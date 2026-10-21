@@ -10,7 +10,8 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { archivedKind, countPhrase, crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { archivedKind, crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { countPhrase } from '../Interface/Confirm/confirmations'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { useContentHost, useHostShown } from '../Interface/contentHost'
@@ -19,6 +20,7 @@ import { usePublishCount } from '../Interface/Subfield/publish'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { containerOwner } from '../Nexus/treeIndex'
 import { owningCollection } from '../Nexus/treePatch'
+import { PropertyTypeIcon } from '../Properties/Cells/PropertyTypes'
 import { personalizationOf } from '../Session/configSlice'
 import type { Personalization } from '../Settings/personalization'
 import { useSession } from '../Session/store'
@@ -41,8 +43,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   const query = useSession((s) => (host ? s.viewSearch[host.tabId]?.query : undefined)) ?? ''
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const openReader = useSession((s) => s.openReader)
-  const tree = useSession((s) => s.tree)
-  const archiveId = useMemo(() => owningCollection(tree, owner)?.id ?? owner.id, [tree, owner])
+  const archiveId = useSession((s) => owningCollection(s.tree, owner)?.id) ?? owner.id
   const browser = useBundleBrowser(
     { kind: 'archive', id: archiveId },
     { query, shown, within: owner.kind === 'set' ? owner.id : undefined },
@@ -110,11 +111,21 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
           style={{ '--cols': cols } as React.CSSProperties}
         >
           <div className="table-head">
-            <div className="col-header">Title</div>
+            <div className="col-header">
+              <span className="col-header-icon">
+                <PropertyTypeIcon type="title" size="body" />
+              </span>
+              Title
+            </div>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are */}
             <div className="col-header archive-date" onContextMenu={browser.date.onContextMenu}>
               <span ref={browser.date.measureRef} className="col-measure">
-                <span>Archived</span>
+                <span>
+                  <span className="col-header-icon">
+                    <PropertyTypeIcon type="dateTime" size="body" />
+                  </span>
+                  Archived
+                </span>
                 <span className={text.body.standard} aria-hidden>
                   {browser.date.sample}
                 </span>

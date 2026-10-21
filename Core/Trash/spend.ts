@@ -16,15 +16,15 @@ import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import {
   contentPages,
-  mintBundle,
+  fileInto,
   openBundle,
   type OpenBundle,
   originPagesOf,
   originPathOf,
   pageIdsOf,
 } from '../Bundles/bundle'
-import { writeRecord } from '../Bundles/record'
-import { relocate, rmwJsonStrict } from '../Files/atomicWrite'
+import { collectionOf, originOf } from '../Bundles/record'
+import { relocate, removeOwn, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -34,17 +34,11 @@ import { collectionArchive } from '../Archive/archive'
 import { refileLanded } from '../Archive/refile'
 import { frozenWorld } from '../Properties/propertyValue'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import { returningNames, settledIndex } from '../Nexus/settle'
+import { returningCascade } from '../Nexus/settle'
 
-import { pageIndexOf, pagesOf } from '../Nexus/record'
+import { pagesOf } from '../Nexus/record'
 import { type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
-import {
-  deleteCascade,
-  joinCascades,
-  linksNotUpdated,
-  renameCascade,
-  type StrippedLink,
-} from '../Nexus/cascade'
+import { deleteCascade, joinCascades, type StrippedLink } from '../Nexus/cascade'
 import { parkLinks, refillTrashed } from './holdings'
 import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
 import { owningCollection } from '../Nexus/treePatch'
@@ -88,8 +82,7 @@ export async function emptyBundle(
   const reach = archive?.sets.length
     ? reachReport(await reachConfig(root, goneContainers(archive.sets)))
     : null
-  recordWrite(bundleAbs)
-  await machine().remove(bundleAbs)
+  await removeOwn(bundleAbs)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, [...recorded, ...(gone?.links ?? [])])
   const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
@@ -100,7 +93,7 @@ type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
-export async function restoreArtifact(
+export async function restoreTrashed(
   root: string,
   bundle: OpenBundle,
   destination?: RestoreDestination,
@@ -112,8 +105,7 @@ export async function restoreArtifact(
     if (!rebuilt.ok) return rebuilt
     await parkLinks(root, rebuilt.value.dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
-    recordWrite(bundleAbs)
-    await machine().remove(bundleAbs)
+    await removeOwn(bundleAbs)
     return ok(restored(rebuilt.value.unrestored))
   }
   if (!artifactAbs)
@@ -162,26 +154,21 @@ export async function restoreArtifact(
     )
     if (!committed.ok) return committed
   }
-  let minted: string | undefined
   try {
     // The Undo of a delete from the Archive lands in a bundle minted under the name its record keeps, reconciled as any Trash restore, and nothing lands in the tree.
-    if (into) {
+    if (into && (record.entity === 'page' || record.entity === 'set')) {
       const origin = join(root, originPathOf(root, store, artifactAbs))
-      minted = await mintBundle(root, into, origin, basename(dir))
-      targetAbs = join(minted, finalName)
-      if (record.entity === 'page' || record.entity === 'set') {
-        const { archive, links, targets, partial, ...filed } = record
-        await writeRecord(minted, filed)
-      }
+      const { archive, links, targets, partial, ...filed } = record
+      targetAbs = join(
+        await fileInto(root, into, origin, artifactAbs, filed, basename(dir)),
+        finalName,
+      )
+    } else {
+      await machine().mkdir(dirname(targetAbs))
+      await relocate(artifactAbs, targetAbs)
     }
-    await machine().mkdir(dirname(targetAbs))
-    await relocate(artifactAbs, targetAbs)
   } catch (e) {
-    // The move is the irreversible half; a Context's entry and a minted bundle are the reversible ones. Reversing them keeps the failure retryable: a ghost entry would trip the next attempt's own id-live guard, and a ghost bundle would take the name the retry asks for.
-    if (minted) {
-      recordWrite(minted)
-      await machine().remove(minted)
-    }
+    // The move is the irreversible half and a Context's entry the reversible one. Reversing it keeps the failure retryable: a ghost entry would trip the next attempt's own id-live guard.
     if (record.entity === 'context')
       await mutateRegistryFile(root, (cur) => ({
         contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),
@@ -189,10 +176,10 @@ export async function restoreArtifact(
     return fault(e)
   }
   await writeOrder?.()
-  const after = await settledIndex(root)
+  const arrived = await returningCascade(root, tree, back, title)
+  const { after, own } = arrived
+  let { cascade } = arrived
   const settled = after && heldTreeOf(root)
-  const returned = after ? returningNames(pageIndexOf(tree), after, back) : null
-  const own = returned?.own ?? new Map<string, string>()
   const unswept: string[] = []
   if (after) {
     const repair = new Map<string, string>()
@@ -203,11 +190,6 @@ export async function restoreArtifact(
     }
     unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
   }
-  let cascade = !returned
-    ? linksNotUpdated(title)
-    : returned.names.size
-      ? await renameCascade(root, { names: returned.names, label: title })
-      : undefined
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -277,11 +259,10 @@ export async function restoreArtifact(
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {
-    recordWrite(bundleAbs)
-    await machine().remove(bundleAbs)
+    await removeOwn(bundleAbs)
   }
-  if (!into && stored.entity === 'set' && stored.parent.kind === 'container')
-    await refileLanded(root, record, stored.trail?.[0] ?? stored.parent.id, dir)
+  const left = originOf(stored)
+  if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
   return ok({
     ...restored([...unspent, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
     ...(cascade ? { cascade } : {}),

@@ -47,6 +47,8 @@ export function markIndexReady(): void {
   readyDb = contentIndexStore()
 }
 
+export const indexReady = (): boolean => contentIndexStore() === readyDb
+
 function queried<T>(run: (db: ContentIndexStore) => T): T | null {
   const db = contentIndexStore()
   if (!db) return null
@@ -58,8 +60,7 @@ function queried<T>(run: (db: ContentIndexStore) => T): T | null {
 }
 
 function queryPaths(run: (db: ContentIndexStore) => string[]): string[] | null {
-  if (contentIndexStore() !== readyDb) return null
-  return queried(run)
+  return indexReady() ? queried(run) : null
 }
 
 export function queryMentions(keys: readonly string[], qualifier?: string): string[] | null {
@@ -82,7 +83,7 @@ export function queryMembers(key: string, title?: string): string[] | null {
 }
 
 export function readPageRelations(paths?: readonly string[], key?: string): PageRelations | null {
-  return contentIndexStore() !== readyDb ? null : queried((db) => db.readPageRelations(paths, key))
+  return indexReady() ? queried((db) => db.readPageRelations(paths, key)) : null
 }
 
 export function readIndexedStat(path: string): IndexedStat | null {

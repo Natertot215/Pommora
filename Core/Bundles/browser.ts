@@ -1,13 +1,14 @@
 // The renderer's half of the bundle owner: what a store's browser does with the rows `rows.ts` builds host-side.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import {
   askEmptyTrash,
   askTrashing,
   confirmDelete,
+  countPhrase,
+  deleteQuestion,
   offerUndo,
   spendUndo,
 } from '../Interface/Confirm/confirmations'
@@ -16,11 +17,10 @@ import {
   notifyReport,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
-import { changesSettled, type MutateRequest, type RestoreDestination } from '../Nexus/mutateRequest'
+import { changesSettled, type RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { basename } from '../Paths/posix'
-import { itemCount } from '../Properties/properties'
 import { formatDate } from '../Properties/formatValue'
 import {
   type DateStyle,
@@ -42,26 +42,6 @@ import { dialer } from '../Platform/dialer'
 import type { Personalization } from '../Settings/personalization'
 import type { BundleStore } from './bundle'
 import type { BundleCrumb, BundleRow } from './rows'
-
-const PLURALS: Record<BundleRow['kind'], string> = {
-  page: 'Pages',
-  collection: 'Collections',
-  set: 'Sets',
-  space: 'Spaces',
-  context: 'Contexts',
-  property: 'Properties',
-}
-
-export function countPhrase(rows: BundleRow[]): string {
-  const kinds = new Set(rows.map((r) => r.kind))
-  const kind = kinds.size === 1 ? [...kinds][0] : null
-  if (kind === null) return itemCount(rows.length)
-  return rows.length === 1 ? `1 ${capitalize(kind)}` : `${rows.length} ${PLURALS[kind]}`
-}
-
-/** What a delete asks of the rows it acts on: one by its title, more by their count. */
-export const deleteQuestion = (rows: BundleRow[]): string =>
-  rows.length === 1 ? `Delete “${rows[0].title}”?` : `Delete these ${countPhrase(rows)}?`
 
 const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 
@@ -88,11 +68,6 @@ export const archivedKind = (row: BundleRow): 'page' | 'set' =>
 const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
 
 type BatchOp = 'restore' | 'emptyBundle' | 'delete'
-
-const requestOf = (op: BatchOp, row: BundleRow): MutateRequest =>
-  op === 'delete'
-    ? { op, path: row.bundlePath, kind: archivedKind(row) }
-    : { op, bundlePath: row.bundlePath }
 
 /** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, under the bundle name it left, so it keeps its Archived date; one renamed or stepped aside since takes a fresh stamp, since that name no longer fits it. */
 const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
@@ -185,9 +160,9 @@ function rulesOf(kind: BundleStore['kind']): {
       return {
         dateKey: 'trashColumnStyle',
         deleteOp: 'emptyBundle',
-        askBatch: (targets) => askEmptyTrash(deleteQuestion(targets)),
+        askBatch: (targets) => askEmptyTrash(deleteQuestion(targets), targets.length),
         deleteOne: async (row) =>
-          (await askEmptyTrash(deleteQuestion([row]))) &&
+          (await askEmptyTrash(deleteQuestion([row]), 1)) &&
           (await useSession
             .getState()
             .mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })) !== null,
@@ -234,9 +209,12 @@ export function useBundleBrowser(
   const [listing, setListing] = useState<Listing>({ status: 'loading' })
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
-  // Keyed on the store's fields rather than the object, so a caller may pass a fresh literal.
+  // Keyed on the store's fields rather than the object, so a caller may pass a fresh literal; only the latest ask's reply lands, since replies can arrive out of order.
+  const asks = useRef(0)
   const refresh = useCallback(async (): Promise<void> => {
+    const ask = ++asks.current
     const res = await dialer().ask('bundles:list', store, within)
+    if (ask !== asks.current) return
     if (!res.ok) {
       setListing({ status: 'failed' })
       return
@@ -323,12 +301,16 @@ export function useBundleBrowser(
     const warnings = new Set<string>()
     const renamed: string[] = []
     const bundled: string[] = []
-    let stopped = false
+    const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
     if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
-      stopped = useSession.getState().tree?.nexus.id !== nexusId
-      if (stopped) break
-      const res = await dialer().ask('mutate', requestOf(op, row))
+      if (switched()) break
+      const res = await dialer().ask(
+        'mutate',
+        op === 'delete'
+          ? { op, path: row.bundlePath, kind: archivedKind(row) }
+          : { op, bundlePath: row.bundlePath },
+      )
       ;(res.ok ? done : refused).push(row)
       if (!res.ok) continue
       spendUndo(row.bundlePath)
@@ -338,7 +320,9 @@ export function useBundleBrowser(
       if (res.value.bundled) bundled.push(res.value.bundled.bundlePath)
     }
     storesChanged.emit()
-    return stopped ? null : { done, refused, unrestored, warnings: [...warnings], renamed, bundled }
+    return switched()
+      ? null
+      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled }
   }
 
   const restoreBatch = async (targets: BundleRow[]): Promise<void> => {

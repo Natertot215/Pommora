@@ -3,7 +3,7 @@ import { machine } from '../Platform/machine'
 import { foldKey } from './caseFold'
 import { hiddenFolder, hiddenName } from './exclusion'
 import { isMarkdownFile } from './posix'
-import { CROPS_REL } from './nexusPaths'
+import { type ArchiveStore, CROPS_REL } from './nexusPaths'
 import { expressibleInLink } from '../Connections/connections'
 
 type NameRole = 'page' | 'directory'
@@ -15,6 +15,10 @@ export function holdsName(name: string): boolean {
   const trimmed = name.trim()
   return trimmed !== '' && trimmed !== '.' && trimmed !== '..' && !/[/\\\0]/.test(name)
 }
+
+/** The Archive a Collection id names: the id becomes one folder under the Archive's root, and a sidecar can carry any string as its id. */
+export const archiveStoreOf = (id: string | undefined): ArchiveStore | null =>
+  id !== undefined && holdsName(id) ? { kind: 'archive', id } : null
 
 // Every rule a name is held to, in one place. Returns the message to show, or null when the name is allowed.
 export function nameError(name: string, role: NameRole): string | null {

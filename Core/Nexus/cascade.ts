@@ -72,6 +72,10 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
+/** The Nexus paths of `files` outside the Archive, the ones a cascade's report names. */
+const outsideArchive = (root: string, files: readonly string[]): string[] =>
+  files.map((file) => relative(root, file)).filter((rel) => !isArchived(rel))
+
 /** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
   root: string,
@@ -82,6 +86,8 @@ export async function deleteCascade(
   const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
   const tree = heldTreeOf(root)
   if (!tree) return NO_STRIP
+  const defs = byKey(linkDefsOf(tree.config.registry))
+  if (!defs.size) return NO_STRIP
   try {
     // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
     const { byId, archived } = await nexusPages(root, tree)
@@ -89,8 +95,7 @@ export async function deleteCascade(
     const gone = new Set(
       paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'),
     )
-    const defs = byKey(linkDefsOf(tree.config.registry))
-    if (!defs.size || !gone.size) return NO_STRIP
+    if (!gone.size) return NO_STRIP
     const goneEntry = (value: unknown): string | null =>
       gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
     const named = (raw: Record<string, unknown>) =>
@@ -126,12 +131,10 @@ export async function deleteCascade(
       if (!id) continue
       for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
     }
-    const unswept = swept.skipped.length + heldOut
+    const unswept = outsideArchive(root, swept.skipped).length + heldOut
     return {
       cascade: {
-        pages: [...swept.touched.keys()]
-          .map((file) => relative(root, file))
-          .filter((rel) => !isArchived(rel)),
+        pages: outsideArchive(root, [...swept.touched.keys()]),
         hosts: [],
         warning: unswept ? unsweptLine(unswept, 'links in ') : undefined,
       },
@@ -252,7 +255,7 @@ export async function renameCascade(
       'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
-      pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),
+      pages: outsideArchive(root, [...swept.touched.keys()].filter(isMarkdownFile)),
       hosts: tiles.hosts,
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
     }

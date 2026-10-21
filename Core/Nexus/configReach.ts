@@ -35,6 +35,8 @@ import { asString } from './coerce'
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
 import { readWatchScope } from '../Settings/settings'
+import { scopeOf } from '../Settings/codec'
+import type { WatchScope } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
@@ -320,15 +322,15 @@ type Container = { kind: ContainerKind; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
-const setSidecarsUnder = async (root: string, abs: string): Promise<string[]> =>
-  (await sidecarsUnder(root, await readWatchScope(root), abs)).filter(
-    (file) => basename(file) === SIDECAR_FILENAME.set,
-  )
+const setSidecarsUnder = async (root: string, scope: WatchScope, abs: string): Promise<string[]> =>
+  (await sidecarsUnder(root, scope, abs)).filter((file) => basename(file) === SIDECAR_FILENAME.set)
 
 /** The ids of the Sets an archived folder holds, read from their sidecars, so every saved view drops them once the folder leaves for good. */
 export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
   const ids = await Promise.all(
-    (await setSidecarsUnder(root, abs)).map((file) => sidecarId(dirname(file), 'set')),
+    (await setSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
+      sidecarId(dirname(file), 'set'),
+    ),
   )
   return ids.flatMap((id) => id ?? [])
 }
@@ -336,7 +338,7 @@ export async function archivedSetIds(root: string, abs: string): Promise<string[
 async function archivedSets(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
   const archive = archiveReach(tree, under && relative(root, under))
   if (archive === null) return []
-  return (await setSidecarsUnder(root, join(root, archive))).map((file) => ({
+  return (await setSidecarsUnder(root, scopeOf(tree.config), join(root, archive))).map((file) => ({
     kind: 'set',
     dir: dirname(file),
   }))

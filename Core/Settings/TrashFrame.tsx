@@ -57,6 +57,7 @@ function TrashBody(): React.JSX.Element {
                     key={row.bundlePath}
                     row={row}
                     checked={checked.has(row.bundlePath)}
+                    revealed={checked.size > 0}
                     onToggle={() => toggle(row.bundlePath)}
                     onMenu={() => void openMenu(row)}
                     icon={
@@ -80,7 +81,7 @@ function TrashBody(): React.JSX.Element {
 
   return (
     <div
-      className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}
+      className="trash-frame table is-clear"
       style={
         date.width === null
           ? undefined
@@ -122,6 +123,7 @@ function TrashBody(): React.JSX.Element {
 function TrashRowView({
   row,
   checked,
+  revealed,
   onToggle,
   onMenu,
   icon,
@@ -130,6 +132,7 @@ function TrashRowView({
 }: {
   row: BundleRow
   checked: boolean
+  revealed: boolean
   onToggle: () => void
   onMenu: () => void
   icon: string
@@ -139,6 +142,7 @@ function TrashRowView({
   return (
     <MenuItem
       className="trash-row table-divider"
+      revealed={revealed}
       leading={<Icon name={icon} size="headline" />}
       detail={
         <NavTrail

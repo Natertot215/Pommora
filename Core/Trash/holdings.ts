@@ -12,15 +12,12 @@ import { stampedIdOf } from '../Files/pageFile'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { isBlankRaw } from '../Properties/propertyValue'
 import { contentPages, listBundles, originPagesIn } from '../Bundles/bundle'
-import { RECORD_FILENAME } from '../Bundles/record'
+import { patchRecord } from '../Bundles/record'
 
-/** Raw, since a record is never rewritten from its decode. */
-async function appendLinks(bundleDir: string, links: StrippedLink[]): Promise<void> {
-  await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({
-    ...raw,
+const appendLinks = (bundleDir: string, links: StrippedLink[]): Promise<void> =>
+  patchRecord(bundleDir, (raw) => ({
     links: [...(Array.isArray(raw.links) ? raw.links : []), ...links],
   }))
-}
 
 /** A Link value dropped for naming a page the Trash holds joins that page's bundle, so its restore writes it back; a key two trashed pages answer names neither. */
 export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {

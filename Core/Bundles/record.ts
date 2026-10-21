@@ -1,6 +1,6 @@
 import { dirname, join, relative } from '../Paths/posix'
 import { z } from 'zod'
-import { readJsonObject, writeJson } from '../Files/atomicWrite'
+import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { index } from '../Files/decoders'
 import { stampedIdOf } from '../Files/pageFile'
 import { sidecarId } from '../Files/sidecar'
@@ -11,7 +11,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { containerAt, containerTrailById } from '../Nexus/treePatch'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
-export const RECORD_FILENAME = '_record.json'
+const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('root') }),
@@ -43,7 +43,7 @@ const contentRecord = <E extends string>(entity: E) =>
     id: z.string().optional(),
     parent: parentRef,
     place,
-    /** The ids of the containers above `parent`, Collection first, so a Trash record's Collection is `trail[0] ?? parent.id`; read once the tree no longer holds `parent`, and kept current in the Archive by its carry. */
+    /** The ids of the containers above `parent`, Collection first; read once the tree no longer holds `parent`, and kept current in the Archive by its carry. */
     trail: z.array(z.string()).optional(),
     /** A Trash record's only: the Archive bundle a delete took the item out of, where its Undo returns it. */
     archive: z.string().optional(),
@@ -92,15 +92,32 @@ export type RecordFile = z.infer<typeof recordFile>
 /** The property shape is artifact-less — there is nothing to place. */
 export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
 
-export async function writeRecord(bundleDir: string, record: RecordFile): Promise<void> {
+/** A record as its file holds it, which a write that carries it on keeps whole, since a record is never rewritten from its decode. */
+export type RawRecord = Record<string, unknown>
+
+export async function writeRecord(
+  bundleDir: string,
+  record: RecordFile | RawRecord,
+): Promise<void> {
   await writeJson(join(bundleDir, RECORD_FILENAME), record)
 }
 
+export const readRawRecord = (bundleDir: string): Promise<RawRecord | null> =>
+  readJsonObject(join(bundleDir, RECORD_FILENAME))
+
 export async function readRecord(bundleDir: string): Promise<RecordFile | null> {
-  const raw = await readJsonObject(join(bundleDir, RECORD_FILENAME))
+  const raw = await readRawRecord(bundleDir)
   if (raw === null) return null
   const parsed = recordFile.safeParse(raw)
   return parsed.success ? parsed.data : null
+}
+
+/** Merges what `patch` answers into the record in place, raw. */
+export async function patchRecord(
+  bundleDir: string,
+  patch: (raw: RawRecord) => RawRecord,
+): Promise<void> {
+  await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({ ...raw, ...patch(raw) }))
 }
 
 export function placeOf(ids: readonly string[], id: string): Place | undefined {
@@ -115,6 +132,20 @@ export const trailAbove = (tree: NexusTree, containerId: string): string[] | nul
   containerTrailById(tree, containerId)
     ?.slice(0, -1)
     .map((n) => n.id) ?? null
+
+type Origin = { parent: string; trail: string[] }
+
+/** The container a page or Set left, and the ids it stored above it. */
+export const originOf = (record: RecordFile): Origin | null =>
+  (record.entity === 'page' || record.entity === 'set') && record.parent.kind === 'container'
+    ? { parent: record.parent.id, trail: record.trail ?? [] }
+    : null
+
+export const collectionOf = ({ parent, trail }: Origin): string => trail[0] ?? parent
+
+/** Whether an origin lies within the Set `setId`: by `held`, the tree's trail above its parent, while the tree holds the parent, else by the trail it stored. */
+export const originWithin = (origin: Origin, setId: string, held: string[] | null): boolean =>
+  origin.parent === setId || (held ?? origin.trail).includes(setId)
 
 export async function gatherContentRecord(
   root: string,

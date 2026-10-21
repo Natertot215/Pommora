@@ -8,6 +8,7 @@ import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import { itemCount } from '../../Properties/properties'
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import type { FormatChange } from '../../Properties/keyFormat'
 
 const DELETE_FACTS_FALLBACK = {
@@ -24,6 +25,28 @@ export interface ConfirmRequest {
 }
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
+
+type Counted = { kind: HeldKind | 'property' }
+
+const PLURALS: Record<Counted['kind'], string> = {
+  page: 'Pages',
+  collection: 'Collections',
+  set: 'Sets',
+  space: 'Spaces',
+  context: 'Contexts',
+  property: 'Properties',
+}
+
+export function countPhrase(items: readonly Counted[]): string {
+  const kinds = new Set(items.map((r) => r.kind))
+  const kind = kinds.size === 1 ? [...kinds][0] : null
+  if (kind === null) return itemCount(items.length)
+  return items.length === 1 ? `1 ${capitalize(kind)}` : `${items.length} ${PLURALS[kind]}`
+}
+
+/** What a delete asks of what it acts on: one by its title, more by their count. */
+export const deleteQuestion = (targets: readonly (Counted & { title: string })[]): string =>
+  targets.length === 1 ? `Delete “${targets[0].title}”?` : `Delete these ${countPhrase(targets)}?`
 
 /** A container, a Context, and a Space each carry everything filed under them, so deleting one asks regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a tile, a folder that carries no schema. An archive removes nothing, so it asks under its own switch alone. */
 const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
@@ -103,7 +126,7 @@ export const confirmDelete = async (target: {
   title: string
   undoTo?: RestoreDestination
 }): Promise<boolean> => {
-  if (!(await askTrashing(`Delete “${target.title}”?`, [target.kind]))) return false
+  if (!(await askTrashing(deleteQuestion([target]), [target.kind]))) return false
   const done = await useSession
     .getState()
     .mutate({ op: 'delete', path: target.path, kind: target.kind })
@@ -205,13 +228,14 @@ export const askFormatChange = (propertyId: string, change: FormatChange): Promi
     true,
   )
 
-export const askEmptyTrash = async (message: string): Promise<boolean> => {
+export const askEmptyTrash = async (message: string, count: number): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
+  const [it, back] = count > 1 ? ['They', 'them'] : ['It', 'it']
   return ask({
     message,
     detail: permanentDelete
-      ? 'It will be erased from this computer. This cannot be undone.'
-      : 'It will move to your system trash, which is where you would get it back from.',
+      ? `${it} will be erased from this computer. This cannot be undone.`
+      : `${it} will move to your system trash, which is where you would get ${back} back from.`,
     action: 'Delete',
     tone: 'destructive',
     defaultsToCancel: true,

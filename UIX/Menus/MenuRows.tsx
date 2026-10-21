@@ -78,6 +78,8 @@ type MenuItemProps = {
   centered?: boolean
   disabled?: boolean
   inert?: boolean
+  /** Shows every reveal target in the row, as while any row of its list is checked. */
+  revealed?: boolean
   indent?: number
   tabIndex?: number
   onClick?: (e: MouseEvent<HTMLDivElement>) => void
@@ -103,6 +105,7 @@ export function MenuItem({
   centered = false,
   disabled = false,
   inert = false,
+  revealed = false,
   indent = 0,
   tabIndex,
   onClick,
@@ -136,7 +139,7 @@ export function MenuItem({
         className,
       )}
       style={rowStyle}
-      data-reveal-host={inert ? undefined : ''}
+      data-reveal-host={inert ? undefined : revealed ? 'on' : ''}
       role={act ? 'button' : undefined}
       tabIndex={act ? (tabIndex ?? 0) : undefined}
       onClick={act}

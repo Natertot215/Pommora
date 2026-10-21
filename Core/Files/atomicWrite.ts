@@ -74,6 +74,11 @@ export async function relocate(
   reportRename(from, to)
 }
 
+export async function removeOwn(abs: string): Promise<void> {
+  recordWrite(abs)
+  await machine().remove(abs)
+}
+
 // A leading BOM is encoding, not corruption.
 export const parseJsonText = (text: string): unknown =>
   JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text)

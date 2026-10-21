@@ -227,9 +227,9 @@ const SETTINGS = {
 }
 type Settings = typeof SETTINGS
 export type SettingKey = keyof Settings
-export type SettingValue<K extends SettingKey> =
-  | Exclude<Personalization[K], undefined>
-  | Settings[K]['fallback']
+export type SettingValue<K extends SettingKey> = K extends keyof typeof SETTING_BOUNDS
+  ? SettingValue<(typeof SETTING_BOUNDS)[K]>
+  : Exclude<Personalization[K], undefined> | Settings[K]['fallback']
 
 const eachSetting = <V>(pick: (s: Settings[SettingKey]) => V): Record<SettingKey, V> =>
   Object.fromEntries(Object.entries(SETTINGS).map(([k, s]) => [k, pick(s)])) as Record<
@@ -257,16 +257,18 @@ export type SteppedKey = {
   [K in SettingKey]: Settings[K]['range'] extends SteppedRange ? K : never
 }[SettingKey]
 
-export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
-  (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
-
-/** A stepped setting with a bound follows it until picked, and never exceeds it. */
-export const SETTING_BOUNDS: Readonly<Partial<Record<SettingKey, SteppedKey>>> = {
+/** A stepped setting with a bound follows it until picked, and is lowered to it on write. */
+export const SETTING_BOUNDS = {
   archiveHistoryDays: 'historyDays',
-}
+} as const satisfies Partial<Record<SettingKey, SteppedKey>>
 
-export const settingWithin = (p: Personalization, key: SteppedKey): number =>
-  (p[key] ?? settingOf(p, SETTING_BOUNDS[key] ?? key)) as number
+export const boundOf = (key: SettingKey): SteppedKey | undefined =>
+  (SETTING_BOUNDS as Partial<Record<SettingKey, SteppedKey>>)[key]
+
+export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> => {
+  const bound = boundOf(key)
+  return (p[key] ?? (bound ? settingOf(p, bound) : SETTING_DEFAULTS[key])) as SettingValue<K>
+}
 
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>

@@ -17,7 +17,7 @@ export function checkedIn<T, K>(
   return shown.filter((item) => checked.has(keyOf(item)))
 }
 
-/** What a right-click acts on: an unchecked item alone, whatever else is checked, since a checked set is a deliberate construction; a checked one with every checked item still shown, so a narrowed list never offers a batch of rows it hides, and a lone shown row keeps the single-row menu it is owed. */
+/** What a right-click acts on: an unchecked item alone, whatever else is checked, since a checked set is a deliberate construction; a checked one, the checked items still shown, so a narrowed list never offers a batch of rows it hides, and a lone shown row keeps the single-row menu it is owed. */
 export function actedOn<T, K>(
   checked: ReadonlySet<K>,
   shown: readonly T[],
