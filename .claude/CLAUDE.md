@@ -4,7 +4,7 @@ Pommora is Nathan’s main project — a personal management and all-in-one prod
 
 ### The Model
 
-Pommora’s model revolves around an individual user-picked folder that’s designated as the “Nexus” that contains all of the content that Pommora’s interacts with — similar to Obsidian's “vault” framework — and the `.nexus/` configuration directory used to define the workspace itself.
+Pommora’s model revolves around an individual user-picked folder designated as the “Nexus” that contains all of the content that Pommora interacts with — similar to Obsidian's “vault” framework — and the `.nexus/` configuration directory used to define the workspace itself.
 
 The Nexus’ structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties**, and linking them all together through relationships to **Contexts**.
 

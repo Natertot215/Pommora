@@ -227,6 +227,24 @@ export const FRAMES = roster([
     ],
   },
   {
+    key: 'metadata',
+    label: 'Metadata',
+    icon: 'server',
+    sections: [
+      {
+        title: 'Maintenance',
+        rows: [
+          {
+            kind: 'toggle',
+            key: 'repairOnOpen',
+            label: 'Repair Properties On Open',
+            hint: 'Repair property and Context values on the pages changed since the last open.',
+          },
+        ],
+      },
+    ],
+  },
+  {
     key: 'interface',
     label: 'Interface',
     icon: 'laptop',
@@ -340,6 +358,13 @@ export const FRAMES = roster([
         ],
       },
     ],
+  },
+  {
+    key: 'shortcuts',
+    label: 'Shortcuts',
+    icon: 'command',
+    experimental: true,
+    sections: [],
   },
   {
     key: 'navigation',
@@ -504,6 +529,13 @@ export const FRAMES = roster([
     ],
   },
   {
+    key: 'automations',
+    label: 'Automations',
+    icon: 'zap',
+    experimental: true,
+    sections: [],
+  },
+  {
     key: 'files',
     label: 'Files & Links',
     icon: 'folder-tree',
@@ -641,24 +673,6 @@ export const FRAMES = roster([
             label: 'Clear History',
             hint: 'Permanently delete stored snapshots for all files; this cannot be undone.',
             clear: clearFileHistory,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'metadata',
-    label: 'Metadata',
-    icon: 'server',
-    sections: [
-      {
-        title: 'Maintenance',
-        rows: [
-          {
-            kind: 'toggle',
-            key: 'repairOnOpen',
-            label: 'Repair Properties On Open',
-            hint: 'Repair property and Context values on the pages changed since the last open.',
           },
         ],
       },
@@ -897,20 +911,6 @@ export const FRAMES = roster([
         ],
       },
     ],
-  },
-  {
-    key: 'automations',
-    label: 'Automations',
-    icon: 'zap',
-    experimental: true,
-    sections: [],
-  },
-  {
-    key: 'shortcuts',
-    label: 'Shortcuts',
-    icon: 'command',
-    experimental: true,
-    sections: [],
   },
   {
     key: 'trash',
