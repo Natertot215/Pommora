@@ -8,5 +8,5 @@ export const face = style({
   gridArea: '1 / 1',
   display: 'grid',
   transition: REVEAL_FADE,
-  selectors: { '&[data-face="hidden"]': { opacity: 0, pointerEvents: 'none' } },
+  selectors: { '&[data-face="hidden"]': { opacity: 0 } },
 })

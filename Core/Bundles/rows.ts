@@ -70,7 +70,7 @@ function homeResolvesFor(
   return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
-const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({
+export const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({
   ...row,
   match: matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
 })

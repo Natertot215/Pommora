@@ -10,9 +10,10 @@ import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { notifyTrashed } from '../Interface/Confirm/confirmations'
-import { currentNotification } from '../Interface/Notifications/notifications'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
+import { storesChanged } from '../Session/nexusSlice'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -193,8 +194,11 @@ describe('the Trash pane', () => {
     expect(older).toHaveBeenCalledTimes(1)
   })
 
-  const pickForBoth = async (action: string): Promise<void> => {
-    listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
+  const pickForBoth = async (
+    action: string,
+    both = [row({ title: 'Alpha' }), row({ title: 'Beta' })],
+  ): Promise<void> => {
+    listed = both
     await act(async () => nexus('B'))
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
@@ -273,6 +277,33 @@ describe('the Trash pane', () => {
       .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Beta (2)' } })
     await pickForBoth('restore')
     expect(currentNotification()).toMatchObject({ segment: '2 Renamed' })
+  })
+
+  it('a Restore All of rows with nowhere to go restores nothing and says only that', async () => {
+    await pickForBoth('restore', [
+      row({ title: 'Alpha', homeResolves: false }),
+      row({ title: 'Beta', homeResolves: false }),
+    ])
+    expect(mutated).not.toHaveBeenCalled()
+    expect(currentNotification()).toMatchObject({
+      message: '2 Pages had nowhere to go — restore those one at a time to choose where.',
+      tone: 'error',
+    })
+  })
+
+  it('a Nexus switch during a batch stops it, posting no notice and telling the stores once', async () => {
+    clearNotification()
+    const heard = vi.fn()
+    const unsubscribe = storesChanged.subscribe(heard)
+    mutated.mockImplementationOnce(async () => {
+      nexus('C')
+      return { ok: true, value: {} }
+    })
+    await pickForBoth('restore')
+    unsubscribe()
+    expect(mutated).toHaveBeenCalledTimes(1)
+    expect(currentNotification()).toBeNull()
+    expect(heard).toHaveBeenCalledTimes(1)
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

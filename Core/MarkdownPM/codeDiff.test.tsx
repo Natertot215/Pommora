@@ -39,21 +39,27 @@ describe('a diff fence’s tally', () => {
   it('swaps its counts for Copied while a copy holds, then back', async () => {
     const view = await mountEditor({ initialBody: doc })
     const tally = view.contentDOM.querySelector<HTMLElement>('.codeblock-tally')!
-    const faces = (): (string | null | undefined)[][] =>
+    const faces = (): (string | boolean | null | undefined)[][] =>
       [...tally.querySelectorAll<HTMLElement>('[data-face]')].map((f) => [
         f.textContent,
         f.dataset.face,
+        f.getAttribute('aria-hidden'),
+        f.hasAttribute('inert'),
       ])
+    expect(faces()).toEqual([
+      ['+1+2 / −1', 'shown', null, false],
+      ['Copied', 'hidden', 'true', true],
+    ])
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     tally.click()
     expect(faces()).toEqual([
-      ['+1+2 / −1', 'hidden'],
-      ['Copied', 'shown'],
+      ['+1+2 / −1', 'hidden', 'true', true],
+      ['Copied', 'shown', null, false],
     ])
     vi.advanceTimersByTime(DONE_MS)
     expect(faces()).toEqual([
-      ['+1+2 / −1', 'shown'],
-      ['Copied', 'hidden'],
+      ['+1+2 / −1', 'shown', null, false],
+      ['Copied', 'hidden', 'true', true],
     ])
     vi.useRealTimers()
   })

@@ -3,9 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { actedOn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
-import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
+import {
+  notifyOutcome,
+  notifyReport,
+  unrestoredLine,
+} from '../Interface/Notifications/notifications'
 import { changesSettled, type MutateRequest } from '../Nexus/mutateRequest'
-import { matchQuery, matchScore } from '../Paths/caseFold'
+import { matches, matchQuery } from '../Paths/caseFold'
 import { itemCount } from '../Properties/properties'
 import { formatDate } from '../Properties/formatValue'
 import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Properties/columnStyles'
@@ -42,11 +46,13 @@ const steppedTo = (title: string, landedAs: string): string => `“${title}” a
 /** Typed search narrows in place, keeping the store's order, as a view's search does (`searchGroups`). */
 export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
   const q = matchQuery(query)
-  return q ? rows.filter((row) => matchScore(row.match, q) !== null) : rows
+  return q ? rows.filter((row) => matches(row.match, q)) : rows
 }
 
+type DateKey = 'trashColumnStyle' | 'archiveColumnStyle'
+
 /** A store's date column: its stored style over the Nexus's date form, and the heading's right-click, which picks one. */
-function useDateColumn(key: 'trashColumnStyle' | 'archiveColumnStyle'): {
+function useDateColumn(key: DateKey): {
   when: (storedAt: number | null) => string
   onContextMenu: (e: React.MouseEvent) => Promise<void>
 } {
@@ -81,7 +87,7 @@ function useDateColumn(key: 'trashColumnStyle' | 'archiveColumnStyle'): {
 }
 
 /** What the Trash and the Archive do differently under one browser. */
-function rulesOf(kind: BundleStore['kind']): { dateKey: Parameters<typeof useDateColumn>[0] } {
+function rulesOf(kind: BundleStore['kind']): { dateKey: DateKey } {
   switch (kind) {
     case 'trash':
       return { dateKey: 'trashColumnStyle' }
@@ -90,13 +96,14 @@ function rulesOf(kind: BundleStore['kind']): { dateKey: Parameters<typeof useDat
   }
 }
 
+type Listing = { status: 'loading' } | { status: 'failed' } | { status: 'ready'; rows: BundleRow[] }
+
 /** A store's browser: its rows, listed again on each change while shown and on each showing; the checked set; the right-click menu's Restore and Delete over a row or the checked rows in view; and its date column. */
 export function useBundleBrowser(
   store: BundleStore,
   { query, shown }: { query: string; shown: boolean },
 ): {
-  rows: BundleRow[] | null
-  failed: boolean
+  listing: Listing
   matches: BundleRow[]
   checked: ReadonlySet<string>
   toggle: (bundlePath: string) => void
@@ -105,22 +112,19 @@ export function useBundleBrowser(
 } {
   const rules = rulesOf(store.kind)
   const date = useDateColumn(rules.dateKey)
-  const tree = useSession((s) => s.tree)
+  const nexusId = useSession((s) => s.tree?.nexus.id)
   const mutate = useSession((s) => s.mutate)
-  const patchPagesFor = useSession((s) => s.patchPagesFor)
-  const [rows, setRows] = useState<BundleRow[] | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [listing, setListing] = useState<Listing>({ status: 'loading' })
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
   // Keyed on the store's fields rather than the object, so a caller may pass a fresh literal.
   const refresh = useCallback(async (): Promise<void> => {
     const res = await dialer().ask('bundles:list', store)
     if (!res.ok) {
-      setFailed(true)
+      setListing({ status: 'failed' })
       return
     }
-    setFailed(false)
-    setRows(res.value)
+    setListing({ status: 'ready', rows: res.value })
     const live = new Set(res.value.map((r) => r.bundlePath))
     setChecked((prev) => retained(prev, live))
   }, [store.kind, store.kind === 'archive' ? store.id : null])
@@ -132,7 +136,10 @@ export function useBundleBrowser(
     return storesChanged.subscribe(() => void refresh())
   }, [refresh, shown])
 
-  const matches = useMemo(() => filterRows(rows ?? [], query), [rows, query])
+  const matches = useMemo(
+    () => (listing.status === 'ready' ? filterRows(listing.rows, query) : []),
+    [listing, query],
+  )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
   const one = async (
@@ -149,6 +156,7 @@ export function useBundleBrowser(
       ])
   }
 
+  /** Answers null when a Nexus switch stopped it, as the slice's `mutate` drops a held op: the paths left belong to the Nexus it left, so the batch reports nothing. */
   const many = async (
     targets: BundleRow[],
     op: 'restore' | 'emptyBundle',
@@ -158,40 +166,42 @@ export function useBundleBrowser(
     unrestored: string[]
     warnings: string[]
     renamed: string[]
-  }> => {
+  } | null> => {
     const done: BundleRow[] = []
     const refused: BundleRow[] = []
     const unrestored: string[] = []
     const warnings = new Set<string>()
     const renamed: string[] = []
+    let stopped = false
     if (changesSettled(op)) await flushAllSaves()
     for (const row of targets) {
-      // As `mutate` holds each write, a Nexus switch stops the batch, since the paths left belong to the Nexus it left.
-      if (useSession.getState().tree?.nexus.id !== tree?.nexus.id) break
-      const req = { op, bundlePath: row.bundlePath }
-      const res = await dialer().ask('mutate', req)
+      stopped = useSession.getState().tree?.nexus.id !== nexusId
+      if (stopped) break
+      const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
       ;(res.ok ? done : refused).push(row)
       if (!res.ok) continue
-      patchPagesFor(req)
       spendBundle(row.bundlePath)
       unrestored.push(...(res.value.unrestored ?? []))
       if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
       if (res.value.landedAs) renamed.push(steppedTo(row.title, res.value.landedAs))
     }
     storesChanged.emit()
-    return { done, refused, unrestored, warnings: [...warnings], renamed }
+    return stopped ? null : { done, refused, unrestored, warnings: [...warnings], renamed }
   }
 
   const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored, warnings, renamed } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
+    const nowhere = `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`
+    if (addressable.length === 0) return notifyReport(nowhere, true)
+    const ran = await many(addressable, 'restore')
+    if (!ran) return
+    const { done, refused, unrestored, warnings, renamed } = ran
     notifyOutcome(
       `Restored ${countPhrase(done)}`,
       renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
       [
-        homeless.length > 0 &&
-          `${countPhrase(homeless)} had nowhere to go — restore those one at a time to choose where.`,
+        homeless.length > 0 && nowhere,
         refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
         unrestored.length > 0 && unrestoredLine(unrestored),
         ...warnings,
@@ -201,7 +211,9 @@ export function useBundleBrowser(
 
   const emptyBatch = async (targets: BundleRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
-    const { done, refused, warnings } = await many(targets, 'emptyBundle')
+    const ran = await many(targets, 'emptyBundle')
+    if (!ran) return
+    const { done, refused, warnings } = ran
     notifyOutcome(`Deleted ${countPhrase(done)}`, undefined, [
       refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
       ...warnings,
@@ -212,6 +224,7 @@ export function useBundleBrowser(
     const targets = actedOn(checked, matches, row, (r) => r.bundlePath)
     const batch = targets.length > 1
     const destinationKind = row.kind === 'space' ? ('context' as const) : ('container' as const)
+    const { tree } = useSession.getState()
     const action = await popMenu(
       restoreMenuItems({
         batch,
@@ -242,5 +255,5 @@ export function useBundleBrowser(
     }
   }
 
-  return { rows, failed, matches, checked, toggle, openMenu, date }
+  return { listing, matches, checked, toggle, openMenu, date }
 }

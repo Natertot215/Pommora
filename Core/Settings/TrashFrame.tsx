@@ -27,11 +27,56 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const { rows, failed, matches, checked, toggle, openMenu, date } = useBundleBrowser(
+  const { listing, matches, checked, toggle, openMenu, date } = useBundleBrowser(
     { kind: 'trash' },
     { query, shown: true },
   )
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
+
+  const body = (): React.JSX.Element => {
+    switch (listing.status) {
+      case 'loading':
+        return <div className="trash-empty" />
+      case 'failed':
+        return (
+          <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
+        )
+      case 'ready':
+        if (matches.length === 0)
+          return (
+            <div className={cx('trash-empty', text.body.standard)}>
+              {listing.rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
+            </div>
+          )
+        return (
+          <>
+            <div className="trash-scroll scroll-fade">
+              <div className="nav-list">
+                {matches.map((row) => (
+                  <TrashRowView
+                    key={row.bundlePath}
+                    row={row}
+                    checked={checked.has(row.bundlePath)}
+                    onToggle={() => toggle(row.bundlePath)}
+                    onMenu={() => void openMenu(row)}
+                    icon={
+                      row.kind === 'property'
+                        ? row.propertyType
+                          ? propertyTypeIconName(row.propertyType)
+                          : 'tag'
+                        : entityIcon(row.kind, undefined, defaultIcons)
+                    }
+                    defaultIcons={defaultIcons}
+                    when={date.when(row.storedAt)}
+                  />
+                ))}
+              </div>
+            </div>
+            <Scrollbar />
+          </>
+        )
+    }
+  }
 
   return (
     <div className={cx('trash-frame table is-clear', checked.size > 0 && 'has-checked')}>
@@ -53,41 +98,7 @@ function TrashBody(): React.JSX.Element {
         </span>
       </div>
 
-      {failed ? (
-        <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
-      ) : rows === null ? (
-        <div className="trash-empty" />
-      ) : matches.length === 0 ? (
-        <div className={cx('trash-empty', text.body.standard)}>
-          {rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
-        </div>
-      ) : (
-        <>
-          <div className="trash-scroll scroll-fade">
-            <div className="nav-list">
-              {matches.map((row) => (
-                <TrashRowView
-                  key={row.bundlePath}
-                  row={row}
-                  checked={checked.has(row.bundlePath)}
-                  onToggle={() => toggle(row.bundlePath)}
-                  onMenu={() => void openMenu(row)}
-                  icon={
-                    row.kind === 'property'
-                      ? row.propertyType
-                        ? propertyTypeIconName(row.propertyType)
-                        : 'tag'
-                      : entityIcon(row.kind, undefined, defaultIcons)
-                  }
-                  defaultIcons={defaultIcons}
-                  when={date.when(row.storedAt)}
-                />
-              ))}
-            </div>
-          </div>
-          <Scrollbar />
-        </>
-      )}
+      {body()}
     </div>
   )
 }

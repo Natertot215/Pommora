@@ -291,7 +291,7 @@ export async function openPane(cdp, scope) {
   await sleep(500)
 }
 
-// A refusal draws as the notification label's alert.
+// A refusal draws as ActionLabel's alert.
 export const refusal = (cdp) => cdp.evaluate(`document.querySelector('[role="alert"]:not([inert])')?.textContent.trim() ?? ''`)
 
 // The refusals and the confirmation the drives assert by their worded text, each a function of the words it names.

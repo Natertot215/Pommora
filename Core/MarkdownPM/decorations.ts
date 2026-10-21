@@ -229,7 +229,7 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
     btn.type.base,
     btn.outlined,
   )
-  pill.innerHTML = `<span class="${swap.swap}"><span class="${swap.face}" data-face="shown"><span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span></span><span class="${swap.face}" data-face="hidden"><span class="${run}">Copied</span></span></span>`
+  pill.innerHTML = `<span class="${swap.swap}"><span class="${swap.face}" data-face="shown"><span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span></span><span class="${swap.face}" data-face="hidden" aria-hidden="true" inert><span class="${run}">Copied</span></span></span>`
   return pill
 }
 
@@ -280,9 +280,19 @@ class CodeTagWidget extends WidgetType {
     const [counts, copied] = pill ? pill.querySelectorAll<HTMLElement>('[data-face]') : []
     const showCopied = (on: boolean): void => {
       el.classList.toggle('is-copied', on)
-      if (!pill) return
-      counts.dataset.face = on ? 'hidden' : 'shown'
-      copied.dataset.face = on ? 'shown' : 'hidden'
+      if (!pill) {
+        if (name.textContent) name.replaceChildren(...(on ? ['Copied'] : resting))
+        return
+      }
+      for (const [face, hidden] of [
+        [counts, on],
+        [copied, !on],
+      ] as const) {
+        face.dataset.face = hidden ? 'hidden' : 'shown'
+        face.toggleAttribute('inert', hidden)
+        if (hidden) face.setAttribute('aria-hidden', 'true')
+        else face.removeAttribute('aria-hidden')
+      }
     }
 
     let timer: number | undefined
@@ -292,12 +302,8 @@ class CodeTagWidget extends WidgetType {
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
       showCopied(true)
-      if (!pill && name.textContent) name.textContent = 'Copied'
       window.clearTimeout(timer)
-      timer = window.setTimeout(() => {
-        showCopied(false)
-        name.replaceChildren(...resting)
-      }, DONE_MS)
+      timer = window.setTimeout(() => showCopied(false), DONE_MS)
     }
     // Swallowed: a caret on the fence line trades the tag back for the raw info word, unmounting what is being pressed.
     for (const target of pill ? [slot, name, pill] : [slot, name]) {

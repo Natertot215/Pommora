@@ -1,8 +1,7 @@
 import { pageKey } from '../Connections/pageIndex'
-import type { BundleRow } from '../Bundles/rows'
+import { type BundleRow, matched } from '../Bundles/rows'
 import type { CascadeChange } from '../Nexus/cascade'
 import type { PageDetail } from '../Pages/pageDetail'
-import { matchKey } from '../Paths/caseFold'
 import { machine } from '../Platform/machine'
 import type { DeviceRecord } from '../Sync/Contract/wire'
 
@@ -31,17 +30,16 @@ export function detail(overrides: Partial<PageDetail> = {}): PageDetail {
 }
 
 export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
-  const { title = 'Alpha', crumbs = [{ kind: 'collection', title: 'Notes' }] } = over
-  return {
-    bundlePath: `.trash/${over.title ?? 'x'}.deleted`,
+  const { title = 'Alpha' } = over
+  return matched({
+    bundlePath: `.trash/${title}.deleted`,
     kind: 'page',
     title,
-    crumbs,
+    crumbs: [{ kind: 'collection', title: 'Notes' }],
     storedAt: 0,
     homeResolves: true,
-    match: matchKey(title, crumbs.map((c) => c.title).join('/')),
     ...over,
-  }
+  })
 }
 
 export function titled(title: string, to: string): CascadeChange {

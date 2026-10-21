@@ -595,6 +595,13 @@ const captionOf = (cdp, label) => cdp.evaluate(`${textEl('span', label)}.nextEle
 
 async function group5(cdp) {
   const kept = settingsOnDisk().personalization ?? {}
+  const A_SIDECAR = `${A_ALPHA}/_pageset.json`
+  const standing = async () => ({
+    pageOrder: orderIn(A_SIDECAR, 'page_order'),
+    trash: (await rows({ kind: 'trash' })).length,
+    permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
+  })
+  const start = await standing()
   const titles = ['G5 One', 'G5 Two', 'G5 Note', 'G5 Note Long']
   for (const t of titles) await createPage(cdp, t)
   await createPage(cdp, 'G5 Diff')
@@ -702,9 +709,9 @@ async function group5(cdp) {
   await must('lock Collection A', ask(cdp, 'mutate', { op: 'setDisclosureLock', path: COLLECTION, kind: 'collection', locked: true }))
   await until('the Unlock Folder button', () => cdp.evaluate(`!!${lockButton('Unlock Folder')}`))
   const [openFace, closedFace] = await facesOf(cdp, lockButton('Unlock Folder'))
-  await must('unlock Collection A', ask(cdp, 'mutate', { op: 'setDisclosureLock', path: COLLECTION, kind: 'collection', locked: false }))
-  await until('the lock released', () => cdp.evaluate(`!${lockButton('Unlock Folder')}`))
+  // Only an unlock pressed on the lock keeps its open face up, until the pointer leaves the row; an unlock from elsewhere takes the button away at once.
   await hover(cdp, ROW)
+  await mouseClick(cdp, lockButton('Unlock Folder'))
   const lockShown = await settles(() => cdp.evaluate(`!!${lockButton('Lock Folder')}`))
   const [openAgain, closedAgain] = lockShown ? await facesOf(cdp, lockButton('Lock Folder')) : []
   item(5, 5, 'G-6', 'the lock glyph cross-fades through the one swap',
@@ -757,7 +764,15 @@ async function group5(cdp) {
     show({ permanentHint, confirmHint }))
   await closeSettings(cdp)
 
+  const made = ['G5 One', 'G5 Two', 'G5 Diff']
+  for (const t of made) {
+    await deleteAt(cdp, page(A_ALPHA, t), 'page')
+    await must(`empty ${t}`, ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: (await trashed(cdp, t))?.bundlePath }))
+  }
   for (const key of ['permanentDelete', 'iconFavorites']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+  const ended = await standing()
+  item(5, 5, '—', 'the group leaves Set Alpha and the Trash as it found them',
+    same(ended, start) && !made.some((t) => exists(page(A_ALPHA, t))), show({ start, ended }))
 }
 
 // ── The run ─────────────────────────────────────────────────────────────────
