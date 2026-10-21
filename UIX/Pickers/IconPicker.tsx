@@ -2,17 +2,16 @@ import {
   type MouseEvent,
   type RefObject,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useState,
   useSyncExternalStore,
 } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { PickerMenu } from './PickerMenu'
 import { SearchField } from '../Fields/SearchField'
 import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Symbols'
 import type { IconEntry } from '../Symbols/allSymbols'
 import { SortableZone, useDragItem } from '../Interactions/drag'
+import { useVirtualRows } from '../Interactions/virtualRows'
 import { moveBefore } from '../Utilities/moveItem'
 import { capitalize } from '../Utilities/capitalize'
 import { cx } from '../Utilities/cx'
@@ -80,21 +79,10 @@ export function IconPicker({
   // A state-backed callback ref, so the virtualizer re-runs the moment the element mounts.
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
-
-  // How far the list's top sits below the scroll container's top.
-  const [scrollMargin, setScrollMargin] = useState(0)
-  useLayoutEffect(() => {
-    if (listEl) setScrollMargin(listEl.offsetTop)
-  }, [listEl, iconFavs.length, open])
-
-  const rowCount = Math.ceil(filtered.length / COLS)
-  const rowVirt = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => scrollEl,
-    estimateSize: () => CELL,
-    overscan: 6,
-    scrollMargin,
-  })
+  const virtual = useVirtualRows(
+    { count: Math.ceil(filtered.length / COLS), rowHeight: CELL, listEl, scrollEl },
+    [iconFavs.length, open],
+  )
 
   return (
     <PickerMenu
@@ -127,14 +115,14 @@ export function IconPicker({
           </div>
         )}
 
-        <div ref={setListEl} className={s.list} style={{ height: rowVirt.getTotalSize() }}>
-          {rowVirt.getVirtualItems().map((vr) => {
+        <div ref={setListEl} className={s.list} style={{ height: virtual.height }}>
+          {virtual.rows.map((vr) => {
             const start = vr.index * COLS
             return (
               <div
                 key={vr.key}
                 className={s.row}
-                style={{ height: CELL, transform: `translateY(${vr.start - scrollMargin}px)` }}
+                style={{ height: CELL, transform: `translateY(${vr.start}px)` }}
               >
                 {filtered.slice(start, start + COLS).map((entry) => (
                   <GridCell

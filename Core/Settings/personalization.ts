@@ -195,6 +195,7 @@ const SETTINGS = {
   dateFormat: oneOf(DATE_FORMATS, 'full'),
   timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
   trashColumnStyle: setting(columnStyle),
+  archiveColumnStyle: setting(columnStyle),
   openLinksInApp: flag(false),
   webZoomFactor: scaled(1),
   embedScale: scaled(0.9),

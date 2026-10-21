@@ -6,14 +6,14 @@ import { ProgressBar, paintProgress } from '@pommora/uix/Elements/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Segments } from '@pommora/uix/Elements/Segments'
-import * as s from './notification-label.css'
+import * as s from './action-label.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { trackNear, withinBox } from '@pommora/uix/Interactions/hoverReveal'
 
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
 
-export function NotificationLabel(): React.JSX.Element {
+export function ActionLabel(): React.JSX.Element {
   const note = useNotification()
   const hostRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -57,10 +57,11 @@ export function NotificationLabel(): React.JSX.Element {
     return () => clearTimeout(t)
   }, [note, shown])
 
-  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach. A press holds the drain where it stands.
+  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach. A press holds the drain where it stands. A notice stays unarmed until the pointer has been seen outside its band once, since the press that posted it can leave the pointer inside.
   useEffect(() => {
     const host = hostRef.current
     if (!note || !shown || !host) return
+    let armed = false
     return trackNear({
       anchor: host,
       measure: () => {
@@ -68,7 +69,9 @@ export function NotificationLabel(): React.JSX.Element {
         return (x, y) => withinBox(box, x, y, s.NEAR_RADIUS)
       },
       report: (at) => {
-        if (at !== 'held') nearRef.current = at === 'near'
+        if (at === 'held') return
+        armed ||= at !== 'near'
+        nearRef.current = armed && at === 'near'
       },
     }).stop
   }, [note, shown])

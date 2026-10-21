@@ -18,7 +18,7 @@ import { WebWindow } from './Windows/WebWindow'
 import { SettingsWindow } from '../Settings/SettingsWindow'
 import { IterationWindow } from './Windows/IterationWindow'
 import { ConfirmationWindow } from './Confirm/ConfirmationWindow'
-import { NotificationLabel } from './Notifications/NotificationLabel'
+import { ActionLabel } from './Notifications/ActionLabel'
 import { GlancePane } from './Glance/GlancePane'
 import { useNavThumbnails } from '../Navigation/useNavThumbnails'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -195,7 +195,7 @@ export function App(): React.JSX.Element {
         <ConfirmationWindow />
         <MenuPresenter />
         <ValuePickPresenter />
-        <NotificationLabel />
+        <ActionLabel />
         {status === 'ready' && <GlancePane />}
         {status === 'ready' && sidePaneOpen && (
           <div
