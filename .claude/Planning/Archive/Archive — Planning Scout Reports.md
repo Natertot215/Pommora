@@ -3,7 +3,7 @@
 **DATE:** 10-19-2026
 **HEAD:** verified at `d880179b6` through `c22cfe847`; the two later commits touch only `Core/MarkdownPM/`.
 
-The five planning scouts' reports, written for *Archive — Implementation Plan* against the decision log's folder model. Each re-verified the claims of *Archive — Investigation* (itself verified at `213f95a3b`) at its own HEAD and settled the Planner's Calls of its lane with evidence. *Archive — Planning Findings* is the reconciled reading of these five and governs where they disagree. Lanes: 1 reach, index admission, the by-id map, counts, and discovery; 2 the Trash's data layer, the neutral owner, the origin record, placement, and orphans; 3 the lift, the crash-safe carry, and F-6's observation point; 4 ArchiveView, the archive place, the shared browser, the entry, the menus, and scale; 5 ActionLabel, the transform, the reader window, the archive history timeframe, settings, confirmations, and the Undo.
+The five planning scouts' reports, written for *Archive — Plan* against the decision log's folder model. Each re-verified the claims of *Archive — Investigation* (itself verified at `213f95a3b`) at its own HEAD and settled the Planner's Calls of its lane with evidence. *Archive — Planning Findings* is the reconciled reading of these five and governs where they disagree. Lanes: 1 reach, index admission, the by-id map, counts, and discovery; 2 the Trash's data layer, the neutral owner, the origin record, placement, and orphans; 3 the lift, the crash-safe carry, and F-6's observation point; 4 ArchiveView, the archive place, the shared browser, the entry, the menus, and scale; 5 ActionLabel, the transform, the reader window, the archive history timeframe, settings, confirmations, and the Undo.
 
 ---
 
