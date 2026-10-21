@@ -76,6 +76,19 @@ Collection, and times the Link column's open, the decoration build on caret move
 native caret move. It seeds `Collection A/Set Alpha` and its neighbors with real duplicates and
 `PL …` pages on debug port 9383, and exits non-zero on any failed check a landed phase owns.
 
+`Archive Drive/live-drive.mjs` drives the Archive end to end against the real app, in seven groups
+that follow the plan's phases, 1 to 6B: the lift and the carry of excluded folders and the asset
+directory; the bundle format both stores share, the exact place a restore returns to, and its
+step-aside past the disk; the Archive's reach into the content index and every cascade while the
+tree, search, and the Matrix leave it out; the archive, restore, and delete ops, the open pass, and a
+Set's carry across Collections; the chrome the Trash and the Archive share; archiving from the menus
+and its settings; and ArchiveView, the reader window, and the action label's bar. `MATRIX.md` beside
+it holds each group's cases and the decision each proves. An item owned by a phase later than
+`POMMORA_ARCHIVE_LANDED` (default 1) prints `AWAIT` and leaves the exit code alone. It takes the
+groups to run as arguments — `node live-drive.mjs 1 6B` — seeds each group's own Sets, pages, and
+settings in `~/Test`'s `Collection A` and puts the settings back, on debug port 9393, and exits
+non-zero on any failed check a landed phase owns.
+
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores

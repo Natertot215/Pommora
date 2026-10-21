@@ -741,6 +741,23 @@ describe('deleteCascade', () => {
     expect(r.links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
   })
 
+  it('strips an archived linker’s Link value and names the live linker alone in its pages', async () => {
+    const a = await linker('Cites', '[[Target]]')
+    const archived = join(
+      root,
+      '.nexus/archive/col-notes/Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md',
+    )
+    await mkdir(join(archived, '..'), { recursive: true })
+    await writeFile(
+      archived,
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QARC\nRelated: "[[Target]]"\n---\nb\n`,
+    )
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Notes/Target.md'])
+    expect(await fmOf(archived)).not.toHaveProperty('Related')
+    expect(r.cascade.pages).toEqual([rel(a.path)])
+  })
+
   it('still strips a linker inside a Collection whose sidecar doesn’t parse', async () => {
     const a = await linker('Cites', '[[Target]]')
     await writeFile(join(dir, '_pagecollection.json'), '{ not json')

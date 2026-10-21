@@ -106,13 +106,14 @@ Every setting here is a machine-level preference, stored in the device database 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Default Asset Directory | `asset_directory` | Where banners, the profile image, and file attachments are stored. Written at the settings root rather than under `personalization`. | Any folder in the Nexus · **`.nexus/assets`** |
+| Default Asset Directory | `asset_directory` | Where banners, the profile image, and file attachments are stored. Written at the settings root rather than under `personalization`, and follows its folder through a Collection or Set rename or move. | Any folder in the Nexus · **`.nexus/assets`** |
 
-**Deletion**
+**Trash & Archive**
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Clear and Remove, which name the Items holding what they reach. | **On** · Off |
+| Confirm Before Archiving | `confirmArchiving` | Asks before archiving a page or a Set. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 | Restore Links On Deletion | `restoreLinksOnDeletion` | Restoring a deleted page puts it back into the Link property values that pointed at it. Off, those values stay removed. | **On** · Off |
 
@@ -122,6 +123,7 @@ Every setting here is a machine-level preference, stored in the device database 
 | --- | --- | --- | --- |
 | File History | `fileHistory` | Stores recoverable snapshots of device-local file history. | **On** · Off |
 | History Timeframe | `historyDays` | How long a snapshot is kept before the open-time sweep removes it; a typed value clamps into the range. | 7 · 14 · 30 · 60 · **90** Days |
+| Archive History Timeframe | `archiveHistoryDays` | How long an archived page keeps its snapshots; unset, it follows History Timeframe, and it stays within it. | 7 · 14 · 30 · 60 · 90 Days · **History Timeframe** |
 | Snapshot Interval | `historyInterval` | The least time between two edit snapshots of one page, and the quiet timer's length; a typed value clamps into the range. | **5** · 10 · 15 · 20 Min |
 | Clear History | — | Permanently delete stored snapshots for all files; this cannot be undone. Confirms, then reads Cleared for a moment. | Clear |
 
@@ -202,7 +204,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 | Search | `search` | Opens View Search on the open Collection or Set, or refocuses it. | ⌘F |
 | Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
 | Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
-| Undo Value | `undo-value` | Reverts the last property value, Space link, or panel row order written outside a text field, and restores the last deletion that offered an Undo. | ⌘Z |
+| Undo Value | `undo-value` | Reverts the last property value, Space link, or panel row order written outside a text field, and takes back the last deletion or archiving that offered an Undo. | ⌘Z |
 | Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves. | ⌘⇧V |
 | Bold | `format:bold` | Bolds the selection. | ⌘B |
 | Italic | `format:italic` | Italicizes the selection. | ⌘I |
@@ -219,6 +221,7 @@ The one frame that is a surface of its own, anchored below the rail's separator.
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Date Column | `trashColumnStyle` | How the browser writes a deletion's date and time. Unset, it follows the Nexus's Date Format and shows the time on its clock, and picking the Nexus's own form or clock returns it to following. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
+| Archive Date Column | `archiveColumnStyle` | How ArchiveView writes an item's archived date and time, picked from its own column heading's menu, following the Nexus's form and clock as the Trash's does. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
 
 ### Collections
 
@@ -256,7 +259,7 @@ The `personalization` object in `settings.json` holds every key the Settings win
 | `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
 | `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |
 
-More keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane and carried along when the Collection or Set above an entry is renamed, moved, trashed, or restored; and the profile — `profile_image` and `profile_icon` — written from the ribbon's identity menu. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip. A `settings.json` that doesn't parse reads as an error rather than as defaults: opening the Nexus waits with the file named until it parses, an open session keeps the settings it last read, and writes leave the file as it is until it's repaired — a Collection or Set rename, move, trash, or restore that would carry an excluded entry refuses before anything moves.
+More keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane, carried along when the Collection or Set above an entry is renamed or moved, and left behind with its folder in that Collection's or Set's parent when it is trashed or the Set is archived, the asset directory alike; and the profile — `profile_image` and `profile_icon` — written from the ribbon's identity menu. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip. A `settings.json` that doesn't parse reads as an error rather than as defaults: opening the Nexus waits with the file named until it parses, an open session keeps the settings it last read, and writes leave the file as it is until it's repaired — a Collection or Set rename, move, or trash, or a Set archive that would carry an excluded entry refuses before anything moves.
 
 ### App Configuration (Per-Device)
 

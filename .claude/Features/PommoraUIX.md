@@ -214,6 +214,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the overlay's park on its own progress or the in-flow reflow, by side, mode, and open state.                                       |
 | Arrival   | `useEntrance` · `useRenameKeys`                                               | Names the rows that arrived since the last render so they disclose in, and keys a list's rename and add drafts for the value they write.                  |
 | Exit      | `useExitPresence` · `useSettleFallback`                                       | Keeps a surface mounted through its close, and settles an end-event wait whose transition never runs; the held forms also keep the value it was showing. |
+| Swap      | `Swap` · `useTimedLabel` · `DONE_MS`                                          | Two faces in one cell as wide as the wider, cross-fading with nothing reflowing; an acknowledgement holds its done face for `DONE_MS`, `1500`. |
 
 ### Buttons
 
@@ -226,7 +227,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Base        | none                          | inherits                     |
 | Tinted      | accent @ `--tint-tertiary`    | accent                       |
 | Solid       | accent @ `--tint-primary`     | `--label-primary`            |
-| Filled      | `--fill-tertiary`             | `--label-primary`            |
+| Filled      | `--fill-secondary`            | `--label-primary`            |
 | Destructive | `--error` @ `--tint-tertiary` | `--error` @ `--tint-primary` |
 
 **Button Sizes** — the `SIZE` scale in `UIX/Buttons/button-base.css.ts`, worn as the `size` class's `--btn-*` bundle; icon-only buttons take the ladder, labeled buttons take the bundle's label inset.
@@ -326,6 +327,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Disclose     | `beginDragDisclose` · `addSpring` · `useLineSpring`     | Hover-open while dragging.                             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture` · `gestureLive` | Press, threshold, move, release.                   |
 | Autoscroll   | `scrollGlide` · `AUTOSCROLL`                            | Edge-proximity scrolling and the glide to a destination. |
+| Virtual rows | `useVirtualRows`                                        | The one seam over the virtualizer: fixed-height rows of a list inside a scroll root. |
 | Keyboard     | `keyboardNext` · `lineProbes` · `onActivateClick` · `onActivateKey` · `announce` · `announceDrag` · `STEP_WORDS` | Arrow stepping, Enter/Space activation, live-region announcements. |
 | OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
@@ -384,15 +386,15 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Symbols
 
-`UIX/Symbols/` — `Icon` and the curated registry (`icons`, `IconName`), `allSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), `symbols.css.ts`, `LockGlyph` (the lock's two faces in one cell, cross-fading between them), and the name helpers `asRenderableIcon` · `iconNameOr`.
+`UIX/Symbols/` — `Icon` and the curated registry (`icons`, `IconName`), `allSymbols.ts` (`searchIcons`), `fileTypes.ts` (`fileTypeIcon`), `customGlyphs.tsx`, `masks.ts` (the grip, fold-chevron, and link glyphs as CSS masks), `symbols.css.ts`, `LockGlyph` (the lock's two faces through `Swap`), and the name helpers `asRenderableIcon` · `iconNameOr`.
 
 ### Table
 
-`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, the Trash): the column-header band with `.col-header` segment bars (`.table-divider` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
+`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, ArchiveView, the Trash): the column-header band with `.col-header` segment bars (`.table-divider` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
 
 ### Utilities
 
-`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`emitter` and the `channel` value built on it) · `capMap` · `checkSet` · `tileMetrics`. The two writers that put runtime values on the root live with what they compute: `applySystemAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
+`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`emitter` and the `channel` value built on it) · `capMap` · `checkSet` (with `checkedIn` and `actedOn`) · `tileMetrics`. The two writers that put runtime values on the root live with what they compute: `applySystemAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
 
 ### Windows
 

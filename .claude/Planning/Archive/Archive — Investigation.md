@@ -65,7 +65,7 @@ When a deleted page comes back from the Trash, Pommora puts back the Link values
 
 **The Gap:** a Link value stripped from an archived page names an id absent from `roots`, so the restore files it under `trashed` (`spend.ts:299-300`), and `refillTrashed` looks only in Trash bundles (`Core/Trash/holdings.ts:111-162`); finding nothing, the value is dropped without a word. The Context re-tag drops an absent id as "a root gone since" (`spend.ts:325-336`), the reassign refill keeps it cached and never refills it, and the property restore filters it out (`restoreProperty.ts:60-62`).
 
-**What Can Answer Archived Ids:** `readIndexedStats(under)` returns path to `{mtimeMs, size, id}` for a prefix (`Core/Index/contentIndex.ts:92-94`; `Desktop/Store/stores.ts:180-187`; `IndexedStat`, `Core/Platform/stores.ts:30-35`). It answers null until the index is ready.
+**What Can Answer Archived Ids:** `readIndexedStats(under)` returns path to `{mtimeMs, size, id}` for a prefix (`Core/Index/contentIndex.ts:92-94`; `Desktop/Store/stores.ts:180-187`; `IndexedStat`, `Core/Platform/stores.ts:30-35`). It answers what the index holds, before the seed as after it, and null only when no store is open.
 
 **The Live Lookups Have Other Readers:** `livePathOf` and `liveIdIndex` (`Core/Nexus/heldPages.ts:16-28`) feed the outside-move pairing (`settle.ts:87`, `:277`, `:287`), `loadValues` (`Core/Views/loadValues.ts:15`), file history (`Core/Pages/fileHistory.ts:89`, `:117`, `:136`, `:174`), and sync captures (`Core/Sync/Arrival/captures.ts:16`), so widening them in place would pair an archive move as an ordinary move.
 
@@ -248,7 +248,7 @@ Each row names code that exists today and what the Archive work does to it. Roug
 - **The Order the Move Already Carries:** `movePage`/`moveSet`'s `order` and `setChildOrder` write a destination order in the same op, and `spliceBeside` composes one around an anchor (*§Order and Page Metadata*).
 - **The Disk-Asking Name Rule:** `createDisambiguated` steps aside on `exists` with `freeName`'s base rule (`names.ts:66-79`).
 - **The Undo:** `notifyUndoable`, the chord, and the dwell countdown; archiving posts through them with no new mechanism.
-- **The Settle's Relink:** `addressed`'s before-and-after diff re-spells for an unarchive's arrival, since `settledIndex` is tree-based.
+- **The Restore's Relink:** the Trash restore's two-map relink, hoisted as `returningNames`, re-spells a restore's arrival.
 - **The Read-Only Editor:** `readOnly`, the inert editor host, and the sentinel embed ancestor, all already in the History window.
 - **The Entry Button and Footing:** `Button type="filled" size="button-inline" pressed` in `MenuFooting`'s `leading`, with no UIX change.
 - **The Index's Path-to-Id Map:** `readIndexedStats(prefix)` answers archived ids for the by-id map and the history sweep.
@@ -291,7 +291,7 @@ Each section opens with what the design will do in plain terms, names the decisi
 
 **Settled By:** B-2. Every part of the app that needs the Archive asks one module where it is, so its location can change in one place.
 
-**Shape:** one module, `Core/Archive/archivePaths.ts`, exporting `ARCHIVE_DIR_REL` (`.nexus/archive`, declared in `nexusPaths.ts` beside `METADATA_DIR_REL`), `archiveDirOf(collectionId)`, `archivedCollectionIdOf(rel)` (the third segment, or null), `inArchive(segs)` (the predicate `outsideContent` and `sweepCount` call), `archiveDirs(root)` (one `listEntries` of the archive root), and `contentRoots(root)` (the root and the archive root, for the two walkers). `owningCollection` answers an archived path through `archivedCollectionIdOf`, so `containerSchema` and every schema reader follow.
+**Shape:** `Core/Paths/nexusPaths.ts`, beside `METADATA_DIR_REL`, exporting `ARCHIVE_DIR_REL` (`.nexus/archive`), `archiveDirRel(collectionId)`, `archiveSegs(segs)` (the segments past `.nexus/archive`, or null, which `outsideContent` calls), `archivedCollectionIdOf(rel)` (the third segment, or null), and `isArchived(rel)`; `contentRoots(root)` (the root and the archive root) sits in `Core/Files/walk.ts` for the corpus and sidecar walkers. `owningCollection` answers an archived path through `archivedCollectionIdOf`, so `containerSchema` and every schema reader follow.
 
 **Consumers:** `exclusion.ts`, `walk.ts`, `assetMigrate.ts`, governed reach, `owningCollection`, `reachConfig`, the archive, unarchive, and delete-from-archive ops, ArchiveView's listing, the Trash's disposal arms, the orphan check, the history sweep, and `sweepCount`.
 
@@ -303,11 +303,11 @@ Each section opens with what the design will do in plain terms, names the decisi
 
 **Settled By:** the record's contents are fixed by Open Item 1: the item's kind, its origin's id (E-1), its archived time (B-4), its exact place in its origin's order (E-2), and its origin path at archive time, so path links re-spell to where it lands (D-1). **Planner's Call:** the shape and storage.
 
-**Options:** (a) one `_archive.json` per Collection Archive mapping each archived id to its record, with items stored flat; (b) one bundle per archived item, `.nexus/archive/<ID>/<stamp>__<leaf>.archived/`, holding the artifact and a `_record.json` from `contentRecord('page' | 'set')`.
+**Options:** (a) one `_archive.json` per Collection Archive mapping each archived id to its record, with items stored flat; (b) one bundle per archived item, `.nexus/archive/<ID>/<origin chain>/<stamp>__<leaf>.archived/`, holding the artifact and a `_record.json` from `contentRecord('page' | 'set')`.
 
 **Trade-Offs:** (a) keeps plain filenames, but two archived `Notes.md` from different Sets collide in the flat folder, so archiving renames through `freeName` and the restore undoes it; the sidecar isn't in `OWN_NAMES` (`Core/Sync/Arrival/mergePolicy.ts:13-21`), so it lands whole on sync and two devices archiving concurrently lose one record unless it joins the merged names; an entry drifts from its file after a hand-move; and it's a second record format beside the Trash's. (b) reuses the record, bundle, listing, row, placement, and time source the Trash already has, holds a Set's folder artifact as easily as a page, never collides, writes once per item, and travels with its artifact. Its cost is depth: archived pages sit inside stamped folders, which the Trash already accepts.
 
-**Recommendation:** (b), flat, one bundle level under the Collection's Archive directory. The record adds the origin path beside the parent id, as the delete's `targets` already record paths beside ids, and the place in its origin's order (*§Restore Placement, Order, and Name Conflicts*). Whether the archived time is the bundle stamp, as the Trash's is, or a record field is the planner's call. A Set bundle carries one archived time for everything inside it, so a later auto-delete expires a Set as one unit (the log's *§Prospects · Auto-Delete*).
+**Recommendation:** (b), under the Collection's Archive directory, mirroring the origin chain as the Trash's bundles do. The record adds the origin path beside the parent id, as the delete's `targets` already record paths beside ids, and the place in its origin's order (*§Restore Placement, Order, and Name Conflicts*). Whether the archived time is the bundle stamp, as the Trash's is, or a record field is the planner's call. A Set bundle carries one archived time for everything inside it, so a later auto-delete expires a Set as one unit (the log's *§Prospects · Auto-Delete*).
 
 ##### Lifecycle With the Collection's Trash and Orphans
 
@@ -333,7 +333,7 @@ Each section opens with what the design will do in plain terms, names the decisi
 
 **Options:** widen `livePathOf`/`liveIdIndex` in place, or add a by-id projection beside them.
 
-**Recommendation:** the projection, in `heldPages.ts`, built from `recordById(tree)` plus `readIndexedStats(ARCHIVE_DIR_REL)`, with `writablePathsOf`'s null-on-twin rule over the union, handed to `sweepRootsById` at the three refill sites. The reassign refill also filters members by `live[id].path.startsWith(under)` (`assignment.ts:79-84`), which an archived path never passes, so its membership resolves through `owningCollection`'s archive arm or the archive folder's id rather than the union map alone. That closes the Link refill, the Context re-tag, the reassign refill, and the property restore gaps; `refillTrashed` then receives only ids found nowhere, its stated purpose. The live lookups stay tree-only for the outside-move pairing, `loadValues`, file history, and sync captures. **Concern:** the index answers null before it's ready, so a restore in that window needs the corpus fallback the other reaches have (a walk of the archive root), or it refills nothing.
+**Recommendation:** the projection, in `heldPages.ts`, built from `recordById(tree)` plus `readIndexedStats(ARCHIVE_DIR_REL)`, with `writablePathsOf`'s null-on-twin rule over the union, handed to `sweepRootsById` at the three refill sites. The reassign refill also filters members by `live[id].path.startsWith(under)` (`assignment.ts:79-84`), which an archived path never passes, so its membership resolves through `owningCollection`'s archive arm or the archive folder's id rather than the union map alone. That closes the Link refill, the Context re-tag, the reassign refill, and the property restore gaps; `refillTrashed` then receives only ids found nowhere, its stated purpose. The live lookups stay tree-only for the outside-move pairing, `loadValues`, file history, and sync captures. **Concern:** the index answers null only when no store is open, so a restore then needs the corpus fallback the other reaches have (a walk of the archive root), or it refills nothing.
 
 ##### Counts
 

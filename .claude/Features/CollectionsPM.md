@@ -42,10 +42,22 @@ Collections sit as siblings at the Nexus root with no wrapper folder. Discovery 
 
 ### CRUD
 
-Collections and Sets share the generic folder-entity CRUD in `Core/Nexus/folderEntity.ts`: create writes the folder and its sidecar, and rename is a folder rename. Every later sidecar write edits only the key it owns on the file as stored, so keys and values another build or tool wrote stay as written. A create under a taken name disambiguates with a numeric suffix, while a rename onto a taken name is refused. Delete moves the folder and everything under it to the trash, and every other saved view, View Tile, the Matrix filter, and the Open In Preview rules then drop the container and its Sets from their Location rules, band order, and hidden and collapsed bands; a Set moved out of a container leaves that container's views the same way. Reorder persists parent-side on each drag — a container's sidecar holds its Sets' and Pages' order, and the top-level Collection order lives in `.nexus/state.json`. Moving a Page or Set drops its id from the source container's order, and an order key whose last id leaves is removed.
+Collections and Sets share the generic folder-entity CRUD in `Core/Nexus/folderEntity.ts`: create writes the folder and its sidecar, and rename is a folder rename that carries the folder's excluded entries and the asset directory with it. Every later sidecar write edits only the key it owns on the file as stored, so keys and values another build or tool wrote stay as written. A create under a taken name disambiguates with a numeric suffix, while a rename onto a taken name is refused. Delete moves the folder and everything under it to the trash, and every other saved view, View Tile, the Matrix filter, and the Open In Preview rules then drop the container and its Sets from their Location rules, band order, and hidden and collapsed bands; a Set moved out of a container leaves that container's views the same way. Reorder persists parent-side on each drag — a container's sidecar holds its Sets' and Pages' order, and the top-level Collection order lives in `.nexus/state.json`. Moving, archiving, or deleting a Page or Set drops its id from its container's order, and an order key whose last id leaves is removed.
+
+### The Archive
+
+Each Collection has its own archive stored within the user's `/.nexus/archive/<collection-id>/`, containing a read-only recoverable store of the pages and sets moved into it. Pages placed in the archive are indexed and receive reach-in changes from external actions such as property mutations and cascading actions to pages an archived page links to in its body text, including renames and moves, and the Link values a deletion strips. Pages can be archived individually, and any set that's archived has its contents archived as well—restoration works with the same framework.
+
+The archive is accessible via the Collection's view selection dropdown as a toggleable button adjacent to the view-creation button in the menu's footer, which opens its view—an uneditable table listing the archive's contents, title, location, and archival date. Opening pages within the archive opens its read-only preview window; selecting pages and sets activates its restoration and deletion options through both the right-click context menu and an interface-level top-right action label offering "Restore" and "Delete" as buttons on its left and right accordingly. Restoring an archived page or set places it back into its remembered placement and order within its Collection.
+
+Once an item is moved to the archive, it appears as totally removed — it's invisible within any navigation surfaces, pages with any pre-existing links rendered as unresolved, and it isn't counted within any user-facing action notices or files-affected statistics — while restoration immediately re-adds the archived item into the nexus with full re-integration.
+
+Per-Nexus settings let you choose shorter timeframes for how long an archived page's history is kept than active pages, and a restore landing on a taken title steps aside to "Name (2)".[^1]
 
 ---
 
 #### Pending
 
 - **Dissolve a Set** — deleting a Set while re-homing its Pages into the parent; today a delete takes the folder with everything in it.
+
+[^1]: [[ConfigurationPM]]

@@ -68,7 +68,9 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ```
 // Core              | • Pommora itself — every interface and its logic
 ├── // Actions       | • Context-menu commands and their row builders
+├── // Archive       | • Archiving, restoring, and ArchiveView
 ├── // Assets        | • Images, icons, and file adoption
+├── // Bundles       | • The bundle format, record, placement, rows, and browser both stores share
 ├── // Connections   | • Content ↔ content links and their rewriting
 ├── // Contexts      | • The Context registry, cascade, and resolution
 ├── // Contract      | • The interface ↔ host channel declaration
@@ -88,7 +90,7 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Sync          | • The wire contract, the signing string, and the device client
 ├── // Testing       | • The shared test tree builder
 ├── // Tiles         | • The homepage and Space tile surfaces
-├── // Trash         | • Deletion, bundling, and restore records
+├── // Trash         | • Deletion, Trash Mode, and restore
 ├── // Views         | • Collections rendered as views
 └── // Web           | • The web guest element, link opening, and guest partitions
 
