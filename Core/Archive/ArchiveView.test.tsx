@@ -229,6 +229,16 @@ describe('ArchiveView', () => {
     expect(titles()).toEqual(['Beta Two', 'Beta One'])
   })
 
+  it('a search that hides every row reads Nothing matches.', async () => {
+    await render()
+    expect(empty()).toBeNull()
+    await act(async () =>
+      useSession.setState({ viewSearch: { t1: { key: 'archive:c1', query: 'zzz', summon: 0 } } }),
+    )
+    expect(titles()).toEqual([])
+    expect(empty()).toBe('Nothing matches.')
+  })
+
   it('declares its bar while rows are checked, reading their count, and withdraws it when parked', async () => {
     listed = [archived('A'), archived('B')]
     await render()

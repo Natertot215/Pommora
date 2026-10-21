@@ -1,5 +1,4 @@
-import { dirname, join, relative, relJoin, titleFromPath } from '../Paths/posix'
-import { sidecarString } from '../Files/sidecar'
+import { dirname, relative, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
@@ -35,7 +34,7 @@ export interface BundleRow {
   homeResolves: boolean
   /** The search's key: the title, placed by the crumbs. */
   match: MatchKey
-  /** The item's own icon: a page's from the metadata the tree holds, a container's or a Space's from the sidecar it took into its bundle. */
+  /** The item's own icon: a page's from the metadata the tree holds, a container's or a Space's from its record, which keeps the sidecar's. */
   icon?: string
   /** A page or Set as stored, by its record's id and its path inside the bundle: what the reader opens and a restore's Undo finds again. */
   stored?: { id: string; path: string }
@@ -80,32 +79,13 @@ export const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({
   match: matchKey(row.title, row.crumbs.map((c) => c.title).join('/')),
 })
 
-async function iconOf(
-  root: string,
-  record: ArtifactRecord,
-  path: string,
-  tree: NexusTree,
-): Promise<string | undefined> {
-  switch (record.entity) {
-    case 'page':
-      return record.id === undefined ? undefined : tree.config.pageMetadata[record.id]?.icon
-    case 'collection':
-    case 'set':
-    case 'space':
-      return sidecarString(join(root, path), record.entity, 'icon')
-    default:
-      return undefined
-  }
-}
-
 /** A property record has no artifact to name it, so its title is its definition's own; it lived nowhere, so it always has a home to return to. */
-export async function bundleRowOf(
-  root: string,
+export function bundleRowOf(
   bundle: ListedBundle,
   store: BundleStore,
   tree: NexusTree,
   byId: NexusPages['byId'],
-): Promise<BundleRow | null> {
+): BundleRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property') {
     const type = propertyType.safeParse(record.def.type)
@@ -122,7 +102,10 @@ export async function bundleRowOf(
   if (!artifactName) return null
   const live = liveCrumbs(record, tree)
   const path = relJoin(bundlePath, artifactName)
-  const icon = await iconOf(root, record, path, tree)
+  const icon =
+    record.entity === 'page'
+      ? record.id && tree.config.pageMetadata[record.id]?.icon
+      : 'icon' in record && record.icon
   return matched({
     bundlePath,
     kind: record.entity,
@@ -138,13 +121,14 @@ export async function bundleRowOf(
   })
 }
 
-export async function bundleRows(
-  root: string,
+export function bundleRows(
   bundles: ListedBundle[],
   store: BundleStore,
   tree: NexusTree,
   byId: NexusPages['byId'],
-): Promise<BundleRow[]> {
-  const rows = await Promise.all(bundles.map((b) => bundleRowOf(root, b, store, tree, byId)))
-  return rows.filter((row) => row !== null).sort((a, b) => (b.storedAt ?? -1) - (a.storedAt ?? -1))
+): BundleRow[] {
+  return bundles
+    .map((b) => bundleRowOf(b, store, tree, byId))
+    .filter((row) => row !== null)
+    .sort((a, b) => (b.storedAt ?? -1) - (a.storedAt ?? -1))
 }

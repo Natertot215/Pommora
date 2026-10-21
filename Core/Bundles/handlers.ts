@@ -26,6 +26,6 @@ export const bundlesHandlers = {
       store.kind === 'archive' && within !== undefined
         ? await archivedWithin(root, within, store.id, tree)
         : await listBundles(root, store)
-    return ok(await bundleRows(root, listed, store, tree, byId))
+    return ok(bundleRows(listed, store, tree, byId))
   }),
 } satisfies Partial<Handlers>

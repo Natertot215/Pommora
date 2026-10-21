@@ -158,6 +158,27 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
     expect(await readdir(at(bundlePath, 'Daily'))).not.toContain('Private')
   })
 
+  it('a Set archive whose move fails puts the lifted folder and its entry back', async () => {
+    await mkdir(at('Notes', 'Daily', 'Private'), { recursive: true })
+    await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
+    await writeFile(
+      at('.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Notes/Daily/Private'] }),
+    )
+    await refreshTree(root)
+    const relocate = atomicWrite.relocate
+    vi.spyOn(atomicWrite, 'relocate')
+      .mockImplementationOnce(relocate)
+      .mockRejectedValueOnce(new Error('the move failed'))
+    expect((await mutate({ op: 'archive', path: 'Notes/Daily', kind: 'set' })).ok).toBe(false)
+    expect(await text('Notes', 'Daily', 'Private', 'Secret.md')).toBe('secret\n')
+    expect(await pathExists(at('Notes', 'Private'))).toBe(false)
+    expect(
+      (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
+        .excluded_folders,
+    ).toEqual(['Notes/Daily/Private'])
+  })
+
   it('an archive handed the bundle name its item left takes it back, and one naming another name or a path takes a fresh stamp', async () => {
     const rearchive = async (path: string, leaf: string): Promise<string> => {
       const r = await mutate({ op: 'archive', path, kind: 'page', leaf })
@@ -280,7 +301,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const homes = async (): Promise<Record<string, boolean>> => {
       const tree = await readNexus(root)
       const { byId } = await nexusPages(root, tree)
-      const rows = await bundleRows(root, await listBundles(root, ARCHIVE), ARCHIVE, tree, byId)
+      const rows = bundleRows(await listBundles(root, ARCHIVE), ARCHIVE, tree, byId)
       return Object.fromEntries(rows.map((r) => [r.bundlePath, r.homeResolves]))
     }
     expect(await homes()).toEqual({ [beta]: false, [gamma]: false })
@@ -544,10 +565,7 @@ describe('a delete from the Archive', () => {
     expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha 2]]')
   })
 
-  it.each([
-    ['in the Trash', false],
-    ['gone for good', true],
-  ])('its Undo keeps the page’s values once its Collection is %s', async (_, forGood) => {
+  const scoredBeta = async (): Promise<void> => {
     await writeFile(
       at('.nexus', 'properties.json'),
       JSON.stringify({
@@ -564,21 +582,35 @@ describe('a delete from the Archive', () => {
     )
     await writeFile(at('Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\nScore: 3\n---\nbeta\n`)
     await reseed()
+  }
+
+  it('its Undo keeps the page’s values once its Collection is in the Trash', async () => {
+    await scoredBeta()
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
-    const notes = await trash('Notes', 'collection')
-    if (forGood)
-      expect(
-        (
-          await settledMutate(
-            root,
-            { op: 'emptyBundle', bundlePath: notes },
-            { ...nexusDeps, permanentDelete: true },
-          )
-        ).ok,
-      ).toBe(true)
+    await trash('Notes', 'collection')
     expect((await restore(trashed, UNDO)).ok).toBe(true)
     expect(splitFrontmatter(await text(archived, 'Beta.md')).Score).toBe(3)
+  })
+
+  it('its Undo refuses once its Collection is gone for good, and the page stays in the Trash', async () => {
+    await scoredBeta()
+    const trashed = await trash(await archive('Notes/Daily/Beta.md'))
+    const notes = await trash('Notes', 'collection')
+    expect(
+      (
+        await settledMutate(
+          root,
+          { op: 'emptyBundle', bundlePath: notes },
+          { ...nexusDeps, permanentDelete: true },
+        )
+      ).ok,
+    ).toBe(true)
+    expect(message(await restore(trashed, UNDO))).toBe(
+      'The place this belonged to no longer exists.',
+    )
+    expect(await text(trashed, 'Beta.md')).toContain('Score: 3')
+    expect(await pathExists(at('.nexus', 'archive', NOTES))).toBe(false)
   })
 
   it('refuses the Archive as a destination for an Archive bundle', async () => {

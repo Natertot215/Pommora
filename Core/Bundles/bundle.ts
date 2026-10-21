@@ -6,12 +6,14 @@ import {
   type ArchiveStore,
   archiveDirRel,
   archivedCollectionIdOf,
+  NEXUS_DIR,
   TRASH_DIR,
 } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
 import { type ConnPage, connPage } from '../Connections/pageIndex'
 import { stampedIdOf } from '../Files/pageFile'
+import { sidecarId } from '../Files/sidecar'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { relocate, removeOwn } from '../Files/atomicWrite'
 import type { NexusTree } from '../Nexus/tree'
@@ -182,6 +184,20 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
   }
   await walk(join(root, dir))
   return out
+}
+
+// The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash.
+export async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
+  const held = new Set(tree.collections.map((c) => c.path))
+  const unheld = (await listEntries(root)).filter(
+    ({ name, kind }) =>
+      kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
+  )
+  const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
+  const trashed = (await listBundles(root, { kind: 'trash' })).flatMap(({ record }) =>
+    record.entity === 'collection' && record.id ? record.id : [],
+  )
+  return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
 }
 
 /** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. */

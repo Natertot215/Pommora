@@ -66,7 +66,7 @@ export function PageReaderWindow(): React.JSX.Element | null {
   }
 }
 
-/** The one read-only page window: the lock where the open-fullscreen glyph sits, an inert editor, and a trail that names the page without renaming it. */
+/** The one read-only page window: the lock where the open-fullscreen glyph sits, an inert editor, and a trail that names the page without renaming it. Both branches read a page’s body uncached through `page:open`, since an archived page sits in no cache. */
 function ReaderShell({
   reader,
   closing,

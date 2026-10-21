@@ -3484,6 +3484,28 @@ describe('handleMutate — excluded entries follow their folders', () => {
     ).toEqual(['Notes', 'Other'])
   })
 
+  it('a Collection delete whose move fails puts the lifted folder and its entry back', async () => {
+    await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
+    await exclude(['Other/Daily'])
+    const relocate = atomicWrite.relocate
+    const fails = vi
+      .spyOn(atomicWrite, 'relocate')
+      .mockImplementationOnce(relocate)
+      .mockRejectedValueOnce(new Error('the move failed'))
+    const deleted = await settledMutate(
+      root,
+      { op: 'delete', path: 'Other', kind: 'collection' },
+      nexusDeps,
+    )
+    fails.mockRestore()
+    expect(deleted.ok).toBe(false)
+    expect(await readJson('Other/Daily/_pageset.json')).toEqual({ id: 'od' })
+    expect(await pathExists(join(root, 'Daily'))).toBe(false)
+    expect(await excludedOnDisk()).toEqual(['Other/Daily'])
+  })
+
   it('reports the lift, the Collection delete, and its restore to Sync as one rename each, every one under settings already excluding the lifted folder', async () => {
     await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))

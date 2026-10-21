@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { index } from '../Files/decoders'
 import { stampedIdOf } from '../Files/pageFile'
-import { sidecarId } from '../Files/sidecar'
+import { sidecarIdentity } from '../Files/sidecar'
 import { contextEntry } from '../Contexts/contexts'
 import type { StrippedLink } from '../Nexus/cascade'
 import type { ContainerKind } from '../Nexus/entities'
@@ -41,6 +41,7 @@ const contentRecord = <E extends string>(entity: E) =>
   z.object({
     entity: z.literal(entity),
     id: z.string().optional(),
+    icon: z.string().optional(),
     parent: parentRef,
     place,
     /** The ids of the containers above `parent`, Collection first; read once the tree no longer holds `parent`, and kept current in the Archive by its carry. */
@@ -61,6 +62,7 @@ const recordFile = z.discriminatedUnion('entity', [
   z.object({
     entity: z.literal('space'),
     id: z.string(),
+    icon: z.string().optional(),
     parent: parentRef,
     place,
     members: z.array(memberRoot),
@@ -153,7 +155,10 @@ export async function gatherContentRecord(
   kind: 'page' | ContainerKind,
   abs: string,
 ): Promise<RecordFile> {
-  const id = kind === 'page' ? await stampedIdOf(abs) : await sidecarId(abs, kind)
+  const { id, icon } =
+    kind === 'page'
+      ? { id: await stampedIdOf(abs), icon: undefined }
+      : await sidecarIdentity(abs, kind)
   const atRoot = dirname(abs) === root
   const container = atRoot ? null : containerAt(tree, relative(root, dirname(abs)))
   const siblings: readonly { id: string }[] | undefined = atRoot
@@ -172,6 +177,7 @@ export async function gatherContentRecord(
   return {
     entity: kind,
     ...(id ? { id } : {}),
+    ...(icon ? { icon } : {}),
     parent: atRoot
       ? { kind: 'root' }
       : container

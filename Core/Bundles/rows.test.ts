@@ -25,7 +25,7 @@ let root: string
 const rows = async (): Promise<BundleRow[]> => {
   const tree = await readNexus(root)
   const { byId } = await nexusPages(root, tree)
-  return bundleRows(root, await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
+  return bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
 }
 const del = (
   path: string,
@@ -133,8 +133,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
     })
     // Nothing climbs: the page is never re-homed into the Set's own Collection.
     expect(page?.crumbs.every((c) => c.kind === undefined)).toBe(true)
-    const archived = await bundleRowOf(
-      root,
+    const archived = bundleRowOf(
       {
         bundlePath: `.nexus/archive/${ARCHIVE_ID}/Notes/Daily/2026-10-20T00-00-00-000Z__Alpha.md.archived`,
         artifactName: 'Alpha.md',
@@ -173,17 +172,14 @@ describe('bundleRows — a bundle as the browser reads it', () => {
 
   it('a property record with no readable name lists under its id', async () => {
     expect(
-      (
-        await bundleRowOf(
-          root,
-          {
-            bundlePath: '.trash/s__property-prop_x.deleted',
-            record: { entity: 'property', id: 'prop_x', def: { id: 'prop_x' }, values: {} },
-          },
-          { kind: 'trash' },
-          { collections: [], contexts: [] } as unknown as NexusTree,
-          new Map(),
-        )
+      bundleRowOf(
+        {
+          bundlePath: '.trash/s__property-prop_x.deleted',
+          record: { entity: 'property', id: 'prop_x', def: { id: 'prop_x' }, values: {} },
+        },
+        { kind: 'trash' },
+        { collections: [], contexts: [] } as unknown as NexusTree,
+        new Map(),
       )?.title,
     ).toBe('prop_x')
   })
@@ -217,8 +213,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
   })
 
   it('a record carrying no id still shapes a row', async () => {
-    const row = await bundleRowOf(
-      root,
+    const row = bundleRowOf(
       {
         bundlePath: '.trash/Notes/s__Alpha.md.deleted',
         artifactName: 'Alpha.md',
@@ -233,8 +228,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
 
   it('a page row carries the metadata’s icon and its stored id and path, and a Set row its sidecar’s icon', async () => {
     const bundlePath = '.trash/Notes/Daily/s__Alpha.md.deleted'
-    const page = await bundleRowOf(
-      root,
+    const page = bundleRowOf(
       {
         bundlePath,
         artifactName: 'Alpha.md',
@@ -283,6 +277,23 @@ describe('bundleRows — a container’s and a Space’s own icons', () => {
     expect(byKind.collection.icon).toBe('book')
     expect(byKind.space.icon).toBe('rocket')
     expect('icon' in byKind.page).toBe(false)
+  })
+  it('an archived Set’s row carries the icon its sidecar held, read from its record alone', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'set-daily', icon: 'folder-heart' }),
+    )
+    const archived = await settledMutate(
+      root,
+      { op: 'archive', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
+    await rm(join(root, bundlePath, 'Daily', '_pageset.json'))
+    const store = { kind: 'archive' as const, id: 'col-notes' }
+    const tree = await readNexus(root)
+    const [set] = bundleRows(await listBundles(root, store), store, tree, new Map())
+    expect(set).toMatchObject({ kind: 'set', icon: 'folder-heart' })
   })
 })
 

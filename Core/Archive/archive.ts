@@ -6,6 +6,7 @@ import { fail, ok } from '../Contract/result'
 import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { archiveDirRel } from '../Paths/nexusPaths'
+import type { WatchScope } from '../Paths/exclusion'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
@@ -40,12 +41,13 @@ export async function archiveOp(
   const store = archiveStoreOf(owningCollection(tree, req.path)?.id)
   if (!store)
     return fail('invalid-path', 'Only pages and Sets inside a Collection can be archived.')
-  if (req.kind === 'set') {
-    const lifted = await liftSetAside(root, abs)
-    if (!lifted.ok) return lifted
-  }
+  const lifted = req.kind === 'set' ? await liftSetAside(root, abs) : null
+  if (lifted && !lifted.ok) return lifted
   const record = await gatherContentRecord(root, tree, req.kind, abs)
-  const bundle = await fileInto(root, store, abs, abs, record, req.leaf)
+  const bundle = await fileInto(root, store, abs, abs, record, req.leaf).catch(async (e) => {
+    await lifted?.value.undo()
+    throw e
+  })
   await dropDeparture(root, tree, req.kind, req.path)
   return ok({ bundled: { bundlePath: relative(root, bundle) } })
 }
@@ -95,6 +97,7 @@ export async function restoreArchived(
 export async function collectionArchive(
   root: string,
   id: string | undefined,
+  scope: WatchScope,
 ): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
   const store = archiveStoreOf(id)
   if (!store) return null
@@ -105,6 +108,6 @@ export async function collectionArchive(
     abs,
     files,
     origins: files.map((f) => originPathOf(root, store, f)),
-    sets: await archivedSetIds(root, abs),
+    sets: await archivedSetIds(root, abs, scope),
   }
 }

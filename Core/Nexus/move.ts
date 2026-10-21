@@ -10,6 +10,7 @@ import { archivedSetIds, goneEdit, reachConfig, reachReport } from './configReac
 import { containerAt, owningCollection } from './treePatch'
 import { dropDeparture, setChildOrder } from './reorder'
 import { archivedWithin } from '../Bundles/bundle'
+import { scopeOf } from '../Settings/codec'
 
 async function ends(
   root: string,
@@ -61,7 +62,9 @@ export async function moveSetOp(
     left !== null && owner && setId ? await archivedWithin(root, setId, owner, held) : []
   const archived = await Promise.all(
     within.map(({ bundlePath, record }) =>
-      record.entity === 'set' ? archivedSetIds(root, join(root, bundlePath)) : [],
+      record.entity === 'set'
+        ? archivedSetIds(root, join(root, bundlePath), scopeOf(held.config))
+        : [],
     ),
   )
   const edit = left === null ? null : goneEdit(held, 'set', req.path, archived.flat())
