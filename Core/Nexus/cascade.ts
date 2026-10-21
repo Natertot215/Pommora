@@ -1,5 +1,6 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
+import { isArchived } from '../Paths/nexusPaths'
 import { stripKeys } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
 import { errText } from '../Contract/result'
@@ -128,7 +129,9 @@ export async function deleteCascade(
     const unswept = swept.skipped.length + heldOut
     return {
       cascade: {
-        pages: [...swept.touched.keys()].map((file) => relative(root, file)),
+        pages: [...swept.touched.keys()]
+          .map((file) => relative(root, file))
+          .filter((rel) => !isArchived(rel)),
         hosts: [],
         warning: unswept ? unsweptLine(unswept, 'links in ') : undefined,
       },
