@@ -6,6 +6,9 @@ import { fileStamp } from '@pommora/core/Bundles/bundle'
 
 export type Db = DatabaseSync
 
+// A list binds as one JSON argument: a placeholder per value fails past SQLite's variable limit.
+export const LISTED = '(SELECT value FROM json_each(?))'
+
 const SQLITE_CORRUPT = 11
 const SQLITE_NOTADB = 26
 

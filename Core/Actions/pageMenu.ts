@@ -13,6 +13,7 @@ export type PageMetaAction =
   | 'title:copypath'
   | 'title:history'
   | 'title:reveal'
+  | 'title:archive'
   | 'title:delete'
 
 export type PageMoveAction = `move:${string}`
@@ -37,7 +38,9 @@ export const COPY_LINK_ROW = { label: 'Copy Link', action: 'title:copylink' } as
 export const COPY_PATH_ROW = { label: 'Copy Path', action: 'title:copypath' } as const
 export const HISTORY_ROW = { label: 'View History', action: 'title:history' } as const
 export const REVEAL_ROW = { label: 'Reveal Location', action: 'title:reveal' } as const
+export const ARCHIVE_ROW = { label: 'Archive', action: 'title:archive' } as const
 export const DELETE_ROW = { label: 'Delete', action: 'title:delete' } as const
+export const REMOVAL_ROWS = [ARCHIVE_ROW, DELETE_ROW]
 
 export function destinationRows<A>(
   targets: readonly MoveTarget[],
@@ -101,7 +104,7 @@ export function pageSendGroups(
 export const PAGE_ACTION_ROWS = joinGroups([
   [RENAME_ROW],
   pageSendGroups({}, true).flat(),
-  [DELETE_ROW],
+  REMOVAL_ROWS,
 ])
 
 // 'single' takes the Below path, since a grid has no above.
@@ -129,6 +132,6 @@ export function pageMetaMenuItems(
     [RENAME_ROW, { label: 'Edit Icon', action: 'title:icon' }, ...propertyBranchRows(opts)],
     opts.newPages ? NEW_PAGE_ROWS[opts.newPages] : [],
     ...pageSendGroups(opts.move ?? {}, opts.reveal),
-    [DELETE_ROW],
+    REMOVAL_ROWS,
   ])
 }

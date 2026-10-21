@@ -26,7 +26,7 @@ import {
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
-import { confirmDelete } from '../Confirm/confirmations'
+import { confirmArchive, confirmDelete } from '../Confirm/confirmations'
 import { runPageAction, runPathAction } from './pageMenuActions'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
@@ -130,7 +130,10 @@ function runEntityAction(
     case 'title:newbelow':
       void newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
       return
-    case 'delete':
+    case 'title:archive':
+      void confirmArchive({ path, kind: 'set', title: target.title })
+      return
+    case 'title:delete':
       void confirmDelete(target)
       return
     case 'lock':

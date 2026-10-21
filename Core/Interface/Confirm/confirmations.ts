@@ -5,7 +5,7 @@ import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
-import { notifyDeleted, reportRefusal } from '../Notifications/notifications'
+import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import { itemCount } from '../../Properties/properties'
 import type { FormatChange } from '../../Properties/keyFormat'
@@ -25,7 +25,7 @@ export interface ConfirmRequest {
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
-/** A container, a Context, and a Space each carry everything filed under them, so they ask regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a tile, a folder that carries no schema. */
+/** A container, a Context, and a Space each carry everything filed under them, so deleting one asks regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a tile, a folder that carries no schema. An archive removes nothing, so it asks under its own switch alone. */
 const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
   'collection',
   'set',
@@ -33,16 +33,33 @@ const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
   'context',
 ])
 
-const waived = (kind?: HeldKind): boolean =>
+const waived = (key: 'confirmDeletion' | 'confirmArchiving', kind?: HeldKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
-  !settingOf(personalizationOf(useSession.getState()), 'confirmDeletion')
+  !settingOf(personalizationOf(useSession.getState()), key)
 
 const armed = new Map<string, () => void>()
 
-/** A bundle restored or deleted from anywhere spends the Undo its delete's notice offered, so neither the label nor the chord retries it. */
-export function spendBundle(bundlePath: string): void {
+/** A bundle restored or deleted from anywhere spends the Undo its notice offered, a delete's or an archive's, so neither the label nor the chord retries it. */
+export function spendUndo(bundlePath: string): void {
   armed.get(bundlePath)?.()
   armed.delete(bundlePath)
+}
+
+function offerUndo(
+  bundlePaths: readonly string[],
+  post: (undo?: () => Promise<void>) => () => void,
+): void {
+  const spend = post(
+    bundlePaths.length > 0
+      ? async () => {
+          for (const bundlePath of bundlePaths) {
+            spendUndo(bundlePath)
+            await useSession.getState().mutate({ op: 'restore', bundlePath })
+          }
+        }
+      : undefined,
+  )
+  for (const bundlePath of bundlePaths) armed.set(bundlePath, spend)
 }
 
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
@@ -51,17 +68,9 @@ export function notifyTrashed(
   { bundled, cascade }: Pick<MutateOutcome, 'bundled' | 'cascade'>,
   retry?: () => void,
 ): void {
-  const spend = notifyDeleted(
-    title,
-    bundled &&
-      (async () => {
-        spendBundle(bundled.bundlePath)
-        await useSession.getState().mutate({ op: 'restore', bundlePath: bundled.bundlePath })
-      }),
-    cascade,
-    retry,
+  offerUndo(bundled ? [bundled.bundlePath] : [], (undo) =>
+    notifyDeleted(title, undo, cascade, retry),
   )
-  if (bundled) armed.set(bundled.bundlePath, spend)
 }
 
 export const confirmDelete = async (target: {
@@ -69,7 +78,7 @@ export const confirmDelete = async (target: {
   kind: HeldKind
   title: string
 }): Promise<void> => {
-  if (!waived(target.kind)) {
+  if (!waived('confirmDeletion', target.kind)) {
     const { trashMode } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
     const yes = await ask({
       message: `Delete “${target.title}”?`,
@@ -88,8 +97,31 @@ export const confirmDelete = async (target: {
   if (done) notifyTrashed(target.title, done)
 }
 
+export const confirmArchive = async (target: {
+  path: string
+  kind: 'page' | 'set'
+  title: string
+}): Promise<void> => {
+  if (!waived('confirmArchiving')) {
+    const yes = await ask({
+      message: `Archive “${target.title}”?`,
+      detail: `“${target.title}” will be moved to this Collection’s archive, where it can be restored.`,
+      action: 'Archive',
+      tone: 'positive',
+    })
+    if (!yes) return
+  }
+  const done = await useSession
+    .getState()
+    .mutate({ op: 'archive', path: target.path, kind: target.kind })
+  if (done)
+    offerUndo(done.bundled ? [done.bundled.bundlePath] : [], (undo) =>
+      notifyUndoable(`Archived “${target.title}”`, undo),
+    )
+}
+
 export const askRemoveTile = (): Promise<boolean> =>
-  waived()
+  waived('confirmDeletion')
     ? Promise.resolve(true)
     : ask({
         message: 'Remove this tile?',

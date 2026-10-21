@@ -11,7 +11,8 @@ import {
   snapshotStore,
 } from '../Platform/stores'
 import { readFileHistoryConfig } from '../Settings/settings'
-import { liveIdOf, livePathOf } from '../Nexus/heldPages'
+import { archivedPageIds, idHeld, liveIdOf, livePathOf } from '../Nexus/heldPages'
+import { heldTreeOf } from '../Nexus/liveTree'
 import { updatePageBody } from '../Nexus/page'
 import type { BodyWrite } from './pageDetail'
 
@@ -193,10 +194,16 @@ export const clearHistory = (): Result<number> =>
 
 export async function sweepFileHistory(root: string): Promise<void> {
   try {
-    const { keepMs } = await readFileHistoryConfig(root)
-    const cutoff = Date.now() - keepMs
-    snapshotStore()?.sweepSnapshots(cutoff)
-    captureStore()?.sweepCaptures(cutoff)
+    const { keepMs, archiveKeepMs } = await readFileHistoryConfig(root)
+    const tree = heldTreeOf(root)
+    const ids = tree
+      ? [...(await archivedPageIds(root, tree)).values()].flatMap(({ id }) =>
+          id && !idHeld(root, id) ? [id] : [],
+        )
+      : []
+    const now = Date.now()
+    snapshotStore()?.sweepSnapshots(now - keepMs, { ids, cutoffMs: now - archiveKeepMs })
+    captureStore()?.sweepCaptures(now - keepMs)
   } catch (e) {
     console.error('file history: the sweep failed:', errText(e))
   }

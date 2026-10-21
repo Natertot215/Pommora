@@ -68,7 +68,7 @@ export const shownTitle = (
 ): string | undefined => byId.get(id)?.title ?? pagesByIdOf(tree).get(id)?.title
 
 export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
-  const rows = readIndexedStats(ARCHIVE_DIR_REL) ?? (await archiveIds(root, tree))
+  const rows = await archivedPageIds(root, tree)
   const byId: ById = new Map(entitiesById(tree))
   const archived: ConnPage[] = []
   for (const [path, { id }] of rows) {
@@ -81,7 +81,12 @@ export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPa
   return { byId, archived }
 }
 
-async function archiveIds(root: string, tree: NexusTree): Promise<Map<string, { id?: string }>> {
+export async function archivedPageIds(
+  root: string,
+  tree: NexusTree,
+): Promise<ReadonlyMap<string, { id?: string }>> {
+  const indexed = readIndexedStats(ARCHIVE_DIR_REL)
+  if (indexed) return indexed
   const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), scopeOf(tree.config))
   const ids = await Promise.all(rels.map((rel) => stampedIdOf(join(root, rel))))
   return new Map(rels.map((rel, i) => [rel, { id: ids[i] ?? undefined }]))

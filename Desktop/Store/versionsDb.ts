@@ -1,6 +1,6 @@
 import { join } from '@pommora/core/Paths/posix'
 import { deflateSync, inflateSync } from 'node:zlib'
-import { checkIntact, openRebuildable, type Db } from './driver'
+import { checkIntact, LISTED, openRebuildable, type Db } from './driver'
 import type { CaptureStore, SnapshotSource, SnapshotStore } from '@pommora/core/Platform/stores'
 
 export const VERSIONS_FILENAME = 'versions.db'
@@ -56,9 +56,10 @@ export const snapshotStore = (db: Db): SnapshotStore => ({
     return row ? inflate(row.blob) : null
   },
   deleteSnapshots(pageId, ts) {
-    const marks = ts.map(() => '?').join(', ')
     return removed(
-      db.prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN (${marks})`).run(pageId, ...ts),
+      db
+        .prepare(`DELETE FROM snapshots WHERE page_id = ? AND ts IN ${LISTED}`)
+        .run(pageId, JSON.stringify(ts)),
     )
   },
   clearSnapshots() {
@@ -68,8 +69,12 @@ export const snapshotStore = (db: Db): SnapshotStore => ({
     db.exec('PRAGMA wal_checkpoint(TRUNCATE)')
     return count
   },
-  sweepSnapshots(cutoffMs) {
-    return removed(db.prepare('DELETE FROM snapshots WHERE ts < ?').run(cutoffMs))
+  sweepSnapshots(cutoffMs, archived) {
+    return removed(
+      db
+        .prepare(`DELETE FROM snapshots WHERE ts < ? OR (ts < ? AND page_id IN ${LISTED})`)
+        .run(cutoffMs, archived.cutoffMs, JSON.stringify(archived.ids)),
+    )
   },
 })
 

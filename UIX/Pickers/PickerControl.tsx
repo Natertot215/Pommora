@@ -11,10 +11,11 @@ export type PickerOption<T extends string> = {
   value: T
   label: string
   icon?: React.ComponentProps<typeof Icon>['name']
+  disabled?: boolean
 }
 
 export type MenuDoor = (
-  rows: { label: string; action: string; checked: boolean; icon?: string }[],
+  rows: { label: string; action: string; checked: boolean; icon?: string; disabled?: boolean }[],
   trigger: HTMLElement,
   options?: { solid?: boolean; compact?: boolean },
 ) => Promise<string | null>
@@ -54,6 +55,7 @@ export function steppedPickerProps({
     options: stepsWith(range.steps, value).map((f) => ({
       value: String(f),
       label: unitLabel(f, unit),
+      disabled: f > range.max,
     })),
     onPick: (v) => onPick(Number(v)),
     typeable: {
@@ -105,6 +107,7 @@ export function PickerControl<T extends string>({
       action: o.value,
       checked: o.value === value,
       icon: o.icon,
+      disabled: o.disabled,
     }))
     void door(rows, el, { solid, compact: true }).then((picked) => {
       // Resolved through the options rather than cast: the reply crosses as a bare string.

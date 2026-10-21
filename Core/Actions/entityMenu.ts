@@ -5,7 +5,10 @@ import {
   type PageMetaAction,
   type PageMoveAction,
   COPY_PATH_ROW,
+  DELETE_ROW,
   pageMetaMenuItems,
+  REMOVAL_ROWS,
+  RENAME_ROW,
   REVEAL_ROW,
 } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
@@ -30,7 +33,6 @@ export type EntityMenuAction =
   | CreateMenuAction
   | 'open'
   | 'preview'
-  | 'delete'
   | 'lock'
   | TitleMenuAction
   | 'changeColor'
@@ -61,10 +63,7 @@ export function entityMenuItems(
     return joinGroups<EntityMenuAction>([
       open,
       create,
-      [
-        { label: 'Rename', action: 'rename' },
-        { label: 'Delete', action: 'delete' },
-      ],
+      [RENAME_ROW],
       [
         ...(target.host === 'sidebar'
           ? [
@@ -77,6 +76,7 @@ export function entityMenuItems(
         COPY_PATH_ROW,
         REVEAL_ROW,
       ],
+      target.kind === 'set' ? REMOVAL_ROWS : [DELETE_ROW],
     ])
   const identity: ActionItem<EntityMenuAction>[] =
     target.kind === 'space'
@@ -88,10 +88,5 @@ export function entityMenuItems(
           ...propertyBranchRows(target),
         ]
       : titleMenuItems()
-  return joinGroups<EntityMenuAction>([
-    open,
-    create,
-    identity,
-    [{ label: 'Delete', action: 'delete' }],
-  ])
+  return joinGroups<EntityMenuAction>([open, create, identity, [DELETE_ROW]])
 }

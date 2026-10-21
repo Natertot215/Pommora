@@ -84,6 +84,7 @@ type PickerControlRow<T extends string> = RowText & {
 
 type ZoomSpec = RowText & {
   unit?: NumberUnit
+  within?: SteppedKey
 }
 
 type InheritSentinel = 'system' | 'accent' | 'default'
@@ -580,13 +581,19 @@ export const FRAMES = roster([
         ],
       },
       {
-        title: 'Deletion',
+        title: 'Trash & Archive',
         rows: [
           {
             kind: 'toggle',
             key: 'confirmDeletion',
             label: 'Confirm Before Deletion',
             hint: 'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views and properties always ask.',
+          },
+          {
+            kind: 'toggle',
+            key: 'confirmArchiving',
+            label: 'Confirm Before Archiving',
+            hint: 'Ask before archiving a page or a Set.',
           },
           {
             kind: 'toggle',
@@ -615,6 +622,14 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'historyDays',
             label: 'History Timeframe',
+            unit: DAYS,
+          },
+          {
+            kind: 'zoom',
+            key: 'archiveHistoryDays',
+            within: 'historyDays',
+            label: 'Archive History Timeframe',
+            hint: "How long archived pages keep their snapshots; it follows 'History Timeframe' until set, and never exceeds it.",
             unit: DAYS,
           },
           {
