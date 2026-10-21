@@ -7,9 +7,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { governedReach } from './governedSweep'
-import { isArchived } from '../Paths/nexusPaths'
-import { relative } from '../Paths/posix'
+import { governedReach, outsideArchive } from './governedSweep'
 import { addressable, type NexusPages } from '../Nexus/heldPages'
 
 // A confirmation names only what's outside the Archive. Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
@@ -17,7 +15,7 @@ export async function confirmedKeyHolders(root: string, key: string): Promise<st
   const holders: string[] = []
   const indexed = queryKeyHolders(key)
   for (const file of await governedReach(root, indexed)) {
-    if (isArchived(relative(root, file))) continue
+    if (!outsideArchive(root, file)) continue
     const content = await readTextOrNull(file)
     // An unreadable file holds the key when the index last read it holding it.
     if (content === null ? indexed !== null : Object.hasOwn(splitFrontmatter(content), key))

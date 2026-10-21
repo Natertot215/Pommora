@@ -16,7 +16,7 @@ import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/discard'
 import type { Changed, FileEvent } from '../Files/writeEcho'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
-import { findContainerWhere } from './treePatch'
+import { containerAt } from './treePatch'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -1289,7 +1289,7 @@ describe('the walk and the sidecar event agree on a container', () => {
     }
   const notes = (): CollectionNode | SetNode | null => {
     const tree = heldTreeOf(root)
-    return tree ? findContainerWhere(tree, (n) => n.path === 'Notes') : null
+    return tree ? containerAt(tree, 'Notes') : null
   }
 
   beforeEach(async () => {

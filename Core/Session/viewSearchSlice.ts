@@ -1,5 +1,5 @@
 import { tabKey } from '../Navigation/tabsModel'
-import { namesContainer } from '../Archive/archivePlace'
+import { namesContainer } from '../Nexus/entities'
 import { tabOf } from './navigationSlice'
 import type { Slice } from './sessionState'
 

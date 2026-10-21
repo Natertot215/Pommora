@@ -76,6 +76,7 @@ import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
 import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
 import { DONE_MS } from '@pommora/uix/Animations/motion'
+import { faceAttrs } from '@pommora/uix/Animations/Swap'
 import * as swap from '@pommora/uix/Animations/swap.css'
 import * as trail from '@pommora/uix/Elements/nav-trail.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
@@ -229,7 +230,7 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
     btn.type.base,
     btn.outlined,
   )
-  pill.innerHTML = `<span class="${swap.swap}"><span class="${swap.face}" data-face="shown"><span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span></span><span class="${swap.face}" data-face="hidden" aria-hidden="true" inert><span class="${run}">Copied</span></span></span>`
+  pill.innerHTML = `<span class="${swap.swap}"><span class="${swap.face}"><span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span></span><span class="${swap.face}"><span class="${run}">Copied</span></span></span>`
   return pill
 }
 
@@ -277,7 +278,7 @@ class CodeTagWidget extends WidgetType {
     name.className = cx('codeblock-name', this.path && trail.option)
     name.replaceChildren(...resting)
     const pill = this.tally ? el.appendChild(tallyPill(this.tally)) : null
-    const [counts, copied] = pill ? pill.querySelectorAll<HTMLElement>('[data-face]') : []
+    const [counts, copied] = pill ? pill.querySelectorAll<HTMLElement>(`.${swap.face}`) : []
     const showCopied = (on: boolean): void => {
       el.classList.toggle('is-copied', on)
       if (!pill) {
@@ -288,12 +289,14 @@ class CodeTagWidget extends WidgetType {
         [counts, on],
         [copied, !on],
       ] as const) {
-        face.dataset.face = hidden ? 'hidden' : 'shown'
-        face.toggleAttribute('inert', hidden)
-        if (hidden) face.setAttribute('aria-hidden', 'true')
-        else face.removeAttribute('aria-hidden')
+        const { inert, ...named } = faceAttrs(hidden)
+        face.toggleAttribute('inert', inert)
+        for (const [attr, value] of Object.entries(named))
+          if (value === undefined) face.removeAttribute(attr)
+          else face.setAttribute(attr, value)
       }
     }
+    showCopied(false)
 
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {

@@ -28,6 +28,7 @@ import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
+import { ARCHIVE_TITLE } from '../../Archive/archivePlace'
 import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
@@ -115,7 +116,7 @@ export function ViewFrame({
             <Button
               type={inArchive ? 'tinted' : 'filled'}
               size="button-inline"
-              label="Archive"
+              label={ARCHIVE_TITLE}
               outline={inArchive}
               pressed={inArchive}
               showSelection={false}

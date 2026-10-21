@@ -36,6 +36,8 @@ import { type CascadeReport, linksNotUpdated, renameCascade } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
+import { repairLanded } from '../Trash/restoreScrub'
+import type { RecordFile } from '../Bundles/record'
 
 // ── The app's own events ──
 
@@ -249,7 +251,7 @@ export async function settledIndex(root: string): Promise<PageIndex | null> {
   return tree && pageIndexOf(tree)
 }
 
-/** A move's re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. A restore's arrival re-spells through `returningNames`. */
+/** A move's re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. A restore's arrival re-spells through `returningCascade`. */
 export async function relink(
   root: string,
   before: PageIndex,
@@ -276,18 +278,30 @@ export function returningNames(
   return { names, own }
 }
 
-/** A restore's arrival under `title`: the index settled with `back` landed, the returning pages' own re-spellings, and the relink's cascade, or the notice that links weren't updated when the index can't settle. */
+/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets. Answers the files the repair couldn't write, and the notice that links weren't updated when the index can't settle. */
 export async function returningCascade(
   root: string,
   tree: NexusTree,
   back: readonly ConnPage[],
   title: string,
-): Promise<{ after: PageIndex | null; own: Map<string, string>; cascade?: CascadeReport }> {
+  landed: {
+    entity: RecordFile['entity']
+    abs: string
+    repair?: (after: PageIndex) => Map<string, string>
+  },
+): Promise<{
+  after: PageIndex | null
+  own: Map<string, string>
+  unswept: string[]
+  cascade?: CascadeReport
+}> {
   const after = await settledIndex(root)
-  if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
+  if (!after) return { after, own: new Map(), unswept: [], cascade: linksNotUpdated(title) }
   const { names, own } = returningNames(pageIndexOf(tree), after, back)
-  if (!names.size) return { after, own }
-  return { after, own, cascade: await renameCascade(root, { names, label: title }) }
+  const repair = landed.repair?.(after) ?? own
+  const unswept = await repairLanded(root, tree, landed.entity, landed.abs, repair)
+  if (!names.size) return { after, own, unswept }
+  return { after, own, unswept, cascade: await renameCascade(root, { names, label: title }) }
 }
 
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.

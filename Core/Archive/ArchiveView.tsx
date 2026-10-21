@@ -8,9 +8,10 @@ import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
-import { EntityIcon } from '../Assets/EntityIcon'
+import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { archivedKind, crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { DateHeading } from '../Bundles/DateHeading'
 import { countPhrase } from '../Interface/Confirm/confirmations'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
@@ -26,6 +27,7 @@ import type { Personalization } from '../Settings/personalization'
 import { useSession } from '../Session/store'
 import { WIDTHS } from '../Views/Table/useColumns'
 import '../Views/Table/table-view.css'
+import { ARCHIVE_TITLE } from './archivePlace'
 import './archive-view.css'
 
 const ROW_H = 48
@@ -104,7 +106,12 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   }
 
   return (
-    <InterfaceScaffold owner={containerOwner(owner)} trailing="Archive" plain>
+    <InterfaceScaffold
+      owner={containerOwner(owner)}
+      trailing={ARCHIVE_TITLE}
+      plain
+      ready={listing.status !== 'loading'}
+    >
       <div className="table table-view">
         <div
           className={cx('table-grid', text.body.standard)}
@@ -117,20 +124,19 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
               </span>
               Title
             </div>
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are */}
-            <div className="col-header archive-date" onContextMenu={browser.date.onContextMenu}>
-              <span ref={browser.date.measureRef} className="col-measure">
+            <DateHeading
+              date={browser.date}
+              className="archive-date"
+              sampleClass={text.body.standard}
+              label={
                 <span>
                   <span className="col-header-icon">
                     <PropertyTypeIcon type="dateTime" size="body" />
                   </span>
                   Archived
                 </span>
-                <span className={text.body.standard} aria-hidden>
-                  {browser.date.sample}
-                </span>
-              </span>
-            </div>
+              }
+            />
           </div>
           <div ref={setListEl} className="archive-rows" style={{ height }}>
             {slots.map(({ index, start }) => {
@@ -142,7 +148,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
                   start={start}
                   lead={index === 0}
                   checked={browser.checked.has(row.bundlePath)}
-                  revealed={browser.checked.size > 0}
+                  revealed={browser.picked.length > 0}
                   when={browser.date.when(row.storedAt)}
                   icons={defaultIcons}
                   api={api}
@@ -189,7 +195,7 @@ const ArchiveRow = memo(function ArchiveRow({
       }}
     >
       <div className="data-cell cell-lead">
-        <span className={cx('row-check', revealTarget)} data-reveal-held={checked || undefined}>
+        <span className={cx('row-check', revealTarget)}>
           <Checkbox
             size="compact"
             state={checked}
@@ -209,7 +215,7 @@ const ArchiveRow = memo(function ArchiveRow({
               : undefined
           }
         >
-          <EntityIcon kind={archivedKind(row)} icon={row.icon} size="body" />
+          <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
           <span className="cell-title-text">{row.title}</span>
         </span>
         <NavTrail

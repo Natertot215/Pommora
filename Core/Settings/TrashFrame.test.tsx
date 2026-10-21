@@ -46,6 +46,31 @@ describe('a Trash row', () => {
     expect(host.querySelector('[data-reveal-host="on"]')).not.toBeNull()
   })
 
+  it('a search that hides the checked row shows no box', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'bundles:list': vi.fn(async () => ({
+        ok: true,
+        value: [row({ title: 'Alpha' }), row({ title: 'Beta' })],
+      })),
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(<TrashFrame />))
+    const box = host.querySelector('[role="checkbox"]') as HTMLButtonElement
+    await act(async () => box.click())
+    const search = host.querySelector('input') as HTMLInputElement
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(
+        search,
+        'Beta',
+      )
+      search.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(host.querySelectorAll('.trash-row')).toHaveLength(1)
+    expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
+  })
+
   it('draws its item’s own icon ahead of its kind’s', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': vi.fn(async () => ({ ok: true, value: [row({ icon: 'hash' })] })),

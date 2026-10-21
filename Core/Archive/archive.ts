@@ -13,6 +13,7 @@ import { dropDeparture } from '../Nexus/reorder'
 import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
 import { returningCascade } from '../Nexus/settle'
+import { withUnswept } from '../Nexus/cascade'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
@@ -49,7 +50,7 @@ export async function archiveOp(
   return ok({ bundled: { bundlePath: relative(root, bundle) } })
 }
 
-/** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled, repaired, or refilled, since every cascade kept it current; path links naming where it lived follow it. */
+/** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */
 export async function restoreArchived(
   root: string,
   bundle: OpenBundle,
@@ -78,7 +79,11 @@ export async function restoreArchived(
   await writeOrder?.()
   await removeOwn(bundle.abs)
   const title = finalTitle ?? finalName
-  const { cascade } = await returningCascade(root, tree, back, title)
+  const arrived = await returningCascade(root, tree, back, title, {
+    entity: record.entity,
+    abs: targetAbs,
+  })
+  const cascade = withUnswept(arrived.cascade, title, arrived.unswept)
   await refileLanded(root, record, store.id, dir)
   return ok({
     ...(cascade ? { cascade } : {}),

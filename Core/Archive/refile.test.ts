@@ -471,6 +471,14 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
     expect(await pathExists(at('.trash'))).toBe(false)
   })
 
+  it('an Archive whose Collection folder was renamed hidden is kept', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    await rename(at('Notes'), at('_Notes'))
+    await settleArchives(root, await reread())
+    expect(await pathExists(at(bundlePath, 'Note.md'))).toBe(true)
+    expect(await pathExists(at('.trash'))).toBe(false)
+  })
+
   it('an Archive whose Collection sits in the Trash is kept', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
     await bundled({ op: 'delete', path: 'Notes', kind: 'collection' })

@@ -11,7 +11,6 @@ import {
   confirmArchive,
   confirmDelete,
   countPhrase,
-  deleteQuestion,
   offerUndo,
   spendUndo,
 } from './confirmations'
@@ -282,19 +281,18 @@ describe('an Undo over several bundles', () => {
     clearNotification()
   })
 
-  it('an empty of one says It, and of more They', async () => {
-    const details: string[] = []
+  it('an empty of one asks by its title and says It, and of more by their count and says They', async () => {
     useSession.setState({
       askConfirm: async (r) => {
-        details.push(r.detail)
+        asked.push(`${r.message} ${r.detail}`)
         return true
       },
     })
-    await askEmptyTrash('Delete “A”?', 1)
-    await askEmptyTrash('Delete these 2 Pages?', 2)
-    expect(details).toEqual([
-      'It will move to your system trash, which is where you would get it back from.',
-      'They will move to your system trash, which is where you would get them back from.',
+    await askEmptyTrash([row({ title: 'A' })])
+    await askEmptyTrash([row({}), row({})])
+    expect(asked).toEqual([
+      'Delete “A”? It will move to your system trash, which is where you would get it back from.',
+      'Delete these 2 Pages? They will move to your system trash, which is where you would get them back from.',
     ])
   })
 
@@ -308,9 +306,9 @@ describe('an Undo over several bundles', () => {
       },
     })
     switchOff()
-    expect(await askTrashing('Delete these 2 Pages?', ['page', 'page'])).toBe(true)
+    expect(await askTrashing([row({}), row({})])).toBe(true)
     expect(asked).toEqual([])
-    expect(await askTrashing('Delete these 2 Items?', ['page', 'set'])).toBe(true)
+    expect(await askTrashing([row({}), row({ kind: 'set' })])).toBe(true)
     expect(asked).toEqual(['Delete these 2 Items?'])
     expect(details).toEqual(['They will be moved to the nexus’s .trash folder (recoverable).'])
   })
@@ -404,11 +402,16 @@ describe('an archive through the confirmation', () => {
   })
 })
 
-describe('deleteQuestion', () => {
-  it('asks of one row by its title, of more by their count, Items where the kinds mix', () => {
-    expect(deleteQuestion([row({ title: 'Ideas' })])).toBe('Delete “Ideas”?')
-    expect(deleteQuestion([row({}), row({})])).toBe('Delete these 2 Pages?')
-    expect(deleteQuestion([row({}), row({ kind: 'set' })])).toBe('Delete these 2 Items?')
+describe('a delete’s question', () => {
+  it('asks of one row by its title, of more by their count, Items where the kinds mix', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
+    })
+    switchOn()
+    await askTrashing([row({ title: 'Ideas' })])
+    await askTrashing([row({}), row({})])
+    await askTrashing([row({}), row({ kind: 'set' })])
+    expect(asked).toEqual(['Delete “Ideas”?', 'Delete these 2 Pages?', 'Delete these 2 Items?'])
   })
 })
 

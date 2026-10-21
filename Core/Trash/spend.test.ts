@@ -1321,6 +1321,60 @@ describe('restore — the returning page’s links follow the pages they named',
     expect(await text('Notes/Third.md')).toContain('see [[Notes/Other/Alpha|Alpha]]')
   })
 
+  describe('a namesake made meanwhile leaves the returning files’ own links on their own pages', () => {
+    const namesake = async (): Promise<void> => {
+      const created = await settledMutate(
+        root,
+        {
+          op: 'createPage',
+          id: '01KVGMT8BFP350FZZXAMG1QDVM',
+          parentPath: 'Notes/Other',
+          name: 'Alpha',
+        },
+        nexusDeps,
+      )
+      expect(created.ok).toBe(true)
+      await reseed()
+    }
+
+    it('a page’s link to itself', async () => {
+      await write(ALPHA, PAGE_A, '', 'me: [[Alpha]]')
+      await reseed()
+      await del(ALPHA)
+      await namesake()
+      await restore('Alpha.md')
+      expect(await text(ALPHA)).toBe(`---\nID: ${PAGE_A}\n---\nme: [[Notes/Daily/Alpha|Alpha]]`)
+    })
+
+    it('a Set’s link to its returning sibling', async () => {
+      await write('Notes/Daily/Gamma.md', PAGE_C, '', 'see [[Alpha]]')
+      await reseed()
+      await del('Notes/Daily', 'set')
+      await namesake()
+      await restore('Daily')
+      expect(await text('Notes/Daily/Gamma.md')).toBe(
+        `---\nID: ${PAGE_C}\n---\nsee [[Notes/Daily/Alpha|Alpha]]`,
+      )
+    })
+
+    it('a Set’s Link value and body link to its returning sibling, the namesake in another Collection', async () => {
+      await write('Notes/Daily/Gamma.md', PAGE_C, 'Related: "[[Alpha]]"\n', 'see [[Alpha]]')
+      await reseed()
+      await del('Notes/Daily', 'set')
+      await mkdir(join(root, 'Plain'))
+      await writeFile(
+        join(root, 'Plain', '_pagecollection.json'),
+        JSON.stringify({ id: 'col-plain' }),
+      )
+      await write('Plain/Alpha.md', '01KVGMT8BFP350FZZXAMG1QDVM', '', 'new')
+      await reseed()
+      await restore('Daily')
+      expect(await text('Notes/Daily/Gamma.md')).toBe(
+        `---\nID: ${PAGE_C}\nRelated: "[[Notes/Daily/Alpha|Alpha]]"\n---\nsee [[Notes/Daily/Alpha|Alpha]]`,
+      )
+    })
+  })
+
   it('a restore that finds no settled world says its links weren’t updated', async () => {
     await del(ALPHA)
     const unsettled = vi.spyOn(liveTree, 'heldTreeOf').mockReturnValue(null)

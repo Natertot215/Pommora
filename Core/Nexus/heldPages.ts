@@ -1,4 +1,5 @@
 // The held tree's pages by path and by id, for the host's writers, and the one projection that adds the Archive's pages to the tree's entities, for every refill and every frozen world.
+// Relinks (create, rename, move) resolve against the live index; strips, refills, and frozen worlds resolve against the tree plus the Archive, `linkWorld`.
 
 import { heldTreeOf } from './liveTree'
 import { join, relative, titleFromPath } from '../Paths/posix'
@@ -10,7 +11,7 @@ import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
 import { scopeOf } from '../Settings/codec'
 import { originPathOf } from '../Bundles/bundle'
-import { type ConnPage, connPage } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 
 type ById = Map<string, EntityRecord | null>
 
@@ -80,6 +81,13 @@ export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPa
   }
   return { byId, archived }
 }
+
+/** The tree's pages and the Archive's at the paths they left, with `more` beside them. */
+export const linkWorld = (
+  tree: NexusTree,
+  archived: readonly ConnPage[],
+  more: readonly ConnPage[] = [],
+): PageIndex => buildPageIndex([...pagesOf(tree), ...archived, ...more])
 
 export async function archivedPageIds(
   root: string,

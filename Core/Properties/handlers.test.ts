@@ -9,7 +9,7 @@ import { fail, fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
-import { findContainerWhere } from '../Nexus/treePatch'
+import { containerAt } from '../Nexus/treePatch'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -46,7 +46,7 @@ const tilePushes = (): unknown[] =>
   pushes.filter((p) => p.channel === 'tiles:changed').map((p) => p.payload)
 
 const liveViewAt = (abs: string): unknown =>
-  findContainerWhere(heldTreeOf(root)!, (c) => c.path === relative(root, abs))?.views?.[0]
+  containerAt(heldTreeOf(root)!, relative(root, abs))?.views?.[0]
 
 beforeEach(async () => {
   pushes = []

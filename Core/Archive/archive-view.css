@@ -1,4 +1,4 @@
-/* ArchiveView on TableView's sheet: the virtual list, each title over the trail it left, the check in the rail gutter, and the Archived column. */
+/* ArchiveView on TableView's sheet: the virtual list, each title over the trail it left, and the Archived column. */
 .archive-rows {
   position: relative;
 }
@@ -12,7 +12,8 @@
   justify-content: center;
   gap: 2px; /* KNOB — the title from its trail */
 }
-.archive-date {
+.col-header.archive-date,
+.data-cell.archive-date {
   align-items: center;
   text-align: center;
 }

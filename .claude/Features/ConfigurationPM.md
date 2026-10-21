@@ -123,7 +123,7 @@ Every setting here is a machine-level preference, stored in the device database 
 | --- | --- | --- | --- |
 | File History | `fileHistory` | Stores recoverable snapshots of device-local file history. | **On** · Off |
 | History Timeframe | `historyDays` | How long a snapshot is kept before the open-time sweep removes it; a typed value clamps into the range. | 7 · 14 · 30 · 60 · **90** Days |
-| Archive History Timeframe | `archiveHistoryDays` | How long an archived page keeps its snapshots; unset, it follows History Timeframe, and it stays within it. | 7 · 14 · 30 · 60 · 90 Days · **History Timeframe** |
+| Archive History Timeframe | `archiveHistoryDays` | How long an archived page keeps its snapshots, within History Timeframe, whose longer options are unavailable; unset, it follows History Timeframe, and once picked it keeps its own value. | 7 · 14 · 30 · 60 · 90 Days |
 | Snapshot Interval | `historyInterval` | The least time between two edit snapshots of one page, and the quiet timer's length; a typed value clamps into the range. | **5** · 10 · 15 · 20 Min |
 | Clear History | — | Permanently delete stored snapshots for all files; this cannot be undone. Confirms, then reads Cleared for a moment. | Clear |
 
@@ -216,7 +216,7 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 
 #### Trash
 
-The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does, and ArchiveView's date column is set here too.
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does; the table also lists ArchiveView's date setting, which is picked from ArchiveView's own column heading.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |

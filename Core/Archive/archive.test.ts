@@ -294,6 +294,20 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(await text('Notes', 'Daily', 'Beta.md')).toBe(BETA)
   })
 
+  it('a Set’s link to its returning sibling stays on it past a namesake made meanwhile', async () => {
+    await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\nsee [[Alpha]]\n`)
+    await reseed()
+    const bundlePath = await archive('Notes/Daily', 'set')
+    expect(
+      (await mutate(minted({ op: 'createPage', parentPath: 'Notes', name: 'Alpha' }))).ok,
+    ).toBe(true)
+    await reseed()
+    expect((await restore(bundlePath)).ok).toBe(true)
+    expect(await text('Notes', 'Daily', 'Gamma.md')).toBe(
+      `---\nID: ${PAGE_G}\n---\nsee [[Notes/Daily/Alpha|Alpha]]\n`,
+    )
+  })
+
   it('a restore whose origin has since been excluded finds no parent and takes a destination', async () => {
     const bundlePath = await archive('Notes/Daily/Beta.md')
     await writeExcludedFolders(root, ['Notes/Daily'])
@@ -470,14 +484,16 @@ describe('a delete from the Archive', () => {
     expect(await related()).toBe('[[Beta]]')
   })
 
-  it('a live page’s delete counts no archived linker whose strip failed in its warning', async () => {
+  it('a live page’s delete counts an archived linker whose strip failed in its warning, and its record stays partial', async () => {
     const linker = await archive('Notes/Linker.md')
     const real = atomicWrite.rewritePreservingTimes
     vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation((file, data) =>
       file.startsWith(at(linker)) ? Promise.reject(new Error('refused')) : real(file, data),
     )
     const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
-    expect(r.ok && r.value.cascade?.warning).toBeUndefined()
+    expect(r.ok && r.value.cascade?.warning).toBe('Couldn’t update links in 1 Item.')
+    const bundlePath = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    expect(await readRecord(at(bundlePath))).toMatchObject({ partial: true })
     expect(splitFrontmatter(await text(linker, 'Linker.md')).Related).toBe('[[Beta]]')
   })
 

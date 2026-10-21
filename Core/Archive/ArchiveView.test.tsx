@@ -14,6 +14,7 @@ import { PageReaderWindow } from '../Interface/Windows/PageReaderWindow'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 import { resetUndo } from '../Session/undo'
 import { storesChanged } from '../Session/nexusSlice'
+import { captureWarm, clearWarm } from '../Session/warmCache'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => ({
@@ -371,6 +372,61 @@ describe('ArchiveView', () => {
         'Restored 1 Page. 1 Page had nowhere to go — restore those one at a time to choose where.',
       tone: 'error',
     })
+  })
+
+  it('a search that hides the checked row withdraws the bar and shows no box', async () => {
+    listed = [archived('A'), archived('B')]
+    await render()
+    await check('A')
+    await act(async () =>
+      useSession.setState({ viewSearch: { t1: { key: 'archive:c1', query: 'B', summon: 0 } } }),
+    )
+    expect(titles()).toEqual(['B'])
+    expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
+    expect(host.querySelector('[role=status]')?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('a bar press landing after a re-list dropped its checked rows does nothing', async () => {
+    await render()
+    await check('A')
+    const restore = barButton('Restore')
+    const remove = barButton('Delete')
+    listed = []
+    await act(async () => storesChanged.emit())
+    await act(async () => {
+      restore.click()
+      remove.click()
+    })
+    expect(mutated).not.toHaveBeenCalled()
+    expect(currentNotification()).toBeNull()
+  })
+
+  it('a remount returns a long archive to where it was scrolled once its listing lands', async () => {
+    // jsdom lays nothing out, so the scroll box clamps to the height its rows declare, as a browser's does.
+    const real = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')!
+    const held = new WeakMap<Element, number>()
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get(this: Element) {
+        return held.get(this) ?? 0
+      },
+      set(this: Element, top: number) {
+        const rows = this.querySelector<HTMLElement>('.archive-rows')
+        held.set(this, Math.min(top, Number.parseFloat(rows?.style.height ?? '') || 0))
+      },
+    })
+    try {
+      listed = Array.from({ length: 40 }, (_, i) => archived(`P${i}`))
+      captureWarm('t1', 'archive:c1', { scrollTop: 900 })
+      let answer: (r: unknown) => void = () => {}
+      list.mockImplementationOnce(() => new Promise((r) => (answer = r)))
+      await render()
+      await act(async () => answer({ ok: true, value: listed }))
+      expect(host.querySelector('.detail-scroll')?.scrollTop).toBe(900)
+    } finally {
+      Object.defineProperty(Element.prototype, 'scrollTop', real)
+      clearWarm()
+    }
   })
 
   it('two presses of the bar’s Restore or Delete in one tick act once', async () => {

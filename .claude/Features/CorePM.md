@@ -7,53 +7,54 @@ The Nexus on disk, the data layer that reads and writes it, and the rules that h
 A Nexus is a single folder, opened through a picker and treated as canonical content. It syncs through Pommora Sync ([[NexusSyncPM]]), never through a third-party folder transport.
 
 ```
-// <Nexus>                               | • The picked folder — canonical content; travels through Pommora Sync
-├── // .nexus                            | • App-internal config
-│   ├── // archive/<Collection ID>       | • Archived pages and Sets, mirroring the chain they came from
-│   │   └── // <stamp>__<Page>.archived  | • An archive bundle — the artifact beside its record
-│   │       ├── [<Page>.md]
-│   │       └── _record.json
-│   ├── // assets                        | • The default asset directory — banners, files, thumbnails
-│   │   └── crops.json                   | • Per-image framing, keyed by the image
-│   ├── // contexts                      | • One folder per Context, one per Space beneath it
-│   │   ├── contexts.json                | • The Context registry — order is display order
+// <Nexus>                                   | • The picked folder — canonical content; travels through Pommora Sync
+├── // .nexus                                | • App-internal config
+│   ├── // archive/<Collection ID>           | • Archived pages and Sets, mirroring the chain they came from
+│   │   └── // <Collection>
+│   │       └── // <stamp>__<Page>.archived  | • An archive bundle — the artifact beside its record
+│   │           ├── [<Page>.md]
+│   │           └── _record.json
+│   ├── // assets                            | • The default asset directory — banners, files, thumbnails
+│   │   └── crops.json                       | • Per-image framing, keyed by the image
+│   ├── // contexts                          | • One folder per Context, one per Space beneath it
+│   │   ├── contexts.json                    | • The Context registry — order is display order
 │   │   └── // <Context>
 │   │       └── // <Space>
-│   │           └── _space.json          | • The Space's identity, banner, links, property values, and row order
-│   ├── // interface                     | • The nexus-wide files of the interface's own surfaces
-│   │   ├── // homepage                  | • The Homepage's tile document and markdown-tile bodies
-│   │   │   └── homepage.json            | • The Homepage's banner and heading icon
-│   │   └── matrix.json                  | • The Matrix's group, filter, forces, and display
-│   ├── // metadata                      | • Per-page metadata, one file per month of page creation
-│   │   └── <MM-YYYY>.json               | • Entries for the pages created that month, keyed by page ID
-│   ├── nexus.json                       | • The Nexus id, creation stamp, and the Agenda registration
-│   ├── properties.json                  | • The nexus-wide property registry
-│   ├── settings.json                    | • Personalization, accent, excluded folders, the profile
-│   └── state.json                       | • Pins and the NavView banner; Collection, Space, and panel Context order
-├── // .trash                            | • Deleted entities, mirroring the chain they came from
+│   │           └── _space.json              | • The Space's identity, banner, links, property values, and row order
+│   ├── // interface                         | • The nexus-wide files of the interface's own surfaces
+│   │   ├── // homepage                      | • The Homepage's tile document and markdown-tile bodies
+│   │   │   └── homepage.json                | • The Homepage's banner and heading icon
+│   │   └── matrix.json                      | • The Matrix's group, filter, forces, and display
+│   ├── // metadata                          | • Per-page metadata, one file per month of page creation
+│   │   └── <MM-YYYY>.json                   | • Entries for the pages created that month, keyed by page ID
+│   ├── nexus.json                           | • The Nexus id, creation stamp, and the Agenda registration
+│   ├── properties.json                      | • The nexus-wide property registry
+│   ├── settings.json                        | • Personalization, accent, excluded folders, the profile
+│   └── state.json                           | • Pins and the NavView banner; Collection, Space, and panel Context order
+├── // .trash                                | • Deleted entities, mirroring the chain they came from
 │   └── // <Collection>
-│       └── // <stamp>__<Page>.deleted   | • A deletion bundle — the artifact beside its record
+│       └── // <stamp>__<Page>.deleted       | • A deletion bundle — the artifact beside its record
 │           ├── [<Page>.md]
 │           └── _record.json
-├── // <Collection>                      | • A Page Collection — identified by its sidecar, not its name
-│   ├── // <Set>                         | • A Page Set, recursive to any depth
+├── // <Collection>                          | • A Page Collection — identified by its sidecar, not its name
+│   ├── // <Set>                             | • A Page Set, recursive to any depth
 │   │   ├── // <SubSet>
 │   │   │   ├── [<Page>.md]
 │   │   │   └── _pageset.json
 │   │   ├── [<Page>.md]
-│   │   └── _pageset.json                | • Order and views
-│   ├── [<Page>.md]                      | • A Page at the Collection root
-│   └── _pagecollection.json             | • Schema assignment, order, views, open-in
-├── // <Events>                          | • The Events singleton — registered by its sidecar's id
-│   ├── [<Event>.md]                     | • An Event-marked ID in frontmatter
+│   │   └── _pageset.json                    | • Order and views
+│   ├── [<Page>.md]                          | • A Page at the Collection root
+│   └── _pagecollection.json                 | • Schema assignment, order, views, open-in
+├── // <Events>                              | • The Events singleton — registered by its sidecar's id
+│   ├── [<Event>.md]                         | • An Event-marked ID in frontmatter
 │   └── _eventconfig.json
-└── // <Tasks>                           | • The Tasks singleton — registered by its sidecar's id; flat
-    ├── [<Task>.md]                      | • A Task-marked ID in frontmatter
+└── // <Tasks>                               | • The Tasks singleton — registered by its sidecar's id; flat
+    ├── [<Task>.md]                          | • A Task-marked ID in frontmatter
     └── _taskconfig.json
 
-// <app-support>                         | • Machine-specific; never syncs
-├── pommora.json                         | • Last-opened Nexus, recent Nexuses, trash mode, the device's public key, fingerprint, and name
-└── secrets.json                         | • The device's private key, keychain-encrypted
+// <app-support>                             | • Machine-specific; never syncs
+├── pommora.json                             | • Last-opened Nexus, recent Nexuses, trash mode, the device's public key, fingerprint, and name
+└── secrets.json                             | • The device's private key, keychain-encrypted
 ```
 
 A container's sidecar decodes through `Core/Nexus/containerFields.ts` and a Space's through `Core/Contexts/spaceSidecar.ts`; every on-disk name both processes speak is in `Core/Paths/nexusPaths.ts`, and every absolute path main builds comes from `Core/Paths/paths.ts`.
@@ -88,7 +89,7 @@ Lookups on both sides derive from one walk, `recordsOf` in `Core/Nexus/record.ts
 
 #### II. Mutations
 
-Content and Context changes funnel through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`, which routes each operation to its implementation, while views, the property registry, tiles, settings, and page bodies write through channels of their own. An operation that changes a page's address runs inside the settle's own turn, so no payment of an outside move interleaves with it, and returns the links it re-spelled. A mutation, view edit, or schema edit that names an entity by path acts only on what the live tree holds at that path, as the kind the request names, so the Nexus root, `.nexus`, the trash, and excluded folders fall outside them, save the Archive bundle a delete from the Archive names. Cascade policy is stated beside it once — a page rename stands when its link rewrite can't reach every file, and reports how many kept the old link; a page, Set, or Collection delete strips the Link values naming its pages under the same rule, whether it takes a live item or an Archive bundle; a Context delete unlinks its Spaces before the folder moves to the trash, and a Context or Space delete that can't write every member puts back what it changed and refuses; once a Space, Context, Set, or Collection has moved to the trash, or a Set has left a container, the saved views, View Tiles, and the Matrix filter drop what named it, and a file that can't be edited is reported beside the delete rather than refusing it. Every write notes itself as a file event as it lands, and the arms that apply an outside edit apply it to the live tree and the content index; the write's gate then settles what moved and pushes it before the reply leaves, so the reply finds the window current. The window is sent a versioned difference of the tree and asks for the whole tree when it holds any version but the one before. Every create the dispatcher takes carries an ID the window minted, so what the window stages for the newborn is keyed before the push lands it.
+Content and Context changes funnel through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`, which routes each operation to its implementation, while views, the property registry, tiles, settings, and page bodies write through channels of their own. An operation that changes a page's address runs inside the settle's own turn, so no payment of an outside move interleaves with it, and returns the links it re-spelled. A mutation, view edit, or schema edit that names an entity by path acts only on what the live tree holds at that path, as the kind the request names, so the Nexus root, `.nexus`, the trash, and excluded folders fall outside them, save the Archive bundle a delete from the Archive names. Cascade policy is stated beside it once — a page rename stands when its link rewrite can't reach every file, and reports how many kept the old link; a page, Set, or Collection delete strips the Link values naming its pages under the same rule, whether it takes a live item or an Archive bundle; a Context delete unlinks its Spaces before the folder moves to the trash, and a Context or Space delete that can't write every member puts back what it changed and refuses; once a Space, Context, Set, or Collection has moved to the trash, or a move has taken a Set out of a container, the saved views, View Tiles, and the Matrix filter drop what named it, and a file that can't be edited is reported beside the delete rather than refusing it. Every write notes itself as a file event as it lands, and the arms that apply an outside edit apply it to the live tree and the content index; the write's gate then settles what moved and pushes it before the reply leaves, so the reply finds the window current. The window is sent a versioned difference of the tree and asks for the whole tree when it holds any version but the one before. Every create the dispatcher takes carries an ID the window minted, so what the window stages for the newborn is keyed before the push lands it.
 
 Several rules hold across every entity and are stated here rather than per feature:
 
@@ -144,7 +145,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Saved views and what a container is                           | Each container's own sidecar                                                 | Editing the view; deleting the container                                        |
 | Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering                                                |
 | Page bodies, frontmatter, and their property values           | The Markdown files themselves                                                | Editing the page                                                                |
-| A page's icon, aliases, title-icon override, and lock         | `metadata/MM-YYYY.json`, by the month the page was created                   | Clearing the field, emptying the page from the Trash, or the Collection holding its Archive, or deleting it to the system trash; an entry left with nothing set is deleted |
+| A page's icon, aliases, title-icon override, and lock         | `metadata/MM-YYYY.json`, by the month the page was created                   | Clearing the field; emptying the page, or a Collection whose Archive holds it, from the Trash; or deleting either to the system trash; an entry left with nothing set is deleted |
 | The Matrix's group, filter, forces, and display               | `interface/matrix.json`                                                      | Changing a row; sections merge one at a time, and forces by value per grouping  |
 
 **Stays on this machine, filed under the Nexus's id.** `nexus.db` sits in the app's userData directory and holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history and the bytes its sync conflicts left behind.

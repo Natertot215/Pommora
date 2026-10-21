@@ -4,7 +4,7 @@ import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
 import { placeAt, placeNew } from '../Views/creationOrder'
 import { containerAt, findContainerById } from '../Nexus/treePatch'
-import { namesContainer } from '../Archive/archivePlace'
+import { namesContainer } from '../Nexus/entities'
 import { useSession, windowTargetOf } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 

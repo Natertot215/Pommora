@@ -31,6 +31,7 @@ import type {
 import { placementOf, type SidebarMode } from '../../Settings/personalization'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { NodeKind } from '../../Nexus/entities'
+import { isTopContainer } from '../../Nexus/treePatch'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
 import { nodesByIdOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
@@ -202,7 +203,7 @@ function GhostLeaf({
 // An arrow rather than a named function, so the recursion inside renders the memoized row.
 const ContainerRow = memo(
   ({ node, depth }: { node: CollectionNode | SetNode; depth: number }): React.JSX.Element => {
-    const selectable = useSetting('openFoldersOnTitleClick') || depth <= 1
+    const selectable = useSetting('openFoldersOnTitleClick') || isTopContainer(node)
     const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
     const mutate = useSession((s) => s.mutate)
     const placement = useSession((s) => placementOf(personalizationOf(s), node.kind))

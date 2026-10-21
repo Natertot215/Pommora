@@ -8,7 +8,6 @@ import {
   askTrashing,
   confirmDelete,
   countPhrase,
-  deleteQuestion,
   offerUndo,
   spendUndo,
 } from '../Interface/Confirm/confirmations'
@@ -160,9 +159,9 @@ function rulesOf(kind: BundleStore['kind']): {
       return {
         dateKey: 'trashColumnStyle',
         deleteOp: 'emptyBundle',
-        askBatch: (targets) => askEmptyTrash(deleteQuestion(targets), targets.length),
+        askBatch: askEmptyTrash,
         deleteOne: async (row) =>
-          (await askEmptyTrash(deleteQuestion([row]), 1)) &&
+          (await askEmptyTrash([row])) &&
           (await useSession
             .getState()
             .mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })) !== null,
@@ -171,7 +170,7 @@ function rulesOf(kind: BundleStore['kind']): {
       return {
         dateKey: 'archiveColumnStyle',
         deleteOp: 'delete',
-        askBatch: (targets) => askTrashing(deleteQuestion(targets), targets.map(archivedKind)),
+        askBatch: askTrashing,
         deleteOne: (row) =>
           confirmDelete({
             path: row.bundlePath,
@@ -365,13 +364,17 @@ export function useBundleBrowser(
     )
   }
 
+  // A re-list can drop the checked rows a frame before the bar withdraws, so a press may name none.
   const restore = (targets: BundleRow[]): Promise<void> =>
-    flight(() => (targets.length === 1 ? restoreOne(targets[0]) : restoreBatch(targets)))
+    flight(async () => {
+      if (targets.length > 1) return restoreBatch(targets)
+      if (targets.length) return restoreOne(targets[0])
+    })
 
   const remove = (targets: BundleRow[]): Promise<void> =>
     flight(async () => {
       if (targets.length > 1) return deleteBatch(targets)
-      if (await rules.deleteOne(targets[0])) spendUndo(targets[0].bundlePath)
+      if (targets.length && (await rules.deleteOne(targets[0]))) spendUndo(targets[0].bundlePath)
     })
 
   const openMenu = async (row: BundleRow): Promise<void> => {
