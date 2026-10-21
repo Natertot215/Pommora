@@ -12,7 +12,13 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
 import { containerTrailById, owningCollection } from '../Nexus/treePatch'
-import { archivedWithin, collectionsElsewhere, listBundles, moveIntoStore } from '../Bundles/bundle'
+import {
+  archiveOwned,
+  archivedWithin,
+  collectionsElsewhere,
+  listBundles,
+  moveIntoStore,
+} from '../Bundles/bundle'
 import { collectionOf, originOf, patchRecord, type RecordFile, trailAbove } from '../Bundles/record'
 import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { listEntries, listFilesRecursive } from '../Files/walk'
@@ -100,8 +106,7 @@ export async function refileMoved(
 
 /** The open pass, once per open before the index seed: an Archive filed under a live Collection re-files each record whose origin the tree holds, which a Set moved while Pommora was closed leaves misfiled; one whose id names no Collection the tree holds, none in a root folder it doesn't hold, and none in the Trash is orphaned, and its bundles move into `.trash` with their records whole. A root folder whose sidecar reads unreadable could be any Collection, so while one does, that open takes no Archive for orphaned. */
 export async function settleArchives(root: string, tree: NexusTree): Promise<void> {
-  const unread = tree.unreadable?.some((u) => u.kind === 'collection') ?? false
-  let elsewhere: Set<string> | undefined
+  let elsewhere: Promise<Set<string>> | undefined
   for (const { name: id, kind } of await listEntries(join(root, ARCHIVE_DIR_REL))) {
     if (kind !== 'dir') continue
     if (tree.collections.some((c) => c.id === id)) {
@@ -120,9 +125,8 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
       }
       continue
     }
-    if (unread) continue
-    elsewhere ??= await collectionsElsewhere(root, tree)
-    if (elsewhere.has(id)) continue
+    if (await archiveOwned(tree, id, () => (elsewhere ??= collectionsElsewhere(root, tree))))
+      continue
     for (const { bundlePath } of await listBundles(root, { kind: 'archive', id }))
       await moveIntoStore(root, join(root, bundlePath), { kind: 'trash' }, {})
     // A bundle that won't parse stays as evidence; the folder goes once nothing is left beneath it.

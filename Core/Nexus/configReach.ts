@@ -34,6 +34,7 @@ import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { asString } from './coerce'
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
+import { readWatchScope } from '../Settings/settings'
 import { scopeOf } from '../Settings/codec'
 import type { WatchScope } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
@@ -325,13 +326,11 @@ const setSidecarsUnder = async (root: string, scope: WatchScope, abs: string): P
   (await sidecarsUnder(root, scope, abs)).filter((file) => basename(file) === SIDECAR_FILENAME.set)
 
 /** The ids of the Sets an archived folder holds, read from their sidecars, so every saved view drops them once the folder leaves for good. */
-export async function archivedSetIds(
-  root: string,
-  abs: string,
-  scope: WatchScope,
-): Promise<string[]> {
+export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
   const ids = await Promise.all(
-    (await setSidecarsUnder(root, scope, abs)).map((file) => sidecarId(dirname(file), 'set')),
+    (await setSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
+      sidecarId(dirname(file), 'set'),
+    ),
   )
   return ids.flatMap((id) => id ?? [])
 }

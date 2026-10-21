@@ -4,6 +4,9 @@ import { basename, join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
+import * as record from '../Bundles/record'
+import * as settings from '../Settings/settings'
+import { fail } from '../Contract/result'
 import { pathExists } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -171,6 +174,46 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       .mockImplementationOnce(relocate)
       .mockRejectedValueOnce(new Error('the move failed'))
     expect((await mutate({ op: 'archive', path: 'Notes/Daily', kind: 'set' })).ok).toBe(false)
+    expect(await text('Notes', 'Daily', 'Private', 'Secret.md')).toBe('secret\n')
+    expect(await pathExists(at('Notes', 'Private'))).toBe(false)
+    expect(
+      (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
+        .excluded_folders,
+    ).toEqual(['Notes/Daily/Private'])
+  })
+
+  it('a lift refused on its second folder puts the first back', async () => {
+    for (const name of ['Private', 'Raw'])
+      await mkdir(at('Notes', 'Daily', name), { recursive: true })
+    await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
+    await writeFile(
+      at('.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Notes/Daily/Private', 'Notes/Daily/Raw'] }),
+    )
+    await refreshTree(root)
+    const carry = settings.carrySetAside
+    vi.spyOn(settings, 'carrySetAside')
+      .mockImplementationOnce(carry)
+      .mockResolvedValueOnce(fail('operation-failed', 'the carry failed'))
+    expect((await mutate({ op: 'archive', path: 'Notes/Daily', kind: 'set' })).ok).toBe(false)
+    expect(await text('Notes', 'Daily', 'Private', 'Secret.md')).toBe('secret\n')
+    expect(await pathExists(at('Notes', 'Private'))).toBe(false)
+    expect(
+      (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
+        .excluded_folders,
+    ).toEqual(['Notes/Daily/Private', 'Notes/Daily/Raw'])
+  })
+
+  it('a Set delete whose record write throws puts the lifted folder back', async () => {
+    await mkdir(at('Notes', 'Daily', 'Private'), { recursive: true })
+    await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
+    await writeFile(
+      at('.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Notes/Daily/Private'] }),
+    )
+    await refreshTree(root)
+    vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
+    expect((await mutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(false)
     expect(await text('Notes', 'Daily', 'Private', 'Secret.md')).toBe('secret\n')
     expect(await pathExists(at('Notes', 'Private'))).toBe(false)
     expect(
@@ -611,6 +654,15 @@ describe('a delete from the Archive', () => {
     )
     expect(await text(trashed, 'Beta.md')).toContain('Score: 3')
     expect(await pathExists(at('.nexus', 'archive', NOTES))).toBe(false)
+  })
+
+  it('its Undo lands while a root Collection’s sidecar reads unreadable', async () => {
+    const archived = await archive('Notes/Daily/Beta.md')
+    const trashed = await trash(archived)
+    await writeFile(at('Notes', '_pagecollection.json'), '{ not json')
+    await refreshTree(root)
+    expect(message(await restore(trashed, UNDO))).toBe('')
+    expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 
   it('refuses the Archive as a destination for an Archive bundle', async () => {

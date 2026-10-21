@@ -49,7 +49,7 @@ async function relocateFolder(
   return ok({ path: to })
 }
 
-/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. `undo` moves each back, its entry with it, when the container's own move fails. */
+/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. A lift refused or thrown partway moves back what it lifted, as `undo` does when the container's own move fails. */
 export async function liftSetAside(
   root: string,
   containerAbs: string,
@@ -61,23 +61,30 @@ export async function liftSetAside(
   })
   const parent = dirname(containerAbs)
   const lifted: { from: string; to: string }[] = []
-  for (const rest of inside) {
-    if (inside.some((outer) => (entryWithin(rest, outer)?.length ?? 0) > 0)) continue
-    const abs = join(containerAbs, rest)
-    // An entry can outlive its folder, whose spelling is read from its parent's listing.
-    const name = await heldName(abs)
-    if (name === null) continue
-    const taken = (await listEntries(parent)).map((e) => e.name)
-    const to = join(parent, freeName(name, taken))
-    const moved = await relocateFolder(root, abs, to)
-    if (!moved.ok) return moved
-    lifted.push({ from: abs, to })
+  const undo = async (): Promise<void> => {
+    for (const { from, to } of [...lifted].reverse()) await relocateFolder(root, to, from)
   }
-  return ok({
-    undo: async () => {
-      for (const { from, to } of [...lifted].reverse()) await relocateFolder(root, to, from)
-    },
-  })
+  try {
+    for (const rest of inside) {
+      if (inside.some((outer) => (entryWithin(rest, outer)?.length ?? 0) > 0)) continue
+      const abs = join(containerAbs, rest)
+      // An entry can outlive its folder, whose spelling is read from its parent's listing.
+      const name = await heldName(abs)
+      if (name === null) continue
+      const taken = (await listEntries(parent)).map((e) => e.name)
+      const to = join(parent, freeName(name, taken))
+      const moved = await relocateFolder(root, abs, to)
+      if (!moved.ok) {
+        await undo()
+        return moved
+      }
+      lifted.push({ from: abs, to })
+    }
+  } catch (e) {
+    await undo()
+    throw e
+  }
+  return ok({ undo })
 }
 
 export async function createFolderEntity(

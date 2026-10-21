@@ -186,7 +186,7 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
   return out
 }
 
-// The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash.
+/** The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash. */
 export async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
   const held = new Set(tree.collections.map((c) => c.path))
   const unheld = (await listEntries(root)).filter(
@@ -198,6 +198,19 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
     record.entity === 'collection' && record.id ? record.id : [],
   )
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
+}
+
+/** Whether the Collection an Archive is filed under still answers for it: live, outside the tree, or possibly behind a root sidecar that reads unreadable, which could be any Collection. */
+export async function archiveOwned(
+  tree: NexusTree,
+  id: string,
+  elsewhere: () => Promise<Set<string>>,
+): Promise<boolean> {
+  return (
+    tree.collections.some((c) => c.id === id) ||
+    (tree.unreadable?.some((u) => u.kind === 'collection') ?? false) ||
+    (await elsewhere()).has(id)
+  )
 }
 
 /** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. */
