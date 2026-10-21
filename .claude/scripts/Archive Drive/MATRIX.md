@@ -117,7 +117,7 @@ Seeds through `mutate` on `~/Test`, each archived through `mutate`'s `archive` a
 
 | Check | Decision | Asserts |
 | --- | --- | --- |
-| the views list closes on an Archive row below its last view, and the footing ends in the disabled More button | G-4 | DOM: in Collection A's `button[title="Views"]` dropdown, the `[role=button]` reading `Archive` with its lock glyph is its list's last child, after a separator, outside every `[data-line-row]`, and unpicked; the footing holding `[aria-label="New View"]` ends in a disabled `[aria-label="More"]` |
+| the views list closes on an Archive row below its last view, and the footing ends in the disabled More button | G-4 | DOM: in Collection A's `button[title="Views"]` dropdown, the `[role=button]` reading `Archive` between its two glyphs is its list's last child, after a separator, outside every `[data-line-row]`, and unpicked; the footing holding `[aria-label="New View"]` ends in a disabled `[aria-label="More"]` |
 | Archive shows the archive place in the same tab, picked | G-4, G-5 | DOM: after the press, the `[role=tab]` count is unchanged, the Archive row wears the picked ring, and the shown `.detail-title` ends in `.detail-title-trailing` reading `Archive` right after `.detail-title-clear` |
 | the header keeps the owner's title with no banner | G-3 | DOM and native rows: `.detail-title-text` reads `Collection A`; no `.banner` and no `[aria-label="Add banner"]` is drawn while `.banner-empty` seats the title; the title's native menu holds `Rename` |
 | the tab reads the owner's title with the archive glyph | G-3 ruling 9 | DOM: `activeTab` is `Collection A`, the selected tab holding `svg.lucide-archive` |

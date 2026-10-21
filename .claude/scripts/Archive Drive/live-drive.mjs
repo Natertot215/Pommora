@@ -1030,7 +1030,7 @@ const trailOf = (cdp, expr) => cdp.evaluate(`(${expr})?.textContent.split('›')
 const READER = `document.querySelector('[aria-label="Archived Page"]')`
 const tabCount = (cdp) => cdp.evaluate(`document.querySelectorAll('[role=tab]').length`)
 const NEW_VIEW = live('[aria-label="New View"]')
-const ARCHIVE_ROW = `[...document.querySelectorAll('[role="button"]')].find((e) => e.textContent.trim() === 'Archive' && e.querySelector('svg.lucide-lock') && !e.closest('[inert]'))`
+const ARCHIVE_ROW = `[...document.querySelectorAll('[role="button"]')].find((e) => e.textContent.trim() === 'Archive' && e.querySelectorAll('svg').length === 2 && !e.closest('[inert]'))`
 const picked = (row) => `getComputedStyle(${row}, '::after').content !== 'none'`
 /** The views dropdown opened, its Archive row pressed, and the archive place up, the dropdown closed after. */
 async function toArchive(cdp) {
