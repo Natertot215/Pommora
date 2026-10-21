@@ -40,8 +40,7 @@ export function resolveColumns(
   contextIds: readonly string[] = [],
 ): ResolvedColumn[] {
   const result = visibleColumns(view, schema, contextIds)
-  if (!result.some((c) => c.id === RESERVED_PROPERTY_ID.title)) {
+  if (!result.some((c) => c.id === RESERVED_PROPERTY_ID.title))
     result.unshift({ id: RESERVED_PROPERTY_ID.title, kind: 'title' })
-  }
   return result
 }

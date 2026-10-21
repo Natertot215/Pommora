@@ -409,9 +409,13 @@ describe('end to end — deleted, listed, restored', () => {
     )
     await del('Journal/Beta.md', 'page')
     row = await find('Beta')
-    const permanent: TrashDeps = { ...deps, permanentDelete: true }
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { permanentDelete: true } }),
+    )
+    await refreshTree(root)
     expect(
-      (await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(await rows()).toHaveLength(0)

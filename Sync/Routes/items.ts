@@ -8,9 +8,8 @@ const MAX_CHANGES = 1000
 const PATH_MAX = 1024
 
 function itemPath(value: unknown): value is string {
-  if (!text(value, PATH_MAX) || value.startsWith('/') || value.normalize('NFC') !== value) {
+  if (!text(value, PATH_MAX) || value.startsWith('/') || value.normalize('NFC') !== value)
     return false
-  }
   return value
     .split('/')
     .every((segment) => segment.length > 0 && segment !== '.' && segment !== '..')
@@ -19,9 +18,8 @@ function itemPath(value: unknown): value is string {
 function itemRecord(value: unknown): Wire.ItemRecord | null {
   const r = value as Partial<Wire.ItemRecord> | null
   if (!r || typeof r !== 'object' || !itemPath(r.path)) return null
-  if (!whole(r.mtimeMs, Number.MAX_SAFE_INTEGER) || !whole(r.size, Number.MAX_SAFE_INTEGER)) {
+  if (!whole(r.mtimeMs, Number.MAX_SAFE_INTEGER) || !whole(r.size, Number.MAX_SAFE_INTEGER))
     return null
-  }
   if (!text(r.keyId, KEY_ID_MAX) || !text(r.sha256, 64) || !SHA256.test(r.sha256)) return null
   return { path: r.path, mtimeMs: r.mtimeMs, size: r.size, keyId: r.keyId, sha256: r.sha256 }
 }
@@ -78,17 +76,15 @@ export function itemRoutes(store: Store) {
       const b = body as Partial<Wire.PullBody> | null
       if (!whole(b?.cursor, Number.MAX_SAFE_INTEGER)) return refuse(400, 'malformed')
       const { waitMs, heads } = b
-      if (waitMs !== undefined && !whole(waitMs, Number.MAX_SAFE_INTEGER)) {
+      if (waitMs !== undefined && !whole(waitMs, Number.MAX_SAFE_INTEGER))
         return refuse(400, 'malformed')
-      }
       if (heads !== undefined && heads !== true) return refuse(400, 'malformed')
       const seq = store.log.seqOf(id.nexusId)
       if (seq === null) return refuse(404, 'not-found')
       if (b.cursor > seq) return refuse(409, 'resync', { seq })
       const first = store.log.readChanges(id.nexusId, b.cursor, heads)
-      if (first.changes.length > 0 || waitMs === undefined || waitMs === 0) {
+      if (first.changes.length > 0 || waitMs === undefined || waitMs === 0)
         return { status: 200, body: first }
-      }
       await wait(id.nexusId, b.cursor, waitMs)
       return { status: 200, body: store.log.readChanges(id.nexusId, b.cursor, heads) }
     },

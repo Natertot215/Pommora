@@ -49,9 +49,8 @@ beforeEach(async () => {
     join(root, 'Notes', SIDECAR_FILENAME.collection),
     JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDC1' }),
   )
-  for (const [name, body] of Object.entries(UNKNOWN_FILES)) {
+  for (const [name, body] of Object.entries(UNKNOWN_FILES))
     await writeFile(join(root, 'Notes', name), body)
-  }
   await writeFile(
     join(root, 'Notes', 'Member.md'),
     `---\n${ID_KEY}: 01KVGMT8BFP350FZZXAMG1QDM1\n---\n\nlinks to [[Target]]\n`,

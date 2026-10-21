@@ -59,9 +59,8 @@ describe('admitContentFile', () => {
   })
 
   it('treats an emptied key as missing, not malformed — the file stays adoptable', () => {
-    for (const empty of [null, '', undefined]) {
+    for (const empty of [null, '', undefined])
       expect(admitContentFile({ [ID_KEY]: empty }, 'page')).toEqual({ state: 'missing' })
-    }
   })
 
   it('rejects a value that cannot be an identity — hand-authored keys are a supported input', () => {

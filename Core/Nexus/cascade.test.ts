@@ -8,7 +8,6 @@ import { createTestPage } from '../Testing/createTestPage'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
-
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -183,9 +182,8 @@ describe('renameCascade over frontmatter', () => {
   const SOURCE = 'Source'
   const SITE = 'Site'
   beforeEach(async () => {
-    for (const name of [SOURCE, SITE]) {
+    for (const name of [SOURCE, SITE])
       await createProperty(root, { id: '', label: name, type: 'link' })
-    }
     await createProperty(root, { id: '', label: 'Notes', type: 'text' })
     await createProperty(root, { id: '', label: 'Files', type: 'file' })
   })

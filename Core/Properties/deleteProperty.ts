@@ -33,7 +33,6 @@ import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import { spaceSidecars, withoutOrderId } from '../Contexts/spaceSidecar'
-
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { join, relative } from '../Paths/posix'

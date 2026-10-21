@@ -92,15 +92,13 @@ export async function deleteOp(
     const under =
       from?.under ?? pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
     const targets = bundle ? await gatherLinkTargets(root, before, rel, under) : {}
-    const write = bundle
-      ? async (record: RecordFile | null): Promise<void> => {
-          if (record)
-            await writeRecord(bundle, {
-              ...record,
-              ...(Object.keys(targets).length ? { targets } : {}),
-            })
-        }
-      : null
+    const write = async (record: RecordFile | null): Promise<void> => {
+      if (bundle && record)
+        await writeRecord(bundle, {
+          ...record,
+          ...(Object.keys(targets).length ? { targets } : {}),
+        })
+    }
     // A refused unlink leaves nothing deleted, so its bundle goes with it.
     const unmint = async (e: unknown): Promise<never> => {
       if (bundle) await removeOwn(bundle)
@@ -109,19 +107,19 @@ export async function deleteOp(
     let record: RecordFile | null = null
     let paths: string[] | null = null
     if (req.kind === 'space') {
-      const registry = write ? await readRegistryStrict(root) : null
-      if (write) await write(await gatherSpaceRecord(before, abs, registry, null))
+      const registry = bundle ? await readRegistryStrict(root) : null
+      if (bundle) await write(await gatherSpaceRecord(before, abs, registry, null))
       const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs)).catch(
         unmint,
       )
-      if (write) await write(await gatherSpaceRecord(before, abs, registry, valueOr(swept, null)))
+      if (bundle) await write(await gatherSpaceRecord(before, abs, registry, valueOr(swept, null)))
     } else if (req.kind === 'context') {
       const registry = contexts!.value
       const title = basename(abs)
       const at = registry.contexts.findIndex((c) => c.title === title)
       const entry = registry.contexts[at]
-      const evidence = write && entry ? await gatherContextEvidence(abs, entry, at) : null
-      if (write && evidence) await write(buildContextRecord(evidence, null))
+      const evidence = bundle && entry ? await gatherContextEvidence(abs, entry, at) : null
+      if (evidence) await write(buildContextRecord(evidence, null))
       // By id, never by title: two entries sharing a title would otherwise erase both while only one folder is trashed.
       const removed = await mutateRegistryFile(root, (cur) =>
         entry ? { contexts: cur.contexts.filter((c) => c.id !== entry.id) } : cur,
@@ -136,12 +134,12 @@ export async function deleteOp(
         return unmint(e)
       })
       if (entry && !bundle) await dropContextOrder(root, entry.id)
-      if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
+      if (evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
     } else {
-      record = write
+      record = bundle
         ? (from?.record ?? (await gatherContentRecord(root, before, req.kind, abs)))
         : null
-      if (write && record) await write({ ...record, partial: true })
+      if (record) await write({ ...record, partial: true })
       paths = from?.keys ?? under
     }
     if (bundle) await relocate(abs, join(bundle, basename(abs)))
@@ -154,14 +152,14 @@ export async function deleteOp(
     const gone = paths
       ? await deleteCascade(root, abs, [...paths, ...(archive?.origins ?? [])])
       : null
-    if (write && record && gone)
+    if (record && gone)
       await write({
         ...record,
         ...(gone.links.length ? { links: gone.links } : {}),
         ...(gone.cascade.warning ? { partial: true as const } : {}),
       })
     const reach = edit ? reachReport(await reachConfig(root, edit)) : null
-    const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
+    const cascade = joinCascades(gone?.cascade, reach)
     return ok({
       ...(bundle ? { bundled: { bundlePath: relative(root, bundle) } } : {}),
       ...(cascade ? { cascade } : {}),

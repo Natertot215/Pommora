@@ -16,7 +16,6 @@ import { fault } from '../Contract/result'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './discard'
 

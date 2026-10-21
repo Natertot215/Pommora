@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
-
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree, dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { assignProperty } from './assignment'

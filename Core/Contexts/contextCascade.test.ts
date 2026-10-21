@@ -17,7 +17,6 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 import type { ContextsRegistry } from './contexts'
-
 import { pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
 import { fault, ok } from '../Contract/result'

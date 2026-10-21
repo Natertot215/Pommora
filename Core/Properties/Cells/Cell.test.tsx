@@ -6,7 +6,6 @@ import { type ColumnStyle, dateDefaults } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-
 import { EMPTY_ASSET_MAP } from '../../Nexus/tree'
 import { Cell } from './Cell'
 import type { ValueContext } from '../valueContext'

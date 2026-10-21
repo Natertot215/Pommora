@@ -199,9 +199,8 @@ describe('serializeLink', () => {
 
 describe('linkDisplayText — the alias always wins', () => {
   it('shows the alias regardless of the show-as look, or of a passed title', () => {
-    for (const look of LINK_DISPLAYS) {
+    for (const look of LINK_DISPLAYS)
       expect(linkDisplayText('[Home](https://example.com)', look)).toBe('Home')
-    }
     expect(linkDisplayText('[Home](https://example.com)', 'link-title', 'Example Domain')).toBe(
       'Home',
     )

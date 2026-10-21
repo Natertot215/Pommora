@@ -67,11 +67,17 @@ const spaceArm = (tree: NexusTree, rewrite: Rewrite): { sidecars?: Rewrite } =>
     ? { sidecars: rewrite }
     : {}
 
-export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport => ({
-  pages: [...a.pages, ...b.pages],
-  hosts: [...a.hosts, ...b.hosts],
-  warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
-})
+export function joinCascades(
+  a: CascadeReport | null | undefined,
+  b: CascadeReport | null | undefined,
+): CascadeReport | undefined {
+  if (!a || !b) return a ?? b ?? undefined
+  return {
+    pages: [...a.pages, ...b.pages],
+    hosts: [...a.hosts, ...b.hosts],
+    warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
+  }
+}
 
 /** `cascade` joined with the line counting the files in “title” whose links couldn't be written. */
 export function withUnswept(
@@ -80,12 +86,11 @@ export function withUnswept(
   unswept: readonly string[],
 ): CascadeReport | undefined {
   if (!unswept.length) return cascade
-  const left = {
+  return joinCascades(cascade, {
     pages: [],
     hosts: [],
     warning: unsweptLine(unswept.length, `links in “${title}” across `),
-  }
-  return cascade ? joinCascades(cascade, left) : left
+  })
 }
 
 /** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */

@@ -74,9 +74,8 @@ setCmdModifier(isWindows)
 
 // Development switches: a packaged build ignores them, so neither an environment variable nor a launch argument can open it to a debugger, swap its renderer, or move its state.
 const DEV_ENV = app.isPackaged ? {} : process.env
-if (DEV_ENV.POMMORA_DEBUG_PORT) {
+if (DEV_ENV.POMMORA_DEBUG_PORT)
   app.commandLine.appendSwitch('remote-debugging-port', DEV_ENV.POMMORA_DEBUG_PORT)
-}
 if (app.isPackaged)
   for (const s of ['remote-debugging-port', 'remote-debugging-pipe'])
     app.commandLine.removeSwitch(s)
@@ -121,9 +120,8 @@ function registerRendererProtocol(): void {
     const { pathname } = new URL(request.url)
     const rel = pathname === '/' ? '/index.html' : decodeURIComponent(pathname)
     const filePath = join(rendererRoot, rel)
-    if (filePath !== rendererRoot && !filePath.startsWith(rendererRoot + sep)) {
+    if (filePath !== rendererRoot && !filePath.startsWith(rendererRoot + sep))
       return new Response('Forbidden', { status: 403 })
-    }
     try {
       const data = await readFile(filePath)
       const type = RENDERER_MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream'

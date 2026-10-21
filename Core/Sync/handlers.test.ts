@@ -64,9 +64,8 @@ const newHub = (devices: DeviceRecord[] = []): Hub => ({ approved: true, devices
 async function seedInfo(hub: Hub, holders: HostDevice[]): Promise<void> {
   const key = mintKey()
   const ring = await wrapForPassword([key], await deriveWrappingKey(PASSWORD, TEST_KDF))
-  for (const holder of holders) {
+  for (const holder of holders)
     ring.push(...(await wrapForDevice([key], { deviceId: holder.id, x25519: holder.x25519 })))
-  }
   hub.info = { version: 1, protocol: 1, kdf: TEST_KDF, historyDays: 90, ring }
 }
 

@@ -377,9 +377,8 @@ export function initNativeCaret(): void {
     if (e.target === active) release()
   })
   // Capture, so a field's own scroll (which doesn't bubble) is seen too.
-  for (const ev of ['input', 'keyup', 'click', 'pointerdown', 'pointerup', 'select', 'scroll']) {
+  for (const ev of ['input', 'keyup', 'click', 'pointerdown', 'pointerup', 'select', 'scroll'])
     document.addEventListener(ev, schedule, true)
-  }
   document.addEventListener('selectionchange', schedule)
   window.addEventListener('resize', () => {
     styledEl = null

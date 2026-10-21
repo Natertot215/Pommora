@@ -50,9 +50,7 @@ export async function ensureIdentity(
 
   await writeJson(path, { id, createdAt })
   const agenda_folders = await seedAgenda(root)
-  if (Object.keys(agenda_folders).length) {
-    await writeJson(path, { id, createdAt, agenda_folders })
-  }
+  if (Object.keys(agenda_folders).length) await writeJson(path, { id, createdAt, agenda_folders })
   return { id, created: true }
 }
 

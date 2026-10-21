@@ -1751,16 +1751,17 @@ describe('emptyBundle — giving a bundle up for good', () => {
 
   it('with the switch on the artifact never reaches the system trash at all', async () => {
     const handed: string[] = []
-    const deps: TrashDeps = {
-      ...nexusDeps,
-      permanentDelete: true,
-      trashToSystem: async (p) => void handed.push(p),
-    }
+    const deps: TrashDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
     await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { permanentDelete: true } }),
+    )
+    await refreshTree(root)
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, deps)
     expect(r.ok).toBe(true)
@@ -1783,10 +1784,15 @@ describe('emptyBundle — giving a bundle up for good', () => {
     await refreshTree(root)
     expect(await pages()).toEqual({ [PAGE_A]: { icon: 'star' }, [PAGE_B]: { locked: true } })
     const [listed] = await listBundles(root, { kind: 'trash' })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { permanentDelete: permanentDelete } }),
+    )
+    await refreshTree(root)
     const r = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: listed.bundlePath },
-      { ...nexusDeps, permanentDelete },
+      nexusDeps,
     )
     expect(r.ok).toBe(true)
     expect(await pages()).toEqual({})
@@ -1851,10 +1857,14 @@ describe('emptyBundle — giving a bundle up for good', () => {
         nexusDeps,
       )
       await updatePageMetadata(root, PAGE_B, { icon: 'star' })
+      await writeFile(
+        join(root, '.nexus', 'settings.json'),
+        JSON.stringify({ personalization: { permanentDelete: permanentDelete } }),
+      )
+      await refreshTree(root)
       const handed: string[] = []
       const r = await emptyNotes({
         ...nexusDeps,
-        permanentDelete,
         trashToSystem: async (p) => {
           handed.push(p)
           await rm(p, { recursive: true })

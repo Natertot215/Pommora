@@ -42,18 +42,16 @@ describe('codec', () => {
   })
 
   it('escapeCell / unescapeCell are inverse for backslashes and pipes', () => {
-    for (const s of ['a|b', 'a\\b', 'a\\|b', 'plain', '|||', '\\\\', 'C:\\path']) {
+    for (const s of ['a|b', 'a\\b', 'a\\|b', 'plain', '|||', '\\\\', 'C:\\path'])
       expect(unescapeCell(escapeCell(s))).toBe(s)
-    }
     expect(escapeCell('a|b')).toBe('a\\|b')
     expect(escapeCell('a\\|b')).toBe('a\\\\\\|b')
   })
 
   // A backslash escaping anything but a pipe is ordinary markdown passing through, and doubling it rewrites the file for every other reader.
   it('a hand-authored cell survives a round trip through the editor', () => {
-    for (const source of ['a \\* b', 'C:\\path', 'a \\_x_ b', 'a \\| b', 'plain']) {
+    for (const source of ['a \\* b', 'C:\\path', 'a \\_x_ b', 'a \\| b', 'plain'])
       expect(escapeCell(unescapeCell(source))).toBe(source)
-    }
   })
 
   it('cellToSource / cellToDisplay round-trip in-cell newlines as <br> (and still escape pipes)', () => {

@@ -34,10 +34,10 @@ import { refileLanded } from '../Archive/refile'
 import { frozenWorld } from '../Properties/propertyValue'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { returningCascade } from '../Nexus/settle'
-
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { deleteCascade, joinCascades, type StrippedLink, withUnswept } from '../Nexus/cascade'
 import { parkLinks, refillTrashed } from './holdings'
+import type { TrashDeps } from './discard'
 import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
 import { owningCollection } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -46,15 +46,16 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 export async function emptyBundle(
   root: string,
   bundleAbs: string,
-  deps: { permanentDelete?: boolean; trashToSystem: (absPath: string) => Promise<void> },
+  deps: TrashDeps,
 ): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   const { store, record, artifact: artifactAbs } = opened.value
   if (store.kind !== 'trash') return fault('Only a trash record can be emptied.')
+  const permanent = await readLiveSetting(root, 'permanentDelete')
   const dispose = async (abs: string): Promise<void> => {
     recordWrite(abs)
-    if (deps.permanentDelete === true) await machine().remove(abs)
+    if (permanent) await machine().remove(abs)
     else await deps.trashToSystem(abs)
     await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
   }
@@ -83,7 +84,7 @@ export async function emptyBundle(
   await removeOwn(bundleAbs)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, [...recorded, ...(gone?.links ?? [])])
-  const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
+  const cascade = joinCascades(gone?.cascade, reach)
   return ok(cascade ? { cascade } : {})
 }
 
@@ -128,17 +129,13 @@ export async function restoreTrashed(
   const world = linkWorld(tree, archived, back)
   const frozen = frozenWorld(world, targets)
   const owner =
-    record.entity === 'collection'
-      ? artifactAbs
-      : record.entity === 'page' || record.entity === 'set'
-        ? owningCollection(tree, dir)?.path
-        : undefined
+    record.entity === 'page' || record.entity === 'set' ? owningCollection(tree, dir) : undefined
   const dropped = await scrubReturning(
     root,
     tree,
     record.entity,
     artifactAbs,
-    owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
+    record.entity === 'collection' ? artifactAbs : owner ? join(root, owner.path) : null,
     frozen,
     record.entity === 'context' ? contextKey(record.registry.title) : undefined,
   )
@@ -248,9 +245,7 @@ export async function restoreTrashed(
   }
   const cascade = withUnswept(arrived.cascade, title, unswept)
   // The record outlives a partial re-tag, so what didn't come back stays written down.
-  if (!unspent.length) {
-    await removeOwn(bundleAbs)
-  }
+  if (!unspent.length) await removeOwn(bundleAbs)
   const left = originOf(stored)
   if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
   return ok({

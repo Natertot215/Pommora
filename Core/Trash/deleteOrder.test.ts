@@ -11,7 +11,6 @@ import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
 import { machine } from '../Platform/machine'
-
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './discard'
 

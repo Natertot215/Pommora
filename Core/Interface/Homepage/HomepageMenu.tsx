@@ -11,7 +11,6 @@ import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 import { HOMEPAGE_HOST } from '../../Tiles/tiles'
 import { BoardLock } from '../../Tiles/BoardLock'
-
 import * as s from '@pommora/uix/Menus/frames.css'
 
 export function HomepageMenu(): React.JSX.Element | null {

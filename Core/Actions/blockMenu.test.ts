@@ -44,9 +44,8 @@ describe('the block menu catalog', () => {
   })
 
   it('names an icon the registry resolves on every row', () => {
-    for (const row of seated.flatMap((s) => s.rows)) {
+    for (const row of seated.flatMap((s) => s.rows))
       expect(asRenderableIcon(row.icon)).toBe(row.icon)
-    }
   })
 })
 

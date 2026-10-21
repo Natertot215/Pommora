@@ -77,9 +77,8 @@ export function useTabClose<E extends { tab: { id: string } }>(
   const liveEntries = useMemo(() => entries.filter((e) => !ghosts.has(e.tab.id)), [entries, ghosts])
   const renderEntries = useMemo(() => {
     const live = liveEntries.map((entry) => ({ entry, ghost: false }))
-    for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index)) {
+    for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index))
       live.splice(Math.min(g.index, live.length), 0, { entry: g.entry, ghost: true })
-    }
     const firstLive = live.findIndex((e) => !e.ghost)
     return live.map((e, i) => ({ ...e, seam: i === 0 ? null : e.ghost || i === firstLive }))
   }, [liveEntries, ghosts])

@@ -4,7 +4,6 @@ import { isUlidShaped } from '../Nexus/identityMark'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { coerceTileHost, landed, patchEntries, tileDocPatch } from './tiles'
-
 import {
   convertTile,
   createTile,
@@ -86,7 +85,7 @@ export const tilesHandlers = {
 
   'tiles:removeTile': withWriteRoot(
     onTile(async ({ root, dir, ctx }, tileId) =>
-      removeTile(root, dir, tileId, await trashDeps(root, ctx)),
+      removeTile(root, dir, tileId, await trashDeps(ctx)),
     ),
   ),
 
@@ -120,7 +119,7 @@ export const tilesHandlers = {
 
   'tiles:convert': withWriteRoot(
     onTile(async ({ root, dir, ctx }, tileId, pick) =>
-      convertTile(root, dir, tileId, pick, await trashDeps(root, ctx)),
+      convertTile(root, dir, tileId, pick, await trashDeps(ctx)),
     ),
   ),
 

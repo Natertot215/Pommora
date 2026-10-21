@@ -66,13 +66,11 @@ const stubGeometry = (wrapTop: number): void => {
   stubRect(wrap, { top: wrapTop, bottom: wrapTop + 72, left: 0, right: 200 })
   const table = container.querySelector('table.mdpm-tbl') as HTMLTableElement
   const rows = [...(table.tHead?.rows ?? []), ...(table.tBodies[0]?.rows ?? [])]
-  for (const [i, r] of rows.entries()) {
+  for (const [i, r] of rows.entries())
     stubRect(r, { top: wrapTop + i * 24, bottom: wrapTop + (i + 1) * 24 })
-  }
   const heads = Array.from(table.tHead?.rows[0]?.cells ?? [])
-  for (const [i, c] of heads.entries()) {
+  for (const [i, c] of heads.entries())
     stubRect(c, { top: wrapTop, bottom: wrapTop + 24, left: i * 100, right: (i + 1) * 100 })
-  }
 }
 
 const measureAndGrip = async (): Promise<HTMLElement> => {

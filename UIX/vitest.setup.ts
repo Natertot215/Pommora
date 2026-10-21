@@ -1,7 +1,6 @@
 // jsdom has no layout, so elementFromPoint — which the drag engines call — is absent.
-if (typeof document !== 'undefined' && !document.elementFromPoint) {
+if (typeof document !== 'undefined' && !document.elementFromPoint)
   document.elementFromPoint = () => null
-}
 
 // CodeMirror measures a Range for its default character size on an empty doc; jsdom reports none, throwing out of a rAF after the test has already passed.
 if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
@@ -28,6 +27,5 @@ if (typeof globalThis !== 'undefined' && !('IntersectionObserver' in globalThis)
 }
 
 // jsdom has no scroller, so a list following its selection has nothing to scroll.
-if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView)
   Element.prototype.scrollIntoView = () => {}
-}

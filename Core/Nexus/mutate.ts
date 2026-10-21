@@ -110,7 +110,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       if (!cascade) return reply
       return ok({
         ...reply.value,
-        cascade: reply.value.cascade ? joinCascades(reply.value.cascade, cascade) : cascade,
+        cascade: joinCascades(reply.value.cascade, cascade),
       })
     })
   switch (req.op) {

@@ -202,9 +202,8 @@ describe('picking a page inside the parens', () => {
     expect(ac).toMatchObject({ syntax: 'markdown', part: 'title' })
     const edit = commitEdit(ac, 'Work Notes', { kept })
     let text = doc
-    for (const c of [...edit.changes].reverse()) {
+    for (const c of [...edit.changes].reverse())
       text = text.slice(0, c.from) + c.insert + text.slice(c.to)
-    }
     return { text, after: text.slice(edit.anchor) }
   }
 

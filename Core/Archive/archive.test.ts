@@ -640,14 +640,13 @@ describe('a delete from the Archive', () => {
     await scoredBeta()
     const trashed = await trash(await archive('Notes/Daily/Beta.md'))
     const notes = await trash('Notes', 'collection')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { permanentDelete: true } }),
+    )
+    await refreshTree(root)
     expect(
-      (
-        await settledMutate(
-          root,
-          { op: 'emptyBundle', bundlePath: notes },
-          { ...nexusDeps, permanentDelete: true },
-        )
-      ).ok,
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: notes }, nexusDeps)).ok,
     ).toBe(true)
     expect(message(await restore(trashed, UNDO))).toBe(
       'The place this belonged to no longer exists.',

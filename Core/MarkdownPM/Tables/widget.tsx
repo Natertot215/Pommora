@@ -355,9 +355,7 @@ class TableWidget extends ReactWidget {
     const dom = document.createElement('div') as TableDom
     dom.className = 'mdpm-tbl-widget'
     // A table drawn before reserves its last height until it renders, so CodeMirror measures it at size rather than collapsing it.
-    if (this.height.px > 0) {
-      dom.style.minHeight = `${this.height.px}px`
-    }
+    if (this.height.px > 0) dom.style.minHeight = `${this.height.px}px`
     if (MarkdownTableComp) {
       this.renderInto(dom, view)
     } else {

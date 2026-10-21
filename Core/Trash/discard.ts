@@ -3,7 +3,6 @@ import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
 import type { HostContext } from '../Contract/handlers'
-import { readLiveSetting } from '../Settings/settings'
 import { chainDir, fileStamp, stampedLeaf } from '../Bundles/bundle'
 import type { TrashMode } from './trashMode'
 
@@ -22,15 +21,13 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
 export interface TrashDeps {
   trashMode: TrashMode
   trashToSystem: (absPath: string) => Promise<void>
-  permanentDelete?: boolean
 }
 
-export async function trashDeps(root: string, ctx: HostContext): Promise<TrashDeps> {
+export async function trashDeps(ctx: HostContext): Promise<TrashDeps> {
   return {
     trashMode: await ctx.trashMode(),
     trashToSystem: (p) =>
       machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-    permanentDelete: await readLiveSetting(root, 'permanentDelete'),
   }
 }
 

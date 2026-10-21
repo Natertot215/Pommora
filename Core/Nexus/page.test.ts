@@ -8,7 +8,6 @@ import { renamePage, updatePageBody, movePage } from './page'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
-
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 

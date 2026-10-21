@@ -4,7 +4,6 @@ import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
 import { hiddenFolder, remainderUnder, rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
-
 import { readWatchScope } from '../Settings/settings'
 
 const startsUnder = (segs: string[], root: string): boolean =>

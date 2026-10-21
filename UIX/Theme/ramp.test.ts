@@ -65,9 +65,8 @@ describe('the paired blue row', () => {
 describe('anchors', () => {
   // Every anchor resolves to the design-system TOKEN, not the literal behind it, so a chip still indirects through --color-solid-* exactly as it did before the ramp existed.
   it('round-trips every spectrum solid back to its own token', () => {
-    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]) {
+    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[])
       expect(cellColor(ANCHOR_CELLS[key])).toBe(c.solid[key])
-    }
   })
 
   // grey-6 falls inside the darkness-offset zone, so a chip carrying the legacy `grey` renders a step darker than it did before the ramp. Pinned, not hidden.
@@ -122,9 +121,8 @@ describe('isColorKey', () => {
   })
 
   it('refuses malformed keys by membership rather than coercion', () => {
-    for (const bad of ['', 'red-', 'red-8', 'red-01', '-3', 'Red-3', 'chartreuse', 'grey-4-2']) {
+    for (const bad of ['', 'red-', 'red-8', 'red-01', '-3', 'Red-3', 'chartreuse', 'grey-4-2'])
       expect(isColorKey(bad)).toBe(false)
-    }
   })
 })
 
@@ -134,9 +132,8 @@ describe('the anchors survive the generation unchanged', () => {
     const chromatic = (Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]).filter(
       (k) => k !== 'grey',
     )
-    for (const key of chromatic) {
+    for (const key of chromatic)
       expect(cellPaint(ANCHOR_CELLS[key])).toEqual({ base: c.solid[key] })
-    }
   })
 
   it('seats default on grey-4 so the two share one source', () => {
@@ -146,16 +143,14 @@ describe('the anchors survive the generation unchanged', () => {
 
 describe('colorNameFor', () => {
   it('normalizes every legacy solid name onto its anchor cell', () => {
-    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[]) {
+    for (const key of Object.keys(SPECTRUM) as (keyof typeof SPECTRUM)[])
       expect(colorNameFor(key)).toBe(ANCHOR_CELLS[key])
-    }
   })
 
   it('passes every cell in the grid straight through', () => {
     for (const family of RAMP_FAMILIES) {
-      for (const step of RAMP_STEPS) {
+      for (const step of RAMP_STEPS)
         expect(colorNameFor(`${family}-${step}`)).toBe(`${family}-${step}`)
-      }
     }
   })
 

@@ -72,9 +72,8 @@ async function isExistingDir(p: string): Promise<boolean> {
 
 /** Never prompts — a launch must not block on a modal (headless runs and tests must not hang). */
 export async function resolveRestorePath(config: AppConfig): Promise<string | null> {
-  if (config.lastNexusPath && (await isExistingDir(config.lastNexusPath))) {
+  if (config.lastNexusPath && (await isExistingDir(config.lastNexusPath)))
     return config.lastNexusPath
-  }
   return null
 }
 

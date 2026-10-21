@@ -109,9 +109,8 @@ function usePillPresence(views: SavedView[]): {
 
   const onAnimEnd = (id: string): void => {
     if (exiting === id) exited()
-    else if (entering.has(id)) {
+    else if (entering.has(id))
       setEntering((s0) => (s0.has(id) ? new Set([...s0].filter((x) => x !== id)) : s0))
-    }
   }
   return { entering, exiting, beginExit: setExiting, onAnimEnd, deleteView }
 }

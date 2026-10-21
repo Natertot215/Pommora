@@ -403,8 +403,7 @@ describe('setSpaceColor', () => {
   })
 
   it('refuses keys outside the grammar', async () => {
-    for (const bad of ['blue-8', 'chartreuse', '']) {
+    for (const bad of ['blue-8', 'chartreuse', ''])
       expect((await setSpaceColor(root, 'sp-pom', bad)).ok).toBe(false)
-    }
   })
 })

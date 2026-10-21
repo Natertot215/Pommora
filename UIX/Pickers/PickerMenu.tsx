@@ -9,22 +9,21 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { pickerBloom } from '../Animations/animations.css'
-import { useExitPresence } from '../Animations/useExitPresence'
-import { useHeld } from '../Animations/useExitPresence'
+import { useExitPresence, useHeld } from '../Animations/useExitPresence'
 import { GlassSurface } from '../Glass/GlassSurface'
 import { GlassWindow } from '../Glass/GlassWindow'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 import { useFocusScope } from '../Interactions/focusScope'
 import { keepFocus } from '../Interactions/shared'
-
-/** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
-export const PICKER_PORTAL_ATTR = 'data-picker-portal'
 import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
 import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import type { PaneResize } from './usePaneResize'
 import * as s from './picker-base.css'
+
+/** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
+export const PICKER_PORTAL_ATTR = 'data-picker-portal'
 
 export const VIEWPORT_MARGIN = 8
 

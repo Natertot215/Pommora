@@ -1,17 +1,21 @@
 import type { Handlers } from '../Contract/handlers'
 import { ok, type Result } from '../Contract/result'
 import { sessionRoot } from '../Nexus/session'
-import { trashDeps } from './discard'
 import type { TrashMode } from './trashMode'
 import { SETTING_DEFAULTS } from '../Settings/personalization'
+import { readLiveSetting } from '../Settings/settings'
 
 export const trashHandlers = {
   'delete:facts': async (
     ctx,
   ): Promise<Result<{ trashMode: TrashMode; permanentDelete: boolean }>> => {
     const root = sessionRoot()
-    const { trashMode, permanentDelete = SETTING_DEFAULTS.permanentDelete } =
-      root === null ? { trashMode: await ctx.trashMode() } : await trashDeps(root, ctx)
-    return ok({ trashMode, permanentDelete })
+    return ok({
+      trashMode: await ctx.trashMode(),
+      permanentDelete:
+        root === null
+          ? SETTING_DEFAULTS.permanentDelete
+          : await readLiveSetting(root, 'permanentDelete'),
+    })
   },
 } satisfies Partial<Handlers>

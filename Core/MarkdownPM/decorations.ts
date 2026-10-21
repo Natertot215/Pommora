@@ -18,7 +18,6 @@ import {
   type Text,
   type Transaction,
 } from '@codemirror/state'
-
 import {
   tokenizeChunk,
   activeTokenIndices,

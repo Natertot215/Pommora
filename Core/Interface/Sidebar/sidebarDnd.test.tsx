@@ -203,9 +203,8 @@ describe('sidebar drag — Esc abort', () => {
     await act(async () => root.unmount())
     const addedFns = adds.mock.calls.map(([type, fn]) => ({ type, fn }))
     const removedFns = removes.mock.calls.map(([, fn]) => fn)
-    for (const { type, fn } of addedFns) {
+    for (const { type, fn } of addedFns)
       expect(removedFns, `leaked '${type}' listener`).toContain(fn)
-    }
   })
 })
 
@@ -336,9 +335,7 @@ describe('sidebar drag — keyboard focus after a remounting drop', () => {
         el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }))
       })
     await key(row('p1'), ' ')
-    for (let i = 0; i < 4 && !region().startsWith('Into'); i++) {
-      await key(document, 'ArrowUp')
-    }
+    for (let i = 0; i < 4 && !region().startsWith('Into'); i++) await key(document, 'ArrowUp')
     expect(region()).toBe('Into S1.')
     await key(document, ' ')
     await act(async () => {

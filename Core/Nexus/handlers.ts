@@ -201,7 +201,7 @@ export const nexusHandlers = {
     const read = mutateRequest.safeParse(raw)
     if (!read.success) return fault('Malformed request.')
     const req = read.data
-    const reply = await handleMutate(root, req, await trashDeps(root, ctx))
+    const reply = await handleMutate(root, req, await trashDeps(ctx))
     if (!reply.ok) return reply
     const { cascade } = reply.value
     // A delete's or an empty's linkers changed frontmatter alone, which `values:changed` carries.

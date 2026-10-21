@@ -308,9 +308,8 @@ describe('activeTokenIndices', () => {
   it('but every position inside it still reveals', () => {
     const tokens = tokenize('[[P]]')
     const idx = tokens.findIndex((tk) => tk.kind === 'wikiLink')
-    for (const caret of [0, 1, 2, 3, 4]) {
+    for (const caret of [0, 1, 2, 3, 4])
       expect(activeTokenIndices(tokens, caret, caret).has(idx)).toBe(true)
-    }
   })
 
   it('and the exception is a link’s alone — bold reveals even when rested on', () => {

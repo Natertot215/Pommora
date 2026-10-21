@@ -7,9 +7,7 @@ import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 
 const roots: string[] = []
 afterEach(async () => {
-  for (const r of roots.splice(0)) {
-    await rm(r, { recursive: true, force: true })
-  }
+  for (const r of roots.splice(0)) await rm(r, { recursive: true, force: true })
 })
 
 async function seed(): Promise<{ root: string; a: string; b: string }> {

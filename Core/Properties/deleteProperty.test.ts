@@ -46,9 +46,8 @@ installMachine({
   ...base,
   async lock(key, fn) {
     // Page locks only: an assignment during setup would otherwise pin this before the act under test has begun.
-    if (key.endsWith('.md')) {
+    if (key.endsWith('.md'))
       recordedBeforeScrub ??= (await readdir(join(root, '.trash')).catch(() => [])).length > 0
-    }
     return base.lock(key, fn)
   },
 })

@@ -42,9 +42,8 @@ export function nexusStore(db: DatabaseSync) {
   }
 
   const addEntries = (nexusId: string, add: Wire.RingEntry[]): void => {
-    for (const entry of add) {
+    for (const entry of add)
       insertRing.run(nexusId, entry.keyId, entry.holder, entry.wrapped, entry.createdMs)
-    }
   }
 
   return {
