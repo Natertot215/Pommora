@@ -45,7 +45,7 @@ The work is removal-first. Before anything archive-shaped lands, the Trash's han
 | 6A | +57 | +102 | +120 (+190 / −70) | +1,152 |
 | 6B | +264 | +644 | +755 (+1,050 / −295) | +1,907 |
 | 7 | docs | docs | +3 (+4 / −1) | +1,910 |
-| Final Verification | — | — | | |
+| Final Verification | — | — | +183 (+899 / −716) | +2,093 |
 
 #### File Placement
 
@@ -102,7 +102,13 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `moveIntoStore` • function | Moves a bundle from one store to another: mints (with an optional kept leaf), writes the record ahead, relocates the artifact, removes the source. | `Core/Bundles/bundle.ts` |
 | `place` • record field, `Place`, `placeOf` • type, function | `{ above?, below? }`: the ids of an item's next and previous siblings in its origin's order when it left, read from the tree as it leaves. | `Core/Bundles/record.ts` |
 | `trail` • record field, `trailAbove` • function | The ids of the containers above an item's parent, Collection first, and their one derivation from the tree. | `Core/Bundles/record.ts` |
-| `originOf`, `originWithin` • functions | A record's origin trail, read from the tree while it holds the origin and from the stored `trail` once it doesn't; whether that origin lies within a Set (Findings 3.4). | `Core/Bundles/record.ts` |
+| `originOf`, `originWithin`, `collectionOf` • functions | A record's origin trail, read from the tree while it holds the origin and from the stored `trail` once it doesn't; whether that origin lies within a Set (Findings 3.4); the Collection an origin sits in (`trail[0] ?? parent`). | `Core/Bundles/record.ts` |
+| `archivedWithin` • function | The bundles in a Collection's Archive archived from within one Set, by ids, each listed whole with its origin and held trail; `bundles:list`'s `within` and a Set's move read it. | `Core/Bundles/bundle.ts` |
+| `fileInto` • function | The one bundling sequence: mint, write the record, move the item in, and remove the bundle when the move throws; `archiveOp`, `moveIntoStore`, and the Undo into an Archive call it. | `Core/Bundles/bundle.ts` |
+| `patchRecord`, `readRawRecord` • functions | A record edited in place, and its raw read, so the record's filename lives in one file. | `Core/Bundles/record.ts` |
+| `icon` • record field | A container's or Space's icon, gathered once through `sidecarIdentity`, so a listing reads records alone. | `Core/Bundles/record.ts`, `Core/Files/sidecar.ts` |
+| `collectionsElsewhere`, `archiveOwned` • functions | The Collection ids a Nexus holds outside its tree (every root folder's sidecar the tree doesn't hold, and the Collections in the Trash); whether an Archive still has an owner — live, unreadable, or elsewhere — for the open pass and an Undo into an Archive. | `Core/Bundles/bundle.ts` |
+| `DateHeading` • component | The measured date heading both browsers render: label, hidden sample, and the style menu's right-click. | `Core/Bundles/DateHeading.tsx` |
 | `archive` • record field | On a Trash record alone: the Archive bundle a delete from the Archive took the item out of. | `Core/Bundles/record.ts` |
 | `placeRecord` • function | The restore's one placement step for either store: destination, resolution with the siblings and writer of the order it lands in, the composed order, and the disk-asking name, answering the placement, the `writeOrder` step that lands it, `landedAs`, and `into` for an Undo back into the Archive. | `Core/Bundles/placement.ts` |
 | `slotOf` • function | Where a returning id re-enters an order from its recorded neighbours: above, below, first, or last. | `Core/Bundles/placement.ts` |
@@ -115,12 +121,20 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `storesChanged`, `changesStores` • emitter, predicate | The one change signal for either store, emitted for the ops that change a store or the crumbs its rows draw, and by a browser's batch (`trashChanged` replaced). | `Core/Session/nexusSlice.ts`, `Core/Nexus/mutateRequest.ts` |
 | `bundled`, `landedAs` • outcome fields | The bundle any removal minted (`trashed` renamed); the title a restore took when it stepped aside. | `Core/Nexus/mutateRequest.ts` |
 | `archive` • mutate op | Moves a page or Set into its Collection's Archive, under a bundle name it's handed when the item could have been minted under it, as a restore's Undo hands it to keep the Archived date. | `Core/Nexus/mutateRequest.ts`, `Core/Archive/archive.ts` |
-| `archiveOp`, `restoreArchived`, `collectionArchive`, `archivedSetIds` • functions | The Archive's two ops; a Collection's Archive read once for F-4's disposal (its pages and its archived Sets' ids); the ids of the Sets a bundle holds, read from their sidecars, for the gone edit a Set's departure runs. | `Core/Archive/archive.ts` |
+| `archiveOp`, `restoreArchived`, `collectionArchive` • functions | The Archive's two ops; a Collection's Archive read once for F-4's disposal (its pages and its archived Sets' ids). | `Core/Archive/archive.ts` |
+| `archivedSetIds` • function | The ids of the Sets a bundle holds, read from their sidecars, for the gone edit a Set's departure runs. | `Core/Nexus/configReach.ts` |
+| `ArchiveStore`, `archiveStoreOf` • type, function | The archive store's one declaration, and the one rule admitting a Collection id as an Archive store (null unless it can name a folder). | `Core/Paths/nexusPaths.ts`, `Core/Paths/names.ts` |
 | `refileArchived`, `refileMoved`, `refileLanded`, `settleArchives` • functions | F-6's carry and trail rewrite; its triggers at the settle's comparison of trees and at either restore's landing; the open pass (F-5's orphans, F-6's re-file). | `Core/Archive/refile.ts` |
 | `dropDeparture` • function | The one drop of a departing id from its order, by kind: a page's or Set's sidecar order, a Collection's or Space's `state.json` order. | `Core/Nexus/reorder.ts` |
 | `dropContextOrder` • function | A Context gone for good takes its panel id and its Space order from `state.json` (`dropSpaceOrder` renamed). | `Core/Nexus/reorder.ts` |
 | `findContainerById`, `containerTrailById` • functions | A container by id, and its trail, beside `findContainerWhere` and `containerTrailWhere`: one spelling for every by-id read. | `Core/Nexus/treePatch.ts` |
-| `returningNames` • function | The restore's two-map relink, hoisted for both restores. | `Core/Nexus/settle.ts` |
+| `returningNames`, `returningCascade` • functions | The restore's two-map relink, hoisted for both restores; the arrival both restores enter, repairing the landed files (the Trash by its recorded targets, the Archive by the returning pages' own keys) before the live world's sweep. | `Core/Nexus/settle.ts` |
+| `withUnswept` • function | The repair's write failures carried on the arrival's cascade, for both restores. | `Core/Nexus/cascade.ts` |
+| `linkWorld` • function | The frozen world every strip and refill reads, the tree's pages and the Archive's, built once. | `Core/Nexus/heldPages.ts` |
+| `indexReady` • function | The content index's readiness, one gate for every query that must not read half-filled tables. | `Core/Index/contentIndex.ts` |
+| `outsideArchive` • function | C-4's one home: the files a confirmation's count and the push's page list name. | `Core/Properties/governedSweep.ts` |
+| `removeOwn` • function | A removal recorded as the app's own, beside `relocate`. | `Core/Files/atomicWrite.ts` |
+| `setFace` • function | Swap's face rule, set once for the component and the code block's pill. | `UIX/Animations/Swap.tsx` |
 | `goneContainers` • function | The configuration edit for containers that left, from their ids. | `Core/Nexus/configReach.ts` |
 | `ARCHIVE_DIR_REL`, `archiveDirRel`, `archiveSegs`, `archivedCollectionIdOf`, `isArchived` • constants, functions | The Archive's location behind one resolver, and the one predicate for a path inside it. | `Core/Paths/nexusPaths.ts` |
 | `governedReach`, `collectionFolders` • functions | The one governed reach over every Collection and the Archive, or one Collection and its Archive; every Collection folder the tree it's handed holds, damaged ones included (moved from `assignment.ts`). | `Core/Properties/governedSweep.ts` |
@@ -132,7 +146,7 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `sidecarsUnder` • function | Container sidecars under both content roots or one folder (hoisted from the asset migration). | `Core/Files/walk.ts` |
 | `carrySetAside` • function | Writes an excluded entry's or the asset directory's landing before its folder moves and drops the source after. | `Core/Settings/settings.ts` |
 | `liftSetAside` • function | Moves excluded folders and the asset directory out of a container being archived or trashed, into its parent. | `Core/Nexus/folderEntity.ts` |
-| `isTopSet` • function | Whether a Set path sits directly under its Collection. | `Core/Nexus/treePatch.ts` |
+| `isTopContainer`, `topContainerOf`, `namesContainer` • functions | A Collection or a Set directly inside its Collection, the depth that offers views and an Archive place; the one such container a selection or place belongs to; a target that is a container or the archive place. | `Core/Nexus/treePatch.ts`, `Core/Nexus/entities.ts` |
 | `Core/Trash/trashMode.ts`, `discard.ts` • files | The Trash Mode leaf; where a deletion goes. | `Core/Trash/` |
 | `LISTED` • constant | The one SQLite list binding, moved to the driver both stores import. | `Desktop/Store/driver.ts` |
 | `restoreMenuItems` • function | The one Restore and Delete builder for the Trash, File History, and the Archive. | `Core/Actions/restoreMenu.ts` |
@@ -146,14 +160,14 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `spendUndo`, `offerUndo` • functions | Spends any armed Undo by its key (`spendBundle` renamed); offers the one restore-and-spend Undo a delete, an archive, or a batch arms. | `Core/Interface/Confirm/confirmations.ts` |
 | `askTrashing` • function | The delete's question, asked for one item or a batch. | `Core/Interface/Confirm/confirmations.ts` |
 | `confirmArchiving`, `archiveHistoryDays`, `archiveColumnStyle` • settings | Confirm Before Archiving; Archive History Timeframe; the Archived column's style. | `Core/Settings/personalization.ts` |
-| `settingWithin` • function | A setting that follows another until picked. | `Core/Settings/personalization.ts` |
+| `boundOf` • function | The setting a bounded setting follows until picked; `settingOf` answers an unset bounded key with its bound. | `Core/Settings/personalization.ts` |
 | `ARCHIVE_ROW`, `REMOVAL_ROWS`, `'title:archive'` • rows, action | Archive above Delete in every page and Set menu. | `Core/Actions/pageMenu.ts` |
 | `{ kind: 'archive'; id }` • place kind | ArchiveView's place in navigation. | `Core/Navigation/navRef.ts` |
-| `ARCHIVE_ICON`, `archiveOwnerOf` • constant, function | The archive glyph; the Collection or top-level Set an archive place belongs to. | `Core/Archive/archivePlace.ts` |
+| `ARCHIVE_ICON`, `ARCHIVE_TITLE` • constants | The archive glyph and title, on `matrixKind.ts`'s precedent. | `Core/Archive/archivePlace.ts` |
 | `ArchiveView` • component | The table of a Collection's or top-level Set's archived items. | `Core/Archive/ArchiveView.tsx`, `archive-view.css` |
 | `Reader`, `openReader`, `closeReader` • type, actions | The one read-only reader slot (`historyTarget`, `openHistory`, `closeHistory` replaced). | `Core/Session/windowSlice.ts` |
 | `PageReaderWindow` • component | The one read-only reader (`PageHistoryWindow` renamed), with History and Archive branches. | `Core/Interface/Windows/PageReaderWindow.tsx` |
-| Archive Drive • script | Groups 1 to 6B over CDP, gated by `POMMORA_ARCHIVE_LANDED`. | `.claude/scripts/Archive Drive/` |
+| Archive Drive • script | Groups 1 to 6B over CDP. | `.claude/scripts/Archive Drive/` |
 | The exclusion-scope entry • IssuesPM entry | Every exclusion write re-reads the Nexus; scope changes could land incrementally. | `.claude/IssuesPM.md` |
 
 **REMOVED**
@@ -163,6 +177,8 @@ Every file the work adds, moves, renames, splits, or removes, with its home, its
 | `excludedWithin`, `editExcluded`, `followExcludedFolders`, `exclusionWriteRefusal`, `releaseExcludedFolders`, `reseatExcludedFolders` • functions | The follow-after carry, its refusal, and the Trash's release and reseat. | `Core/Settings/settings.ts` |
 | `excluded` • record field | The excluded entries a trashed container carried. | `Core/Trash/record.ts` |
 | `NON_CORPUS_TOP` • constant | Inlined into its one reader. | `Core/Paths/nexusPaths.ts` |
+| `settingWithin`, `isTopSet`, `ownsArchivePlace`, `archiveOwnerOf`, `findContainerWhere` • functions | Each folded onto one rule in the final review: `settingOf`'s bound, `isTopContainer`, `topContainerOf`, `containerAt`. | `Core/Settings/personalization.ts`, `Core/Nexus/treePatch.ts`, `Core/Archive/archivePlace.ts` |
+| `restoreArtifact` • function | Renamed `restoreTrashed`, beside `restoreArchived`. | `Core/Trash/spend.ts` |
 | `Core/Trash/bundle.ts`, `record.ts`, `resolve.ts`, `trashRow.ts`, `trashRows.ts` • files | Moved into the owner, `trashMode.ts`, and `discard.ts`. | `Core/Trash/` |
 | `trashChainDir`, `deletedPathOf`, `deletedAtOf`, `trashedPages`, `trashedPagesOf`, `trashRows`, `trashRowOf` • functions | Generalized under the owner's names. | `Core/Trash/` |
 | `TrashRow`, `TrashCrumb`, `deletedAt` • types, field | Renamed `BundleRow`, `BundleCrumb`, `storedAt`. | `Core/Trash/trashRow.ts` |
@@ -10920,7 +10936,7 @@ In the AFTER blocks below, a `~` line is context as an earlier phase leaves it (
 - **A Date Column Fits Its Widest Date (the owner, 10-21-2026):** `useDateColumn` answers the widest string its style can produce (`widestDate`: a late-September Wednesday at noon, seven days or twelve months ago for a relative style) and the width a hidden sample measures once per style, stacked under the heading's label so the column is never narrower than either; ArchiveView's and the Trash's date columns both take it, the Trash's fixed 140px lane and ellipsis leaving. The drive proves no date is cut under the widest style.
 - **The Reader's Lock Is the Stroked Glyph (the owner, 10-21-2026):** the filled custom glyph read brighter than the toolbar's Close beside it though both wore `--label-control`; the reader draws Lucide's stroked `lock` at the toolbar's icon size, and the sidebar's lock glyph keeps the filled one.
 - **Every Row Wears Its Own Icon (Last Call 8):** a Collection's and a Space's sidecar icon are read as a Set's is, so the Trash's Collection and Space rows wear their own icons too, where this phase first narrowed the rule to pages and Sets.
-- **One Reader for "What Left From Within This Set":** `bundles:list`'s `within` reads through `archivedWithin`, which answers each listed bundle whole with its origin and held trail, and refuses a `within` on the Trash; `originOf` and `originWithin` are `refile.ts`' own.
+- **One Reader for "What Left From Within This Set":** `bundles:list`'s `within` reads through `archivedWithin`, which answers each listed bundle whole with its origin and held trail, and refuses a `within` on the Trash.
 - **One Owner Rule, One Shown Rule:** `ownsArchivePlace` names a Collection or a top-level Set for `archiveOwnerOf` and the archive cores; `useHostShown` says a view is shown for ArchiveView, the bar's declaration, and the count's publication.
 
 ##### Found False or Drifted at HEAD
@@ -11124,6 +11140,11 @@ Each document reads as its CHANGE item states, every sentence replaced in place;
 - **The Swap's Fixed Cell (Task 5-1):** "Copied" sits centered in the code block's pill, and Settings' Clear button holds "Cleared"'s width at rest.
 - **A Following Timeframe (Task 6A-3):** picking the step a following Archive History Timeframe already shows leaves it following, since the picker ignores a pick of the current value.
 - **An Undo Across a Set's Move (Task 6A-1):** an archive's Undo names the bundle path the archive minted; moving the item's Set into another Collection carries that bundle, so an Undo pressed afterwards posts a refusal, the item sitting restorable in the new Collection's Archive. A delete's Undo from the Archive (Task 6B-5) shares the shape; the Trash's bundles never move.
+- **Sync and the Open Pass (Final Review):** a device whose first pull lands `.nexus/archive/<id>` before the Collection's sidecar sweeps that Archive into the Trash on open, and the swept records carry no `archive`, so a Trash restore lands them live; the pass predates Sync and is gated or softened before Sync lands.
+- **An Outside Drag From the Archive (Final Review):** a Finder or Sync move out of the Archive pairs as a move from the archive path, so path links naming the origin aren't re-spelled where it lands (I-067's shape).
+- **A Stale Browser Under Host-Side Moves (Final Review):** the settle, the open pass, and Sync move bundles with no renderer op, and only ops emit `storesChanged`, so an open ArchiveView or reader shows what it opened with until re-shown; main classes store paths as ignored, so a `stores:changed` push from the settle is the follow-up.
+- **The Archive Tab Under an Unreadable Set (Final Review):** an archive place carries no path, so its tab drops while its Set's sidecar reads unreadable, where the Set's own tab survives.
+- **An ID-less Archived Row (Final Review):** an archive inside the watcher's quiet window after an outside edit stripped the page's ID lands a record with no id, so its row neither opens nor checks and its Undo is skipped.
 
 #### Deviations
 
@@ -11168,3 +11189,19 @@ Phase 7 measured +3 (+4 / −1) where it was written as documents alone: its spo
 
 - **A Delete's Link Count Leaves the Archive Out (Task 7-1):** a delete's "N Internal Links" counted every page the governed sweep stripped a Link value from, archived pages included, where decision C-4 has every count name only what lies outside the Archive; `deleteCascade` keeps stripping the archived pages and leaves their paths out of the count. +3, `Core/Nexus/cascade.ts`.
 - **The Documents Read to the Reference (Task 7-1):** the owner's direction of 10-20-2026 governed the rewrite: *§The Archive* in `CollectionsPM.md` is the owner's, fact-fixed in five places and added to nowhere; every other document took only the sentences the code made false, and an opus-high spotcheck against `r/studio-documentation` folded fourteen register and truth findings before the commit. The issues index renumbered on I-007's removal (old I-008 to I-074 are I-007 to I-073; the two new entries are I-074 and I-075), and every citation under `.claude/` was re-pointed.
+
+The final review measured +183 (+899 / −716) over `ddc6f8843..b495bf190`: two waves of two `opus-xhigh` reviewers and their slices, then Neutral Gate 2 (yes on every lens, on `da81976cf`) whose accepted corrections landed as one fold, whose `opus-xhigh` spotcheck's three findings landed as one more; what they changed beyond folds:
+
+- **Bundles Imports No Consumer (Final Review):** Phase 6B had left `archivedWithin`, `originOf`, and `originWithin` in `refile.ts`, with `bundles:list` reaching up into `Core/Archive` for them. They live in `Core/Bundles` (`archivedWithin` beside `listBundles`, the other two with `collectionOf` in the record), and `Core/Bundles` imports neither `Core/Trash` nor `Core/Archive`, as *§Concepts* said.
+- **The Returning Files Repaired First (Final Review, Task 4-1):** the first wave's fold hoisted the arrival into one `returningCascade` and ran the live world's sweep before the Trash's identity repair, so a returning page's bare link to its returning sibling was re-pointed at a namesake made meanwhile; `restoreArchived` had the same outcome since Phase 4, having no repair and dropping `own`. Both restores enter one arrival that repairs the landed files first, the Trash by the targets its delete recorded (its Frozen rule) and the Archive by the returning pages' own keys, then sweeps; D-1 governs live links pointing at an archived page, not the archived page's own. Four pins.
+- **One Bundling Sequence (Final Review):** three paths minted a bundle, wrote its record, and moved the item in, and only the Undo removed the bundle when the move threw, leaving a record-only folder that took the retry's name. One `fileInto` owns it.
+- **The Orphan Rule Reads Every Root Folder (Final Review, F-5):** the open pass exempted live Collections, root-level excluded entries' sidecars, and Collections in the Trash, so a Collection folder renamed hidden in Finder had its Archive swept into the Trash. It exempts the sidecar id of every root folder the tree doesn't hold, through one `collectionsElsewhere`.
+- **A Failure Line Counts Every File (Final Review, C-4):** the first wave's fold had a delete's "Couldn't update links" count leave archived write failures out, which also dropped the record's `partial` mark; C-4 governs confirmations and what-changed counts, and a failure line names what wasn't kept current, so the count was restored and `outsideArchive` serves the counts and the push's page list alone.
+- **Container Rules Beside the Tree (Final Review):** `isTopSet`, `ownsArchivePlace`, the Sidebar's `depth <= 1`, and the crumbs' `i <= 1` spelled one rule, exported from `Core/Archive`; `isTopContainer` and `topContainerOf` sit beside `findContainerById` and `namesContainer` beside `isContainer`, and `archivePlace.ts` keeps the glyph and the title.
+- **ArchiveView's Heading Glyphs (Final Review, G-1):** Phase 6B's headings carried no glyph where TableView draws one on every column and the Trash its own; they wear TableView's, a change made after the owner's screenshots and shown to him.
+- **The Index's Readiness Gate (Final Review):** `archivedPageIds` read the content index without the gate every other query applies, so after a seed that threw the frozen worlds lost the archived pages; one `indexReady()` serves the three gates.
+- **An Undo Into an Archive Whose Collection Is Gone Refuses (Neutral Gate 2, Task 4-4):** Phase 4 pinned that ⌘Z on a delete-from-the-Archive lands in its Archive whatever became of the Collection, the next open sweeping an orphan into the Trash; three independent reads asked for a refusal, since the page sat where no view reaches until then. Placement refuses as parent gone unless a live Collection has the id or `collectionsElsewhere` (moved beside `listBundles`) knows it, so an Undo into a trashed Collection's Archive still lands; the pin split.
+- **The Icon Rides in the Record (Neutral Gate 2, Last Call 8):** Phase 6B gave every row its own icon by reading each container's sidecar per row per listing, new I/O on every store action while a browser is shown; the record declares `icon`, gathered once through `sidecarIdentity`, and the rows build with no I/O. A bundle made before carries none and draws its kind's default.
+- **The Lift Undone (Neutral Gate 2, Task 1-2):** `liftSetAside` ran before the bundling in both ops with nothing to put the folders back when the move threw; it answers an undo, runs it from its own refusal or throw, and each op runs it from anywhere between the lift and the artifact's move.
+- **One Owner Rule for an Archive (the spotcheck):** the open pass kept an Archive whose Collection was live, whose any root sidecar read unreadable, or which `collectionsElsewhere` knew, while placement's Undo branch checked live or elsewhere alone; one `archiveOwned` beside `collectionsElsewhere` answers both.
+- **Not Taken at the Gate:** replacing `SETTING_BOUNDS`, the bounded `settingOf`, the write clamp, and the capped picker with a `Math.min` and a hint (ruled at Phase 6A); one `nexusPages` read through a delete (its gather reads before the move and its cascade after — two worlds, proven by two failing tests); the archived reader noticing an outside removal (main classes everything under `.nexus/` outside Contexts as ignored, so no renderer signal exists — the store push below).
