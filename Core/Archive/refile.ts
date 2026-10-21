@@ -46,7 +46,22 @@ async function refile(
     await rmwJsonStrict(join(bundle, RECORD_FILENAME), (raw) => ({ ...raw, trail }))
 }
 
-/** Each record in `from`'s Archive whose origin lies within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */
+/** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail the tree gives the origin now, or on the one its record stored once the tree no longer holds it. */
+export async function archivedWithin(root: string, setId: string, from: string, tree: NexusTree) {
+  if (!holdsName(from)) return []
+  return (await listBundles(root, { kind: 'archive', id: from })).flatMap(
+    ({ bundlePath, record }) => {
+      const origin = originOf(record)
+      if (!origin) return []
+      const held = trailAbove(tree, origin.parent)
+      return origin.parent === setId || (held ?? origin.trail).includes(setId)
+        ? [{ bundlePath, record, origin, held }]
+        : []
+    },
+  )
+}
+
+/** Each record archived from within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */
 async function refileArchived(
   root: string,
   setId: string,
@@ -55,15 +70,10 @@ async function refileArchived(
   tree: NexusTree,
 ): Promise<void> {
   const above = trailAbove(tree, setId)
-  if (!above || !holdsName(from)) return
-  for (const { bundlePath, record } of await listBundles(root, { kind: 'archive', id: from })) {
-    const origin = originOf(record)
-    if (!origin) continue
-    const held = trailAbove(tree, origin.parent)
-    const at = (held ?? origin.trail).indexOf(setId)
-    if (origin.parent !== setId && at === -1) continue
-    const trail = held ?? [...above, setId, ...origin.trail.slice(at + 1)]
-    await refile(root, bundlePath, origin.trail, trail, from, to)
+  if (!above) return
+  for (const { bundlePath, origin, held } of await archivedWithin(root, setId, from, tree)) {
+    const below = origin.trail.slice(origin.trail.indexOf(setId) + 1)
+    await refile(root, bundlePath, origin.trail, held ?? [...above, setId, ...below], from, to)
   }
 }
 

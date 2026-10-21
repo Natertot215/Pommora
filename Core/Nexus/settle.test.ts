@@ -658,9 +658,8 @@ describe('the settle', () => {
     const real = bundles.listBundles
     const carry = vi
       .spyOn(bundles, 'listBundles')
-      .mockImplementation((r, store) =>
-        store.kind === 'archive' ? Promise.reject(new Error('boom')) : real(r, store),
-      )
+      .mockImplementationOnce(real)
+      .mockRejectedValue(new Error('boom'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     const moved = await handleMutate(
       root,
@@ -669,7 +668,7 @@ describe('the settle', () => {
     )
     expect(moved.ok).toBe(true)
     await settleNow(pusher, root)
-    expect(carry).toHaveBeenCalledTimes(1)
+    expect(carry).toHaveBeenCalledTimes(2)
     expect(channels()).toEqual(['nexus:changed', 'values:changed'])
     expect(logged).toHaveBeenCalledWith('archive: the carry failed:', 'boom')
   })

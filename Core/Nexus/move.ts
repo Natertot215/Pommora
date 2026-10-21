@@ -7,9 +7,8 @@ import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { archivedSetIds, goneEdit, reachConfig, reachReport } from './configReach'
-import { owningCollection } from './treePatch'
-import { holdsName } from '../Paths/names'
-import { archiveDirRel } from '../Paths/nexusPaths'
+import { containerAt, owningCollection } from './treePatch'
+import { archivedWithin } from '../Archive/refile'
 import { dropDeparture, setChildOrder } from './reorder'
 
 async function ends(
@@ -56,12 +55,16 @@ export async function moveSetOp(
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
   const held = await liveTreeOf(root)
   const owner = owningCollection(held, req.path)?.id
-  // What was archived from within it moves with it, under the chain it left.
-  const archived =
-    left !== null && owner && holdsName(owner)
-      ? await archivedSetIds(root, join(root, archiveDirRel(owner), req.path))
-      : []
-  const edit = left === null ? null : goneEdit(held, 'set', req.path, archived)
+  const setId = containerAt(held, req.path)?.id
+  // What was archived from within it moves with it.
+  const within =
+    left !== null && owner && setId ? await archivedWithin(root, setId, owner, held) : []
+  const archived = await Promise.all(
+    within.map(({ bundlePath, record }) =>
+      record.entity === 'set' ? archivedSetIds(root, join(root, bundlePath)) : [],
+    ),
+  )
+  const edit = left === null ? null : goneEdit(held, 'set', req.path, archived.flat())
   const r = await moveFolderEntity(root, at.value.src, at.value.dst)
   if (!r.ok) return r
   await dropDeparture(root, held, 'set', req.path)

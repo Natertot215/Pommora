@@ -213,6 +213,68 @@ describe('the comparison — a Set the settle sees move carries what was archive
     expect(views[0].filter).toEqual(filter(['set_keep']))
   })
 
+  it('a Set moved out of its Collection takes the archived Sets within it from the views it left after a Set above it was renamed', async () => {
+    const filter = (values: string[]) => ({
+      match: 'all',
+      rules: [{ property_id: '_location', op: 'is', values }],
+    })
+    await writeFile(
+      at('Notes', '_pagecollection.json'),
+      JSON.stringify({
+        id: NOTES,
+        views: [{ id: 'view_1', name: 'V', type: 'table', filter: filter([DEEP, 'set_keep']) }],
+      }),
+    )
+    await reread()
+    await archive('Notes/Daily/Sub/Deep', 'set')
+    expect(
+      (await mutate({ op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Days' })).ok,
+    ).toBe(true)
+    expect(
+      (
+        await mutate({
+          op: 'moveSet',
+          path: 'Notes/Days/Sub',
+          newParentPath: 'Other',
+          order: [SUB],
+        })
+      ).ok,
+    ).toBe(true)
+    const { views } = JSON.parse(await readFile(at('Notes', '_pagecollection.json'), 'utf8'))
+    expect(views[0].filter).toEqual(filter(['set_keep']))
+  })
+
+  it('an archived Set carried with a Set that changes Collection keeps its own saved views', async () => {
+    const own = JSON.stringify({
+      id: DEEP,
+      views: [
+        {
+          id: 'view_1',
+          name: 'V',
+          type: 'table',
+          filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: [DEEP] }] },
+        },
+      ],
+    })
+    await writeFile(at('Notes', 'Daily', 'Sub', 'Deep', '_pageset.json'), own)
+    await reread()
+    const deep = await archive('Notes/Daily/Sub/Deep', 'set')
+    expect(
+      (
+        await mutate({
+          op: 'moveSet',
+          path: 'Notes/Daily/Sub',
+          newParentPath: 'Other',
+          order: [SUB],
+        })
+      ).ok,
+    ).toBe(true)
+    const carried = `.nexus/archive/${OTHER}/Notes/Daily/Sub/${leafOf(deep)}`
+    expect(JSON.parse(await readFile(at(carried, 'Deep', '_pageset.json'), 'utf8'))).toEqual(
+      JSON.parse(own),
+    )
+  })
+
   it('a Set moved within its Collection rewrites the trails alone', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
     expect(
