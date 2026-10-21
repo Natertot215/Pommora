@@ -379,6 +379,8 @@ export async function reachConfig(
   for (const { kind, dir } of await archivedSets(tree, root, under)) {
     await written(sidecarPath(dir, kind), (cur) => {
       const id = asString(cur.id)
+      // A Set the edit names as gone leaves together with everything else it names, so its own views still answer.
+      if (id && e.kind === 'gone' && e.ids.includes(id)) return null
       if (id) sources.add(id)
       return mapViews(cur, edit)
     })
