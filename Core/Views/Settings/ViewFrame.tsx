@@ -10,8 +10,10 @@ import { Icon } from '@pommora/uix/Symbols'
 import {
   Menu,
   MenuItem,
+  MenuSeparator,
   MenuFooting,
   MenuScrollFrame,
+  AccessoryButton,
   FootingCreate,
   menuDropLine,
 } from '@pommora/uix/Menus'
@@ -28,7 +30,7 @@ import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { ARCHIVE_TITLE } from '../../Archive/archivePlace'
+import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archivePlace'
 import { useSession } from '../../Session/store'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
@@ -113,14 +115,13 @@ export function ViewFrame({
         <MenuFooting
           leading={<FootingCreate ariaLabel="New View" onClick={() => void createView()} />}
           trailing={
-            <Button
-              type={inArchive ? 'tinted' : 'filled'}
-              size="button-inline"
-              label={ARCHIVE_TITLE}
-              outline={inArchive}
-              pressed={inArchive}
-              showSelection={false}
-              onClick={() => showArchive(!inArchive)}
+            // PLACEHOLDER
+            <AccessoryButton
+              icon="dots"
+              size="control"
+              ariaLabel="More"
+              disabled
+              onClick={() => {}}
             />
           }
         />
@@ -155,7 +156,7 @@ export function ViewFrame({
             return (
               <LineRow key={v.id} id={v.id} open={open}>
                 <MenuItem
-                  picked={active.id === v.id ? 'solo' : undefined}
+                  picked={!inArchive && active.id === v.id ? 'solo' : undefined}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
                   trailing={
                     <Button
@@ -187,6 +188,16 @@ export function ViewFrame({
               </LineRow>
             )
           })}
+          <MenuSeparator className={vd.archiveDivider} />
+          <MenuItem
+            className={vd.archiveRow}
+            picked={inArchive ? 'solo' : undefined}
+            leading={<Icon name={ARCHIVE_ICON} size="headline" className={vd.archiveGlyph} />}
+            trailing={<Icon name="lock" size="headline" />}
+            onClick={() => showArchive(true)}
+          >
+            {ARCHIVE_TITLE}
+          </MenuItem>
         </Menu>
       </LineZone>
     </MenuScrollFrame>

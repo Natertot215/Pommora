@@ -117,8 +117,8 @@ Seeds through `mutate` on `~/Test`, each archived through `mutate`'s `archive` a
 
 | Check | Decision | Asserts |
 | --- | --- | --- |
-| the views footing holds New View and, at its right, an Archive button, and no More button | G-4 | DOM: in Collection A's `button[title="Views"]` dropdown, the footing holding `[aria-label="New View"]` ends in a `button` reading `Archive` with `aria-pressed="false"` and holds no `[aria-label="More"]` |
-| Archive shows the archive place in the same tab, pressed | G-4, G-5 | DOM: after the press, the `[role=tab]` count is unchanged, the button reads `aria-pressed="true"`, and the shown `.detail-title` ends in `.detail-title-trailing` reading `Archive` right after `.detail-title-clear` |
+| the views list closes on an Archive row below its last view, and the footing ends in the disabled More button | G-4 | DOM: in Collection A's `button[title="Views"]` dropdown, the `[role=button]` reading `Archive` with its lock glyph is its list's last child, after a separator, outside every `[data-line-row]`, and unpicked; the footing holding `[aria-label="New View"]` ends in a disabled `[aria-label="More"]` |
+| Archive shows the archive place in the same tab, picked | G-4, G-5 | DOM: after the press, the `[role=tab]` count is unchanged, the Archive row wears the picked ring, and the shown `.detail-title` ends in `.detail-title-trailing` reading `Archive` right after `.detail-title-clear` |
 | the header keeps the owner's title with no banner | G-3 | DOM and native rows: `.detail-title-text` reads `Collection A`; no `.banner` and no `[aria-label="Add banner"]` is drawn while `.banner-empty` seats the title; the title's native menu holds `Rename` |
 | the tab reads the owner's title with the archive glyph | G-3 ruling 9 | DOM: `activeTab` is `Collection A`, the selected tab holding `svg.lucide-archive` |
 | rows list each archived item with its trail and time, newest first | G-1, G-2 | DOM: `.archive-rows .data-row .cell-title-text` read `Drive Arc Set`, `Drive Arc Root`, `Drive Arc 2`, `Drive Arc 1`; `Drive Arc 1`'s trail reads `Collection A`, `Set Alpha`; no `.archive-date` cell is empty; `[title="Results"]` reads `4`; `shot` beside it |
@@ -137,7 +137,7 @@ Seeds through `mutate` on `~/Test`, each archived through `mutate`'s `archive` a
 | Back returns to the view and Forward to the archive | G-5 | DOM: `button[title="Back"]` shows Collection A's table rows and no `.detail-title-trailing`; `button[title="Forward"]` shows the archive |
 | relaunch reopens the archive tab | G-5 | DOM: after `relaunch`, the active tab reads `Collection A` holding `svg.lucide-archive`, and `.detail-title-trailing` is up |
 | a top-level Set's archive lists only what left from within it | G-4 | DOM and channel: Archive in Set Alpha's views dropdown draws `bundles:list({ kind: 'archive', id: <A id> }, <Set Alpha id>)`'s titles in order, which are `Drive Arc 1` and `Drive Arc 2` alone |
-| virtual rows render a window of a long archive | 4.7 | DOM and channel: in Collection B's archive, `.archive-rows` is 48 px times the sixty rows `bundles:list` answers tall and holds fewer `.data-row`s; with `.detail-scroll` scrolled to its bottom, `Drive Bulk 01`'s row is drawn |
+| virtual rows render a window of a long archive | 4.7 | DOM and channel: in Collection B's archive, `.archive-rows` is 30 px times the sixty rows `bundles:list` answers tall and holds fewer `.data-row`s; with `.detail-scroll` scrolled to its bottom, `Drive Bulk 01`'s row is drawn |
 | the bar withdraws when its tab parks | G-6 | DOM: with a row checked in Collection B's archive, `[aria-label="New Tab"]` leaves the label's host `inert`; back on the archive's tab, the shown face reads `Restore1 Page` |
 
 #### Pruned

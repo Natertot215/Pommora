@@ -1030,12 +1030,13 @@ const trailOf = (cdp, expr) => cdp.evaluate(`(${expr})?.textContent.split('›')
 const READER = `document.querySelector('[aria-label="Archived Page"]')`
 const tabCount = (cdp) => cdp.evaluate(`document.querySelectorAll('[role=tab]').length`)
 const NEW_VIEW = live('[aria-label="New View"]')
-const ARCHIVE_BUTTON = `[...(${NEW_VIEW})?.closest('div')?.querySelectorAll('button') ?? []].find((b) => b.textContent.trim() === 'Archive')`
-/** The views dropdown opened, its Archive toggle pressed, and the archive place up, the dropdown closed after. */
+const ARCHIVE_ROW = `[...document.querySelectorAll('[role="button"]')].find((e) => e.textContent.trim() === 'Archive' && e.querySelector('svg.lucide-lock') && !e.closest('[inert]'))`
+const picked = (row) => `getComputedStyle(${row}, '::after').content !== 'none'`
+/** The views dropdown opened, its Archive row pressed, and the archive place up, the dropdown closed after. */
 async function toArchive(cdp) {
   await mouseClick(cdp, live('button[title="Views"]'))
-  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_BUTTON})`))
-  await mouseClick(cdp, ARCHIVE_BUTTON)
+  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_ROW})`))
+  await mouseClick(cdp, ARCHIVE_ROW)
   await until('the archive place', () => cdp.evaluate(`!!(${live('.detail-title-trailing')})`))
   await pressKey(cdp, 'Escape')
 }
@@ -1085,19 +1086,21 @@ async function group6B() {
   await sidebarTo(cdp, 'Collections', COLLECTION)
   await sleep(1200)
   await mouseClick(cdp, live('button[title="Views"]'))
-  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_BUTTON})`)).catch(() => {})
-  const footing = await cdp.evaluate(`(() => { const f = (${NEW_VIEW})?.closest('div'); const a = ${ARCHIVE_BUTTON}; return { archive: a?.getAttribute('aria-pressed') ?? null, right: !!a && f?.lastElementChild === a, more: !!f?.querySelector('[aria-label="More"]') } })()`)
-  item('6B', 'G-4', "the views footing holds New View and, at its right, an Archive button, and no More button",
-    footing.archive === 'false' && footing.right && !footing.more, show(footing))
+  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_ROW})`)).catch(() => {})
+  const footing = await cdp.evaluate(`(() => { const f = (${NEW_VIEW})?.closest('div'); const a = ${ARCHIVE_ROW}; const more = f?.lastElementChild; return { last: !!a && a.parentElement?.lastElementChild === a, divided: a?.previousElementSibling?.getAttribute('aria-hidden') ?? null, reorder: !!a?.closest('[data-line-row]'), picked: !!a && ${picked('a')}, more: more?.getAttribute('aria-label') ?? null, disabled: more?.disabled ?? null } })()`)
+  item('6B', 'G-4', 'the views list closes on an Archive row below its last view, and the footing ends in the disabled More button',
+    footing.last && footing.divided === 'true' && !footing.reorder && !footing.picked && footing.more === 'More' && footing.disabled === true, show(footing))
 
   const tabsBefore = await tabCount(cdp)
-  await mouseClick(cdp, ARCHIVE_BUTTON)
+  await mouseClick(cdp, ARCHIVE_ROW)
   await until('the archive place', () => cdp.evaluate(`!!(${live('.detail-title-trailing')})`)).catch(() => {})
-  const pressed = await cdp.evaluate(`(${ARCHIVE_BUTTON})?.getAttribute('aria-pressed') ?? null`)
+  if (!(await cdp.evaluate(`!!(${ARCHIVE_ROW})`))) await mouseClick(cdp, live('button[title="Views"]'))
+  await until('the views dropdown', () => cdp.evaluate(`!!(${ARCHIVE_ROW})`)).catch(() => {})
+  const pressed = await cdp.evaluate(`(() => { const a = ${ARCHIVE_ROW}; return !!a && ${picked('a')} })()`)
   await pressKey(cdp, 'Escape')
   const header = await cdp.evaluate(`(() => { const t = ${live('.detail-title')}; const last = t?.lastElementChild; return { last: last?.className ?? null, text: last?.textContent ?? null, before: last?.previousElementSibling?.classList.contains('detail-title-clear') ?? false } })()`)
   item('6B', 'G-4, G-5', 'Archive shows the archive place in the same tab, pressed',
-    (await tabCount(cdp)) === tabsBefore && pressed === 'true' && header.last === 'detail-title-trailing' && header.text === 'Archive' && header.before,
+    (await tabCount(cdp)) === tabsBefore && pressed && header.last === 'detail-title-trailing' && header.text === 'Archive' && header.before,
     show({ tabsBefore, tabs: await tabCount(cdp), pressed, header }))
 
   const title = await cdp.evaluate(`(${live('.detail-title-text')})?.textContent ?? null`)
@@ -1288,7 +1291,7 @@ async function group6B() {
   await cdp.evaluate(`(() => { const s = ${live('.detail-scroll')}; s.scrollTop = s.scrollHeight })()`)
   const bottomed = await settles(async () => (await arcTitles(cdp)).includes('Drive Bulk 01'))
   item('6B', '4.7', 'virtual rows render a window of a long archive',
-    bulkCount === 60 && Math.round(sized.height) === 48 * bulkCount && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
+    bulkCount === 60 && Math.round(sized.height) === 30 * bulkCount && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
 
   await checkArc(cdp, 'Drive Bulk 01')
   const archiveTab = await cdp.evaluate(`[...document.querySelectorAll('[role=tab]')].findIndex((t) => t.getAttribute('aria-selected') === 'true')`)

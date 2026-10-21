@@ -30,7 +30,7 @@ import '../Views/Table/table-view.css'
 import { ARCHIVE_TITLE } from './archivePlace'
 import './archive-view.css'
 
-const ROW_H = 48
+const ROW_H = 30
 
 type RowApi = {
   toggle: (row: BundleRow) => void
@@ -225,7 +225,7 @@ const ArchiveRow = memo(function ArchiveRow({
         <NavTrail
           segments={crumbSegments(row.crumbs, icons)}
           iconSize="control"
-          className={cx(row.historical && historical)}
+          className={cx('archive-trail', row.historical && historical)}
         />
       </div>
       <div className="data-cell archive-date">{when}</div>

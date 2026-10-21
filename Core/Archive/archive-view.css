@@ -1,4 +1,4 @@
-/* ArchiveView on TableView's sheet: the virtual list, each title over the trail it left, and the Archived column. */
+/* ArchiveView on TableView's sheet: the virtual list, each title with the trail it left at its right, as the Trash's rows carry theirs, and the Archived column. */
 .archive-rows {
   position: relative;
 }
@@ -8,14 +8,25 @@
 }
 .archive-rows .data-cell {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px; /* KNOB — the title from its trail */
+  align-items: center;
+  gap: 8px; /* KNOB — the title from its trail */
+}
+.archive-rows .cell-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.archive-rows .archive-trail {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 55%;
 }
 .col-header.archive-date,
 .data-cell.archive-date {
   align-items: center;
   text-align: center;
+}
+.data-cell.archive-date {
+  justify-content: center;
 }
 .archive-empty {
   padding: var(--cell-padding-y) var(--cell-padding-x);

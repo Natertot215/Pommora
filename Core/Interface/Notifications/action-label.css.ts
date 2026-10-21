@@ -22,7 +22,7 @@ export const host = style({
   borderStyle: 'solid',
   borderWidth: SIZE.border,
   borderColor: c.fill.primary,
-  background: c.fill.tertiary,
+  background: c.fill.secondary,
   vars: { '--pane-inset': 'var(--surface-inset)' },
 })
 

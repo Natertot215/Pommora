@@ -10,6 +10,7 @@ import { ViewFrame } from './ViewFrame'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
+import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
@@ -127,10 +128,16 @@ describe('ViewFrame — reordering views', () => {
   })
 })
 
-describe('ViewFrame — the Archive toggle', () => {
+describe('ViewFrame — the Archive row', () => {
   let select: ReturnType<typeof vi.fn>
-  const archiveButton = (): HTMLElement =>
-    [...document.querySelectorAll('button')].find((b) => b.textContent === 'Archive')!
+  const archiveRow = (): HTMLElement =>
+    [...document.querySelectorAll('[role="button"]')].find(
+      (e) => e.textContent === 'Archive',
+    ) as HTMLElement
+  const viewRow = (name: string): HTMLElement =>
+    [...document.querySelectorAll('[role="button"]')].find((e) =>
+      e.textContent?.includes(name),
+    ) as HTMLElement
   const shown = (selection: 'collection' | 'archive'): void => {
     useSession.setState({ selection: { kind: selection, id: 'col1' }, select: select as never })
   }
@@ -139,26 +146,37 @@ describe('ViewFrame — the Archive toggle', () => {
     select = vi.fn(async () => {})
   })
 
-  it('the footing holds New View at its left and the Archive button at its right, and no More button', async () => {
+  it('the footing holds New View at its left and the disabled More button at its right', async () => {
     shown('collection')
     await mount(source([view('view_a', 'Table')]))
     const newView = document.querySelector('[aria-label="New View"]') as HTMLElement
+    const more = document.querySelector('[aria-label="More"]') as HTMLButtonElement
     expect(newView.parentElement?.firstElementChild).toBe(newView)
-    expect(newView.parentElement?.lastElementChild).toBe(archiveButton())
-    expect(document.querySelector('[aria-label="More"]')).toBeNull()
+    expect(newView.parentElement?.lastElementChild).toBe(more)
+    expect(more.disabled).toBe(true)
   })
 
-  it('pressing Archive shows the archive in place, and pressing it there returns to the view', async () => {
+  it('the Archive row closes the list below its last view, past a divider and outside the reorder', async () => {
+    shown('collection')
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    const row = archiveRow()
+    expect(row.parentElement?.lastElementChild).toBe(row)
+    expect(row.previousElementSibling?.getAttribute('aria-hidden')).toBe('true')
+    expect(row.closest('[data-line-row]')).toBeNull()
+    expect(row.querySelectorAll('svg')).toHaveLength(2)
+  })
+
+  it('pressing the Archive row shows the archive in place, and while it shows it is the picked row', async () => {
     shown('collection')
     await mount(source([view('view_a', 'Table')]))
-    expect(archiveButton().getAttribute('aria-pressed')).toBe('false')
-    await act(async () => archiveButton().click())
+    expect(viewRow('Table').classList.contains(itemPicked.solo)).toBe(true)
+    expect(archiveRow().classList.contains(itemPicked.solo)).toBe(false)
+    await act(async () => archiveRow().click())
     expect(select).toHaveBeenLastCalledWith({ kind: 'archive', id: 'col1' }, { newTab: false })
     shown('archive')
     await mount(source([view('view_a', 'Table')]))
-    expect(archiveButton().getAttribute('aria-pressed')).toBe('true')
-    await act(async () => archiveButton().click())
-    expect(select).toHaveBeenLastCalledWith({ kind: 'collection', id: 'col1' }, { newTab: false })
+    expect(archiveRow().classList.contains(itemPicked.solo)).toBe(true)
+    expect(viewRow('Table').classList.contains(itemPicked.solo)).toBe(false)
   })
 
   it('picking a view from the archive returns to it', async () => {
