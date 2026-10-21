@@ -43,3 +43,8 @@ export const isContainerKind = (kind: unknown): kind is ContainerKind =>
 export const isContainer = <T extends { kind: unknown }>(
   n: T | null | undefined,
 ): n is T & { kind: ContainerKind } => n != null && isContainerKind(n.kind)
+
+/** A target that names a container by id: a Collection, a Set, or either's archive place. */
+export const namesContainer = <T extends { kind: unknown }>(
+  n: T | null | undefined,
+): n is T & { kind: ContainerKind | 'archive' } => isContainer(n) || n?.kind === 'archive'

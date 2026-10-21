@@ -3,7 +3,7 @@
 import type { NexusTree } from '../Nexus/tree'
 import type { SelectionState } from '../Navigation/navRef'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
-import { ownsArchivePlace } from '../Archive/archivePlace'
+import { isTopContainer } from '../Nexus/treePatch'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 export interface ReconcileIndex {
@@ -43,7 +43,7 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
     case 'archive': {
       const path = index.sets.get(selection.id)
       return index.collections.has(selection.id) ||
-        (path !== undefined && ownsArchivePlace({ kind: 'set', path }))
+        (path !== undefined && isTopContainer({ kind: 'set', path }))
         ? selection
         : { kind: 'none' }
     }

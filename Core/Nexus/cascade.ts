@@ -1,6 +1,5 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
-import { isArchived } from '../Paths/nexusPaths'
 import { stripKeys } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
 import { errText } from '../Contract/result'
@@ -10,6 +9,7 @@ import {
   type RewriteText,
   governedReach,
   governedRoot,
+  outsideArchive,
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
@@ -35,6 +35,7 @@ import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 
 export interface CascadeReport {
+  /** The Nexus paths written outside the Archive, which feed the `pages:changed` push; nothing displays an archived path. */
   pages: string[]
   hosts: TilesChanged[]
   warning?: string
@@ -72,9 +73,20 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
-/** The Nexus paths of `files` outside the Archive, the ones a cascade's report names. */
-const outsideArchive = (root: string, files: readonly string[]): string[] =>
-  files.map((file) => relative(root, file)).filter((rel) => !isArchived(rel))
+/** `cascade` joined with the line counting the files in “title” whose links couldn't be written. */
+export function withUnswept(
+  cascade: CascadeReport | undefined,
+  title: string,
+  unswept: readonly string[],
+): CascadeReport | undefined {
+  if (!unswept.length) return cascade
+  const left = {
+    pages: [],
+    hosts: [],
+    warning: unsweptLine(unswept.length, `links in “${title}” across `),
+  }
+  return cascade ? joinCascades(cascade, left) : left
+}
 
 /** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
@@ -131,10 +143,12 @@ export async function deleteCascade(
       if (!id) continue
       for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
     }
-    const unswept = outsideArchive(root, swept.skipped).length + heldOut
+    const unswept = swept.skipped.length + heldOut
     return {
       cascade: {
-        pages: outsideArchive(root, [...swept.touched.keys()]),
+        pages: [...swept.touched.keys()]
+          .filter((file) => outsideArchive(root, file))
+          .map((file) => relative(root, file)),
         hosts: [],
         warning: unswept ? unsweptLine(unswept, 'links in ') : undefined,
       },
@@ -255,7 +269,9 @@ export async function renameCascade(
       'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
-      pages: outsideArchive(root, [...swept.touched.keys()].filter(isMarkdownFile)),
+      pages: [...swept.touched.keys()]
+        .filter((file) => isMarkdownFile(file) && outsideArchive(root, file))
+        .map((file) => relative(root, file)),
       hosts: tiles.hosts,
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
     }

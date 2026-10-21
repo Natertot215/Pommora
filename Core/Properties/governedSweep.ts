@@ -138,8 +138,12 @@ export async function sweepGovernedRoots(
   return out
 }
 
+/** A file outside the Archive: the only kind a confirmation, a what-changed count, or a cascade's `pages` names, since nothing displays an archived path. */
+export const outsideArchive = (root: string, file: string): boolean =>
+  !isArchived(relative(root, file))
+
 export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
-  const shown = files.filter((file) => !isArchived(relative(root, file)))
+  const shown = files.filter((file) => outsideArchive(root, file))
   return (await sweepGovernedRoots(root, shown, plan, true)).touched.size
 }
 

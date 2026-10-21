@@ -129,7 +129,7 @@ export async function moveIntoStore(
   root: string,
   fromBundle: string,
   to: BundleStore,
-  extra: Record<string, unknown>,
+  extra: RawRecord,
   leaf?: string,
 ): Promise<void> {
   const from = storeOf(root, fromBundle)

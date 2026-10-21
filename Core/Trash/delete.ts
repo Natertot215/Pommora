@@ -145,10 +145,8 @@ export async function deleteOp(
   if (bundle) await relocate(abs, join(bundle, basename(abs)))
   else await machine().lock(abs, () => discardFile(root, abs, deps))
   if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
-  if (from) {
-    await removeOwn(from.bundle)
-  }
-  if (!from) await dropDeparture(root, before, req.kind, req.path)
+  if (from) await removeOwn(from.bundle)
+  else await dropDeparture(root, before, req.kind, req.path)
   await dropPageMetadata(root, pageIds)
   const gone = paths
     ? await deleteCascade(root, abs, [...paths, ...(archive?.origins ?? [])])

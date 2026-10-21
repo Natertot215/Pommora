@@ -82,11 +82,6 @@ export const containerTrailWhere = (
   match: ContainerMatch,
 ): (CollectionNode | SetNode)[] | null => trailIn(tree.collections, match)
 
-export const findContainerWhere = (
-  tree: NexusTree,
-  match: ContainerMatch,
-): CollectionNode | SetNode | null => containerTrailWhere(tree, match)?.at(-1) ?? null
-
 export const containerTrailById = (
   tree: NexusTree,
   id: string,
@@ -94,6 +89,19 @@ export const containerTrailById = (
 
 export const findContainerById = (tree: NexusTree, id: string): CollectionNode | SetNode | null =>
   containerTrailById(tree, id)?.at(-1) ?? null
+
+/** A Collection or a Set directly inside it: what keeps views of its own and an Archive place. */
+export const isTopContainer = (n: { kind: string; path: string }): boolean =>
+  n.kind === 'collection' || (n.kind === 'set' && n.path.split('/').length === 2)
+
+/** The Collection or top-level Set with this id; none once it's gone or sits deeper. */
+export function topContainerOf(
+  tree: NexusTree | null,
+  id: string,
+): CollectionNode | SetNode | undefined {
+  const node = tree && findContainerById(tree, id)
+  return node && isTopContainer(node) ? node : undefined
+}
 
 /** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, or by the one whose Archive holds it. */
 export function owningCollection(
@@ -114,9 +122,6 @@ export function archiveReach(tree: NexusTree, rel?: string): string | null {
   return store ? archiveDirRel(store.id) : null
 }
 
-/** A Set directly inside its Collection: the depth that keeps views of its own and an Archive place. */
-export const isTopSet = (path: string): boolean => path.split('/').length === 2
-
 export const NO_SCHEMA: PropertyDefinition[] = []
 
 /** A Set or page takes its Collection's schema; the one empty schema when nothing owns it. */
@@ -126,7 +131,7 @@ export const containerSchema = (
 ): PropertyDefinition[] => owningCollection(tree, of)?.properties ?? NO_SCHEMA
 
 export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
-  findContainerWhere(tree, (n) => n.path === rel)
+  containerTrailWhere(tree, (n) => n.path === rel)?.at(-1) ?? null
 
 export const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
   node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []

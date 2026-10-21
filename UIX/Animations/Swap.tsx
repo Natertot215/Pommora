@@ -22,13 +22,15 @@ export function Swap({
   )
 }
 
+/** A face's attributes, for a host drawing the faces itself. */
+export const faceAttrs = (hidden: boolean) => ({
+  'data-face': hidden ? 'hidden' : 'shown',
+  'aria-hidden': hidden ? ('true' as const) : undefined,
+  inert: hidden,
+})
+
 const face = (node: ReactNode, hidden: boolean): React.JSX.Element => (
-  <span
-    className={s.face}
-    data-face={hidden ? 'hidden' : 'shown'}
-    aria-hidden={hidden || undefined}
-    inert={hidden}
-  >
+  <span className={s.face} {...faceAttrs(hidden)}>
     {node}
   </span>
 )

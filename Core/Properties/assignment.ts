@@ -6,10 +6,8 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import { pagesOf } from '../Nexus/record'
-import { type NexusPages, nexusPages } from '../Nexus/heldPages'
+import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
-import { buildPageIndex } from '../Connections/pageIndex'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { byKey, type PropertyDefinition } from './properties'
 import {
@@ -89,7 +87,7 @@ async function restoreCachedValues(
         : []
     }),
   )
-  const frozen = frozenWorld(buildPageIndex([...pagesOf(tree), ...archived]))
+  const frozen = frozenWorld(linkWorld(tree, archived))
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     def.type === 'link'

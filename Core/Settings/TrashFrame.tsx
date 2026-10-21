@@ -16,6 +16,7 @@ import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/Prop
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { DateHeading } from '../Bundles/DateHeading'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -27,7 +28,7 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const { listing, visible, checked, toggle, openMenu, date } = useBundleBrowser(
+  const { listing, visible, checked, picked, toggle, openMenu, date } = useBundleBrowser(
     { kind: 'trash' },
     { query, shown: true },
   )
@@ -57,7 +58,7 @@ function TrashBody(): React.JSX.Element {
                     key={row.bundlePath}
                     row={row}
                     checked={checked.has(row.bundlePath)}
-                    revealed={checked.size > 0}
+                    revealed={picked.length > 0}
                     onToggle={() => toggle(row.bundlePath)}
                     onMenu={() => void openMenu(row)}
                     icon={
@@ -101,18 +102,17 @@ function TrashBody(): React.JSX.Element {
           </span>
           File Name
         </span>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label — it carries no click and no keyboard gesture of its own, exactly as the banner's and the cards' right-click surfaces do */}
-        <span className="trash-head-date col-header" onContextMenu={date.onContextMenu}>
-          <span ref={date.measureRef} className="col-measure">
+        <DateHeading
+          date={date}
+          className="trash-head-date"
+          sampleClass={text.caption.standard}
+          label={
             <span className="trash-head-label">
               <Icon name="clock-fading" size="body" />
               Time Deleted
             </span>
-            <span className={text.caption.standard} aria-hidden>
-              {date.sample}
-            </span>
-          </span>
-        </span>
+          }
+        />
       </div>
 
       {body()}

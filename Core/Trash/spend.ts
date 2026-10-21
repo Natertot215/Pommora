@@ -6,12 +6,11 @@ import type { MutateOutcome, MutateReply, RestoreDestination } from '../Nexus/mu
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
-import { repairLanded, scrubReturning } from './restoreScrub'
+import { scrubReturning } from './restoreScrub'
 import { readLiveSetting } from '../Settings/settings'
-import { sweepRootsById, unsweptLine } from '../Properties/governedSweep'
+import { sweepRootsById } from '../Properties/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
 import { rewriteConnections } from '../Connections/rewrite'
-import { buildPageIndex } from '../Connections/pageIndex'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import {
@@ -36,9 +35,8 @@ import { frozenWorld } from '../Properties/propertyValue'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { returningCascade } from '../Nexus/settle'
 
-import { pagesOf } from '../Nexus/record'
-import { type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
-import { deleteCascade, joinCascades, type StrippedLink } from '../Nexus/cascade'
+import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
+import { deleteCascade, joinCascades, type StrippedLink, withUnswept } from '../Nexus/cascade'
 import { parkLinks, refillTrashed } from './holdings'
 import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
 import { owningCollection } from '../Nexus/treePatch'
@@ -127,7 +125,7 @@ export async function restoreTrashed(
   let targetAbs = join(root, dir, finalName)
   const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
   const targets = new Map(Object.entries(record.targets ?? {}))
-  const world = buildPageIndex([...pagesOf(tree), ...archived, ...back])
+  const world = linkWorld(tree, archived, back)
   const frozen = frozenWorld(world, targets)
   const owner =
     record.entity === 'collection'
@@ -176,20 +174,21 @@ export async function restoreTrashed(
     return fault(e)
   }
   await writeOrder?.()
-  const arrived = await returningCascade(root, tree, back, title)
-  const { after, own } = arrived
-  let { cascade } = arrived
+  const arrived = await returningCascade(root, tree, back, title, {
+    entity: record.entity,
+    abs: targetAbs,
+    repair: (after) => {
+      const repair = new Map<string, string>()
+      for (const [key, { id, path }] of targets) {
+        const q = after.byId.get(id)
+        const next = q && after.respell(key, q, path)
+        if (next) repair.set(key, next)
+      }
+      return repair
+    },
+  })
+  const { after, own, unswept } = arrived
   const settled = after && heldTreeOf(root)
-  const unswept: string[] = []
-  if (after) {
-    const repair = new Map<string, string>()
-    for (const [key, { id, path }] of targets) {
-      const q = after.byId.get(id)
-      const next = q && after.respell(key, q, path)
-      if (next) repair.set(key, next)
-    }
-    unswept.push(...(await repairLanded(root, tree, record.entity, targetAbs, repair)))
-  }
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -230,9 +229,7 @@ export async function restoreTrashed(
   ) {
     const defs = linkDefsOf(tree.config.registry)
     // Back in the Archive the page sits in no settled tree, so only the world from before the landing holds it.
-    const refilled = frozenWorld(
-      settled && !into ? buildPageIndex([...pagesOf(settled), ...archived]) : world,
-    )
+    const refilled = frozenWorld(settled && !into ? linkWorld(settled, archived) : world)
     const trashed: StrippedLink[] = []
     for (const def of defs) {
       const all = Object.fromEntries(
@@ -249,14 +246,7 @@ export async function restoreTrashed(
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
     await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.key])))
   }
-  if (unswept.length) {
-    const left = {
-      pages: [],
-      hosts: [],
-      warning: unsweptLine(unswept.length, `links in “${title}” across `),
-    }
-    cascade = cascade ? joinCascades(cascade, left) : left
-  }
+  const cascade = withUnswept(arrived.cascade, title, unswept)
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {
     await removeOwn(bundleAbs)

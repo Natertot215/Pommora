@@ -10,11 +10,14 @@ export function InterfaceScaffold({
   owner,
   trailing,
   plain,
+  ready,
   children,
 }: {
   owner: BannerOwner | null
   trailing?: React.ReactNode
   plain?: true
+  /** False while the content still has no height, so the saved scroll lands once it has. */
+  ready?: boolean
   children?: React.ReactNode
 }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
@@ -37,7 +40,7 @@ export function InterfaceScaffold({
       el.removeEventListener('scroll', onScroll)
       captureWarm(tabId, warmKey, { scrollTop: last })
     }
-  }, [tabId, warmKey])
+  }, [tabId, warmKey, ready])
 
   const surface = owner !== null && isSurfaceKind(owner.kind)
   return (

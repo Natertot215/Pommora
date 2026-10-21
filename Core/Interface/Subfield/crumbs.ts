@@ -5,7 +5,8 @@ import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
 import { titleFromPath } from '../../Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, type TrailNode, findSpace, nodesByIdOf } from '../../Nexus/treeIndex'
-import { ARCHIVE_ICON } from '../../Archive/archivePlace'
+import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archivePlace'
+import { isTopContainer } from '../../Nexus/treePatch'
 
 type SpineTarget = Extract<SelectTarget, { kind: ContainerKind | 'page' }>
 
@@ -51,8 +52,7 @@ export function subfieldCrumbs(
   const crumbsOver = (spine: TrailNode[], currentPos: number): TrailSegment[] =>
     spine.map((node, i) => {
       const forwardCrumb = i > currentPos
-      // Up the spine the collection (0) and depth-1 set (1) open a detail surface; deeper Sets open only when folders do.
-      const navigable = forwardCrumb || (i < currentPos && (i <= 1 || foldersOpen))
+      const navigable = forwardCrumb || (i < currentPos && (isTopContainer(node) || foldersOpen))
       const target = navigable ? targetOf(node) : null
       return {
         title: node.title,
@@ -95,7 +95,13 @@ export function subfieldCrumbs(
         [
           ...owner.parents,
           owner,
-          { kind: 'archive', id: owner.id, title: 'Archive', path: owner.path, icon: ARCHIVE_ICON },
+          {
+            kind: 'archive',
+            id: owner.id,
+            title: ARCHIVE_TITLE,
+            path: owner.path,
+            icon: ARCHIVE_ICON,
+          },
         ],
         owner.parents.length + 1,
       )
