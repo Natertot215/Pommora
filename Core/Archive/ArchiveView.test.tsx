@@ -156,7 +156,7 @@ describe('ArchiveView', () => {
     expect(heads.map((h) => h.querySelectorAll('.col-header-icon svg').length)).toEqual([1, 1])
   })
 
-  it('a click on a row checks it, and a page row’s title opens the reader titled by its trail under the stroked lock', async () => {
+  it('a click on a row checks it, and a page row’s title opens the reader titled by its trail under the filled lock', async () => {
     await render()
     await check('A')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
@@ -168,7 +168,7 @@ describe('ArchiveView', () => {
       page: { kind: 'page', id: 'p1', path: 'x/A.md' },
       trail: [expect.objectContaining({ title: 'Notes' }), expect.objectContaining({ title: 'A' })],
     })
-    expect(host.querySelector('.reader-lock svg')?.classList.contains('lucide-lock')).toBe(true)
+    expect(host.querySelector('.reader-lock svg rect[fill="currentColor"]')).not.toBeNull()
   })
 
   it('a Set row’s title opens nothing and checks its row', async () => {
