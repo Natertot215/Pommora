@@ -46,7 +46,6 @@ Nathan's, verbatim, folded as above.
 
 #### Perspectives
 
-What this work looks out for, ratified by Nathan on 10-21-2026.
 
 - **Responsibility Sets Scope:** The Properties system is everything whose job is properties, wherever it lives — `Core/Properties` and the property logic held in Views, Contexts, Nexus, the Trash, the Archive, Settings, Actions, and UIX. Code is inventoried where it sits and judged by where it belongs, and machinery Properties shares in kind with a sibling subsystem is assessed as one pattern across both.
 - **Legacy Versus Interop:** Reading what other applications write — Obsidian's keys, YAML shapes, checkbox words, foreign frontmatter — is product behavior the Legibility decision protects. Reading what earlier Pommora builds wrote is migration residue, checked against the live Nexuses and removed once nothing holds the old shape.
