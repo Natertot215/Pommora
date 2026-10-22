@@ -2740,7 +2740,7 @@ The folded describe renames `items` to `rows`, since `moveItem.test.ts:4` alread
 **CHANGE**
 
 - [ ] Delete `propertyValue.test.ts:245-247`, `columnStyles.test.ts:13-16` and `:34-43`, and `pageValue.test.ts:20-22` and `:58-60`; `defaultStyleFor('file')`'s pin moves into `columnStyles.test.ts:22` (AFTER).
-- [ ] Retitle per the table below; each row's old title text is replaced exactly, the rest of its line unchanged.
+- [ ] Retitle per the table below (AFTER); each row's old title text is replaced exactly, the rest of its line unchanged.
 - [ ] Sibling sweep: `git grep -nE "\((A|B|C|D|E|T|H)-?[0-9]+[a-z]?([/…][A-Z]?-?[0-9]+)*\)|breaker [A-Z]-|Requirement [0-9]|F1 —|\(B28\)|T6 hangs|D-7[ab]|\((D-3|G-2|G-1a)\)|snake_case PropertyType|Filename/Full Path|its look is per-property" -- Core/Properties Core/Actions Core/Contexts/contextCascade.test.ts` answers nothing.
 - [ ] Commit: `git commit --only -m "Tests of retired file shapes left, and Properties test titles lost their plan-round tags and say what they assert." -- Core/Properties/propertyValue.test.ts Core/Properties/deleteProperty.test.ts Core/Properties/columnStyles.test.ts Core/Properties/pageValue.test.ts Core/Properties/value.test.ts Core/Actions/columnMenu.test.ts Core/Actions/cellMenu.test.ts Core/Actions/propertyMenu.test.ts Core/Properties/Pickers/PropertyPicker.pane.test.tsx Core/Properties/Schema/PropertyFrame.dateTime.test.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Properties/assignment.test.ts Core/Properties/cascadeRace.test.ts Core/Properties/keyHolders.test.ts Core/Properties/paneDrop.test.ts Core/Properties/propertiesRegistry.test.ts Core/Properties/registryProperty.test.ts Core/Properties/removeProperty.test.ts Core/Properties/setSpaceProperty.test.ts Core/Contexts/contextCascade.test.ts`.
 
@@ -2849,6 +2849,186 @@ The folded describe renames `items` to `rows`, since `moveItem.test.ts:4` alread
 -    expect(replace({ S: 'Active' }, 'S', 'Active', 'Doing')).toEqual({ S: ['Doing'] })
 -  })
 -
+```
+
+```Core/Actions/propertyMenu.test.ts diff
+@@ :5 @@
+-  it('editor ⋮ yields Remove then a destructive Delete (A-8)', () => {
++  it('editor ⋮ yields Remove then a destructive Delete', () => {
+@@ :12 @@
+-  it('an assigned row yields Rename · Remove (A-10)', () => {
++  it('an assigned row yields Rename · Remove', () => {
+```
+
+```Core/Properties/Pickers/PropertyPicker.pane.test.tsx diff
+@@ :145 @@
+-  it('an options target anchored to a click centres its pane (B28)', async () => {
++  it('an options target anchored to a click centres its pane', async () => {
+@@ :150 @@
+-  it('an options target with no click does not centre (B28)', async () => {
++  it('an options target with no click does not centre', async () => {
+```
+
+```Core/Properties/Schema/PropertyFrame.dateTime.test.tsx diff
+@@ :77 @@
+-describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
++describe('the dateTime Format editor writes the ACTIVE view', () => {
+```
+
+```Core/Properties/Schema/PropertyFrame.test.tsx diff
+@@ :134 @@
+-describe('the DRY nested slide (A-7)', () => {
++describe('the DRY nested slide', () => {
+@@ :176 @@
+-describe('the All Properties section (T5)', () => {
++describe('the All Properties section', () => {
+@@ :177 @@
+-  it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {
++  it('lists only unassigned, unreserved registry defs, in registry order', async () => {
+@@ :202 @@
+-  it('header ⊕ opens the type picker; the footer create-row is gone (A-9)', async () => {
++  it('header ⊕ opens the type picker; the footer create-row is gone', async () => {
+@@ :235 @@
+-  it('the assigned group renders inside its region wrapper (T6 hangs rects on it)', async () => {
++  it('the assigned group renders inside its region wrapper', async () => {
+@@ :243 @@
+-describe('the two-region drag (T6) — state-level; geometry truth lives in the live pass', () => {
++describe('the two-region drag — state-level; geometry truth lives in the live pass', () => {
+@@ :430 @@
+-describe('native menus + the inline-rename channel (T7)', () => {
++describe('native menus + the inline-rename channel', () => {
+@@ :438 @@
+-  it("the editor's ⋮ Remove routes through schema.delete and returns to the list (A-8)", async () => {
++  it("the editor's ⋮ Remove routes through schema.delete and returns to the list", async () => {
+@@ :451 @@
+-  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
++  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE', async () => {
+@@ :486 @@
+-  it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename (A-10)', async () => {
++  it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename', async () => {
+```
+
+```Core/Properties/assignment.test.ts diff
+@@ :49 @@
+-it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
++it('a Remove racing an Assign on ONE collection never loses either write', async () => {
+```
+
+```Core/Properties/cascadeRace.test.ts diff
+@@ :58 @@
+-describe('F1 — the cascade takes the cell-write lock', () => {
++describe('the cascade takes the cell-write lock', () => {
+```
+
+```Core/Properties/deleteProperty.test.ts diff
+@@ :124 @@
+-  it('purges the property_cache block in every sidecar — even non-assigners (D-6)', async () => {
++  it('purges the property_cache block in every sidecar — even non-assigners', async () => {
+```
+
+```Core/Properties/keyHolders.test.ts diff
+@@ :270 @@
+-  it('a corpus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
++  it('a corpus-wide governed sweep cannot reach an excluded folder', async () => {
+```
+
+```Core/Properties/paneDrop.test.ts diff
+@@ :63 @@
+-  it('assigned→assigned reorders at the slot (C-5)', () => {
++  it('assigned→assigned reorders at the slot', () => {
+@@ :69 @@
+-  it('assigned→all is unassign with the area highlight and NO line (C-3/C-4)', () => {
++  it('assigned→all is unassign with the area highlight and NO line', () => {
+@@ :76 @@
+-  it('all→assigned assigns at the slot with a line (C-2)', () => {
++  it('all→assigned assigns at the slot with a line', () => {
+@@ :82 @@
+-  it('all→all reorders the nexus order (C-1)', () => {
++  it('all→all reorders the nexus order', () => {
+@@ :180 @@
+-describe('nexusReorderIndex — visible All-Properties slot → FULL nexus-order index (breaker M-1)', () => {
++describe('nexusReorderIndex — visible All-Properties slot → FULL nexus-order index', () => {
+```
+
+```Core/Properties/propertiesRegistry.test.ts diff
+@@ :123 @@
+-describe('a definition with no label (C-3)', () => {
++describe('a definition with no label', () => {
+@@ :148 @@
+-describe('hostile hand-edited files (breaker M-2/L-1)', () => {
++describe('hostile hand-edited files', () => {
+@@ :204 @@
+-  it('element-filters junk order entries — non-strings and ids without defs dropped (B-3)', async () => {
++  it('element-filters junk order entries — non-strings and ids without defs dropped', async () => {
+```
+
+```Core/Properties/registryProperty.test.ts diff
+@@ :275 @@
+-  it('appends each new id to the nexus order (A-9)', async () => {
++  it('appends each new id to the nexus order', async () => {
+@@ :610 @@
+-  it('moves an id within the nexus order (C-1)', async () => {
++  it('moves an id within the nexus order', async () => {
+```
+
+```Core/Properties/removeProperty.test.ts diff
+@@ :93 @@
+-describe('removeProperty — strip + cache (C-3/C-6)', () => {
++describe('removeProperty — strip + cache', () => {
+@@ :178 @@
+-  it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
++  it('is a no-op when the property is not assigned — never overwrites a cache with emptiness', async () => {
+@@ :217 @@
+-describe('removeProperty reaches saved views (B-6)', () => {
++describe('removeProperty reaches saved views', () => {
+@@ :261 @@
+-describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {
++describe('restore on re-assign — per-value schema-currency reconciliation', () => {
+@@ :361 @@
+-  it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred (breaker H-1)', async () => {
++  it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred', async () => {
+```
+
+```Core/Properties/setSpaceProperty.test.ts diff
+@@ :84 @@
+-  it('writes a property no Collection assigns (A-2)', async () => {
++  it('writes a property no Collection assigns', async () => {
+```
+
+```Core/Contexts/contextCascade.test.ts diff
+@@ :633 @@
+-describe('skip-aware journal (D-7b)', () => {
++describe('skip-aware journal', () => {
+@@ :655 @@
+-describe('unlink cascades (D-3)', () => {
++describe('unlink cascades', () => {
+@@ :698 @@
+-describe('the sweep tells the truth about what it did (G-2)', () => {
++describe('the sweep tells the truth about what it did', () => {
+@@ :775 @@
+-describe('a delete sweep never strips a passenger (G-1a)', () => {
++describe('a delete sweep never strips a passenger', () => {
+@@ :804 @@
+-describe('replayPendingRename (D-7a crash windows)', () => {
++describe('replayPendingRename across crash windows', () => {
+```
+
+```Core/Properties/value.test.ts diff
+@@ :81 @@
+-  it('reads user property types from the schema (snake_case PropertyType)', () => {
++  it('reads user property types from the schema', () => {
+```
+
+```Core/Actions/columnMenu.test.ts diff
+@@ :39 @@
+-  it('checkbox offers Checkbox/Switch; link the three link forms; file Filename/Full Path', () => {
++  it('checkbox offers Checkbox/Switch, link the three link forms, and file nothing', () => {
+```
+
+```Core/Actions/cellMenu.test.ts diff
+@@ :100 @@
+-  it('link (a filled Link cell): Edit + Rename, then a separated Clear, no Style (its look is per-property)', () => {
++  it('link (a filled Link cell): Edit + Rename, then a separated Clear, and no Style', () => {
 ```
 
 **VERIFY**
@@ -3999,7 +4179,62 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 +    seams = { targets: [FILEDATA_TARGETS.title] }
 ```
 
-`Core/Properties/paneDrop.test.ts`, `Core/Views/Table/useColumns.test.ts`, and `Core/Views/views.test.ts` take the same import swap and `RESERVED_PROPERTY_ID.<name>` → `FILEDATA.<name>.id` read by read.
+```Core/Properties/paneDrop.test.ts diff
+@@ imports @@
+-import { RESERVED_PROPERTY_ID } from './properties'
++import { FILEDATA } from './properties'
+@@ :114 @@
+-  const pane = { assigned: ['a', 'b'], ordersAll: false, pinned: RESERVED_PROPERTY_ID.title }
++  const pane = { assigned: ['a', 'b'], ordersAll: false, pinned: FILEDATA.title.id }
+@@ :138 @@
+-      [r(RESERVED_PROPERTY_ID.title, 0, 20), r('b', 20, 40), r('h', 60, 80)],
++      [r(FILEDATA.title.id, 0, 20), r('b', 20, 40), r('h', 60, 80)],
+@@ :145 @@
+-      { ...pane, assigned: [RESERVED_PROPERTY_ID.title, 'b'] },
++      { ...pane, assigned: [FILEDATA.title.id, 'b'] },
+@@ :147 @@
+-      RESERVED_PROPERTY_ID.title,
++      FILEDATA.title.id,
+```
+
+```Core/Views/Table/useColumns.test.ts diff
+@@ imports @@
+-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../../Properties/properties'
++import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+@@ :27 @@
+-      expect(widthFor(RESERVED_PROPERTY_ID.title, schema).default).toBe(280)
++      expect(widthFor(FILEDATA.title.id, schema).default).toBe(280)
+@@ :29 @@
+-      expect(widthFor(RESERVED_PROPERTY_ID.modifiedAt, schema).default).toBe(120)
++      expect(widthFor(FILEDATA.modifiedAt.id, schema).default).toBe(120)
+@@ :30 @@
+-      expect(widthFor(RESERVED_PROPERTY_ID.createdAt, schema).default).toBe(120)
++      expect(widthFor(FILEDATA.createdAt.id, schema).default).toBe(120)
+@@ :77 @@
+-      expect(clampWidth(10, RESERVED_PROPERTY_ID.title, schema)).toBe(120)
++      expect(clampWidth(10, FILEDATA.title.id, schema)).toBe(120)
+@@ :78 @@
+-      expect(clampWidth(9999, RESERVED_PROPERTY_ID.title, schema)).toBe(9999)
++      expect(clampWidth(9999, FILEDATA.title.id, schema)).toBe(9999)
+@@ :79 @@
+-      expect(clampWidth(300, RESERVED_PROPERTY_ID.title, schema)).toBe(300)
++      expect(clampWidth(300, FILEDATA.title.id, schema)).toBe(300)
+@@ :112 @@
+-      expect(defaultAlignFor(RESERVED_PROPERTY_ID.title, schema)).toBe('left')
++      expect(defaultAlignFor(FILEDATA.title.id, schema)).toBe('left')
+@@ :116 @@
+-      expect(defaultAlignFor(RESERVED_PROPERTY_ID.modifiedAt, schema)).toBe('left')
++      expect(defaultAlignFor(FILEDATA.modifiedAt.id, schema)).toBe('left')
+```
+
+```Core/Views/views.test.ts diff
+@@ imports @@
+-import { RESERVED_PROPERTY_ID } from '../Properties/properties'
++import { FILEDATA } from '../Properties/properties'
+@@ :370 and :377, both @@
+-    expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
++    expect(v.property_order).toEqual([FILEDATA.title.id])
+```
 
 **VERIFY**
 
@@ -6731,6 +6966,16 @@ The reconcile now spells each value before the live guard rather than after it. 
 +
 ```
 
+```Core/Properties/propertyValue.test.ts diff
+@@ imports @@
+-  frozenWorld,
+ } from './propertyValue'
+-import { buildPageIndex } from '../Connections/pageIndex'
+@@ describe('frozenWorld') @@
+-describe('frozenWorld', () => { … })   (HEAD :407-428, moved to Core/Trash/holdings.test.ts)
+-
+```
+
 ```Core/Trash/holdings.test.ts (new)
 import { describe, expect, it } from 'vitest'
 import { frozenWorld } from './holdings'
@@ -7299,6 +7544,50 @@ describe('frozenWorld', () => {
 +  spelledNumber,
  } from '../Properties/propertyValue'
 -import { spelledNumber } from '../Properties/formatValue'
+```
+
+```Core/Properties/parseEditorValue.ts diff
+@@ imports @@
+-import type { PropertyValue } from './propertyValue'
++import { type PropertyValue, readNumber } from './propertyValue'
+ import type { ColumnType } from './properties'
+ import { linkValueFromEdit } from '../Connections/linkValue'
+-import { readNumber } from './formatValue'
+```
+
+```Core/Views/Pipeline/filter.ts diff
+@@ imports @@
+   type PropertyValue,
++  readNumber,
+   selectedValues,
+@@
+-import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
++import { dayMs, readDate } from '../../Properties/formatValue'
+```
+
+```Core/Properties/formatValue.test.ts diff
+@@ imports @@
+   readDate,
+-  readNumber,
+-  spelledNumber,
+ } from './formatValue'
+@@ describe('readNumber'), describe('spelledNumber') @@
+-
+-describe('readNumber', () => { … })   (HEAD :272-308)
+-
+-describe('spelledNumber', () => { … })   (HEAD :310-332)
+```
+
+```Core/Properties/propertyValue.test.ts diff
+@@ imports @@
+ import {
++  readNumber,
++  spelledNumber,
+@@ end of file @@
++
++describe('readNumber', () => { … })   (moved verbatim, HEAD Core/Properties/formatValue.test.ts:272-308)
++
++describe('spelledNumber', () => { … })   (moved verbatim, HEAD Core/Properties/formatValue.test.ts:310-332)
 ```
 
 **VERIFY**
@@ -8652,6 +8941,18 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 -      ?.views ?? []
 +    containerNodeFrom('set', { title: 'S', path: 'S' }, { id: 's', views: stored }, [], [])?.views ??
 +    []
+```
+
+```Core/Properties/PropertyPanel.test.tsx diff
+@@ setTree's Collection @@
+-          properties: [stageDef, noteDef],
++          propertyIds: [stageDef.id, noteDef.id],
+@@ the two Link cases' setup, both @@
+-      collections: { properties: PropertyDefinition[] }[]
++      collections: { propertyIds: string[] }[]
+@@ the two Link cases' push, both @@
+-    tree.collections[0].properties.push(siteDef)
++    tree.collections[0].propertyIds.push(siteDef.id)
 ```
 
 ```Core/Views/Host/useViewHost.test.tsx diff
@@ -12610,9 +12911,9 @@ The five remaining `unsweptLine` readers change one import each:
 
 **CHANGE**
 
-- [ ] Re-point every call by Task 7-6's table, reading replies by its right column.
+- [ ] Re-point every call by Task 7-6's table, reading replies by its right column (AFTER).
   A record compared by value reads `r.value?.retry?.record` (`Metadata :948,955,975,981,1193,1200`, and `tryAgain`'s `owed` at `:104`, whose replay sends `r.value.retry`). The Metadata Drive's `add` and `define` (`:164-170`) send `draft: def` and answer `created.propertyId`; every `X.id` read off an `add` result (`:854-855,1115,1118,1121-1122,1145,1148`) reads `X.created.propertyId`. `:1099` reads `listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds'` and `:1107` `recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS'`. `:533,1281,1285` read `.bundled.bundlePath`.
-- [ ] The Metadata Drive's O-1 names read Delete: `:789` "a Delete", `:932` "delete Critical", `:933`'s pin "an option delete strips the page and the view naming it", `:935` "delete Mid Grey" and its pin "an option delete strips the page and the Collection cache", `:959-960` "an option delete waits while a record is owed", `:977-982` "an option delete record carries the stored key" and "the option delete's Try Again strips the skipped file". The Metadata Drive's `MATRIX.md`, whose `:110` names the option removal, is Task 18-6's, which rewrites the matrix once on the landed head.
+- [ ] The Metadata Drive's O-1 names read Delete (AFTER): `:789` "a Delete", `:932` "delete Critical", `:933`'s pin "an option delete strips the page and the view naming it", `:935` "delete Mid Grey" and its pin "an option delete strips the page and the Collection cache", `:959-960` "an option delete waits while a record is owed", `:977-982` "an option delete record carries the stored key" and "the option delete's Try Again strips the skipped file". The Metadata Drive's `MATRIX.md`, whose `:110` names the option removal, is Task 18-6's, which rewrites the matrix once on the landed head.
 - [ ] The Option Picker Drive's `stepClearRemove` becomes `stepClearDelete`: Clear over the one Item holding Alpha runs unasked (`check('Clear over one Item strips it unasked', !(await cdp.evaluate(DIALOG_OPEN)) && !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))`, `DIALOG_OPEN` reading `!!document.querySelector('[role="alertdialog"]')`), with no click on a Clear button; then `chooseNative(cdp, alphaRow, 'Delete')`, `check('Delete asks to delete Alpha without a strip clause, nothing holding it', …innerText.includes('Delete “Alpha”?') && …includes('The option is deleted from the property.') && !…includes('stripped'))`, `click(cdp, confirmButton('Delete'))`, and `check('Delete removes Alpha from the registry', …)`. Its call site follows the new name.
 - [ ] `openSettings`, `closeSettings`, `DIALOG`, `pressDialog`, `notice`, and `trashRowEl` move from the Archive Drive into `drive-harness.mjs` (exported, bodies unchanged, with `RAIL` and `ribbon` they read); the Archive Drive imports them.
 - [ ] The Properties Drive gains `group6(cdp)`, its run line, and `'6'` in its group list, on `~/Test`, as below; `MATRIX.md` beside it gains group 6's rows with these names.
@@ -12666,6 +12967,486 @@ The Archive Drive's Settings and Trash helpers move into the harness verbatim:
 - [ ] `[g6 O-2] deleting a property nothing holds asks without "0 Items"` — seed `addProperty` `{ label: 'Drive Bare', type: 'text' }`; open its editor; `chooseNative(cdp, '[aria-label="Property Menu"]', 'Delete', { button: 'left' })`; the dialog asks `Delete “Drive Bare” everywhere?` with `It is removed from every collection; a restorable record lands in the nexus’s .trash folder.`; pressing Delete returns the pane to its list, `notice(cdp)` starts `Deleted “Drive Bare”`, and `bundles:list({ kind: 'trash' })` holds one property row titled `Drive Bare`.
 - [ ] `[g6 O-4] a property restored after its name was taken says the name it took` — seed `addProperty` `{ label: 'Drive Bare', type: 'text' }` again; `openSettings(cdp, 'Trash')`, `chooseNative(cdp, trashRowEl('Drive Bare'), 'Restore')`; `notice(cdp)` includes `Restored “Drive Bare” as “Drive Bare (2)”`, and the registry holds `Drive Bare` and `Drive Bare (2)`.
 - [ ] `[g6 —] the group leaves Collection A, the registry, and the Trash as it found them` — `deleteProperty` each seeded property through `mutate`, `deletePage` `Drive Held`, empty each bundle the group made with `permanentDelete` on, and reset `permanentDelete`; assert against start-of-group values: `Collection A`'s `properties`, `.nexus/properties.json`'s `order`, and `bundles:list({ kind: 'trash' })`'s length.
+
+Every folded call, by the table, with the replies and the O-1 names the CHANGE spells:
+
+```.claude/scripts/Alias Drive/live-drive.mjs diff
+@@ :75 @@
+-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
++    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+@@ :78 @@
+-    ids[name] = r.value.id
++    ids[name] = r.value.created.propertyId
+@@ :80 @@
+-  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'property:editOption', ids[CHOICE], { op: 'add', groupId: 'select', label: title }))
++  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[CHOICE], edit: { op: 'add', groupId: 'select', label: title } }))
+```
+
+```.claude/scripts/Archive Drive/live-drive.mjs diff
+@@ :335 @@
+-  const { id: stage } = await must('add Drive Stage', ask(cdp, 'schema:add', 'Collection A', {
++  const { created: { propertyId: stage } } = await must('add Drive Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
+@@ :340 @@
+-  }))
++  } }))
+@@ :389 @@
+-  const count = await must('property:holders', ask(cdp, 'property:holders', stage))
++  const count = await must('property:holders', ask(cdp, 'property:holders', stage, { of: 'property' }))
+@@ :391 @@
+-  await must('rename the Draft option', ask(cdp, 'property:renameOption', stage, 'Draft', 'Final'))
++  await must('rename the Draft option', ask(cdp, 'mutate', { op: 'renameOption', propertyId: stage, from: 'Draft', to: 'Final' }))
+@@ :396 @@
+-  await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
++  await must('delete Drive Stage', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: stage }))
+```
+
+```.claude/scripts/Metadata Drive/live-drive.mjs diff
+@@ :104 @@
+-  const owed = r.ok ? r.value?.owed : undefined
++  const owed = r.ok ? r.value?.retry?.record : undefined
+@@ :106 @@
+-  const replayed = owed ? await ask(cdp, 'property:replay', owed) : null
++  const replayed = owed ? await ask(cdp, 'mutate', r.value.retry) : null
+@@ :156 @@
+-  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id)).ok)
++  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id, { of: 'property' })).ok)
+@@ :157 @@
+-  await must(`assign ${def.label ?? def.key}`, ask(cdp, 'schema:assign', COLLECTION, def.id))
++  await must(`assign ${def.label ?? def.key}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: def.id }))
+@@ :164 @@
+-const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...def })
++const add = (cdp, def, container = COLLECTION) => ask(cdp, 'mutate', { op: 'addProperty', containerPath: container, draft: def })
+@@ :168 @@
+-  ids[def.label] = r.value.id
++  ids[def.label] = r.value.created.propertyId
+@@ :169 @@
+-  return r.value.id
++  return r.value.created.propertyId
+@@ :216 @@
+-  await must('assign to Collection B', ask(cdp, 'schema:assign', CACHE_COLLECTION, propertyId))
++  await must('assign to Collection B', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
+@@ :217 @@
+-  await must('unassign from Collection B', ask(cdp, 'schema:unassign', CACHE_COLLECTION, propertyId))
++  await must('unassign from Collection B', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
+@@ :354 @@
+-  await must('rename M1 Note', ask(cdp, 'property:rename', note, 'M1 Notes'))
++  await must('rename M1 Note', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: note, label: 'M1 Notes' }))
+@@ :361 @@
+-  await must('delete M1 Stage', ask(cdp, 'property:delete', stage))
++  await must('delete M1 Stage', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: stage }))
+@@ :512 @@
+-    key: { label: 'a property rename', decision: 'A-1', run: () => ask(cdp, 'property:rename', ids['M2 Pick'], 'M2 Picked') },
++    key: { label: 'a property rename', decision: 'A-1', run: () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Pick'], label: 'M2 Picked' }) },
+@@ :513 @@
+-    recase: { label: 'a case-only property rename', decision: 'A-1', run: () => ask(cdp, 'property:rename', ids['M2 Memo'], 'm2 memo') },
++    recase: { label: 'a case-only property rename', decision: 'A-1', run: () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Memo'], label: 'm2 memo' }) },
+@@ :525 @@
+-  const refused = await ask(cdp, 'property:rename', ids['M2 Held'], 'm2 held')
++  const refused = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Held'], label: 'm2 held' })
+@@ :530 @@
+-  const deleted = await must('delete M2 Gone', ask(cdp, 'property:delete', ids['M2 Gone']))
++  const deleted = await must('delete M2 Gone', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M2 Gone'] }))
+@@ :533 @@
+-  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.trashed.bundlePath }))
++  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.bundled.bundlePath }))
+@@ :538 @@
+-  const skip = await tryAgain(cdp, pairs.skip, () => ask(cdp, 'property:rename', ids['M2 Skip'], 'M2 Skipped'), async () => {
++  const skip = await tryAgain(cdp, pairs.skip, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Skip'], label: 'M2 Skipped' }), async () => {
+@@ :545 @@
+-  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'property:rename', ids['M2 Chain'], 'M2 Chained'),
++  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Chained' }),
+@@ :546 @@
+-    () => must('rename M2 Chained', ask(cdp, 'property:rename', ids['M2 Chain'], 'M2 Linked')))
++    () => must('rename M2 Chained', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Linked' })))
+@@ :552 @@
+-  const twin = await tryAgain(cdp, pairs.twin, () => ask(cdp, 'property:rename', ids['M2 Twin'], 'M2 Twins'), async () => {
++  const twin = await tryAgain(cdp, pairs.twin, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twins' }), async () => {
+@@ :553 @@
+-    await must('rename M2 Twins back', ask(cdp, 'property:rename', ids['M2 Twin'], 'M2 Twin'))
++    await must('rename M2 Twins back', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twin' }))
+@@ :684 @@
+-  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], 'green')).ok, 10000)
++  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], { of: 'option', label: 'green' })).ok, 10000)
+@@ :685 @@
+-  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], 'ideas')).ok, 10000)
++  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], { of: 'option', label: 'ideas' })).ok, 10000)
+@@ :733 @@
+-    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'property:renameOption', ids[C.labels], 'Work', 'Job') },
++    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: ids[C.labels], from: 'Work', to: 'Job' }) },
+@@ :738 @@
+-  const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'property:rename', ids['M3 Case'], 'm3 case'))
++  const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M3 Case'], label: 'm3 case' }))
+@@ :787 @@
+-  await counted('J-1 F-4', 'a property delete', [priority], [one, two, AREA_ONE, AREA_TWO], 4, () => ask(cdp, 'property:delete', priority))
++  await counted('J-1 F-4', 'a property delete', [priority, { of: 'property' }], [one, two, AREA_ONE, AREA_TWO], 4, () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: priority }))
+@@ :788 @@
+-  await counted('F-4', 'a Clear', [tagsId, 'a'], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'property:clearOption', tagsId, 'a'))
++  await counted('F-4', 'a Clear', [tagsId, { of: 'option', label: 'a' }], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'mutate', { op: 'clearOption', propertyId: tagsId, label: 'a' }))
+@@ :789 @@
+-  await counted('F-4', 'a Remove', [tagsId, 'b'], [tags[1], tags[2]], 2, () => ask(cdp, 'property:removeOption', tagsId, 'b'))
++  await counted('F-4', 'a Delete', [tagsId, { of: 'option', label: 'b' }], [tags[1], tags[2]], 2, () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tagsId, label: 'b' }))
+@@ :791 @@
+-  pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'property:rename', ids['M4 Held'], 'm4 held'), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
++  pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Held'], label: 'm4 held' }), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
+@@ :792 @@
+-  pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'property:rename', ids['M4 Pair'], 'm4 pair'), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
++  pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Pair'], label: 'm4 pair' }), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
+@@ :793 @@
+-  const skipped = await unreadable(notice[0], () => ask(cdp, 'property:rename', ids['M4 Notice'], 'M4 Notices'))
++  const skipped = await unreadable(notice[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Notice'], label: 'M4 Notices' }))
+@@ :795 @@
+-  if (skipped.ok && skipped.value?.owed) await must('Try Again', ask(cdp, 'property:replay', skipped.value.owed))
++  if (skipped.ok && skipped.value?.retry) await must('Try Again', ask(cdp, 'mutate', skipped.value.retry))
+@@ :840 @@
+-  await must('an unrelated registry write', ask(cdp, 'property:setIcon', grade, 'tag'))
++  await must('an unrelated registry write', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: grade, patch: { icon: 'tag' } }))
+@@ :848 @@
+-  await must('clear Urgent', ask(cdp, 'property:clearOption', kindId, 'Urgent'))
++  await must('clear Urgent', ask(cdp, 'mutate', { op: 'clearOption', propertyId: kindId, label: 'Urgent' }))
+@@ :855 @@
+-    defOf(step.id)?.label === 'm5 grade (2)' && defOf(step.id)?.key === 'm5 grade (2)', show(defOf(step.id)))
++    defOf(step.created.propertyId)?.label === 'm5 grade (2)' && defOf(step.created.propertyId)?.key === 'm5 grade (2)', show(defOf(step.created.propertyId)))
+@@ :857 @@
+-    refusedAs(await ask(cdp, 'property:rename', kindId, 'm5 grade'), COPY.aLabelAnotherPropertyHolds, 'm5 grade'))
++    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindId, label: 'm5 grade' }), COPY.aLabelAnotherPropertyHolds, 'm5 grade'))
+@@ :859 @@
+-    refusedAs(await ask(cdp, 'property:rename', kindId, 'M5_DUE'), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
++    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindId, label: 'M5_DUE' }), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
+@@ :865 @@
+-  pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner)).ok === false)
++  pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner, { of: 'property' })).ok === false)
+@@ :868 @@
+-    refusedAs(await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', label: 'a' }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
++    refusedAs(await ask(cdp, 'mutate', { op: 'editOption', propertyId: grade, edit: { op: 'add', groupId: 'select', label: 'a' } }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
+@@ :921 @@
+-  await must('rename Light Blue', ask(cdp, 'property:renameOption', tones, 'Light Blue', 'Sky Blue'))
++  await must('rename Light Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: tones, from: 'Light Blue', to: 'Sky Blue' }))
+@@ :928 @@
+-  await must('rename Urgent', ask(cdp, 'property:renameOption', kindId, 'Urgent', 'Critical'))
++  await must('rename Urgent', ask(cdp, 'mutate', { op: 'renameOption', propertyId: kindId, from: 'Urgent', to: 'Critical' }))
+@@ :932 @@
+-  await must('remove Critical', ask(cdp, 'property:removeOption', kindId, 'Critical'))
++  await must('delete Critical', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: kindId, label: 'Critical' }))
+@@ :933 @@
+-  pin(G, 'F-2', 'an option removal strips the page and the view naming it',
++  pin(G, 'F-2', 'an option delete strips the page and the view naming it',
+@@ :935 @@
+-  await must('remove Mid Grey', ask(cdp, 'property:removeOption', tones, 'Mid Grey'))
++  await must('delete Mid Grey', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tones, label: 'Mid Grey' }))
+@@ :936 @@
+-  pin(G, 'F-2', 'an option removal strips the page and the Collection cache',
++  pin(G, 'F-2', 'an option delete strips the page and the Collection cache',
+@@ :938 @@
+-  await must('clear Sky Blue', ask(cdp, 'property:clearOption', tones, 'Sky Blue'))
++  await must('clear Sky Blue', ask(cdp, 'mutate', { op: 'clearOption', propertyId: tones, label: 'Sky Blue' }))
+@@ :940 @@
+-  await must('assign M6 Tones to Collection B again', ask(cdp, 'schema:assign', CACHE_COLLECTION, tones))
++  await must('assign M6 Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
+@@ :946 @@
+-  const renamed = await unreadable(due[0], () => ask(cdp, 'property:rename', dueId, 'M6 When'))
++  const renamed = await unreadable(due[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueId, label: 'M6 When' }))
+@@ :948 @@
+-    same(renamed.value?.owed, { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }) && same(slot(), renamed.value?.owed), show([renamed, slot()]))
++    same(renamed.value?.retry?.record, { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }) && same(slot(), renamed.value?.retry?.record), show([renamed, slot()]))
+@@ :949 @@
+-  await must('Try Again', ask(cdp, 'property:replay', renamed.value.owed))
++  await must('Try Again', ask(cdp, 'mutate', renamed.value.retry))
+@@ :953 @@
+-  const owing = await unreadable(tint[0], () => ask(cdp, 'property:renameOption', tints, 'Pale', 'Light'))
++  const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Pale', to: 'Light' }))
+@@ :955 @@
+-    same(owing.value?.owed, optionRecord) && same(slot(), optionRecord), show([owing, slot()]))
++    same(owing.value?.retry?.record, optionRecord) && same(slot(), optionRecord), show([owing, slot()]))
+@@ :958 @@
+-    refusedAs(await ask(cdp, 'property:renameOption', tints, 'Deep', 'Dark'), COPY.anOptionChangeWaitingForTryAgain))
++    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Deep', to: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
+@@ :959 @@
+-  pin(G, 'F-1', 'an option removal waits while a record is owed',
++  pin(G, 'F-1', 'an option delete waits while a record is owed',
+@@ :960 @@
+-    refusedAs(await ask(cdp, 'property:removeOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
++    refusedAs(await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
+@@ :963 @@
+-    refusedAs(await ask(cdp, 'property:clearOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
++    refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
+@@ :964 @@
+-  await must('rename M6 Free', ask(cdp, 'property:rename', ids['M6 Free'], 'M6 Freed'))
++  await must('rename M6 Free', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }))
+@@ :969 @@
+-  await must('Try Again', ask(cdp, 'property:replay', owing.value.owed))
++  await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
+@@ :973 @@
+-  const removedProp = await unreadable(doomed[0], () => ask(cdp, 'property:delete', ids['M6 Doomed']))
++  const removedProp = await unreadable(doomed[0], () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M6 Doomed'] }))
+@@ :975 @@
+-    same(removedProp.value?.owed, { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
++    same(removedProp.value?.retry?.record, { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
+@@ :976 @@
+-  if (removedProp.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedProp.value.owed))
++  if (removedProp.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedProp.value.retry))
+@@ :979 @@
+-  const removedOption = await unreadable(strike[0], () => ask(cdp, 'property:removeOption', strikeId, 'x'))
++  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, label: 'x' }))
+@@ :980 @@
+-  pin(G, 'F-1', 'an option removal record carries the stored key',
++  pin(G, 'F-1', 'an option delete record carries the stored key',
+@@ :981 @@
+-    same(removedOption.value?.owed, { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
++    same(removedOption.value?.retry?.record, { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
+@@ :982 @@
+-  if (removedOption.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedOption.value.owed))
++  if (removedOption.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedOption.value.retry))
+@@ :983 @@
+-  pin(G, 'F-1', "the option removal's Try Again strips the skipped file",
++  pin(G, 'F-1', "the option delete's Try Again strips the skipped file",
+@@ :1075 @@
+-    const count = await ask(cdp, 'property:holders', slugId, { key_format: f })
++    const count = await ask(cdp, 'property:holders', slugId, { of: 'format', change: { key_format: f } })
+@@ :1077 @@
+-    const r = await ask(cdp, 'property:setKeyFormat', slugId, f)
++    const r = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { key_format: f } })
+@@ :1094 @@
+-  const unchanged = await ask(cdp, 'property:setKeyFormat', slugId, 'Match Title')
++  const unchanged = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { key_format: 'Match Title' } })
+@@ :1097 @@
+-  const listed = await ask(cdp, 'property:setKeyFormat', kindsId, 'lowercase')
++  const listed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: kindsId, change: { key_format: 'lowercase' } })
+@@ :1099 @@
+-    listed.ok && listed.value?.from === 'Kinds' && listed.value?.to === 'kinds' && (await wrote(kinds, 'x: 1\nkinds: [a]\ny: 2'))
++    listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds' && (await wrote(kinds, 'x: 1\nkinds: [a]\ny: 2'))
+@@ :1102 @@
+-  const relabel = await ask(cdp, 'property:rename', kindsId, 'Labels')
++  const relabel = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindsId, label: 'Labels' })
+@@ :1105 @@
+-  const recased = await ask(cdp, 'property:rename', kindsId, 'LABELS')
++  const recased = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindsId, label: 'LABELS' })
+@@ :1107 @@
+-    recased.ok && recased.value?.from === 'labels' && recased.value?.to === 'labels' && defOf(kindsId).label === 'LABELS' && (await kindsKept.holds()), show(recased))
++    recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS' && (await kindsKept.holds()), show(recased))
+@@ :1111 @@
+-    refusedAs(await ask(cdp, 'property:setKeyFormat', sortsId, 'lowercase'), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'lowercase' } }), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
+@@ :1115 @@
+-    pin(G, 'B-5', `a create of "${label}" under ${format} writes "${want}"`, r.ok && defOf(r.value.id)?.key === want && defOf(r.value.id)?.label === label, show([r, r.ok && defOf(r.value.id)]))
++    pin(G, 'B-5', `a create of "${label}" under ${format} writes "${want}"`, r.ok && defOf(r.value.created.propertyId)?.key === want && defOf(r.value.created.propertyId)?.label === label, show([r, r.ok && defOf(r.value.created.propertyId)]))
+@@ :1118 @@
+-  pin(G, 'C-2', 'a create writes its key from its label, whatever key it is handed', defOf(given.id)?.key === 'Given Key', show(defOf(given.id)))
++  pin(G, 'C-2', 'a create writes its key from its label, whatever key it is handed', defOf(given.created.propertyId)?.key === 'Given Key', show(defOf(given.created.propertyId)))
+@@ :1122 @@
+-    defOf(stepped.id)?.label === 'Ship Date (2)' && defOf(stepped.id)?.key === 'ship_date_(2)', show(defOf(stepped.id)))
++    defOf(stepped.created.propertyId)?.label === 'Ship Date (2)' && defOf(stepped.created.propertyId)?.key === 'ship_date_(2)', show(defOf(stepped.created.propertyId)))
+@@ :1126 @@
+-    refusedAs(await ask(cdp, 'property:setKeyFormat', shipDate, 'snake_case'), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shipDate, change: { key_format: 'snake_case' } }), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
+@@ :1130 @@
+-    refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: dashes, change: { key_format: 'kebab-case' } }), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
+@@ :1133 @@
+-    refusedAs(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), COPY.aKeyPommoraManages) && defOf(hidden).key === 'Heading Icon Hidden')
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: hidden, change: { key_format: 'snake_case' } }), COPY.aKeyPommoraManages) && defOf(hidden).key === 'Heading Icon Hidden')
+@@ :1137 @@
+-  await must('rename Due Soon', ask(cdp, 'property:rename', dueSoonId, 'Due Later'))
++  await must('rename Due Soon', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueSoonId, label: 'Due Later' }))
+@@ :1139 @@
+-  await must('an icon on Kind Of', ask(cdp, 'property:setIcon', kindOf, 'tag'))
++  await must('an icon on Kind Of', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: kindOf, patch: { icon: 'tag' } }))
+@@ :1146 @@
+-    same(wordsOf(seededStatus.id), [['open', 'Open'], ['active', 'Active'], ['done', 'Done']]), show(defOf(seededStatus.id)))
++    same(wordsOf(seededStatus.created.propertyId), [['open', 'Open'], ['active', 'Active'], ['done', 'Done']]), show(defOf(seededStatus.created.propertyId)))
+@@ :1148 @@
+-  pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.id), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.id)))
++  pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.created.propertyId), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.created.propertyId)))
+@@ :1150 @@
+-  await must('add Dark Blue', ask(cdp, 'property:editOption', paletteId, { op: 'add', groupId: 'select', label: 'Dark Blue' }))
++  await must('add Dark Blue', ask(cdp, 'mutate', { op: 'editOption', propertyId: paletteId, edit: { op: 'add', groupId: 'select', label: 'Dark Blue' } }))
+@@ :1152 @@
+-  await must('rename Dark Blue', ask(cdp, 'property:renameOption', paletteId, 'Dark Blue', 'Navy Blue'))
++  await must('rename Dark Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: paletteId, from: 'Dark Blue', to: 'Navy Blue' }))
+@@ :1159 @@
+-  await must('rename in-progress', ask(cdp, 'property:renameOption', progressId, 'in-progress', 'In Progress'))
++  await must('rename in-progress', ask(cdp, 'mutate', { op: 'renameOption', propertyId: progressId, from: 'in-progress', to: 'In Progress' }))
+@@ :1167 @@
+-  const toneCount = await ask(cdp, 'property:holders', tones, { value_format: 'kebab-case' })
++  const toneCount = await ask(cdp, 'property:holders', tones, { of: 'format', change: { value_format: 'kebab-case' } })
+@@ :1170 @@
+-  const changed = await ask(cdp, 'property:setValueFormat', tones, 'kebab-case')
++  const changed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: tones, change: { value_format: 'kebab-case' } })
+@@ :1172 @@
+-    changed.ok && !changed.value?.owed && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && slot() === null,
++    changed.ok && !changed.value?.retry && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && slot() === null,
+@@ :1186 @@
+-  await must('assign Tones to Collection B again', ask(cdp, 'schema:assign', CACHE_COLLECTION, tones))
++  await must('assign Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
+@@ :1190 @@
+-  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'property:setKeyFormat', skipKeyId, 'lowercase'))
++  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipKeyId, change: { key_format: 'lowercase' } }))
+@@ :1193 @@
+-    same(keySkip.value?.owed, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
++    same(keySkip.value?.retry?.record, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
+@@ :1194 @@
+-  const keyReplay = await ask(cdp, 'property:replay', keySkip.value?.owed)
++  const keyReplay = await ask(cdp, 'mutate', keySkip.value?.retry)
+@@ :1197 @@
+-  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'property:setValueFormat', skipValueId, 'kebab-case'))
++  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipValueId, change: { value_format: 'kebab-case' } }))
+@@ :1200 @@
+-    same(valueSkip.value?.owed, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
++    same(valueSkip.value?.retry?.record, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
+@@ :1201 @@
+-  const valueReplay = await ask(cdp, 'property:replay', valueSkip.value?.owed)
++  const valueReplay = await ask(cdp, 'mutate', valueSkip.value?.retry)
+@@ :1207 @@
+-    refusedAs(await ask(cdp, 'property:setValueFormat', wifiId, 'kebab-case'), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: wifiId, change: { value_format: 'kebab-case' } }), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
+@@ :1210 @@
+-    refusedAs(await ask(cdp, 'property:setValueFormat', router, 'kebab-case'), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: router, change: { value_format: 'kebab-case' } }), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
+@@ :1212 @@
+-    refusedAs(await ask(cdp, 'property:setValueFormat', slugId, 'kebab-case'), COPY.anOptionEditWithoutOptions))
++    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { value_format: 'kebab-case' } }), COPY.anOptionEditWithoutOptions))
+@@ :1214 @@
+-    refusedAs(await ask(cdp, 'property:holders', slugId, { value_format: 'kebab-case' }), COPY.anOptionEditWithoutOptions))
++    refusedAs(await ask(cdp, 'property:holders', slugId, { of: 'format', change: { value_format: 'kebab-case' } }), COPY.anOptionEditWithoutOptions))
+@@ :1215 @@
+-  const matchTitle = await ask(cdp, 'property:holders', wifiId, { value_format: 'Match Title' })
++  const matchTitle = await ask(cdp, 'property:holders', wifiId, { of: 'format', change: { value_format: 'Match Title' } })
+@@ :1218 @@
+-  const owing = await unreadable(owedPage[0], () => ask(cdp, 'property:renameOption', owedColors, 'Red', 'Crimson'))
++  const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, from: 'Red', to: 'Crimson' }))
+@@ :1220 @@
+-    !!owing.value?.owed && refusedAs(await ask(cdp, 'property:setValueFormat', shadesId, 'UPPERCASE'), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
++    !!owing.value?.retry && refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shadesId, change: { value_format: 'UPPERCASE' } }), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
+@@ :1221 @@
+-  const free = await ask(cdp, 'property:setKeyFormat', sortsId, 'UPPERCASE')
++  const free = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })
+@@ :1223 @@
+-  if (owing.value?.owed) await must('Try Again', ask(cdp, 'property:replay', owing.value.owed))
++  if (owing.value?.retry) await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
+@@ :1233 @@
+-  await must('Value Format lowercase on Hues', ask(cdp, 'property:setValueFormat', huesId, 'lowercase'))
++  await must('Value Format lowercase on Hues', ask(cdp, 'mutate', { op: 'setFormat', propertyId: huesId, change: { value_format: 'lowercase' } }))
+@@ :1281 @@
+-  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).trashed.bundlePath
++  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).bundled.bundlePath
+@@ :1285 @@
+-    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).trashed.bundlePath
++    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).bundled.bundlePath
+@@ :1286 @@
+-  await must('Key Format lowercase on Priority', ask(cdp, 'property:setKeyFormat', ids.Priority, 'lowercase'))
++  await must('Key Format lowercase on Priority', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Priority, change: { key_format: 'lowercase' } }))
+@@ :1287 @@
+-  await must('Value Format UPPERCASE on Severity', ask(cdp, 'property:setValueFormat', ids.Severity, 'UPPERCASE'))
++  await must('Value Format UPPERCASE on Severity', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Severity, change: { value_format: 'UPPERCASE' } }))
+@@ :1288 @@
+-  await must('rename Rank', ask(cdp, 'property:rename', ids.Rank, 'Standing'))
++  await must('rename Rank', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids.Rank, label: 'Standing' }))
+@@ :1535 @@
+-  await must('rename M9 A', ask(cdp, 'property:rename', A, 'M9 Alpha'))
++  await must('rename M9 A', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: A, label: 'M9 Alpha' }))
+```
+
+```.claude/scripts/Option Picker Drive/live-drive.mjs diff
+@@ :33 @@
+-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
++    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+@@ :35 @@
+-    ids[name] = r.value?.id
++    ids[name] = r.value?.created?.propertyId
+@@ :39 @@
+-      const r = await ask(cdp, 'property:editOption', ids[name], { op: 'add', groupId: 'select', label: title })
++      const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[name], edit: { op: 'add', groupId: 'select', label: title } })
+@@ :286 @@
+-  const r = await ask(cdp, 'property:editOption', ids['Drive Select'], { op: 'add', groupId: 'select', label: '' })
++  const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Drive Select'], edit: { op: 'add', groupId: 'select', label: '' } })
+```
+
+```.claude/scripts/Path Links Drive/live-drive.mjs diff
+@@ :178 @@
+-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
++    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+@@ :180 @@
+-    props[name] = r.value.id
++    props[name] = r.value.created.propertyId
+@@ :1298 @@
+-  const added = await ask(cdp, 'schema:add', seeded.first, { id: '', label: BENCH_LINK, type: 'link' })
++  const added = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: seeded.first, draft: { id: '', label: BENCH_LINK, type: 'link' } })
+@@ :1300 @@
+-  for (const [v, order] of [[BENCH_VIEW, ['_title', added.value.id]], [BENCH_PLAIN_VIEW, ['_title']]])
++  for (const [v, order] of [[BENCH_VIEW, ['_title', added.value.created.propertyId]], [BENCH_PLAIN_VIEW, ['_title']]])
+@@ :1301 @@
+-    await must(v.name, ask(cdp, 'views:save', seeded.first, 'collection', { id: v.id, name: v.name, type: 'table', property_order: order, hidden_properties: added.value.id === order.at(-1) ? [] : [added.value.id] }, {}))
++    await must(v.name, ask(cdp, 'views:save', seeded.first, 'collection', { id: v.id, name: v.name, type: 'table', property_order: order, hidden_properties: added.value.created.propertyId === order.at(-1) ? [] : [added.value.created.propertyId] }, {}))
+```
+
+```.claude/scripts/Text Property Drive/live-drive.mjs diff
+@@ :67 @@
+-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
++    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+@@ :70 @@
+-    ids[name] = r.value.id
++    ids[name] = r.value.created.propertyId
+@@ :72 @@
+-  await must('Drive Bar as a percent', ask(cdp, 'property:setNumberFormat', ids[BAR], { number_family: 'percent' }))
++  await must('Drive Bar as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids[BAR], patch: { number_family: 'percent' } }))
+@@ :443 @@
+-  await must('description as Text', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'description', type: 'text' }))
++  await must('description as Text', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'description', type: 'text' } }))
+```
+
+```.claude/scripts/nexus-watch.mjs diff
+@@ :35 @@
+-    await Promise.all(Object.values(defs).map(async (d) => [label(d), (await ask(cdp, 'property:holders', d.id)).value ?? null])),
++    await Promise.all(Object.values(defs).map(async (d) => [label(d), (await ask(cdp, 'property:holders', d.id, { of: 'property' })).value ?? null])),
+```
+
+```.claude/scripts/Properties Drive/live-drive.mjs diff
+@@ :124 @@
+-    ids[label] = (await must(`add ${label}`, ask(cdp, 'schema:add', 'Collection A', { id: '', label, type }))).id
++    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label, type } }))).created.propertyId
+@@ :125 @@
+-  await must('Looks Number as a percent', ask(cdp, 'property:setNumberFormat', ids['Looks Number'], { number_family: 'percent' }))
++  await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
+@@ :126 @@
+-  await must('Looks Select gains Alpha', ask(cdp, 'property:editOption', ids['Looks Select'], { op: 'add', groupId: 'select', label: 'Alpha' }))
++  await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', label: 'Alpha' } }))
+@@ :152 @@
+-  const status = await must('Status', ask(cdp, 'schema:add', 'Collection A', {
++  const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
+     id: '', label: 'Status', type: 'select',
+     select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
+-  }))
++  } }))
+@@ :156 @@
+-  const notes = await must('Notes', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Notes', type: 'text' }))
++  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Notes', type: 'text' } }))
+@@ :157 @@
+-  const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.id, notes.id], hidden_properties: [] }
++  const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.created.propertyId, notes.created.propertyId], hidden_properties: [] }
+@@ :168 @@
+-  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.id, value: { kind: 'text', value: 'edited' } }))
++  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.created.propertyId, value: { kind: 'text', value: 'edited' } }))
+@@ :173 @@
+-    filter: { match: 'all', rules: [{ property_id: notes.id, op: 'is_empty' }] },
++    filter: { match: 'all', rules: [{ property_id: notes.created.propertyId, op: 'is_empty' }] },
+@@ :180 @@
+-  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.id, value: { kind: 'text', value: 'held' } }))
++  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.created.propertyId, value: { kind: 'text', value: 'held' } }))
+@@ :194 @@
+-  await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.id))
++  await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.created.propertyId))
+@@ :258 @@
+-  const pick = await must('Drive Undo Pick', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Pick', type: 'select' }))
++  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Pick', type: 'select' } }))
+@@ :259 @@
+-  const link = await must('Drive Undo Link', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Link', type: 'link' }))
++  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Link', type: 'link' } }))
+@@ :260 @@
+-  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'property:editOption', pick.id, { op: 'add', groupId: 'select', label }))
++  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', label } }))
+@@ :261 @@
+-  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.id, link.id], hidden_properties: [] }, {}))
++  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
+```
 
 **VERIFY**
 
@@ -14602,6 +15383,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
  …
 -  const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']], labels: ['Pale', 'Light'] }
 +  const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']] }
+ …
 -  pin(G, 'F-1', 'an option rename record carries its key pairs and its label pair',
 +  pin(G, 'F-1', 'an option rename record carries its key pairs',
 ```
@@ -21232,7 +22014,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 - [ ] `useViewCreation.ts`' `createAdjacent` resolves each sort criterion's column once through `resolveColumn(criterion.property_id, c.schema, c.contextIds)`.
 - [ ] Every other `resolveFieldValue` caller passes the column it holds: `Cell.tsx`, `CardValue.tsx`, `CardsView.tsx`'s value-picker effect, `cardValueInput.ts` (`c` in `shownColumnsFor`, the entry's `column` in `addEntriesFor`), `TableView.tsx` (`col`, and `massPicker`'s `col`), `assignValue.ts` (`column`; on F3's Fail outcome, `send`'s definition read, in Task 6-3's form, reads `column.def`), `propertyMenuActions.ts` (`build` and `runPropertyAction` read Task 13-1's columns), and `PropertyPanel.tsx` (`renderRow` reads its `column`; `editRow`, `panelTarget`, and the popover read one local `currentOf(id)`).
 - [ ] `ValueWriter.schema` leaves: P6's `send` check `if (column.kind !== 'context' && !w.schema.some((d) => d.id === column.id)) return undefined` (Task 6-5's) leaves, since a property column carries its definition and the host's `setProperty` refuses a property deleted since through its own registry read, and with it go what only that refusal could trip: `send`'s `| undefined` return and its doc's "undefined for a property the writer's schema lacks", `assignValue`'s `if (!sent) return sent`, and `revert`'s `!== undefined` test. On F3's Fail outcome there is no such check: Task 6-3's `w.schema.find` read takes `column.def`, and its `if (!def) return undefined` refusal keeps the return, the doc, and the two tests until Task 13-7 removes them with it. With `resolveFieldValue`'s read on the column (below), `git grep -n "w\.schema\|live\.schema" -- Core/Properties/assignValue.ts` answers nothing; the field and its `PropertyDefinition` import leave `assignValue.ts`, with the three assemblers' `schema` lines (`useViewHost.ts`' writer effect, `PropertyPanel.tsx`'s writer effect, `entityMenuActions.ts`' `valueCommitFor`, which drops its `schema` parameter, the file's last `PropertyDefinition` reader) and the two test writers' (`propertyMenuActions.test.ts`' harness `schema: SCHEMA`; `assignValue.test.ts`' `live` and the Link group's `live.schema`). `assignValue.test.ts`' "writes nothing without a live writer, and nothing for an unknown property" loses its unknown-property half (`schema: []`) with the refusal it pinned.
-- [ ] Test sweep: `fieldValue.test.ts`' `rfv` (above) and its direct `resolveFieldValue(keyed, 'prop_s', [def])` (HEAD `:155`) read `propertyColumn(def)`; `sort.test.ts`' `makeSorter(…, schema)` and `resolvedSortCount(…, schema)` calls gain `[]` as `contextIds` (`CONTEXT_IDS` where a case seeds a Context, as `:56`'s `prop_rel` fixture does); `filter.test.ts`' `applyFilter` calls without a set tree or Context ids pass `[]` for each; `group.test.ts`' wrapper drops `schema` from `resolveGroupsOf` and its three `bucketKey` calls take `propertyColumn(def)`; `bandModel.test.ts`, `GroupBand.test.tsx`, and `bandZone.test.tsx` pass a `Grouping` (or `undefined`) to `headContextOf`; `bandRouter.test.ts`' scope drops `schema` and its plans carry `{ config, column }`; `creationOrder.test.ts`' sorter call gains `[]`.
+- [ ] Test sweep: `fieldValue.test.ts`' `rfv` (above) and its direct `resolveFieldValue(keyed, 'prop_s', [def])` (HEAD `:155`) read `propertyColumn(def)`; `sort.test.ts`' `makeSorter(…, schema)` and `resolvedSortCount(…, schema)` calls gain `[]` as `contextIds` (AFTER, every call but the four naming `prop_rel` or `ctx_areas`), and `CONTEXT_IDS` where a case seeds a Context, as `:56`'s `prop_rel` fixture does; `filter.test.ts`' `applyFilter` calls without a set tree or Context ids pass `[]` for each; `group.test.ts`' wrapper drops `schema` from `resolveGroupsOf` and its three `bucketKey` calls take `propertyColumn(def)`; `bandModel.test.ts`, `GroupBand.test.tsx`, and `bandZone.test.tsx` pass a `Grouping` (or `undefined`) to `headContextOf`; `bandRouter.test.ts`' scope drops `schema` and its plans carry `{ config, column }`; `creationOrder.test.ts`' sorter call gains `[]`.
 - [ ] Sibling sweep: `git grep -n "declaredType(" -- Core/Views/Pipeline Core/Views/Host Core/Matrix ':!*.test.*'` answers only `useColumnStyles.ts:30` (Task 13-3's); `git grep -n "schema.find" -- Core/Views/Pipeline Core/Views/Bands Core/Matrix ':!*.test.*'` answers only `resolveColumn` and `groupingOf`; `git grep -n "resolveFieldValue(.*schema" -- Core ':!*.test.*'` answers nothing (`fieldValue.test.ts`' `rfv` resolves its column from the test schema).
 - [ ] Commit: `git commit --only -- Core/Properties/fieldValue.ts Core/Properties/fieldValue.test.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Views/Pipeline/sort.ts Core/Views/Pipeline/sort.test.ts Core/Views/Pipeline/group.ts Core/Views/Pipeline/group.test.ts Core/Views/Pipeline/resolveView.ts Core/Views/Pipeline/creationSeeds.ts Core/Matrix/matrixInput.ts Core/Views/Host/useViewHost.ts Core/Views/Host/useBandHeads.ts Core/Views/Host/useViewCreation.ts Core/Views/Host/useViewInteractions.tsx Core/Views/Bands/bandModel.ts Core/Views/Bands/bandModel.test.ts Core/Views/Bands/bandRouter.ts Core/Views/Bands/bandRouter.test.ts Core/Views/Bands/GroupBand.test.tsx Core/Views/Bands/bandZone.test.tsx Core/Views/Settings/GroupFrame.tsx Core/Views/Settings/GroupFrame.test.tsx Core/Properties/Cells/Cell.tsx Core/Views/Cards/CardValue.tsx Core/Views/Cards/CardsView.tsx Core/Views/Cards/cardValueInput.ts Core/Views/Table/TableView.tsx Core/Properties/assignValue.ts Core/Properties/assignValue.test.ts Core/Interface/Menus/propertyMenuActions.ts Core/Interface/Menus/propertyMenuActions.test.ts Core/Interface/Menus/entityMenuActions.ts Core/Properties/PropertyPanel.tsx Core/Views/creationOrder.test.ts -m "Values were read through the column, and the view pipeline resolved each rule, sort, and grouping's column once per pass."`
 
@@ -22099,6 +22881,108 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 (The elided column is Task 13-1's `propertyColumn(schema[0])`; the Link group's column carries its own definition from Task 13-1, so its `beforeEach` stops widening the writer's schema.)
 
 (`TableView.tsx`, `Cell.tsx`, `CardValue.tsx`, `CardsView.tsx`, and `cardValueInput.ts` change only `resolveFieldValue(row, X.id, schema)` to `resolveFieldValue(row, X)` for the column `X` each site holds, as the CHANGE step lists.)
+
+```Core/Views/Pipeline/sort.test.ts diff
+@@ :442 @@
+-    expect(makeSorter(undefined, schema, [])).toBeNull()
++    expect(makeSorter(undefined, schema, [], [])).toBeNull()
+@@ :90 @@
+-    const sorter = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
++    const sorter = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema, [])
+@@ :101 and :118, both @@
+-    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema)
++    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema, [])
+@@ :108 @@
+-    const byLink = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
++    const byLink = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema, [])
+@@ :128 @@
+-    const sorter = makeSorter([{ property_id: 'prop_file', direction: 'ascending' }], schema)
++    const sorter = makeSorter([{ property_id: 'prop_file', direction: 'ascending' }], schema, [])
+@@ :139 @@
+-    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema)!
++    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [])!
+@@ :172 and :205, both @@
+-    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
++    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale], [])!
+@@ :229 @@
+-      ids(makeSorter([{ property_id: 'prop_status', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_status', direction: 'ascending' }], schema, [])!(rows)),
+@@ :232 @@
+-      ids(makeSorter([{ property_id: 'prop_status', direction: 'descending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_status', direction: 'descending' }], schema, [])!(rows)),
+@@ :241 @@
+-    const sorter = makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!
++    const sorter = makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema, [])!
+@@ :252 @@
+-      ids(makeSorter([{ property_id: 'prop_num', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_num', direction: 'ascending' }], schema, [])!(rows)),
+@@ :263 @@
+-      ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema, [])!(rows)),
+@@ :274 @@
+-      ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema, [])!(rows)),
+@@ :292 @@
+-      ids(makeSorter([{ property_id: '_title', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: '_title', direction: 'ascending' }], schema, [])!(rows)),
+@@ :297 @@
+-    expect(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema)).toBeNull()
++    expect(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema, [])).toBeNull()
+@@ :307 @@
+-      ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema, [])!(rows)),
+@@ :318 @@
+-      ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema, [])!(rows)),
+@@ :334 @@
+-      ids(makeSorter([{ property_id: '_modified_at', direction: 'descending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: '_modified_at', direction: 'descending' }], schema, [])!(rows)),
+@@ :377 @@
+-      ids(makeSorter([{ property_id: 'prop_sel', direction: 'descending' }], schema)!(rows)),
++      ids(makeSorter([{ property_id: 'prop_sel', direction: 'descending' }], schema, [])!(rows)),
+@@ :398 @@
+-    expect(makeSorter(undefined, schema)).toBeNull()
++    expect(makeSorter(undefined, schema, [])).toBeNull()
+@@ :399 @@
+-    expect(makeSorter([], schema)).toBeNull()
++    expect(makeSorter([], schema, [])).toBeNull()
+@@ :400 @@
+-    expect(makeSorter([{ property_id: 'prop_unknown', direction: 'ascending' }], schema)).toBeNull()
++    expect(makeSorter([{ property_id: 'prop_unknown', direction: 'ascending' }], schema, [])).toBeNull()
+@@ :408 @@
+-    expect(ids(makeSorter(undefined, schema, ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
++    expect(ids(makeSorter(undefined, schema, [], ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
+@@ :413 @@
+-    expect(ids(makeSorter(undefined, schema, ['c', 'a'])!(rows))).toEqual(['c', 'a', 'b', 'd'])
++    expect(ids(makeSorter(undefined, schema, [], ['c', 'a'])!(rows))).toEqual(['c', 'a', 'b', 'd'])
+@@ :422 and :434, both @@
+-    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [
++    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [], [
+@@ :443 @@
+-    expect(makeSorter(undefined, schema, undefined)).toBeNull()
++    expect(makeSorter(undefined, schema, [], undefined)).toBeNull()
+@@ :465 @@
+-    expect(resolvedSortCount(undefined, schema)).toBe(0)
++    expect(resolvedSortCount(undefined, schema, [])).toBe(0)
+@@ :466 @@
+-    expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema)).toBe(
++    expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema, [])).toBe(
+@@ every call written across lines whose criteria list closes on its own line @@
+       ],
+-      schema,
++      schema,
++      [],
+@@ :216-217 @@
+       [{ property_id: 'prop_sel', direction: 'ascending', order: ['a', 'b'] }],
+-      schema,
++      schema,
++      [],
+@@ :456-457 @@
+       [{ property_id: 'prop_sel', direction: 'descending', order: ['c', 'a', 'b'] }],
+-      schema,
++      schema,
++      [],
+```
 
 **VERIFY**
 
