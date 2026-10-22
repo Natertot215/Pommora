@@ -7,7 +7,7 @@
 
 The Properties Restructure is a top-to-bottom cleanup of how Pommora handles properties, the fields like Status, Tags, Due Date, or Priority that pages and Spaces carry. Properties grew across many sessions, and most of how they work behind the scenes reflects what earlier agents judged appropriate rather than what you asked for. The same job is often done several ways, old code lingers for file layouts no Nexus still holds, and a handful of real bugs sit in the gaps. The work covers everything whose job is properties, wherever it lives in Pommora [A-2], treats the finished Archive work as current ground truth [A-3], and answers to the Brief's approach and principles [A-1].
 
-Most of it changes nothing you'll see. Where something does change, it's either a decision you made during the brainstorm (cited as [B-1], [J-10], and so on, from *Properties Restructure — Decisions & Intention*) or a reading planning took in your place, a Last Call (cited as [LC-#]) waiting for your ruling below.
+Most of it changes nothing you'll see. Where something does change, it's either a decision you made during the brainstorm (cited as [B-1], [J-10], and so on, from *Properties Restructure — Decisions & Intention*) or a reading planning took in your place, a Last Call (cited as [LC-#]) listed below for awareness.
 
 **The Shape:** 21 phases, run in order, each small enough for one agent to finish and each leaving Pommora working:
 
@@ -35,83 +35,11 @@ Most of it changes nothing you'll see. Where something does change, it's either 
 
 **How It Runs:** one agent per phase applies each step with the plan-replay tool, finishes what the tool can't, and proves the phase with the type check, tests, lint, and a click-through drive of the app. Two reviewers read Phases 6, 8, 11B, 12, 16B, and 17, the phases that rewrite your data, rebuild crash recovery, or change a shared surface. A neutral check runs after Phase 12 and at the end, and one final review covers everything.
 
-**When It's Done:** Pommora has about 838 fewer lines of production code, each property type's facts live in one place, every value change reaches its file one way, every big multi-file change can be finished with one Try Again, options have permanent ids, and the documents describing all of it are accurate.
+**When It's Done:** Pommora has about 759 fewer lines of production code, each property type's facts live in one place, every value change reaches its file one way, every big multi-file change can be finished with one Try Again, options have permanent ids, and the documents describing all of it are accurate.
 
 ### What I Need From You
 
-Seven decisions need you. Each one starts with the situation it's about, then what happens today, what happens after the plan, and what I recommend. After them is a short list of small visible changes, for awareness only. Answer in chat or under each decision.
-
-#### Your Decisions
-
-##### 1. Clearing an Option When It Misses Pages (LC-58)
-
-**The Situation:** you have a Select called Priority with an option "High". You use the option's Clear, which removes "High" from every page that has it. Three of those pages can't be changed right now, say because they're mid-sync.
-
-- **Today:** Pommora clears the pages it can reach and warns you that three pages were missed. There's no Try Again button; you run Clear again later to catch them.
-- **After:** The same.
-- **The Conflict:** you confirmed in B-1 that every change rewriting many files gets a crash-recovery note, and a note is what gives a change a Try Again button. The plan doesn't give Clear one.
-- **Why:** suppose Clear had a Try Again, and before you pressed it you set one of those three pages back to "High" on purpose. Pressing Try Again would then wipe the "High" you just chose. Running Clear again yourself is a fresh choice, so it can't erase something you did in between.
-- **I Recommend:** keep Clear as it is today, with no Try Again.
-
-##### 2. A Second Change While a Rename Is Still Unfinished (LC-63)
-
-**The Situation:** you rename the property Priority to Urgency. Two pages can't be updated right now, so they still say "Priority", and the rename's notice says "Couldn't update 2 Items" with Try Again. Before you press it, you rename the option "High" to "Urgent".
-
-- **Today:** I didn't trace this exact case in the code, so I can't tell you exactly what happens now.
-- **After:** The option rename updates every page that already says Urgency and reports success. The two leftover pages get both changes when the property rename finishes, either through its Try Again or the next time the Nexus opens.
-- **The Conflict:** you confirmed in B-3 that a change which can't reach every page tells you and offers Try Again for the rest. Here the second change reports success while two pages still wait.
-- **Alternative:** the option rename also reports "2 pages are still waiting" with its own Try Again. That's about 15 more lines of code.
-- **I Recommend:** the plan's way. Those two pages are already counted, with a Try Again, on the first notice, so a second notice would report the same two pages twice.
-
-##### 3. Telling You When a Name Got a Number (LC-14)
-
-**The Situation:** you restore a property called "Priority" from the Trash, but you've since made a new property called "Priority". The restored one has to become "Priority (2)". Separately, pressing `+` in the Properties pane makes a property named "New Select", and if that name is taken it becomes "New Select (2)".
-
-- **Today:** both happen silently.
-- **After:** the restore tells you: "Restored “Priority” as “Priority (2)”." The `+` stays silent.
-- **The Conflict:** you confirmed in O-4 that taking a numbered name tells you.
-- **Why the `+` Stays Silent:** you never typed a name there. Pommora picked "New Select" itself, so there's nothing of yours it changed.
-- **I Recommend:** a notice on the restore only.
-
-##### 4. One Word Different in the Two Link Menus (LC-47)
-
-**The Situation:** a page-link property in the Properties panel has two right-click menus: one on the row's label on the left, and one on the link value itself.
-
-- **Today:** the two menus list different items in a different order.
-- **After:** both read "Rename", then the edit item. On the label the edit item says "Edit Link"; on the value it says "Edit Title", because what you're editing there is the linked page's title.
-- **The Conflict:** you confirmed in J-10 that a value's right-click reads the same wherever it opens.
-- **Alternative:** both menus use the same word.
-- **I Recommend:** the plan's way, unless one word reads better to you everywhere. If so, say which.
-
-##### 5. Broken Copies of Settings Files (NC-2, With LC-57)
-
-**The Situation:** Pommora keeps its own settings in small files inside the Nexus: the property list, the Context list, each Collection's settings, and so on. If one gets damaged, for example by a bad hand edit or a broken sync, Pommora rebuilds it. It rebuilds from the last good version it read this session, or from scratch if it never read one.
-
-- **Today:** the damaged file is renamed to a hidden `.name.bad-…` file beside the rebuilt one and stays there forever.
-- **Your Answer:** "No, it should be cleaned up and done so during whichever time is the most appropriate to do such, potentially during the repair itself. We shouldn't be leaving broken files in the nexus."
-- **The Catch:** if Pommora rebuilt from scratch, the damaged file is the only place your data still exists. For example, if the property list broke before Pommora ever read it, every property definition is in that broken file. Deleting it during the repair would lose them for good.
-- **I Recommend:** the repair moves the damaged file to your computer's Trash. The Nexus stays clean, and nothing is lost if you need it back. The same rule covers the new crash-recovery notes file (LC-57).
-- **Need From You:** OK, or delete it outright?
-
-##### 6. Pages Pommora Won't Touch (NC-3)
-
-**The Situation:** a few pages can't be rewritten safely: a page with no ID, two pages sharing one ID, or a page whose properties at the top are malformed. Pommora leaves them alone rather than risk damaging them. Say you rename Priority to Urgency, and one such page has Priority.
-
-- **Today:** that page keeps "Priority", and nothing tells you.
-- **After:** the same for renames, deletes, option changes, and Context and Space changes. Only Remove now tells you, with Try Again (LC-19).
-- **Your Answer:** "Unsure."
-- **Alternative:** every change tells you about these pages and offers Try Again, not just Remove.
-- **I Recommend:** the alternative. It's one rule everywhere, and no change silently leaves a page behind. A page with no ID usually gets one the next time Pommora reads it, so Try Again usually works. This adds a little to the plan, and I'd write it in.
-
-##### 7. Pommora Rewriting Several-Word Selects in Your Files (LC-20, LC-21, LC-30, LC-42)
-
-**The Situation:** in Obsidian you write `Status: Active, Blocked` on a page. A Status holds one option, so Pommora shows only "Active".
-
-- **What You Already Ruled:** any edit tidies it to the one option shown (LC-42), and Repair Properties On Open is on by default.
-- **After:** together, those mean the next time Pommora opens the Nexus, it rewrites that page to `Status: Active`. "Blocked" is gone from the file, and Obsidian sees the change through sync. Editing any other property on that page does the same. Editing the page's text, title, or banner doesn't.
-- **The Same Rule, Less Obviously:** `Stage: [done, Active]`, where the real option is spelled "Done" with a capital D, becomes `[Active]`. The lowercase "done" matches no option, so it's dropped.
-- **Today:** NexusOS has no such pages. The plan scans for them before turning this on and stops to ask you if it finds any.
-- **I Recommend:** keep it, since it's what your two rulings say together. Tell me if dropping words from files Obsidian wrote isn't what you meant.
+Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is a short list of small visible changes, for awareness only, and the ratification.
 
 #### Small Things You'll See
 
@@ -124,18 +52,18 @@ No action needed. These are visible changes the plan makes on its own; speak up 
 - **LC-37:** a Trash item that was only partly saved shows a warning mark, and restoring it says some of it may not come back.
 - **LC-40:** the Pommora Project tile's leftover "open" and "closed" collapsed groups, which match no option, are dropped.
 - **LC-52:** a page title containing a link sorts and filters by the text you see, like Text values do.
-- **LC-54:** Cards and the Properties panel open a fresh picker for each value, like the table does, and the panel's popup fades out.
+- **LC-54:** On a card, the Add chooser still slides into a Select's, Status's, Multi-Select's, or Space's options inside the same menu (‹ Properties › the property), while a Number, Date, File, Link, Checkbox, or Text opens its own picker or field; moving from one value's picker to another's, on a card or in the Properties panel, opens a fresh picker as the table does, and the panel's popup fades out.
 - **LC-55:** every property editor uses the same 8px row spacing. The Date editor's rows were at 4px.
 - **LC-60:** if a property disappears while its editor is open and then comes back (an undo or a sync), its editor reopens.
 
 #### Ratify
 
-Once the seven are answered, ratify the plan, or tell me what to change.
+Ratify the plan, or tell me what to change.
 
 ### Where It Stands
 
-- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,400 changes with no mismatches and skips 7 that land only if a speed measurement fails.
-- **The Numbers:** about −834 production lines if every speed measurement passes; about −767 if F3 fails, and about −711 if all three fail. The count stays below zero after every phase, closest at about −79 after Phase 12 if F3 fails. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
+- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,427 changes with no mismatches and skips 7 that land only if a speed measurement fails.
+- **The Numbers:** about −759 production lines if every speed measurement passes; about −692 if F3 fails, and about −636 if all three fail. The count stays below zero after every phase, closest at about −4 after Phase 12 if F3 fails. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
 - **The Dry Run:** the whole plan was applied in a throwaway copy and type-checked at every phase end. Phase 1 compiles clean; from Phase 2 on, each phase end shows new errors, about 120 in app code and more in tests, mostly from steps the plan states in words, like rewriting a test. Execution fixes these in the real code, where each phase's checks prove the fix, so the rule that every phase leaves a working state is true at execution rather than on paper.
 
@@ -167,7 +95,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 **What Changes:**
 - A value holding only spaces reads as empty for every type, in cells, in "is empty" filters, and in sorting.
 - Clearing a property a Space doesn't hold tidies its other properties, as a page already does, and a write that changes nothing writes nothing.
-- A Select or Status holding several words is written as the one option it shows whenever any value on its page changes, or at Repair On Open; one naming no option stays as written (LC-20, LC-21, LC-30).
+- A Select or Status holding several words is written as the one option it shows whenever any value on its page changes, or at Repair On Open; one naming no option stays as written.
 
 **Your Calls:**
 - [J-1] Text holding only spaces counts as empty on every surface.
@@ -208,10 +136,13 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 **What Changes:**
 - Every property, Context, and Space keeps its own entry in one hidden notes file, `.nexus/.owed.json`, so Priority's unfinished rename never touches Status.
 - Every big change updates the property or Context list first and the files second. A Context or Space delete that misses pages finishes what it can and offers Try Again, as a property delete already does.
-- A Remove that missed pages returns you to the property list and offers Try Again (LC-19).
+- A Remove that missed pages returns you to the property list and offers Try Again.
 - Option renames, format changes, and option deletes stop being refused because some other property owes work.
 - A name still owed to an unfinished change is finished first: Pommora runs the leftover work, then does what you asked, and shows an error with Try Again only if the leftover work still can't finish. This covers properties, Contexts, Spaces, and Trash restores alike.
-- Also: LC-58, LC-63.
+- Clearing an option that misses pages offers Try Again, which clears the pages still holding that option; a page you've since set to another option keeps it, and one you've set back to the cleared option is cleared with the rest.
+- A change made while a rename is still unfinished, such as renaming an option while Priority's rename owes two pages, counts those two pages in its own notice with Try Again instead of reporting success.
+- A page Pommora can't safely rewrite (no ID, an ID another page shares, or malformed properties at the top) counts as unfinished with Try Again for every change: renames, deletes, option changes, and Context and Space changes, not only Remove.
+- A damaged settings file goes to your computer's Trash when Pommora rebuilds it, instead of staying in the Nexus as a hidden `.bad-` copy; the notes file follows the same rule, and it's removed once nothing is owed.
 
 **Your Calls:**
 - [B-1] Every property, Context, and Space keeps its own note; dropping the notes was rejected, since nothing could finish a change the app quit during.
@@ -286,9 +217,10 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **What Changes:**
 - A value's right-click menu reads the same in the table, cards, and panel, and the panel's row label opens the same menu as its value.
-- In the panel, a Link row's name gains Rename and Edit Link.
-- The pen's spoken label reads "Open In Editor."
-- Also: LC-15, LC-47, LC-54.
+- In the panel, a Link row's name gains Edit Title and Edit Link.
+- Every link menu names its two edits the same way: Edit Title changes the text the link shows, and Edit Link changes where it points, the linked page or the address.
+- The text pen's spoken label reads "Open In Editor."
+- Also: LC-15, LC-54.
 
 **Your Calls:**
 - [J-10] A value's right-click reads the same wherever it opens, and the panel's File value gains Remove.
@@ -360,7 +292,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** Every remove, clear, and delete question already lives in one place shared with the Trash and the Archive, but the counting words are split across two places, and deleting a property or option held by nothing still asks and says "stripped from 0 Items." An option's "Remove" deletes it for good, while Remove everywhere else can be undone. Every Trash entry records whether it's partial, meaning the delete couldn't record everything it touched, and nothing shows it. A taken name quietly becomes "Name (2)."
 
-**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. Also: LC-13, LC-14, LC-37.
+**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. A restore that takes a numbered name says so, and so does the Properties pane's `+` when its default name is taken ("Created “New Select (2)”."). Emptying a deleted property from the Trash drops it from every Collection still listing it, one restored since or one still in the Trash. Also: LC-13, LC-37.
 
 **Your Calls:**
 - [O-1] An option's Remove reads Delete, so Remove only names something that can be undone or restored.
@@ -473,7 +405,7 @@ Four NexusOS files are converted once, after a backup, by a throwaway script, wh
 - **The Homepage Tiles File:** the first tile's "Active" and "Archive" views switch their Status sort orders and filters to ids.
 - **The Pommora Project's Tiles File:** the third tile's "Ideas" view switches its Status sort order to ids, and its leftover Status collapses are kept and scoped to Status, with "open" and "closed" dropped (LC-40).
 
-Every other collapsed group in NexusOS holds only folders and stays as it is, and no other view, tile, graph filter, or Trash entry names an option. No page changes: pages keep the option words they hold now, and nothing in any page's file changes shape. Nothing else on disk changes shape either, since NexusOS holds no stash, no old spellings, and no crash-recovery notes to convert. Going forward, Pommora keeps its one hidden notes file, `.nexus/.owed.json`, on each device, holding nothing once no work is owed.
+Every other collapsed group in NexusOS holds only folders and stays as it is, and no other view, tile, graph filter, or Trash entry names an option. No page changes: pages keep the option words they hold now, and nothing in any page's file changes shape. Nothing else on disk changes shape either, since NexusOS holds no stash, no old spellings, and no crash-recovery notes to convert. Going forward, Pommora keeps its one hidden notes file, `.nexus/.owed.json`, on each device, and removes it once no work is owed.
 
 ### Good to Know
 

@@ -71,7 +71,7 @@ Take renaming Priority to Urgency. Pommora writes "Priority is becoming Urgency"
 
 ##### What the Revision Changes
 
-One notes file, `.nexus/.owed.json`, replaces both; like them it stays on its device and never syncs, and it stays behind as an empty `{}` once nothing is owed. It holds one entry per property, Context, or Space that still owes work, so Priority's unfinished rename never touches Status. Each entry is a list of old names still owed, "these words should become whatever this thing is called now" and "these words should leave," plus, for a property, the Collections a Remove or a re-add hasn't finished. That one rule replaces four note shapes and the guesswork the replays do today, and a second change on the same item simply adds its old name to the list.
+One notes file, `.nexus/.owed.json`, replaces both; like them it stays on its device and never syncs, and it's removed once nothing is owed. It holds one entry per property, Context, or Space that still owes work, so Priority's unfinished rename never touches Status. Each entry is a list of old names still owed, "these words should become whatever this thing is called now" and "these words should leave," plus, for a property, the Collections a Remove or a re-add hasn't finished. That one rule replaces four note shapes and the guesswork the replays do today, and a second change on the same item simply adds its old name to the list. A damaged settings file stops leaving a `.<name>.bad-<id>` copy behind: the repair sends it to the computer's Trash, and only a host without one, such as the coming Mobile companion, keeps today's hidden copy.
 
 | Change | Proposed |
 |---|---|
@@ -79,7 +79,7 @@ One notes file, `.nexus/.owed.json`, replaces both; like them it stays on its de
 | **Property Delete** | Trash entry, its own entry, list, files, then each Collection's settings and views. |
 | **Option Rename / Value Format** | Its own entry, list, files. Saved views name options by id, so they need no rewrite. No longer refused because some other property owes work. |
 | **Option Delete** | Its own entry, the option leaves the list first, files, views. |
-| **Option Clear** | Still no entry, and no longer refused because the property owes work; an old name the option still owes leaves the pages with it. Missed pages show an error with no Try Again, as today (LC-58). |
+| **Option Clear** | Its own entry, files; the option stays listed. No longer refused because the property owes work, and an old name the option still owes leaves the pages with it. Missed pages offer Try Again, which clears only the pages still holding the cleared word. |
 | **Remove From a Collection** | Its own entry; the editor returns to the list, and Try Again finishes stashing and stripping the pages it missed; adding the property back to that Collection cancels what's owed there. |
 | **Re-Add to a Collection** | Its Collection joins the property's entry when a page can't be refilled; Try Again refills it from the stash. |
 | **Create (and Rename)** | A name still owed to unfinished work first finishes that work and then lands, for properties, Contexts, and Spaces alike. Only a name the finish still can't free is refused with "An earlier change hasn’t reached every file yet." and Try Again. |
@@ -105,13 +105,13 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **4B** The Tidy Rule and Repair On Open | The tidy rule as a type fact, spaces-only reads as empty, no-op writes write nothing, Repair On Open defaults on | +11 |
 | **5** One Home per Definition | Collections hold assigned ids; one `schemaOf` and one `holderSchema`; registration from the index; a damaged list opens | −34 |
 | **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding (F3 measured) | +18 |
-| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −154 |
+| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −147 |
 | **8** Option Identity | Permanent option ids in values, views, tiles, and filters; one `bandKey`; NexusOS's one-time conversion | −42 |
 | **9** List First and One Replay Point | The Context rename takes its list step first; one replay point at open | −7 |
 | **10** One Finder | One finder over the tree in `Core/Index/keyHolders.ts`, one writer, and every restore miss reported (G-3) | +10 |
-| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names finished, then used; one Try Again | +97 |
-| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | +94 |
-| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +104 |
+| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names finished, then used; one Try Again | +140 |
+| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | +96 |
+| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +127 |
 | **13** Columns Carry Their Answer | `ResolvedColumn` carries type and definition; one `resolveFieldValue`; `declaredType` leaves | −99 |
 | **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −55 |
 | **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock (02-10 measured) | −35 |
@@ -120,7 +120,7 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −207 |
 | **18** The Documents Read True | Feature documents, Issues entries, drives, matrices, and test seeds read true | 0 |
 
-**Total:** **−834** production lines (−7,414 / +6,580), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +92 and Task 13-7's Fail half lands −7, for **−767**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +14 in Phase 17. Measured figures replace these in *§Net Ledger*.
+**Total:** **−759** production lines (−7,443 / +6,684), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +92 and Task 13-7's Fail half lands −7, for **−692**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +14 in Phase 17. Measured figures replace these in *§Net Ledger*.
 
 #### Concepts
 
@@ -223,7 +223,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `"The option is deleted from the property."` • string | The option delete's detail when nothing holds the option, without the strip clause (O-2, LC-13). | `Core/Interface/Confirm/confirmations.ts` |
 | `addProperty` • function | Creates and assigns a new property in one hold of the schema lock, taking the create back inside the hold on a failed assign; it answers `{ created: { propertyId } }` from Task 7-6. | `Core/Properties/assignment.ts` |
 | `ID_HELD` • constant | The `'exists'` refusal `createProperty` answers for an id the registry already holds. | `Core/Properties/registryProperty.ts` |
-| `landedAs` • field | `RestoredProperty`'s numbered label, present when a restore took a numbered name, which `restoreTrashed` passes to the outcome (O-4, LC-14). | `Core/Trash/restoreProperty.ts` |
+| `landedAs` • field | `RestoredProperty`'s numbered label, present when a restore took a numbered name, which `restoreTrashed` passes to the outcome, and `addProperty`'s when a create did, which the slice posts as "Created “…”." (O-4). | `Core/Trash/restoreProperty.ts`, `Core/Properties/assignment.ts` |
 | `Core/Properties/unassignProperty.ts` • file | `removeProperty.ts` renamed; holds a property's unassign from a Collection. | `Core/Properties/unassignProperty.ts` |
 | `unassignProperty` • function | `removeProperty` renamed; answers `MutateReply` with its cascade from Task 7-6. | `Core/Properties/unassignProperty.ts` |
 | `unassignInner` • function | `removeInner` renamed. | `Core/Properties/unassignProperty.ts` |
@@ -311,7 +311,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `Notes` • type | The notes file's shape, entries keyed by id. | `Core/Nexus/owed.ts` |
 | `readNotes`, `editNote` • functions | The notes file's read and its locked per-entry edit, which drops an entry owing nothing and answers the entry as it stood or the refusal. | `Core/Nexus/owed.ts` |
 | `propertyNote` • function | An entry read as a property entry, empty when absent. | `Core/Nexus/owed.ts` |
-| `owedRename`, `owedDelete`, `owedRestore`, `owedSwept` • functions | The compose rules for a rename, a delete (an option Clear passing no current name), and a restore, and the clean-sweep rule removing the names a sweep reached. | `Core/Nexus/owed.ts` |
+| `owedRename`, `owedDelete`, `owedRestore`, `owedSwept` • functions | The compose rules for a rename, a delete or an option Clear, and a restore, and the clean-sweep rule removing the names a sweep reached. | `Core/Nexus/owed.ts` |
 | `withOption` • function | Edits one option's part in a property entry, dropping a part that owes nothing. | `Core/Nexus/owed.ts` |
 | `owedName` • function | Whether an item other than the one landing still owes a name within its owner, which no create or rename may take; option words compare as written, other names fold case. | `Core/Nexus/owed.ts` |
 | `Owner`, `Landing` • types | Where a name lives (a property's keys, a Context's titles, a Space's titles in its Context, one property's option words), and a name a create or rename lands on with the item landing there. | `Core/Nexus/owed.ts` |
@@ -425,7 +425,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `pickModel.test.ts` • test file | Carries `massAssign.test.ts`' cases and the `pickShape` case onto `pickOver` and `pickGroups`, with the Select-closes and list-stays-open pins. | `Core/Properties/Pickers/pickModel.test.ts` |
 | `useValueWriter` • hook | Assembles a mounted surface's `ValueWriter`, rebuilt each render and emptied on unmount; replaces the hand-built writers in `useViewHost.ts` and `PropertyPanel.tsx`. | `Core/Properties/assignValue.ts` |
 | `oneShotWriter` • function | A writer for one row no surface shows, as the native menu's pick writes it; replaces `valueCommitFor`'s writer. | `Core/Properties/assignValue.ts` |
-| `"Edit Link"` • string | The Link cell menu's edit label, after Rename (J-10, LC-47). | `Core/Actions/cellMenu.ts` |
+| `"Edit Link"`, `"Edit Title"` • strings | Every link menu's two authoring labels: Edit Title edits the alias (`rename`), Edit Link the target (`editLink`), in that order (J-10). | `Core/Actions/cellMenu.ts`, `Core/Actions/connectionMenu.ts` |
 | `span` • field | `DateTimeValuePicker`'s prop offering the End Date switch; the value's own picker passes it and the filter's date operand doesn't. | `Core/Properties/Pickers/DateTimeValuePicker.tsx` |
 | `"Open In Editor"` • string | The text pen's spoken label (J-4), which the drive harness's `PEN` selector reads. | `Core/Properties/Cells/TextCell.tsx` |
 | `cardColumns.ts` • file | `cardValueInput.ts` renamed; holds card visibility and the add chooser's entries. | `Core/Views/Cards/cardColumns.ts` |
@@ -456,7 +456,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `rowEl` • function | The panel's lookup of a row's value span by `[data-property-row]`, serving the seat's anchor and `revealAndEdit`. | `Core/Properties/PropertyPanel.tsx` |
 | `PickTarget.column` • field | The options arm's resolved column, in place of a definition. | `Core/Properties/Pickers/PropertyPicker.tsx` |
 | `column` • field | The resolved-column prop `PropertyOptionRows`, `MassPropertyPicker`, and `ChipsField` take; renamed from `def`. | `Core/Properties/Pickers/PropertyPicker.tsx`, `Core/Properties/Pickers/MassPropertyPicker.tsx`, `Core/Views/Settings/FilterFrame.tsx` |
-| `group14` • drive | Properties Drive group 14 (X6, J-3, J-10, LC-15, LC-47, LC-54): the same value clicked, right-clicked, and edited in a Table, a Card, and the panel, the panel's Link label and File menus, and the seat's disclosed changes, with its *Group 14* table in `MATRIX.md`. | `.claude/scripts/Properties Drive/live-drive.mjs` |
+| `group14` • drive | Properties Drive group 14 (X6, J-3, J-10, LC-15, LC-54): the same value clicked, right-clicked, and edited in a Table, a Card, and the panel, the panel's Link label and File menus, and the seat's disclosed changes, with its *Group 14* table in `MATRIX.md`. | `.claude/scripts/Properties Drive/live-drive.mjs` |
 | **Phase 17 — The Properties Pane** | | |
 | `FLUSH_GHOST` • constant | The flush-slot ghost option pair (`{ dwellMs: REVEAL_DWELL_MS, graceMs: 0 }`), which `OptionEditor` and `PropertyPanel` spread into `useGhostAnchor` beside their own `suppressed`. | `Core/Properties/Schema/GhostOptionChip.tsx` |
 | `fullOrderIndex` • function | `nexusReorderIndex` renamed and moved; converts a slot in a filtered list to an index in the full order. | `UIX/Utilities/moveItem.ts` |
@@ -836,7 +836,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `pickedValue` • function | Moved to `Core/Properties/Pickers/pickModel.ts`, answering through `pickCommits`. | `Core/Properties/Pickers/PropertyPicker.tsx` |
 | `ValueWriter.mutate` • field | Every assembly filled it with the session's `mutate`; `assignValue.ts` calls `useSession.getState().mutate` directly. | `Core/Properties/assignValue.ts` |
 | `valueCommitFor` • function | Replaced by `oneShotWriter`, with the menu's commit calling `assignValue`. | `Core/Interface/Menus/entityMenuActions.ts` |
-| `"Edit"` • string | The Link cell menu's edit label, replaced by "Edit Link". | `Core/Actions/cellMenu.ts` |
+| `"Edit"`, `"Rename"` • strings | The Link cell menu's target and alias labels, and the connection menu's alias label (with its page-link "Edit Title" for the target), replaced by "Edit Link" and "Edit Title". | `Core/Actions/cellMenu.ts`, `Core/Actions/connectionMenu.ts` |
 | `nexusClock` • constant | The filter date slot's Nexus clock read, replaced by the column's `time_format` through `DateTimeValuePicker`. | `Core/Views/Settings/FilterFrame.tsx` |
 | `"Open in TextPane"` • string | Replaced by "Open In Editor". | `Core/Properties/Cells/TextCell.tsx` |
 | `cardValueInput.ts` • file | Renamed `cardColumns.ts`. | `Core/Views/Cards/cardValueInput.ts` |
@@ -1174,14 +1174,14 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [ ] Task 11B-1 · `findHolders` falls back to the index's last read
   - [ ] Task 11B-2 · Context and Space deletes finish
   - [ ] Task 11B-3 · Remove notes its Collection and shares one finishing routine
-  - [ ] Task 11B-4 · An unpurged Collection settings file counts as missed
+  - [ ] Task 11B-4 · An unpurged Collection settings file and an unaddressed holder count as missed
   - [ ] Task 11B-5 · Drive group 9
   - [ ] Review Checkpoint
 - [ ] **Phase 12** — The Stash and Trash Records
   - [ ] Task 12-1 · "Cache" becomes "stash"
   - [ ] Task 12-2 · The stash block and its stamp, with the rename's commit
   - [ ] Task 12-3 · The purge reads and writes through the stash's one reader and writer
-  - [ ] Task 12-4 · The restore writes the stash back first
+  - [ ] Task 12-4 · The restore writes the stash back first, and an emptied property leaves every Collection
   - [ ] Task 12-5 · The re-add's refill reaches the Trash copy
   - [ ] Task 12-6 · A re-add that couldn't refill offers Try Again
   - [ ] Task 12-7 · The stash ages out after the History Timeframe
@@ -1216,7 +1216,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - [ ] **Phase 15** — Pick Model and One Writer
   - [ ] Task 15-1 · One pure pick model, `pickModel.ts`
   - [ ] Task 15-2 · The value writer is assembled one way
-  - [ ] Task 15-3 · Both link menus read Rename, then Edit Link
+  - [ ] Task 15-3 · Every link menu reads Edit Title, then Edit Link
   - [ ] Task 15-4 · One row-menu vocabulary: `hideable` names what Remove takes, and a column with no look is a bare value
   - [ ] Task 15-5 · The filter's date operand opens `DateTimeValuePicker`
   - [ ] Task 15-6 · The small ones
@@ -7818,13 +7818,13 @@ Every reader treats the answer as read-only (`git grep -n -A3 "= await readRegis
 
 ### Phase 4B — The Tidy Rule and Repair On Open
 
-**GOAL:** On the one module Phase 4A consolidated, the tidy rule lands as a type fact: a live reconcile never blanks a value and never drops a member of a list it can't resolve, so a Select or Status lands as the one option it shows (LC-20, LC-21); a Multi-Select's foreign words dedupe the way its own pick does; File dedupes; spaces-only reads as empty for every type; a write that changes nothing writes nothing on a Space as on a page; and Repair Properties On Open defaults on (O-3). Each task lands one ruling, pinned by a test that fails first, and the Properties Drive gains group 3.
+**GOAL:** On the one module Phase 4A consolidated, the tidy rule lands as a type fact: a live reconcile never blanks a value and never drops a member of a list it can't resolve, so a Select or Status lands as the one option it shows; a Multi-Select's foreign words dedupe the way its own pick does; File dedupes; spaces-only reads as empty for every type; a write that changes nothing writes nothing on a Space as on a page; and Repair Properties On Open defaults on (O-3). Each task lands one ruling, pinned by a test that fails first, and the Properties Drive gains group 3.
 
 **State This Phase Starts From:** Phase 4A has landed: `Core/Nexus/governedRoot.ts` holds `GovernedWorld`, the world builders, `Frozen`, `gonePageEntry`, `writtenSpelling`, `reencode` (answering the written value, or undefined), `reconcileGovernedRoot`, `writtenRoot`, `governedRoot`, `changedKeys`, `rewriteRaw`, and `rewriteRootAt`; `reconcileGovernedRoot`'s tests live in `Core/Nexus/governedRoot.test.ts`; `setSpacePropertyOp` writes through `writeSpaceSidecar` with the absent-key clear check inline; `readNumber`/`spelledNumber` live in `propertyValue.ts`. Every `-` line below is Phase 4A's AFTER unless the task cites HEAD.
 
 #### Task 4B-1
 
-**TASK:** The live reconcile's guard becomes a type fact: never blank a value, for every type, and never drop a member of a list (Multi-Select, Context, File, whose decoded value is an array), so a Select or Status holding several words lands as the one option it shows (P-1, LC-20, LC-21). A sibling Multi-Select re-encodes through `keepingForeignWords`, the written key's own rule, so its foreign words stay after its options and its duplicates collapse.
+**TASK:** The live reconcile's guard becomes a type fact: never blank a value, for every type, and never drop a member of a list (Multi-Select, Context, File, whose decoded value is an array), so a Select or Status holding several words lands as the one option it shows (P-1). A sibling Multi-Select re-encodes through `keepingForeignWords`, the written key's own rule, so its foreign words stay after its options and its duplicates collapse.
 
 **NOW:** `reconcileGovernedRoot`'s guard (`Core/Nexus/governedRoot.ts`, after Task 4A-2; HEAD `contextResolve.ts:119-123`) keeps `raw` whenever the result is undefined or holds fewer distinct members, for every governed key: two rules fused, never-blank and never-drop-a-member, the second born Context-only in `3d28c836f` and widened to every property in `87fa8aaf6`. So `Stage: [A, B]` stays `[A, B]` on a sibling write while the frozen restore already lands `[B]`, and `Tags: [a, zeta, a]` stays whole while picking that Multi-Select writes `[a, zeta]` (`keepingForeignWords`, `Core/Properties/propertyValue.ts:164-179`, called by `writtenRoot`). The reconcile's live callers are `writtenRoot` (every page and Space value write, the Context-tag write, both Space-link halves) and `runRepairSweep` (`Core/Properties/repairSweep.ts:37-41`); the banner and the schema sweeps don't reconcile siblings. `Core/Properties/repairSweep.test.ts:151-157` ("never removes a value — a mixed Select list keeps its unregistered member") pins the old rule; `Core/Nexus/mutate.ts:81` says a page's value write "never shrinks or drops a key it can't resolve".
 
@@ -8110,7 +8110,7 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 +
 +| Case | Seeds | Operation | Expected | Decisions |
 +| --- | --- | --- | --- | --- |
-+| A several-word Select | `Status` (Select: Option 1, Option 2) and `Notes` (Text) added to Collection A; `Tidy` written by hand with `Status: [Option 1, Option 2]` | set Tidy's Notes to `edited` | the file's `Status` reads `[Option 2]` | P-1, LC-20 |
++| A several-word Select | `Status` (Select: Option 1, Option 2) and `Notes` (Text) added to Collection A; `Tidy` written by hand with `Status: [Option 1, Option 2]` | set Tidy's Notes to `edited` | the file's `Status` reads `[Option 2]` | P-1 |
 +| Spaces-only Text | `Spaces` written with `Notes: "   "`, `Filled` with `Notes: x` | the `Drive Values` view filters Notes Is Empty | `Spaces` draws and `Filled` doesn't | J-1 |
 +| A re-pick on a Space | Area One | set its Notes to `held` twice, a second apart | `_space.json`'s text and modified time are unchanged | J-9 |
 ```
@@ -8134,7 +8134,7 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 
 #### Behavior Changes and Disclosures
 
-- **A Several-Word Select or Status Tidies (P-1, LC-20, LC-21; Task 4B-1):** on any value write to its page or Space (a property, a Context tag, a Space link) and on Repair On Open, it's written as the one option it shows; one naming no option stays as written. Body, title, and banner writes don't tidy. A case-variant word beside a valid one is dropped by the same rule (`Stage: [done, Active]` with option key `Done` becomes `[Active]`; T flag 5).
+- **A Several-Word Select or Status Tidies (P-1, Nathan's Intent; Task 4B-1):** on any value write to its page or Space (a property, a Context tag, a Space link) and on Repair On Open, it's written as the one option it shows; one naming no option stays as written. Body, title, and banner writes don't tidy. A case-variant word beside a valid one is dropped by the same rule (`Stage: [done, Active]` with option key `Done` becomes `[Active]`; T flag 5).
 - **A Multi-Select's Foreign Words Dedupe and Follow Its Options (Task 4B-1):** `[a, zeta, a]` becomes `[a, zeta]` on a sibling write, as its own pick writes it, and its options move ahead of the words no option names (`[zeta, alpha]` with only `alpha` registered becomes `[alpha, zeta]`), the order a pick writes; the never-shrink guard kept `[zeta, alpha]` whole.
 - **File Dedupes (Task 4B-2):** a File value reads each entry once and drops a spaces-only entry. A repeated entry the file quotes (Obsidian's spelling and Pommora's) also collapses on disk at the next sibling write; a repeated unquoted `[[x]]` parses as a nested list the member count counts once per occurrence, so it's kept on disk while it reads and shows once.
 - **Spaces-Only Reads as Empty (J-1 for Text, the Same Rule for the Rest; Task 4B-2):** for every type; a live reconcile keeps it as written (never blank), and a restore drops it.
@@ -11794,10 +11794,10 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Tests first, failing:
   - `Core/Nexus/mutateRequest.test.ts` gains "reads each property op, and holds a configure patch to the definition's display fields": `{ op: 'configureProperty', propertyId: 'p', patch: { icon: 'tag', type: 'text', select_options: [] } }` parses to a patch of `{ icon: 'tag' }`; `{ checkbox_color: undefined }` keeps its key; `{ op: 'setFormat', propertyId: 'p', change: { key_format: 'Shouting' } }` and `{ op: 'addProperty', containerPath: 'A', draft: { type: 'text' } }` (no label) are refused; and "a property delete re-lists the stores": `changesStores({ op: 'deleteProperty', propertyId: 'p' })` is true.
   - `Core/Nexus/mutate.test.ts` gains `describe('the property ops')` over a Collection `Notes` assigning a Select `Stage` (options `Done`, `Todo`), a page holding `Done`, and an unassigned Text `Spare`, seeded through `seedNexus` (P1): "<op> takes the schema lock exactly once" for each of the fourteen ops (`addProperty`, `assignProperty` of `Spare`, `unassignProperty`, `reorderAssigned`, `reorderProperty`, `renameProperty`, `setFormat` with a `value_format`, `configureProperty` with an icon, `deleteProperty`, `replayProperty` with no record, `editOption` recoloring `Done`, `renameOption`, `deleteOption` of `Todo`, `clearOption` of `Done`), each through `handleMutate` with a `vi.spyOn(machine(), 'lock')` counting calls keyed `nexusDir(root)` (exactly 1) and the reply ok; "an added property answers its id as what it created" (`created` equals `{ propertyId }` naming the registry's new entry); "a rename that keeps its key answers no cascade, and one that moves it answers the sweep" (`Stage` → `stage` under `lowercase` key format answers `{}`; `Stage` → `Phase` answers `cascade`); "a configure under a file directory outside the asset root refuses, and one naming the root itself clears the field" (`{ file_directory: '  ' }` leaves the definition without `file_directory`); "a replay handed a malformed record refuses" (`{ op: 'replayProperty', record: { op: 'rename' } }` → `fault('A schema record is required.')`).
-  - `Core/Session/store.test.tsx` › the slice's `mutate` describe (beside "posts a warning that carries a retry with Try Again, which sends the retry", `:1145`) gains "an owed refusal offers Try Again, which replays the journal's record" (`channels.mutate` answers `fail('owed', 'An earlier change hasn’t reached every file yet.')` to an `editOption`; the notice reads that message with `Try Again`, whose run sends `{ op: 'replayProperty' }`), and "leaves a property delete's pass warning to the Deleted notice" (`deleteProperty` answering a warning posts nothing; `storesChanged` fires once).
+  - `Core/Session/store.test.tsx` › the slice's `mutate` describe (beside "posts a warning that carries a retry with Try Again, which sends the retry", `:1145`) gains "an owed refusal offers Try Again, which replays the journal's record" (`channels.mutate` answers `fail('owed', 'An earlier change hasn’t reached every file yet.')` to an `editOption`; the notice reads that message with `Try Again`, whose run sends `{ op: 'replayProperty' }`), "leaves a property delete's pass warning to the Deleted notice" (`deleteProperty` answering a warning posts nothing; `storesChanged` fires once), and "a create that took a numbered name says so" (`addProperty` answering `landedAs: 'New Select (2)'` posts `Created “New Select (2)”.`; one answering no `landedAs` posts nothing).
 - [ ] `mutateRequest.ts`: the fourteen ops, `created`'s two shapes, and `deleteProperty` in `changesStores`, as AFTER.
 - [ ] `mutate.ts`: the fourteen arms, as AFTER. The `replayProperty` arm is today's `property:replay` handler moved: `journalRecord`'s decode, `replaySchemaCascade`, and `unsweptReply`'s skipped line, with the request itself as the retry where `property:replay`'s renderer re-offered `replay(record)`.
-- [ ] The schema ops answer `MutateReply` at their origin: `schemaCascade` (`propertyJournal.ts`) answers `{ cascade, retry? }`; `rekeyProperty` answers `{}` when the key holds and the cascade when it moves; `rekeyOptions`, `renameOption`, `setValueFormat`, `deleteOption`, `deleteProperty`, and `deleteInner` retype; `clearOption` answers its sweep's report; `unassignProperty` answers `{ cascade: reachReport(reach) }` (so its tile hosts are owed on a partial Remove too, which `schema:unassign` did by owing before refusing); `addProperty` answers `{ created: { propertyId } }`. `SchemaCascade`, `PropertyRename`, and `PropertyDeletion` leave.
+- [ ] The schema ops answer `MutateReply` at their origin: `schemaCascade` (`propertyJournal.ts`) answers `{ cascade, retry? }`; `rekeyProperty` answers `{}` when the key holds and the cascade when it moves; `rekeyOptions`, `renameOption`, `setValueFormat`, `deleteOption`, `deleteProperty`, and `deleteInner` retype; `clearOption` answers its sweep's report; `unassignProperty` answers `{ cascade: reachReport(reach) }` (so its tile hosts are owed on a partial Remove too, which `schema:unassign` did by owing before refusing); `addProperty` answers `{ created: { propertyId } }`, with `landedAs` when the label it landed isn't the draft's (O-4). `SchemaCascade`, `PropertyRename`, and `PropertyDeletion` leave.
 - [ ] `editProperty` → `configureProperty(root, propertyId, patch: PropertyConfig)`, the file directory's trim, root-relative join, and asset-root check inline, as AFTER. `properties.ts`: `propertyConfig` replaces `linkFields`, `numberFields`, the three narrowers, and `FileConfig`; `propertyDraft`'s `id` is optional, so the pane sends a label and a type.
 - [ ] `handlers.ts` keeps `property:holders` alone, as AFTER; `keyFormat.ts`'s `isKeyFormat` leaves with `idAndFormat`, its last reader, and `keyFormat.test.ts:96-98`'s `isKeyFormat` case with it; `bridge.ts` drops the nineteen entries and the imports only they read.
 - [ ] `mutate.ts:68`'s comment names the `replayProperty` op where it named `property:replay`.
@@ -11822,7 +11822,7 @@ The five remaining `unsweptLine` readers change one import each:
   | `'property:clearOption', id, label` | `{ op: 'clearOption', propertyId: id, label }` | a skip reads `cascade.warning` |
   | `'property:holders', id[, of]` | `'property:holders', id, { of: 'property' }` · `{ of: 'option', label }` · `{ of: 'format', change }` | — |
 - [ ] `propertyWrite.ts` is deleted.
-- [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'replayProperty' })`; a property delete's cascade is left to its Deleted notice, as AFTER.
+- [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'replayProperty' })`; a property delete's cascade is left to its Deleted notice; an `addProperty` reply carrying `landedAs` posts "Created “…”." (O-4), as AFTER.
 - [ ] The renderer: `PropertyFrame.tsx`, `useOptionEdit.tsx`, and `PropertyPanel.tsx` as AFTER; `createActions.ts` and `useViewCreation.ts` read `created.path` only where `created` holds one. `bumpValuesEpoch` takes no arguments from Task 6-5, so the frame calls `bumpValuesEpoch()` as it does. On F3's Fail (Task 6-6's revert), `rekeyOverrides` and `bumpValuesEpoch(oldKey, newKey)` stand: the frame reads `from` as `defOf(id)?.key` before the send and `to` as that definition's key in `useSession.getState().tree` after it, which the write gate pushes before the reply leaves (`Core/Contract/handlers.ts:98`), and calls `bumpValuesEpoch(from, to)` when they differ; `cacheSlice.ts` and `useContainerValues.ts` stay as P6 left them.
 - [ ] Rewrite the tests the fold makes false, each by one rule:
   - **Channel calls become ops:** `Core/Properties/handlers.test.ts` calls `nexusHandlers.mutate(ctx, req)` (its `ctx` gains `trashMode: async () => 'nexus'`, which `trashDeps` reads) in place of `propertiesHandlers['<channel>'](ctx, …)`, by the table above; "schema:add writes the key from the label, replacing a key the payload carries" sends `draft: { label: 'Due Date', key: 'whatever', type: 'text' }` and reads `created.propertyId`; "an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault" becomes "…then answers the skip on its cascade" (`ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } })`); every replay that answered `ok(null)` answers `ok({ cascade: { pages: [], hosts: <its hosts> } })` and every one that answered `fault(unsweptLine(1))` answers `ok({ cascade: { pages: [], hosts: <its hosts>, warning: unsweptLine(1) }, retry: { op: 'replayProperty', record } })` (`toMatchObject` where hosts vary); `r.value.owed` reads `r.value.retry` as `{ op: 'replayProperty', record }`; "property:setKeyFormat refuses a format that isn’t a Key Format" and its Value Format twin become one case, "a format change that isn’t a Key Format is refused as malformed" (`fault('Malformed request.')`). `Core/Contract/writeGate.test.ts:138-159`'s three property rows call `nexusHandlers.mutate` with `addProperty`, `renameProperty`, and `editOption`, keeping their push lists.
@@ -12201,6 +12201,7 @@ The five remaining `unsweptLine` readers change one import each:
 ```Core/Properties/assignment.ts diff
 @@ imports @@
 +import type { MutateReply } from '../Nexus/mutateRequest'
++import { exactTitle } from '../Paths/caseFold'
 @@ addProperty @@
  export function addProperty(
    root: string,
@@ -12210,7 +12211,8 @@ The five remaining `unsweptLine` readers change one import each:
 +): Promise<MutateReply> {
  …
 -    return ok({ id })
-+    return ok({ created: { propertyId: id } })
++    const { label } = created.value
++    return ok({ created: { propertyId: id }, ...(label === exactTitle(draft.label) ? {} : { landedAs: label }) })
    })
  }
 ```
@@ -12373,7 +12375,10 @@ The five remaining `unsweptLine` readers change one import each:
 -        if (req.op !== 'delete' && cascade)
 +        if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
            warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
++        if (req.op === 'addProperty' && res.value.landedAs) notifyReport(`Created “${res.value.landedAs}”.`, false)
 ```
+
+A create names itself, so the pane's `+` and every other create read the same reply; a restore's `landedAs` keeps the Restored notice its own surface composes (`steppedTo`), so only `addProperty`'s is posted here.
 
 ```Core/Properties/Schema/PropertyFrame.tsx diff
 @@ imports @@
@@ -12603,7 +12608,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −185 production (+234 / −419).
+**Lines:** −178 production (+241 / −419).
 
 #### Task 7-7
 
@@ -12782,6 +12787,7 @@ The Archive Drive's Settings and Trash helpers move into the harness verbatim:
 - [ ] `[g6 O-1] an option's menu reads Delete, and a delete nothing holds asks without a strip clause` — seed `addProperty` `{ label: 'Drive Choice', type: 'select', select_options: [{ key: 'Alpha', label: 'Alpha' }, { key: 'Beta', label: 'Beta' }] }`; open Settings → Properties → Drive Choice (the Option Picker Drive's `openEditor` path); `chooseNative(cdp, <Alpha's row>, 'Delete')` answers rows holding `Delete` and no `Remove`; the dialog asks `Delete “Alpha”?` with `The option is deleted from the property.` and a `Delete` button; pressing it leaves `Drive Choice`'s options `['Beta']` in `.nexus/properties.json`.
 - [ ] `[g6 O-1] an option a page holds asks with its count` — `createPage Drive Held` in `Collection A/Set Alpha` seeded `{ [Drive Choice]: { kind: 'select', value: 'Beta' } }`; Delete on Beta asks `The option is deleted from the property and its value stripped from 1 Item.`; pressing Delete strips `Drive Choice` from `Drive Held.md`.
 - [ ] `[g6 O-2] deleting a property nothing holds asks without "0 Items"` — seed `addProperty` `{ label: 'Drive Bare', type: 'text' }`; open its editor; `chooseNative(cdp, '[aria-label="Property Menu"]', 'Delete', { button: 'left' })`; the dialog asks `Delete “Drive Bare” everywhere?` with `It is removed from every collection; a restorable record lands in the nexus’s .trash folder.`; pressing Delete returns the pane to its list, `notice(cdp)` starts `Deleted “Drive Bare”`, and `bundles:list({ kind: 'trash' })` holds one property row titled `Drive Bare`.
+- [ ] `[g6 O-4] the pane's + says the numbered name it took` — seed `addProperty` `{ label: 'New Text', type: 'text' }`; in Settings → Properties, `+` then Text; `notice(cdp)` reads `Created “New Text (2)”.` and the editor opens on `New Text (2)`; `deleteProperty` both through `mutate`.
 - [ ] `[g6 O-4] a property restored after its name was taken says the name it took` — seed `addProperty` `{ label: 'Drive Bare', type: 'text' }` again; `openSettings(cdp, 'Trash')`, `chooseNative(cdp, trashRowEl('Drive Bare'), 'Restore')`; `notice(cdp)` includes `Restored “Drive Bare” as “Drive Bare (2)”`, and the registry holds `Drive Bare` and `Drive Bare (2)`.
 - [ ] `[g6 —] the group leaves Collection A, the registry, and the Trash as it found them` — `deleteProperty` each seeded property through `mutate`, `deletePage` `Drive Held`, empty each bundle the group made with `permanentDelete` on, and reset `permanentDelete`; assert against start-of-group values: `Collection A`'s `properties`, `.nexus/properties.json`'s `order`, and `bundles:list({ kind: 'trash' })`'s length.
 
@@ -13286,9 +13292,9 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 
 - **An Option's Remove Reads Delete (O-1, Nathan's Intent):** the menu row, the question `Delete “Alpha”?`, and its button.
 - **A Delete Held by Nothing Asks Without "0 Items" (O-2, Nathan's Intent; LC-13):** the zero-case details are today's (`confirmations.ts:191,199`) with the strip clause removed and no new words: "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." for a property, and "The option is deleted from the property." for an option.
-- **A Numbered Restore Says So (O-4, Nathan's Intent; LC-14):** "Restored “Priority” as “Priority (2)”". The pane's `+` stays quiet.
+- **A Numbered Name Says So (O-4, Nathan's Intent):** a restore says "Restored “Priority” as “Priority (2)”", and the pane's `+` says "Created “New Select (2)”." when its default name was taken.
 - **A Stored Denominator of Zero or Less Reads as Unset (L-3, Nathan's Intent):** the definition stays admitted.
-- **A Partial Remove Returns to the List:** `schema:unassign` refused with "Couldn’t update N Items." and the editor stayed open; `unassignProperty` now answers that line on its cascade, so the tile hosts it wrote are owed (which the refusal did by owing before refusing) and the frame returns to the list with the same notice. This lands the return half of C-2 (Nathan's intent; LC-19) one phase early; its Try Again arrives with P11's note.
+- **A Partial Remove Returns to the List:** `schema:unassign` refused with "Couldn’t update N Items." and the editor stayed open; `unassignProperty` now answers that line on its cascade, so the tile hosts it wrote are owed (which the refusal did by owing before refusing) and the frame returns to the list with the same notice. This lands the return half of C-2 (Nathan's intent) one phase early; its Try Again arrives with P11's note.
 - **Clear's Skip Is a Warning:** a Clear that skipped a file answered a refusal; it answers the same line, in the same error tone, as its cascade's warning.
 - **Folding the Channels:** no visible change; the request each surface sends is held by `mutateRequest` before anything is written, so a malformed format or patch refuses as "Malformed request." where a channel answered its own wording (reachable from scripts only).
 - **The Lock Rule:** a property reorder in the pane now waits on a running schema op, where it could land inside its cascade.
@@ -13302,10 +13308,10 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 | 7-3 | −20 | +20 | 0 |
 | 7-4 | −42 | +46 | +4 |
 | 7-5 | −10 | +9 | −1 |
-| 7-6 | −421 | +236 | −185 |
+| 7-6 | −421 | +243 | −178 |
 | 7-7 | −38 | +32 | −6 |
 | 7-8 | 0 | 0 | 0 |
-| **Phase 7** | **−619** | **+465** | **−154** |
+| **Phase 7** | **−619** | **+472** | **−147** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
 - **Task 7-1's +23:** the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
@@ -17417,20 +17423,22 @@ The other sweep calls drop their first argument and nothing else:
   - "a rename appends the old name and drops the new one": `owedRename({}, 'a', 'b')` → `{ rename: ['a'] }`; `owedRename({ rename: ['a'] }, 'b', 'c')` → `{ rename: ['a', 'b'] }`.
   - "renaming back composes to the name the second rename left": `owedRename(owedRename({}, 'a', 'b'), 'b', 'a')` → `{ rename: ['b'] }`, and `owedSwept` of that over `['b']` → `{}`, so a→b→a owes nothing once the second sweep runs clean.
   - "a delete moves every owed old name and the current one into strip": `owedDelete({ rename: ['a'] }, 'b')` → `{ strip: ['a', 'b'] }`.
-  - "a clear moves an option's owed old names into strip and never adds its current word": `owedDelete({ rename: ['a'] })` → `{ strip: ['a'] }`.
+  - "a rename and a clean sweep keep a Clear's mark": `owedRename({ strip: ['High'], kept: true }, 'High', 'Urgent')` → `{ rename: ['High'], strip: ['High'], kept: true }`, and `owedSwept` of `{ strip: ['a', 'High'], kept: true }` over `['a']` → `{ strip: ['High'], kept: true }`.
   - "a restore moves strip back into rename": `owedRestore({ strip: ['a', 'b'] })` → `{ rename: ['a', 'b'] }`.
-  - "an edit that leaves nothing owed removes the entry": seed `.nexus/.owed.json` with `{ P: { kind: 'property', rename: ['a'] } }`, `editNote(root, 'P', (e) => e && { ...e, ...owedSwept(e, ['a']) })` → the file reads `{}`.
+  - "an edit that leaves nothing owed removes the entry": seed `.nexus/.owed.json` with `{ P: { kind: 'property', rename: ['a'] } }`, `editNote(root, 'P', (e) => e && { ...e, ...owedSwept(e, ['a']) })` → `.nexus/.owed.json` is gone, and `readNotes` answers `{}`.
   - "an edit answers the entry as it stood": `editNote` over the same seed answers `ok({ kind: 'property', rename: ['a'] })`.
   - "an unreadable notes file refuses the edit": `chmod 000` the file; `editNote` answers `ok: false` and the file's bytes are unchanged.
-  - "a corrupt notes file is set aside and rebuilt": write `{` to the file, `editNote` lands, and a `.owed.json.bad-*` sits beside it.
+  - "a corrupt notes file is set aside and rebuilt": write `{` to the file, `editNote` lands, and on the test host, which has no system Trash, a `.owed.json.bad-*` sits beside it.
+- [ ] Write in `Core/Files/atomicWrite.test.ts` › `describe('readAppFile and a repairable updateNexusFile')` and watch each fail: "a damaged file goes to the system Trash where the host has one": `installMachine({ ...machine(), trashToSystem })` with a `vi.fn` that removes its path (as `Core/Nexus/mutate.test.ts`' system-mode case does) and `afterEach(() => installMachine(diskMachine()))` (as `names.test.ts` does), damage the file, write; `trashToSystem` was called with the file's path and no `.bad-` file sits beside it; "a file left empty with `dropEmpty` is removed": write `{ a: 1 }`, then a write answering `{}` with `dropEmpty`; the file is gone, and the same write without `dropEmpty` leaves `{}`.
+- [ ] `Core/Files/atomicWrite.ts` as the AFTER gives it: `setAside` sends the damaged bytes to the system Trash through the platform seam's optional `trashToSystem`, keeping today's dotted rename only on a host without one, and `updateNexusFile` takes `dropEmpty`, removing a file its write left empty while it still holds the file's lock.
   - "a name another item owes is refused within its owner, folding case": property entries `P` (`rename: ['Priority']`) and `Q` (`strip: ['Stage']`); `owedName(notes, { owner: { kind: 'property' }, name: 'stage', except: 'P' })` is `true` and `{ …, name: 'Priority', except: 'P' }` is `false`; a Space entry under Context `C1` doesn't answer for `{ kind: 'space', contextId: 'C2' }`; an option part `o1` owing `High` answers for `{ kind: 'option', propertyId: 'P' }` and `name: 'High'` with `except: 'o2'`, and not for `name: 'high'` or `except: 'o1'`.
   - "an option part emptied by an edit leaves the entry": `withOption({ kind: 'property', options: { o1: { rename: ['a'] } } }, 'o1', (o) => owedSwept(o, ['a']))` → `{ kind: 'property' }`.
   - "a restore converts only an entry that owes a strip": with `{ P: { kind: 'property', strip: ['a'] } }`, `restoreNote(root, 'P')` leaves `rename: ['a']`; with no entry it answers `ok` and writes nothing, even with the file `chmod 000`.
-  - `describe('runNoted')`, each with stub steps: "a landing on a name another item owes refuses with nothing written"; "a refused note refuses before the list step runs"; "a refused list step puts the entry back as it stood"; "a sweep that missed nothing settles the entry"; "a sweep that missed a file keeps the entry and marks the report owed"; "an entry under an owed rename stays whole after a clean sweep" (`under` naming an entry with `rename: ['x']`).
+  - `describe('runNoted')`, each with stub steps: "a landing on a name another item owes refuses with nothing written"; "a refused note refuses before the list step runs"; "a refused list step puts the entry back as it stood"; "a sweep that missed nothing settles the entry"; "a sweep that missed a file keeps the entry and marks the report owed"; "an entry under an owed rename stays whole after a clean sweep, and its report counts the files still under the old name as owed" (`under` naming an entry with `rename: ['x']` and one page holding `x`; the report reads `owed: true` and "Couldn’t update 1 Item.").
   - "the notes file is neither watched nor synced": `manifestAdmits(scope)('.nexus/.owed.json')` → `false`, through the dot rule alone.
 - [ ] Add `OWED_REL` to `Core/Paths/nexusPaths.ts` beside the journal constants (they leave in Tasks 11A-2 and 11A-3, with their last readers).
 - [ ] Write `Core/Nexus/owed.ts` as the AFTER gives it.
-- [ ] Run `npm run test -- owed` green, then `git commit --only -- Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/cascade.ts Core/Paths/nexusPaths.ts -m "Added the notes module that keeps one owed entry per property, Context, and Space, and the one order every many-file change runs."`
+- [ ] Run `npm run test -- owed` green, then `git commit --only -- Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/cascade.ts Core/Paths/nexusPaths.ts Core/Files/atomicWrite.ts Core/Files/atomicWrite.test.ts -m "Added the notes module that keeps one owed entry per property, Context, and Space, and the one order every many-file change runs; a damaged settings file now goes to the system Trash."`
 
 **AFTER**
 
@@ -17442,22 +17450,54 @@ The other sweep calls drop their first argument and nothing else:
 +export const OWED_REL = `${NEXUS_DIR}/.owed.json`
 ```
 
+```Core/Files/atomicWrite.ts diff
+@@ setAside @@
+-// The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
++// The damaged bytes go to the system Trash, so the Nexus keeps no copy and nothing is lost; a host without one keeps them under a dotted name beside the file, which neither the watcher nor sync admits.
+ export async function setAside(bad: string): Promise<void> {
+-  await machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`))
++  await (machine().trashToSystem?.(bad) ??
++    machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`)))
+ }
+@@ updateNexusFile @@
+-/** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one is set aside and rebuilt from its last read only where `repairable` allows. */
++/** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, a corrupt one is set aside and rebuilt from its last read only where `repairable` allows, and one left empty is removed where `dropEmpty` asks. */
+ export function updateNexusFile(
+   absPath: string,
+   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+   repairable: boolean,
++  dropEmpty = false,
+ ): Promise<Result<Record<string, unknown>>> {
+   return machine().lock(absPath, async () => {
+     await machine().mkdir(dirname(absPath))
+     const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? rebuild : undefined)
++    if (written.ok && dropEmpty && !Object.keys(written.value).length) await machine().remove(absPath)
+     if (written.ok) lastRead.set(absPath, written.value)
+     return written
+   })
+ }
+```
+
+`setAside` reads the seam the way `Core/Trash/discard.ts`' `trashDeps` does, so Desktop sends a damaged file to the system Trash and a host with none (Mobile, the tests) renames it as today; `journalSlot`'s `setAside` call, its other reader, leaves in Task 11A-3. Only the notes file passes `dropEmpty`: every other Nexus file that empties is a real state its reader keeps.
+
 ```Core/Nexus/owed.ts diff
 @@ the whole file @@
 +// The notes file: one entry per property, Context, or Space that still owes work, keyed by its id, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
 +
 +import { fail, ok, type Result } from '../Contract/result'
++import { contextKey } from '../Contexts/contexts'
 +import { readAppFile, updateNexusFile } from '../Files/atomicWrite'
 +import { memberKey } from '../Files/rootValues'
 +import { same } from '../Files/stableJson'
++import { findHolders } from '../Index/keyHolders'
 +import { normalizeTitle } from '../Paths/caseFold'
 +import { OWED_REL } from '../Paths/nexusPaths'
 +import { join } from '../Paths/posix'
 +import type { CascadeReport } from './cascade'
 +import { type ConfigReach, reachReport } from './configReach'
 +
-+/** Each name in `rename` becomes the current name wherever a file still holds it; each in `strip` leaves. */
-+export type Owed = { rename?: string[]; strip?: string[] }
++/** Each name in `rename` becomes the current name wherever a file still holds it; each in `strip` leaves. `kept` marks an option part a Clear wrote: the option stays listed, so its own word in `strip` leaves the pages without the option leaving. */
++export type Owed = { rename?: string[]; strip?: string[]; kept?: true }
 +export type PropertyEntry = Owed & {
 +  kind: 'property'
 +  options?: Record<string, Owed>
@@ -17501,7 +17541,7 @@ The other sweep calls drop their first argument and nothing else:
 +/** Whether `e` still owes a rename. Pages under its old name weren't candidates for any sweep since, so an option part, a Remove's Collection, or a Space under it settles only once the rename lands (H-1). */
 +export const owesRename = (e: Entry | undefined): boolean => !!e?.rename?.length
 +
-+/** Edits `id`'s entry under the file's own lock, dropping one that owes nothing; answers the entry as it stood, or the refusal naming the file. */
++/** Edits `id`'s entry under the file's own lock, dropping one that owes nothing and the file once no entry is left; answers the entry as it stood, or the refusal naming the file. */
 +export async function editNote(
 +  root: string,
 +  id: string,
@@ -17518,6 +17558,7 @@ The other sweep calls drop their first argument and nothing else:
 +      return next && owesAnything(next) ? { ...rest, [id]: next } : rest
 +    },
 +    true,
++    true,
 +  )
 +  return written.ok ? ok(prior) : written
 +}
@@ -17526,13 +17567,13 @@ The other sweep calls drop their first argument and nothing else:
 +  e?.kind === 'property' ? e : { kind: 'property' }
 +
 +export const owedRename = (o: Owed, from: string, to: string): Owed => ({
++  ...o,
 +  rename: distinct([...(o.rename ?? []), from].filter((n) => n !== to)),
-+  strip: o.strip,
 +})
-+/** Every owed name and, for a delete, the current one move into `strip`; Clear passes no current name, since its own word is never owed (H-2, H-3). */
-+export const owedDelete = (o: Owed, current?: string): Owed => ({
++/** Every owed name and the current one move into `strip`, for a delete and a Clear alike (H-2, H-3). */
++export const owedDelete = (o: Owed, current: string): Owed => ({
 +  rename: undefined,
-+  strip: distinct(o.strip, o.rename, current === undefined ? [] : [current]),
++  strip: distinct(o.strip, o.rename, [current]),
 +})
 +export const owedRestore = (o: Owed): Owed => ({
 +  rename: distinct(o.rename, o.strip),
@@ -17540,6 +17581,7 @@ The other sweep calls drop their first argument and nothing else:
 +})
 +/** `o` once a sweep that missed nothing has reached `swept`. */
 +export const owedSwept = (o: Owed, swept: readonly string[]): Owed => ({
++  ...o,
 +  rename: distinct(o.rename?.filter((n) => !swept.includes(n))),
 +  strip: distinct(o.strip?.filter((n) => !swept.includes(n))),
 +})
@@ -17577,13 +17619,26 @@ The other sweep calls drop their first argument and nothing else:
 +  return editNote(root, id, (e) => e && { ...e, ...owedRestore(e) })
 +}
 +
-+/** A many-file change's report, marked owed while it left files for Try Again. */
-+export const owedReport = (reach: ConfigReach): CascadeReport => ({
-+  ...reachReport(reach),
-+  ...(reach.skipped ? { owed: true as const } : {}),
-+})
++/** A many-file change's report, marked owed while it left files for Try Again, counting the files still `waiting` on a rename it runs under. */
++export const owedReport = (reach: ConfigReach, waiting = 0): CascadeReport => {
++  const skipped = reach.skipped + waiting
++  return { ...reachReport({ ...reach, skipped }), ...(skipped ? { owed: true as const } : {}) }
++}
 +
-+/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename. */
++/** The files still under the owed old names of `under`'s rename: a change under it reaches them only once the rename lands (H-1), so its reply counts them with Try Again. */
++export async function waitingOn(root: string, under: string | undefined): Promise<number> {
++  const e = under === undefined ? undefined : (await readNotes(root))[under]
++  let waiting = 0
++  for (const old of e?.rename ?? []) {
++    const property = e?.kind === 'property'
++    const q = { keys: [property ? old : contextKey(old)], reach: property ? ('governed' as const) : ('anywhere' as const) }
++    const { pages, spaces } = await findHolders(root, q)
++    waiting += pages.length + spaces.length
++  }
++  return waiting
++}
++
++/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename, whose waiting files the report counts. */
 +export async function runNoted<T>(
 +  root: string,
 +  id: string,
@@ -17608,7 +17663,7 @@ The other sweep calls drop their first argument and nothing else:
 +  const reach = await change.sweep(listed.value, prior.value)
 +  const held = change.under === undefined ? undefined : notes[change.under]
 +  if (!reach.skipped && !owesRename(held)) await editNote(root, id, (e) => e && change.settle(e, listed.value))
-+  return ok({ listed: listed.value, cascade: owedReport(reach) })
++  return ok({ listed: listed.value, cascade: owedReport(reach, await waitingOn(root, change.under)) })
 +}
 ```
 
@@ -17632,7 +17687,7 @@ The other sweep calls drop their first argument and nothing else:
 
 #### Task 11A-2
 
-**TASK:** Move the property kind onto the notes, whole: rename and Label Format, delete, option rename and Value Format, and option delete run through `runNoted`, the two deletes taking their list step right after the note (B-2) and the option delete's halt leaving; Clear composes under an owed option rename; create, rename, Label Format, and option edits refuse an owed name through `owedName`, and the slice finishes the owed work and sends the request once more before it shows that refusal; a restore turns its entry's `strip` back into `rename`; option registration skips owed words; one finishing pass replaces the property replay at the open and as Try Again's `finishOwed` op, which `confirmDelete` offers a delete that missed files. `propertyJournal.ts` and `replaySchemaCascade.ts` are deleted.
+**TASK:** Move the property kind onto the notes, whole: rename and Label Format, delete, option rename and Value Format, option delete, and Clear run through `runNoted`, the two deletes taking their list step right after the note (B-2), the option delete's halt leaving, and Clear noting a kept part that Try Again finishes; create, rename, Label Format, and option edits refuse an owed name through `owedName`, and the slice finishes the owed work and sends the request once more before it shows that refusal; a restore turns its entry's `strip` back into `rename`; option registration skips owed words; one finishing pass replaces the property replay at the open and as Try Again's `finishOwed` op, which `confirmDelete` offers a delete that missed files. `propertyJournal.ts` and `replaySchemaCascade.ts` are deleted.
 
 **NOW:**
 
@@ -17656,14 +17711,14 @@ The other sweep calls drop their first argument and nothing else:
   - `Core/Properties/deleteProperty.test.ts` › "takes the definition off the list before it strips a page": `vi.mocked(removeFromRegistry).mockImplementationOnce` reads the page before calling the real function; the page read at the list step held `Priority: hi`, and the page now holds no `Priority` (B-2; fails today, since the list step runs after the strip). "A delete whose list step fails strips nothing": with `removeFromRegistry` refusing, every surface reads as before the delete (HEAD's `:412` case, which pinned the strip landing, is rewritten). "A delete after an owed rename strips both keys": rename with one page unreadable, restore its mode, delete; both `Priority:` and `Urgency:` leave every page and the entry clears (H-3); "a delete reads each holder once per key it holds": spy `readTextOrNull` across a one-key delete, and each holder is read once.
   - "a refused list step removes the bundle and puts the entry back": stub `removeFromRegistry` to refuse; no `.trash/property-*` remains and the notes file reads as before.
   - `Core/Properties/optionOps.test.ts` › `describe('option cascades reach saved views')`: HEAD's `:1173` "a removal with a page skip leaves every view holding the option and the journal held" becomes "a deletion with a page skip drops the option, clears every view, and owes the page" (the options read `['Todo']`, the three views equal the cleared views, the reply is owed); `:1241` "a pass skip holds the drop and the journal" becomes "a pass skip owes the page with the option already dropped"; `:1263` "a failed drop keeps the journal" becomes "a failed drop strips nothing and puts the entry back".
-  - `Core/Properties/optionOps.test.ts` › "an option rename runs while another property owes work", "an option rename keeps its part while its property's rename is owed": with `rename: ['Priority']` owed on the property, a clean option rename leaves `options[optId].rename` standing (H-1); "Clear moves an owed option rename into strip": with `options[optId] = { rename: ['a'] }`, Clear of that option leaves `{ strip: ['a'] }` (H-2); "registration skips an owed word": an unreached page holding a deleted word doesn't re-register it (H-7); "renameOption, setValueFormat, and editOption refuse a landing on another option's owed word", and "an add taking back an owed delete's word refuses" (a locked Set holding a page with `A`; after `deleteOption` of `A`, P8's `add` edit for `A` answers `'owed'` where HEAD answered a duplicate, since the halt kept `A` listed).
+  - `Core/Properties/optionOps.test.ts` › "an option rename runs while another property owes work", "an option rename keeps its part while its property's rename is owed": with `rename: ['Priority']` owed on the property, a clean option rename leaves `options[optId].rename` standing (H-1); "Clear sweeps an owed option rename's old word with its own": with `options[optId] = { rename: ['a'] }` and pages holding `a` and the option's word, Clear leaves neither and the part clears (H-2); "a Clear that misses a page owes it with Try Again": one holder `chmod 000`; the reply's `cascade.owed` is `true`, the part reads `{ strip: [<word>], kept: true }`, and once the mode is restored `finishOwed` clears the page, the option stays listed, and the part clears; "a Clear's Try Again leaves a page picked to another option": after the miss, the unreached page is set to another option, and `finishOwed` leaves that pick and clears the part; "registration skips an owed word": an unreached page holding a deleted word doesn't re-register it (H-7); "renameOption, setValueFormat, and editOption refuse a landing on another option's owed word", and "an add taking back an owed delete's word refuses" (a locked Set holding a page with `A`; after `deleteOption` of `A`, P8's `add` edit for `A` answers `'owed'` where HEAD answered a duplicate, since the halt kept `A` listed).
   - `Core/Trash/restoreProperty.test.ts` › "a restore turns the delete's owed strip into renames": delete with one page unreadable, restore; the entry reads `rename: [<key>]`, the definition stays after `finishOwed`, and the unreached page keeps its value (H-4).
   - `Core/Nexus/finishOwed.test.ts` (new) › "a crash between the delete's note and its list step finishes the delete": seed the entry `{ strip: [key] }` with the definition still listed; `finishOwed` removes the definition and strips the pages (H-5); "a crash between a rename's note and its list step owes nothing": `{ rename: [currentKey] }` clears with no page touched; "a name a live definition holds is skipped and dropped" (H-16); "a live definition holding a strip part keeps its Collections" (the strip arm runs only once the definition is gone); "an option part sweeps while its property's rename is owed and stays whole" (H-1); "a registry that can't be written counts one missed file"; "the open finishes an owed rename once the index is seeded"; "Try Again finishes every entry and reports one combined count".
   - `Core/Interface/Confirm/confirmations.test.ts` › P7's "a property delete asks its own question, counting what holds it, deletes through its op, and offers its reply's retry" becomes "… and a delete that missed a file offers Try Again, which sends `{ op: 'finishOwed' }`": `mutate` answers `cascade: { pages: [], hosts: [], warning: 'W', owed: true }` and no `retry`.
   - `Core/Session/store.test.tsx` › the slice's `mutate` describe › "an owed name is finished, then the request lands": the dialer answers `addProperty` `'owed'`, then `finishOwed` with an empty cascade, then `addProperty` landed; the asks run in that order and no notice shows.
 - [ ] `Core/Properties/registryProperty.ts`: as the AFTER gives it — `freeLabel` loses `owed`; `createProperty` refuses an owed landed key inside its registry edit; `rekeyProperty` runs a key move through `runNoted` (the refusal, the note, the commit as its list step, `renameSweep`, the settle of the swept key) and a format change that keeps the key through the commit alone. `renameSweep` and `removeFromRegistry` stay exported for the pass.
 - [ ] `Core/Properties/deleteProperty.ts`: `deletePlan` takes every key the delete strips; `deleteInner` runs through `runNoted` after the bundle mints, its list step `removeFromRegistry` right after the note, and removes the bundle when the runner refuses; `stripAndRemove` becomes `stripProperty(root, propertyId, folders, planned)`, which no longer removes the definition and which the pass imports; `snapshot` files each holder's value under every key it strips; `propertyHolders` passes `[def.key]`.
-- [ ] `Core/Properties/optionOps.ts`: `OWED` moves to `owed.ts`; `owedKeys` folds into `owedName`, which `editOption` and `registerHeldOptions` read; `rekeyOptions` and `deleteOption` run through `runNoted`, the delete dropping the option right after its note; `optionCascade`'s delete halt leaves, so a delete reaches the stash and the views on a page skip; `clearOption` composes under an owed part.
+- [ ] `Core/Properties/optionOps.ts`: `OWED` moves to `owed.ts`; `owedKeys` folds into `owedName`, which `editOption` and `registerHeldOptions` read; `rekeyOptions`, `deleteOption`, and `clearOption` run through `runNoted`, the delete dropping the option right after its note and Clear noting its word in a kept part; `optionCascade`'s delete halt leaves, so a delete reaches the stash and the views on a page skip.
 - [ ] `Core/Trash/restoreProperty.ts`: after the create, `restoreNote`; a failed conversion refuses with the bundle unspent, H-4's crash reading.
 - [ ] Write `Core/Nexus/finishOwed.ts` with the pass and its property arm (Task 11A-3 adds the Context and Space arms, Task 11B-3 the `unassigned` arm).
 - [ ] `Core/Nexus/handlers.ts`: P9's genuine-open replay call for properties becomes `await finishOwed(root, await trashDeps(ctx))`, before `settleNow`; P9's Context replay call stays until Task 11A-3.
@@ -17895,7 +17950,6 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 -  writeSchemaJournal,
 -} from './propertyJournal'
 +import {
-+  editNote,
 +  type Entry,
 +  type Owed,
 +  OWED,
@@ -17990,13 +18044,20 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 -    if (option && journal.id === propertyId) return OWED
      const r = await resolveOption(root, propertyId, optionId)
      if (!r.ok) return r
-+    // Clear writes no note of its own; an old name still owed to the option leaves instead of becoming the cleared word again (H-2).
-+    if (propertyNote((await readNotes(root))[propertyId]).options?.[optionId]) {
-+      const composed = await editNote(root, propertyId, (e) =>
-+        withOption(propertyNote(e), optionId, (o) => owedDelete(o)),
-+      )
-+      if (!composed.ok) return composed
-+    }
++    const { def, option } = r.value
++    // The option stays listed, so its part is marked kept: its word and every old name it still owes leave the pages holding them, and no finish drops the option (H-2).
++    const part = (e: Entry | undefined): Owed => ({
++      ...owedDelete(propertyNote(e).options?.[optionId] ?? {}, option.key),
++      kept: true,
++    })
++    const ran = await runNoted(root, propertyId, {
++      note: (e) => withOption(propertyNote(e), optionId, () => part(e)),
++      list: async () => ok(def),
++      sweep: (_, prior) => optionCascade(root, def, new Map((part(prior).strip ?? []).map((w) => [w, null]))),
++      settle: (e) => withOption(propertyNote(e), optionId, () => ({})),
++      under: propertyId,
++    })
++    return ran.ok ? ok({ cascade: ran.value.cascade }) : ran
      const reach = await optionCascade(root, r.value.def, new Map([[r.value.option.key, null]]))
 ~  …P7's reply from `reach`, unchanged (`reachReport`, no `owed`: nothing is noted, so nothing is retried)…
    })
@@ -18031,6 +18092,20 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
    })
  }
 ```
+
+```Core/Properties/optionOps.ts diff
+@@ imports, the configuration reach @@
+-import { type ConfigReach, NO_REACH, reachConfig, reachReport } from '../Nexus/configReach'
++import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
+@@ clearOption, its sweep now the runner's @@
+     return ran.ok ? ok({ cascade: ran.value.cascade }) : ran
+-    const reach = await optionCascade(root, r.value.def, new Map([[r.value.option.key, null]]))
+-    return ok({ cascade: reachReport(reach) })
+   })
+ }
+```
+
+Clear's list step is the definition it resolved, since a Clear changes no list; the runner gives it the note, the owed reply, and the settle every other option change has. A finish strips a kept part's words from the files still holding them, so a page picked to another option since keeps that pick.
 
 `renameOption` passes `[{ optionId, from: option.key, to }]`, or none when the word holds, with P8's `{ optionId, label }` change; `setValueFormat` maps its plan's key pairs to their options' ids, with `{ value_format }`; so the owed-word refusal is the runner's one check for both (H-7). `editOption` reads each option's own id as its `except`, so an option's own owed words never refuse it. The delete's `?? []` only narrows the type: a part composed with the option's current word always lists it. With the option dropped first, the halt's reason (keeping the option and its views while pages owe the strip) is gone, so a delete reaches the stash and the views on a page skip, as a rename already does; `def` is the definition read before the drop, and `valueEditRewrite` edits `def.key`'s held list by word without resolving a word against the options, so the strip lands either way.
 
@@ -18188,7 +18263,7 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 +  const left: Record<string, Owed> = {}
 +  for (const [optionId, o] of Object.entries(options)) {
 +    let option = findOption(def, optionId)
-+    if (option && o.strip?.includes(option.key)) {
++    if (option && !o.kept && o.strip?.includes(option.key)) {
 +      if (!(await dropOptionFromDef(root, def.id, option.key)).ok) {
 +        left[optionId] = o
 +        continue
@@ -18203,8 +18278,9 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 +    const renamed =
 +      to !== undefined && rename.length > 0 && add(reach, await optionCascade(root, def, new Map(rename.map((w) => [w, to]))))
 +    const stripped =
-+      strip.length > 0 && add(reach, await optionCascade(root, def, new Map(strip.map((w) => [w, null])), optionId))
-+    if (renamed || stripped) left[optionId] = { rename: renamed ? rename : undefined, strip: stripped ? strip : undefined }
++      strip.length > 0 &&
++      add(reach, await optionCascade(root, def, new Map(strip.map((w) => [w, null])), o.kept ? undefined : optionId))
++    if (renamed || stripped) left[optionId] = { ...o, rename: renamed ? rename : undefined, strip: stripped ? strip : undefined }
 +  }
 +  return Object.keys(left).length ? left : undefined
 +}
@@ -18303,7 +18379,7 @@ An owed refusal is the one refusal answered by finishing first: every owed refus
 
 - [ ] `git grep -nw "propertyJournal\|replaySchemaCascade\|SchemaJournal\|schemaCascade\|writeSchemaJournal\|readSchemaJournal\|clearSchemaJournal\|replayProperty\|owedKeys\|stripAndRemove" -- Core Desktop UIX` answers nothing.
 - [ ] `git grep -n "OWED = fail" -- Core` answers only `Core/Nexus/owed.ts`; `git grep -nw "owedName" -- Core ':!*.test.*'` answers `owed.ts` (its declaration and `runNoted`'s check), `createProperty`, `editOption`, and `registerHeldOptions`.
-- [ ] `git grep -n "() => noted.value\|() => prior.value" -- Core ':!*.test.*'` answers only `runNoted`'s put-back; `git grep -nw "runNoted" -- Core ':!*.test.*'` answers `owed.ts`, `rekeyProperty`, `deleteInner`, `rekeyOptions`, and `deleteOption`.
+- [ ] `git grep -n "() => noted.value\|() => prior.value" -- Core ':!*.test.*'` answers only `runNoted`'s put-back; `git grep -nw "runNoted" -- Core ':!*.test.*'` answers `owed.ts`, `rekeyProperty`, `deleteInner`, `rekeyOptions`, `deleteOption`, and `clearOption`.
 - [ ] `git grep -nw "retry" -- Core/Interface/Confirm/confirmations.ts` answers nothing.
 - [ ] `git grep -n "removeFromRegistry(" -- Core ':!*.test.*'` answers its declaration, `addProperty`'s rollback (P7), `deleteInner`'s list step, and `finishProperty`'s; `git grep -nF "removed !== undefined) return" -- Core/Properties/optionOps.ts` answers nothing (the delete halt left).
 - [ ] The tests named in CHANGE pass, each having failed first; every test file in the commit is green.
@@ -18843,7 +18919,7 @@ A Space entry sweeps the holders already under its Context's current title on ev
 - [ ] `git grep -nw "journalSlot\|contextJournal\|RenameJournal\|writeJournal\|readJournal\|clearJournal\|replayPendingRename\|sweepAgain\|settleJournal\|Unswept\|PROPERTY_JOURNAL_FILENAME\|CONTEXT_JOURNAL_FILENAME\|PROPERTY_JOURNAL_REL\|CONTEXT_JOURNAL_REL" -- Core Desktop UIX` answers nothing; `git grep -nw "unswept" -- Core/Contexts/contextCascade.ts` and `git grep -n "function renamed" -- Core/Nexus/mutate.ts` answer nothing.
 - [ ] `git grep -nw "retry" -- Core/Nexus/mutateRequest.ts Core/Nexus/mutate.ts Core/Session/nexusSlice.ts Core/Interface/Confirm/confirmations.ts` answers nothing, and `git grep -nF "from: z.string().optional()" -- Core/Nexus/mutateRequest.ts` answers nothing.
 - [ ] `git grep -n "const underContexts" -- Core` answers only `Core/Nexus/settle.ts`.
-- [ ] `git grep -nw "runNoted" -- Core ':!*.test.*'` answers `owed.ts`, the four property ops, `renameContextOp`, and `renameSpaceOp`; `git grep -nw "owesRename" -- Core ':!*.test.*'` answers `owed.ts` (its declaration and `runNoted`), `finishProperty`, and `finishSpace`, and `git grep -n "rename?.length" -- Core ':!*.test.*'` answers only `owed.ts`' `owes` and `owesRename`.
+- [ ] `git grep -nw "runNoted" -- Core ':!*.test.*'` answers `owed.ts`, the five property ops, `renameContextOp`, and `renameSpaceOp`; `git grep -nw "owesRename" -- Core ':!*.test.*'` answers `owed.ts` (its declaration and `runNoted`), `finishProperty`, and `finishSpace`, and `git grep -n "rename?.length" -- Core ':!*.test.*'` answers only `owed.ts`' `owes` and `owesRename`.
 - [ ] The tests named in CHANGE pass, each having failed first; every test file in the commit is green.
 - [ ] `npm run typecheck`, `npm run test`, `npm run lint` clean; `npm run test -- engineGraph hostGraph` passes.
 - [ ] Check for unnecessary code or mistakes.
@@ -18868,24 +18944,26 @@ A Space entry sweeps the holders already under its Context's current title on ev
 - **An Owed Name Is Finished, Then Used (B-4):** property create, rename, and Label Format, option create and rename, Context and Space create and rename, and every Trash restore landing on a name another item still owes first finish that item's work through the one Try Again and then land, where HEAD numbered a create, left a rename unchecked, and let a Context or Space take another's leftover tags. Only a name still owed after the finish, such as one held on an unreadable page, is refused with "An earlier change hasn’t reached every file yet." and Try Again.
 - **A Note That Can't Be Written Refuses:** every many-file change refuses with nothing changed; a Label Format change or option relabel that moves no key writes no note, so it lands as today.
 - **One Try Again Finishes Everything:** Try Again finishes every owed entry and reports one combined count, since a refusal knows the name it refused and not which item owes it; the open runs the same pass, once the index is seeded.
-- **The Notes File Stays as `{}`** once its first entry clears.
-- **A Notes File Damaged Before the Session Read It Reads Empty:** `readAppFile` answers `null` for a file this session never saw parse, so its owed work is lost; the next note sets the damaged copy aside as `.owed.json.bad-<id>` (NC-2's policy) and starts a fresh file.
+- **The Notes File Leaves Once Nothing Is Owed:** the last entry's clearing removes `.nexus/.owed.json`, as the slot's own clear removed its journal, so a Nexus with nothing owed holds no notes file.
+- **A Damaged Settings File Goes to the System Trash:** `setAside`, which every repairable Nexus file's rebuild runs, sends the damaged bytes to the computer's Trash through the platform seam instead of leaving `.<name>.bad-<id>` beside the rebuilt file forever; a host with no system Trash keeps today's rename. A file rebuilt from scratch, damaged before the session ever read it, holds its only copy of the data, which the Trash keeps recoverable. Nathan's intent.
+- **A Notes File Damaged Before the Session Read It Reads Empty:** `readAppFile` answers `null` for a file this session never saw parse, so its owed work is lost; the next note sends the damaged copy where `setAside` sends every damaged file and starts a fresh one.
+- **Clear Owes What It Missed (B-1, B-3):** an option's Clear notes its word in a kept part and runs on the runner, so a Clear that misses pages offers Try Again, which clears every page still holding the word; a page picked to another option in between keeps that pick, a page set back to the cleared option is cleared with the rest, and the option stays listed. Where the Clear followed an owed option rename, H-2's old word leaves with it. A Clear whose note can't be written refuses with nothing changed. Nathan's intent.
 - **A Second Rename of One Context Keeps the First's Leftovers:** HEAD's slot let a second rename overwrite the first's record, forgetting its unreached pages after a restart; both old titles stay owed. B-1's intent applied to Contexts.
 - **A Live Op Sweeps Its Own Old Name:** an older name still owed to the same item waits for Try Again rather than being swept by a later rename; a delete strips every owed name.
 - **A Context Rename Whose Folder Can't Move or Go Back Offers Try Again:** P9's order answered the relocate's error and left the note for the next open. The runner reads a title that couldn't go back as a list step that landed, so the reply reads "Couldn’t update 1 Item." with Try Again, which moves the folder and rekeys the files. The reason: the registry already names the new title, so the rename has landed in the list and only its folder and files are owed; Try Again finishes it now instead of at the next open. Recommendation: keep.
-- **A Change Waiting on an Owed Rename Reads as Done (LC-63):** while a property's rename is owed, an option rename, option delete, or Remove reaches every page already under the new key and reads as done; while a Context's rename is owed, a Space rename or delete reaches every holder already under the Context's new title and reads as done. The pages under the old name keep the old value until the rename's own Try Again or the next open, which finishes the rename and then the change, in that order (H-1). For a Space delete this departs from B-3's letter, a delete that can't reach every page offering Try Again for the rest. The reason: those pages are the ones the rename's own notice counted and offered Try Again for, and counting which of them hold the change's word or Space would read files the rename couldn't read; offering Try Again here would need either a per-kind count of those pages (about 15 lines across the runner and the arms) or a count of one that misstates the number. Recommendation: keep; the alternative is the per-kind count.
+- **A Change Waiting on an Owed Rename Says So (B-3):** while a property's rename is owed, an option rename, Value Format, option delete, Clear, or Remove reaches every page already under the new key; while a Context's rename is owed, a Space rename reaches every holder already under the Context's new title. Each reply also counts the files still under the old name as owed, with the one Try Again, where it would otherwise read as done; the rename's Try Again or the next open finishes the rename and then the change, in that order (H-1). The count is every file the index lists under the old name, the same files the rename's own notice counted, read once per owed rename by `waitingOn`, so a page under the old name that doesn't hold the change's word is counted too; narrowing it to the change's word would add an index read per change kind.
 
 #### Line Total
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 11A-1 | 0 | +156 | +156 |
-| 11A-2 | −274 | +339 | +65 |
+| 11A-1 | −1 | +183 | +182 |
+| 11A-2 | −277 | +359 | +82 |
 | 11A-3 | −325 | +201 | −124 |
-| **Phase 11A** | **−599** | **+696** | **+97** |
+| **Phase 11A** | **−603** | **+743** | **+140** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Task 11A-2 deletes `propertyJournal.ts` and `replaySchemaCascade.ts` whole, and Task 11A-3 `contextJournal.ts`, `journalSlot.ts`, and `replayPendingRename` (63 lines).
-- **Why It Lands Positive:** 11A-1 (+156) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`; 11A-2 (+65) and 11A-3 (−124) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +94, P11 lands +191, the two deletes' list-first orders included.
+- **Why It Lands Positive:** 11A-1 (+182) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, `waitingOn`, and `restoreNote`, with `setAside`'s system Trash and `dropEmpty`; 11A-2 (+82) and 11A-3 (−124) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. Clear's move onto the runner, `waitingOn`'s count of the files a change under an owed rename can't reach yet, `dropEmpty`, and `setAside`'s system Trash are ruled behavior in their minimal form. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +96, P11 lands +236, the two deletes' list-first orders included.
 - **Tests:** about −900 removed (`propertyJournal.test.ts` 102, `replaySchemaCascade.test.ts` 713, `contextJournal.test.ts` 20, the slot and consumer cases in `journalWiring.test.ts`, the `OWED` and `from` cases) and about +480 written (`owed.test.ts` with the runner's cases, `finishOwed.test.ts`, and the cases each task names).
 
 ---
@@ -19160,7 +19238,7 @@ An unreadable page the index answers now carries its id and values in `held`, so
 +import { contextKey } from '../Contexts/contexts'
 +import { spaceAt } from '../Nexus/treePatch'
 +import { finishEntry } from '../Nexus/finishOwed'
-+import { editNote, owedDelete, owedReport } from '../Nexus/owed'
++import { editNote, owedDelete, owedReport, waitingOn } from '../Nexus/owed'
 -import { fail, ok, valueOr } from '../Contract/result'
 +import { fail, ok } from '../Contract/result'
 -import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
@@ -19237,7 +19315,8 @@ An unreadable page the index answers now carries its id and values in `held`, so
 @@ deleteOp — after the move @@
      moved = true
 +    // The strip and the views run as the finish runs them, now the list step and the folder move have landed.
-+    const stripped = owed ? owedReport(await finishEntry(root, owed, deps)) : null
++    const parent = req.kind === 'space' ? spaceAt(before, rel)?.contextId : undefined
++    const stripped = owed ? owedReport(await finishEntry(root, owed, deps), await waitingOn(root, parent)) : null
  …
 -    const cascade = joinCascades(gone?.cascade, reach)
 +    const cascade = joinCascades(joinCascades(gone?.cascade, reach), stripped)
@@ -19438,7 +19517,7 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 
 #### Task 11B-3
 
-**TASK:** Remove runs through `runNoted`: it notes the Collection it leaves, then, as its list step, unassigns the property and clears it from the Collection's views in one write, then reaches the configuration under the Collection and stashes and strips its holders, the stash and strip through one routine the finish shares; a holder it couldn't reach, including one with no usable id or one it can't rewrite, keeps the Collection owed with Try Again, and re-adding the property to that Collection cancels what's owed there.
+**TASK:** Remove runs through `runNoted`: it notes the Collection it leaves, then, as its list step, unassigns the property and clears it from the Collection's views in one write, then reaches the configuration under the Collection and stashes and strips its holders, the stash and strip through one routine the finish shares; a holder it couldn't reach, including one with no usable id or one it can't rewrite, keeps the Collection owed with Try Again, and re-adding the property to that Collection cancels what's owed there. The sweep every many-file change runs counts a file it can't safely rewrite as one it missed, and the finder states once which holders no id addresses, so rename, delete, option changes, and Context and Space changes owe such a page with Try Again as Remove does.
 
 **NOW:** P7's `unassignProperty` (`Core/Properties/unassignProperty.ts`, HEAD's `removeProperty.ts:19-62`) writes no note: it reads the holders' values in the Collection (P10's finder), then one sidecar write drops the assignment, clears the property from the Collection's views (`mapViews(cur, propertyClear(propertyId))`, which P7 keeps in that write), and merges the values into the stash, then `reachConfig(…, collectionFolder)`, then the page strip; it answers the skipped count, which P7 carries as the op's reply, and a holder with no id or a duplicate id is kept out of the strip uncounted (HEAD `Core/Properties/keyHolders.ts:37-66`), as is a page the sweep refuses (`sweepGovernedRoots`' `refused`, read only by `gather.ts:58` at HEAD). `PropertyFrame.tsx`'s three Remove sites (HEAD `:255-257`, `:280`, `:302-306`) treat a refusal as not landed, and the editor's `remove` stays open on one.
 
@@ -19446,18 +19525,23 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 
 - [ ] Write the tests first and watch each fail, in `Core/Properties/unassignProperty.test.ts`:
   - "a Remove that missed a page notes the Collection and offers Try Again": one holder `chmod 000`; the reply lands with `cascade.owed` and the entry reads `{ kind: 'property', unassigned: [<collectionId>] }`; restoring the mode and `finishOwed` stash the page's value and strip it, and the entry clears (C-2).
-  - "a holder with no id keeps the Collection owed": a page holding the key with no `ID`; the reply counts it, the page keeps its value, and once adoption stamps it `finishOwed` stashes and strips it (LC-19).
+  - "a holder with no id keeps the Collection owed": a page holding the key with no `ID`; the reply counts it, the page keeps its value, and once adoption stamps it `finishOwed` stashes and strips it.
   - "a page the sweep refuses keeps the Collection owed and reports on each Try Again": a page whose front matter can't round-trip; `finishOwed` answers `skipped: 1` each run while the page stays refused (the reading in *Behavior Changes and Disclosures*).
   - "re-adding the property cancels what its Remove owed there": with the entry owed, `assignProperty` back to the Collection, then `finishOwed`; the unreached page keeps its value and the entry clears (F-7, H-6).
   - "a Remove under an owed rename keeps its Collection owed": with `rename: ['Priority']` owed, a clean Remove leaves `unassigned` standing (H-1).
   - "a delete subsumes an owed Remove": with the entry owed, `deleteProperty`; the entry reads only `strip` (H-3).
   - "a note that can't be written refuses the Remove with nothing changed".
   - `Core/Properties/Schema/PropertyFrame.test.tsx` › "a Remove that missed pages returns to the list": the editor's Remove with a reply carrying `cascade.owed` lands on the list view.
+  - `Core/Nexus/governedSweep.test.ts` › "a root that can't round-trip counts as skipped": an Unknown page and a sidecar that won't parse are left byte-identical and both sit in `skipped`.
+  - `Core/Properties/registryProperty.test.ts` › "a rename owes a page it can't rewrite": a holder whose front matter can't round-trip; the rename's reply is owed, the entry keeps `rename`, and once the page parses `finishOwed` renames it and clears the entry. The same case in `optionOps.test.ts` for an option rename and in `contextCascade.test.ts` for a Context rename.
 - [ ] `Core/Properties/unassignProperty.ts`: as the AFTER gives it; `stashAndStrip` exported for the finish; HEAD's one-write comment (`removeProperty.ts:46`), which P7 keeps, loses its cache clause where the stash leaves that write, the clause moving onto `stashAndStrip`'s doc.
 - [ ] `Core/Nexus/finishOwed.ts`: the `unassigned` arm, after the options, its part held whole while the rename is owed.
+- [ ] `Core/Nexus/governedSweep.ts`: `sweepGovernedRoots` files a root that can't round-trip under `skipped`, so `SweepResult.refused` and `unwritten` leave and every reader counts `skipped` alone: `restoreScrub.ts` (two), `trashedCopies.ts`, `spend.ts`, and `exclusionScan.ts`, whose `ClearReport.refused`, which no surface reads, leaves with it, so an exclusion clear that can't rewrite a page answers the same "Couldn’t update N Items." as one it can't read.
+- [ ] `Core/Index/keyHolders.ts`: `unaddressed(held)` counts the holders a values read leaves out because no id addresses them; `stashAndStrip` reads it here and `stripProperty` in Task 11B-4.
+- [ ] Tests: `exclusionScan.test.ts`' refused-count assertions (HEAD `:180`, `:271`) become the refusal and the two-field report; `cascade.test.ts`' `.refused` assertion (HEAD `:837`) reads `skipped`.
 - [ ] `PropertyFrame.tsx`: the three sites read a landed reply as landed (P7's `mutate` answers `null` only for a refusal), so a Remove that missed pages returns the editor to the list and the slice posts the warning with Try Again; where P7 already reads the reply that way, the site is unchanged and only the test is new.
 - [ ] Tests: `unassignProperty.test.ts`'s HEAD case pinning a skipped Remove as a refusal (HEAD `removeProperty.test.ts`, its `unsweptReply` assertion) is rewritten to the owed reply; its ID-less case ("keeps the value of a page with no ID") pins the owed count.
-- [ ] Run the gates, then commit: `git commit --only -- Core/Properties/unassignProperty.ts Core/Properties/unassignProperty.test.ts Core/Nexus/finishOwed.ts Core/Nexus/finishOwed.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx -m "Remove notes the Collection it left, owes what it couldn't reach, and a re-add cancels it."`
+- [ ] Run the gates, then commit: `git commit --only -- Core/Properties/unassignProperty.ts Core/Properties/unassignProperty.test.ts Core/Nexus/finishOwed.ts Core/Nexus/finishOwed.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Nexus/governedSweep.ts Core/Nexus/governedSweep.test.ts Core/Index/keyHolders.ts Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts Core/Trash/spend.ts Core/Settings/exclusionScan.ts Core/Settings/exclusionScan.test.ts Core/Nexus/cascade.test.ts Core/Properties/registryProperty.test.ts Core/Properties/optionOps.test.ts Core/Contexts/contextCascade.test.ts -m "Remove notes the Collection it left, owes what it couldn't reach, and a re-add cancels it; every many-file change owes a page it can't safely rewrite."`
 
 **AFTER**
 
@@ -19548,9 +19632,101 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 +    if (!stashed.ok) return held.length
 +  }
 +  const swept = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [def.key]) })
-+  return swept.skipped.length + swept.refused.length + held.filter((h) => h.values && !h.id).length
++  return swept.skipped.length + unaddressed(held)
 +}
 ```
+
+```Core/Properties/unassignProperty.ts diff
+@@ the finder import @@
+-import { findHolders, heldValues } from '../Index/keyHolders'
++import { findHolders, heldValues, unaddressed } from '../Index/keyHolders'
+```
+
+```Core/Index/keyHolders.ts diff
+@@ heldValues @@
+ export const heldValues = (held: readonly Held[], key: string): Record<string, unknown> =>
+   Object.fromEntries(
+     held.flatMap((h) => (h.id && h.values && !isBlankRaw(h.values[key]) ? [[h.id, h.values[key]]] : [])),
+   )
++
++/** The holders a values read leaves out of `pages` because no id addresses them (none, or one another file shares): each keeps its value and counts as unfinished, since no restore could put it back. */
++export const unaddressed = (held: readonly Held[]): number => held.filter((h) => h.values && !h.id).length
+```
+
+```Core/Nexus/governedSweep.ts diff
+@@ SweepResult @@
+   touched: Map<string, { before: string; after: string }>
++  /** Each file left as it was that the sweep should have reached: one it couldn't read, and one whose root can't round-trip, which a later sweep reaches once it reads back as written. */
+   skipped: string[]
+-  refused: string[]
+ }
+@@ sweepGovernedRoots @@
+-  const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
++  const out: SweepResult = { touched: new Map(), skipped: [] }
+ 
+   for (const file of files) {
+     await guarded(file, out.skipped, async () => {
+       const content = await readTextOrNull(file)
+-      if (content === null) {
+-        out.skipped.push(file)
+-        return
+-      }
+-      const next = rewritten(plan, file, content)
+-      if (next === undefined) {
+-        out.refused.push(file)
++      const next = content === null ? undefined : rewritten(plan, file, content)
++      if (content === null || next === undefined) {
++        out.skipped.push(file)
+         return
+       }
+@@ unwritten @@
+-/** Every file a sweep left as it was, skipped or refused alike: a restore reports both, since nothing retries it. */
+-export const unwritten = ({ skipped, refused }: SweepResult): string[] => [...skipped, ...refused]
+```
+
+```Core/Trash/restoreScrub.ts diff
+@@ imports @@
+-import { type Rewrite, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
++import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
+@@ scrubReturning @@
+-  return { dropped, unswept: unwritten(swept) }
++  return { dropped, unswept: swept.skipped }
+@@ repairLanded @@
+-  return unwritten(await sweepGovernedRoots(files, { text, raw: spaceMoved }))
++  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
+```
+
+```Core/Trash/trashedCopies.ts diff
+@@ imports @@
+-import { refillOf, rootId, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
++import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
+@@ refillTrashed @@
+-  return unwritten(swept)
++  return swept.skipped
+```
+
+```Core/Trash/spend.ts diff
+@@ imports @@
+-import { refillValues, sweepGovernedRoots, sweepRootsById, unwritten } from '../Nexus/governedSweep'
++import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
+@@ the Context re-key @@
+-      unswept.push(...unwritten(rekeyed))
++      unswept.push(...rekeyed.skipped)
+```
+
+```Core/Settings/exclusionScan.ts diff
+@@ ClearReport @@
+ export interface ClearReport {
+   pages: number
+   sidecars: number
+-  refused: number
+ }
+@@ clearExclusionData @@
+-  return ok({ pages: swept.touched.size, sidecars: removed, refused: swept.refused.length })
++  return ok({ pages: swept.touched.size, sidecars: removed })
+```
+
+A rename sweeps by key and never reads a value it would need to put back, so its finder keeps an ID-less page among its files and rewrites it; only a values read, the strip that stashes or files in the Trash, leaves one out, so `unaddressed` is read where those strips count. With a root that can't round-trip counted as skipped, every arm's `skipped.length` already counts it: `renameSweep`, `optionCascade`, `stripProperty`, `cascadeTitle`, `unlinkMembers`, and the restores, which reported both through `unwritten`.
 
 `NOTHING_TO_REMOVE` (P7's `ok({})`) and `reachReport`'s import leave, since nothing else here reads them. `pages` already leaves out a holder no id addresses (P10), which keeps its value and is counted; an unreadable one stays in `pages` and is counted as the sweep's miss. The stash lands in its own locked write after the assignment's; a crash between the two leaves the Collection noted, and the finish runs the same `stashAndStrip`.
 
@@ -19586,19 +19762,23 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 
 #### Task 11B-4
 
-**TASK:** A property delete counts a Collection settings file it couldn't purge as a missed file, so the entry stays owed and Try Again purges it (H-18).
+**TASK:** A property delete counts a Collection settings file it couldn't purge, and a holder no id addresses, as missed files, so the entry stays owed and Try Again purges and strips them (H-18).
 
 **NOW:** `unassignAndPurge` (`Core/Properties/deleteProperty.ts:163-172`) discards `patchSidecar`'s `Result`, so an unreadable Collection settings file keeps the deleted property's assignment and stash block with nothing owed; Task 11A-2's `stripProperty` calls it for every Collection folder.
 
 **CHANGE**
 
 - [ ] Write `deleteProperty.test.ts` › "a Collection settings file the delete couldn't purge keeps the delete owed" first, failing: `chmod 000` one Collection's `_pagecollection.json`; the delete answers `cascade.owed`, the entry keeps `strip`, and after the mode is restored `finishOwed` drops the assignment and the block and clears the entry.
-- [ ] `unassignAndPurge` answers `written.ok`; `stripProperty` counts a `false` as one missed file.
+- [ ] `unassignAndPurge` answers `written.ok`; `stripProperty` counts a `false` as one missed file, and reads Task 11B-3's `unaddressed` for the holders its strip passed over.
+- [ ] Write `deleteProperty.test.ts` › "a holder with no id keeps the delete owed": a page holding the key with no `ID`; the delete answers `cascade.owed`, the page keeps its value, the record reads `partial`, and once adoption stamps it `finishOwed` strips it and clears the entry.
 - [ ] Run the gates, then commit: `git commit --only -- Core/Properties/deleteProperty.ts Core/Properties/deleteProperty.test.ts -m "A property delete owes a Collection settings file it couldn't purge."`
 
 **AFTER**
 
 ```Core/Properties/deleteProperty.ts diff
+@@ the finder import @@
+-import { findHolders, type Held, heldValues, type Holders } from '../Index/keyHolders'
++import { findHolders, type Held, heldValues, type Holders, unaddressed } from '../Index/keyHolders'
 @@ stripProperty @@
    const swept = await sweepGovernedRoots([...holders.pages, ...holders.spaces], plan)
 -  for (const folder of folders) await unassignAndPurge(folder, propertyId)
@@ -19606,7 +19786,7 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 +  for (const folder of folders) if (!(await unassignAndPurge(folder, propertyId))) purged++
    const reach = await reachConfig(root, { kind: 'property', propertyId })
 -  return { skipped: swept.skipped.length + reach.skipped, hosts: reach.hosts }
-+  return { skipped: swept.skipped.length + purged + reach.skipped, hosts: reach.hosts }
++  return { skipped: swept.skipped.length + unaddressed(holders.held) + purged + reach.skipped, hosts: reach.hosts }
 @@ unassignAndPurge @@
 -async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
 -  await patchSidecar(folder, 'collection', (cur) => {
@@ -19707,10 +19887,11 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 
 - **Deletes Finish (B-3):** a Context or Space delete that misses pages, or a view settings file, finishes and offers Try Again, where it put everything back and refused. Nathan's intent.
 - **A Partial Delete's Trash Entry Holds What It Missed:** every delete captures its holders' values up front, an unreadable page's from the index.
-- **Re-Adding Cancels an Owed Remove; a Remove Reports What It Can't Clean Up (LC-19, C-2):** a Remove that missed pages returns to the list with Try Again.
-- **The Refused-Holder Reading:** Remove's entry stays owed, and is reported on every Try Again, for as long as a holder stays refused (front matter Pommora can't rewrite safely). That is how every arm already treats a page that stays unreadable (`chmod 000`): the entry stands until the file can be reached, and the warning says so. Dropping a holder the index no longer lists doesn't apply, since the index keeps a refused page's rows; and dropping refused holders would leave the value on a page the Collection no longer governs with nothing on record, the silent case LC-19 ends. An ID-less or duplicate-ID holder is transient: adoption stamps an ID at the page's next read and the remint ledger settles a duplicate, after which Try Again stashes and strips it. Since one Try Again finishes everything owed, a stuck refused page re-reports its one count with every Try Again until it's fixed by hand; the page's own "contains invalid metadata" notice names it.
-- **A Space Deleted Under an Owed Context Rename:** the delete strips every holder already under the Context's current title and reads as done, against B-3's letter; the pages under the Context's old title keep the Space's tag until the Context's rename finishes, then lose it in the same pass. *Phase 11A*'s LC-63 carries the reading for every kind.
-- **For Nathan — Refused Pages Under Rename and Delete:** LC-19 counts a refused page for Remove only. Property rename and delete, option changes, and Context and Space sweeps still count only files they couldn't read (`renameSweep` reads `skipped.length`; `sweepGovernedRoots`' `refused` reaches only Remove and, through the capture's `partial`, the Trash record), so after a rename or delete a page Pommora can't rewrite keeps the old key with nothing owed, as at HEAD. Widening the count to every arm is a behavior change this plan doesn't make; it's Nathan's call, NC-3.
+- **Re-Adding Cancels an Owed Remove; a Remove Reports What It Can't Clean Up (C-2):** a Remove that missed pages returns to the list with Try Again.
+- **Every Change Owes a Page It Can't Safely Rewrite:** a property rename or delete, an option rename, Value Format, delete, or Clear, a Context or Space rename or delete, and Remove each count a page whose front matter can't be read back as written as a missed file, with Try Again, where at HEAD only a restore reported one and every other change left the page under the old name with nothing said. A property delete and Remove also count a holder no id addresses, which keeps its value. An exclusion clear that meets such a page answers "Couldn’t update N Items." as it does for an unreadable one, where it reported a count no surface showed. Nathan's intent.
+- **The Refused-Holder Reading:** an entry stays owed, and is reported on every Try Again, for as long as a holder stays refused (front matter Pommora can't rewrite safely). That is how every arm already treats a page that stays unreadable (`chmod 000`): the entry stands until the file can be reached, and the warning says so. Dropping a holder the index no longer lists doesn't apply, since the index keeps a refused page's rows; and dropping refused holders would leave the old name or value on the page with nothing on record. An ID-less or duplicate-ID holder is transient: adoption stamps an ID at the page's next read and the remint ledger settles a duplicate, after which Try Again stashes and strips it. Since one Try Again finishes everything owed, a stuck refused page re-reports its one count with every Try Again until it's fixed by hand; the page's own "contains invalid metadata" notice names it.
+- **A Space Deleted Under an Owed Context Rename:** the delete strips every holder already under the Context's current title and counts the files still under the Context's old title as owed, with Try Again (B-3); those pages lose the Space's tag once the Context's rename finishes, in the same pass. *Phase 11A*'s waiting count carries the rule for every kind.
+- **A Holder No Id Addresses Under a Delete:** the Trash entry can't file its value, so the record reads partial, and once adoption stamps the page an ID the finish strips the key, the value going with it. The page is counted owed in between rather than keeping the deleted key with nothing said.
 - **The System Trash Mode's Context and Space Deletes:** a finish in System Trash mode sends the folder to the system Trash and strips the tags with no record anywhere, as the live delete does.
 - **The Orphan Trash Entry (H-5 Residual):** a crash between a delete's bundle mint and its note leaves a Trash entry for a live item, as at HEAD; its restore refuses `'exists'`, and it can be emptied.
 
@@ -19719,14 +19900,14 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 11B-1 | −3 | +9 | +6 |
-| 11B-2 | −157 | +207 | +50 |
-| 11B-3 | −26 | +62 | +36 |
-| 11B-4 | −4 | +6 | +2 |
+| 11B-2 | −157 | +210 | +53 |
+| 11B-3 | −45 | +77 | +32 |
+| 11B-4 | −5 | +10 | +5 |
 | 11B-5 | 0 | 0 | 0 |
-| **Phase 11B** | **−190** | **+284** | **+94** |
+| **Phase 11B** | **−210** | **+306** | **+96** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
-- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3, LC-19). What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, and Remove's inline holders read and one-write stash.
+- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `SweepResult.refused` with `unwritten`, and `ClearReport.refused`.
 - **Tests:** about −100 removed (the undo-and-throw, put-back, unmint, `goneEdit`, and skipped-Remove-refusal cases) and about +220 written (the cases each task names).
 
 ---
@@ -20213,16 +20394,18 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 
 #### Task 12-4
 
-**TASK:** A property's restore writes its recorded stash blocks back first, without the pages its record holds a delete-time value for, then re-assigns, then refills the record's values, so the re-assign refills from the stash and a page in both takes the value it held at the delete.
+**TASK:** A property's restore writes its recorded stash blocks back first, without the pages its record holds a delete-time value for, then re-assigns, then refills the record's values, so the re-assign refills from the stash and a page in both takes the value it held at the delete. Emptying a property's Trash entry ends it for good, so every Collection still listing it, one restored since its delete or one still in the Trash, drops it the way the delete dropped it everywhere else.
 
-**NOW:** After Task 12-2 the record keeps each Collection's block whole with its stamp. `restoreInner` (`restoreProperty.ts:31-78`; P7 has it trust `createProperty`'s landed definition and read the tree once for `byId`, P11 has it run create → `owedRestore` → spend) re-assigns from `record.assignments` (`:45-49`) before writing `record.stashes` back (`:50-54`). `assignInner` refills only on a new append (`assignment.ts:110-126`), so a Collection that both assigned the property and held leftovers keeps them unspent. Swapping the two loops alone regresses a page held in both a block and `record.values`: the block's older leftover lands first, the `record.values` refill finds the key filled, and the page is named unrestored. A delete leaves every Trash bundle alone, trashed Collections included (`collectionFolders`, `governedSweep.ts:36-40`), and a restored Collection's id for a deleted property is inert because the resolver drops an id the registry lacks (P5's `holderSchema`; HEAD `containerFields.ts:29-39`).
+**NOW:** After Task 12-2 the record keeps each Collection's block whole with its stamp. `restoreInner` (`restoreProperty.ts:31-78`; P7 has it trust `createProperty`'s landed definition and read the tree once for `byId`, P11 has it run create → `owedRestore` → spend) re-assigns from `record.assignments` (`:45-49`) before writing `record.stashes` back (`:50-54`). `assignInner` refills only on a new append (`assignment.ts:110-126`), so a Collection that both assigned the property and held leftovers keeps them unspent. Swapping the two loops alone regresses a page held in both a block and `record.values`: the block's older leftover lands first, the `record.values` refill finds the key filled, and the page is named unrestored. A delete leaves every Trash bundle alone, trashed Collections included (`collectionFolders`, `governedSweep.ts:36-40`), and a restored Collection's id for a deleted property is inert because the resolver drops an id the registry lacks (P5's `holderSchema`; HEAD `containerFields.ts:29-39`). `emptyBundle`'s property arm (`Core/Trash/spend.ts:62-65`) only disposes of the bundle, so that id, its stash block, its view columns, and its pages' values stay in the Collection for good once the property can't come back.
 
 **CHANGE**
 
 - [ ] Write "a page in a stash and in the record takes the value it held at the delete, and isn't named unrestored", and watch it fail: Priority assigned to Notes; page A holds `hi`, Remove from Notes, re-assign while A regained `lo` itself (so A's `hi` stays stashed as a leftover); delete Priority (the record's `values` hold A's `lo`, its `stashes` Notes' block with A's `hi`); restore; A reads `['lo']`, the reply has no `unrestored`, and Notes holds no block for A.
 - [ ] Write "a property deleted while its Collection sits in the Trash switches back on there when both return" (no production change): Priority assigned to Tasks, a Tasks page holds `hi`; delete the Tasks Collection, delete Priority, restore the Collection (its sidecar still lists Priority's id, and the tree resolves no definition for it), restore Priority; Tasks assigns Priority and the page reads `['hi']`. It pins today's behavior, so it passes at once.
 - [ ] `restoreInner`: the stash loop runs first, writing each recorded block with its stamp and without the ids `record.values` holds; then the `assignInner` loop; then the `record.values` refill as it stands.
-- [ ] Commit: `git commit --only -- Core/Trash/restoreProperty.ts Core/Trash/restoreProperty.test.ts` with "A deleted property's restore writes its stash back before re-assigning."
+- [ ] Write `Core/Trash/spend.test.ts` › "emptying a property's Trash entry drops it from every Collection still listing it" and watch it fail: Priority assigned to Tasks and Notes, a page in each holding `hi`; delete the Tasks and Notes Collections, delete Priority, restore Tasks, then empty Priority's bundle; Tasks' sidecar lists no Priority and holds no stash block for it, its view columns don't name it, and its page holds no `Priority:`; Notes' sidecar inside its Trash bundle lists no Priority either, so restoring Notes brings back no inert id. "a live property holding the key keeps it": with a new property `Priority` created before the empty, the Tasks page keeps its value under it.
+- [ ] `spend.ts`: `emptyBundle`'s property arm runs the finish's strip under the schema lock before it disposes of the bundle, as the AFTER gives it.
+- [ ] Commit: `git commit --only -- Core/Trash/restoreProperty.ts Core/Trash/restoreProperty.test.ts Core/Trash/spend.ts Core/Trash/spend.test.ts` with "A deleted property's restore writes its stash back before re-assigning, and emptying its Trash entry drops it from every Collection still listing it."
 
 **AFTER**
 
@@ -20251,6 +20434,43 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 -      await patchSidecar(folder, 'collection', (cur) => patchStashBlock(cur, record.id, block))
 -  }
 ```
+
+```Core/Trash/spend.ts diff
+@@ imports @@
+ import { readLiveSetting } from '../Settings/settings'
+-import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
++import { collectionFolders, refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
+ import { joinValues, landValue } from '../Files/rootValues'
+ import { rewriteConnections } from '../Connections/rewrite'
+-import { linkDefsOf } from '../Properties/propertiesRegistry'
++import { linkDefsOf, readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
++import { deletePlan, stripProperty } from '../Properties/deleteProperty'
++import { asString } from '../Nexus/coerce'
+ import {
+   contentPages,
+   fileInto,
++  listBundles,
+   openBundle,
+@@ emptyBundle's property arm @@
+   if (record.entity === 'property') {
++    // Gone for good: every Collection still listing it, one restored since the delete or one in the Trash, drops it as the delete dropped it everywhere else, and its key leaves their pages unless a live definition holds it now.
++    await serializeSchemaOp(root, async () => {
++      const key = asString(record.def.key)
++      const held = Object.values((await readRegistry(root)).defs).some((d) => d.key === key)
++      const trashed = (await listBundles(root, { kind: 'trash' })).filter((b) => b.record.entity === 'collection')
++      const folders = [
++        ...collectionFolders(root, await liveTreeOf(root)),
++        ...trashed.flatMap((b) => (b.artifactName ? [join(root, b.bundlePath, b.artifactName)] : [])),
++      ]
++      const keys = key && !held ? [key] : []
++      await stripProperty(root, record.id, folders, await deletePlan(root, record.id, keys))
++    })
+     await dispose(bundleAbs)
+     return ok({})
+   }
+```
+
+The arm runs the strip the finish runs for a definition gone (`finishProperty`), over the live Collections and the Trash's: `unassignAndPurge` is a no-op on a sidecar that neither lists the id nor stashes it, and the strip passes over a key a live definition holds, as the finish's `held` does. A Collection still in the Trash is purged in its bundle, the way a re-add's refill already writes a trashed page's Trash copy, so its restore brings back no inert id and needs no reconcile of its own.
 
 **VERIFY**
 
@@ -20330,7 +20550,7 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 -  for (const file of skipped) asked.delete(file)
 -  return new Set(asked.values())
 +  for (const file of swept.skipped) asked.delete(file)
-+  return { taken: new Set(asked.values()), skipped: unwritten(swept).length }
++  return { taken: new Set(asked.values()), skipped: swept.skipped.length }
  }
 @@ refillValues (P7 moved it here) @@
  export async function refillValues(
@@ -20344,7 +20564,7 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 +): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
 ```
 
-(`files` and the `raw` plan are P10's body, unchanged; `unwritten` is P10's one restore accounting, so the count reads it rather than restating `skipped` and `refused`. With `refillValues` and `sweepRootsById` both on `RootsById`, `NexusPages` has no reader left in this file and its import leaves.)
+(`files` and the `raw` plan are P10's body, unchanged; `skipped` counts a refused root since P11B. With `refillValues` and `sweepRootsById` both on `RootsById`, `NexusPages` has no reader left in this file and its import leaves.)
 
 ```Core/Trash/restoreProperty.ts diff
 @@ restoreInner — the record.values refill @@
@@ -21118,6 +21338,7 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 - **The History Timeframe's Hint Stays:** "Stores recoverable snapshots of device-local file history." (`Core/Settings/frames.ts:650`) now undersells a setting that also ages a synced store; its wording waits for I-076's pass and I-077.
 - **The Restore's Link Parking and the Stash's Trash Parking Share One Rewrite:** `refillTrashed` puts `record.links`' recorded Link values back into Trash copies at a restore, and the stash's parking re-adds a value into a Trash copy through the definition as it reads now. P10 lands `refillTrashed` through `refillOf(def, frozen)`, the rewrite `refillValues` passes to `sweepRootsById`, so both parkings reconcile, encode, and blank-check a value the way a live refill does (an option or page deleted since doesn't come back), find copies through the one `trashedHolders`, and write through `sweepGovernedRoots`. This phase adds only `trashedHolders`' `from` filter and its second caller.
 - **Import Order:** `Core/Settings/handlers.ts` → `Core/Properties/propertyStash.ts` → `Core/Settings/settings.ts` adds no cycle (`settings.ts` imports neither handlers module), and `Core/Nexus/finishOwed.ts` → `Core/Properties/assignment.ts` → `Core/Nexus/owed.ts` adds none (`owed.ts` imports neither); the drive's launch is the module-load check, as the Archive plan's was.
+- **An Emptied Property Leaves Every Collection (Task 12-4):** emptying a property's Trash entry drops its id, stash block, and view columns from every Collection still listing it, live or in the Trash, and strips its key from the live pages under them, where today a Collection restored after the delete keeps the inert id, its stash, and its pages' values for good. While the entry stays in the Trash, the Collection and the property still return in either order and switch back on together. Under the *No Leftovers* constraint.
 - **A Restore's Own Notice Keeps Its Try Again (Task 12-9):** an Archive restore's lines show once, inside the Restored notice that replaces the slice's in the same turn; that notice now carries the reply's Try Again, which the replacement otherwise loses.
 
 #### Line Total
@@ -21127,20 +21348,20 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 | 12-1 One Vocabulary | −58 | +58 | 0 |
 | 12-2 The Block and Its Stamp | −23 | +33 | +10 |
 | 12-3 The Purge | −5 | +5 | 0 |
-| 12-4 The Restore Order | −5 | +10 | +5 |
+| 12-4 The Restore Order and the Empty | −7 | +35 | +28 |
 | 12-5 The Refill | −39 | +58 | +19 |
 | 12-6 Refill Skips Surface | −18 | +47 | +29 |
 | 12-7 The Age Cleanup | −2 | +22 | +20 |
 | 12-8 The Partial Mark | −10 | +29 | +19 |
 | 12-9 The Restore Notice's Try Again | 0 | +2 | +2 |
 | 12-10 | 0 | 0 | 0 |
-| **Phase 12** | **−160** | **+264** | **+104** |
+| **Phase 12** | **−162** | **+289** | **+127** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +190 (`propertyStash.test.ts` new with about 80; about 15 new cases across `unassignProperty.test.ts`, `assignment.test.ts`, `finishOwed.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `rows.test.ts`, and `TrashFrame.test.tsx`; two cases rewritten; fixtures re-seeded with the stamp, line-neutral). The drive group (about 90 lines) is apart.
 - **Net-Positive Rationale, Per Item (*Less Stuff*):**
   - **The stamp and the age cleanup (+30, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
-  - **The restore order (+5, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass.
+  - **The restore order and the empty (+28, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty runs the finish's own strip over the Collections still listing the property rather than a second purge, under *No Leftovers*.
   - **The refill (+19, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
   - **The refill's report (+29, Task 12-6):** with the timeframe, a skipped value would be lost unseen; the refill's report rides P11's notes entry, its `owesAnything` rule, its `finishProperty` and `sweepEach`, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
   - **The partial mark (+19, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
@@ -26089,7 +26310,7 @@ No repository file changes, on either outcome.
 
 ### Phase 15 — Pick Model and One Writer
 
-**GOAL:** Picking a value is one pure model for one row and many, so `massAssign.ts` folds into `Core/Properties/Pickers/pickModel.ts` and the "a Select closes once picked" rule is stated once; the value writer is assembled one way, by `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu, and loses the `mutate` field every assembly filled with the same session call. The cell menu's vocabulary takes the shapes the value seat's one row menu reads in Phase 16: `hideable` names what Remove takes a value out of, a view's columns or the panel's rows, and a column with no look in hand is a bare value. Both link menus read Rename, then Edit Link. The filter's date picker is the value's own `DateTimeValuePicker` on the column's clock, with one rule for the date form a picker shows; the text pen reads "Open In Editor"; two misnamed files take names for what they hold; the duplicate editor tests collapse; and the mass-assign cost (02-10) is measured at Benchmark scale and settles `setProperty`'s shape by rule.
+**GOAL:** Picking a value is one pure model for one row and many, so `massAssign.ts` folds into `Core/Properties/Pickers/pickModel.ts` and the "a Select closes once picked" rule is stated once; the value writer is assembled one way, by `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu, and loses the `mutate` field every assembly filled with the same session call. The cell menu's vocabulary takes the shapes the value seat's one row menu reads in Phase 16: `hideable` names what Remove takes a value out of, a view's columns or the panel's rows, and a column with no look in hand is a bare value. Every link menu reads Edit Title for the alias, then Edit Link for the target. The filter's date picker is the value's own `DateTimeValuePicker` on the column's clock, with one rule for the date form a picker shows; the text pen reads "Open In Editor"; two misnamed files take names for what they hold; the duplicate editor tests collapse; and the mass-assign cost (02-10) is measured at Benchmark scale and settles `setProperty`'s shape by rule.
 
 Earlier phases rewrite this phase's files first, and every diff below is written against their AFTER: P1 moves `pageRow.ts` to `Core/Views/pageRow.ts` and opens `Core/Testing/definitions.ts`; P2 gives `cellMenuContextFor` and `valueClickIntent` `ColumnType` and the record's `origin: 'filedata'`; P3 moves `columnLabel.ts` to `Core/Properties/columnLabel.ts` and the pane targets to `Core/Views/paneTargets.ts`; P4 renames `Core/Properties/value.ts` to `fieldValue.ts`; P5 gives Collections `propertyIds`; P6 reshapes the writer (`ValueWriter.apply(pageId, picked, write)`, `patchOverride(set, pageId, picked, write)`, the `Picked` map beside `ViewRow` in `Core/Views/viewRow.ts`, the reply-carried `undo`, `send`/`valueRequest` in `assignValue.ts`, and `valueCommitFor`'s `apply` folding `picked` into its local row; on F3's Fail, Task 6-6's revert restores `apply(pageId, fm, write, contexts?)` and the encoded override, and Task 15-2 names the writer's Fail lines); P7 adds the `addProperty` op, whose reply's `created` is `{ propertyId }`; P8 decodes option values to ids, so `pickGroups` offers `value: o.id` and `EditableOptionRows` reads `optionGroupsOf(def)`; P13 compiles columns (`ResolvedColumn` carries `type` and `def?`; the panel builds its rows' columns with `propertyColumn`/`contextColumn` and reads values through `currentOf(id)`), drops `ValueWriter.schema` with its three assemblers' `schema` lines (`valueCommitFor(opened)`) and `send`'s `| undefined` return, reads values as `resolveFieldValue(row, column)`, and replaces `useStyleFor` with the host's style map and, in `FilterFrame`, `styleFor(column, view, nexus)` over `useNexusForms()`; P14 replaces the filter's per-kind evaluators with `VALUE_KINDS` (`ValueKindSpec`, `Core/Views/valueKinds.ts`). Where a diff line quotes code one of them rewrote, the task names it, and the executor keeps that phase's spelling of the surrounding lines.
 
@@ -26662,15 +26883,17 @@ describe('pickOver', () => {
 
 #### Task 15-3
 
-**TASK:** Both link menus read Rename, then Edit Link: `cellMenuModel`'s `link` kind moves from "Edit, Rename" to the connection menu's order and wording (J-10, LC-47).
+**TASK:** Every link menu names each item by what it edits: Edit Title edits the alias, the text the link shows, and Edit Link edits the target, the URL or the linked page. `cellMenuModel`'s `link` kind moves from "Edit, Rename" and `connectionMenuModel` from "Rename, Edit Title" (a page) or "Rename, Edit Link" (a URL) to "Edit Title, Edit Link", so a Link value reads the same wherever its menu opens (J-10). The actions behind them, `rename` and `editLink`, keep their ids.
 
-**NOW:** `Core/Actions/cellMenu.ts:126-133` builds `[{ label: 'Edit', action: 'editLink' }, ...(filled ? [{ label: 'Rename', action: 'rename' }] : [])]`; `connectionMenuModel` (`Core/Actions/connectionMenu.ts:90-95`) builds `Rename`, then `Edit Title` for a page and `Edit Link` for a URL. The `link` kind opens wherever a Link value names no page the connection menu can serve: the table's and cards' unresolved or empty Link cells (`TableView.tsx:286-303`, `CardValue.tsx:110-126`) and the panel's (`PropertyPanel.tsx:344`). Pinned by `cellMenu.test.ts`' two `link` cases (`:100-109` as P1 retitled it, `:121-124`) and `PropertyPanel.test.tsx:245-250`.
+**NOW:** `Core/Actions/cellMenu.ts:126-133` builds `[{ label: 'Edit', action: 'editLink' }, ...(filled ? [{ label: 'Rename', action: 'rename' }] : [])]`; `connectionMenuModel` (`Core/Actions/connectionMenu.ts:90-95`) builds `Rename`, then `Edit Title` for a page and `Edit Link` for a URL. In both, `rename` edits the alias (`linkEdit`'s `rename` selects the shown text, adding one where there is none; the value editor's `rename` seat does the same for a bare address) and `editLink` the target (`linkEdit` selects `tk.link.title`, the linked page or the URL; the `editLink` seat selects a bare address whole), so the page link's "Edit Title" names the target and "Rename" names the alias. The `link` kind opens wherever a Link value names no page the connection menu can serve: the table's and cards' unresolved or empty Link cells (`TableView.tsx:286-303`, `CardValue.tsx:110-126`) and the panel's (`PropertyPanel.tsx:344`). Pinned by `cellMenu.test.ts`' two `link` cases (`:100-109` as P1 retitled it, `:121-124`) and `PropertyPanel.test.tsx:245-250`.
 
 **CHANGE**
 
-- [ ] Rewrite and watch fail: `cellMenu.test.ts`' filled-link case expects `[['Rename', 'rename'], ['Edit Link', 'editLink'], ['Clear', 'cell:clear']]` with `Clear` separated, and its empty-link case `[['Edit Link', 'editLink']]`; `PropertyPanel.test.tsx`' "a Link value naming no page pops the fallback menu, whose Edit opens the editor" becomes "…whose Edit Link opens the editor" and expects `['Rename', 'Edit Link', 'Clear', 'Remove']`.
-- [ ] `Core/Actions/cellMenu.ts`: the `link` arm (AFTER).
-- [ ] Commit: `git commit --only -m "A Link cell's menu read Rename, then Edit Link, as the connection menu does." -- Core/Actions/cellMenu.ts Core/Actions/cellMenu.test.ts Core/Properties/PropertyPanel.test.tsx`
+- [ ] Rewrite and watch fail: `cellMenu.test.ts`' filled-link case expects `[['Edit Title', 'rename'], ['Edit Link', 'editLink'], ['Clear', 'cell:clear']]` with `Clear` separated, and its empty-link case `[['Edit Link', 'editLink']]`; `PropertyPanel.test.tsx`' "a Link value naming no page pops the fallback menu, whose Edit opens the editor" becomes "…whose Edit Link opens the editor" and expects `['Edit Title', 'Edit Link', 'Clear', 'Remove']`; `connectionMenu.test.ts`' three authoring pairs (HEAD `:19-20`, `:71-72`, `:84-85`) read `['Edit Title', 'rename'], ['Edit Link', 'editLink']`.
+- [ ] Retitle the tests that name the items by their old reading, assertions unchanged: `linkEdit.test.tsx`' describe "Rename and Edit Title land the caret where their names imply" (`:268`) → "Edit Title and Edit Link land the caret where their names imply", "Edit Title selects the title behind the alias" (`:285`) → "Edit Link selects the target behind the alias", "Rename selects an alias and Edit Title the title behind it" (`:322`) → "Edit Title selects an alias and Edit Link the target behind it", "on a heading connection, Edit Title selects the page and Rename seats after the heading" (`:336`) → "…Edit Link selects the page and Edit Title seats after the heading", and "a weblink’s Rename selects its label and Edit Link its address" (`:347`) → "a weblink’s Edit Title selects its label and Edit Link its address"; `linkEdges.test.tsx`' "Edit Title on the second of two touching links acts on the second" (`:145`) → "Edit Link on …"; `cellLinks.test.tsx`' "Edit Title enters with the title selected and writes nothing" (`:222`) → "Edit Link enters with the target selected and writes nothing".
+- [ ] `Core/Actions/cellMenu.ts`: the `link` arm, and `Core/Actions/connectionMenu.ts`: the authoring pair (AFTER). `ValueEditor.tsx`' `seat` doc (`:47`) reads "Edit Title seats the alias, and Edit Link selects the target".
+- [ ] `.claude/scripts/Path Links Drive/live-drive.mjs`: the two picks of the target (`:477-482`, `:856-859`) choose `Edit Link`, and their item names read "Edit Link selects a path link's whole page half" and "Link value: Edit Link opens the field with the target selected".
+- [ ] Commit: `git commit --only -m "Every link menu read Edit Title for the alias and Edit Link for the target." -- Core/Actions/cellMenu.ts Core/Actions/cellMenu.test.ts Core/Actions/connectionMenu.ts Core/Actions/connectionMenu.test.ts Core/Properties/PropertyPanel.test.tsx Core/Properties/Pickers/ValueEditor.tsx Core/MarkdownPM/Links/linkEdit.test.tsx Core/MarkdownPM/Links/linkEdges.test.tsx Core/MarkdownPM/Tables/cellLinks.test.tsx ".claude/scripts/Path Links Drive/live-drive.mjs"`
 
 **AFTER**
 
@@ -26686,21 +26909,35 @@ describe('pickOver', () => {
        ]
 ```
 
+```Core/Actions/cellMenu.ts diff
+@@ baseCellMenuModel › link, the alias row @@
+-          ...(ctx.filled ? [{ label: 'Rename', action: 'rename' as const }] : []),
++          ...(ctx.filled ? [{ label: 'Edit Title', action: 'rename' as const }] : []),
+```
+
+```Core/Actions/connectionMenu.ts diff
+@@ connectionMenuModel › authoring @@
+-        { label: 'Rename', action: 'rename' },
+-        { label: ctx.kind === 'page' ? 'Edit Title' : 'Edit Link', action: 'editLink' },
++        { label: 'Edit Title', action: 'rename' },
++        { label: 'Edit Link', action: 'editLink' },
+```
+
 ```Core/Actions/cellMenu.test.ts diff
 @@ the filled-link case @@
 -  it('link (a filled Link cell): Edit + Rename, then a separated Clear, and no Style', () => {
-+  it('a filled Link cell: Rename, then Edit Link, then a separated Clear, and no Style', () => {
++  it('a filled Link cell: Edit Title, then Edit Link, then a separated Clear, and no Style', () => {
      const m = cellMenuModel({ kind: 'link', filled: true })
      expect(m.map((i) => [i.label, i.action])).toEqual([
 -      ['Edit', 'editLink'],
 -      ['Rename', 'rename'],
-+      ['Rename', 'rename'],
++      ['Edit Title', 'rename'],
 +      ['Edit Link', 'editLink'],
        ['Clear', 'cell:clear'],
      ])
 @@ the empty-link case @@
 -  it('link (an empty Link cell): Edit alone — Rename/Clear are no-ops with no value', () => {
-+  it('an empty Link cell: Edit Link alone, since Rename and Clear have no value to act on', () => {
++  it('an empty Link cell: Edit Link alone, since Edit Title and Clear have no value to act on', () => {
      const m = cellMenuModel({ kind: 'link', filled: false })
 -    expect(m.map((i) => [i.label, i.action])).toEqual([['Edit', 'editLink']])
 +    expect(m.map((i) => [i.label, i.action])).toEqual([['Edit Link', 'editLink']])
@@ -26723,13 +26960,21 @@ describe('pickOver', () => {
      ])
 ```
 
+```Core/Properties/PropertyPanel.test.tsx diff
+@@ the fallback-menu case, the alias row @@
+-      'Rename',
++      'Edit Title',
+       'Edit Link',
+```
+
 **VERIFY**
 
-- [ ] `npx vitest run Core/Actions/cellMenu.test.ts Core/Properties/PropertyPanel.test.tsx Core/Properties/Pickers/valueClick.test.ts` green; the two `cellMenu` cases red before the arm changes.
-- [ ] `git grep -n "label: 'Edit', action: 'editLink'" -- Core` answers nothing.
+- [ ] `npx vitest run Core/Actions/cellMenu.test.ts Core/Actions/connectionMenu.test.ts Core/Properties/PropertyPanel.test.tsx Core/Properties/Pickers/valueClick.test.ts Core/MarkdownPM/Links Core/MarkdownPM/Tables/cellLinks.test.tsx` green; the two `cellMenu` cases and the three `connectionMenu` cases red before the arms change.
+- [ ] `git grep -n "label: 'Edit', action: 'editLink'\|label: 'Rename', action: 'rename'\|'Edit Title' : 'Edit Link'" -- Core/Actions/cellMenu.ts Core/Actions/connectionMenu.ts` answers nothing; `git grep -n "'Edit Title'" -- ".claude/scripts/Path Links Drive"` answers nothing.
+- [ ] The Path Links Drive passes on `~/Test`.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** 0 production (+1 / −1). Tests 0.
+**Lines:** 0 production (+4 / −4). Tests 0.
 
 #### Task 15-4
 
@@ -27542,16 +27787,16 @@ A value write names every file it lands on, so `assignValue` stays the one write
 
 - [ ] The gates pass from a clean state (`npm run typecheck`, `npm run test`, `npm run lint`), with `engineGraph.test.ts` and `hostGraph.test.ts` green and unchanged.
 - [ ] Removal greps, each answering nothing: `git grep -nwE "massPickCommits|massSelected|pickShape|pickSemantics|massAssign|valueCommitFor|emptyPicker|cardValueInput" -- Core UIX .claude/scripts`; `git grep -n "Open in TextPane" -- Core UIX .claude/scripts`; `git grep -n KNOB -- Core/Properties/PropertyPanel.tsx`; `git grep -n "Settings/valueField\|/valueField'" -- Core`; `git grep -nw "ValueWriter" -- Core ':!Core/Properties/assignValue.ts' ':!*.test.*'` (Scoreboard: hand-built `ValueWriter` assemblies 3 → 0, assembled by two); `git grep -nw "CalendarPicker" -- Core/Views/Settings`; `git grep -n "hideable: true" -- Core/Actions/cellMenu.ts Core/Views/Cards Core/Properties/PropertyPanel.tsx`. `git grep -n "'relative' ? 'short'" -- Core UIX` answers `DateTimeValuePicker.tsx` alone.
-- [ ] Each written or rewritten test fails with its task's change reverted: `pickModel.test.ts` (15-1), `assignValue.test.ts`' session-`mutate` setup (15-2), the two `cellMenu` link cases (15-3), the two `cellMenu` vocabulary cases (15-4), the filter clock case (15-5).
+- [ ] Each written or rewritten test fails with its task's change reverted: `pickModel.test.ts` (15-1), `assignValue.test.ts`' session-`mutate` setup (15-2), the two `cellMenu` link cases and the three `connectionMenu` cases (15-3), the two `cellMenu` vocabulary cases (15-4), the filter clock case (15-5).
 - [ ] Properties Drive group 13 passes; the Text Property Drive passes.
 - [ ] 02-10's outcome is recorded with both runs' numbers.
 
 #### Behavior Changes and Disclosures
 
-- **Both Link Menus Read Rename, Then Edit Link (LC-47, Nathan's Intent):** an unresolved or empty Link value in the table, cards, and panel reads Rename then Edit Link, where it read Edit then Rename; an empty one reads Edit Link alone.
+- **Every Link Menu Reads Edit Title, Then Edit Link (Nathan's Intent):** Edit Title edits the text the link shows and Edit Link what it points to, in every link menu. An unresolved or empty Link value in the table, cards, and panel reads Edit Title then Edit Link, where it read Edit then Rename, and an empty one reads Edit Link alone; a connection's menu, in a page body, a table cell, or a Link value, reads Edit Title then Edit Link, where a page link read Rename then Edit Title and a URL Rename then Edit Link.
 - **The Filter's Date Picker Uses the Column's Clock (J-1, Nathan's Intent):** it differs from today only where a column's clock differs from the Nexus's; it still offers no End Date.
 - **VoiceOver Reads "Open In Editor" (J-4, Nathan's Intent).**
-- **The Panel's Label and File Menus Change With the Seat (J-3, J-10, LC-15):** a Link row's label gaining Rename and Edit Link, and the panel's File menu gaining Remove and losing Clear, land in Task 16B-2, where the panel's one row menu is built; at this phase's head the panel's menus read as today.
+- **The Panel's Label and File Menus Change With the Seat (J-3, J-10, LC-15):** a Link row's label gaining Edit Title and Edit Link, and the panel's File menu gaining Remove and losing Clear, land in Task 16B-2, where the panel's one row menu is built; at this phase's head the panel's menus read as today.
 - **Unchanged and Checked:** every panel row's menu reads as today apart from the unresolved Link's order above; cards' and the table's menus read as today; the mass assign lands the same commits; the one-row pick, the writer's undo, and J-5's revealed rows behave as P6 and HEAD left them.
 - **Measurement:** filled by Task 15-8 with the base and head lines, `total=<ms> longest=<ms> writes=300`, and the rule's outcome.
 
@@ -27561,15 +27806,15 @@ A value write names every file it lands on, so `assignValue` stays the one write
 |---|---|---|---|
 | 15-1 The Pick Model | −106 | +75 | −31 |
 | 15-2 One Writer | −54 | +50 | −4 |
-| 15-3 The Link Menus | −1 | +1 | 0 |
+| 15-3 The Link Menus | −4 | +4 | 0 |
 | 15-4 One Menu Vocabulary | −18 | +18 | 0 |
 | 15-5 The Filter's Clock | −15 | +17 | +2 |
 | 15-6 The Small Ones | −16 | +14 | −2 |
 | 15-7 The Test Collapse | 0 | 0 | 0 |
 | 15-8 The Measurement | 0 | 0 | 0 |
 | 15-9 The Drive | 0 | 0 | 0 |
-| **Phase 15 (02-10's Pass)** | **−210** | **+175** | **−35** |
-| **Phase 15 (02-10's Fail, With the Fail Branch)** | **−243** | **+250** | **+7** |
+| **Phase 15 (02-10's Pass)** | **−213** | **+178** | **−35** |
+| **Phase 15 (02-10's Fail, With the Fail Branch)** | **−246** | **+253** | **+7** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides (`pickGroups` 6, `toggleValue` 2, `oneShotWriter`'s body 9), and `useMultiValue.ts` and `cardColumns.ts` move whole. On 02-10's Pass, Task 15-8 lands nothing; its Fail Branch adds −33 / +75 (+42), and its callers' `[row]` adapters change in place.
 - **On 02-10's Fail:** the phase lands +7. The Fail Branch (+42) is the remedy *§Measurement Rules › 02-10* rules for a mass assign over its threshold: one `setProperty` carrying every swept path, under each file's own lock with one reply, in place of one request per row, so a measured stall is fixed in the one writer rather than worked around at each surface.
@@ -28931,7 +29176,8 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 - **A Chooser-Added Date or File Remounts the Picker (Earlier Agent's Choice Made Consistent; Take):** on a card, a Date or File picked from the Add chooser opens its pane as a fresh picker at the same anchor, the per-value keying every value pick uses, where today the chooser's content swaps in place.
 - **Cards' Picker Remounts per Value (Consistency; Take):** the table's keying applies to Cards: moving from one value's picker to another's mounts a fresh picker rather than reusing the open one.
 - **A Date Picked Into Another Band Closes Its Calendar (Accident; Take):** in a table or Cards view grouped by a Date, a pick that moves the row to another band closes the calendar after that one click, since the row is redrawn under its new band and the cell the calendar opened from leaves the page (`TableView.tsx:446-495` nests each row under its band, and Cards do the same). At HEAD the calendar stays open (`DateTimeValuePicker.tsx:30` commits without closing, and no picker checks its trigger is still on the page), measured against a cell no longer there, so it likely drifts toward the window's corner. **Recommended:** take it; one anchor rule covers every surface, and HEAD's open pane has lost its anchor anyway.
-- **A Link Added From a Card's Chooser Opens Empty (Accident; Take):** today the chooser's popover for a Link inherits the Rename seat, which writes `[]()` into the empty field and seats the caret in its label (`ValueEditor.tsx:158-161`); every other route to a blank Link opens an empty field, which this one now does too.
+- **The Card Chooser Still Slides Into a Choice Type's Options (Nathan's Intent):** a Select, Status, Multi-Select, or Space entry is `drillable` and slides inside the same pane to its options under a "‹ Properties" or "‹ Spaces" top row, as today, while a Number, Date, File, Link, Checkbox, or Text entry opens its own picker or field; the seat's picker hosts the chooser whole, `FrameSlide` included.
+- **A Link Added From a Card's Chooser Opens Empty (Accident; Take):** today the chooser's popover for a Link inherits the alias seat (`rename`), which writes `[]()` into the empty field and seats the caret in its label (`ValueEditor.tsx:158-161`); every other route to a blank Link opens an empty field, which this one now does too.
 
 #### Line Total
 
@@ -28949,7 +29195,7 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 
 ### Phase 16B — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
 
-**GOAL:** The seat Phase 16A landed serves everything else that edits a value. One app-level `MenuSeat` replaces `ValuePickPresenter`, so a value picked from a menu away from it runs what a click would and nothing on the session channel decides by type; the Properties panel keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value interaction moves to the seat, so its label and value menus are the seat's one row menu: a Link row's label gains Rename and Edit Link, a File value gains Remove and no Clear, and `propertyMenu.ts`' `page-value` kind and `fileValueMenu` leave. The `rename` intent folds into `popover`; and the pickers read the resolved column, so `syntheticContextDef` and its sites leave. Drive group 14 proves every surface on one seat.
+**GOAL:** The seat Phase 16A landed serves everything else that edits a value. One app-level `MenuSeat` replaces `ValuePickPresenter`, so a value picked from a menu away from it runs what a click would and nothing on the session channel decides by type; the Properties panel keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value interaction moves to the seat, so its label and value menus are the seat's one row menu: a Link row's label gains Edit Title and Edit Link, a File value gains Remove and no Clear, and `propertyMenu.ts`' `page-value` kind and `fileValueMenu` leave. The `rename` intent folds into `popover`; and the pickers read the resolved column, so `syntheticContextDef` and its sites leave. Drive group 14 proves every surface on one seat.
 
 **Starting State (Phase 16A's AFTER):** `Core/Properties/Cells/ValueSeat.tsx` holds `SeatHost` (`rowOf`, `commit`, `anchor`, `holder`, `connections`, `style` answering `ColumnStyle | null`, `setStyle`, `centered`, `hold`, `hide: { from: 'view' | 'row'; run }`, `clear`, `onClose`), `SeatOpen`, `useValueSeat` (`open`, `anchor`, `host`, `close`, `intentOf`, `run`, `click`, `pane`, `menu(row, column, e, label?)`, `editor`, `target`), `SeatChooser`, and `<ValueSeat seat chooser? />`; its `target` reads `column.def ?? syntheticContextDef(column.id)`, and its handler table still maps `rename`; `LinkMenuContext.value.hideable` and `valueMenuTarget`'s parameter take the `'view' | 'row'` union (Task 16A-1), and the seat hands both menus `host.hide?.from`. The view host returns `seatHost`; the table and Cards run every value through the seat; `CardValue.tsx` and `pickTarget` are gone. `runPropertyAction` and `ValuePickPresenter` read as P15 and P13 left them. The panel reads as HEAD with P13's columns and `currentOf`, P15's `useValueWriter`, P15's `hideable: 'row'` on its fallback Link menu, and P16A's `'row'` in its `valueMenuTarget` call: its label still pops `propertyMenuModel`'s `page-value` kind, and its File value `fileValueMenu`. P15's `HideFrom` (`Core/Actions/cellMenu.ts`) and `cellMenuContextFor(type, null, …)` answering a bare value are the vocabulary the panel's seat host reads.
 
@@ -29225,7 +29471,7 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
 
 #### Task 16B-2
 
-**TASK:** The Properties panel splits along the seat: it keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value click, right-click, inline editor, picker, and popover move to the seat, the label's right-click included. The label and the value build one row menu through `cellMenuContextFor` and `cellMenuModel`, as the table and cards do, so `propertyMenu.ts`' `page-value` kind with its three `value:*` actions, the panel's hand mapping, and `fileValueMenu` leave: a Link row's label gains Rename and Edit Link (J-3), and the panel's File value gains Remove and no Clear (J-10, LC-15). With the panel the seat's last copy, the `rename` intent folds into `popover` carrying its seat, and `valueMenuTarget.ts` leaves (06-06, B-06-01).
+**TASK:** The Properties panel splits along the seat: it keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value click, right-click, inline editor, picker, and popover move to the seat, the label's right-click included. The label and the value build one row menu through `cellMenuContextFor` and `cellMenuModel`, as the table and cards do, so `propertyMenu.ts`' `page-value` kind with its three `value:*` actions, the panel's hand mapping, and `fileValueMenu` leave: a Link row's label gains Edit Title and Edit Link (J-3), and the panel's File value gains Remove and no Clear (J-10, LC-15). With the panel the seat's last copy, the `rename` intent folds into `popover` carrying its seat, and `valueMenuTarget.ts` leaves (06-06, B-06-01).
 
 **NOW:**
 - `PropertyPanel.tsx` (577 lines at HEAD; P15 has replaced its writer with `useValueWriter`, its fallback Link menu's `hideable` with `'row'`, and its `KNOB` comment; P16A its `valueMenuTarget` call's `true` with `'row'`) holds the open-value state (`Editing`, `:66`, `:93`), the trigger (`:95`), the intent map (`runIntent`, `:286-304`), `editRow` (`:305-313`, P13's `currentOf`), and two right-click handlers:
@@ -29244,14 +29490,14 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
 **CHANGE**
 
 - [ ] Write the panel pins in `Core/Properties/PropertyPanel.test.tsx` › `describe('PropertyPanel')` (below):
-  - Watch fail (J-3, J-10): "a Link row's label offers Rename and Edit Link before Clear and Remove, and its value offers the connection menu" and "a File value's menu offers Add File and Remove and never Clear, and its Remove takes the row away". At the base the label offers Clear and Remove only, and the File value Add File alone.
+  - Watch fail (J-3, J-10): "a Link row's label offers Edit Title and Edit Link before Clear and Remove, and its value offers the connection menu" and "a File value's menu offers Add File and Remove and never Clear, and its Remove takes the row away". At the base the label offers Clear and Remove only, and the File value Add File alone.
   - Watch pass at the base (preserved behavior): "a Context row's click opens its Spaces, leaving the Space itself out".
 - [ ] Rewrite `PropertyPanel.test.tsx`: the three `'value:remove'` answers (`:153,277,335`) become `'cell:hide'`, the seat's Remove; the two Link cases' setup and the new cases share one `seedDef(def)` and one `menuAnswers(action)`, and every menu read goes through `poppedLabels()` or `poppedActions()` (below).
 - [ ] `Core/Properties/PropertyPanel.tsx`: the seat lands after the panel's state (below), its host stating the panel's differences (no column look, the row's Clear and Remove); `rowEl` serves the anchor and `revealAndEdit`; the subject and Nexus resets close the seat; `renderRow`'s label and value hand their gestures to the seat; `<ValueSeat>` with the Add chooser replaces the popover and the `PropertyPicker`.
 - [ ] Delete from `PropertyPanel.tsx`: `Editing`, `editing`/`setEditing`, `triggerRef`, `runIntent`, `editRow`, `rowMenu`, `valueMenu`, P13's `currentOf`, `isContextRow` (P13 leaves it read only by `revealAndEdit` and `panelTarget`), `editingDef`, `panelTarget`, the label's and value's right-click handlers, the inline `PropertyValueInput`, the popover, and the `PropertyPicker` block, with the imports only they read (`PropertyPicker`, `PickTarget`, `syntheticContextDef`, `PropertyValueInput`, `runValueIntent`, `ValueIntent`, `valueClickIntent`, `valueMenuIntent`, `propertyMenuModel`, `CellMenuAction`, `cellMenuModel`, `fileChipIndex`, `fileValueMenu`, `pickFileInto`, `contextOptionsFor`, `popMenu`, `showConnectionMenu`, `valueMenuTarget`, `ConnEditAction`, `LinkAction`, `NULL_VALUE`, `resolveFieldValue`, and `isBlankValue` where nothing else reads them).
 - [ ] `Core/Actions/propertyMenu.ts`: the `page-value` kind, its comment, the three `value:*` actions, and `joinGroups`' import leave (AFTER). `Core/Actions/propertyMenu.test.ts`: the "a page value yields Clear · Remove …" case leaves.
 - [ ] `Core/Properties/Pickers/filePick.ts`: `fileValueMenu`, its comment, and the `cellMenuModel` and `popMenu` imports leave. `filePick.test.ts`: `describe('fileValueMenu …')` becomes `describe('runFileMenuAction')`, keeping its Remove-a-chip and Replace-a-chip cases on the function the seat calls; the off-chip-model and dismissed-menu cases leave with the menu they pinned, as do the `cellMenu` stub and the `cellMenuModel` import (AFTER).
-- [ ] `Core/Properties/Pickers/valueClick.ts`: the `rename` intent leaves and the menu's Rename maps to `{ kind: 'popover', seat: 'rename' }`. `Core/Properties/Cells/ValueSeat.tsx`: its `rename` handler leaves. `Core/Properties/Pickers/valueClick.test.ts`: `:71` expects the popover with its seat, and `:88`'s `rename: null` leaves the handler table.
+- [ ] `Core/Properties/Pickers/valueClick.ts`: the `rename` intent leaves and the menu's Edit Title (the `rename` action) maps to `{ kind: 'popover', seat: 'rename' }`. `Core/Properties/Cells/ValueSeat.tsx`: its `rename` handler leaves. `Core/Properties/Pickers/valueClick.test.ts`: `:71` expects the popover with its seat, and `:88`'s `rename: null` leaves the handler table.
 - [ ] `git rm Core/Properties/Cells/valueMenuTarget.ts`. Removal proofs, each answering nothing: `git grep -nw "valueMenuTarget\|fileValueMenu\|editRow\|panelTarget\|currentOf" -- Core`; `git grep -nw "rowMenu\|valueMenu\|syntheticContextDef" -- Core/Properties/PropertyPanel.tsx`; `git grep -n "'page-value'\|value:edit\|value:clear\|value:remove" -- Core UIX`; `git grep -n "kind: 'rename'" -- Core/Properties/Pickers Core/Properties/Cells` (`Core/Nexus/tree.ts`' values epoch and `Core/Properties/Schema/PropertyFrame.test.tsx` spell other unions' `kind: 'rename'` and stay). `git grep -nw "propertyMenuModel" -- Core ':!*.test.*'` answers only `PropertyFrame.tsx`.
 - [ ] Run `Core/Properties` and `Core/Actions` green, then the gates.
 - [ ] Commit: `git commit --only -- Core/Properties/PropertyPanel.tsx Core/Properties/PropertyPanel.test.tsx Core/Actions/propertyMenu.ts Core/Actions/propertyMenu.test.ts Core/Properties/Pickers/filePick.ts Core/Properties/Pickers/filePick.test.ts Core/Properties/Pickers/valueClick.ts Core/Properties/Pickers/valueClick.test.ts Core/Properties/Cells/ValueSeat.tsx Core/Properties/Cells/valueMenuTarget.ts -m "The Properties panel's value interaction moved onto the value seat, its row menu became the one the table and cards build, and Rename became a popover carrying its seat."`
@@ -29578,13 +29824,13 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
      ).not.toBeNull()
    })
 +
-+  it('a Link row’s label offers Rename and Edit Link before Clear and Remove, and its value offers the connection menu', async () => {
++  it('a Link row’s label offers Edit Title and Edit Link before Clear and Remove, and its value offers the connection menu', async () => {
 +    seedDef({ id: 'prop_site', label: 'Site', key: 'Site', type: 'link' })
 +    menuAnswers('')
 +    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Site: 'https://a.com' } }))
 +    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
 +    await rightClick(labelOf('Site'))
-+    expect(poppedLabels(0)).toEqual(['Rename', 'Edit Link', 'Clear', 'Remove'])
++    expect(poppedLabels(0)).toEqual(['Edit Title', 'Edit Link', 'Clear', 'Remove'])
 +    await rightClick(host.querySelector('[data-property-row="prop_site"]'))
 +    expect(poppedActions(1)).toContain('title:copylink')
 +  })
@@ -29678,7 +29924,7 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 **VERIFY**
 
 - [ ] `npx vitest run Core/Properties Core/Actions` passes; the J-3 and J-10 cases red at the base; `PropertyPanel.test.tsx:152` (a row removed through its menu disappears), `:170` (Remove on a Link value's menu clears the value and hides its row), and `:212` (an unresolved Link's fallback menu and its Edit Link) pass with only their menu answers and setup rewritten.
-- [ ] The panel's menus per type, against today's: Text — Edit, Clear (filled), Remove, unchanged; Select, Multi-Select, Status, Date, Number, Checkbox, Context — Clear (filled), Remove, unchanged; a Link label — Rename (filled), Edit Link, Clear (filled), Remove (J-3); a resolved Link value — the connection menu, unchanged; an unresolved Link value — Rename, Edit Link, Clear, Remove (P15's order); File — Add File, Remove (and on a chip Replace File and Remove File), no Clear, from the label as from the value (J-10). Each is read off a `cellMenuModel` case or a written panel test.
+- [ ] The panel's menus per type, against today's: Text — Edit, Clear (filled), Remove, unchanged; Select, Multi-Select, Status, Date, Number, Checkbox, Context — Clear (filled), Remove, unchanged; a Link label — Edit Title (filled), Edit Link, Clear (filled), Remove (J-3); a resolved Link value — the connection menu as P15 left it; an unresolved Link value — Edit Title, Edit Link, Clear, Remove (P15's order); File — Add File, Remove (and on a chip Replace File and Remove File), no Clear, from the label as from the value (J-10). Each is read off a `cellMenuModel` case or a written panel test.
 - [ ] The removal greps above answer nothing; `git grep -n "runValueIntent(" -- Core ':!*.test.*'` answers only `ValueSeat.tsx`; `git grep -n "seat={.*'rename'" -- Core` answers nothing; `PropertyPanel.tsx` reads no `PropertyPicker` or `PropertyValueInput`.
 - [ ] The gates are clean.
 - [ ] Check for unnecessary code or mistakes.
@@ -30102,8 +30348,8 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 +  await openPage(cdp, 'Seat One')
 +  await openPanel(cdp)
 +  const label = await chooseNative(cdp, rowLabel(SEAT.site.id, SEAT.site.label), [])
-+  item(14, 'J-3 LC-47', "a Link row's label offers Rename and Edit Link before Clear and Remove",
-+    show(label.rows) === show(['Rename', 'Edit Link', 'Clear', 'Remove']), show(label.rows))
++  item(14, 'J-3', "a Link row's label offers Edit Title and Edit Link before Clear and Remove",
++    show(label.rows) === show(['Edit Title', 'Edit Link', 'Clear', 'Remove']), show(label.rows))
 +  const chip = await chooseNative(cdp, `document.querySelector('[data-property-row="${SEAT.doc.id}"] [data-file-chip-index="0"]')`, 'Remove')
 +  item(14, 'J-10 LC-15', "a File chip's menu offers Remove and never Clear",
 +    show(chip.rows) === show(['Add File', 'Replace File', 'Remove File', 'Remove']), show(chip.rows))
@@ -30150,7 +30396,7 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 +| An option's click | `Seat Stage` (Select) holding `Seat Open` on `Seat One` | click the value in the Seat Table, on its card in Seat Cards, and in the page's Properties panel | the same option list on every surface | X6 |
 +| An option's right-click | as above | right-click the value on each surface | Clear everywhere; Remove on the card and the panel, not the table; Style in both views, never the panel | X6 |
 +| A Text click | `Seat Notes` (Text) holding `words` | click the value on each surface | the inline editor opens | X6 |
-+| A Link row's label | `Seat Site` (Link) holding `https://example.com` | right-click the row's label in the panel | Rename, Edit Link, Clear, Remove | J-3, LC-47 |
++| A Link row's label | `Seat Site` (Link) holding `https://example.com` | right-click the row's label in the panel | Edit Title, Edit Link, Clear, Remove | J-3 |
 +| A File chip's menu | `Seat Doc` (File) holding `[[Drive.pdf]]` | right-click the value's chip in the panel | Add File, Replace File, Remove File, Remove; no Clear | J-10, LC-15 |
 +| The File's Remove | as above | choose Remove | the page file drops `Seat Doc` and the row leaves the panel | J-10, LC-15 |
 +| The panel's picker and its row | `Seat Stage` on `Seat One`, its row not revealed | open its picker, then clear the value from outside | the picker closes with the row | — |
@@ -30180,14 +30426,14 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 
 Each item is visible, classified, and carries a recommendation; the reconciliation report lists them for Nathan.
 
-- **A Link Row's Label Gains Rename and Edit Link (J-3, Nathan's Intent):** its right-click reads Rename (when filled), Edit Link, Clear, Remove, where it read Clear and Remove; Rename opens the alias popover on the row's value and Edit Link the inline editor, as the value's own menu does. On a page link, the label's item reads Edit Link while the value's connection menu reads Edit Title for the same action (LC-47).
+- **A Link Row's Label Gains Edit Title and Edit Link (J-3, Nathan's Intent):** its right-click reads Edit Title (when filled), Edit Link, Clear, Remove, where it read Clear and Remove; Edit Title opens the alias popover on the row's value and Edit Link the inline editor on its target, as the value's own menu does, in the same words.
 - **The Panel's File Menu Gains Remove and No Clear (J-10, LC-15, Nathan's Intent):** a File value reads Add File and Remove, and on a chip Add File, Replace File, Remove File, and Remove; Remove clears the value and takes the row away, as every panel row's Remove does. The row's label opens the same menu, so a File row's label loses the Clear it offered and gains Add File: one menu wherever the row is right-clicked is J-10's ruling, and Clear on a File is what LC-15 removes.
 - **The Panel's Picker Remounts per Value, and Its Popover Fades Out (Consistency; Take; LC-54):** the table's keying applies: moving from one row's picker to another's mounts a fresh picker, and the popover leaves through its exit fade instead of vanishing.
 - **A Pane Closes When Its Anchor Leaves (Accident; Take):** in the panel, clearing the last value of a row that wasn't revealed hides the row, and its open picker now closes with it rather than floating over the gap; a pane opened from the sidebar's menu closes if that row is redrawn while it's open.
 - **The Panel's Secondary Click Opens Only the Menu (Accident; Take):** a Control-click on macOS fires `click` beside `contextmenu`; the table and cards already let the menu take it, and the panel now does too instead of also running the click.
 - **The Panel Label's Right-Click Stops There (Inert):** the seat stops a menu's event, as the value span already did. Nothing above the panel's rows handles `contextmenu` (`SpaceMenu.tsx:86` wraps its header only; `glanceAction.ts:96` listens in capture).
 - **A Title Menu's Pick Is Ghost-Neutral (Inert):** a property leaf from the table's title menu opens the app-level seat, as today, so the table's ghost behaves as it does now.
-- **Unchanged and Checked:** every other panel row's menu (Text: Edit, Clear, Remove; every other type and Context: Clear when filled, Remove) reads as today, as do the resolved Link value's connection menu and the unresolved one's Rename, Edit Link, Clear, Remove.
+- **Unchanged and Checked:** every other panel row's menu (Text: Edit, Clear, Remove; every other type and Context: Clear when filled, Remove) reads as today, as do the resolved Link value's connection menu and the unresolved one's Edit Title, Edit Link, Clear, Remove, as P15 left them.
 
 #### Line Total
 
@@ -32331,7 +32577,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +**The Property Frame:** The Properties frame of the toolbar's Settings menu (`Core/Properties/Schema/PropertyFrame.tsx`) is the assign surface for a Collection: the assigned properties on top, each opening its per-type editor, and an **All Properties** disclosure pinned to the bottom listing every unassigned registry definition in the nexus order, each promotable by its `+` or by dragging into the assigned group. Dragging within a group reorders it — the Collection's order above, the nexus order below — dragging an assigned row out removes it, and a release outside the frame writes nothing. The frame's `+` creates: it mints into the registry, seeds per-type options, assigns here, and opens the new property's editor. Renames, format changes, and option edits change the global definition for every assigner. A property's editor opens with its **Label Format** row, which sets how its label is written as its key, and, for a Select, Status, or Multi-Select, its **Value Format** row, divided from the type's own settings below. The global Delete lives only inside a property's own editor frame, behind its ⋮ menu and a confirmation naming the Items holding the property when any do.
 @@ :117 · The Value Picker @@
 -**The Value Picker:** Where the Property Frame assigns the schema, setting a member's value runs through one control (`Core/Properties/Pickers/PropertyPicker.tsx`) across every surface that assigns one — the page window's SidePane, the Properties panel, and the Cards and Table views. It renders the popup each type needs: option rows for Select, Status, Multi-Select, and Context; a calendar for Date; a file field for File; and it can open on a chooser pane that adds a property and drills straight into its value. Every option list scrolls inside a fixed-height pane, and a Status lists its groups apart behind dividers. A Select, Multi-Select, or Status list also edits its options in place: its rows drag to reorder the property's options, a Status's within their own group; a row's right-click offers the option editor's menu without Clear and Remove, and without Style where no view is in hand; and beneath a Select or Multi-Select list, a `+` names a new option, added at the end and left unassigned. A number keeps the shared text field, a Link value and a Text value's single line open the one-line editor, and a Text value's pen opens TextPane. The Properties panel (`Core/Properties/PropertyPanel.tsx`) is the value surface itself: a page's or a Space's shown Contexts and properties as menu rows, each row's value opening the picker, and the row's own menu editing a Text value in place, clearing the value, or removing the row. A Text value's right-click on every surface reads **Edit · Clear · Remove**, where Edit opens the same inline field a click does and a table, having no per-cell Remove, stops at Clear.
-+**The Value Picker:** Where the Property Frame assigns the schema, a member's value is set through one value surface shared by the Table and Cards views and the Properties panel, where a click opens the same picker and a right-click the same menu wherever the value shows. The picker renders what each type needs: option rows for Select, Status, Multi-Select, and Context; a calendar for Date & Time; the operating system's file dialog for File; and it can open on a chooser pane that adds a property and drills straight into its value. Every option list scrolls inside a fixed-height pane, and a Status lists its groups apart behind dividers. A Select, Multi-Select, or Status list also edits its options in place: its rows drag to reorder the property's options, a Status's within their own group; a row's right-click offers the option editor's menu without Clear and Delete, and without Style where no view is in hand; and beneath a Select or Multi-Select list, a `+` names a new option, added at the end and left unassigned. A number keeps the shared text field, a Link value and a Text value's single line open the one-line editor, and a Text value's pen opens TextPane. A Text value's right-click reads **Edit · Clear · Remove**, where Edit opens the same inline field a click does and Remove takes the row off the page in the Properties panel and the property out of the view on a card, while a table, having no per-cell Remove, stops at Clear; a link's reads **Rename** then **Edit Link**, or **Edit Title** for a link naming a page.
++**The Value Picker:** Where the Property Frame assigns the schema, a member's value is set through one value surface shared by the Table and Cards views and the Properties panel, where a click opens the same picker and a right-click the same menu wherever the value shows. The picker renders what each type needs: option rows for Select, Status, Multi-Select, and Context; a calendar for Date & Time; the operating system's file dialog for File; and it can open on a chooser pane that adds a property and drills straight into its value. Every option list scrolls inside a fixed-height pane, and a Status lists its groups apart behind dividers. A Select, Multi-Select, or Status list also edits its options in place: its rows drag to reorder the property's options, a Status's within their own group; a row's right-click offers the option editor's menu without Clear and Delete, and without Style where no view is in hand; and beneath a Select or Multi-Select list, a `+` names a new option, added at the end and left unassigned. A number keeps the shared text field, a Link value and a Text value's single line open the one-line editor, and a Text value's pen opens TextPane. A Text value's right-click reads **Edit · Clear · Remove**, where Edit opens the same inline field a click does and Remove takes the row off the page in the Properties panel and the property out of the view on a card, while a table, having no per-cell Remove, stops at Clear; a link's reads **Edit Title**, which edits the text it shows, then **Edit Link**, which edits what it points to.
 @@ :121 · The Properties Menu @@
 -**The Properties Menu.** Any full page menu — a sidebar page row, a view row's title cell, a card, a Matrix node — carries **Spaces ▸** and **Properties ▸** branches that enable quick management of contexts and properties. The first lists the nexus Contexts in registry order; the second lists the Collection's assigned properties, skipping the auto-managed stamps. A row whose type offers a fixed set expands into it with the page's standing values checked — the options for Select, Status, Multi-Select, and Context, a Status's groups apart behind dividers, with **Check** and **Uncheck** for a Checkbox. Non-option properties stay leaves; File opens the operating system's file dialog, with Number, Link, and Date opening their pickers and Text its TextPane, anchored where the menu originates. 
 +**The Properties Menu:** Any full page menu — a sidebar page row, a view row's title cell, a card, a Matrix node — carries **Spaces ▸** and **Properties ▸** branches that enable quick management of contexts and properties. The first lists the nexus Contexts in registry order; the second lists the Collection's assigned properties. A row whose type offers a fixed set expands into it with the page's standing values checked — the options for Select, Status, Multi-Select, and Context, a Status's groups apart behind dividers, with **Check** and **Uncheck** for a Checkbox. Non-option properties stay leaves; File opens the operating system's file dialog, with Number, Link, and Date & Time opening their pickers and Text its TextPane, anchored where the menu originates.
@@ -32356,7 +32602,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +
 +**The Stash:** A removed property's values wait in its Collection's settings file, under `property_stash`, beside the time they were removed. They're kept for the **History Timeframe**, and the next open, or a change to that timeframe, clears what has outlived it.
 +
-+**Unfinished Changes:** A change that rewrites many files notes what it owes in a device-local notes file before it starts, and doesn't start when the note can't be written. A file it can't reach is counted in its notice with Try Again, which finishes every owed change at once, and the next open finishes whatever a closed session left. A create, rename, Label Format change, or restore onto a name still owed finishes that work first and then lands, refused with Try Again only when the name is still owed after the finish. An option's Clear writes no note, and a file it misses is named in a warning without Try Again.
++**Unfinished Changes:** A change that rewrites many files notes what it owes in a device-local notes file before it starts, and doesn't start when the note can't be written. A file it can't reach is counted in its notice with Try Again, which finishes every owed change at once, and the next open finishes whatever a closed session left. A create, rename, Label Format change, or restore onto a name still owed finishes that work first and then lands, refused with Try Again only when the name is still owed after the finish. A page Pommora can't safely rewrite — front matter it can't read back as written, or, where values move into a stash or the Trash, no ID or one another page shares — counts as unfinished in the same notice. An option's Clear notes its word the same way, and its Try Again clears only the pages still holding that word.
 @@ :138 · Repairs @@
 -**Repairs:** Every governed write runs one reconcile over the file's root (`reconcileGovernedRoot` in `Core/Contexts/contextResolve.ts`) before it lands: an assigned property's value is re-encoded as its definition reads it — a scalar option becomes a one-element list — keeping each value as the file gives it. A list naming one option or Space more than once is written with it once. Apart from a member it collapses, the reconcile removes nothing: a checkbox `false`, an emptied value, and a value naming no Space stay as written, and a Trash restore alone drops them. Files that changed while the app was closed are reached by the on-open sweep behind **Repair Properties On Open**: the index seed already knows which pages it re-read, and the sweep runs the same reconcile over exactly those, behind the window rather than before it, writing only where a value moved and pushing the containers it touched.
 +**Tidying:** Every value write — a property, a Context tag, or a Space link — reconciles the page or Space it lands on, rewriting each assigned value as its definition reads it: a scalar option becomes a list of one, a list naming one option or Space twice names it once, and a Select or Status holding several words becomes the one option it shows. A reconcile leaves a value it can't re-encode as written, and keeps every member of a Multi-Select, Context, or File value it can't read; a checkbox `false`, an emptied value, and a word naming no option or Space stay as written, and a Trash restore alone drops them. A value holding only spaces reads as empty for every type, and a write that changes nothing leaves the file untouched. **Repair Properties On Open**, on by default, runs the same reconcile behind the window over the pages that changed while the app was closed.
@@ -32370,7 +32616,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +- **Per-view link styling** — a view's column can set a Link's Format; its Underline and Color stay property-level, and letting a view override them is a prospect the `column_styles` seam already allows for.
 ```
 
-**[Anchor]** `:117`'s menu readings follow P15's landed `cellMenuModel` (`Core/Actions/cellMenu.ts`), `connectionMenuModel`, and LC-47, and the Remove each surface's seat host offers (P16's `hide.from`): the executor reads the `text` and `link` kinds' rows and the page link's connection menu at P18's head and keeps the sentence to them. *Unfinished Changes*' Clear sentence follows the *Crash-Recovery Map*'s Clear row and LC-58: the executor reads `clearOption`'s reply at P18's head, and if Clear has come to note its work, the sentence leaves.
+**[Anchor]** `:117`'s menu readings follow P15's landed `cellMenuModel` (`Core/Actions/cellMenu.ts`), and `connectionMenuModel`, and the Remove each surface's seat host offers (P16's `hide.from`): the executor reads the `text` and `link` kinds' rows and the page link's connection menu at P18's head and keeps the sentence to them. *Unfinished Changes*' Clear sentence follows the *Crash-Recovery Map*'s Clear row.
 
 **VERIFY**
 
@@ -32401,13 +32647,13 @@ Where a line below names a construct one of those phases landed, the executor ke
 +Content, Context, and property changes funnel through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`, which routes each operation to its implementation, while views, tiles, settings, and page bodies write through channels of their own. An operation that changes a page's address runs inside the settle's own turn, so no payment of an outside move interleaves with it, and returns the links it re-spelled. A mutation, view edit, or schema edit that names an entity by path acts only on what the live tree holds at that path, as the kind the request names, so the Nexus root, `.nexus`, the trash, and excluded folders fall outside them, save the Archive bundle a delete from the Archive names. Cascade policy is stated beside it once — a page rename stands when its link rewrite can't reach every file, and reports how many kept the old link; a page, Set, or Collection delete strips the Link values naming its pages under the same rule, whether it takes a live item or an Archive bundle; a Context or Space delete records its membership, moves its folder to the trash, and then strips its tags, a member it can't write counted beside the delete with Try Again; once a Space, Context, Set, or Collection has moved to the trash, or a move has taken a Set out of a container, the saved views, View Tiles, and the Matrix filter drop what named it, and a file that can't be edited is reported beside the delete rather than refusing it. Every write notes itself as a file event as it lands, and the arms that apply an outside edit apply it to the live tree and the content index; the write's gate then settles what moved and pushes it before the reply leaves, so the reply finds the window current. The window is sent a versioned difference of the tree and asks for the whole tree when it holds any version but the one before. Every content create the dispatcher takes carries an ID the window minted, so what the window stages for the newborn is keyed before the push lands it, while a property's create answers with the id the host minted.
 @@ :100 · Sweeps and journals @@
 -- **Sweeps and journals.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open the files the content index names as candidates and every Space sidecar, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Multi-file schema operations queue on one lock on the `.nexus` folder and Context operations on one on the Contexts folder, and quitting waits for one in flight. A rename or schema cascade writes a crash journal first — intent to disk before action — so an interrupted rename is finished by the next open's replay rather than left half-applied; a Space or Context delete writes its record into its Trash bundle first instead.
-+- **Sweeps and owed work.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open the pages the content index names as candidates and the Spaces the held tree shows holding the key, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Property operations queue on one lock on the `.nexus` folder and Context operations on one on the Contexts folder, and quitting waits for one in flight. Every operation that rewrites many files first notes what it owes in one device-local file, `.nexus/.owed.json`, keeping one entry per property, Context, or Space, and refuses with nothing changed when the note can't be written; Try Again finishes every owed entry during the session, and the next open finishes what a closed session left. A delete's Trash record lands before its note. An option's Clear writes no note, and a file it misses is named in a warning without Try Again.
++- **Sweeps and owed work.** Governed-key sweeps — the writes that touch many files because a property or Context changed — share one walk (enumerate, lock, admission-check, decide, write only what changed), open the pages the content index names as candidates and the Spaces the held tree shows holding the key, and confirm each under its own lock. A page a sweep rewrites keeps its modification time, and so its Last Modified — the sweep is not the user's edit of that page. Property operations queue on one lock on the `.nexus` folder and Context operations on one on the Contexts folder, and quitting waits for one in flight. Every operation that rewrites many files first notes what it owes in one device-local file, `.nexus/.owed.json`, keeping one entry per property, Context, or Space, and refuses with nothing changed when the note can't be written; Try Again finishes every owed entry during the session, and the next open finishes what a closed session left. A delete's Trash record lands before its note. A file a sweep can't safely rewrite counts as one it couldn't reach, and the notes file is removed once nothing is owed.
 @@ :111 · SOURCE @@
 -**SOURCE:** `Core/Properties/schema.ts` · `Core/Platform/localState.ts` · `Core/Index/indexSeed.ts`
 +**SOURCE:** `Core/Properties/validation.ts` · `Core/Platform/localState.ts` · `Core/Index/indexSeed.ts`
 @@ :137 · Travels with the Nexus @@
 -**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live. A file only Pommora writes — the order and pins, the Homepage, crops, the Matrix, and a tile layout — that stops parsing reads as the copy last read, and the next change rebuilds it from that copy, or from the last synced one, setting the damaged bytes aside under a hidden name. The hand-authored `settings.json`, `nexus.json`, and `properties.json` also read as the copy last read once the session has read one, while a change that writes to one refuses until it parses again. An open that finds one damaged before the session has read it waits on a screen naming the file, and the Nexus opens once it parses.
-+**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live. A file only Pommora writes — the order and pins, the Homepage, crops, the Matrix, and a tile layout — that stops parsing reads as the copy last read, and the next change rebuilds it from that copy, or from the last synced one, setting the damaged bytes aside under a hidden name. The hand-authored `settings.json`, `nexus.json`, and `properties.json` also read as the copy last read once the session has read one, while a change that writes to one refuses until it parses again. An open that finds `settings.json` or `nexus.json` damaged before the session has read it waits on a screen naming the file, and the Nexus opens once it parses; one that finds `properties.json` damaged opens the Nexus with no property definitions and a notice naming the list, and the definitions return once it parses.
++**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live. A file only Pommora writes — the order and pins, the Homepage, crops, the Matrix, and a tile layout — that stops parsing reads as the copy last read, and the next change rebuilds it from that copy, or from the last synced one, sending the damaged bytes to the system Trash. The hand-authored `settings.json`, `nexus.json`, and `properties.json` also read as the copy last read once the session has read one, while a change that writes to one refuses until it parses again. An open that finds `settings.json` or `nexus.json` damaged before the session has read it waits on a screen naming the file, and the Nexus opens once it parses; one that finds `properties.json` damaged opens the Nexus with no property definitions and a notice naming the list, and the definitions return once it parses.
 ```
 
 ```.claude/Features/ContextsPM.md diff
@@ -32452,7 +32698,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +// A content create carries the ID the window minted, since its ask places the newborn by ID; `addProperty` and a tile's create on its own channel place nothing in their ask and learn the ID from the reply.
 ```
 
-**[Anchor]** `CorePM.md:100`'s Clear sentence follows the same reading as *Unfinished Changes*' in Task 18-1, and leaves with it. `CorePM.md:92`'s last clause and the comment follow P7's `created: { path } | { propertyId }`: the executor reads the `addProperty` arm in `Core/Nexus/mutate.ts` and keeps the clause to it. `ContextsPM.md:26`'s order reads P9's landed Context rename (note → `commitTitle` → `relocate` → cascade, with the in-op revert on a failed move).
+**[Anchor]** `CorePM.md:92`'s last clause and the comment follow P7's `created: { path } | { propertyId }`: the executor reads the `addProperty` arm in `Core/Nexus/mutate.ts` and keeps the clause to it. `ContextsPM.md:26`'s order reads P9's landed Context rename (note → `commitTitle` → `relocate` → cascade, with the in-op revert on a failed move).
 
 **VERIFY**
 
@@ -32463,14 +32709,14 @@ Where a line below names a construct one of those phases landed, the executor ke
 
 #### Task 18-3
 
-**TASK:** Rewrite the surface documents the option, filter, menu, settings, migration, and type-record work made false — `ConfigurationPM.md`, `ViewTypesPM.md`, `PommoraUIX.md`, `InteractionPM.md`, `SurfacePM.md`, and `SymbolsPM.md`.
+**TASK:** Rewrite the surface documents the option, filter, menu, settings, migration, and type-record work made false — `ConfigurationPM.md`, `ViewTypesPM.md`, `ConnectionsPM.md`, `PommoraUIX.md`, `InteractionPM.md`, `SurfacePM.md`, and `SymbolsPM.md`.
 
-**NOW:** `ConfigurationPM.md:115` has "an option's Clear and Remove" ask regardless of Confirm Before Deletion, where Clear asks only past one Item since `5e3aee180`; `:143` defaults Repair Properties On Open to Off. `ViewTypesPM.md:24`'s abstaining rules leave out an operand that doesn't read; `:41` has Select and Status compare an option "exactly by its label"; `:55` places empty values nowhere; `:91` has the link menu offer "Edit Link … and Rename". `PommoraUIX.md:347` lists `optionShapeFor` as a Labels export, which P3 moves into the type record. `InteractionPM.md:42` keys option drafts through `useRenameKeys`, which P8 removes from the option editor. `SurfacePM.md:42` names "the saved-view normalization at open (`migrateConfig.ts`)" as the tree-less site that names tile folders by hand, which P1's Task 1-2 deletes; `ensureConfigLayout` (`Core/Nexus/identity.ts:57-61`) still creates the Homepage folder before a tree exists. `SymbolsPM.md:18` places the property types' glyphs in `PropertyTypes.tsx`, which P3's Task 3-5 moves to `Core/Properties/typeDisplay.ts`.
+**NOW:** `ConfigurationPM.md:115` has "an option's Clear and Remove" ask regardless of Confirm Before Deletion, where Clear asks only past one Item since `5e3aee180`; `:143` defaults Repair Properties On Open to Off. `ViewTypesPM.md:24`'s abstaining rules leave out an operand that doesn't read; `:41` has Select and Status compare an option "exactly by its label"; `:55` places empty values nowhere; `:91` has the link menu offer "Edit Link … and Rename". `ConnectionsPM.md:45` names the authoring pair "Rename · Edit Title" for a connection and "Rename · Edit Link" for an external link, and `:51` explains Rename and Edit Title by the reading P15 replaces. `PommoraUIX.md:347` lists `optionShapeFor` as a Labels export, which P3 moves into the type record. `InteractionPM.md:42` keys option drafts through `useRenameKeys`, which P8 removes from the option editor. `SurfacePM.md:42` names "the saved-view normalization at open (`migrateConfig.ts`)" as the tree-less site that names tile folders by hand, which P1's Task 1-2 deletes; `ensureConfigLayout` (`Core/Nexus/identity.ts:57-61`) still creates the Homepage folder before a tree exists. `SymbolsPM.md:18` places the property types' glyphs in `PropertyTypes.tsx`, which P3's Task 3-5 moves to `Core/Properties/typeDisplay.ts`. `SurfacePM.md:18` sets a damaged tile document's bytes aside under a hidden `.bad-` name, where P11A's `setAside` sends them to the system Trash.
 
 **CHANGE**
 
 - [ ] Replace each line below with its AFTER.
-- [ ] Commit: `git commit --only -m "The surface documents described option Delete, Repair On Open's default, id-named filter options, empty values sorting last, the shared link menu order, the one tree-less tile folder, and the type record's home." -- .claude/Features/ConfigurationPM.md .claude/Features/ViewTypesPM.md .claude/Features/PommoraUIX.md .claude/Features/InteractionPM.md .claude/Features/SurfacePM.md .claude/Features/SymbolsPM.md`.
+- [ ] Commit: `git commit --only -m "The surface documents described option Delete, Repair On Open's default, id-named filter options, empty values sorting last, the shared link menu words, the one tree-less tile folder, and the type record's home." -- .claude/Features/ConfigurationPM.md .claude/Features/ViewTypesPM.md .claude/Features/ConnectionsPM.md .claude/Features/PommoraUIX.md .claude/Features/InteractionPM.md .claude/Features/SurfacePM.md .claude/Features/SymbolsPM.md`.
 
 **AFTER**
 
@@ -32495,7 +32741,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, checkbox by rank, text — Title, Text, Link, Multi-Select, and File — case-insensitive, and a row holding no value last in either direction. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
 @@ :91 · Rows & Cells @@
 -A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, a progress bar, or a Text value's first line with its connections live — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Core/Properties/Pickers/valueClick.ts`, which Cards and the Properties panel read as well: the title navigates, or opens a new tab under ⌘, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor or, drawn as a bar, the number picker, a Text value enters its inline field over its first line or, from the pen beside it, TextPane, a link opens its address, or its inline field when empty or malformed, and a file chip opens the file dialog. A link's menu offers Edit Link as the inline field and Rename as the alias popover on every surface. Right-click opens the cell's menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios, with Clear beside them on a filled Select, Multi-Select, Status, or Date cell. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert; a number that won't parse reads dimmed and isn't saved. Dragging down an option column's cells from outside a multi-value chip sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value. ⌘Z walks the most recent value edit back on any value surface — Table, Cards, and the Properties panel — and a sweep's fan-out is one step. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Preview, New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
-+A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, a progress bar, or a Text value's first line with its connections live — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Core/Properties/Pickers/valueClick.ts`, which Cards and the Properties panel read as well: the title navigates, or opens a new tab under ⌘, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor or, drawn as a bar, the number picker, a Text value enters its inline field over its first line or, from the pen beside it, TextPane, a link opens its address, or its inline field when empty or malformed, and a file chip opens the file dialog. A link's menu offers Rename, the alias popover, then Edit Link, the inline field — Edit Title for a link naming a page — on every surface. Right-click opens the cell's menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios, with Clear beside them on a filled Select, Multi-Select, Status, or Date cell. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert; a number that won't parse reads dimmed and isn't saved. Dragging down an option column's cells from outside a multi-value chip sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value. ⌘Z walks the most recent value edit back on any value surface — Table, Cards, and the Properties panel — and a sweep's fan-out is one step. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Preview, New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
++A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, a progress bar, or a Text value's first line with its connections live — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Core/Properties/Pickers/valueClick.ts`, which Cards and the Properties panel read as well: the title navigates, or opens a new tab under ⌘, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor or, drawn as a bar, the number picker, a Text value enters its inline field over its first line or, from the pen beside it, TextPane, a link opens its address, or its inline field when empty or malformed, and a file chip opens the file dialog. A link's menu offers Edit Title, the alias popover, then Edit Link, the inline field on its target, on every surface. Right-click opens the cell's menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios, with Clear beside them on a filled Select, Multi-Select, Status, or Date cell. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert; a number that won't parse reads dimmed and isn't saved. Dragging down an option column's cells from outside a multi-value chip sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value. ⌘Z walks the most recent value edit back on any value surface — Table, Cards, and the Properties panel — and a sweep's fan-out is one step. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Preview, New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
 ```
 
 ```.claude/Features/PommoraUIX.md diff
@@ -32516,17 +32762,32 @@ Where a line below names a construct one of those phases landed, the executor ke
 +A host is one schema member and one `TILE_HOSTS` arm in `Core/Tiles/tileHosts.ts`, which gives its folder and lists its boards; `ensureConfigLayout` (`Core/Nexus/identity.ts`) creates the Homepage folder by hand because it runs before a tree exists. A host's document is loaded once and shared by every mount of that host, never in the tree walk, and layout writes debounce on gesture end; it retires when its last mount leaves and no window tab holds it, flushing what it owes. A change to a tile's settings writes that one entry, a create, duplicate, or restore lands the tile's place on the board in the same write as its entry, and each create, remove, convert, duplicate, or settings write answers with the document it left on disk, which the host shows. The watcher names each host's `_tiles.json` and tile files: a change that lands from outside the app — a sync, a hand edit — pushes the host with the tiles whose text changed, and the host flushes any save it owes and reloads the document, so the file's newest contents are what the host shows (most recent wins); the app's own writes are echo-suppressed like every other file's, and the document's reload for a change arriving while any mount holds a tile gesture waits for that gesture to settle, as a sibling mount's create, remove, duplicate, or convert does. A host's lock lives in its document, so every surface that carries the lock reads one value, and a toggle writes `_tiles.json` once. A markdown tile's text rides the page body layer under its tile id, shared by every mount: the mount that takes over an edit starts from what was last typed rather than from disk, and every other mount of that tile takes the text in place once each debounced save lands. A board change — an outside edit, or a page or heading rename that rewrote a link — lands in the tiles it names, each merging into every mount that holds it, in place. A body save carries the hash of the text it started from, so a save the file moved past is refused and merged onto the file's text, and the losing text is kept as a capture when the merge conflicts or when no mount holds the tile. Markdown-tile bodies write as pure Markdown with no frontmatter and no stamp, under a per-file lock. A copied Space folder carries its document; the open-time re-mint gives the copy's view tiles fresh config ids along with its sidecar.
 ```
 
+```.claude/Features/ConnectionsPM.md diff
+@@ :45 · the authoring row @@
+-| **Author** (editable surfaces) | Rename · Edit Title | Rename · Edit Link |
++| **Author** (editable surfaces) | Edit Title · Edit Link | Edit Title · Edit Link |
+@@ :51 @@
+-Rename edits the shown text, adding one where there is none, and Edit Title or Edit Link edits what the link points to. The editors are a page body, a table cell live or at rest, a Text value's pane, and the one-line field a Link value or a single-line Text value is typed in; a Link value's look follows its property's Format instead. Copy Link on a connection naming a heading copies the whole fragment form. An embedded page at rest offers the opens and the copies; a glance pane and a page's history offer no link menu. A phantom, ambiguous, or invalid link offers no link menu, and the right-click falls through to the editor's own menu where there is one. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
++Edit Title edits the text the link shows, adding one where there is none, and Edit Link edits what it points to, the linked page or the address. The editors are a page body, a table cell live or at rest, a Text value's pane, and the one-line field a Link value or a single-line Text value is typed in; a Link value's look follows its property's Format instead. Copy Link on a connection naming a heading copies the whole fragment form. An embedded page at rest offers the opens and the copies; a glance pane and a page's history offer no link menu. A phantom, ambiguous, or invalid link offers no link menu, and the right-click falls through to the editor's own menu where there is one. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
+```
+
+```.claude/Features/SurfacePM.md diff
+@@ :18 · the tile document's damaged copy @@
+-Each host's document is `_tiles.json` in the host's own folder — `.nexus/interface/homepage/` for the Homepage, the Space folder for a Space — beside the markdown tile bodies, modeled by the shared contract in `Core/Tiles/tiles.ts`: the `layout` (a stack of bands, each a split tree of rows and columns with tiles as leaves), the `tiles` entries, and the host lock. Every entry is a reference to something that lives elsewhere, so the document creates nothing a Nexus would miss. An entry this build doesn't recognize, or a foreign key on one it does, rides through every read and write untouched and renders inert. Every write of the file is a read-modify-write under its lock; a corrupt file reads as the document last read, or as the empty document when there is none, and the board's own next write sets the bytes aside under a hidden `.bad-` name and rebuilds from that document, while the configuration passes skip it. A file that can't be read at all opens the board as the document last read, or, when there is none, leaves it closed with a notice that offers to try again; a write that can't land says why, and the board shows the file again. The host's sidecar (`homepage.json`, `_space.json`) never carries the document.
++Each host's document is `_tiles.json` in the host's own folder — `.nexus/interface/homepage/` for the Homepage, the Space folder for a Space — beside the markdown tile bodies, modeled by the shared contract in `Core/Tiles/tiles.ts`: the `layout` (a stack of bands, each a split tree of rows and columns with tiles as leaves), the `tiles` entries, and the host lock. Every entry is a reference to something that lives elsewhere, so the document creates nothing a Nexus would miss. An entry this build doesn't recognize, or a foreign key on one it does, rides through every read and write untouched and renders inert. Every write of the file is a read-modify-write under its lock; a corrupt file reads as the document last read, or as the empty document when there is none, and the board's own next write sends the damaged bytes to the system Trash and rebuilds from that document, while the configuration passes skip it. A file that can't be read at all opens the board as the document last read, or, when there is none, leaves it closed with a notice that offers to try again; a write that can't land says why, and the board shows the file again. The host's sidecar (`homepage.json`, `_space.json`) never carries the document.
+```
+
 ```.claude/Features/SymbolsPM.md diff
 @@ :18 @@
 -Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `PropertyTypes.tsx`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
 +Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `Core/Properties/typeDisplay.ts`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
 ```
 
-**[Anchor]** `ViewTypesPM.md:91`'s order and `Edit Title` case read P15's landed `cellMenuModel` link kind beside `connectionMenu.ts`; `InteractionPM.md:42` reads P8's landed `useOptionEdit`, and if an option draft no longer stays open on a refusal, its clause says what it does.
+**[Anchor]** `ViewTypesPM.md:91`'s order and `ConnectionsPM.md`'s authoring words read P15's landed `cellMenuModel` link kind beside `connectionMenu.ts`; `InteractionPM.md:42` reads P8's landed `useOptionEdit`, and if an option draft no longer stays open on a refusal, its clause says what it does.
 
 **VERIFY**
 
-- [ ] `git grep -n -E "Clear and Remove|exactly by its label|Edit Link as the inline field and Rename|optionShapeFor|aliases, exclusions, and options|migrateConfig|normalization at open|PropertyTypes\.tsx" -- .claude/Features` answers nothing.
+- [ ] `git grep -n -E "Clear and Remove|exactly by its label|Edit Link as the inline field and Rename|Rename · Edit (Title|Link)|Rename edits the shown text|optionShapeFor|aliases, exclusions, and options|migrateConfig|normalization at open|PropertyTypes\.tsx" -- .claude/Features` answers nothing.
 - [ ] `git grep -n "Repair Properties On Open" -- .claude/Features/ConfigurationPM.md` shows **On** bolded.
 - [ ] `node .claude/scripts/check-atlas.mjs` exits 0.
 - [ ] Check for unnecessary text or mistakes.
@@ -32929,7 +33190,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 #### Behavior Changes and Disclosures
 
 - **None in the App:** the phase changes no production line; the documents, Issues entries, drives, and tests describe behavior P1–P17 landed.
-- **The Documents Now State Nathan's Calls:** the rewritten sentences carry LC-13, LC-14, LC-19, LC-20, LC-21, LC-26, LC-37, LC-47, and N-2 as the documents' own claims, so the reconciliation report's readings and the documents agree.
+- **The Documents Now State Nathan's Calls:** the rewritten sentences carry the plan's rulings and LC-13, LC-26, LC-37, and N-2 as the documents' own claims, so the reconciliation report's readings and the documents agree.
 - **Test Seeds Change Setup Only:** each converted file seeds the same registry and assignment it seeded by hand; no assertion changes.
 
 #### Line Total
@@ -33018,7 +33279,7 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Tally**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Tally**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Morning Report › §What I Need From You* | *Morning Report* |
-| **Directive (10-22-2026)** | Net production delta | — | −834 written on Biome-formatted code (−767 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is −79 | *§Net Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | −759 written on Biome-formatted code (−692 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is −4 | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -33107,23 +33368,23 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4B | −18 | +29 | +11 | | |
 | 5 | −151 | +117 | −34 | | |
 | 6 | −263 | +281 | +18 | | |
-| 7 | −619 | +465 | −154 | | |
+| 7 | −619 | +472 | −147 | | |
 | 8 | −417 | +375 | −42 | | |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −390 | +400 | +10 | | |
-| 11A | −599 | +696 | +97 | | |
-| 11B | −190 | +284 | +94 | | |
-| 12 | −160 | +264 | +104 | | |
+| 11A | −603 | +743 | +140 | | |
+| 11B | −210 | +306 | +96 | | |
+| 12 | −162 | +289 | +127 | | |
 | 13 | −642 | +543 | −99 | | |
 | 14 | −516 | +461 | −55 | | |
-| 15 | −210 | +175 | −35 | | |
+| 15 | −213 | +178 | −35 | | |
 | 16A | −536 | +464 | −72 | | |
 | 16B | −367 | +154 | −213 | | |
 | 17 | −800 | +593 | −207 | | |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
-**Written Total:** −7,414 / +6,580, net **−834**, on each measurement's first outcome. The written cumulative is net-negative at every phase: thinnest at Phase 1's −136, it reaches −458 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +97, +94, +104) leave it at −153 at Phase 12's head, where the Mid-Plan Neutral Gate's range ends. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +92 (−133 / +225), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−767**, and the cumulative is thinnest at Phase 12's head, −79. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +7 and the total −792. **O-5's Fail Outcome:** Task 17-11's remedy adds +14 (−1 / +15), so Phase 17 lands −193 and the total −820. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −711, and the cumulative stays net-negative at every phase, thinnest at Phase 12's head.
+**Written Total:** −7,443 / +6,684, net **−759**, on each measurement's first outcome. The written cumulative is net-negative at every phase: thinnest at Phase 1's −136, it reaches −451 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +140, +96, +127) leave it at −78 at Phase 12's head, where the Mid-Plan Neutral Gate's range ends. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +92 (−133 / +225), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−692**, and the cumulative is thinnest at Phase 12's head, −4. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +7 and the total −717. **O-5's Fail Outcome:** Task 17-11's remedy adds +14 (−1 / +15), so Phase 17 lands −193 and the total −745. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −636, and the cumulative stays net-negative at every phase, thinnest at Phase 12's head.
 
 #### Reconciliation
 
@@ -33219,6 +33480,8 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 - `.claude/Features/ViewTypesPM.md:24`, `:41`, `:55`; `.claude/Features/PommoraUIX.md:347`; `.claude/Features/InteractionPM.md:42` — an unreadable operand left out of abstaining; Select and Status compared by label; empty values placed nowhere in a sort; `optionShapeFor` as a Labels export; option drafts keyed through `useRenameKeys` — Task 18-3
 - `.claude/Features/CorePM.md`'s *§Mutations*, `Core/Nexus/mutateRequest.ts:132`'s comment — a property create on "a feature's own channel" — Task 18-2
 - `.claude/Features/SurfacePM.md:42` — the saved-view normalization at open (`migrateConfig.ts`) naming the tile hosts' folders by hand — Task 18-3
+- `.claude/Features/SurfacePM.md:18`, `.claude/Features/CorePM.md:137` — a damaged file's bytes set aside under a hidden name — Tasks 18-3 and 18-2
+- `.claude/Features/ConnectionsPM.md:45`, `:51` — the link menus' Rename and Edit Title for the alias and the target — Task 18-3
 - `.claude/Features/SymbolsPM.md:18` — the property types' glyphs decided in `PropertyTypes.tsx` — Task 18-3
 
 **Issues Entries**
