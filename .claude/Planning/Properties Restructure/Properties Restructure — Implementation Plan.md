@@ -82,7 +82,7 @@ One notes file, `.nexus/.owed.json`, replaces both; like them it stays on its de
 | **Option Clear** | Its own entry, files; the option stays listed. No longer refused because the property owes work, and an old name the option still owes leaves the pages with it. Missed pages offer Try Again, which clears only the pages still holding the cleared word. |
 | **Remove From a Collection** | Its own entry; the editor returns to the list, and Try Again finishes stashing and stripping the pages it missed; adding the property back to that Collection cancels what's owed there. |
 | **Re-Add to a Collection** | Its Collection joins the property's entry when a page can't be refilled; Try Again refills it from the stash. |
-| **Create (and Rename)** | A name still owed to unfinished work first finishes that work and then lands, for properties, Contexts, and Spaces alike. Only a name the finish still can't free is refused with "An earlier change hasn’t reached every file yet." and Try Again. |
+| **Create (and Rename)** | A name still owed to unfinished work first finishes that work and then lands, for properties, Contexts, and Spaces alike. Only a name the finish still can't free is refused with "An earlier change hasn’t reached every file yet." and Try Again; a name owed only on pages whose front matter Pommora can't rewrite stays free. |
 | **Context Rename** | Its own entry, list, folder, files. If the folder can't move, the list change is undone on the spot and nothing else happened; if the list change can't be undone either, Try Again moves the folder and finishes the files. |
 | **Space Rename** | Its own entry, folder, files. |
 | **Context or Space Delete** | Trash entry, its own entry, list or folder, files. Missed pages offer Try Again instead of putting everything back. |
@@ -104,23 +104,23 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **4A** The Value Write's One Home | `Core/Nexus/governedRoot.ts`, one `reencode`, one single-file writer; each "value" file named for what it holds | −47 |
 | **4B** The Tidy Rule and Repair On Open | The tidy rule as a type fact, spaces-only reads as empty, no-op writes write nothing, Repair On Open defaults on | +11 |
 | **5** One Home per Definition | Collections hold assigned ids; one `schemaOf` and one `holderSchema`; registration from the index; a damaged list opens | −34 |
-| **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding (F3 measured) | +18 |
-| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −147 |
+| **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding (F3 measured) | +24 |
+| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −149 |
 | **8** Option Identity | Permanent option ids in values, views, tiles, and filters; one `bandKey`; NexusOS's one-time conversion | −42 |
 | **9** List First and One Replay Point | The Context rename takes its list step first; one replay point at open | −7 |
 | **10** One Finder | One finder over the tree in `Core/Index/keyHolders.ts`, one writer, and every restore miss reported (G-3) | +10 |
-| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names finished, then used; one Try Again | +140 |
-| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | +96 |
-| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +127 |
+| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names finished, then used; one Try Again | +123 |
+| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | +115 |
+| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +147 |
 | **13** Columns Carry Their Answer | `ResolvedColumn` carries type and definition; one `resolveFieldValue`; `declaredType` leaves | −99 |
-| **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −55 |
-| **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock (02-10 measured) | −35 |
-| **16A** One Value Seat: The Seat, the Table, and Cards | `ValueSeat.tsx` lands and the table and cards run through it | −72 |
-| **16B** One Value Seat: The Native Router, the Panel, and No Fabricated Definition | `MenuSeat` replaces the native router; the panel joins the seat with its one row menu; `syntheticContextDef` leaves | −213 |
-| **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −207 |
+| **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −51 |
+| **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock; the pickers stop fabricating a Context definition at four sites (02-10 measured) | −27 |
+| **16A** One Value Seat: The Seat, the Table, and Cards | `ValueSeat.tsx` lands and the table and cards run through it | −76 |
+| **16B** One Value Seat: The Native Router, the Panel, and No Fabricated Definition | `MenuSeat` replaces the native router; the panel joins the seat with its one row menu; `syntheticContextDef` leaves with its last two sites | −217 |
+| **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −204 |
 | **18** The Documents Read True | Feature documents, Issues entries, drives, matrices, and test seeds read true | 0 |
 
-**Total:** **−759** production lines (−7,443 / +6,684), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +92 and Task 13-7's Fail half lands −7, for **−692**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +14 in Phase 17. Measured figures replace these in *§Net Ledger*.
+**Total:** **−726** production lines (−7,491 / +6,765), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +98, Phase 7's frame keeps the two-argument epoch and lands −143, and Task 13-7's Fail half lands −7, for **−651**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +16 in Phase 17. Measured figures replace these in *§Net Ledger*.
 
 #### Concepts
 
@@ -318,7 +318,10 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `owesRename` • function | Whether an entry still owes a rename, which holds its option parts, its Collections, and a Context's Spaces whole until it lands (H-1). | `Core/Nexus/owed.ts` |
 | `restoreNote` • function | A restore's one conversion of its entry's `strip` into `rename` (H-4), read by the property and the Context and Space restores. | `Core/Nexus/owed.ts` |
 | `distinct` • function | Every name in its parts once, or nothing, as an entry stores a part. | `Core/Nexus/owed.ts` |
-| `owedReport` • function | A many-file change's cascade report, marked `owed` while it left files for Try Again. | `Core/Nexus/owed.ts` |
+| `owedReport` • function | A many-file change's cascade report, marked `owed` while it left files for Try Again or runs under an owed rename. | `Core/Nexus/owed.ts` |
+| `refused` • field | An entry's mark that its last finish missed only files Pommora can't rewrite safely, so it stays owed while `owedName` passes over its names. | `Core/Nexus/owed.ts` |
+| `ConfigReach.refused` • field | The files among a reach's `skipped` whose front matter Pommora can't rewrite safely. | `Core/Nexus/configReach.ts` |
+| `sweptReach` • function | A sweep's two counts as a `ConfigReach`, the one way an arm answers what it missed. | `Core/Nexus/configReach.ts` |
 | `runNoted` • function | The one order of a many-file change: the owed-name refusal, the note, the list step, the sweep, the put-back on a refused note or list step, and the settle, held while the entry it sits under owes a rename. | `Core/Nexus/owed.ts` |
 | `notesFile`, `owes`, `owesAnything` • functions | Module-private helpers for the notes file's path and an entry's owed test. | `Core/Nexus/owed.ts` |
 | `owed` • field | `CascadeReport`'s mark that an entry still owes what the warning counts, which Try Again finishes. | `Core/Nexus/cascade.ts` |
@@ -402,8 +405,9 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | **Phase 14 — The Per-Kind View Record** | | |
 | `shownText` • function | A value as the text its cell shows (an option's label, a text's connections as they read, a link's display text, a list's members joined), or `null`; it replaces `textValue` and `sortText` as the one text projection the filter and the sort read. | `Core/Properties/formatValue.ts` |
 | `valueKinds.ts` • file | The renderer-free per-kind view record: each value kind's filter operators, rule compile, Is Empty reading, sort key, direction words, band, and creation seeds. | `Core/Views/valueKinds.ts` |
+| `groupable` • function | Whether a view groups by a type, read off its kind's `groups` in the record; moved from `properties.ts`. | `Core/Views/valueKinds.ts` |
 | `VALUE_KINDS` • constant | The per-kind view record keyed by `ValueKind`, replacing `KIND_OPS`, the filter's evaluators, the sort's kind switch, the bucket switch, `FROM_GROUP_KEY`, `SEEDS_FROM_SORT`, the seed switch, and the Sort pane's direction switch. | `Core/Views/valueKinds.ts` |
-| `ValueKindSpec` • type | One record entry: `ops`, `filled`, `prepare`, `sortKey?`, `directions`, `bucket?`, `seed?`, and `sortSeeds?`. | `Core/Views/valueKinds.ts` |
+| `ValueKindSpec` • type | One record entry: `ops`, `filled`, `prepare`, `sortKey?`, `directions`, `groups?`, `bucket?`, `seed?`, and `sortSeeds?`. | `Core/Views/valueKinds.ts` |
 | `ValueTest` • type | A compiled test of one value, which `filled` and each `prepare` answer. | `Core/Views/valueKinds.ts` |
 | `SortDirections` • type | The three families of direction words (`'option' \| 'text' \| 'value'`) a kind's `directions` names. | `Core/Views/valueKinds.ts` |
 | `prepareText`, `prepareMembers`, `prepareNumber`, `prepareDate`, `prepareCheckbox` • functions | Each kind family's rule compile, reading its operands once and answering `undefined` (abstain) for an operator it doesn't answer or an operand that doesn't read; they replace the six evaluators. | `Core/Views/valueKinds.ts` |
@@ -413,7 +417,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `compareKeys` • function | Compares two non-null sort keys, numbers by difference and strings as titles; `makeSorter` sorts a `null` key last in either direction before calling it. | `Core/Views/Pipeline/sort.ts` |
 | `ResolvedCriterion.key` • field | A criterion's per-row key reader built once from the kind's `sortKey`, replacing `extract` and `less`. | `Core/Views/Pipeline/sort.ts` |
 | `DIRECTIONS` • constant | The Sort pane's direction words keyed by `SortDirections`, folding the three direction pairs. | `Core/Views/Settings/SortFrame.tsx` |
-| `viewSpecOf` • function | A column type's record entry, read by `reassignable` (a band reassigns when its kind both buckets and seeds) and `groupKeyToValue`. | `Core/Views/reassign.ts` |
+| `viewSpecOf` • function | A column type's record entry, the one per-type lookup into `VALUE_KINDS`, read by `reassignable` (a band reassigns when its kind both buckets and seeds), `groupKeyToValue`, and every other per-type record read. | `Core/Views/valueKinds.ts` |
 | `valueKinds.test.ts` • test file | Holds the five date-bucket cases moved from `group.test.ts` as `describe('the Date bucket')`. | `Core/Views/valueKinds.test.ts` |
 | `group12` • drive | Properties Drive group 12 (K-1, K-2): an unreadable Number operand inside an Any group, a Checkbox "is not empty" filter, and a Select sort's empty row in both directions, with its *Group 12* table in `MATRIX.md`. | `.claude/scripts/Properties Drive/live-drive.mjs` |
 | `checkboxValue` • function | States once that unchecking removes the key; the Checkbox seed, `valueClickIntent`, and `runPropertyAction` read it. | `Core/Properties/propertyValue.ts` |
@@ -425,7 +429,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `pickModel.test.ts` • test file | Carries `massAssign.test.ts`' cases and the `pickShape` case onto `pickOver` and `pickGroups`, with the Select-closes and list-stays-open pins. | `Core/Properties/Pickers/pickModel.test.ts` |
 | `useValueWriter` • hook | Assembles a mounted surface's `ValueWriter`, rebuilt each render and emptied on unmount; replaces the hand-built writers in `useViewHost.ts` and `PropertyPanel.tsx`. | `Core/Properties/assignValue.ts` |
 | `oneShotWriter` • function | A writer for one row no surface shows, as the native menu's pick writes it; replaces `valueCommitFor`'s writer. | `Core/Properties/assignValue.ts` |
-| `"Edit Link"`, `"Edit Title"` • strings | Every link menu's two authoring labels: Edit Title edits the alias (`rename`), Edit Link the target (`editLink`), in that order (J-10). | `Core/Actions/cellMenu.ts`, `Core/Actions/connectionMenu.ts` |
+| `"Edit Link"`, `"Edit Title"` • strings | Every link menu's two authoring labels: Edit Title edits the alias (`editTitle` from Phase 16B, `rename` until then), Edit Link the target (`editLink`), in that order (J-10). | `Core/Actions/cellMenu.ts`, `Core/Actions/connectionMenu.ts` |
 | `span` • field | `DateTimeValuePicker`'s prop offering the End Date switch; the value's own picker passes it and the filter's date operand doesn't. | `Core/Properties/Pickers/DateTimeValuePicker.tsx` |
 | `"Open In Editor"` • string | The text pen's spoken label (J-4), which the drive harness's `PEN` selector reads. | `Core/Properties/Cells/TextCell.tsx` |
 | `cardColumns.ts` • file | `cardValueInput.ts` renamed; holds card visibility and the add chooser's entries. | `Core/Views/Cards/cardColumns.ts` |
@@ -438,7 +442,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `valuesAt` • function | Writes one value onto each path in turn under its own lock, answering one put-back undo. Only on 02-10's Fail outcome. | `Core/Nexus/mutate.ts` |
 | **Phase 16A — One Value Seat: The Seat, the Table, and Cards** | | |
 | `Core/Properties/Cells/ValueSeat.tsx` • file | The shared value seat: one intent dispatch, menu chain, open-value state, inline editor, pick target, and set of floating panes for every value surface. | `Core/Properties/Cells/ValueSeat.tsx` |
-| `useValueSeat` • hook | Owns a surface's open value, its click and right-click chains, its inline editor, and its pick target, given the surface's `SeatHost`. Its `rename` handler and its `syntheticContextDef` reads are interim; Phase 16B removes them. | `Core/Properties/Cells/ValueSeat.tsx` |
+| `useValueSeat` • hook | Owns a surface's open value, its click and right-click chains, its inline editor, and its pick target, given the surface's `SeatHost`. Its `rename` handler and its `syntheticContextDef` read for the value click are interim; Phase 16B removes them. | `Core/Properties/Cells/ValueSeat.tsx` |
 | `ValueSeat` • component | Renders the seat's one picker, which a surface's add chooser shares, and one typed-value popover, each held on the value it last opened on through its exit. | `Core/Properties/Cells/ValueSeat.tsx` |
 | `SeatHost` • type | What a surface hands the seat: its row read, commit, pane anchor, holder, connections, column style and style write, and the optional centering, ghost hold, Remove, Clear, and close. | `Core/Properties/Cells/ValueSeat.tsx` |
 | `SeatOpen`, `ValueSeatApi`, `SeatChooser`, `Mode` • types | The seat's open-value record, its returned API, a surface's add chooser shown in the seat's picker, and the three pane modes (`Mode` is module-private). | `Core/Properties/Cells/ValueSeat.tsx` |
@@ -480,7 +484,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `NUMBER_STYLE_OPTIONS`, `CHECKBOX_STYLE_OPTIONS` • constants | `NumberEditor`'s and `CheckboxEditor`'s `STYLE_OPTIONS` renamed. | `Core/Properties/Schema/typeRows.tsx` |
 | `typeRows.test.ts` • test file | Pins each type's rows under each condition, the scope each control writes, that only Date's rows carry glyphs, and the refused non-positive denominator. | `Core/Properties/Schema/typeRows.test.ts` |
 | `"Edit Icon"` • string | The kit header's icon button's spoken label, matching the option popup and every menu. | `UIX/Menus/InlineEditHeader.tsx` |
-| `assigned` • function | Only on O-5's Fail outcome: resolves once the held tree assigns a newly created property to the pane's Collection, so its editor opens on a definition the list holds. | `Core/Properties/Schema/PropertyFrame.tsx` |
+| `assigned` • function | Only on O-5's Fail outcome: answers `true` once the held tree assigns a newly created property to the pane's Collection, so its editor opens on a definition the list holds, and `false` when the tree doesn't within a second, leaving the list showing. | `Core/Properties/Schema/PropertyFrame.tsx` |
 | `group15` • drive | Properties Drive group 15 (L-1, L-3, O-5): each type's editor measured against the one rhythm with a row revealed and collapsed, a denominator of zero reverting, and an editor whose property leaves showing the list, with its *Group 15* table in `MATRIX.md`. | `.claude/scripts/Properties Drive/live-drive.mjs` |
 | **Phase 18 — The Documents Read True** | | |
 | — | None. | — |
@@ -804,6 +808,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `withSeeds` • function | Folded into `patchedValues`. Only on F3's Fail outcome, where Phase 6's revert restores it; on Pass, Phase 6 has already removed it. | `Core/Views/Host/useViewCreation.ts` |
 | **Phase 14 — The Per-Kind View Record** | | |
 | `textValue` • function | Replaced by `shownText`. | `Core/Views/Pipeline/filter.ts` |
+| `TypeSpec.groups` • field | Grouping is the value kind's fact, stated once on `VALUE_KINDS` and read through `groupable`. | `Core/Properties/properties.ts` |
 | `sortText` • function | Replaced by `shownText`. | `Core/Views/Pipeline/sort.ts` |
 | `FILTER_OP_SET` • constant | The unknown-op gate; an op a kind doesn't answer now abstains through its `prepare`. | `Core/Views/Pipeline/filter.ts` |
 | `Evaluator` • type | Replaced by `ValueTest`. | `Core/Views/Pipeline/filter.ts` |
@@ -869,7 +874,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `pickSeq` • constant | The pick-request counter; removed with the presenter's echo, its one reader. | `Core/Session/chromeSlice.ts` |
 | `pendingPick.id` • field | The pick request's sequence id; removed with the presenter's echo. | `Core/Session/chromeSlice.ts` |
 | `ValuePickRequest.def`, `ValuePickRequest.current` • fields | The request's definition and value snapshot; replaced by `column` and `rowOf`. | `Core/Session/chromeSlice.ts` |
-| `{ kind: 'rename' }` • type | `ValueIntent`'s `rename` arm and its handler-table entry; folded into `popover` carrying `seat: 'rename'`. | `Core/Properties/Pickers/valueClick.ts` |
+| `{ kind: 'rename' }` • type | `ValueIntent`'s `rename` arm and its handler-table entry; folded into `popover` carrying `seat: 'editTitle'`, the alias action's name for what it edits. | `Core/Properties/Pickers/valueClick.ts` |
 | `rename` • field | Phase 16A's interim seat handler for the `rename` intent; folded into `popover`. | `Core/Properties/Cells/ValueSeat.tsx` |
 | `Core/Properties/Cells/valueMenuTarget.ts` • file | Removed; the seat's `menu` states its body. | `Core/Properties/Cells/valueMenuTarget.ts` |
 | `valueMenuTarget` • function | Folded into the seat's `menu`. | `Core/Properties/Cells/valueMenuTarget.ts` |
@@ -884,7 +889,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `fileValueMenu` • function | The panel's File menu, replaced by the seat's row menu with `runFileMenuAction`. | `Core/Properties/Pickers/filePick.ts` |
 | `currentOf` • function | The panel's value read by id; the seat reads the value through the column. | `Core/Properties/PropertyPanel.tsx` |
 | `editingDef`, `panelTarget` • constants | The panel's open definition and pick target; folded into the seat's `target`. | `Core/Properties/PropertyPanel.tsx` |
-| `syntheticContextDef` • function | The fabricated Context definition; the pickers, the pick model, the filter's chips, and the native menu's builder read the resolved column instead. | `Core/Properties/Pickers/PropertyPicker.tsx` |
+| `syntheticContextDef` • function | The fabricated Context definition; Phase 15 moves the pickers, the pick model, the mass picker, and the filter's chips onto the resolved column, and Phase 16B removes the value click's and the native menu's reads with the function. | `Core/Properties/Pickers/PropertyPicker.tsx` |
 | `PickTarget.def` • field | Leaves the options and dateTime arms; only the file arm carries the File definition its pane reads. | `Core/Properties/Pickers/PropertyPicker.tsx` |
 | `def` • field | The definition prop of `PropertyOptionRows`, `MassPropertyPicker`, and `ChipsField`; renamed `column`. | `Core/Properties/Pickers/PropertyPicker.tsx`, `Core/Properties/Pickers/MassPropertyPicker.tsx`, `Core/Views/Settings/FilterFrame.tsx` |
 | `def` • constant | `runPropertyAction`'s local definition lookup with its fabricated fallback; `pickedValue` reads the column. | `Core/Interface/Menus/propertyMenuActions.ts` |
@@ -997,6 +1002,8 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Applied, Not Retyped (10-22-2026):** we should not waste tokens re-writing what's already been written.
 - **Lean Execution (10-22-2026):** Lean, establish phase reviews where they matter. Give docs opus-medium instead of high; dual-agent closeout for the phase reviews please.
 - **No Leftovers (10-22-2026):** When making any decisions. Ensure you know that I don’t want any leftovers to be allowed to remain format when there’s clear ways for them to be flushed or tidied. That’s a constraint — if you’re making in-flight decisions during planning, assume I don’t want stale leftovers in peoples nexuses or leave things “clogged” when simply removing them is an option without additional cost and rides what’s already established codebase pattern
+- **Try Again Unclogs (10-22-2026):** Anything where an error occurs, and a "Try Agin" option would retry it, it should be available. We shouldnt just report erros with the ActionLabel that cannot be "unclogged" if you get what I'm saying.
+- **Unambiguous Reduction (10-22-2026):** I also need to make the intent clear that were unambigiously reducing how much stuff is wwithin the codebase. You should unarguabaly have an easier time adding more stuff, changing things, explaining it, and patching the codebase in the future from a brefore-and-after perspective.
 
 ##### Working Rules
 
@@ -1052,14 +1059,14 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean (`biome lint` exits 0 with warnings, so its `Found N warnings` line is read). Biome formats every TS/CSS/JSON write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A VERIFY grep runs under default `git grep`, whose basic regex alternates with `\|`; `grep -r` is never used, since it reaches `Desktop/out/`. Every removal check uses `git grep -nw` for a whole symbol, or `git grep -n` with an exact, anchored pattern; `\b`, `\s`, and `\d` never appear inside `git grep -E`, where this toolchain's regex never matches them (`-w`, `[[:space:]]`, or basic regex with `\|` take their place), and no pattern also matches an unrelated name that survives. A clean state for the gates is a `git status` showing nothing outside `.claude/`. `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` are part of the test gate and fail the moment host-run code reaches React or a `.tsx`.
 - **The Drive:** every visual or interactive claim is proven by the Properties Drive (`.claude/scripts/Properties Drive/live-drive.mjs`, on `.claude/scripts/drive-harness.mjs`, which builds the app, backs up `~/Test`, launches on its own debug port and userData, records native menus, and restores `~/Test`), created in Phase 2 with its first group and grown by one group in the last task of each phase with a visible surface. Every Review Checkpoint runs every landed group from the checkout, and the Metadata, Option Picker, and Text Property drives are re-pointed in the phase that changes what they select. A drive check is a DOM, channel-reply, or disk assertion; a screenshot is evidence beside it, never the check. Each new check is run once at its phase's base: a check claiming a change fails there before its task lands, and a check that passes there is named in its CHANGE as a regression guard. `.claude/Guidelines/Development-Environment.md` is read before anything drives the app. Nothing is left to Nathan's hand.
-- **Frozen:** `Core/Sync/`, its tests included (*Sync Stays*: `mergePolicy.test.ts` keeps its cases; what Sync loses goes to *Planning Findings › §Sync Rebuild Inputs*); Project Sapphire; MarkdownPM; the property settings panes' layout and every row's wording (I-1: no row moves and no row's words change, and only Date's rows carry icons, since the rest is I-076's pass); NexusOS's files, except the four Phase 8's conversion writes after its backup.
+- **Frozen:** `Core/Sync/`, its tests included (*Sync Stays*: `mergePolicy.test.ts` keeps its cases; what Sync loses goes to *Planning Findings › §Sync Rebuild Inputs*); Project Sapphire; MarkdownPM; the property settings panes' layout and every row's wording (I-1: no row moves and no row's words change, except the Date type's name, which reads "Date & Time" wherever a type is named (Phase 3, ruled 10-22-2026), and only Date's rows carry icons, since the rest is I-076's pass); NexusOS's files, except the four Phase 8's conversion writes after its backup.
 - **Conventions:** "LC-n" and "NC-n" cite *Morning Report › §What I Need From You*; each task states the substance it leans on. A cited line is HEAD `3c6afcabb`'s, and where an earlier task moved it, the function's or test's title is the anchor. Production comments carry no planning ids. Finite states are unions plus exhaustive switches; `Core/Contract` is the one bridge, and every property change rides the `mutate` union from Phase 7 on; host-run code imports no React and no `.tsx`. User-facing copy is only what a Last Call quotes. Nothing committed outside `.claude/` carries a personal name, commit messages included.
 - **Diff Notation:** each task's code lands as fenced blocks labelled with the repo path and `diff`, or `(new)` for a whole new file, each hunk opening on `@@ <anchor> @@`: the declaration, test title, or line it sits at. Space, `-`, and `+` lines are context, removal, and addition. A `…` line elides: on a `-` line it removes the lines it stands for, up to the next listed line, and elsewhere it keeps them; a `~` line is elided context. A one-line summary, `head { … }   (HEAD :a-b)`, stands for that whole block, and a `+` summary reading `(moved verbatim, HEAD path:a-b)` lands the source's lines unchanged; a block opening `~ the whole file after …` is the file entire. A block that lands on only one outcome of a measurement has `*Only on <Rule>'s <Outcome>:*` as the nearest line above it. `.claude/scripts/plan-replay/plan_replay.py` reads this notation: `check` replays the plan in order over a commit, `measure` counts it under *The Number*'s rule, and `apply` writes one task into the checkout.
 - **Sequencing:** removal and consolidation precede anything additive, and changes to what exists precede new surface unless the new surface is foundational; a new type, field, op, or function lands with its first consumer, in that consumer's task. Every phase leaves a shippable head: gates green, no half-moved state, and every landed drive group green.
 - **Shape:** a removal, a refactor, a migration, and a handful of fixes. The removal's inventory is *§Concepts › REMOVED*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior, kept except where a phase's *Behavior Changes and Disclosures* names a change (each tied to a decision or a Last Call) and proven by the tests each task rewrites or adds; every removal task lists its consumers and the `git grep` proving none remain. The migration is Phase 8's one-time NexusOS conversion: a backup to `~/NexusOS-Backup-<MM-DD-YYYY>/` before its first write, a transform that changes nothing on a second run, and the backup removed by its path at *§Final Verification*'s closeout. Each fix sweeps what else consumed the old behavior.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals; every existing entry the work touches is closed or narrowed in place with no successor (Phase 18), and anything that can't finish inside the plan is reported as a Last Call row, never filed.
 - **Measurements:** each measuring task runs *Planning Findings › §Measurement Rules* as written: the Benchmark Nexus (`node .claude/scripts/make-benchmark-nexus.mjs large`), the measurement, the threshold, and both outcomes as concrete steps, so the executor runs a rule; the Benchmark Nexus and its timed sidecar are swept after.
-- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The written cumulative production delta is net-negative at every phase from Phase 1 on: on the first outcomes it is thinnest at Phase 1's −136, with Phase 12's head close behind at −157 after the net-positive run of Phases 10 through 12, and on F3's Fail it is thinnest at Phase 12's head, −83. *§Final Verification* proves the measured cumulative the same way.
+- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. On the first outcomes the written cumulative production delta is net-negative at every phase from Phase 1 on, thinnest at Phase 12's head, −52, after the net-positive run of Phases 10 through 12; on F3's Fail it rises to +28 at Phase 12's head and is net-negative again from Phase 13's head, −78. *§Final Verification* proves the measured cumulative the same way.
 - **Execution:** the plan runs end to end through `c/plan-execution`, autonomously, in the main checkout on `active`: executors edit in place, each phase commits its own files with `git commit --only` (after `git add` of any new or moved file, which `--only` otherwise skips), and the Properties Drive builds and launches from the checkout. If Nathan's live app runs from this checkout, the drive runs from a worktree of the phase's head built by `.claude/scripts/editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`. Each phase goes to one `execution-agent` carrying *§Context*, *§Overview*, this *§Constraints* whole, and its phase: `opus-low` for Phases 1 and 9, `sonnet-medium` for Phase 18, and `opus-medium` for the rest. For each task in order it first runs `python3 .claude/scripts/plan-replay/plan_replay.py apply "<this plan>" <task-id>`, adding `--outcome <Rule>=<Outcome>` once a measurement has landed on another outcome; the tool writes the task's blocks into the checkout and formats them with Biome. The executor reads its report and `git diff` against the AFTER, completes by hand only the hunks the tool refused and the CHANGE's prose steps, and runs VERIFY, retyping nothing an AFTER already holds. It reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks each task's result against its AFTER and VERIFY. Reviewers sit where a phase rewrites user data, the crash-recovery path, or a surface every value passes through: the Review Checkpoints of Phases 6, 8, 11B (reading 11A with it), 12, 16B (reading 16A with it), and 17 each dispatch two read-only `opus-high` agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, consequences; its closing procedures, write-guards, and output format don't apply), one leading on simplification and one adversarial, each carrying *§Constraints* whole and the do-not-re-raise list below, reading outward rather than in isolation, with no implementation running meanwhile, and Phase 18's checkpoint runs its `opus-medium` documentation spotcheck; every other checkpoint closes on its gates, its drive group, and its measure; the orchestrator verifies each finding against the tree, fixes what holds, and weighs the landed work against the Approach and Principles before the next phase opens. An in-flight call is weighed against *§Constraints*, disclosed in chat, and recorded under *§Deviations* where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`, repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim in the handoff, and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
 - **Neutral Gates:** two, each a `fable-high` agent that wrote and reviewed nothing, given only the BASELINE head, the head named, and the intention statement quoted in its gate, with no plan, log, principle, or document; it answers yes or no on whether the range holds, with its corrections; a "no" routes back to the orchestrator, the fix lands, and the gate runs again until it answers yes. The first closes Phase 12, where the data layer completes; the second runs inside *§Final Verification*.
 - **Directive (10-22-2026):** Nathan's, verbatim, which execution and every review answer to as the plan's own reviews did: "If there's any behavior you assume ISNT my intention, that gets flagged. Ensure that the plans own reviews honestly assert its adherence to the approach and principles; concretely less of the flagged practices and perspectives: net-negative delta; zero room for two issues being replaced by one new one except the two previous issue-logged items; codebase must adhere to our standards unambiguously and be the honest better environment as a result." The two previously logged items are I-076 and I-077.
@@ -1232,8 +1239,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - [ ] **Phase 16B** — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
   - [ ] Task 16B-1 · The native menu's router folds into `MenuSeat`
   - [ ] Task 16B-2 · The Properties panel splits along the seat
-  - [ ] Task 16B-3 · The pickers read the resolved column
-  - [ ] Task 16B-4 · Drive group 14
+  - [ ] Task 16B-3 · Drive group 14
   - [ ] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 17 opens]`
 - [ ] **Phase 17** — The Properties Pane
@@ -5657,13 +5663,14 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 - [ ] Write the chip-shape pin and watch it fail: `Core/Properties/typeDisplay.test.ts` › `describe('chipOf')` › "draws a Status option as a pill, a Select or Multi-Select option as a tag, and an option with no declared type as a Select's" (`chipOf('status')` → `{ shape: 'pill', glyph: 'circle-dashed' }`; `chipOf('select')` → `{ shape: 'tag', glyph: 'tag' }`; `chipOf('multiSelect')` → `{ shape: 'tag', glyph: 'tags' }`; `chipOf(undefined)` equals `chipOf('select')`).
 - [ ] Rewrite `Core/Actions/columnMenu.test.ts:171-175` ("says Format for the two whose rows are one") as "names Link's look Format and Number's Style" (`label('link')` → `'Format'`, `label('number', true)` → `'Style'`) and watch it fail on Number; `:181-184`'s "leaves the rest as Style" stays.
 - [ ] `git mv Core/Properties/Cells/PropertyTypes.tsx Core/Properties/typeDisplay.ts` (with `PropertyTypeIcon` folded below, it holds no JSX, so it's a `.ts`) and `git mv Core/Properties/Cells/columnLabel.ts Core/Properties/columnLabel.ts` with `git mv Core/Properties/Cells/columnLabel.test.ts Core/Properties/columnLabel.test.ts`; fix each moved file's relative imports.
-- [ ] `TYPE_META` gains `chip` on its three option rows and `styleLabel: 'Format'` on Link; `chipOf` and `styleLabel` are exported; `PropertyTypeIcon` and `typeDisplay.ts`'s `Icon` import leave, and its five call sites draw `<Icon name={propertyTypeIconName(…)} size={…} />`.
+- [ ] Write `Core/Properties/typeDisplay.test.ts` › "names the Date & Time type in full" and watch it fail: `propertyTypeLabel('dateTime')` → `'Date & Time'`.
+- [ ] `TYPE_META` gains `chip` on its three option rows, and Date's label reads `'Date & Time'` (ruled 10-22-2026) and `styleLabel: 'Format'` on Link; `chipOf` and `styleLabel` are exported; `PropertyTypeIcon` and `typeDisplay.ts`'s `Icon` import leave, and its five call sites draw `<Icon name={propertyTypeIconName(…)} size={…} />`.
 - [ ] `optionShapeFor` and its `LabelShape` import leave `recipes.tsx`; `OptionChip`, `GhostOptionChip`, and `OptionDraft` read `chipOf(type).shape`; `optionGlyph` reads `chipOf(type).glyph` for its default.
 - [ ] `styleMenuLabel` leaves `columnMenu.ts`; `styleBranch` reads `styleLabel(ctx.type)`.
 - [ ] The seven `type: string` props become `PropertyType` (`OptionChip`, `optionGlyph`, and `BucketFace` take `PropertyType | undefined`), and the three `?? ''` leave.
 - [ ] Re-point every reader of `Cells/PropertyTypes` and `Cells/columnLabel`.
 - [ ] `git grep -nw "optionShapeFor\|styleMenuLabel\|PropertyTypeIcon\|Cells/PropertyTypes\|Cells/columnLabel" -- Core UIX` finds nothing; `git grep -n "type: string" -- Core/Properties/Cells Core/Properties/Schema Core/Views/Bands/bandModel.ts` names none of the seven; `git grep -n "type={dt ?? ''}\|type ?? ''" -- Core` finds nothing.
-- [ ] Commit: `git commit --only -- Core/Properties/typeDisplay.ts Core/Properties/typeDisplay.test.ts Core/Properties/Cells/PropertyTypes.tsx Core/Properties/columnLabel.ts Core/Properties/columnLabel.test.ts Core/Properties/Cells/columnLabel.ts Core/Properties/Cells/columnLabel.test.ts UIX/Labels/recipes.tsx Core/Properties/Cells/OptionChip.tsx Core/Properties/Schema/GhostOptionChip.tsx Core/Properties/Schema/useOptionEdit.tsx Core/Properties/Schema/OptionRow.tsx Core/Properties/Schema/OptionEditPopup.tsx Core/Views/Bands/bandModel.ts Core/Properties/Cells/Cell.tsx Core/Views/Settings/GroupFrame.tsx Core/Actions/columnMenu.ts Core/Actions/columnMenu.test.ts Core/Archive/ArchiveView.tsx Core/Settings/TrashFrame.tsx Core/Views/Cards/CardsView.tsx Core/Views/Settings/VisibilityFrame.tsx Core/Views/Table/TableView.tsx Core/Properties/Schema/PropertyFrame.tsx Core/Views/paneTargets.ts Core/Interface/Menus/propertyMenuActions.ts Core/Views/Cards/cardValueInput.ts Core/Views/Host/useViewInteractions.tsx -m "The renderer type record took the chip shape, chip glyph, and look-menu name, and a Number column's look now reads Style."`
+- [ ] Commit: `git commit --only -- Core/Properties/typeDisplay.ts Core/Properties/typeDisplay.test.ts Core/Properties/Cells/PropertyTypes.tsx Core/Properties/columnLabel.ts Core/Properties/columnLabel.test.ts Core/Properties/Cells/columnLabel.ts Core/Properties/Cells/columnLabel.test.ts UIX/Labels/recipes.tsx Core/Properties/Cells/OptionChip.tsx Core/Properties/Schema/GhostOptionChip.tsx Core/Properties/Schema/useOptionEdit.tsx Core/Properties/Schema/OptionRow.tsx Core/Properties/Schema/OptionEditPopup.tsx Core/Views/Bands/bandModel.ts Core/Properties/Cells/Cell.tsx Core/Views/Settings/GroupFrame.tsx Core/Actions/columnMenu.ts Core/Actions/columnMenu.test.ts Core/Archive/ArchiveView.tsx Core/Settings/TrashFrame.tsx Core/Views/Cards/CardsView.tsx Core/Views/Settings/VisibilityFrame.tsx Core/Views/Table/TableView.tsx Core/Properties/Schema/PropertyFrame.tsx Core/Views/paneTargets.ts Core/Interface/Menus/propertyMenuActions.ts Core/Views/Cards/cardValueInput.ts Core/Views/Host/useViewInteractions.tsx -m "The renderer type record took the chip shape, chip glyph, and look-menu name, and a Number column's look now reads Style and the Date type Date & Time."`
 
 **AFTER**
 
@@ -6479,7 +6486,8 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 #### Behavior Changes and Disclosures
 
-- **Number's Look Reads "Style" (I-4, Nathan's Intent):** the column header's right-click and a Number cell's right-click (both through `styleBranch`) name the Number or Bar choice "Style"; a Link column keeps "Format". No other label, glyph, chip, or order changes.
+- **Number's Look Reads "Style" (I-4, Nathan's Intent):** the column header's right-click and a Number cell's right-click (both through `styleBranch`) name the Number or Bar choice "Style"; a Link column keeps "Format". No other label, glyph, chip, or order changes but Date's.
+- **The Date Type Reads "Date & Time" (Nathan's Intent, Ruled 10-22-2026):** every place a type is named, the type picker, a column's type row, and a new property's name ("New Date & Time"), reads "Date & Time" where it read "Date"; a property already named "New Date" keeps its name.
 - **No Other Visible Change:** the Select chip keeps `'tag'` (M-1), user-made Status groups keep `'circle-dashed'` (M-2), the value picker still creates Select and Multi-Select options and not Status ones (J-8), and every picker list reads its values, labels, and order as at HEAD.
 - **`lookIn` Behaves as the Ternaries Did:** a stored look naming another type's look (only a hand edit writes one) still reads as the type's default.
 
@@ -9599,6 +9607,7 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
   - "an unknown Space title survives a Context undo" (the page seeded `<Projects>: [Pommora, Ghost]`, `setContext` with `spaceIds: []` clears it, the undo reads `<Projects>: [Pommora, Ghost]` back).
   - "a Space link’s undo puts back both halves" (a second Context `Areas` with Space `Home`; `setContext` on `Home`'s path for `Projects` with `[Pommora's id]` writes `Home`'s `<Projects>` and `Pommora`'s `<Areas>`; the reply's record holds two entries; after the undo neither sidecar holds either key).
   - "an entry naming a file that’s gone reports it missed": an undo whose page was deleted meanwhile answers a cascade whose `warning` reads "Couldn’t update 1 Item." and writes nothing.
+  - "a Context tag's undo lands while the property list is damaged": tag a page with a Space, write `{` to `.nexus/properties.json`, undo; the page's Context key reads as it did before the tag.
   - The file's imports gain `MutateReply` (`../Nexus/mutateRequest`), `splitFrontmatter` (`../Files/pageFile`), `renameProperty` (`./registryProperty`), `seedNexus` (`../Testing/hostFs`), and `stat` and `utimes` (`node:fs/promises`); `createProperty` and `assignProperty` leave with the hand-rolled seed.
 - [ ] `Core/Nexus/mutateRequest.ts`: `restoreValue` stays until Task 6-3.
 - [ ] `Core/Nexus/governedRoot.ts`: `writeSpaceSidecar` moves in from `contextWrite.ts` unchanged, since `contextWrite.ts` imports this module from P4A on and a put-back here reading it from there would close an import cycle. `rewriteRootAt` keeps P4A's signature: a value writer reads the key's pair inside its own page rewrite, before handing the page to `rewriteRaw`, whose merge mutates the document.
@@ -9669,12 +9678,11 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 +  return written.ok ? ok(null) : written
 +}
 +
-+/** The key a property or a Context is written under now. */
++/** The key a property or a Context is written under now. A Context resolves from the tree first, so a tag's undo never reads the property list, which a damaged file makes throw. */
 +async function keyNow(root: string, id: string): Promise<string | undefined> {
-+  const def = (await readRegistry(root)).defs[id]
-+  if (def) return def.key
 +  const group = contextWorldOf((await liveTreeOf(root)).contexts).groupById.get(id)
-+  return group && contextKey(group.def.title)
++  if (group) return contextKey(group.def.title)
++  return (await readRegistry(root)).defs[id]?.key
 +}
 +
 +/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node so a bare key comes back bare, leaving every other key as it now stands and a file whose key already reads so unwritten; answers how many files it couldn't put back. */
@@ -10023,8 +10031,10 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 - [ ] `Core/Properties/setProperty.ts`: `requestedValue`, the `restoreValue` member of the request type, and the `PropertyDefinition` import only `requestedValue` read leave; both ops read `valueToWrite(def, req.value)` directly (P1 made it answer the encoded value).
 - [ ] `Core/Nexus/mutateRequest.ts` (AFTER).
 - [ ] `Core/Nexus/mutate.ts` (AFTER).
+- [ ] `Core/Session/nexusSlice.ts`: a value write its file refused for a reason a retry can clear (`'operation-failed'`) offers Try Again, sending the same request (AFTER); a refusal a retry can't change (a page gone, a name or value refused) reports as today (*Try Again Unclogs*).
+- [ ] Write `Core/Session/store.test.tsx` › "a value write refused by its file offers Try Again, which sends it again" and watch it fail: the mocked dialer answers `{ ok: false, error: { code: 'operation-failed', message: 'Couldn’t write “A”.' } }` once, then ok; the notice reads the message with Try Again, and pressing it sends the same `setProperty`.
 - [ ] Removal proofs: `git grep -nw "restoreValue\|requestedValue" -- Core UIX Desktop` answers 0 (`Core/Properties/putBack.test.ts` holds none after Task 6-2); `git grep -nw "held" -- Core/Properties/assignValue.ts` answers 0.
-- [ ] Commit: `git commit --only -m "Undo sent the record each write answered, and the renderer's held copy left." -- Core/Properties/assignValue.ts Core/Properties/assignValue.test.ts Core/Properties/setProperty.ts Core/Nexus/mutateRequest.ts Core/Nexus/mutate.ts`
+- [ ] Commit: `git commit --only -m "Undo sent the record each write answered, and the renderer's held copy left." -- Core/Session/nexusSlice.ts Core/Session/store.test.tsx Core/Properties/assignValue.ts Core/Properties/assignValue.test.ts Core/Properties/setProperty.ts Core/Nexus/mutateRequest.ts Core/Nexus/mutate.ts`
 
 **AFTER**
 
@@ -10201,6 +10211,26 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
      case 'setProperty':
 -    case 'restoreValue':
        return isMarkdownFile(req.path)
+```
+
+```Core/Session/nexusSlice.ts diff
+@@ imports @@
+ import {
+   clearNotification,
+   notifyReport,
++  notifyRetry,
+   warnCascade,
+@@ mutate @@
+       const res = await dialer().ask('mutate', req)
+       if (!res.ok) {
+-        if (!quiet) reportRefusal(res)
++        if (quiet) return null
++        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
++        if ((req.op === 'setProperty' || req.op === 'setContext') && res.error.code === 'operation-failed')
++          notifyRetry(res.error.message, () => void get().mutate(req))
++        else reportRefusal(res)
+         return null
+       }
 ```
 
 **VERIFY**
@@ -10878,6 +10908,7 @@ No repository file changes on **Pass**. On **Fail**, the tree reads as Task 6-4'
 
 #### Behavior Changes and Disclosures
 
+- **A Value Write Its File Refused Offers Try Again (Try Again Unclogs, Nathan's Intent):** a value set from a cell, a picker, or the panel that fails on its file (unreadable, unwritable, or busy writing) shows the refusal with Try Again, which sends the same value again; a refusal no retry can change (the page is gone, or the value is refused) reads as today.
 - **Undo Puts Back the File's Own Spelling (E-1, E-2; Nathan's Intent):** a bare `Status:` comes back bare, a key's quoting, flow style, trailing comment, and a YAML alias (`B: *x`) come back as written, and only the edited key changes; a sibling the write tidied stays tidied. I-063's unfixed half no longer occurs (its text is P18's).
 - **An Undo That Changes Nothing Writes Nothing (Nathan's Intent):** undoing a write that changed nothing, such as a re-pick of the value a page or Space already holds, leaves the file and its modified time alone, as the write itself did.
 - **Unknown Context Titles Survive an Undo (Nathan's Intent):** undoing a tag change on a page whose tag names a Space Pommora can't find puts the unknown name back.
@@ -10891,18 +10922,18 @@ No repository file changes on **Pass**. On **Fail**, the tree reads as Task 6-4'
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 6-1 One key's pair | −4 | +30 | +26 |
-| 6-2 The record and the put-back | −52 | +115 | +63 |
-| 6-3 Undo sends the record | −66 | +56 | −10 |
+| 6-2 The record and the put-back | −52 | +114 | +62 |
+| 6-3 Undo sends the record | −67 | +64 | −3 |
 | 6-4 The alias comes back | −11 | +24 | +13 |
 | 6-5 The picked overlay (F3) | −130 | +56 | −74 |
 | 6-6 | 0 | 0 | 0 |
 | 6-7 | 0 | 0 | 0 |
-| **Phase 6 (F3's Pass)** | **−263** | **+281** | **+18** |
-| **Phase 6 (F3's Fail, Task 6-5 Reverted)** | **−133** | **+225** | **+92** |
+| **Phase 6 (F3's Pass)** | **−264** | **+288** | **+24** |
+| **Phase 6 (F3's Fail, Task 6-5 Reverted)** | **−134** | **+232** | **+98** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +50 net (`restoreValue.test.ts`'s helpers, the two re-key tests, and `applyValueAtRoot`'s describe out, about −45; the pair, put-back, no-op undo, alias, and overlay pins in, about +95).
-- **Net-Positive Rationale:** under *Less Stuff*, the undo half (Tasks 6-1 through 6-4, +92) is required behavior no existing landing performs: an undo that puts back the file's own node. The sweep's `keysPutBack` writes parsed values with the file's times and leaves in P11B, so it can't carry it. Its cost is `pair` and `withPair` (+26 with the no-op rule and the alias) and the record each value write captures with the put-back that lands it (+63 in 6-2, `writeSpaceSidecar`'s move joining the two `governedRoot` imports P4A already wraps). In return, the undo has one route, no second page or Space writer exists, and the renderer stops encoding; F3's overlay (−74) also retires the pending `fm`/`contexts` shapes, `spaceRowOf`'s `fm`, and the epoch's key pair. On F3's Pass the phase lands +18; on its Fail it lands +92, which goes to the reconciliation report with F3's trace.
+- **Net-Positive Rationale:** under *Less Stuff*, the undo half (Tasks 6-1 through 6-4, +98, the value write's Try Again included) is required behavior no existing landing performs: an undo that puts back the file's own node. The sweep's `keysPutBack` writes parsed values with the file's times and leaves in P11B, so it can't carry it. Its cost is `pair` and `withPair` (+26 with the no-op rule and the alias) and the record each value write captures with the put-back that lands it (+62 in 6-2, `writeSpaceSidecar`'s move joining the two `governedRoot` imports P4A already wraps). In return, the undo has one route, no second page or Space writer exists, and the renderer stops encoding; F3's overlay (−74) also retires the pending `fm`/`contexts` shapes, `spaceRowOf`'s `fm`, and the epoch's key pair. On F3's Pass the phase lands +24; on its Fail it lands +98, which goes to the reconciliation report with F3's trace.
 
 ---
 
@@ -11823,7 +11854,7 @@ The five remaining `unsweptLine` readers change one import each:
   | `'property:holders', id[, of]` | `'property:holders', id, { of: 'property' }` · `{ of: 'option', label }` · `{ of: 'format', change }` | — |
 - [ ] `propertyWrite.ts` is deleted.
 - [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'replayProperty' })`; a property delete's cascade is left to its Deleted notice; an `addProperty` reply carrying `landedAs` posts "Created “…”." (O-4), as AFTER.
-- [ ] The renderer: `PropertyFrame.tsx`, `useOptionEdit.tsx`, and `PropertyPanel.tsx` as AFTER; `createActions.ts` and `useViewCreation.ts` read `created.path` only where `created` holds one. `bumpValuesEpoch` takes no arguments from Task 6-5, so the frame calls `bumpValuesEpoch()` as it does. On F3's Fail (Task 6-6's revert), `rekeyOverrides` and `bumpValuesEpoch(oldKey, newKey)` stand: the frame reads `from` as `defOf(id)?.key` before the send and `to` as that definition's key in `useSession.getState().tree` after it, which the write gate pushes before the reply leaves (`Core/Contract/handlers.ts:98`), and calls `bumpValuesEpoch(from, to)` when they differ; `cacheSlice.ts` and `useContainerValues.ts` stay as P6 left them.
+- [ ] The renderer: `PropertyFrame.tsx`, `useOptionEdit.tsx`, and `PropertyPanel.tsx` as AFTER; `createActions.ts` and `useViewCreation.ts` read `created.path` only where `created` holds one. `bumpValuesEpoch` takes no arguments from Task 6-5, so the frame calls `bumpValuesEpoch()` as it does. On F3's Fail (Task 6-6's revert), `rekeyOverrides` and `bumpValuesEpoch(oldKey, newKey)` stand: the frame reads `from` as `defOf(id)?.key` before the send and `to` as that definition's key in `useSession.getState().tree` after it, which the write gate pushes before the reply leaves (`Core/Contract/handlers.ts:98`), and calls `bumpValuesEpoch(from, to)` when the reply carries a cascade, which a rekey answers only when the key moves; `cacheSlice.ts` and `useContainerValues.ts` stay as P6 left them.
 - [ ] Rewrite the tests the fold makes false, each by one rule:
   - **Channel calls become ops:** `Core/Properties/handlers.test.ts` calls `nexusHandlers.mutate(ctx, req)` (its `ctx` gains `trashMode: async () => 'nexus'`, which `trashDeps` reads) in place of `propertiesHandlers['<channel>'](ctx, …)`, by the table above; "schema:add writes the key from the label, replacing a key the payload carries" sends `draft: { label: 'Due Date', key: 'whatever', type: 'text' }` and reads `created.propertyId`; "an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault" becomes "…then answers the skip on its cascade" (`ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } })`); every replay that answered `ok(null)` answers `ok({ cascade: { pages: [], hosts: <its hosts> } })` and every one that answered `fault(unsweptLine(1))` answers `ok({ cascade: { pages: [], hosts: <its hosts>, warning: unsweptLine(1) }, retry: { op: 'replayProperty', record } })` (`toMatchObject` where hosts vary); `r.value.owed` reads `r.value.retry` as `{ op: 'replayProperty', record }`; "property:setKeyFormat refuses a format that isn’t a Key Format" and its Value Format twin become one case, "a format change that isn’t a Key Format is refused as malformed" (`fault('Malformed request.')`). `Core/Contract/writeGate.test.ts:138-159`'s three property rows call `nexusHandlers.mutate` with `addProperty`, `renameProperty`, and `editOption`, keeping their push lists.
   - **Direct calls read the one reply:** in `registryProperty.test.ts`, `optionOps.test.ts`, `deleteProperty.test.ts`, `replaySchemaCascade.test.ts`, `unassignProperty.test.ts`, `assignment.test.ts`, `journalWiring.test.ts`, `cascadeRace.test.ts`, `Core/Nexus/settle.test.ts`, `keyHolders.test.ts`, `restoreProperty.test.ts`, and `trashRecovery.test.ts`, `.value.owed` reads `.value.retry?.record`; a `ConfigReach` expectation `ok({ skipped: n, hosts })` on Remove reads `ok({ cascade: { pages: [], hosts, ...(n ? { warning: unsweptLine(n) } : {}) } })`; a rename's `ok(null)` reads `ok({})`, and its `from`/`to` are read off the registry; `editProperty(` calls read `configureProperty(`. `typecheck` lists every site.
@@ -12353,20 +12384,17 @@ The five remaining `unsweptLine` readers change one import each:
 ```
 
 ```Core/Session/nexusSlice.ts diff
-@@ imports @@
- import {
-   clearNotification,
-   notifyReport,
-+  notifyRetry,
-   warnCascade,
 @@ mutate @@
-       const res = await dialer().ask('mutate', req)
        if (!res.ok) {
--        if (!quiet) reportRefusal(res)
-+        if (quiet) return null
+         if (quiet) return null
+-        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
+-        if ((req.op === 'setProperty' || req.op === 'setContext') && res.error.code === 'operation-failed')
 +        if (res.error.code === 'owed')
 +          notifyRetry(res.error.message, () => void get().mutate({ op: 'replayProperty' }))
-+        else reportRefusal(res)
++        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
++        else if ((req.op === 'setProperty' || req.op === 'setContext') && res.error.code === 'operation-failed')
+           notifyRetry(res.error.message, () => void get().mutate(req))
+         else reportRefusal(res)
          return null
        }
        if (!quiet) {
@@ -12400,7 +12428,7 @@ A create names itself, so the pane's `+` and every other create read the same re
    const registry = useSession((st) => st.tree?.config.registry) ?? []
 +  const mutate = useSession((st) => st.mutate)
    const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
-@@ the writes @@
+@@ create @@
    const create = async (type: PropertyType): Promise<void> => {
 -    const res = await dialer().ask('schema:add', collectionPath, {
 -      id: '',
@@ -12412,24 +12440,7 @@ A create names itself, so the pane's `+` and every other create read the same re
 +    const created = (await mutate({ op: 'addProperty', containerPath: collectionPath, draft }))?.created
 +    if (created && 'propertyId' in created) setView({ kind: 'edit', id: created.propertyId })
    }
--  const renamed = (res: Result<PropertyRename | null>): void => {
--    if (!reportRefusal(res) || !res.value) return
--    if (res.value.from !== res.value.to) bumpValuesEpoch()
--    retryOwed(res.value)
--  }
--  const rename = async (id: string, label: string): Promise<void> =>
--    renamed(await dialer().ask('property:rename', id, label))
-+  const rename = async (id: string, label: string): Promise<void> => {
-+    if ((await mutate({ op: 'renameProperty', propertyId: id, label }))?.cascade) bumpValuesEpoch()
-+  }
-   const setFormat = async (id: string, change: FormatChange): Promise<void> => {
-     if (!(await askFormatChange(id, change))) return
--    if ('key_format' in change)
--      renamed(await dialer().ask('property:setKeyFormat', id, change.key_format))
--    else await warnOwed(dialer().ask('property:setValueFormat', id, change.value_format))
-+    const done = await mutate({ op: 'setFormat', propertyId: id, change })
-+    if (done?.cascade && 'key_format' in change) bumpValuesEpoch()
-   }
+@@ remove @@
    const remove = async (id: string): Promise<void> => {
 -    if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
 +    if (await mutate({ op: 'unassignProperty', containerPath: collectionPath, propertyId: id }))
@@ -12531,6 +12542,62 @@ A create names itself, so the pane's `+` and every other create read the same re
 ```
 
 (`dialer` and `reportRefusal` stay for `assets:chooseDir`; the `storesChanged` import leaves, since the slice emits it for `deleteProperty`.)
+
+*Only on F3's Pass:*
+
+```Core/Properties/Schema/PropertyFrame.tsx diff
+@@ rename @@
+-  const renamed = (res: Result<PropertyRename | null>): void => {
+-    if (!reportRefusal(res) || !res.value) return
+-    if (res.value.from !== res.value.to) bumpValuesEpoch()
+-    retryOwed(res.value)
+-  }
+-  const rename = async (id: string, label: string): Promise<void> =>
+-    renamed(await dialer().ask('property:rename', id, label))
++  const rename = async (id: string, label: string): Promise<void> => {
++    if ((await mutate({ op: 'renameProperty', propertyId: id, label }))?.cascade) bumpValuesEpoch()
++  }
+   const setFormat = async (id: string, change: FormatChange): Promise<void> => {
+     if (!(await askFormatChange(id, change))) return
+-    if ('key_format' in change)
+-      renamed(await dialer().ask('property:setKeyFormat', id, change.key_format))
+-    else await warnOwed(dialer().ask('property:setValueFormat', id, change.value_format))
++    const done = await mutate({ op: 'setFormat', propertyId: id, change })
++    if (done?.cascade && 'key_format' in change) bumpValuesEpoch()
+   }
+```
+
+*Only on F3's Fail:*
+
+```Core/Properties/Schema/PropertyFrame.tsx diff
+@@ imports @@
+ import type { FormatChange } from '../keyFormat'
++import type { MutateRequest } from '../../Nexus/mutateRequest'
+@@ rename @@
+-  const renamed = (res: Result<PropertyRename | null>): void => {
+-    if (!reportRefusal(res) || !res.value) return
+-    if (res.value.from !== res.value.to) bumpValuesEpoch(res.value.from, res.value.to)
+-    retryOwed(res.value)
+-  }
+-  const rename = async (id: string, label: string): Promise<void> =>
+-    renamed(await dialer().ask('property:rename', id, label))
++  const rekeyed = async (id: string, req: MutateRequest): Promise<void> => {
++    const from = defOf(id)?.key
++    if (!(await mutate(req))?.cascade) return
++    const to = useSession.getState().tree?.config.registry.find((d) => d.id === id)?.key
++    if (from && to) bumpValuesEpoch(from, to)
++  }
++  const rename = (id: string, label: string): Promise<void> =>
++    rekeyed(id, { op: 'renameProperty', propertyId: id, label })
+   const setFormat = async (id: string, change: FormatChange): Promise<void> => {
+     if (!(await askFormatChange(id, change))) return
+-    if ('key_format' in change)
+-      renamed(await dialer().ask('property:setKeyFormat', id, change.key_format))
+-    else await warnOwed(dialer().ask('property:setValueFormat', id, change.value_format))
++    if ('key_format' in change) await rekeyed(id, { op: 'setFormat', propertyId: id, change })
++    else await mutate({ op: 'setFormat', propertyId: id, change })
+   }
+```
 
 ```Core/Properties/Schema/useOptionEdit.tsx diff
 @@ imports @@
@@ -13308,12 +13375,13 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 | 7-3 | −20 | +20 | 0 |
 | 7-4 | −42 | +46 | +4 |
 | 7-5 | −10 | +9 | −1 |
-| 7-6 | −421 | +243 | −178 |
+| 7-6 | −421 | +241 | −180 |
 | 7-7 | −38 | +32 | −6 |
 | 7-8 | 0 | 0 | 0 |
-| **Phase 7** | **−619** | **+472** | **−147** |
+| **Phase 7 (F3's Pass)** | **−619** | **+470** | **−149** |
+| **Phase 7 (F3's Fail)** | **−619** | **+476** | **−143** |
 
-- **The Rule:** *§Plan Constraints › The Number*'s. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
+- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Fail, Task 7-6 lands −174, its frame reading each rekey's old and new key for the two-argument `bumpValuesEpoch` Task 6-6's revert keeps. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
 - **Task 7-1's +23:** the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
 - **What Leaves:** `Core/Properties/propertyWrite.ts`; nineteen bridge entries; `resolveSchemaFolder`, `Reply`, `asIs`, `unsweptReply`, `cascadeReply`, `answer`, `registryChannel`, `schemaChannel`, nine positional narrowers, `journalRecord`, `defEditOp`; `SchemaCascade`, `PropertyRename`, `PropertyDeletion`, `FileConfig`; `linkFields`, `numberFields`, `narrowLinkConfig`, `narrowNumberFormat`, `narrowFileConfig`; `isKeyFormat` and the holder count's argument sniff; `writePropertyBundle`; `notifyTrashed`; `restoreInner`'s pre-check, read-back, and second tree read; the count copy's second home.
 - **Tests:** about +160 (+240 / −80): the fourteen lock cases and the op, slice, restore, and zero-wording pins are new, while the merged `PropertyFrame` harness, the history pins, `isKeyFormat`'s case, and the two format-refusal cases leave. The drive group and the script re-points are apart.
@@ -15305,7 +15373,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 
 ##### Task 8-8 · The NexusOS Conversion
 
-**TASK:** Convert NexusOS's four files once with a throwaway script in the executing session's scratchpad: back up the four files to `~/NexusOS-Backup-<MM-DD-YYYY>/` before anything is written, give all 59 options an id (keeping any already stored), strip Status's eight `group_id`s, switch the three view files' option words to ids, scope the leftover Status collapses to Status, drop lowercase `open` and `closed`, verify against *Properties Restructure — Morning Report › §Your Data*, run it a second time to prove it writes nothing, and delete the script. The backup folder stays until Final Verification's closeout removes it by its path, after the full drive on the final head.
+**TASK:** Convert NexusOS's four files once with a throwaway script in the executing session's scratchpad, and flush every view's inert hidden ids with them: back up every file it writes to `~/NexusOS-Backup-<MM-DD-YYYY>/` before anything is written, give all 59 options an id (keeping any already stored), strip Status's eight `group_id`s, switch the three view files' option words to ids, scope the leftover Status collapses to Status, drop lowercase `open` and `closed`, drop each hidden id a view's `property_order` doesn't name from every NexusOS view file, the Trash's included (*No Leftovers*), verify against *Properties Restructure — Morning Report › §Your Data*, run it a second time to prove it writes nothing, and delete the script. The backup folder stays until Final Verification's closeout removes it by its path, after the full drive on the final head.
 
 **NOW:** read-only at HEAD for this plan, `~/NexusOS` holds:
 - **`.nexus/properties.json`:** seven option properties, 59 options, none with an id: Status (`prop_01KWG2FPV0VP0D2W6BR5EK485P`) 8 in three groups, each option carrying `group_id`; Tags 3, Brand 20, Concern 5, Scale 5, Color 12, Version 6, as `select_options`.
@@ -15313,12 +15381,13 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - **`.nexus/interface/homepage/_tiles.json`:** tile 0's view 0 "Active" sorts Status by `Active, Open, Paused, Awaiting, Revisit, Complete, Closed, Archived` and filters `is_not` `Complete, Closed, Archived, Revisit`; view 1 "Archive" the same order and `is` the same four. Tile 1's collapses are Set ids and adopted ids.
 - **`.nexus/contexts/Projects/Pommora/_tiles.json`:** tile 2's view 0 "Ideas" (structural) sorts Status by `Active, Open, Paused, Awaiting, Complete, Closed, Archived, Revisit` and holds `collapsed_groups` `open, closed, Paused, Closed, Complete, Archived, 01KXQ7HKBZNGKT00VDF1F7X5ER`; its `contains_any` rule names Space ids.
 - **Nothing Else:** every other `collapsed_groups` holds Set ids or adopted ids (Studio's two views, Context, Resources, Index, Studio/Athena, Studio/Pommora, homepage tile 1, and the trashed Knowledge Collection), every `hidden_groups` is `[]`, `matrix.json`'s filter and `openInPreview` name only `_location`, and there is no `.nexus/archive`. All four files are written in Pommora's stable form (sorted keys, two-space indent, a closing newline).
+- **Inert Hidden Ids:** eighteen views across sixteen view files, the three above and two in the Trash among them, hold 66 hidden ids their `property_order` doesn't name (Index's "Untitled" holds 7 hidden and 1 in order). They hide nothing, since a view shows only what its order names (HEAD `Core/Views/Pipeline/columns.ts:18-33`) and the Visibility list counts an unordered id as hidden either way (HEAD `Core/Views/visibilityModel.ts:12-14`); `mintNewView`'s seeded list left them, which Task 13-6 stops writing. All sixteen files are in the stable form.
 
 **CHANGE**
 
 - [ ] No Pommora instance holds `~/NexusOS` while the script runs, since an open window keeps the pre-conversion views in memory and its next view save would write the words back over the ids: list the Electron processes with `ps -o pid,ppid,command -A | grep -i electron | grep -v grep`, and stop each one by its exact PID, Electron first and then its wrappers (*Development-Environment › Stop by Exact PID*); the list answering nothing is the check. Any instance the session stops is relaunched only after the CDP read below, from the reviewed head (`git rev-parse HEAD` matches the checkpoint's head), so the next launch reads the converted views with this phase's code.
-- [ ] Write `<scratchpad>/convert-nexusos-options.mjs` as the AFTER gives it, and run `node <scratchpad>/convert-nexusos-options.mjs`. It stops with `STOP` and writes nothing past the backup if any expectation fails. On a `STOP`: `for f in .nexus/properties.json Ideas/_pagecollection.json .nexus/interface/homepage/_tiles.json .nexus/contexts/Projects/Pommora/_tiles.json; do cmp ~/NexusOS/$f ~/NexusOS-Backup-<MM-DD-YYYY>/$f; done` prints nothing, proving NexusOS untouched; the script stays in the scratchpad for the record, and execution halts before Phase 9 with a push notification to Nathan naming the failed expectation and the file it read, since NexusOS holding a shape the conversion didn't plan for is his call.
-- [ ] Run it a second time: it prints `written 0`, and `stat -f %m` on the four files matches the first run's.
+- [ ] Write `<scratchpad>/convert-nexusos-options.mjs` as the AFTER gives it, and run `node <scratchpad>/convert-nexusos-options.mjs`. It stops with `STOP` and writes nothing past the backup if any expectation fails. On a `STOP`: `(cd ~/NexusOS-Backup-<MM-DD-YYYY> && find . -type f) | while read f; do cmp ~/NexusOS/$f ~/NexusOS-Backup-<MM-DD-YYYY>/$f; done` prints nothing, proving NexusOS untouched; the script stays in the scratchpad for the record, and execution halts before Phase 9 with a push notification to Nathan naming the failed expectation and the file it read, since NexusOS holding a shape the conversion didn't plan for is his call.
+- [ ] Run it a second time: it prints `written 0`, and `stat -f %m` on every written file matches the first run's.
 - [ ] Re-open NexusOS in the reviewed build (`env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`, choosing `~/NexusOS`), read over CDP that the Ideas "Table" view shows Status bands in its saved order with Archived, Paused, Closed, and Complete collapsed, and that the homepage's "Active" view lists no Complete, Closed, Archived, or Revisit page; quit the instance.
 - [ ] Delete the script: `rm <scratchpad>/convert-nexusos-options.mjs`. Nothing in the repo changes, so the task commits nothing; the reconciliation report records the backup path, the run's two outputs, and the CDP read.
 
@@ -15340,7 +15409,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +const IDEAS = 'Ideas/_pagecollection.json'
 +const HOMEPAGE = '.nexus/interface/homepage/_tiles.json'
 +const POMMORA = '.nexus/contexts/Projects/Pommora/_tiles.json'
-+const FILES = [REGISTRY, IDEAS, HOMEPAGE, POMMORA]
++const CONVERTED = [IDEAS, HOMEPAGE, POMMORA]
 +const STATUS = 'prop_01KWG2FPV0VP0D2W6BR5EK485P'
 +const SET = '01KXQ7HKBZNGKT00VDF1F7X5ER'
 +const DROPPED = new Set(['open', 'closed'])
@@ -15360,6 +15429,26 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +const stable = (v) => `${JSON.stringify(sortKeys(v), null, 2)}\n`
 +const readAt = (dir, rel) => JSON.parse(readFileSync(join(dir, rel), 'utf8'))
 +const optionsIn = (def) => (def.type === 'status' ? def.status_groups.flatMap((g) => g.options) : (def.select_options ?? []))
++
++// Every view file NexusOS holds, its Trash included; a hidden id its view's property_order doesn't name hides nothing, so it leaves.
++const VIEW_FILES = new Set(['_pagecollection.json', '_pageset.json', '_tiles.json'])
++const walk = (dir) =>
++  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
++    e.name === '.obsidian' || e.name === '.git' ? []
++    : e.isDirectory() ? walk(join(dir, e.name))
++    : VIEW_FILES.has(e.name) ? [join(dir, e.name).slice(NEXUS.length + 1)]
++    : [],
++  )
++const VIEWS = walk(NEXUS)
++const viewsIn = (doc) =>
++  [...(doc.views ?? []), ...(doc.tiles ?? []).flatMap((t) => (t.views ?? []).map((v) => v?.config))].filter((v) => v && typeof v === 'object')
++const inert = (v) => (v.hidden_properties ?? []).filter((id) => !(v.property_order ?? []).includes(id))
++const flushed = (doc) => {
++  for (const v of viewsIn(doc)) if (inert(v).length) v.hidden_properties = v.hidden_properties.filter((id) => !inert(v).includes(id))
++  return doc
++}
++const FLUSHED = VIEWS.filter((rel) => !CONVERTED.includes(rel) && viewsIn(readAt(NEXUS, rel)).some((v) => inert(v).length))
++const FILES = [REGISTRY, ...CONVERTED, ...FLUSHED]
 +
 +// 1. The backup, first: each file copied once, so a later run keeps the copy of what NexusOS held before the first.
 +const pad = (n) => String(n).padStart(2, '0')
@@ -15412,12 +15501,11 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +}
 +const collapsed = (keys) =>
 +  keys.flatMap((k) => (DROPPED.has(k) ? [] : status.has(k) ? [`${STATUS}/${status.get(k)}`] : [k]))
-+const viewsIn = (doc) =>
-+  [...(doc.views ?? []), ...(doc.tiles ?? []).flatMap((t) => (t.views ?? []).map((v) => v?.config))].filter((v) => v && typeof v === 'object')
 +
 +const next = { [REGISTRY]: registry }
-+for (const rel of [IDEAS, HOMEPAGE, POMMORA]) {
-+  const doc = readAt(NEXUS, rel)
++for (const rel of FLUSHED) next[rel] = flushed(readAt(NEXUS, rel))
++for (const rel of CONVERTED) {
++  const doc = flushed(readAt(NEXUS, rel))
 +  for (const v of viewsIn(doc)) {
 +    const where = `${rel} "${v.name}"`
 +    for (const c of v.sort ?? []) ordered(c, where)
@@ -15429,7 +15517,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +  next[rel] = doc
 +}
 +
-+// 4. The expectations, Morning Report §Your Data written out against the backup: each converted file equals its backup with exactly these changes.
++// 4. The expectations, Morning Report §Your Data written out against the backup: each converted file equals its backup with exactly these changes and its inert hidden ids gone.
 +const want = structuredClone(backup[REGISTRY])
 +const seen = new Set()
 +let total = 0
@@ -15460,7 +15548,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +const ORDER = S('Active', 'Open', 'Paused', 'Awaiting', 'Complete', 'Closed', 'Archived', 'Revisit')
 +const HOME_ORDER = S('Active', 'Open', 'Paused', 'Awaiting', 'Revisit', 'Complete', 'Closed', 'Archived')
 +
-+const ideas = structuredClone(backup[IDEAS])
++const ideas = flushed(structuredClone(backup[IDEAS]))
 +const table = viewAt(ideas, ['views', 0], 'Table')
 +table.group.order = S('Active', 'Open', 'Awaiting', 'Revisit', 'Complete', 'Closed', 'Archived')
 +statusSort(table).order = ORDER
@@ -15469,7 +15557,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +untitled.group.order = S('Active', 'Open', 'Paused', 'Archived', 'Awaiting', 'Closed', 'Revisit', 'Complete')
 +untitled.collapsed_groups = scoped('Paused', 'Revisit', 'Closed')
 +
-+const homepage = structuredClone(backup[HOMEPAGE])
++const homepage = flushed(structuredClone(backup[HOMEPAGE]))
 +for (const [i, name, op] of [[0, 'Active', 'is_not'], [1, 'Archive', 'is']]) {
 +  const v = viewAt(homepage, ['tiles', 0, 'views', i, 'config'], name)
 +  statusSort(v).order = HOME_ORDER
@@ -15478,7 +15566,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +  rule.values = S('Complete', 'Closed', 'Archived', 'Revisit')
 +}
 +
-+const pommora = structuredClone(backup[POMMORA])
++const pommora = flushed(structuredClone(backup[POMMORA]))
 +const ideasTile = viewAt(pommora, ['tiles', 2, 'views', 0, 'config'], 'Ideas')
 +statusSort(ideasTile).order = ORDER
 +ideasTile.collapsed_groups = [...scoped('Paused', 'Closed', 'Complete', 'Archived'), SET]
@@ -15486,8 +15574,32 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +for (const [rel, expected] of [[REGISTRY, want], [IDEAS, ideas], [HOMEPAGE, homepage], [POMMORA, pommora]])
 +  if (stable(expected) !== stable(next[rel])) fail(`${rel} differs from Morning Report §Your Data`)
 +if (stable(next[REGISTRY]).includes('group_id')) fail('a group_id survived')
++for (const rel of FLUSHED) if (stable(flushed(structuredClone(backup[rel]))) !== stable(next[rel])) fail(`${rel} changed beyond its inert hidden ids`)
 +
-+// 5. The writes: only a file whose text changes, through a hidden temp file the watcher never reads.
++// 5. Nothing in NexusOS names an option by its word or holds an inert hidden id once the conversion lands, read before anything is written: the files as converted, every other view file as it stands.
++const offenders = []
++const optionWord = (pid, w) => ids.has(pid) && typeof w === 'string' && !w.startsWith('opt_')
++for (const rel of VIEWS) {
++  for (const v of viewsIn(next[rel] ?? readAt(NEXUS, rel))) {
++    const words = [
++      ...inert(v),
++      ...(v.sort ?? []).flatMap((c) => (c.order ?? []).filter((w) => optionWord(c.property_id, w))),
++      ...[v.group, v.sub_group].flatMap((g) => (g?.order ?? []).filter((w) => optionWord(g.property_id, w))),
++      ...[...(v.collapsed_groups ?? []), ...(v.hidden_groups ?? [])].filter((k) => [...ids.values()].some((m) => m.has(k))),
++    ]
++    const rules = (n) => {
++      if (!n || typeof n !== 'object') return
++      if (Array.isArray(n.rules)) return n.rules.forEach(rules)
++      if (!TEXT_OPS.has(n.op) || registry.defs[n.property_id]?.type === 'multiSelect')
++        words.push(...[n.value, ...(n.values ?? [])].filter((w) => optionWord(n.property_id, w)))
++    }
++    rules(v.filter)
++    if (words.length) offenders.push(`${rel} "${v.name}": ${words.join(', ')}`)
++  }
++}
++if (offenders.length) fail(`option words or inert hidden ids remain:\n  ${offenders.join('\n  ')}`)
++
++// 6. The writes: only a file whose text changes, through a hidden temp file the watcher never reads.
 +let written = 0
 +for (const rel of FILES) {
 +  const abs = join(NEXUS, rel)
@@ -15499,46 +15611,15 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +  written++
 +}
 +
-+// 6. Nothing in NexusOS names an option by its word any more.
-+const VIEW_FILES = new Set(['_pagecollection.json', '_pageset.json', '_tiles.json'])
-+const offenders = []
-+const optionWord = (pid, w) => ids.has(pid) && typeof w === 'string' && !w.startsWith('opt_')
-+const scan = (dir) => {
-+  for (const e of readdirSync(dir, { withFileTypes: true })) {
-+    if (e.name === '.obsidian' || e.name === '.git') continue
-+    const abs = join(dir, e.name)
-+    if (e.isDirectory()) scan(abs)
-+    else if (VIEW_FILES.has(e.name)) {
-+      for (const v of viewsIn(JSON.parse(readFileSync(abs, 'utf8')))) {
-+        const words = [
-+          ...(v.sort ?? []).flatMap((c) => (c.order ?? []).filter((w) => optionWord(c.property_id, w))),
-+          ...[v.group, v.sub_group].flatMap((g) => (g?.order ?? []).filter((w) => optionWord(g.property_id, w))),
-+          ...[...(v.collapsed_groups ?? []), ...(v.hidden_groups ?? [])].filter((k) => [...ids.values()].some((m) => m.has(k))),
-+        ]
-+        const walk = (n) => {
-+          if (!n || typeof n !== 'object') return
-+          if (Array.isArray(n.rules)) return n.rules.forEach(walk)
-+          if (!TEXT_OPS.has(n.op) || registry.defs[n.property_id]?.type === 'multiSelect')
-+            words.push(...[n.value, ...(n.values ?? [])].filter((w) => optionWord(n.property_id, w)))
-+        }
-+        walk(v.filter)
-+        if (words.length) offenders.push(`${abs.slice(NEXUS.length + 1)} "${v.name}": ${words.join(', ')}`)
-+      }
-+    }
-+  }
-+}
-+scan(NEXUS)
-+if (offenders.length) fail(`option words remain:\n  ${offenders.join('\n  ')}`)
-+
-+console.log(`backup ${BACKUP}\nwritten ${written}\n59 options, 8 group_ids stripped, the three view files verified, no option word left in NexusOS`)
++console.log(`backup ${BACKUP}\nwritten ${written}\n59 options, 8 group_ids stripped, the three view files verified, ${FLUSHED.length} more view files' inert hidden ids flushed, no option word or inert hidden id left in NexusOS`)
 ```
 
 **VERIFY**
 
-- [ ] The first run prints the backup path and `written 4`; the second prints `written 0` and leaves the four files' mtimes unchanged.
+- [ ] The first run prints the backup path and `written 17` (the four files and thirteen more view files' flush); the second prints `written 0` and leaves every written file's mtime unchanged.
 - [ ] `diff <(jq -S . ~/NexusOS-Backup-<date>/Ideas/_pagecollection.json) <(jq -S . ~/NexusOS/Ideas/_pagecollection.json)` shows only the Table and Untitled View orders and collapses, and the same holds for the two tile documents; `jq '[.. | objects | select(has("group_id"))] | length' ~/NexusOS/.nexus/properties.json` answers 0.
-- [ ] `git -C ~/NexusOS status --porcelain` (where NexusOS tracks it) or a `find ~/NexusOS -newer <backup>/.nexus/properties.json -type f ! -path '*/.obsidian/*'` names only the four files and Pommora's own index or state files from the CDP read.
-- [ ] The CDP read above holds; the script is gone (`ls <scratchpad>/convert-nexusos-options.mjs` fails); `~/NexusOS-Backup-<date>/` holds the four files, kept for Final Verification's closeout.
+- [ ] `git -C ~/NexusOS status --porcelain` (where NexusOS tracks it) or a `find ~/NexusOS -newer <backup>/.nexus/properties.json -type f ! -path '*/.obsidian/*'` names only the files the backup holds and Pommora's own index or state files from the CDP read.
+- [ ] The CDP read above holds; the script is gone (`ls <scratchpad>/convert-nexusos-options.mjs` fails); `~/NexusOS-Backup-<date>/` holds every written file, kept for Final Verification's closeout.
 
 ---
 
@@ -15553,6 +15634,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - **A Hand-Copied Option Keeps Its Place Under a Derived Id (8-1):** a person or agent who copies an option block in `properties.json` and gives the copy a new key and label but leaves its id reads both options: the copy answers to the id its key derives (`opt_<key>`), the next option write stores it, and its pages read it as theirs. A plain "each id once" rule would drop the copy on every read, so its pages would read as foreign, the next option edit would write the registry without it, and a Select or Status would lose the option outright (a Multi-Select re-adopting the word without its color), where HEAD keeps it. A copy whose derived id another option already holds still leaves, as a copy repeating a label or key does. An earlier agent's mechanism made consistent with the derived id. **Recommended:** take it.
 - **A Status Glyph Follows Its Option's Id (8-2, Take Along):** a Status chip finds its group's glyph by the option's id, so the option editor's chip keeps its group glyph while a new label is typed, where the label scan fell back to the default glyph until the rename committed. A word no option holds draws the default, as before. An accident fixed. **Recommended:** take it.
 - **Between Landing and the Conversion:** a P8 build opening NexusOS before Task 8-8 reads its Status sort orders, group orders, and filters as naming no option (orders inert, the homepage "Active" tile unfiltered) and stores derived ids on the first option edit; the conversion keeps any stored id. A build older than P8 reading the converted files shows the same until it's rebuilt. The window is the checkpoint's own.
+- **NexusOS's Inert Hidden Ids Leave (No Leftovers):** the conversion drops the 66 hidden ids its views' orders don't name, across sixteen view files, two of them in the Trash; every view shows and lists exactly what it did, since an unordered id was hidden either way.
 
 #### Line Total
 
@@ -17423,7 +17505,7 @@ The other sweep calls drop their first argument and nothing else:
   - "a rename appends the old name and drops the new one": `owedRename({}, 'a', 'b')` → `{ rename: ['a'] }`; `owedRename({ rename: ['a'] }, 'b', 'c')` → `{ rename: ['a', 'b'] }`.
   - "renaming back composes to the name the second rename left": `owedRename(owedRename({}, 'a', 'b'), 'b', 'a')` → `{ rename: ['b'] }`, and `owedSwept` of that over `['b']` → `{}`, so a→b→a owes nothing once the second sweep runs clean.
   - "a delete moves every owed old name and the current one into strip": `owedDelete({ rename: ['a'] }, 'b')` → `{ strip: ['a', 'b'] }`.
-  - "a rename and a clean sweep keep a Clear's mark": `owedRename({ strip: ['High'], kept: true }, 'High', 'Urgent')` → `{ rename: ['High'], strip: ['High'], kept: true }`, and `owedSwept` of `{ strip: ['a', 'High'], kept: true }` over `['a']` → `{ strip: ['High'], kept: true }`.
+  - "a rename and a clean sweep keep a Clear's mark": `owedRename({ strip: ['High'], kept: true }, 'High', 'Urgent')` → `{ strip: ['High'], kept: true }`, owing no rename of the cleared word, and `owedSwept` of `{ strip: ['a', 'High'], kept: true }` over `['a']` → `{ strip: ['High'], kept: true }`.
   - "a restore moves strip back into rename": `owedRestore({ strip: ['a', 'b'] })` → `{ rename: ['a', 'b'] }`.
   - "an edit that leaves nothing owed removes the entry": seed `.nexus/.owed.json` with `{ P: { kind: 'property', rename: ['a'] } }`, `editNote(root, 'P', (e) => e && { ...e, ...owedSwept(e, ['a']) })` → `.nexus/.owed.json` is gone, and `readNotes` answers `{}`.
   - "an edit answers the entry as it stood": `editNote` over the same seed answers `ok({ kind: 'property', rename: ['a'] })`.
@@ -17434,7 +17516,7 @@ The other sweep calls drop their first argument and nothing else:
   - "a name another item owes is refused within its owner, folding case": property entries `P` (`rename: ['Priority']`) and `Q` (`strip: ['Stage']`); `owedName(notes, { owner: { kind: 'property' }, name: 'stage', except: 'P' })` is `true` and `{ …, name: 'Priority', except: 'P' }` is `false`; a Space entry under Context `C1` doesn't answer for `{ kind: 'space', contextId: 'C2' }`; an option part `o1` owing `High` answers for `{ kind: 'option', propertyId: 'P' }` and `name: 'High'` with `except: 'o2'`, and not for `name: 'high'` or `except: 'o1'`.
   - "an option part emptied by an edit leaves the entry": `withOption({ kind: 'property', options: { o1: { rename: ['a'] } } }, 'o1', (o) => owedSwept(o, ['a']))` → `{ kind: 'property' }`.
   - "a restore converts only an entry that owes a strip": with `{ P: { kind: 'property', strip: ['a'] } }`, `restoreNote(root, 'P')` leaves `rename: ['a']`; with no entry it answers `ok` and writes nothing, even with the file `chmod 000`.
-  - `describe('runNoted')`, each with stub steps: "a landing on a name another item owes refuses with nothing written"; "a refused note refuses before the list step runs"; "a refused list step puts the entry back as it stood"; "a sweep that missed nothing settles the entry"; "a sweep that missed a file keeps the entry and marks the report owed"; "an entry under an owed rename stays whole after a clean sweep, and its report counts the files still under the old name as owed" (`under` naming an entry with `rename: ['x']` and one page holding `x`; the report reads `owed: true` and "Couldn’t update 1 Item.").
+  - `describe('runNoted')`, each with stub steps: "a landing on a name another item owes refuses with nothing written"; "a refused note refuses before the list step runs"; "a refused list step puts the entry back as it stood"; "a sweep that missed nothing settles the entry"; "a sweep that missed a file keeps the entry and marks the report owed"; "an entry under an owed rename stays whole after a clean sweep, and its report is owed" (`under` naming an entry with `rename: ['x']`; the report reads `owed: true` and "An earlier change hasn’t reached every file yet.").
   - "the notes file is neither watched nor synced": `manifestAdmits(scope)('.nexus/.owed.json')` → `false`, through the dot rule alone.
 - [ ] Add `OWED_REL` to `Core/Paths/nexusPaths.ts` beside the journal constants (they leave in Tasks 11A-2 and 11A-3, with their last readers).
 - [ ] Write `Core/Nexus/owed.ts` as the AFTER gives it.
@@ -17485,11 +17567,9 @@ The other sweep calls drop their first argument and nothing else:
 +// The notes file: one entry per property, Context, or Space that still owes work, keyed by its id, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
 +
 +import { fail, ok, type Result } from '../Contract/result'
-+import { contextKey } from '../Contexts/contexts'
 +import { readAppFile, updateNexusFile } from '../Files/atomicWrite'
 +import { memberKey } from '../Files/rootValues'
 +import { same } from '../Files/stableJson'
-+import { findHolders } from '../Index/keyHolders'
 +import { normalizeTitle } from '../Paths/caseFold'
 +import { OWED_REL } from '../Paths/nexusPaths'
 +import { join } from '../Paths/posix'
@@ -17517,7 +17597,8 @@ The other sweep calls drop their first argument and nothing else:
 +/** A name a create or rename lands on, and the item landing there, whose own owed names never refuse it. */
 +export type Landing = { owner: Owner; name: string; except?: string }
 +
-+export const OWED = fail('owed', 'An earlier change hasn’t reached every file yet.')
++const OWED_LINE = 'An earlier change hasn’t reached every file yet.'
++export const OWED = fail('owed', OWED_LINE)
 +
 +const notesFile = (root: string): string => join(root, OWED_REL)
 +
@@ -17566,9 +17647,10 @@ The other sweep calls drop their first argument and nothing else:
 +export const propertyNote = (e: Entry | undefined): PropertyEntry =>
 +  e?.kind === 'property' ? e : { kind: 'property' }
 +
++/** A kept part's own word stays in `strip` alone, so a rename never carries a Clear's pages to the new word. */
 +export const owedRename = (o: Owed, from: string, to: string): Owed => ({
 +  ...o,
-+  rename: distinct([...(o.rename ?? []), from].filter((n) => n !== to)),
++  rename: distinct([...(o.rename ?? []), from].filter((n) => n !== to && !(o.kept && o.strip?.includes(n)))),
 +})
 +/** Every owed name and the current one move into `strip`, for a delete and a Clear alike (H-2, H-3). */
 +export const owedDelete = (o: Owed, current: string): Owed => ({
@@ -17619,26 +17701,14 @@ The other sweep calls drop their first argument and nothing else:
 +  return editNote(root, id, (e) => e && { ...e, ...owedRestore(e) })
 +}
 +
-+/** A many-file change's report, marked owed while it left files for Try Again, counting the files still `waiting` on a rename it runs under. */
-+export const owedReport = (reach: ConfigReach, waiting = 0): CascadeReport => {
-+  const skipped = reach.skipped + waiting
-+  return { ...reachReport({ ...reach, skipped }), ...(skipped ? { owed: true as const } : {}) }
++/** A many-file change's report, marked owed while it left files for Try Again or runs under `held`'s owed rename, whose pages it reaches only once that rename lands (H-1). */
++export const owedReport = (reach: ConfigReach, held?: Entry): CascadeReport => {
++  const report = reachReport(reach)
++  if (!reach.skipped && !owesRename(held)) return report
++  return { ...report, warning: report.warning ?? OWED_LINE, owed: true }
 +}
 +
-+/** The files still under the owed old names of `under`'s rename: a change under it reaches them only once the rename lands (H-1), so its reply counts them with Try Again. */
-+export async function waitingOn(root: string, under: string | undefined): Promise<number> {
-+  const e = under === undefined ? undefined : (await readNotes(root))[under]
-+  let waiting = 0
-+  for (const old of e?.rename ?? []) {
-+    const property = e?.kind === 'property'
-+    const q = { keys: [property ? old : contextKey(old)], reach: property ? ('governed' as const) : ('anywhere' as const) }
-+    const { pages, spaces } = await findHolders(root, q)
-+    waiting += pages.length + spaces.length
-+  }
-+  return waiting
-+}
-+
-+/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename, whose waiting files the report counts. */
++/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename, which keeps the report owed. */
 +export async function runNoted<T>(
 +  root: string,
 +  id: string,
@@ -17663,7 +17733,7 @@ The other sweep calls drop their first argument and nothing else:
 +  const reach = await change.sweep(listed.value, prior.value)
 +  const held = change.under === undefined ? undefined : notes[change.under]
 +  if (!reach.skipped && !owesRename(held)) await editNote(root, id, (e) => e && change.settle(e, listed.value))
-+  return ok({ listed: listed.value, cascade: owedReport(reach, await waitingOn(root, change.under)) })
++  return ok({ listed: listed.value, cascade: owedReport(reach, held) })
 +}
 ```
 
@@ -17712,6 +17782,7 @@ The other sweep calls drop their first argument and nothing else:
   - "a refused list step removes the bundle and puts the entry back": stub `removeFromRegistry` to refuse; no `.trash/property-*` remains and the notes file reads as before.
   - `Core/Properties/optionOps.test.ts` › `describe('option cascades reach saved views')`: HEAD's `:1173` "a removal with a page skip leaves every view holding the option and the journal held" becomes "a deletion with a page skip drops the option, clears every view, and owes the page" (the options read `['Todo']`, the three views equal the cleared views, the reply is owed); `:1241` "a pass skip holds the drop and the journal" becomes "a pass skip owes the page with the option already dropped"; `:1263` "a failed drop keeps the journal" becomes "a failed drop strips nothing and puts the entry back".
   - `Core/Properties/optionOps.test.ts` › "an option rename runs while another property owes work", "an option rename keeps its part while its property's rename is owed": with `rename: ['Priority']` owed on the property, a clean option rename leaves `options[optId].rename` standing (H-1); "Clear sweeps an owed option rename's old word with its own": with `options[optId] = { rename: ['a'] }` and pages holding `a` and the option's word, Clear leaves neither and the part clears (H-2); "a Clear that misses a page owes it with Try Again": one holder `chmod 000`; the reply's `cascade.owed` is `true`, the part reads `{ strip: [<word>], kept: true }`, and once the mode is restored `finishOwed` clears the page, the option stays listed, and the part clears; "a Clear's Try Again leaves a page picked to another option": after the miss, the unreached page is set to another option, and `finishOwed` leaves that pick and clears the part; "registration skips an owed word": an unreached page holding a deleted word doesn't re-register it (H-7); "renameOption, setValueFormat, and editOption refuse a landing on another option's owed word", and "an add taking back an owed delete's word refuses" (a locked Set holding a page with `A`; after `deleteOption` of `A`, P8's `add` edit for `A` answers `'owed'` where HEAD answered a duplicate, since the halt kept `A` listed).
+  - `Core/Properties/optionOps.test.ts` › "renaming an option whose Clear is owed is refused until the Clear finishes": a Clear of `High` misses one page (`chmod 000`); renaming `High` to `Urgent` answers `'owed'` and the page keeps `High`; with the mode restored, `finishOwed` clears the page and the rename then lands with no page reading `Urgent`.
   - `Core/Trash/restoreProperty.test.ts` › "a restore turns the delete's owed strip into renames": delete with one page unreadable, restore; the entry reads `rename: [<key>]`, the definition stays after `finishOwed`, and the unreached page keeps its value (H-4).
   - `Core/Nexus/finishOwed.test.ts` (new) › "a crash between the delete's note and its list step finishes the delete": seed the entry `{ strip: [key] }` with the definition still listed; `finishOwed` removes the definition and strips the pages (H-5); "a crash between a rename's note and its list step owes nothing": `{ rename: [currentKey] }` clears with no page touched; "a name a live definition holds is skipped and dropped" (H-16); "a live definition holding a strip part keeps its Collections" (the strip arm runs only once the definition is gone); "an option part sweeps while its property's rename is owed and stays whole" (H-1); "a registry that can't be written counts one missed file"; "the open finishes an owed rename once the index is seeded"; "Try Again finishes every entry and reports one combined count".
   - `Core/Interface/Confirm/confirmations.test.ts` › P7's "a property delete asks its own question, counting what holds it, deletes through its op, and offers its reply's retry" becomes "… and a delete that missed a file offers Try Again, which sends `{ op: 'finishOwed' }`": `mutate` answers `cascade: { pages: [], hosts: [], warning: 'W', owed: true }` and no `retry`.
@@ -18028,7 +18099,11 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 +  const parts = (e: Entry | undefined, edit: (o: Owed, m: (typeof moved)[number]) => Owed): PropertyEntry =>
 +    moved.reduce((n, m) => withOption(n, m.optionId, (o) => edit(o, m)), propertyNote(e))
 +  const ran = await runNoted(root, propertyId, {
-+    lands: moved.map((m) => ({ owner: { kind: 'option', propertyId }, name: m.to, except: m.optionId })),
++    lands: moved.flatMap((m) => [
++      { owner: { kind: 'option' as const, propertyId }, name: m.to, except: m.optionId },
++      // A word its own Clear still owes refuses the rename, so the finish clears those pages before the word moves.
++      { owner: { kind: 'option' as const, propertyId }, name: m.from },
++    ]),
 +    note: (e) => parts(e, (o, m) => owedRename(o, m.from, m.to)),
 +    list: commit,
 +    sweep: (def) => optionCascade(root, def, keys),
@@ -18356,6 +18431,9 @@ Clear's list step is the definition it resolved, since a Clear changes no list; 
          if (res.error.code === 'owed')
 -          notifyRetry(res.error.message, () => void get().mutate({ op: 'replayProperty' }))
 +          notifyRetry(res.error.message, get().finishOwed)
+         // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
+         else if ((req.op === 'setProperty' || req.op === 'setContext') && res.error.code === 'operation-failed')
+           notifyRetry(res.error.message, () => void get().mutate(req))
          else reportRefusal(res)
          return null
        }
@@ -18947,23 +19025,23 @@ A Space entry sweeps the holders already under its Context's current title on ev
 - **The Notes File Leaves Once Nothing Is Owed:** the last entry's clearing removes `.nexus/.owed.json`, as the slot's own clear removed its journal, so a Nexus with nothing owed holds no notes file.
 - **A Damaged Settings File Goes to the System Trash:** `setAside`, which every repairable Nexus file's rebuild runs, sends the damaged bytes to the computer's Trash through the platform seam instead of leaving `.<name>.bad-<id>` beside the rebuilt file forever; a host with no system Trash keeps today's rename. A file rebuilt from scratch, damaged before the session ever read it, holds its only copy of the data, which the Trash keeps recoverable. Nathan's intent.
 - **A Notes File Damaged Before the Session Read It Reads Empty:** `readAppFile` answers `null` for a file this session never saw parse, so its owed work is lost; the next note sends the damaged copy where `setAside` sends every damaged file and starts a fresh one.
-- **Clear Owes What It Missed (B-1, B-3):** an option's Clear notes its word in a kept part and runs on the runner, so a Clear that misses pages offers Try Again, which clears every page still holding the word; a page picked to another option in between keeps that pick, a page set back to the cleared option is cleared with the rest, and the option stays listed. Where the Clear followed an owed option rename, H-2's old word leaves with it. A Clear whose note can't be written refuses with nothing changed. Nathan's intent.
+- **Clear Owes What It Missed (B-1, B-3):** an option's Clear notes its word in a kept part and runs on the runner, so a Clear that misses pages offers Try Again, which clears every page still holding the word; a page picked to another option in between keeps that pick, a page set back to the cleared option is cleared with the rest, and the option stays listed. Where the Clear followed an owed option rename, H-2's old word leaves with it. While a Clear is owed, renaming the option first finishes the Clear, as every owed-name refusal does, and is refused with Try Again while pages it missed still hold the word, so the rename never turns those pages to the new word. A Clear whose note can't be written refuses with nothing changed. Nathan's intent.
 - **A Second Rename of One Context Keeps the First's Leftovers:** HEAD's slot let a second rename overwrite the first's record, forgetting its unreached pages after a restart; both old titles stay owed. B-1's intent applied to Contexts.
 - **A Live Op Sweeps Its Own Old Name:** an older name still owed to the same item waits for Try Again rather than being swept by a later rename; a delete strips every owed name.
 - **A Context Rename Whose Folder Can't Move or Go Back Offers Try Again:** P9's order answered the relocate's error and left the note for the next open. The runner reads a title that couldn't go back as a list step that landed, so the reply reads "Couldn’t update 1 Item." with Try Again, which moves the folder and rekeys the files. The reason: the registry already names the new title, so the rename has landed in the list and only its folder and files are owed; Try Again finishes it now instead of at the next open. Recommendation: keep.
-- **A Change Waiting on an Owed Rename Says So (B-3):** while a property's rename is owed, an option rename, Value Format, option delete, Clear, or Remove reaches every page already under the new key; while a Context's rename is owed, a Space rename reaches every holder already under the Context's new title. Each reply also counts the files still under the old name as owed, with the one Try Again, where it would otherwise read as done; the rename's Try Again or the next open finishes the rename and then the change, in that order (H-1). The count is every file the index lists under the old name, the same files the rename's own notice counted, read once per owed rename by `waitingOn`, so a page under the old name that doesn't hold the change's word is counted too; narrowing it to the change's word would add an index read per change kind.
+- **A Change Waiting on an Owed Rename Says So (B-3):** while a property's rename is owed, an option rename, Value Format, option delete, Clear, or Remove reaches every page already under the new key; while a Context's rename is owed, a Space rename reaches every holder already under the Context's new title. Each reply stays owed, reading “An earlier change hasn’t reached every file yet.” with the one Try Again, where it would otherwise read as done; the rename's Try Again or the next open finishes the rename and then the change, in that order (H-1). The reply adds no count of its own, since the rename's notice already counted the files under the old name.
 
 #### Line Total
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 11A-1 | −1 | +183 | +182 |
-| 11A-2 | −277 | +359 | +82 |
+| 11A-1 | −1 | +167 | +166 |
+| 11A-2 | −277 | +358 | +81 |
 | 11A-3 | −325 | +201 | −124 |
-| **Phase 11A** | **−603** | **+743** | **+140** |
+| **Phase 11A** | **−603** | **+726** | **+123** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Task 11A-2 deletes `propertyJournal.ts` and `replaySchemaCascade.ts` whole, and Task 11A-3 `contextJournal.ts`, `journalSlot.ts`, and `replayPendingRename` (63 lines).
-- **Why It Lands Positive:** 11A-1 (+182) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, `waitingOn`, and `restoreNote`, with `setAside`'s system Trash and `dropEmpty`; 11A-2 (+82) and 11A-3 (−124) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. Clear's move onto the runner, `waitingOn`'s count of the files a change under an owed rename can't reach yet, `dropEmpty`, and `setAside`'s system Trash are ruled behavior in their minimal form. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +96, P11 lands +236, the two deletes' list-first orders included.
+- **Why It Lands Positive:** 11A-1 (+166) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`, with `setAside`'s system Trash and `dropEmpty`; 11A-2 (+81) and 11A-3 (−124) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. Clear's move onto the runner, the owed reply of a change under an owed rename, `dropEmpty`, and `setAside`'s system Trash are ruled behavior in their minimal form. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +115, P11 lands +238, the two deletes' list-first orders included.
 - **Tests:** about −900 removed (`propertyJournal.test.ts` 102, `replaySchemaCascade.test.ts` 713, `contextJournal.test.ts` 20, the slot and consumer cases in `journalWiring.test.ts`, the `OWED` and `from` cases) and about +480 written (`owed.test.ts` with the runner's cases, `finishOwed.test.ts`, and the cases each task names).
 
 ---
@@ -19235,7 +19313,7 @@ An unreadable page the index answers now carries its id and values in `held`, so
 +import { contextKey } from '../Contexts/contexts'
 +import { spaceAt } from '../Nexus/treePatch'
 +import { finishEntry } from '../Nexus/finishOwed'
-+import { editNote, owedDelete, owedReport, waitingOn } from '../Nexus/owed'
++import { editNote, owedDelete, owedReport, readNotes } from '../Nexus/owed'
 -import { fail, ok, valueOr } from '../Contract/result'
 +import { fail, ok } from '../Contract/result'
 -import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
@@ -19313,7 +19391,8 @@ An unreadable page the index answers now carries its id and values in `held`, so
      moved = true
 +    // The strip and the views run as the finish runs them, now the list step and the folder move have landed.
 +    const parent = req.kind === 'space' ? spaceAt(before, rel)?.contextId : undefined
-+    const stripped = owed ? owedReport(await finishEntry(root, owed, deps), await waitingOn(root, parent)) : null
++    const held = parent === undefined ? undefined : (await readNotes(root))[parent]
++    const stripped = owed ? owedReport(await finishEntry(root, owed, deps), held) : null
  …
 -    const cascade = joinCascades(gone?.cascade, reach)
 +    const cascade = joinCascades(joinCascades(gone?.cascade, reach), stripped)
@@ -19512,7 +19591,7 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 
 #### Task 11B-3
 
-**TASK:** Remove runs through `runNoted`: it notes the Collection it leaves, then, as its list step, unassigns the property and clears it from the Collection's views in one write, then reaches the configuration under the Collection and stashes and strips its holders, the stash and strip through one routine the finish shares; a holder it couldn't reach, including one with no usable id or one it can't rewrite, keeps the Collection owed with Try Again, and re-adding the property to that Collection cancels what's owed there. The sweep every many-file change runs counts a file it can't safely rewrite as one it missed, and the finder states once which holders no id addresses, so rename, delete, option changes, and Context and Space changes owe such a page with Try Again as Remove does.
+**TASK:** Remove runs through `runNoted`: it notes the Collection it leaves, then, as its list step, unassigns the property and clears it from the Collection's views in one write, then reaches the configuration under the Collection and stashes and strips its holders, the stash and strip through one routine the finish shares; a holder it couldn't reach, including one with no usable id or one it can't rewrite, keeps the Collection owed with Try Again, and re-adding the property to that Collection cancels what's owed there. The sweep every many-file change runs counts a file it can't safely rewrite as one it missed, and the finder states once which holders no id addresses, so rename, delete, option changes, and Context and Space changes owe such a page with Try Again as Remove does; an item whose every miss is a page only a fix by hand can reach keeps its Try Again without holding its names.
 
 **NOW:** P7's `unassignProperty` (`Core/Properties/unassignProperty.ts`, HEAD's `removeProperty.ts:19-62`) writes no note: it reads the holders' values in the Collection (P10's finder), then one sidecar write drops the assignment, clears the property from the Collection's views (`mapViews(cur, propertyClear(propertyId))`, which P7 keeps in that write), and merges the values into the stash, then `reachConfig(…, collectionFolder)`, then the page strip; it answers the skipped count, which P7 carries as the op's reply, and a holder with no id or a duplicate id is kept out of the strip uncounted (HEAD `Core/Properties/keyHolders.ts:37-66`), as is a page the sweep refuses (`sweepGovernedRoots`' `refused`, read only by `gather.ts:58` at HEAD). `PropertyFrame.tsx`'s three Remove sites (HEAD `:255-257`, `:280`, `:302-306`) treat a refusal as not landed, and the editor's `remove` stays open on one.
 
@@ -19527,23 +19606,27 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
   - "a delete subsumes an owed Remove": with the entry owed, `deleteProperty`; the entry reads only `strip` (H-3).
   - "a note that can't be written refuses the Remove with nothing changed".
   - `Core/Properties/Schema/PropertyFrame.test.tsx` › "a Remove that missed pages returns to the list": the editor's Remove with a reply carrying `cascade.owed` lands on the list view.
-  - `Core/Nexus/governedSweep.test.ts` › "a root that can't round-trip counts as skipped": an Unknown page and a sidecar that won't parse are left byte-identical and both sit in `skipped`.
+  - `Core/Nexus/governedSweep.test.ts` › "a root that can't round-trip counts as skipped": an Unknown page and a sidecar that won't parse are left byte-identical and both sit in `skipped` and in `refused`.
+  - `Core/Nexus/owed.test.ts` › "a name owed only by pages Pommora can't rewrite doesn't refuse a landing": a property entry `P` with `rename: ['Priority']` and `refused: true`; `owedName(notes, { owner: { kind: 'property' }, name: 'Priority' })` is `false`, and with the mark gone it's `true`; the same for an option part under a marked property.
+  - `Core/Nexus/finishOwed.test.ts` › "a finish that missed only refused pages marks the entry, and one that missed an unreadable page doesn't": a rename owed on one page whose front matter can't round-trip; `finishOwed` leaves the entry with `refused: true`; with a second holder `chmod 000`, the entry stays unmarked.
+  - `Core/Properties/registryProperty.test.ts` › "a create on a key owed only by a refused page lands after Try Again": with `Priority` owed on such a page alone, `addProperty` named `Priority` through the slice lands on its second send.
   - `Core/Properties/registryProperty.test.ts` › "a rename owes a page it can't rewrite": a holder whose front matter can't round-trip; the rename's reply is owed, the entry keeps `rename`, and once the page parses `finishOwed` renames it and clears the entry. The same case in `optionOps.test.ts` for an option rename and in `contextCascade.test.ts` for a Context rename.
 - [ ] `Core/Properties/unassignProperty.ts`: as the AFTER gives it; HEAD's one-write comment (`removeProperty.ts:46`), which P7 keeps, loses its cache clause where the stash leaves that write, the clause moving onto `stashAndStrip`'s doc.
 - [ ] `Core/Nexus/finishOwed.ts`: the `unassigned` arm, after the options, its part held whole while the rename is owed.
-- [ ] `Core/Nexus/governedSweep.ts`: `sweepGovernedRoots` files a root that can't round-trip under `skipped`, so `SweepResult.refused` and `unwritten` leave and every reader counts `skipped` alone: `restoreScrub.ts` (two), `trashedCopies.ts`, `spend.ts`, and `exclusionScan.ts`, whose `ClearReport.refused`, which no surface reads, leaves with it, so an exclusion clear that can't rewrite a page answers the same "Couldn’t update N Items." as one it can't read.
+- [ ] `Core/Nexus/governedSweep.ts`: `sweepGovernedRoots` files a root that can't round-trip under `skipped` as well as `refused`, so `refused` is the part of `skipped` only a fix by hand reaches, `unwritten` leaves, and every reader counts `skipped` alone: `restoreScrub.ts` (two), `trashedCopies.ts`, `spend.ts`, and `exclusionScan.ts`, whose `ClearReport.refused`, which no surface reads, leaves with it, so an exclusion clear that can't rewrite a page answers the same "Couldn’t update N Items." as one it can't read.
+- [ ] `Core/Nexus/configReach.ts`: `ConfigReach.refused` counts those files and `sweptReach` reads both counts from a sweep; `renameSweep`, `optionCascade`, `cascadeTitle`, `unlinkMembers` with its two callers, and `stashAndStrip` answer a `ConfigReach`, and Task 11B-4's `stripProperty` carries the count. `finishOwed.ts`: `add` sums it, `sweepEach` reads its arms through `add`, and `finishEntry` marks an entry `refused` when every file it still owes is refused. `owed.ts`: `owedName` passes over a marked entry, and `runNoted`'s note drops the mark.
 - [ ] `Core/Index/keyHolders.ts`: `unaddressed(held)` counts the holders a values read leaves out because no id addresses them; `stashAndStrip` reads it here and `stripProperty` in Task 11B-4.
 - [ ] Tests: `exclusionScan.test.ts`' refused-count assertions (HEAD `:180`, `:271`) become the refusal and the two-field report; `cascade.test.ts`' `.refused` assertion (HEAD `:837`) reads `skipped`.
 - [ ] `PropertyFrame.tsx`: the three sites read a landed reply as landed (P7's `mutate` answers `null` only for a refusal), so a Remove that missed pages returns the editor to the list and the slice posts the warning with Try Again; where P7 already reads the reply that way, the site is unchanged and only the test is new.
 - [ ] Tests: `unassignProperty.test.ts`'s HEAD case pinning a skipped Remove as a refusal (HEAD `removeProperty.test.ts`, its `unsweptReply` assertion) is rewritten to the owed reply; its ID-less case ("keeps the value of a page with no ID") pins the owed count.
-- [ ] Run the gates, then commit: `git commit --only -- Core/Properties/unassignProperty.ts Core/Properties/unassignProperty.test.ts Core/Nexus/finishOwed.ts Core/Nexus/finishOwed.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Nexus/governedSweep.ts Core/Nexus/governedSweep.test.ts Core/Index/keyHolders.ts Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts Core/Trash/spend.ts Core/Settings/exclusionScan.ts Core/Settings/exclusionScan.test.ts Core/Nexus/cascade.test.ts Core/Properties/registryProperty.test.ts Core/Properties/optionOps.test.ts Core/Contexts/contextCascade.test.ts -m "Remove notes the Collection it left, owes what it couldn't reach, and a re-add cancels it; every many-file change owes a page it can't safely rewrite."`
+- [ ] Run the gates, then commit: `git commit --only -- Core/Properties/unassignProperty.ts Core/Properties/unassignProperty.test.ts Core/Nexus/finishOwed.ts Core/Nexus/finishOwed.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Nexus/governedSweep.ts Core/Nexus/governedSweep.test.ts Core/Index/keyHolders.ts Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts Core/Trash/spend.ts Core/Settings/exclusionScan.ts Core/Settings/exclusionScan.test.ts Core/Nexus/cascade.test.ts Core/Properties/registryProperty.test.ts Core/Properties/optionOps.test.ts Core/Contexts/contextCascade.test.ts Core/Nexus/configReach.ts Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/finishOwed.test.ts Core/Properties/registryProperty.ts Core/Properties/optionOps.ts Core/Contexts/contextCascade.ts -m "Remove notes the Collection it left, owes what it couldn't reach, and a re-add cancels it; every many-file change owes a page it can't safely rewrite, without holding its names."`
 
 **AFTER**
 
 ```Core/Properties/unassignProperty.ts diff
 @@ imports @@
 -import { propertyClear, reachConfig, reachReport } from '../Nexus/configReach'
-+import { propertyClear, reachConfig } from '../Nexus/configReach'
++import { type ConfigReach, propertyClear, reachConfig, sweptReach } from '../Nexus/configReach'
  import type { MutateReply } from '../Nexus/mutateRequest'
 +import { distinct, propertyNote, runNoted } from '../Nexus/owed'
 +import { containerAt } from '../Nexus/treePatch'
@@ -19605,7 +19688,8 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 +      })),
 +    sweep: async () => {
 +      const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-+      return { skipped: reach.skipped + (await stashAndStrip(root, collectionFolder, def)), hosts: reach.hosts }
++      const stripped = await stashAndStrip(root, collectionFolder, def)
++      return { ...stripped, skipped: reach.skipped + stripped.skipped, hosts: reach.hosts }
 +    },
 +    settle: (e) => ({
 +      ...propertyNote(e),
@@ -19617,17 +19701,17 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
  }
 +
 +/** Moves the values the Collection's holders hold for `def` into its stash, then strips the key, answering what it couldn't reach: a file it can't read or rewrite, and a holder with no id to stash under, which keeps its value. The stash keeps what it already holds, which a refill cut short left for pages it never reached. */
-+export async function stashAndStrip(root: string, folder: string, def: PropertyDefinition): Promise<number> {
++export async function stashAndStrip(root: string, folder: string, def: PropertyDefinition): Promise<ConfigReach> {
 +  const { pages, held } = await findHolders(root, { keys: [def.key], reach: { collection: folder } }, 'values')
 +  const values = heldValues(held, def.key)
 +  if (Object.keys(values).length) {
 +    const stashed = await patchSidecar(folder, 'collection', (cur) =>
 +      patchCacheBlock(cur, def.id, { values: { ...cachedValues(cur, def.id), ...values } }),
 +    )
-+    if (!stashed.ok) return held.length
++    if (!stashed.ok) return { skipped: held.length, hosts: [] }
 +  }
 +  const swept = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [def.key]) })
-+  return swept.skipped.length + unaddressed(held)
++  return { ...sweptReach(swept), skipped: swept.skipped.length + unaddressed(held) }
 +}
 ```
 
@@ -19653,25 +19737,14 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
    touched: Map<string, { before: string; after: string }>
 +  /** Each file left as it was that the sweep should have reached: one it couldn't read, and one whose root can't round-trip, which a later sweep reaches once it reads back as written. */
    skipped: string[]
--  refused: string[]
++  /** The files among `skipped` whose root can't round-trip, which only a fix by hand lets a sweep reach. */
+   refused: string[]
  }
 @@ sweepGovernedRoots @@
--  const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
-+  const out: SweepResult = { touched: new Map(), skipped: [] }
- 
-   for (const file of files) {
-     await guarded(file, out.skipped, async () => {
-       const content = await readTextOrNull(file)
--      if (content === null) {
--        out.skipped.push(file)
--        return
--      }
--      const next = rewritten(plan, file, content)
--      if (next === undefined) {
--        out.refused.push(file)
-+      const next = content === null ? undefined : rewritten(plan, file, content)
-+      if (content === null || next === undefined) {
+       const next = rewritten(plan, file, content)
+       if (next === undefined) {
 +        out.skipped.push(file)
+         out.refused.push(file)
          return
        }
 @@ unwritten @@
@@ -19720,6 +19793,161 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 -  return ok({ pages: swept.touched.size, sidecars: removed, refused: swept.refused.length })
 +  return ok({ pages: swept.touched.size, sidecars: removed })
 ```
+
+```Core/Nexus/configReach.ts diff
+@@ imports @@
+ import { FILEDATA } from '../Properties/properties'
++import type { SweepResult } from './governedSweep'
+@@ ConfigReach @@
+ export interface ConfigReach {
+   skipped: number
++  /** The files among `skipped` whose front matter Pommora can't rewrite safely. */
++  refused?: number
+   hosts: TilesChanged[]
+ }
+ 
+ export const NO_REACH: ConfigReach = { skipped: 0, hosts: [] }
++
++export const sweptReach = ({ skipped, refused }: SweepResult): ConfigReach => ({
++  skipped: skipped.length,
++  refused: refused.length,
++  hosts: [],
++})
+```
+
+```Core/Properties/registryProperty.ts diff
+@@ imports @@
+ import { outsideArchive, sweepCount, sweepGovernedRoots, type SweepPlan } from '../Nexus/governedSweep'
++import { type ConfigReach, NO_REACH, sweptReach } from '../Nexus/configReach'
+@@ renameSweep @@
+-export async function renameSweep(root: string, from: string, to: string): Promise<number> {
++export async function renameSweep(root: string, from: string, to: string): Promise<ConfigReach> {
+   const { files, plan } = await renamePlan(root, from, to)
+-  return (await sweepGovernedRoots(files, plan)).skipped.length
++  return sweptReach(await sweepGovernedRoots(files, plan))
+ }
+@@ rekeyProperty @@
+-      sweep: async ({ from, def }) => ({
+-        skipped: from === def.key ? 0 : await renameSweep(root, from, def.key),
+-        hosts: [],
+-      }),
++      sweep: async ({ from, def }) => (from === def.key ? NO_REACH : renameSweep(root, from, def.key)),
+```
+
+```Core/Properties/optionOps.ts diff
+@@ optionCascade @@
+   let skipped = 0
++  let refused = 0
+   if (keys.size) {
+     const { files, plan } = await valueEditPlan(root, def, keys)
+-    skipped = (await sweepGovernedRoots(files, plan)).skipped.length
++    const swept = await sweepGovernedRoots(files, plan)
++    skipped = swept.skipped.length
++    refused = swept.refused.length
+     skipped += await cacheSweep(root, def, keys)
+   }
+ …
+-  return { skipped: skipped + reach.skipped, hosts: reach.hosts }
++  return { skipped: skipped + reach.skipped, refused, hosts: reach.hosts }
+```
+
+```Core/Contexts/contextCascade.ts diff
+@@ imports @@
+   sweepGovernedRoots,
+ } from '../Nexus/governedSweep'
++import { type ConfigReach, sweptReach } from '../Nexus/configReach'
+@@ cascadeTitle @@
+-/** Sweeps one title change through `files`: a Context's key from `from` to `to`, or with `space` that Space's name inside `contextTitle`'s key; answers how many it missed. */
++/** Sweeps one title change through `files`: a Context's key from `from` to `to`, or with `space` that Space's name inside `contextTitle`'s key; answers what it missed. */
+ export async function cascadeTitle(
+ …
+-): Promise<number> {
++): Promise<ConfigReach> {
+   const raw: Rewrite = space ? (r) => retitleSpace(r, contextTitle, from, to) : rekeyContext(from, to)
+-  return (await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) })).skipped.length
++  return sweptReach(await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) }))
+ }
+@@ unlinkContextKey @@
+ export async function unlinkContextKey(
+ …
+   skipUnder: string,
+-): Promise<number> {
++): Promise<ConfigReach> {
+@@ unlinkSpaceValue @@
+ export async function unlinkSpaceValue(
+ …
+   skipUnder: string,
+-): Promise<number> {
++): Promise<ConfigReach> {
+@@ unlinkMembers @@
+   skipUnder: string,
+-): Promise<number> {
++): Promise<ConfigReach> {
+ …
+-  return (await sweepGovernedRoots(files, { raw: rewrite })).skipped.length
++  return sweptReach(await sweepGovernedRoots(files, { raw: rewrite }))
+ }
+@@ renameContextOp's sweep @@
+-    sweep: async (relocated) => ({
+-      skipped: relocated ? await cascadeTitle(entry.title, entry.title, newName, false, files) : 1,
+-      hosts: [],
+-    }),
++    sweep: async (relocated) =>
++      relocated ? cascadeTitle(entry.title, entry.title, newName, false, files) : { skipped: 1, hosts: [] },
+@@ renameSpaceOp's sweep @@
+-    sweep: async () => ({ skipped: await cascadeTitle(group.def.title, space.title, newName, true, files), hosts: [] }),
++    sweep: () => cascadeTitle(group.def.title, space.title, newName, true, files),
+```
+
+```Core/Nexus/finishOwed.ts diff
+@@ add @@
+ const add = (reach: ConfigReach, r: ConfigReach): boolean => {
+   reach.skipped += r.skipped
++  reach.refused = (reach.refused ?? 0) + (r.refused ?? 0)
+   reach.hosts.push(...r.hosts)
+@@ finishEntry @@
+   const done = await finishArm(root, id, e, notes, deps)
+-  await editNote(root, id, () => done.left)
++  const { skipped, refused } = done.reach
++  await editNote(root, id, () => ({ ...done.left, refused: skipped > 0 && skipped === refused ? true : undefined }))
+   return done.reach
+@@ sweepEach @@
+-  sweep: (name: string) => Promise<number>,
++  sweep: (name: string) => Promise<ConfigReach>,
+   reach: ConfigReach,
+ ): Promise<string[] | undefined> {
+   const left: string[] = []
+   for (const name of names ?? []) {
+     if (skip(name)) continue
+-    const missed = await sweep(name)
+-    reach.skipped += missed
+-    if (missed) left.push(name)
++    if (add(reach, await sweep(name))) left.push(name)
+   }
+```
+
+```Core/Nexus/owed.ts diff
+@@ Entry @@
+-export type Entry = PropertyEntry | ContextEntry | SpaceEntry
++/** `refused` marks an entry whose last finish missed only files Pommora can't rewrite safely: it stays owed with Try Again, and its names stay free, since only a fix by hand lets a sweep reach those files. */
++export type Entry = (PropertyEntry | ContextEntry | SpaceEntry) & { refused?: true }
+@@ owedName @@
+     owner.kind === 'option'
+-      ? Object.entries(propertyNote(notes[owner.propertyId]).options ?? {})
++      ? notes[owner.propertyId]?.refused
++        ? []
++        : Object.entries(propertyNote(notes[owner.propertyId]).options ?? {})
+       : Object.entries(notes).filter(
+           ([, e]) =>
+             e.kind === owner.kind &&
++            !e.refused &&
+@@ runNoted @@
+-  const prior = await editNote(root, id, change.note)
++  // A new change's misses are unknown until the next finish, so its note drops the mark.
++  const prior = await editNote(root, id, (e) => ({ ...change.note(e), refused: undefined }))
+```
+
+A sweep counts a root it can't round-trip among `skipped` and again in `refused`, so every arm's count owes it and `sweptReach` carries the second count up through `ConfigReach`. `finishEntry` marks an entry whose every miss was refused; the slice's finish before re-sending an owed-name refusal is what reads the mark fresh, so a create or rename onto a name only such pages still hold lands on its second send.
 
 A rename sweeps by key and never reads a value it would need to put back, so its finder keeps an ID-less page among its files and rewrites it; only a values read, the strip that stashes or files in the Trash, leaves one out, so `unaddressed` is read where those strips count. With a root that can't round-trip counted as skipped, every arm's `skipped.length` already counts it: `renameSweep`, `optionCascade`, `stripProperty`, `cascadeTitle`, `unlinkMembers`, and the restores, which reported both through `unwritten`.
 
@@ -19780,7 +20008,11 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 +  for (const folder of folders) if (!(await unassignAndPurge(folder, propertyId))) purged++
    const reach = await reachConfig(root, { kind: 'property', propertyId })
 -  return { skipped: swept.skipped.length + reach.skipped, hosts: reach.hosts }
-+  return { skipped: swept.skipped.length + unaddressed(holders.held) + purged + reach.skipped, hosts: reach.hosts }
++  return {
++    skipped: swept.skipped.length + unaddressed(holders.held) + purged + reach.skipped,
++    refused: swept.refused.length,
++    hosts: reach.hosts,
++  }
 @@ unassignAndPurge @@
 -async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
 -  await patchSidecar(folder, 'collection', (cur) => {
@@ -19870,7 +20102,7 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 #### Review Checkpoint
 
 - [ ] Two read-only `opus-high` reviewers, to `closeout-review`'s standards (its closing procedures, write guards, and output format exempt), one simplification and one adversarial, each brief carrying the Approach, Principles, Perspectives, Nathan's Constraints, and the 10-22-2026 directive verbatim, read Phase 11B's diff against this phase: the five tasks' AFTERs landed as written or with each departure disclosed; nothing temporary or unreachable left; every comment the phase touched reads true; each reviewer states, with evidence, that the phase leaves the flagged practices concretely fewer (one capture for three deletes; one strip-and-views routine shared by each live delete and its finish; Remove on the one runner; one Try Again site for every delete; no put-back-and-throw) and adds no Issues entry.
-- [ ] The adversarial reviewer walks a crash between note and list step for a Context and a Space delete in both Trash modes (H-5), a crash between landing and conversion for a Context and a Space restore (H-4), a Remove beside an owed rename and a re-add (H-1), a Space delete beside an owed Context rename (H-1), and a refused holder across repeated Try Agains.
+- [ ] The adversarial reviewer walks a crash between note and list step for a Context and a Space delete in both Trash modes (H-5), a crash between landing and conversion for a Context and a Space restore (H-4), a Remove beside an owed rename and a re-add (H-1), a Space delete beside an owed Context rename (H-1), and a refused holder across repeated Try Agains, its names free while it's the only miss.
 - [ ] The tests named in Tasks 11B-1 to 11B-4 pass.
 - [ ] Run the gates: `npm run typecheck`, `npm run test`, `npm run lint`, clean; `npm run test -- engineGraph hostGraph` passes.
 - [ ] The Properties Drive passes groups 1–9, and the Metadata and Archive drives, whose Context, Space, and Collection deletes this phase reshapes, pass every group.
@@ -19882,9 +20114,9 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 - **Deletes Finish (B-3):** a Context or Space delete that misses pages, or a view settings file, finishes and offers Try Again, where it put everything back and refused. Nathan's intent.
 - **A Partial Delete's Trash Entry Holds What It Missed:** every delete captures its holders' values up front, an unreadable page's from the index.
 - **Re-Adding Cancels an Owed Remove; a Remove Reports What It Can't Clean Up (C-2):** a Remove that missed pages returns to the list with Try Again.
-- **Every Change Owes a Page It Can't Safely Rewrite:** a property rename or delete, an option rename, Value Format, delete, or Clear, a Context or Space rename or delete, and Remove each count a page whose front matter can't be read back as written as a missed file, with Try Again, where at HEAD only a restore reported one and every other change left the page under the old name with nothing said. A property delete and Remove also count a holder no id addresses, which keeps its value. An exclusion clear that meets such a page answers "Couldn’t update N Items." as it does for an unreadable one, where it reported a count no surface showed. Nathan's intent.
-- **The Refused-Holder Reading:** an entry stays owed, and is reported on every Try Again, for as long as a holder stays refused (front matter Pommora can't rewrite safely). That is how every arm already treats a page that stays unreadable (`chmod 000`): the entry stands until the file can be reached, and the warning says so. Dropping a holder the index no longer lists doesn't apply, since the index keeps a refused page's rows; and dropping refused holders would leave the old name or value on the page with nothing on record. An ID-less or duplicate-ID holder is transient: adoption stamps an ID at the page's next read and the remint ledger settles a duplicate, after which Try Again stashes and strips it. Since one Try Again finishes everything owed, a stuck refused page re-reports its one count with every Try Again until it's fixed by hand; the page's own "contains invalid metadata" notice names it.
-- **A Space Deleted Under an Owed Context Rename:** the delete strips every holder already under the Context's current title and counts the files still under the Context's old title as owed, with Try Again (B-3); those pages lose the Space's tag once the Context's rename finishes, in the same pass. *Phase 11A*'s waiting count carries the rule for every kind.
+- **Every Change Owes a Page It Can't Safely Rewrite:** a property rename or delete, an option rename, Value Format, delete, or Clear, a Context or Space rename or delete, and Remove each count a page whose front matter can't be read back as written as a missed file, with Try Again, where at HEAD only a restore reported one and every other change left the page under the old name with nothing said. A property delete and Remove also count a holder no id addresses, which keeps its value. An item whose every miss is such a page keeps its Try Again without holding its names: a create or rename onto one of them finishes the owed work first, as every owed-name refusal does, and lands. An exclusion clear that meets such a page answers "Couldn’t update N Items." as it does for an unreadable one, where it reported a count no surface showed. Nathan's intent.
+- **The Refused-Holder Reading:** an entry stays owed, and is reported on every Try Again, for as long as a holder stays refused (front matter Pommora can't rewrite safely). That is how every arm already treats a page that stays unreadable (`chmod 000`): the entry stands until the file can be reached, and the warning says so. Dropping a holder the index no longer lists doesn't apply, since the index keeps a refused page's rows; and dropping refused holders would leave the old name or value on the page with nothing on record. An ID-less or duplicate-ID holder is transient: adoption stamps an ID at the page's next read and the remint ledger settles a duplicate, after which Try Again stashes and strips it. Since one Try Again finishes everything owed, a stuck refused page re-reports its one count with every Try Again until it's fixed by hand, and the Try Again that follows the fix finishes it; the page's own "contains invalid metadata" notice names it. While a refused page is an entry's only miss, the entry is marked `refused` and its names stay free (Try Again Unclogs), so the stuck page never blocks a create or rename; an unreadable page or a holder with no id keeps the names held, since Try Again reaches those on its own.
+- **A Space Deleted Under an Owed Context Rename:** the delete strips every holder already under the Context's current title and stays owed, with Try Again (B-3); the pages still under the Context's old title lose the Space's tag once the Context's rename finishes, in the same pass. *Phase 11A*'s owed reply under an owed rename carries the rule for every kind.
 - **A Holder No Id Addresses Under a Delete:** the Trash entry can't file its value, so the record reads partial, and once adoption stamps the page an ID the finish strips the key, the value going with it. The page is counted owed in between rather than keeping the deleted key with nothing said.
 - **The System Trash Mode's Context and Space Deletes:** a finish in System Trash mode sends the folder to the system Trash and strips the tags with no record anywhere, as the live delete does.
 - **The Orphan Trash Entry (H-5 Residual):** a crash between a delete's bundle mint and its note leaves a Trash entry for a live item, as at HEAD; its restore refuses `'exists'`, and it can be emptied.
@@ -19894,14 +20126,14 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 11B-1 | −3 | +9 | +6 |
-| 11B-2 | −157 | +210 | +53 |
-| 11B-3 | −45 | +77 | +32 |
-| 11B-4 | −5 | +10 | +5 |
+| 11B-2 | −157 | +209 | +52 |
+| 11B-3 | −68 | +119 | +51 |
+| 11B-4 | −5 | +11 | +6 |
 | 11B-5 | 0 | 0 | 0 |
-| **Phase 11B** | **−210** | **+306** | **+96** |
+| **Phase 11B** | **−233** | **+348** | **+115** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
-- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `SweepResult.refused` with `unwritten`, and `ClearReport.refused`.
+- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change, with `refused` threaded once through `ConfigReach` so a refused-only entry frees its names. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `unwritten`, and `ClearReport.refused`.
 - **Tests:** about −100 removed (the undo-and-throw, put-back, unmint, `goneEdit`, and skipped-Remove-refusal cases) and about +220 written (the cases each task names).
 
 ---
@@ -20386,7 +20618,7 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 
 #### Task 12-4
 
-**TASK:** A property's restore writes its recorded stash blocks back first, without the pages its record holds a delete-time value for, then re-assigns, then refills the record's values, so the re-assign refills from the stash and a page in both takes the value it held at the delete. Emptying a property's Trash entry ends it for good, so every Collection still listing it, one restored since its delete or one still in the Trash, drops it the way the delete dropped it everywhere else.
+**TASK:** A property's restore writes its recorded stash blocks back first, without the pages its record holds a delete-time value for, then re-assigns, then refills the record's values, so the re-assign refills from the stash and a page in both takes the value it held at the delete. Emptying a property's Trash entry ends it for good, so every Collection still listing it, one restored since its delete or one still in the Trash, drops it the way the delete dropped it everywhere else, its key leaves the pages in the Trash too, and what the strip misses is owed with Try Again.
 
 **NOW:** After Task 12-2 the record keeps each Collection's block whole with its stamp. `restoreInner` (`restoreProperty.ts:31-78`; P7 has it trust `createProperty`'s landed definition and read the tree once for `byId`, P11 has it run create → `owedRestore` → spend) re-assigns from `record.assignments` (`:45-49`) before writing `record.stashes` back (`:50-54`). `assignInner` refills only on a new append (`assignment.ts:110-126`), so a Collection that both assigned the property and held leftovers keeps them unspent. Swapping the two loops alone regresses a page held in both a block and `record.values`: the block's older leftover lands first, the `record.values` refill finds the key filled, and the page is named unrestored. A delete leaves every Trash bundle alone, trashed Collections included (`collectionFolders`, `governedSweep.ts:36-40`), and a restored Collection's id for a deleted property is inert because the resolver drops an id the registry lacks (P5's `holderSchema`; HEAD `containerFields.ts:29-39`). `emptyBundle`'s property arm (`Core/Trash/spend.ts:62-65`) only disposes of the bundle, so that id, its stash block, its view columns, and its pages' values stay in the Collection for good once the property can't come back.
 
@@ -20394,7 +20626,7 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 
 - [ ] Write "a page in a stash and in the record takes the value it held at the delete, and isn't named unrestored", and watch it fail: Priority assigned to Notes; page A holds `hi`, Remove from Notes, re-assign while A regained `lo` itself (so A's `hi` stays stashed as a leftover); delete Priority (the record's `values` hold A's `lo`, its `stashes` Notes' block with A's `hi`); restore; A reads `['lo']`, the reply has no `unrestored`, and Notes holds no block for A.
 - [ ] Write "a property deleted while its Collection sits in the Trash switches back on there when both return" (no production change): Priority assigned to Tasks, a Tasks page holds `hi`; delete the Tasks Collection, delete Priority, restore the Collection (its sidecar still lists Priority's id, and the tree resolves no definition for it), restore Priority; Tasks assigns Priority and the page reads `['hi']`. It pins today's behavior, so it passes at once.
-- [ ] Write `Core/Trash/spend.test.ts` › "emptying a property's Trash entry drops it from every Collection still listing it" and watch it fail: Priority assigned to Tasks and Notes, a page in each holding `hi`; delete the Tasks and Notes Collections, delete Priority, restore Tasks, then empty Priority's bundle; Tasks' sidecar lists no Priority and holds no stash block for it, its view columns don't name it, and its page holds no `Priority:`; Notes' sidecar inside its Trash bundle lists no Priority either, so restoring Notes brings back no inert id. "a live property holding the key keeps it": with a new property `Priority` created before the empty, the Tasks page keeps its value under it.
+- [ ] Write `Core/Trash/spend.test.ts` › "emptying a property's Trash entry drops it from every Collection still listing it" and watch it fail: Priority assigned to Tasks and Notes, a page in each holding `hi`; delete the Tasks and Notes Collections, delete Priority, restore Tasks, then empty Priority's bundle; Tasks' sidecar lists no Priority and holds no stash block for it, its view columns don't name it, and its page holds no `Priority:`; Notes' sidecar inside its Trash bundle lists no Priority either and its trashed page holds no `Priority:`, so restoring Notes brings back no inert id and no ungoverned value; "an empty that misses a page offers Try Again": with the Tasks page `chmod 000`, the reply's `cascade.owed` is `true`, the entry holds `strip: ['Priority']`, and once the mode is restored `finishOwed` strips the page and clears the entry. "a live property holding the key keeps it": with a new property `Priority` created before the empty, the Tasks page keeps its value under it.
 - [ ] `spend.ts`: `emptyBundle`'s property arm, as the AFTER gives it.
 - [ ] Commit: `git commit --only -- Core/Trash/restoreProperty.ts Core/Trash/restoreProperty.test.ts Core/Trash/spend.ts Core/Trash/spend.test.ts` with "A deleted property's restore writes its stash back before re-assigning, and emptying its Trash entry drops it from every Collection still listing it."
 
@@ -20442,26 +20674,41 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
    fileInto,
 +  listBundles,
    openBundle,
+@@ the notes import @@
+-import { OWED, owedName, readNotes, restoreNote } from '../Nexus/owed'
++import { distinct, OWED, owedName, propertyNote, readNotes, restoreNote, runNoted } from '../Nexus/owed'
 @@ emptyBundle's property arm @@
    if (record.entity === 'property') {
-+    // Gone for good: every Collection still listing it, one restored since the delete or one in the Trash, drops it as the delete dropped it everywhere else, and its key leaves their pages unless a live definition holds it now.
-+    await serializeSchemaOp(root, async () => {
++    // Gone for good: every Collection still listing it, one restored since the delete or one in the Trash, drops it as the delete dropped it everywhere else, and its key leaves their pages and the Trash's unless a live definition holds it now. What the strip misses stays owed, so Try Again reaches it.
++    const stripped = await serializeSchemaOp(root, async () => {
 +      const key = asString(record.def.key)
 +      const held = Object.values((await readRegistry(root)).defs).some((d) => d.key === key)
-+      const trashed = (await listBundles(root, { kind: 'trash' })).filter((b) => b.record.entity === 'collection')
++      const trashed = (await listBundles(root, { kind: 'trash' })).flatMap((b) =>
++        b.artifactName ? [{ entity: b.record.entity, abs: join(root, b.bundlePath, b.artifactName) }] : [],
++      )
 +      const folders = [
 +        ...collectionFolders(root, await liveTreeOf(root)),
-+        ...trashed.flatMap((b) => (b.artifactName ? [join(root, b.bundlePath, b.artifactName)] : [])),
++        ...trashed.flatMap((b) => (b.entity === 'collection' ? [b.abs] : [])),
 +      ]
 +      const keys = key && !held ? [key] : []
-+      await stripProperty(root, record.id, folders, await deletePlan(root, record.id, keys))
++      const planned = await deletePlan(root, record.id, keys)
++      const inTrash = keys.length ? (await Promise.all(trashed.map((b) => contentPages(b.entity, b.abs)))).flat() : []
++      const holders = { ...planned.holders, pages: [...planned.holders.pages, ...inTrash] }
++      return runNoted(root, record.id, {
++        note: (e) => ({ ...propertyNote(e), strip: distinct(propertyNote(e).strip, keys) }),
++        list: async () => ok(null),
++        sweep: () => stripProperty(root, record.id, folders, { ...planned, holders }),
++        settle: () => undefined,
++      })
 +    })
++    if (!stripped.ok) return stripped
      await dispose(bundleAbs)
-     return ok({})
+-    return ok({})
++    return ok({ cascade: stripped.value.cascade })
    }
 ```
 
-The arm runs the strip the finish runs for a definition gone (`finishProperty`), over the live Collections and the Trash's: `unassignAndPurge` is a no-op on a sidecar that neither lists the id nor stashes it, and the strip passes over a key a live definition holds, as the finish's `held` does. A Collection still in the Trash is purged in its bundle, the way a re-add's refill already writes a trashed page's Trash copy, so its restore brings back no inert id and needs no reconcile of its own.
+The arm runs the strip the finish runs for a definition gone (`finishProperty`), over the live Collections and the Trash's, on the runner every many-file change runs: a miss keeps the key in the entry's `strip`, and Try Again's finish strips it from the live Collections as it does for any deleted property; the bundle goes either way, since the property can't come back. `unassignAndPurge` is a no-op on a sidecar that neither lists the id nor stashes it, and the strip passes over a key a live definition holds, as the finish's `held` does. A Collection still in the Trash is purged in its bundle, the way a re-add's refill already writes a trashed page's Trash copy, so its restore brings back no inert id and needs no reconcile of its own.
 
 **VERIFY**
 
@@ -20890,9 +21137,18 @@ The arm runs the strip the finish runs for a definition gone (`finishProperty`),
 - [ ] Rewrite `Core/Settings/handlers.test.ts:26-35` as "sweeps file history when either timeframe is written and the stash when the History Timeframe is, and neither for any other key", mocking `../Properties/propertyStash` with `sweepStashes: vi.fn()`: `historyDays` calls both with `'/root'`, `archiveHistoryDays` calls `sweepFileHistory` alone, and `openLinksInApp` calls neither. Watch it fail.
 - [ ] `propertyStash.ts`: `sweepStashes(root)` lands per the AFTER.
 - [ ] `Core/Nexus/handlers.ts`: `void sweepStashes(root)` on the line after `void sweepFileHistory(root)`, before P11's `await finishOwed(…)`.
-- [ ] Commit: `git commit --only -- Core/Properties/propertyStash.ts Core/Properties/propertyStash.test.ts Core/Nexus/handlers.ts Core/Settings/handlers.ts Core/Settings/handlers.test.ts` with "The stash ages out after the History Timeframe at the open and when the timeframe changes."
+- [ ] `Core/Settings/frames.ts`: the History Timeframe row gains its hint, as the AFTER gives it, since the setting now ages the stash too.
+- [ ] Commit: `git commit --only -- Core/Properties/propertyStash.ts Core/Properties/propertyStash.test.ts Core/Nexus/handlers.ts Core/Settings/handlers.ts Core/Settings/handlers.test.ts Core/Settings/frames.ts` with "The stash ages out after the History Timeframe at the open and when the timeframe changes."
 
 **AFTER**
+
+```Core/Settings/frames.ts diff
+@@ the History Timeframe row @@
+             key: 'historyDays',
+             label: 'History Timeframe',
++            hint: 'How long file history and the recovery stash are kept.',
+             unit: DAYS,
+```
 
 ```Core/Properties/propertyStash.ts diff
 @@ imports @@
@@ -21308,7 +21564,7 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 
 #### Behavior Changes and Disclosures
 
-- **Each Is a Ruled or Recommended Behavior:** stash entries age out after the History Timeframe at the open and when the History Timeframe is written (C-3, Nathan's intent; LC-26); re-adding drops entries for pages that left and parks a trashed page's value in its Trash copy, only for a page trashed from this Collection (C-2, Nathan's intent); a re-add or a property restore that couldn't refill a page says "Couldn’t update N Items." with Try Again, and the entry keeps the refill owed until a finish reaches it; a restored property's stash keeps its Remove's stamp (LC-26) and is written back before the re-assign, so leftovers refill and a page in both takes its delete-time value (C-2); a partly recorded Trash entry shows its mark and its restore says so (N-1, LC-37); a restore that reports in its own notice keeps the Try Again its reply owes (B-3); Collections in the Trash stay untouched by a global delete, and a restored Collection's inert id stays (pinned in Task 12-4).
+- **Each Is a Ruled or Recommended Behavior:** stash entries age out after the History Timeframe at the open and when the History Timeframe is written (C-3, Nathan's intent; LC-26); re-adding drops entries for pages that left and parks a trashed page's value in its Trash copy, only for a page trashed from this Collection (C-2, Nathan's intent); a re-add or a property restore that couldn't refill a page says "Couldn’t update N Items." with Try Again, and the entry keeps the refill owed until a finish reaches it; a restored property's stash keeps its Remove's stamp (LC-26) and is written back before the re-assign, so leftovers refill and a page in both takes its delete-time value (C-2); a partly recorded Trash entry shows its mark and its restore says so (N-1, LC-37); a restore that reports in its own notice keeps the Try Again its reply owes (B-3); Collections in the Trash stay untouched by a global delete, so a Collection and its property restored in either order switch back on together (pinned in Task 12-4).
 - **A Page That Left Loses Its Stashed Value at the Next Re-Add (C-2):** a page deleted, moved to another Collection, or claimed by two files at the re-add leaves the block, where today it waits forever; `unassignProperty.test.ts`' HEAD case pinning the opposite is rewritten. A page unreadable at that moment is absent from `byId` and drops with them (an accepted edge, since `tree.unreadable` lists paths, not ids). A member already holding its own value isn't taken, so its entry waits for the timeframe, as does a stashed Link refilled into a Trash copy naming a gone page, since `gonePageEntry` runs over members only; both are bounded and earn no arm.
 - **A Failed Spend Write Counts as a Skip:** `refillStash` answers one more skip when its final sidecar write fails, where HEAD's `assignInner` answered that failure as the re-add's refusal after the assignment and the refill had already landed. The re-add now reports it with Try Again, which re-runs the spend.
 - **The Note Is Written After the Refill:** the refill can't know it skipped until it runs, so `refill` is written on a skip, after the pages. When the notes file can't be written, the warning still shows and `owed` is left off, so no Try Again is offered for an entry that doesn't exist; the values stay in the stash until the timeframe.
@@ -21318,10 +21574,10 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 - **A Block That Expires Mid-Session Can Still Refill Until the Next Trigger:** expired file history stays viewable the same way, since neither reader filters by age.
 - **A Block Without a Stamp Is Read as No Block:** every block the app writes carries its stamp from the commit that names the store, and Sync carries a Collection's settings file whole (`Core/Sync/Arrival/mergePolicy.ts:38`), so only a hand edit can leave one; `stashedBlock` reads it as absent, so it neither refills nor ages. No Nexus holds a stash today.
 - **The Sweep Is a New Writer of Synced Sidecars:** recorded in *§Sync Rebuild Inputs* (*The Stash Sweep as a New Writer*); nothing under `Core/Sync/` changes.
-- **The History Timeframe's Hint Stays:** "Stores recoverable snapshots of device-local file history." (`Core/Settings/frames.ts:650`) now undersells a setting that also ages a synced store; its wording waits for I-076's pass and I-077.
+- **The History Timeframe Gains a Hint (Nathan's Intent, 10-22-2026, Interim):** the row, which had none, reads "How long file history and the recovery stash are kept.", since the setting now ages the stash as well as file history; the File History toggle's own hint is unchanged.
 - **The Restore's Link Parking and the Stash's Trash Parking Share One Rewrite:** `refillTrashed` puts `record.links`' recorded Link values back into Trash copies at a restore, and the stash's parking re-adds a value into a Trash copy through the definition as it reads now. P10 lands `refillTrashed` through `refillOf(def, frozen)`, the rewrite `refillValues` passes to `sweepRootsById`, so both parkings reconcile, encode, and blank-check a value the way a live refill does (an option or page deleted since doesn't come back), find copies through the one `trashedHolders`, and write through `sweepGovernedRoots`. This phase adds only `trashedHolders`' `from` filter and its second caller.
 - **Import Order:** `Core/Settings/handlers.ts` → `Core/Properties/propertyStash.ts` → `Core/Settings/settings.ts` adds no cycle (`settings.ts` imports neither handlers module), and `Core/Nexus/finishOwed.ts` → `Core/Properties/assignment.ts` → `Core/Nexus/owed.ts` adds none (`owed.ts` imports neither); the drive's launch is the module-load check, as the Archive plan's was.
-- **An Emptied Property Leaves Every Collection (Task 12-4):** emptying a property's Trash entry drops its id, stash block, and view columns from every Collection still listing it, live or in the Trash, and strips its key from the live pages under them, where today a Collection restored after the delete keeps the inert id, its stash, and its pages' values for good. While the entry stays in the Trash, the Collection and the property still return in either order and switch back on together. Under the *No Leftovers* constraint.
+- **An Emptied Property Leaves Every Collection (Task 12-4):** emptying a property's Trash entry drops its id, stash block, and view columns from every Collection still listing it, live or in the Trash, and strips its key from the live pages under them and from the pages in the Trash, owing what it misses with Try Again, where today a Collection restored after the delete keeps the inert id, its stash, and its pages' values for good. While the entry stays in the Trash, the Collection and the property still return in either order and switch back on together. Under the *No Leftovers* constraint.
 - **A Restore's Own Notice Keeps Its Try Again (Task 12-9):** an Archive restore's lines show once, inside the Restored notice that replaces the slice's in the same turn; that notice now carries the reply's Try Again, which the replacement otherwise loses.
 
 #### Line Total
@@ -21331,20 +21587,20 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 | 12-1 One Vocabulary | −58 | +58 | 0 |
 | 12-2 The Block and Its Stamp | −23 | +33 | +10 |
 | 12-3 The Purge | −5 | +5 | 0 |
-| 12-4 The Restore Order and the Empty | −7 | +35 | +28 |
+| 12-4 The Restore Order and the Empty | −9 | +56 | +47 |
 | 12-5 The Refill | −39 | +58 | +19 |
 | 12-6 Refill Skips Surface | −18 | +47 | +29 |
-| 12-7 The Age Cleanup | −2 | +22 | +20 |
+| 12-7 The Age Cleanup | −2 | +23 | +21 |
 | 12-8 The Partial Mark | −10 | +29 | +19 |
 | 12-9 The Restore Notice's Try Again | 0 | +2 | +2 |
 | 12-10 | 0 | 0 | 0 |
-| **Phase 12** | **−162** | **+289** | **+127** |
+| **Phase 12** | **−164** | **+311** | **+147** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +190 (`propertyStash.test.ts` new with about 80; about 15 new cases across `unassignProperty.test.ts`, `assignment.test.ts`, `finishOwed.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `rows.test.ts`, and `TrashFrame.test.tsx`; two cases rewritten; fixtures re-seeded with the stamp, line-neutral). The drive group (about 90 lines) is apart.
 - **Net-Positive Rationale, Per Item (*Less Stuff*):**
-  - **The stamp and the age cleanup (+30, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
-  - **The restore order and the empty (+28, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty runs the finish's own strip over the Collections still listing the property rather than a second purge, under *No Leftovers*.
+  - **The stamp and the age cleanup (+31, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
+  - **The restore order and the empty (+47, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty runs the finish's own strip over the Collections still listing the property and the Trash's pages rather than a second purge, on the runner so a miss keeps Try Again, under *No Leftovers* and *Try Again Unclogs*.
   - **The refill (+19, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
   - **The refill's report (+29, Task 12-6):** with the timeframe, a skipped value would be lost unseen; the refill's report rides P11's notes entry, its `owesAnything` rule, its `finishProperty` and `sweepEach`, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
   - **The partial mark (+19, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
@@ -21380,7 +21636,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 - [ ] `Core/Views/Pipeline/columns.ts` (AFTER). The file comment keeps its allowlist rule.
 - [ ] `fieldValue.ts`: `columnType` and its doc comment leave, with its `ResolvedColumn` import if nothing else reads it (Task 13-2 re-adds it); `CardValue.tsx`, `CardsView.tsx:718`, and `TableView.tsx:169,281,330` read `column.type` (AFTER).
 - [ ] The hand-built columns resolve: `commit(id, next)` resolves `resolveColumn(id, schema, contextIds)` and writes only when it answers (the write's own `def` check answered the same stale id with nothing); `isContextColumnId` leaves `contextIdentity.ts` with its three `contextIdentity.test.ts` lines (`:109-111`; the case's title becomes "resolves a Space id").
-- [ ] A column's label reads the column (Take Along): `columnLabel(column, contexts)` in `Core/Properties/columnLabel.ts` (P3's home) reads `column.def` where it scanned the schema, which a card ran per value per render (`CardsView.tsx:593,731`); its callers holding a column pass it (`CardsView.tsx` ×2, `TableView.tsx:527`, `cardValueInput.ts`' `addEntriesFor`, `propertyMenuActions.ts`' `build`), and the two holding an id resolve it once: `VisibilityFrame.tsx:116`'s `nameFor` and `useViewInteractions.tsx:121`'s switched-order notice, each falling to the id as `columnLabel` did for an id with no column. `columnLabel.test.ts`' cases pass columns; "falls back to the raw id" (`:41`) moves onto `nameFor`'s fallback, since an id with no column has no label to resolve.
+- [ ] A column's label reads the column (Take Along): `columnLabel(column, contexts)` in `Core/Properties/columnLabel.ts` (P3's home) reads `column.def` where it scanned the schema, which a card ran per value per render (`CardsView.tsx:593,731`); its callers holding a column pass it (`CardsView.tsx` ×2, `TableView.tsx:527`, `cardValueInput.ts`' `addEntriesFor`, `propertyMenuActions.ts`' `build`), and the two holding an id resolve it once: `VisibilityFrame.tsx:116`'s `nameFor`, falling to the id as `columnLabel` did for an id with no column, and `useViewInteractions.tsx:121`'s switched-order notice, which asserts its column, since it names a property the plan just resolved. `columnLabel.test.ts`' cases pass columns; "falls back to the raw id" (`:41`) moves onto `nameFor`'s fallback, since an id with no column has no label to resolve.
 - [ ] Test sweep: every hand-written `ResolvedColumn` literal in a test (`Cell.test.tsx`, `assignValue.test.ts` (10), `cardValueInput.test.ts` (2), `useViewHost.test.tsx`, `group.test.ts`, `cellMenu.test.ts`'s `{ kind: 'title' }` is a menu kind and stays) becomes `propertyColumn(def)`, `contextColumn(id)`, or `resolveColumn(id, schema, ids)!` for Title; `fieldValue.test.ts`' `columnType` case (HEAD `value.test.ts:92-100`) leaves with the function; `cardValueInput.test.ts`' `AddEntry` literals (`:61`) take `column`; `columns.test.ts`' remaining calls already pass `CONTEXT_IDS`, and `:58`'s and every other `resolveColumns(view, schema)` call passes `CONTEXT_IDS`.
 - [ ] Sibling sweep: `git grep -nw "columnType\|addColumn\|columnKind\|isContextColumnId\|visibleColumns" -- Core` answers nothing; `git grep -nE "kind: '(property|context)' \}" -- Core ':!*.test.*'` answers no column literal.
 - [ ] Commit: `git commit --only -- Core/Views/viewRow.ts Core/Views/Pipeline/columns.ts Core/Views/Pipeline/columns.test.ts Core/Properties/fieldValue.ts Core/Properties/fieldValue.test.ts Core/Properties/Cells/Cell.tsx Core/Properties/Cells/Cell.test.tsx Core/Views/Cards/CardValue.tsx Core/Views/Cards/CardsView.tsx Core/Views/Cards/cardValueInput.ts Core/Views/Cards/cardValueInput.test.ts Core/Views/Table/TableView.tsx Core/Properties/PropertyPanel.tsx Core/Contexts/contextIdentity.ts Core/Contexts/contextIdentity.test.ts Core/Views/Host/useViewHost.ts Core/Views/Host/useViewHost.test.tsx Core/Views/Host/useViewInteractions.tsx Core/Interface/Menus/propertyMenuActions.ts Core/Properties/assignValue.test.ts Core/Views/Pipeline/group.test.ts Core/Properties/columnLabel.ts Core/Properties/columnLabel.test.ts Core/Views/Settings/VisibilityFrame.tsx -m "Every column carried its type and definition from one resolver, and the hand-built columns and per-cell definition scans left."`
@@ -22349,7 +22605,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
        mutate,
 ```
 
-(`syntheticContextDef` stays until P16.)
+(`syntheticContextDef` stays until P15 hands the picker the column.)
 
 ```Core/Views/Host/useBandHeads.ts diff
 @@ imports @@
@@ -22606,7 +22862,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 +  const current = resolveFieldValue(row, column)
 ```
 
-(`build` takes its column from Task 13-1; its `def` parameter stays for the menu's option groups until P16 folds `syntheticContextDef`.)
+(`build` takes its column from Task 13-1; its `def` parameter stays for the menu's option groups until P15's pick model reads the column.)
 
 ```Core/Properties/PropertyPanel.tsx diff
 @@ after commit @@
@@ -24228,7 +24484,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 - **None Visible:** new views keep the Title-only start and properties created later stay hidden until revealed; every column renders, sorts, filters, groups, and edits as it did.
 - **New Views Store `hidden_properties: []`:** a view sidecar written by a new view holds an empty list where it listed every property; every reader treats absence from `property_order` as hidden, so nothing renders differently, and a property delete's view sweep has fewer ids to strip.
 - **Context Columns Classify as Context Where They Read as Unknown:** the header's style menu, the header icon, the column's style defaults, and a Context sort criterion classified a Context column as unknown (no registry ids); they now read it as Context. Each answers the same: no style menu for Title or Context (`useColumns.ts:313`), a Context's own icon first (`TableView.tsx:408-414`), no looks for Context (`LOOKS.context` is empty), and no criterion for a Context sort.
-- **A Write for a Property Deleted Since Its Column Resolved Reaches the Host:** `send` dropped such a write silently when the writer's schema no longer held the id; with that copy of the check gone, the host's `setProperty` answers its own refusal, which the cell shows as any refused write. A race only (a delete landing between a column's resolve and a commit); an earlier agent's guard folded into the one write path.
+- **A Write for a Property Gone Since Its Column Resolved Reaches the Host:** `send` dropped such a write silently when the writer's schema no longer held the id; with that copy of the check gone, the write reaches the host. A property deleted from the registry draws the host's own refusal (`setProperty.ts:69`, its registry read), which the cell shows as any refused write; a property only removed from this Collection's schema stays in the registry, so the host lands the value in the page's frontmatter, as any write naming a registry property does. A race only (a delete or a removal landing between a column's resolve and a commit); an earlier agent's guard folded into the one write path.
 - **A Pick for a Property That Just Left Writes Nothing:** `runPropertyAction` answered a pick whose property was deleted between the native menu opening and the pick by opening a picker on a fabricated Context definition; it now does nothing. An accident fixed; the menu offers only properties that existed when it opened.
 - **The Default View Is One Object:** a container with no saved view answers one module-level default view, where `pickView` minted one per schema identity; its contents are the same.
 - **Comments:** `columns.ts`' `resolveColumn` doc, `viewRow.ts`' `kind`/`type` line, `fieldValue.ts`' rewritten file comment and `resolveFieldValue` doc, `group.ts`' `Grouping` and Date-order lines, the host's style-map line, `pickView`'s rewritten doc, `patchedValues`' doc, and Task 13-8's mount line; `columnType`'s doc, `visibleColumns`' doc, the two `contextIds` warnings in `useColumns.ts`, `useColumnStyleMap`'s doc, and `ViewHost.tsx`'s schema clause leave.
@@ -24258,7 +24514,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 
 **GOAL:** One renderer-free record keyed by value kind, `VALUE_KINDS` in `Core/Views/valueKinds.ts`, states what each kind does in a view: the operators the filter pane offers, how a rule tests a value with its operands read once, what Is Empty means, the key a sort compares, the words the Sort pane names a direction with, the band a grouping files a value under, and the value a new page takes from a filter rule, a band, or a sort neighbor. It replaces the filter's six evaluators and their dispatcher, the sort's five key extractors and its kind switch, the bucket switch, `KIND_OPS`, `FROM_GROUP_KEY`, `SEEDS_FROM_SORT`, the seed switch, and the Sort pane's direction switch, and one `shownText` replaces the two text projections. An unreadable filter value and an operator its kind doesn't answer are ignored, a Checkbox's "is not empty" works, and an empty value sorts last for every type in both directions. The view pipeline's per-edit cost and the Matrix filter's cost are measured on `~/Benchmark-Large` and settle K and 07-10 by rule, and the Properties Drive gains group 12.
 
-**Builds On:** P2's AFTER (`ColumnType`, `PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>>` with Title's `{ kind: 'text' }` row, `FILEDATA`, Title's value `{ kind: 'text' }`, `formatBucketLabel` in `group.ts`), P3's (`Core/Views/paneTargets.ts`), P4A's (`readNumber` in `Core/Properties/propertyValue.ts`, `fileName` in `Core/Connections/linkValue.ts`, `Core/Properties/fieldValue.ts`, `formatValue.ts` outside the engine graph), P8's (option ids; `optionIds(def)` in `properties.ts`; `optionLabel(def, id)` in `propertyValue.ts`; `prepareRule` hands the evaluators the rule's definition; Task 8-4 deletes `configReach.ts`' `wholeValues` and `filterRules.ts`' `SUBSTRING_OPS`), and P13's (`resolveColumn(id, schema, contextIds)` in `Core/Views/Pipeline/columns.ts`; `ResolvedColumn = { id; kind; type: ColumnType; def? }`; `resolveFieldValue(row, column)`; `prepareRule` resolving its column once; `buildCriterion(c, schema, contextIds)`, `makeSorter(sort, schema, contextIds, manualOrder)`, `resolvedSortCount(sort, schema, contextIds)`; `bucketKey(row, column, granularity)`; `Grouping = { config; column }`; `TypeSpec.groups?: true` kept, whether a type groups at all; `declaredType` gone).
+**Builds On:** P2's AFTER (`ColumnType`, `PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>>` with Title's `{ kind: 'text' }` row, `FILEDATA`, Title's value `{ kind: 'text' }`, `formatBucketLabel` in `group.ts`), P3's (`Core/Views/paneTargets.ts`), P4A's (`readNumber` in `Core/Properties/propertyValue.ts`, `fileName` in `Core/Connections/linkValue.ts`, `Core/Properties/fieldValue.ts`, `formatValue.ts` outside the engine graph), P8's (option ids; `optionIds(def)` in `properties.ts`; `optionLabel(def, id)` in `propertyValue.ts`; `prepareRule` hands the evaluators the rule's definition; Task 8-4 deletes `configReach.ts`' `wholeValues` and `filterRules.ts`' `SUBSTRING_OPS`), and P13's (`resolveColumn(id, schema, contextIds)` in `Core/Views/Pipeline/columns.ts`; `ResolvedColumn = { id; kind; type: ColumnType; def? }`; `resolveFieldValue(row, column)`; `prepareRule` resolving its column once; `buildCriterion(c, schema, contextIds)`, `makeSorter(sort, schema, contextIds, manualOrder)`, `resolvedSortCount(sort, schema, contextIds)`; `bucketKey(row, column, granularity)`; `Grouping = { config; column }`; `TypeSpec.groups?: true` and `groupable(t)`, whether a type groups at all, read by `group.ts`' property grouping and `GroupFrame.tsx`; `declaredType` gone).
 
 #### Task 14-1
 
@@ -24438,7 +24694,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
   - Same describe, new: "a rule whose operand doesn't read abstains, so its Any group answers by the other rule": `applyFilter(rows, { match: 'any', rules: [{ property_id: 'prop_num', op: 'is', value: 'abc' }, { property_id: 'prop_sel', op: 'is', value: 'opt_a' }] }, schema, [], ['ctx_areas'])` keeps `['r1']`, and the same with `{ property_id: 'prop_when', op: 'is', value: 'soon' }` in place of the Number rule keeps `['r1']`.
   - `describe('applyFilter — new single-operand ops')` › "a single-operand check reads the chip list first, and an unreadable operand passes" becomes "…, and an unreadable operand abstains" (its assertions hold: the lone rule abstains, so every row shows).
 - [ ] Write and watch fail, in `Core/Views/Pipeline/creationSeeds.test.ts` beside "an Any group passes over a rule the filter ignores" (unchanged): "an Any group passes over a rule whose operand doesn't read": `{ match: 'any', rules: [{ property_id: 'p_num', op: 'is', value: 'abc' }, { property_id: 'p_pri', op: 'is', value: 'High' }] }` seeds `{ p_pri: { kind: 'select', value: 'High' } }` (the operand spelled as the neighboring case spells it after P8). Today the Number rule passes the blank page, so the group seeds nothing.
-- [ ] Create `Core/Views/valueKinds.ts` (AFTER): `TEXT_OPS` now ending in `...EMPTIES` (Text and Link both offered it so).
+- [ ] Create `Core/Views/valueKinds.ts` (AFTER): `TEXT_OPS` now ending in `...EMPTIES` (Text and Link both offered it so), and `viewSpecOf(type)`, a column type's entry, the one lookup every reader of the record by type asks: `prepareRule` and `operatorsFor` here, the sort and the Sort pane in Task 14-3, `groupable` in Task 14-4, and the seeds and the reassign in Task 14-5.
 - [ ] `filter.ts` (AFTER): `prepareLocation` keeps its own `default: return undefined`, now the only answer an unknown Location op gets.
 - [ ] Sibling sweep: `git grep -nwE "evaluatorOf|evaluate(Number|Date|Checkbox|Text|Members|Presence)|FILTER_OP_SET|KIND_OPS" -- Core` answers nothing; `git grep -n "OperatorChoice" -- Core ':!*.test.*'` answers `valueKinds.ts`, `filterModel.ts`, and `FilterFrame.tsx`; `git grep -n "valueKinds" -- Core/Nexus Core/Contract Desktop` answers nothing.
 - [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/Pipeline/filter.ts Core/Views/Pipeline/filter.test.ts Core/Views/Pipeline/creationSeeds.test.ts Core/Views/filterModel.ts Core/Views/Settings/FilterFrame.tsx -m "Each value kind's filter operators and rule compile moved into one per-kind view record, and a rule whose operand doesn't read or whose operator its kind lacks stopped matching every page."` (`git add Core/Views/valueKinds.ts` first.)
@@ -24449,7 +24705,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 // What each value kind does in a view: the operators the filter pane offers, how a rule tests a value, the key a sort compares, the band a grouping files a value under, and the value a new page takes from a rule, a band, or a sort neighbor.
 
 import { foldKey } from '../Paths/caseFold'
-import type { PropertyDefinition } from '../Properties/properties'
+import { type ColumnType, type PropertyDefinition, specOf } from '../Properties/properties'
 import {
   checkboxWord,
   isBlankValue,
@@ -24697,12 +24953,19 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
   context: { ops: SET_OPS, filled: notBlank, prepare: prepareMembers },
   file: { ops: EMPTIES, filled: notBlank, prepare: () => undefined },
 }
+
+/** A column type's entry in the record; none for a property that's gone. */
+export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefined => {
+  const spec = specOf(type)
+  return spec && VALUE_KINDS[spec.kind]
+}
 ```
 
 ```Core/Views/Pipeline/filter.ts diff
 @@ imports @@
  import type { ViewRow } from '../viewRow'
- import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+-import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
++import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 -import {
 -  checkboxWord,
 -  isBlankValue,
@@ -24715,7 +24978,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
  import { resolveColumn } from './columns'
  import type { SetTreeNode } from './group'
 -import { dayMs, readDate, shownText } from '../../Properties/formatValue'
-+import { VALUE_KINDS } from '../valueKinds'
++import { viewSpecOf } from '../valueKinds'
  import { foldKey } from '../../Paths/caseFold'
  import { isUlidShaped } from '../../Nexus/identityMark'
  
@@ -24738,11 +25001,12 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 +  if (!answerable(rule)) return undefined
    if (id === FILEDATA.location.id) return prepareLocation(op, want, setTree)
    const column = resolveColumn(id, schema, contextIds)
-   if (!column) return undefined
+-  if (!column) return undefined
 -  const evaluate = evaluatorOf(PROPERTY_TYPES[column.type].kind, op)
 -  const operands = evaluate === evaluateText ? want.map(foldKey) : want
 -  return (row) => evaluate(resolveFieldValue(row, column), op, operands, column.def)
-+  const kind = VALUE_KINDS[PROPERTY_TYPES[column.type].kind]
++  const kind = viewSpecOf(column?.type)
++  if (!column || !kind) return undefined
 +  switch (op) {
 +    case FILTER_OPS.isEmpty:
 +      return (row) => !kind.filled(resolveFieldValue(row, column))
@@ -24784,7 +25048,8 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 
 ```Core/Views/filterModel.ts diff
 @@ imports @@
- import { FILEDATA, type PropertyDefinition, specOf } from '../Properties/properties'
+-import { FILEDATA, type PropertyDefinition, specOf } from '../Properties/properties'
++import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 -import type { ValueKind } from '../Properties/propertyValue'
  import {
    FILTER_OPS,
@@ -24795,7 +25060,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 +  OPERANDLESS_OPS,
  } from './filterRules'
 @@ after the filterRules import @@
-+import { type OperatorChoice, VALUE_KINDS } from './valueKinds'
++import { type OperatorChoice, VALUE_KINDS, viewSpecOf } from './valueKinds'
  import type { NexusTree } from '../Nexus/tree'
 @@ ValueSlot … CHECKBOX_OPS @@
 -type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
@@ -24846,13 +25111,13 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 +): readonly OperatorChoice[] {
    if (propertyId === FILEDATA.title.id) return TITLE_OPS
    if (propertyId === FILEDATA.location.id) return LOCATION_OPS
-   const kind = specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind
+-  const kind = specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind
 -  return kind ? KIND_OPS[kind] : []
-+  return kind ? VALUE_KINDS[kind].ops : []
++  return viewSpecOf(resolveColumn(propertyId, schema, contextIds)?.type)?.ops ?? []
  }
 ```
 
-(`LOCATION_OPS` stays in `filterModel.ts`: Location is a Filedata target with no value kind. The `kind` line is P13's.)
+(`LOCATION_OPS` stays in `filterModel.ts`: Location is a Filedata target with no value kind. The `-` `kind` line is P13's.)
 
 ```Core/Views/Settings/FilterFrame.tsx diff
 @@ imports @@
@@ -24922,11 +25187,11 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −10 production (+258 / −268); about 60 of each side the seven menus with `OperatorChoice` and `ValueSlot` moved from `filterModel.ts`. Comments ±0 (three moved with their menus, `prepareRule`'s rewritten, the record's own beside what a reader meets). Tests +18 / −3.
+**Lines:** −7 production (+265 / −272); about 60 of each side the seven menus with `OperatorChoice` and `ValueSlot` moved from `filterModel.ts`. Comments ±0 (three moved with their menus, `prepareRule`'s rewritten, the record's own beside what a reader meets). Tests +18 / −3.
 
 #### Task 14-3
 
-**TASK:** Each kind's sort key and its direction words join the record, `makeSorter` compares keys through one rule in which a key of `null` sorts last in either direction (K-2), and the Sort pane names a direction from the record (07-02's directions): `buildCriterion`'s kind switch, `rank`, `numberOf`, `dateOf`, `boolRank`, `Less`, `numericLess`, `ciLess`, and `directionOptions`' switch leave. A Checkbox keeps ordering unchecked before checked, since an unchecked box draws as one rather than as an empty value.
+**TASK:** Each kind's sort key and its direction words join the record, `makeSorter` compares keys through one rule in which a key of `null` sorts last in either direction (K-2), and the Sort pane names a direction from the record (07-02's directions): `buildCriterion`'s kind switch, `rank`, `numberOf`, `dateOf`, `boolRank`, `Less`, `numericLess`, `ciLess`, and `directionOptions`' switch leave. A Checkbox sorts checked first ascending and unchecked first descending: an unchecked box is stored as no value, so the default direction puts it after the checked ones as an empty value sorts last, while its key keeps the direction meaningful (LC-53).
 
 **NOW:**
 - `buildCriterion(c, schema, contextIds)` (`sort.ts:77-110`; P13 resolves `column` and reads `value(r)`; P8's Select arm completes a Custom order with `optionIds`) switches on the column's kind to an extractor and a `less`: a Select's rank in its Custom order then its options (`rank`, `:28-37`, `Number.MAX_SAFE_INTEGER` for no value), a Number (`numberOf`, `:39-42`, `-Infinity` for none), a Date (`dateOf`, `:44-48`, `-Infinity`), a Checkbox (`boolRank`, `:50-53`, `0` for unchecked), and the text kinds (Task 14-1's `shownText(…) ?? ''`); a Context answers `null`, so it neither sorts nor counts in `resolvedSortCount` (`:113-118`). A Custom order forces ascending (`:92`).
@@ -24941,7 +25206,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
   - New `describe('makeSorter — empty values')` › `it.each` "an empty %s sorts last ascending and descending", over `['number', 'prop_num', 2, 5]`, `['date', 'prop_when', '2026-06-15', '2026-06-20']`, `['select', 'prop_sel', 'a', 'b']`, `['status', 'prop_status', 'not_started', 'done']`, `['text', 'prop_notes', 'apple', 'pear']`, `['link', 'prop_link', 'https://a.co', 'https://b.co']`, `['multi-select', 'prop_tags', ['x'], ['y']]`, and `['file', 'prop_file', ['[[a.pdf]]'], ['[[b.pdf]]']]`: rows `none` (no value), `high`, and `low` sort `['low', 'high', 'none']` ascending and `['high', 'low', 'none']` descending.
   - Same describe › "a Last Modified stamp with none sorts last ascending and descending": rows with `modifiedAt` `'2026-06-20T10:00:00Z'`, none, and `'2026-06-15T10:00:00Z'` sort `['r3', 'r1', 'r2']` ascending and `['r1', 'r3', 'r2']` descending.
   - "number sorts numerically, absent first ascending" becomes "number sorts numerically" with its three rows sorting `['r2', 'r1', 'r3']`; "date sorts chronologically, absent earliest" becomes "date sorts chronologically" with `['r2', 'r1', 'r3']`; "sorts _modified_at by the row's modifiedAt, absent first ascending like any date" leaves (the new stamp case holds its row).
-  - "checkbox sorts false before true (absent = false)" keeps its ascending `['r2', 'r3', 'r1']` and adds `expect(ids(makeSorter([{ property_id: 'prop_done', direction: 'descending' }], schema, [])!(rows))).toEqual(['r1', 'r2', 'r3'])`, pinning that an unchecked box keeps its place in the run.
+  - "checkbox sorts false before true (absent = false)" becomes "checkbox sorts checked first ascending, unchecked first descending": its ascending expectation becomes `['r1', 'r2', 'r3']`, and it adds `expect(ids(makeSorter([{ property_id: 'prop_done', direction: 'descending' }], schema, [])!(rows))).toEqual(['r2', 'r3', 'r1'])` (LC-53).
   - "select sorts by schema option order, unknown values last" and "a criterion order ranks rows by the sequence, unknowns last, direction moot" keep their expectations (an unregistered word decodes to no value, P8).
 - [ ] Sibling sweep: `git grep -nwE "numericLess|ciLess|boolRank|numberOf|dateOf|OPTION_DIRECTIONS|VALUE_DIRECTIONS|TEXT_DIRECTIONS|NEGATIVE_INFINITY" -- Core/Views/Pipeline/sort.ts Core/Views/Settings/SortFrame.tsx` and `git grep -n "rank(" -- Core/Views/Pipeline/sort.ts` answer nothing (the manual order's `MAX_SAFE_INTEGER` stays, below; `CUSTOM_OPTION_DIRECTIONS` stays, which `-w` keeps out of the first).
 - [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/Pipeline/sort.ts Core/Views/Pipeline/sort.test.ts Core/Views/Settings/SortFrame.tsx -m "Each value kind's sort key and direction words joined the per-kind view record, and an empty value sorted last for every type in both directions."`
@@ -24950,8 +25215,8 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 
 ```Core/Views/valueKinds.ts diff
 @@ imports @@
--import type { PropertyDefinition } from '../Properties/properties'
-+import { optionIds, type PropertyDefinition } from '../Properties/properties'
+-import { type ColumnType, type PropertyDefinition, specOf } from '../Properties/properties'
++import { type ColumnType, optionIds, type PropertyDefinition, specOf } from '../Properties/properties'
 @@ ValueKindSpec @@
  export type ValueTest = (v: PropertyValue) => boolean
 +export type SortDirections = 'option' | 'text' | 'value'
@@ -25007,12 +25272,12 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 +    directions: 'value',
    },
 -  checkbox: { ops: CHECKBOX_OPS, filled: notBlank, prepare: prepareCheckbox },
-+  // An unchecked box draws as one: Is Empty still matches it, as the filter always has, while the sort keeps it in the run its direction orders rather than with the value-less tail.
++  // An unchecked box is stored as no value: Is Empty matches it, and it sorts after the checked ones ascending, as an empty value does, while holding a key so descending puts it first.
 +  checkbox: {
 +    ops: CHECKBOX_OPS,
 +    filled: notBlank,
 +    prepare: prepareCheckbox,
-+    sortKey: () => (v) => (v.kind === 'checkbox' ? 1 : 0),
++    sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
 +    directions: 'value',
 +  },
    // Is and Isn't name whole options; the text ops a hand-written rule may hold search the option's label.
@@ -25049,10 +25314,10 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
-import { PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { resolveColumn } from './columns'
-import { VALUE_KINDS } from '../valueKinds'
+import { viewSpecOf } from '../valueKinds'
 
 type SortKey = string | number | null
 
@@ -25071,7 +25336,7 @@ function buildCriterion(
   contextIds: readonly string[],
 ): ResolvedCriterion | null {
   const column = resolveColumn(c.property_id, schema, contextIds)
-  const sortKey = column && VALUE_KINDS[PROPERTY_TYPES[column.type].kind].sortKey
+  const sortKey = viewSpecOf(column?.type)?.sortKey
   if (!column || !sortKey) return null
   const key = sortKey(column.def, c.order)
   return {
@@ -25135,7 +25400,11 @@ export function makeSorter(
 
 ```Core/Views/Settings/SortFrame.tsx diff
 @@ imports @@
-+import { type SortDirections, VALUE_KINDS } from '../valueKinds'
+-import { PROPERTY_TYPES, type PropertyDefinition, specOf } from '../../Properties/properties'
++import type { PropertyDefinition } from '../../Properties/properties'
+@@
+ import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
++import { type SortDirections, viewSpecOf } from '../valueKinds'
 @@ the direction pickers @@
 -const OPTION_DIRECTIONS: PickerOption<Direction>[] = [
 -  { value: 'ascending', label: 'Default' },
@@ -25195,12 +25464,17 @@ export function makeSorter(
 -    case undefined:
 -      return VALUE_DIRECTIONS
 -  }
-+  const kind = specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind
-+  return DIRECTIONS[kind ? VALUE_KINDS[kind].directions : 'value']
++  const column = resolveColumn(propertyId, schema, contextIds)
++  return DIRECTIONS[viewSpecOf(column?.type)?.directions ?? 'value']
  }
+@@ SortFrame › finiteDef @@
+   const primaryDef = primary && schema.find((d) => d.id === primary.property_id)
+   const finiteDef =
+-    primaryDef && PROPERTY_TYPES[primaryDef.type].kind === 'select' ? primaryDef : undefined
++    primaryDef && viewSpecOf(primaryDef.type)?.directions === 'option' ? primaryDef : undefined
 ```
 
-(The signature and the kind's expression are P13's (Task 13-4), moved whole into `const kind`; its imports stay as P13 leaves them.)
+(The signature and the column's resolve are P13's (Task 13-4), now read through `viewSpecOf`, so the properties import keeps only `PropertyDefinition`. `finiteDef`, the property whose Custom order the pane offers, asks the record whether its kind's directions are an option's, where it tested for a Select itself.)
 
 ```Core/Views/Pipeline/sort.test.ts diff
 @@ schema @@
@@ -25224,12 +25498,16 @@ export function makeSorter(
 -    ).toEqual(['r3', 'r2', 'r1'])
 +    ).toEqual(['r2', 'r1', 'r3'])
 @@ checkbox sorts false before true @@
+-  it('checkbox sorts false before true (absent = false)', () => {
++  it('checkbox sorts checked first ascending, unchecked first descending', () => {
+@@
      expect(
        ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema, [])!(rows)),
-     ).toEqual(['r2', 'r3', 'r1'])
+-    ).toEqual(['r2', 'r3', 'r1'])
++    ).toEqual(['r1', 'r2', 'r3'])
 +    expect(
 +      ids(makeSorter([{ property_id: 'prop_done', direction: 'descending' }], schema, [])!(rows)),
-+    ).toEqual(['r1', 'r2', 'r3'])
++    ).toEqual(['r2', 'r3', 'r1'])
 @@ date sorts chronologically @@
 -  it('date sorts chronologically, absent earliest', () => {
 +  it('date sorts chronologically', () => {
@@ -25281,27 +25559,29 @@ export function makeSorter(
 
 **VERIFY**
 
-- [ ] Each of the eight `it.each` rows (Select and Status on their descending line, the rest on their ascending one), the stamp case, and the two rewritten expectations fail at Task 14-2's head and pass after; the Checkbox descending line passes on both, pinning the order kept; every other `sort.test.ts` case, `SortFrame.test.tsx` (`:137,148`'s label pairs included), `resolveView.test.ts`, `useViewHost.test.tsx`, `creationOrder.test.ts`, and `reassign.test.ts` pass unchanged.
+- [ ] Each of the eight `it.each` rows (Select and Status on their descending line, the rest on their ascending one), the stamp case, the two rewritten expectations, and the Checkbox case's two lines fail at Task 14-2's head and pass after; every other `sort.test.ts` case, `SortFrame.test.tsx` (`:137,148`'s label pairs included), `resolveView.test.ts`, `useViewHost.test.tsx`, `creationOrder.test.ts`, and `reassign.test.ts` pass unchanged.
 - [ ] `git grep -nwE "numericLess|ciLess|boolRank|numberOf|dateOf|OPTION_DIRECTIONS|VALUE_DIRECTIONS|TEXT_DIRECTIONS" -- Core` and `git grep -nw NEGATIVE_INFINITY -- Core/Views/Pipeline/sort.ts` answer nothing (`Number.NEGATIVE_INFINITY` stays in the sidebar's and the Matrix's geometry).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +2 production (+97 / −95). Comments +1 (the Checkbox entry's reason; `buildCriterion`'s Custom comment shortened in place). Tests +46 / −10.
+**Lines:** +7 production (+104 / −97). Comments +1 (the Checkbox entry's reason; `buildCriterion`'s Custom comment shortened in place). Tests +46 / −10.
 
 #### Task 14-4
 
-**TASK:** Each kind's bucket joins the record, and `bucketKey` asks the value's kind for its band (07-02's `bucket`): `bucketKey`'s kind switch leaves, and the date bucket key moves into the record as the Date entry's own fact, with its ISO-week arithmetic, so `group.ts` and the record don't import each other.
+**TASK:** Each kind's bucket joins the record, and `bucketKey` asks the value's kind for its band (07-02's `bucket`): `bucketKey`'s kind switch leaves, and the date bucket key moves into the record as the Date entry's own fact, with its ISO-week arithmetic, so `group.ts` and the record don't import each other. Whether a view groups by a kind joins the record beside its band, so `TypeSpec.groups` and its three rows leave `PROPERTY_TYPES` and `groupable` moves into `valueKinds.ts`.
 
 **NOW:**
 - `bucketKey(row, column, granularity)` (`group.ts:172-195`; P13's column form) switches on the value's kind: a Select files under its option id (P8), a checked Checkbox under `'true'`, a Date under `dateBucketKey(v.value, granularity)`, and every other kind, the empty value included, under `null`, the value-less tail. Its readers: `property` and `structuralSubGrouped` (`group.ts:242,328`, P13's `Grouping` form), the sort-run reassign's run key (`useViewHost.ts:203`, P13's `bucketKey(row, sortReassign, 'day')`), and `DateBucketList` (`Core/Views/Settings/GroupFrame.tsx:506`, P13's column form). A Checkbox never groups (`groupable` is false for it, `group.test.ts:533`), so its `'true'` band is read only by the sort-run reassign.
 - `dateBucketKey(iso, granularity)` (`:151-170`) and `isoWeek` (`:142-149`) build the zero-padded date keys; `dateBucketKey`'s only production reader is `bucketKey`, and `group.test.ts`' `describe('dateBucketKey')` (`:668-696`) tests it directly. They are why `group.ts` imports `localDayKey` and `pad` (`:26`) and `readDate` (`:30`, beside P2's `dateFmt`, `formatDate`, and `NUMERIC_FORMATS` for `formatBucketLabel`).
 - `formatBucketLabel` (P2's move, after `dateBucketKey` in `group.ts`) labels a band head from a date key; it is display, read by `Core/Views/Bands/bandModel.ts`, and stays in `group.ts`.
+- Grouping is stated in a second record: `TypeSpec.groups?: true` (`Core/Properties/properties.ts:30`, on the Date, Select, and Status rows, `:38,39,41`) and `groupable(t)` (`:55-56`, P2's `ColumnType` form) answer whether a view groups by a type, which is a fact of the value kind (Date's, and Select's that Status wears), as its band is. `groupable`'s readers are `group.ts`' property grouping (P13's `if (!def || !groupable(def.type)) return undefined`) and `GroupFrame.tsx:155`'s offered properties, each passing a definition's type; `properties.test.ts`' "groups by Select, Status and Date only" pins it, and its Status case spells `groups: true`.
 
 **CHANGE**
 
 - [ ] Move `describe('dateBucketKey')` (`group.test.ts:668-696`) into a new `Core/Views/valueKinds.test.ts` as `describe('the Date bucket')`, its five cases reading through `const bucket = (iso: string, g: DateGranularity) => VALUE_KINDS.dateTime.bucket?.({ kind: 'dateTime', value: iso }, g)`; the cases' titles and expectations stay. `group.test.ts` drops `dateBucketKey` from its import.
-- [ ] Sibling sweep: `git grep -nw "dateBucketKey\|isoWeek" -- Core` answers `valueKinds.ts` alone; `git grep -n "bucketKey(" -- Core ':!*.test.*'` answers the same four readers with their P13 arguments.
-- [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/valueKinds.test.ts Core/Views/Pipeline/group.ts Core/Views/Pipeline/group.test.ts -m "Each value kind's band joined the per-kind view record, the date bucket key moving in as the Date entry's own."` (`git add Core/Views/valueKinds.test.ts` first.)
+- [ ] Move "groups by Select, Status and Date only" into `valueKinds.test.ts` › `describe('groupable')`, over `CREATABLE_TYPES`; `properties.test.ts` drops it, its `groupable` import, and its Status case's `groups: true` line.
+- [ ] Sibling sweep: `git grep -nw "dateBucketKey\|isoWeek" -- Core` answers `valueKinds.ts` alone; `git grep -n "bucketKey(" -- Core ':!*.test.*'` answers the same four readers with their P13 arguments; `git grep -n "groups: true\|groups?: true" -- Core/Properties` answers nothing.
+- [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/valueKinds.test.ts Core/Views/Pipeline/group.ts Core/Views/Pipeline/group.test.ts Core/Views/Settings/GroupFrame.tsx Core/Properties/properties.ts Core/Properties/properties.test.ts -m "Each value kind's band and whether a view groups by it joined the per-kind view record, the date bucket key moving in as the Date entry's own."` (`git add Core/Views/valueKinds.test.ts` first.)
 
 **AFTER**
 
@@ -25314,6 +25594,8 @@ export function makeSorter(
 +import type { DateGranularity } from './views'
 @@ ValueKindSpec @@
    directions: SortDirections
++  /** A view can group by the kind; Checkbox's band serves the sort-run reassign alone. */
++  groups?: true
 +  /** The band a grouping files a value under; null files it with the value-less rows. */
 +  bucket?(v: PropertyValue, granularity: DateGranularity): string | null
  }>
@@ -25332,19 +25614,84 @@ export function makeSorter(
      sortKey: () => (v) =>
        v.kind === 'dateTime' ? (readDate(v.value)?.at.getTime() ?? null) : null,
      directions: 'value',
++    groups: true,
 +    bucket: (v, granularity) =>
 +      v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null,
    },
 @@ checkbox @@
-     sortKey: () => (v) => (v.kind === 'checkbox' ? 1 : 0),
+     sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
      directions: 'value',
 +    bucket: (v) => (v.kind === 'checkbox' ? 'true' : null),
    },
 @@ select @@
      sortKey: optionKey,
      directions: 'option',
++    groups: true,
 +    bucket: (v) => (v.kind === 'select' ? v.value : null),
    },
+@@ after viewSpecOf @@
+   const spec = specOf(type)
+   return spec && VALUE_KINDS[spec.kind]
+ }
++
++export const groupable = (t: PropertyDefinition['type']): boolean => viewSpecOf(t)?.groups === true
+```
+
+```Core/Properties/properties.ts diff
+@@ TypeSpec @@
+   origin: 'user' | 'context' | 'filedata'
+-  groups?: true
+   options?: 'select' | 'status'
+@@ PROPERTY_TYPES @@
+-  dateTime: { kind: 'dateTime', origin: 'user', groups: true },
+-  select: { kind: 'select', origin: 'user', groups: true, options: 'select' },
++  dateTime: { kind: 'dateTime', origin: 'user' },
++  select: { kind: 'select', origin: 'user', options: 'select' },
+   multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select', registersMembers: true },
+-  status: { kind: 'select', origin: 'user', groups: true, options: 'status' },
++  status: { kind: 'select', origin: 'user', options: 'status' },
+@@ groupable @@
+   t === undefined ? undefined : PROPERTY_TYPES[t]
+ 
+-export const groupable = (t: ColumnType | undefined): boolean => specOf(t)?.groups === true
+-
+ export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
+```
+
+```Core/Properties/properties.test.ts diff
+@@ imports @@
+   isUserType,
+-  groupable,
+   optionsOf,
+@@ describe('PROPERTY_TYPES') @@
+ describe('PROPERTY_TYPES', () => {
+-  it('groups by Select, Status and Date only', () => {
+-    const grouping = (Object.keys(PROPERTY_TYPES) as (keyof typeof PROPERTY_TYPES)[]).filter((t) =>
+-      groupable(t),
+-    )
+-    expect(grouping).toEqual(['dateTime', 'select', 'status'])
+-  })
+-
+   it('admits the nine user types and nothing a Context or Filedata column wears', () => {
+@@ the Status case @@
+       origin: 'user',
+-      groups: true,
+       options: 'status',
+```
+
+```Core/Views/Pipeline/group.ts diff
+@@ imports @@
+-import { groupable, optionIds, type PropertyDefinition } from '../../Properties/properties'
++import { optionIds, type PropertyDefinition } from '../../Properties/properties'
+```
+
+```Core/Views/Settings/GroupFrame.tsx diff
+@@ imports @@
+-import { groupable, type PropertyDefinition, type SelectOption } from '../../Properties/properties'
++import type { PropertyDefinition, SelectOption } from '../../Properties/properties'
+@@
+ import { styleFor, useNexusForms } from '../Host/useColumnStyles'
++import { groupable } from '../valueKinds'
 ```
 
 ```Core/Views/Pipeline/group.ts diff
@@ -25353,7 +25700,7 @@ export function makeSorter(
 @@
 -import { dateFmt, formatDate, NUMERIC_FORMATS, readDate } from '../../Properties/formatValue'
 +import { dateFmt, formatDate, NUMERIC_FORMATS } from '../../Properties/formatValue'
-+import { VALUE_KINDS } from '../valueKinds'
++import { groupable, VALUE_KINDS } from '../valueKinds'
 @@ isoWeek, dateBucketKey @@
 -/** UTC arithmetic, so adding days never crosses a DST boundary. … */
 -function isoWeek(year: number, month: number, day: number): [year: number, week: number] {
@@ -25396,10 +25743,17 @@ export function makeSorter(
 ```Core/Views/valueKinds.test.ts (new)
 import { describe, expect, it } from 'vitest'
 import type { DateGranularity } from './views'
-import { VALUE_KINDS } from './valueKinds'
+import { CREATABLE_TYPES } from '../Properties/properties'
+import { groupable, VALUE_KINDS } from './valueKinds'
 
 const bucket = (iso: string, g: DateGranularity) =>
   VALUE_KINDS.dateTime.bucket?.({ kind: 'dateTime', value: iso }, g)
+
+describe('groupable', () => {
+  it('groups by Select, Status and Date only', () => {
+    expect(CREATABLE_TYPES.filter(groupable)).toEqual(['dateTime', 'select', 'status'])
+  })
+})
 
 describe('the Date bucket', () => {
   … (the five cases of HEAD `group.test.ts:669-696`, each `dateBucketKey(` read as `bucket(`)
@@ -25408,12 +25762,12 @@ describe('the Date bucket', () => {
 
 **VERIFY**
 
-- [ ] `valueKinds.test.ts`' five cases pass; `group.test.ts` (its checkbox and text bucket cases included), `GroupFrame.test.tsx`, `bandModel.test.ts`, `resolveView.test.ts`, and `useViewHost.test.tsx` pass unchanged.
+- [ ] `valueKinds.test.ts`' six cases pass; `properties.test.ts`, `group.test.ts` (its checkbox and text bucket cases included), `GroupFrame.test.tsx`, `bandModel.test.ts`, `resolveView.test.ts`, and `useViewHost.test.tsx` pass unchanged.
 - [ ] `git grep -nw "dateBucketKey\|isoWeek" -- Core ':!Core/Views/valueKinds.ts' ':!Core/Views/valueKinds.test.ts'` answers nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −9 production (+37 / −46); `isoWeek` and `dateBucketKey` (28) moved on both sides. Tests ±0 (the five cases move; +7 for the new file's head, −1 import).
+**Lines:** −6 production (+48 / −54); `isoWeek` and `dateBucketKey` (28) moved on both sides, and `groupable` (2) with them. Tests about +5 (the five cases move; +7 for the new file's head and the `groupable` case, against the `properties.test.ts` case, its import, and the Status case's `groups` line).
 
 #### Task 14-5
 
@@ -25501,7 +25855,7 @@ The record as the phase leaves it, in full:
 
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import { foldKey } from '../Paths/caseFold'
-import { optionIds, type PropertyDefinition } from '../Properties/properties'
+import { type ColumnType, optionIds, type PropertyDefinition, specOf } from '../Properties/properties'
 import {
   checkboxValue,
   checkboxWord,
@@ -25543,6 +25897,8 @@ export type ValueKindSpec = Readonly<{
   ): (v: PropertyValue) => string | number | null
   /** Which pair of words the Sort pane names a direction with. */
   directions: SortDirections
+  /** A view can group by the kind; Checkbox's band serves the sort-run reassign alone. */
+  groups?: true
   /** The band a grouping files a value under; null files it with the value-less rows. */
   bucket?(v: PropertyValue, granularity: DateGranularity): string | null
   /** The value a new page takes from a rule naming one operand, null when the rule's op names none; a band's key seeds the value an Is rule naming it would. */
@@ -25811,16 +26167,17 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     sortKey: () => (v) =>
       v.kind === 'dateTime' ? (readDate(v.value)?.at.getTime() ?? null) : null,
     directions: 'value',
+    groups: true,
     bucket: (v, granularity) =>
       v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null,
     sortSeeds: true,
   },
-  // An unchecked box draws as one: Is Empty still matches it, as the filter always has, while the sort keeps it in the run its direction orders rather than with the value-less tail.
+  // An unchecked box is stored as no value: Is Empty matches it, and it sorts after the checked ones ascending, as an empty value does, while holding a key so descending puts it first.
   checkbox: {
     ops: CHECKBOX_OPS,
     filled: notBlank,
     prepare: prepareCheckbox,
-    sortKey: () => (v) => (v.kind === 'checkbox' ? 1 : 0),
+    sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
     directions: 'value',
     bucket: (v) => (v.kind === 'checkbox' ? 'true' : null),
     seed: (op, operand) =>
@@ -25837,6 +26194,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
         : prepareText(op, want, def),
     sortKey: optionKey,
     directions: 'option',
+    groups: true,
     bucket: (v) => (v.kind === 'select' ? v.value : null),
     seed: (op, operand) => (op === FILTER_OPS.is ? { kind: 'select', value: operand } : null),
     sortSeeds: true,
@@ -25864,11 +26222,20 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     directions: 'text',
   },
 }
+
+/** A column type's entry in the record; none for a property that's gone. */
+export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefined => {
+  const spec = specOf(type)
+  return spec && VALUE_KINDS[spec.kind]
+}
+
+export const groupable = (t: PropertyDefinition['type']): boolean => viewSpecOf(t)?.groups === true
 ```
 
 ```Core/Views/Pipeline/creationSeeds.ts diff
 @@ imports @@
- import { type PropertyDefinition, specOf } from '../../Properties/properties'
+-import { type PropertyDefinition, specOf } from '../../Properties/properties'
++import type { PropertyDefinition } from '../../Properties/properties'
  import type { PropertyValue } from '../../Properties/propertyValue'
 -import {
 -  FILTER_OPS,
@@ -25880,7 +26247,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 +import { type FilterGroup, type FilterRule, isGroup, ruleOperands } from '../filterRules'
  import { resolveColumn } from './columns'
 -import { groupKeyToValue } from '../reassign'
-+import { VALUE_KINDS } from '../valueKinds'
++import { viewSpecOf } from '../valueKinds'
  import { prepareGroup, prepareRule } from './filter'
 @@ LIST_OPS @@
 -const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])
@@ -25909,10 +26276,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 -    case undefined:
 -      return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null
 -  }
-+  const kind = specOf(type)?.kind
-+  return operands.length === 1 && kind
-+    ? (VALUE_KINDS[kind].seed?.(rule.op, operands[0]) ?? null)
-+    : null
++  return operands.length === 1 ? (viewSpecOf(type)?.seed?.(rule.op, operands[0]) ?? null) : null
  }
 ```
 
@@ -25923,9 +26287,10 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
  import { UNGROUPED } from './viewRow'
 -import { checkboxWord, type PropertyValue, type ValueKind } from '../Properties/propertyValue'
 +import type { PropertyValue } from '../Properties/propertyValue'
- import { type ColumnType, specOf } from '../Properties/properties'
+-import { type ColumnType, specOf } from '../Properties/properties'
++import type { ColumnType } from '../Properties/properties'
 +import { FILTER_OPS } from './filterRules'
-+import { VALUE_KINDS } from './valueKinds'
++import { viewSpecOf } from './valueKinds'
 @@ FROM_GROUP_KEY, fromGroupKey, reassignable, groupKeyToValue @@
 -/** A date bucket isn't a single date, so date grouping can't be reassigned by drag; a kind without a function here never reassigns. */
 -const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) | null> = {
@@ -25944,11 +26309,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 -  const kind = specOf(type)?.kind
 -  return kind ? FROM_GROUP_KEY[kind] : null
 -}
-+const viewSpecOf = (type: ColumnType | undefined) => {
-+  const spec = specOf(type)
-+  return spec && VALUE_KINDS[spec.kind]
-+}
- 
+-
 -export const reassignable = (type: ColumnType | undefined): boolean => fromGroupKey(type) !== null
 +/** A band names one value when an Is rule on its key would seed one, so a drag into it writes that value; a date band names a span, never one date, so date grouping can't be reassigned by drag. */
 +export const reassignable = (type: ColumnType | undefined): boolean => {
@@ -25969,7 +26330,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 @@ imports @@
 -import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properties/propertyValue'
 +import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
-+import { VALUE_KINDS } from '../valueKinds'
++import { viewSpecOf } from '../valueKinds'
 @@ SEEDS_FROM_SORT @@
 -// Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link and a text aside; under anything else the row simply lands where the sort puts it.
 -const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
@@ -25988,7 +26349,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
        const column = resolveColumn(criterion.property_id, c.schema, c.contextIds)
        const spec = specOf(column?.type)
 -      if (!column || spec?.origin !== 'user' || !SEEDS_FROM_SORT[spec.kind]) continue
-+      if (!column || spec?.origin !== 'user' || !VALUE_KINDS[spec.kind].sortSeeds) continue
++      if (!column || spec?.origin !== 'user' || !viewSpecOf(column.type)?.sortSeeds) continue
 ```
 
 (The `propertyValue` import reads the same on either F3 outcome: on its Pass `applyValueAtRoot` left it in P6, and on its Fail Task 13-7 moved that read into `assignValue.ts`' `patchedValues`. The `createAdjacent` context lines are P13's.)
@@ -25997,11 +26358,11 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 
 - [ ] `reassign.test.ts`, `creationSeeds.test.ts` (Task 14-2's new case included), `useViewHost.test.tsx` (the New Page Above/Below and band-drop cases), `bandCommits.test.tsx`, and `cardDrops.test.tsx` pass unchanged.
 - [ ] `git grep -nw "FROM_GROUP_KEY\|fromGroupKey\|SEEDS_FROM_SORT" -- Core` answers nothing; `git grep -nw "LIST_OPS" -- Core` answers `valueKinds.ts` alone; `git grep -n "kind: 'checkbox', value: true }" -- Core ':!*.test.*'` answers `propertyValue.ts`' `checkboxValue` and the two sites P16 folds into it (`valueClick.ts:32`, `propertyMenuActions.ts:114`), `reassign.ts:8`'s gone with `FROM_GROUP_KEY`.
-- [ ] `git grep -nE "Record<ValueKind" -- Core ':!*.test.*'` answers `valueKinds.ts` alone (*§Adherence Scoreboard*'s type-fact tables: the per-kind view record is one of the five).
+- [ ] `git grep -n "VALUE_KINDS\[PROPERTY_TYPES\|VALUE_KINDS\[spec.kind\]" -- Core ':!*.test.*'` answers `valueKinds.ts`' `viewSpecOf` alone; `git grep -nE "Record<ValueKind" -- Core ':!*.test.*'` answers `valueKinds.ts` alone (*§Adherence Scoreboard*'s type-fact tables: the per-kind view record is one of the five).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −16 production (+41 / −57). Comments ±0 (`FROM_GROUP_KEY`'s and `SEEDS_FROM_SORT`'s reasons move onto `reassignable` and the record's field). Tests ±0.
+**Lines:** −24 production (+38 / −62). Comments ±0 (`FROM_GROUP_KEY`'s and `SEEDS_FROM_SORT`'s reasons move onto `reassignable` and the record's field). Tests ±0.
 
 #### Task 14-6
 
@@ -26226,23 +26587,23 @@ No repository file changes, on either outcome.
 - **An Operator a Kind Doesn't Answer Is Ignored (an Accident Fixed):** a hand-written rule whose operator its kind doesn't answer (`greater_than` on a Checkbox, `contains_any` on a Select, `is_not` on a Date) sits out where it matched every page. The pane never writes one. K-1 rules on values that don't read, not on operators, so this rides with the accidents fixed along the way. **Recommended:** take it; a rule that can't test a value shouldn't decide an Any group.
 - **Checkbox "Is Not Empty" Works (K-1):** it shows checked pages only, which only a hand-written rule holds, since the pane offers a Checkbox only Is Checked and Isn't Checked (`CHECKBOX_OPS`, HEAD `Core/Views/filterModel.ts:94-97`).
 - **Empty Values Sort Last for Every Type, Both Directions (K-2, a Reading Nathan Didn't Object To):** Number, Date, Creation Time, Last Modified, Select, Status, Text, Link, Multi-Select, and File put the pages holding no value at the bottom whichever way the sort runs. Today empty Numbers, Dates, and texts led an ascending sort and empty Selects led a descending one. Dragging a row into another value's run in a single-sorted view keeps reassigning, the empty run included.
-- **Checkbox Keeps Both Its Readings:** an unchecked box reads as no value on disk. The filter keeps today's reading, so Is Empty matches an unchecked box and Isn't Empty a checked one (K-1's fix). The sort keeps today's order: applying K-2 literally would put every unchecked page last in both directions and make the Checkbox sort's direction do nothing, so the record treats an unchecked box as a value there, as it draws (P3's `blankDraws`): ascending puts unchecked first, descending checked first. The one entry states both, with the reason beside it. **Recommended:** keep both; a Checkbox has no empty state on screen, and "empty sorts last" was written about values that can be missing. Nathan's call if he reads K-2 otherwise.
+- **A Checkbox Sort Puts Checked First Ascending (LC-53, Nathan's Ruling):** an unchecked box is stored as no value, so ascending now puts checked pages first and unchecked after them, as an empty value sorts last, and descending puts unchecked first; today it ran the other way. The filter keeps today's reading, so Is Empty matches an unchecked box and Isn't Empty a checked one (K-1's fix). The record's one Checkbox entry states both: its sort key ranks a checked box before an unchecked one, which keeps a key so the direction still reorders the two runs.
 - **A Custom Order Reads Ascending for Any Kind:** `buildCriterion` forces ascending whenever a criterion carries an `order`, where only the Select arm did. Only a Select criterion is written with one (the Sort pane's Custom, `SortFrame.tsx:188`), so nothing changes for a criterion any path writes.
-- **Hidden Changes:** none beyond the above. The record is read only by the renderer; nothing on disk changes shape.
+- **Hidden Changes:** the Sort pane offers a Custom order where the record names a kind's directions as an option's, which is the Select and Status it offers one for today. The record is read only by the renderer; nothing on disk changes shape.
 
 #### Line Total
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 14-1 | −50 | +29 | −21 |
-| 14-2 | −268 | +257 | −11 |
-| 14-3 | −95 | +97 | +2 |
-| 14-4 | −46 | +37 | −9 |
-| 14-5 | −57 | +41 | −16 |
+| 14-2 | −272 | +265 | −7 |
+| 14-3 | −97 | +104 | +7 |
+| 14-4 | −54 | +48 | −6 |
+| 14-5 | −62 | +38 | −24 |
 | 14-6 | 0 | 0 | 0 |
 | 14-7 | 0 | 0 | 0 |
 | 14-8 | 0 | 0 | 0 |
-| **Phase 14** | **−516** | **+461** | **−55** |
+| **Phase 14** | **−535** | **+484** | **−51** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides: the seven menus with `OperatorChoice` and `ValueSlot` (about 60), `isoWeek` and `dateBucketKey` (28), and `LIST_OPS` (1). Task 14-4's figure counts `isoWeek` and `dateBucketKey` whole on both sides, where its AFTER writes each moved body as one placeholder line that Task 14-5's full `valueKinds.ts` spells out. Two hunks don't replay: 14-1's and 14-2's `filter.ts` imports, whose `-` lines read `readNumber` from where Task 4A-4 moves it; they're counted from their own lines (+1 / −1 and +1 / −12). K's and 07-10's measurements change no production line on either outcome.
 - **Tests:** about +94 / −13. Written: `shownText`'s case (+29), the two abstain cases and the seed case (+18), the empty-last cases and the multi-select fixture (+46); rewritten in place: the Checkbox, unhandled-op, unreadable-operand, number, date, and stamp cases; moved: the five date-key cases into `valueKinds.test.ts`. Each pins one behavior this phase adds or changes; no record-level duplicate of a pipeline test is written.
@@ -26251,28 +26612,31 @@ No repository file changes, on either outcome.
 
 ### Phase 15 — Pick Model and One Writer
 
-**GOAL:** Picking a value is one pure model for one row and many, so `massAssign.ts` folds into `Core/Properties/Pickers/pickModel.ts` and the "a Select closes once picked" rule is stated once; the value writer is assembled one way, by `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu, and loses the `mutate` field every assembly filled with the same session call. The cell menu's vocabulary takes the shapes the value seat's one row menu reads in Phase 16: `hideable` names what Remove takes a value out of, a view's columns or the panel's rows, and a column with no look in hand is a bare value. Every link menu reads Edit Title for the alias, then Edit Link for the target. The filter's date picker is the value's own `DateTimeValuePicker` on the column's clock, with one rule for the date form a picker shows; the text pen reads "Open In Editor"; two misnamed files take names for what they hold; the duplicate editor tests collapse; and the mass-assign cost (02-10) is measured at Benchmark scale and settles `setProperty`'s shape by rule.
+**GOAL:** Picking a value is one pure model for one row and many, read off the resolved column, so `massAssign.ts` folds into `Core/Properties/Pickers/pickModel.ts`, the "a Select closes once picked" rule is stated once, and the pickers stop fabricating a Context definition wherever a column is in hand; the value writer is assembled one way, by `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu, and loses the `mutate` field every assembly filled with the same session call. The cell menu's vocabulary takes the shapes the value seat's one row menu reads in Phase 16: `hideable` names what Remove takes a value out of, a view's columns or the panel's rows, and a column with no look in hand is a bare value. Every link menu reads Edit Title for the alias, then Edit Link for the target. The filter's date picker is the value's own `DateTimeValuePicker` on the column's clock, with one rule for the date form a picker shows; the text pen reads "Open In Editor"; two misnamed files take names for what they hold; the duplicate editor tests collapse; and the mass-assign cost (02-10) is measured at Benchmark scale and settles `setProperty`'s shape by rule.
 
 Earlier phases rewrite this phase's files first, and every diff below is written against their AFTER: P1 moves `pageRow.ts` to `Core/Views/pageRow.ts` and opens `Core/Testing/definitions.ts`; P2 gives `cellMenuContextFor` and `valueClickIntent` `ColumnType` and the record's `origin: 'filedata'`; P3 moves `columnLabel.ts` to `Core/Properties/columnLabel.ts` and the pane targets to `Core/Views/paneTargets.ts`; P4 renames `Core/Properties/value.ts` to `fieldValue.ts`; P5 gives Collections `propertyIds`; P6 reshapes the writer (`ValueWriter.apply(pageId, picked, write)`, `patchOverride(set, pageId, picked, write)`, the `Picked` map beside `ViewRow` in `Core/Views/viewRow.ts`, the reply-carried `undo`, `send`/`valueRequest` in `assignValue.ts`, and `valueCommitFor`'s `apply` folding `picked` into its local row; on F3's Fail, Task 6-6's revert restores `apply(pageId, fm, write, contexts?)` and the encoded override, and Task 15-2 names the writer's Fail lines); P7 adds the `addProperty` op, whose reply's `created` is `{ propertyId }`; P8 decodes option values to ids, so `pickGroups` offers `value: o.id` and `EditableOptionRows` reads `optionGroupsOf(def)`; P13 compiles columns (`ResolvedColumn` carries `type` and `def?`; the panel builds its rows' columns with `propertyColumn`/`contextColumn` and reads values through `currentOf(id)`), drops `ValueWriter.schema` with its three assemblers' `schema` lines (`valueCommitFor(opened)`) and `send`'s `| undefined` return, reads values as `resolveFieldValue(row, column)`, and replaces `useStyleFor` with the host's style map and, in `FilterFrame`, `styleFor(column, view, nexus)` over `useNexusForms()`; P14 replaces the filter's per-kind evaluators with `VALUE_KINDS` (`ValueKindSpec`, `Core/Views/valueKinds.ts`). Where a diff line quotes code one of them rewrote, the task names it, and the executor keeps that phase's spelling of the surrounding lines.
 
 #### Task 15-1
 
-**TASK:** One pure pick model, `Core/Properties/Pickers/pickModel.ts`, holds the option groups, the toggle, the rule for what one pick writes over one row or many, and the one-row case; `massAssign.ts` merges in and is deleted, `PropertyPicker.tsx` keeps only components, `MassPropertyPicker.tsx` reads the model, and the "a Select closes once picked" rule is stated once (06-04).
+**TASK:** One pure pick model, `Core/Properties/Pickers/pickModel.ts`, holds the option groups, the toggle, the rule for what one pick writes over one row or many, and the one-row case, each read off the resolved column; `massAssign.ts` merges in and is deleted, `PropertyPicker.tsx` keeps only components, `MassPropertyPicker.tsx` reads the model, and the "a Select closes once picked" rule is stated once (06-04). The picker's options target, its option rows, the mass picker, and the filter's chips take the column too, so a Context column reaches them without a fabricated definition, and `syntheticContextDef` keeps only the two sites Phase 16B removes with their code.
 
 **NOW:**
 - **The Rule Twice:** `pickedValue` (`Core/Properties/Pickers/PropertyPicker.tsx:391-401`) lands a pick on one row (a repeat Select clears, every other kind toggles); `massPickCommits` (`Core/Properties/Pickers/massAssign.ts:8-26`) lands it on N (all holding clears all, otherwise the non-holders take it; a list value's unanimity decides add or strip). For one row the second yields exactly the first's single commit: a Select's `selectedValues` holds at most one entry, so `own.length === 1 && own[0] === value` is `own.includes(value)`, and a list row's `own.includes(value) !== unanimous` is always false. `massSelected` (`massAssign.ts:4-6`) is `selectedValues` intersected across the rows.
 - **"A Select Closes" Twice:** `pickSemantics` (`PropertyPicker.tsx:374-389`) calls `onSinglePicked` when `pickKind(def) === 'select'` (`:386`), and `MassPropertyPicker.tsx:36` repeats it.
 - **Pure Model in a Component File:** `PropertyPicker.tsx` exports `pickGroups` (`:62-67`, P8: `value: o.id`), `pickShape` (`:71-77`), `toggleValue` (`:79-80`), `syntheticContextDef` (`:82-87`), and `pickedValue`, beside `pickKind` (`:69`) and the `PickGroup` type (`:60`) its own components read.
 - **Readers:** `pickGroups` — `PropertyOptionRows` (`:239`), `propertyMenuBranches` (`Core/Interface/Menus/propertyMenuActions.ts:14,59`); `pickShape` — `MassPropertyPicker.tsx:7,28`, `FilterFrame.tsx`' `ChipsField` (`Core/Views/Settings/FilterFrame.tsx:39,147`, which reads only `options`), `PropertyPicker.pane.test.tsx:12,377-382`; `toggleValue` — `Core/Views/Settings/valueField.tsx:4`; `pickedValue` — `propertyMenuActions.ts:13,115`; `massPickCommits`/`massSelected` — `MassPropertyPicker.tsx:6`, `massAssign.test.ts`.
-- **Tests:** `massAssign.test.ts` (46 lines, P8 on ids) pins the four N-row cases and the unanimity marks; `PropertyPicker.pane.test.tsx`' `describe('pickShape')` (`:377-382`, P8 on ids) pins that an option is offered under its id and named by its label.
+- **A Definition Where a Column Is in Hand:** every caller of the model already holds P13's `ResolvedColumn` (`{ id; kind; type; def? }`), yet reads it through a definition: `PickTarget` (`PropertyPicker.tsx:41-49`) carries `def` on every arm, though the date pane reads only the value and the formats (`:135-141`) and the file pane alone reads the definition (`:142-158`); `PropertyOptionRows` (`:224-269`) and `MassPropertyPicker` take one; and where a Context column has none, a caller fabricates it with `syntheticContextDef` (`type: 'context'` and the id, nothing else), at six sites: `propertyMenuBranches`' Spaces (P13's `build(contextColumn(id), syntheticContextDef(id))`), `runPropertyAction`'s `def` (P13's `column.def ?? syntheticContextDef(id)`), `useViewHost.ts`' `pickTarget`, `PropertyPanel.tsx`' `panelTarget` (HEAD `:364`) and value click (`:403`), and `FilterFrame.tsx:378`, which also hands one to a rule whose property was deleted (its column resolves to nothing, so `ChipsField` lists no options). Its readers use the type (`pickKindOf`), the id (`pickGroups`' one Spaces group), and `optionGroupsOf`, which answers an empty group for it that `pickGroups` filters away. `ValuePickPresenter.tsx` builds the one other date target, with a definition its pane doesn't read.
+- **Tests:** `massAssign.test.ts` (46 lines, P8 on ids) pins the four N-row cases and the unanimity marks; `PropertyPicker.pane.test.tsx`' `describe('pickShape')` (`:377-382`, P8 on ids) pins that an option is offered under its id and named by its label, and its targets (`:33-35`, `:122`, `:334`, `:344-345`) are written with definitions, the Context one through `syntheticContextDef('ctx_a')`.
 
 **CHANGE**
 
 - [ ] Write `Core/Properties/Pickers/pickModel.test.ts` (AFTER), carrying `massAssign.test.ts`' cases and the `pickShape` case onto the model, plus the Select-closes and list-stays-open pins; watch it fail on the missing module.
-- [ ] `Core/Properties/Pickers/PropertyPicker.tsx`: `syntheticContextDef` stays (P16 deletes it with its six sites).
-- [ ] `git rm Core/Properties/Pickers/massAssign.ts Core/Properties/Pickers/massAssign.test.ts`; `PropertyPicker.pane.test.tsx` drops its `describe('pickShape')` and the `pickShape` import.
-- [ ] Removal proof: `git grep -nwE "massPickCommits|massSelected|pickShape|pickSemantics|massAssign" -- Core UIX` answers nothing; `git grep -nE "export (const|function) (pickGroups|toggleValue|pickedValue)" -- Core/Properties/Pickers/PropertyPicker.tsx` answers nothing.
-- [ ] Commit: `git add Core/Properties/Pickers/pickModel.ts Core/Properties/Pickers/pickModel.test.ts && git commit --only -m "Picking became one pure model for one row and many, and the mass-assign module folded into it." -- Core/Properties/Pickers/pickModel.ts Core/Properties/Pickers/pickModel.test.ts Core/Properties/Pickers/massAssign.ts Core/Properties/Pickers/massAssign.test.ts Core/Properties/Pickers/PropertyPicker.tsx Core/Properties/Pickers/PropertyPicker.pane.test.tsx Core/Properties/Pickers/MassPropertyPicker.tsx Core/Views/Settings/FilterFrame.tsx Core/Interface/Menus/propertyMenuActions.ts Core/Views/Settings/valueField.tsx`
+- [ ] Rewrite `PropertyPicker.pane.test.tsx`' targets to the new arms (AFTER), the Context one as `contextColumn('ctx_a')`, and watch the file fail to compile against the base's `PickTarget`.
+- [ ] `PickTarget`'s options arm carries `column`, its date arm no definition, and its file arm the definition it reads; `PropertyOptionRows`, `MassPropertyPicker`, the table's mass picker, `ChipsField`, `propertyMenuBranches`, `useViewHost.ts`' `pickTarget`, the panel's `panelTarget`, and `ValuePickPresenter`'s date target pass what they hold (AFTER). `FilterFrame.tsx`' `valueCell` `def`, read only by the chips slot, leaves.
+- [ ] `syntheticContextDef` stays in `PropertyPicker.tsx` for its two remaining sites, `runPropertyAction`'s `def`, which the native router's request reads until Task 16B-1 hands it the column, and the panel's value click, which Task 16B-2 removes with the function: `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` answers those two.
+- [ ] `git rm Core/Properties/Pickers/massAssign.ts Core/Properties/Pickers/massAssign.test.ts`; `PropertyPicker.pane.test.tsx` drops its `describe('pickShape')` and its `pickShape` and `syntheticContextDef` imports.
+- [ ] Removal proof: `git grep -nwE "massPickCommits|massSelected|pickShape|pickSemantics|massAssign" -- Core UIX` answers nothing; `git grep -nE "export (const|function) (pickGroups|toggleValue|pickedValue)" -- Core/Properties/Pickers/PropertyPicker.tsx` answers nothing; `git grep -n "def: PropertyDefinition; current" -- Core/Properties/Pickers/PropertyPicker.tsx` answers nothing.
+- [ ] Commit: `git add Core/Properties/Pickers/pickModel.ts Core/Properties/Pickers/pickModel.test.ts && git commit --only -m "Picking became one pure model over the resolved column for one row and many, the mass-assign module folded into it, and the pickers stopped needing a fabricated Context definition." -- Core/Properties/Pickers/pickModel.ts Core/Properties/Pickers/pickModel.test.ts Core/Properties/Pickers/massAssign.ts Core/Properties/Pickers/massAssign.test.ts Core/Properties/Pickers/PropertyPicker.tsx Core/Properties/Pickers/PropertyPicker.pane.test.tsx Core/Properties/Pickers/MassPropertyPicker.tsx Core/Views/Table/TableView.tsx Core/Views/Settings/FilterFrame.tsx Core/Interface/Menus/propertyMenuActions.ts Core/Interface/Menus/ValuePickPresenter.tsx Core/Views/Host/useViewHost.ts Core/Properties/PropertyPanel.tsx Core/Views/Settings/valueField.tsx`
 
 **AFTER**
 
@@ -26283,24 +26647,26 @@ import {
   type OptionPickKind,
   pickKindOf,
   type PickOption,
-  type PropertyDefinition,
 } from '../properties'
 import { type PropertyValue, selectedValues } from '../propertyValue'
+import type { ResolvedColumn } from '../../Views/viewRow'
 
 export type PickGroup = { id: string; options: PickOption[] }
 export type PickCommit = { index: number; next: PropertyValue | null }
 
-export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[]): PickGroup[] =>
+export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]): PickGroup[] =>
   contextOptions
-    ? [{ id: def.id, options: contextOptions }]
-    : optionGroupsOf(def)
-        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
-        .filter((g) => g.options.length > 0)
+    ? [{ id: column.id, options: contextOptions }]
+    : column.def
+      ? optionGroupsOf(column.def)
+          .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
+          .filter((g) => g.options.length > 0)
+      : []
 
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
-const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'
+const pickKind = (column: ResolvedColumn): OptionPickKind => pickKindOf(column.type) ?? 'select'
 
 // A value every row holds leaves them all; otherwise it lands on each row lacking it, a Select replacing what the row held and a list joining it.
 function pickCommits(kind: OptionPickKind, rows: string[][], value: string): PickCommit[] {
@@ -26314,12 +26680,12 @@ function pickCommits(kind: OptionPickKind, rows: string[][], value: string): Pic
 
 /** One pick over one row or many: what every row holds reads as picked, and a Select's picker closes once picked, since a Select holds one value. */
 export function pickOver(
-  def: PropertyDefinition,
+  column: ResolvedColumn,
   currents: readonly (PropertyValue | null)[],
   onCommit: (commits: PickCommit[]) => void,
   onClose: () => void,
 ): { selected: string[]; pick: (value: string) => void } {
-  const kind = pickKind(def)
+  const kind = pickKind(column)
   const rows = currents.map(selectedValues)
   return {
     selected: rows[0].filter((v) => rows.every((own) => own.includes(v))),
@@ -26331,49 +26697,53 @@ export function pickOver(
 }
 
 export const pickedValue = (
-  def: PropertyDefinition,
+  column: ResolvedColumn,
   current: PropertyValue | null,
   value: string,
-): PropertyValue | null => pickCommits(pickKind(def), [selectedValues(current)], value)[0].next
+): PropertyValue | null => pickCommits(pickKind(column), [selectedValues(current)], value)[0].next
 ```
 
-(`pickGroups` moves as P8 left it.)
+(`pickGroups` moves as P8 left it, reading the column's definition. A column without one is a Context's, whose Spaces arrive as `contextOptions`, or a rule's whose property is gone; either way it offers no options of its own.)
 
 ```Core/Properties/Pickers/pickModel.test.ts (new)
 import { describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
+import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
+import type { ResolvedColumn } from '../../Views/viewRow'
 import { type PickCommit, pickGroups, pickOver } from './pickModel'
 
-const def = (type: 'select' | 'multiSelect' | 'context'): PropertyDefinition =>
-  type === 'context'
-    ? { id: 'ctx_areas', label: '', key: '', type }
-    : {
-        id: 'prop_p',
-        label: 'P',
-        key: 'P',
-        type,
-        select_options: [
-          { id: 'opt_a', key: 'a', label: 'a' },
-          { id: 'opt_b', key: 'b', label: 'b' },
-          { id: 'opt_c', key: 'c', label: 'c' },
-        ],
-      }
+const optionDef = (type: 'select' | 'multiSelect'): PropertyDefinition => ({
+  id: 'prop_p',
+  label: 'P',
+  key: 'P',
+  type,
+  select_options: [
+    { id: 'opt_a', key: 'a', label: 'a' },
+    { id: 'opt_b', key: 'b', label: 'b' },
+    { id: 'opt_c', key: 'c', label: 'c' },
+  ],
+})
+const column = (type: 'select' | 'multiSelect' | 'context'): ResolvedColumn =>
+  type === 'context' ? contextColumn('ctx_areas') : propertyColumn(optionDef(type))
 const select = (value: string): PropertyValue => ({ kind: 'select', value })
 const multi = (...value: string[]): PropertyValue => ({ kind: 'multiSelect', value })
 const spaces = (...value: string[]): PropertyValue => ({ kind: 'context', value })
 
 /** The commits one pick of `value` makes over `currents`, and whether it closed the picker. */
-function pickOf(d: PropertyDefinition, currents: (PropertyValue | null)[], value: string) {
+function pickOf(c: ResolvedColumn, currents: (PropertyValue | null)[], value: string) {
   const onCommit = vi.fn<(commits: PickCommit[]) => void>()
   const onClose = vi.fn()
-  pickOver(d, currents, onCommit, onClose).pick(value)
+  pickOver(c, currents, onCommit, onClose).pick(value)
   return { commits: onCommit.mock.calls[0][0], closed: onClose.mock.calls.length > 0 }
 }
 
 describe('pickGroups', () => {
   it('offers an option under its id and names it by its label, never by its key', () => {
-    const named = { ...def('select'), select_options: [{ id: 'opt_new', key: 'new', label: 'New' }] }
+    const named = propertyColumn({
+      ...optionDef('select'),
+      select_options: [{ id: 'opt_new', key: 'new', label: 'New' }],
+    })
     const offered = pickGroups(named).flatMap((g) => g.options)
     expect(offered.map((o) => [o.value, o.label])).toEqual([['opt_new', 'New']])
   })
@@ -26382,12 +26752,18 @@ describe('pickGroups', () => {
 describe('pickOver', () => {
   it('marks as picked only what every row holds', () => {
     const rows = [multi('opt_a', 'opt_b'), multi('opt_a'), multi('opt_a', 'opt_c')]
-    expect(pickOver(def('multiSelect'), rows, vi.fn(), vi.fn()).selected).toEqual(['opt_a'])
-    expect(pickOver(def('select'), [select('opt_a'), select('opt_b')], vi.fn(), vi.fn()).selected).toEqual([])
+    expect(pickOver(column('multiSelect'), rows, vi.fn(), vi.fn()).selected).toEqual(['opt_a'])
+    expect(
+      pickOver(column('select'), [select('opt_a'), select('opt_b')], vi.fn(), vi.fn()).selected,
+    ).toEqual([])
   })
 
   it('a list value joins every row lacking it, keeps what each holds, and leaves the picker open', () => {
-    const { commits, closed } = pickOf(def('multiSelect'), [multi('opt_a'), multi('opt_b', 'opt_c'), null], 'opt_b')
+    const { commits, closed } = pickOf(
+      column('multiSelect'),
+      [multi('opt_a'), multi('opt_b', 'opt_c'), null],
+      'opt_b',
+    )
     expect(commits).toEqual([
       { index: 0, next: multi('opt_a', 'opt_b') },
       { index: 2, next: multi('opt_b') },
@@ -26396,14 +26772,18 @@ describe('pickOver', () => {
   })
 
   it('a list value every row holds leaves each of them', () => {
-    expect(pickOf(def('context'), [spaces('a', 'b'), spaces('b', 'c')], 'b').commits).toEqual([
+    expect(pickOf(column('context'), [spaces('a', 'b'), spaces('b', 'c')], 'b').commits).toEqual([
       { index: 0, next: spaces('a') },
       { index: 1, next: spaces('c') },
     ])
   })
 
   it('a Select lands on every row not already holding it, and closes the picker', () => {
-    const { commits, closed } = pickOf(def('select'), [select('opt_a'), select('opt_b'), null], 'opt_a')
+    const { commits, closed } = pickOf(
+      column('select'),
+      [select('opt_a'), select('opt_b'), null],
+      'opt_a',
+    )
     expect(commits).toEqual([
       { index: 1, next: select('opt_a') },
       { index: 2, next: select('opt_a') },
@@ -26412,7 +26792,7 @@ describe('pickOver', () => {
   })
 
   it('a Select every row holds clears from all of them', () => {
-    expect(pickOf(def('select'), [select('opt_a'), select('opt_a')], 'opt_a').commits).toEqual([
+    expect(pickOf(column('select'), [select('opt_a'), select('opt_a')], 'opt_a').commits).toEqual([
       { index: 0, next: null },
       { index: 1, next: null },
     ])
@@ -26436,9 +26816,28 @@ describe('pickOver', () => {
  } from '../properties'
 -import { NULL_VALUE, optionLabel, type PropertyValue, selectedValues } from '../propertyValue'
 +import { NULL_VALUE, optionLabel, type PropertyValue } from '../propertyValue'
++import type { ResolvedColumn } from '../../Views/viewRow'
 @@ imports @@
  import { DateTimeValuePicker } from './DateTimeValuePicker'
 +import { type PickGroup, pickGroups, pickOver } from './pickModel'
+@@ PickTarget @@
+-export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
+-  | { kind: 'options'; style?: OptionStyleControl; contextOptions?: PickOption[] }
++export type PickTarget = { current: PropertyValue | null } & (
++  | {
++      kind: 'options'
++      column: ResolvedColumn
++      style?: OptionStyleControl
++      contextOptions?: PickOption[]
++    }
+   | {
+       kind: 'dateTime'
+       dateFormat?: ColumnStyle['date_format']
+       timeFormat?: ColumnStyle['time_format']
+     }
+-  | { kind: 'file' }
++  | { kind: 'file'; def: PropertyDefinition }
+ )
 @@ PickGroup … toggleValue @@
 -type PickGroup = { id: string; options: PickOption[] }
 -
@@ -26467,8 +26866,43 @@ describe('pickOver', () => {
    const pane = !t ? null : t.kind === 'options' ? (
      (() => {
 -      const { selected, pick } = pickSemantics(t.def, t.current, commit, onDismiss)
-+      const { selected, pick } = pickOver(t.def, [t.current], ([one]) => commit(one.next), onDismiss)
++      const { selected, pick } = pickOver(
++        t.column,
++        [t.current],
++        ([one]) => commit(one.next),
++        onDismiss,
++      )
        return (
+         <PropertyOptionRows
+-          def={t.def}
++          column={t.column}
+           style={t.style}
+@@ PropertyOptionRows @@
+ export function PropertyOptionRows({
+-  def,
++  column,
+   style,
+@@
+ }: {
+-  def: PropertyDefinition
++  column: ResolvedColumn
+   style?: OptionStyleControl
+   contextOptions?: PickOption[]
+@@
+-  const groups = pickGroups(def, contextOptions)
+-  if (editable && PROPERTY_TYPES[def.type].options)
++  const groups = pickGroups(column, contextOptions)
++  if (editable && column.def && PROPERTY_TYPES[column.type].options)
+     return (
+       <EditableOptionRows
+-        key={def.id}
+-        def={def}
++        key={column.id}
++        def={column.def}
+@@
+             ) : (
+-              <OptionChip type={def.type} look={look} option={o} def={def} />
++              <OptionChip type={column.type} look={look} option={o} def={column.def} />
 @@ pickSemantics, pickedValue @@
 -
 -function pickSemantics(
@@ -26501,20 +26935,32 @@ describe('pickOver', () => {
 -}
 ```
 
-(`groupOptions` and `optionGroupsOf` stay imported: P8's `EditableOptionRows` reads both. A one-row pick always answers exactly one commit, which `([one]) => commit(one.next)` hands on.)
+(`groupOptions` and `optionGroupsOf` stay imported: P8's `EditableOptionRows` reads both, and so does the `PropertyDefinition` type, with the file pane's `t.def`. A one-row pick always answers exactly one commit, which `([one]) => commit(one.next)` hands on.)
 
 ```Core/Properties/Pickers/MassPropertyPicker.tsx diff
  import type { RefObject } from 'react'
- import type { PickOption, PropertyDefinition } from '../properties'
+-import type { PickOption, PropertyDefinition } from '../properties'
 -import { type PropertyValue, selectedValues } from '../propertyValue'
++import type { PickOption } from '../properties'
 +import type { PropertyValue } from '../propertyValue'
++import type { ResolvedColumn } from '../../Views/viewRow'
  import type { OptionStyleControl } from '../Schema/useOptionEdit'
  import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 -import { massPickCommits, massSelected } from './massAssign'
 -import { pickShape, PropertyOptionRows } from './PropertyPicker'
 +import { type PickCommit, pickOver } from './pickModel'
 +import { PropertyOptionRows } from './PropertyPicker'
+ 
+ export function MassPropertyPicker({
+-  def,
++  column,
+   currents,
 @@ MassPropertyPicker @@
+ }: {
+-  def: PropertyDefinition
++  column: ResolvedColumn
+   currents: Array<PropertyValue | null>
+@@
 -  onPick: (commits: Array<{ index: number; next: PropertyValue | null }>) => void
 +  onPick: (commits: PickCommit[]) => void
    onDismiss: () => void
@@ -26529,8 +26975,21 @@ describe('pickOver', () => {
 -    onPick(massPickCommits(rows, value, kind))
 -    if (kind === 'select') onDismiss()
 -  }
-+  const { selected, pick } = pickOver(def, currents, onPick, onDismiss)
++  const { selected, pick } = pickOver(column, currents, onPick, onDismiss)
    return (
+     <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} solid>
+       <PropertyOptionRows
+-        def={def}
++        column={column}
+```
+
+```Core/Views/Table/TableView.tsx diff
+@@ massPicker @@
+       <MassPropertyPicker
+         key={`${mass.colId}:${mass.rowIds.join('.')}`}
+-        def={target.def}
++        column={col}
+         currents={currents}
 ```
 
 ```Core/Views/Settings/FilterFrame.tsx diff
@@ -26540,14 +26999,48 @@ describe('pickOver', () => {
 -  pickShape,
 -  syntheticContextDef,
 -} from '../../Properties/Pickers/PropertyPicker'
-+import { PropertyOptionRows, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
++import { PropertyOptionRows } from '../../Properties/Pickers/PropertyPicker'
 +import { pickGroups } from '../../Properties/Pickers/pickModel'
 @@ ChipsField @@
+ function ChipsField({
+   values,
+-  def,
++  column,
+   contextOptions,
+   onCommit,
+ }: {
+   values: string[]
+-  def: PropertyDefinition
++  column: ResolvedColumn
+   contextOptions?: PickOption[]
+@@
    const { shown, toggle } = useMultiValue(values, onCommit)
 -  const { options } = pickShape(def, contextOptions)
-+  const options = pickGroups(def, contextOptions).flatMap((g) => g.options)
++  const options = pickGroups(column, contextOptions).flatMap((g) => g.options)
    const byValue = new Map(options.map((o) => [o.value, o]))
+@@
+                 <OptionChip
+                   key={v}
+-                  type={def.type}
++                  type={column.type}
+@@
+           <PropertyOptionRows
+-            def={def}
++            column={column}
+             contextOptions={contextOptions}
+@@ valueCell @@
+     const operand = operands[0] ?? ''
+-    const def = column?.def
+     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
+@@ the rule's chips slot @@
+         <ChipsField
+           values={operands}
+-          def={def ?? syntheticContextDef(rule.property_id)}
++          column={column!}
+           contextOptions={
 ```
+
+(`column!` follows P13's date slot, `styleFor(column!, …)`: a rule reaches a value slot only through an operator its resolved column offers. `PropertyDefinition` stays imported for the pane's `schema` props.)
 
 ```Core/Interface/Menus/propertyMenuActions.ts diff
 @@ imports @@
@@ -26558,6 +27051,104 @@ describe('pickOver', () => {
 -} from '../../Properties/Pickers/PropertyPicker'
 +import { pickedValue, pickGroups } from '../../Properties/Pickers/pickModel'
 +import { syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
+@@ contextOptionsOf @@
+ const contextOptionsOf = (
+   tree: NexusTree | null,
+-  def: PropertyDefinition,
++  column: ResolvedColumn,
+   excludeId?: string,
+ ): ReturnType<typeof contextOptionsFor> | undefined =>
+-  def.type === 'context' && tree ? contextOptionsFor(def.id, tree, excludeId) : undefined
++  column.type === 'context' && tree ? contextOptionsFor(column.id, tree, excludeId) : undefined
+@@ propertyMenuBranches @@
+-  const build = (column: ResolvedColumn, def: PropertyDefinition): PropertyMenuRow => {
++  const build = (column: ResolvedColumn): PropertyMenuRow => {
+     const base = { id: column.id, name: columnLabel(column, contexts) }
+     const current = resolveFieldValue(row, column)
+-    if (def.type === 'checkbox') {
++    if (column.type === 'checkbox') {
+@@
+-    if (pickKindOf(def.type) === null) return base
++    if (pickKindOf(column.type) === null) return base
+@@
+-      options: pickGroups(def, contextOptionsOf(tree, def, row.id)).map((g) =>
++      options: pickGroups(column, contextOptionsOf(tree, column, row.id)).map((g) =>
+@@
+-  const built = schema.map((def) => build(propertyColumn(def), def))
++  const built = schema.map((def) => build(propertyColumn(def)))
+   return {
+-    spaces: [...contexts.keys()].map((id) => build(contextColumn(id), syntheticContextDef(id))),
++    spaces: [...contexts.keys()].map((id) => build(contextColumn(id))),
+@@ runPropertyAction @@
+-  else commitValue(pickedValue(def, current, value))
++  else commitValue(pickedValue(column, current, value))
+```
+
+(`runPropertyAction`'s `def` stays for the native router's request, the file dialog, and the checkbox test until Task 16B-1 hands the router the column.)
+
+```Core/Views/Host/useViewHost.ts diff
+@@ imports @@
+-import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
++import type { PickTarget } from '../../Properties/Pickers/PropertyPicker'
+@@ pickTarget @@
+   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
+-    const def = column.def ?? syntheticContextDef(column.id)
+     const current = resolveFieldValue(row, column)
+     const style = styleOf(column)
+     const spec = specOf(column.type)
+     if (spec?.kind === 'dateTime' && spec.origin === 'user')
+       return {
+         kind: 'dateTime',
+-        def,
+         current,
+         dateFormat: style.date_format,
+         timeFormat: style.time_format,
+       }
+-    if (column.type === 'file') return { kind: 'file', def, current }
++    if (column.def?.type === 'file') return { kind: 'file', def: column.def, current }
+     return {
+       kind: 'options',
+-      def,
++      column,
+       current,
+```
+
+```Core/Properties/PropertyPanel.tsx diff
+@@ panelTarget @@
+   const panelTarget = ((): PickTarget | null => {
+     if (!editing || !row || editing.mode !== 'picker') return null
+-    const def =
+-      editingDef ?? (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined)
+-    if (!def) return null
++    const column = editingDef
++      ? propertyColumn(editingDef)
++      : isContextRow(editing.id)
++        ? contextColumn(editing.id)
++        : undefined
++    if (!column) return null
+     const current = currentOf(editing.id)
+-    if (def.type === 'dateTime') return { kind: 'dateTime', def, current }
++    if (column.type === 'dateTime') return { kind: 'dateTime', current }
+     return {
+       kind: 'options',
+-      def,
++      column,
+       current,
+       contextOptions:
+-        def.type === 'context' && tree
++        column.kind === 'context' && tree
+           ? contextOptionsFor(editing.id, tree, isSpace ? subjectId : undefined)
+           : undefined,
+```
+
+(`propertyColumn` and `contextColumn` are P13's imports, read by `renderRow`; `syntheticContextDef` stays imported for the value click.)
+
+```Core/Interface/Menus/ValuePickPresenter.tsx diff
+@@ the date target @@
+         target={{
+           kind: 'dateTime',
+-          def,
+           current,
 ```
 
 ```Core/Views/Settings/valueField.tsx diff
@@ -26568,13 +27159,42 @@ describe('pickOver', () => {
 
 ```Core/Properties/Pickers/PropertyPicker.pane.test.tsx diff
 @@ imports @@
- import {
-   PropertyPicker,
+ import { separator } from '@pommora/uix/Menus/menu-row.css'
+-import {
+-  PropertyPicker,
 -  pickShape,
-   syntheticContextDef,
-   type PickEntry,
-   type PickTarget,
- } from './PropertyPicker'
+-  syntheticContextDef,
+-  type PickEntry,
+-  type PickTarget,
+-} from './PropertyPicker'
++import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
++import { PropertyPicker, type PickEntry, type PickTarget } from './PropertyPicker'
+@@ the targets @@
+-const dateDef: PropertyDefinition = { id: 'prop_d', label: 'Due', key: 'Due', type: 'dateTime' }
+ const fileDef: PropertyDefinition = { id: 'prop_f', label: 'Doc', key: 'Doc', type: 'file' }
+ 
+-const optionsTarget = (): PickTarget => ({ kind: 'options', def: selectDef, current: null })
+-const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', def: dateDef, current: null })
++const optionsTarget = (): PickTarget => ({
++  kind: 'options',
++  column: propertyColumn(selectDef),
++  current: null,
++})
++const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
+ const fileTarget = (): PickTarget => ({ kind: 'file', def: fileDef, current: null })
+@@ the compact-look case @@
+         kind: 'options',
+-        def: selectDef,
++        column: propertyColumn(selectDef),
+         current: null,
+@@ the Status and Context case @@
+-    await render({ target: { kind: 'options', def: statusDef, current: null } })
++    await render({ target: { kind: 'options', column: propertyColumn(statusDef), current: null } })
+@@
+         kind: 'options',
+-        def: syntheticContextDef('ctx_a'),
++        column: contextColumn('ctx_a'),
+         current: null,
 @@ describe('pickShape') @@
 -
 -describe('pickShape', () => {
@@ -26584,12 +27204,12 @@ describe('pickOver', () => {
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Properties/Pickers Core/Interface/Menus/propertyMenuActions.test.ts Core/Views/Table Core/Views/Settings/FilterFrame.test.tsx` green; `pickModel.test.ts` red before `pickModel.ts` lands.
-- [ ] The removal greps above answer nothing.
+- [ ] `npx vitest run Core/Properties/Pickers Core/Interface/Menus Core/Views/Table Core/Views/Settings/FilterFrame.test.tsx Core/Properties/PropertyPanel.test.tsx` green; `pickModel.test.ts` red before `pickModel.ts` lands; `PropertyPicker.pane.test.tsx`' Context case lists the Spaces from a column.
+- [ ] The removal greps above answer nothing; `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` answers `propertyMenuActions.ts`' `runPropertyAction` and `PropertyPanel.tsx`' value click (the Scoreboard's **Type Facts Once** row: 6 → 2).
 - [ ] `npm run test -- engineGraph hostGraph` green: `pickModel.ts` is a renderer-side `.ts` reached only from renderer files.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −31 production (+75 / −106). Tests about +12 (+70 / −58).
+**Lines:** −23 production (+126 / −149). Tests about +29 (+105 / −76).
 
 #### Task 15-2
 
@@ -26818,7 +27438,7 @@ describe('pickOver', () => {
 
 #### Task 15-3
 
-**TASK:** Every link menu names each item by what it edits: Edit Title edits the alias, the text the link shows, and Edit Link edits the target, the URL or the linked page. `cellMenuModel`'s `link` kind moves from "Edit, Rename" and `connectionMenuModel` from "Rename, Edit Title" (a page) or "Rename, Edit Link" (a URL) to "Edit Title, Edit Link", so a Link value reads the same wherever its menu opens (J-10). The actions behind them, `rename` and `editLink`, keep their ids.
+**TASK:** Every link menu names each item by what it edits: Edit Title edits the alias, the text the link shows, and Edit Link edits the target, the URL or the linked page. `cellMenuModel`'s `link` kind moves from "Edit, Rename" and `connectionMenuModel` from "Rename, Edit Title" (a page) or "Rename, Edit Link" (a URL) to "Edit Title, Edit Link", so a Link value reads the same wherever its menu opens (J-10). The actions behind them keep their ids here, `rename` and `editLink`; Task 16B-2 names the alias's `editTitle` when it folds the `rename` intent.
 
 **NOW:** `Core/Actions/cellMenu.ts:126-133` builds `Edit`, then `Rename` when the cell is filled; `connectionMenuModel` (`Core/Actions/connectionMenu.ts:90-95`) builds `Rename`, then `Edit Title` for a page and `Edit Link` for a URL. In both, `rename` edits the alias (`linkEdit`'s `rename` selects the shown text, adding one where there is none; the value editor's `rename` seat does the same for a bare address) and `editLink` the target (`linkEdit` selects `tk.link.title`, the linked page or the URL; the `editLink` seat selects a bare address whole), so the page link's "Edit Title" names the target and "Rename" names the alias. The `link` kind opens wherever a Link value names no page the connection menu can serve: the table's and cards' unresolved or empty Link cells (`TableView.tsx:286-303`, `CardValue.tsx:110-126`) and the panel's (`PropertyPanel.tsx:344`). Pinned by `cellMenu.test.ts`' two `link` cases (`:100-109` as P1 retitled it, `:121-124`) and `PropertyPanel.test.tsx:245-250`.
 
@@ -26827,7 +27447,7 @@ describe('pickOver', () => {
 - [ ] Rewrite and watch fail: `cellMenu.test.ts`' filled-link case expects `[['Edit Title', 'rename'], ['Edit Link', 'editLink'], ['Clear', 'cell:clear']]` with `Clear` separated, and its empty-link case `[['Edit Link', 'editLink']]`; `PropertyPanel.test.tsx`' "a Link value naming no page pops the fallback menu, whose Edit opens the editor" becomes "…whose Edit Link opens the editor" and expects `['Edit Title', 'Edit Link', 'Clear', 'Remove']`; `connectionMenu.test.ts`' three authoring pairs (HEAD `:19-20`, `:71-72`, `:84-85`) read `['Edit Title', 'rename'], ['Edit Link', 'editLink']`.
 - [ ] Retitle the tests that name the items by their old reading, assertions unchanged: `linkEdit.test.tsx`' describe "Rename and Edit Title land the caret where their names imply" (`:268`) → "Edit Title and Edit Link land the caret where their names imply", "Edit Title selects the title behind the alias" (`:285`) → "Edit Link selects the target behind the alias", "Rename selects an alias and Edit Title the title behind it" (`:322`) → "Edit Title selects an alias and Edit Link the target behind it", "on a heading connection, Edit Title selects the page and Rename seats after the heading" (`:336`) → "…Edit Link selects the page and Edit Title seats after the heading", and "a weblink’s Rename selects its label and Edit Link its address" (`:347`) → "a weblink’s Edit Title selects its label and Edit Link its address"; `linkEdges.test.tsx`' "Edit Title on the second of two touching links acts on the second" (`:145`) → "Edit Link on …"; `cellLinks.test.tsx`' "Edit Title enters with the title selected and writes nothing" (`:222`) → "Edit Link enters with the target selected and writes nothing".
 - [ ] `ValueEditor.tsx`' `seat` doc (`:47`) reads "Edit Title seats the alias, and Edit Link selects the target".
-- [ ] `.claude/scripts/Path Links Drive/live-drive.mjs`: the two picks of the target (`:477-482`, `:856-859`) choose `Edit Link`, and their item names read "Edit Link selects a path link's whole page half" and "Link value: Edit Link opens the field with the target selected".
+- [ ] `.claude/scripts/Path Links Drive/live-drive.mjs`: the two picks of the target (`:477-482`, `:856-859`) choose `Edit Link`, and their item names read "Edit Link selects a path link's whole page half" and "Link value: Edit Link opens the field with the target selected"; the pick of the alias on a Link value (`:720`, A-7's Show Full Link item) chooses `Edit Title`; and the body link menu's comment (`:477`) reads "The link menu on a path link in a body: Edit Title, Edit Link, Copy Link, Remove Link; and the Connection format off."
 - [ ] Commit: `git commit --only -m "Every link menu read Edit Title for the alias and Edit Link for the target." -- Core/Actions/cellMenu.ts Core/Actions/cellMenu.test.ts Core/Actions/connectionMenu.ts Core/Actions/connectionMenu.test.ts Core/Properties/PropertyPanel.test.tsx Core/Properties/Pickers/ValueEditor.tsx Core/MarkdownPM/Links/linkEdit.test.tsx Core/MarkdownPM/Links/linkEdges.test.tsx Core/MarkdownPM/Tables/cellLinks.test.tsx ".claude/scripts/Path Links Drive/live-drive.mjs"`
 
 **AFTER**
@@ -26905,7 +27525,7 @@ describe('pickOver', () => {
 **VERIFY**
 
 - [ ] `npx vitest run Core/Actions/cellMenu.test.ts Core/Actions/connectionMenu.test.ts Core/Properties/PropertyPanel.test.tsx Core/Properties/Pickers/valueClick.test.ts Core/MarkdownPM/Links Core/MarkdownPM/Tables/cellLinks.test.tsx` green; the two `cellMenu` cases and the three `connectionMenu` cases red before the arms change.
-- [ ] `git grep -n "label: 'Edit', action: 'editLink'\|label: 'Rename', action: 'rename'\|'Edit Title' : 'Edit Link'" -- Core/Actions/cellMenu.ts Core/Actions/connectionMenu.ts` answers nothing; `git grep -n "'Edit Title'" -- ".claude/scripts/Path Links Drive"` answers nothing.
+- [ ] `git grep -n "label: 'Edit', action: 'editLink'\|label: 'Rename', action: 'rename'\|'Edit Title' : 'Edit Link'" -- Core/Actions/cellMenu.ts Core/Actions/connectionMenu.ts` answers nothing; `git grep -n "'Rename'" -- ".claude/scripts/Path Links Drive"` answers nothing, and `git grep -n "'Edit Title'" -- ".claude/scripts/Path Links Drive"` answers the `:720` pick alone.
 - [ ] The Path Links Drive passes on `~/Test`.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -27729,7 +28349,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 15-1 The Pick Model | −106 | +75 | −31 |
+| 15-1 The Pick Model | −149 | +126 | −23 |
 | 15-2 One Writer | −54 | +50 | −4 |
 | 15-3 The Link Menus | −4 | +4 | 0 |
 | 15-4 One Menu Vocabulary | −18 | +18 | 0 |
@@ -27738,12 +28358,12 @@ A value write names every file it lands on, so `assignValue` stays the one write
 | 15-7 The Test Collapse | 0 | 0 | 0 |
 | 15-8 The Measurement | 0 | 0 | 0 |
 | 15-9 The Drive | 0 | 0 | 0 |
-| **Phase 15 (02-10's Pass)** | **−213** | **+178** | **−35** |
-| **Phase 15 (02-10's Fail, With the Fail Branch)** | **−246** | **+253** | **+7** |
+| **Phase 15 (02-10's Pass)** | **−256** | **+229** | **−27** |
+| **Phase 15 (02-10's Fail, With the Fail Branch)** | **−289** | **+304** | **+15** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides (`pickGroups` 6, `toggleValue` 2, `oneShotWriter`'s body 9), and `useMultiValue.ts` and `cardColumns.ts` move whole. On 02-10's Pass, Task 15-8 lands nothing; its Fail Branch adds −33 / +75 (+42), and its callers' `[row]` adapters change in place.
-- **On 02-10's Fail:** the phase lands +7. The Fail Branch (+42) is the remedy *§Measurement Rules › 02-10* rules for a mass assign over its threshold: one `setProperty` carrying every swept path, under each file's own lock with one reply, in place of one request per row, so a measured stall is fixed in the one writer rather than worked around at each surface.
-- **Tests:** about +4 (+107 / −103): the pick model's file (+70) against `massAssign.test.ts` and the `pickShape` case (−58); the `cellMenu` vocabulary cases +24; the filter clock case +21; the writer harnesses −14 / +8; the editor collapse −14 / +1; the `cellMenu` link cases ±0; the panel's fallback-menu case ±0. The drive apart: about +28.
+- **On 02-10's Fail:** the phase lands +15. The Fail Branch (+42) is the remedy *§Measurement Rules › 02-10* rules for a mass assign over its threshold: one `setProperty` carrying every swept path, under each file's own lock with one reply, in place of one request per row, so a measured stall is fixed in the one writer rather than worked around at each surface.
+- **Tests:** about +26 (+142 / −116): the pick model's file (+95) against `massAssign.test.ts` and the `pickShape` case (−58); the pane test's targets on the column (+10 / −13); the `cellMenu` vocabulary cases +24; the filter clock case +21; the writer harnesses −14 / +8; the editor collapse −14 / +1; the `cellMenu` link cases ±0; the panel's fallback-menu case ±0. The drive apart: about +28.
 
 ---
 
@@ -27751,7 +28371,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 
 **GOAL:** Clicking, right-clicking, and editing a value becomes one shared seat, `Core/Properties/Cells/ValueSeat.tsx`, which owns the intent dispatch, the menu chain, the open-value state, the inline editor, the pick target, and the floating panes; each surface hands it only what it genuinely does differently. The table's and Cards' hand-wired copies move onto it, `CardValue.tsx` and `useViewHost.pickTarget` leave, and the three interleavings — Cards' ghost hold, the table's title-action passthrough, and `lastOpened` keying — are settled and pinned. It's a phase of its own because the panel and the native menu's router keep their own copies until Phase 16B, so its head is shippable with two surfaces on the seat.
 
-**Builds On:** P2's `ColumnType` and Filedata origin (`specOf(t).origin === 'filedata'`; `FILEDATA.createdAt.id`); P3's `blankDraws`; P4's `Core/Properties/fieldValue.ts`; P6's writer; P13's `ResolvedColumn = { id; kind; type; def? }`, `resolveColumn`/`propertyColumn`/`contextColumn` (`Core/Views/Pipeline/columns.ts`), `resolveFieldValue(row, column)`, the host's `styleById`, `styleOf(column)`, and `setStylePatch(column, key, value)`, `useColumns`' `runStyleAction(column, action)`, and Cards' `addedColumn(id)` over entries carrying `column`; P15's `pickModel.ts` (`pickGroups`, `pickOver`, `pickedValue`, `toggleValue`), `useValueWriter`/`oneShotWriter`, `cellMenuContextFor(type, style | null, filled, { hideable?: 'view' | 'row', … })`, `cardColumns.ts`, the link menus' Rename-then-Edit-Link order, and `syntheticContextDef`, which stays in `PropertyPicker.tsx` with its sites for this plan to delete.
+**Builds On:** P2's `ColumnType` and Filedata origin (`specOf(t).origin === 'filedata'`; `FILEDATA.createdAt.id`); P3's `blankDraws`; P4's `Core/Properties/fieldValue.ts`; P6's writer; P13's `ResolvedColumn = { id; kind; type; def? }`, `resolveColumn`/`propertyColumn`/`contextColumn` (`Core/Views/Pipeline/columns.ts`), `resolveFieldValue(row, column)`, the host's `styleById`, `styleOf(column)`, and `setStylePatch(column, key, value)`, `useColumns`' `runStyleAction(column, action)`, and Cards' `addedColumn(id)` over entries carrying `column`; P15's `pickModel.ts` over the resolved column (`pickGroups`, `pickOver`, `pickedValue`, `toggleValue`), `PickTarget`'s options arm carrying `column`, its date arm no definition, and its file arm `def`, `useValueWriter`/`oneShotWriter`, `cellMenuContextFor(type, style | null, filled, { hideable?: 'view' | 'row', … })`, `cardColumns.ts`, the link menus' Edit Title-then-Edit Link order (the alias item's action still `rename`), and `syntheticContextDef`, which stays in `PropertyPicker.tsx` for `runPropertyAction` and the panel's value click until Phase 16B removes both.
 
 **Order:** 16A-1 writes the seat with its tests, and it commits with 16A-2, which moves the table, its first reader; 16A-3 moves Cards. Phase 16B folds the native router, moves the panel, folds `rename`, and removes the fabricated definition.
 
@@ -27772,7 +28392,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 - [ ] Write `Core/Properties/Cells/ValueSeat.test.tsx` (below) and watch it fail on the missing module.
 - [ ] `Core/Properties/Pickers/valueClick.ts`: nothing reads the new `seat` field until the seat does; the three surfaces' handlers ignore it.
 - [ ] `Core/Actions/connectionMenu.ts`: `LinkMenuContext`'s `value` reads `{ hideable?: HideFrom }`, P15's union read through a type-only import from `./cellMenu` (the runtime import runs the other way, `cellMenu.ts` reading `cellClosingRows`), and the closing rows pass `!!ctx.value.hideable`; `valueMenuTarget.ts`'s `hideable` parameter takes `HideFrom`, optional, through the same type-only import, and its three callers follow: the table's drops its `false` and Cards' `true` reads `'view'` (lines Tasks 16A-2 and 16A-3 delete with their files' copies), and the panel's `true` reads `'row'` (deleted in Task 16B-2).
-- [ ] Write `Core/Properties/Cells/ValueSeat.tsx` in full (below). Its `target` reads `column.def ?? syntheticContextDef(column.id)` for the options arm until Phase 16B's Task 16B-3 removes the fabricated definition; it handles `rename` until Task 16B-2 folds that intent into `popover`.
+- [ ] Write `Core/Properties/Cells/ValueSeat.tsx` in full (below). Its `target` hands the options arm the column, as P15's `PickTarget` reads it; it handles `rename` until Task 16B-2 folds that intent into `popover`.
 - [ ] Run the new test file and `Core/Actions/connectionMenu.test.ts` green, then the gates. The work commits with Task 16A-2.
 
 **AFTER**
@@ -27815,12 +28435,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 +import { resolveFieldValue } from '../fieldValue'
 +import { isBlankValue, type PropertyValue } from '../propertyValue'
 +import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
-+import {
-+  type PickEntry,
-+  PropertyPicker,
-+  type PickTarget,
-+  syntheticContextDef,
-+} from '../Pickers/PropertyPicker'
++import { type PickEntry, PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
 +import { PropertyValueInput } from '../Pickers/PropertyValueInput'
 +import {
 +  runValueIntent,
@@ -27993,7 +28608,6 @@ A value write names every file it lands on, so `assignValue` stays the one write
 +    if (column.type === 'dateTime')
 +      return {
 +        kind: 'dateTime',
-+        def: column.def ?? syntheticContextDef(column.id),
 +        current,
 +        dateFormat: style?.date_format,
 +        timeFormat: style?.time_format,
@@ -28002,7 +28616,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 +    const { setStyle } = host
 +    return {
 +      kind: 'options',
-+      def: column.def ?? syntheticContextDef(column.id),
++      column,
 +      current,
 +      style: setStyle && style ? { current: style, set: (key, value) => setStyle(column, key, value) } : undefined,
 +      contextOptions:
@@ -28731,12 +29345,13 @@ The style action spelling in "runs a Style answer" is `columnMenu.ts`'s at P3's 
 **CHANGE**
 
 - [ ] Write the pin in `Core/Views/Cards/cardCreation.test.tsx` › `describe('the cards ghost — dwell, create, and exit')` and watch it pass at the base (preserved behavior): "a value’s inline field closes the ghost and keeps it down until the field closes" (below). The file's `source()` gains a Text property with a value on `p1`, seeded as its other fixtures are.
+- [ ] Write the chooser pins in `Core/Views/Cards/cardGestures.test.tsx` › `describe('the card’s Add chooser')` (below) and watch them pass at the base (preserved behavior): "a Select entry slides into its options under ‹ Properties, in the same pane" and "a Date entry opens its own calendar", over a Select and a Date the view doesn't show, so the blank card's chooser offers both.
 - [ ] `Core/Views/Cards/CardsView.tsx`: the seat, `commitOnCard`, and the inline hold land after `useViewInteractions` (below); `PageCard`, `CardFace`, and `CardProperties` carry `editing`, the column id of the card's open inline field, as the table's rows carry theirs.
 - [ ] Delete from `CardsView.tsx`: `ValuePickerRequest`, `PROPERTY_PICKER_KINDS`, `valuePicker`, `pickerAnchorRef`, the value-picker close effect (`:211-219`), `valuePopup` through `popoverRow`, `commitPicked`, the popover and `PropertyPicker` blocks, `CardApi.setStyle`, `CardApi.hide`, and `CardApi.openValuePicker` (each read only by `CardValue`: `git grep -n "api\.setStyle\|api\.hide\|openValuePicker" -- Core` answers only `CardsView.tsx:703,704,706`).
 - [ ] `git rm Core/Views/Cards/CardValue.tsx`; `git grep -nw "CardValue\|CardPickerKind" -- Core` answers nothing.
-- [ ] `Core/Views/Host/useViewHost.ts`: delete `pickTarget` and its return entry, with the `PickTarget`/`syntheticContextDef` import, `specOf`, `resolveFieldValue`, and `contextOptionsFor` where nothing else in the file reads them; `git grep -nw "pickTarget" -- Core` answers nothing.
+- [ ] `Core/Views/Host/useViewHost.ts`: delete `pickTarget` and its return entry, with the `PickTarget` import, `specOf`, `resolveFieldValue`, and `contextOptionsFor` where nothing else in the file reads them; `git grep -nw "pickTarget" -- Core` answers nothing.
 - [ ] Run `Core/Views/Cards` green, then the gates.
-- [ ] Commit: `git commit --only -- Core/Views/Cards/CardsView.tsx Core/Views/Cards/CardValue.tsx Core/Views/Cards/cardCreation.test.tsx Core/Views/Host/useViewHost.ts -m "Cards moved onto the value seat; CardValue and the cards' own picker and popover were removed."`
+- [ ] Commit: `git commit --only -- Core/Views/Cards/CardsView.tsx Core/Views/Cards/CardValue.tsx Core/Views/Cards/cardCreation.test.tsx Core/Views/Cards/cardGestures.test.tsx Core/Views/Host/useViewHost.ts -m "Cards moved onto the value seat; CardValue and the cards' own picker and popover were removed."`
 
 **AFTER**
 
@@ -29043,11 +29658,11 @@ On 02-10's Fail, Task 15-8's `commitValue` takes `rows`, so `commitOnCard`'s wri
 @@
 -import { contextOptionsFor } from '../../Contexts/contextOptions'
 @@
--import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
+-import type { PickTarget } from '../../Properties/Pickers/PropertyPicker'
 -import { resolveFieldValue } from '../../Properties/fieldValue'
 @@ pickTarget @@
 -  const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
--  … (HEAD :212-231 as P13 left them, the `syntheticContextDef` fallback included)
+-  … (HEAD :212-231 as P13 and P15 left them, reading the column)
 -        column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
 -    }
 -  }
@@ -29057,6 +29672,54 @@ On 02-10's Fail, Task 15-8's `commitValue` takes `rows`, so `commitOnCard`'s wri
 ```
 
 (P13 leaves `specOf` the `properties` import's one name and `resolveFieldValue` the `fieldValue` import's, each read only by `pickTarget`, so both lines leave whole.)
+
+```Core/Views/Cards/cardGestures.test.tsx diff
+@@ the end of the file @@
+       'cell:clear',
+       'cell:hide',
+     ])
+   })
+ })
++
++describe('the card’s Add chooser', () => {
++  const stageDef: PropertyDefinition = {
++    id: 'prop_stage',
++    label: 'Stage',
++    key: 'Stage',
++    type: 'select',
++    select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
++  }
++  const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
++  const entry = (name: string): HTMLElement | undefined =>
++    portalButtons().find((b) => b.textContent?.includes(name))
++  const choose = async (name: string): Promise<void> => {
++    const base = source()
++    await renderView(root, { ...base, properties: [STATUS_DEF, numberDef, stageDef, dueDef] })
++    await act(async () => {
++      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
++    })
++    await act(async () => {
++      entry(name)?.click()
++    })
++    await act(async () => {
++      await new Promise((r) => setTimeout(r, 30))
++    })
++  }
++
++  it('a Select entry slides into its options under ‹ Properties, in the same pane', async () => {
++    await choose('Stage')
++    expect(entry('Properties')?.textContent).toContain('Stage')
++    expect(entry('Early')).toBeTruthy()
++    expect(openPanes()).toBe(1)
++  })
++
++  it('a Date entry opens its own calendar', async () => {
++    await choose('Due')
++    const shown = [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent)
++    expect(shown.join('')).toContain('Mon')
++  })
++})
+```
 
 ```Core/Views/Cards/cardCreation.test.tsx diff
 @@ describe('the cards ghost — dwell, create, and exit') @@
@@ -29081,7 +29744,7 @@ On 02-10's Fail, Task 15-8's `commitValue` takes `rows`, so `commitOnCard`'s wri
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Views/Cards` passes; `cardGestures.test.tsx:131` ("a status click opens one picker at the root") and `:178` (the link menu closing with Clear and Remove) pass unchanged.
+- [ ] `npx vitest run Core/Views/Cards` passes; `cardGestures.test.tsx:131` ("a status click opens one picker at the root") and `:178` (the link menu closing with Clear and Remove) pass unchanged, and the two chooser pins pass on both sides of the task.
 - [ ] `git grep -nw "CardValue\|ValuePickerRequest\|PROPERTY_PICKER_KINDS\|commitPicked\|revealOnCommit" -- Core` answers nothing; `git grep -nw "PropertyPicker\|PropertyValueInput" -- Core/Views/Cards/CardsView.tsx` answers only the `PickEntry` type import.
 - [ ] The gates are clean.
 - [ ] Check for unnecessary code or mistakes.
@@ -29108,23 +29771,23 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 16A-1 The Seat | −7 | +281 | +274 |
+| 16A-1 The Seat | −7 | +275 | +268 |
 | 16A-2 The Table | −198 | +58 | −140 |
-| 16A-3 Cards | −331 | +125 | −206 |
-| **Phase 16A** | **−536** | **+464** | **−72** |
+| 16A-3 Cards | −329 | +125 | −204 |
+| **Phase 16A** | **−534** | **+458** | **−76** |
 
-- **The Rule:** *§Plan Constraints › The Number*'s. 16A-1 is `ValueSeat.tsx` (+263) with `hideable`'s `HideFrom` and its callers' tokens; 16A-2 and 16A-3 spend the seat's call against the table's and Cards' intent maps, open state, held panes, editors, and value menu chains, `CardValue.tsx` leaving whole.
-- **Tests:** about +190 (`ValueSeat.test.tsx` about +180, the table's two pins, Cards' one); `connectionMenu.test.ts`' four literals change in place.
+- **The Rule:** *§Plan Constraints › The Number*'s. 16A-1 is `ValueSeat.tsx` (+257) with `hideable`'s `HideFrom` and its callers' tokens; 16A-2 and 16A-3 spend the seat's call against the table's and Cards' intent maps, open state, held panes, editors, and value menu chains, `CardValue.tsx` leaving whole.
+- **Tests:** about +225 (`ValueSeat.test.tsx` about +180, the table's two pins, Cards' three: the inline-field ghost hold and the Add chooser's two); `connectionMenu.test.ts`' four literals change in place.
 
 ---
 
 ### Phase 16B — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
 
-**GOAL:** The seat Phase 16A landed serves everything else that edits a value. One app-level `MenuSeat` replaces `ValuePickPresenter`, so a value picked from a menu away from it runs what a click would and nothing on the session channel decides by type; the Properties panel keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value interaction moves to the seat, so its label and value menus are the seat's one row menu: a Link row's label gains Edit Title and Edit Link, a File value gains Remove and no Clear, and `propertyMenu.ts`' `page-value` kind and `fileValueMenu` leave. The `rename` intent folds into `popover`; and the pickers read the resolved column, so `syntheticContextDef` and its sites leave. Drive group 14 proves every surface on one seat.
+**GOAL:** The seat Phase 16A landed serves everything else that edits a value. One app-level `MenuSeat` replaces `ValuePickPresenter`, so a value picked from a menu away from it runs what a click would and nothing on the session channel decides by type; the Properties panel keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value interaction moves to the seat, so its label and value menus are the seat's one row menu: a Link row's label gains Edit Title and Edit Link, a File value gains Remove and no Clear, and `propertyMenu.ts`' `page-value` kind and `fileValueMenu` leave. The `rename` intent folds into `popover`, and `syntheticContextDef` leaves with the router's request and the panel's click, the two sites P15 left it. Drive group 14 proves every surface on one seat.
 
-**Starting State (Phase 16A's AFTER):** `Core/Properties/Cells/ValueSeat.tsx` holds `SeatHost` (`rowOf`, `commit`, `anchor`, `holder`, `connections`, `style` answering `ColumnStyle | null`, `setStyle`, `centered`, `hold`, `hide: { from: 'view' | 'row'; run }`, `clear`, `onClose`), `SeatOpen`, `useValueSeat` (`open`, `anchor`, `host`, `close`, `intentOf`, `run`, `click`, `pane`, `menu(row, column, e, label?)`, `editor`, `target`), `SeatChooser`, and `<ValueSeat seat chooser? />`; its `target` reads `column.def ?? syntheticContextDef(column.id)`, and its handler table still maps `rename`; `LinkMenuContext.value.hideable` and `valueMenuTarget`'s parameter take the `'view' | 'row'` union (Task 16A-1), and the seat hands both menus `host.hide?.from`. The view host returns `seatHost`; the table and Cards run every value through the seat; `CardValue.tsx` and `pickTarget` are gone. `runPropertyAction` and `ValuePickPresenter` read as P15 and P13 left them. The panel reads as HEAD with P13's columns and `currentOf`, P15's `useValueWriter`, P15's `hideable: 'row'` on its fallback Link menu, and P16A's `'row'` in its `valueMenuTarget` call: its label still pops `propertyMenuModel`'s `page-value` kind, and its File value `fileValueMenu`. P15's `HideFrom` (`Core/Actions/cellMenu.ts`) and `cellMenuContextFor(type, null, …)` answering a bare value are the vocabulary the panel's seat host reads.
+**Starting State (Phase 16A's AFTER):** `Core/Properties/Cells/ValueSeat.tsx` holds `SeatHost` (`rowOf`, `commit`, `anchor`, `holder`, `connections`, `style` answering `ColumnStyle | null`, `setStyle`, `centered`, `hold`, `hide: { from: 'view' | 'row'; run }`, `clear`, `onClose`), `SeatOpen`, `useValueSeat` (`open`, `anchor`, `host`, `close`, `intentOf`, `run`, `click`, `pane`, `menu(row, column, e, label?)`, `editor`, `target`), `SeatChooser`, and `<ValueSeat seat chooser? />`; its `target` hands the options arm the column, and its handler table still maps `rename`; `LinkMenuContext.value.hideable` and `valueMenuTarget`'s parameter take the `'view' | 'row'` union (Task 16A-1), and the seat hands both menus `host.hide?.from`. The view host returns `seatHost`; the table and Cards run every value through the seat; `CardValue.tsx` and `pickTarget` are gone. `runPropertyAction` and `ValuePickPresenter` read as P15 and P13 left them. The panel reads as HEAD with P13's columns and `currentOf`, P15's `useValueWriter`, P15's `hideable: 'row'` on its fallback Link menu, and P16A's `'row'` in its `valueMenuTarget` call: its label still pops `propertyMenuModel`'s `page-value` kind, and its File value `fileValueMenu`. P15's `HideFrom` (`Core/Actions/cellMenu.ts`) and `cellMenuContextFor(type, null, …)` answering a bare value are the vocabulary the panel's seat host reads.
 
-**Order:** 16B-1 folds the native router, 16B-2 moves the panel (the seat's last copy, so its row menu, `rename`, and `valueMenuTarget.ts` fold there), 16B-3 removes the fabricated definition, and 16B-4 adds the drive group.
+**Order:** 16B-1 folds the native router, 16B-2 moves the panel (the seat's last copy, so its row menu, `rename`, `valueMenuTarget.ts`, and the fabricated Context definition fold there), and 16B-3 adds the drive group.
 
 #### Task 16B-1
 
@@ -29168,6 +29831,8 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 +import { checkboxValue, type PropertyValue, selectedValues } from '../../Properties/propertyValue'
 @@
 -import { pickFileInto } from '../../Properties/Pickers/filePick'
+@@
+-import { syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 @@ runPropertyAction @@
  export function runPropertyAction(
    action: string,
@@ -29192,7 +29857,7 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
    const column = resolveColumn(id, schema, contextIdsOf(tree))
    // The property can leave between the menu opening and the pick; the pick then writes nothing.
    if (!column) return true
-   const def = column.def ?? syntheticContextDef(id)
+-  const def = column.def ?? syntheticContextDef(id)
    const current = resolveFieldValue(row, column)
 -  const commitValue = (next: PropertyValue | null): void => commit(column, next)
 -  if (value === null) {
@@ -29210,7 +29875,7 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 -  }
 -  if (def.type === 'checkbox')
 -    commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
--  else commitValue(pickedValue(def, current, value))
+-  else commitValue(pickedValue(column, current, value))
 +  if (value === null)
 +    useSession.getState().requestPick({
 +      rowOf,
@@ -29221,12 +29886,12 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 +      style: styleOf?.(column),
 +    })
 +  else if (column.type === 'checkbox') commit(column, checkboxValue(value === 'true'))
-+  else commit(column, pickedValue(def, current, value))
++  else commit(column, pickedValue(column, current, value))
    return true
  }
 ```
 
-(`def` is P13's `column.def ?? syntheticContextDef(id)`, the fabricated definition a Context leaf's `pickedValue` reads until Task 16B-3 hands the pick model the column. `propertyValue.ts`' import line is whatever P15 left it, `selectedValues` included only if a reader stays.)
+(`def`, P13's `column.def ?? syntheticContextDef(id)`, leaves with the router's request, its last reader; P15's `pickedValue` already reads the column. `propertyValue.ts`' import line is whatever P15 left it, `selectedValues` included only if a reader stays.)
 
 ```Core/Interface/Menus/entityMenuActions.ts diff
 @@ showEntityMenu @@
@@ -29393,14 +30058,14 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
 
 #### Task 16B-2
 
-**TASK:** The Properties panel splits along the seat: it keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value click, right-click, inline editor, picker, and popover move to the seat, the label's right-click included. The label and the value build one row menu through `cellMenuContextFor` and `cellMenuModel`, as the table and cards do, so `propertyMenu.ts`' `page-value` kind with its three `value:*` actions, the panel's hand mapping, and `fileValueMenu` leave: a Link row's label gains Edit Title and Edit Link (J-3), and the panel's File value gains Remove and no Clear (J-10, LC-15). With the panel the seat's last copy, `valueMenuTarget.ts` leaves (06-06, B-06-01).
+**TASK:** The Properties panel splits along the seat: it keeps subject loading, layout, row order, the Add rows, and revealed rows (J-5), and its value click, right-click, inline editor, picker, and popover move to the seat, the label's right-click included. The label and the value build one row menu through `cellMenuContextFor` and `cellMenuModel`, as the table and cards do, so `propertyMenu.ts`' `page-value` kind with its three `value:*` actions, the panel's hand mapping, and `fileValueMenu` leave: a Link row's label gains Edit Title and Edit Link (J-3), and the panel's File value gains Remove and no Clear (J-10, LC-15). With the panel the seat's last copy, `valueMenuTarget.ts` leaves (06-06, B-06-01), and the alias item's action, which reads Edit Title since P15, is named `editTitle` for what it edits, beside `property:rename`, which renames a property.
 
 **NOW:**
 - `PropertyPanel.tsx` (577 lines at HEAD; P15 has replaced its writer with `useValueWriter`, its fallback Link menu's `hideable` with `'row'`, and its `KNOB` comment; P16A its `valueMenuTarget` call's `true` with `'row'`) holds the open-value state (`Editing`, `:66`, `:93`), the trigger (`:95`), the intent map (`runIntent`, `:286-304`), `editRow` (`:305-313`, P13's `currentOf`), and two right-click handlers:
   - **The Label:** `rowMenu` (`:319-331`, reached from `:388-391`) pops `propertyMenuModel({ kind: 'page-value', filled, editable: def?.type === 'text' })` (`Core/Actions/propertyMenu.ts:9,31-38`: Edit for Text only, then Clear when filled, and Remove) and maps `value:edit`, `value:clear`, and `value:remove` by hand onto `runIntent` and `emptyRow`.
   - **The Value:** `valueMenu` (`:332-346`, reached from `:396-402`): a File value pops `fileValueMenu` (`Core/Properties/Pickers/filePick.ts:115-125`, `cellMenuModel({ kind: 'file', onChip })` with no Remove, its one caller) and stops the event, so the row's Remove never opens on it; a resolved Link pops the connection menu through `valueMenuTarget`; an unresolved Link pops `cellMenuModel({ kind: 'link', filled: true, hideable: 'row' })`; every other value returns false and bubbles to the label's handler.
 - It also holds `revealAndEdit` (`:347-358`, which edits a revealed property through `editRow` and opens a Context's picker by hand), `panelTarget` (`:360-377`), the inline editor (`:405-414`), the popover (`:537-548`), and one `PropertyPicker` shared by values and the Add chooser (`:549-567`).
-- Its two fabricated-definition sites are `:364` (a Context row's picker) and `:403` (`editRow(def ?? syntheticContextDef(id), …)`, the value's click).
+- Its one fabricated-definition site is `:403` (`editRow(def ?? syntheticContextDef(id), …)`, the value's click; P15 reads `panelTarget` off the column), the last reader of `syntheticContextDef` (`Core/Properties/Pickers/PropertyPicker.tsx:82-87`) once Task 16B-1 drops `runPropertyAction`'s.
 - **The Table and Cards:** the seat's `menu` (Task 16A-1) builds `cellMenuContextFor(column.type, host.style(column), filled, { hideable: host.hide?.from, barCapable, onChip })` → `cellMenuModel`, then `runFileMenuAction` and `valueMenuIntent`, and pops the connection menu for a Link it serves unless `label` is set.
 - The panel's genuine differences: its Clear keeps the row shown and its Remove hides it (`emptyRow`, `:314-318`, Nathan's reading L-06); it holds no column look, so its menu is `cellMenuContextFor(type, null, filled, { hideable: 'row', onChip })` (P15's bare arms) and its calendar reads the Nexus's forms; a pane anchors on the row's value span, found by `[data-property-row]` (`:351-353`, `:426`); and its picker excludes the Space itself from its own Spaces (`:374`).
 - A subject change resets the open state during render (`:108-113`), and a Nexus change in an effect (`:152-157`).
@@ -29416,11 +30081,13 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
   - Watch pass at the base (preserved behavior): "a Context row's click opens its Spaces, leaving the Space itself out".
 - [ ] Rewrite `PropertyPanel.test.tsx`: the three `'value:remove'` answers (`:153,277,335`) become `'cell:hide'`, the seat's Remove.
 - [ ] Delete from `PropertyPanel.tsx`: `Editing`, `editing`/`setEditing`, `triggerRef`, `runIntent`, `editRow`, `rowMenu`, `valueMenu`, P13's `currentOf`, `isContextRow` (P13 leaves it read only by `revealAndEdit` and `panelTarget`), `editingDef`, `panelTarget`, the label's and value's right-click handlers, the inline `PropertyValueInput`, the popover, and the `PropertyPicker` block, with the imports only they read, and `isBlankValue` import where nothing else reads it.
+- [ ] `Core/Properties/Pickers/PropertyPicker.tsx`: `syntheticContextDef` leaves with its last reader (AFTER).
+- [ ] The alias item's action takes the name of what it edits, beside `property:rename`, which renames a property: `ConnEditAction`'s `'rename'` becomes `'editTitle'` in `connectionMenu.ts`, `cellMenu.ts`, `linkEdit.ts`, `ValueEditor.tsx`, and `MENU_INTENTS` (AFTER), and every test spelling the alias action reads `'editTitle'`: `cellMenu.test.ts` (one), `connectionMenu.test.ts` (five), `connectionMenuActions.test.ts` (two), `linkEdit.test.tsx` (nine), `linkEdges.test.tsx` (one), `cellLinks.test.tsx` (one), `PropertyValueInput.test.tsx` (ten seats), `ValueEditor.test.tsx` (six seats), `valueClick.test.ts` (one), `cardGestures.test.tsx` (one), and `cellGestures.test.tsx` (one). The other `'rename'` unions (`aliasRowMenu.ts`, `gripMenu.ts`, `identityMenus.ts`, `viewRowMenu.ts`, the Nexus's rename op) rename a thing and stay.
 - [ ] `Core/Actions/propertyMenu.ts`: the `page-value` kind, its comment, the three `value:*` actions, and `joinGroups`' import leave (AFTER). `Core/Actions/propertyMenu.test.ts`: the "a page value yields Clear · Remove …" case leaves.
 - [ ] `filePick.test.ts`: `describe('fileValueMenu …')` becomes `describe('runFileMenuAction')`, keeping its Remove-a-chip and Replace-a-chip cases on the function the seat calls; the off-chip-model and dismissed-menu cases leave with the menu they pinned (AFTER).
-- [ ] `git rm Core/Properties/Cells/valueMenuTarget.ts`. Removal proofs, each answering nothing: `git grep -nw "valueMenuTarget\|fileValueMenu\|editRow\|panelTarget\|currentOf" -- Core`; `git grep -nw "rowMenu\|valueMenu\|syntheticContextDef" -- Core/Properties/PropertyPanel.tsx`; `git grep -n "'page-value'\|value:edit\|value:clear\|value:remove" -- Core UIX`; `git grep -n "kind: 'rename'" -- Core/Properties/Pickers Core/Properties/Cells` (`Core/Nexus/tree.ts`' values epoch and `Core/Properties/Schema/PropertyFrame.test.tsx` spell other unions' `kind: 'rename'` and stay). `git grep -nw "propertyMenuModel" -- Core ':!*.test.*'` answers only `PropertyFrame.tsx`.
+- [ ] `git rm Core/Properties/Cells/valueMenuTarget.ts`. Removal proofs, each answering nothing: `git grep -nw "valueMenuTarget\|fileValueMenu\|editRow\|panelTarget\|currentOf" -- Core`; `git grep -nw "rowMenu\|valueMenu" -- Core/Properties/PropertyPanel.tsx`; `git grep -nw "syntheticContextDef" -- Core`; `git grep -n "'page-value'\|value:edit\|value:clear\|value:remove" -- Core UIX`; `git grep -n "kind: 'rename'" -- Core/Properties/Pickers Core/Properties/Cells` (`Core/Nexus/tree.ts`' values epoch and `Core/Properties/Schema/PropertyFrame.test.tsx` spell other unions' `kind: 'rename'` and stay). `git grep -nw "propertyMenuModel" -- Core ':!*.test.*'` answers only `PropertyFrame.tsx`.
 - [ ] Run `Core/Properties` and `Core/Actions` green, then the gates.
-- [ ] Commit: `git commit --only -- Core/Properties/PropertyPanel.tsx Core/Properties/PropertyPanel.test.tsx Core/Actions/propertyMenu.ts Core/Actions/propertyMenu.test.ts Core/Properties/Pickers/filePick.ts Core/Properties/Pickers/filePick.test.ts Core/Properties/Pickers/valueClick.ts Core/Properties/Pickers/valueClick.test.ts Core/Properties/Cells/ValueSeat.tsx Core/Properties/Cells/valueMenuTarget.ts -m "The Properties panel's value interaction moved onto the value seat, its row menu became the one the table and cards build, and Rename became a popover carrying its seat."`
+- [ ] Commit: `git commit --only -- Core/Properties/PropertyPanel.tsx Core/Properties/PropertyPanel.test.tsx Core/Actions/propertyMenu.ts Core/Actions/propertyMenu.test.ts Core/Properties/Pickers/filePick.ts Core/Properties/Pickers/filePick.test.ts Core/Properties/Pickers/valueClick.ts Core/Properties/Pickers/valueClick.test.ts Core/Properties/Cells/ValueSeat.tsx Core/Properties/Cells/valueMenuTarget.ts Core/Properties/Pickers/PropertyPicker.tsx Core/Actions/connectionMenu.ts Core/Actions/connectionMenu.test.ts Core/Actions/cellMenu.ts Core/Actions/cellMenu.test.ts Core/MarkdownPM/Links/linkEdit.ts Core/MarkdownPM/Links/linkEdit.test.tsx Core/MarkdownPM/Links/linkEdges.test.tsx Core/MarkdownPM/Tables/cellLinks.test.tsx Core/Properties/Pickers/ValueEditor.tsx Core/Properties/Pickers/ValueEditor.test.tsx Core/Properties/Pickers/PropertyValueInput.test.tsx Core/Interface/Menus/connectionMenuActions.test.ts Core/Views/Cards/cardGestures.test.tsx Core/Views/Table/cellGestures.test.tsx -m "The Properties panel's value interaction moved onto the value seat, its row menu became the one the table and cards build, Rename became a popover carrying its seat, the alias action was named editTitle, and the fabricated Context definition left."`
 
 **AFTER**
 
@@ -29543,7 +30210,7 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
 -
 -  const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
 -  const panelTarget = ((): PickTarget | null => {
--  … (HEAD :362-376 as P13 left them, `panelTarget`)
+-  … (HEAD :362-376 as P13 and P15 left them, `panelTarget`)
 -  })()
 @@ renderRow @@
      const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
@@ -29678,7 +30345,7 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 @@ MENU_INTENTS @@
    'cell:edit': { kind: 'edit' },
 -  rename: { kind: 'rename' },
-+  rename: { kind: 'popover', seat: 'rename' },
++  editTitle: { kind: 'popover', seat: 'editTitle' },
    'cell:clear': { kind: 'commit', value: null },
 ```
 
@@ -29833,10 +30500,58 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 +})
 ```
 
+```Core/Actions/connectionMenu.ts diff
+@@ ConnEditAction @@
+-export type ConnEditAction = 'rename' | 'editLink'
++export type ConnEditAction = 'editTitle' | 'editLink'
+@@ LINK_EDIT_ACTIONS @@
+ const LINK_EDIT_ACTIONS = [
+-  'rename',
++  'editTitle',
+   'editLink',
+@@ connectionMenuModel › authoring @@
+-        { label: 'Edit Title', action: 'rename' },
++        { label: 'Edit Title', action: 'editTitle' },
+         { label: 'Edit Link', action: 'editLink' },
+```
+
+```Core/Actions/cellMenu.ts diff
+@@ baseCellMenuModel › link @@
+-          ...(ctx.filled ? [{ label: 'Edit Title', action: 'rename' as const }] : []),
++          ...(ctx.filled ? [{ label: 'Edit Title', action: 'editTitle' as const }] : []),
+```
+
+```Core/MarkdownPM/Links/linkEdit.ts diff
+@@ linkEdit @@
+-    case 'rename': {
++    case 'editTitle': {
+       if (tk.kind === 'link' || aliasedToken(tk)) return { kind: 'select', range: [cs, ce] }
+```
+
+```Core/Properties/Pickers/ValueEditor.tsx diff
+@@ the seat on mount @@
+-    else if (seat === 'rename') {
+-      // A bare address draws no link token, so Rename gives it the label a markdown link has.
++    else if (seat === 'editTitle') {
++      // A bare address draws no link token, so Edit Title gives it the label a markdown link has.
+```
+
+```Core/Properties/Pickers/PropertyPicker.tsx diff
+@@ syntheticContextDef @@
+-export const syntheticContextDef = (id: string): PropertyDefinition => ({
+-  id,
+-  label: '',
+-  key: '',
+-  type: 'context',
+-})
+-
+ export function PropertyPicker({
+```
+
 ```Core/Properties/Pickers/valueClick.test.ts diff
 @@ valueMenuIntent @@
 -    expect(valueMenuIntent('rename')).toEqual({ kind: 'rename' })
-+    expect(valueMenuIntent('rename')).toEqual({ kind: 'popover', seat: 'rename' })
++    expect(valueMenuIntent('editTitle')).toEqual({ kind: 'popover', seat: 'editTitle' })
 @@ runValueIntent's handler table @@
 -    rename: null,
 ```
@@ -29845,284 +30560,11 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 
 - [ ] `npx vitest run Core/Properties Core/Actions` passes; the J-3 and J-10 cases red at the base; `PropertyPanel.test.tsx:152` (a row removed through its menu disappears), `:170` (Remove on a Link value's menu clears the value and hides its row), and `:212` (an unresolved Link's fallback menu and its Edit Link) pass with only their menu answers and setup rewritten.
 - [ ] The panel's menus per type, against today's: Text — Edit, Clear (filled), Remove, unchanged; Select, Multi-Select, Status, Date, Number, Checkbox, Context — Clear (filled), Remove, unchanged; a Link label — Edit Title (filled), Edit Link, Clear (filled), Remove (J-3); a resolved Link value — the connection menu as P15 left it; an unresolved Link value — Edit Title, Edit Link, Clear, Remove (P15's order); File — Add File, Remove (and on a chip Replace File and Remove File), no Clear, from the label as from the value (J-10). Each is read off a `cellMenuModel` case or a written panel test.
-- [ ] The removal greps above answer nothing; `git grep -n "runValueIntent(" -- Core ':!*.test.*'` answers only `ValueSeat.tsx`; `git grep -n "seat={.*'rename'" -- Core` answers nothing; `PropertyPanel.tsx` reads no `PropertyPicker` or `PropertyValueInput`.
+- [ ] The removal greps above answer nothing; `git grep -n "runValueIntent(" -- Core ':!*.test.*'` answers only `ValueSeat.tsx`; `git grep -n "seat={.*'rename'" -- Core` answers nothing; `git grep -n "'rename'" -- Core/Actions/connectionMenu.ts Core/Actions/connectionMenu.test.ts Core/Actions/cellMenu.ts Core/Actions/cellMenu.test.ts Core/Interface/Menus/connectionMenuActions.test.ts Core/MarkdownPM/Links Core/MarkdownPM/Tables/cellLinks.test.tsx Core/Properties/Pickers Core/Properties/Cells Core/Views/Cards/cardGestures.test.tsx Core/Views/Table/cellGestures.test.tsx` answers nothing; `PropertyPanel.tsx` reads no `PropertyPicker` or `PropertyValueInput`.
 - [ ] The gates are clean.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 16B-3
-
-**TASK:** The pickers read the resolved column, so a Context column reaches them without a fabricated definition.
-
-**NOW:**
-- After Phase 16A and Tasks 16B-1 to 16B-2, `syntheticContextDef` (`Core/Properties/Pickers/PropertyPicker.tsx:82-87`, where P15 left it) is read at five lines: the seat's `target` (two arms), `runPropertyAction`'s `def` (P13's `column.def ?? syntheticContextDef(id)`), `propertyMenuBranches`' Spaces (`propertyMenuActions.ts`, P13's `build(contextColumn(id), syntheticContextDef(id))`), and `FilterFrame.tsx:378`, plus `PropertyPicker.pane.test.tsx:13,345`.
-- A fabricated definition carries `type: 'context'` and the id, nothing else; its readers use the type (`pickKindOf`), the id (`pickGroups`' one Spaces group), and `optionGroupsOf`, which answers an empty group for it that `pickGroups` filters away. `FilterFrame.tsx:378` also hands one to a rule whose property was deleted, which reaches `ChipsField` with a column and no definition and so lists no options; `pickGroups` states that case as a column without a definition offering none.
-- `PickTarget` (`PropertyPicker.tsx:41-49`) carries `def` on every arm; the date pane reads only the value and the formats (`:135-141`), and the file pane reads the definition (`:142-158`).
-- `PropertyOptionRows` (`:224-269`) and `EditableOptionRows` (`:296-372`) take the definition; P15's `pickOver(def, currents, onCommit, onClose)` serves the options pane and `MassPropertyPicker`, `pickedValue(def, …)` the native menu, and `pickGroups(def, …)` the option rows, `ChipsField` (`Core/Views/Settings/FilterFrame.tsx:133-200`), and `propertyMenuBranches`. P13's rule row resolves `const column = resolveColumn(rule.property_id, schema, contextIds)` and hands it to the slot, where `:378` reads `def = column?.def`.
-
-**CHANGE**
-
-- [ ] Rewrite `Core/Properties/Pickers/PropertyPicker.pane.test.tsx`'s targets (`:33-35`, `:122`, `:334`, `:344-345`) to the new arms, the Context one as `{ kind: 'options', column: { id: 'ctx_a', kind: 'context', type: 'context' }, … }`, and watch the file fail to compile against HEAD's `PickTarget`.
-- [ ] `Core/Views/Settings/FilterFrame.tsx`: `ChipsField` takes the rule's column, and `valueCell`'s `def`, read only by the chips slot, leaves.
-- [ ] Delete `syntheticContextDef`; `git grep -nw "syntheticContextDef" -- Core` answers nothing.
-- [ ] Run `Core/Properties/Pickers`, `Core/Views`, and `Core/Interface/Menus` green, then the gates.
-- [ ] Commit: `git commit --only -- Core/Properties/Pickers/PropertyPicker.tsx Core/Properties/Pickers/PropertyPicker.pane.test.tsx Core/Properties/Pickers/pickModel.ts Core/Properties/Pickers/MassPropertyPicker.tsx Core/Views/Table/TableView.tsx Core/Views/Settings/FilterFrame.tsx Core/Interface/Menus/propertyMenuActions.ts Core/Properties/Cells/ValueSeat.tsx -m "The pickers read the resolved column, and the fabricated Context definition was removed."`
-
-**AFTER**
-
-```Core/Properties/Pickers/PropertyPicker.tsx diff
-@@ imports @@
-+import type { ResolvedColumn } from '../../Views/viewRow'
-@@ PickTarget @@
--export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
--  | { kind: 'options'; style?: OptionStyleControl; contextOptions?: PickOption[] }
-+export type PickTarget = { current: PropertyValue | null } & (
-+  | {
-+      kind: 'options'
-+      column: ResolvedColumn
-+      style?: OptionStyleControl
-+      contextOptions?: PickOption[]
-+    }
-   | {
-       kind: 'dateTime'
-       dateFormat?: ColumnStyle['date_format']
-       timeFormat?: ColumnStyle['time_format']
-     }
--  | { kind: 'file' }
-+  | { kind: 'file'; def: PropertyDefinition }
- )
-@@ syntheticContextDef @@
--export const syntheticContextDef = (id: string): PropertyDefinition => ({
--  id,
--  label: '',
--  key: '',
--  type: 'context',
--})
-@@ the options pane @@
--      const { selected, pick } = pickOver(t.def, [t.current], ([one]) => commit(one.next), onDismiss)
-+      const { selected, pick } = pickOver(t.column, [t.current], ([one]) => commit(one.next), onDismiss)
-       return (
-         <PropertyOptionRows
--          def={t.def}
-+          column={t.column}
-           style={t.style}
-@@ PropertyOptionRows @@
- export function PropertyOptionRows({
--  def,
-+  column,
-   style,
-@@
- }: {
--  def: PropertyDefinition
-+  column: ResolvedColumn
-   style?: OptionStyleControl
-   contextOptions?: PickOption[]
-@@
--  const groups = pickGroups(def, contextOptions)
--  if (editable && PROPERTY_TYPES[def.type].options)
-+  const groups = pickGroups(column, contextOptions)
-+  if (editable && column.def && PROPERTY_TYPES[column.type].options)
-     return (
-       <EditableOptionRows
--        key={def.id}
--        def={def}
-+        key={column.id}
-+        def={column.def}
-@@
-             ) : (
--              <OptionChip type={def.type} look={look} option={o} def={def} />
-+              <OptionChip type={column.type} look={look} option={o} def={column.def} />
-```
-
-```Core/Properties/Pickers/pickModel.ts diff
-@@ imports @@
-   type PickOption,
--  type PropertyDefinition,
- } from '../properties'
- import { type PropertyValue, selectedValues } from '../propertyValue'
-+import type { ResolvedColumn } from '../../Views/viewRow'
-@@ pickGroups @@
--export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[]): PickGroup[] =>
-+export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]): PickGroup[] =>
-   contextOptions
--    ? [{ id: def.id, options: contextOptions }]
--    : optionGroupsOf(def)
--        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
--        .filter((g) => g.options.length > 0)
-+    ? [{ id: column.id, options: contextOptions }]
-+    : column.def
-+      ? optionGroupsOf(column.def)
-+          .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
-+          .filter((g) => g.options.length > 0)
-+      : []
-@@ pickKind @@
--const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'
-+const pickKind = (column: ResolvedColumn): OptionPickKind => pickKindOf(column.type) ?? 'select'
-@@ pickOver @@
- export function pickOver(
--  def: PropertyDefinition,
-+  column: ResolvedColumn,
-   currents: readonly (PropertyValue | null)[],
-@@
--  const kind = pickKind(def)
-+  const kind = pickKind(column)
-@@ pickedValue @@
- export const pickedValue = (
--  def: PropertyDefinition,
-+  column: ResolvedColumn,
-   current: PropertyValue | null,
-   value: string,
--): PropertyValue | null => pickCommits(pickKind(def), [selectedValues(current)], value)[0].next
-+): PropertyValue | null => pickCommits(pickKind(column), [selectedValues(current)], value)[0].next
-```
-
-(A column the picker holds without a definition is a Context's, whose Spaces arrive as `contextOptions`; any other such column, a stamp, offers no options.)
-
-```Core/Properties/Pickers/MassPropertyPicker.tsx diff
-@@ imports @@
--import type { PickOption, PropertyDefinition } from '../properties'
-+import type { PickOption } from '../properties'
-+import type { ResolvedColumn } from '../../Views/viewRow'
-@@ MassPropertyPicker @@
--  def,
-+  column,
-@@
--  def: PropertyDefinition
-+  column: ResolvedColumn
-@@
--  const { selected, pick } = pickOver(def, currents, onPick, onDismiss)
-+  const { selected, pick } = pickOver(column, currents, onPick, onDismiss)
-@@
-       <PropertyOptionRows
--        def={def}
-+        column={column}
-```
-
-```Core/Views/Table/TableView.tsx diff
-@@ massPicker @@
-       <MassPropertyPicker
-         key={`${mass.colId}:${mass.rowIds.join('.')}`}
--        def={target.def}
-+        column={col}
-         currents={currents}
-```
-
-```Core/Views/Settings/FilterFrame.tsx diff
-@@ imports @@
--import { PropertyOptionRows, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
-+import { PropertyOptionRows } from '../../Properties/Pickers/PropertyPicker'
-@@ ChipsField @@
- function ChipsField({
-   values,
--  def,
-+  column,
-   contextOptions,
-   onCommit,
- }: {
-   values: string[]
--  def: PropertyDefinition
-+  column: ResolvedColumn
-   contextOptions?: PickOption[]
-@@
--  const options = pickGroups(def, contextOptions).flatMap((g) => g.options)
-+  const options = pickGroups(column, contextOptions).flatMap((g) => g.options)
-@@
-                 <OptionChip
-                   key={v}
--                  type={def.type}
-+                  type={column.type}
-@@
-           <PropertyOptionRows
--            def={def}
-+            column={column}
-             contextOptions={contextOptions}
-@@ valueCell @@
-     const operand = operands[0] ?? ''
--    const def = column?.def
-     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
-@@ the rule's chips slot @@
-         <ChipsField
-           values={operands}
--          def={def ?? syntheticContextDef(rule.property_id)}
-+          column={column!}
-           contextOptions={
-```
-
-(`column!` follows P13's date slot, `styleFor(column!, …)`: a rule reaches a value slot only through an operator its resolved column offers.)
-
-```Core/Interface/Menus/propertyMenuActions.ts diff
-@@ contextOptionsOf @@
- const contextOptionsOf = (
-   tree: NexusTree | null,
--  def: PropertyDefinition,
-+  column: ResolvedColumn,
-   excludeId?: string,
- ): ReturnType<typeof contextOptionsFor> | undefined =>
--  def.type === 'context' && tree ? contextOptionsFor(def.id, tree, excludeId) : undefined
-+  column.type === 'context' && tree ? contextOptionsFor(column.id, tree, excludeId) : undefined
-@@ propertyMenuBranches @@
--  const build = (column: ResolvedColumn, def: PropertyDefinition): PropertyMenuRow => {
-+  const build = (column: ResolvedColumn): PropertyMenuRow => {
-     const base = { id: column.id, name: columnLabel(column, contexts) }
-     const current = resolveFieldValue(row, column)
--    if (def.type === 'checkbox') {
-+    if (column.type === 'checkbox') {
-@@
--    if (pickKindOf(def.type) === null) return base
-+    if (pickKindOf(column.type) === null) return base
-@@
--      options: pickGroups(def, contextOptionsOf(tree, def, row.id)).map((g) =>
-+      options: pickGroups(column, contextOptionsOf(tree, column, row.id)).map((g) =>
-@@
--  const built = schema.map((def) => build(propertyColumn(def), def))
-+  const built = schema.map((def) => build(propertyColumn(def)))
-   return {
--    spaces: [...contexts.keys()].map((id) => build(contextColumn(id), syntheticContextDef(id))),
-+    spaces: [...contexts.keys()].map((id) => build(contextColumn(id))),
-```
-
-```Core/Interface/Menus/propertyMenuActions.ts diff
-@@ imports @@
--import { syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
-@@ runPropertyAction @@
-   if (!column) return true
--  const def = column.def ?? syntheticContextDef(id)
-   const current = resolveFieldValue(row, column)
-@@
--  else commit(column, pickedValue(def, current, value))
-+  else commit(column, pickedValue(column, current, value))
-```
-
-```Core/Properties/Cells/ValueSeat.tsx diff
-@@ imports @@
--import {
--  type PickEntry,
--  PropertyPicker,
--  type PickTarget,
--  syntheticContextDef,
--} from '../Pickers/PropertyPicker'
-+import { type PickEntry, PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
-@@ target @@
-     if (column.type === 'dateTime')
-       return {
-         kind: 'dateTime',
--        def: column.def ?? syntheticContextDef(column.id),
-         current,
-@@
-     return {
-       kind: 'options',
--      def: column.def ?? syntheticContextDef(column.id),
-+      column,
-       current,
-```
-
-**VERIFY**
-
-- [ ] `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` answers 0 (the Scoreboard's **Type Facts Once** row: 6 → 0); `git grep -nw "syntheticContextDef" -- Core` answers nothing.
-- [ ] `npx vitest run Core/Properties/Pickers Core/Views Core/Interface/Menus` passes; `PropertyPicker.pane.test.tsx`'s Context case lists the Spaces from a column.
-- [ ] The gates are clean.
-- [ ] Check for unnecessary code or mistakes.
-
-#### Task 16B-4
 
 **TASK:** Add the Properties Drive's group 14: the same value is clicked, right-clicked, and edited in a Table, a Card, and the Properties panel, each opening the same picker and menu.
 
@@ -30328,13 +30770,13 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
 
 #### Review Checkpoint
 
-- [ ] `Core/Properties/Cells/ValueSeat.test.tsx`, `Core/Properties/PropertyPanel.test.tsx`, `Core/Properties/Pickers/PropertyPicker.pane.test.tsx`, `Core/Properties/Pickers/valueClick.test.ts`, `Core/Properties/Pickers/filePick.test.ts`, `Core/Actions/propertyMenu.test.ts`, `Core/Interface/Menus/propertyMenuActions.test.ts`, `Core/Interface/Menus/entityMenuActions.test.ts`, `Core/Matrix/MatrixView.test.tsx`, `Core/Session/store.test.ts`, and `Core/Views/Table/cellGestures.test.tsx` pass; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
+- [ ] `Core/Properties/Cells/ValueSeat.test.tsx`, `Core/Properties/PropertyPanel.test.tsx`, `Core/Properties/Pickers/valueClick.test.ts`, `Core/Properties/Pickers/filePick.test.ts`, `Core/Actions/propertyMenu.test.ts`, `Core/Interface/Menus/propertyMenuActions.test.ts`, `Core/Interface/Menus/entityMenuActions.test.ts`, `Core/Matrix/MatrixView.test.tsx`, `Core/Session/store.test.ts`, and `Core/Views/Table/cellGestures.test.tsx` pass; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
 - [ ] The phase's removal greps answer nothing: `git grep -nw "syntheticContextDef\|valueMenuTarget\|ValuePickPresenter\|panelTarget\|editRow\|currentOf\|pickSeq\|fileValueMenu" -- Core`; `git grep -nw "rowMenu\|valueMenu" -- Core/Properties/PropertyPanel.tsx`; `git grep -n "'page-value'\|value:edit\|value:clear\|value:remove" -- Core UIX`; `git grep -n "kind: 'rename'" -- Core/Properties/Pickers Core/Properties/Cells`. `git grep -n "runValueIntent(\|<PropertyValueInput" -- Core ':!*.test.*'` answers `ValueSeat.tsx` alone, and `git grep -n "kind: 'checkbox', value: true }" -- Core ':!*.test.*'` answers `propertyValue.ts` alone.
-- [ ] *§Adherence Scoreboard* rows the plan gives P16 read their targets: **Type Facts Once** `syntheticContextDef(` sites 6 → 0; **One Way** value click-and-menu copies, three plus the native router → one seat; the panel's two menu vocabularies (`page-value` and the cell menu) → one; the checkbox commit's spellings → P14's one `checkboxValue`.
+- [ ] *§Adherence Scoreboard* rows the plan gives P16 read their targets: **Type Facts Once** `syntheticContextDef(` sites 6 → 0 (P15 takes four, this phase the last two: `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` answers nothing); **One Way** value click-and-menu copies, three plus the native router → one seat; the panel's two menu vocabularies (`page-value` and the cell menu) → one; the checkbox commit's spellings → P14's one `checkboxValue`.
 - [ ] Run the gates.
 - [ ] The Properties Drive passes groups 1 to 14 from the checkout.
 - [ ] Two read-only `opus-high` reviewers, to `closeout-review`'s standards, one simplification and one adversarial, read both halves of P16 outward from the seat. Each brief carries the plan's *§Approach*, *§Principles*, *§Perspectives*, and *§Nathan's Constraints* sections and Nathan's 10-22-2026 directive verbatim, and asks the reviewer to state, with evidence, that every surface keeps today's click and menu behavior apart from the disclosed items, that the panel's menus per type read as Task 16B-2's VERIFY lists them, that a File chip right-clicked from the label or the value narrows to that chip, that nothing the seat replaced survives anywhere, and that the flagged practices end concretely fewer. Findings are fixed before Phase 17 opens.
-- [ ] Both halves' landed production deltas are recorded beside their *§Line Total* figures; a combined figure above −285 is reported in chat with what the growth buys before Phase 17 opens.
+- [ ] Both halves' landed production deltas are recorded beside their *§Line Total* figures; a combined figure above −293 is reported in chat with what the growth buys before Phase 17 opens.
 
 #### Behavior Changes and Disclosures
 
@@ -30353,15 +30795,14 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 16B-1 The Native Router | −73 | +57 | −16 |
-| 16B-2 The Panel | −231 | +41 | −190 |
-| 16B-3 No Fabricated Definition | −63 | +56 | −7 |
-| 16B-4 The Drive | 0 | 0 | 0 |
-| **Phase 16B** | **−367** | **+154** | **−213** |
+| 16B-1 The Native Router | −74 | +57 | −17 |
+| 16B-2 The Panel | −247 | +47 | −200 |
+| 16B-3 The Drive | 0 | 0 | 0 |
+| **Phase 16B** | **−321** | **+104** | **−217** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
-- **Tests:** about +75 written (the menu seat's cases, the router's and the table's pins, the panel's three, the `runFileMenuAction` cases) against about −120 (`ValuePickPresenter.test.tsx`, −57; `filePick.test.ts`' `fileValueMenu` cases, −41; `propertyMenu.test.ts`' `page-value` case, −19; `valueClick.test.ts`' `rename` row) and the panel's folded setup (−16); `PropertyPicker.pane.test.tsx`'s targets are rewritten in place. The drive apart: about +150.
-- **Both Halves:** P16 lands −285 (16A −72, 16B −213): the seat carries code the surfaces held, `CardValue.tsx` leaves whole, one anchor rule replaces three closes, and the panel's row-menu vocabulary and file menu leave here.
+- **Tests:** about +75 written (the menu seat's cases, the router's and the table's pins, the panel's three, the `runFileMenuAction` cases) against about −120 (`ValuePickPresenter.test.tsx`, −57; `filePick.test.ts`' `fileValueMenu` cases, −41; `propertyMenu.test.ts`' `page-value` case, −19; `valueClick.test.ts`' `rename` row) and the panel's folded setup (−16). The drive apart: about +150.
+- **Both Halves:** P16 lands −293 (16A −76, 16B −217): the seat carries code the surfaces held, `CardValue.tsx` leaves whole, one anchor rule replaces three closes, and the panel's row-menu vocabulary and file menu leave here.
 
 ---
 
@@ -31381,7 +31822,8 @@ Where a line below names a construct one of those phases landed, the executor ke
 - [ ] Write `Core/Properties/Schema/typeRows.test.ts` (AFTER) and watch it fail to resolve `./typeRows`. It pins, per type, the rows a viewer sees under each condition, which scope each control writes, that only Date's rows carry glyphs, and that the option types, Text, and Context answer no rows; it carries every behavior the three editor tests pinned (the Number reveals and the Value row's parse, the Day row's gating and the Date and Day picks, the checkbox swatch's color variable and its two writes).
 - [ ] Write `PropertyFrame.test.tsx`' "a Number editor's rows share one container: a shown row in an open Reveal, a hidden one collapsed in place" (AFTER). It pins the DOM the Task 17-6 rule addresses (the rows and their `Reveal`s as the container's direct children) and passes before and after; the rhythm's pixels are Task 17-11's drive checks, since jsdom computes no layout.
 - [ ] Delete `Core/Properties/Schema/NumberEditor.tsx`, `DateTimeEditor.tsx`, `LinkEditor.tsx`, `CheckboxEditor.tsx`, `FileEditor.tsx`, `number-editor.css.ts`, and the three editor tests. Their consumers were `PropertyFrame.tsx:25-28,49` and the three tests (`git grep -n "Schema/\(Number\|DateTime\|Link\|Checkbox\|File\)Editor\|'./\(Number\|DateTime\|Link\|Checkbox\|File\)Editor'\|number-editor.css\|CheckboxLook" -- Core UIX` answers nothing after).
-- [ ] Commit: `git commit --only -- Core/Properties/Schema/typeRows.tsx Core/Properties/Schema/typeRows.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Properties/Schema/NumberEditor.tsx Core/Properties/Schema/DateTimeEditor.tsx Core/Properties/Schema/LinkEditor.tsx Core/Properties/Schema/CheckboxEditor.tsx Core/Properties/Schema/FileEditor.tsx Core/Properties/Schema/number-editor.css.ts Core/Properties/Schema/NumberEditor.test.tsx Core/Properties/Schema/CheckboxEditor.test.tsx Core/Properties/Schema/DateTimeEditor.test.tsx -m "The five type editors became row builders in typeRows.tsx, drawn through one menu index in the shared container, so Number and Date take its spacing."`
+- [ ] `Core/Settings/AssetDirectoryRow.tsx`' Browse answers a refused folder choice as the File editor's Directory row does, with Try Again reopening the picker (AFTER), so the two folder pickers stay one shape.
+- [ ] Commit: `git commit --only -- Core/Properties/Schema/typeRows.tsx Core/Properties/Schema/typeRows.test.ts Core/Properties/Schema/PropertyFrame.tsx Core/Properties/Schema/PropertyFrame.test.tsx Core/Properties/Schema/NumberEditor.tsx Core/Properties/Schema/DateTimeEditor.tsx Core/Properties/Schema/LinkEditor.tsx Core/Properties/Schema/CheckboxEditor.tsx Core/Properties/Schema/FileEditor.tsx Core/Properties/Schema/number-editor.css.ts Core/Properties/Schema/NumberEditor.test.tsx Core/Properties/Schema/CheckboxEditor.test.tsx Core/Properties/Schema/DateTimeEditor.test.tsx Core/Settings/AssetDirectoryRow.tsx -m "The five type editors became row builders in typeRows.tsx, drawn through one menu index in the shared container, so Number and Date take its spacing, and a refused folder choice offered Try Again."`
 
 **AFTER**
 
@@ -31392,7 +31834,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +import { resolveColor } from '@pommora/uix/Theme/ramp'
 +import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 +import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '../../Connections/linkValue'
-+import { reportRefusal } from '../../Interface/Notifications/notifications'
++import { notifyRetry } from '../../Interface/Notifications/notifications'
 +import { dialer } from '../../Platform/dialer'
 +import {
 +  CHECKBOX_LOOKS,
@@ -31601,28 +32043,30 @@ Where a line below names a construct one of those phases landed, the executor ke
 +  ]
 +}
 +
-+/** Relative to the asset root rather than to the nexus, so re-pointing the root carries it along. */
-+const fileRows = (def: PropertyDefinition, { configure, assetRoot }: RowContext): MenuRow[] => [
-+  item('Directory', {
-+    kind: 'field',
-+    children: (
-+      <PathField
-+        label="Directory"
-+        value={def.file_directory ?? ''}
-+        empty={assetRoot}
-+        onCommit={(dir) => configure({ file_directory: dir })}
-+        onBrowse={() =>
-+          void dialer()
-+            .ask('assets:chooseDir', 'property', def.file_directory)
-+            .then((picked) => {
-+              if (reportRefusal(picked) && picked.value !== null)
-+                configure({ file_directory: picked.value })
-+            })
-+        }
-+      />
-+    ),
-+  }),
-+]
++/** Relative to the asset root rather than to the nexus, so re-pointing the root carries it along; a refused choice offers the folder picker again. */
++const fileRows = (def: PropertyDefinition, { configure, assetRoot }: RowContext): MenuRow[] => {
++  const browse = (): void =>
++    void dialer()
++      .ask('assets:chooseDir', 'property', def.file_directory)
++      .then((picked) => {
++        if (!picked.ok) notifyRetry(picked.error.message, browse)
++        else if (picked.value !== null) configure({ file_directory: picked.value })
++      })
++  return [
++    item('Directory', {
++      kind: 'field',
++      children: (
++        <PathField
++          label="Directory"
++          value={def.file_directory ?? ''}
++          empty={assetRoot}
++          onCommit={(dir) => configure({ file_directory: dir })}
++          onBrowse={browse}
++        />
++      ),
++    }),
++  ]
++}
 +
 +const NONE = (): MenuRow[] => []
 +
@@ -31935,6 +32379,34 @@ Where a line below names a construct one of those phases landed, the executor ke
 +    expect(shape).toEqual(['row', 'collapsed', 'open', 'row', 'open', 'collapsed', 'collapsed'])
 +  })
 +})
+```
+
+```Core/Settings/AssetDirectoryRow.tsx diff
+@@ imports @@
+-import { reportRefusal } from '../Interface/Notifications/notifications'
++import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
+@@ AssetDirectoryRow @@
+   const setDir = (dir: string): void => void dialer().ask('assets:setDir', dir).then(reportRefusal)
++  const browse = (): void =>
++    void dialer()
++      .ask('assets:chooseDir')
++      .then((picked) => {
++        if (!picked.ok) notifyRetry(picked.error.message, browse)
++        else if (picked.value !== null) setDir(picked.value)
++      })
+ 
+   return (
+@@
+         onCommit={setDir}
+-        onBrowse={() =>
+-          void dialer()
+-            .ask('assets:chooseDir')
+-            .then((picked) => {
+-              if (reportRefusal(picked) && picked.value !== null) setDir(picked.value)
+-            })
+-        }
++        onBrowse={browse}
+       />
 ```
 
 **VERIFY**
@@ -32307,21 +32779,23 @@ Where a line below names a construct one of those phases landed, the executor ke
      const created = (await mutate({ op: 'addProperty', containerPath: collectionPath, draft }))?.created
 -    if (created && 'propertyId' in created) setView({ kind: 'edit', id: created.propertyId })
 +    if (!created || !('propertyId' in created)) return
-+    await assigned(created.propertyId)
-+    setView({ kind: 'edit', id: created.propertyId })
++    if (await assigned(created.propertyId)) setView({ kind: 'edit', id: created.propertyId })
    }
-+  /** Resolves once the held tree assigns `id` to this pane's Collection, so the new editor opens on a definition the list already holds. */
-+  const assigned = (id: string): Promise<void> =>
++  /** Answers once the held tree assigns `id` to this pane's Collection, so the new editor opens on a definition the list already holds; a tree that doesn't within a second answers false and leaves the list showing, where the property appears when it lands. */
++  const assigned = (id: string): Promise<boolean> =>
 +    new Promise((resolve) => {
 +      const holds = (tree: NexusTree | null): boolean =>
 +        containerSchema(tree, source).some((d) => d.id === id)
-+      if (holds(useSession.getState().tree)) return resolve()
++      if (holds(useSession.getState().tree)) return resolve(true)
++      const settle = (held: boolean): void => {
++        stop()
++        clearTimeout(timer)
++        resolve(held)
++      }
 +      const stop = useSession.subscribe((st) => {
-+        if (holds(st.tree)) {
-+          stop()
-+          resolve()
-+        }
++        if (holds(st.tree)) settle(true)
 +      })
++      const timer = setTimeout(() => settle(false), 1000)
 +    })
 ```
 
@@ -32359,7 +32833,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 - [ ] Properties Drive groups 1 through 15 pass in one run, group 15's screenshots beside its checks, and O-5's rule recorded with its outcome (pass, or the remedy landed with its frame counts).
 - [ ] `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-17-delta.md` over the phase's own commits, its review's fix included; its **Actionable** column is recorded in *§Net Ledger* beside *§Line Total*'s figure, and a gap past ±10 is reported in chat with what it buys before P18 opens.
 - [ ] Two read-only `opus-high` reviewers apply `closeout-review`'s standards (its closing procedures, write guards, and output format exempt), one simplification and one adversarial, each brief carrying the plan's *§Constraints* (*§Approach*, *§Principles*, *§Perspectives*, *§Nathan's Constraints*) and Nathan's 10-22-2026 directive, verbatim.
-  - **Simplification:** whether `typeRows.tsx` states each type's rows once and nothing twice (`item`, `ROW`, `DATE_ROW`, the option lists), whether `RowContext` carries only what the rows read, whether `FLUSH_GHOST`, `fullOrderIndex`, and `paneRows.tsx` each earn their place, and whether the phase's delta is honestly net-negative against the Ledger's −160.
+  - **Simplification:** whether `typeRows.tsx` states each type's rows once and nothing twice (`item`, `ROW`, `DATE_ROW`, the option lists), whether `RowContext` carries only what the rows read, whether `FLUSH_GHOST`, `fullOrderIndex`, and `paneRows.tsx` each earn their place, and whether the phase's delta is honestly net-negative against its *§Line Total*'s −204.
   - **Adversarial:** every row of the five deleted editors against its row in `typeRows.tsx` (label, `ariaLabel`, option list, reveal condition, the scope it writes, its icon), each surface's spacing in the drive's screenshots against HEAD's (only the Number reveals, the Date rhythm, and the collapsed Day may differ), every `PaneDrop` consumer's drop against HEAD's request, the rename slice's removal across a Nexus switch, O-5 under a delete, a Remove, an outside removal, an undo that brings the property back, and the create path, and the kit test's independence from Core.
   - Each reviewer states, with evidence, the phase's adherence to the Approach and Principles, that the Perspectives' flagged practices are concretely fewer (*§Adherence Scoreboard*'s P17 rows: shared modules filed in `Core/Properties` `paneDrop` → 0; the editors' five containers and three rhythms → one), that the production delta is negative, and that no new Issue or deferral was created. Findings are fixed before P18 opens.
 
@@ -32370,9 +32844,10 @@ Where a line below names a construct one of those phases landed, the executor ke
 - **A Denominator of Zero or Less Is Refused (L-3, Nathan's Intent):** typing one leaves the field reading the denominator it held; P7's decode already reads a stored one as unset.
 - **An Editor Whose Property Leaves Returns to the List (O-5, Nathan's Intent):** a delete, a Remove from another surface, an outside edit, or a sync that takes the property out of this Collection shows the list, where the pane read "Property not found."
 - **An Editor That Gave Way Reopens If Its Property Returns (Earlier Agent's Choice; Take; LC-60):** the pane keeps naming the editor it gave way from, so if the property comes back before anything else is opened (an undo of an outside Remove, a sync, or re-adding it from All Properties after a Remove made elsewhere), its editor slides open again. O-5 says nothing about a return; the frame's own Remove and Delete reset the view, so a property removed or deleted from this pane doesn't reopen. **Recommended:** take it; the same derived view is what lets a just-created property's editor open the moment the tree holds it, and clearing the view on every departure would need a second rule watching the schema.
+- **A Refused Folder Choice Offers Try Again (Try Again Unclogs, Nathan's Constraint):** when the File editor's Browse picks a folder outside the asset root, or Settings' asset folder Browse picks one the Nexus can't hold, or either picker is refused, the notice carries Try Again, which opens the folder picker again, where it was a notice alone.
 - **The Header's Icon Button Is Spoken "Edit Icon" (L-4, Nathan's Intent):** on all five surfaces the kit header serves.
 - **Nothing Else Visible:** no row moves, no wording changes, and only Date's rows carry icons (I-1, L-2, I-076); the ghost slot's dwell and grace, the inline rename, both panes' drags, the order lists, and the option editor behave as at P16's head.
-- **O-5's Rule (17-11):** its outcome is recorded here when the drive runs; if the remedy lands, the editor of a newly created property opens once the tree holds it, so the type list stays on screen for those frames instead of the list, and the frame gains `assigned` (+13 lines, in the line total's conditional row).
+- **O-5's Rule (17-11):** its outcome is recorded here when the drive runs; if the remedy lands, the editor of a newly created property opens once the tree holds it, so the type list stays on screen for those frames instead of the list, and the frame gains `assigned` (in the line total's conditional row), which gives up after a second if the tree never holds the new id, leaving the list showing.
 
 #### Line Total
 
@@ -32384,13 +32859,13 @@ Where a line below names a construct one of those phases landed, the executor ke
 | 17-4 `paneRows.tsx` | −47 | +48 | +1 |
 | 17-5 `OptionEditor` takes `def`, `OptionSlot.tsx` | −69 | +60 | −9 |
 | 17-6 The collapse-safe rhythm | −1 | +6 | +5 |
-| 17-7 The five editors become rows | −474 | +301 | −173 |
+| 17-7 The five editors become rows | −482 | +312 | −170 |
 | 17-8 The denominator | −2 | +2 | 0 |
 | 17-9 "Edit Icon" | −1 | +1 | 0 |
 | 17-10 The list on a vanished property | −17 | +6 | −11 |
 | 17-11 The drive | 0 | 0 | 0 |
-| **Phase 17 (O-5's Pass)** | **−800** | **+593** | **−207** |
-| *17-11's remedy, only if O-5's check fails* | *−1* | *+15* | *+14* |
+| **Phase 17 (O-5's Pass)** | **−808** | **+604** | **−204** |
+| *17-11's remedy, only if O-5's check fails* | *−1* | *+17* | *+16* |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Task 17-7 deletes the five components, their five containers, and `number-editor.css.ts` against `typeRows.tsx`, which reads P3's one Link format list rather than building its own; Tasks 17-4 and 17-6 land small positives, since `paneRows.tsx` repeats imports its helpers need and the rhythm's `globalStyle` replaces one `gap` line with three.
 - **Tests:** about −75: the three editor tests (about −218) against `typeRows.test.ts` (about +117) and the frame's two new cases (about +32); `formatValue.test.ts` about −7; `store.test.tsx` and the harness −3; `paneDrop.test.ts` and the `fullOrderIndex` cases move with no net change.
@@ -32429,7 +32904,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +The ten types are the type ids in `Core/Properties/properties.ts`: the nine a property can be created as, and Context, which the Context registry supplies. A value Pommora writes fresh is bare and natively typed, legible to any YAML tool. A definition names its type by its id (`text`, `number`, `checkbox`, `dateTime`, `select`, `multiSelect`, `status`, `link`, `file`), and one naming any other type, or holding a reserved id, stays in the file and reaches no reader.
 @@ :15 · the Date & Time row @@
 -| **Date**          | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone); a span as `2026-06-15/2026-06-18` | A bare date-only value folds into Date on read                                                          |
-+| **Date & Time**   | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone); a span as `2026-06-15/2026-06-18` | A bare date-only value folds into Date on read                                                          |
++| **Date & Time**   | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone); a span as `2026-06-15/2026-06-18` | A bare date-only value folds into Date & Time on read                                                   |
 @@ :16 · the Select row @@
 -| **Select**        | `Stage:` over a one-element block sequence                             | A list holding one option; one colored chip. A list holding several reads as its last registered option |
 +| **Select**        | `Stage:` over a one-element block sequence                             | A list holding one option; one colored chip. A list holding several shows its last registered option, which the page's next value edit writes alone |
@@ -32608,7 +33083,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 
 **TASK:** Rewrite the surface documents the option, filter, menu, settings, migration, and type-record work made false.
 
-**NOW:** `ConfigurationPM.md:115` has "an option's Clear and Remove" ask regardless of Confirm Before Deletion, where Clear asks only past one Item since `5e3aee180`; `:143` defaults Repair Properties On Open to Off. `ViewTypesPM.md:24`'s abstaining rules leave out an operand that doesn't read; `:41` has Select and Status compare an option "exactly by its label"; `:55` places empty values nowhere; `:91` has the link menu offer "Edit Link … and Rename". `ConnectionsPM.md:45` names the authoring pair "Rename · Edit Title" for a connection and "Rename · Edit Link" for an external link, and `:51` explains Rename and Edit Title by the reading P15 replaces. `PommoraUIX.md:347` lists `optionShapeFor` as a Labels export, which P3 moves into the type record. `InteractionPM.md:42` keys option drafts through `useRenameKeys`, which P8 removes from the option editor. `SurfacePM.md:42` names "the saved-view normalization at open (`migrateConfig.ts`)" as the tree-less site that names tile folders by hand, which P1's Task 1-2 deletes; `ensureConfigLayout` (`Core/Nexus/identity.ts:57-61`) still creates the Homepage folder before a tree exists. `SymbolsPM.md:18` places the property types' glyphs in `PropertyTypes.tsx`, which P3's Task 3-5 moves to `Core/Properties/typeDisplay.ts`. `SurfacePM.md:18` sets a damaged tile document's bytes aside under a hidden `.bad-` name, where P11A's `setAside` sends them to the system Trash.
+**NOW:** `ConfigurationPM.md:115` has "an option's Clear and Remove" ask regardless of Confirm Before Deletion, where Clear asks only past one Item since `5e3aee180`; `:143` defaults Repair Properties On Open to Off. `ViewTypesPM.md:24`'s abstaining rules leave out an operand that doesn't read; `:33`'s operator table and `SymbolsPM.md:37`'s glyph table name the type "Date", which P3 names Date & Time; `:41` has Select and Status compare an option "exactly by its label"; `:55` places empty values nowhere; `:91` has the link menu offer "Edit Link … and Rename". `ConnectionsPM.md:45` names the authoring pair "Rename · Edit Title" for a connection and "Rename · Edit Link" for an external link, and `:51` explains Rename and Edit Title by the reading P15 replaces. `PommoraUIX.md:347` lists `optionShapeFor` as a Labels export, which P3 moves into the type record. `InteractionPM.md:42` keys option drafts through `useRenameKeys`, which P8 removes from the option editor. `SurfacePM.md:42` names "the saved-view normalization at open (`migrateConfig.ts`)" as the tree-less site that names tile folders by hand, which P1's Task 1-2 deletes; `ensureConfigLayout` (`Core/Nexus/identity.ts:57-61`) still creates the Homepage folder before a tree exists. `SymbolsPM.md:18` places the property types' glyphs in `PropertyTypes.tsx`, which P3's Task 3-5 moves to `Core/Properties/typeDisplay.ts`. `SurfacePM.md:18` sets a damaged tile document's bytes aside under a hidden `.bad-` name, where P11A's `setAside` sends them to the system Trash.
 
 **CHANGE**
 
@@ -32630,12 +33105,15 @@ Where a line below names a construct one of those phases landed, the executor ke
 @@ :24 · Filter @@
 -A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or), **Any** by default — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. Deleting a property, Space, Context, Set, or Collection removes it from every filter that picked it, dropping a rule it leaves with nothing to test; a folder name typed into a filter stays. A rule the schema can't read — an unknown operator, a property it doesn't hold, an operand not yet supplied — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
 +A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or), **Any** by default — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. Deleting a property, Space, Context, Set, or Collection removes it from every filter that picked it, dropping a rule it leaves with nothing to test; a folder name typed into a filter stays. A rule the schema can't read — an unknown operator, a property it doesn't hold, an operand not yet supplied or one that doesn't read as its type — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
+@@ :33 · the Date & Time row @@
+-| Date | Is (a calendar day the value spans) · Starts Before · Starts After · Ends Before · Ends After (all inclusive; a single date starts and ends on itself) · Is Empty · Isn't Empty |
++| Date & Time | Is (a calendar day the value spans) · Starts Before · Starts After · Ends Before · Ends After (all inclusive; a single date starts and ends on itself) · Is Empty · Isn't Empty |
 @@ :41 @@
 -Text comparisons ignore case on Title, Text, and Link, and Select and Status compare an option exactly by its label. Location's Contains and Doesn't Contain also take a typed folder name, which matches every folder of that whole name regardless of case; a name matching no folder matches nothing.
 +Text comparisons ignore case on Title, Text, and Link, and Select and Status compare an option by its id, so a rule keeps its option through a rename. Location's Contains and Doesn't Contain also take a typed folder name, which matches every folder of that whole name regardless of case; a name matching no folder matches nothing.
 @@ :55 · Sort @@
 -A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, checkbox by rank, text — Title, Text, Link, Multi-Select, and File — case-insensitive. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
-+A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, checkbox by rank, text — Title, Text, Link, Multi-Select, and File — case-insensitive, and a row holding no value last in either direction. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
++A multi-key list applied in priority order, stable on ties, with per-type comparators: Select and Status by option order or a criterion's own Custom order, dates chronological, a checked box before an unchecked one, text — Title, Text, Link, Multi-Select, and File — case-insensitive, and a row holding no value last in either direction. The Sorting pane authors the first two slots (primary and sub-sort) and owns the `sort` slot; a deeper hand-authored array is honored until the pane's first write replaces it. Two effective criteria retire row drag-reorder, since manual order is meaningless under a multi-key sort; a criterion whose property was deleted sorts by nothing and doesn't count.
 @@ :91 · Rows & Cells @@
 -A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, a progress bar, or a Text value's first line with its connections live — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Core/Properties/Pickers/valueClick.ts`, which Cards and the Properties panel read as well: the title navigates, or opens a new tab under ⌘, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor or, drawn as a bar, the number picker, a Text value enters its inline field over its first line or, from the pen beside it, TextPane, a link opens its address, or its inline field when empty or malformed, and a file chip opens the file dialog. A link's menu offers Edit Link as the inline field and Rename as the alias popover on every surface. Right-click opens the cell's menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios, with Clear beside them on a filled Select, Multi-Select, Status, or Date cell. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert; a number that won't parse reads dimmed and isn't saved. Dragging down an option column's cells from outside a multi-value chip sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value. ⌘Z walks the most recent value edit back on any value surface — Table, Cards, and the Properties panel — and a sweep's fan-out is one step. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Preview, New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
 +A cell's content is type-aware — a page icon and title, chips, a checkbox or switch, a link, file chips, a formatted date or number, a progress bar, or a Text value's first line with its connections live — reading the per-view column style. Every cell owns its click through the shared gesture rules in `Core/Properties/Pickers/valueClick.ts`, which Cards and the Properties panel read as well: the title navigates, or opens a new tab under ⌘, option cells open the shared value dropdown, a checkbox toggles, a number enters its inline editor or, drawn as a bar, the number picker, a Text value enters its inline field over its first line or, from the pen beside it, TextPane, a link opens its address, or its inline field when empty or malformed, and a file chip opens the file dialog. A link's menu offers Edit Title, the alias popover, then Edit Link, the inline field on its target, on every surface. Right-click opens the cell's menu: the title gets the page menu with New Page Above and Below, a link cell the link menu, a file cell its Add, Replace, and Remove rows, and style-bearing types their column's style radios, with Clear beside them on a filled Select, Multi-Select, Status, or Date cell. Chip values carry the hover × that removes one value without opening the picker. Inline edits follow Enter to confirm, click-out to save, and Esc to revert; a number that won't parse reads dimmed and isn't saved. Dragging down an option column's cells from outside a multi-value chip sweeps a contiguous cross-group range instead of lifting the row, and the release opens the shared dropdown over every swept row at once — picks fan out per row against each row's own value. ⌘Z walks the most recent value edit back on any value surface — Table, Cards, and the Properties panel — and a sweep's fan-out is one step. A hover-revealed grip in the gutter lifts the row for drag-reorder and carries its own menu (Preview, New Tab, Rename, Edit Icon, New Page Above and Below, Delete).
@@ -32678,6 +33156,9 @@ Where a line below names a construct one of those phases landed, the executor ke
 @@ :18 @@
 -Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `PropertyTypes.tsx`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
 +Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `Core/Properties/typeDisplay.ts`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
+@@ :37 · the Date & Time row @@
+-| Date | `calendar` |
++| Date & Time | `calendar` |
 ```
 
 **[Anchor]** `ViewTypesPM.md:91`'s order and `ConnectionsPM.md`'s authoring words read P15's landed `cellMenuModel` link kind beside `connectionMenu.ts`; `InteractionPM.md:42` reads P8's landed `useOptionEdit`, and if an option draft no longer stays open on a refusal, its clause says what it does.
@@ -32755,7 +33236,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 +A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's hint has no measure of its own, so a long hint runs on one line and pushes the pane wide; the Settings window's hints wrap only because that window has a fixed width. The Label Format and Value Format rows were drawn with their hints ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two hints alone was weighed and left out as a one-off rule, and the rows carry no hints.[^64]
 @@ I-076 › Description, last sentence @@
 -The Date editor gives each of its three rows (Date, Day, and Time) an icon, and the Key and Value Format rows and the option editors' Style footing carry one too. The Number editor's seven rows, the Link editor's three, the Checkbox editor's two, and the File editor's one pass none. The same panes also mix settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and every Date row writes the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for those two types lists the view's look.[^76]
-+The Date editor gives each of its three rows (Date, Day, and Time) an icon, and the Key and Value Format rows and the option editors' Style footing carry one too. The Number editor's seven rows, the Link editor's three, the Checkbox editor's two, and the File editor's one pass none. The same panes also mix settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and every Date row writes the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for a Link lists the view's own link format.[^76]
++The Date & Time editor gives each of its three rows (Date, Day, and Time) an icon, and the Key and Value Format rows and the option editors' Style footing carry one too. The Number editor's seven rows, the Link editor's three, the Checkbox editor's two, and the File editor's one pass none. The same panes also mix settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and every Date row writes the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for a Link lists the view's own link format.[^76]
 @@ I-077 › Description, first sentence @@
 -Removing a property from a Collection moves its values off the Collection's pages into a stash (`property_cache`) in the Collection's own settings file, where re-adding the property restores them. The stash stays there, and its entries are kept for the History Timeframe (`historyDays`), the setting that sets how long page history snapshots and captures are kept; after that, they're cleaned out. That setting measures the age of saved page text, and a stash entry is a removed property's values waiting to be re-added, so one number sets how long both are recoverable. The Archive already separates these cases: Archive History Timeframe (`archiveHistoryDays`) sets how long archived pages keep their snapshots, follows History Timeframe until it's picked, and never exceeds it. The stash has no such setting, so removed values can't be kept longer than page history, or cleaned out sooner, without changing page history too.[^77]
 +Removing a property from a Collection moves its values off the Collection's pages into a stash (`property_stash`) in the Collection's own settings file, where re-adding the property restores them. The stash stays there, and its entries are kept for the History Timeframe (`historyDays`), the setting that sets how long page history snapshots and captures are kept; after that, they're cleaned out. That setting measures the age of saved page text, and a stash entry is a removed property's values waiting to be re-added, so one number sets how long both are recoverable. The Archive already separates these cases: Archive History Timeframe (`archiveHistoryDays`) sets how long archived pages keep their snapshots, follows History Timeframe until it's picked, and never exceeds it. The stash has no such setting, so removed values can't be kept longer than page history, or cleaned out sooner, without changing page history too.[^77]
@@ -33116,7 +33597,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 - **Confirmation:** every "watch it fail" test went red before its change and green after; every VERIFY ran and its output was read; every measurement (F3, K, 07-10, 02-10) and every read rule (07-17) recorded its outcome and applied it as *Planning Findings › §Measurement Rules* states; no check was left to a hand check.
 - **Continuity:** *§Reconciliation* is walked; the feature documents, the Issues entries, the scripts README, and the drive matrices read true (Phase 18); every Behavior Change a phase disclosed is tied to a decision or a ruled Last Call; every deviation is fixed or ruled on under *§Deviations*.
 - **Confidence:** the three gates are green from a clean checkout at HEAD, with `engineGraph.test.ts` and `hostGraph.test.ts` inside them; the test count moved only as the phases' *Tests* lines stated; each phase's measured delta sits in *§Net Ledger* beside its written figure, and any growth past it was reported before the next phase opened with what it bought; both neutral gates answered yes without ambiguity.
-- **Net-Negative:** the cumulative production delta in *§Net Ledger* is net-negative at every phase from Phase 1 on and at the final head; the written cumulative's thinnest points are Phase 1's −136 and Phase 12's head at −157 (−83 on F3's Fail), after the four net-positive phases before it.
+- **Net-Negative:** on the measurements' first outcomes the cumulative production delta in *§Net Ledger* is net-negative at every phase from Phase 1 on and at the final head, thinnest at Phase 12's head at −52, after the four net-positive phases before it; on F3's Fail it rises to +28 at Phase 12's head and is net-negative again from Phase 13's head (−78) on.
 - **No New Issues:** the work files no Issues entry, compared by entry title, since the index script renumbers every heading after Phase 18's three closures: no title in `.claude/IssuesPM.md` at HEAD is missing at BASELINE (`diff <(git show BASELINE:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort) <(git show HEAD:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort)` shows no `>` line) apart from I-032's and I-061's titles, which Task 18-4 narrows in place, and any entry another session's commit filed, named in the report by its commit; Task 18-4's title diff over its own commit holds as its VERIFY states. I-076's and I-077's entries, under whatever numbers the index script gives them, are the only deferrals.
 - **Adherence:** *§Adherence Scoreboard* reads its After column true on the final head, each row's check re-run there rather than carried from a phase.
 
@@ -33134,7 +33615,7 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Type Facts Once** | Checkbox blank-draws rule statements | 3 (P3's count; `Cell.tsx:50-58` is the checkbox cell's type dispatch, not a statement of the rule) | 1 (`blankDraws`) | P3 |
 | **Type Facts Once** | Registration `=== 'multiSelect'` checks | 2 (`fileEvents.ts:528`, `optionOps.ts:133`) | 0 (`registersMembers`) | P3 · command 3 |
 | **Type Facts Once** | Options-from-labels builders | 8 (**Tally**) | 1 (`pickerOptions`) | P3 |
-| **Type Facts Once** | `syntheticContextDef(` sites | 6 | 0 | P16B · `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` |
+| **Type Facts Once** | `syntheticContextDef(` sites | 6 | 0 | P15, P16B · `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` |
 | **Fix the Origin** | UI filters guarding against non-user definitions | 4 | 0 | P2 |
 | **Fix the Origin** | Hand-placed slot guards | 7 (**Tally**) | one owed-name check (`owedName`) and one rename hold (`owesRename`) | P11A · command 4 |
 | **Fix the Origin** | Many-file change skeletons | 7 hand-written | 1 (`runNoted`) | P11A, P11B |
@@ -33176,7 +33657,7 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Tally**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Tally**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Morning Report › §What I Need From You* | *Morning Report* |
-| **Directive (10-22-2026)** | Net production delta | — | −759 written on Biome-formatted code (−692 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is −4 | *§Net Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | −726 written on Biome-formatted code (−651 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is +28, net-negative again from Phase 13's head | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -33243,7 +33724,7 @@ Run inside *§Final Verification* over `BASELINE..HEAD`; its statement, verbatim
 > - Finding which files hold a property or a tag uses one shared lookup: properties reach pages in Collections and the archive, tags reach any page.
 > - A removed property's set-aside values record when they were removed and are cleaned out after the page-history timeframe; re-adding the property refills pages still in the Collection, pages in the trash, and reports any it couldn't refill.
 > - A view works out each column's type and definition once and hands it to every filter, sort, group, and cell, instead of looking it up again per cell.
-> - Each kind of value's filter rules, sorting, and grouping are stated once in one record; a filter value that can't be read is ignored instead of matching everything, a checkbox's "is not empty" filter works, and empty values sort last for every type that can be empty, a checkbox's unchecked state keeping its place in a sort.
+> - Each kind of value's filter rules, sorting, and grouping are stated once in one record; a filter value that can't be read is ignored instead of matching everything, a checkbox's "is not empty" filter works, and empty values sort last for every type that can be empty, so a Checkbox sorted ascending puts checked pages first.
 > - Picking a value follows one model for one row or many, and the right-click menu on a value reads the same in the table, cards, and the properties panel.
 > - Clicking, right-clicking, and editing a value is one shared piece for the table, cards, and panel.
 > - Every type's settings editor uses one layout with consistent spacing, and an editor whose property disappears returns to the property list.
@@ -33264,24 +33745,24 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4A | −531 | +484 | −47 | | |
 | 4B | −18 | +29 | +11 | | |
 | 5 | −151 | +117 | −34 | | |
-| 6 | −263 | +281 | +18 | | |
-| 7 | −619 | +472 | −147 | | |
+| 6 | −264 | +288 | +24 | | |
+| 7 | −619 | +470 | −149 | | |
 | 8 | −417 | +375 | −42 | | |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −390 | +400 | +10 | | |
-| 11A | −603 | +743 | +140 | | |
-| 11B | −210 | +306 | +96 | | |
-| 12 | −162 | +289 | +127 | | |
+| 11A | −603 | +726 | +123 | | |
+| 11B | −233 | +348 | +115 | | |
+| 12 | −164 | +311 | +147 | | |
 | 13 | −642 | +543 | −99 | | |
-| 14 | −516 | +461 | −55 | | |
-| 15 | −213 | +178 | −35 | | |
-| 16A | −536 | +464 | −72 | | |
-| 16B | −367 | +154 | −213 | | |
-| 17 | −800 | +593 | −207 | | |
+| 14 | −535 | +484 | −51 | | |
+| 15 | −256 | +229 | −27 | | |
+| 16A | −534 | +458 | −76 | | |
+| 16B | −321 | +104 | −217 | | |
+| 17 | −808 | +604 | −204 | | |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
-**Written Total:** −7,443 / +6,684, net **−759**, on each measurement's first outcome. The written cumulative is net-negative at every phase: thinnest at Phase 1's −136, it reaches −451 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +140, +96, +127) leave it at −78 at Phase 12's head, where the Mid-Plan Neutral Gate's range ends. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +92 (−133 / +225), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−692**, and the cumulative is thinnest at Phase 12's head, −4. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +7 and the total −717. **O-5's Fail Outcome:** Task 17-11's remedy adds +14 (−1 / +15), so Phase 17 lands −193 and the total −745. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −636, and the cumulative stays net-negative at every phase, thinnest at Phase 12's head.
+**Written Total:** −7,491 / +6,765, net **−726**, on each measurement's first outcome. The written cumulative is net-negative at every phase: it reaches −447 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +123, +115, +147) leave it at its thinnest, −52, at Phase 12's head, where the Mid-Plan Neutral Gate's range ends. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +98 (−134 / +232), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −143 (−619 / +476), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−651**, and the cumulative rises to +28 at Phase 12's head before Phase 13's head brings it to −78. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15 and the total −684. **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −710. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −589, and the cumulative is net-negative at every phase but Phase 12's head, +28.
 
 #### Reconciliation
 
@@ -33405,7 +33886,7 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 #### Open Items
 
 1. **`reveal-parity`:** `.claude/scripts/reveal-parity/run.mjs:750` looks for "Forget Test" and needs fixtures `~/Test` doesn't hold; it stays outside Properties.
-2. **The Value Seat's Interleavings:** Cards' ghost hold, the table's title passthrough, and `lastOpened` keying are designed and pinned in Phase 16A; its two halves land −285 (16A −72, 16B −213), checked at each Review Checkpoint.
+2. **The Value Seat's Interleavings:** Cards' ghost hold, the table's title passthrough, and `lastOpened` keying are designed and pinned in Phase 16A; its two halves land −293 (16A −76, 16B −217), checked at each Review Checkpoint.
 3. **Measurement Outcomes:** F3, K, 07-10, and 02-10 run their rules in Phases 6, 14, and 15; a failed threshold becomes a Last Call row in the report, never an Issues entry.
 
 #### Deviations
