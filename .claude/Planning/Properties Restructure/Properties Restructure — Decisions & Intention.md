@@ -1,4 +1,4 @@
-### Properties Deepclean — Decisions & Intention
+### Properties Restructure — Decisions & Intention
 
 **DATE:** 10-21-2026
 **STATUS:** ACTIVE
@@ -7,11 +7,11 @@
 
 Pommora's Properties system is everything whose job is properties: the property list in `.nexus/properties.json`, the values pages carry in their front matter and Spaces carry in their settings files, the editors and pickers that change them, the views that filter, sort, and group by them, and the machinery that rewrites many files when a property changes. It grew across many sessions, and most of its data-level mechanics reflect what earlier agents judged appropriate rather than Nathan's stated intent.
 
-The deepclean began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis produced *Properties Deepclean — Scout Reports* and *Properties Deepclean — Investigation*. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here and in *§Session Questionnaire*.
+The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis produced *Properties Restructure — Scout Reports* and *Properties Restructure — Investigation*. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here and in *§Session Questionnaire*.
 
 ### Overview
 
-This log is the authority on intent for the deepclean. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, the Investigation and the Scout Reports hold the technical evidence and cite the entries here, and the plan is built from this log once Nathan ratifies it.
+This log is the authority on intent for the restructure. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, the Investigation and the Scout Reports hold the technical evidence and cite the entries here, and the plan is built from this log once Nathan ratifies it.
 
 Most decisions fix accidents or fold duplicated machinery into one shape; a few change visible behavior on purpose, such as giving every option a permanent id, giving every property, Context, and Space its own crash-recovery note, and making undo put back what the file held. Sync's merge rules stay as they are while Sync awaits its rebuild, so the merge losses found here are recorded under *§Prospects* as inputs for that rebuild.
 
@@ -34,14 +34,14 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 ### Decisions
 
-#### A - Deepclean Setup
+#### A - Restructure Setup
 
-- **A-1 [CONFIRMED]:** The deepclean answers to the Approach, Principles, Perspectives, and Nathan's Constraints under *§Constraints*, held in *BRIEF.md* and copied one-for-one into every planning document, agent dispatch, session handoff, and continuation procedure.
+- **A-1 [CONFIRMED]:** The restructure answers to the Approach, Principles, Perspectives, and Nathan's Constraints under *§Constraints*, held in *BRIEF.md* and copied one-for-one into every planning document, agent dispatch, session handoff, and continuation procedure.
 - **A-2 [CONFIRMED]:** The scope is the Properties system by responsibility — `Core/Properties` and the property logic held anywhere else — including the journal, replay, and sweep machinery Contexts and Properties each carry for one pattern (I-036).
 - **A-3 [CONFIRMED]:** The Archive work is complete, and how it changed the Properties system's reach into archived files is current ground truth for the inventory.
 - **A-4 [CONFIRMED]:** No Nexus beyond NexusOS, `~/Test`, and the Benchmark Nexuses needs to keep reading, so a read path for a shape only earlier Pommora builds wrote becomes removable once a scan of those Nexuses finds nothing holding it.
 - **A-5 [CONFIRMED]:** A Multi-Select registering the unknown and externally-added words its members hold as options is intended behavior and stays.
-- **A-6 [CONFIRMED]:** Finding the behaviors Nathan never asked for is part of the deepclean's mandate, and each one reaches him as a decision carrying its explanation.
+- **A-6 [CONFIRMED]:** Finding the behaviors Nathan never asked for is part of the restructure's mandate, and each one reaches him as a decision carrying its explanation.
 - **A-7 [ASSUMED]:** This session runs through *§Decisions*, and possibly the plan, with execution continuing in fresh sessions from *BRIEF.md* and a handoff.
 
 #### B - Crash Recovery
@@ -58,7 +58,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 #### D - Options and Groups
 
-- **D-1 [CONFIRMED]:** Every option is meant to carry a permanent id, the way properties already do, so views, tiles, and the Matrix filter refer to options by id, a rename touches only the property list, and sync can merge options one at a time; pages keep storing the option's word. NexusOS's views, tiles, and property list that name options by label are converted once.
+- **D-1 [CONFIRMED]:** Every option is meant to carry a permanent id, the way properties already do, so views, tiles, the Matrix filter, and the preview rules refer to options by id and an option rename stops rewriting them; pages keep storing the option's word, so a rename still rewrites the pages holding it, and sync merging options one at a time waits on the Sync rebuild (H-2). NexusOS's views, tiles, and property list that name options by label are converted once.
 - **D-2 [CONFIRMED]:** Collapsed groups are meant to be remembered per property, as hidden groups already are, with NexusOS's existing collapsed groups converted rather than reopening once.
 - **D-3 [CONFIRMED]:** Status options stop storing their group's id, with NexusOS's property list stripped of it once.
 
@@ -140,7 +140,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 - **P-1 [CONFIRMED]:** A Select or Status holding several words ignores the ones no option names, shows the most recently added valid option, and tidies to that one value on the next change. Planning checks where this differs from today's rule of showing the last registered word.
 - **P-2 [CONFIRMED]:** Picking a Select value drops words no option names, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
-- **P-3 [CONFIRMED]:** The remaining edge rules *Properties Deepclean — Investigation*'s *§Edge Rules* lists stay as they are.
+- **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Investigation*'s *§Edge Rules* lists stay as they are.
 
 ---
 
@@ -200,12 +200,12 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 
 ##### Working Rules
 
-- **Re-Verify, Then Reuse:** *Properties Deepclean — Investigation* and *Properties Deepclean — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
+- **Re-Verify, Then Reuse:** *Properties Restructure — Investigation* and *Properties Restructure — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
 - **Intent Over Wording:** the decisions record intent. INFERRED and ASSUMED entries are readings the plan confirms against the code or puts to Nathan before building on them.
-- **The Planning Pair:** *Properties Deepclean — Investigation* and this log carry everything planning needs; the Investigation cites the decision a direction became as `[Intended as A-#]`, and this log is the one source for what was decided.
+- **The Planning Pair:** *Properties Restructure — Investigation* and this log carry everything planning needs; the Investigation cites the decision a direction became as `[Intended as A-#]`, and this log is the one source for what was decided.
 - **Cost:** nothing this work adds runs on a high-frequency trigger, and no sweep or rebuild walks the whole Nexus where an incremental or cached read does the job.
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root; `.claude/Guidelines/Development-Environment.md` before driving the app; `~/Test` for live testing, rebuilt by `node .claude/scripts/make-benchmark-nexus.mjs test`.
-- **Process:** decisions ran on `~/NexusOS/Studio/Athena/II. Drafts/Studio-Brainstorm-V2.md` and planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Their blank sections take the installed `studio-brainstorm` and `writing-plans` skills' guidance, and the processes they name without spelling out take the shape of `.claude/Planning/Archive/Archive — Plan.md`; the drafts win where they conflict.
+- **Process:** decisions ran on `~/NexusOS/Studio/Athena/II. Drafts/Studio-Brainstorm-V2.md` and planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Their blank sections take the installed `studio-brainstorm` and `writing-plans` skills' guidance, and the processes they name without spelling out take the shape of `.claude/Planning/Completed/Archive/Archive — Plan.md`; the drafts win where they conflict.
 - **Models (Nathan, 10-19-2026):** execution agents run `opus-medium`; there are no hand-checks, so every visual surface is driven over CDP. The plan's phases are designed one at a time with an advisor checkpoint before each is written.
 - **Reviews:** the plan, its execution, and the landed work are reviewed as *§Review Procedure* sets out.
 - **Handoffs:** every handoff on this work repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim.
@@ -213,7 +213,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 
 ##### Review Procedure
 
-Adopted from the Archive plan (`.claude/Planning/Archive/Archive — Plan.md` *§Constraints › Models and Reviews* and *§Final Verification*, as run in `.claude/sessions/10-19-2026-Archive—Execution-&-Final-Verification.md`). Every reviewer brief carries the Approach, Principles, Perspectives, and Nathan's Constraints verbatim, except a neutral reader's, which carries none of them. Each wave closes before the next opens.
+Adopted from the Archive plan (`.claude/Planning/Completed/Archive/Archive — Plan.md` *§Constraints › Models and Reviews* and *§Final Verification*, as run in `.claude/sessions/10-19-2026-Archive—Execution-&-Final-Verification.md`). Every reviewer brief carries the Approach, Principles, Perspectives, and Nathan's Constraints verbatim, except a neutral reader's, which carries none of them. Each wave closes before the next opens.
 
 **Plan Reviews**
 
@@ -274,9 +274,9 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 #### Sources
 
-- `.claude/Planning/Properties Deepclean/BRIEF.md`
-- `.claude/Planning/Properties Deepclean/Properties Deepclean — Investigation.md`
-- `.claude/Planning/Properties Deepclean/Properties Deepclean — Scout Reports.md`
+- `.claude/Planning/Properties Restructure/BRIEF.md`
+- `.claude/Planning/Properties Restructure/Properties Restructure — Investigation.md`
+- `.claude/Planning/Properties Restructure/Properties Restructure — Scout Reports.md`
 - `.claude/Planning/7-2 - ViewPane Properties Flow — Decision Log.md` at `052ceec63` — C-3 and C-6, the stash's origin
 - `.claude/Features/PropertiesPM.md`
 - `.claude/IssuesPM.md` — I-006, I-032, I-035, I-036, I-039, I-042, I-063, I-064

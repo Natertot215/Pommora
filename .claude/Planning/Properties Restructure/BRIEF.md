@@ -1,15 +1,15 @@
-### Properties Deepclean — Brief
+### Properties Restructure — Brief
 
 **DATE:** 10-21-2026
 **STATUS:** RATIFIED 10-21-2026
 
-The standing approach, principles, perspectives, constraints, and process for the Properties Deepclean — a self-contained, full-sweep inventory, assessment, and deep clean of Pommora's Properties system. Every planning document, agent dispatch, session handoff, and continuation procedure copies *§Constraints* one-for-one, in the wording below. The project and global `CLAUDE.md` files still hold the conventions that apply everywhere; where a ratified decision is more specific than a principle here, the decision wins.
+The standing approach, principles, perspectives, constraints, and process for the Properties Restructure — a self-contained, full-sweep inventory, assessment, and deep clean of Pommora's Properties system. Every planning document, agent dispatch, session handoff, and continuation procedure copies *§Constraints* one-for-one, in the wording below. The project and global `CLAUDE.md` files still hold the conventions that apply everywhere; where a ratified decision is more specific than a principle here, the decision wins.
 
 #### The Documents
 
-- ***Properties Deepclean — Decisions & Intention***: the intent, authoritative once ratified, with each decision tagged CONFIRMED, INFERRED, or ASSUMED and the session's questions and answers closing it.
-- ***Properties Deepclean — Investigation***: the synthesized inventory and technical evidence, citing the decision log's entries.
-- ***Properties Deepclean — Scout Reports***: the nine reconciled scout reports the Investigation is synthesized from.
+- ***Properties Restructure — Decisions & Intention***: the intent, authoritative once ratified, with each decision tagged CONFIRMED, INFERRED, or ASSUMED and the session's questions and answers closing it.
+- ***Properties Restructure — Investigation***: the synthesized inventory and technical evidence, citing the decision log's entries.
+- ***Properties Restructure — Scout Reports***: the nine reconciled scout reports the Investigation is synthesized from.
 - ***BRIEF.md***: this document.
 
 ---
@@ -70,12 +70,12 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 
 ##### Working Rules
 
-- **Re-Verify, Then Reuse:** *Properties Deepclean — Investigation* and *Properties Deepclean — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
+- **Re-Verify, Then Reuse:** *Properties Restructure — Investigation* and *Properties Restructure — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
 - **Intent Over Wording:** the decisions record intent. INFERRED and ASSUMED entries are readings the plan confirms against the code or puts to Nathan before building on them.
-- **The Planning Pair:** *Properties Deepclean — Investigation* and this log carry everything planning needs; the Investigation cites the decision a direction became as `[Intended as A-#]`, and this log is the one source for what was decided.
+- **The Planning Pair:** *Properties Restructure — Investigation* and this log carry everything planning needs; the Investigation cites the decision a direction became as `[Intended as A-#]`, and this log is the one source for what was decided.
 - **Cost:** nothing this work adds runs on a high-frequency trigger, and no sweep or rebuild walks the whole Nexus where an incremental or cached read does the job.
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root; `.claude/Guidelines/Development-Environment.md` before driving the app; `~/Test` for live testing, rebuilt by `node .claude/scripts/make-benchmark-nexus.mjs test`.
-- **Process:** decisions ran on `~/NexusOS/Studio/Athena/II. Drafts/Studio-Brainstorm-V2.md` and planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Their blank sections take the installed `studio-brainstorm` and `writing-plans` skills' guidance, and the processes they name without spelling out take the shape of `.claude/Planning/Archive/Archive — Plan.md`; the drafts win where they conflict.
+- **Process:** decisions ran on `~/NexusOS/Studio/Athena/II. Drafts/Studio-Brainstorm-V2.md` and planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Their blank sections take the installed `studio-brainstorm` and `writing-plans` skills' guidance, and the processes they name without spelling out take the shape of `.claude/Planning/Completed/Archive/Archive — Plan.md`; the drafts win where they conflict.
 - **Models (Nathan, 10-19-2026):** execution agents run `opus-medium`; there are no hand-checks, so every visual surface is driven over CDP. The plan's phases are designed one at a time with an advisor checkpoint before each is written.
 - **Reviews:** the plan, its execution, and the landed work are reviewed as *§Review Procedure* sets out.
 - **Handoffs:** every handoff on this work repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim.
@@ -83,7 +83,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 
 ##### Review Procedure
 
-Adopted from the Archive plan (`.claude/Planning/Archive/Archive — Plan.md` *§Constraints › Models and Reviews* and *§Final Verification*, as run in `.claude/sessions/10-19-2026-Archive—Execution-&-Final-Verification.md`). Every reviewer brief carries the Approach, Principles, Perspectives, and Nathan's Constraints verbatim, except a neutral reader's, which carries none of them. Each wave closes before the next opens.
+Adopted from the Archive plan (`.claude/Planning/Completed/Archive/Archive — Plan.md` *§Constraints › Models and Reviews* and *§Final Verification*, as run in `.claude/sessions/10-19-2026-Archive—Execution-&-Final-Verification.md`). Every reviewer brief carries the Approach, Principles, Perspectives, and Nathan's Constraints verbatim, except a neutral reader's, which carries none of them. Each wave closes before the next opens.
 
 **Plan Reviews**
 
@@ -126,9 +126,9 @@ Removal and consolidation come before anything additive, and changes to what exi
 #### Process
 
 1. **Alignment:** the principles, scope, and session shape ratified with Nathan.
-2. **Inventory:** Plan-Creation's Large exploration — domain scouts writing scratchpad reports, two reconciliation agents cross-verifying them, and one synthesis agent writing *Properties Deepclean — Investigation* with each cleaned report beside it.
+2. **Inventory:** Plan-Creation's Large exploration — domain scouts writing scratchpad reports, two reconciliation agents cross-verifying them, and one synthesis agent writing *Properties Restructure — Investigation* with each cleaned report beside it.
 3. **Assessment:** the Investigation and every cleaned report read in full, load-bearing claims re-checked against the code, and conflicts disclosed to Nathan.
-4. **Decisions:** Studio-Brainstorm-V2 over every finding that needs Nathan, recorded in *Properties Deepclean — Decisions & Intention*.
+4. **Decisions:** Studio-Brainstorm-V2 over every finding that needs Nathan, recorded in *Properties Restructure — Decisions & Intention*.
 5. **Plan:** Plan-Creation, from the ratified decisions, run headlessly as *§Nathan's Constraints › Headless Planning* sets out.
 6. **Execution:** the ratified plan, phase by phase, closed by its *§Final Verification*.
 
