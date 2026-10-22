@@ -818,7 +818,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 ##### P16 — One Value Seat
 
-**GOAL:** Clicking, right-clicking, and editing a value is one shared seat for the table, cards, and panel, with the native menu's fourth router folded into it, and a Context column reaches the pickers without a fabricated definition. The panel's five jobs split along that seam. The phase opens with an advisor checkpoint on its task design before any task is written.
+**GOAL:** Clicking, right-clicking, and editing a value is one shared seat for the table, cards, and panel, with the native menu's fourth router folded into it, and a Context column reaches the pickers without a fabricated definition. The panel's five jobs split along that seam.
 
 **Units:** X6 (Approach B; 06-01, 06-02, 06-03), `syntheticContextDef`'s fold.
 
@@ -828,7 +828,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 3. **No Fabricated Definition:** the seat hands pickers a `PickTarget` built from P13's resolved column (`{ type, def? }`), so `syntheticContextDef` and its six sites leave (`PropertyPanel.tsx:364,403`, `useViewHost.ts:212`, `propertyMenuActions.ts:72,96`, `FilterFrame.tsx:378`).
 4. **The Panel Splits:** `PropertyPanel.tsx` keeps layout, row order, and revealed rows (J-5); value interaction moves to the seat. The Cards File pane's `PickTarget` arm and `adoptPathInto` stay (J-7); Cards keeps hiding a chip's remove below 80% zoom (J-6).
 
-**Order:** the advisor checkpoint, then 3, 1, 2, 4.
+**Order:** 3, 1, 2, 4. The seat's interleavings with Cards' ghost hold, the table's title-action passthrough, and `lastOpened` popover keying are designed in the phase's tasks during planning, from the code, so the executor runs a settled design.
 
 **Behavior Changes:** none intended; every surface keeps today's click and menu behavior after P15.
 
@@ -842,7 +842,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Depends On:** P13, P15.
 
-**Risks:** Cards' ghost hold, the table's title-action passthrough, and `lastOpened` popover keying interleave with the menu chain; the advisor checkpoint designs them before tasks are written.
+**Risks:** Cards' ghost hold, the table's title-action passthrough, and `lastOpened` popover keying interleave with the menu chain; each interleaving is pinned by a seat test before the old copy it replaces is deleted.
 
 `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before P17 opens]`
 
@@ -880,13 +880,13 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Units:** every *§What Becomes False* row assigned to P18; the documentation spotcheck.
 
-**Binding Design:** each row of *§What Becomes False › Documents* and *› Issues Entries* marked P18 is rewritten to the landed code, in the Studio documentation reference's voice; `PropertiesPM.md`'s mutation table, Repairs, and Validation sections become overview prose; the Scripts README's channel names are checked against `bridge.ts` and the `mutate` union.
+**Binding Design:** each row of *§What Becomes False › Documents* and *› Issues Entries* marked P18 is rewritten to the landed code, in the Studio documentation reference's voice; `PropertiesPM.md`'s mutation table, Repairs, and Validation sections become overview prose; the Scripts README's channel names are checked against `bridge.ts` and the `mutate` union. The test sweep converts every hand-rolled Nexus seed still standing in the Properties-system tests to P1's `seedNexus` and shared definitions module, so one seeding path remains, and any test title still carrying a plan-round tag or naming a removed symbol is rewritten; the task lists each file with the `git grep` that found it.
 
 **Order:** feature documents, Issues entries, scripts and drives, then the spotcheck.
 
 **Behavior Changes:** none.
 
-**Tests:** none.
+**Tests:** the seed sweep above (test lines move, net negative); no behavior test changes.
 
 **Drive:** every drive in `.claude/scripts/` runs green on P18's head.
 
@@ -915,8 +915,8 @@ A neutral gate receives only two commits and the statement below, with no plan, 
 > - Undo puts back exactly what the file held for the one property that was edited, and undoing a link value also removes the alias it added.
 > - Every property change goes through the app's one change channel with one reply shape, and confirmations count affected items correctly, zero included.
 > - Every option has a permanent id; saved views, tiles, and filters refer to options by id, so renaming an option no longer rewrites them. Collapsed groups are remembered per property.
-> - Changes that rewrite many files update the list first and the files second, and every property, Context, and Space keeps its own crash-recovery entry in one notes file. A change that can't reach every file finishes what it can and offers one Try Again that finishes everything owed; a name still owed to unfinished work can't be reused until that work finishes.
-> - Finding which files hold a property or a tag uses one shared finder: properties reach pages in Collections and the archive, tags reach any page.
+> - Changes that rewrite many files update the list first and the files second, and every property, Context, and Space keeps its own crash-recovery record in one file. A change that can't reach every file finishes what it can and offers one Try Again that finishes everything owed; a name still owed to unfinished work can't be reused until that work finishes.
+> - Finding which files hold a property or a tag uses one shared lookup: properties reach pages in Collections and the archive, tags reach any page.
 > - A removed property's set-aside values record when they were removed and are cleaned out after the page-history timeframe; re-adding the property refills pages still in the Collection, pages in the trash, and reports any it couldn't refill.
 > - The production code is smaller than at the baseline, with fewer ways of doing the same thing, and the tests pin each intended behavior once.
 >
@@ -933,8 +933,8 @@ A neutral gate receives only two commits and the statement below, with no plan, 
 > - Undo puts back exactly what the file held for the one property that was edited, and undoing a link value also removes the alias it added.
 > - Every property change goes through the app's one change channel with one reply shape, and confirmations count affected items correctly, zero included.
 > - Every option has a permanent id; saved views, tiles, and filters refer to options by id, so renaming an option no longer rewrites them. Collapsed groups are remembered per property.
-> - Changes that rewrite many files update the list first and the files second, and every property, Context, and Space keeps its own crash-recovery entry in one notes file. A change that can't reach every file finishes what it can and offers one Try Again that finishes everything owed; a name still owed to unfinished work can't be reused until that work finishes.
-> - Finding which files hold a property or a tag uses one shared finder: properties reach pages in Collections and the archive, tags reach any page.
+> - Changes that rewrite many files update the list first and the files second, and every property, Context, and Space keeps its own crash-recovery record in one file. A change that can't reach every file finishes what it can and offers one Try Again that finishes everything owed; a name still owed to unfinished work can't be reused until that work finishes.
+> - Finding which files hold a property or a tag uses one shared lookup: properties reach pages in Collections and the archive, tags reach any page.
 > - A removed property's set-aside values record when they were removed and are cleaned out after the page-history timeframe; re-adding the property refills pages still in the Collection, pages in the trash, and reports any it couldn't refill.
 > - A view works out each column's type and definition once and hands it to every filter, sort, group, and cell, instead of looking it up again per cell.
 > - Each kind of value's filter rules, sorting, and grouping are stated once in one record; a filter value that can't be read is ignored instead of matching everything, a checkbox's "is not empty" filter works, and empty values sort last for every type.
@@ -1303,6 +1303,6 @@ Every decision maps to a phase or a stated exclusion.
 
 1. **Superseded Readings in the Planning Documents:** *Properties Restructure — Investigation*'s *§What Counts as a Property* (the Built-In Fields name) and *§Edge Rules* P-1 bullet (an edit to a different property leaves a several-word Select as written), and *Properties Restructure — Walkthrough*'s lines this document departs from (*§Last Calls › Departures From the Walkthrough*, plus line 34's "already today's rule", which covers the display half only), carry readings this document supersedes. Whether those planning records are rewritten before ratification is the orchestrator's call; no phase touches them.
 2. **`reveal-parity`:** the decision log's Open Item 2 (`.claude/scripts/reveal-parity/run.mjs:750` looks for "Forget Test" and needs fixtures `~/Test` doesn't hold) stays outside Properties.
-3. **P16's Seat:** its interleavings (Cards' ghost hold, the table's title passthrough, `lastOpened` keying) are designed at its advisor checkpoint; its delta is checked against −170 at its Review Checkpoint.
+3. **P16's Seat:** its interleavings (Cards' ghost hold, the table's title passthrough, `lastOpened` keying) are designed in its tasks during planning; its delta is checked against −170 at its Review Checkpoint.
 4. **Measurement Outcomes:** F3, K, 07-10, and 02-10 run their rules in P6, P14, and P15; a failed threshold becomes an LC-44 row.
 5. **Sources:** the four planning scouts, the decision log, the Investigation, the Walkthrough, `BRIEF.md`, and the Archive precedent's Findings and *§Process Overview* were read in full. *Properties Restructure — Scout Reports* (376 KB) wasn't read; it's backup evidence behind the Investigation, and every cite this document leans on was taken from a planning scout's HEAD read or opened at HEAD for this document. A reviewer who finds a Scout Reports claim that contradicts a call here checks it against the code, and the code wins.
