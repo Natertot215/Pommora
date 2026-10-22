@@ -34,32 +34,8 @@
 3. **Nathan's Calls NC-1 to NC-3:** the same document, *§Nathan's Calls*.
 4. **"Date" or "Date & Time":** the plan names the type "Date", while Pommora's CLAUDE.md says "Date & Time". Say which name stands.
 5. **The Issues renumbering:** when Phase 18 closes three entries, the index script renumbers the rest, so I-076 and I-077 become I-073 and I-074.
-6. **The Open Items** (*Implementation Plan › §Open Items*), and Open Item 1 above all: some lines in the Investigation and the Walkthrough describe readings the plan has since replaced. They can stay as history or be rewritten.
+6. **The Open Items** (*Implementation Plan › §Open Items*).
 
 ### The Walkthrough
 
-What each phase does, against what's true now.
-
-- **P1 · Removal First:** removes code that only exists to read files older Pommora versions wrote, an unreachable refusal, and an unused field, and moves two general helpers to where they belong.
-- **P2 · What Counts as a Property:** the nine property types and Context are defined in one place. Title, Created, Modified, and Location become built-in fields, also defined once.
-- **P3 · Type Records and Looks:** each type's facts are stated once per type: how it connects, how it looks when blank, its chip shape, and its display styles.
-- **P4A · The Value Write's One Home:** every single-file value write goes through one module, and files are named for what they hold.
-- **P4B · The Tidy Rule:** one rule for tidying values. A value of only spaces reads as empty, and writing the same value writes nothing. "Repair Properties on Open" is on by default.
-- **P5 · One Home per Definition:** each Collection lists the ids of the properties it uses. A damaged property list opens with a notice instead of hiding every Space.
-- **P6 · Undo From the File:** each value write records what the file held, so undo puts back exactly that. The window stops re-encoding values itself; a speed check (F3) confirms this costs nothing.
-- **P7 · One Door for Property Changes:** nineteen separate change channels become fourteen operations through one door, under one lock rule. The option menu's "Remove" reads "Delete".
-- **P8 · Option Identity:** options get permanent ids, so renaming one no longer rewrites every file. NexusOS converts once, after a backup.
-- **P9 · List First:** a Context rename writes down its file list before it starts, and unfinished work replays from one place when the Nexus opens.
-- **P10 · One Finder:** one way to find which files hold a property or a Context, and every restore miss is reported.
-- **P11A · One Note per Item:** the crash-recovery notes become one file, `.nexus/.owed.json`, with one entry per item. Every many-file change runs on one runner with one Try Again, and a name still owed can't be reused.
-- **P11B · Deletes and Remove:** Context and Space deletes, and a property's Remove, finish through those notes.
-- **P12 · The Stash and Trash Records:** removed values are kept in a dated stash that ages out, and the phase adds Trash parking, the order restores happen in, and a mark for a partial restore.
-- **P13 · Columns Carry Their Answer:** each column carries its type and definition, so cells, sorting, and filters stop looking them up again.
-- **P14 · The Per-Kind View Record:** filtering, sorting, grouping, and new-row values are stated once for each kind of value.
-- **P15 · Pick Model and One Writer:** one model for picking values, one value writer, and one set of menu words.
-- **P16A · One Value Seat, the Table and Cards:** one component opens and edits values in the table and in Cards.
-- **P16B · One Value Seat, the Native Menus and the Panel:** the native menus and the page panel join that component, and the made-up Context definition leaves.
-- **P17 · The Properties Pane:** one drag model and one editor spacing. The five type editors become row lists in one file, and an editor whose property disappears returns to the list.
-- **P18 · The Documents Read True:** feature documents, Issues entries, drives, and matrices are updated to match.
-
-Behind the scenes, the cleanup throughout is the same: the same job done one way, code for formats no Nexus holds removed, and each fact stated once.
+*Properties Restructure — Walkthrough* gives what each phase does, and what the work changes against what's true now, in plain English.

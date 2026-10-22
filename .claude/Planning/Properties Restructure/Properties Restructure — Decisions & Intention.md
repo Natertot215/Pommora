@@ -1,31 +1,31 @@
 ### Properties Restructure — Decisions & Intention
 
-**DATE:** 10-21-2026
+**DATE:** 10-22-2026
 **STATUS:** ACTIVE
 
 ### Context
 
 Pommora's Properties system is everything whose job is properties: the property list in `.nexus/properties.json`, the values pages carry in their front matter and Spaces carry in their settings files, the editors and pickers that change them, the views that filter, sort, and group by them, and the machinery that rewrites many files when a property changes. It grew across many sessions, and most of its data-level mechanics reflect what earlier agents judged appropriate rather than Nathan's stated intent.
 
-The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis produced *Properties Restructure — Scout Reports* and *Properties Restructure — Investigation*. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here and in *§Session Questionnaire*.
+The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis produced *Properties Restructure — Scout Reports* and *Properties Restructure — Investigation*. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here.
 
 ### Overview
 
-This log is the authority on intent for the restructure. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, the Investigation and the Scout Reports hold the technical evidence and cite the entries here, and the plan is built from this log once Nathan ratifies it.
+This log is the authority on intent for the restructure. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, *Properties Restructure — Implementation Plan* builds each decision into its phases, and Nathan ratifies this log with the plan.
 
-Most decisions fix accidents or fold duplicated machinery into one shape; a few change visible behavior on purpose, such as giving every option a permanent id, giving every property, Context, and Space its own crash-recovery note, and making undo put back what the file held. Sync's merge rules stay as they are while Sync awaits its rebuild, so the merge losses found here are recorded under *§Prospects* as inputs for that rebuild.
+Most decisions fix accidents or fold duplicated machinery into one shape; a few change visible behavior on purpose, such as giving every option a permanent id, giving every property, Context, and Space its own crash-recovery note, and making undo put back what the file held. Sync's merge rules stay as they are while Sync awaits its rebuild, so the merge losses found here are recorded as inputs for that rebuild, as *§Prospects* notes.
 
 #### Concepts
 
 - **Property List:** `.nexus/properties.json`, the Nexus-wide list of property definitions, each with a permanent id, a label, a type, and its type's settings.
 - **Front Matter:** the block of properties at the top of a page's Markdown file, where a page holds its values; a Space holds its values in its own settings file, `_space.json`.
 - **Label Format and Value Format:** a property's settings for how its key and its values are spelled in front matter; changing either rewrites every file that holds the property.
-- **The Stash:** the store of values a Remove takes off a Collection's pages, kept in that Collection's settings file (`property_cache` in `_pagecollection.json`) so re-adding the property brings them back.
-- **Crash-Recovery Note:** a record written before a change that rewrites many files, saying what the change is, so Pommora can finish it after a crash or an unreachable file; such a change is "owed" until it reaches every file.
+- **The Stash:** the store of values a Remove takes off a Collection's pages, kept in that Collection's settings file, `_pagecollection.json`, so re-adding the property brings them back.
+- **Crash-Recovery Note:** an item's entry in `.nexus/.owed.json`, written before a change that rewrites many files, saying what the change is, so Pommora can finish it after a crash or an unreachable file; such a change is "owed" until it reaches every file.
 - **Try Again:** the action offered when a change couldn't reach every file, which runs the unfinished part again.
 - **Option Id:** a permanent id on each Select, Multi-Select, or Status option, which views, tiles, and the Matrix filter refer to in place of the option's word; pages keep storing the word.
-- **File-Derived Fields:** values Pommora reads from a file itself rather than from its front matter, such as Created Time and Last Modified Time, in the same category as a page's Aliases and its ID.
-- **Reach:** the set of files a change rewrites; today a property change reaches the pages of Collections and the Archive, while a Context or Space change reaches any page in the Nexus.
+- **Filedata:** Title, Created Time, Last Modified Time, and Location, the built-in fields Pommora reads from a file itself and its place in the Nexus rather than from its front matter; none of them is a property type.
+- **Reach:** the set of files a change rewrites; a property change reaches the pages of Collections and the Archive, while a Context or Space change reaches any page in the Nexus.
 - **Tidy-Ups:** the small rewrites any edit applies to a page's other properties, such as turning a single-word Select into a one-item list or collapsing duplicates.
 - **Partial Mark:** a Trash entry's flag recording that some values couldn't be read when the entry was made.
 - **Format and Style:** a property's Format is set on the property and applies across the Nexus; a column's style is a per-view display setting.
@@ -79,12 +79,12 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 - **G-1 [CONFIRMED]:** Finding which pages and Spaces hold a property or a tag is meant to run through one shared mechanism, the best available scan for both, unless planning finds evidence that one of them needs its own.
 - **G-2 [INFERRED]:** A change reaches every file where its key means something: a property's key means something on the pages of Collections and the Archive, and a Context tag means something on any page, including loose pages outside every Collection, so the one mechanism keeps that difference as its stated rule.
-- **G-3 [INFERRED]:** A restore from the Trash that can't update a Space's settings file reports it as a warning.
+- **G-3 [INFERRED]:** A restore from the Trash that can't update a Space's settings file or a returning page still completes, and a warning names what it missed.
 
 #### H - Sync
 
 - **H-1 [CONFIRMED]:** Sync's merge rules stay as they are, since Sync is expected to be rebuilt soon. The losses that come from how Sync merges are recorded under *§Prospects* as inputs for that rebuild, and a fix here is taken only where it removes the problem without adding a rule to how Sync works.
-- **H-2 [INFERRED]:** The stash losing nothing under sync (C-2) and options merging one at a time under sync (D-1) become inputs for the Sync rebuild, unless planning's placement or shape for them achieves it without adding a rule to Sync; option ids still land for what they fix outside Sync.
+- **H-2 [INFERRED]:** The stash losing nothing under sync (C-2) and options merging one at a time under sync (D-1) are inputs for the Sync rebuild; option ids still land for what they fix outside Sync, and they're what per-option merging would key on.
 
 #### I - Formats and Styles
 
@@ -109,7 +109,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 #### K - View Edges
 
 - **K-1 [CONFIRMED]:** A filter value Pommora can't read is meant to be ignored rather than matching every page, a Checkbox's "is not empty" filter is meant to work, and deleting the property a view groups by keeps which folders were collapsed.
-- **K-2 [INFERRED]:** Empty values sort last for every type, and dragging a row into another value's run in a sorted view keeps reassigning its value.
+- **K-2 [INFERRED]:** Empty values sort last in either direction for every type except Checkbox, whose unchecked box sorts as a value, first ascending and last descending; dragging a row into another value's run in a sorted view keeps reassigning its value.
 
 #### L - Property Editors
 
@@ -199,59 +199,6 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Headless Planning (10-21-2026):** from the handoff forward, the planning session runs headlessly: planning, reviews, and every call are made against the Approach, Principles, and Perspectives without stopping for Nathan. Whatever Nathan wouldn't reasonably want any other way is decided in his place. Whatever remains genuinely his call is listed in the final reconciliation report beside the plan, for his morning. The session closes with the same plain-English walkthrough given in chat at the end of the brainstorm: everything the plan changes against what's true now, what rests on his calls, and the behind-the-scenes cleanup in simple terms. Every decision the plan has to be designed around was put to Nathan before the handoff. A push notification reaches Nathan at every decision or stopping point and after each major phase of planning.
 - **Sync Stays (10-21-2026):** `Core/Sync/` and its merge rules aren't changed by this work, since Sync is expected to be rebuilt; what Sync loses today is recorded as input for that rebuild.
 
-##### Working Rules
-
-- **Re-Verify, Then Reuse:** *Properties Restructure — Investigation* and *Properties Restructure — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
-- **Intent Over Wording:** the decisions record intent. INFERRED and ASSUMED entries are readings the plan confirms against the code or puts to Nathan before building on them.
-- **The Planning Pair:** *Properties Restructure — Investigation* and this log carry everything planning needs; the Investigation cites the decision a direction became as `[Intended as A-#]`, and this log is the one source for what was decided.
-- **Cost:** nothing this work adds runs on a high-frequency trigger, and no sweep or rebuild walks the whole Nexus where an incremental or cached read does the job.
-- **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root; `.claude/Guidelines/Development-Environment.md` before driving the app; `~/Test` for live testing, rebuilt by `node .claude/scripts/make-benchmark-nexus.mjs test`.
-- **Process:** decisions ran on `~/NexusOS/Studio/Athena/II. Drafts/Studio-Brainstorm-V2.md` and planning runs on `~/NexusOS/Studio/Athena/II. Drafts/Plan-Creation.md`. Their blank sections take the installed `studio-brainstorm` and `writing-plans` skills' guidance, and the processes they name without spelling out take the shape of `.claude/Planning/Completed/Archive/Archive — Plan.md`; the drafts win where they conflict.
-- **Models (Nathan, 10-19-2026):** execution agents run `opus-medium`; there are no hand-checks, so every visual surface is driven over CDP. The plan's phases are designed one at a time with an advisor checkpoint before each is written.
-- **Reviews:** the plan, its execution, and the landed work are reviewed as *§Review Procedure* sets out.
-- **Handoffs:** every handoff on this work repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim.
-- **Names:** no personal names in anything committed outside `.claude/`, commit messages included.
-
-##### Review Procedure
-
-Adopted from the Archive plan (`.claude/Planning/Completed/Archive/Archive — Plan.md` *§Constraints › Models and Reviews* and *§Final Verification*, as run in `.claude/sessions/10-19-2026-Archive—Execution-&-Final-Verification.md`). Every reviewer brief carries the Approach, Principles, Perspectives, and Nathan's Constraints verbatim, except a neutral reader's, which carries none of them. Each wave closes before the next opens.
-
-**Plan Reviews**
-
-1. **Wave One:** two `opus-xhigh` read-only reviewers over the whole drafted plan. One leads on the frame and the data-layer phases, and the other on the interface phases. Each is briefed with the decision log as the list not to re-litigate, and with the `closeout-review` perspectives: correctness, simplification, cohesiveness, and consequences. Both read the plan's shape first and read outward, looking for:
-   - sequencing faults;
-   - consolidation a later phase makes possible;
-   - anything a task adds that an adjacent task makes unnecessary or confusing;
-   - anything additive that should have been a change to what exists;
-   - machinery the behavior doesn't need, with line growth used only as a pointer;
-   - anything the plan asserts about the tree that isn't true.
-
-   Each finding is verified against the tree. One fold agent applies what holds, and what doesn't is logged with its reason.
-2. **Wave Two:** two fresh `opus-xhigh` reviewers over the folded plan, under the same brief, leading on correctness: what wave one's folds broke, and the savings it missed. Its findings are folded the same way.
-3. **Neutral Read:** one `opus-xhigh` agent that wrote and reviewed nothing, given only the plan file and the tree, is asked whether it would execute the plan cold and what it would change. The plan's own *§Constraints* is its only priming. What holds is folded.
-4. **Own Read:** the orchestrator reads as the executor would, runs the spec sweep (every decision maps to a task or an approved exclusion), reads for conflicts last, and checks in with the advisor.
-5. **Presentation:** the plan reaches Nathan as a phase-by-phase account of what each phase builds, removes, changes, and consolidates, and why it's its own phase. With it come the ledger, with any growth justified, numbered Last Calls with recommendations, and the Open Items. Ratification is his.
-
-Removal and consolidation come before anything additive, and changes to what exists come before new surface unless the new surface is foundational.
-
-**Execution Reviews**
-
-- **Phase Checkpoints:** two `opus-high` read-only reviewers to `closeout-review`'s standards, one for simplification and one adversarial, with their findings fixed before the next phase opens.
-- **Mid-Plan Neutral Gate:** where a milestone completes the data layer, one `fable-high` agent is given only the baseline head, that milestone's head, and a plain statement of what the work intended, with no plan, log, document, or skill. It answers yes or no on whether the result holds, and is re-run after each fold until it answers yes.
-- **Documentation Phase:** one `opus-high` spotcheck against the Studio documentation reference before its commit.
-
-**Post-Plan Reviews**
-
-1. **Wave One:** two `opus-xhigh` read-only reviewers over `BASELINE..HEAD`, briefed with the `closeout-review` perspectives.
-   - **Inward:** correctness first (a defect an ordinary action reaches, data that can be lost, a cost on a frequent path, a broken invariant), then simplification within the diff.
-   - **Outward:** cohesion with the rest of Core, UIX, and Desktop, odd-ones-out, and anything done one way here and another way elsewhere.
-
-   Each reports findings ranked by severity with `file:line`, the open questions with the check that settles each, where the code drifted from the plan, and insights. One fix agent folds them as numbered fixes plus a Not Taken list, and the fold is committed.
-2. **Wave Two:** two fresh `opus-xhigh` reviewers, one inward and one outward, over the folded range. Their findings are folded and committed.
-3. **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement, with no plan, document, or skill. It gives a yes-or-no verdict, its corrections, and the strengths to keep, and is re-run after each fold until it answers yes on every lens.
-4. **Spotcheck:** any fold made after the gate gets one `opus-xhigh` spotcheck against the principles alone.
-5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come the history entry, `save-session`, `save-delta`, and the report.
-
 #### Rejected
 
 - **No Crash-Recovery Notes:** dropping the notes would leave a change the app quit during split between old and new names, with nothing able to finish it.
@@ -260,16 +207,11 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Changing Sync's Merge Rules Here:** Sync is expected to be rebuilt, so a merge-rule change now would add rules to a design about to be replaced (H-1).
 - **Moving Context Out of the Property Types:** Context stays a property type (F-1).
 
-#### Open Items
-
-1. Nathan ratifies this log after a plain-English overview of everything the prospective plan changes against what's true now, and planning reuses that overview.
-2. Outside Properties: `.claude/scripts/reveal-parity/run.mjs` looks for a button that now reads "Delete alias" and needs fixtures the rebuilt `~/Test` doesn't hold.
-
 #### Prospects
 
 - **Checkbox False on Uncheck:** a per-property choice for a Checkbox to write `false` when unchecked, in place of removing its key.
 - **Option Approval:** a Multi-Select's unknown and externally-added words are scanned and offered to the user to approve or deny as options, in place of registering them on their own.
-- **Sync Rebuild Inputs:** a property deleted on one device while edited on another leaves a fragment that stays in `properties.json` (pinned as intended by `mergePolicy.test.ts:130-136`); two devices creating one name leave the later definition hidden; two devices editing one page lose one edit outside the conflict capture; option lists, a Collection's assignment list, and the stash each merge whole. The scouts' candidate rules for the rebuild are a whole-on-absent rule for a property deleted on one side (08-01), per-option merging (`{defs: 3}`, 08 Approach B), per-property and per-page merging for the stash (03-02, 08-06), and front-matter merging key by key at sync landing (08 Approach D).
+- **Sync Rebuild Inputs:** the merge losses this work found are recorded in *Properties Restructure — Planning Findings › §Sync Rebuild Inputs*. The scouts' candidate rules for the rebuild are a whole-on-absent rule for a property deleted on one side (08-01), per-option merging (`{defs: 3}`, 08 Approach B), per-property and per-page merging for the stash (03-02, 08-06), and front-matter merging key by key at sync landing (08 Approach D).
 
 ---
 
