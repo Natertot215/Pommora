@@ -55,6 +55,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 - **C-1 [CONFIRMED]:** Removing a property from a Collection keeps taking its values off the Collection's pages and keeping them in the stash, so re-adding the property brings them back; Nathan's July ruling of no dormant foreign values on pages (7-2 C-3, C-6) stands.
 - **C-2 [CONFIRMED]:** The stash is meant to lose nothing under sync, drop entries for pages that have left the Collection, and let a Remove that missed pages be retried. Planning investigates every issue around the stash that keeps this behavior intact, and proposes a better home for it than the Collection's settings file where it finds one.
+- **C-3 [CONFIRMED]:** The stash stays in the Collection's own settings file, and its entries are kept for the page history timeframe (the History Timeframe setting), after which they're cleaned out; the stash likely needs a timeframe of its own, filed in the Issues index. Its sync loss stays a Sync rebuild input (H-2).
 
 #### D - Options and Groups
 
@@ -389,3 +390,4 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Q:** One Style row per type for a view's look? **A:** Keep that open and make no calls on how the settings panels are done; note it in the same Issue. Fix a setting that's genuinely confusing or genuinely in the wrong place, and leave "Date Format" and "Show Decimals" ambiguous in the rows' wording for a later pass.
 - **Q:** A Select holding several words: does editing a different property on the page trim it? **A:** Yes; it tidies using the same logic as the rest.
 - **Q:** What are Title, Created Time, Last Modified, and Location called as a group? **A:** Filedata.
+- **Q:** Where does the stash live: the Collection's settings file, or its own small files in `.nexus`? **A:** The Collection's settings file, tied to the page history timeframe; note in the Issues index that it should likely get its own timeframe before cleanup.

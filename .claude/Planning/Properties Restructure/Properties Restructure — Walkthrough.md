@@ -322,7 +322,7 @@ Every other collapsed group in NexusOS holds only folders and stays as it is, an
 
 #### Still Open
 
-**Where the Stash Lives:** This is the one question that shapes the plan. Your answer read "stash it within the Collection." The recommendation is a small file per property and Collection inside the hidden .nexus folder, holding each page's removed value. Two devices removing different properties then write different files, so neither loses the other's stash, which makes it the only home that fixes the sync loss without a new Sync rule; it also follows Collections through moves, renames, and the Trash with nothing extra, and a delete everywhere drops one folder. Kept in the Collection's settings file, every other stash fix still lands and the sync loss waits for the Sync rebuild. Either way, a Collection's list of its properties still merges as one item, so two simultaneous Removes can bring one property back beside its stash, which stays a Sync rebuild input. Without your answer, planning keeps the stash in the Collection's settings file.
+**Where the Stash Lives:** settled. The stash stays in the Collection's settings file, and its entries are kept for as long as the History Timeframe setting keeps page history, then cleaned out; a timeframe of its own is filed for later. The sync loss waits for the Sync rebuild [C-3].
 
 **Morning Questions:** each gives the reading planning proceeds on.
 1. **Owed Names [B-4]:** the refusal also covers a name still owed to an unfinished rename, which today quietly becomes "Priority (2)," so one rule covers both and a new property never inherits a rename's unreached pages.
