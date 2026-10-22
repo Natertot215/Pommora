@@ -273,7 +273,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 **Units:** T6 with T2 inside (F-1, F-2, F-3; 01-03, 01-04, 01-11, 05-03, 07-13, 02-15), T4 (01-10, 09-09's moves), T5 (01-14), 01-13.
 
 **Binding Design:**
-1. **Two Type Sets** (`Core/Properties/properties.ts`): `typeIds = z.enum(['text', 'number', 'checkbox', 'dateTime', 'select', 'multiSelect', 'status', 'link', 'file', 'context'])`, `PropertyType = z.infer<typeof typeIds>`; `FiledataType = 'title' | 'createdTime' | 'lastEditedTime'`; `ColumnType = PropertyType | FiledataType`, which replaces all 21 `PropertyType | 'title'` unions in their 11 files (`Core/Actions/cellMenu.ts` 2, `Core/Properties/Cells/PropertyTypes.tsx` 3, `Core/Properties/Pickers/valueClick.ts` 1, `Core/Properties/columnStyles.ts` 1, `parseEditorValue.ts` 1, `properties.ts` 3, `Core/Views/Pipeline/value.ts` 2, `cardValueInput.ts` 1, `useViewHost.ts` 1, `useColumns.ts` 3, `reassign.ts` 3).
+1. **Two Type Sets** (`Core/Properties/properties.ts`): `typeIds = z.enum(['text', 'number', 'checkbox', 'dateTime', 'select', 'multiSelect', 'status', 'link', 'file', 'context'])`, `PropertyType = z.infer<typeof typeIds>`; `FiledataType = 'title' | 'createdTime' | 'lastEditedTime'`; `ColumnType = PropertyType | FiledataType`, which replaces all 21 `PropertyType | 'title'` unions in their 11 files (`Core/Actions/cellMenu.ts` 2, `Core/Properties/Cells/PropertyTypes.tsx` 3, `Core/Properties/Pickers/valueClick.ts` 1, `Core/Properties/columnStyles.ts` 1, `parseEditorValue.ts` 1, `properties.ts` 3, `Core/Properties/value.ts` 2, `cardValueInput.ts` 1, `useViewHost.ts` 1, `useColumns.ts` 3, `reassign.ts` 3).
 2. **One Record Keyed by Column Type:** `PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>>`, with `origin: 'user' | 'context' | 'filedata'`; the stamp rows become `origin: 'filedata'`, and `title: { kind: 'text', origin: 'filedata' }` joins, so `specOf`, `pickKindOf`, `valueClickIntent`, and `fillsBlank` answer every column from one record.
 3. **One Admission Predicate:** `export const isUserType = (t: string): t is PropertyType => isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'`, read by `normalizeRegistry` (`Core/Properties/propertiesRegistry.ts:21-45`) and `validateDefinition` (`Core/Properties/schema.ts:65-66`); `normalizeRegistry` also sets aside a reserved id, filing both as `unadmitted`. The guards that filtered them back out leave: `Core/Properties/Schema/PropertyFrame.tsx:202,204`, `Core/Views/Settings/visibilityModel.ts:17`, `Core/Views/Settings/SortFrame.tsx:92`, `Core/Interface/Menus/propertyMenuActions.ts:69`, and the stamps' `NO_SETTINGS` rows (`PropertyFrame.tsx:392-393`; Context's `:391` stays).
 4. **Filedata** (`properties.ts`):
@@ -286,8 +286,8 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
    } as const
    ```
    with one derived `FILEDATA_BY_ID` map behind `isReservedPropertyId`. It replaces `RESERVED_PROPERTY_ID` (its 12 readers write `FILEDATA.<name>.id`), `STAMP_TYPE` (`columnKind`, `Core/Views/Pipeline/columns.ts:11-15`, reads `FILEDATA_BY_ID.get(id)?.type`), `RESERVED_LABEL`, `TITLE_TARGET`/`LOCATION_TARGET`/`STAMP_TARGETS` (`SortFrame.tsx`), `columnLabel.ts:6-7`'s two labels, and `rowGlyph`'s fallback. The ids stay byte for byte; NexusOS refers to them only by id (`_modified_at`, `_location`), so nothing converts. Icon gets no entry. Location carries no `type` because it's a sort, filter, and preview target, never a shown column: `columnKind` (`columns.ts:11-15`) never classifies it, and the task says so where `FILEDATA` is declared. `PROPERTY_TYPES`' `origin` and `FILEDATA` both stand because they answer different questions: `origin` is what separates the nine user types from `context` and the Filedata column types, keyed by type, while `FILEDATA` names each reserved id's type and label, keyed by field; the declaration carries that one line.
-5. **Title Reads as Text:** `Core/Views/Pipeline/value.ts:43` answers `{ kind: 'text', value: row.title }`; `filter.ts`'s title branch leaves; `textValue`'s select arm stays for option labels; `TITLE_OPS` (`filterModel.ts:107-108`) stays, since Title offers no empty ops.
-6. **Catalog Moves (T4):** `KEY_REFUSAL` and `RESERVED_NAME_PREFIX` move to `schema.ts`; the two seeds move to `Core/Properties/registryProperty.ts`; the `optionsOf` comment (`properties.ts:286`) and `properties.test.ts:267` lose the ghost "type change" reason.
+5. **Title Reads as Text:** `Core/Properties/value.ts:43` answers `{ kind: 'text', value: row.title }`; `filter.ts`'s title branch leaves; `textValue`'s select arm stays for option labels; `TITLE_OPS` (`filterModel.ts:107-108`) stays, since Title offers no empty ops.
+6. **Catalog Moves (T4):** `KEY_REFUSAL` and `RESERVED_NAME_PREFIX` move to `schema.ts` (which P17 renames `validation.ts`; the cross-phase reconciliation settles whether the rename moves into P2 so the file is touched once); the two seeds move to `Core/Properties/registryProperty.ts`; the `optionsOf` comment (`properties.ts:286`) and `properties.test.ts:267` lose the ghost "type change" reason.
 7. **Bucket Labels (T5):** `formatBucketLabel` moves to `Core/Views/Pipeline/group.ts` beside `dateBucketKey`, with its test; `NUMERIC_FORMATS` stays in `formatValue.ts`. **01-13:** `formatPoint` calls `showsWeekday`.
 
 **Order:** 1 and 2 together, 3, 4, 5, 6, 7.
@@ -338,7 +338,10 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before P4 opens]`
 
-##### P4 — The Value Write's One Home
+##### P4 — The Value Write's One Home (Written as P4A and P4B)
+
+The phase lands as two phases in the Archive's 6A/6B shape, each with its own Review Checkpoint: **P4A — The Value Write's One Home** (the module, the codec's narrowing, the real-write seeds, the names and small merges: pure consolidation with no behavior change) and **P4B — The Tidy Rule and Repair On Open** (the type-fact tidy, foreign-word and File dedupe, whitespace at decode's entry, the no-op write, O-3: the phase's six Last Calls). The design below covers both.
+
 
 **GOAL:** Every value write lands through one governed-root module that reads each file once, and tests seed through the real write. The tidy rule lands there as a type fact: a value is never blanked, a list never loses a member it can't read, and a Select or Status lands as the one option it shows. Text and every other type holding only spaces read as empty, a write that changes nothing writes nothing on a Space as on a page, and Repair Properties On Open turns on by default.
 
@@ -366,7 +369,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 6. **A Write That Changes Nothing (J-9, T flag 4):** `landSpaceValue`'s short-circuit leaves; the Space write's mutate answers `changedKeys(raw, next).length ? next : null`, and `setSpaceContext`'s own and far halves (`contextWrite.ts:84-120`) take the same rule.
 7. **The Codec Narrows (V3):** `propertyValue.ts` keeps the union, decode, encode, option words, checkbox reading, and blank predicates; `unregisteredMembers` moves to `Core/Properties/optionOps.ts`; `Frozen`/`frozenWorld`/`gonePageEntry` move to the Trash side with one `frozenOf(tree, archived)` builder replacing the three `frozenWorld(linkWorld(...))` sites (`assignment.ts`, `restoreProperty.ts`, `Core/Trash/spend.ts`); `readNumber`/`spelledNumber` move beside decode and encode, so `formatValue.ts` leaves the engine graph.
 8. **Tests Seed Through the Real Write (V4):** `writePageValue`/`writeSpaceValue` leave `Core/Testing/propertyWrites.ts`; a test meaning "a user wrote this" seeds through `settledMutate`, one meaning "the file holds this" through `putJson`/`seedSpaceSidecar`; the `land*` exports leave once `writePathRace.test.ts:75-82` pins the lock rule through `setPagePropertyOp`.
-9. **Names and Small Merges (V5):** `Core/Properties/pageValue.ts` is deleted, its list edits moving to `Core/Files/rootValues.ts` and `valueEditRewrite` to `optionOps.ts`; `Core/Views/Pipeline/value.ts` becomes `fieldValue.ts`, its `fileName` moving to `linkValue.ts`; `pageValuesOf` folds into `Core/Views/Host/loadValues.ts`; create-with-seeds writes once (02-16); the registry read on a value write goes through `cachedParse` (`Core/Files/walkCache.ts:34-58`), ending the per-write `validateName` re-validation (08-05).
+9. **Names and Small Merges (V5):** `Core/Properties/pageValue.ts` is deleted, its list edits moving to `Core/Files/rootValues.ts` and `valueEditRewrite` to `optionOps.ts`; `Core/Properties/value.ts` becomes `fieldValue.ts`, its `fileName` moving to `linkValue.ts`; `pageValuesOf` folds into `Core/Views/Host/loadValues.ts`; create-with-seeds writes once (02-16); the registry read on a value write goes through `cachedParse` (`Core/Files/walkCache.ts:34-58`), ending the per-write `validateName` re-validation (08-05).
 10. **Repair On Open (O-3):** `personalization.ts:146` becomes `flag(true)`.
 11. **Describers:** `Core/Nexus/mutate.ts:81`'s "never shrinks or drops a key it can't resolve" becomes "never blanks a value or drops a list member it can't resolve".
 
@@ -735,7 +738,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Delta:** about −120 (−100 to −140).
 
-**Depends On:** P2 (`ColumnType`), P8 (option ids in the compiled field).
+**Depends On:** P2 (`ColumnType`), P4 (`fieldValue.ts`), P8 (option ids in the compiled field).
 
 **Risks:** `TableView.tsx` and `CardsView.tsx` read columns on the render path; the compiled `fieldOf` is built once per pass, never per cell.
 
