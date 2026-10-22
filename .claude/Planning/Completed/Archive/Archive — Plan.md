@@ -217,7 +217,7 @@ This section is copied verbatim into every planning document for this work.
 
 ##### Approach
 
-Nathan's, verbatim, with one word corrected: *Look Outward* named Sapphire, carried over from an earlier brief, where this codebase is Pommora.
+Nathan's, verbatim; Nathan's approach and principles govern every phase and task, and every agent brief on this topic — scouts, executors, and reviewers — carries both sections in full.
 
 - **Removal First:** any approach first assesses what's true *now* that could be removed, deleted, changed, consolidated, or replaced. The design isn't based on what's currently there with its course adjusted; it ensures totality-first application, removal-first scoping, and residue-eliminating frameworks that provide a clean slate rather than building changes on top of what's ultimately going to be replaced.
 - **Consolidation First:** the codebase ends up more understandable, less complex, more efficient in what it does, less conflicting in defining that, and an overall cleaner foundation to work within.
@@ -239,12 +239,6 @@ Nathan's, verbatim.
 - Anything introduced should have independent justification behind its existence that isn't simply self-induced requirements.
 - Anything changed or implemented should be reflected across the board — nothing that's done this way here, while something else works differently elsewhere, unless that's *genuinely* correct.
 - Zero data-level spaghetti, complexity, or additional 'stuff' should be added without reason. Rewiring things to become more understandable, more efficient, more appropriate, and more effective is preferred when the alternative is just adding more to something that's inherently unfit to suit the long-term mandate of what's actually being offered.
-
-##### Nathan's Constraints
-
-Nathan's, verbatim.
-
-- Because of how much trash and archive would share UIX and interaction between them, we *must* approach this through removal-and-unification perspectives *first* so that we're consolidating what's now shared and can be appropriately DRY-hoisted within shared components rather than existing as duplicates. The shared UIX within both views is an obvious example of this.
 - Nathan's approach and principles govern every phase and task, and every agent brief on this topic — scouts, executors, and reviewers — carries both sections in full.
 
 ##### Working Rules
