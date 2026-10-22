@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 75 | 0 | 3 | 13 | 35 | 24 |
+| 76 | 0 | 3 | 13 | 35 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -93,6 +93,7 @@
 | [I-053](#I-053 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-052](#I-052 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-064](#I-064 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
+| [I-076](#I-076 • Only the Date editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.) | Only the Date editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1084,6 +1085,20 @@ A property's settings pane sizes to its widest row, with no width ceiling, and a
 
 One rule for where a hint wraps in a pane that sizes to its content, set once for every such pane: a measure on the row's hint, or a width ceiling on the pane. The format rows then take their hints back.
 
+#### I-076 • Only the Date editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
+
+**Description**
+
+The Date editor gives each of its three rows (Date, Day, and Time) an icon, and the Key and Value Format rows and the option editors' Style footing carry one too. The Number editor's seven rows, the Link editor's three, the Checkbox editor's two, and the File editor's one pass none. The same panes also mix settings that change the property across the Nexus with settings that change only the current view, and nothing in a row's wording tells the two apart. The Number editor's Format, Currency, Separators, Decimals, and Fraction write the property, while its Style writes the view; the Checkbox editor's Color writes the property and its Style the view; the Link editor's rows all write the property; and every Date row writes the view. "Format" in the Link and Number editors is the property-wide setting (`link_display`, `number_family`), while the column menu's "Format" submenu for those two types lists the view's look.[^76]
+
+**Solution** [Deferred]
+
+Every settings row in the Number, Link, Checkbox, and File editors carries an icon as the Date editor's do. How a row says which layer it sets, and how each type's settings are laid out, wait for a design pass by the owner. Until then, work on Properties moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording as it reads.
+
 ### A6 • Tiles & Embeds
 
 #### I-025 • In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing.
@@ -1354,3 +1369,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^73]: **I-073:** `Core/Bundles/placement.ts:~41-116` (`resolveRecord`), `Core/Bundles/placement.ts:~159-183` (`freeOnDisk`), `Core/Paths/names.ts:~56-79` (`freeName`, `createDisambiguated`)
 [^74]: **I-074:** `Core/Nexus/fileEvents.ts:502-518` (`applySettings`, `oweRescope`), `Core/Nexus/settle.ts:184-189` (`reseed`), `Core/Settings/settings.ts:107-139` (`carrySetAside`), `Core/Nexus/folderEntity.ts:53-71` (`liftSetAside`), `.claude/Features/DesktopPM.md:22`
 [^75]: **I-075:** `Desktop/FileWatch/watcher.ts:38` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:106` (`awaitWriteFinish`)
+[^76]: **I-076:** `Core/Properties/Schema/DateTimeEditor.tsx:18,33-61` (`ROW_LOOK`, the icon-led `pickerRow` rows), `Core/Properties/Schema/NumberEditor.tsx:35-143` (the icon-less rows), `Core/Properties/Schema/LinkEditor.tsx:26-56`, `Core/Properties/Schema/CheckboxEditor.tsx:30-46`, `Core/Properties/Schema/FileEditor.tsx:22-40`, `Core/Properties/Schema/FormatRows.tsx:34-46` and `Core/Properties/Schema/PropertyFrame.tsx:410-416` (the icon-led rows elsewhere), `Core/Properties/Schema/PropertyFrame.tsx:347-376` (which editors write the property and which the view), `Core/Actions/columnMenu.ts:40-42,67-73` (the column menu's "Format")

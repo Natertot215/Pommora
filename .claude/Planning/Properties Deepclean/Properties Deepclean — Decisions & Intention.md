@@ -87,7 +87,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 #### I - Formats and Styles
 
-- **I-1 [CONFIRMED]:** Settings that apply only to the current view share one word, and the Properties pane shows one row for a view's look on every type that has more than one look.
+- **I-1 [CONFIRMED]:** How the property settings panes are laid out, and how a row's wording says whether it sets the property or only the current view, stay as they are and are filed as I-076 for Nathan's own later pass; this work moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording, such as the Date and Decimals rows, as it reads.
 - **I-2 [CONFIRMED]:** A Date property is meant to carry its own format, which its columns follow unless a column overrides how it displays, and a date column with no style keeps showing no time.
 - **I-3 [INFERRED]:** The same pattern — the format on the property, display overrides per column — holds for Number and Link.
 
@@ -97,10 +97,12 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **J-2 [CONFIRMED]:** Unchecking a checkbox keeps removing its key by default.
 - **J-3 [CONFIRMED]:** A Link row's label in the Properties panel gains the value's Edit and Rename on right-click, where planning finds that's the cohesive move.
 - **J-4 [CONFIRMED]:** The text editor pen's spoken label reads "Open In Editor."
-- **J-5 [CONFIRMED]:** A row added in the Properties panel stays shown until it resets on another page.
+- **J-5 [CONFIRMED]:** A row added in the Properties panel stays shown while it's empty, since adding it signals the user means to fill it, and it shows as a blank row on every other page; the behavior is open to cleanup like everything else.
 - **J-6 [CONFIRMED]:** Cards keep hiding a chip's remove button below 80% zoom.
 - **J-7 [CONFIRMED]:** Adding a File value from a card's chooser keeps its typed-path field, as cards' file handling is intended.
 - **J-8 [CONFIRMED]:** Whether the value picker can create Status options is planning's to recommend.
+- **J-9 [CONFIRMED]:** Clearing a property a page or a Space doesn't hold tidies the holder's other properties on both, as a page does today, unless planning finds a meaningful simplification in having it tidy neither.
+- **J-10 [CONFIRMED]:** A value's right-click menu reads the same wherever it opens — the table, a card, or the Properties panel — so the panel's right-click on a File value gains Remove, and planning folds any blatant divergence between the menus and takes the consolidation it finds.
 
 #### K - View Edges
 
@@ -110,7 +112,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 #### L - Property Editors
 
 - **L-1 [CONFIRMED]:** Every type's editor is meant to share one layout with its spacing fixed.
-- **L-2 [CONFIRMED]:** Every type's editor rows carry icons as the Date editor's do.
+- **L-2 [CONFIRMED]:** Every type's settings rows carrying an icon as the Date editor's do is meant to happen, and is filed as I-076 beside I-1's settings-pane pass rather than done in this work.
 - **L-3 [CONFIRMED]:** The Decimals picker keeps reading "Hidden" when unset, and a fraction denominator of zero or less is refused.
 - **L-4 [CONFIRMED]:** The option popup's title field and footer stay as they are, and planning raises where they differ from the app's standard pieces.
 
@@ -259,10 +261,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 #### Open Items
 
 1. Nathan ratifies this log after a plain-English overview of everything the prospective plan changes against what's true now, and planning reuses that overview.
-2. Today the Properties panel resets an added row only when the Nexus changes (`PropertyPanel.tsx:151-157`), so J-5's "resets on another page" reads as a change to that behavior while the session recorded it as kept; Nathan confirms which is meant.
-3. A clear of a key a page doesn't hold still tidies that page's other properties, while the same clear on a Space changes nothing (02-14); which one is intended hasn't been asked.
-4. The Properties panel's right-click on a File value offers less than the same right-click on a card (B-06-01); whether the panel gains the card's actions hasn't been asked.
-5. Outside Properties: `.claude/scripts/reveal-parity/run.mjs` looks for a button that now reads "Delete alias" and needs fixtures the rebuilt `~/Test` doesn't hold.
+2. Outside Properties: `.claude/scripts/reveal-parity/run.mjs` looks for a button that now reads "Delete alias" and needs fixtures the rebuilt `~/Test` doesn't hold.
 
 #### Prospects
 
@@ -380,3 +379,11 @@ Removal and consolidation come before anything additive, and changes to what exi
 - Number and Link follow Date's pattern: the format on the property, display overrides per column.
 - Empty values sort last for every type; drag-to-reassign in a sorted view stays.
 - Every type's editor rows carry icons as Date's do.
+
+#### Final Clarifications
+
+- **Q:** A row added in the Properties panel stays shown, empty, across pages until the Nexus changes; keep it? **A:** Yes, and it's subject to cleanup like everything else. Adding the row may mean the user wants to add a property to it, so revoking it the moment it's empty would be the wrong call, but it should also be a blank row for every other page.
+- **Q:** Clearing a property a page doesn't hold tidies the page's other properties, while on a Space it does nothing; should it do nothing on both? **A:** Tidy in both, unless planning finds meaningful simplification in making it neither.
+- **Q:** Should the panel's right-click on a File value match the card's? **A:** Yes, and offer Remove. The whole right-click menu should be the same wherever it opens, table or card; take that with a grain of salt and look out for blatant divergence and consolidation opportunities.
+- **Q:** Does "date-row being icon-only should be fixed" mean every editor's rows get icons? **A:** Every property's settings rows should get an icon as Date's do; it's out of scope here but definitely should be done, so it's filed as an Issue.
+- **Q:** One Style row per type for a view's look? **A:** Keep that open and make no calls on how the settings panels are done; note it in the same Issue. Fix a setting that's genuinely confusing or genuinely in the wrong place, and leave "Date Format" and "Show Decimals" ambiguous in the rows' wording for a later pass.
