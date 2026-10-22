@@ -7,8 +7,9 @@ The standing principles and process for the Properties Deepclean — a self-cont
 
 #### The Documents
 
-- ***Properties Deepclean — Decisions & Intention***: the intent, authoritative once ratified, tagged CONFIRMED, INFERRED, or ASSUMED.
-- ***Properties Deepclean — Investigation***: the synthesized inventory and the cleaned scout reports beside it.
+- ***Properties Deepclean — Decisions & Intention***: the intent, authoritative once ratified, with each decision tagged CONFIRMED, INFERRED, or ASSUMED and the session's questions and answers closing it.
+- ***Properties Deepclean — Investigation***: the synthesized inventory and technical evidence, citing the decision log's entries.
+- ***Properties Deepclean — Scout Reports***: the nine reconciled scout reports the Investigation is synthesized from.
 - ***BRIEF.md***: this document.
 
 ---
