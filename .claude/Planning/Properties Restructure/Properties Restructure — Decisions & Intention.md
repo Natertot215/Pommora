@@ -7,7 +7,7 @@
 
 Pommora's Properties system is everything whose job is properties: the property list in `.nexus/properties.json`, the values pages carry in their front matter and Spaces carry in their settings files, the editors and pickers that change them, the views that filter, sort, and group by them, and the machinery that rewrites many files when a property changes. It grew across many sessions, and most of its data-level mechanics reflect what earlier agents judged appropriate rather than Nathan's stated intent.
 
-The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis produced *Properties Restructure — Scout Reports* and *Properties Restructure — Investigation*. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here.
+The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a0f7dc6ff`: nine domain scouts, two reconcilers, and a synthesis inventoried it. Every finding that changes something a user sees or something saved to disk was then put to Nathan in plain terms, and his answers are recorded here.
 
 ### Overview
 
@@ -141,7 +141,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 - **P-1 [CONFIRMED]:** A Select or Status holding several words ignores the ones no option names, shows the most recently added valid option, and tidies to that one value on the next change. Planning checks where this differs from today's rule of showing the last registered word.
 - **P-2 [CONFIRMED]:** Picking a Select value drops words no option names, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
-- **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Investigation*'s *§Edge Rules* lists stay as they are.
+- **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Planning Findings*' *§Edge Rules* lists stay as they are.
 
 ---
 
@@ -194,7 +194,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Take Along:** any trivial fixes to existing things, folds of existing duplication and divergence, or cleanup that would otherwise be risk-free, obvious, or stupid to ignore now are taken alongside this work.
 - **Planning Direction (10-19-2026):** approaches may diverge from ratified decisions within reason; the "how" can alter slightly if it's genuinely best; the "what" actually gets built still gets brought to Nathan if there's conflict. Removal and consolidation come before anything truly additive, and changes to what exists come before new surface unless the new surface is foundational: never add something in one phase that a later phase's consolidation would have made unnecessary.
 - **The Mandate (10-21-2026):** a self-contained, full-sweep deepclean of the Properties system, so that any future work on it happens inside a smaller, more cohesive codebase with less stuff, fewer ways of doing the same thing, and its legacy code cleaned. It finds what's spelled more than once, what lives where it shouldn't, what exists only for older systems and doesn't fit Pommora's long-term approach, what was a patch-on fix, and what wasn't integrated when it should have been.
-- **Plain English (10-21-2026):** every finding, decision, and overview put to Nathan is explained in plain, non-technical English, with its technical evidence kept apart and complete. *Properties Restructure — Walkthrough* is the reference for every overview and explanation in planning.
+- **Plain English (10-21-2026):** every finding, decision, and overview put to Nathan is explained in plain, non-technical English, with its technical evidence kept apart and complete. *Properties Restructure — Morning Report* is the reference for every overview and explanation in planning.
 - **Investigate Before Designing (10-21-2026):** planning re-investigates the mechanics behind every decision against the code before designing it, and presents what Nathan asked to see — the crash-recovery files, which part of Pommora owns each, how a change flows through them today, and the proposed revision — before designing it.
 - **Headless Planning (10-21-2026):** from the handoff forward, the planning session runs headlessly: planning, reviews, and every call are made against the Approach, Principles, and Perspectives without stopping for Nathan. Whatever Nathan wouldn't reasonably want any other way is decided in his place. Whatever remains genuinely his call is listed in the final reconciliation report beside the plan, for his morning. The session closes with the same plain-English walkthrough given in chat at the end of the brainstorm: everything the plan changes against what's true now, what rests on his calls, and the behind-the-scenes cleanup in simple terms. Every decision the plan has to be designed around was put to Nathan before the handoff. A push notification reaches Nathan at every decision or stopping point and after each major phase of planning.
 - **Sync Stays (10-21-2026):** `Core/Sync/` and its merge rules aren't changed by this work, since Sync is expected to be rebuilt; what Sync loses today is recorded as input for that rebuild.
@@ -218,8 +218,6 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 #### Sources
 
 - `.claude/Planning/Properties Restructure/BRIEF.md`
-- `.claude/Planning/Properties Restructure/Properties Restructure — Investigation.md`
-- `.claude/Planning/Properties Restructure/Properties Restructure — Scout Reports.md`
 - `.claude/Planning/7-2 - ViewPane Properties Flow — Decision Log.md` at `052ceec63` — C-3 and C-6, the stash's origin
 - `.claude/Features/PropertiesPM.md`
 - `.claude/IssuesPM.md` — I-006, I-032, I-035, I-036, I-039, I-042, I-063, I-064

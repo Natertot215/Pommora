@@ -2,7 +2,7 @@
 
 **DATE:** 10-22-2026
 **STATUS:** Draft
-**SOURCE:** *Properties Restructure — Decisions & Intention* (ACTIVE; Nathan ratifies it with this plan), *Properties Restructure — Planning Findings* (the settled Planner's Calls, the measurement rules, the ledger, the Last Calls, Nathan's Calls, and the Sync rebuild inputs), *Properties Restructure — Investigation*'s edge rules and *Properties Restructure — Scout Reports* (the brainstorm's evidence at `d0595b22d`; leads only), *Properties Restructure — Walkthrough* (what the work does, in plain English), and `BRIEF.md`.
+**SOURCE:** *Properties Restructure — Decisions & Intention* (ACTIVE; Nathan ratifies it with this plan), *Properties Restructure — Planning Findings* (the settled Planner's Calls, the edge rules, the measurement rules, the ledger, and the Sync rebuild inputs), *Properties Restructure — Morning Report* (the Last Calls, Nathan's Calls, and what the work does, in plain English), and `BRIEF.md`.
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
@@ -990,7 +990,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Take Along:** any trivial fixes to existing things, folds of existing duplication and divergence, or cleanup that would otherwise be risk-free, obvious, or stupid to ignore now are taken alongside this work.
 - **Planning Direction (10-19-2026):** approaches may diverge from ratified decisions within reason; the "how" can alter slightly if it's genuinely best; the "what" actually gets built still gets brought to Nathan if there's conflict. Removal and consolidation come before anything truly additive, and changes to what exists come before new surface unless the new surface is foundational: never add something in one phase that a later phase's consolidation would have made unnecessary.
 - **The Mandate (10-21-2026):** a self-contained, full-sweep deepclean of the Properties system, so that any future work on it happens inside a smaller, more cohesive codebase with less stuff, fewer ways of doing the same thing, and its legacy code cleaned. It finds what's spelled more than once, what lives where it shouldn't, what exists only for older systems and doesn't fit Pommora's long-term approach, what was a patch-on fix, and what wasn't integrated when it should have been.
-- **Plain English (10-21-2026):** every finding, decision, and overview put to Nathan is explained in plain, non-technical English, with its technical evidence kept apart and complete. *Properties Restructure — Walkthrough* is the reference for every overview and explanation in planning.
+- **Plain English (10-21-2026):** every finding, decision, and overview put to Nathan is explained in plain, non-technical English, with its technical evidence kept apart and complete. *Properties Restructure — Morning Report* is the reference for every overview and explanation in planning.
 - **Investigate Before Designing (10-21-2026):** planning re-investigates the mechanics behind every decision against the code before designing it, and presents what Nathan asked to see — the crash-recovery files, which part of Pommora owns each, how a change flows through them today, and the proposed revision — before designing it.
 - **Headless Planning (10-21-2026):** from the handoff forward, the planning session runs headlessly: planning, reviews, and every call are made against the Approach, Principles, and Perspectives without stopping for Nathan. Whatever Nathan wouldn't reasonably want any other way is decided in his place. Whatever remains genuinely his call is listed in the final reconciliation report beside the plan, for his morning. The session closes with the same plain-English walkthrough given in chat at the end of the brainstorm: everything the plan changes against what's true now, what rests on his calls, and the behind-the-scenes cleanup in simple terms. Every decision the plan has to be designed around was put to Nathan before the handoff. A push notification reaches Nathan at every decision or stopping point and after each major phase of planning.
 - **Sync Stays (10-21-2026):** `Core/Sync/` and its merge rules aren't changed by this work, since Sync is expected to be rebuilt; what Sync loses today is recorded as input for that rebuild.
@@ -999,7 +999,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 
 ##### Working Rules
 
-- **Re-Verify, Then Reuse:** *Properties Restructure — Investigation* and *Properties Restructure — Scout Reports* are leads verified at `d0595b22d`. A planning session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
+- **Re-Verify, Then Reuse:** a session re-verifies every claim it leans on against its own HEAD, and rides the mechanism that already does the job before designing anything new.
 - **Intent Over Wording:** the decisions record intent. INFERRED and ASSUMED entries are readings the plan confirms against the code or puts to Nathan before building on them.
 - **Cost:** nothing this work adds runs on a high-frequency trigger, and no sweep or rebuild walks the whole Nexus where an incremental or cached read does the job.
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root; `.claude/Guidelines/Development-Environment.md` before driving the app; `~/Test` for live testing, rebuilt by `node .claude/scripts/make-benchmark-nexus.mjs test`.
@@ -1052,7 +1052,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint`, from the repo root; each prints its own failures, and lint runs clean (`biome lint` exits 0 with warnings, so its `Found N warnings` line is read). Biome formats every TS/CSS/JSON write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means these three. A VERIFY grep runs under default `git grep`, whose basic regex alternates with `\|`; `grep -r` is never used, since it reaches `Desktop/out/`. Every removal check uses `git grep -nw` for a whole symbol, or `git grep -n` with an exact, anchored pattern; `\b`, `\s`, and `\d` never appear inside `git grep -E`, where this toolchain's regex never matches them (`-w`, `[[:space:]]`, or basic regex with `\|` take their place), and no pattern also matches an unrelated name that survives. A clean state for the gates is a `git status` showing nothing outside `.claude/`. `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` are part of the test gate and fail the moment host-run code reaches React or a `.tsx`.
 - **The Drive:** every visual or interactive claim is proven by the Properties Drive (`.claude/scripts/Properties Drive/live-drive.mjs`, on `.claude/scripts/drive-harness.mjs`, which builds the app, backs up `~/Test`, launches on its own debug port and userData, records native menus, and restores `~/Test`), created in Phase 2 with its first group and grown by one group in the last task of each phase with a visible surface. Every Review Checkpoint runs every landed group from the checkout, and the Metadata, Option Picker, and Text Property drives are re-pointed in the phase that changes what they select. A drive check is a DOM, channel-reply, or disk assertion; a screenshot is evidence beside it, never the check. Each new check is run once at its phase's base: a check claiming a change fails there before its task lands, and a check that passes there is named in its CHANGE as a regression guard. `.claude/Guidelines/Development-Environment.md` is read before anything drives the app. Nothing is left to Nathan's hand.
 - **Frozen:** `Core/Sync/`, its tests included (*Sync Stays*: `mergePolicy.test.ts` keeps its cases; what Sync loses goes to *Planning Findings › §Sync Rebuild Inputs*); Project Sapphire; MarkdownPM; the property settings panes' layout and every row's wording (I-1: no row moves and no row's words change, and only Date's rows carry icons, since the rest is I-076's pass); NexusOS's files, except the four Phase 8's conversion writes after its backup.
-- **Conventions:** "LC-n" and "NC-n" cite *Planning Findings › §Last Calls* and *§Nathan's Calls*; each task states the substance it leans on. A cited line is HEAD `3c6afcabb`'s, and where an earlier task moved it, the function's or test's title is the anchor. Production comments carry no planning ids. Finite states are unions plus exhaustive switches; `Core/Contract` is the one bridge, and every property change rides the `mutate` union from Phase 7 on; host-run code imports no React and no `.tsx`. User-facing copy is only what a Last Call quotes. Nothing committed outside `.claude/` carries a personal name, commit messages included.
+- **Conventions:** "LC-n" and "NC-n" cite *Morning Report › §What I Need From You*; each task states the substance it leans on. A cited line is HEAD `3c6afcabb`'s, and where an earlier task moved it, the function's or test's title is the anchor. Production comments carry no planning ids. Finite states are unions plus exhaustive switches; `Core/Contract` is the one bridge, and every property change rides the `mutate` union from Phase 7 on; host-run code imports no React and no `.tsx`. User-facing copy is only what a Last Call quotes. Nothing committed outside `.claude/` carries a personal name, commit messages included.
 - **Diff Notation:** each task's code lands as fenced blocks labelled with the repo path and `diff`, or `(new)` for a whole new file, each hunk opening on `@@ <anchor> @@`: the declaration, test title, or line it sits at. Space, `-`, and `+` lines are context, removal, and addition. A `…` line elides: on a `-` line it removes the lines it stands for, up to the next listed line, and elsewhere it keeps them; a `~` line is elided context. A one-line summary, `head { … }   (HEAD :a-b)`, stands for that whole block, and a `+` summary reading `(moved verbatim, HEAD path:a-b)` lands the source's lines unchanged; a block opening `~ the whole file after …` is the file entire. A block that lands on only one outcome of a measurement has `*Only on <Rule>'s <Outcome>:*` as the nearest line above it. `.claude/scripts/plan-replay/plan_replay.py` reads this notation: `check` replays the plan in order over a commit, `measure` counts it under *The Number*'s rule, and `apply` writes one task into the checkout.
 - **Sequencing:** removal and consolidation precede anything additive, and changes to what exists precede new surface unless the new surface is foundational; a new type, field, op, or function lands with its first consumer, in that consumer's task. Every phase leaves a shippable head: gates green, no half-moved state, and every landed drive group green.
 - **Shape:** a removal, a refactor, a migration, and a handful of fixes. The removal's inventory is *§Concepts › REMOVED*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior, kept except where a phase's *Behavior Changes and Disclosures* names a change (each tied to a decision or a Last Call) and proven by the tests each task rewrites or adds; every removal task lists its consumers and the `git grep` proving none remain. The migration is Phase 8's one-time NexusOS conversion: a backup to `~/NexusOS-Backup-<MM-DD-YYYY>/` before its first write, a transform that changes nothing on a second run, and the backup removed by its path at *§Final Verification*'s closeout. Each fix sweeps what else consumed the old behavior.
@@ -15297,7 +15297,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 
 ##### Task 8-8 · The NexusOS Conversion
 
-**TASK:** Convert NexusOS's four files once with a throwaway script in the executing session's scratchpad: back up the four files to `~/NexusOS-Backup-<MM-DD-YYYY>/` before anything is written, give all 59 options an id (keeping any already stored), strip Status's eight `group_id`s, switch the three view files' option words to ids, scope the leftover Status collapses to Status, drop lowercase `open` and `closed`, verify against *Properties Restructure — Walkthrough §Your Data*, run it a second time to prove it writes nothing, and delete the script. The backup folder stays until Final Verification's closeout removes it by its path, after the full drive on the final head.
+**TASK:** Convert NexusOS's four files once with a throwaway script in the executing session's scratchpad: back up the four files to `~/NexusOS-Backup-<MM-DD-YYYY>/` before anything is written, give all 59 options an id (keeping any already stored), strip Status's eight `group_id`s, switch the three view files' option words to ids, scope the leftover Status collapses to Status, drop lowercase `open` and `closed`, verify against *Properties Restructure — Morning Report › §Your Data*, run it a second time to prove it writes nothing, and delete the script. The backup folder stays until Final Verification's closeout removes it by its path, after the full drive on the final head.
 
 **NOW:** read-only at HEAD for this plan, `~/NexusOS` holds:
 - **`.nexus/properties.json`:** seven option properties, 59 options, none with an id: Status (`prop_01KWG2FPV0VP0D2W6BR5EK485P`) 8 in three groups, each option carrying `group_id`; Tags 3, Brand 20, Concern 5, Scale 5, Color 12, Version 6, as `select_options`.
@@ -15421,7 +15421,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +  next[rel] = doc
 +}
 +
-+// 4. The expectations, Walkthrough §Your Data written out against the backup: each converted file equals its backup with exactly these changes.
++// 4. The expectations, Morning Report §Your Data written out against the backup: each converted file equals its backup with exactly these changes.
 +const want = structuredClone(backup[REGISTRY])
 +const seen = new Set()
 +let total = 0
@@ -15476,7 +15476,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 +ideasTile.collapsed_groups = [...scoped('Paused', 'Closed', 'Complete', 'Archived'), SET]
 +
 +for (const [rel, expected] of [[REGISTRY, want], [IDEAS, ideas], [HOMEPAGE, homepage], [POMMORA, pommora]])
-+  if (stable(expected) !== stable(next[rel])) fail(`${rel} differs from Walkthrough §Your Data`)
++  if (stable(expected) !== stable(next[rel])) fail(`${rel} differs from Morning Report §Your Data`)
 +if (stable(next[REGISTRY]).includes('group_id')) fail('a group_id survived')
 +
 +// 5. The writes: only a file whose text changes, through a hidden temp file the watcher never reads.
@@ -15537,7 +15537,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 #### Behavior Changes and Disclosures
 
 - **Option Identity's Visible Changes (D-1, D-2, D-3, K-1; LC-40):** an option rename stops rewriting views, tiles, the Matrix filter, and preview rules, and rewrites only pages holding the word; collapsed groups are remembered per property; deleting the property a view groups by keeps folder collapses; Status options stop writing `group_id`; view JSON shows `opt_…` where it showed words; NexusOS's Pommora tile keeps its Status collapses scoped to Status, with `open` and `closed` dropped. Each is Nathan's intent.
-- **A Hand-Written Status Option Without `group_id` Now Reads:** today it sets the whole Status definition aside (08-04). Nathan's intent (D-3, "a hand edit leaving it out makes the whole property vanish" is the accident the Walkthrough names).
+- **A Hand-Written Status Option Without `group_id` Now Reads:** today it sets the whole Status definition aside (08-04). Nathan's intent (D-3, "a hand edit leaving it out makes the whole property vanish" is the accident the Morning Report names).
 - **A Pick Naming an Option Deleted Meanwhile Writes Nothing for It:** `encodeValue` drops an id no option holds, where today an unknown label is written as given. The paths that can hand it one are a picker open while another device deletes the option, and a creation seed from a filter operand a sync race left behind. Today's spelling would write the deleted word, which a Multi-Select's registration then adopts back as an option; the new rule writes `[]` for a Select and leaves the member out of a Multi-Select. An earlier agent's choice made consistent with ids; LC-51.
 - **Collapsed Keys Outside NexusOS Lose Their Collapse:** a Nexus whose views hold bare-label collapsed keys from a property grouping (no live Nexus but NexusOS, which the conversion covers; `~/Test` and the Benchmark Nexuses seed none) shows those groups expanded, the bare keys inert. A Set-id collapse is unaffected. This is the D-2 key change itself; no reader of the old spelling stays (*Legacy Versus Interop*).
 - **The Option Popup Keeps Its Content Through a Rename:** its content remounted on every rename (`contentKey` was the label); it remounts only when another option opens. The field's in-flight label and its reversion on a refusal are unchanged (pinned).
@@ -32952,35 +32952,35 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 
 #### Adherence Scoreboard
 
-Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven in the phase named and re-run by every Review Checkpoint whose phase the row names and by *§Final Verification* on the final head. A count marked **Investigation** is a hand tally from the brainstorm's investigation; every other row's command is in its last column.
+Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven in the phase named and re-run by every Review Checkpoint whose phase the row names and by *§Final Verification* on the final head. A count marked **Tally** is a hand tally from the brainstorm's inventory; every other row's command is in its last column.
 
 | Perspective | Flagged Practice | Today | After | Proven In · How |
 |---|---|---|---|---|
 | **Legacy Versus Interop** | Read paths for shapes only earlier builds wrote | 9 (`LEGACY_TYPE_IDS`, `RENAMED`, `normalizeSavedViews`' open pass, `renamedSidecar`, `legacyBucketKey`'s 3 branches, the bare-`sub/` clause, 1 year sniff) | 0 | P1 · command 1 |
 | **Type Facts Once** | `PropertyType \| 'title'` unions | 21 in 11 files | 0 | P2 · command 2 |
 | **Type Facts Once** | Ad-hoc `.type === '<type>'` checks | 30 | each survivor names a unique piece in its phase's *§Behavior Changes and Disclosures* | P3, P14 · `git grep -n "\.type === '\(text\|number\|select\|multiSelect\|status\|dateTime\|checkbox\|link\|file\|context\|createdTime\|lastEditedTime\)'" -- Core UIX ':!*.test.*'` |
-| **Type Facts Once** | Type-fact tables | about 14 (**Investigation**) | 6 records: engine `PROPERTY_TYPES`, renderer `TYPE_META`, `LOOKS`, `VALUE_KINDS`, `FILEDATA`, and `TYPE_ROWS` (the editor rows, replacing `SETTINGS`) | P2, P3, P14, P17 |
-| **Type Facts Once** | "Which types hold connections" statements | 5 (**Investigation**) | 1 (`connections`) | P3 |
+| **Type Facts Once** | Type-fact tables | about 14 (**Tally**) | 6 records: engine `PROPERTY_TYPES`, renderer `TYPE_META`, `LOOKS`, `VALUE_KINDS`, `FILEDATA`, and `TYPE_ROWS` (the editor rows, replacing `SETTINGS`) | P2, P3, P14, P17 |
+| **Type Facts Once** | "Which types hold connections" statements | 5 (**Tally**) | 1 (`connections`) | P3 |
 | **Type Facts Once** | Checkbox blank-draws rule statements | 3 (P3's count; `Cell.tsx:50-58` is the checkbox cell's type dispatch, not a statement of the rule) | 1 (`blankDraws`) | P3 |
 | **Type Facts Once** | Registration `=== 'multiSelect'` checks | 2 (`fileEvents.ts:528`, `optionOps.ts:133`) | 0 (`registersMembers`) | P3 · command 3 |
-| **Type Facts Once** | Options-from-labels builders | 8 (**Investigation**) | 1 (`pickerOptions`) | P3 |
+| **Type Facts Once** | Options-from-labels builders | 8 (**Tally**) | 1 (`pickerOptions`) | P3 |
 | **Type Facts Once** | `syntheticContextDef(` sites | 6 | 0 | P16B · `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` |
 | **Fix the Origin** | UI filters guarding against non-user definitions | 4 | 0 | P2 |
-| **Fix the Origin** | Hand-placed slot guards | 7 (**Investigation**) | one owed-name check (`owedName`) and one rename hold (`owesRename`) | P11A · command 4 |
+| **Fix the Origin** | Hand-placed slot guards | 7 (**Tally**) | one owed-name check (`owedName`) and one rename hold (`owesRename`) | P11A · command 4 |
 | **Fix the Origin** | Many-file change skeletons | 7 hand-written | 1 (`runNoted`) | P11A, P11B |
 | **Fix the Origin** | Never-shrink guard's scope | every governed key | list-shaped values only | P4B |
 | **Fix the Origin** | A delete's put-back-and-throw paths | 2 (`unlinkMembers`, the Context put-back) | 0 | P11B |
-| **One Write Path** | Value write routes | 12, with 3 world-less side doors (**Investigation**) | every single-file page write (value, tag, banner, put-back) through `rewriteRootAt`, every reconcile through `reconcileGovernedRoot`; the sweeps keep their per-file bodies | P4A · command 5 |
+| **One Write Path** | Value write routes | 12, with 3 world-less side doors (**Tally**) | every single-file page write (value, tag, banner, put-back) through `rewriteRootAt`, every reconcile through `reconcileGovernedRoot`; the sweeps keep their per-file bodies | P4A · command 5 |
 | **One Write Path** | Renderer re-encodes of a write | 2 (`applyValueAtRoot`, `withSeeds`) | 0 | P6 (on F3's Pass) |
 | **One Write Path** | Undo routes / put-back landings | 2 / 2 | 1 / 1 | P6 (routes; P6's put-back lands beside the sweep's own private `keysPutBack`), P11B (landings, `keysPutBack` leaving with `undoSweep`) |
 | **One Write Path** | `ValueWriter` hand-built assemblies | 3 | 0, assembled by two (`useValueWriter` for a mounted surface, `oneShotWriter` for the native menu) | P15 |
-| **One Way** | Try Again forms | 4 (**Investigation**, R) | 1 (`finishOwed`) | P11A |
+| **One Way** | Try Again forms | 4 (**Tally**, R) | 1 (`finishOwed`) | P11A |
 | **One Way** | Crash-recovery files / record kinds | 2 / 5 | 1 / 1 entry type | P11A · `git grep -n "JOURNAL_FILENAME\|journalSlot" -- Core` answers 0 |
 | **One Way** | Replay points at open | 2 (`handlers.ts:86,111`) | 1 | P9, P11A |
-| **One Way** | Reply shapes across schema ops | 7 (**Investigation**) | 1 (`MutateOutcome`) | P7, P11A |
+| **One Way** | Reply shapes across schema ops | 7 (**Tally**) | 1 (`MutateOutcome`) | P7, P11A |
 | **One Way** | The holder count's argument sniff | 1 (`handlers.ts:199-208`) | 0 (one `countedChange` decode and `switch`); the four holder functions stay, each planning its own sweep, and `Holders` is only the finder's answer | P7, P10 |
 | **One Way** | Property, schema, and registry channels | 20 | 1 read channel (`property:holders`) | P7 · `bridge.ts`'s `'(property\|schema\|registry):` entries |
-| **One Way** | Space candidate paths for key sweeps | 5 (**Investigation**) | 1 (`spaceFiles`, through `findHolders`); `sweepRootsById`'s by-id paths, the restore's artifact listings, and the asset migration's `spaceSidecars` find by other means | P10 |
+| **One Way** | Space candidate paths for key sweeps | 5 (**Tally**) | 1 (`spaceFiles`, through `findHolders`); `sweepRootsById`'s by-id paths, the restore's artifact listings, and the asset migration's `spaceSidecars` find by other means | P10 |
 | **One Way** | Page candidate rules for property and Context sweeps | 2 (`governedReach`, `sweepMembers`) | 1, with its reach stated | P10 |
 | **One Way** | Shown-text projections | 2 (`textValue`, `sortText`) | 1 (`shownText`) | P14 |
 | **One Way** | Value click-and-menu copies | 3 plus the native router | 1 seat | P16A (table, Cards), P16B (panel, native router) |
@@ -32995,17 +32995,17 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Hot Paths Stay Cold** | Filter operand parses | per row | once per pass | P14 |
 | **One Vocabulary** | Names for the stash | 2 (cache, stash) | 1 | P12 · `git grep -n -i "property_cache\|cachedValues\|patchCacheBlock" -- Core` answers 0 |
 | **One Vocabulary** | Meanings of "Remove" in the Properties pane | 2 (option delete, unassign) | 1 | P7 |
-| **One Vocabulary** | Meanings of "schema" in file names | 3 (**Investigation**) | 1 | P2, P11A · command 6 |
-| **One Vocabulary** | Files named "value" meaning different things | 5 (**Investigation**) | each named for its content | P4A |
+| **One Vocabulary** | Meanings of "schema" in file names | 3 (**Tally**) | 1 | P2, P11A · command 6 |
+| **One Vocabulary** | Files named "value" meaning different things | 5 (**Tally**) | each named for its content | P4A |
 | **Clearer Boundaries** | Shared modules living in `Core/Properties` | 8 (`governedSweep`, `governedWrite`, `journalSlot`, `keyHolders`, `rowOrder`, `pageRow`, link vocabulary, pane targets) plus `paneDrop` | 0 | P1, P3, P4A, P10, P11A, P17 |
 | **Clearer Boundaries** | Homes for count copy | 2 (`properties.ts`, `confirmations.ts`) | 1 (`entities.ts`) | P7 |
 | **Sync-Ready Shapes** | Options without ids / unread `group_id` writes | every option / 8 NexusOS options | 0 / 0 | P8 |
 | **Sync-Ready Shapes** | Sync rules added | 0 | 0 | every phase · `git diff BASELINE..HEAD -- Core/Sync` is empty |
-| **Describers Get Swept** | Plan-round tags in test titles | about 31 (**Investigation**) | 0 | P1 |
+| **Describers Get Swept** | Plan-round tags in test titles | about 31 (**Tally**) | 0 | P1 |
 | **Describers Get Swept** | Finder casing pins | 6 (`keyHolders.test.ts:155,219`, `renameSweep.test.ts:82`, `removeProperty.test.ts:117`, `optionOps.test.ts:530`, `deleteProperty.test.ts:278`) | 1 (the finder's); the rewrite and reconcile casing pins stay, each pinning its own rule | P10 |
-| **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Investigation**) | 0 | P11A |
-| **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Investigation**) | 0 | P18 |
-| **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Planning Findings › §Last Calls* or *§Nathan's Calls* | *Planning Findings* |
+| **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Tally**) | 0 | P11A |
+| **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Tally**) | 0 | P18 |
+| **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Morning Report › §What I Need From You* | *Morning Report* |
 | **Directive (10-22-2026)** | Net production delta | — | −838 written on Biome-formatted code (−771 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is −83 | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
@@ -33235,7 +33235,6 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 1. **`reveal-parity`:** `.claude/scripts/reveal-parity/run.mjs:750` looks for "Forget Test" and needs fixtures `~/Test` doesn't hold; it stays outside Properties.
 2. **The Value Seat's Interleavings:** Cards' ghost hold, the table's title passthrough, and `lastOpened` keying are designed and pinned in Phase 16A; its two halves land −285 (16A −72, 16B −213), checked at each Review Checkpoint.
 3. **Measurement Outcomes:** F3, K, 07-10, and 02-10 run their rules in Phases 6, 14, and 15; a failed threshold becomes a Last Call row in the report, never an Issues entry.
-4. **Sources:** *Properties Restructure — Scout Reports* is backup evidence; a claim there that contradicts a task is checked against the code, and the code wins.
 
 #### Deviations
 
