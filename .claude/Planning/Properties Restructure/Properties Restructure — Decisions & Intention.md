@@ -42,7 +42,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **A-4 [CONFIRMED]:** No Nexus beyond NexusOS, `~/Test`, and the Benchmark Nexuses needs to keep reading, so a read path for a shape only earlier Pommora builds wrote becomes removable once a scan of those Nexuses finds nothing holding it.
 - **A-5 [CONFIRMED]:** A Multi-Select registering the unknown and externally-added words its members hold as options is intended behavior and stays.
 - **A-6 [CONFIRMED]:** Finding the behaviors Nathan never asked for is part of the restructure's mandate, and each one reaches him as a decision carrying its explanation.
-- **A-7 [ASSUMED]:** This session runs through *§Decisions*, and possibly the plan, with execution continuing in fresh sessions from *BRIEF.md* and a handoff.
+- **A-7 [CONFIRMED]:** The brainstorm closes in this session, planning runs headlessly from the handoff as *§Constraints › Nathan's Constraints › Headless Planning* sets out, and execution follows in fresh sessions once Nathan ratifies the plan.
 
 #### B - Crash Recovery
 
@@ -339,6 +339,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 - **Q:** Should each layer of settings — the whole Nexus versus this view — get one word, with one Style row in the pane? **A:** One word per view.
 - **Q:** Dates are formatted per view while numbers are formatted per property. Which way should they go? **A:** The format for a date column rides the property's own format, with per-column display overrides.
+- **Q:** Number, Checkbox, Link, and Date each offer different settings that reach either the property everywhere or one view; which goes where? **A:** Link is correct as it is, and Date seems correct too. Number's Number or Bar look reads "Style" in a column's right-click menu, as the rest do. Link's default can stay, or ride the existing Default Link Format or a similar Nexus setting; otherwise it isn't actually an issue. Link's Underline and Color stay as they are, Number's settings stay as they are, Date stays as it is, and Checkbox stays as it is.
 
 #### Value Surfaces
 
@@ -354,7 +355,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 #### Display Defaults
 
-- **Q:** Should unstyled date columns stay time-less, should a Select's compact chip use the Select type icon, and should user-made Status groups get their own glyph? **A:** A date column's format rides the property's own format, with per-column display overrides. Unstyled stays the time-less default. Keep Select's single tag icon. The user-made Status group glyph is intentional.
+- **Q:** Should unstyled date columns stay time-less, should a Select's compact chip use the Select type icon, and should user-made Status groups get their own glyph? **A:** Unstyled stays the time-less default. Keep Select's single tag icon. The user-made Status group glyph is intentional.
 
 #### Small Things Saved to Disk
 
@@ -386,4 +387,3 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Q:** Should the panel's right-click on a File value match the card's? **A:** Yes, and offer Remove. The whole right-click menu should be the same wherever it opens, table or card; take that with a grain of salt and look out for blatant divergence and consolidation opportunities.
 - **Q:** Does "date-row being icon-only should be fixed" mean every editor's rows get icons? **A:** Every property's settings rows should get an icon as Date's do; it's out of scope here but definitely should be done, so it's filed as an Issue.
 - **Q:** One Style row per type for a view's look? **A:** Keep that open and make no calls on how the settings panels are done; note it in the same Issue. Fix a setting that's genuinely confusing or genuinely in the wrong place, and leave "Date Format" and "Show Decimals" ambiguous in the rows' wording for a later pass.
-- **Q:** Number, Checkbox, Link, and Date each offer different settings that reach either the property everywhere or one view; which goes where? **A:** Link is correct as it is, and Date seems correct too. Number's Number or Bar look reads "Style" in a column's right-click menu, as the rest do. Link's default can stay, or ride the existing Default Link Format or a similar Nexus setting; otherwise it isn't actually an issue. Link's Underline and Color stay as they are, Number's settings stay as they are, Date stays as it is, and Checkbox stays as it is.
