@@ -45,19 +45,46 @@ Reply in chat. The simplest answer is a sentence like "approve the rest as recom
 
 These four depart from a decision you confirmed. Each needs your yes or your original back.
 
-- **LC-58 · Clearing an Option Warns Without Try Again [B-1]:** you confirmed that every change rewriting many files writes a crash-recovery note. The plan keeps Clear without one: if a Clear misses some pages, it warns, as it does today, and offers no Try Again. A note would let Try Again run the Clear later, and by then you may have picked that option again on a page the Clear never reached, so the late Clear would wipe your new pick. Running Clear again reaches the missed pages safely. **Recommended:** keep it. **If You Hold to B-1:** Clear writes a note and offers Try Again, and that Try Again can erase a pick you made in between.
-- **LC-63 · A Change Under an Owed Rename Reads as Done [B-3]:** you confirmed that a delete which can't reach every page finishes what it can and offers Try Again for the rest. While a property's or Context's rename is still owed, the plan has a later option rename, option delete, Remove, or Space rename or delete update every page already under the new name and report success. The pages still under the old name catch up when the rename itself finishes, through its own Try Again or the next open. Those pages are the ones the rename's notice already counted and offered Try Again for, and counting which of them hold this change's word would mean reading files the rename couldn't read. **Recommended:** keep it. **If You Hold to B-3:** each such change reports a count of the pages waiting on the rename, about 15 more lines.
-- **LC-14 · Numbered Names Speak Only on a Trash Restore [O-4]:** you confirmed that creating a property under a taken name tells you it took a numbered name. The plan tells you when a Trash restore lands under a numbered name ("Restored “Priority” as “Priority (2)”."), while the pane's `+` keeps naming new properties "New Select" or similar without a notice, since it picks the name itself and you haven't asked for a name it could refuse. **Recommended:** keep it. **If You Hold to O-4:** the `+` also shows a notice whenever it numbers its own default name.
-- **LC-47 · The Two Link Menus Read the Same, With One Word Apart [J-10]:** you confirmed that a value's right-click reads the same wherever it opens. Both link menus now read Rename, then Edit Link, in the order the connection menu already uses. On a page link in the Properties panel, though, the row label's item reads Edit Link while the value's own menu reads Edit Title for the same action, since that menu edits the linked page's title. **Recommended:** keep it. **If You Hold to J-10:** one of the two words is chosen for both menus.
+- **LC-58 · Clearing an Option Warns Without a Try Again (No Visible Change):**
+  - **Today:** Clear removes an option's value from every page that holds it; if it misses some pages, it warns you and offers no Try Again button.
+  - **After:** No change, although you confirmed [B-1] that every change rewriting many files writes a crash-recovery note.
+  - **Alternative:** Clear writes a crash-recovery note and offers Try Again, as B-1 says, but a late Try Again could wipe an option you picked again in the meantime on a page the Clear missed.
+  - **Recommendation:** Keep Clear warning without a Try Again, and run Clear again yourself to reach the missed pages; a second Clear is safe, while a late Try Again could erase a newer pick.
+- **LC-63 · A Change Made While a Rename Is Unfinished Reports Success (Change):**
+  - **Today:** This case wasn't traced in the code for this report, so what happens today isn't established.
+  - **After:** While a property's or Context's rename still hasn't reached every page, a later option rename, option delete, Remove, or Space rename or delete updates every page already under the new name and reports success. The pages still under the old name catch up when the rename finishes, through its own Try Again or the next open, though you confirmed [B-3] that a change which can't reach every page offers Try Again for the rest.
+  - **Alternative:** Each such change also reports how many pages are waiting on the rename, which takes about 15 more lines of code.
+  - **Recommendation:** Let the later change report success, since the rename's own notice already counted those pages and offers Try Again, and counting them again would mean reading files the rename couldn't read.
+- **LC-14 · A Trash Restore Says When It Took a Numbered Name (Change):**
+  - **Today:** A property restored from the Trash under a name that's already taken quietly lands as "Priority (2)", and the pane's `+` quietly numbers its default names ("New Select") the same way.
+  - **After:** The Trash restore tells you: "Restored “Priority” as “Priority (2)”." The `+` stays quiet, although you confirmed [O-4] that creating a property under a taken name tells you it took a numbered name.
+  - **Alternative:** The `+` also shows a notice whenever it numbers its own default name.
+  - **Recommendation:** Show the notice only on a Trash restore, since the `+` picks its default name itself and you never asked for a name it could turn down.
+- **LC-47 · Both Link Menus Read Rename, Then Edit Link (Change):**
+  - **Today:** The two link menus word and order their rows differently: one reads "Edit, Rename", the other "Rename, Edit Title".
+  - **After:** Both read Rename, then Edit Link, in the connection menu's order, with one word still different: on a page link in the Properties panel, the row label's menu says Edit Link while the value's own menu says Edit Title for the same action. You confirmed [J-10] that a value's right-click reads the same wherever it opens.
+  - **Alternative:** One of the two words is used in both menus.
+  - **Recommendation:** Keep Edit Title on the value's menu and Edit Link on the row label's, since the value's menu edits the linked page's title.
 
 #### Open Calls
 
 These have no recommendation strong enough to take in your place.
 
-- **NC-1 · Context and Space Deletes in System Trash Mode Keep No Record of Their Tags:** in System Trash mode the folder goes to the system Trash and its tags leave every page with no copy anywhere, while a property delete keeps a Pommora Trash entry in either mode, because you chose that [N-2]. **Recommended:** leave it; System Trash mode means Pommora keeps no records of its own, and the property exception is yours.
-- **NC-2 · Damaged-File Copies Are Never Cleaned:** when Pommora rebuilds one of its own damaged settings files, it sets the damaged copy aside beside it and never removes it. This is the rule for every Pommora settings file, outside Properties too. **Recommended:** leave it; the copies are evidence for a hand repair, and a cleanup rule belongs to all of Pommora's files at once.
-- **NC-3 · Pages Pommora Can't Safely Rewrite Count as Unfinished Only for Remove:** a Remove counts such a page as unfinished, with Try Again (LC-19), but a rename, a delete, an option change, and Context and Space changes still count only files they couldn't read, so after one of those, such a page keeps the old name with nothing owed, as today. **Recommended:** decide whether every change should count them; widening it is a behavior change the plan doesn't make on its own.
-- **"Date" or "Date & Time":** the plan, and the app today, name the type "Date", while Pommora's CLAUDE.md says "Date & Time". Say which name stands.
+- **NC-2 · Damaged Settings-File Copies Stay in the Nexus (No Visible Change):**
+  - **Today:** When Pommora rebuilds one of its own damaged settings files, it sets the damaged copy aside beside it and never removes it; this holds for every Pommora settings file, outside Properties too.
+  - **After:** No change.
+  - **Alternative:** Pommora removes the damaged copy at a set moment, such as during the repair itself.
+  - **Recommendation:** Keep the copies, since they're evidence for a repair by hand, and a cleanup rule would belong to all of Pommora's settings files at once.
+
+  **Your Answer:** No, it should be cleaned up and done so during whichever time is the most appropriate to do such, potentially during the repair itself. We shouldn’t be leaving broken files in the nexus.
+
+- **NC-3 · Only a Remove Counts Pages It Can't Safely Rewrite as Unfinished (Change):**
+  - **Today:** Every change that rewrites many files counts only files it couldn't read as unfinished, so a page it can't safely rewrite (no ID, an ID shared with another page, or properties it can't rewrite safely) quietly keeps the old value.
+  - **After:** A Remove counts such a page as unfinished and offers Try Again (LC-19), while a rename, a delete, an option change, and Context and Space changes still don't, so such a page keeps the old name with nothing owed.
+  - **Alternative:** Every change counts these pages as unfinished and offers Try Again.
+  - **Recommendation:** None; widening it to every change is a behavior change the plan doesn't make without you.
+
+  **Your Answer:** Unsure.
 
 No Last Call is close enough to sit here; each has a clear recommendation below.
 
@@ -67,80 +94,260 @@ Each changes something you'd see or something written in your files. Approving t
 
 ##### Crash Recovery and Big Changes
 
-- **LC-6 · One Try Again Finishes Everything Owed:** when a new name is refused because something else still owes it, Pommora knows the name but not which item owes it, so Try Again finishes every owed item at once and reports one combined count. Unfinished work is rare, so finishing all of it is harmless. **Recommended:** take it.
-- **LC-7 · A Name Still Owed to an Unfinished Rename Is Refused:** today a new property named after an unfinished rename's old name quietly becomes "Priority (2)", and renaming a property onto such a name isn't checked at all. Both are refused with "An earlier change hasn't reached every file yet." and Try Again, as your B-4 does for a deleted name, so a new property never inherits pages a rename hasn't reached. This covers creating, renaming, and changing the Label Format. **Recommended:** refuse.
-- **LC-8 · The Same Rule for Contexts and Spaces:** a Context or Space created or renamed under a title another item still owes takes over that item's leftover tags today. It's refused the same way. **Recommended:** refuse.
-- **LC-9 · A Trash Restore Under Someone Else's Owed Name Is Refused Too:** restoring goes through the same create step, so it's refused with the same message, and Try Again finishes the other item's work first, after which the restore can run. **Recommended:** take it.
-- **LC-10 · A Delete That Finishes Later Still Saves Every Value to the Trash:** today a property delete that couldn't reach some pages loses those pages' values from its Trash entry when it finishes them later. Every delete records the values up front from Pommora's index, so a restore brings them all back. **Recommended:** take it.
-- **LC-12 · A Change Whose Note Can't Be Written Doesn't Start:** today some big changes run without a note when the note can't be written, and others refuse. Every one refuses, with nothing changed. **Recommended:** refuse.
-- **LC-18 · Re-Adding a Removed Property Cancels What Its Remove Still Owed There:** if a Remove missed pages and you add the property back to that Collection before Try Again runs, the leftover work is dropped for that Collection, since the property governs those pages again. **Recommended:** take it.
-- **LC-19 · A Remove Reports Pages It Can't Clean Up:** today a Remove quietly leaves the value on a page with no ID, a page sharing another page's ID, or a page whose properties can't be rewritten safely, while the Collection no longer uses the property. These count as unfinished, with Try Again; a page without an ID usually gets one at its next read, so Try Again usually succeeds. **Recommended:** take it.
-- **LC-28 · The Notes File Stays Behind Empty:** after the first big change, the hidden `.nexus/.owed.json` stays on disk holding nothing (`{}`), because deleting it safely would rebuild the very file-locking piece this work removes. It's hidden, never synced, and harmless. **Recommended:** accept it.
-- **LC-45 · Clearing an Option Is No Longer Refused While Another Option Change Is Owed:** today Clear waits on its own property's unfinished option change. It runs, and any old names still owed to that option switch to "remove", so the unfinished rename can't bring the cleared value back. **Recommended:** take it.
-- **LC-49 · A Retried Context Rename Can Leave Leftovers Mid-Plan:** between Phase 1 and the crash-recovery rebuild in Phase 11A, if a Context or Space rename's Try Again misses files a second time and no earlier record of that rename is still on file, nothing records the leftover files, so they keep the old name until renamed again. Every other retry behaves as today, and Phase 11A gives each item its own note. **Recommended:** accept it for those phases; keeping the old field alive to cover it would be code Phase 11A deletes.
-- **LC-50 · Re-Choosing the Open Nexus Doesn't Retry an Owed Context Rename:** today picking the Nexus that's already open re-runs an unfinished Context rename. It happens only on a real open, as unfinished property work already does, and the rename's notice keeps its Try Again. **Recommended:** take it.
-- **LC-57 · A Notes File Damaged Before Pommora Read It Starts Fresh:** if `.nexus/.owed.json` is damaged before Pommora reads it, its unfinished work reads as none, and the next note sets the damaged copy aside and starts a new file, as every Pommora settings file does (NC-2). The leftover files keep their old names until changed again. **Recommended:** accept it; the file stays on one device, and only an outside edit damages it.
-- **LC-64 · A Stranded Context Rename Offers Try Again:** if a Context rename's folder can't move and putting the old name back fails too, the new name is already in the Context list, so the rename reports "Couldn’t update 1 Item." with Try Again, which moves the folder and updates the pages. Today it answers with the folder's error and leaves the work for the next open. **Recommended:** take it.
+- **LC-12 · A Big Change That Can't Write Its Crash-Recovery Note Doesn't Start (Fix):**
+  - **Today:** Before a change that rewrites many files, Pommora writes a crash-recovery note so a quit halfway can be finished on the next open, but only one note fits at a time. With an earlier change unfinished, option changes refuse, while property renames and deletes run with no note, so a quit halfway leaves pages split between old and new names with nothing to finish them.
+  - **After:** Every one of these changes refuses with nothing touched and offers Try Again. Once every item gets its own note (Phase 11A), this only happens when Pommora can't write to the Nexus at all, such as on a full disk.
+  - **Recommendation:** Refuse, since a change that can't be finished after a crash shouldn't start; the only other path is today's, which can strand pages.
+
+- **LC-18 · Re-Adding a Removed Property Cancels Its Leftover Cleanup (Change):**
+  - **Today:** A Remove that misses pages keeps no record of them, so there's no leftover work to cancel.
+  - **After:** If a Remove missed pages and you add the property back to that Collection before Try Again runs, the leftover cleanup for that Collection is dropped, since the property governs those pages again.
+  - **Recommendation:** Drop the leftover cleanup when the property returns, so a later Try Again never strips values from a Collection that uses the property again; there's no sensible alternative.
+- **LC-19 · A Remove Reports Pages It Can't Clean Up (Fix):**
+  - **Today:** A Remove quietly leaves the value on a page with no ID, a page sharing another page's ID, or a page whose properties can't be rewritten safely, while the Collection no longer uses the property.
+  - **After:** These pages count as unfinished, with Try Again; a page without an ID usually gets one the next time Pommora reads it, so Try Again usually succeeds.
+  - **Recommendation:** Report them with Try Again, so a Remove never leaves values behind without telling you; the only alternative is today's silence.
+- **LC-28 · The Hidden Notes File Stays Behind Empty (No Visible Change):**
+  - **Today:** The hidden notes file, `.nexus/.owed.json`, doesn't exist yet; this work creates it to hold every crash-recovery note.
+  - **After:** After the first big change, the file stays on disk holding nothing (`{}`). It's hidden, never synced, and harmless.
+  - **Alternative:** Pommora deletes the file once it empties, which means rebuilding the file-locking piece this work removes.
+  - **Recommendation:** Leave the empty file in place, since deleting it safely costs more code than the empty file ever costs you.
+- **LC-45 · Clearing an Option Runs While Another Option Change Is Unfinished (Change):**
+  - **Today:** Clear is refused while its own property has an unfinished option change.
+  - **After:** Clear runs, and any old names still owed to that option switch to "remove", so the unfinished rename can't bring the cleared value back.
+  - **Recommendation:** Let Clear run, since switching the owed names to "remove" keeps the cleared value from coming back; the only alternative is today's refusal.
+- **LC-49 · A Retried Context Rename Can Leave Leftovers Between Phases 1 and 11A (Change):**
+  - **Today:** A Context or Space rename whose Try Again misses files a second time keeps a record of the leftover files, so they're finished later.
+  - **After:** Only between Phase 1 and Phase 11A, if that second miss has no earlier record of the rename on file, nothing records the leftover files, so they keep the old name until renamed again. Phase 11A gives each item its own note and closes the gap; every other retry behaves as today.
+  - **Alternative:** Keep the old record-keeping alive through those phases, which is code Phase 11A deletes.
+  - **Recommendation:** Accept the gap for those phases only, since it closes within this same work and covering it means writing code that's deleted a few phases later.
+- **LC-50 · Re-Choosing the Open Nexus No Longer Retries a Context Rename (Change):**
+  - **Today:** Picking the Nexus that's already open re-runs an unfinished Context rename.
+  - **After:** The rename re-runs only when the Nexus genuinely opens, as unfinished property work already does, and the rename's notice keeps its Try Again.
+  - **Recommendation:** Retry only on a real open, so Context and property work follow one rule; the only alternative is today's split.
+- **LC-57 · A Damaged Notes File Starts Fresh (Change):**
+  - **Today:** The notes file is new to this work; Pommora's other settings files already set a damaged copy aside and start fresh (NC-2).
+  - **After:** If `.nexus/.owed.json` is damaged before Pommora reads it, its unfinished work reads as none, and the next note sets the damaged copy aside and starts a new file. Files the lost notes covered keep their old names until changed again.
+  - **Recommendation:** Start fresh, as every Pommora settings file does, since the file stays on one device and only an outside edit can damage it.
+- **LC-64 · A Stuck Context Rename Offers Try Again (Fix):**
+  - **Today:** If a Context rename's folder can't move and putting the old name back also fails, the rename shows the folder's error and leaves the work for the next open.
+  - **After:** Since the new name already sits in the Context list, the rename reports "Couldn’t update 1 Item." with Try Again, which moves the folder and updates the pages.
+  - **Recommendation:** Offer Try Again, so you can finish the rename without reopening the Nexus.
 
 ##### Values and Tidy-Ups
 
-- **LC-20 · Outside-Written Several-Word Selects Are Tidied at the Next Open:** with your tidy rule and Repair Properties On Open both on, a Select or Status that Obsidian or another app wrote with several words becomes the one option Pommora shows the next time the Nexus opens, and that change syncs. NexusOS has none today, and Phase 4B lists any it finds before changing them. **Recommended:** take it; it's what your two rulings say together.
-- **LC-21 · "Any Edit" Means Any Value Edit:** a several-word Select tidies when any property, tag, or Space link on its page changes, and at Repair On Open, the same moments every other tidy-up happens. Editing the page's text, title, or banner doesn't tidy. **Recommended:** take it.
-- **LC-22 · A Multi-Select Holding Unknown Words Also Collapses Duplicates:** today `[a, zeta, a]` stays as written when another property is edited, while picking that Multi-Select writes `[a, zeta]`. It becomes `[a, zeta]` either way, with its options ahead of the words no option names, as a pick writes them. NexusOS holds no such value, and Phase 4B stops for your call if one appears. **Recommended:** one rule.
-- **LC-23 · A File Value Listed Twice Collapses:** every other list type drops a repeated item on the next edit; File didn't. **Recommended:** match the others.
-- **LC-24 · Spaces-Only Reads as Empty for Dates, Links, and Files Too:** you ruled spaces-only text empty; a date, link, or file written as only spaces read as filled for the same reason. It's stated once for every type. **Recommended:** take it.
-- **LC-25 · An Edit That Changes Nothing Leaves the File Alone:** today re-picking a value a Space already holds rewrites its settings file and gives it a new modified time. It writes nothing, as pages already do, and undoing a change that changed nothing writes nothing either. **Recommended:** take it.
-- **LC-51 · A Pick of an Option Deleted Meanwhile Writes Nothing:** if a picker is open while another device deletes one of its options, or a new page inherits an option a sync just removed, picking it writes nothing for that option instead of writing the deleted word, which a Multi-Select would then re-adopt as a brand-new option. **Recommended:** take it.
-- **LC-52 · A Title Sorts and Filters on the Text It Shows:** a page title holding `[[…]]` or `](…)` sorts and filters on the text it displays, as a Text value already does, where it sorted on the raw file name. A file name seldom holds either. **Recommended:** take it.
-- **LC-61 · A Hand-Copied Option Keeps Its Place:** if you or an agent copy an option in `properties.json` by hand, give the copy a new name, and leave its id, both options stay: the copy takes an id derived from its own name, and pages holding its word keep reading it. A plain "each id once" rule would drop the copy on every read, and the next option edit would erase it from the list, where today it stays. **Recommended:** take it; it keeps what today keeps.
-- **LC-62 · A Status Glyph Follows Its Option's Id:** while you type a new name in the option editor, the Status chip keeps its group's icon, where today it falls back to the default icon until the rename is saved. An accident fixed. **Recommended:** take it.
+- **LC-20 · Several-Word Selects Written Elsewhere Are Tidied at the Next Open (Change):**
+  - **Today:** A Select or Status that Obsidian or another app wrote with several words stays as written when the Nexus opens.
+  - **After:** With your tidy rule and Repair Properties On Open both on, it becomes the one option Pommora shows the next time the Nexus opens, and that change syncs. NexusOS has none today, and Phase 4B lists any it finds before changing them.
+  - **Recommendation:** Tidy them at the next open, since that's what your two rulings say together.
+- **LC-21 · A Several-Word Select Tidies When Any Value on Its Page Changes (Change):**
+  - **Today:** Editing another property on the page leaves a several-word Select as written.
+  - **After:** It tidies to the one option shown when any property, tag, or Space link on its page changes, and at Repair On Open, the same moments every other tidy-up happens; editing the page's text, title, or banner doesn't tidy it.
+  - **Alternative:** Text, title, and banner edits tidy it too.
+  - **Recommendation:** Tidy it on value edits only, so it follows the same moments as every other tidy-up.
+- **LC-22 · A Multi-Select's Repeated Words Collapse on Any Edit (Fix):**
+  - **Today:** `[a, zeta, a]` stays as written when another property is edited, while picking that Multi-Select writes `[a, zeta]`.
+  - **After:** It becomes `[a, zeta]` either way, with its options ahead of the words no option names, as a pick writes them. NexusOS holds no such value, and Phase 4B stops for your call if one appears.
+  - **Recommendation:** Use the pick's rule at both moments, so one value never has two outcomes.
+- **LC-23 · A File Listed Twice Collapses (Fix):**
+  - **Today:** Every other list type drops a repeated item on the next edit, but a File value keeps its duplicate.
+  - **After:** A File value drops a repeated file on the next edit too.
+  - **Recommendation:** Match the other list types.
+- **LC-24 · Only Spaces Reads as Empty for Every Type (Fix):**
+  - **Today:** You ruled that text holding only spaces is empty, but a date, link, or file written as only spaces still reads as filled.
+  - **After:** A value of only spaces reads as empty for every type, stated once.
+  - **Recommendation:** Use the one rule for every type, since the reason behind your ruling applies to all of them.
+- **LC-25 · An Edit That Changes Nothing Leaves the File Alone (Fix):**
+  - **Today:** Re-picking a value a Space already holds rewrites its settings file and gives it a new modified time; pages already skip this.
+  - **After:** It writes nothing, and undoing a change that changed nothing writes nothing either.
+  - **Recommendation:** Write nothing, so a file only gets a new modified time when something in it actually changed.
+- **LC-51 · Picking an Option Deleted Meanwhile Writes Nothing (Fix):**
+  - **Today:** If a picker is open while another device deletes one of its options, or a new page inherits an option a sync just removed, picking it writes the deleted word, which a Multi-Select then re-adopts as a brand-new option.
+  - **After:** The pick writes nothing for that option.
+  - **Recommendation:** Write nothing, so a deleted option can't sneak back in.
+- **LC-52 · A Title Sorts and Filters on the Text It Shows (Change):**
+  - **Today:** A page title holding `[[…]]` or `](…)` sorts and filters on the raw file name, while a Text value already uses the text it displays.
+  - **After:** The title sorts and filters on the text it displays; a file name seldom holds either.
+  - **Recommendation:** Match how Text values already sort and filter.
+- **LC-61 · A Hand-Copied Option Keeps Its Place (No Visible Change):**
+  - **Today:** If you or an agent copy an option in `properties.json` by hand and give the copy a new name, both options stay in the list.
+  - **After:** The same, once options carry ids (Phase 8): a copy that kept the original's id takes an id made from its own name, and pages holding its word keep reading it.
+  - **Alternative:** A plain "each id appears once" rule, which drops the copy on every read and erases it from the list at the next option edit.
+  - **Recommendation:** Give the copy its own id, since it keeps what today keeps.
+- **LC-62 · A Status Chip Keeps Its Icon While You Rename Its Option (Fix):**
+  - **Today:** While you type a new name in the option editor, the Status chip falls back to the default icon until the rename is saved.
+  - **After:** The chip keeps its group's icon throughout.
+  - **Recommendation:** Keep the group's icon; the fallback was an accident.
 
 ##### The Stash and the Trash
 
-- **LC-1 · Each Stash Block Records Its Removal Date:** each removed property's stash gains the day it was removed, so the stash can age out, and that date sits beside the values inside the existing wrapper. **Recommended:** keep the wrapper; flattening would put the date where a page's id belongs.
-- **LC-2 · Deleting a Property Everywhere Leaves Collections in the Trash Alone:** reaching into a trashed Collection's settings without also touching its pages would make restoring both lose the link between them. Every delete already leaves the Trash alone, and restoring in either order works: the Collection comes back still listing the property, and the property's restore switches it back on. **Recommended:** leave the Trash alone.
-- **LC-3 · "Cache" Becomes "Stash" Everywhere, on Disk Too:** everyone calls it the stash, while the code and the settings file say "cache" for something that can't be rebuilt. No Nexus holds a stash yet, so renaming the file key to `property_stash` costs nothing, and renaming the code alone would give one thing two names. **Recommended:** rename both.
-- **LC-4 · A Restored Collection Can Keep a Deleted Property's Id:** if a property is deleted while its Collection sits in the Trash, the restored Collection still lists the property's id. It does nothing on its own, and it switches the property back on if the property is restored too. **Recommended:** leave it.
-- **LC-5 · A Re-Add That Couldn't Refill Some Pages Offers Try Again:** today, if re-adding a property can't write some pages, their values wait in the stash and you're never told. With the stash aging out, they'd be lost unseen, so the re-add reports them with Try Again, which refills from the stash. Restoring a deleted property from the Trash re-adds it the same way. **Recommended:** report it.
-- **LC-26 · How the Stash's Clock Runs:** a property restored from the Trash keeps its stash's original removal date, as page history ages trashed pages; a second Remove into the same block restarts that block's clock; archived pages' stash values follow History Timeframe rather than Archive History Timeframe, as your C-3 says. **Recommended:** take all three.
-- **LC-36 · A Page in the Trash Gets Its Stashed Value:** re-adding a property writes a trashed page's stashed value into its Trash copy, so restoring the page brings it back. Only a page trashed from this Collection qualifies. **Recommended:** take it.
-- **LC-37 · The Partial Mark:** a partly recorded Trash entry shows a warning mark spoken as "Recorded Partly", and restoring it adds "“Title” was recorded partly, so some of what it held may not come back." **Recommended:** take it.
-- **LC-46 · An Archive Restore's Notice Keeps Its Try Again:** restoring from the Archive shows its "some values didn't come back" lines once, inside the Restored notice, which replaces the earlier notice in the same moment. What that replacement loses is the earlier notice's Try Again, so the Restored notice carries it whenever work is still owed. **Recommended:** take it.
+- **LC-1 · Each Stash Records When Its Property Was Removed (No Visible Change):**
+  - **Today:** When you Remove a property from a Collection, its pages' values are kept in a stash (the saved copy of removed values) inside the Collection's settings file, with no date.
+  - **After:** Each property's stash gains the day it was removed, so it can age out, written beside the values inside the existing wrapper.
+  - **Alternative:** Flatten the wrapper, which would put the date where a page's id belongs.
+  - **Recommendation:** Keep the wrapper, with the date beside the values.
+- **LC-2 · Deleting a Property Everywhere Leaves Trashed Collections Alone (No Visible Change):**
+  - **Today:** Every delete already leaves the Trash alone.
+  - **After:** No change; restoring the Collection and the property works in either order, since the Collection comes back still listing the property and the property's restore switches it back on.
+  - **Alternative:** Reach into a trashed Collection's settings, which without also touching its pages would make restoring both lose the link between them.
+  - **Recommendation:** Leave the Trash alone, so restores in either order keep working.
+- **LC-3 · "Cache" Becomes "Stash" Everywhere, on Disk Too (No Visible Change):**
+  - **Today:** Everyone calls it the stash, while the code and the settings file call it "cache" (`property_cache`).
+  - **After:** Both say stash, and the file key becomes `property_stash`; no Nexus holds a stash yet, so the rename costs nothing.
+  - **Alternative:** Rename the code only, which gives one thing two names.
+  - **Recommendation:** Rename both, so the stash has one name everywhere.
+- **LC-4 · A Restored Collection Can Keep a Deleted Property's Id (No Visible Change):**
+  - **Today:** A Collection trashed before its property was deleted comes back still listing that property's id, since deletes leave the Trash alone (LC-2).
+  - **After:** No change; the id does nothing on its own and switches the property back on if the property is restored too.
+  - **Recommendation:** Leave it, since it's what lets the two restores work in either order; dropping it would break that, so there's no real alternative.
+- **LC-5 · A Re-Add That Couldn't Refill Some Pages Offers Try Again (Fix):**
+  - **Today:** If re-adding a property can't write some pages, their values wait in the stash and you're never told.
+  - **After:** The re-add reports them with Try Again, which refills them from the stash; restoring a deleted property from the Trash re-adds it the same way.
+  - **Recommendation:** Report them with Try Again, since the stash now ages out (LC-26) and those values would otherwise be lost without you ever knowing.
+- **LC-26 · How the Stash Ages Out (Change):**
+  - **Today:** The stash never ages out.
+  - **After:** A property restored from the Trash keeps its stash's original removal date, as page history ages trashed pages, and a second Remove into the same stash restarts its clock. Archived pages' stashed values follow History Timeframe rather than Archive History Timeframe, as your C-3 says.
+  - **Recommendation:** Use all three rules, since each matches how Pommora already ages page history or what you ruled.
+- **LC-36 · A Trashed Page Gets Its Stashed Value Back on a Re-Add (Fix):**
+  - **Today:** Re-adding a property refills the Collection's live pages from the stash, but a page sitting in the Trash doesn't get its value.
+  - **After:** Re-adding writes a trashed page's stashed value into its Trash copy, so restoring the page brings the value back; only a page trashed from this Collection qualifies.
+  - **Recommendation:** Write the value into the Trash copy, so restoring that page later restores its value too.
+- **LC-37 · A Partly Recorded Trash Entry Shows a Warning Mark (Change):**
+  - **Today:** Pommora notes when a Trash entry was only partly recorded, but nothing on screen shows it.
+  - **After:** The entry shows a warning mark, read aloud as "Recorded Partly", and restoring it adds "“Title” was recorded partly, so some of what it held may not come back."
+  - **Recommendation:** Show the mark and the line, so you know before and after a restore that something may be missing.
+- **LC-46 · An Archive Restore's Notice Keeps Its Try Again (Fix):**
+  - **Today:** Restoring from the Archive shows its "some values didn't come back" lines once, inside the Restored notice, which replaces the earlier warning in the same moment and loses that warning's Try Again.
+  - **After:** The Restored notice carries the Try Again whenever work is still owed.
+  - **Recommendation:** Carry the Try Again on the Restored notice, so you can still finish the owed work.
 
 ##### Views, Menus, Pickers, and Editors
 
-- **LC-11 · A Hand-Written Context Property Isn't a Real Property:** a Context-typed or timestamp property typed into the property list by hand is set aside when the list is read, since Contexts come from the Context list. **Recommended:** take it.
-- **LC-13 · Deleting Something Nothing Holds Still Asks:** deleting a property or option no page holds still asks, since the definition itself is destroyed, without the "stripped from 0 Items" clause: "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." for a property, and "The option is deleted from the property." for an option. **Recommended:** take it.
-- **LC-15 · The Panel's File Menu:** a File value's right-click in the panel gains Remove and not Clear, matching cards. The row's label opens the same menu as its value, so a File row's label loses its Clear and gains Add File. **Recommended:** take it.
-- **LC-16 · Undo and Aliases:** undo takes back a Link value's alias, while a link typed inside a Text value keeps the alias its save added. **Recommended:** take it.
-- **LC-40 · The Pommora Tile's Collapses:** its leftover Status collapses are kept and scoped to Status, with "open" and "closed", which match no option, dropped (see *§Your Data*). **Recommended:** take it.
-- **LC-48 · Accidents Fixed Along the Way:** a Nexus whose unfinished Context rename throws on open finishes opening; a property delete that can't update a damaged Collection settings file stays unfinished with Try Again instead of silently skipping it; the restores' ignored Space-file failures warn; a returning page the restore can't tidy no longer refuses the whole restore, it lands and the warning names it; a page restored into the Trash takes a re-filled link value as a live page does; a value picked from a menu after its property was deleted does nothing instead of opening a picker on a made-up property; a write for a property deleted a moment earlier reaches the app's own refusal instead of vanishing; a hand-written filter rule its type can't answer, such as Greater Than on a Checkbox, sits out instead of matching every page; a Link added from a card's Add list opens empty; an open picker closes when its row disappears, and a pane opened from the sidebar's menu closes if that row is redrawn; and a Control-click in the panel opens only the menu, as in the table and cards. **Recommended:** take all of them.
-- **LC-53 · A Checkbox Keeps Both of Its Readings:** an unchecked box is stored as no value, so "is empty" matches unchecked boxes, while sorting treats it as a value, ascending putting unchecked first. Applying "empty sorts last" to it would put every unchecked page last both ways and make the sort's direction do nothing. **Recommended:** keep both; it's the one exception to empty-last.
-- **LC-54 · Pickers Open Fresh per Value Everywhere:** the table already opens a fresh picker when you move from one value to another; Cards and the Properties panel do the same, a Date or File added from a card's Add list opens as a fresh picker at the same spot, and the panel's popover fades out instead of vanishing. **Recommended:** take it.
-- **LC-55 · The Date Editor's Rows Space at 8px:** with every type's editor on one layout, the Date editor's rows space at 8px where they spaced at 4px, the Number editor's revealed rows gain their missing 8px, and a hidden Day row leaves no gap. **Recommended:** take it; it's what "every editor shares one layout" [L-1] means.
-- **LC-56 · Sweeps Reach Only the Spaces Pommora Lists:** finding which Spaces hold a property or tag reads Pommora's own list of Spaces instead of scanning every folder, so a Space folder under a Context the Context list doesn't name (only a hand copy makes one) is no longer rewritten, a Space sharing another's id is held out as pages already are, and an unreadable Space file counts as owed. **Recommended:** take it.
-- **LC-59 · A Date Picked Into Another Group Closes Its Calendar:** in a view grouped by a Date, picking a date that moves the page into another group closes the calendar, because the row it opened from is redrawn under its new group. Today the calendar stays open but loses its place on screen. **Recommended:** take it.
-- **LC-60 · An Editor That Gave Way Reopens If Its Property Returns:** when a property's editor gives way to the list because the property left [O-5], the pane remembers it, so if the property comes back before you open anything else (an undo, a sync, or re-adding it), its editor slides open again. A Remove or Delete made from this pane forgets it. **Recommended:** take it; the same rule lets a just-created property's editor open the moment the property exists.
+- **LC-11 · A Context Property Typed Into the Property List by Hand Is Ignored (No Visible Change):**
+  - **Today:** A Context-typed or timestamp property typed into `properties.json` by hand is read in, and four places on screen each filter it out.
+  - **After:** It's set aside when the list is read, since Contexts come from the Context list, and the four filters leave.
+  - **Recommendation:** Set it aside at reading, so one check replaces four.
+- **LC-13 · Deleting Something Nothing Holds Still Asks, Without "0 Items" (Change):**
+  - **Today:** Deleting a property or option no page holds asks with "stripped from 0 Items" in its message.
+  - **After:** It still asks, without that clause: "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." for a property, and "The option is deleted from the property." for an option.
+  - **Recommendation:** Keep asking with the shorter wording, since the delete destroys the definition even when no page holds it.
+- **LC-15 · The Panel's File Menu Matches Cards (Change):**
+  - **Today:** In the Properties panel, a File value's right-click lacks the Remove every other panel row offers, and the row's label has its own menu with Clear.
+  - **After:** The File value's right-click gains Remove and not Clear, matching cards, and the label opens the same menu as its value, so it loses Clear and gains Add File.
+  - **Recommendation:** Match cards, as your J-10 asks.
+- **LC-16 · Undo Takes Back a Link Value's Alias (Change):**
+  - **Today:** Giving a Link value a new display name also gives the linked page that alias, and undo leaves the alias behind.
+  - **After:** Undo takes back a Link value's alias, while a link typed inside a Text value keeps the alias its save added.
+  - **Recommendation:** Undo only a Link value's alias, as your E-3 says, since a Text value's link adds its alias through the editor's own save, which undo doesn't cover.
+- **LC-40 · The Pommora Project's Tile Drops Its "open" and "closed" Collapses (Change):**
+  - **Today:** The Pommora Project's tiles file has an "Ideas" view whose collapsed Status groups include the lowercase words "open" and "closed", which match no option.
+  - **After:** Its real Status collapses are kept and scoped to Status, and "open" and "closed" are dropped (see *§Your Data*).
+  - **Recommendation:** Keep the real collapses and drop the two that match nothing.
+- **LC-48 · Small Accidents Fixed Along the Way (Fix):**
+  - **Today:** Each of these goes wrong, with what it does after the plan:
+    - a Nexus whose unfinished Context rename throws on open doesn't finish opening; it finishes opening;
+    - a property delete that can't update a damaged Collection settings file silently skips it; it stays unfinished with Try Again;
+    - restores ignore a failure to write a Space's file; they warn;
+    - a returning page the restore can't tidy refuses the whole restore; it lands and the warning names it;
+    - a page restored into the Trash doesn't take a re-filled link value as a live page does; it takes it;
+    - a value picked from a menu after its property was deleted opens a picker on a made-up property; it does nothing;
+    - a write for a property deleted a moment earlier vanishes; it reaches the app's own refusal;
+    - a hand-written filter rule its type can't answer, such as Greater Than on a Checkbox, matches every page; it sits out;
+    - a Link added from a card's Add list doesn't open empty; it opens empty;
+    - an open picker stays when its row disappears, and a pane opened from the sidebar's menu stays when that row is redrawn; both close;
+    - a Control-click in the panel opens more than the menu; it opens only the menu, as in the table and cards.
+  - **After:** Each one behaves as listed above.
+  - **Recommendation:** Fix all of them, since each is an accident with no reason to keep it.
+- **LC-53 · A Checkbox Keeps Both of Its Readings (No Visible Change):**
+  - **Today:** An unchecked box is stored as no value, so "is empty" matches unchecked boxes, while sorting treats it as a value, with ascending putting unchecked first.
+  - **After:** No change; it's the one exception to "empty sorts last".
+  - **Alternative:** Apply "empty sorts last" to it too, which puts every unchecked page last both ways and makes the sort's direction do nothing.
+  - **Recommendation:** Keep both readings, so sorting a Checkbox still does something.
+- **LC-54 · Every Picker Opens Fresh per Value (Change):**
+  - **Today:** The table opens a fresh picker when you move from one value to another, while Cards and the Properties panel carry the open picker over, and the panel's popover vanishes instead of fading.
+  - **After:** Cards and the panel open a fresh picker per value as the table does, a Date or File added from a card's Add list opens as a fresh picker at the same spot, and the panel's popover fades out.
+  - **Recommendation:** Behave like the table everywhere, so a picker always belongs to the value it opened for.
+- **LC-55 · Every Property Editor Shares One Spacing (Change):**
+  - **Today:** The Date editor's rows space at 4px and hiding its Day row leaves an extra gap, while the Number editor's rows that appear and disappear have lost their spacing.
+  - **After:** The Date editor's rows space at 8px, the Number editor's revealed rows gain their 8px, and a hidden Day row leaves no gap.
+  - **Recommendation:** Use the one 8px spacing, since that's what "every editor shares one layout" [L-1] means.
+- **LC-56 · Updates Reach Only the Spaces Pommora Lists (Change):**
+  - **Today:** Finding which Spaces hold a property or tag scans every folder, so a Space folder under a Context the Context list doesn't name (only a hand copy makes one) is rewritten too.
+  - **After:** It reads Pommora's own list of Spaces, so that stray folder is left alone, a Space sharing another's id is held out as pages already are, and an unreadable Space file counts as unfinished.
+  - **Recommendation:** Use Pommora's own list, so updates reach exactly the Spaces Pommora shows.
+- **LC-59 · A Date That Moves a Page to Another Group Closes Its Calendar (Fix):**
+  - **Today:** In a view grouped by a Date, picking a date that moves the page into another group leaves the calendar open but lost from its place on screen.
+  - **After:** The calendar closes, because the row it opened from is redrawn under its new group.
+  - **Recommendation:** Close the calendar, since its row is gone from where it opened.
+- **LC-60 · An Editor That Gave Way Reopens If Its Property Returns (Change):**
+  - **Today:** When a property disappears while its editor is open, the editor shows "Property not found."
+  - **After:** The editor gives way to the property list [O-5], and the pane remembers it, so if the property comes back before you open anything else (an undo, a sync, or re-adding it), its editor slides open again; a Remove or Delete made from this pane forgets it.
+  - **Recommendation:** Reopen the editor, since the same rule lets a just-created property's editor open the moment the property exists.
 
 #### Already Settled or Invisible
 
 These record your earlier answers or change nothing you see. Nothing needs doing.
 
-- **LC-17 · Status in the Picker:** the value picker keeps creating Select and Multi-Select options but not Status options, since a Status option has to sit in one of its groups; your J-8 left this to planning.
-- **LC-27 · The History Timeframe's Hint:** it describes only file history while it also ages the stash; its wording waits for your I-076 and I-077 passes.
-- **LC-29 · The Notes File Uses Pommora's Usual File Writer:** the same piece every other Pommora settings file uses.
-- **LC-30 · A Mis-Capitalized Option Word Beside a Valid One Drops:** `Stage: [done, Active]`, with the option spelled "Done", tidies to `[Active]` by your rule that unknown words are ignored; `[done]` alone stays as written.
-- **LC-31 · Sync's Tests Stay:** Sync's folder isn't touched while Sync awaits its rebuild; only its feature document's example is rewritten.
-- **LC-32 · The Properties Folder's Background/Screen Split Waits:** it's part of I-042's folder plan for all of Pommora.
-- **LC-33 · One Notes File:** one file holds every item's entry, since it never syncs and keeps one read at open.
-- **LC-34 · Every Property Change Goes Through the App's One Change Channel:** five ways to save a property setting become one.
-- **LC-35 · I-035 Stays Open:** pages tagged with a new Space or Context name stay unlinked until re-read; the entry's wording is updated.
-- **LC-38 · New Views:** a new view shows Title only, and properties created later stay hidden in existing views, as today.
-- **LC-39 · Value-Less Rows:** in a grouped view, pages with no value stay an unlabeled run at the top or bottom, as today.
-- **LC-41 · The Link Default:** an unset Link Format stays Full Link [I-3].
-- **LC-42 · Several-Word Selects:** your answer: any edit tidies to the one option shown.
-- **LC-43 · The Name:** your answer: Filedata.
-- **LC-44 · Measurement Outcomes:** four speed checks on a large test Nexus decide small things by fixed rules; any that fails its threshold comes back to you with its numbers.
+- **LC-17 · The Value Picker Creates No Status Options (No Visible Change):**
+  - **Today:** The value picker creates Select and Multi-Select options but not Status options.
+  - **After:** No change; the reason, that a Status option has to sit in one of its groups, is written beside it.
+  - **Recommendation:** Keep it, which your J-8 left to planning.
+- **LC-27 · The History Timeframe's Hint Waits for Your Settings Passes (No Visible Change):**
+  - **Today:** The History Timeframe's hint describes only file history.
+  - **After:** No change for now, although the timeframe also ages the stash (LC-26).
+  - **Recommendation:** Leave its wording for your I-076 and I-077 passes.
+- **LC-29 · The Notes File Uses Pommora's Usual File Writer (No Visible Change):**
+  - **Today:** Every Pommora settings file is written through one shared writer.
+  - **After:** The new notes file uses it too.
+  - **Recommendation:** Use the shared writer; nothing needs deciding.
+- **LC-30 · A Mis-Capitalized Option Word Beside a Valid One Drops (Change):**
+  - **Today:** `Stage: [done, Active]`, with the option spelled "Done", stays as written.
+  - **After:** It tidies to `[Active]`, while `[done]` alone stays as written.
+  - **Recommendation:** Follow your rule that unknown words are ignored.
+- **LC-31 · Sync's Tests Stay (No Visible Change):**
+  - **Today:** Sync's folder holds a test of an old spelling this work removes.
+  - **After:** Sync's folder isn't touched while Sync awaits its rebuild; only its feature document's example is rewritten.
+  - **Recommendation:** Leave Sync's folder for its rebuild.
+- **LC-32 · The Properties Folder's Background/Screen Split Waits (No Visible Change):**
+  - **Today:** The Properties folder mixes the code that runs in the background with the code that draws the screen.
+  - **After:** No change here.
+  - **Recommendation:** Split it with I-042's folder plan for all of Pommora.
+- **LC-33 · One Notes File (No Visible Change):**
+  - **Today:** Only one crash-recovery note fits at a time (LC-12).
+  - **After:** One file holds every item's note.
+  - **Recommendation:** Keep one file, since it never syncs and Pommora reads it once at open.
+- **LC-34 · Every Property Change Goes Through the App's One Change Channel (No Visible Change):**
+  - **Today:** Property settings are saved five different ways.
+  - **After:** They're saved one way.
+  - **Recommendation:** Use one way; nothing you see changes.
+- **LC-35 · I-035 Stays Open (No Visible Change):**
+  - **Today:** Pages already tagged with a new Space or Context name stay unlinked until Pommora re-reads them.
+  - **After:** No change; the issue's wording is updated.
+  - **Recommendation:** Leave it open, since the fault sits in code this work doesn't touch.
+- **LC-38 · New Views (No Visible Change):**
+  - **Today:** A new view shows Title only, and properties created later stay hidden in existing views.
+  - **After:** No change.
+  - **Recommendation:** Keep it.
+- **LC-39 · Value-Less Rows (No Visible Change):**
+  - **Today:** In a grouped view, pages with no value sit as an unlabeled run at the top or bottom.
+  - **After:** No change.
+  - **Recommendation:** Keep it.
+- **LC-41 · The Link Default (No Visible Change):**
+  - **Today:** An unset Link Format reads as Full Link.
+  - **After:** No change [I-3].
+  - **Recommendation:** Keep it, as you ruled.
+- **LC-42 · Several-Word Selects (Change):**
+  - **Today:** A Select holding several words stays as written when you edit its page.
+  - **After:** Any value edit tidies it to the one option shown (LC-21), your answer.
+  - **Recommendation:** As you answered.
+- **LC-43 · The Name (No Visible Change):**
+  - **Today:** Title, Created, Modified, and Location have no shared name in the code.
+  - **After:** Their one shared table is named Filedata, your answer.
+  - **Recommendation:** As you answered.
+- **LC-44 · Measurement Outcomes (No Visible Change):**
+  - **Today:** These speed checks don't exist yet; they're part of this work.
+  - **After:** Four speed checks on a large test Nexus decide small things by fixed rules, and any that fails its threshold comes back to you with its numbers.
+  - **Recommendation:** Let the rules decide, and review only the checks that fail.
 
 #### Ratify
 
