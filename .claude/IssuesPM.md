@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 76 | 0 | 3 | 13 | 35 | 25 |
+| 77 | 0 | 3 | 13 | 36 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -64,6 +64,7 @@
 | [I-038](#I-038 • A write's reply waits behind a walk an outside change owes.) | A write's reply waits behind a walk an outside change owes. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
 | [I-033](#I-033 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
 | [I-062](#I-062 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-16-2026 |
+| [I-077](#I-077 • A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own.) | A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own. | Low | Medium (TBD) | Shortcut | `57da5c1db` | **Created:** 10-22-2026<br>**Updated:** 10-22-2026 |
 | [I-035](#I-035 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.) | An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again. | Low | Small (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-04-2026 |
 | [I-039](#I-039 • A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state.) | A page renamed or moved while a refused Space or Context delete puts its sweep back keeps the swept state. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
 | [I-040](#I-040 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
@@ -1099,6 +1100,20 @@ The Date editor gives each of its three rows (Date, Day, and Time) an icon, and 
 
 Every settings row in the Number, Link, Checkbox, and File editors carries an icon as the Date editor's do. How a row says which layer it sets, and how each type's settings are laid out, wait for a design pass by the owner. Until then, work on Properties moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording as it reads.
 
+#### I-077 • A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Medium (TBD) | Shortcut | `57da5c1db` | **Created:** 10-22-2026<br>**Updated:** 10-22-2026 |
+
+**Description**
+
+Removing a property from a Collection moves its values off the Collection's pages into a stash (`property_cache`) in the Collection's own settings file, where re-adding the property restores them. The stash stays there, and its entries are kept for the History Timeframe (`historyDays`), the setting that sets how long page history snapshots and captures are kept; after that, they're cleaned out. That setting measures the age of saved page text, and a stash entry is a removed property's values waiting to be re-added, so one number sets how long both are recoverable. The Archive already separates these cases: Archive History Timeframe (`archiveHistoryDays`) sets how long archived pages keep their snapshots, follows History Timeframe until it's picked, and never exceeds it. The stash has no such setting, so removed values can't be kept longer than page history, or cleaned out sooner, without changing page history too.[^77]
+
+**Solution** [Deferred]
+
+A stash timeframe set beside the Archive's: a stepped setting over the same day steps, placed after Archive History Timeframe in the History section, that follows History Timeframe until picked and never exceeds it. The cleanup of expired stash entries reads it in place of `historyDays`.
+
 ### A6 • Tiles & Embeds
 
 #### I-025 • In a free-text markdown tile, the footnotes divider and the footnote reveal do nothing.
@@ -1370,3 +1385,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^74]: **I-074:** `Core/Nexus/fileEvents.ts:502-518` (`applySettings`, `oweRescope`), `Core/Nexus/settle.ts:184-189` (`reseed`), `Core/Settings/settings.ts:107-139` (`carrySetAside`), `Core/Nexus/folderEntity.ts:53-71` (`liftSetAside`), `.claude/Features/DesktopPM.md:22`
 [^75]: **I-075:** `Desktop/FileWatch/watcher.ts:38` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:106` (`awaitWriteFinish`)
 [^76]: **I-076:** `Core/Properties/Schema/DateTimeEditor.tsx:18,33-61` (`ROW_LOOK`, the icon-led `pickerRow` rows), `Core/Properties/Schema/NumberEditor.tsx:35-143` (the icon-less rows), `Core/Properties/Schema/LinkEditor.tsx:26-56`, `Core/Properties/Schema/CheckboxEditor.tsx:30-46`, `Core/Properties/Schema/FileEditor.tsx:22-40`, `Core/Properties/Schema/FormatRows.tsx:34-46` and `Core/Properties/Schema/PropertyFrame.tsx:410-416` (the icon-led rows elsewhere), `Core/Properties/Schema/PropertyFrame.tsx:347-376` (which editors write the property and which the view), `Core/Actions/columnMenu.ts:40-42,67-73` (the column menu's "Format")
+[^77]: **I-077:** `Core/Properties/removeProperty.ts:44-58` (the stash written on Remove), `Core/Properties/propertyCache.ts:8-28` (`cachedValues`, `patchCacheBlock`), `Core/Properties/assignment.ts:66-106` (the stash read and spent on re-adding), `Core/Settings/personalization.ts:42,189-190,261-263` (`HISTORY_DAYS`, `historyDays`, `archiveHistoryDays`, `SETTING_BOUNDS`), `Core/Settings/settings.ts:82-92` (`readFileHistoryConfig`), `Core/Pages/fileHistory.ts:195-206` (`sweepFileHistory`), `Core/Settings/frames.ts:652-665` (the History section's rows)
