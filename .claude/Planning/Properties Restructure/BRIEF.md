@@ -11,6 +11,9 @@ The standing approach, principles, perspectives, constraints, and process for th
 - ***Properties Restructure — Investigation***: the synthesized inventory and technical evidence, citing the decision log's entries.
 - ***Properties Restructure — Scout Reports***: the nine reconciled scout reports the Investigation is synthesized from.
 - ***Properties Restructure — Walkthrough***: the plain-English overview of everything the work changes against what's true now, which every overview in planning and the plan's closing presentation follow.
+- ***Properties Restructure — Planning Findings***: the planning scouts reconciled at HEAD, every planner's call settled, the binding design each phase expands, and the Last Calls.
+- ***Properties Restructure — Implementation Plan***: the phases and tasks, written as diff blocks `.claude/scripts/plan-replay/plan_replay.py` applies.
+- ***Properties Restructure — Morning Report***: where planning closed, the numbers, the checks' findings, and the calls left to Nathan.
 - ***BRIEF.md***: this document.
 
 ---
