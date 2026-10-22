@@ -71,7 +71,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 #### F - Property Types
 
 - **F-1 [CONFIRMED]:** Context stays a property type.
-- **F-2 [CONFIRMED]:** Created Time and Last Modified Time are meant to leave the property types and become their own kind of file-derived field, named something like Filedata or Metadata, in the same category as a page's Aliases and its ID where that fits. Planning investigates what already exists for those fields and where they belong before naming or placing them, noting that "metadata" already names the page metadata in `Core/Nexus/pageMetadata.ts` and `.nexus/metadata/`.
+- **F-2 [CONFIRMED]:** Created Time and Last Modified Time are meant to leave the property types and become their own kind of file-derived field, named Filedata, in the same category as a page's Aliases and its ID where that fits. Planning investigates what already exists for those fields and where they belong before naming or placing them, noting that "metadata" already names the page metadata in `Core/Nexus/pageMetadata.ts` and `.nexus/metadata/`. The group is named Filedata.
 - **F-3 [CONFIRMED]:** Title and Icon are built-in fields rather than property types, so the property types hold the nine user types plus Context. Planning investigates how Icon is held today alongside Title.
 
 #### G - Reach
@@ -387,3 +387,5 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Q:** Should the panel's right-click on a File value match the card's? **A:** Yes, and offer Remove. The whole right-click menu should be the same wherever it opens, table or card; take that with a grain of salt and look out for blatant divergence and consolidation opportunities.
 - **Q:** Does "date-row being icon-only should be fixed" mean every editor's rows get icons? **A:** Every property's settings rows should get an icon as Date's do; it's out of scope here but definitely should be done, so it's filed as an Issue.
 - **Q:** One Style row per type for a view's look? **A:** Keep that open and make no calls on how the settings panels are done; note it in the same Issue. Fix a setting that's genuinely confusing or genuinely in the wrong place, and leave "Date Format" and "Show Decimals" ambiguous in the rows' wording for a later pass.
+- **Q:** A Select holding several words: does editing a different property on the page trim it? **A:** Yes; it tidies using the same logic as the rest.
+- **Q:** What are Title, Created Time, Last Modified, and Location called as a group? **A:** Filedata.

@@ -8,7 +8,7 @@ The Properties Restructure is a top-to-bottom cleanup of how Pommora handles pro
 
 **Today:** Pommora keeps one list of types that does two jobs: what a property can be, and what kind of column a view can show. Because of that, Created Time, Last Modified, and in places Title ride along as if they were property types, and guards across the app keep them from being treated as real ones; one written into the property list by hand shows up as a dead or uneditable property. Neither timestamp is stored: Created Time is read from the moment encoded in the page's ID, and Last Modified from the file itself. A page's Icon is already neither a property nor a column; it lives in Pommora's page-info files beside the page's aliases. Each type's facts, such as its name, its icon, how it sorts, whether it can group a view, and which editor opens, are written in about 14 tables and about 25 one-off checks scattered through the app.
 
-**What Changes:** Nothing you'll see. The property types become the nine you can create plus Context. Title, Created Time, Last Modified, and Location form their own group, Built-In Fields, with one table holding their names and icons. A Context-typed property written into the property list by hand is set aside as not a real property, since Contexts come from the Context list.
+**What Changes:** Nothing you'll see. The property types become the nine you can create plus Context. Title, Created Time, Last Modified, and Location form their own group, Filedata, with one table holding their names and icons. A Context-typed property written into the property list by hand is set aside as not a real property, since Contexts come from the Context list.
 
 **Your Calls:**
 - [F-1] Context stays a property type.
@@ -332,9 +332,9 @@ Every other collapsed group in NexusOS holds only folders and stays as it is, an
 5. **Folder Layout:** part one of I-042, the Core-wide folder proposal, isn't owned by this work, and the Properties folder's split waits on it.
 6. **New Views:** a new view shows Title only.
 7. **Value-Less Rows:** they stay an unlabeled run rather than a "None" group.
-8. **Several-Word Selects [P-1]:** editing another property doesn't trim a Select holding several words; it tidies on that property's own next pick.
+8. **Several-Word Selects [P-1]:** settled: any edit to the page tidies a Select holding several words to the one valid option it shows, by the same logic as every other tidy-up.
 9. **The Pommora Tile [D-2]:** its Status collapses are kept and scoped to Status, with "open" and "closed" dropped.
-10. **The Name [F-2]:** the group is named "Built-In Fields," since "Metadata" already names the files holding Icon and Aliases, and "Filedata" misdescribes Title and Created Time.
+10. **The Name [F-2]:** settled: the group is named Filedata.
 11. **Hand-Written Context Properties [F-1]:** one written into the property list reads as not a real property.
 12. **The Link Default [I-3]:** an unset Link Format stays Full Link, since Default Link Format is set per device and governs pasting, so tying them would let one property read differently on your Mac and your iPhone.
 13. **Zero-Holder Deletes [O-2]:** deleting a property or option held by nothing still asks, with correct wording.
