@@ -84,7 +84,7 @@ Each call names its reason under the Approach, Principles, and Perspectives. Cal
 - **Sequence:** Q's eighteen phases stand with the adjustments listed under *§The Phases › Adjustments to Q's Sequence*. Each phase fits one implementation agent's context and leaves its head shippable.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals. Every existing entry the work touches is closed or narrowed in place with no successor (*§What Becomes False › Issues Entries*), and anything that can't finish inside the plan is a Last Call.
 - **Sync Stays:** nothing under `Core/Sync/` changes, its tests included; `mergePolicy.test.ts:120-136` stays as it reads and goes to *§Sync Rebuild Inputs* (LC-31).
-- **Net-Negative Production Lines:** a completion criterion. *§The Ledger* is re-estimated per phase, and the one net-positive phase (P12) states why under *Less Stuff*.
+- **Net-Negative Production Lines:** a completion criterion. *§The Ledger* is re-estimated per phase, and each net-positive phase (P4B, P12) states why under *Less Stuff*.
 - **Every Measure-Then-Decide Point:** each names its Benchmark Nexus, the measurement, a threshold number, and both outcomes as tasks, so the executor runs a rule (*§Measurement Rules*).
 - **One Drive:** the plan creates `.claude/scripts/Properties Drive/live-drive.mjs` on `drive-harness.mjs` with one group per phase that has a visible surface, in the Archive Drive's shape; the existing Metadata, Option Picker, and Text Property drives are re-pointed where a phase changes what they select.
 
@@ -207,7 +207,7 @@ Each call names its reason under the Approach, Principles, and Perspectives. Cal
 
 #### Measurement Rules
 
-Each measuring task builds its Benchmark Nexus with `node .claude/scripts/make-benchmark-nexus.mjs large` first, writes the view sidecar it times (the size presets seed no views), runs the measurement over CDP with `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev`, and sweeps the Benchmark Nexus and the sidecar after. A baseline is taken with the same script at the phase's base commit. One frame is 16 ms.
+Each measuring task builds its Benchmark Nexus with `node .claude/scripts/make-benchmark-nexus.mjs large` first, writes the view sidecar it times (the size presets seed no views), runs the measurement over CDP on a build launched through `drive-harness.mjs`' `launch` on its own userData (a baseline worktree through `POMMORA_DRIVE_REPO`), so both sides run the build users run and Nathan's dev state is untouched, and sweeps the Benchmark Nexus and the sidecar after. A baseline is taken with the same script at the phase's base commit. One frame is 16 ms.
 
 - **F3 (P6), the Renderer Stops Encoding:** on `~/Benchmark-Large`, a Table over the largest Collection; 20 single-cell Select edits and five 200-row mass assigns, commit-to-paint from `pointerup` to the paint showing the new chip. **Pass:** single-edit p95 is at most baseline p95 + 16 ms, and each mass assign is at most baseline × 1.10 → F3 lands. **Fail:** the phase restores `applyValueAtRoot`'s encode for the pending override, keeps the rest of P6, removes F3's −30 from *§The Ledger*, and the trace becomes a Last Call row in the reconciliation report.
 - **K (P14), an Incremental View Pipeline:** on `~/Benchmark-Large`, a date-sorted, date-grouped Table over the largest Collection; the pipeline's own time (flatten, filter, sort, group) for one value edit, 20 samples, after H compiles operands and date keys once per pass. **Pass:** p95 at most 16 ms → Approach K is excluded, with the trace recorded in the phase's Departures. **Fail:** K becomes a Last Call with the trace, never an Issue.
@@ -229,7 +229,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 3. **P7 Folds `property:replay` as a Transport:** Q left `property:replay` for P11 to reshape on folded ops; P7 folds it into `mutate` as `replayProperty` and carries owed records on `MutateOutcome.retry`, so `propertyWrite.ts` leaves in P7 and P11 replaces one op and one field.
 4. **P9 Takes R's Context Rename Order:** note → list → folder → files with H-8's in-op revert, over Q's preferred cascade-before-relocate.
 5. **P10 Adds the Finder's Move Rebase:** Q's fallback becomes the design, since the tree is patched settle-side.
-6. **P11 Takes R's Design Whole:** `journalSlot` dissolves rather than moving; the notes module lands in `Core/Nexus/owed.ts`; Try Again is the argument-less `finishOwed` op; H-13 and H-18 land here; P11's delta becomes R's −200 midpoint less P9's −50 and P1's −12.
+6. **P11 Takes R's Design Whole:** `journalSlot` dissolves rather than moving; the notes module lands in `Core/Nexus/owed.ts`; Try Again is the argument-less `finishOwed` op; H-13 and H-18 land here.
 7. **P12 Takes S's Design Whole:** the wrapper stays, trashed Collections stay untouched, cache becomes stash on disk and in code, the refill's skips surface through a `refill` entry, and the Archive restore's double report folds.
 8. **P13 Settles 07-17 by Rule:** Q's read is written as a rule with both outcomes.
 9. **P18 Leaves I-064 Deferred:** Q's settlement through P17 doesn't hold (*§Planner's Calls › P13 – P18*).
@@ -246,7 +246,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 3. **Legacy Hidden-Group Keys (L3):** delete `legacyBucketKey` and its three call branches, `clearHiddenBuckets`' bare-`sub/` clause, and the `/^\d{4}/` sniff in `Core/Views/views.ts:317-382`, and the frame's copy at `GroupFrame.tsx:510-511`.
 4. **The Encoder Stops Refusing (V2):** `valueToWrite` returns `unknown`, keeping its exhaustive `never` arm; its `Result` plumbing and the `invalid-property` code leave from `Core/Properties/propertyValue.ts`, `Core/Properties/setProperty.ts`, `Core/Nexus/page.ts`, and `Core/Testing/propertyWrites.ts`.
 5. **The Unread Field (N4):** `RenameJournal.skipped`, its decode, its write at `Core/Contexts/contextCascade.ts:184`, and the `contextJournal.ts:1` comment claiming it updates the held record.
-6. **Generic Modules to Their Owners (Z1):** `Core/Properties/rowOrder.ts`'s `resolveRowOrder` moves into `UIX/Utilities/moveItem.ts` (already a pinned engine-graph UIX leaf), its seven readers re-importing (`Core/Contexts/spaceSidecar.ts`, `Core/Nexus/tree.ts`, `Core/Properties/PropertyPanel.tsx`, `Core/Properties/propertiesRegistry.ts`, the two `bandRouter.ts`/`bandOrder.ts` readers, `Core/Views/Pipeline/group.ts`); `Core/Properties/pageRow.ts` moves to `Core/Views/pageRow.ts`.
+6. **Generic Modules to Their Owners (Z1):** `Core/Properties/rowOrder.ts`'s `resolveRowOrder` moves into `UIX/Utilities/moveItem.ts` (already a pinned engine-graph UIX leaf), its five production readers re-importing (`Core/Contexts/spaceSidecar.ts` and `Core/Nexus/tree.ts` hold a `rowOrder` field, not the function; `Core/Properties/PropertyPanel.tsx`, `Core/Properties/propertiesRegistry.ts`, the two `bandRouter.ts`/`bandOrder.ts` readers, `Core/Views/Pipeline/group.ts`); `Core/Properties/pageRow.ts` moves to `Core/Views/pageRow.ts`.
 7. **Unexports and Comments (09-09, 09-11):** `TypeSpec`, `NUMBER_FAMILIES`, `NumberPart`, `StoredColumnStyle`, and `numberDivisor` unexport, with the rest of 09-09's list of test-only or unread exports; the comments at `Core/Properties/Cells/columnLabel.ts:10`, `setProperty.ts:14`, `Core/Properties/paneDrop.tsx:16-17` (one line), `property-panel.css.ts:8`, and `propertyValue.ts:29` leave.
 8. **Test Titles (09-06):** about 31 plan-round tags leave test titles, and the four stale titles are rewritten.
 
@@ -254,13 +254,13 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Behavior Changes:** none on NexusOS, `~/Test`, or a Benchmark Nexus. A Nexus outside them holding a legacy type id would read that definition as unadmitted, which A-4 accepts (Nathan's intent).
 
-**Consumers:** `Core/Nexus/handlers.ts`, `Core/Nexus/adopt.ts`, `Core/Properties/properties.ts`, `Core/Views/views.ts`, `GroupFrame.tsx`, the four `valueToWrite` readers, `contextJournal.ts`, `contextCascade.ts`, the seven `resolveRowOrder` readers, `pageRow`'s readers.
+**Consumers:** `Core/Nexus/handlers.ts`, `Core/Nexus/adopt.ts`, `Core/Properties/properties.ts`, `Core/Views/views.ts`, `GroupFrame.tsx`, the four `valueToWrite` readers, `contextJournal.ts`, `contextCascade.ts`, the five `resolveRowOrder` readers, `pageRow`'s readers.
 
 **Tests:** **Deleted:** `migrateConfig.test.ts` (74), `normalizeSavedViews.test.ts` (148), `properties.test.ts:44-47`, `optionOps.test.ts:416-435`, `Nexus/handlers.test.ts:165-178`, the eight `legacyBucketKey`/year-sniff tests, `propertyValue.test.ts:245-247`, `deleteProperty.test.ts:303-332`, `columnStyles.test.ts:13-16,34-43` (keeping the `defaultStyleFor('file')` line), V2's cast test. **Rewritten:** `restoreScrub.test.ts:287,310` respelled camelCase; `value.test.ts:81` retitled. **Untouched:** `Core/Sync/Arrival/mergePolicy.test.ts`. **Written:** one `seedNexus` test pinning that the seeded registry reads back through `readRegistry`.
 
 **Drive:** no visible surface. The Properties Drive lands with its first group in P2.
 
-**Delta:** about −160 production (−90 L1, −35 L3, −22 V2, −12 N4, about −5 unexports; the moves are line-neutral and the comments uncounted); about −420 tests, +25 for the seed.
+**Delta:** about −141 production (−296 / +155; *Phase 1 › Line Total*); tests about −520.
 
 **Depends On:** nothing.
 
@@ -270,12 +270,12 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **GOAL:** The property types become the nine user types plus Context, and Title, Created Time, Last Modified, and Location become one Filedata table keyed by reserved id, with one admission predicate setting aside any definition that isn't a user type. Title reads as text, so option ids can land later without a title ever reading as an id.
 
-**Units:** T6 with T2 inside (F-1, F-2, F-3; 01-03, 01-04, 01-11, 05-03, 07-13, 02-15), T4 (01-10, 09-09's moves), T5 (01-14), 01-13.
+**Units:** Z2 (08-12's vocabulary half, as the phase's first task), T6 with T2 inside (F-1, F-2, F-3; 01-03, 01-04, 01-11, 05-03, 07-13, 02-15), T4 (01-10, 09-09's moves), T5 (01-14), 01-13.
 
 **Binding Design:**
 1. **Two Type Sets** (`Core/Properties/properties.ts`): `typeIds = z.enum(['text', 'number', 'checkbox', 'dateTime', 'select', 'multiSelect', 'status', 'link', 'file', 'context'])`, `PropertyType = z.infer<typeof typeIds>`; `FiledataType = 'title' | 'createdTime' | 'lastEditedTime'`; `ColumnType = PropertyType | FiledataType`, which replaces all 21 `PropertyType | 'title'` unions in their 11 files (`Core/Actions/cellMenu.ts` 2, `Core/Properties/Cells/PropertyTypes.tsx` 3, `Core/Properties/Pickers/valueClick.ts` 1, `Core/Properties/columnStyles.ts` 1, `parseEditorValue.ts` 1, `properties.ts` 3, `Core/Properties/value.ts` 2, `cardValueInput.ts` 1, `useViewHost.ts` 1, `useColumns.ts` 3, `reassign.ts` 3).
 2. **One Record Keyed by Column Type:** `PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>>`, with `origin: 'user' | 'context' | 'filedata'`; the stamp rows become `origin: 'filedata'`, and `title: { kind: 'text', origin: 'filedata' }` joins, so `specOf`, `pickKindOf`, `valueClickIntent`, and `fillsBlank` answer every column from one record.
-3. **One Admission Predicate:** `export const isUserType = (t: string): t is PropertyType => isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'`, read by `normalizeRegistry` (`Core/Properties/propertiesRegistry.ts:21-45`) and `validateDefinition` (`Core/Properties/schema.ts:65-66`); `normalizeRegistry` also sets aside a reserved id, filing both as `unadmitted`. The guards that filtered them back out leave: `Core/Properties/Schema/PropertyFrame.tsx:202,204`, `Core/Views/Settings/visibilityModel.ts:17`, `Core/Views/Settings/SortFrame.tsx:92`, `Core/Interface/Menus/propertyMenuActions.ts:69`, and the stamps' `NO_SETTINGS` rows (`PropertyFrame.tsx:392-393`; Context's `:391` stays).
+3. **One Admission Predicate:** `export const isUserType = (t: string): t is PropertyType => isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'`, read by `normalizeRegistry` (`Core/Properties/propertiesRegistry.ts:21-45`) and `validateDefinition` (`Core/Properties/schema.ts:65-66` at HEAD, `validation.ts` from Task 2-1); `normalizeRegistry` also sets aside a reserved id, filing both as `unadmitted`. The guards that filtered them back out leave: `Core/Properties/Schema/PropertyFrame.tsx:202,204`, `Core/Views/Settings/visibilityModel.ts:17`, `Core/Views/Settings/SortFrame.tsx:92`, `Core/Interface/Menus/propertyMenuActions.ts:69`, and the stamps' `NO_SETTINGS` rows (`PropertyFrame.tsx:392-393`; Context's `:391` stays).
 4. **Filedata** (`properties.ts`):
    ```ts
    export const FILEDATA = {
@@ -287,7 +287,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
    ```
    with one derived `FILEDATA_BY_ID` map behind `isReservedPropertyId`. It replaces `RESERVED_PROPERTY_ID` (its 12 readers write `FILEDATA.<name>.id`), `STAMP_TYPE` (`columnKind`, `Core/Views/Pipeline/columns.ts:11-15`, reads `FILEDATA_BY_ID.get(id)?.type`), `RESERVED_LABEL`, `TITLE_TARGET`/`LOCATION_TARGET`/`STAMP_TARGETS` (`SortFrame.tsx`), `columnLabel.ts:6-7`'s two labels, and `rowGlyph`'s fallback. The ids stay byte for byte; NexusOS refers to them only by id (`_modified_at`, `_location`), so nothing converts. Icon gets no entry. Location carries no `type` because it's a sort, filter, and preview target, never a shown column: `columnKind` (`columns.ts:11-15`) never classifies it, and the task says so where `FILEDATA` is declared. `PROPERTY_TYPES`' `origin` and `FILEDATA` both stand because they answer different questions: `origin` is what separates the nine user types from `context` and the Filedata column types, keyed by type, while `FILEDATA` names each reserved id's type and label, keyed by field; the declaration carries that one line.
 5. **Title Reads as Text:** `Core/Properties/value.ts:43` answers `{ kind: 'text', value: row.title }`; `filter.ts`'s title branch leaves; `textValue`'s select arm stays for option labels; `TITLE_OPS` (`filterModel.ts:107-108`) stays, since Title offers no empty ops.
-6. **Catalog Moves (T4):** `KEY_REFUSAL` and `RESERVED_NAME_PREFIX` move to `schema.ts` (which P17 renames `validation.ts`; the cross-phase reconciliation settles whether the rename moves into P2 so the file is touched once); the two seeds move to `Core/Properties/registryProperty.ts`; the `optionsOf` comment (`properties.ts:286`) and `properties.test.ts:267` lose the ghost "type change" reason.
+6. **Catalog Moves (T4):** `KEY_REFUSAL` and `RESERVED_NAME_PREFIX` move to `Core/Properties/validation.ts`, which `schema.ts` becomes as this phase's first task (Z2, a pure move), since this phase, P3, P7, and P8 all write into the file; the two seeds move to `Core/Properties/registryProperty.ts`; the `optionsOf` comment (`properties.ts:286`) and `properties.test.ts:267` lose the ghost "type change" reason.
 7. **Bucket Labels (T5):** `formatBucketLabel` moves to `Core/Views/Pipeline/group.ts` beside `dateBucketKey`, with its test; `NUMERIC_FORMATS` stays in `formatValue.ts`. **01-13:** `formatPoint` calls `showsWeekday`.
 
 **Order:** 1 and 2 together, 3, 4, 5, 6, 7.
@@ -296,11 +296,11 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Consumers:** the 11 union files, `RESERVED_PROPERTY_ID`'s 12 readers, `normalizeRegistry`, `validateDefinition`, the four guard sites, `columns.ts`, `value.ts`, `filter.ts`, `SortFrame.tsx`, `columnLabel.ts`, `formatValue.ts`, `group.ts`, `bandModel.ts`.
 
-**Tests:** **Rewritten:** `schema.test.ts:86-91` becomes a decode test (`normalizeRegistry` sets a stamp definition aside); stamp-typed fixtures (`propertyMenuActions.test.ts:39`, `useColumnStyles.test.ts:90`, `sort.test.ts:51,56`, `propertyValue.test.ts:157,161`) re-typed to a Filedata column or removed. **Kept:** `schema.test.ts:79-84` as the create-side pin of `isUserType`. **Written:** one test that a Title value is `{ kind: 'text' }` through `resolveFieldValue`.
+**Tests:** **Rewritten:** `validation.test.ts:86-91` (HEAD's `schema.test.ts`) becomes a decode test (`normalizeRegistry` sets a stamp definition aside); stamp-typed fixtures (`propertyMenuActions.test.ts:39`, `useColumnStyles.test.ts:90`, `sort.test.ts:51,56`, `propertyValue.test.ts:157,161`) re-typed to a Filedata column or removed. **Kept:** `validation.test.ts:79-84` as the create-side pin of `isUserType`. **Written:** one test that a Title value is `{ kind: 'text' }` through `resolveFieldValue`.
 
 **Drive:** the Properties Drive (`.claude/scripts/Properties Drive/live-drive.mjs`, on `drive-harness.mjs`, in the Archive Drive's shape) is created with group 1 on `~/Test`: a Table's header and its sort and filter menus show Title, Creation Time, and Last Modified with today's labels and icons; a `context`-typed definition written by hand into `~/Test/.nexus/properties.json` shows nowhere in the Properties pane, and the drive removes it after.
 
-**Delta:** about −60 (−45 to −80).
+**Delta:** about −52 (−287 / +235, the rename's specifiers inside; *Phase 2 › Line Total*).
 
 **Depends On:** P1 (`propertyType` is plain `typeIds`).
 
@@ -315,7 +315,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 **Binding Design:**
 1. **Owners First (T9):** the link-display values (`LINK_DISPLAYS`, `LinkDisplay`, `isLinkDisplay`, `DEFAULT_LINK_DISPLAY`) move to `Core/Connections/linkValue.ts`, and their labels go to the label module (08-08's split); `PaneTarget` and its builders move to `Core/Views/paneTargets.ts` (renderer `.ts`, beside `filterModel.ts`); 08-07's renderer label module is `Core/Properties/displayLabels.ts`, taking `LINK_DISPLAY_LABELS` (`properties.ts:98`), `LOOK_LABELS` (`columnStyles.ts:23`), and `lookOptions` (`columnStyles.ts:33`), whose every reader is renderer-side at HEAD (`Core/Actions/columnMenu.ts`, `connectionMenu.ts`, `pasteAsMenu.ts`, `Schema/linkFormatOptions.ts`, `CheckboxEditor.tsx`, `NumberEditor.tsx`, `PropertyFrame.tsx`; the engine graph reaches `Core/Actions` only through `handlers.ts` → `menuModel.ts` and `editorMenu.ts`, which import none of them). The remaining label tables in engine files follow the same test: a table whose every reader is renderer-side moves, and one with a host-side reader stays, each placement stated in its task with the `git grep -n` that settles it.
 2. **The Engine Record (T1):** `TypeSpec` gains `connections?: 'value' | 'prose'` (Link `'value'`, Text `'prose'`), `registersMembers?: true` (Multi-Select), and `blankDraws?: true` (Checkbox). `CREATABLE_TYPES` moves from `Cells/PropertyTypes.tsx:43-45` into `properties.ts`, derived from `isUserType`. Readers: the five "which types hold connections" sites (01-05) read `connections`; `fileEvents.ts:528` and `optionOps.ts:133` read `registersMembers`; the four checkbox blank-rule sites (06-14) read `blankDraws`.
-3. **The Renderer Record:** `Core/Properties/Cells/PropertyTypes.tsx` moves to `Core/Properties/typeDisplay.tsx` (06-11: it isn't a cell), its `TYPE_META` keyed by `ColumnType` absorbing the chip shape (`optionShapeFor`, which leaves `UIX/Labels/recipes.tsx`), the chip default glyph (`optionGlyph`'s default, `Cells/OptionChip.tsx:26`; Select keeps `'tag'`, M-1), and `styleLabel` (Link `'Format'`, every other type `'Style'`), which replaces `styleMenuLabel` (`Core/Actions/columnMenu.ts:40-42`); `columnMenu.ts` is renderer-side (its importers are `cellMenu.ts`, `optionMenu.ts`, `Bundles/browser.ts`, `MarkdownPM/Tables/tableMenu.ts`, `useOptionEdit.tsx`, `CardValue.tsx`, `useColumns.ts`, none in the engine graph), so it reads the `.tsx` record directly. `Schema/GhostOptionChip.tsx` and `Schema/useOptionEdit.tsx` read the shape from it.
+3. **The Renderer Record:** `Core/Properties/Cells/PropertyTypes.tsx` moves to `Core/Properties/typeDisplay.ts` (06-11: it isn't a cell; with `PropertyTypeIcon` folded into `Icon`, it holds no JSX), its `TYPE_META` keyed by `ColumnType` absorbing the chip shape (`optionShapeFor`, which leaves `UIX/Labels/recipes.tsx`), the chip default glyph (`optionGlyph`'s default, `Cells/OptionChip.tsx:26`; Select keeps `'tag'`, M-1), and `styleLabel` (Link `'Format'`, every other type `'Style'`), which replaces `styleMenuLabel` (`Core/Actions/columnMenu.ts:40-42`); `columnMenu.ts` is renderer-side (its importers are `cellMenu.ts`, `optionMenu.ts`, `Bundles/browser.ts`, `MarkdownPM/Tables/tableMenu.ts`, `useOptionEdit.tsx`, `CardValue.tsx`, `useColumns.ts`, none in the engine graph), so it reads the record directly. `Schema/GhostOptionChip.tsx` and `Schema/useOptionEdit.tsx` read the shape from it.
 4. **One Options-From-Labels Builder (T3):** `pickerOptions(values, labels)` in `displayLabels.ts`, beside `lookOptions`, which becomes `(looks) => pickerOptions(looks, LOOK_LABELS)`; `Core/Properties/Schema/linkFormatOptions.ts` leaves; `LinkEditor.tsx` and `Core/Settings/frames.ts` call `pickerOptions`. Nothing in the engine graph imports `displayLabels.ts`, which `engineGraph.test.ts`'s no-renderer pin proves.
 5. **One Looks Record (T7):** `LOOKS: Readonly<Record<PropertyType, readonly ColumnLook[]>>` in `columnStyles.ts` beside `OPTION_LOOKS`/`CHECKBOX_LOOKS`/`NUMBER_LOOKS`, read by `styleMenuItems`, `defaultStyleFor`, and `PropertyFrame.tsx:362,370,408`'s three narrowings. No row moves and no wording changes (I-1).
 6. **The Status Picker Gate (J-8):** `PropertyPicker.tsx:311` keeps reading `options === 'select'`, with its reason in one line beside it.
@@ -330,7 +330,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Drive:** Properties Drive group 2: right-clicking a Number column header shows "Style", a Link header "Format"; a Select chip in compact view keeps its tag glyph.
 
-**Delta:** about −78 (−60 to −95).
+**Delta:** about −29 (−264 / +235; *Phase 3 › Line Total*): the moves pay Biome's import wrapping, and the narrowings read the record through `lookIn` rather than leaving.
 
 **Depends On:** P2 (`ColumnType`).
 
@@ -385,7 +385,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Measurements:** P4's checkpoint runs T's NexusOS scan read-only against a copy of `~/NexusOS` and lists every page and key Repair On Open would change under the new rule (expected: none).
 
-**Delta:** about −85 (−75 to −95; T's +4 inside).
+**Delta:** about −32 across both halves: P4A about −39 (−419 / +380) and P4B about +7 (−16 / +23); `frozenOf` and the `pageValuesOf` fold didn't hold at HEAD, and the banner keeps its read.
 
 **Depends On:** P1, P2.
 
@@ -413,7 +413,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 4: corrupting `~/Test/.nexus/properties.json` and reopening shows the Nexus with a notice naming the property list and every Space still in tiles; restoring the file brings the properties back without a reopen.
 
-**Delta:** about −27 (−20 to −35; O-6's +10 to +20 inside, required behavior in its minimal form).
+**Delta:** about −55 (−125 / +70; O-6's +8 inside, required behavior in its minimal form).
 
 **Depends On:** P4.
 
@@ -437,7 +437,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Behavior Changes:** undo puts back exactly what the file held for the edited key only (E-1, E-2), a bare key comes back bare, unknown Context tag names survive an undo, and undoing a Link value takes back the alias it added (E-3) — each Nathan's intent.
 
-**Consumers:** `assignValue.ts`, `setProperty.ts`, `mutateRequest.ts`, `mutate.ts`, `governedRoot.ts`, `governedSweep.ts`, `contextWrite.ts`, `pageMetadata.ts`, `aliasMemory.ts`, `Session/undo.ts`, `valueOverride.ts`, `useViewCreation.ts`, `useContainerValues.ts`, `ValueWriter`'s four assemblers (`entityMenuActions.ts`, `PropertyPanel.tsx`, `assignValue.ts`, `useViewHost.ts`).
+**Consumers:** `assignValue.ts`, `setProperty.ts`, `mutateRequest.ts`, `mutate.ts`, `governedRoot.ts`, `governedSweep.ts`, `contextWrite.ts`, `pageMetadata.ts`, `aliasMemory.ts`, `Session/undo.ts`, `valueOverride.ts`, `useViewCreation.ts`, `useContainerValues.ts`, `ValueWriter`'s three assemblers (`entityMenuActions.ts`, `PropertyPanel.tsx`, `useViewHost.ts`; `assignValue.ts` declares it) (`entityMenuActions.ts`, `PropertyPanel.tsx`, `assignValue.ts`, `useViewHost.ts`).
 
 **Tests:** **Rewritten:** `restoreValue.test.ts` (193 lines) folds into the `setProperty` and put-back tests; `assignValue.test.ts:72-115` pins the reply-carried record. **Written:** bare `Status:` round-trips bare; an unknown Space title survives a Context undo; a Link undo removes its alias and keeps an alias the page already had; a tidied sibling stays tidied after undo.
 
@@ -445,7 +445,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Measurements:** F3 (*§Measurement Rules › F3*).
 
-**Delta:** about −35 (−30 to −40); E alone is near zero, and F3 makes it negative.
+**Delta:** about 0 (−193 / +193): the undo's node-exact put-back (about +68) against F3 (about −68); about +68 on F3's Fail.
 
 **Depends On:** P4.
 
@@ -463,7 +463,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 1. **The Ops** (`Core/Nexus/mutateRequest.ts`'s union; `Core/Nexus/mutate.ts`'s `dispatch`): 19 writing channels become 14 ops —
    | Op | Replaces |
    |---|---|
-   | `addProperty { containerPath, type, label }` | `schema:add` |
+   | `addProperty { containerPath, draft }` (the existing `PropertyDraft` decoder; the pane sends `{ label, type }`) | `schema:add` |
    | `assignProperty { containerPath, propertyId }` | `schema:assign` |
    | `unassignProperty { containerPath, propertyId }` | `schema:unassign` |
    | `reorderAssigned { containerPath, propertyId, toIndex }` | `schema:reorder` |
@@ -482,7 +482,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 2. **One Reply:** every op answers `MutateOutcome`: `cascade` for a sweep's report; `retry: { op: 'replayProperty', record }` for an owed record (replacing `SchemaCascade.owed`'s renderer copy); `bundled` for a delete's Trash entry; `landedAs` for a numbered restore; `created` widens to `{ path: string } | { propertyId: string }` for `addProperty`. `Core/Properties/propertyWrite.ts` is deleted: `PropertyFrame.tsx` and `useOptionEdit.tsx` call the slice's `mutate`, whose refusal path offers Try Again for code `'owed'` as `mutate({ op: 'replayProperty' })`.
 3. **One Lock Rule (S1):** each property op takes `serializeSchemaOp` exactly once inside its function and `dispatch` adds no lock around it, so no op re-takes the schema lock (`machine.ts:31-32`); the Trash restore's Contexts → settle → schema nesting is unchanged. `addProperty` is one hold: create, assign, and on a failed assign an in-hold rollback of the create. `rekeyProperty`'s in-commit `validateName` stays for outside writers, its comment (`registryProperty.ts:170`) rewritten to that reason; `propertiesRegistry.ts:125`'s comment states the rule.
 4. **Restore Trusts Create (S3, O-4):** `createProperty` returns `Result<PropertyDefinition>` (the landed definition); `restoreInner`'s `'exists'` pre-check, read-back, and second tree read leave, keeping the refusal message; `restoreTrashed`'s property arm answers `landedAs` when the landed label differs, reported by `browser.ts`'s `steppedTo` in the Archive's approved wording.
-5. **Small Ones (S5):** `optionCascade`'s `null`-in-a-tuple becomes `type OptionChange = { kind: 'rename'; from; to } | { kind: 'remove'; label } | { kind: 'clear'; label }` with a `switch`; Remove's inline `mapViews` leaves, so `reachConfig` owns every view edit; `refillValues` moves beside `sweepRootsById` in `Core/Nexus/governedSweep.ts`; `writePropertyBundle` unexports; `Core/Properties/removeProperty.ts` becomes `unassignProperty.ts`; `Core/Trash/holdings.ts` becomes `Core/Trash/trashedCopies.ts`; `propertyDraft.id` becomes optional; `number_denominator` decodes `z.number().positive().optional().catch(undefined)` (`properties.ts:190`), so a stored non-positive value reads as unset and the definition stays admitted.
+5. **Small Ones (S5):** `optionCascade`'s `null`-in-a-tuple waits for P8, which replaces it with `removed?: string` (the deleted option's id) once the label pair's reach leaves; Remove's inline `mapViews` leaves, so `reachConfig` owns every view edit; `refillValues` moves beside `sweepRootsById` in `Core/Nexus/governedSweep.ts`; `writePropertyBundle` unexports; `Core/Properties/removeProperty.ts` becomes `unassignProperty.ts`; `Core/Trash/holdings.ts` becomes `Core/Trash/trashedCopies.ts`; `propertyDraft.id` becomes optional; `number_denominator` decodes `z.number().positive().optional().catch(undefined)` (`properties.ts:190`), so a stored non-positive value reads as unset and the definition stays admitted.
 6. **One Count Path (S6, O-2):** `property:holders` takes one request union, `{ of: 'property' } | { of: 'option'; label: string } | { of: 'format'; change: FormatChange }`, answered by a `switch` ending in `sweepCount`'s dry run (`Core/Properties/handlers.ts:199-208`'s shape sniff leaves). `Counted`, `PLURALS`, `itemCount`, `countPhrase`, and `unsweptLine` move into `Core/Nexus/entities.ts`; `confirmations.ts`, `governedSweep.ts`, `KEY_REFUSAL.held`, and `unsweptLine`'s 8 readers import from there. A property or option delete held by nothing asks without its strip clause: `askDestroyProperty`'s detail reads "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." at zero, and `askDeleteOption`'s reads "The option is deleted from the property." at zero.
 7. **Remove Reads Delete (S7, O-1):** `Core/Actions/optionMenu.ts:21` becomes `{ label: 'Delete', action: 'option:delete' }` (its `:1` comment leaves); `askRemoveOption` becomes `askDeleteOption`, asking `Delete “${label}”?` with a Delete button; `removeOption` becomes `deleteOption`; `useOptionEdit.tsx:114-116` dispatches `deleteOption`.
 8. **The Delete Flow (S8):** `PropertyFrame.tsx:291-299`'s ask, `property:delete`, `storesChanged.emit`, back-to-list, and `notifyTrashed` become one `confirmDelete` call (`confirmations.ts:122-134`) with the `deleteProperty` op; the frame's `trashChanged` emit (`PropertyFrame.tsx:297`) leaves, since the slice emits it.
@@ -498,7 +498,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 6: an option's menu reads Delete and asks "Delete “Alpha”?"; deleting a property no page holds asks without "0 Items"; restoring a deleted property after creating one with its name reports the numbered name. The Option Picker and Metadata drives run green on the new wording.
 
-**Delta:** about −50 (−35 to −70; the op-keyed `created` and the counting module's zero wording inside).
+**Delta:** about −155 (−382 / +227; the channel adapters held more than they were priced at).
 
 **Depends On:** P2, P3 (the frame's type facts), P6 (the reply shape `mutate` already carries).
 
@@ -516,7 +516,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 3. **Option Ops Take Ids:** `editOption`, `renameOption { propertyId, optionId, label }`, `deleteOption { propertyId, optionId }`, `clearOption { propertyId, optionId }`, and `property:holders`' `{ of: 'option'; optionId }`. The `add` edit carries the id the renderer minted with `mintOptionId()`; the host mints at `registerHeldOptions` (`optionOps.ts:150`) and in the two seeds.
 4. **The Rename Reach Leaves:** `Core/Nexus/configReach.ts`'s RENAME table and its four handlers (`wholeValues`, `optionRule`'s rename half, `scopedOrder`, `collapsedKeys`, `:131-196`) and `OptionReach.labels` leave; `optionCascade`'s `labels` leave. An option delete still drops its id from views through `GONE`'s `stripGone` (`:226-235`) with a `propId/optId` matcher.
 5. **The Popup Re-Keying Leaves:** `useOptionEdit.tsx`'s `useRenameKeys`, rename landing, `rowKeyOf`, and the draft row's `\0n` key hand-off (`:66-97,142-149,183`) leave; rows and the open popup key by option id. `useRenameKeys` stays in UIX for `useListEdit` (`AliasList.tsx`, `ExcludedDirectoriesRow.tsx`).
-6. **One Bucket-Key Builder (D2)** (`Core/Views/views.ts`): `bandKey(band: { kind: 'set'; setId } | { kind: 'property'; propertyId; bucket; setId?: string } | { kind: 'tail' }): string` — a property band `propId/bucket`, a sub-band `setId/propId/bucket`, a Set band its Set id, the tail `_ungrouped`. It serves hidden and collapsed keys; `editHiddenBucket` leaves; `clearHiddenBuckets` is the one prefix strip, and `CLEAR.bandKeys` (`configReach.ts:212-216`) calls it, so a grouped property's delete keeps structural keys. `useViewHost.ts:63,148-155` and `Core/Views/viewRow.ts` build band keys through it.
+6. **One Bucket-Key Builder (D2)** (`Core/Views/views.ts`): `bandKey(propertyId, bucket, setId?): string` — a property band `propId/bucket`, a sub-band `setId/propId/bucket`, a Set's value-less sub-tail `bandKey(property, UNGROUPED, set)` (retiring `subGroupKey`); a Set band keeps its Set id and the tail `_ungrouped`. It serves hidden and collapsed keys, which merge into one `bucketKeys` role; `editHiddenBucket` leaves; `clearBucketKeys(keys, propertyId)` (from `clearHiddenBuckets`) is the one prefix strip, and `CLEAR.bandKeys` (`configReach.ts:212-216`) calls it, so a grouped property's delete keeps structural keys. `group.ts` (`:253,337,340`) and `GroupFrame.tsx`' preview (`:387,411`) build band keys through it.
 7. **The NexusOS Conversion (throwaway, in the checkpoint):** a script in the session scratchpad copies `~/NexusOS/.nexus/properties.json`, `~/NexusOS/Ideas/_pagecollection.json`, `~/NexusOS/.nexus/interface/homepage/_tiles.json`, and `~/NexusOS/.nexus/contexts/Projects/Pommora/_tiles.json` into `~/NexusOS-Backup-<MM-DD-YYYY>/` (the conversion's date, a folder beside NexusOS outside every Nexus, so it survives across sessions and is never read as content) before its first write; it builds its label → id map from the property list as read, keeping each option's stored id where one is present (an app open between P8 landing and the conversion may already have stored derived ids) and minting through `mintOptionId()` only where none is stored, across all 59 options (Status 8, Tags 3, Brand 20, Concern 5, Scale 5, Color 12, Version 6), strips `group_id` from Status's 8; switches the Ideas views' `group.order`, `sort[Status].order`, and `collapsed_groups`, the homepage tile 0's two views' sort orders and filters, and the Pommora tile 2's sort order and collapses to ids; scopes collapsed Status labels to `prop_01KWG2FPV0VP0D2W6BR5EK485P/<optId>`; keeps Set ids; drops lowercase `open` and `closed`. It verifies the result against *Walkthrough §Your Data*, runs twice without changing anything the second time, and is deleted; the backup folder is removed by its path at Final Verification's closeout, after the full drive on the final head.
 8. **The Generator:** `.claude/scripts/make-benchmark-nexus.mjs:169` writes option ids and no `group_id`; the Metadata Drive (`live-drive.mjs:179-180,876`) stops writing `group_id`.
 
@@ -524,13 +524,13 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Behavior Changes:** an option rename stops rewriting views, tiles, the Matrix filter, and preview rules (D-1); collapsed groups are remembered per property (D-2); deleting the property a view groups by keeps folder collapses (K-1); Status options stop writing `group_id` (D-3); view JSON shows `opt_…` where it showed words — each Nathan's intent. NexusOS's Pommora tile keeps its Status collapses scoped to Status, with `open` and `closed` dropped (Morning Question 9; LC-40).
 
-**Consumers:** `properties.ts`, `ids.ts`, `optionModel.ts`, `optionOps.ts`, `propertyValue.ts`, `findOption`'s and `optionLabels`' readers, `group.ts`, `sort.ts`, `filter.ts`, `configReach.ts`, `useOptionEdit.tsx`, `views.ts`, `useViewHost.ts`, `viewRow.ts`, `GroupBand.tsx:130`, `bandModel.ts:181`, `TableView.tsx:447`, `Core/Testing/`, the generator, the Metadata Drive.
+**Consumers:** `properties.ts`, `ids.ts`, `optionModel.ts`, `optionOps.ts`, `propertyValue.ts`, `findOption`'s readers, `optionLabels`' readers (it becomes `optionIds`, since they order and rank ids), `group.ts`, `sort.ts`, `filter.ts`, `configReach.ts`, `useOptionEdit.tsx`, `views.ts`, `useViewHost.ts`, `viewRow.ts`, `GroupBand.tsx:130`, `bandModel.ts:181`, `TableView.tsx:447`, `Core/Testing/`, the generator, the Metadata Drive.
 
 **Tests:** **Deleted:** about 160 lines of `OptionEditor.test.tsx:267-448`'s re-keying tests (keeping one refused-rename field reversion), `optionOps.test.ts:245-276`, `configReach.test.ts:157-252`'s rename block. **Rewritten:** every fixture holding `group_id` (about 100 occurrences across 28 test files) drops it; option fixtures carry ids. **Written:** a derived id for an id-less option is stable and stored on the next registry write; an option rename leaves a view's sort order untouched; collapsing "Done" under Status doesn't collapse a "Done" under another property; a grouped property's delete keeps a Set id collapse.
 
 **Drive:** Properties Drive group 7: on `~/Test`, create a Select with options, sort and group a view by it, rename an option, and the view keeps its order and collapses while pages holding the word are rewritten; the view sidecar names `opt_` ids.
 
-**Delta:** about −85 (−70 to −100).
+**Delta:** about −73 (−213 / +140).
 
 **Depends On:** P2 (Title as text), P7 (O-1's renames before the id retype).
 
@@ -561,7 +561,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** no new surface; Properties Drive groups 1–7 re-run green.
 
-**Delta:** about −50 (−40 to −60).
+**Delta:** about −11 (−54 / +43): `answered` and the option arm's slot check stay until P11A deletes `replaySchemaCascade.ts`, which counts them.
 
 **Depends On:** P5 (R3's index-read registration), P8.
 
@@ -582,7 +582,8 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
      title?: string
      moved?: { from: string; to: string }
    }
-   export type Holders = { pages: string[]; spaces: string[]; partial: boolean; values?: ReadonlyMap<string, Record<string, unknown>> }
+   export type Held = { file: string; id?: string; keys: string[]; values?: Record<string, unknown> }
+   export type Holders = { pages: string[]; spaces: string[]; partial: boolean; held: Held[] }
    export function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders>
    ```
    Pages come from `queryKeyHolders`/`queryMembers` (corpus fallback before the index is ready), filtered by reach (`governed` is Collections plus the Archive; `{ collection }` one Collection and its Archive; `anywhere` every page); Space sidecar paths come from the tree, `SpaceNode.values` for property keys and the new `SpaceNode.contextKeys` for Context keys, each rebased under `moved`. With `read: 'values'`, it answers which keys each candidate holds and its values by id in the same pass (S4), serving the rename clash (which checks `to` only on `from` holders), the delete snapshot, and counts.
@@ -602,7 +603,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 8: on `~/Test`, rename a Context whose Space links another Space in it; both sidecars update and the Matrix keeps the link.
 
-**Delta:** about −65 (−55 to −75; the `SpaceNode` field's +3 to +6 inside).
+**Delta:** about −45 (−255 / +210; the correctness requirements the disk scan met implicitly inside).
 
 **Depends On:** P9 (the post-seed replay the tree-sourced finder needs).
 
@@ -610,7 +611,9 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and this document's §P11 before P11 opens]`
 
-##### P11 — One Note per Item
+##### P11 — One Note per Item (Written as P11A and P11B)
+
+The phase lands as two phases, each with its own Review Checkpoint: **P11A — One Note per Item: The Notes and the Renames** (the notes module, the property kind, and Context and Space renames on the notes; the journals, the slot, both replays, `retry`, and the four Try Again forms leave) and **P11B — One Note per Item: Deletes, Remove, and the Runner** (Context and Space deletes capture up front and finish, Remove's note, the property delete's purge miss, the runner check, and drive group 9). The design below covers both.
 
 **GOAL:** Every property, Context, and Space keeps its own entry in one device-local notes file, so unfinished work on one never blocks or unprotects another, and every many-file change writes its note first and refuses if it can't. Every delete finishes what it can and offers one Try Again that finishes everything owed, a name still owed to unfinished work is refused, and Remove writes its note so a partial Remove can be retried.
 
@@ -626,9 +629,10 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
    export type Entry = PropertyEntry | ContextEntry | SpaceEntry
    export type Notes = Record<string, Entry>
    export function readNotes(root: string): Promise<Notes>
-   export function editNote(root: string, id: string, edit: (e: Entry | undefined) => Entry | undefined): Promise<boolean>
+   export function editNote(root: string, id: string, edit: (e: Entry | undefined) => Entry | undefined): Promise<Result<Entry | undefined>>
    export function owedNames(notes: Notes, kind: Entry['kind'], except?: string): ReadonlySet<string>
-   export function finishOwed(root: string): Promise<CascadeReport>
+   // in Core/Nexus/finishOwed.ts, beside owed.ts, since the pass imports every op's sweep
+   export function finishOwed(root: string, deps: TrashDeps): Promise<CascadeReport>
    export const owedRename: (o: Owed, from: string, to: string) => Owed
    export const owedDelete: (o: Owed, current: string) => Owed
    export const owedClear: (o: Owed) => Owed
@@ -637,7 +641,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
    Entries key by entity id (`prop_…` and Context and Space ULIDs share no namespace), and option parts key by option id. `readNotes` reads through `readAppFile`; `editNote` writes through `updateNexusFile(abs(OWED_REL), …, true)`, answering `false` when the file can't be written. The four compose rules are one-liners: `owedRename` appends the old name to `rename` and drops the new one; `owedDelete` moves `rename` plus the current name into `strip`; `owedClear` moves an option's `rename` into its `strip` (H-2); `owedRestore` moves `strip` back into `rename` (H-4). Renaming back composes to nothing owed. An entry clears only whole (H-1).
 2. **The File:** `OWED_REL = \`${NEXUS_DIR}/.owed.json\`` in `Core/Paths/nexusPaths.ts`; the four journal constants (`:27-30`) and `exclusion.ts:58` with its imports leave. `journalSlot.ts`, `propertyJournal.ts`, `contextJournal.ts`, and `replaySchemaCascade.ts` are deleted, and `replayPendingRename` (`contextCascade.ts:290-352`) leaves.
 3. **Every Op Writes Its Note First (F-5):** `rekeyProperty` (rename, Label Format), `deleteInner` (after the bundle mints, H-5's residual order), `rekeyOptions` (option rename, Value Format), `deleteOption`, `unassignProperty` (`unassigned: [collectionId]`), `renameContextOp`, `renameSpaceOp`, and the Context and Space deletes (`bundle` in Pommora Trash mode, omitted in System Trash mode). `editNote` answering `false` refuses the op with nothing changed. Option Clear writes no note and composes only when the option already owes old names. The `OWED` refusals (`optionOps.ts:242,377,346-348`) and every discarded-`false` path (`registryProperty.ts:183`, `deleteProperty.ts:123`, `contextCascade.ts:217,277`) leave.
-4. **Replay** (`finishOwed`): one pass under H-12's lock order — Context entries first under the Contexts lock, then Space entries, then property entries under the schema lock, the notes file's own lock innermost and never nested — each entry under a catch that logs. Inside an entry: `rename` → `options` → `unassigned` → `strip` (H-1). A Space entry stays while its parent Context owes a rename; a Space entry whose parent Context is owed a delete or is gone drops. Each arm re-derives per name from the current lists, skipping a name a live entity holds now (H-16). A Context or Space arm that relocates a folder calls `oweWalk(root)` and its cascade passes the finder `moved`; one whose current name sits in `strip` lands the list step first, moving the folder into `bundle` or to the system Trash (H-5). `NO_REACH` clearing a record on any unmapped state (`replaySchemaCascade.ts:29`) leaves with the file.
+4. **Replay** (`finishOwed`): one pass under H-12's lock order — Context entries first under the Contexts lock, then Space entries, then property entries under the schema lock, the notes file's own lock innermost and never nested — each entry under a catch that logs. Inside an entry: `rename` → `options` → `unassigned` → `strip` (H-1). A Space entry stays while its parent Context owes a rename; a Space entry whose parent Context is owed a delete or is gone drops. Each arm re-derives per name from the current lists, skipping a name a live entity holds now (H-16). A Context or Space rename arm that relocates a folder then reads the tree again (`await refreshTree(root)`) before it finds, since after a crash between the list step and the folder move the open's tree holds none of that Context's Spaces for `moved` to rebase (P10); a delete arm's folder step keeps `oweWalk(root)`; one whose current name sits in `strip` lands the list step first, moving the folder into `bundle` or to the system Trash (H-5). `NO_REACH` clearing a record on any unmapped state (`replaySchemaCascade.ts:29`) leaves with the file.
 5. **The Open:** P9's two replay calls become one `await finishOwed(root)` in the genuine-open block after the seed, before `settleNow` (`handlers.ts:111-112`).
 6. **Try Again (H-17, F-6):** `{ op: 'finishOwed' }` joins `mutate`'s union and runs `finishOwed(root)` outside `dispatch`'s per-op locks, taking each lock itself. `CascadeReport` gains `owed?: true`, set when an op's entry stays; the slice's `mutate` offers `warnCascade(cascade, cascade.owed ? () => void get().mutate({ op: 'finishOwed' }) : undefined)`, and an `'owed'` refusal offers the same. `MutateOutcome.retry`, the `replayProperty` op, `SchemaCascade`, `journalRecord`, `renamed`'s retry (`mutate.ts:68-77`), `sweepAgain`, the `from` branches (`contextCascade.ts:101-109,206-211,260-264`), and `Unswept` leave.
 7. **Restores (H-4, F-3):** property, Context, and Space restores run create → `owedRestore` → spend the bundle. `createProperty`'s delete-record consumption (`registryProperty.ts:94-100`) leaves.
@@ -660,7 +664,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 9: on `~/Test`, with one page made unreadable (`chmod 000`), rename a property and see "Couldn’t update 1 Item" with Try Again; rename a second property and see no refusal; create a property under the first's old name and see the owed refusal; restore the page's mode, press Try Again, and both renames finish and the name frees. The drive restores every mode and file it touched.
 
-**Delta:** about −135 (−85 to −185; the keyed entries, arms, and refusals' +190 to +250 inside).
+**Delta:** about −12 across both halves: P11A about −10 (−405 / +395) and P11B about −2 (−130 / +128); the per-op put-backs and settles, H-16's per-name skips, H-1's holds, and the tree re-read cost what R priced at none.
 
 **Depends On:** P6 (`keysPutBack`), P8 (option ids), P9 (orders), P10 (the finder and its capture).
 
@@ -674,8 +678,8 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Binding Design:**
 1. **One Vocabulary (LC-3):** `property_cache` → `property_stash` on disk; `Core/Properties/propertyCache.ts` → `Core/Properties/propertyStash.ts`; `cachedValues` → `stashedBlock`; `patchCacheBlock` → `patchStashBlock`; `editCacheBlocks`/`editCaches` → `editStashBlocks`/`editStashes`; `CollectionNode.cached` → `stashed`; `containerFields.ts`'s `cachedIds` → `stashedIds`; the record's `caches` → `stashes`.
-2. **The Block:** `type StashBlock = { removed_at: string; values: Record<string, unknown> }` (decoded loose, a missing stamp answering the sweep's first-sight stamp); on disk `property_stash.<propertyId>: { removed_at: "<ISO-8601>", values: { <pageId>: raw } }`. `stashedBlock(sidecar, propertyId): StashBlock | null` is the one reader. `patchStashBlock(sidecar, propertyId, values?: Record<string, unknown>, removedAt?: string)` writes `{ removed_at: removedAt ?? <the block's current stamp>, values }` for non-empty values and removes the block (and an emptied `property_stash`) otherwise, folding the three hand-built `{ values: x }` spellings (`removeProperty.ts:55`, `assignment.ts:104`, `propertyCache.ts:44-47`).
-3. **Who Stamps:** Remove and its retry pass `new Date().toISOString()`; the refill, option edits and Link re-spells (`editStashes`), and the purge pass none, keeping the found stamp. `editStashes`' callback gains a third argument, the block's `removed_at`.
+2. **The Block:** `type StashBlock = { removed_at?: string; values: Record<string, unknown> }` (decoded loose: a missing or unparseable stamp reads as absent, which tells the next write to stamp it); on disk `property_stash.<propertyId>: { removed_at: "<ISO-8601>", values: { <pageId>: raw } }`. `stashedBlock(sidecar, propertyId): StashBlock | null` is the one reader. `patchStashBlock(sidecar, propertyId, values?: Record<string, unknown>, removedAt?: string)` is the one stamper, writing `{ removed_at: removedAt ?? <the block's readable stamp> ?? <now>, values }` for non-empty values, so every block a write leaves carries a stamp, and removes the block (and an emptied `property_stash`) otherwise, folding the three hand-built `{ values: x }` spellings (`removeProperty.ts:55`, `assignment.ts:104`, `propertyCache.ts:44-47`).
+3. **Who Stamps:** Remove and its retry pass `new Date().toISOString()`; the refill, option edits and Link re-spells (`editStashes`), and the purge pass none, keeping the found stamp or stamping a stampless block now through `patchStashBlock`; the age sweep answers a stampless block's values unchanged, so its write stamps it on first sight. `editStashes`' callback gains a third argument, the block's `removed_at`.
 4. **The Age Cleanup:**
    ```ts
    export async function sweepStashes(root: string): Promise<void> {
@@ -687,9 +691,9 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
    }
    ```
    in `propertyStash.ts`, called as `void sweepStashes(root)` beside `void sweepFileHistory(root)` at `Core/Nexus/handlers.ts:110` and inside the `historyDays || archiveHistoryDays` branch at `Core/Settings/handlers.ts:46`, logging and swallowing errors as `sweepFileHistory` does. A Nexus with no stash reads zero files; a sidecar is written only when a block expired or carried no stamp; a block without a readable stamp is stamped now on first sight and ages from then, the pattern P8 sets for an id-less option.
-5. **The Refill** (`assignment.ts`'s `restoreCachedValues` becomes `refillStash`): after the refill, the block keeps only ids still owed to a page of this Collection, `(members ∪ trashed) − spent − gone`, passing no stamp. When some stashed id is absent from `byId`, `trashedHolders` (exported from `Core/Trash/trashedCopies.ts`, filtered to page and Set bundles whose `collectionOf(originOf(record))` is this Collection; Collection bundles never qualify) supplies those pages' Trash copies as extra roots to `refillValues`, so one reconcile, encode, and blank-check writes every copy; `sweepRootsById`'s `roots` type narrows to `ReadonlyMap<string, Pick<EntityRecord, 'kind' | 'path'> | null>`.
-6. **Refill Skips Surface (LC-5):** `refillValues` answers `{ spent: ReadonlySet<string>; skipped: number }`; `refillStash` answers its skipped count; `assignInner` answers `Result<{ skipped: number }>`; `assignProperty` replies `cascade.owed` and writes `refill: [collectionId]` into the property's entry (`PropertyEntry` gains `refill?: string[]`), and `finishOwed`'s property arm re-runs `refillStash` for each listed Collection still assigning the property, dropping it when nothing skipped. Inside the entry it runs after `unassigned` and before `strip` (H-1's order becomes `rename` → `options` → `unassigned` → `refill` → `strip`), and `owedDelete` drops it, since a delete purges every Collection's block (H-3).
-7. **The Trash Record:** `snapshot` captures each Collection's block whole into `stashes` (`deleteProperty.ts:61-72`); `record.ts:79` becomes `stashes: z.record(z.string(), z.object({ removed_at: z.string(), values: z.record(z.string(), z.unknown()) })).optional()`. `restoreProperty` writes each recorded block whole with its stamp minus the ids `record.values` holds, then runs the `assignInner` loop, then the `record.values` refill (LC-26).
+5. **The Refill** (`assignment.ts`'s `restoreCachedValues` becomes `refillStash`): after the refill, the block keeps only ids still owed to a page of this Collection, `(members ∪ trashed) − taken − gone`, passing no stamp; `refillStash(root, propertyId, collectionId)` resolves its Collection by id, since a notes entry holds Collection ids. When some stashed id is absent from `byId`, `trashedHolders` (exported from `Core/Trash/trashedCopies.ts`, filtered to page and Set bundles whose `collectionOf(originOf(record))` is this Collection; Collection bundles never qualify) supplies those pages' Trash copies as extra roots to `refillValues`, whose rewrite is P10's `refillOf(def, frozen)`, the same rewrite `refillTrashed(root, links, defs, frozen)` lands a restore's Link values through, so one reconcile, encode, and blank-check writes every copy; `sweepRootsById`'s `roots` type is `RootsById = ReadonlyMap<string, Pick<EntityRecord, 'kind' | 'path'> | null>`.
+6. **Refill Skips Surface (LC-5):** `refillValues` answers `sweepRootsById`'s `{ taken: ReadonlySet<string>; skipped: number }`; `refillStash` answers its skipped count; `assignInner`, which every re-add passes through (the op, the restore, and `addProperty`), writes `refill: [collectionId]` into the property's entry and answers the owed cascade, which `assignProperty` forwards (`PropertyEntry` gains `refill?: string[]`), and `finishOwed`'s property arm re-runs `refillStash` for each listed Collection still assigning the property, dropping it when nothing skipped. Inside the entry it runs after `unassigned` and before `strip` (H-1's order becomes `rename` → `options` → `unassigned` → `refill` → `strip`), and `owedDelete` drops it, since a delete purges every Collection's block (H-3).
+7. **The Trash Record:** `snapshot` captures each Collection's block whole into `stashes` (`deleteProperty.ts:61-72`); `record.ts:79` becomes `stashes: z.record(z.string(), z.object({ removed_at: z.string().optional(), values: z.record(z.string(), z.unknown()) })).optional()`, so a hand-edited stampless block deleted before any sweep saw it keeps the record decodable. `restoreProperty` writes each recorded block through `patchStashBlock` with its stamp minus the ids `record.values` holds, then runs the `assignInner` loop, then the `record.values` refill (LC-26).
 8. **Collections in the Trash:** a global delete leaves them untouched (LC-2); a restored Collection's inert assignment id stays (LC-4).
 9. **The Partial Mark (N-1, LC-37):** `BundleRow` gains `partial?: true` from `record.partial` in both of `bundleRowOf`'s branches (`Core/Bundles/rows.ts:83-125`); `TrashRowView` (`Core/Settings/TrashFrame.tsx:123-170`) shows a warning glyph with the spoken label "Recorded Partly" in its trailing slot. A partial restore adds `“${title}” was recorded partly, so some of what it held may not come back.` to `cascade.warning`.
 10. **One Restore Report:** `browser.ts:277-282`'s `notifyOutcome` stops passing `unrestoredLine` and `cascade.warning`, which the slice's `mutate` already shows (LC-46).
@@ -704,7 +708,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 10: on `~/Test`, remove a property from Collection A, trash one page, re-add the property, restore the page, and it holds its value; set `.nexus/settings.json`'s `historyDays` to 7 with a block's `removed_at` backdated eight days, and reopening drops the block. A Trash row for a partial record shows its mark.
 
-**Delta:** about **+37** (+30 to +45) — the plan's one net-positive phase. C-3's stamp and cleanup (about +15) and C-2's stale drop and Trash parking (about +11) deliver ruled behavior in minimal form on existing mechanisms (`editStashes`, `refillValues`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, or Sync rule; the refill-skip arm (about +8) and the partial mark (about +8) fix a silent loss and deliver N-1; the block literals' fold and the double report's fold remove what they replace.
+**Delta:** about **+93** (−106 / +199). C-3's stamp and cleanup (about +22) and C-2's stale drop and Trash parking (about +20) deliver ruled behavior in minimal form on existing mechanisms (`editStashes`, `refillValues`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, or Sync rule; the refill-skip report (about +23) fixes a silent loss through the one function every re-add passes; the record and restore order (about +8) and the partial mark (about +21) deliver C-2, LC-26, and N-1; the block literals' fold, the one stash name, and the double report's fold remove what they replace.
 
 **Depends On:** P11 (the notes entry Remove and the refill ride).
 
@@ -736,7 +740,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 11: a new view shows only Title; revealing a property shows it; a Table with Text, Link, and Select columns renders and edits as before.
 
-**Delta:** about −120 (−100 to −140).
+**Delta:** about −73 (−291 / +218): the resolver's arms, the plan's `Grouping`, and W5's context fields add about +80 against about −150 deleted.
 
 **Depends On:** P2 (`ColumnType`), P4 (`fieldValue.ts`), P8 (option ids in the compiled field).
 
@@ -749,16 +753,16 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 **Units:** W4 (Approach H, 07-11, K-1, K-2), W2 (07-04), the K and 07-10 measurements.
 
 **Binding Design:**
-1. **The Record** (new `Core/Views/viewKinds.ts`, a renderer-free `.ts`, since host-side `configReach.ts` reads the operand class):
+1. **The Record** (new `Core/Views/valueKinds.ts`, a renderer-free `.ts` the React-free pipeline modules read; `VIEW_KINDS` and `ViewKind` already name the view-type record in `Core/Views/views.ts`, so the record is named for the `ValueKind` it's keyed by):
    ```ts
-   export type ViewKind = {
+   export type ValueKindSpec = {
      ops: readonly FilterOp[]
      operand: 'none' | 'text' | 'number' | 'date' | 'options' | 'checkbox'
      prepare(op: FilterOp, operand: unknown): ((v: PropertyValue) => boolean) | 'abstain'
      sortKey(v: PropertyValue): string | number | null
      bucket?(v: PropertyValue, granularity?: Granularity): string | null
    }
-   export const VIEW_KINDS: Readonly<Record<ValueKind, ViewKind>>
+   export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>>
    ```
    It replaces `filter.ts`'s per-kind evaluators, `sort.ts:36-73`'s per-kind keys, `group.ts`'s bucket arms, `filterModel.ts`'s `KIND_OPS`, `creationSeeds.ts`'s `SEEDS_FROM_SORT`, `reassign.ts`'s `FROM_GROUP_KEY`, and `configReach.ts`'s whole-option operand class (07-11).
 2. **One Shown Text (W2):** `shownText(value: PropertyValue, def?: PropertyDefinition): string` in `formatValue.ts` replaces `filter.ts`'s `textValue` and `sort.ts`'s `sortText`, mapping option ids to labels.
@@ -768,17 +772,17 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Order:** 2, 1, 3, 4, 5.
 
-**Behavior Changes:** an unreadable filter value is ignored, which also changes which values a new page created in that view inherits (K-1, Nathan's intent); Checkbox "is not empty" works (K-1); empty values sort last for every type in both directions (K-2, a reading Nathan didn't object to).
+**Behavior Changes:** an unreadable filter value is ignored, which also changes which values a new page created in that view inherits (K-1, Nathan's intent); Checkbox "is not empty" works (K-1); empty values sort last for every type that can be empty, in both directions, while a Checkbox's unchecked box keeps its place as a value in a sort (K-2, a reading Nathan didn't object to; LC-53).
 
 **Consumers:** `filter.ts`, `sort.ts`, `group.ts`, `filterModel.ts`, `creationSeeds.ts`, `reassign.ts`, `configReach.ts`, `formatValue.ts`, `FilterFrame.tsx`.
 
-**Tests:** **Rewritten:** the per-kind filter, sort, and group tests against `VIEW_KINDS`. **Written:** a Number rule holding letters abstains, and inside an "Any" group the group no longer matches every page; Checkbox "is not empty"; an empty value sorts last ascending and descending for each kind.
+**Tests:** **Rewritten:** the per-kind filter, sort, and group tests through the pipeline functions that read `VALUE_KINDS`. **Written:** a Number rule holding letters abstains, and inside an "Any" group the group no longer matches every page; Checkbox "is not empty"; an empty value sorts last ascending and descending for each kind.
 
 **Drive:** Properties Drive group 12: a Number filter holding "abc" inside an Any group leaves the other rule deciding; a Checkbox "is not empty" filter shows only checked pages; a Select sort puts empty rows last in both directions.
 
 **Measurements:** K and 07-10 on `~/Benchmark-Large`.
 
-**Delta:** about −115 (−90 to −140; the record's +150 inside).
+**Delta:** about −112 (−550 / +438; the record's about +257 new lines inside).
 
 **Depends On:** P13 (compiled columns), P2, P8.
 
@@ -793,7 +797,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 **Units:** X1 (06-04, 06-05), X2 (06-06, J-3, J-10, B-06-01), X3 (J-1's clock, 06-09/L-15), X4 (J-4, J-5's comment), X5 (06-11, 06-12), 02-10.
 
 **Binding Design:**
-1. **The Pick Model** (new `Core/Properties/Pickers/pickModel.ts`, pure): `pickGroups`, `pickShape`, `toggleValue`, the N-row rule (today's `massAssign.ts:13-18`), and `pickedValue` as its one-row case; `Core/Properties/Pickers/massAssign.ts` merges in and is deleted, and `MassPropertyPicker.tsx` reads the model.
+1. **The Pick Model** (new `Core/Properties/Pickers/pickModel.ts`, pure): `pickGroups`, `toggleValue`, `pickOver(def, currents, onCommit, onClose)` carrying the N-row rule (today's `massAssign.ts:13-18`), the picked marks, and the close rule, and `pickedValue` as its one-row case (`pickShape` inlines into its last reader); `Core/Properties/Pickers/massAssign.ts` merges in and is deleted, and `MassPropertyPicker.tsx` reads the model.
 2. **One Writer:** `useValueWriter(host)` and `oneShotWriter(...)` replace `ValueWriter`'s three assemblies (`Core/Interface/Menus/entityMenuActions.ts`, `PropertyPanel.tsx`, `useViewHost.ts`), built on P6's reshaped writer.
 3. **One Row Menu:** the panel label's right-click and every panel value build from `cellMenuModel`'s kinds (`link`, `text`, `file`, and `bare` with `clearable: filled, hideable: true`, `Core/Actions/cellMenu.ts:26`) mapped through `valueMenuIntent` (`Core/Properties/Pickers/valueClick.ts:58-59`). `propertyMenu.ts`'s `page-value` kind and its three `value:*` actions, `rowMenu`'s hand mapping (`PropertyPanel.tsx:319-331`), and `fileValueMenu` (`Core/Properties/Pickers/filePick.ts:115-125`, one caller) leave. A Link row's label gains Edit and Rename (J-3); the panel's File value gains Remove and no Clear (J-10). Both link menus read **Rename** then **Edit Link** (**Edit Title** where the connection menu edits a page link's title): `cellMenuModel`'s link kind (`cellMenu.ts:126-131`) moves from "Edit, Rename" to that order and wording, matching `connectionMenu.ts:81-102`.
 4. **The Filter's Clock (X3):** `FilterFrame.tsx:351-371`'s hand-built `CalendarPicker` is replaced by `DateTimeValuePicker` with the operand as a `dateTime` value, on the column's `time_format`.
@@ -813,20 +817,22 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Measurements:** 02-10 on `~/Benchmark-Large`.
 
-**Delta:** about −135 (−115 to −155).
+**Delta:** about −77 (−205 / +128): the pick model's new file offsets most of what it removes, and 06-09's chip merge isn't this phase's.
 
 **Depends On:** P6 (the writer), P13.
 
 **Risks:** the panel's right-click chain changes shape; the drive group exercises every row kind.
 
-##### P16 — One Value Seat
+##### P16 — One Value Seat (Written as P16A and P16B)
+
+The phase lands as two phases, each with its own Review Checkpoint: **P16A — One Value Seat: The Seat, the Table, and Cards** (the seat lands and the table's and Cards' copies move onto it, `CardValue.tsx` and `useViewHost.pickTarget` leaving) and **P16B — One Value Seat: The Native Router, the Panel, and No Fabricated Definition** (`MenuSeat` replaces `ValuePickPresenter`, the panel's value interaction moves to the seat, `rename` folds into `popover`, `syntheticContextDef` leaves, and drive group 14). The design below covers both.
 
 **GOAL:** Clicking, right-clicking, and editing a value is one shared seat for the table, cards, and panel, with the native menu's fourth router folded into it, and a Context column reaches the pickers without a fabricated definition. The panel's five jobs split along that seam.
 
 **Units:** X6 (Approach B; 06-01, 06-02, 06-03), `syntheticContextDef`'s fold.
 
 **Binding Design:**
-1. **The Seat** (new `Core/Properties/Cells/ValueSeat.tsx`): `useValueSeat(host: SeatHost)` and `<ValueSeat>`, with `SeatHost = { anchor; hideable: boolean; commit; rowMenu?: (target) => MenuModel }`, dispatching `valueClickIntent` (`valueClick.ts`) for click and the P15 row menu for right-click. It replaces the three intent maps (`TableView.tsx:134-156`, `CardValue.tsx:74-94`, `PropertyPanel.tsx:286-304`), the two identical right-click chains and the panel's third, the three editing-state types, the three link-seat lines, and the `rename` intent.
+1. **The Seat** (new `Core/Properties/Cells/ValueSeat.tsx`): `useValueSeat(host: SeatHost)` and `<ValueSeat>`, with `SeatHost` holding each surface's genuine differences (`anchor`, `commit`, `rowOf`, `hide?: { from: 'view' | 'row' }` after P15's `hideable` union, `style`, and the rest *phase-P16A.md* names; no `rowMenu` hook, since P15's `cellMenuContextFor(type, null, …)` builds the panel's menu), dispatching `valueClickIntent` (`valueClick.ts`) for click and the P15 row menu for right-click. It replaces the three intent maps (`TableView.tsx:134-156`, `CardValue.tsx:74-94`, `PropertyPanel.tsx:286-304`), the two identical right-click chains and the panel's third, the three editing-state types, the three link-seat lines, and the `rename` intent.
 2. **The Fourth Router:** `runPropertyAction` → `pendingPick` → `ValuePickPresenter` folds into one app-level seat instance for off-surface menus; `Core/Properties/Cells/valueMenuTarget.ts` and `Core/Interface/Menus/ValuePickPresenter.tsx` are deleted with `App.tsx`'s mount; `pendingPick`'s type-deciding half (`Core/Session/chromeSlice.ts`, `Core/Matrix/MatrixView.tsx`), `CHECKBOX_OPTIONS`, and `valueCommitFor` leave. Matrix's hold follows the seat.
 3. **No Fabricated Definition:** the seat hands pickers a `PickTarget` built from P13's resolved column (`{ type, def? }`), so `syntheticContextDef` and its six sites leave (`PropertyPanel.tsx:364,403`, `useViewHost.ts:212`, `propertyMenuActions.ts:72,96`, `FilterFrame.tsx:378`).
 4. **The Panel Splits:** `PropertyPanel.tsx` keeps layout, row order, and revealed rows (J-5); value interaction moves to the seat. The Cards File pane's `PickTarget` arm and `adoptPathInto` stay (J-7); Cards keeps hiding a chip's remove below 80% zoom (J-6).
@@ -841,7 +847,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 14: the same value is clicked, right-clicked, and edited in a Table, a Card, and the panel, and each opens the same picker and menu; the native menu's property action opens the seat.
 
-**Delta:** about −170 (−120 to −220; the seat's about +120 inside). The phase's checkpoint compares the landed delta to this figure.
+**Delta:** about −269 across both halves: P16A about −87 (−520 / +433, the seat's about +268 inside) and P16B about −182 (−309 / +127).
 
 **Depends On:** P13, P15.
 
@@ -853,25 +859,24 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **GOAL:** Every type's editor renders its rows through one menu index in one collapse-safe container, fixing the Date and Number spacing without moving a row or changing a word. The pane's small duplicates fold, a denominator of zero or less is refused in the editor, an editor whose property disappears returns to the list, the kit header reads "Edit Icon", and "schema" keeps one meaning in file names.
 
-**Units:** Y1 (Approach G; L-1), Y2 (05-06, 05-08, 05-09, 05-10, 05-11), Y3 (L-3's editor half, L-4, O-5), Z2 (08-12's vocabulary half).
+**Units:** Y1 (Approach G; L-1), Y2 (05-06, 05-08, 05-09, 05-10, 05-11), Y3 (L-3's editor half, L-4, O-5); Z2 lands in P2.
 
 **Binding Design:**
-1. **Rows as Specifications (Y1):** `NumberEditor.tsx`, `DateTimeEditor.tsx`, `LinkEditor.tsx`, `CheckboxEditor.tsx`, and `FileEditor.tsx` become per-type row builders in one `Core/Properties/Schema/typeRows.ts` (`rowsFor(def, ctx): MenuRow[]`), rendered by one `MenuIndex` (`UIX/Menus/MenuIndex.tsx:122-176`) in one container whose rhythm sits on `Reveal`'s `[data-reveal]` wrapper (`UIX/Menus/Reveal.tsx:45`), so a revealed row keeps its margin and a collapsed Day row leaves no gap. `number-editor.css.ts` is deleted and `DateTimeEditor.tsx:31`'s inline `gap: 4` leaves; FileEditor's `useSession` read moves to the frame; T7's `LOOKS` serves the three narrowings. Date keeps its row icons; every other row passes none (L-2 is I-076).
-2. **Small Folds (Y2):** `useGhostOptionAnchor` leaves and both sites call `useGhostAnchor`; the inline-rename store slice becomes `useState`; `OptionOrderList.tsx`'s pane-row helpers move to `Core/Views/Settings/paneRows.ts` with one shared order row; `OptionEditor` takes `def`; `Schema/OptionRow.tsx` becomes `OptionSlot.tsx`, folding `OptionDraft` and `compactTitle`; internal types unexport; `handleDrop` becomes a `switch`; `Core/Properties/paneDrop.tsx` moves to `UIX/Menus/paneDrop.ts` with neutral names (readers `PropertyPanel.tsx`, `PropertyFrame.tsx`, `VisibilityFrame.tsx`); `nexusReorderIndex` becomes `fullOrderIndex` in `UIX/Utilities/moveItem.ts`.
+1. **Rows as Specifications (Y1):** `NumberEditor.tsx`, `DateTimeEditor.tsx`, `LinkEditor.tsx`, `CheckboxEditor.tsx`, and `FileEditor.tsx` become per-type row builders in one `Core/Properties/Schema/typeRows.tsx` (`rowsFor(def, ctx): MenuRow[]`), rendered by one `MenuIndex` (`UIX/Menus/MenuIndex.tsx:122-176`) in one container whose rhythm sits on `Reveal`'s `[data-reveal]` wrapper (`UIX/Animations/Reveal.tsx:45`), so a revealed row keeps its margin and a collapsed Day row leaves no gap. `number-editor.css.ts` is deleted and `DateTimeEditor.tsx:31`'s inline `gap: 4` leaves; FileEditor's `useSession` read moves to the frame; T7's `LOOKS` serves the three narrowings. Date keeps its row icons; every other row passes none (L-2 is I-076).
+2. **Small Folds (Y2):** `useGhostOptionAnchor` leaves and both sites call `useGhostAnchor`; the inline-rename store slice becomes `useState`; `OptionOrderList.tsx`'s pane-row helpers move to `Core/Views/Settings/paneRows.tsx`; `OptionEditor` takes `def`; `Schema/OptionRow.tsx` becomes `OptionSlot.tsx`, folding `OptionDraft` and `compactTitle`; internal types unexport; `handleDrop` becomes a `switch`; `Core/Properties/paneDrop.tsx` moves to `UIX/Menus/paneDrop.tsx` with neutral names (readers `PropertyPanel.tsx`, `PropertyFrame.tsx`, `VisibilityFrame.tsx`); `nexusReorderIndex` becomes `fullOrderIndex` in `UIX/Utilities/moveItem.ts`.
 3. **Y3:** the denominator row takes only a positive number and otherwise reverts (`NumberEditor.tsx:126-133`), and `formatValue.ts:221`'s guard reduces to a presence check; `UIX/Menus/InlineEditHeader.tsx:47`'s aria-label reads "Edit Icon"; the frame renders the list whenever the edit view names an id `props` lacks, derived at render, so `PropertyFrame.tsx:396-405`'s "Property not found." caption leaves (O-5).
-4. **One Meaning for "Schema" (Z2):** `Core/Properties/schema.ts` becomes `Core/Properties/validation.ts`, so `Schema/` names only the pane's folder.
 
-**Order:** 4, 2, 1, 3.
+**Order:** 2, 1, 3.
 
 **Behavior Changes:** the Date and Number editors' spacing is fixed (L-1); a non-positive denominator is refused in the editor (L-3); an editor whose property disappears returns to the list (O-5); the header's spoken label reads "Edit Icon" (L-4) — each Nathan's intent.
 
-**Consumers:** the five editors, `PropertyFrame.tsx`, `frames.css.ts`, `MenuIndex.tsx`, `Reveal.tsx`, `GhostOptionChip.tsx`, `PropertyPanel.tsx`, `OptionEditor.tsx`, `OptionOrderList.tsx`, `VisibilityFrame.tsx`, `moveItem.ts`, `InlineEditHeader.tsx`, `schema.ts`'s readers.
+**Consumers:** the five editors, `PropertyFrame.tsx`, `frames.css.ts`, `MenuIndex.tsx`, `Reveal.tsx`, `GhostOptionChip.tsx`, `PropertyPanel.tsx`, `OptionEditor.tsx`, `OptionOrderList.tsx`, `VisibilityFrame.tsx`, `moveItem.ts`, `InlineEditHeader.tsx`.
 
 **Tests:** **Rewritten:** the editor tests against row builders; `PropertyFrame.test.tsx:224` for "Edit Icon". **Written:** a revealed Number row keeps its margin; a collapsed Day row leaves no gap; a denominator of 0 reverts; deleting the property under an open editor shows the list.
 
 **Drive:** Properties Drive group 15: screenshots of each type's editor with a row revealed and collapsed, compared against the rhythm; create a property, open its editor, delete it from the ⋮ menu, and the list shows.
 
-**Delta:** about −160 (−140 to −180).
+**Delta:** about −193 (−611 / +418), plus +13 only if O-5's check needs its remedy.
 
 **Depends On:** P3 (`LOOKS`), P7.
 
@@ -940,7 +945,7 @@ A neutral gate receives only two commits and the statement below, with no plan, 
 > - Finding which files hold a property or a tag uses one shared lookup: properties reach pages in Collections and the archive, tags reach any page.
 > - A removed property's set-aside values record when they were removed and are cleaned out after the page-history timeframe; re-adding the property refills pages still in the Collection, pages in the trash, and reports any it couldn't refill.
 > - A view works out each column's type and definition once and hands it to every filter, sort, group, and cell, instead of looking it up again per cell.
-> - Each kind of value's filter rules, sorting, and grouping are stated once in one record; a filter value that can't be read is ignored instead of matching everything, a checkbox's "is not empty" filter works, and empty values sort last for every type.
+> - Each kind of value's filter rules, sorting, and grouping are stated once in one record; a filter value that can't be read is ignored instead of matching everything, a checkbox's "is not empty" filter works, and empty values sort last for every type that can be empty, a checkbox's unchecked state keeping its place in a sort.
 > - Picking a value follows one model for one row or many, and the right-click menu on a value reads the same in the table, cards, and the properties panel.
 > - Clicking, right-clicking, and editing a value is one shared piece for the table, cards, and panel.
 > - Every type's settings editor uses one layout with consistent spacing, and an editor whose property disappears returns to the property list.
@@ -960,87 +965,89 @@ Each count is today's at `3c6afcabb` and the plan's target, with where it's prov
 | **Legacy Versus Interop** | Read paths for shapes only earlier builds wrote | 8 (`LEGACY_TYPE_IDS`, `RENAMED`, `normalizeSavedViews`' open pass, `renamedSidecar`, `legacyBucketKey`'s 3 branches, the bare-`sub/` clause, 2 year sniffs) | 0 | P1 · `git grep -nwE "LEGACY_TYPE_IDS\|legacyBucketKey\|normalizeSavedViews\|renamedSidecar" -- Core` answers 0, and neither `views.ts` nor `GroupFrame.tsx` holds a year sniff |
 | **Type Facts Once** | `PropertyType \| 'title'` unions | 21 in 11 files | 0 | P2 · `git grep -n "PropertyType \| 'title'" -- Core UIX ':!*.test.*'` |
 | **Type Facts Once** | Ad-hoc `.type === '<type>'` checks | 30 | each survivor names a unique piece in its phase's Departures | P3, P14 · the `\.type === '…'` grep in *§Verified at HEAD* |
-| **Type Facts Once** | Type-fact tables | about 14 (**Investigation**) | 5 records: engine `PROPERTY_TYPES`, renderer `TYPE_META`, `LOOKS`, `VIEW_KINDS`, `FILEDATA` | P2, P3, P14 |
+| **Type Facts Once** | Type-fact tables | about 14 (**Investigation**) | 5 records: engine `PROPERTY_TYPES`, renderer `TYPE_META`, `LOOKS`, `VALUE_KINDS`, `FILEDATA` | P2, P3, P14 |
 | **Type Facts Once** | "Which types hold connections" statements | 5 (**Investigation**) | 1 (`connections`) | P3 |
-| **Type Facts Once** | Checkbox blank-draws rule statements | 4 (**Investigation**) | 1 (`blankDraws`) | P3 |
+| **Type Facts Once** | Checkbox blank-draws rule statements | 3 (P3's count; `Cell.tsx:50-58` is the checkbox cell's type dispatch, not a statement of the rule) | 1 (`blankDraws`) | P3 |
 | **Type Facts Once** | Registration `=== 'multiSelect'` checks | 2 (`fileEvents.ts:528`, `optionOps.ts:133`) | 0 (`registersMembers`) | P3 · `git grep -n "=== 'multiSelect'" -- Core ':!*.test.*'` |
 | **Type Facts Once** | Options-from-labels builders | 8 (**Investigation**) | 1 (`pickerOptions`) | P3 |
-| **Type Facts Once** | `syntheticContextDef(` sites | 6 | 0 | P16 · `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` |
+| **Type Facts Once** | `syntheticContextDef(` sites | 6 | 0 | P16B · `git grep -n "syntheticContextDef(" -- Core ':!*.test.*'` |
 | **Fix the Origin** | UI filters guarding against non-user definitions | 4 | 0 | P2 |
-| **Fix the Origin** | Hand-placed guards around the one slot | 7 (**Investigation**) | 0 | P11 |
-| **Fix the Origin** | Never-shrink guard's scope | every governed key | list-shaped values only | P4 |
-| **Fix the Origin** | A delete's put-back-and-throw paths | 2 (`unlinkMembers`, the Context put-back) | 0 | P11 |
-| **One Write Path** | Value write routes | 12, with 3 world-less side doors (**Investigation**) | one governed-root module; 0 side doors | P4 |
+| **Fix the Origin** | Hand-placed guards around the one slot | 7 (**Investigation**) | 0 | P11A |
+| **Fix the Origin** | Never-shrink guard's scope | every governed key | list-shaped values only | P4B |
+| **Fix the Origin** | A delete's put-back-and-throw paths | 2 (`unlinkMembers`, the Context put-back) | 0 | P11B |
+| **One Write Path** | Value write routes | 12, with 3 world-less side doors (**Investigation**) | one governed-root module; 0 side doors | P4A |
 | **One Write Path** | Renderer re-encodes of a write | 2 (`applyValueAtRoot`, `withSeeds`) | 0 | P6 |
-| **One Write Path** | Undo routes / put-back landings | 2 / 2 | 1 / 1 | P6 |
+| **One Write Path** | Undo routes / put-back landings | 2 / 2 | 1 / 1 | P6 (routes; P6's put-back lands beside the sweep's, renamed `sweptKeysBack`), P11B (landings, `sweptKeysBack` leaving with `undoSweep`) |
 | **One Write Path** | `ValueWriter` assemblies | 3 | 1 | P15 |
-| **One Way** | Try Again forms | 4 (**Investigation**, R) | 1 (`finishOwed`) | P11 |
-| **One Way** | Crash-recovery files / record kinds | 2 / 5 | 1 / 1 entry type | P11 · `git grep -n "JOURNAL_FILENAME\|journalSlot" -- Core` answers 0 |
-| **One Way** | Replay points at open | 2 (`handlers.ts:86,111`) | 1 | P9, P11 |
-| **One Way** | Reply shapes across schema ops | 7 (**Investigation**) | 1 (`MutateOutcome`) | P7, P11 |
+| **One Way** | Try Again forms | 4 (**Investigation**, R) | 1 (`finishOwed`) | P11A |
+| **One Way** | Crash-recovery files / record kinds | 2 / 5 | 1 / 1 entry type | P11A · `git grep -n "JOURNAL_FILENAME\|journalSlot" -- Core` answers 0 |
+| **One Way** | Replay points at open | 2 (`handlers.ts:86,111`) | 1 | P9, P11A |
+| **One Way** | Reply shapes across schema ops | 7 (**Investigation**) | 1 (`MutateOutcome`) | P7, P11A |
 | **One Way** | Holder count functions | 4 (**Investigation**) | 1 (`property:holders`' switch) | P7 |
 | **One Way** | Property, schema, and registry channels | 20 | 1 read channel (`property:holders`) | P7 · `bridge.ts`'s `'(property\|schema\|registry):` entries |
 | **One Way** | Space candidate paths | 5 (**Investigation**) | 1 (`findHolders`) | P10 |
 | **One Way** | Page candidate rules for property and Context sweeps | 2 (`governedReach`, `sweepMembers`) | 1, with its reach stated | P10 |
 | **One Way** | Shown-text projections | 2 (`textValue`, `sortText`) | 1 (`shownText`) | P14 |
-| **One Way** | Value click-and-menu copies | 3 plus the native router | 1 seat | P16 |
+| **One Way** | Value click-and-menu copies | 3 plus the native router | 1 seat | P16A (table, Cards), P16B (panel, native router) |
 | **One Way** | Bucket-key builders | 2 | 1 (`bandKey`) | P8 |
 | **Hot Paths Stay Cold** | Per-cell schema scans | 2 (`resolveFieldValue`'s `schema.find`, `Cell.tsx:45`) | 0 | P13 |
-| **Hot Paths Stay Cold** | `declaredType(` calls | 23 in 14 files | 0 | P13 · `git grep -n "declaredType(" -- Core ':!*.test.*'` |
-| **Hot Paths Stay Cold** | Optional `contextIds` defaults | 19 | 0 | P13 · the `contextIds` grep in *§Verified at HEAD* |
+| **Hot Paths Stay Cold** | `declaredType(` calls | 23 lines in 14 files (21 readers, the definition, and `columnType`'s own call) | 0 | P13 · `git grep -n "declaredType(" -- Core ':!*.test.*'` |
+| **Hot Paths Stay Cold** | Optional `contextIds` defaults | 12 (the grep's other 7 lines are `contextIdsOf(tree)` derivations, which stay) | 0 | P13 · Task 13-3's `contextIds` grep |
 | **Hot Paths Stay Cold** | `TextCell` store subscriptions | 3 per cell | 1 | P13 |
 | **Hot Paths Stay Cold** | Whole-Nexus walks on a synced definition / open-time per-page registration | 1 / 1 | 0 / 0 | P5 |
-| **Hot Paths Stay Cold** | Registry re-read and re-validation per value write | 1 | 0 (`cachedParse`) | P4 |
+| **Hot Paths Stay Cold** | Registry re-read and re-validation per value write | 1 | 0 (`cachedParse`) | P4A |
 | **Hot Paths Stay Cold** | Filter operand parses | per row | once per pass | P14 |
 | **One Vocabulary** | Names for the stash | 2 (cache, stash) | 1 | P12 · `git grep -n -i "property_cache\|cachedValues\|patchCacheBlock" -- Core` answers 0 |
 | **One Vocabulary** | Meanings of "Remove" in the Properties pane | 2 (option delete, unassign) | 1 | P7 |
-| **One Vocabulary** | Meanings of "schema" in file names | 3 (**Investigation**) | 1 | P17 |
-| **One Vocabulary** | Files named "value" meaning different things | 5 (**Investigation**) | each named for its content | P4 |
-| **Clearer Boundaries** | Shared modules living in `Core/Properties` | 8 (`governedSweep`, `governedWrite`, `journalSlot`, `keyHolders`, `rowOrder`, `pageRow`, link vocabulary, pane targets) plus `paneDrop` | 0 | P1, P3, P4, P10, P11, P17 |
+| **One Vocabulary** | Meanings of "schema" in file names | 3 (**Investigation**) | 1 | P2 · `git ls-files Core/Properties \| grep -i schema` lists only `Core/Properties/Schema/` |
+| **One Vocabulary** | Files named "value" meaning different things | 5 (**Investigation**) | each named for its content | P4A |
+| **Clearer Boundaries** | Shared modules living in `Core/Properties` | 8 (`governedSweep`, `governedWrite`, `journalSlot`, `keyHolders`, `rowOrder`, `pageRow`, link vocabulary, pane targets) plus `paneDrop` | 0 | P1, P3, P4A, P10, P11A, P17 |
 | **Clearer Boundaries** | Homes for count copy | 2 (`properties.ts`, `confirmations.ts`) | 1 (`entities.ts`) | P7 |
 | **Sync-Ready Shapes** | Options without ids / unread `group_id` writes | every option / 8 NexusOS options | 0 / 0 | P8 |
 | **Sync-Ready Shapes** | Sync rules added | 0 | 0 | every phase · `git diff BASELINE..HEAD -- Core/Sync` is empty |
 | **Describers Get Swept** | Plan-round tags in test titles | about 31 (**Investigation**) | 0 | P1 |
 | **Describers Get Swept** | Exact-key rule pins | 17 in 12 files (**Investigation**) | 1 | P10 |
-| **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Investigation**) | 0 | P11 |
+| **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Investigation**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Investigation**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *§Last Calls* or *§Nathan's Calls* | this document |
-| **Directive (10-22-2026)** | Net production delta | — | about −1,490 | *§The Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | about −1,236 | *§The Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076 and I-077 the only deferrals | P18 · `git diff BASELINE..HEAD -- .claude/IssuesPM.md` adds no `#### I-` heading |
 
 ---
 
 #### The Ledger
 
-Production lines; tests apart. Ranges are each scout's; the figure is the midpoint used.
+Production lines; tests apart. Each figure is the phase file's own *Line Total*, estimated from its AFTER blocks under the one counting rule (source with imports and blank lines as Biome wraps them; comments, tests, test support, documents, and drives out; moved lines on both sides), and each executor replaces it with the measured figure at the phase's Review Checkpoint.
 
 | Phase | Removed | Added | Net | Running Total | Tests |
 |---|---|---|---|---|---|
-| **P1** Removal First | about −165 | about +5 | **−160** | −160 | about −420, +25 |
-| **P2** What Counts as a Property | about −80 | about +20 | **−60** | −220 | small |
-| **P3** Type Records and Looks | about −110 | about +32 | **−78** | −298 | small |
-| **P4** The Value Write's One Home | about −100 | about +15 (T's +4 inside) | **−85** | −383 | about −40 |
-| **P5** One Home per Definition | about −60 | about +33 (O-6 inside) | **−27** | −410 | about −30 |
-| **P6** Undo From the File | about −65 | about +30 | **−35** | −445 | about −60 |
-| **P7** One Door | about −95 | about +45 | **−50** | −495 | about −40 |
-| **P8** Option Identity | about −105 | about +20 | **−85** | −580 | about −220 |
-| **P9** List First, One Replay | about −60 | about +10 | **−50** | −630 | rewritten |
-| **P10** One Finder | about −75 | about +10 | **−65** | −695 | about −100 |
-| **P11** One Note per Item | about −355 | about +220 | **−135** | −830 | about −250 |
-| **P12** The Stash and Trash Records | about −14 | about +51 | **+37** | −793 | about +60 |
-| **P13** Columns Carry Their Answer | about −140 | about +20 | **−120** | −913 | small |
-| **P14** The Per-Kind View Record | about −265 | about +150 | **−115** | −1,028 | rewritten |
-| **P15** Pick Model and One Row Menu | about −160 | about +25 | **−135** | −1,163 | about −30 |
-| **P16** One Value Seat | about −290 | about +120 | **−170** | −1,333 | rewritten |
-| **P17** The Properties Pane | about −190 | about +30 | **−160** | −1,493 | about −40 |
-| **P18** The Documents Read True | 0 | 0 | **0** | −1,493 | 0 |
+| **P1** Removal First | about −296 | about +155 | **−141** | −141 | about −520 |
+| **P2** What Counts as a Property | about −287 | about +235 | **−52** | −193 | about −9 |
+| **P3** Type Records and Looks | about −264 | about +235 | **−29** | −222 | about +5 |
+| **P4A** The Value Write's One Home | about −419 | about +380 | **−39** | −261 | about −77 |
+| **P4B** The Tidy Rule and Repair On Open | about −16 | about +23 | **+7** | −254 | about +53 |
+| **P5** One Home per Definition | about −125 | about +70 | **−55** | −309 | about +110 |
+| **P6** Undo From the File | about −193 | about +193 | **0** | −309 | about +45 |
+| **P7** One Door | about −382 | about +227 | **−155** | −464 | about +170 |
+| **P8** Option Identity | about −213 | about +140 | **−73** | −537 | about −220 |
+| **P9** List First, One Replay | about −54 | about +43 | **−11** | −548 | about +120 |
+| **P10** One Finder | about −255 | about +210 | **−45** | −593 | about +55 |
+| **P11A** The Notes and the Renames | about −405 | about +395 | **−10** | −603 | about −450 |
+| **P11B** Deletes, Remove, and the Runner | about −130 | about +128 | **−2** | −605 | about +100 |
+| **P12** The Stash and Trash Records | about −106 | about +199 | **+93** | −512 | about +190 |
+| **P13** Columns Carry Their Answer | about −291 | about +218 | **−73** | −585 | about −40 |
+| **P14** The Per-Kind View Record | about −550 | about +438 | **−112** | −697 | about +81 |
+| **P15** Pick Model and One Row Menu | about −205 | about +128 | **−77** | −774 | about +39 |
+| **P16A** The Seat, the Table, and Cards | about −520 | about +433 | **−87** | −861 | about +190 |
+| **P16B** The Native Router, the Panel, and No Fabricated Definition | about −309 | about +127 | **−182** | −1,043 | about +10 |
+| **P17** The Properties Pane | about −611 | about +418 | **−193** | −1,236 | about −75 |
+| **P18** The Documents Read True | 0 | 0 | **0** | −1,236 | net negative (the seed sweep, measured) |
 
-**Total:** about **−1,490** production lines (roughly −1,100 to −1,850), with about −1,250 to −1,600 test lines. Every phase but P12 is net-negative, so every intermediate head is net-negative from P1 on.
+**Total:** about **−1,236** production lines (about −5,631 / +4,395), and about **−220** test lines before P18's seed sweep. Every intermediate head is net-negative from P1 on; the Mid-Plan Neutral Gate's range ends at P12's head, about −512. On F3's Fail, P6 lands about +68 and P13's Task 13-8 about 0, so the total is about −1,167.
 
-**Confidence:** P1, P2, and the small folds are read from the code and hold within a few lines. P11 (the notes), P12 (the stash), P14 (the record), P16 (the seat), and P17 (the editor rows) are estimates of designs drawn here but not yet coded, and each could move by half; none of them flips the cumulative sign, since the smallest plausible total (every estimate at its least favorable end) is still below −1,000. P11's figure is R's −150 to −250 less what P9 (−50) and P1 (N4's −12) took first; P12's is S's +23 less the purge check P11 counts, plus the refill-skip arm (+8) and the partial mark (+8), less the double report's fold (−1).
+**Confidence:** the figures are read from the written AFTER blocks, so each moves by Biome's wrapping and the landed shapes of earlier phases; the executors' measured numbers replace them. The total lands about 250 lines short of the planning estimate (−1,490), because the moves pay import wrapping (P3, P4A), the type records and the seat carry the code their surfaces held (P14, P16A), and the crash-recovery rebuild's arms cost what R priced at none (P11A, P11B); P7, P16B, and P17 land further negative than estimated. The tests total lands about −220 rather than −1,250 to −1,600: the large deletions (P1's legacy pins, P8's re-keying tests, P11A's journal suites) hold, while P5, P7, P9, P12, and P16A each write the pins their new behavior needs, one behavior per pin. No combination of the estimates' least favorable ends flips the cumulative sign.
 
-**Net-Positive Rationale (P12):** under *Less Stuff*, C-3's ageing and C-2's fixes are required behavior in minimal form on existing mechanisms; the refill-skip report fixes a loss the ageing would otherwise make silent; the partial mark delivers N-1; each fold inside it removes what it replaces.
-
+**Net-Positive Rationale:** two phases land above zero, and P6 at zero. **P4B (+7):** every added line is ruled behavior in its minimal form: the list test and the live arm's foreign-word rule narrow an over-generalized guard rather than adding a Select or Status branch, and `writtenRoot`'s null rule replaces the Space op's special case with one rule for every writer. **P12 (+93):** C-3's ageing and C-2's stale drop, Trash parking, and restore order are Nathan's rulings delivered on existing mechanisms (`editStashes`, `refillValues` through `refillOf`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, Sync rule, or timer; the refill-skip report fixes a loss the ageing would otherwise make silent, through the one function every re-add passes; the partial mark delivers N-1; each fold inside removes what it replaces. **P6 (0):** an undo that puts back what the file held is a landing no existing code performs, and F3's picked overlay removes as much as it adds.
 ---
 
 #### What Becomes False
@@ -1056,20 +1063,19 @@ Each describer the work makes false, with the phase that rewrites it. A phase sw
 | `contextJournal.ts:1` on the skip list | N4 | P1 |
 | `columnLabel.ts:10`, `setProperty.ts:14`, `paneDrop.tsx:16-17`, `property-panel.css.ts:8` | stale today (09-11) | P1 |
 | `properties.ts:286` and `properties.test.ts:267`'s "type change" | stale today (01-10) | P2 |
-| `contextResolve.ts:119` "never shrinks or blanks" | the tidy type fact | P4 |
-| `mutate.ts:81` "never shrinks or drops a key it can't resolve" | the tidy type fact | P4 |
+| `contextResolve.ts:119` "never shrinks or blanks" | the tidy type fact | P4B |
+| `mutate.ts:81` "never shrinks or drops a key it can't resolve" | the tidy type fact | P4B |
 | `mutateRequest.ts:91` `held` "written back as it was" | E-1 | P6 |
 | `registryProperty.ts:170` race rationale | S1 | P7 |
 | `propertiesRegistry.ts:125` lock claim | S1 | P7 |
 | `optionMenu.ts:1` "Remove deletes the option" | O-1 | P7 |
 | `deleteProperty.ts:169` "Spread, never Object.assign" | `patchStashBlock`'s fold | P12 |
-| `replaySchemaCascade.ts:52` registry-last rationale | B-2 | P9 (file leaves in P11) |
+| `replaySchemaCascade.ts:52` registry-last rationale | B-2 | P9 (file leaves in P11A) |
 | `contextCascade.ts:32` the `'merge'` rule's reason | B-2 | P9 |
 | `keyHolders.ts:13`, `spaceSidecar.ts:49` disk truth | G-1 | P10 |
-| `mutate.ts:68` four-way Try Again; `journalSlot.ts:1,18` | B-1 | P11 |
+| `mutate.ts:68` four-way Try Again; `journalSlot.ts:1,18` | B-1 | P11A |
 | `PropertyPanel.tsx:151` the `KNOB` comment | J-5 | P15 |
 | `number-editor.css.ts:3` | the file leaves | P17 |
-| `formatValue.ts:221`'s guard comment | L-3 | P17 |
 | `UIX/Menus/InlineEditHeader.tsx:47` "Edit icon" | L-4 | P17 |
 
 ##### Tests and Scripts
@@ -1078,8 +1084,8 @@ Each describer the work makes false, with the phase that rewrites it. A phase sw
 |---|---|---|
 | `Core/Sync/Arrival/mergePolicy.test.ts:120-136` (`name` field, respelling, fragment) | stays as written under *Sync Stays*; recorded as a rebuild input | — |
 | `columnMenu.test.ts:171-175` "Format" for Number | I-4 | P3 |
-| `repairSweep.test.ts:150-156` | P-1's type fact | P4 |
-| `propertyValue.test.ts:223-225` | whitespace at decode's entry | P4 |
+| `repairSweep.test.ts:151-157` | P-1's type fact | P4B |
+| `propertyValue.test.ts:223-225` | whitespace at decode's entry | P4B |
 | `restoreValue.test.ts`, `assignValue.test.ts:72-115` | E-1 | P6 |
 | `confirmations.test.ts:434-435` | kept; the zero wording is pinned beside it | P7 |
 | `PropertyFrame.test.tsx:202,244,255,438,486` | 05-13 | P7 |
@@ -1089,9 +1095,19 @@ Each describer the work makes false, with the phase that rewrites it. A phase sw
 | `.claude/scripts/make-benchmark-nexus.mjs:169` | D-1, D-3 | P8 |
 | `OptionEditor.test.tsx:267-448`, `optionOps.test.ts:245-276`, `configReach.test.ts:157-252` | D-1 | P8 |
 | `keyHolders.test.ts:80-216` | the finder's move | P10 |
-| `journalWiring.test.ts:274-319`, `optionOps.test.ts:707`, the one-slot pins | B-1, B-4 | P11 |
+| `journalWiring.test.ts:274-319`, `optionOps.test.ts:707`, the one-slot pins | B-1, B-4 | P11A |
 | `cascadeRace.test.ts:58` "F1 —" and the other plan-round tags | 09-06 | P1 |
 | `.claude/scripts/drive-harness.mjs:282`; `Text Property Drive/live-drive.mjs:279,287,292,365` | J-4 | P15 |
+| `resolveView.test.ts:513`, `GroupFrame.test.tsx:260`, `views.test.ts:569-578`, `configReach.test.ts:72,83` (bare hidden-group keys) | L3 | P1 |
+| `contextCascade.test.ts`' 24 skip-list lines, `contextJournal.test.ts:14`, `Core/Nexus/handlers.test.ts:436` | N4 | P1 |
+| `Core/Nexus/handlers.test.ts:143-154` (the open waits on a damaged `properties.json`), `readNexus.test.ts:470-483` | O-6 | P5 |
+| The Metadata Drive's label-addressed option ops, counts, values, operands, and five pins; the Option Picker Drive's adds and seeded values; `Alias Drive/live-drive.mjs:80`'s id-less adds; `Archive Drive/live-drive.mjs:391`'s rename by label | D-1 | P8 |
+| `Core/Testing/configSurfaces.ts:36` (`viewOn`'s bare collapsed key), `propertyJournal.test.ts`' `labels` cases | D-1, D-2 | P8 |
+| `restoreScrub.test.ts:165` (the scrub's refusal), `contextCascade.test.ts:93` ("still reaches every sidecar"), `spaceSidecar.test.ts:28`, the 19 `seedSpaceSidecar` calls | G-1, G-3 | P10 |
+| The Metadata Drive's journal slots, `retry` replays, and group 6's owed-option refusals; `drive-harness.mjs:307`'s `COPY.anOptionChangeWaitingForTryAgain` | B-1, LC-45 | P11A |
+| `removeProperty.test.ts:351-358` ("a page deleted while cached is skipped — its entry stays cached") | C-2 | P12 |
+| `.claude/scripts/Metadata Drive/live-drive.mjs:21-22,188,213-218` (`property_cache`) | LC-3 | P12 |
+| `.claude/scripts/Metadata Drive/MATRIX.md`'s channel, journal, cache, and label rows; `Archive Drive/MATRIX.md:42`'s `replaySchemaCascade.test.ts:523` cite | P7, P8, P11A, P12 | P18 |
 | `.claude/scripts/README.md`'s channel names | P7's fold | P18 |
 
 ##### Documents
@@ -1119,6 +1135,10 @@ Each describer the work makes false, with the phase that rewrites it. A phase sw
 | `.claude/Features/NexusRecordPM.md:12` | `partial` read by nothing; system-Trash mode "records nothing" for a property delete | P18 |
 | `.claude/Features/CollectionsPM.md:14` | `property_cache` → `property_stash` with its stamp and timeframe | P18 |
 | `.claude/Features/ViewTypesPM.md:91` | a link menu's "Edit Link … and Rename" order | P18 |
+| `.claude/Features/CorePM.md:111` | the SOURCE line names `schema.ts` (Z2) | P18 |
+| `CorePM.md:92`, `:100`, `:137` | the channel sentence, Context and Space delete policy, and create clause; "every Space sidecar"; the damaged-`properties.json` open (O-6) | P18 |
+| `ContextsPM.md:27-28`; `NexusRecordPM.md:12`, `:14` | cascades and deletes that refuse and put back (B-3); the cache, "Key or Value Format", and the owed-name clause | P18 |
+| `ViewTypesPM.md:24`, `:41`, `:55`; `PommoraUIX.md:347`; `InteractionPM.md:42` | an unreadable operand that abstains (K-1); Select and Status compared by label (D-1); empty values placed nowhere in a sort (K-2); the chip shape's home (P3); option drafts keyed through `useRenameKeys` (P8) | P18 |
 | `CorePM.md`'s *§Mutations*, `mutateRequest.ts`'s comment | I-032's Properties slice folded | P18 |
 
 ##### Issues Entries
@@ -1129,13 +1149,13 @@ Each describer the work makes false, with the phase that rewrites it. A phase sw
 | **I-032** | Narrowed: the Properties slice (19 writing channels) folded into `mutate`; the count and list name what's left. | P18 |
 | **I-033** | Unchanged (the Trash batch's walk). | — |
 | **I-035** | Narrowed in place: its event-order sentence follows the list-first Context rename; the defect stays. | P18 |
-| **I-036** | Closed: one notes file, one replay at one point, one finder over the tree. | P11 (text in P18) |
-| **I-039** | Closed: the put-back it describes leaves. | P11 (text in P18) |
+| **I-036** | Closed: one notes file, one replay at one point, one finder over the tree. | P11A (text in P18) |
+| **I-039** | Closed: the put-back it describes leaves. | P11B (text in P18) |
 | **I-042** | Narrowed to part (1) and part (2)'s non-Properties moves; `governedSweep` lands in `Core/Nexus`, `governedWrite` and `journalSlot` dissolve, `keyHolders` lands in `Core/Index`. | P18 |
 | **I-063** | Closed: undo puts back the file's own node. | P6 (text in P18) |
 | **I-064** | Narrowed in place: "Key Format" becomes "Label Format" and its footnote lines move; stays deferred. | P18 |
 | **I-068**, **I-072** | Unchanged (outside Properties). | — |
-| **I-076** | Narrowed: its column-menu wording note follows I-4. Stays deferred. | P18 |
+| **I-076** | Narrowed: its column-menu wording note follows I-4, and its footnote's five editor cites (`IssuesPM.md:1387`) re-point to `typeRows.tsx`' row builders. Stays deferred. | P18 |
 | **I-077** | Its footnote lines and `property_cache` follow P12. Stays deferred. | P18 |
 
 ---
@@ -1164,7 +1184,9 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 - **LC-12 · A Change Whose Note Can't Be Written Doesn't Start:** today some big changes run without a note when the note can't be written, and others refuse. Every one now refuses with nothing changed. **Recommended:** refuse.
 - **LC-18 · Re-Adding a Removed Property Cancels What Its Remove Still Owed There:** if a Remove missed pages and you add the property back to that Collection before Try Again runs, the leftover work is dropped for that Collection, since the property governs those pages again. **Recommended:** take it.
 - **LC-19 · A Remove Reports Pages It Can't Clean Up:** today a Remove quietly leaves the value on a page with no ID, a page sharing another page's ID, or a page whose properties can't be rewritten safely, while the Collection no longer uses the property. These now count as unfinished, with Try Again; a page without an ID usually gets one at its next read, so Try Again usually succeeds. The feature document's sentence calling this intended is rewritten. **Recommended:** report and offer Try Again.
-- **LC-45 · Clearing an Option Is No Longer Refused While Another Option Change Is Owed:** today Clear waits on its own property's unfinished option change. It now runs, and any old names still owed to that option are switched to "remove" so the unfinished rename can't bring the cleared value back. **Recommended:** take it.
+- **LC-45 · Clearing an Option Is No Longer Refused While Another Option Change Is Owed:** today Clear waits on its own property's unfinished option change. It now runs, and any old names still owed to that option are switched to "remove" so the unfinished rename can't bring the cleared value back. **Recommended:** take it. A Clear that misses a page warns, as every Clear's miss already does, and offers no Try Again, since Clear writes no note recording what to run again (P7, P11A).
+- **LC-49 · A Retried Context Rename That Misses Files Again Can Leave Nothing to Finish (P1 to P11A):** between the first phase and the crash-recovery rebuild, if a Context or Space rename's Try Again misses files a second time and no earlier record of that rename is still on file (a later rename of the same item replaced it, or the open already finished it), nothing records the leftover files, so they keep the old name until it's renamed again. Every other retry behaves as today, and the rebuild gives each item its own note. **Recommended:** accept it for those phases; keeping the unread field alive only to cover it would be code the rebuild deletes.
+- **LC-50 · Re-Choosing the Nexus Already Open Doesn't Retry an Owed Context Rename (P9):** today, picking the Nexus that's already open re-runs an unfinished Context rename; afterward that happens only on a real open, as unfinished property work already does, and the rename's own notice keeps its Try Again. **Recommended:** take it, one rule for both.
 
 ##### Values and Tidy-Ups
 
@@ -1175,6 +1197,7 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 - **LC-24 · Spaces-Only Reads as Empty for Dates, Links, and Files Too:** you ruled spaces-only text empty; a date, link, or file written as only spaces read as filled for the same reason. It's stated once for every type. **Recommended:** take it.
 - **LC-25 · A Space Edit That Changes Nothing Leaves the File Alone:** today re-picking a Space's value it already holds rewrites its settings file and gives it a new modified time. It now writes nothing, as pages already do. **Recommended:** take it.
 - **LC-30 · A Mis-Capitalized Option Word Beside a Valid One Drops:** `Stage: [done, Active]`, where the option is spelled "Done", tidies to `[Active]`, since "done" names no option; alone, `[done]` stays as written. This follows your rule that words no option names are ignored. **Recommended:** no change; noted so it isn't a surprise.
+- **LC-51 · A Pick of an Option Deleted Meanwhile Writes Nothing (P8):** if a picker is open while another device deletes one of its options, or a new page inherits an option a sync just removed, picking it writes nothing for that option instead of writing the deleted word, which a Multi-Select would then re-adopt as a brand-new option. **Recommended:** take it; a deleted option shouldn't come back from a stale menu.
 
 ##### The Stash
 
@@ -1191,7 +1214,7 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 - **LC-11 · A Hand-Written Context Property Isn't a Real Property (Morning Question 11):** a Context-typed definition typed into the property list by hand is set aside when the list is read, since Contexts come from the Context list.
 - **LC-13 · Deleting Something Nothing Holds Still Asks (Morning Question 13):** deleting a property or option no page holds still asks, since the definition itself is destroyed, without the "stripped from 0 Items" clause. The zero-case details are today's details with the strip clause removed and no new words: "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." for a property, and "The option is deleted from the property." for an option.
 - **LC-14 · Numbered Names (Morning Question 14):** the pane's `+` keeps naming a new property "New Select" or similar without a notice; a Trash restore whose name was taken says "Restored “Priority” as “Priority (2)”."
-- **LC-15 · The Panel's File Menu (Morning Question 15):** a File value's right-click in the panel gains Remove and not Clear, matching cards.
+- **LC-15 · The Panel's File Menu (Morning Question 15):** a File value's right-click in the panel gains Remove and not Clear, matching cards. The row's label opens the same menu as its value, so a File row's label loses the Clear it offered and gains Add File (P15, J-10).
 - **LC-16 · Undo and Aliases (Morning Question 16):** undo takes back only a Link value's alias; a link typed inside a Text value keeps the alias its save added.
 - **LC-17 · Status in the Picker (Morning Question 17):** the value picker keeps creating Select and Multi-Select options but not Status options, since a Status option has to sit in one of its groups.
 - **LC-38 · New Views (Morning Question 6):** a new view shows Title only, and properties created later stay hidden in existing views.
@@ -1199,6 +1222,10 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 - **LC-40 · The Pommora Tile (Morning Question 9):** its leftover Status collapses are kept and scoped to Status, with "open" and "closed" dropped.
 - **LC-41 · The Link Default (Morning Question 12):** an unset Link Format stays Full Link, since Default Link Format is set per device and governs pasting.
 - **LC-47 · The Two Link Menus Read the Same:** both read Rename, then Edit Link (Edit Title where a page link's title is what's edited), the order the connection menu already uses. **Recommended:** take it.
+- **LC-52 · A Title Sorts and Filters on the Text It Shows (P2):** a page title holding `[[…]]` or `](…)` sorts and filters on the text it displays, as a Text value already does, where it sorted on the raw file name. A file name seldom holds either. **Recommended:** take it, since Title now reads as text.
+- **LC-53 · A Checkbox Keeps Both of Its Readings (P14):** an unchecked box is stored as no value, so the filter treats it as empty ("is empty" matches unchecked boxes), while the sort keeps treating it as a value, ascending putting unchecked first and descending checked first. Applying "empty sorts last" to it would put every unchecked page last both ways and make the sort's direction do nothing. **Recommended:** keep both; a checkbox has no empty state on screen, and the empty-last rule was written for values that can be missing.
+- **LC-54 · Pickers Open Fresh per Value Everywhere (P16):** the table already opens a fresh picker when you move from one value to another; Cards and the Properties panel now do the same, a Date or File added from a card's Add list opens as a fresh picker at the same spot, and the panel's popover fades out instead of vanishing. **Recommended:** take it, one behavior on every surface.
+- **LC-55 · The Date Editor's Rows Space at 8px (P17):** with every type's editor on one layout, the Date editor's rows space at 8px where they spaced at 4px, under the same top padding the other editors have; the Number editor's revealed rows gain their missing 8px, and a hidden Day row leaves no gap. **Recommended:** take it; it's what "every editor shares one layout" means, and the drive's screenshots show it.
 
 ##### Settled or Structural
 
@@ -1208,7 +1235,9 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 - **LC-42 · Several-Word Selects (Morning Question 8):** settled by Nathan: any edit tidies to the one option shown.
 - **LC-43 · The Name (Morning Question 10):** settled by Nathan: Filedata.
 - **LC-44 · Measurement Outcomes:** four speed checks on a large test Nexus decide small things by fixed rules: whether the renderer stops pre-computing a write's result (F3), whether views need in-place updating after an edit (K), whether the graph filter needs a cache (07-10), and whether mass edits need a combined request (02-10). Any check that fails its threshold is reported here in the morning with its numbers rather than filed.
-- **LC-48 · Accidents Fixed Along the Way:** a Nexus whose unfinished Context rename throws on open now finishes opening; a property delete that can't update a damaged Collection settings file now stays unfinished with Try Again instead of silently skipping it; the restore routines' ignored Space-file failures now warn. **Recommended:** take all three.
+- **LC-48 · Accidents Fixed Along the Way:** a Nexus whose unfinished Context rename throws on open now finishes opening; a property delete that can't update a damaged Collection settings file now stays unfinished with Try Again instead of silently skipping it; the restore routines' ignored Space-file failures now warn. **Recommended:** take all three. Also: a returning page the restore's clean-up can't update no longer refuses the whole restore, it lands and the warning names it, as a Space file already did (P10; **Recommended:** take it); a page restored into the Trash takes a re-filled link value the way a live page does, dropping one that names a page gone since (P10); a value picked from a menu after its property was deleted does nothing instead of opening a picker on a made-up property (P13); a write for a property deleted a moment earlier reaches the app's own refusal instead of being dropped silently (P13); a Link added from a card's Add list opens empty instead of pre-filled with an empty link (P16A); an open picker closes when the row it belongs to disappears (P16B); and a Control-click in the Properties panel opens only the menu, as it already does in the table and cards (P16B).
+- **LC-56 · Sweeps Reach Only the Spaces Pommora Lists (P10):** finding which Spaces hold a property or tag now reads Pommora's own list of Spaces instead of scanning every folder, so a Space folder sitting under a Context the Context list doesn't name (only a hand copy makes one) is no longer rewritten, a Space with no id two files share is held out as pages already are, and an unreadable Space file is counted as owed. **Recommended:** take it; nothing displays those folders, and the counts match what the app shows.
+- **LC-57 · A Notes File Damaged Before Pommora Read It Starts Fresh (P11A):** if `.nexus/.owed.json` is damaged before the session ever read it, its unfinished work reads as none, and the next note sets the damaged copy aside and starts a new file, the policy every Pommora settings file follows (NC-2). The leftover files keep their old names until changed again. **Recommended:** accept it; the file is device-local and only an outside edit damages it.
 
 ---
 
@@ -1216,6 +1245,7 @@ Each is a reading taken in Nathan's place, where the decisions don't settle it o
 
 - **NC-1 · Context and Space Deletes in System Trash Mode Keep No Record of Their Tags (R's F-8):** in System Trash mode the folder goes to the system Trash and the tags leave every page with no copy anywhere, while a property delete keeps a Pommora Trash entry in either mode on purpose (N-2). **Recommended:** leave it; System Trash mode means Pommora keeps no records of its own, and the property exception is yours by N-2.
 - **NC-2 · Damaged-File Copies Are Never Cleaned (R's F-9):** when Pommora rebuilds one of its own damaged JSON files, the damaged copy is set aside as `.<name>.bad-<id>` beside it and never removed. This is the policy for every Pommora settings file, outside Properties. **Recommended:** leave it; the copies are evidence for a hand repair, and a cleanup policy belongs to all of Pommora's files at once.
+- **NC-3 · Pages Pommora Can't Safely Rewrite Count as Unfinished Only for Remove (P11B):** a Remove now counts a page whose properties Pommora can't rewrite safely as unfinished, with Try Again (LC-19), but a property rename, a delete, an option change, and Context and Space changes still count only files they couldn't read, so after one of those such a page keeps the old name with nothing owed, as today. **Recommended:** decide whether every change should count them; widening it is a behavior change this plan doesn't make on its own.
 
 ---
 
@@ -1244,10 +1274,11 @@ Every decision maps to a phase or a stated exclusion.
 | A-1, A-2, A-3, A-6, A-7 | Every phase's brief and review |
 | A-4 | P1 |
 | A-5 | Kept (P8 mints ids at registration) |
-| B-1, B-3, B-4 | P11 |
+| B-1, B-4 | P11A |
+| B-3 | P11B |
 | B-2 | P9 |
-| C-1 | Kept; P11, P12 |
-| C-2 | P11 (retry), P12 |
+| C-1 | Kept; P11A, P11B, P12 |
+| C-2 | P11B (Remove's retry), P12 |
 | C-3 | P12; its own timeframe is I-077 |
 | D-1, D-2, D-3 | P8 |
 | E-1, E-2, E-3 | P6 |
@@ -1259,13 +1290,13 @@ Every decision maps to a phase or a stated exclusion.
 | I-2 | Kept |
 | I-3 | Kept (LC-41) |
 | I-4 | P3 |
-| J-1 | P4 (spaces), P15 (clock) |
+| J-1 | P4B (spaces), P15 (clock) |
 | J-2, J-6, J-7 | Kept |
 | J-3, J-10 | P15 |
 | J-4 | P15 |
 | J-5 | Kept; its comment in P15 |
 | J-8 | P3 (gate's reason; LC-17) |
-| J-9 | P4 |
+| J-9 | P4B |
 | K-1 | P14 (filters), P8 (collapses) |
 | K-2 | P14 |
 | L-1, L-4 | P17 |
@@ -1275,30 +1306,30 @@ Every decision maps to a phase or a stated exclusion.
 | N-1 | P12 |
 | N-2 | Kept; P18 (document) |
 | O-1, O-2, O-4 | P7 |
-| O-3 | P4 |
+| O-3 | P4B |
 | O-5 | P17 |
 | O-6 | P5 |
-| P-1 | P4 |
+| P-1 | P4B |
 | P-2, P-3 | Kept |
 
 | Walkthrough Line | Phase or Exclusion |
 |---|---|
 | *Types* — two tables; 21 unions; fake-property guards; eight picker builders | P3; P2; P2; P3 |
-| *Values* — one module; refusal check; real-write tests; "value" names; cached registry and one creation write; Title as text | P4; P1; P4; P4; P4; P2 |
+| *Values* — one module; refusal check; real-write tests; "value" names; cached registry and one creation write; Title as text | P4A; P1; P4A; P4A; P4A; P2 |
 | *Undo* — one route and one put-back; the undo list stays the owner; the bare-key repair unneeded | P6 |
-| *Crash Recovery* — one notes system and the seven guards; one open point; the reverse path; list-first delete; no screen copy of a note; the unread field; up-front capture | P11; P9, P11; P9; P9; P11 (LC-6); P1; P11 |
+| *Crash Recovery* — one notes system and the seven guards; one open point; the reverse path; list-first delete; no screen copy of a note; the unread field; up-front capture | P11A; P9, P11A; P9; P9; P11A (LC-6); P1; P11B |
 | *Reach* — one read per file; Space Context keys; index registration; ids not copies; repair from the tree | P10; P10; P5; P5; P5 |
-| *Stash* — wrapper flattens; restore writes the stash first; damaged sidecar caught; `.nexus` home | LC-1; P12; P11; superseded by C-3 |
-| *Stash* — What Changes: stale drop, Trash parking, Trash Collections reached, Remove's Try Again | P12; P12; LC-2; P11 |
+| *Stash* — wrapper flattens; restore writes the stash first; damaged sidecar caught; `.nexus` home | LC-1; P12; P11B; superseded by C-3 |
+| *Stash* — What Changes: stale drop, Trash parking, Trash Collections reached, Remove's Try Again | P12; P12; LC-2; P11B |
 | *Options* — rename machinery and popup tests leave; one bucket-key builder; throwaway conversion; ids for Sync later | P8 |
-| *Panel* — one seat replacing the native router; one pick model and one writer; moves and names | P16; P15; P15 |
+| *Panel* — one seat replacing the native router; one pick model and one writer; moves and names | P16A, P16B; P15; P15 |
 | *Views* — columns once; one shown text; no redundant hidden list; the view-kind table; speed measured | P13; P14; P13; P14; P14 (LC-44) |
 | *Editors* — looks once; row lists; one save path and one format saver; one lock; small duplicates | P3; P17; P7; P7; P17 |
 | *Trash* — one counting home; the delete flow; restore trusts create; Delete names | P7 |
 | *Settings* — the notice names its list | P5 |
 | *Sync* — the scrap test corrected; the merge-depth test rewritten; losses listed | LC-31; LC-31; *§Sync Rebuild Inputs* |
 | *Tests* — one seed; duplicates collapse; tags leave; removed-behavior tests leave; documents and Issues rewritten; comments; drives | P1; each phase; P1; each phase; P18; P1, each phase; P7, P8, P15, P18 |
-| *Leftover* — the open conversion; old hidden groups; legacy tests; interop stays; shared pieces move; one name per concept; folder split waits | P1; P1; P1; kept; P1, P3, P4, P10, P11, P17; each phase; LC-32 |
+| *Leftover* — the open conversion; old hidden groups; legacy tests; interop stays; shared pieces move; one name per concept; folder split waits | P1; P1; P1; kept; P1, P3, P4A, P10, P11A, P17; each phase, `validation.ts` in P2; LC-32 |
 
 ---
 
@@ -1306,6 +1337,6 @@ Every decision maps to a phase or a stated exclusion.
 
 1. **Superseded Readings in the Planning Documents:** *Properties Restructure — Investigation*'s *§What Counts as a Property* (the Built-In Fields name) and *§Edge Rules* P-1 bullet (an edit to a different property leaves a several-word Select as written), and *Properties Restructure — Walkthrough*'s lines this document departs from (*§Last Calls › Departures From the Walkthrough*, plus line 34's "already today's rule", which covers the display half only), carry readings this document supersedes. Whether those planning records are rewritten before ratification is the orchestrator's call; no phase touches them.
 2. **`reveal-parity`:** the decision log's Open Item 2 (`.claude/scripts/reveal-parity/run.mjs:750` looks for "Forget Test" and needs fixtures `~/Test` doesn't hold) stays outside Properties.
-3. **P16's Seat:** its interleavings (Cards' ghost hold, the table's title passthrough, `lastOpened` keying) are designed in its tasks during planning; its delta is checked against −170 at its Review Checkpoint.
+3. **P16's Seat:** its interleavings (Cards' ghost hold, the table's title passthrough, `lastOpened` keying) are designed and pinned in P16A; its two halves land about −269 (P16A about −87, P16B about −182), checked at each Review Checkpoint.
 4. **Measurement Outcomes:** F3, K, 07-10, and 02-10 run their rules in P6, P14, and P15; a failed threshold becomes an LC-44 row.
 5. **Sources:** the four planning scouts, the decision log, the Investigation, the Walkthrough, `BRIEF.md`, and the Archive precedent's Findings and *§Process Overview* were read in full. *Properties Restructure — Scout Reports* (376 KB) wasn't read; it's backup evidence behind the Investigation, and every cite this document leans on was taken from a planning scout's HEAD read or opened at HEAD for this document. A reviewer who finds a Scout Reports claim that contradicts a call here checks it against the code, and the code wins.
