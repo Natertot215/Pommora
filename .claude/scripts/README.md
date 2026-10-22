@@ -112,6 +112,21 @@ make — it runs it and prints every value that moved, polling until the Nexus i
 
 `make-benchmark-nexus.mjs` builds a deterministic Nexus: a benchmark at one of four sizes (`small`, `medium`, `large`, `xlarge`, default `medium`) into `~/Benchmark-<Size>`, or, with `test`, the drives' starting state into `~/Test`. Before building, a benchmark sweeps every earlier benchmark Nexus (each size and the legacy `~/Benchmark`) and `test` sweeps the earlier `~/Test`, each along with its index database under the Pommora userData folder, and it refuses to touch an existing folder that it didn't write. It uses only Node's built-in modules.
 
+`plan-replay/plan_replay.py` reads an implementation plan's tasks as the fenced diff blocks they
+write — elisions, one-line block summaries, moved-verbatim lines, and the `git mv`, `git rm`, and
+deletion lines of each task's CHANGE list — and replays them through one applier. `check` replays
+every phase in plan order over a commit and writes a report of each hunk whose before-text no longer
+matches, with the file as replayed at that point, beside an import check of each phase's end. `measure`
+tallies each task's and phase's production delta under `view-delta`'s Actionable rule on
+Biome-formatted trees, counting a hunk it can't replay from its own lines. `apply` writes one task's
+blocks into the working tree in the order the task gives them, refusing any hunk whose before-text
+matches nowhere or in more than one place, formats what it touched with Biome, and prints each
+block and hunk numbered with where it landed or why it didn't, and nothing is staged or committed.
+Every command passes over a block marked `*Only on <Rule>'s <Outcome>:*`, so each measurement reads
+on its first outcome, unless `--outcome <Rule>=<Outcome>` names it; `--skip` passes over numbered
+blocks by hand. It uses only Python's standard library,
+`git`, and the repo's Biome.
+
 `check-atlas.mjs` runs before every commit through the versioned git hook `../hooks/pre-commit`. Its
 partner `../hooks/post-commit` runs the Studio dashboard's `sync.mjs`, which folds the commit into
 Pommora's line ledger on the Studio dashboard and pushes `active`. Because they are native git hooks
