@@ -84,7 +84,7 @@ Each call names its reason under the Approach, Principles, and Perspectives. Cal
 - **Sequence:** Q's eighteen phases stand with the adjustments listed under *§The Phases › Adjustments to Q's Sequence*. Each phase fits one implementation agent's context and leaves its head shippable.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals. Every existing entry the work touches is closed or narrowed in place with no successor (*§What Becomes False › Issues Entries*), and anything that can't finish inside the plan is a Last Call.
 - **Sync Stays:** nothing under `Core/Sync/` changes, its tests included; `mergePolicy.test.ts:120-136` stays as it reads and goes to *§Sync Rebuild Inputs* (LC-31).
-- **Net-Negative Production Lines:** a completion criterion. *§The Ledger* is re-estimated per phase, and each net-positive phase (P4B, P12) states why under *Less Stuff*.
+- **Net-Negative Production Lines:** a completion criterion. *§The Ledger* carries each phase's measured figure, and each net-positive phase (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail) states why under *Less Stuff*.
 - **Every Measure-Then-Decide Point:** each names its Benchmark Nexus, the measurement, a threshold number, and both outcomes as tasks, so the executor runs a rule (*§Measurement Rules*).
 - **One Drive:** the plan creates `.claude/scripts/Properties Drive/live-drive.mjs` on `drive-harness.mjs` with one group per phase that has a visible surface, in the Archive Drive's shape; the existing Metadata, Option Picker, and Text Property drives are re-pointed where a phase changes what they select.
 
@@ -246,7 +246,7 @@ Each call names its reason under the Approach, Principles, and Perspectives. Cal
 
 Each measuring task builds its Benchmark Nexus with `node .claude/scripts/make-benchmark-nexus.mjs large` first, writes the view sidecar it times (the size presets seed no views), runs the measurement over CDP on a build launched through `drive-harness.mjs`' `launch` on its own userData (a baseline worktree through `POMMORA_DRIVE_REPO`), so both sides run the build users run and Nathan's dev state is untouched, and sweeps the Benchmark Nexus and the sidecar after. A baseline is taken with the same script at the phase's base commit. One frame is 16 ms.
 
-- **F3 (P6), the Renderer Stops Encoding:** on `~/Benchmark-Large`, at Task 6-4's head as the baseline and Task 6-5's as the measure, so the comparison isolates the overlay, a Table over the largest Collection; 20 single-cell Select edits and five 200-row mass assigns, commit-to-paint from `pointerup` to the paint showing the new chip. **Pass:** single-edit p95 is at most baseline p95 + 16 ms, and each mass assign is at most baseline × 1.10 → F3 lands. **Fail:** the phase restores `applyValueAtRoot`'s encode for the pending override, keeps the rest of P6, removes F3's −30 from *§The Ledger*, and the trace becomes a Last Call row in the reconciliation report.
+- **F3 (P6), the Renderer Stops Encoding:** on `~/Benchmark-Large`, at Task 6-4's head as the baseline and Task 6-5's as the measure, so the comparison isolates the overlay, a Table over the largest Collection; 20 single-cell Select edits and five 200-row mass assigns, commit-to-paint from `pointerup` to the paint showing the new chip. **Pass:** single-edit p95 is at most baseline p95 + 16 ms, and each mass assign is at most baseline × 1.10 → F3 lands. **Fail:** the phase restores `applyValueAtRoot`'s encode for the pending override, keeps the rest of P6, which then lands +92 where *§The Ledger* carries +18, and the trace becomes a Last Call row in the reconciliation report.
 - **K (P14), an Incremental View Pipeline:** on `~/Benchmark-Large`, a date-sorted, date-grouped Table over the largest Collection; the pipeline's own time (flatten, filter, sort, group) for one value edit, 20 samples, after H compiles operands and date keys once per pass. **Pass:** p95 at most 16 ms → Approach K is excluded, with the trace recorded in the phase's Departures. **Fail:** K becomes a Last Call with the trace, never an Issue.
 - **07-10 (P14), the Matrix Filter per Space:** on `~/Benchmark-Large` (800 Spaces), one Matrix filter change with a Context rule every Space answers (`contains_any` over one of two Space ids, alternated); compile plus evaluate time. Benchmark Spaces hold no Select value, so a Select rule would prune away and time nothing. **Pass:** at most 16 ms → no signature cache. **Fail:** a Last Call with the trace, naming the signature cache as the fold it argues for, since this rule prunes alike on every Space.
 - **02-10 (P15), Mass Assign:** on `~/Benchmark-Large`, a 300-row mass assign of a Select. **Pass:** total wall time at most 1,500 ms with no main-thread task over 100 ms → `setProperty` stays one path per op. **Fail:** `setProperty` takes `paths: string[]` in place of `path`, one op under each file's own lock and one reply, inside P15.
@@ -296,7 +296,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Drive:** no visible surface. The Properties Drive lands with its first group in P2.
 
-**Delta:** about −141 production (−296 / +155; *Phase 1 › Line Total*); tests about −520.
+**Delta:** −136 production (−300 / +164; *Phase 1 › Line Total*); tests about −495.
 
 **Depends On:** nothing.
 
@@ -336,7 +336,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Drive:** the Properties Drive (`.claude/scripts/Properties Drive/live-drive.mjs`, on `drive-harness.mjs`, in the Archive Drive's shape) is created with group 1 on `~/Test`: a Table's header and its sort and filter menus show Title, Creation Time, and Last Modified with today's labels and icons; a `context`-typed definition written by hand into `~/Test/.nexus/properties.json` shows nowhere in the Properties pane, and the drive removes it after.
 
-**Delta:** about −52 (−287 / +235, the rename's specifiers inside; *Phase 2 › Line Total*).
+**Delta:** −52 (−305 / +253, the rename's specifiers inside; *Phase 2 › Line Total*).
 
 **Depends On:** P1 (`propertyType` is plain `typeIds`).
 
@@ -366,7 +366,7 @@ Every phase closes with a Review Checkpoint: gates clean (`npm run typecheck`, `
 
 **Drive:** Properties Drive group 2: right-clicking a Number column header shows "Style", a Link header "Format"; a Select chip in compact view keeps its tag glyph.
 
-**Delta:** about −29 (−264 / +235; *Phase 3 › Line Total*): the moves pay Biome's import wrapping, and the narrowings read the record through `lookIn` rather than leaving.
+**Delta:** −16 (−384 / +368; *Phase 3 › Line Total*): the moves pay Biome's import wrapping, and the narrowings read the record through `lookIn` rather than leaving.
 
 **Depends On:** P2 (`ColumnType`).
 
@@ -421,7 +421,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Measurements:** P4's checkpoint runs T's NexusOS scan read-only against a copy of `~/NexusOS` and lists every page and key Repair On Open would change under the new rule (expected: none).
 
-**Delta:** about −32 across both halves: P4A about −39 (−419 / +380) and P4B about +7 (−16 / +23); `frozenOf` and the `pageValuesOf` fold didn't hold at HEAD, and the banner keeps its read.
+**Delta:** −36 across both halves: P4A −47 (−528 / +481) and P4B +11 (−18 / +29); `frozenOf` and the `pageValuesOf` fold didn't hold at HEAD, and the banner keeps its read.
 
 **Depends On:** P1, P2.
 
@@ -449,7 +449,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 4: corrupting `~/Test/.nexus/properties.json` and reopening shows the Nexus with a notice naming the property list and every Space still in tiles; restoring the file brings the properties back without a reopen.
 
-**Delta:** about −55 (−125 / +70; O-6's +8 inside, required behavior in its minimal form).
+**Delta:** −34 (−151 / +117; O-6's +14 inside, required behavior in its minimal form).
 
 **Depends On:** P4.
 
@@ -481,7 +481,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Measurements:** F3 (*§Measurement Rules › F3*).
 
-**Delta:** about 0 (−193 / +193): the undo's node-exact put-back (about +68) against F3 (about −68); about +68 on F3's Fail.
+**Delta:** +18 (−262 / +280): the undo's node-exact put-back (+92) against F3's overlay (−74); +92 on F3's Fail.
 
 **Depends On:** P4.
 
@@ -534,7 +534,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 6: an option's menu reads Delete and asks "Delete “Alpha”?"; deleting a property no page holds asks without "0 Items"; restoring a deleted property after creating one with its name reports the numbered name. The Option Picker and Metadata drives run green on the new wording.
 
-**Delta:** about −155 (−382 / +227; the channel adapters held more than they were priced at).
+**Delta:** −152 (−617 / +465; the channel adapters held more than they were priced at).
 
 **Depends On:** P2, P3 (the frame's type facts), P6 (the reply shape `mutate` already carries).
 
@@ -566,7 +566,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 7: on `~/Test`, create a Select with options, sort and group a view by it, rename an option, and the view keeps its order and collapses while pages holding the word are rewritten; the view sidecar names `opt_` ids.
 
-**Delta:** about −73 (−213 / +140).
+**Delta:** −42 (−413 / +371).
 
 **Depends On:** P2 (Title as text), P7 (O-1's renames before the id retype).
 
@@ -597,7 +597,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** no new surface; Properties Drive groups 1–7 re-run green.
 
-**Delta:** about −11 (−54 / +43): `answered` and the option arm's slot check stay until P11A deletes `replaySchemaCascade.ts`, which counts them.
+**Delta:** −7 (−16 / +9): `answered` and the option arm's slot check stay until P11A deletes `replaySchemaCascade.ts`, which counts them.
 
 **Depends On:** P5 (R3's index-read registration), P8.
 
@@ -639,7 +639,7 @@ The phase lands as two phases in the Archive's 6A/6B shape, each with its own Re
 
 **Drive:** Properties Drive group 8: on `~/Test`, rename a Context whose Space links another Space in it; both sidecars update and the Matrix keeps the link.
 
-**Delta:** about −45 (−255 / +210; the correctness requirements the disk scan met implicitly inside).
+**Delta:** +11 (−391 / +402; the correctness requirements the disk scan met implicitly inside).
 
 **Depends On:** P9 (the post-seed replay the tree-sourced finder needs).
 
@@ -705,7 +705,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P11A — O
 
 **Drive:** Properties Drive group 9: on `~/Test`, with one page made unreadable (`chmod 000`), rename a property and see "Couldn’t update 1 Item" with Try Again; rename a second property and see no refusal; create a property under the first's old name and see the owed refusal; restore the page's mode, press Try Again, and both renames finish and the name frees. The drive restores every mode and file it touched.
 
-**Delta:** about −12 across both halves: P11A about −10 (−405 / +395) and P11B about −2 (−130 / +128); the per-op put-backs and settles, H-16's per-name skips, H-1's holds, and the tree re-read cost what R priced at none.
+**Delta:** +186 across both halves: P11A +92 (−598 / +690) and P11B +94 (−190 / +284); the per-op put-backs and settles, H-16's per-name skips, H-1's holds, the tree re-read, and the finish's strip arms cost what R priced at none.
 
 **Depends On:** P6 (`putBackEntries`), P8 (option ids), P9 (the Context rename's order), P10 (the finder and its capture).
 
@@ -751,7 +751,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P11A — O
 
 **Drive:** Properties Drive group 10: on `~/Test`, remove a property from Collection A, trash one page, re-add the property, restore the page, and it holds its value; set `.nexus/settings.json`'s `historyDays` to 7 with a block's `removed_at` backdated eight days, and reopening drops the block. A Trash row for a partial record shows its mark.
 
-**Delta:** about **+93** (−106 / +199). C-3's stamp and cleanup (about +22) and C-2's stale drop and Trash parking (about +20) deliver ruled behavior in minimal form on existing mechanisms (`editStashes`, `refillValues`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, or Sync rule; the refill-skip report (about +23) fixes a silent loss through the one function every re-add passes; the record and restore order (about +8) and the partial mark (about +21) deliver C-2, LC-26, and N-1; the block literals' fold, the one stash name, and the double report's fold remove what they replace.
+**Delta:** **+105** (−160 / +265). C-3's stamp and cleanup (+30) and C-2's stale drop and Trash parking (+19) deliver ruled behavior in minimal form on existing mechanisms (`editStashes`, `refillValues`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, or Sync rule; the refill-skip report (+29) fixes a silent loss through the one function every re-add passes; the restore order (+5) and the partial mark (+20) deliver C-2, LC-26, and N-1; the block literals' fold, the one stash name, and the double report's fold remove what they replace.
 
 **Depends On:** P11 (the notes entry Remove and the refill ride).
 
@@ -783,7 +783,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P11A — O
 
 **Drive:** Properties Drive group 11: a new view shows only Title; revealing a property shows it; a Table with Text, Link, and Select columns renders and edits as before.
 
-**Delta:** about −73 (−291 / +218): the resolver's arms, the plan's `Grouping`, and W5's context fields add about +80 against about −150 deleted.
+**Delta:** −97 (−642 / +545; −104 on F3's Fail): the resolver's arms, the plan's `Grouping`, and W5's context fields add against the deleted per-site scans.
 
 **Depends On:** P2 (`ColumnType`), P4 (`fieldValue.ts`), P8 (option ids in the compiled field).
 
@@ -825,7 +825,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P11A — O
 
 **Measurements:** K and 07-10 on `~/Benchmark-Large`.
 
-**Delta:** about −112 (−550 / +438; the record's about +257 new lines inside).
+**Delta:** −54 (−516 / +462; the record's new lines inside).
 
 **Depends On:** P13 (compiled columns), P2, P8.
 
@@ -860,7 +860,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P11A — O
 
 **Measurements:** 02-10 on `~/Benchmark-Large`.
 
-**Delta:** about −77 (−205 / +128): the pick model's new file offsets most of what it removes, and 06-09's chip merge isn't this phase's.
+**Delta:** −35 (−210 / +175; +7 on 02-10's Fail): the pick model's new file offsets most of what it removes, and 06-09's chip merge isn't this phase's.
 
 **Depends On:** P6 (the writer), P13.
 
@@ -890,7 +890,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P16A — O
 
 **Drive:** Properties Drive group 14: the same value is clicked, right-clicked, and edited in a Table, a Card, and the panel, and each opens the same picker and menu; the panel's Link label and File menus read as J-3 and J-10 rule; the seat's disclosed changes show; the native menu's property action opens the seat.
 
-**Delta:** about −269 across both halves: P16A about −87 (−520 / +433, the seat's about +268 inside) and P16B about −182 (−309 / +127).
+**Delta:** −286 across both halves: P16A −72 (−536 / +464, the seat's +274 inside) and P16B −214 (−368 / +154).
 
 **Depends On:** P13, P15.
 
@@ -919,7 +919,7 @@ The phase lands as two phases, each with its own Review Checkpoint: **P16A — O
 
 **Drive:** Properties Drive group 15: screenshots of each type's editor with a row revealed and collapsed, compared against the rhythm; create a property, open its editor, delete it from the ⋮ menu, and the list shows.
 
-**Delta:** about −193 (−611 / +418), plus +13 only if O-5's check needs its remedy.
+**Delta:** −207 (−800 / +593), plus +14 only if O-5's check needs its remedy.
 
 **Depends On:** P3 (`LOOKS`), P7.
 
@@ -1055,7 +1055,7 @@ Each count is today's at `3c6afcabb` and the plan's target, with where it's prov
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Investigation**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Investigation**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *§Last Calls* or *§Nathan's Calls* | this document |
-| **Directive (10-22-2026)** | Net production delta | — | about −1,236 | *§The Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | about −834 written on Biome-formatted code (about −767 on F3's Fail), weaker than the −1,236 the Ledger first gave; seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at P12's head is about −81 | *§The Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -1071,37 +1071,37 @@ Commands the table cites by number, each written outside a table cell so no pipe
 
 #### The Ledger
 
-Production lines; tests apart. Each figure is the phase file's own *Line Total*, estimated from its AFTER blocks under the one counting rule (source with imports and blank lines as Biome wraps them; comments, tests, test support, documents, and drives out; moved lines on both sides), and each executor replaces it with the measured figure at the phase's Review Checkpoint.
+Production lines; tests apart. Each figure is the phase file's own *Line Total*: the counting rule *Implementation Plan › §Plan Constraints › The Number* states (`view-delta`'s Actionable rule on Biome-formatted code, blank lines and `Core/Testing/` in; tests, documents, `.claude/`, and comments out; moved lines on both sides), applied to the phase's AFTER blocks task by task in plan order on each measurement's first outcome. Each executor replaces it with the measured figure at the phase's Review Checkpoint.
 
 | Phase | Removed | Added | Net | Running Total | Tests |
 |---|---|---|---|---|---|
-| **P1** Removal First | about −296 | about +155 | **−141** | −141 | about −520 |
-| **P2** What Counts as a Property | about −287 | about +235 | **−52** | −193 | about −9 |
-| **P3** Type Records and Looks | about −264 | about +235 | **−29** | −222 | about +5 |
-| **P4A** The Value Write's One Home | about −419 | about +380 | **−39** | −261 | about −77 |
-| **P4B** The Tidy Rule and Repair On Open | about −16 | about +23 | **+7** | −254 | about +53 |
-| **P5** One Home per Definition | about −125 | about +70 | **−55** | −309 | about +110 |
-| **P6** Undo From the File | about −193 | about +193 | **0** | −309 | about +45 |
-| **P7** One Door | about −382 | about +227 | **−155** | −464 | about +170 |
-| **P8** Option Identity | about −213 | about +140 | **−73** | −537 | about −220 |
-| **P9** List First, One Replay | about −54 | about +43 | **−11** | −548 | about +120 |
-| **P10** One Finder | about −255 | about +210 | **−45** | −593 | about +55 |
-| **P11A** The Notes and the Renames | about −405 | about +395 | **−10** | −603 | about −450 |
-| **P11B** Deletes and Remove | about −130 | about +128 | **−2** | −605 | about +100 |
-| **P12** The Stash and Trash Records | about −106 | about +199 | **+93** | −512 | about +190 |
-| **P13** Columns Carry Their Answer | about −291 | about +218 | **−73** | −585 | about −40 |
-| **P14** The Per-Kind View Record | about −550 | about +438 | **−112** | −697 | about +81 |
-| **P15** Pick Model and One Writer | about −205 | about +128 | **−77** | −774 | about +39 |
-| **P16A** The Seat, the Table, and Cards | about −520 | about +433 | **−87** | −861 | about +190 |
-| **P16B** The Native Router, the Panel, and No Fabricated Definition | about −309 | about +127 | **−182** | −1,043 | about +10 |
-| **P17** The Properties Pane | about −611 | about +418 | **−193** | −1,236 | about −75 |
-| **P18** The Documents Read True | 0 | 0 | **0** | −1,236 | net negative (the seed sweep, measured) |
+| **P1** Removal First | −300 | +164 | **−136** | −136 | about −495 |
+| **P2** What Counts as a Property | −305 | +253 | **−52** | −188 | about −9 |
+| **P3** Type Records and Looks | −384 | +368 | **−16** | −204 | about +5 |
+| **P4A** The Value Write's One Home | −528 | +481 | **−47** | −251 | about −54 |
+| **P4B** The Tidy Rule and Repair On Open | −18 | +29 | **+11** | −240 | about +53 |
+| **P5** One Home per Definition | −151 | +117 | **−34** | −274 | about +110 |
+| **P6** Undo From the File | −262 | +280 | **+18** | −256 | about +45 |
+| **P7** One Door | −617 | +465 | **−152** | −408 | about +160 |
+| **P8** Option Identity | −413 | +371 | **−42** | −450 | about −220 |
+| **P9** List First, One Replay | −16 | +9 | **−7** | −457 | about +120 |
+| **P10** One Finder | −391 | +402 | **+11** | −446 | about +50 |
+| **P11A** The Notes and the Renames | −598 | +690 | **+92** | −354 | about −450 |
+| **P11B** Deletes and Remove | −190 | +284 | **+94** | −260 | about +100 |
+| **P12** The Stash and Trash Records | −160 | +265 | **+105** | −155 | about +190 |
+| **P13** Columns Carry Their Answer | −642 | +545 | **−97** | −252 | about −40 |
+| **P14** The Per-Kind View Record | −516 | +462 | **−54** | −306 | about +81 |
+| **P15** Pick Model and One Writer | −210 | +175 | **−35** | −341 | about +39 |
+| **P16A** The Seat, the Table, and Cards | −536 | +464 | **−72** | −413 | about +190 |
+| **P16B** The Native Router, the Panel, and No Fabricated Definition | −368 | +154 | **−214** | −627 | about +10 |
+| **P17** The Properties Pane | −800 | +593 | **−207** | −834 | about −75 |
+| **P18** The Documents Read True | 0 | 0 | **0** | −834 | net negative (the seed sweep, measured) |
 
-**Total:** about **−1,236** production lines (about −5,631 / +4,395), and about **−220** test lines before P18's seed sweep. Every intermediate head is net-negative from P1 on; the Mid-Plan Neutral Gate's range ends at P12's head, about −512. On F3's Fail, P6 lands about +68 and P13's Task 13-8 about 0, so the total is about −1,167.
+**Total:** about **−834** production lines (−7,405 / +6,571), and about **−220** test lines before P18's seed sweep. The running total is net-negative at every phase: thinnest at P1's −136, it reaches −457 at P9's head, and the net-positive P10, P11A, P11B, and P12 leave it at −155 at P12's head, where the Mid-Plan Neutral Gate's range ends. On F3's Fail, P6 reverts Task 6-5 and lands +92 and Task 13-7's `patchedValues` half lands −7, so the total is about −767 and P12's head about −81, the thinnest point on any outcome. 02-10's Fail adds +42 in P15 and O-5's Fail +14 in P17; with all three on their Fail outcomes, the total is about −711.
 
-**Confidence:** the figures are read from the written AFTER blocks, so each moves by Biome's wrapping and the landed shapes of earlier phases; the executors' measured numbers replace them. The total lands about 250 lines short of the planning estimate (−1,490), because the moves pay import wrapping (P3, P4A), the type records and the seat carry the code their surfaces held (P14, P16A), and the crash-recovery rebuild's arms cost what R priced at none (P11A, P11B); P7, P16B, and P17 land further negative than estimated. The tests total lands about −220 rather than −1,250 to −1,600: the large deletions (P1's legacy pins, P8's re-keying tests, P11A's journal suites) hold, while P5, P7, P9, P12, and P16A each write the pins their new behavior needs, one behavior per pin. No combination of the estimates' least favorable ends flips the cumulative sign.
+**Confidence:** the figures count the AFTER blocks as Biome formats them, so the about 100 added lines the AFTERs write past 100 columns count at their wrapped height; the executors' measured numbers replace them. The total lands about 650 lines short of the planning estimate (−1,490): the moves pay import wrapping (P3, P4A), the type records and the seat carry the code their surfaces held (P14, P16A), and the crash-recovery rebuild's arms cost what R priced at none and carry most of the long lines Biome wraps (P11A, P11B); P7, P16B, and P17 land further negative than estimated. P3 lands −16 against its own estimate of about −25: Tasks 3-3, 3-5, 3-6, and 3-7 each land 3 to 6 lines above their estimates, which the AFTERs trace to Biome's import wrapping where a moved label joins a long import, and the counting rule counts `PaneTarget`'s move on both sides and `linkFormatOptions.ts` once. The tests total lands about −220 rather than −1,250 to −1,600: the large deletions (P1's legacy pins, P8's re-keying tests, P11A's journal suites) hold, while P5, P7, P9, P12, and P16A each write the pins their new behavior needs, one behavior per pin.
 
-**Net-Positive Rationale:** two phases land above zero, and P6 at zero. **P4B (+7):** every added line is ruled behavior in its minimal form: the list test and the live arm's foreign-word rule narrow an over-generalized guard rather than adding a Select or Status branch, and `writtenRoot`'s null rule replaces the Space op's special case with one rule for every writer. **P12 (+93):** C-3's ageing and C-2's stale drop, Trash parking, and restore order are Nathan's rulings delivered on existing mechanisms (`editStashes`, `refillValues` through `refillOf`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, Sync rule, or timer; the refill-skip report fixes a loss the ageing would otherwise make silent, through the one function every re-add passes; the partial mark delivers N-1; each fold inside removes what it replaces. **P6 (0):** an undo that puts back what the file held is a landing no existing code performs, and F3's picked overlay removes as much as it adds.
+**Net-Positive Rationale:** six phases land above zero on the measurements' first outcomes, P6 lands further above it on F3's Fail, and P15 lands above it only on 02-10's Fail. **P4B (+11):** every added line is ruled behavior in its minimal form: the list test and the live arm's foreign-word rule (+9) narrow an over-generalized guard rather than adding a Select or Status branch, and `writtenRoot`'s null rule (+2) replaces the Space op's special case with one rule for every writer. **P6 (+18; +92 on F3's Fail):** the undo half (Tasks 6-1 through 6-4, +92) is a landing no existing code performs, an undo that puts back the file's own node; the sweep's `keysPutBack` writes parsed values with the file's times and leaves in P11B, so it can't carry it. `pair` and `withPair` (+26) and the record each value write captures with its put-back (+63) replace the renderer's held copy, `restore`, `restoreValue`, and `requestedValue` (Task 6-3, −10), so the undo has one route and no second page or Space writer exists. F3's overlay (−74) removes most of what the undo adds; on F3's Fail it doesn't land, and the +92 goes to the reconciliation report with F3's trace. **P10 (+11):** the tree-sourced finder (Task 10-2, +55) states what HEAD's disk scan met implicitly: unreadable Spaces as candidates, the clash's index fallback, the `id` row-order candidates, the find-before-the-list step, and the replay's commit-first order. In return a key sweep's Space candidates come from one place where five mechanisms stood, page candidate rules go from two to one, the holder reads per delete from three to one, and the four hand-rolled Space write loops leave with Task 10-3's `keyedHolders` (−49). **P11A (+92):** `owed.ts` (+156: one notes file with one entry per item, `runNoted`, `owedName`, `owesRename`, and `restoreNote`) replaces `propertyJournal.ts`, `replaySchemaCascade.ts`, `contextJournal.ts`, `journalSlot.ts`, `replayPendingRename`, and the seven hand-spelled orders with their seven refusals and seven holds (Tasks 11A-2 and 11A-3, −64 together). What it adds beyond a one-for-one swap is each item's own work, which one shared journal slot couldn't hold: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read; the notes runner's calls and the finish's arms are also where most of the plan's Biome-wrapped lines sit. **P11B (+94):** B-3, Nathan's intent, has a Context or Space delete that misses a file finish and owe the rest where HEAD put everything back and refused; that needs the pass's Context and Space strip arms (Task 11B-2), which the live delete calls through `finishEntry` rather than keeping a second strip, and LC-10's up-front capture, which gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (Task 11B-3, LC-18, LC-19). They replace the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture, `sweepIncomplete`, `goneEdit`'s two cases, and Remove's inline holders read and one-write stash; nothing smaller delivers a delete that finishes, since the arm is the one routine the live delete and Try Again both run. **P12 (+105):** C-3's ageing and C-2's stale drop, Trash parking, and restore order are Nathan's rulings delivered on existing mechanisms (`editStashes`, `refillValues` through `refillOf`, `trashedHolders`, `readFileHistoryConfig`, the two triggers) with no new pass, module, Sync rule, or timer; the refill-skip report (+29) fixes a loss the ageing would otherwise make silent, through the one function every re-add passes; the partial mark (+20) delivers N-1; each fold inside removes what it replaces. **P15 (+7, on 02-10's Fail only):** the Fail Branch (+42) is the remedy *§Measurement Rules › 02-10* rules for a mass assign over its threshold, one `setProperty` carrying every swept path under each file's own lock, in place of one request per row.
 ---
 
 #### What Becomes False

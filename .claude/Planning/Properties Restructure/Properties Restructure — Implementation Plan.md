@@ -98,29 +98,29 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 
 | Phase | What It Does | Net Production Lines |
 |---|---|---|
-| **1** Removal First | The migration layer, legacy bucket keys, an unreachable refusal, and an unread journal field leave; two generic modules move to their owners; the shared test seed lands | −141 |
+| **1** Removal First | The migration layer, legacy bucket keys, an unreachable refusal, and an unread journal field leave; two generic modules move to their owners; the shared test seed lands | −136 |
 | **2** What Counts as a Property | Nine user types plus Context; `ColumnType`; `admissible`; `FILEDATA` for Title, the stamps, and Location; the Properties Drive opens | −52 |
-| **3** Type Records and Looks | The engine and renderer type records state connections, registration, blank draws, chip shape, and looks once; one `pickerOptions` | −29 |
-| **4A** The Value Write's One Home | `Core/Nexus/governedRoot.ts`, one `reencode`, one single-file writer; each "value" file named for what it holds | −39 |
-| **4B** The Tidy Rule and Repair On Open | The tidy rule as a type fact, spaces-only reads as empty, no-op writes write nothing, Repair On Open defaults on | +7 |
-| **5** One Home per Definition | Collections hold assigned ids; one `schemaOf` and one `holderSchema`; registration from the index; a damaged list opens | −55 |
-| **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding (F3 measured) | 0 |
-| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −155 |
-| **8** Option Identity | Permanent option ids in values, views, tiles, and filters; one `bandKey`; NexusOS's one-time conversion | −73 |
-| **9** List First and One Replay Point | The Context rename takes its list step first; one replay point at open | −11 |
-| **10** One Finder | One finder over the tree in `Core/Index/keyHolders.ts`, one writer, and every restore miss reported (G-3) | −45 |
-| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names refused; one Try Again | −10 |
-| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | −2 |
-| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +93 |
-| **13** Columns Carry Their Answer | `ResolvedColumn` carries type and definition; one `resolveFieldValue`; `declaredType` leaves | −73 |
-| **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −112 |
-| **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock (02-10 measured) | −77 |
-| **16A** One Value Seat: The Seat, the Table, and Cards | `ValueSeat.tsx` lands and the table and cards run through it | −87 |
-| **16B** One Value Seat: The Native Router, the Panel, and No Fabricated Definition | `MenuSeat` replaces the native router; the panel joins the seat with its one row menu; `syntheticContextDef` leaves | −182 |
-| **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −193 |
+| **3** Type Records and Looks | The engine and renderer type records state connections, registration, blank draws, chip shape, and looks once; one `pickerOptions` | −16 |
+| **4A** The Value Write's One Home | `Core/Nexus/governedRoot.ts`, one `reencode`, one single-file writer; each "value" file named for what it holds | −47 |
+| **4B** The Tidy Rule and Repair On Open | The tidy rule as a type fact, spaces-only reads as empty, no-op writes write nothing, Repair On Open defaults on | +11 |
+| **5** One Home per Definition | Collections hold assigned ids; one `schemaOf` and one `holderSchema`; registration from the index; a damaged list opens | −34 |
+| **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding (F3 measured) | +18 |
+| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete | −152 |
+| **8** Option Identity | Permanent option ids in values, views, tiles, and filters; one `bandKey`; NexusOS's one-time conversion | −42 |
+| **9** List First and One Replay Point | The Context rename takes its list step first; one replay point at open | −7 |
+| **10** One Finder | One finder over the tree in `Core/Index/keyHolders.ts`, one writer, and every restore miss reported (G-3) | +11 |
+| **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names refused; one Try Again | +92 |
+| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection | +94 |
+| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; Neutral Gate 1 | +105 |
+| **13** Columns Carry Their Answer | `ResolvedColumn` carries type and definition; one `resolveFieldValue`; `declaredType` leaves | −97 |
+| **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −54 |
+| **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock (02-10 measured) | −35 |
+| **16A** One Value Seat: The Seat, the Table, and Cards | `ValueSeat.tsx` lands and the table and cards run through it | −72 |
+| **16B** One Value Seat: The Native Router, the Panel, and No Fabricated Definition | `MenuSeat` replaces the native router; the panel joins the seat with its one row menu; `syntheticContextDef` leaves | −214 |
+| **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −207 |
 | **18** The Documents Read True | Feature documents, Issues entries, drives, matrices, and test seeds read true | 0 |
 
-**Total:** about **−1,236** production lines (about −5,631 / +4,395), from *Planning Findings › §The Ledger*; on F3's Fail outcome, Phase 6 lands about +68 and Task 13-7 about 0, for about **−1,167**. Measured figures replace these in *§Net Ledger*.
+**Total:** about **−834** production lines (−7,405 / +6,571), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +92 and Task 13-7's Fail half lands −7, for about **−767**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +14 in Phase 17. Measured figures replace these in *§Net Ledger*.
 
 #### Concepts
 
@@ -1058,7 +1058,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Shape:** a removal, a refactor, a migration, and a handful of fixes. The removal's inventory is *§Concepts › REMOVED*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior, kept except where a phase's *Behavior Changes and Disclosures* names a change (each tied to a decision or a Last Call) and proven by the tests each task rewrites or adds; every removal task lists its consumers and the `git grep` proving none remain. The migration is Phase 8's one-time NexusOS conversion: a backup to `~/NexusOS-Backup-<MM-DD-YYYY>/` before its first write, a transform that changes nothing on a second run, and the backup removed by its path at *§Final Verification*'s closeout. Each fix sweeps what else consumed the old behavior.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals; every existing entry the work touches is closed or narrowed in place with no successor (Phase 18), and anything that can't finish inside the plan is reported as a Last Call row, never filed.
 - **Measurements:** each measuring task runs *Planning Findings › §Measurement Rules* as written: the Benchmark Nexus (`node .claude/scripts/make-benchmark-nexus.mjs large`), the measurement, the threshold, and both outcomes as concrete steps, so the executor runs a rule; the Benchmark Nexus and its timed sidecar are swept after.
-- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The plan's cumulative production delta is net-negative at every phase from Phase 1 on, and *§Final Verification* proves it.
+- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The written cumulative production delta is net-negative at every phase from Phase 1 on: on the first outcomes it is thinnest at Phase 1's −136, with Phase 12's head close behind at −155 after the net-positive run of Phases 10 through 12, and on F3's Fail it is thinnest at Phase 12's head, −81. *§Final Verification* proves the measured cumulative the same way.
 - **Execution:** the plan runs end to end through `c/plan-execution`, autonomously, in the main checkout on `active`: executors edit in place, each phase commits its own files with `git commit --only`, and the Properties Drive builds and launches from the checkout. If Nathan's live app runs from this checkout, the drive runs from a worktree of the phase's head built by `.claude/scripts/editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`. Each task goes to an `execution-agent` (`opus-medium`) carrying *§Context*, *§Overview*, this *§Constraints* whole, and its task; it reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks its result against the task's AFTER and VERIFY. Every Review Checkpoint dispatches two read-only `opus-high` agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, consequences; its closing procedures, write-guards, and output format don't apply), one leading on simplification and one adversarial, each carrying *§Constraints* whole and the do-not-re-raise list below, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator verifies each finding against the tree, fixes what holds, and weighs the landed work against the Approach and Principles before the next phase opens. An in-flight call is weighed against *§Constraints*, disclosed in chat, and recorded under *§Deviations* where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`, repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim in the handoff, and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
 - **Neutral Gates:** two, each a `fable-high` agent that wrote and reviewed nothing, given only the BASELINE head, the head named, and the intention statement quoted in its gate, with no plan, log, principle, or document; it answers yes or no on whether the range holds, with its corrections; a "no" routes back to the orchestrator, the fix lands, and the gate runs again until it answers yes. The first closes Phase 12, where the data layer completes; the second runs inside *§Final Verification*.
 - **Directive (10-22-2026):** Nathan's, verbatim, which execution and every review answer to as the plan's own reviews did: "If there's any behavior you assume ISNT my intention, that gets flagged. Ensure that the plans own reviews honestly assert its adherence to the approach and principles; concretely less of the flagged practices and perspectives: net-negative delta; zero room for two issues being replaced by one new one except the two previous issue-logged items; codebase must adhere to our standards unambiguously and be the honest better environment as a result." The two previously logged items are I-076 and I-077.
@@ -2899,21 +2899,21 @@ The folded describe renames `items` to `rows`, since `moveItem.test.ts:4` alread
 
 ##### Line Total
 
-| Task | Production Net | Removed / Added | Tests |
-| --- | --- | --- | --- |
-| 1-1 | 0 | 0 / 0 | about −150 / +85 |
-| 1-2 | −88 | −97 / +9 | about −265 |
-| 1-3 | −25 | −54 / +29 | about −100 / +5 |
-| 1-4 | −21 | −36 / +15 | about −20 |
-| 1-5 | −6 | −10 / +4 | about −25 / +4 |
-| 1-6 | −1 | −92 / +91 | 0 (moved) |
-| 1-7 | 0 | −7 / +7 | 0 |
-| 1-8 | 0 | 0 / 0 | about −25 |
-| **Phase 1, Estimated** | **−141** | **−296 / +155** | **about −585 / +95** |
+| Task | Removed | Added | Net | Tests |
+|---|---|---|---|---|
+| 1-1 | −69 | +77 | +8 | about −80 / +8 |
+| 1-2 | −98 | +9 | −89 | about −265 |
+| 1-3 | −51 | +25 | −26 | about −100 / +5 |
+| 1-4 | −39 | +17 | −22 | about −20 |
+| 1-5 | −10 | +4 | −6 | about −25 / +4 |
+| 1-6 | −26 | +25 | −1 | 0 (moved) |
+| 1-7 | −7 | +7 | 0 | 0 |
+| 1-8 | 0 | 0 | 0 | about −25 |
+| **Phase 1** | **−300** | **+164** | **−136** | **about −510 / +15** |
 
-- **The Rule:** the plan's counting rule (source with imports and blank lines as Biome wraps them; comments, tests, test support under `Core/Testing/`, documents, and drives out; moved lines on both sides). `Core/Testing/propertyWrites.ts` (−2) counts with the tests. Moved lines: `resolveRowOrder` (13, plus its separating blank) and `pageRow.ts` (67).
-- **Against the Findings' −160 (−165 / +5):** L1 lands at −88 against −90 with `listFilesRecursive`'s fold inside it; L3 at −25 against −35, since the four hidden-key functions keep their parameter lists (`hiddenBuckets` wraps to +2) and `GroupFrame` binds `held`; V2 at −21 against −22; N4 at −6 against −12 (*§Found False at HEAD*); the unexports and moves are line-neutral where the Findings priced −5. Comments, uncounted: −9 (`properties.ts:78`, `migrateConfig.ts`' six, `contextJournal.ts`' field doc and second sentence, `GroupFrame.tsx:510`, `encodeValue`'s arm, `columnLabel.ts:10`, `setProperty.ts:14`, `property-panel.css.ts:8`, `propertyValue.ts:29`, and `paneDrop.tsx`' two lines to one), with `renameContextOp`'s doc rewritten in place.
-- **Tests Against the Findings' −420 / +25:** the deletions the Findings lists, plus the tests the extra legacy readers and the N4 sweep reach, plus `restoreScrub.test.ts`'s eleven registry writes collapsing onto `seedNexus`; the additions are `seedNexus` (+17), `definitions.ts` (+57, against `registry.json`'s −44 and `viewHarness.tsx`'s −20), and the seed's test (+24).
+- **The Rule:** *§Plan Constraints › The Number*'s. Task 1-1's +8 is `Core/Testing/`'s new `definitions.ts` and `seedNexus` against `fixtures/registry.json` and `viewHarness.tsx`'s registry seeding, and Task 1-4's −22 includes `Core/Testing/propertyWrites.ts`' −2; `pageRow.ts` moves whole, so Task 1-6 counts only the lines it changes, and `resolveRowOrder`'s 13 lines count on both sides.
+- **Comments:** −9, uncounted, with `renameContextOp`'s doc rewritten in place.
+- **Tests Against the Findings' −420 / +25:** the deletions the Findings lists, plus the tests the extra legacy readers and the N4 sweep reach, plus `restoreScrub.test.ts`'s eleven registry writes collapsing onto `seedNexus`; the seed's own test is the addition, since `seedNexus`, `definitions.ts`, `fixtures/registry.json`, and `viewHarness.tsx` count as production.
 
 ---
 
@@ -3400,7 +3400,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −3 (+44 / −47); the union sweep is line-neutral, `groupable`, `reassignable`, and `CREATABLE_TYPES` fold onto fewer lines, and `PropertyFrame.tsx` loses two rows. Tests about +14 / −38.
+**Lines:** 0 production (+57 / −57). Tests about +14 / −38.
 
 #### Task 2-3
 
@@ -3560,7 +3560,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +2 (+11 / −9): `admissible` +3 and `normalizeRegistry`'s wrapped condition +4 against `validateDefinition` −1, `PropertyFrame.tsx` −2, `propertyMenuActions.ts` −2, the rest in place. Comments +1 (`admissible`'s doc). Tests +20 / −3.
+**Lines:** −1 production (+22 / −23). Comments +1 (`admissible`'s doc). Tests +20 / −3.
 
 #### Task 2-4
 
@@ -3993,7 +3993,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −42 (+58 / −100). By file: `properties.ts` −6, `PropertyTypes.tsx` −3, `columnLabel.ts` −4, `value.ts` −6, `columns.ts` −4, `cardValueInput.ts` −4, `VisibilityFrame.tsx` −5, `SortFrame.tsx` −3, `previewRules.ts` −3, `configReach.ts` −4, `filter.ts` −4, `filterModel.ts` −1, `GroupFrame.tsx` +2 (Biome wraps the comparison), the rest in place. Comments +2 (`FILEDATA`'s line, `filedataTarget`'s line). Tests about +26 / −30.
+**Lines:** −41 production (+82 / −123). Comments +2 (`FILEDATA`'s line, `filedataTarget`'s line). Tests about +26 / −30.
 
 #### Task 2-5
 
@@ -4077,7 +4077,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −8 (+2 / −10). Comments −1 (`filter.ts:82`). Tests +4 / −3.
+**Lines:** −9 production (+4 / −13). Comments −1 (`filter.ts:82`). Tests +4 / −3.
 
 #### Task 2-6
 
@@ -4250,7 +4250,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −3 (+39 / −42), moved lines on both sides (`KEY_REFUSAL` 10, `RESERVED_NAME_PREFIX` 1, `defaultStatusSeed` 22); `defaultSelectSeed` folds to one line (−2), imports +4 / −5. Comments rewritten in place, one. Tests: the seed describe moves (13 on both sides), imports +5 / −4.
+**Lines:** −4 production (+42 / −46); moved lines on both sides (`KEY_REFUSAL` 10, `RESERVED_NAME_PREFIX` 1, `defaultStatusSeed` 22). Comments rewritten in place, one. Tests: the seed describe moves (13 on both sides), imports +5 / −4.
 
 #### Task 2-7
 
@@ -4359,7 +4359,7 @@ Every diff below, apart from Task 2-1's move, was applied and run on a copy of t
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +1 (+34 / −33), the label's 30 lines moved on both sides; imports +3 / −2. Tests: the describe moves (32 / 33).
+**Lines:** +3 production (+40 / −37); the label's 30 lines moved on both sides. Tests: the describe moves (32 / 33).
 
 #### Task 2-8
 
@@ -4601,20 +4601,19 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 2-1 `schema.ts` → `validation.ts` | 0 | +6 / −6 (specifiers) |
-| 2-2 | about −3 | +44 / −47 |
-| 2-3 | about +2 | +11 / −9 |
-| 2-4 | about −42 | +58 / −100 |
-| 2-5 | about −8 | +2 / −10 |
-| 2-6 | about −3 | +39 / −42 |
-| 2-7 | about +1 | +34 / −33 |
-| 2-8 | 0 | — |
-| **Phase 2, Measured on the Applied Copy** | **−52** | **+235 / −287** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 2-1 `schema.ts` → `validation.ts` | −6 | +6 | 0 |
+| 2-2 | −57 | +57 | 0 |
+| 2-3 | −23 | +22 | −1 |
+| 2-4 | −123 | +82 | −41 |
+| 2-5 | −13 | +4 | −9 |
+| 2-6 | −46 | +42 | −4 |
+| 2-7 | −37 | +40 | +3 |
+| 2-8 | 0 | 0 | 0 |
+| **Phase 2** | **−305** | **+253** | **−52** |
 
-- **The Rule:** the plan's counting rule (production source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides: `KEY_REFUSAL` 10, `RESERVED_NAME_PREFIX` 1, `defaultStatusSeed` 22, `formatBucketLabel` 30). Measured as the non-blank, non-comment lines of the applied copy's diff against the P1-approximated base; the per-task rows split that total by file and round to whole lines. The AFTERs' blank lines (+9 / −8) move the figure by about +1 under the plan's rule, which the post-rebase recount settles. Comments +5 / −4 apart.
-- **Against the Findings (about −60, −45 to −80):** inside the range. The deepest cut is 2-4 (seven tables and three target constants into one table and one map); 2-2's union sweep is line-neutral by design, and the two places it lands above zero, `admissible` with `normalizeRegistry`'s Biome-wrapped condition (+5) and `group.ts`' imports (+3), are each a single statement of a rule now read in two places.
+- **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides: `KEY_REFUSAL` 10, `RESERVED_NAME_PREFIX` 1, `defaultStatusSeed` 22, and `formatBucketLabel` 30.
 - **Tests:** +157 / −166 (−9), of which 45 lines move on both sides (the bucket-label describe and the seed describe). The drive apart: +150.
 
 ---
@@ -6324,22 +6323,22 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 ##### Line Total
 
-Estimated from the AFTER blocks under the plan's counting rule (production source with imports, as Biome wraps it; comments, tests, documents, and the drive out; moved lines on both sides); the executor measures each task with `view-delta`'s Actionable column.
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 3-1 Link Vocabulary to `linkValue.ts` | −37 | +40 | +3 |
+| 3-2 Pane Targets to `Views/paneTargets.ts` | −57 | +49 | −8 |
+| 3-3 The Renderer Label Module | −61 | +64 | +3 |
+| 3-4 The Engine Record's Three Facts | −31 | +35 | +4 |
+| 3-5 The Renderer Record | −101 | +99 | −2 |
+| 3-6 `pickerOptions` | −41 | +31 | −10 |
+| 3-7 `LOOKS` | −56 | +50 | −6 |
+| 3-8 The Status Gate's Reason | 0 | 0 | 0 |
+| 3-9 | 0 | 0 | 0 |
+| **Phase 3** | **−384** | **+368** | **−16** |
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 3-1 Link Vocabulary to `linkValue.ts` | +3 | +26 / −23 |
-| 3-2 Pane Targets to `Views/paneTargets.ts` | +2 | +45 / −43 |
-| 3-3 The Renderer Label Module | −3 | +47 / −50 |
-| 3-4 The Engine Record's Three Facts | +4 | +20 / −16 |
-| 3-5 The Renderer Record | −5 | +40 / −45 |
-| 3-6 `pickerOptions` | −14 | +22 / −36 |
-| 3-7 `LOOKS` | −12 | +40 / −52 |
-| 3-8 The Status Gate's Reason | 0 | comment only |
-| **Phase 3, Estimated** | **−25** | **+240 / −265** |
-
+- **The Rule:** *§Plan Constraints › The Number*'s. Task 3-2's `PaneTarget` and Task 3-1's link vocabulary count on both sides of their moves, and Task 3-6's `linkFormatOptions.ts` once, by its deletion.
 - **Tests:** about +5 (`Cells/PropertyTypes.test.ts` −18 folds into `properties.test.ts` +14; `typeDisplay.test.ts` +10 and `displayLabels.test.ts` +15, each pinning a record or builder no test reached; the rest retitles and import re-points). **Drive:** about +40.
-- **Against the Findings' −78 (−110 / +32):** the phase lands about 49 lines short. The moves (3-1, 3-2, 3-3, the record's rename) are line-neutral by design but pay Biome's import wrapping where a moved name joins a long import (`LinkCell.tsx` +7, `columnMenu.ts`' second block). 05-02's −30 to −50 priced the frame's three narrowings as deletions; they become reads of the record through `lookIn`. The Ledger's 06-09 share (−25) is P15's date pane and an unadopted chip fork. Every removal the Findings names lands: `linkFormatOptions.ts`, `optionShapeFor`, `styleMenuLabel`, the two look `switch`es, the eight builders, the two registration and five connection hand checks, and three of the blank checks, with `PropertyTypeIcon` and `frames.ts`' three one-use constants taken along. The running total moves from −298 to about −249, still net-negative, and the reconciliation report carries the difference.
+- **Against the Estimate of About −25:** the phase lands −16. Tasks 3-3, 3-5, 3-6, and 3-7 each land 3 to 6 lines above their estimates, which the AFTERs of 3-3 and 3-7 trace to Biome's import wrapping where a moved label joins a long import, under-priced in the estimate; 3-2 lands 10 lines below its estimate. Every removal the Findings name lands: `linkFormatOptions.ts`, `optionShapeFor`, `styleMenuLabel`, the two look `switch`es, the eight builders, the two registration and five connection hand checks, and three of the blank checks, with `PropertyTypeIcon` and `frames.ts`' three one-use constants taken along.
 
 ---
 
@@ -7579,19 +7578,19 @@ Every reader treats the answer as read-only (`git grep -n -A3 "= await readRegis
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 4A-1 | 0 | +18 / −18 (specifiers) |
-| 4A-2 | about −8 | about +160 / −168 (moves, `reencode`, the refill and reconcile folds) |
-| 4A-3 | about −3 | about +80 / −83 (`governedWrite.ts`, `land*`, two existence checks; the page-level `rewriteRootAt` and its `rewriteRaw` lift, about +20, nearly all Biome wrapping two import lists and three calls) |
-| 4A-4 | about 0 | about +57 / −57 (moves) |
-| 4A-5 | about −5 | about +60 / −65 (`pageValue.ts`, `Views/pageValues.ts`) |
-| 4A-6 | about −7 | about +22 / −29 (the birth write, +5 for the cached read) |
-| **Phase 4A, Estimated** | **about −23** | **about +397 / −420 (net −15 to −35)** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 4A-1 | −26 | +31 | +5 |
+| 4A-2 | −187 | +175 | −12 |
+| 4A-3 | −123 | +100 | −23 |
+| 4A-4 | −68 | +69 | +1 |
+| 4A-5 | −90 | +82 | −8 |
+| 4A-6 | −34 | +24 | −10 |
+| **Phase 4A** | **−528** | **+481** | **−47** |
 
-- **The Rule:** production lines (source with imports and blank lines as Biome wraps them; comments, tests, test fixtures, documents, and the drive out; moved lines on both sides), measured by the executor over the phase's range; each task's row is its own share.
-- **Tests:** about −77 (the seeder fixture −23, `page.test.ts`'s writer describe and birth tests about −70, the seed calls' wrapping about −40, the copied fixtures +18, and the six new tests about +38); the moved blocks are line-neutral.
-- **Against the Ledger:** the Findings price P4 whole at −85 (−75 to −95); this half lands about −23 and Phase 4B about +7, so P4 lands about −16. The module is mostly moves, line-neutral, and carries its own import block (about 22 lines) while its sources keep part of theirs; `frozenOf` and the `pageValuesOf` fold, priced as savings, don't hold at HEAD; the banner keeps its read; and `rewriteRootAt` takes the parsed page now (about +20), so the put-back Phase 6 adds reuses the one writer rather than widening it and rewriting its 55 call sites. The phase removes four files (`governedWrite.ts`, `pageValue.ts`, `Views/pageValues.ts`, `propertyWrites.ts`), two exported write paths, the world-less write mode, the second parse of every value write, the second write of every Context seed, the per-write registry re-validation, and `formatValue.ts` from the engine graph. *§The Ledger*'s P4 row moves from −85 to about −16 across both halves, and the running total from P4 on by about +69.
+- **The Rule:** *§Plan Constraints › The Number*'s. `Core/Testing/propertyWrites.ts`, which Task 4A-3 deletes, counts as production (−22). Task 4A-4's figure counts the four blocks its one-line summaries move (`unregisteredMembers`, `NumberShape`, `numberShape`, and `readNumber`) at their HEAD ranges on both sides.
+- **Tests:** about −54 (`page.test.ts`'s writer describe and birth tests about −70, the seed calls' wrapping about −40, the copied fixtures +18, and the six new tests about +38); the moved blocks are line-neutral.
+- **What Leaves:** four files (`governedWrite.ts`, `pageValue.ts`, `Views/pageValues.ts`, `propertyWrites.ts`), two exported write paths, the world-less write mode, the second parse of every value write, the second write of every Context seed, the per-write registry re-validation, and `formatValue.ts` from the engine graph. `rewriteRootAt` takes the parsed page now, so the put-back Phase 6 adds reuses the one writer rather than widening it and rewriting its 55 call sites.
 
 ---
 
@@ -7934,17 +7933,17 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 4B-1 | about +9 | +14 / −5 |
-| 4B-2 | 0 | +5 / −5 |
-| 4B-3 | about +2 | +9 / −7 |
-| 4B-4 | 0 | +1 / −1 |
-| **Phase 4B, From the AFTER Blocks** | **about +11** | **+29 / −18** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 4B-1 | −5 | +14 | +9 |
+| 4B-2 | −5 | +5 | 0 |
+| 4B-3 | −7 | +9 | +2 |
+| 4B-4 | −1 | +1 | 0 |
+| **Phase 4B** | **−18** | **+29** | **+11** |
 
-- **The Rule:** production lines (source with imports and blank lines as Biome wraps them; comments, tests, test fixtures, documents, and the drive out; moved lines on both sides), counted from each AFTER's `+` and `-` lines (no blank line is added or removed here) and measured by the executor over the phase's range; each task's row is its own share.
+- **The Rule:** *§Plan Constraints › The Number*'s; no blank line is added or removed here.
 - **Tests:** about +60 (the repair-sweep test −7, and the ten new tests about +67).
-- **Against the Ledger:** the Findings priced the tidy at T's +4 inside P4's −85; this half lands about +11, so P4 lands about −28 with Phase 4A's −39. **Net-Positive Rationale:** under *Less Stuff*, every added line is required behavior in its minimal form: the list test and the live arm's foreign-word rule (+9, five of them `reencode`'s signature wrapping once it answers the pair inline) narrow an over-generalized guard rather than adding a Select or Status branch; `writtenRoot`'s null rule (+2, its signature wrapping) replaces the Space op's special case and states one rule for every writer; the decode entry and the File arm change no line count.
+- **Net-Positive Rationale:** under *Less Stuff*, every added line is required behavior in its minimal form: the list test and the live arm's foreign-word rule (+9, five of them `reencode`'s signature wrapping once it answers the pair inline) narrow an over-generalized guard rather than adding a Select or Status branch; `writtenRoot`'s null rule (+2, its signature wrapping) replaces the Space op's special case and states one rule for every writer; the decode entry and the File arm change no line count.
 
 ---
 
@@ -9266,17 +9265,17 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 5-1 | about −11 | +28 / −39 |
-| 5-2 | about −47 | +12 / −59 |
-| 5-3 | about −3 | +9 / −12 |
-| 5-4 | about +2 | +4 / −2 |
-| 5-5 | about +8 | +21 / −13 |
-| **Phase 5, From the AFTER Blocks** | **about −51** | **+74 / −125** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 5-1 | −61 | +55 | −6 |
+| 5-2 | −60 | +15 | −45 |
+| 5-3 | −13 | +12 | −1 |
+| 5-4 | −2 | +6 | +4 |
+| 5-5 | −15 | +29 | +14 |
+| 5-6 | 0 | 0 | 0 |
+| **Phase 5** | **−151** | **+117** | **−34** |
 
-- **The Rule:** the plan's counting rule (*§Measurement Rules*' production lines: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out), read from the AFTER blocks; the executor measures the landed range at the Review Checkpoint and reports any gap past ±10.
-- **Against the Findings' −27 (−20 to −35):** about 24 lines further negative. `assignedDefs` and the repair sweep's async memo leave whole (−39 in 5-1 against the Investigation's −12 for R5, with +4 back for the sweep's per-Collection world map), and 5-2's removals (`resolveAssignedSchema`, `repointRegistryInTree`, the `registryOf` plumbing) run about −59 against −45. O-6 lands at about +8, below its +10 to +20, because the Contexts block folds into the shared helper; R3 lands at +2 against −5, since the settle's file read stays (*§Departures From the Findings*); the returning Collection's schema read adds about +4 the Findings didn't price.
+- **The Rule:** *§Plan Constraints › The Number*'s. `assignedDefs` and the repair sweep's async memo leave whole in 5-1, with +4 back for the sweep's per-Collection world map; 5-5 is O-6 with the returning Collection's schema read.
 - **Tests:** about +110 against the Findings' −30. Removed: `describe('assignedDefs')` (about −19); rewritten in place: the walk case, the waiting-open case, the first-walk `it.each`, the registry fixtures, and the copy-holding fixtures (about +20 net, `propertyIds` and `registry` lines). Written: the returning Collection's pin (+33), `schemaOf` (+16), `containerSchema` and `holderSchema` (+13), the index-read registration (+12 net), and O-6's open, recovery, skip, notice, and ledger pins (+65). Each pins one behavior this phase adds or reimplements; O-6's arm had no tests to remove.
 
 ---
@@ -10676,21 +10675,21 @@ No repository file changes on **Pass**. On **Fail**, the tree reads as Task 6-4'
 
 ##### Line Total
 
-Production lines (source with imports; no blank lines, comments, tests, docs, or drives), counted from the AFTERs' `+` and `-` lines, Biome's import wrapping included and a re-indented context line left out; the executor records the landed count from the Review Checkpoint's view-delta.
-
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| **6-1** One key's pair | −4 | +29 | **+25** |
-| **6-2** The record and the put-back | −35 | +99 | **+64** |
-| **6-3** Undo sends the record | −79 | +54 | **−25** |
-| **6-4** The alias comes back | −13 | +22 | **+9** |
-| **6-5** The picked overlay (F3) | −128 | +50 | **−78** |
-| **Phase (F3's Pass)** | −259 | +254 | **−5** |
-| **Phase (F3's Fail)** | −131 | +204 | **+73** |
+| 6-1 One key's pair | −4 | +30 | +26 |
+| 6-2 The record and the put-back | −52 | +115 | +63 |
+| 6-3 Undo sends the record | −65 | +55 | −10 |
+| 6-4 The alias comes back | −11 | +24 | +13 |
+| 6-5 The picked overlay (F3) | −130 | +56 | −74 |
+| 6-6 | 0 | 0 | 0 |
+| 6-7 | 0 | 0 | 0 |
+| **Phase 6 (F3's Pass)** | **−262** | **+280** | **+18** |
+| **Phase 6 (F3's Fail, Task 6-5 Reverted)** | **−132** | **+224** | **+92** |
 
-**Tests:** about +50 net (`restoreValue.test.ts`'s helpers, the two re-key tests, and `applyValueAtRoot`'s describe out, about −45; the pair, put-back, no-op undo, alias, and overlay pins in, about +95).
-
-**Against the Findings' −35 (−65 / +30):** F3 lands −78 against its −30, since the overlay also retires the pending `fm`/`contexts` shapes, `spaceRowOf`'s `fm`, and the epoch's key pair. The undo half lands +73 against the Findings' near-zero, which priced the node-exact put-back as an edit of the sweep's `keysPutBack`; that sweep put-back writes parsed values with the file's times and leaves in P11B, so the value put-back is required behavior no existing landing does, an undo that puts back the file's own node. Its cost is `pair` and `withPair` (+25 with the no-op rule and the alias), and the record each value write captures with the put-back that lands it (+64 in 6-2; `writeSpaceSidecar`'s move joins the two `governedRoot` imports P4A already wraps, one line each). In return, the undo has one route, no second page or Space writer exists, and the renderer stops encoding. On F3's **Pass**, the phase lands just below zero. On F3's **Fail**, it lands +73, which goes to the reconciliation report with F3's trace.
+- **The Rule:** *§Plan Constraints › The Number*'s.
+- **Tests:** about +50 net (`restoreValue.test.ts`'s helpers, the two re-key tests, and `applyValueAtRoot`'s describe out, about −45; the pair, put-back, no-op undo, alias, and overlay pins in, about +95).
+- **Net-Positive Rationale:** under *Less Stuff*, the undo half (Tasks 6-1 through 6-4, +92) is required behavior no existing landing performs: an undo that puts back the file's own node. The sweep's `keysPutBack` writes parsed values with the file's times and leaves in P11B, so it can't carry it. Its cost is `pair` and `withPair` (+26 with the no-op rule and the alias) and the record each value write captures with the put-back that lands it (+63 in 6-2, `writeSpaceSidecar`'s move joining the two `governedRoot` imports P4A already wraps). In return, the undo has one route, no second page or Space writer exists, and the renderer stops encoding; F3's overlay (−74) also retires the pending `fm`/`contexts` shapes, `spaceRowOf`'s `fm`, and the epoch's key pair. On F3's Pass the phase lands +18; on its Fail it lands +92, which goes to the reconciliation report with F3's trace.
 
 ---
 
@@ -11067,7 +11066,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +23 (+87 / −64). By file: `entities.ts` +19, `confirmations.ts` +14 / −30, `handlers.ts` +17 / −11, `properties.ts` +9 / −4, `bridge.ts` +9 / −6, `keyFormat.ts` +8 / −2, `governedSweep.ts` −3, the five other `unsweptLine` readers' imports +7 / −5, `optionOps.ts`, `ArchiveView.tsx`, and `browser.ts` +1 / −1 each, `validation.ts` +1. The counting words' move is about 17 of each side.
+**Lines:** +23 production (+93 / −70).
 
 #### Task 7-2
 
@@ -11187,7 +11186,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +11 (+29 / −18). By file: `assignment.ts` +19 / −1, `handlers.ts` +2 / −11, `registryProperty.ts` +8 / −6 (`reorderRegistry`'s wrap).
+**Lines:** +12 production (+30 / −18).
 
 #### Task 7-3
 
@@ -11320,7 +11319,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +2 (+19 / −17). By file: `registryProperty.ts` +8 / −7, `restoreProperty.ts` +8 / −8, `spend.ts` +3 / −2.
+**Lines:** 0 production (+20 / −20).
 
 #### Task 7-4
 
@@ -11487,7 +11486,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −6 (+31 / −37), about 16 of each side the `refillValues` move and about +3 / −2 its imports. By file beside the move: `unassignProperty.ts` +3 / −3, `deleteProperty.ts` +4 / −10, `assignment.ts` +2 / −5, `governedSweep.ts` +2, `properties.ts` +1 / −1. `seedPropertyBundle` is test code.
+**Lines:** +5 production (+47 / −42); `refillValues`' move counted on both sides and `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) inside.
 
 #### Task 7-5
 
@@ -11562,7 +11561,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** ±0 (+11 / −11), `handlers.ts`' import and call of `deleteOption` among them.
+**Lines:** −1 production (+9 / −10); `handlers.ts`' import and call of `deleteOption` among them.
 
 #### Task 7-6
 
@@ -12391,7 +12390,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −173 (+237 / −410). By file: `handlers.ts` +6 / −165 (everything but the holders arm), `bridge.ts` +1 / −72, `propertyWrite.ts` −24, `mutate.ts` +71 / −1, `mutateRequest.ts` +23 / −1, `PropertyFrame.tsx` +50 / −56, `properties.ts` +18 / −28, `registryProperty.ts` +18 / −16, `optionOps.ts` +10 / −11, `useOptionEdit.tsx` +8 / −6, `nexusSlice.ts` +6 / −2, `PropertyPanel.tsx` +6 / −3, `unassignProperty.ts` +6 / −5, `propertyJournal.ts` +4 / −5, `createActions.ts` and `useViewCreation.ts` +4 / −3, `deleteProperty.ts` +3 / −8, `assignment.ts` +3 / −2, `keyFormat.ts` −2.
+**Lines:** −185 production (+234 / −419).
 
 #### Task 7-7
 
@@ -12506,7 +12505,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −5 (+34 / −39). By file: `confirmations.ts` +28 / −27, `PropertyFrame.tsx` +6 / −12.
+**Lines:** −6 production (+32 / −38).
 
 #### Task 7-8
 
@@ -12635,10 +12634,22 @@ The Archive Drive's Settings and Trash helpers move into the harness verbatim:
 
 ##### Line Total
 
-- **Production: about −148 (+448 / −596):** 7-1 +23, 7-2 +11, 7-3 +2, 7-4 −6, 7-5 ±0, 7-6 −173, 7-7 −5. **The Rule:** each AFTER's `+` and `-` production lines, blank lines and comments out, a modified line counted on both sides; tests, documents, and drives out; an elided span measured from the tree (`handlers.ts`' 187 production lines at HEAD, `bridge.ts`' nineteen entries at 60, `propertyWrite.ts`' 24); moves counted on both sides, about 35 lines each.
-- **Against the Findings' −50 (−95 / +45):** the fold's channel adapters (`handlers.ts`' write half, about 165 lines) and `bridge.ts`'s nineteen entries were priced at less than they hold; `mutate.ts`'s fourteen arms (+71) are about the +45 the Findings priced for the whole phase. Task 7-1 runs +23: the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 7-1 | −70 | +93 | +23 |
+| 7-2 | −18 | +30 | +12 |
+| 7-3 | −20 | +20 | 0 |
+| 7-4 | −42 | +47 | +5 |
+| 7-5 | −10 | +9 | −1 |
+| 7-6 | −419 | +234 | −185 |
+| 7-7 | −38 | +32 | −6 |
+| 7-8 | 0 | 0 | 0 |
+| **Phase 7** | **−617** | **+465** | **−152** |
+
+- **The Rule:** *§Plan Constraints › The Number*'s. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
+- **Task 7-1's +23:** the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
 - **What Leaves:** `Core/Properties/propertyWrite.ts`; nineteen bridge entries; `resolveSchemaFolder`, `Reply`, `asIs`, `unsweptReply`, `cascadeReply`, `answer`, `registryChannel`, `schemaChannel`, nine positional narrowers, `journalRecord`, `defEditOp`; `SchemaCascade`, `PropertyRename`, `PropertyDeletion`, `FileConfig`; `linkFields`, `numberFields`, `narrowLinkConfig`, `narrowNumberFormat`, `narrowFileConfig`; `isKeyFormat` and the holder count's argument sniff; `writePropertyBundle`; `notifyTrashed`; `restoreInner`'s pre-check, read-back, and second tree read; the count copy's second home.
-- **Tests: about +170 (+250 / −80)**, against the Findings' about −40: the fourteen lock cases and the op, slice, restore, and zero-wording pins are new, while the merged `PropertyFrame` harness, the history pins, `isKeyFormat`'s case, and the two format-refusal cases leave. The drive group and the script re-points are apart.
+- **Tests: about +160 (+240 / −80)**, against the Findings' about −40: the fourteen lock cases and the op, slice, restore, and zero-wording pins are new, while the merged `PropertyFrame` harness, the history pins, `isKeyFormat`'s case, and the two format-refusal cases leave. The drive group and the script re-points are apart.
 
 ---
 
@@ -12994,7 +13005,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +8 production (+26 / −18): `properties.ts` +7 / −16, `ids.ts` +7, `validation.ts` +13 / −5 (the derived id for a repeated one, about +5), `optionModel.ts` +7 / −4 (the add's mint is replaced in Task 8-5), `optionOps.ts` +5 / −2, `registryProperty.ts` ±0. Tests about +60 written, `group_id` lines −110, option ids added in place.
+**Lines:** +13 production (+72 / −59). Tests about +60 written, `group_id` lines −110, option ids added in place.
 
 ---
 
@@ -13356,7 +13367,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +10 production (+28 / −18), `labelledOption` and its three calls counted where Task 8-5 leaves them (the line rule). `propertyValue.ts` +8 / −6, `filter.ts` +9 / −4, `sort.ts` +9 / −4, `optionOps.ts` −1 (the result's `option` in place of `key`), `properties.ts` +3, the rest in place. Tests: three written, about 40 rewritten to ids.
+**Lines:** +27 production (+89 / −62); `labelledOption` and its import counted here and again where Task 8-5 removes them. Tests: three written, about 40 rewritten to ids.
 
 ---
 #### Task 8-3
@@ -13596,7 +13607,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −63 production (+13 / −76): `configReach.ts` +9 / −45, `views.ts` −17, `filterRules.ts` −6, `optionOps.ts` +4 / −1, `replaySchemaCascade.ts` −6 / +0 net of the wrap, `properties.ts` −4. Tests about −125 (the rename block, `editHiddenBucket`'s cases, the replay's label cases), about +30 rewritten.
+**Lines:** −68 production (+22 / −90). Tests about −125 (the rename block, `editHiddenBucket`'s cases, the replay's label cases), about +30 rewritten.
 
 ---
 
@@ -13813,7 +13824,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −9 production (+33 / −42): `views.ts` +8 / −14 (`GroupedView` leaves with `groupsOn`, its one reader), `group.ts` +11 / −11, `GroupFrame.tsx` +12 / −7 (Biome's wrapping of the widened imports and signature), `configReach.ts` +2 / −11; `configSurfaces.ts` is test support, counted with the tests. Tests about +35 written, about −30 for `clearHiddenBuckets`' cases, keys rewritten in place.
+**Lines:** −3 production (+46 / −49); `Core/Testing/configSurfaces.ts` inside. Tests about +35 written, about −30 for `clearHiddenBuckets`' cases, keys rewritten in place.
 
 ---
 
@@ -14415,7 +14426,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −12 production (+46 / −58): `useOptionEdit.tsx` +34 / −44 (P7's mutate wiring at its Findings shape), `optionOps.ts` +8 / −7, `propertyJournal.ts` +2 / −8, `optionModel.ts` +1 / −2, `confirmations.ts` +3 / −1, the rest in place. Tests about −160 for the popup's re-keying and −32 for the label race, about +25 written.
+**Lines:** −11 production (+142 / −153). Tests about −160 for the popup's re-keying and −32 for the label race, about +25 written.
 
 ---
 #### Task 8-6
@@ -14888,19 +14899,19 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 8-1 | about +8 | +26 / −18 |
-| 8-2 | about +10 | +28 / −18 |
-| 8-3 | about −63 | +13 / −76 |
-| 8-4 | about −9 | +33 / −42 |
-| 8-5 | about −12 | +46 / −58 |
-| 8-6, 8-7 | 0 | generator, drives |
-| 8-8 | 0 | throwaway |
-| **Phase 8, Estimated** | **about −66** | **about +146 / −212** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 8-1 | −59 | +72 | +13 |
+| 8-2 | −62 | +89 | +27 |
+| 8-3 | −90 | +22 | −68 |
+| 8-4 | −49 | +46 | −3 |
+| 8-5 | −153 | +142 | −11 |
+| 8-6 | 0 | 0 | 0 |
+| 8-7 | 0 | 0 | 0 |
+| **Phase 8** | **−413** | **+371** | **−42** |
 
-- **The Rule:** the plan's counting rule — source with imports and blank lines as Biome wraps them; comments, tests, documents, the drives, the generator, and the throwaway script out; a line one task writes and a later task rewrites counts once, in its final form (Task 8-2's `labelledOption` and its three calls, `EditableOptionRows`' four interim handles, and Task 8-1's host-side mint on an add appear in no row, since the final code holds none of them).
-- **Against the Findings (about −85: −105 / +20):** within the range (−70 to −100), toward its small end. The removals land as priced: RENAME and its four handlers, `OptionReach`, `wholeValues`, `optionRule`, `collapsedKeys`, `editHiddenBucket`, `groupsOn`, `SUBSTRING_OPS`, `optionLabels`, the second decoder and `statusGroupId`, `group_id`'s stamping and stripping, `subGroupKey`, the record's `labels`, `optionCascade`'s label pair, and `useRenameKeys` with the landing in `useOptionEdit`. Additions above the Findings' +20 are the id's two functions and `identified` (+11), `optionLabel` and `optionKeys` (+5), threading the definition into the filter's text ops and the Multi-Select sort (+10, both necessary where an id now stands for a label), the id dedupe with its derived-id arm for a hand-copied option (+9), and `rekeyOptions`' relabel argument (+3); each is the minimal form of reading or writing an id where a label stood.
+- **The Rule:** *§Plan Constraints › The Number*'s. Task 8-2's +27 holds `labelledOption` and its `SelectOption` import (+3), interim lines Task 8-5 removes and counts there, and the holders count's call that Biome wraps once it reads `option.key` (+4); `Core/Testing/configSurfaces.ts` counts in 8-4.
+- **What It Adds:** the id's two functions and `identified` (+11), `optionLabel` and `optionKeys` (+5), threading the definition into the filter's text ops and the Multi-Select sort (+10, both necessary where an id now stands for a label), the id dedupe with its derived-id arm for a hand-copied option (+9), and `rekeyOptions`' relabel argument (+3); each is the minimal form of reading or writing an id where a label stood.
 - **Tests:** about −220 (−160 `OptionEditor.test.tsx`, −32 `optionOps.test.ts:245-276`, −96 `configReach.test.ts:157-252`, about −55 `editHiddenBucket`'s and −30 `clearHiddenBuckets`' cases, the replay's and journal's label cases), about +130 written (ids, derived ids, encode, the cross-property band key, K-1, the rename leaving a view's sort order, the gone option edit), and about −110 `group_id` lines, the Findings' about −220 net.
 
 ---
@@ -15046,7 +15057,7 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 - [ ] Run the gates: `npm run typecheck`, `npm run test`, `npm run lint`.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +2 (+3 / −1). Tests about +40 / −3.
+**Lines:** +2 production (+3 / −1). Tests about +40 / −3.
 
 #### Task 9-2
 
@@ -15233,7 +15244,7 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −9 (+6 / −15), two of them blank lines the reverse path held. Comments: three rewritten, one added, one removed. Tests about +45 / −60.
+**Lines:** −9 production (+6 / −15); two of them blank lines the reverse path held. Comments: three rewritten, one added, one removed. Tests about +45 / −60.
 
 #### Review Checkpoint
 
@@ -15272,14 +15283,13 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 9-1 | +2 | +3 / −1 |
-| 9-2 | −9 | +6 / −15 |
-| **Phase 9** | **−7** | **+9 / −16** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 9-1 | −1 | +3 | +2 |
+| 9-2 | −15 | +6 | −9 |
+| **Phase 9** | **−16** | **+9** | **−7** |
 
-- **The Rule:** the plan's counting rule (production lines with imports and blank lines as Biome wraps them; comments, tests, documents, and drives out); 9-2's two blank lines leave with the reverse path. Comments: three rewritten, one added, one removed. Tests: about +85 / −63 across two files.
-- **Against the Findings' −50 (−60 / +10):** the Findings priced items 1 and 2 here; they land in Task 11A-2 with the notes file, and their figure with it. Items 3 and 5 land as priced: the reverse path (−7 net with H-8's revert) and the open's catch (+2 net).
+- **The Rule:** *§Plan Constraints › The Number*'s; 9-2's two blank lines leave with the reverse path. Comments: three rewritten, one added, one removed. Tests: about +85 / −63 across two files.
 
 ---
 
@@ -16769,17 +16779,17 @@ The other sweep calls drop their first argument and nothing else:
 ##### Line Total
 
 | Task | Removed | Added | Net |
-| --- | --- | --- | --- |
-| 10-1 | −3 | +6 | **+3** |
-| 10-2 | −212 | +234 | **+22** |
-| 10-3 | −73 | +26 | **−47** |
-| 10-4 | −61 | +63 | **+2** |
-| **Phase 10, Production** | **−349** | **+329** | **−20** |
-| Tests | about −110 | about +180 | **about +70** |
+|---|---|---|---|
+| 10-1 | −3 | +6 | +3 |
+| 10-2 | −244 | +299 | +55 |
+| 10-3 | −81 | +32 | −49 |
+| 10-4 | −63 | +65 | +2 |
+| 10-5 | 0 | 0 | 0 |
+| **Phase 10** | **−391** | **+402** | **+11** |
 
-- **The Rule:** each AFTER's `+` and `-` production lines, blank lines and comments out, a modified line counted on both sides; tests, documents, and the drive out; the calls 10-2 names without a hunk (`repairSweep.ts`, `exclusionScan.ts`, `restoreScrub.ts` twice, `trashedCopies.ts`) and 10-4's prose imports counted as they'd land; moves counted on both sides (`governedReach`'s body into `pagesInReach`, the scrub's sidecar reconcile into `json`, `refillValues`' rewrite into `refillOf`). `Core/Testing/hostFs.ts` counts with tests.
-- **Against the Findings' −65 (−55 to −75):** about −20, outside the range. The finder itself is the cost: `findHolders`, `pagesInReach`, `spaceFiles`, and their types land about +96 in `keyHolders.ts` against the −21 of `confirmedKeyHolders` and its imports, and 10-3 takes −47 back by deleting `keyedHolders` and the delete's own Space loop. What the estimate didn't price: the unreadable Spaces as candidates (+3), the clash's index fallback through `Held.keys` (+3), the `id` row-order candidates (+2), the find-before-the-list step and its `titleHolders` (+12, against `sweepMembers`' and `Member`'s −17), the replay's commit-first order and re-read (+3), `rootId`, `unwritten`, and `refillOf` (+7, each folding two or more spellings), and Biome's wrapping of the finder's signatures. Each is a correctness requirement HEAD's disk scan met implicitly and the tree-sourced finder must state. What it buys: a key sweep's Space candidates come from one place, `spaceFiles`, where five mechanisms stood (`sweepRootsById`'s by-id paths, 10-4's artifact listings, and the asset migration's `spaceSidecars` remain, each finding by something other than a key); page candidate rules go from two to one with the reach stated once; the holder reads per delete go from three to one and per Key Format change from four to two; and the four hand-rolled Space write loops leave with their three different failure accountings.
-- **Tests:** about −110 (the `keyedHolders` describe, `confirmedKeyHolders`' pin, three collapsed exact-key pins, the sidecar-arm fixtures) against about +180 (the finder's seven pins, the writer's dispatch pin, the four rename and replay pins, the four restore pins, and the seed's registration).
+- **The Rule:** *§Plan Constraints › The Number*'s. Moves count on both sides (`governedReach`'s body into `pagesInReach`, the scrub's sidecar reconcile into `json`, `refillValues`' rewrite into `refillOf`), and `Core/Testing/hostFs.ts`' seed (+6) counts in 10-2. One hunk doesn't replay: 10-2's `registryProperty.ts` imports, whose base line Biome wraps after P4A's re-point; it's counted from its own lines (+2 / −3).
+- **Net-Positive Rationale:** under *Less Stuff*, the phase lands +11 because 10-2's finder (+55) costs more than the scans it replaces: `findHolders`, `pagesInReach`, `spaceFiles`, and their types in `Core/Index/keyHolders.ts`, with the unreadable Spaces as candidates, the clash's index fallback through `Held.keys`, the `id` row-order candidates, the find-before-the-list step and its `titleHolders`, the replay's commit-first order and re-read, and `rootId`, `unwritten`, and `refillOf`, each a correctness requirement HEAD's disk scan met implicitly. 10-3 takes −49 back by deleting `keyedHolders` and the delete's own Space loop. A key sweep's Space candidates come from one place, `spaceFiles`, where five mechanisms stood; page candidate rules go from two to one with the reach stated once; the holder reads per delete go from three to one and per Key Format change from four to two; and the four hand-rolled Space write loops leave with their three different failure accountings.
+- **Tests:** about −110 (the `keyedHolders` describe, `confirmedKeyHolders`' pin, three collapsed exact-key pins, the sidecar-arm fixtures) against about +175 (the finder's seven pins, the writer's dispatch pin, the four rename and replay pins, the four restore pins, and the seed's registration), about +65.
 
 ---
 
@@ -18275,8 +18285,15 @@ A Space entry sweeps the holders already under its Context's current title on ev
 
 ##### Line Total
 
-- **Count, About +65 (+590 / −525):** counted from this phase's AFTER blocks: each `+` and `-` production line that isn't blank or a comment (tests, drives, and docs out), about 26 added lines past Biome's 100 columns counted at their wrapped height (about +40), the four whole files deleted at their HEAD sizes counted the same way (`propertyJournal.ts` 44, `replaySchemaCascade.ts` 83, `contextJournal.ts` 40, `journalSlot.ts` 44), and each elided `…` body of a removed function at its HEAD size (`replayPendingRename` 60, `sweepAgain` with `Unswept` 15, `renamed` 10, `dispatch`'s `underContexts` closure 8, `settleJournal` 4, P7's `replayProperty` arm and decoder, P9's `owedKeys` and Context-rename steps, about 115 in all). Per task: 11A-1 about +145 (`owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`; the path; the report field); 11A-2 about +25 (+285: the property arm, the pass, `finishEntry`, `sweepEach`, `stuck`, `add`, `deletePlan`'s per-key finds, the four property ops on the runner with both deletes list-first, `confirmDelete`'s Try Again; −260: `propertyJournal.ts` and `replaySchemaCascade.ts` whole, the ops' journal calls, `stripAndRemove`'s last-step removal, `optionCascade`'s delete halt, `freeLabel`'s owed key, the create's consumption, `owedKeys`, `OWED`'s second home, the `replayProperty` op, `confirmDelete`'s `retry`); 11A-3 about −105 (+165: the Context and Space rename arms with the tree re-read, the two renames on the runner, the create refusals, the lock; −270: `contextJournal.ts`, `journalSlot.ts`, `replayPendingRename`, `sweepAgain` and the `from` re-send, `Unswept`, `renamed`, `retry`, the path constants, and the exclusion line).
-- **Why It Lands Positive:** R priced the notes as replacing the journal calls one for one, about −135 for the whole of P11. What the count adds beyond that is what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read, which R priced at none. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. Phase 11B lands about +75, so the whole of P11 comes to about +140 where the Findings priced −135 (P9's share of the two deletes' orders, which this task now carries, included); the reconciliation report carries the gap to Nathan with this evidence and the recount after the rebase settles the figure.
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 11A-1 | 0 | +156 | +156 |
+| 11A-2 | −273 | +334 | +61 |
+| 11A-3 | −325 | +200 | −125 |
+| **Phase 11A** | **−598** | **+690** | **+92** |
+
+- **The Rule:** *§Plan Constraints › The Number*'s. Task 11A-2 deletes `propertyJournal.ts` and `replaySchemaCascade.ts` whole, and Task 11A-3 `contextJournal.ts`, `journalSlot.ts`, and `replayPendingRename` (63 lines).
+- **Why It Lands Positive:** R priced the notes as replacing the journal calls one for one, about −135 for the whole of P11. 11A-1 (+156) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`; 11A-2 (+61) and 11A-3 (−125) put the property ops and both renames on the runner and delete the journals. What the count adds beyond R's pricing is what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read, which R priced at none. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. Phase 11B lands +94, so the whole of P11 comes to +186 where the Findings priced −135 (P9's share of the two deletes' orders, which this phase now carries, included); the reconciliation report carries the gap to Nathan with this evidence.
 - **Tests:** about −900 removed (`propertyJournal.test.ts` 102, `replaySchemaCascade.test.ts` 713, `contextJournal.test.ts` 20, the slot and consumer cases in `journalWiring.test.ts`, the `OWED` and `from` cases) and about +480 written (`owed.test.ts` with the runner's cases, `finishOwed.test.ts`, and the cases each task names).
 
 ---
@@ -18350,7 +18367,7 @@ An unreadable page the index answers now carries its id and values in `held`, so
   - "a Space deleted while its Context owes a rename strips the holders under the Context's new title and stays owed": the Space entry stands with `strip: ['Gym']`, and once the Context's page reads, one `finishOwed` rekeys it and strips `Gym` from it (H-1).
   - "a view settings file the delete couldn't reach keeps it owed": one Collection's `_pagecollection.json` holding a column of the Context, `chmod 000`; the reply is owed, and after the mode is restored `finishOwed` drops the column and clears the entry.
   - `Core/Trash/spend.test.ts` › "a Context restore turns its owed strip into renames" and the Space twin (H-4): after a partial delete and a restore, the entry reads `rename: [title]`, and once the page reads, `finishOwed` leaves its tag in place under the restored title; "a Context restore under another Context's owed title is refused" (LC-9).
-- [ ] `Core/Contexts/contextCascade.ts`: `unlinkContextKey` and `unlinkSpaceValue` answer the files they missed, take `skipUnder` (a folder whose Spaces left with it, which the tree lists at their old paths until the walk), and capture nothing; `unlinkMembers`' put-back and throw leave, with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`; `Core/Nexus/governedSweep.ts`: `undoSweep` and its private `keysPutBack` leave, so P6's `putBackEntries` is the one put-back landing.
+- [ ] `Core/Contexts/contextCascade.ts`: `unlinkContextKey` and `unlinkSpaceValue` answer the files they missed, take `skipUnder` (a folder whose Spaces left with it, which the tree lists at their old paths until the walk), and capture nothing; `unlinkMembers`' put-back and throw leave, with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`; `Core/Nexus/governedSweep.ts`: `undoSweep` and its private `keysPutBack` leave with the `changedKeys` and `governedRoot` imports only they read, so P6's `putBackEntries` is the one put-back landing.
 - [ ] `Core/Trash/gather.ts`: `gatherSpaceRecord` and `buildContextRecord` read the up-front capture (`Holders`) in place of a sweep's outcome; `sweepIncomplete` leaves.
 - [ ] `Core/Trash/delete.ts`: the Space and Context branches as the AFTER gives them; the strip and the views run after the folder move through `finishEntry`, the arm the finish runs.
 - [ ] `Core/Nexus/configReach.ts`: `goneEdit`'s Context and Space cases leave, since the arms reach the views by id.
@@ -18463,6 +18480,24 @@ An unreadable page the index answers now carries its id and values in `held`, so
 +  return (await sweepGovernedRoots(files, { raw: rewrite })).skipped.length
  }
 ```
+
+```Core/Nexus/governedSweep.ts diff
+@@ imports @@
+-import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
++import { type Frozen, reencode, rewriteRaw } from './governedRoot'
+@@ undoSweep, keysPutBack @@
+   return (await sweepGovernedRoots(shown, plan, true)).touched.size
+ }
+ 
+-/** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
+-export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> { … }   (HEAD Core/Properties/governedSweep.ts:151-161)
+-
+-function keysPutBack(file: string, now: string, before: string, after: string): string | null { … }   (HEAD Core/Properties/governedSweep.ts:163-182)
+-
+ /** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
+```
+
+(`keysPutBack` was the file's last reader of `changedKeys` and `governedRoot`; `rewriteRaw`, `sweepParse`, `parseJsonObject`, `jsonText`, `isMarkdownFile`, `readTextOrNull`, and `rewritePreservingTimes` keep other readers.)
 
 ```Core/Trash/gather.ts diff
 @@ imports @@
@@ -19092,8 +19127,18 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 
 ##### Line Total
 
-- **Count, About +75 (+245 / −170):** counted by *Phase 11A*'s method: each `+` and `-` production line in this phase's AFTER blocks that isn't blank or a comment (tests, the drive, and docs out), about 17 added lines past Biome's 100 columns at their wrapped height (about +25), and each elided `…` body of a removed function at its HEAD size (`undoSweep` with its private `keysPutBack` 32, the rest of `SweepCapture` and `captureRoot`, P10's inline holders read and P7's stash write in Remove, about 60 in all). Per task: 11B-1 about +6 (the index fallback); 11B-2 about +35 (+165: the strip arms, the folder and view steps, the capture reads with the own-folder filter, the restore refusal and conversion, the delete note; −130: the capture types and closures, the undo-and-throw, `undoSweep` with `keysPutBack`, the put-back and unmint, the second record writes, `goneEdit`'s two cases); 11B-3 about +30 (Remove on the runner, `stashAndStrip`, and the `unassigned` arm, against P10's inline read and P7's one-write stash); 11B-4 about +2; the drive out.
-- **The Whole of P11:** about +140 (11A about +65, 11B about +75), against the Findings' −135; *Phase 11A › Line Total* gives the reasons.
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 11B-1 | −3 | +9 | +6 |
+| 11B-2 | −157 | +207 | +50 |
+| 11B-3 | −26 | +62 | +36 |
+| 11B-4 | −4 | +6 | +2 |
+| 11B-5 | 0 | 0 | 0 |
+| **Phase 11B** | **−190** | **+284** | **+94** |
+
+- **The Rule:** *§Plan Constraints › The Number*'s.
+- **Why It Lands Positive:** under *Less Stuff*, the added lines are B-3's and LC-10's ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3, LC-18, LC-19). What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, and Remove's inline holders read and one-write stash.
+- **The Whole of P11:** +186 (11A +92, 11B +94), against the Findings' −135; *Phase 11A › Line Total* gives the reasons.
 - **Tests:** about −100 removed (the undo-and-throw, put-back, unmint, `goneEdit`, and skipped-Remove-refusal cases) and about +220 written (the cases each task names).
 
 ---
@@ -20508,29 +20553,28 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 
 ##### Line Total
 
-Production lines counted from the AFTER blocks above: every `+` and `-` line in a production file that isn't blank, a comment, or a `…` placeholder, with tests, documents, and drives out and a renamed line counted on both sides (W1-A's counting rule, which reproduces P9's written figure exactly):
-
 | Task | Removed | Added | Net |
 |---|---|---|---|
-| 12-1 One Vocabulary | −32 | +32 | **0** |
-| 12-2 The Block and Its Stamp | −23 | +31 | **+8** |
-| 12-3 The Purge | −5 | +5 | **0** |
-| 12-4 The Restore Order | −5 | +10 | **+5** |
-| 12-5 The Refill | −50 | +65 | **+15** |
-| 12-6 Refill Skips Surface | −15 | +46 | **+31** |
-| 12-7 The Age Cleanup | −2 | +21 | **+19** |
-| 12-8 The Partial Mark | −11 | +30 | **+19** |
-| 12-9 The Restore Notice's Try Again | 0 | +2 | **+2** |
-| **Total** | **−143** | **+242** | **+99** |
+| 12-1 One Vocabulary | −58 | +58 | 0 |
+| 12-2 The Block and Its Stamp | −23 | +33 | +10 |
+| 12-3 The Purge | −5 | +5 | 0 |
+| 12-4 The Restore Order | −5 | +10 | +5 |
+| 12-5 The Refill | −39 | +58 | +19 |
+| 12-6 Refill Skips Surface | −18 | +47 | +29 |
+| 12-7 The Age Cleanup | −2 | +22 | +20 |
+| 12-8 The Partial Mark | −10 | +30 | +20 |
+| 12-9 The Restore Notice's Try Again | 0 | +2 | +2 |
+| 12-10 | 0 | 0 | 0 |
+| **Phase 12** | **−160** | **+265** | **+105** |
 
-- **Against the Estimate (+37: −14 / +51, range +30 to +45):** about +62 over. About 20 is Biome's wrapping of signatures, the record schema, and imports the estimate didn't price; about 12 the restore's surfacing of refill skips, which the Findings left out of its count (*§Departures › The Refill's Note*); about 6 `assignProperty` answering its own reply where `done` answered an empty one; about 8 the Trash row's fragment and the curated glyph; about 6 the id-keyed `refillStash` resolving its own Collection. The measured figure replaces this count at the Review Checkpoint.
+- **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +190 (`propertyStash.test.ts` new with about 80; about 15 new cases across `unassignProperty.test.ts`, `assignment.test.ts`, `finishOwed.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `rows.test.ts`, and `TrashFrame.test.tsx`; two cases rewritten; fixtures re-seeded with the stamp, line-neutral). The drive group (about 90 lines) is apart.
 - **Net-Positive Rationale, Per Item (*Less Stuff*):**
-  - **The stamp and the age cleanup (+27, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
+  - **The stamp and the age cleanup (+30, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
   - **The restore order (+5, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass.
-  - **The refill (+15, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2, LC-36). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
-  - **The refill's report (+31, Task 12-6):** with the timeframe, a skipped value would be lost unseen; LC-5's report rides P11's notes entry, its `owesAnything` rule, its `finishProperty` and `sweepEach`, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
-  - **The partial mark (+19, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
+  - **The refill (+19, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2, LC-36). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
+  - **The refill's report (+29, Task 12-6):** with the timeframe, a skipped value would be lost unseen; LC-5's report rides P11's notes entry, its `owesAnything` rule, its `finishProperty` and `sweepEach`, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
+  - **The partial mark (+20, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
   - **The Try Again (+2, Task 12-9):** B-3 has every change that left files offer Try Again; the restore's own notice passes the slice's one closure on rather than losing it.
   - **The folds (Tasks 12-1, 12-3):** one name for one store, and the purge's spelling, raw read, and stale comment each remove what they replace.
 
@@ -21022,7 +21066,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 
 - [ ] The three `columns.test.ts` cases pass and fail with the task reverted; `fieldValue.test.ts`, `Cell.test.tsx`, `cardValueInput.test.ts`, `assignValue.test.ts`, `useViewHost.test.tsx`, `group.test.ts`, `cellGestures.test.tsx`, `cardGestures.test.tsx`, `cardCreation.test.tsx`, `PropertyPanel.test.tsx`, and `contextIdentity.test.ts` pass with only the literal and title rewrites named above.
 - [ ] `git grep -nw "columnType\|addColumn\|columnKind\|isContextColumnId" -- Core UIX` answers nothing.
-- [ ] `git grep -n "schema.find((d) => d.id === col.id)\|schema.find((d) => d.id === column.id)\|schema.find((d) => d.id === c.id)" -- Core ':!*.test.*'` answers nothing.
+- [ ] `git grep -n "schema.find((d) => d.id === col.id)\|schema.find((d) => d.id === column.id)\|schema.find((d) => d.id === c.id)" -- Core/Properties/Cells/Cell.tsx Core/Views/Cards/cardValueInput.ts Core/Views/Table/TableView.tsx` answers nothing; `useViewHost.ts`' `pickTarget` read leaves in Task 13-2.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -23370,20 +23414,21 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 13-1 Columns carry type and definition | about −7 | +51 / −58 |
-| 13-2 One reader; the pipeline resolves once | about −1 | +100 / −101 |
-| 13-3 One style map | about −27 | +22 / −49 |
-| 13-4 Surfaces read the type; `declaredType` leaves | about −56 | +12 / −68 |
-| 13-5 Heading settings on the context | about +24 | +27 / −3 |
-| 13-6 New views store no hidden list | about −14 | +3 / −17 |
-| 13-7 `hideShown` (and `patchedValues` on F3's Fail) | about −1 on Pass (about −8 on Fail) | +1 / −2 on Pass (+28 / −36 on Fail) |
-| 13-8 07-17's rule | 0 | — |
-| **Phase 13, Estimated From the AFTER Blocks** | **about −82** | **+216 / −298** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 13-1 Columns carry type and definition | −124 | +126 | +2 |
+| 13-2 One reader; the pipeline resolves once | −220 | +216 | −4 |
+| 13-3 One style map | −121 | +87 | −34 |
+| 13-4 Surfaces read the type; `declaredType` leaves | −117 | +48 | −69 |
+| 13-5 Heading settings on the context | −20 | +43 | +23 |
+| 13-6 New views store no hidden list | −38 | +23 | −15 |
+| 13-7 `hideShown` (and `patchedValues` on F3's Fail) | −2 | +2 | 0 |
+| 13-8 07-17's rule | 0 | 0 | 0 |
+| 13-9 | 0 | 0 | 0 |
+| **Phase 13 (F3's Pass)** | **−642** | **+545** | **−97** |
+| **Phase 13 (F3's Fail, With 13-7's `patchedValues`)** | **−679** | **+575** | **−104** |
 
-- **The Rule:** production source with imports, blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides. Counted from the AFTER blocks against HEAD's text as each earlier phase leaves it, so each figure moves by a few lines with Biome's wrapping and the earlier phases' landed shapes.
-- **Against the Findings (about −120, −100 to −140; −140 / +20):** short of the range by about 38. The table's columns count a rewritten line on both sides; counted the Ledger's way, as whole deletions against new code, the phase deletes about −150 (`declaredType`, `columnType`, `columnKind`, `visibleColumns`, `addColumn`, `isContextColumnId`, `useStyleFor`, `useColumnStyleMap`, `withSeeds` (F3's Fail only), `readable`, `widthFor`, `defaultAlignFor`, `FALLBACK`, `defById`, the `WeakMap`, and the per-site scans), near the estimate, and adds about +75, nearly four times the Findings' +20. The additions concentrate in three places: W5's two context fields and the two callers' setting reads with Biome's wrapping of the context build (about +25); the plan's `Grouping` with `groupingOf` (about +12, against about −12 of grouping re-lookups it retires in the band face, the router, the Group pane, and the host); and the resolver with its two arms plus the Context ids threaded into sort and the sort pane (about +30). The phase stays net-negative; 13-2 is near zero because it trades the per-row scan on every pipeline stage for one resolution per pass, its plan memo replacing the line it wraps, and 13-5 is the Findings' W5 in its minimal form, the 3 → 1 subscription row's whole cost.
+- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Pass, Task 13-7 lands only `commitHide`; on its Fail, the `patchedValues` half adds −37 / +30 (−7), its seven unreplayed hunks counted from their own lines, since they quote the code P6's revert restores. Task 13-8 is 07-17's Otherwise outcome, the one its read gives at HEAD, a comment line; its If outcome threads one `values` prop through `SettingsFrame`, `ViewLeaf`, and `GroupFrame` and has no AFTER.
 - **Tests:** about −40 net: about −100 leave (the `declaredType` and `columnType` describes, the width and alignment fallback cases, the stale-id style case, and the per-schema mint pin) against about +60 for the eight new pins and the column-form rewrites. The drive apart: `live-drive.mjs` about +85, `MATRIX.md` +9.
 
 ---
@@ -23553,7 +23598,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −20 (+22 / −42): `formatValue.ts` +22 (the function and one import line), `filter.ts` −19 (`textValue` and an import), `sort.ts` −23 (`sortText` and two imports). Comments ±0 (`sortText`'s filename comment moves into `shownText`). Tests +30.
+**Lines:** −21 production (+29 / −50). Comments ±0 (`sortText`'s filename comment moves into `shownText`). Tests +30.
 
 #### Task 14-2
 
@@ -24060,7 +24105,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −14 (+252 / −266). `valueKinds.ts` +240, of which about 60 are the seven menus with `OperatorChoice` and `ValueSlot`, moved from `filterModel.ts` (new: about +180); `filter.ts` −181 (+7 / −188: the evaluators and their dispatcher, about 171 with their blank lines once Task 14-1 has taken `textValue`'s 19 and P8 has added about 5, `FILTER_OP_SET`, `Evaluator`, and nine import lines); `filterModel.ts` −68 (+3 / −71, the moved 60 among them); `FilterFrame.tsx` −5 (+2 / −7). Comments ±0 (three moved with their menus, `prepareRule`'s rewritten, the record's own beside what a reader meets). Tests +18 / −3.
+**Lines:** −10 production (+258 / −268); about 60 of each side the seven menus with `OperatorChoice` and `ValueSlot` moved from `filterModel.ts`. Comments ±0 (three moved with their menus, `prepareRule`'s rewritten, the record's own beside what a reader meets). Tests +18 / −3.
 
 #### Task 14-3
 
@@ -24427,7 +24472,7 @@ export function makeSorter(
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −26 (+86 / −112). `valueKinds.ts` +48; `sort.ts` −50 (+20 / −70); `SortFrame.tsx` −24 (+18 / −42), the three label pairs moving into `DIRECTIONS` and the switch leaving. Comments +1 (the Checkbox entry's reason; `buildCriterion`'s Custom comment shortened in place). Tests +46 / −10.
+**Lines:** +2 production (+97 / −95). Comments +1 (the Checkbox entry's reason; `buildCriterion`'s Custom comment shortened in place). Tests +46 / −10.
 
 #### Task 14-4
 
@@ -24556,7 +24601,7 @@ describe('the Date bucket', () => {
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −18 (+37 / −55). `valueKinds.ts` +35 (the two moved functions' 28, their three entries, two import lines, and the type's field); `group.ts` −53 (+2 / −55: the moved 28, the switch's 20, two imports). Tests ±0 (the five cases move; +7 for the new file's head, −1 import).
+**Lines:** −9 production (+37 / −46); `isoWeek` and `dateBucketKey` (28) moved on both sides. Tests ±0 (the five cases move; +7 for the new file's head, −1 import).
 
 #### Task 14-5
 
@@ -25147,7 +25192,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −21 (+43 / −64). `propertyValue.ts` +2 (`checkboxValue`); `valueKinds.ts` +23 (the type's two fields, `LIST_OPS` moved, the six `seed` lines, four `sortSeeds`, the Context entry reflowed, `checkboxValue`'s import inside the existing list); `creationSeeds.ts` −23 (+5 / −28); `reassign.ts` −10 (+11 / −21); `useViewCreation.ts` −13 (+2 / −15). Comments ±0 (`FROM_GROUP_KEY`'s and `SEEDS_FROM_SORT`'s reasons move onto `reassignable` and the record's field). Tests ±0.
+**Lines:** −16 production (+41 / −57). Comments ±0 (`FROM_GROUP_KEY`'s and `SEEDS_FROM_SORT`'s reasons move onto `reassignable` and the record's field). Tests ±0.
 
 #### Task 14-6
 
@@ -25402,17 +25447,19 @@ No repository file changes, on either outcome.
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 14-1 | about −20 | +22 / −42 |
-| 14-2 | about −14 | +252 / −266 |
-| 14-3 | about −26 | +86 / −112 |
-| 14-4 | about −18 | +37 / −55 |
-| 14-5 | about −21 | +43 / −64 |
-| **Phase 14, From the AFTER Blocks** | **about −99** | **+440 / −539** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 14-1 | −50 | +29 | −21 |
+| 14-2 | −268 | +258 | −10 |
+| 14-3 | −95 | +97 | +2 |
+| 14-4 | −46 | +37 | −9 |
+| 14-5 | −57 | +41 | −16 |
+| 14-6 | 0 | 0 | 0 |
+| 14-7 | 0 | 0 | 0 |
+| 14-8 | 0 | 0 | 0 |
+| **Phase 14** | **−516** | **+462** | **−54** |
 
-- **The Rule:** the plan's counting rule (production lines: source with imports and blank lines as Biome wraps them; comments, tests, documents, and the drive out; moved lines on both sides), read from the AFTER blocks; the executor measures the landed range at the Review Checkpoint and reports any gap past ±10. Moved lines: the seven menus with `OperatorChoice` and `ValueSlot` (about 60), `isoWeek` and `dateBucketKey` (28), and `LIST_OPS` (1), about 89 in all, so the phase's new code is about +351 against about −450 removed.
-- **Against the Findings' −115 (−90 to −140; the Record's +150 Inside):** inside the range. The record lands at about +346 with the 89 moved lines and about +257 without them, above the Findings' +150, because it carries the fields the sketch left out (`filled`, `directions`, `seed`, `sortSeeds`, and the Select's compiled rank) and each kind's compile is written out where its evaluator was; those fields are what remove `KIND_OPS`, `FROM_GROUP_KEY`, `SEEDS_FROM_SORT`, the seed switch, and the Sort pane's switch, which the Findings counted on the removed side. The removals land about as priced: the evaluators and their dispatcher (about −171, `textValue` already gone in Task 14-1), the sort's extractors and switch (−70), the bucket switch (−20), the two text projections (−39 less `shownText`'s +22).
+- **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides: the seven menus with `OperatorChoice` and `ValueSlot` (about 60), `isoWeek` and `dateBucketKey` (28), and `LIST_OPS` (1). Task 14-4's figure counts `isoWeek` and `dateBucketKey` whole on both sides, where its AFTER writes each moved body as one placeholder line that Task 14-5's full `valueKinds.ts` spells out. Two hunks don't replay: 14-1's and 14-2's `filter.ts` imports, whose `-` lines read `readNumber` from where Task 4A-4 moves it; they're counted from their own lines (+1 / −1 and +1 / −12). K's and 07-10's measurements change no production line on either outcome.
 - **Tests:** about +94 / −13. Written: `shownText`'s case (+29), the two abstain cases and the seed case (+18), the empty-last cases and the multi-select fixture (+46); rewritten in place: the Checkbox, unhandled-op, unreadable-operand, number, date, and stamp cases; moved: the five date-key cases into `valueKinds.test.ts`. Each pins one behavior this phase adds or changes; no record-level duplicate of a pipeline test is written.
 
 ---
@@ -25760,7 +25807,7 @@ describe('pickOver', () => {
 - [ ] `npm run test -- engineGraph hostGraph` green: `pickModel.ts` is a renderer-side `.ts` reached only from renderer files.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −34 production (+63 / −97): `pickModel.ts` +49, `massAssign.ts` −24, `PropertyPicker.tsx` +3 / −47, `MassPropertyPicker.tsx` +5 / −14, the three import blocks +6 / −12. Tests about +12 (+70 / −58).
+**Lines:** −31 production (+75 / −106). Tests about +12 (+70 / −58).
 
 #### Task 15-2
 
@@ -25988,7 +26035,7 @@ describe('pickOver', () => {
 - [ ] `npm run test -- engineGraph hostGraph` green.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about −4 production (+49 / −53): `assignValue.ts` +31 / −6 (the two writers +26, their imports ±2, the three session reads ±3, the field −1), `useViewHost.ts` +6 / −14 (the block and its imports), `PropertyPanel.tsx` +3 / −13, `entityMenuActions.ts` +9 / −20. Tests about −6.
+**Lines:** −4 production (+50 / −54). Tests about −6.
 
 #### Task 15-3
 
@@ -26200,7 +26247,7 @@ describe('pickOver', () => {
 - [ ] No surface's menu changes at this head: cards pass a style and `'view'`, so their menus and "Remove from View" read as before; the table passes a style and no `hideable`; the panel's menus are HEAD's (its unresolved Link's fallback reads "Remove" under `'row'` as it did under `true`). `PropertyPanel.test.tsx` and `cardGestures.test.tsx` pass with no assertion changed.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** 0 production (+18 / −18): `cellMenu.ts` +16 / −16 (`HideFrom` +1, the type and flag lines ±7, the styled arms +6 / −7, the closing rows ±2), `CardValue.tsx` and `PropertyPanel.tsx` ±0 (+1 / −1 each). Tests about +26.
+**Lines:** 0 production (+18 / −18). Tests about +26.
 
 #### Task 15-5
 
@@ -26342,7 +26389,7 @@ describe('pickOver', () => {
 - [ ] The two greps above answer as stated.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +1 production (+17 / −16): `FilterFrame.tsx` +10 / −12 (the imports +2 / −4, `nexusClock` −1, the slot's style ±2, the pane ±6), `DateTimeValuePicker.tsx` +6 / −4 (the `span` prop +3 / −1, `dateFormFor` +1, its import ±1, the picker's form +1 / −2; doc lines uncounted), `PropertyPicker.tsx` +1. Tests about +21.
+**Lines:** +2 production (+17 / −15). Tests about +21.
 
 #### Task 15-6
 
@@ -26452,7 +26499,7 @@ export function useMultiValue(
 - [ ] The removal grep answers nothing.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** about +4 production (+14 / −10): `valueField.tsx`' `emptyPicker` and its `MenuCaption` import −2; `LocationField.tsx` +9 / −3 (its `@pommora/uix/Menus` import wraps under Biome once it names a fifth export, +7 / −1; the call, ordered so it fits one line, ±1; the `useMultiValue` import ±1); `TextCell.tsx`, `FilterFrame.tsx`, `CardValue.tsx`, and `CardsView.tsx` ±0; the moved file's other lines are a rename. The drive harness apart, ±0.
+**Lines:** −2 production (+14 / −16); `LocationField.tsx`' `@pommora/uix/Menus` import wraps under Biome once it names a fifth export; the moved file's other lines are a rename. The drive harness apart, ±0.
 
 #### Task 15-7
 
@@ -26758,7 +26805,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
          }}
 ```
 
-(The host's `commitValue` takes `rows: readonly ViewRow[]` and hands them to `assignValue`; every other caller passes `[row]`: `useViewHost.ts`' other value writes, `PropertyPanel.tsx`' `commit`, `entityMenuActions.ts`' menu commit, `TableView.tsx`' `cellApi`, whose `commit: commitValue` becomes `commit: (row, col, next) => commitValue([row], col, next)`, `CardsView.tsx`' `CardApi`, whose `commitValue` member becomes `commitValue: (row, column, value) => commitValue([row], column, value)`, and the harnesses in `assignValue.test.ts` and `propertyMenuActions.test.ts`; `git grep -n "assignValue(\|commitValue" -- Core` lists them. A Select's pick is one value, so one request; a list pick sends one per distinct row value, since each row's own list differs. Every `setProperty` and `setContext` request in the tests, drives, and scripts takes `paths: [<path>]`: `git grep -n "op: 'setProperty'\|op: 'setContext'" -- Core .claude/scripts` lists them. Fail Branch lines: about +31 production (+59 / −28), counted under *Line Total* only if it lands.)
+(The host's `commitValue` takes `rows: readonly ViewRow[]` and hands them to `assignValue`; every other caller passes `[row]`: `useViewHost.ts`' other value writes, `PropertyPanel.tsx`' `commit`, `entityMenuActions.ts`' menu commit, `TableView.tsx`' `cellApi`, whose `commit: commitValue` becomes `commit: (row, col, next) => commitValue([row], col, next)`, `CardsView.tsx`' `CardApi`, whose `commitValue` member becomes `commitValue: (row, column, value) => commitValue([row], column, value)`, and the harnesses in `assignValue.test.ts` and `propertyMenuActions.test.ts`; `git grep -n "assignValue(\|commitValue" -- Core` lists them. A Select's pick is one value, so one request; a list pick sends one per distinct row value, since each row's own list differs. Every `setProperty` and `setContext` request in the tests, drives, and scripts takes `paths: [<path>]`: `git grep -n "op: 'setProperty'\|op: 'setContext'" -- Core .claude/scripts` lists them. Fail Branch lines: +42 production (+75 / −33), counted under *Line Total* only if it lands.)
 
 **VERIFY**
 
@@ -26767,7 +26814,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 - [ ] `ls ~/Benchmark-Large` fails, the worktree is gone, and the script is deleted.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** 0 production on Pass; about +31 on Fail.
+**Lines:** 0 production on Pass; +42 on Fail (+75 / −33).
 
 #### Task 15-9
 
@@ -26894,21 +26941,22 @@ A value write names every file it lands on, so `assignValue` stays the one write
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 15-1 The Pick Model | about −34 | +63 / −97 |
-| 15-2 One Writer | about −4 | +49 / −53 |
-| 15-3 The Link Menus | 0 | +1 / −1 |
-| 15-4 One Menu Vocabulary | 0 | +18 / −18 |
-| 15-5 The Filter's Clock | about +1 | +17 / −16 |
-| 15-6 The Small Ones | about +4 | +14 / −10 |
-| 15-7 The Test Collapse | 0 | — |
-| 15-8 The Measurement | 0 on Pass | about +31 on Fail |
-| 15-9 The Drive | 0 | — |
-| **Phase 15** | **about −33** | **+162 / −195** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 15-1 The Pick Model | −106 | +75 | −31 |
+| 15-2 One Writer | −54 | +50 | −4 |
+| 15-3 The Link Menus | −1 | +1 | 0 |
+| 15-4 One Menu Vocabulary | −18 | +18 | 0 |
+| 15-5 The Filter's Clock | −15 | +17 | +2 |
+| 15-6 The Small Ones | −16 | +14 | −2 |
+| 15-7 The Test Collapse | 0 | 0 | 0 |
+| 15-8 The Measurement | 0 | 0 | 0 |
+| 15-9 The Drive | 0 | 0 | 0 |
+| **Phase 15 (02-10's Pass)** | **−210** | **+175** | **−35** |
+| **Phase 15 (02-10's Fail, With the Fail Branch)** | **−243** | **+250** | **+7** |
 
-- **The Rule:** production source with imports, counted as the `+` and `-` lines of each AFTER; blank lines, comments, tests, documents, and drives out; moved lines on both sides (`pickGroups` 6, `toggleValue` 2, `oneShotWriter`'s body 9) and a renamed file's unchanged lines on neither (`useMultiValue.ts`, `cardColumns.ts`). Counted from the diffs above against P1–P14's AFTER where they rewrote a line; the executor re-counts on the applied head and records the figure here.
-- **Against the Findings (about −135, −115 to −155):** below the range. The Findings' figure is the Investigation's per-unit estimates summed (06-04 −40 to −60, 06-05 −20 to −30, 06-06 −20, B-06-01 −10, 06-09 −15 to −25, 06-11 and 06-12 −10). Read from the code: the pick model is a new file whose 49 lines offset most of the 97 it removes (−34); the writer hook and the menu's writer are two small shapes over three assemblies, and the dropped `mutate` field is a few lines (−4, P13 having already taken `schema`); the row menu's fold (06-06, B-06-01, about −30) moves to Task 16B-2 with the seat that builds the panel's menu, so this phase carries only its vocabulary at ±0; 06-09's −15 to −25 counted the chip merge, which isn't this phase's, and the date fold itself is +1 with the `span` prop and the shared date-form rule inside; the small ones cost about four lines of Biome wrap; the deferred fallbacks (−2) and the move that can't land (±0) take nothing. The phase removes about 1.2 lines for every line it adds.
+- **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides (`pickGroups` 6, `toggleValue` 2, `oneShotWriter`'s body 9), and `useMultiValue.ts` and `cardColumns.ts` move whole. On 02-10's Pass, Task 15-8 lands nothing; its Fail Branch adds −33 / +75 (+42), and its callers' `[row]` adapters change in place.
+- **On 02-10's Fail:** the phase lands +7. The Fail Branch (+42) is the remedy *§Measurement Rules › 02-10* rules for a mass assign over its threshold: one `setProperty` carrying every swept path, under each file's own lock with one reply, in place of one request per row, so a measured stall is fixed in the one writer rather than worked around at each surface.
 - **Tests:** about +4 (+107 / −103): the pick model's file (+70) against `massAssign.test.ts` and the `pickShape` case (−58); the `cellMenu` vocabulary cases +24; the filter clock case +21; the writer harnesses −14 / +8; the editor collapse −14 / +1; the `cellMenu` link cases ±0; the panel's fallback-menu case ±0. The drive apart: about +28.
 - **Measurement:** filled by Task 15-8 with the base and head lines, `total=<ms> longest=<ms> writes=300`, and the rule's outcome.
 
@@ -28301,16 +28349,15 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 16A-1 The Seat | about +265 | +271 / −6: `ValueSeat.tsx` (+263, its `cellMenu` import wrapped by `HideFrom`); `hideable`'s `HideFrom` in `connectionMenu.ts` (two lines and its import) and `valueMenuTarget.ts` (one and its import), and its three callers' tokens (+6 / −6) |
-| 16A-2 The Table | about −140 | +66 / −206: `seatHost` (+10); the intent map, open state, held panes, editor, and value menu chain against the seat's call, the rename's state, and `openTitleMenu`; `useColumns`' return entry |
-| 16A-3 Cards | about −205 | +109 / −314: `CardValue.tsx` (−166), `CardsView`'s request, panes, closes, and `commitPicked` (−123) against the seat's host, the inline hold, the chooser, the inlined span, and `editing`; `pickTarget` (−25) |
-| **Phase 16A** | **about −80** | **+446 / −526** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 16A-1 The Seat | −7 | +281 | +274 |
+| 16A-2 The Table | −198 | +58 | −140 |
+| 16A-3 Cards | −331 | +125 | −206 |
+| **Phase 16A** | **−536** | **+464** | **−72** |
 
-- **The Rule:** *§Net Ledger*'s; elided removals are counted from their ranges, and a line changed in place counts on both sides.
+- **The Rule:** *§Plan Constraints › The Number*'s. 16A-1 is `ValueSeat.tsx` (+263) with `hideable`'s `HideFrom` and its callers' tokens; 16A-2 and 16A-3 spend the seat's call against the table's and Cards' intent maps, open state, held panes, editors, and value menu chains, `CardValue.tsx` leaving whole.
 - **Tests:** about +190 (`ValueSeat.test.tsx` about +180, the table's two pins, Cards' one); `connectionMenu.test.ts`' four literals change in place.
-- **Against the Findings:** the Findings give one figure, −170, for the whole of P16; this half spends the seat and recovers it from the table and Cards, and Phase 16B carries the rest (about −182, together about −269).
 
 ---
 
@@ -29573,17 +29620,17 @@ Each item is visible, classified, and carries a recommendation; the reconciliati
 
 ##### Line Total
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 16B-1 The Native Router | about −21 | +60 / −81: `ValuePickPresenter.tsx` (−48) and `pickSeq` (−1) against `MenuSeat` (+29), the narrower `runPropertyAction` (−5), and the live-row reads (+4) |
-| 16B-2 The Panel | about −186 | +39 / −225: the panel's intent map, `editRow`, `rowMenu` and `valueMenu` (−28), `currentOf`, `panelTarget`, editor, popover, picker, and imports against its seat host; `propertyMenu.ts`' `page-value` kind (−17); `fileValueMenu` (−11); `valueMenuTarget.ts` (−17); the `rename` intent (−1) |
-| 16B-3 No Fabricated Definition | about −6 | +53 / −59: `syntheticContextDef` and its imports against the column reads and `pickGroups`' definition-less arm |
-| 16B-4 The Drive | — | the drive, outside the count |
-| **Phase 16B** | **about −213** | **+152 / −365** |
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 16B-1 The Native Router | −73 | +57 | −16 |
+| 16B-2 The Panel | −232 | +41 | −191 |
+| 16B-3 No Fabricated Definition | −63 | +56 | −7 |
+| 16B-4 The Drive | 0 | 0 | 0 |
+| **Phase 16B** | **−368** | **+154** | **−214** |
 
-- **The Rule:** production source with imports, counted as the `+` and `-` lines of each AFTER; blank lines, comments, tests, documents, and drives out; elided removals counted from their HEAD ranges (`PropertyPanel.tsx:287-313`, `:319-346`, `:360-377`, `:405-414`, `:537-548`, `:549-567`, and the 23 import lines only they read), P13's and P15's where they rewrote them.
+- **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +75 written (the menu seat's cases, the router's and the table's pins, the panel's three, the `runFileMenuAction` cases) against about −120 (`ValuePickPresenter.test.tsx`, −57; `filePick.test.ts`' `fileValueMenu` cases, −41; `propertyMenu.test.ts`' `page-value` case, −19; `valueClick.test.ts`' `rename` row) and the panel's folded setup (−16); `PropertyPicker.pane.test.tsx`'s targets are rewritten in place. The drive apart: about +150.
-- **Both Halves Against the Findings:** about −300 for P16 (with P16A's −87) against the Findings' −170 (−120 to −220): the seat costs more than their +120 because it carries code the surfaces held, and the phase removes more than their −290 because `CardValue.tsx` leaves whole, one anchor rule replaces three closes, and the panel's row-menu vocabulary and file menu leave here rather than in P15.
+- **Both Halves:** P16 lands −286 (16A −72, 16B −214): the seat carries code the surfaces held, `CardValue.tsx` leaves whole, one anchor rule replaces three closes, and the panel's row-menu vocabulary and file menu leave here.
 
 ---
 
@@ -31176,7 +31223,7 @@ Where a line below names a construct one of those phases landed, the executor ke
 
 - [ ] `typeRows.test.ts` passes; `PropertyFrame.test.tsx` passes, its frame-level Date cases among them.
 - [ ] `git grep -nwE "(Number|DateTime|Link|Checkbox|File)Editor|number-editor|rowRhythm|CheckboxLook|NO_SETTINGS" -- Core UIX` and `git grep -nw "SETTINGS" -- Core/Properties` answer nothing (`Toolbar.tsx` and `personalization.ts` hold `SETTINGS` constants of their own); `git ls-files Core/Properties/Schema` lists neither the five editors, their three tests, nor `number-editor.css.ts`; `git grep -n "gap: 4" -- Core/Properties` answers nothing.
-- [ ] No row set `rowsFor` returns holds a `separator` row (`git grep -n "separator" -- Core/Properties/Schema/typeRows.tsx` answers nothing), so every direct child Task 17-6's rule spaces is a row or a `Reveal`.
+- [ ] No row set `rowsFor` returns holds a `separator` row (`git grep -n "kind: 'separator'" -- Core/Properties/Schema/typeRows.tsx` answers nothing), so every direct child Task 17-6's rule spaces is a row or a `Reveal`.
 - [ ] `git grep -nw "LINK_DISPLAY_OPTIONS" -- Core ':!*.test.*'` names its one definition in `displayLabels.ts` and its readers, `typeRows.tsx` and `Core/Settings/frames.ts`.
 - [ ] `git grep -n "useSession" -- Core/Properties/Schema/typeRows.tsx` answers nothing (the rows read no store); `git grep -n "'assets:chooseDir'" -- Core/Properties` names `typeRows.tsx` alone.
 - [ ] `npm run test -- engineGraph hostGraph` passes with neither graph reaching `typeRows.tsx`; the gates pass.
@@ -31638,25 +31685,23 @@ Where a line below names a construct one of those phases landed, the executor ke
 
 ##### Line Total
 
-Estimated from the AFTER blocks under *§Net Ledger*'s counting rule, moved lines on both sides; the Review Checkpoint's `view-delta` run measures it.
+| Task | Removed | Added | Net |
+|---|---|---|---|
+| 17-1 The ghost anchor | −18 | +14 | −4 |
+| 17-2 The rename slice | −16 | +5 | −11 |
+| 17-3 `paneDrop` to the kit, `fullOrderIndex`, the switches | −155 | +150 | −5 |
+| 17-4 `paneRows.tsx` | −47 | +48 | +1 |
+| 17-5 `OptionEditor` takes `def`, `OptionSlot.tsx` | −69 | +60 | −9 |
+| 17-6 The collapse-safe rhythm | −1 | +6 | +5 |
+| 17-7 The five editors become rows | −474 | +301 | −173 |
+| 17-8 The denominator | −2 | +2 | 0 |
+| 17-9 "Edit Icon" | −1 | +1 | 0 |
+| 17-10 The list on a vanished property | −17 | +6 | −11 |
+| 17-11 The drive | 0 | 0 | 0 |
+| **Phase 17 (O-5's Pass)** | **−800** | **+593** | **−207** |
+| *17-11's remedy, only if O-5's check fails* | *−1* | *+15* | *+14* |
 
-| Task | Net | Added / Removed |
-| --- | --- | --- |
-| 17-1 The ghost anchor | −3 | +14 / −17 |
-| 17-2 The rename slice | −10 | +5 / −15 |
-| 17-3 `paneDrop` to the kit, `fullOrderIndex`, the switches | −7 | +50 / −57 |
-| 17-4 `paneRows.tsx` | +2 | +43 / −41 |
-| 17-5 `OptionEditor` takes `def`, `OptionSlot.tsx` | −8 | +22 / −30 |
-| 17-6 The collapse-safe rhythm | +2 | +3 / −1 |
-| 17-7 The five editors become rows | −165 | +267 / −432 |
-| 17-8 The denominator | 0 | +2 / −2 |
-| 17-9 "Edit Icon" | 0 | +1 / −1 |
-| 17-10 The list on a vanished property | −9 | +6 / −15 |
-| 17-11 The drive | 0 | — |
-| **Phase 17, Estimated** | **about −198** | **+413 / −611** |
-| *17-11's remedy, only if O-5's check fails* | *+13* | *+13 / 0* |
-
-- **Against the Findings' −160 (−190 / +30):** about 38 lines further negative. Task 17-7 carries it: the five components, their five containers, and `number-editor.css.ts` (about −352) against `typeRows.tsx`' about 239, which reads P3's one Link format list rather than building its own, which Biome spreads over its long `pickerRow` calls and its import blocks, and the frame's `SETTINGS` record (about −66) against one `rowsFor` call and one container. Tasks 17-4 and 17-6 land small positives: `paneRows.tsx` repeats four imports its helpers need, and the rhythm's `globalStyle` replaces one `gap` line with three. The shared order row the Findings named is left out at its measured +28 (*Departures From the Findings*). The running total stays net-negative.
+- **The Rule:** *§Plan Constraints › The Number*'s. Task 17-7 deletes the five components, their five containers, and `number-editor.css.ts` against `typeRows.tsx`, which reads P3's one Link format list rather than building its own; Tasks 17-4 and 17-6 land small positives, since `paneRows.tsx` repeats imports its helpers need and the rhythm's `globalStyle` replaces one `gap` line with three. The shared order row the Findings named is left out at its measured +28 (*Departures From the Findings*).
 - **Tests:** about −75: the three editor tests (about −218) against `typeRows.test.ts` (about +117) and the frame's two new cases (about +32); `formatValue.test.ts` about −7; `store.test.tsx` and the harness −3; `paneDrop.test.ts` and the `fullOrderIndex` cases move with no net change. Against the Findings' about −40.
 - **Drive:** group 15 about +120 in `live-drive.mjs` and +12 in `MATRIX.md`, apart.
 
@@ -32303,7 +32348,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 | 18-8 Title sweep | 0 | — | 0 (titles in place) |
 | **Phase 18** | **0** | **about −50** | **net negative, measured by the executor** |
 
-- **The Rule:** production lines are source with imports, comments out, so the comment at `mutateRequest.ts:132` counts as none; documents and tests are counted apart and never offset production.
+- **The Rule:** *§Plan Constraints › The Number*'s; the comment at `mutateRequest.ts:132` counts as none, and documents and tests are counted apart and never offset production.
 - **Against the Findings:** the Findings price documents at about −40; closing three Issues entries in full puts the phase near −50.
 
 ---
@@ -32316,7 +32361,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 - **Confirmation:** every "watch it fail" test went red before its change and green after; every VERIFY ran and its output was read; every measurement (F3, K, 07-10, 02-10) and every read rule (07-17) recorded its outcome and applied it as *Planning Findings › §Measurement Rules* states; no check was left to a hand check.
 - **Continuity:** *§Reconciliation* is walked; the feature documents, the Issues entries, the scripts README, and the drive matrices read true (Phase 18); every Behavior Change a phase disclosed is tied to a decision or a ruled Last Call; every deviation is fixed or ruled on under *§Deviations*.
 - **Confidence:** the three gates are green from a clean checkout at HEAD, with `engineGraph.test.ts` and `hostGraph.test.ts` inside them; the test count moved only as the phases' *Tests* lines stated; each phase's measured delta sits in *§Net Ledger* beside its written figure, and any growth past it was reported before the next phase opened with what it bought; both neutral gates answered yes without ambiguity.
-- **Net-Negative:** the cumulative production delta in *§Net Ledger* is net-negative at every phase from Phase 1 on and at the final head.
+- **Net-Negative:** the cumulative production delta in *§Net Ledger* is net-negative at every phase from Phase 1 on and at the final head; the written cumulative's thinnest points are Phase 1's −136 and Phase 12's head at −155 (about −81 on F3's Fail), after the four net-positive phases before it.
 - **No New Issues:** the work files no Issues entry, compared by entry title, since the index script renumbers every heading after Phase 18's three closures: no title in `.claude/IssuesPM.md` at HEAD is missing at BASELINE (`diff <(git show BASELINE:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort) <(git show HEAD:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort)` shows no `>` line) apart from I-032's and I-061's titles, which Task 18-4 narrows in place, and any entry another session's commit filed, named in the report by its commit; Task 18-4's title diff over its own commit holds as its VERIFY states. I-076's and I-077's entries, under whatever numbers the index script gives them, are the only deferrals.
 - **Adherence:** *§Adherence Scoreboard* reads its After column true on the final head, each row's check re-run there rather than carried from a phase.
 
@@ -32376,7 +32421,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Investigation**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Investigation**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Planning Findings › §Last Calls* or *§Nathan's Calls* | *Planning Findings* |
-| **Directive (10-22-2026)** | Net production delta | — | about −1,236 | *§Net Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | about −834 written on Biome-formatted code (about −767 on F3's Fail), weaker than the −1,236 the Ledger first gave; seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail), and on F3's Fail the cumulative at Phase 12's head is about −81 | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -32460,30 +32505,30 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 
 | Phase | Written Removed | Written Added | Written Net | Actionable | Cumulative |
 |---|---|---|---|---|---|
-| 1 | −296 | +155 | −141 | | |
-| 2 | −287 | +235 | −52 | | |
-| 3 | −264 | +235 | −29 | | |
-| 4A | −419 | +380 | −39 | | |
-| 4B | −16 | +23 | +7 | | |
-| 5 | −125 | +70 | −55 | | |
-| 6 | −193 | +193 | 0 | | |
-| 7 | −382 | +227 | −155 | | |
-| 8 | −213 | +140 | −73 | | |
-| 9 | −54 | +43 | −11 | | |
-| 10 | −255 | +210 | −45 | | |
-| 11A | −405 | +395 | −10 | | |
-| 11B | −130 | +128 | −2 | | |
-| 12 | −106 | +199 | +93 | | |
-| 13 | −291 | +218 | −73 | | |
-| 14 | −550 | +438 | −112 | | |
-| 15 | −205 | +128 | −77 | | |
-| 16A | −520 | +433 | −87 | | |
-| 16B | −309 | +127 | −182 | | |
-| 17 | −611 | +418 | −193 | | |
+| 1 | −300 | +164 | −136 | | |
+| 2 | −305 | +253 | −52 | | |
+| 3 | −384 | +368 | −16 | | |
+| 4A | −528 | +481 | −47 | | |
+| 4B | −18 | +29 | +11 | | |
+| 5 | −151 | +117 | −34 | | |
+| 6 | −262 | +280 | +18 | | |
+| 7 | −617 | +465 | −152 | | |
+| 8 | −413 | +371 | −42 | | |
+| 9 | −16 | +9 | −7 | | |
+| 10 | −391 | +402 | +11 | | |
+| 11A | −598 | +690 | +92 | | |
+| 11B | −190 | +284 | +94 | | |
+| 12 | −160 | +265 | +105 | | |
+| 13 | −642 | +545 | −97 | | |
+| 14 | −516 | +462 | −54 | | |
+| 15 | −210 | +175 | −35 | | |
+| 16A | −536 | +464 | −72 | | |
+| 16B | −368 | +154 | −214 | | |
+| 17 | −800 | +593 | −207 | | |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
-**Written Total:** about −5,631 / +4,395, net about **−1,236**. **F3's Fail Outcome:** Phase 6 lands about +68 in place of 0, and Task 13-8's `patchedValues` lands at about 0, so the written total becomes about **−1,167**; the cumulative stays net-negative at every phase either way.
+**Written Total:** −7,405 / +6,571, net about **−834**, on each measurement's first outcome. The written cumulative is net-negative at every phase: thinnest at Phase 1's −136, it reaches −457 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+11, +92, +94, +105) leave it at −155 at Phase 12's head, where the Mid-Plan Neutral Gate's range ends. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +92 (−132 / +224), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes about **−767**, and the cumulative is thinnest at Phase 12's head, about −81. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +7 and the total about −792. **O-5's Fail Outcome:** Task 17-11's remedy adds +14 (−1 / +15), so Phase 17 lands −193 and the total about −820. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is about −711, and the cumulative stays net-negative at every phase, thinnest at Phase 12's head.
 
 #### Reconciliation
 
