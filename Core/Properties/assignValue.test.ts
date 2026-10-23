@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { RefObject } from 'react'
 import type { PageFrontmatter } from '../Nexus/schemas'
+import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
@@ -31,6 +32,15 @@ const rowOf = (fm: Record<string, unknown>): ViewRow => ({
   modifiedAt: null,
 })
 
+const BEFORE = 'Tag:\n  - red\n'
+/** A value write's reply, carrying the record that takes it back. */
+const recorded = (req: MutateRequest): MutateOutcome =>
+  req.op === 'setProperty' || req.op === 'setContext'
+    ? {
+        undo: { op: 'putBack', entries: [{ file: req.path, fieldId: 'prop_tag', before: BEFORE }] },
+      }
+    : {}
+
 let apply: Mock<ValueWriter['apply']>
 let mutate: Mock<ValueWriter['mutate']>
 let row: ViewRow
@@ -39,7 +49,7 @@ let writer: RefObject<ValueWriter | null>
 
 beforeEach(() => {
   apply = vi.fn()
-  mutate = vi.fn(async () => ({}))
+  mutate = vi.fn(async (req: MutateRequest) => recorded(req))
   row = rowOf({ id: 'page1', Tag: ['red'] })
   live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
@@ -69,14 +79,14 @@ describe('assignValue', () => {
     })
   })
 
-  it('records a revert that restores the value the file held', async () => {
+  it('undo sends the record the write’s reply carried, at the row’s current path', async () => {
     await assignValue(
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
       { kind: 'select', value: 'blue' },
     )
-    row = rowOf({ id: 'page1', Tag: ['blue'] })
+    row = { ...rowOf({ id: 'page1', Tag: ['blue'] }), path: '/nexus/Notes/Moved.md' }
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith(
       'page1',
@@ -85,15 +95,16 @@ describe('assignValue', () => {
       undefined,
     )
     expect(mutate).toHaveBeenLastCalledWith({
-      op: 'restoreValue',
-      path: row.path,
-      propertyId: 'prop_tag',
-      held: ['red'],
+      op: 'putBack',
+      entries: [{ file: '/nexus/Notes/Moved.md', fieldId: 'prop_tag', before: BEFORE }],
     })
   })
 
-  it('reverts a key the file didn’t hold as a restore of nothing, and pushes no second entry', async () => {
+  it('a record without `before` sends that entry as it came, and pushes no second entry', async () => {
     row = rowOf({ id: 'page1' })
+    mutate.mockResolvedValueOnce({
+      undo: { op: 'putBack', entries: [{ file: row.path, fieldId: 'prop_tag' }] },
+    })
     await assignValue(
       writer,
       row,
@@ -104,10 +115,8 @@ describe('assignValue', () => {
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything(), undefined)
     expect(mutate).toHaveBeenLastCalledWith({
-      op: 'restoreValue',
-      path: row.path,
-      propertyId: 'prop_tag',
-      held: undefined,
+      op: 'putBack',
+      entries: [{ file: row.path, fieldId: 'prop_tag' }],
     })
     expect(undoValue(null)).toBe(false)
   })
@@ -129,8 +138,13 @@ describe('assignValue', () => {
     )
   })
 
-  it('lays the Context patch beside the frontmatter and mutates the context', () => {
-    assignValue(
+  it('lays the Context patch beside the frontmatter and mutates the context', async () => {
+    const record: MutateRequest = {
+      op: 'putBack',
+      entries: [{ file: row.path, fieldId: 'ctx_areas' }],
+    }
+    mutate.mockResolvedValueOnce({ undo: record })
+    await assignValue(
       writer,
       row,
       { id: 'ctx_areas', kind: 'context' },
@@ -148,6 +162,9 @@ describe('assignValue', () => {
       contextId: 'ctx_areas',
       spaceIds: ['space1'],
     })
+    mutate.mockClear()
+    expect(undoValue(null)).toBe(true)
+    expect(mutate.mock.calls).toEqual([[record]])
   })
 
   it('writes nothing without a live writer, and nothing for an unknown property', () => {
@@ -175,15 +192,17 @@ describe('assignValue', () => {
     expect(mutate).not.toHaveBeenCalled()
   })
 
-  it('a refused write records nothing to undo', async () => {
-    mutate.mockResolvedValueOnce(null)
-    await assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
-    )
-    expect(undoValue(null)).toBe(false)
+  it('a refused write records nothing to undo, and a reply carrying no record leaves nothing to undo', async () => {
+    for (const reply of [null, {}]) {
+      mutate.mockResolvedValueOnce(reply)
+      await assignValue(
+        writer,
+        row,
+        { id: 'prop_tag', kind: 'property' },
+        { kind: 'select', value: 'blue' },
+      )
+      expect(undoValue(null)).toBe(false)
+    }
   })
 
   it('a sweep undoes as one step, even though its writes land later', async () => {
@@ -243,8 +262,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     mutate.mockClear()
     expect(undoValue(null)).toBe(true)
     await settled()
-    expect(mutate).toHaveBeenCalledTimes(1)
-    expect(remembered()).toEqual([])
+    expect(mutate.mock.calls.map(([req]) => req.op)).toEqual(['putBack'])
   })
 
   it('a new spelling of the alias it showed is remembered', async () => {

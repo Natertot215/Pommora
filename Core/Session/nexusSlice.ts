@@ -1,6 +1,7 @@
 import {
   clearNotification,
   notifyReport,
+  notifyRetry,
   warnCascade,
   notifyUnreadable,
   reportRefusal,
@@ -247,14 +248,28 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (get().tree?.nexus.id !== held?.nexus.id) return null
       const res = await dialer().ask('mutate', req)
       if (!res.ok) {
-        if (!quiet) reportRefusal(res)
+        if (quiet) return null
+        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
+        if (
+          (req.op === 'setProperty' || req.op === 'setContext') &&
+          res.error.code === 'operation-failed'
+        )
+          notifyRetry(res.error.message, () => void get().mutate(req))
+        else reportRefusal(res)
         return null
       }
       if (!quiet) {
         if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
-        const { cascade, retry } = res.value
+        const { cascade, retry, missed } = res.value
         if (req.op !== 'delete' && cascade)
-          warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
+          warnCascade(
+            cascade,
+            retry
+              ? () => void get().mutate(retry)
+              : missed
+                ? () => void get().mutate({ op: 'putBack', entries: missed })
+                : undefined,
+          )
         if (changesStores(req)) storesChanged.emit()
       }
       // The host pushed what this write changed before it replied, so the tree already holds it.

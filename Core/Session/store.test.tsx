@@ -1172,6 +1172,48 @@ describe('store — the mutate rail', () => {
     await note?.action?.run()
     await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(retry))
   })
+
+  it('an undo that missed a file offers Try Again, which sends only the missed entries', async () => {
+    const landed = { file: 'Notes/A.md', fieldId: 'p1', before: 'P: 1\n' }
+    const missed = { file: 'Notes/B.md', fieldId: 'p1', before: 'P: 2\n' }
+    channels.mutate = vi.fn(async () =>
+      ok({
+        cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.' },
+        missed: [missed],
+      }),
+    )
+    clearNotification()
+    await useSession.getState().mutate({ op: 'putBack', entries: [landed, missed] })
+    const note = currentNotification()
+    expect(note?.message).toBe('Couldn’t update 1 Item.')
+    expect(note?.action?.label).toBe('Try Again')
+    channels.mutate = vi.fn(async () => ok({}))
+    await note?.action?.run()
+    await vi.waitFor(() =>
+      expect(channels.mutate).toHaveBeenCalledWith({ op: 'putBack', entries: [missed] }),
+    )
+  })
+
+  it('a value write refused by its file offers Try Again, which sends it again', async () => {
+    const req = {
+      op: 'setProperty',
+      path: 'Notes/A.md',
+      propertyId: 'p1',
+      value: { kind: 'number', value: 5 },
+    } as const
+    channels.mutate = vi.fn(async () => ({
+      ok: false as const,
+      error: { code: 'operation-failed' as const, message: 'Couldn’t write “A”.' },
+    }))
+    clearNotification()
+    await useSession.getState().mutate(req)
+    const note = currentNotification()
+    expect(note?.message).toBe('Couldn’t write “A”.')
+    expect(note?.action?.label).toBe('Try Again')
+    channels.mutate = vi.fn(async () => ok({}))
+    await note?.action?.run()
+    await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(req))
+  })
 })
 
 describe('store — a Nexus switch lands every owed save first', () => {
