@@ -1116,7 +1116,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 2-7 · `formatBucketLabel` moves into `group.ts`
   - [x] Task 2-8 · The Properties Drive opens with group 1
   - [x] Review Checkpoint
-  - [ ] Closeout P1–P2 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P1–P2 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 3** — Type Records and Looks
   - [ ] Task 3-1 · The link-display vocabulary moves into `linkValue.ts`
   - [ ] Task 3-2 · The pane targets move to `Core/Views/paneTargets.ts`
@@ -34734,7 +34734,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | Phase | Written Removed | Written Added | Written Net | Actionable | Cumulative |
 |---|---|---|---|---|---|
 | 1 | −300 | +164 | −136 | −300 / +164 / −136 | −136 |
-| 2 | −305 | +253 | −52 | −294 / +242 / −52 | −188 |
+| 2 | −305 | +253 | −52 | −312 / +249 / −63 | −199 |
 | 3 | −384 | +369 | −15 | | |
 | 4A | −531 | +484 | −47 | | |
 | 4B | −18 | +29 | +11 | | |
