@@ -1,14 +1,24 @@
-import type { PageFrontmatter } from '../Nexus/schemas'
-
-export const VIEW_BUTTONS = ['icon', 'labeled'] as const
-export type ViewButton = (typeof VIEW_BUTTONS)[number]
-export const VIEW_STYLES = ['dropdown', 'toolbar'] as const
-export type ViewStyle = (typeof VIEW_STYLES)[number]
+import { localIso } from '@pommora/uix/Utilities/pad'
+import { ID_KEY } from '../Nexus/identityMark'
+import { idTime } from '../Nexus/ids'
+import { type PageFrontmatter, pageFrontmatter } from '../Nexus/schemas'
 
 export interface PageValues {
   frontmatter: PageFrontmatter
   createdAt: string | null
   modifiedAt: string | null
+}
+
+export function pageValuesOf(
+  id: string,
+  fm: Record<string, unknown>,
+  mtimeMs: number | null,
+): PageValues {
+  return {
+    frontmatter: pageFrontmatter.parse({ ...fm, [ID_KEY]: id }),
+    createdAt: localIso(idTime(id)),
+    modifiedAt: localIso(mtimeMs),
+  }
 }
 
 export type RowValues = PageValues & Pick<ViewRow, 'contextValues'>

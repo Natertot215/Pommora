@@ -3,7 +3,7 @@
 import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { landValue, memberKey } from '../Files/rootValues'
+import { landValue, memberKey, namesValue } from '../Files/rootValues'
 import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
@@ -26,7 +26,6 @@ import {
   keepingForeignWords,
   spelledNumber,
 } from '../Properties/propertyValue'
-import { namesValue } from '../Properties/pageValue'
 import { assignedDefs } from '../Properties/assignment'
 import { liveTreeOf } from './liveTree'
 import { owningCollection } from './treePatch'

@@ -2,11 +2,10 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
-import { editHeldList, rekeyHeld, stripKeys } from '../Files/rootValues'
+import { editHeldList, editList, rekeyHeld, stripKeys } from '../Files/rootValues'
 import { byKey, optionsOf, PROPERTY_TYPES } from '../Properties/properties'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { spellingsOf } from '../Properties/keyFormat'
-import { editList } from '../Properties/pageValue'
 import { contextKey, parseContextKey } from '../Contexts/contexts'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { keyRefusal } from '../Properties/validation'

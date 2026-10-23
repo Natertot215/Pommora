@@ -3,14 +3,14 @@ import { uniqueOptionGroups, validateOptionValues } from './validation'
 import { queryKeyHolders } from '../Index/contentIndex'
 import {
   governedReach,
+  type Rewrite,
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
   unsweptLine,
 } from '../Nexus/governedSweep'
-import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
-import { editHeldList, memberKey } from '../Files/rootValues'
+import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { findOption, optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
@@ -211,6 +211,11 @@ async function resolveForCascade(
   const option = findOption(found.value, label)
   return option ? ok({ def: found.value, key: option.key }) : NO_OPTION
 }
+
+export const valueEditRewrite =
+  (def: Pick<PropertyDefinition, 'key'>, edit: ValueEdit): Rewrite =>
+  (raw) =>
+    editHeldList(raw, def.key, (held) => editList(held, edit))
 
 async function valueEditPlan(
   root: string,

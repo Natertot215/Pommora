@@ -1,5 +1,5 @@
 import type { ActionItem } from './menuModel'
-import type { ViewButton, ViewStyle } from '../Views/viewRow'
+import type { ViewButton, ViewStyle } from '../Nexus/schemas'
 import { iconLabel, viewsLabel } from './toggleLabels'
 
 type ViewStyleAction = 'style-dropdown' | 'style-toolbar'

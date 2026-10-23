@@ -3,8 +3,12 @@
 import { z } from 'zod'
 import { eachOf, entriesOf, numberCheck } from '../Files/decoders'
 import { CROP_POINT, CROP_ZOOM } from '../Assets/cropGeometry'
-import { VIEW_BUTTONS, type ViewButton } from '../Views/viewRow'
 import { ID_KEY } from './identityMark'
+
+export const VIEW_BUTTONS = ['icon', 'labeled'] as const
+export type ViewButton = (typeof VIEW_BUTTONS)[number]
+export const VIEW_STYLES = ['dropdown', 'toolbar'] as const
+export type ViewStyle = (typeof VIEW_STYLES)[number]
 
 const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
 

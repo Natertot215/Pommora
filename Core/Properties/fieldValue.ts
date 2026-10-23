@@ -4,7 +4,6 @@ import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import { type ColumnType, FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from './properties'
 import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
-import { wikiTitle } from '../Connections/linkValue'
 
 export function declaredType(
   propertyId: string,
@@ -56,5 +55,3 @@ export function resolveFieldValue(
 
 // MEMOIZED per frontmatter object and definition: the decode was the measured grouped-view hot spot. A value write swaps the frontmatter and a definition edit mints a new definition, so entries self-expire.
 const resolvedByFm = new WeakMap<PageFrontmatter, WeakMap<PropertyDefinition, PropertyValue>>()
-
-export const fileName = (reference: string): string => wikiTitle(reference) ?? reference

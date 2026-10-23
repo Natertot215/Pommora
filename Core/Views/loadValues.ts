@@ -1,6 +1,5 @@
 import { join } from '../Paths/posix'
-import type { PageValues } from './viewRow'
-import { pageValuesOf } from './pageValues'
+import { type PageValues, pageValuesOf } from './viewRow'
 import { readPageRecord } from '../Nexus/readNexus'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { containerAt, pagePathsIn } from '../Nexus/treePatch'

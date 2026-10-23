@@ -1,6 +1,6 @@
 import { basename, join, isMarkdownFile } from '../Paths/posix'
 import { contextKey } from './contexts'
-import { namesValue, stripList } from '../Properties/pageValue'
+import { namesValue, stripList } from '../Files/rootValues'
 import { contextWorldOf, type ContextWorld } from './contextResolve'
 import {
   pageWorldOf,

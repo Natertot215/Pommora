@@ -9,7 +9,7 @@ import {
   isGroup,
   ruleOperands,
 } from '../filterRules'
-import { declaredType } from '../../Properties/value'
+import { declaredType } from '../../Properties/fieldValue'
 import { groupKeyToValue } from '../reassign'
 import { prepareGroup, prepareRule } from './filter'
 import type { ViewRow } from '../viewRow'

@@ -32,7 +32,7 @@ import { useStyleFor } from '../Host/useColumnStyles'
 import { useSetting } from '../../Session/store'
 import { formatDate, readDate } from '../../Properties/formatValue'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
-import { declaredType } from '../../Properties/value'
+import { declaredType } from '../../Properties/fieldValue'
 import { checkboxWord } from '../../Properties/propertyValue'
 import {
   PropertyOptionRows,

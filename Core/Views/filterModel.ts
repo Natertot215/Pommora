@@ -11,7 +11,7 @@ import {
 } from './filterRules'
 import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
-import { declaredType } from '../Properties/value'
+import { declaredType } from '../Properties/fieldValue'
 import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget, schemaTargets } from './paneTargets'
 
 export type DecodedFilter =
