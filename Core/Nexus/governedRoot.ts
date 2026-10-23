@@ -87,11 +87,19 @@ export function writtenSpelling(next: unknown, raw: unknown): unknown {
 }
 
 // A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
-/** `raw` read and written back through `def`, spelled as `raw` spells it; undefined when it reads as nothing or, under `frozen`, names a page gone. */
-export function reencode(def: PropertyDefinition, raw: unknown, frozen?: Frozen): unknown {
+/** `raw` read and written back through `def`, spelled as `raw` spells it, `next` undefined when it reads as nothing or, under `frozen`, names a page gone; a live read keeps a Multi-Select's words no option names after its own. `listed` when the value is a list. */
+export function reencode(
+  def: PropertyDefinition,
+  raw: unknown,
+  frozen?: Frozen,
+): { next: unknown; listed: boolean } {
   const value = decodeValue(def, raw)
+  const listed = 'value' in value && Array.isArray(value.value)
   const gone = frozen && value.kind === 'link' && gonePageEntry(value.value, frozen) !== null
-  return gone || isBlankValue(value) ? undefined : writtenSpelling(encodeValue(def, value), raw)
+  if (gone || isBlankValue(value)) return { next: undefined, listed }
+  const encoded = encodeValue(def, value)
+  const kept = frozen ? encoded : keepingForeignWords(def, encoded, raw)
+  return { next: writtenSpelling(kept, raw), listed }
 }
 
 interface Reconciled {
@@ -125,14 +133,15 @@ export function reconcileGovernedRoot(
       continue
     }
     let next: unknown
-    if ('def' in governor) next = reencode(governor.def, raw, frozen)
+    let listed = true
+    if ('def' in governor) ({ next, listed } = reencode(governor.def, raw, frozen))
     else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
       const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
-    // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, for the user to settle.
-    if (!frozen && (next === undefined || memberCount(next) < memberCount(raw))) {
+    // A live reconcile never blanks a value, and never drops a list member it can't resolve: either stays as written for the user to settle. A single value lands as it reads.
+    if (!frozen && (next === undefined || (listed && memberCount(next) < memberCount(raw)))) {
       out[key] = raw
       continue
     }
