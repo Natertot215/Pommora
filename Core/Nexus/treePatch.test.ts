@@ -8,6 +8,7 @@ import {
   containerTrailById,
   containerTrailWhere,
   findContainerById,
+  holderSchema,
   moveNodeInTree,
   NO_SCHEMA,
   owningCollection,
@@ -244,6 +245,14 @@ describe('owningCollection', () => {
     expect(containerSchema(t, t.collections[1])).toEqual([])
     expect(containerSchema(tree(), 'Tasks/T.md')).toBe(NO_SCHEMA)
     expect(containerSchema(null, 'Notes/A.md')).toBe(NO_SCHEMA)
+  })
+
+  it('a Space holds the whole registry, and a path its Collection’s schema', () => {
+    const t = withContexts()
+    const home = t.contexts[0].spaces[0]
+    expect(holderSchema(t, home)).toBe(t.config.registry)
+    expect(holderSchema(t, 'Notes/A.md')).toBe(containerSchema(t, 'Notes/A.md'))
+    expect(holderSchema(null, home)).toBe(NO_SCHEMA)
   })
 })
 

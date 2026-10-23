@@ -29,7 +29,7 @@ import {
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
 import { pageRowOf, spaceRowOf } from '../Views/pageRow'
-import { containerSchema, owningCollection } from '../Nexus/treePatch'
+import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './fieldValue'
@@ -156,10 +156,7 @@ export function PropertyPanel({
   }, [nexusId])
 
   const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
-  const schema = useMemo(
-    () => (isSpace ? (tree?.config.registry ?? []) : containerSchema(tree, path)),
-    [tree, path, isSpace],
-  )
+  const schema = useMemo(() => holderSchema(tree, spaceNode ?? path), [tree, spaceNode, path])
   const identity = tree && identityOf(tree)
   const ctx = useMemo<ValueContext | null>(
     () =>
