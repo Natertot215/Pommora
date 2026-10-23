@@ -1,8 +1,8 @@
 import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { ColumnLook } from '../columnStyles'
-import type { PropertyDefinition, PropertyType } from '../properties'
-import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
+import type { PropertyDefinition, PropertyType, SelectOption } from '../properties'
+import { OptionChip } from '../Cells/OptionChip'
 import { ghostAnchorProps, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { compactTitle } from './option-row.css'
@@ -17,7 +17,7 @@ export function OptionSlot({
   onToggleEditing,
   onOpenMenu,
 }: {
-  option: OptionChipData
+  option: SelectOption
   type: PropertyType
   look: ColumnLook | undefined
   def: Pick<PropertyDefinition, 'status_groups'>
@@ -29,8 +29,8 @@ export function OptionSlot({
   const rowEl = useLineEl()
   return (
     <LineRow
-      id={option.label}
-      {...ghostAnchorProps(ghost, option.label)}
+      id={option.id}
+      {...ghostAnchorProps(ghost, option.id)}
       className={s.optionRow}
       data-reveal-host=""
       onContextMenu={(e) => {
@@ -50,7 +50,7 @@ export function OptionSlot({
         className={s.optionEditButton}
         data-reveal-held={editing || undefined}
         aria-label="Edit Option"
-        onClick={() => onToggleEditing(rowEl(option.label))}
+        onClick={() => onToggleEditing(rowEl(option.id))}
       />
     </LineRow>
   )

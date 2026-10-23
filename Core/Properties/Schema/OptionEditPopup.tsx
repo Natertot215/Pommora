@@ -67,6 +67,7 @@ export function OptionEditPopup({
               <Icon name={optionGlyph(type, option, def)} size="control" />
             </button>
             <EditableInput
+              key={option.label}
               initial={option.label}
               boxed
               autoFocus={false}

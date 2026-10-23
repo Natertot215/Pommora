@@ -7,8 +7,7 @@ import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
-import type { FormatChange } from '../../Properties/keyFormat'
-import type { CountedChange } from '../../Properties/properties'
+import type { CountedChange, SelectOption } from '../../Properties/properties'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -174,20 +173,22 @@ const askDestroyProperty = (propertyId: string, label: string): Promise<boolean>
     tone: 'destructive',
   }))
 
-export const askDeleteOption = (propertyId: string, label: string): Promise<boolean> =>
-  askHolding(propertyId, { of: 'option', label }, (held) => ({
-    message: `Delete “${label}”?`,
+type AskedOption = Pick<SelectOption, 'id' | 'label'>
+
+export const askDeleteOption = (propertyId: string, option: AskedOption): Promise<boolean> =>
+  askHolding(propertyId, { of: 'option', optionId: option.id }, (held) => ({
+    message: `Delete “${option.label}”?`,
     detail: `The option is deleted from the property${held ? ` and its value stripped from ${itemCount(held)}` : ''}.`,
     action: 'Delete',
     tone: 'destructive',
   }))
 
-export const askClearOption = (propertyId: string, label: string): Promise<boolean> =>
+export const askClearOption = (propertyId: string, option: AskedOption): Promise<boolean> =>
   askHolding(
     propertyId,
-    { of: 'option', label },
+    { of: 'option', optionId: option.id },
     (held) => ({
-      message: `Clear “${label}” from ${itemCount(held)}?`,
+      message: `Clear “${option.label}” from ${itemCount(held)}?`,
       detail: 'The option stays; only its assigned values are removed.',
       action: 'Clear',
       tone: 'destructive',
@@ -195,13 +196,20 @@ export const askClearOption = (propertyId: string, label: string): Promise<boole
     true,
   )
 
-export const askFormatChange = (propertyId: string, change: FormatChange): Promise<boolean> =>
+/** The one question before a change that rewrites a written key or option word in files: it counts what the change's sweep would rewrite, so a change that moves no key, its display label alone, counts nothing and asks nothing. */
+export const askRewrite = (
+  propertyId: string,
+  change: Extract<CountedChange, { of: 'format' | 'rename' }>,
+): Promise<boolean> =>
   askHolding(
     propertyId,
-    { of: 'format', change },
+    change,
     (held) => ({
       message: `This action would rewrite metadata in ${itemCount(held)}.`,
-      detail: `Each ${'key_format' in change ? 'key' : 'value'} changes to the new format; its display label stays the same.`,
+      detail:
+        change.of === 'rename'
+          ? `Each ${change.optionId === undefined ? 'key' : 'value'} changes to the new name.`
+          : `Each ${'key_format' in change.change ? 'key' : 'value'} changes to the new format; its display label stays the same.`,
       action: 'Rewrite',
       tone: 'positive',
     }),

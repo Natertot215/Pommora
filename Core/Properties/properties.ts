@@ -179,11 +179,13 @@ export const propertyDraft = looseDecoder(
 )
 export type PropertyDraft = z.infer<typeof propertyDraft>
 
-/** The change a confirmation counts the holders of before it asks: the property's delete, an option's strip, or a format's rewrite. */
+/** The change a confirmation counts the holders of before it asks: the property's delete, an option's strip, a format's rewrite, or a rename's. */
 export const countedChange = z.discriminatedUnion('of', [
   z.object({ of: z.literal('property') }),
-  z.object({ of: z.literal('option'), label: z.string() }),
+  z.object({ of: z.literal('option'), optionId: z.string() }),
   z.object({ of: z.literal('format'), change: formatChange }),
+  // A property's rename, or with `optionId` an option's: what the new label's key would rewrite.
+  z.object({ of: z.literal('rename'), label: z.string(), optionId: z.string().optional() }),
 ])
 export type CountedChange = z.infer<typeof countedChange>
 
