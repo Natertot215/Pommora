@@ -12,7 +12,7 @@ import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
-import { removeProperty } from './removeProperty'
+import { unassignProperty } from './unassignProperty'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { refreshTree } from '../Nexus/liveTree'
@@ -67,7 +67,7 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
 
   // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its cache block intact, pB assigned.
   for (let round = 0; round < 20; round++) {
-    await Promise.all([removeProperty(root, notes, pC), assignProperty(root, notes, pB)])
+    await Promise.all([unassignProperty(root, notes, pC), assignProperty(root, notes, pB)])
     const sc = (await readJsonObject(sidecarPath(notes, 'collection'))) as Record<string, unknown>
     const assigned = (sc.properties as string[]) ?? []
     const cached = (
@@ -79,7 +79,7 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
     const fm = splitFrontmatter(await readFile(page.value.path, 'utf8'))
     expect(fm.Gone).toBeUndefined()
     await assignProperty(root, notes, pC)
-    await removeProperty(root, notes, pB)
+    await unassignProperty(root, notes, pB)
   }
 })
 
@@ -102,7 +102,7 @@ describe('a re-assign puts a cached value back', () => {
     if (!page.ok) throw new Error('setup failed')
     await writeFile(page.value.path, `---\nID: ${page.value.id}\n${cached}\n---\nb`)
     await refreshTree(root)
-    expect((await removeProperty(root, notes, made.value.id)).ok).toBe(true)
+    expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
     await writeFile(page.value.path, `---\nID: ${page.value.id}${held}\n---\nb`)
     expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
     return splitFrontmatter(await readFile(page.value.path, 'utf8'))
@@ -152,7 +152,7 @@ describe('a re-assign puts a cached value back', () => {
     await assignProperty(root, notes, made.value.id)
     const old = await archivedPage('Status: hi\n')
     await refreshTree(root)
-    expect((await removeProperty(root, notes, made.value.id)).ok).toBe(true)
+    expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
     expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toBeUndefined()
     expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
     expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toEqual(['hi'])

@@ -6,6 +6,7 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
+import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
@@ -13,7 +14,6 @@ import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, listBundles, mintBundle } from '../Bundles/bundle'
 import { readRecord, writeRecord } from '../Bundles/record'
-import { writePropertyBundle } from '../Properties/deleteProperty'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -660,8 +660,8 @@ describe('the bundle records the page each outbound link named', () => {
   })
 })
 
-describe('writePropertyBundle — the artifact-less shape', () => {
-  it('de-collides within one timestamp — a same-stamp double delete keeps both records', async () => {
+describe('a property bundle', () => {
+  it('two deletes in one stamp keep both records', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
     try {
@@ -671,8 +671,8 @@ describe('writePropertyBundle — the artifact-less shape', () => {
         def: { id: 'prop_x' },
         values: { a: 1 },
       }
-      const first = await writePropertyBundle(root, record)
-      const second = await writePropertyBundle(root, { ...record, values: { a: 2 } })
+      const first = await seedPropertyBundle(root, record)
+      const second = await seedPropertyBundle(root, { ...record, values: { a: 2 } })
       expect(second).not.toBe(first)
       expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
       expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
@@ -691,7 +691,7 @@ describe('listBundles — what the trash offers', () => {
     )
     const [dir] = await bundleDirs(join(root, '.trash'))
     await rm(join(dir, 'Alpha.md'), { force: true })
-    await writePropertyBundle(root, {
+    await seedPropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
       def: { id: 'prop_x' },
@@ -1613,7 +1613,7 @@ describe('restore — the gate-four pins', () => {
   })
 
   it('a property whose definition can no longer stand does not return, and its record stays', async () => {
-    const bundle = await writePropertyBundle(root, {
+    const bundle = await seedPropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
       def: { id: 'prop_x' },

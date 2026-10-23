@@ -46,6 +46,22 @@ describe('typeIds', () => {
 })
 
 describe('propertyDefinition', () => {
+  it('a stored denominator of zero or less reads as unset, and the definition stays admitted', () => {
+    const denominator = (n: number) => {
+      const r = propertyDefinition.safeParse({
+        id: 'p',
+        key: 'N',
+        type: 'number',
+        number_denominator: n,
+      })
+      expect(r.success).toBe(true)
+      return r.data?.number_denominator
+    }
+    expect(denominator(0)).toBeUndefined()
+    expect(denominator(-4)).toBeUndefined()
+    expect(denominator(8)).toBe(8)
+  })
+
   it('round-trips a fully-specified def and preserves a foreign key', () => {
     const def = {
       id: 'prop_01H',

@@ -20,7 +20,7 @@ import type { KeyFormat } from './keyFormat'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
-import { removeProperty } from './removeProperty'
+import { unassignProperty } from './unassignProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -1030,7 +1030,7 @@ describe('the option cascades reach the Collection caches', () => {
     const [, p2, p3] = pages.map((p) => p.id)
     expect(await clearOption(root, id, 'A')).toEqual(ok(null))
     expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
-    expect((await removeProperty(root, col, id)).ok).toBe(true)
+    expect((await unassignProperty(root, col, id)).ok).toBe(true)
     expect((await assignProperty(root, col, id)).ok).toBe(true)
     for (const p of pages) expect(await readFile(p.path, 'utf8')).not.toMatch(/\bA\b/)
   })

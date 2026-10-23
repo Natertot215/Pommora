@@ -4,13 +4,13 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
+import { seedPropertyBundle } from '../Testing/fixtures'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
 import { readRecord } from '../Bundles/record'
-import { writePropertyBundle } from './deleteProperty'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
@@ -216,7 +216,7 @@ describe('delete replay', () => {
     // The crash state: bundle minted, journal written, page A stripped, then death — the def, the assignment, and page B all still standing.
     const crashed = await seedNexus()
     const def = (await readRegistry(crashed)).defs.prop_s
-    await writePropertyBundle(crashed, {
+    await seedPropertyBundle(crashed, {
       entity: 'property',
       id: 'prop_s',
       def,

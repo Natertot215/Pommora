@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { frozenWorld } from './holdings'
+import { frozenWorld } from './trashedCopies'
 import { buildPageIndex } from '../Connections/pageIndex'
 
 describe('frozenWorld', () => {

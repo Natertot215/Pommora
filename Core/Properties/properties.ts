@@ -171,7 +171,7 @@ const propertyDefinitionFields = z.object({
     .optional()
     .catch(undefined),
   number_fraction: z.boolean().optional().catch(undefined),
-  number_denominator: z.number().optional().catch(undefined),
+  number_denominator: z.number().positive().optional().catch(undefined),
   // Relative to the asset root, so re-pointing the root moves every property's folder with it. Governs new writes only — files already on disk keep resolving where they sit.
   file_directory: z.string().optional().catch(undefined),
 })

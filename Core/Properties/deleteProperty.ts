@@ -1,5 +1,5 @@
 import { mintBundle } from '../Bundles/bundle'
-import { type RecordFile, writeRecord } from '../Bundles/record'
+import { writeRecord } from '../Bundles/record'
 import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import {
@@ -39,15 +39,6 @@ import { join, relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
-export async function writePropertyBundle(
-  root: string,
-  record: Extract<RecordFile, { entity: 'property' }>,
-): Promise<string> {
-  const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`))
-  await writeRecord(bundle, record)
-  return bundle
-}
-
 async function snapshot(
   root: string,
   propertyId: string,
@@ -82,7 +73,8 @@ async function snapshot(
     if (!id || id in values) partial = true
     else values[id] = raw[key]
   }
-  return writePropertyBundle(root, {
+  const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${propertyId}`))
+  await writeRecord(bundle, {
     entity: 'property',
     id: propertyId,
     def,
@@ -91,6 +83,7 @@ async function snapshot(
     ...(Object.keys(caches).length ? { caches } : {}),
     ...(partial ? { partial: true as const } : {}),
   })
+  return bundle
 }
 
 export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'bundled'>>

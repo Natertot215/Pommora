@@ -20,7 +20,7 @@ import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { deleteProperty } from '../Properties/deleteProperty'
-import { removeProperty } from '../Properties/removeProperty'
+import { unassignProperty } from '../Properties/unassignProperty'
 import { createProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './discard'
 
@@ -267,7 +267,7 @@ describe('restoring a deleted property', () => {
       page.value.path,
       rewriteRaw((raw) => landValue(raw, key, ['lo'])),
     )
-    expect((await removeProperty(root, tasks, id)).ok).toBe(true)
+    expect((await unassignProperty(root, tasks, id)).ok).toBe(true)
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
 
     const deleted = await deleteProperty(root, id)
@@ -465,7 +465,7 @@ describe('restoring a deleted property', () => {
       dead.value.path,
       rewriteRaw((raw) => landValue(raw, def.key, '[[Gone]]')),
     )
-    expect((await removeProperty(root, tasks, c.value.id)).ok).toBe(true)
+    expect((await unassignProperty(root, tasks, c.value.id)).ok).toBe(true)
     expect((await assignProperty(root, tasks, c.value.id)).ok).toBe(true)
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
     expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()

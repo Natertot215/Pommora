@@ -12,7 +12,7 @@ import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { assignProperty } from './assignment'
-import { removeProperty } from './removeProperty'
+import { unassignProperty } from './unassignProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newContentId, newId } from '../Nexus/ids'
 import { dropLiveTree } from '../Nexus/liveTree'
@@ -140,7 +140,7 @@ describe('deleteProperty', () => {
       p.value.path,
       rewriteRaw((raw) => landValue(raw, key, ['hi'])),
     )
-    await removeProperty(root, notes, id)
+    await unassignProperty(root, notes, id)
     const before = await readJsonObject(sidecarPath(notes, 'collection'))
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
 

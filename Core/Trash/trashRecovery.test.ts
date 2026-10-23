@@ -9,7 +9,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
-import { parkLinks } from './holdings'
+import { parkLinks } from './trashedCopies'
 import { readRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { readNexus } from '../Nexus/readNexus'
@@ -17,7 +17,7 @@ import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
-import { removeProperty } from '../Properties/removeProperty'
+import { unassignProperty } from '../Properties/unassignProperty'
 import { assignProperty } from '../Properties/assignment'
 import { newContentId, newId } from '../Nexus/ids'
 import { handleMutate } from '../Nexus/mutate'
@@ -797,7 +797,7 @@ describe('links come back with the page', () => {
   })
 
   it('a delete leaves a cached Link value, and re-assigning hands one whose page sits in the Trash to that page', async () => {
-    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     await del('Journal/Daily/Alpha.md', 'page')
     expect(await cachedIn()).toEqual({ [BETA_ID]: '[[Alpha]]' })
     expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
@@ -808,12 +808,12 @@ describe('links come back with the page', () => {
   })
 
   it('re-assigning brings a cached Link back once its page is restored, and drops one naming nothing', async () => {
-    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     await del('Journal/Daily/Alpha.md', 'page')
     expect(await restore('Alpha')).toBeUndefined()
     expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
-    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     await del('Journal/Daily/Alpha.md', 'page')
     await empty('Alpha')
     expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
@@ -858,8 +858,8 @@ describe('links come back with the page', () => {
 
     it('re-assigning drops a cached link whose page sits in the Trash, as it drops one naming nothing', async () => {
       await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nParent: "[[Nowhere]]"')
-      expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
-      expect((await removeProperty(root, journal(), 'prop_parent')).ok).toBe(true)
+      expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
+      expect((await unassignProperty(root, journal(), 'prop_parent')).ok).toBe(true)
       await del('Journal/Daily/Alpha.md', 'page')
       expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
       expect((await assignProperty(root, journal(), 'prop_parent')).ok).toBe(true)

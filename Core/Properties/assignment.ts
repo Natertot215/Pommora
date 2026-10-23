@@ -7,31 +7,15 @@ import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { assignedIds } from '../Nexus/containerFields'
-import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
+import { linkWorld, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { PROPERTY_TYPES, type PropertyDefinition, type PropertyDraft } from './properties'
+import { PROPERTY_TYPES, type PropertyDraft } from './properties'
 import { createProperty, removeFromRegistry } from './registryProperty'
-import { isBlankRaw } from './propertyValue'
-import { type Frozen, gonePageEntry, reencode } from '../Nexus/governedRoot'
-import { frozenWorld, parkLinks } from '../Trash/holdings'
-import { sweepRootsById } from '../Nexus/governedSweep'
-import { landValue } from '../Files/rootValues'
+import { gonePageEntry } from '../Nexus/governedRoot'
+import { frozenWorld, parkLinks } from '../Trash/trashedCopies'
+import { refillValues } from '../Nexus/governedSweep'
 import { ok, fail, type Result } from '../Contract/result'
-
-/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
-export async function refillValues(
-  root: string,
-  def: PropertyDefinition,
-  roots: NexusPages['byId'],
-  values: Record<string, unknown>,
-  frozen: Frozen,
-): Promise<Set<string>> {
-  return sweepRootsById(root, roots, values, (raw, value) => {
-    const { next } = reencode(def, value, frozen)
-    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
-  })
-}
 
 async function restoreCachedValues(
   root: string,

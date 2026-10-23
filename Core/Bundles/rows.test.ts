@@ -1,6 +1,7 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
+import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dropLiveTree } from '../Nexus/liveTree'
 import type { MutateReply } from '../Nexus/mutateRequest'
@@ -8,7 +9,6 @@ import type { NexusTree } from '../Nexus/tree'
 import type { BundleRow } from './rows'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { writePropertyBundle } from '../Properties/deleteProperty'
 import { listBundles } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
@@ -158,7 +158,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
   })
 
   it('a property record lists under its name, with nowhere to be placed and a home to return to', async () => {
-    await writePropertyBundle(root, {
+    await seedPropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
       def: { id: 'prop_x', label: 'Stage', key: 'Stage' },

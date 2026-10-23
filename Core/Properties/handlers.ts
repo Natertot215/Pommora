@@ -33,7 +33,7 @@ import {
   reorderRegistry,
   setKeyFormat,
 } from './registryProperty'
-import { removeProperty } from './removeProperty'
+import { unassignProperty } from './unassignProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from '../Nexus/entities'
 import { decodeSchemaJournal, type SchemaCascade, type SchemaJournal } from './propertyJournal'
@@ -158,7 +158,7 @@ export const propertiesHandlers = {
   }),
 
   'schema:reorder': schemaChannel(idAndIndex, reorderAssignment),
-  'schema:unassign': schemaChannel(idOnly, removeProperty, unsweptReply),
+  'schema:unassign': schemaChannel(idOnly, unassignProperty, unsweptReply),
   'schema:assign': schemaChannel(idAndOptionalIndex, assignProperty),
 
   'registry:reorder': registryChannel(idAndIndex, reorderRegistry),

@@ -12,7 +12,7 @@ import { sidecarPath } from '../Paths/paths'
 import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
-import { removeProperty } from './removeProperty'
+import { unassignProperty } from './unassignProperty'
 import { assignProperty } from './assignment'
 import { assignedIds } from '../Nexus/containerFields'
 import { createProperty, editProperty } from './registryProperty'
@@ -98,11 +98,11 @@ const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undef
       | undefined
   )?.[propId]
 
-describe('removeProperty — strip + cache', () => {
+describe('unassignProperty — strip + cache', () => {
   it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
     await openSession(root)
     await refreshTree(root)
-    const r = await removeProperty(root, folder, propId)
+    const r = await unassignProperty(root, folder, propId)
     const rels: string[] = []
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'values:changed') rels.push(...(value as ValueChange[]).map((c) => c.rel))
@@ -125,7 +125,7 @@ describe('removeProperty — strip + cache', () => {
   it('a holder of another casing keeps its key, and the cache holds nothing for it', async () => {
     await writeFile(pageA, (await readFile(pageA, 'utf8')).replace('Stage:', 'stage:'))
     const id = splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY] as string
-    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
+    expect((await unassignProperty(root, folder, propId)).ok).toBe(true)
     expect(splitFrontmatter(await readFile(pageA, 'utf8'))).toHaveProperty('stage')
     expect((await cacheBlock())?.values[id]).toBeUndefined()
   })
@@ -142,7 +142,7 @@ describe('removeProperty — strip + cache', () => {
       reason: 'missing',
     })
 
-    const r = await removeProperty(root, folder, propId)
+    const r = await unassignProperty(root, folder, propId)
     expect(await readFile(pageA, 'utf8')).toBe(bare)
     expect(r.ok).toBe(true)
     closeSession()
@@ -152,7 +152,7 @@ describe('removeProperty — strip + cache', () => {
     const copy = join(folder, 'A copy.md')
     const raw = await readFile(pageA, 'utf8')
     await writeFile(copy, raw.replace('- active', '- done'))
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
     await assignProperty(root, folder, propId)
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
@@ -177,16 +177,16 @@ describe('removeProperty — strip + cache', () => {
     }
     const own = await archivedUnder(folder)
     const theirs = await archivedUnder(other.value.path)
-    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
+    expect((await unassignProperty(root, folder, propId)).ok).toBe(true)
     expect(await pageValue(own.file)).toBeUndefined()
     expect((await cacheBlock())?.values[own.id]).toEqual(['done'])
     expect(await pageValue(theirs.file)).toEqual(['done'])
   })
 
   it('is a no-op when the property is not assigned — never overwrites a cache with emptiness', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     const before = await cacheBlock()
-    const again = await removeProperty(root, folder, propId)
+    const again = await unassignProperty(root, folder, propId)
     expect(again.ok).toBe(true)
     expect(await cacheBlock()).toEqual(before)
   })
@@ -204,7 +204,7 @@ describe('removeProperty — strip + cache', () => {
       )
       await chmod(set.value.path, 0o555)
       try {
-        const r = await removeProperty(root, folder, propId).catch(fault)
+        const r = await unassignProperty(root, folder, propId).catch(fault)
         expect(r).toEqual(ok({ skipped: 1, hosts: [] }))
       } finally {
         await chmod(set.value.path, 0o755)
@@ -221,14 +221,14 @@ describe('removeProperty — strip + cache', () => {
     )
     await chmod(held.value.path, 0o000)
     try {
-      expect(await removeProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
+      expect(await unassignProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
     } finally {
       await chmod(held.value.path, 0o644)
     }
   })
 })
 
-describe('removeProperty reaches saved views', () => {
+describe('unassignProperty reaches saved views', () => {
   const cleared = {
     ...viewOn('', ''),
     property_order: ['_title'],
@@ -255,7 +255,7 @@ describe('removeProperty reaches saved views', () => {
     await writeFile(surfaces.tiles, JSON.stringify(doc))
     vi.mocked(editJsonStrict).mockClear()
 
-    expect(await removeProperty(root, folder, propId)).toEqual(
+    expect(await unassignProperty(root, folder, propId)).toEqual(
       ok({ skipped: 0, hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }] }),
     )
     const { calls, results } = vi.mocked(editJsonStrict).mock
@@ -276,7 +276,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   it('removing and re-assigning leaves every page’s modification time where it was', async () => {
     const then = new Date('2020-01-01T00:00:00Z')
     for (const page of [pageA, pageB]) await utimes(page, then, then)
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['active'])
     for (const page of [pageA, pageB]) expect((await stat(page)).mtimeMs).toBe(then.getTime())
@@ -284,7 +284,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
 
   it('pages swapped behind the held tree each take back their own value', async () => {
     await refreshTree(root)
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     const tmp = join(folder, 'tmp.md')
     await rename(pageA, tmp)
     await rename(pageB, pageA)
@@ -296,7 +296,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('restores cached values to pages still present and clears the block', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toEqual(['active'])
@@ -306,7 +306,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('a Remove after a refill that didn’t reach every page keeps the cached values, so the next Assign leaves every page its value', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await patchSidecar(folder, 'collection', (cur) => ({
       ...cur,
       properties: [...assignedIds(cur), propId],
@@ -315,14 +315,14 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       pageA,
       rewriteRaw((raw) => landValue(raw, liveDef.key, ['active'])),
     )
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['active'])
     expect(await pageValue(pageB)).toEqual(['done'])
   })
 
   it('a page that regained the key itself keeps its own value; a page without it still gets the cached one', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     const raw = await readFile(pageA, 'utf8')
     await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.key}:\n  - done\n`))
 
@@ -335,7 +335,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('a value whose option no longer exists stays cached; conforming siblings restore', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await editProperty(root, propId, {
       status_groups: [
         {
@@ -356,7 +356,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('a value whose def type changed stays cached, restoring nothing', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await editProperty(root, propId, { type: 'number' })
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
@@ -366,7 +366,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('a page deleted while cached is skipped — its entry stays cached, no error', async () => {
-    await removeProperty(root, folder, propId)
+    await unassignProperty(root, folder, propId)
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
@@ -396,7 +396,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       c.value.path,
       rewriteRaw((raw) => landValue(raw, selDef.key, ['2024-01-01'])),
     )
-    await removeProperty(root, folder, id)
+    await unassignProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8'))
     expect(root2[selDef.key]).toEqual(['2024-01-01'])
@@ -418,7 +418,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       p.value.path,
       rewriteRaw((raw) => landValue(raw, key, ['alpha', 'zeta'])),
     )
-    await removeProperty(root, folder, tags.value.id)
+    await unassignProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)
     const fm = splitFrontmatter(await readFile(p.value.path, 'utf8'))
     expect(fm.Tags).toEqual(['alpha'])

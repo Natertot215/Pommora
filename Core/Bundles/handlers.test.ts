@@ -5,7 +5,7 @@ import type { HostContext } from '../Contract/handlers'
 import { fault } from '../Contract/result'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { tempRoot } from '../Testing/hostFs'
-import { writePropertyBundle } from '../Properties/deleteProperty'
+import { seedPropertyBundle } from '../Testing/fixtures'
 import { mintBundle } from './bundle'
 import { writeRecord } from './record'
 
@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('bundles:list', () => {
   it('lists the Trash’s rows for the trash store', async () => {
-    await writePropertyBundle(root, {
+    await seedPropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',
       def: { id: 'prop_x', label: 'Stage', key: 'Stage' },
