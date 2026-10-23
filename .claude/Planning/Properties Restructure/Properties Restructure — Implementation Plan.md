@@ -87,7 +87,7 @@ One notes file, `.nexus/.owed.json`, replaces both; like them it stays on its de
 | **Space Rename** | Its own entry, folder, files. |
 | **Context or Space Delete** | Trash entry, its own entry, list or folder, files. Missed pages offer Try Again instead of putting everything back. |
 | **Restore From the Trash** | Restoring a property, Context, or Space turns its owed "these words should leave" back into "these words should become my name," so the pages a delete never reached come back with it. A restore onto a name another item still owes finishes that work first the same way, and a restored property gets its set-aside values back. |
-| **Try Again** | One form: finish what's owed. |
+| **Try Again** | One form for unfinished work: finish what's owed. A change refused before it wrote anything, and an undo's put-backs that missed, send the same request again. |
 | **On Open** | One pass, once the index is ready, item by item. |
 
 ### Overview
@@ -105,13 +105,13 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **4B** The Tidy Rule and Repair On Open | The tidy rule as a type fact, spaces-only reads as empty, no-op writes write nothing, Repair On Open defaults on | +11 |
 | **5** One Home per Definition | Collections hold assigned ids; one `schemaOf` and one `holderSchema`; registration from the index; a damaged list opens | −34 |
 | **6** Undo From the File | Every value write answers its undo; one `putBackEntries` through the page and Space writers; the renderer stops encoding; an undo miss's Try Again resends what missed (F3 measured) | +39 |
-| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete; every create says a numbered name | −144 |
+| **7** One Door for Property Changes | Nineteen writing channels become fourteen `mutate` ops; one schema-lock hold; counts in `entities.ts`; option Remove reads Delete; a property, Context, or Space create says a numbered name | −146 |
 | **8** Option Identity | Permanent option ids in values, views, tiles, and filters; one `bandKey`; NexusOS's one-time conversion; one confirmation for every key rewrite | −30 |
 | **9** List First and One Replay Point | The Context rename takes its list step first; one replay point at open | −7 |
 | **10** One Finder | One finder over the tree in `Core/Index/keyHolders.ts`, one writer, and every restore miss reported (G-3) | +10 |
 | **11A** One Note per Item: The Notes and the Renames | `.nexus/.owed.json` with one entry per item; one runner; both deletes list-first; renames on the notes; owed names finished, then used; one Try Again | +138 |
-| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection; content deletes, Trash emptying, moves, and restores note their links and views | +250 |
-| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; a batch's Try Again; Neutral Gate 1 | +145 |
+| **11B** One Note per Item: Deletes and Remove | Context and Space deletes finish; Remove notes its Collection; content deletes, Trash emptying, moves, and restores note their links and views | +285 |
+| **12** The Stash and Trash Records | Cache becomes stash; the block's stamp, ageing, and refill reach; the partial Trash mark; a batch's Try Again; Neutral Gate 1 | +140 |
 | **13** Columns Carry Their Answer | `ResolvedColumn` carries type and definition; one `resolveFieldValue`; `declaredType` leaves | −99 |
 | **14** The Per-Kind View Record | `VALUE_KINDS` states each kind's filter, sort, bucket, and seed; one `shownText` (K and 07-10 measured) | −51 |
 | **15** Pick Model and One Writer | One pick model, one value-writer shape, one menu vocabulary, the filter's clock; the pickers stop fabricating a Context definition at four sites (02-10 measured) | −27 |
@@ -120,7 +120,7 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −204 |
 | **18** The Documents Read True | Feature documents, Issues entries, drives, matrices, and test seeds read true | 0 |
 
-**Total:** **−546** production lines (−7,599 / +7,053), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +113, Phase 7's frame keeps the two-argument epoch and lands −138, and Task 13-7's Fail half lands −7, for **−470**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +16 in Phase 17. The plan ends net-negative on every outcome; on the measurements' first outcomes the running total rises above zero at Phase 12 (+128) before Phase 14 brings it back down, and on F3's Fail it rises above zero at Phase 11B (+64, +209 at Phase 12) before Phase 16A brings it back down. Measured figures replace these in *§Net Ledger*.
+**Total:** **−518** production lines (−7,625 / +7,107), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +113, Phase 7's frame keeps the two-argument epoch and lands −140, and Task 13-7's Fail half lands −7, for **−442**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +16 in Phase 17. The plan ends net-negative on every outcome; on the measurements' first outcomes the running total rises above zero at Phase 11B (+16, +156 at Phase 12) before Phase 15 brings it back down, and on F3's Fail it rises above zero at Phase 11B (+97, +237 at Phase 12) before Phase 16A brings it back down. Measured figures replace these in *§Net Ledger*.
 
 #### Concepts
 
@@ -219,13 +219,13 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `Core/Nexus/entities.test.ts` • test file | Holds the `countPhrase` cases moved from `confirmations.test.ts` and the `unsweptLine` singular-and-plural case. | `Core/Nexus/entities.test.ts` |
 | `keyFormat` • constant | The one `z.enum(KEY_FORMATS)` decoder; `KeyFormat` is inferred from it and the definition's two format fields decode through it. | `Core/Properties/keyFormat.ts` |
 | `formatChange` • constant | Decodes a Key Format or Value Format change; `FormatChange` is inferred from it. | `Core/Properties/keyFormat.ts` |
-| `landedAs` • function | A create's numbered name when it stepped past a taken one, which the page, Collection, Set, Space, and Context creates answer and the slice announces. | `Core/Nexus/create.ts` |
+| `landedAs` • function | A Space's or Context's create's numbered name when it stepped past a taken one, which the slice announces; a page, Collection, or Set create numbers itself silently. | `Core/Nexus/create.ts` |
 | `countedChange`, `CountedChange` • types | The change `property:holders` counts the holders of: `{ of: 'property' }`, `{ of: 'option', label }`, or `{ of: 'format', change }`, decoded once and answered by one `switch` in the handler. | `Core/Properties/properties.ts` |
 | `"It is removed from every collection; a restorable record lands in the nexus’s .trash folder."` • string | The property delete's detail when nothing holds the property, without the strip clause (O-2, LC-13). | `Core/Interface/Confirm/confirmations.ts` |
 | `"The option is deleted from the property."` • string | The option delete's detail when nothing holds the option, without the strip clause (O-2, LC-13). | `Core/Interface/Confirm/confirmations.ts` |
 | `addProperty` • function | Creates and assigns a new property in one hold of the schema lock, taking the create back inside the hold on a failed assign; it answers `{ created: { propertyId } }` from Task 7-6. | `Core/Properties/assignment.ts` |
 | `ID_HELD` • constant | The `'exists'` refusal `createProperty` answers for an id the registry already holds. | `Core/Properties/registryProperty.ts` |
-| `landedAs` • field | `RestoredProperty`'s numbered label, present when a restore took a numbered name, which `restoreTrashed` passes to the outcome, and every create's when it stepped past a taken name, which the slice posts as "Created “…”." (O-4). | `Core/Trash/restoreProperty.ts`, `Core/Properties/assignment.ts` |
+| `landedAs` • field | `RestoredProperty`'s numbered label, present when a restore took a numbered name, which `restoreTrashed` passes to the outcome, and a property's, Context's, or Space's create's when it stepped past a taken name, which the slice posts as "Created “…”." (O-4). | `Core/Trash/restoreProperty.ts`, `Core/Properties/assignment.ts` |
 | `Core/Properties/unassignProperty.ts` • file | `removeProperty.ts` renamed; holds a property's unassign from a Collection. | `Core/Properties/unassignProperty.ts` |
 | `unassignProperty` • function | `removeProperty` renamed; answers `MutateReply` with its cascade from Task 7-6. | `Core/Properties/unassignProperty.ts` |
 | `unassignInner` • function | `removeInner` renamed. | `Core/Properties/unassignProperty.ts` |
@@ -357,9 +357,10 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `stashAndStrip` • function | Moves a Collection's holders' values into its stash, then strips the key, counting what it couldn't reach; shared by Remove and the finish's `unassigned` arm. | `Core/Properties/unassignProperty.ts` |
 | `group9` • drive | The Properties Drive's One Note per Item group: an owed rename beside a second property's rename, the owed name's refusal while its page stays unreadable, and a rename onto it finishing both renames and landing. | `.claude/scripts/Properties Drive/live-drive.mjs` |
 | `ContainerEntry` • type | The notes entry of a page, Collection, or Set delete, a Trash emptying, or a Set move: the gone pages' paths, the views it owes, and where stripped links go. | `Core/Nexus/owed.ts` |
-| `RelinkEntry` • type | The notes entry of a move's or a restore's re-spell, each old link key mapped to how it spells its page now. | `Core/Nexus/owed.ts` |
+| `RelinkEntry` • type | The notes entry of a move's or a restore's re-spell, each old link key mapped to how it spells its page now, with `files` scoping a restore's repair of its own landed files to them alone and `rekey` re-keying a renamed Context's Space sidecars among them. | `Core/Nexus/owed.ts` |
 | `relinkNote` • function | Lays a re-spell over a relink entry, an old key following the page a later move moves. | `Core/Nexus/owed.ts` |
-| `relinkReach` • function | A relink entry's sweep, counting the files it missed. | `Core/Nexus/cascade.ts` |
+| `relinkReach` • function | A relink entry's sweep, over every file naming its keys or over its `files` still there, counting the files it missed. |
+| `repairLanded` • function | A restore's repair of its own landed files and a renamed Context's Space re-key, run on `runNoted` under a relink entry keyed by the landed path, answering its owed report. | `Core/Trash/restoreScrub.ts` | `Core/Nexus/cascade.ts` |
 | `respell` • function | Module-private: a move's or a restore's re-spell on `runNoted`, keyed by the first page it re-spells for. | `Core/Nexus/settle.ts` |
 | `finishContainer` • function | Module-private: the container arm, a delete's link strip and view reach. | `Core/Nexus/finishOwed.ts` |
 | `sendClear` • function | Clear Exclusion Cache's send, which its Try Again repeats without asking. | `Core/Settings/frames.ts` |
@@ -1082,7 +1083,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Shape:** a removal, a refactor, a migration, and a handful of fixes. The removal's inventory is *§Concepts › REMOVED*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior, kept except where a phase's *Behavior Changes and Disclosures* names a change (each tied to a decision or a Last Call) and proven by the tests each task rewrites or adds; every removal task lists its consumers and the `git grep` proving none remain. The migration is Phase 8's one-time NexusOS conversion: a backup to `~/NexusOS-Backup-<MM-DD-YYYY>/` before its first write, a transform that changes nothing on a second run, and the backup removed by its path at *§Final Verification*'s closeout. Each fix sweeps what else consumed the old behavior.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals; every existing entry the work touches is closed or narrowed in place with no successor (Phase 18), and anything that can't finish inside the plan is reported as a Last Call row, never filed.
 - **Measurements:** each measuring task runs *Planning Findings › §Measurement Rules* as written: the Benchmark Nexus (`node .claude/scripts/make-benchmark-nexus.mjs large`), the measurement, the threshold, and both outcomes as concrete steps, so the executor runs a rule; the Benchmark Nexus and its timed sidecar are swept after.
-- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The plan ends net-negative on every outcome; on the first outcomes the written cumulative production delta rises above zero at Phase 12's head (+128), after the net-positive run of Phases 10 through 12, before Phase 14's head (−22) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+64) before Phase 16A's head (−49) brings it back down. *§Final Verification* proves the measured cumulative the same way.
+- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, its review's fix included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The plan ends net-negative on every outcome; on the first outcomes the written cumulative production delta rises above zero at Phase 11B's head (+16) and peaks at Phase 12's (+156), after the net-positive run of Phases 10 through 12, before Phase 15's head (−21) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+97) before Phase 16A's head (−21) brings it back down. *§Final Verification* proves the measured cumulative the same way.
 - **Execution:** the plan runs end to end through `c/plan-execution`, autonomously, in the main checkout on `active`: executors edit in place, each phase commits its own files with `git commit --only` (after `git add` of any new or moved file, which `--only` otherwise skips), and the Properties Drive builds and launches from the checkout. If Nathan's live app runs from this checkout, the drive runs from a worktree of the phase's head built by `.claude/scripts/editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`. Each phase goes to one `execution-agent` carrying *§Context*, *§Overview*, this *§Constraints* whole, and its phase: `opus-low` for Phases 1 and 9, `sonnet-medium` for Phase 18, and `opus-medium` for the rest. For each task in order it first runs `python3 .claude/scripts/plan-replay/plan_replay.py apply "<this plan>" <task-id>`, adding `--outcome <Rule>=<Outcome>` once a measurement has landed on another outcome; the tool writes the task's blocks into the checkout and formats them with Biome. The executor reads its report and `git diff` against the AFTER, completes by hand only the hunks the tool refused and the CHANGE's prose steps, and runs VERIFY, retyping nothing an AFTER already holds. It reports insights, concerns, and suggestions rather than diverging, and the orchestrator checks each task's result against its AFTER and VERIFY. Reviewers sit where a phase rewrites user data, the crash-recovery path, or a surface every value passes through: the Review Checkpoints of Phases 6, 8, 11B (reading 11A with it), 12, 16B (reading 16A with it), and 17 each dispatch two read-only `opus-high` agents to the `closeout-review` skill's standards (correctness, simplification, cohesiveness, consequences; its closing procedures, write-guards, and output format don't apply), one leading on simplification and one adversarial, each carrying *§Constraints* whole and the do-not-re-raise list below, reading outward rather than in isolation, with no implementation running meanwhile, and Phase 18's checkpoint runs its `opus-medium` documentation spotcheck; every other checkpoint closes on its gates, its drive group, and its measure; the orchestrator verifies each finding against the tree, fixes what holds, and weighs the landed work against the Approach and Principles before the next phase opens. An in-flight call is weighed against *§Constraints*, disclosed in chat, and recorded under *§Deviations* where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`, repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim in the handoff, and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
 - **Neutral Gates:** two, each a `fable-high` agent that wrote and reviewed nothing, given only the BASELINE head, the head named, and the intention statement quoted in its gate, with no plan, log, principle, or document; it answers yes or no on whether the range holds, with its corrections; a "no" routes back to the orchestrator, the fix lands, and the gate runs again until it answers yes. The first closes Phase 12, where the data layer completes; the second runs inside *§Final Verification*.
 - **Directive (10-22-2026):** Nathan's, verbatim, which execution and every review answer to as the plan's own reviews did: "If there's any behavior you assume ISNT my intention, that gets flagged. Ensure that the plans own reviews honestly assert its adherence to the approach and principles; concretely less of the flagged practices and perspectives: net-negative delta; zero room for two issues being replaced by one new one except the two previous issue-logged items; codebase must adhere to our standards unambiguously and be the honest better environment as a result." The two previously logged items are I-076 and I-077.
@@ -11881,7 +11882,7 @@ The five remaining `unsweptLine` readers change one import each:
   | `'property:clearOption', id, label` | `{ op: 'clearOption', propertyId: id, label }` | a skip reads `cascade.warning` |
   | `'property:holders', id[, of]` | `'property:holders', id, { of: 'property' }` · `{ of: 'option', label }` · `{ of: 'format', change }` | — |
 - [ ] `propertyWrite.ts` is deleted.
-- [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'replayProperty' })`; a property delete's cascade is left to its Deleted notice; a create's reply carrying `landedAs` posts "Created “…”." (O-4), as AFTER, and `create.ts`' page, Collection, Set, and Space creates and `mutate.ts`' Context create answer `landedAs` when they stepped past a taken name, through `create.ts`' one `landedAs`. Tests first, watched failing: `Core/Nexus/create.test.ts` › "a create that stepped past a taken name answers the name it took" (a page, a Set, and a Space created twice under one name; the second reply's `landedAs` reads `New Page 2`, and the first carries none), `Core/Nexus/mutate.test.ts` › the same for `createContextGroup`, and `Core/Session/store.test.tsx` › "any create that took a numbered name says so" (the dialer answers a `createPage` with `{ created: { path: 'A/New Page 2.md' }, landedAs: 'New Page 2' }`; the notice reads `Created “New Page 2”.`, and a `restore` reply carrying `landedAs` posts none here).
+- [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'replayProperty' })`; a property delete's cascade is left to its Deleted notice; a create's reply carrying `landedAs` posts "Created “…”." (O-4), as AFTER, and `create.ts`' Space create and `mutate.ts`' Context create answer `landedAs` when they stepped past a taken name, through `create.ts`' one `landedAs`, while the page, Collection, and Set creates answer `created` alone. Tests first, watched failing: `Core/Nexus/create.test.ts` › "a Space create that stepped past a taken name answers the name it took, and a page create answers none" (a Space created twice under one name: the second reply's `landedAs` reads `New Space (2)` and the first carries none; a page created twice answers no `landedAs` either time), `Core/Nexus/mutate.test.ts` › the same for `createContextGroup`, and `Core/Session/store.test.tsx` › "a Space create that took a numbered name says so" (the dialer answers a `createSpace` with `{ created: { path: 'Areas/New Space (2)' }, landedAs: 'New Space (2)' }`; the notice reads `Created “New Space (2)”.`, and a `restore` reply carrying `landedAs` posts none here).
 - [ ] The renderer: `PropertyFrame.tsx`, `useOptionEdit.tsx`, and `PropertyPanel.tsx` as AFTER; `createActions.ts` and `useViewCreation.ts` read `created.path` only where `created` holds one. `bumpValuesEpoch` takes no arguments from Task 6-5, so the frame calls `bumpValuesEpoch()` as it does. On F3's Fail (Task 6-6's revert), `rekeyOverrides` and `bumpValuesEpoch(oldKey, newKey)` stand: the frame reads `from` as `defOf(id)?.key` before the send and `to` as that definition's key in `useSession.getState().tree` after it, which the write gate pushes before the reply leaves (`Core/Contract/handlers.ts:98`), and calls `bumpValuesEpoch(from, to)` when the reply carries a cascade, which a rekey answers only when the key moves; `cacheSlice.ts` and `useContainerValues.ts` stay as P6 left them.
 - [ ] Rewrite the tests the fold makes false, each by one rule:
   - **Channel calls become ops:** `Core/Properties/handlers.test.ts` calls `nexusHandlers.mutate(ctx, req)` (its `ctx` gains `trashMode: async () => 'nexus'`, which `trashDeps` reads) in place of `propertiesHandlers['<channel>'](ctx, …)`, by the table above; "schema:add writes the key from the label, replacing a key the payload carries" sends `draft: { label: 'Due Date', key: 'whatever', type: 'text' }` and reads `created.propertyId`; "an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault" becomes "…then answers the skip on its cascade" (`ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } })`); every replay that answered `ok(null)` answers `ok({ cascade: { pages: [], hosts: <its hosts> } })` and every one that answered `fault(unsweptLine(1))` answers `ok({ cascade: { pages: [], hosts: <its hosts>, warning: unsweptLine(1) }, retry: { op: 'replayProperty', record } })` (`toMatchObject` where hosts vary); `r.value.owed` reads `r.value.retry` as `{ op: 'replayProperty', record }`; "property:setKeyFormat refuses a format that isn’t a Key Format" and its Value Format twin become one case, "a format change that isn’t a Key Format is refused as malformed" (`fault('Malformed request.')`). `Core/Contract/writeGate.test.ts:138-159`'s three property rows call `nexusHandlers.mutate` with `addProperty`, `renameProperty`, and `editOption`, keeping their push lists.
@@ -12434,31 +12435,16 @@ The five remaining `unsweptLine` readers change one import each:
 +        if (res.value.created && res.value.landedAs) notifyReport(`Created “${res.value.landedAs}”.`, false)
 ```
 
-Every create that stepped past a taken name answers `landedAs` beside `created`, so a property, a page, a Collection, a Set, a Context, and a Space all say the numbered name they took through this one line; a restore's `landedAs` carries no `created` and keeps the Restored notice its own surface composes (`steppedTo`).
+A create whose name must stay unique answers `landedAs` beside `created` when it stepped past a taken one, so a property, a Context, and a Space say the numbered name they took through this one line, while a page, a Collection, or a Set, whose titles may repeat, numbers itself silently; a restore's `landedAs` carries no `created` and keeps the Restored notice its own surface composes (`steppedTo`).
 
 ```Core/Nexus/create.ts diff
-@@ imports @@
--import { basename, join, relJoin } from '../Paths/posix'
-+import { basename, join, relJoin, stripMarkdownExt } from '../Paths/posix'
 @@ created @@
--const created = (parentPath: string, r: { path: string }): MutateReply =>
--  ok({ created: { path: relJoin(parentPath, basename(r.path)) } })
-+/** A create that stepped past a taken name answers the one it landed under, which the slice announces. */
-+export const landedAs = (asked: string, path: string): { landedAs?: string } => {
-+  const name = stripMarkdownExt(basename(path))
-+  return name === asked ? {} : { landedAs: name }
-+}
+ const created = (parentPath: string, r: { path: string }): MutateReply =>
+   ok({ created: { path: relJoin(parentPath, basename(r.path)) } })
 +
-+const created = (parentPath: string, asked: string, r: { path: string }): MutateReply =>
-+  ok({ created: { path: relJoin(parentPath, basename(r.path)) }, ...landedAs(asked, r.path) })
-@@ createPageOp @@
-   if (req.order) await setChildOrder(parent.value, 'page_order', req.order)
--  return created(req.parentPath, r.value)
-+  return created(req.parentPath, req.name, r.value)
-@@ createContainerOp @@
-   if (req.kind === 'collection') await appendCollection(root, req.id)
--  return created(req.parentPath, r.value)
-+  return created(req.parentPath, req.name, r.value)
++/** A Space or Context create that stepped past a taken name answers the one it landed under, which the slice announces; a page, Collection, or Set numbers itself silently, since their titles may repeat. */
++export const landedAs = (asked: string, path: string): { landedAs?: string } =>
++  basename(path) === asked ? {} : { landedAs: basename(path) }
 @@ createSpaceOp @@
    if (req.order) await setSpaceOrder(root, req.contextId, req.order)
 -  return ok({ created: r.value })
@@ -12742,7 +12728,7 @@ Every create that stepped past a taken name answers `landedAs` beside `created`,
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** −175 production (+254 / −429), the creates' numbered-name reply included.
+**Lines:** −177 production (+247 / −424), the property, Context, and Space creates' numbered-name reply included.
 
 #### Task 7-7
 
@@ -13426,7 +13412,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 
 - **An Option's Remove Reads Delete (O-1, Nathan's Intent):** the menu row, the question `Delete “Alpha”?`, and its button.
 - **A Delete Held by Nothing Asks Without "0 Items" (O-2, Nathan's Intent; LC-13):** the zero-case details are today's (`confirmations.ts:191,199`) with the strip clause removed and no new words: "It is removed from every collection; a restorable record lands in the nexus’s .trash folder." for a property, and "The option is deleted from the property." for an option.
-- **A Numbered Name Says So (O-4, Nathan's Intent):** a restore says "Restored “Priority” as “Priority (2)”", and every create that steps past a taken name says the name it took, "Created “New Select (2)”." for the pane's `+` and "Created “New Page 2”." for a page, where a page, Collection, Set, Context, or Space create numbered itself silently. Nathan's ruling (10-22-2026, Everywhere).
+- **A Numbered Name Says So (O-4, Nathan's Intent):** a restore says "Restored “Priority” as “Priority (2)”", and a property, Context, or Space create that steps past a taken name says the name it took, "Created “New Select (2)”." for the pane's `+` and "Created “New Space (2)”." for a Space, where a Context or Space create numbered itself silently. A page, Collection, or Set create keeps numbering itself silently, since their titles may repeat (Nathan's ruling, 10-22-2026).
 - **A Stored Denominator of Zero or Less Reads as Unset (L-3, Nathan's Intent):** the definition stays admitted.
 - **A Partial Remove Returns to the List:** `schema:unassign` refused with "Couldn’t update N Items." and the editor stayed open; `unassignProperty` now answers that line on its cascade, so the tile hosts it wrote are owed (which the refusal did by owing before refusing) and the frame returns to the list with the same notice. This lands the return half of C-2 (Nathan's intent) one phase early; its Try Again arrives with P11's note.
 - **Clear's Skip Is a Warning:** a Clear that skipped a file answered a refusal; it answers the same line, in the same error tone, as its cascade's warning.
@@ -13442,13 +13428,13 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 | 7-3 | −20 | +20 | 0 |
 | 7-4 | −42 | +46 | +4 |
 | 7-5 | −10 | +9 | −1 |
-| 7-6 | −429 | +254 | −175 |
+| 7-6 | −424 | +247 | −177 |
 | 7-7 | −38 | +32 | −6 |
 | 7-8 | 0 | 0 | 0 |
-| **Phase 7 (F3's Pass)** | **−627** | **+483** | **−144** |
-| **Phase 7 (F3's Fail)** | **−627** | **+489** | **−138** |
+| **Phase 7 (F3's Pass)** | **−622** | **+476** | **−146** |
+| **Phase 7 (F3's Fail)** | **−622** | **+482** | **−140** |
 
-- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Fail, Task 7-6 lands −169, its frame reading each rekey's old and new key for the two-argument `bumpValuesEpoch` Task 6-6's revert keeps. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
+- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Fail, Task 7-6 lands −171, its frame reading each rekey's old and new key for the two-argument `bumpValuesEpoch` Task 6-6's revert keeps. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
 - **Task 7-1's +23:** the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
 - **What Leaves:** `Core/Properties/propertyWrite.ts`; nineteen bridge entries; `resolveSchemaFolder`, `Reply`, `asIs`, `unsweptReply`, `cascadeReply`, `answer`, `registryChannel`, `schemaChannel`, nine positional narrowers, `journalRecord`, `defEditOp`; `SchemaCascade`, `PropertyRename`, `PropertyDeletion`, `FileConfig`; `linkFields`, `numberFields`, `narrowLinkConfig`, `narrowNumberFormat`, `narrowFileConfig`; `isKeyFormat` and the holder count's argument sniff; `writePropertyBundle`; `notifyTrashed`; `restoreInner`'s pre-check, read-back, and second tree read; the count copy's second home.
 - **Tests:** about +160 (+240 / −80): the fourteen lock cases and the op, slice, restore, and zero-wording pins are new, while the merged `PropertyFrame` harness, the history pins, `isKeyFormat`'s case, and the two format-refusal cases leave. The drive group and the script re-points are apart.
@@ -20266,9 +20252,9 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 
 #### Task 11B-5
 
-**TASK:** Page, Collection, and Set deletes, Trash emptying, Set moves, page moves, and a restore's re-spell of the live world note what they owe and finish through the one pass: a `container` entry holds a delete's or a Set move's link strip and view reach, a `relink` entry holds a move's or a restore's re-spell, and a file either misses stays owed with Try Again, as every property, Context, and Space change does.
+**TASK:** Page, Collection, and Set deletes, Trash emptying, Set moves, page moves, and a restore's re-spell of the live world and repair of its own landed files note what they owe and finish through the one pass: a `container` entry holds a delete's or a Set move's link strip and view reach, a `relink` entry holds a move's or a restore's re-spell, scoped to the landed files for a restore's own repair, and a file either misses stays owed with Try Again, as every property, Context, and Space change does.
 
-**NOW:** `deleteOp`'s content branch (`Core/Trash/delete.ts`, after Task 11B-2) writes its record marked `partial` before the move, then after the move runs `deleteCascade(root, abs, paths)` (`Core/Nexus/cascade.ts`, answering `{ cascade, links }`), rewrites the record with the stripped `links` and `partial` whenever the strip's warning is set, and reaches the views through `reachConfig(root, edit)`; nothing is noted, so a file the strip or the view pass missed keeps the gone page's link or the gone container's columns for good. `emptyBundle` (`Core/Trash/spend.ts:47-90` at this phase's base) runs the same strip and `goneContainers` reach and parks the links it strips, with no note. `moveSetOp` (`Core/Nexus/move.ts:43-73`) reaches the Set's views out of the Collection it left through `reachConfig(root, edit, join(root, left))` after the move, with no note. Every page move, page rename, and Set move re-spells through `relink` (`Core/Nexus/settle.ts`), which `addressed` (`mutate.ts:91-115`) and `payOutsideMoves` call, and a restore re-spells the live world through `returningCascade`'s `renameCascade` call; both answer `renameCascade`'s warning and owe nothing, and a resend of the move or restore can't help, since the move already landed and the restore's bundle is spent. `ConfigReach` (`Core/Nexus/configReach.ts`) carries no pages, so `reachReport` answers `pages: []`.
+**NOW:** `deleteOp`'s content branch (`Core/Trash/delete.ts`, after Task 11B-2) writes its record marked `partial` before the move, then after the move runs `deleteCascade(root, abs, paths)` (`Core/Nexus/cascade.ts`, answering `{ cascade, links }`), rewrites the record with the stripped `links` and `partial` whenever the strip's warning is set, and reaches the views through `reachConfig(root, edit)`; nothing is noted, so a file the strip or the view pass missed keeps the gone page's link or the gone container's columns for good. `emptyBundle` (`Core/Trash/spend.ts:47-90` at this phase's base) runs the same strip and `goneContainers` reach and parks the links it strips, with no note. `moveSetOp` (`Core/Nexus/move.ts:43-73`) reaches the Set's views out of the Collection it left through `reachConfig(root, edit, join(root, left))` after the move, with no note. Every page move, page rename, and Set move re-spells through `relink` (`Core/Nexus/settle.ts`), which `addressed` (`mutate.ts:91-115`) and `payOutsideMoves` call, and a restore re-spells the live world through `returningCascade`'s `renameCascade` call; both answer `renameCascade`'s warning and owe nothing. Before that call, `returningCascade` runs `repairLanded` (`Core/Trash/restoreScrub.ts`) over the landed files and answers the files it couldn't write as `unswept`, which `restoreTrashed` (`spend.ts`) and `archive.ts`' restore join into the notice through `withUnswept` with no Try Again, as `restoreTrashed` does for the Space sidecars its own re-key of a Context restored under a new title misses; and a resend of the move or restore can't help, since the move already landed and the restore's bundle is spent. `ConfigReach` (`Core/Nexus/configReach.ts`) carries no pages, so `reachReport` answers `pages: []`.
 
 **CHANGE**
 
@@ -20280,10 +20266,11 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
   - "a crash between the note and the strip finishes at the open": seed the entry with the page already in its bundle; `finishOwed` strips its linkers; "a Collection restored before its delete's Try Again keeps its views": with the view file unreadable at the delete, restore the Collection, restore the mode, and `finishOwed` leaves its tile's view in place and clears the entry.
   - `Core/Trash/spend.test.ts` › "emptying the Trash owes a linker it couldn't strip": one linker `chmod 000`; the reply is owed, and `finishOwed` strips and parks the value once the mode is restored.
   - `Core/Nexus/move.test.ts` (new) › "a Set move that misses a view settings file owes it": the Collection the Set left holds a view `chmod 000`; the reply is owed, and `finishOwed` drops the Set's rule once it reads.
-  - `Core/Nexus/settle.test.ts` › "a page move that misses a linker owes the re-spell": one linker `chmod 000`; the reply's `cascade.owed` is `true`, the entry is the page's `relink`, and `finishOwed` re-spells the linker once it reads; "a second move carries what the first missed": move the page again before the finish, and the finish re-spells the missed linker to the second path; "a restore's re-spell owes what it missed": a restore whose live linker is unreadable answers owed, and `finishOwed` re-spells it.
-- [ ] `Core/Nexus/owed.ts`, `Core/Nexus/configReach.ts`, `Core/Nexus/cascade.ts`, `Core/Nexus/finishOwed.ts`, `Core/Nexus/settle.ts`, `Core/Trash/delete.ts`, `Core/Trash/spend.ts`, and `Core/Nexus/move.ts`: as the AFTER gives them.
+  - `Core/Nexus/settle.test.ts` › "a page move that misses a linker owes the re-spell": one linker `chmod 000`; the reply's `cascade.owed` is `true`, the entry is the page's `relink`, and `finishOwed` re-spells the linker once it reads; "a second move carries what the first missed": move the page again before the finish, and the finish re-spells the missed linker to the second path; "a restore's re-spell owes what it missed": a restore whose live linker is unreadable answers owed, and `finishOwed` re-spells it; "a restore's repair of its own files owes what it missed": a restored page holding a link under its old key, `chmod 000` once it lands, answers owed with the relink entry keyed by its landed path and carrying `files`, and `finishOwed` re-spells it once the mode is restored and clears the entry; "a landed file gone before the finish leaves the repair's entry": the same miss, the page then deleted, and `finishOwed` clears the entry; "a Context restored under a new title owes the re-key a Space sidecar missed": a Context restored as `Areas (2)` whose Space's sidecar is `chmod 000` answers owed with the entry's `rekey` reading `['Areas', 'Areas (2)']`, and `finishOwed` re-keys the sidecar once the mode is restored and clears the entry.
+  - `Core/Nexus/owed.test.ts` › "a restore's repair follows a later move without taking its keys": `relinkNote({ kind: 'relink', label: 'A', names: { a: 'B' }, files: ['X/A.md'] }, new Map([['b', 'C']]))` → `{ kind: 'relink', label: 'A', names: { a: 'C' }, files: ['X/A.md'] }`.
+- [ ] `Core/Nexus/owed.ts`, `Core/Nexus/configReach.ts`, `Core/Nexus/cascade.ts`, `Core/Nexus/finishOwed.ts`, `Core/Nexus/settle.ts`, `Core/Trash/restoreScrub.ts`, `Core/Archive/archive.ts`, `Core/Trash/delete.ts`, `Core/Trash/spend.ts`, and `Core/Nexus/move.ts`: as the AFTER gives them.
 - [ ] Tests: `deleteReach.test.ts`' and `deleteOrder.test.ts`' cases asserting the write-ahead `partial` on a clean delete, and the warning "Couldn’t update links in N Items.", read the owed reply's "Couldn’t update N Items." and a record without `partial`; `cascade.test.ts`' `deleteCascade` cases read `reach` where they read `cascade`.
-- [ ] Run the gates, then commit: `git commit --only -- Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/configReach.ts Core/Nexus/cascade.ts Core/Nexus/cascade.test.ts Core/Nexus/finishOwed.ts Core/Nexus/settle.ts Core/Nexus/settle.test.ts Core/Nexus/move.ts Core/Nexus/move.test.ts Core/Trash/delete.ts Core/Trash/spend.ts Core/Trash/deleteReach.test.ts Core/Trash/deleteOrder.test.ts Core/Trash/spend.test.ts -m "Content deletes, Trash emptying, moves, and restores note their links and views and owe what they miss with Try Again."`
+- [ ] Run the gates, then commit: `git commit --only -- Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/configReach.ts Core/Nexus/cascade.ts Core/Nexus/cascade.test.ts Core/Nexus/finishOwed.ts Core/Nexus/settle.ts Core/Nexus/settle.test.ts Core/Trash/restoreScrub.ts Core/Archive/archive.ts Core/Nexus/move.ts Core/Nexus/move.test.ts Core/Trash/delete.ts Core/Trash/spend.ts Core/Trash/deleteReach.test.ts Core/Trash/deleteOrder.test.ts Core/Trash/spend.test.ts -m "Content deletes, Trash emptying, moves, and restores note their links and views and owe what they miss with Try Again."`
 
 **AFTER**
 
@@ -20303,8 +20290,14 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 +  bundle?: string
 +  park?: true
 +}
-+/** A move's or a restore's re-spell, each old link key mapped to how it spells its page now. */
-+export type RelinkEntry = Owed & { kind: 'relink'; names: Record<string, string>; label: string }
++/** A move's or a restore's re-spell, each old link key mapped to how it spells its page now; `files` scopes a restore's repair of its own landed files to them alone, and `rekey` re-keys a Context restored under a new title in its own Spaces' sidecars among them. */
++export type RelinkEntry = Owed & {
++  kind: 'relink'
++  names: Record<string, string>
++  label: string
++  files?: string[]
++  rekey?: [from: string, to: string]
++}
  /** `refused` marks an entry whose last finish missed only files Pommora can't rewrite safely: it stays owed with Try Again, and its names stay free, since only a fix by hand lets a sweep reach those files. */
 -export type Entry = (PropertyEntry | ContextEntry | SpaceEntry) & { refused?: true }
 +export type Entry = (PropertyEntry | ContextEntry | SpaceEntry | ContainerEntry | RelinkEntry) & { refused?: true }
@@ -20315,16 +20308,17 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 -    (!!e.unassigned?.length || Object.values(e.options ?? {}).some(owes)))
 +    (!!e.unassigned?.length || Object.values(e.options ?? {}).some(owes))) ||
 +  (e.kind === 'container' && !!e.edit) ||
-+  (e.kind === 'relink' && Object.keys(e.names).length > 0)
++  (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey))
 +
-+/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it. */
++/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets. */
 +export const relinkNote = (e: Entry | undefined, names: ReadonlyMap<string, string>, label?: string): RelinkEntry => {
 +  const held = e?.kind === 'relink' ? e : undefined
 +  const followed = Object.entries(held?.names ?? {}).map(([k, v]) => [k, names.get(pageKey(v)) ?? v])
 +  return {
 +    kind: 'relink',
 +    label: label ?? held?.label ?? '',
-+    names: { ...Object.fromEntries(followed), ...Object.fromEntries(names) },
++    names: { ...Object.fromEntries(followed), ...(held?.files ? {} : Object.fromEntries(names)) },
++    ...(held?.files ? { files: held.files, rekey: held.rekey } : {}),
 +  }
 +}
 ```
@@ -20350,6 +20344,8 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 ```Core/Nexus/cascade.ts diff
 @@ imports @@
  import { addressable, nexusPages } from './heldPages'
++import { pathExists } from '../Files/atomicWrite'
++import { rekeyContext } from '../Contexts/contextCascade'
 +import type { ConfigReach } from './configReach'
 +import type { RelinkEntry } from './owed'
 @@ DeleteCascade @@
@@ -20404,9 +20400,18 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
    }
  }
 +
-+/** A relink entry's sweep: its names re-spelled, counting the files it missed. */
++/** A relink entry's sweep: its names re-spelled in every file naming them, or in those of its `files` still there with its `rekey` applied, counting the files it missed. */
 +export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigReach> {
-+  const { missed, hosts, pages } = await renameCascade(root, { names: new Map(Object.entries(e.names)), label: e.label })
++  const names = new Map(Object.entries(e.names))
++  if (e.files) {
++    const { text, spaceMoved } = fileRewrites(root, await liveTreeOf(root), (t) => rewriteConnections(t, names))
++    const rekey = e.rekey && rekeyContext(...e.rekey)
++    const raw: Rewrite = rekey ? (r, f) => rekey(spaceMoved(r, f) ?? r, f) ?? spaceMoved(r, f) : spaceMoved
++    const here = await Promise.all(e.files.map(async (f) => ((await pathExists(join(root, f))) ? [join(root, f)] : [])))
++    const swept = await sweepGovernedRoots(here.flat(), { text, raw })
++    return { skipped: swept.skipped.length, refused: swept.refused.length, hosts: [] }
++  }
++  const { missed, hosts, pages } = await renameCascade(root, { names, label: e.label })
 +  return { skipped: missed, hosts, pages }
 +}
 ```
@@ -20444,7 +20449,7 @@ The `unassigned` part sweeps while the property's rename is owed and stays whole
 +    case 'container':
 +      return finishContainer(root, id, e)
 +    case 'relink':
-+      return relinkReach(root, e).then((reach) => ({ left: reach.skipped ? e : { ...e, names: {} }, reach }))
++      return relinkReach(root, e).then((reach) => ({ left: reach.skipped ? e : { ...e, names: {}, rekey: undefined }, reach }))
    }
 @@ end of file @@
 +
@@ -20474,7 +20479,7 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +import { errText, ok } from '../Contract/result'
 @@
 -import { type CascadeReport, linksNotUpdated, renameCascade } from './cascade'
-+import { type CascadeReport, linksNotUpdated, relinkReach, renameCascade } from './cascade'
++import { type CascadeReport, joinCascades, linksNotUpdated, relinkReach, renameCascade } from './cascade'
 +import { editNote, readNotes, relinkNote, runNoted } from './owed'
 @@ relink @@
    const names = respellings(before, after, moved, arriving)
@@ -20503,13 +20508,100 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +  return ran.ok ? ran.value.cascade : renameCascade(root, { names, label })
  }
 @@ returningCascade @@
-   if (!names.size) return { after, own, unswept }
+-/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets. Answers the files the repair couldn't write, and the notice that links weren't updated when the index can't settle. */
++/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index can't settle. */
+ export async function returningCascade(
+   root: string,
+   tree: NexusTree,
+   back: readonly ConnPage[],
+   title: string,
+   landed: {
+     entity: RecordFile['entity']
+     abs: string
++    rekey?: [from: string, to: string]
+     repair?: (after: PageIndex) => Map<string, string>
+   },
+ ): Promise<{
+   after: PageIndex | null
+   own: Map<string, string>
+-  unswept: string[]
+   cascade?: CascadeReport
+ }> {
+   const after = await settledIndex(root)
+-  if (!after) return { after, own: new Map(), unswept: [], cascade: linksNotUpdated(title) }
++  if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
+   const { names, own } = returningNames(pageIndexOf(tree), after, back)
+-  const repair = landed.repair?.(after) ?? own
+-  const unswept = await repairLanded(root, tree, landed.entity, landed.abs, repair)
+-  if (!names.size) return { after, own, unswept }
 -  return { after, own, unswept, cascade: await renameCascade(root, { names, label: title }) }
-+  return { after, own, unswept, cascade: await respell(root, back.map((p) => p.id), names, title) }
++  const repaired = await repairLanded(root, landed, title, landed.repair?.(after) ?? own)
++  if (!names.size) return { after, own, cascade: repaired }
++  return { after, own, cascade: joinCascades(repaired, await respell(root, back.map((p) => p.id), names, title)) }
  }
 ```
 
-The re-spell's list step is the move or the landing, already made, as Clear's is the definition it resolved. The returning files' own repair (`repairLanded`) stays reported through `withUnswept`, since its map applies to the landed files alone and Repair On Open rewrites them.
+```Core/Trash/restoreScrub.ts diff
+@@ imports @@
+-import { valueOr } from '../Contract/result'
++import { ok, valueOr } from '../Contract/result'
+ import { asString } from '../Nexus/coerce'
+-import { fileRewrites, type StrippedLink } from '../Nexus/cascade'
+-import { rewriteConnections } from '../Connections/rewrite'
++import { type CascadeReport, relinkReach, type StrippedLink } from '../Nexus/cascade'
++import { type RelinkEntry, runNoted } from '../Nexus/owed'
++import { reachReport } from '../Nexus/configReach'
+@@
+-import { basename, join } from '../Paths/posix'
++import { basename, join, relative } from '../Paths/posix'
+@@ repairLanded @@
+-/** A returning artifact's own links, repaired where it landed: each key in `repair` re-spells to the current name of the page the delete recorded it naming. Answers the files it couldn't write. */
+-export async function repairLanded(
+-  root: string,
+-  tree: NexusTree,
+-  entity: RecordFile['entity'],
+-  targetAbs: string,
+-  repair: ReadonlyMap<string, string>,
+-): Promise<string[]> {
+-  if (!repair.size) return []
+-  const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
+-  const files = await artifactFiles(root, entity, targetAbs)
+-  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
+-}
++/** A returning artifact's own links and keys, repaired where it landed under the relink entry keyed by its path: each key in `repair` re-spells, in the landed files alone, to the current name of the page the delete recorded it naming, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
++export async function repairLanded(
++  root: string,
++  landed: { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] },
++  label: string,
++  repair: ReadonlyMap<string, string>,
++): Promise<CascadeReport | undefined> {
++  if (!repair.size && !landed.rekey) return undefined
++  const files = (await artifactFiles(root, landed.entity, landed.abs)).map((f) => relative(root, f))
++  const e: RelinkEntry = { kind: 'relink', names: Object.fromEntries(repair), label, files, rekey: landed.rekey }
++  const ran = await runNoted(root, relative(root, landed.abs), {
++    note: () => e,
++    list: async () => ok(null),
++    sweep: () => relinkReach(root, e),
++    settle: () => undefined,
++  })
++  return ran.ok ? ran.value.cascade : reachReport(await relinkReach(root, e))
++}
+```
+
+```Core/Archive/archive.ts diff
+@@ imports @@
+ import { returningCascade } from '../Nexus/settle'
+-import { withUnswept } from '../Nexus/cascade'
+@@ the arrival @@
+-  const arrived = await returningCascade(root, tree, back, title, {
++  const { cascade } = await returningCascade(root, tree, back, title, {
+     entity: record.entity,
+     abs: targetAbs,
+   })
+-  const cascade = withUnswept(arrived.cascade, title, arrived.unswept)
+```
+
+The re-spell's list step is the move or the landing, already made, as Clear's is the definition it resolved. A restore's repair of its own landed files rides the same kind under its landed path, its `files` scoping the map to them alone, since a live linker under one of their old keys means whatever that key names now; a landed file moved or deleted before the finish leaves the entry rather than clogging it.
 
 ```Core/Trash/delete.ts diff
 @@ imports @@
@@ -20635,6 +20727,34 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
 +  await parkLinks(root, recorded)
 +  return ok({ cascade: owedReport(await finishEntry(root, id, deps)) })
  }
+@@ the Context imports @@
+-import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
+-import { rekeyContext } from '../Contexts/contextCascade'
++import { spaceIdsIn } from '../Contexts/spaceSidecar'
+@@ the governedSweep import @@
+-import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
++import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
+@@ restoreTrashed — the arrival @@
+   const arrived = await returningCascade(root, tree, back, title, {
+     entity: record.entity,
+     abs: targetAbs,
++    rekey: record.entity === 'context' && title !== record.registry.title ? [record.registry.title, title] : undefined,
+@@ restoreTrashed — after the arrival @@
+-  const { after, own, unswept } = arrived
++  const { after, own } = arrived
++  const unswept: string[] = []
+   const settled = after && heldTreeOf(root)
+   const unspent: string[] = []
+   const unlinked = new Set<string>()
+   if (record.entity === 'context') {
+-    if (title !== record.registry.title) {
+-      const sidecars = (await spaceSidecarsIn(targetAbs)).map((s) => s.file)
+-      const rekeyed = await sweepGovernedRoots(sidecars, {
+-        raw: rekeyContext(record.registry.title, title),
+-      })
+-      unswept.push(...rekeyed.skipped)
+-    }
+     const titlesById = new Map(
 ```
 
 `emptyBundle` takes `deps` already, and `finishEntry` runs inside its settle turn, which it doesn't take.
@@ -20676,7 +20796,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 **VERIFY**
 
 - [ ] `git grep -nw "deleteCascade" -- Core ':!*.test.*'` answers its declaration and `finishContainer`; `git grep -n "renameCascade(root, { names" -- Core ':!*.test.*'` answers `relinkReach` and `respell`'s two un-noted fallbacks; `git grep -n "partial: true" -- Core/Trash/delete.ts` answers nothing.
-- [ ] `git grep -nw "runNoted" -- Core ':!*.test.*'` answers what Task 11B-3 left, `moveSetOp`, and `respell`.
+- [ ] `git grep -nw "runNoted" -- Core ':!*.test.*'` answers what Task 11B-3 left, `moveSetOp`, `respell`, and `repairLanded`; `git grep -nw "unswept" -- Core/Nexus/settle.ts Core/Archive/archive.ts` `git grep -nw "withUnswept" -- Core/Archive` and `git grep -nw "spaceSidecarsIn\|rekeyContext" -- Core/Trash/spend.ts` answer nothing.
 - [ ] The tests named in CHANGE pass, each having failed first; `deleteReach.test.ts`, `deleteOrder.test.ts`, `trashRecovery.test.ts`, `spend.test.ts`, `move.test.ts`, and `settle.test.ts` green.
 - [ ] `npm run typecheck`, `npm run test`, `npm run lint` clean; `npm run test -- engineGraph hostGraph` passes.
 - [ ] Check for unnecessary code or mistakes.
@@ -20772,7 +20892,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 - **The System Trash Mode's Context and Space Deletes:** a finish in System Trash mode sends the folder to the system Trash and strips the tags with no record anywhere, as the live delete does.
 - **Content Deletes, Moves, and Restores Owe What They Miss (Nathan's Ruling, 10-22-2026, Unify):** a page, Collection, or Set delete, a Trash emptying, a Set move, a page move or rename, and a restore's re-spell of the live world that miss a file now keep a note and offer the one Try Again, which strips the gone page's links, reaches the views, or re-spells the links still under the old name; a move made again before the finish carries what the first missed to where the second leaves it. Each answered a warning nothing could finish, and a delete cut short by a crash left its strip undone for good; the next open finishes it now. The warning reads as every owed change's, "Couldn’t update N Items.", where these read "Couldn’t update links in N Items." or "links to “…” in N Items.".
 - **A Delete's Trash Record Is Partial Only Where It's Still True:** a page, Collection, or Set delete no longer writes its record `partial` ahead of the move or marks it for a strip that missed a file, since the miss is owed and each link a finish strips joins the record's `links`; the record keeps `partial` only from what its gather couldn't file, such as a holder with no ID. A content delete whose note can't be written refuses with nothing deleted.
-- **The Returning Files' Own Repair Keeps Its Warning:** a restore's repair of its own returning files stays reported through its warning without Try Again, since its map applies to the landed files alone and Repair On Open rewrites them.
+- **A Restore's Own Link Repair Owes What It Misses (Try Again Unclogs, Nathan's Ruling, 10-22-2026):** a Trash or Archive restore whose repair of its own landed files misses one now keeps a note under the landed path and offers the one Try Again, which re-spells those files alone; it answered "Couldn’t update links in “…” across N Items." that nothing could finish, and now reads "Couldn’t update N Items." as every owed change does. A Context restored under a new title re-keys its Spaces' sidecars on the same note, so a sidecar it misses takes the same Try Again. A landed file moved or deleted before the finish drops out of the note. The same notice's other restore lines, a trashed copy's refilled Link value and the returning values the scrub couldn't reconcile, keep their warning without Try Again: each resolves against the restore-time world and schema its spent record held, which no note keeps.
 - **The Orphan Trash Entry (H-5 Residual):** a crash between a delete's bundle mint and its note leaves a Trash entry for a live item, as at HEAD; its restore refuses `'exists'`, and it can be emptied.
 
 #### Line Total
@@ -20783,12 +20903,12 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 | 11B-2 | −157 | +210 | +53 |
 | 11B-3 | −70 | +128 | +58 |
 | 11B-4 | −5 | +11 | +6 |
-| 11B-5 | −71 | +198 | +127 |
+| 11B-5 | −102 | +264 | +162 |
 | 11B-6 | 0 | 0 | 0 |
-| **Phase 11B** | **−306** | **+556** | **+250** |
+| **Phase 11B** | **−337** | **+622** | **+285** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
-- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change, with `refused` threaded once through `ConfigReach` so a refused-only entry frees its names, and Clear Exclusion Cache's skip carries Try Again (+7 with 11B-3's count). Content deletes, Trash emptying, Set moves, page moves, and a restore's re-spell join the notes (11B-5, +127, Nathan's ruling to unify them): the `container` and `relink` entry kinds, their two arms, `respell` on the runner with its composition onto an earlier move, and `ConfigReach`'s pages, while `deleteOp`'s own configuration pass, its record's second write and write-ahead mark, and `emptyBundle`'s and `moveSetOp`'s inline reaches leave. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `unwritten`, and `ClearReport.refused`.
+- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change, with `refused` threaded once through `ConfigReach` so a refused-only entry frees its names, and Clear Exclusion Cache's skip carries Try Again (+7 with 11B-3's count). Content deletes, Trash emptying, Set moves, page moves, and a restore's re-spell join the notes (11B-5, +162, Nathan's ruling to unify them): the `container` and `relink` entry kinds, their two arms, `respell` on the runner with its composition onto an earlier move, `ConfigReach`'s pages, and the relink entry's `files` scope with its `rekey`, which carries a restore's own link repair and a renamed Context's Space re-key on the same note and Try Again (Nathan's ruling) and takes `returningCascade`'s `unswept` thread and the Archive restore's `withUnswept` with it, while `deleteOp`'s own configuration pass, its record's second write and write-ahead mark, and `emptyBundle`'s and `moveSetOp`'s inline reaches leave. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `unwritten`, and `ClearReport.refused`.
 - **Tests:** about −100 removed (the undo-and-throw, put-back, unmint, `goneEdit`, and skipped-Remove-refusal cases) and about +220 written (the cases each task names).
 
 ---
@@ -21316,8 +21436,8 @@ The refill's spend answers `null` when its block has gone, so `patchSidecar` wri
 ```Core/Trash/spend.ts diff
 @@ imports @@
  import { readLiveSetting } from '../Settings/settings'
--import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
-+import { collectionFolders, refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
+-import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
++import { collectionFolders, refillValues, sweepRootsById } from '../Nexus/governedSweep'
  import { joinValues, landValue } from '../Files/rootValues'
  import { rewriteConnections } from '../Connections/rewrite'
 -import { linkDefsOf } from '../Properties/propertiesRegistry'
@@ -22274,20 +22394,20 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 | 12-1 One Vocabulary | −58 | +58 | 0 |
 | 12-2 The Block and Its Stamp | −23 | +33 | +10 |
 | 12-3 The Purge | −5 | +5 | 0 |
-| 12-4 The Restore Order and the Empty | −8 | +49 | +41 |
+| 12-4 The Restore Order and the Empty | −8 | +44 | +36 |
 | 12-5 The Refill | −39 | +58 | +19 |
 | 12-6 Refill Skips Surface | −18 | +46 | +28 |
 | 12-7 The Age Cleanup | −2 | +23 | +21 |
 | 12-8 The Partial Mark | −11 | +30 | +19 |
 | 12-9 The Restore Notice's Try Again | −3 | +10 | +7 |
 | 12-10 | 0 | 0 | 0 |
-| **Phase 12** | **−167** | **+312** | **+145** |
+| **Phase 12** | **−167** | **+307** | **+140** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +190 (`propertyStash.test.ts` new with about 80; about 15 new cases across `unassignProperty.test.ts`, `assignment.test.ts`, `finishOwed.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `rows.test.ts`, and `TrashFrame.test.tsx`; two cases rewritten; fixtures re-seeded with the stamp, line-neutral). The drive group (about 90 lines) is apart.
 - **Net-Positive Rationale, Per Item (*Less Stuff*):**
   - **The stamp and the age cleanup (+31, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks`' ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
-  - **The restore order and the empty (+41, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty runs the finish's own strip over the Collections still listing the property and the Trash's pages rather than a second purge, on the runner so a miss keeps Try Again, under *No Leftovers* and *Try Again Unclogs*.
+  - **The restore order and the empty (+36, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty runs the finish's own strip over the Collections still listing the property and the Trash's pages rather than a second purge, on the runner so a miss keeps Try Again, under *No Leftovers* and *Try Again Unclogs*.
   - **The refill (+19, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
   - **The refill's report (+28, Task 12-6):** with the timeframe, a skipped value would be lost unseen; the refill's report rides P11's notes entry, its `owesAnything` rule, its `finishProperty` and `sweepEach`, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
   - **The partial mark (+19, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
@@ -34284,7 +34404,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 - **Confirmation:** every "watch it fail" test went red before its change and green after; every VERIFY ran and its output was read; every measurement (F3, K, 07-10, 02-10) and every read rule (07-17) recorded its outcome and applied it as *Planning Findings › §Measurement Rules* states; no check was left to a hand check.
 - **Continuity:** *§Reconciliation* is walked; the feature documents, the Issues entries, the scripts README, and the drive matrices read true (Phase 18); every Behavior Change a phase disclosed is tied to a decision or a ruled Last Call; every deviation is fixed or ruled on under *§Deviations*.
 - **Confidence:** the three gates are green from a clean checkout at HEAD, with `engineGraph.test.ts` and `hostGraph.test.ts` inside them; the test count moved only as the phases' *Tests* lines stated; each phase's measured delta sits in *§Net Ledger* beside its written figure, and any growth past it was reported before the next phase opened with what it bought; both neutral gates answered yes without ambiguity.
-- **Net-Negative:** the plan ends net-negative on every outcome, the cumulative production delta in *§Net Ledger* reading −546 at the final head on the measurements' first outcomes; on those outcomes the running total rises above zero at Phase 12's head (+128, after the net-positive Phases 10, 11A, 11B, and 12) before Phase 14's head (−22) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+64, +209 at Phase 12's) before Phase 16A's head (−49) brings it back down.
+- **Net-Negative:** the plan ends net-negative on every outcome, the cumulative production delta in *§Net Ledger* reading −518 at the final head on the measurements' first outcomes; on those outcomes the running total rises above zero at Phase 11B's head (+16, after the net-positive Phases 10, 11A, and 11B), peaks at Phase 12's (+156), and stays above zero through Phase 14's (+6) before Phase 15's head (−21) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+97, +237 at Phase 12's) before Phase 16A's head (−21) brings it back down.
 - **No New Issues:** the work files no Issues entry, compared by entry title, since the index script renumbers every heading after Phase 18's three closures: no title in `.claude/IssuesPM.md` at HEAD is missing at BASELINE (`diff <(git show BASELINE:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort) <(git show HEAD:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort)` shows no `>` line) apart from I-032's and I-061's titles, which Task 18-4 narrows in place, and any entry another session's commit filed, named in the report by its commit; Task 18-4's title diff over its own commit holds as its VERIFY states. I-076's and I-077's entries, under whatever numbers the index script gives them, are the only deferrals.
 - **Adherence:** *§Adherence Scoreboard* reads its After column true on the final head, each row's check re-run there rather than carried from a phase.
 
@@ -34344,7 +34464,7 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Tally**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Tally**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Morning Report › §What I Need From You* | *Morning Report* |
-| **Directive (10-22-2026)** | Net production delta | — | −546 written on Biome-formatted code (−470 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail); the cumulative rises above zero at Phase 12's head (+128) before Phase 14's head brings it back down, and on F3's Fail at Phase 11B's head (+64) before Phase 16A's | *§Net Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | −518 written on Biome-formatted code (−442 on F3's Fail); seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail); the cumulative rises above zero at Phase 11B's head (+16, peaking at +156 at Phase 12's) before Phase 15's head brings it back down, and on F3's Fail at Phase 11B's head (+97) before Phase 16A's | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -34433,13 +34553,13 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4B | −18 | +29 | +11 | | |
 | 5 | −151 | +117 | −34 | | |
 | 6 | −266 | +305 | +39 | | |
-| 7 | −627 | +483 | −144 | | |
+| 7 | −622 | +476 | −146 | | |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −390 | +400 | +10 | | |
 | 11A | −608 | +746 | +138 | | |
-| 11B | −306 | +556 | +250 | | |
-| 12 | −167 | +312 | +145 | | |
+| 11B | −337 | +622 | +285 | | |
+| 12 | −167 | +307 | +140 | | |
 | 13 | −642 | +543 | −99 | | |
 | 14 | −535 | +484 | −51 | | |
 | 15 | −256 | +229 | −27 | | |
@@ -34449,7 +34569,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
-**Written Total:** −7,599 / +7,053, net **−546**, on each measurement's first outcome. The plan ends net-negative on every outcome. On the first outcomes the written cumulative reaches −415 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +138, +250, +145) carry it above zero at Phase 12's head (+128), where the Mid-Plan Neutral Gate's range ends, and through Phase 13's (+29) before Phase 14's head (−22) brings it back down; Phase 11B's head (−17) is the last net-negative point before it. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +113 (−136 / +249), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −138 (−627 / +489), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−470**, and the cumulative rises above zero at Phase 11B's head (+64), peaks at +209 at Phase 12's, and stays above zero through Phase 15's head (+27) before Phase 16A's head (−49) brings it back down. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15 and the total −504. **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −530. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −408, and the cumulative stays above zero from Phase 11B's head through Phase 15's (+73).
+**Written Total:** −7,625 / +7,107, net **−518**, on each measurement's first outcome. The plan ends net-negative on every outcome. On the first outcomes the written cumulative reaches −417 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +138, +285, +140) carry it above zero at Phase 11B's head (+16) and to its peak at Phase 12's (+156), where the Mid-Plan Neutral Gate's range ends, and through Phase 13's (+57) and Phase 14's (+6) before Phase 15's head (−21) brings it back down; Phase 11A's head (−269) is the last net-negative point before it. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +113 (−136 / +249), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −140 (−622 / +482), and Task 13-7's `patchedValues` half lands −7 (−37 / +30, its seven hunks counted from their own lines), so the written total becomes **−442**, and the cumulative rises above zero at Phase 11B's head (+97), peaks at +237 at Phase 12's, and stays above zero through Phase 15's head (+55) before Phase 16A's head (−21) brings it back down. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15 and the total −476. **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −502. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −380, and the cumulative stays above zero from Phase 11B's head through Phase 15's (+101).
 
 #### Reconciliation
 
