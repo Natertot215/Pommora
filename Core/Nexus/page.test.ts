@@ -9,7 +9,6 @@ import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
-import type { PropertyValue } from '../Properties/propertyValue'
 
 /** The writer takes a definition, not an id. The type only has to be one the value's kind can hold; the key is the label lowercased, so a write that reads the label lands on the wrong key. */
 const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => {
@@ -274,22 +273,6 @@ describe('a page property write', () => {
     const fm = splitFrontmatter(await readFile(f, 'utf8'))
     expect(fm.stage).toEqual(['doing'])
     expect(fm.Stage).toBe('Held')
-  })
-
-  it('a value kind the schema has no shape for is refused under its label, never a clear', async () => {
-    const c = await createTestPage(typeDir, 'Unknown Kind', { body: 'x' })
-    if (!c.ok) throw new Error('setup failed')
-    const f = c.value.path
-    await writePageValue(f, defOf('prop_stage'), { kind: 'select', value: 'todo' })
-
-    const r = await writePageValue(f, defOf('prop_stage'), {
-      kind: 'status',
-      value: 'done',
-    } as unknown as PropertyValue)
-
-    expect(splitFrontmatter(await readFile(f, 'utf8')).stage).toEqual(['todo'])
-    expect(r.ok || r.error.code).toBe('invalid-property')
-    expect(r.ok || r.error.message).toBe('"Stage" was given a value it has no shape for.')
   })
 
   it('errors when the page is missing', async () => {

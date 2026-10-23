@@ -8,8 +8,7 @@ export async function writePageValue(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
-  const encoded = valueToWrite(def, value)
-  return encoded.ok ? landPageValue(absFile, def.key, encoded.value) : encoded
+  return landPageValue(absFile, def.key, valueToWrite(def, value))
 }
 
 export async function writeSpaceValue(
@@ -18,6 +17,5 @@ export async function writeSpaceValue(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
-  const encoded = valueToWrite(def, value)
-  return encoded.ok ? landSpaceValue(root, absSpaceDir, def.key, encoded.value) : encoded
+  return landSpaceValue(root, absSpaceDir, def.key, valueToWrite(def, value))
 }
