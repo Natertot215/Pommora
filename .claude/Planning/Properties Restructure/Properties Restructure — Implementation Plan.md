@@ -1129,7 +1129,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 3-9 · Drive group 2
   - [x] Review Checkpoint
   - [x] Closeout P3 (two `opus-high` agents, inward and outward)
-- [ ] `[Compaction checkpoint: every remaining task applied in order in a throwaway worktree of Phase 3's head, its refusals recorded; c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 4A opens]`
+- [x] `[Compaction checkpoint: every remaining task applied in order in a throwaway worktree of Phase 3's head, its refusals recorded; c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 4A opens]`
 - [ ] **Phase 4A** — The Value Write's One Home
   - [ ] Task 4A-1 · `governedSweep.ts` moves to `Core/Nexus`
   - [ ] Task 4A-2 · `Core/Nexus/governedRoot.ts` and one `reencode`
