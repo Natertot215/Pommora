@@ -391,7 +391,7 @@ export async function optionHolders(
   return ok(await sweepCount(root, files, plan))
 }
 
-export function removeOption(
+export function deleteOption(
   root: string,
   propertyId: string,
   label: string,

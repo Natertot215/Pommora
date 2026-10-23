@@ -11,7 +11,7 @@ import {
   clearOption,
   editOption,
   optionHolders,
-  removeOption,
+  deleteOption,
   renameOption,
   setValueFormat,
   valueFormatHolders,
@@ -186,7 +186,7 @@ export const propertiesHandlers = {
   'property:editOption': registryChannel(idAndEdit, editOption),
   'property:renameOption': registryChannel(idOldNew, renameOption, cascadeReply),
   'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply),
-  'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
+  'property:removeOption': registryChannel(idAndValue, deleteOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
   'property:holders': withRoot(async (root, _ctx, propertyId: unknown, change: unknown) => {
     const read = countedChange.safeParse(change)
