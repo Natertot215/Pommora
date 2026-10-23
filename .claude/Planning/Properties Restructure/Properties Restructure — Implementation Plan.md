@@ -1176,7 +1176,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 7-7 · A property delete runs through `confirmDelete`
   - [x] Task 7-8 · The drives and scripts call `mutate`; drive group 6
   - [x] Review Checkpoint
-  - [ ] Closeout P7 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P7 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 8 opens]`
 - [ ] **Phase 8** — Option Identity
   - [ ] Task 8-1 · Every option carries an `id`
@@ -11881,7 +11881,7 @@ The five remaining `unsweptLine` readers change one import each:
   - `Core/Nexus/mutate.test.ts` gains `describe('the property ops')` over a Collection `Notes` assigning a Select `Stage` (options `Done`, `Todo`), a page holding `Done`, and an unassigned Text `Spare`, seeded through `seedNexus` (P1): "<op> takes the schema lock exactly once" for each of the fourteen ops (`addProperty`, `assignProperty` of `Spare`, `unassignProperty`, `reorderAssigned`, `reorderProperty`, `renameProperty`, `setFormat` with a `value_format`, `configureProperty` with an icon, `deleteProperty`, `finishOwed`, `editOption` recoloring `Done`, `renameOption`, `deleteOption` of `Todo`, `clearOption` of `Done`), each through `handleMutate` with a `vi.spyOn(machine(), 'lock')` counting calls keyed `nexusDir(root)` (exactly 1) and the reply ok; "an added property answers its id as what it created" (`created` equals `{ propertyId }` naming the registry's new entry); "a rename that keeps its key answers no cascade, and one that moves it answers the sweep" (`Stage` → `stage` under `lowercase` key format answers `{}`; `Stage` → `Phase` answers `cascade`); "a configure under a file directory outside the asset root refuses, and one naming the root itself clears the field" (`{ file_directory: '  ' }` leaves the definition without `file_directory`).
   - `Core/Session/store.test.tsx` › the slice's `mutate` describe (beside "posts a warning that carries a retry with Try Again, which sends the retry", `:1145`) gains "an owed refusal offers Try Again, which replays the journal's record" (`channels.mutate` answers `fail('owed', 'An earlier change hasn’t reached every file yet.')` to an `editOption`; the notice reads that message with `Try Again`, whose run sends `{ op: 'finishOwed' }`), "leaves a property delete's pass warning to the Deleted notice" (`deleteProperty` answering a warning posts nothing; `storesChanged` fires once), and "a create that took a numbered name says so" (`addProperty` answering `landedAs: 'New Select (2)'` posts `Created “New Select (2)”.`; one answering no `landedAs` posts nothing).
 - [ ] `mutateRequest.ts`: the fourteen ops, `created`'s two shapes, and `deleteProperty` in `changesStores`, as AFTER.
-- [ ] `mutate.ts`: the fourteen arms, as AFTER. The `finishOwed` arm is today's `property:replay` handler moved: `replaySchemaCascade` over the journal's one record and `unsweptReply`'s skipped line, with the request itself as the retry where `property:replay`'s renderer re-offered `replay(record)`; the slot holds the record a reply would carry, since its `write` refuses a different one while it holds one, so no record travels and `journalRecord`'s decode leaves with the channel.
+- [ ] `mutate.ts`: the fourteen arms, as AFTER. The `finishOwed` arm is today's `property:replay` handler moved: `replaySchemaCascade` over the journal's one record and `unsweptReply`'s skipped line, with the request itself as the retry where `property:replay`'s renderer re-offered `replay(record)`; the slot holds the record a reply would carry, since every property op refuses with `OWED` while the slot holds another record, so no record travels and `journalRecord`'s decode leaves with the channel.
 - [ ] The schema ops answer `MutateReply` at their origin: `schemaCascade` (`propertyJournal.ts`) answers `{ cascade, retry? }`; `rekeyProperty` answers `{}` when the key holds and the cascade when it moves; `rekeyOptions`, `renameOption`, `setValueFormat`, `deleteOption`, `deleteProperty`, and `deleteInner` retype; `clearOption` answers its sweep's report; `unassignProperty` answers `{ cascade: reachReport(reach) }` (so its tile hosts are owed on a partial Remove too, which `schema:unassign` did by owing before refusing); `addProperty` answers `{ created: { propertyId } }`, with `landedAs` when the label it landed isn't the draft's (O-4). `SchemaCascade`, `PropertyRename`, and `PropertyDeletion` leave.
 - [ ] `editProperty` → `configureProperty(root, propertyId, patch: PropertyConfig)`, the file directory's trim, root-relative join, and asset-root check inline, as AFTER. `properties.ts`: `propertyConfig` replaces `linkFields`, `numberFields`, the three narrowers, and `FileConfig`; `propertyDraft`'s `id` is optional, so the pane sends a label and a type.
 - [ ] `handlers.ts` keeps `property:holders` alone, as AFTER; `keyFormat.ts`'s `isKeyFormat` leaves with `idAndFormat`, its last reader, and `keyFormat.test.ts:96-98`'s `isKeyFormat` case with it; `bridge.ts` drops the nineteen entries and the imports only they read.
@@ -13437,6 +13437,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 - **Clear's Skip Is a Warning:** a Clear that skipped a file answered a refusal; it answers the same line, in the same error tone, as its cascade's warning.
 - **Folding the Channels:** no visible change; the request each surface sends is held by `mutateRequest` before anything is written, so a malformed format or patch refuses as "Malformed request." where a channel answered its own wording (reachable from scripts only).
 - **The Lock Rule:** a property reorder in the pane now waits on a running schema op, where it could land inside its cascade.
+- **A Rename or Delete Waits on an Unfinished Change (Closeout P7):** while another change's record holds the property journal, a property rename, Label Format change, or delete refuses with "An earlier change hasn’t reached every file yet." and its Try Again, as option changes already did, where it ran unjournaled and a Try Again replayed the other record, stranding its own missed files; a second rename of the same property waits the same way. Phase 11A's notes replace the wait with one note per item.
 
 #### Line Total
 
@@ -34751,7 +34752,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
 | 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
 | 6 | −266 | +305 | +39 | −305 / +336 / +31 | −244 |
-| 7 | −622 | +469 | −153 | | |
+| 7 | −622 | +469 | −153 | −600 / +456 / −144 | −388 |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −390 | +400 | +10 | | |
