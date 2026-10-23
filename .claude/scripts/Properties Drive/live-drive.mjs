@@ -1,16 +1,17 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
   frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
-  SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
+  holds, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -409,6 +410,55 @@ async function group6(cdp) {
   item(6, '—', 'the group leaves Collection A, the registry, and the Trash as it found them', same(end, start), show({ start, end }))
 }
 
+// ── Group 7 — Option identity ─────────────────────────────────────────────
+
+const registryOnDisk = () => JSON.parse(read('.nexus/properties.json')).defs
+const optionsOf = (id) => registryOnDisk()[id]?.select_options ?? []
+const viewOnDisk = (id) => JSON.parse(read('Collection A/_pagecollection.json')).views.find((v) => v.id === id)
+/** The roles a saved view names options in, as its sidecar holds them. */
+const optionRoles = (v) => ({ sort: v.sort, group: v.group, filter: v.filter, collapsed: v.collapsed_groups })
+
+async function group7(cdp) {
+  const G = 7
+  const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'P8 Stage', type: 'select' } }))
+  const propertyId = added.created.propertyId
+  const seedId = optionsOf(propertyId)[0]?.id
+  const doneId = mintOptionId()
+  await must('the Done option', ask(cdp, 'mutate', { op: 'editOption', propertyId, edit: { op: 'add', groupId: 'select', id: doneId, label: 'Done' } }))
+  item(G, 'D-1', 'a created Select seeds its option under a minted id, and an added option lands under the id the window sent',
+    /^opt_[0-9A-HJKMNP-TV-Z]{26}$/.test(seedId ?? '') && optionsOf(propertyId).some((o) => o.id === doneId && o.label === 'Done'), JSON.stringify(optionsOf(propertyId)))
+  for (const [name, value] of [['P8 One', doneId], ['P8 Two', seedId]])
+    await createPage(cdp, name, { [propertyId]: { kind: 'select', value } })
+  const VIEW = `view_${ulid()}`
+  await must('the P8 Stages view', ask(cdp, 'views:save', 'Collection A', 'collection', {
+    id: VIEW, name: 'P8 Stages', type: 'table', property_order: ['_title', propertyId], hidden_properties: [],
+    sort: [{ property_id: propertyId, direction: 'ascending', order: [doneId, seedId] }],
+    group: { kind: 'property', property_id: propertyId, order_mode: 'manual', order: [doneId, seedId] },
+    collapsed_groups: [`${propertyId}/${doneId}`],
+    filter: { match: 'all', rules: [{ property_id: propertyId, op: 'is', values: [doneId, seedId] }] },
+  }, {}))
+  const before = JSON.stringify(optionRoles(viewOnDisk(VIEW)))
+  item(G, 'D-1', 'the view sidecar names options by opt_ id, its collapse scoped to the property',
+    before.includes(doneId) && !/"(Done|Option 1)"/.test(before) && viewOnDisk(VIEW).collapsed_groups[0] === `${propertyId}/${doneId}`, before)
+
+  await must('rename Done', ask(cdp, 'mutate', { op: 'renameOption', propertyId, optionId: doneId, label: 'Finished' }))
+  item(G, 'D-1', 'an option rename rewrites the pages holding its word',
+    await settles(async () => [frontmatter('P8 One')['P8 Stage']].flat().includes('Finished')), JSON.stringify(frontmatter('P8 One')))
+  item(G, 'D-1', 'the renamed option keeps its id', optionsOf(propertyId).some((o) => o.id === doneId && o.label === 'Finished'), JSON.stringify(optionsOf(propertyId)))
+  item(G, 'D-1', "the view's sort order, group order, collapse, and filter are untouched by the rename",
+    await holds(async () => JSON.stringify(optionRoles(viewOnDisk(VIEW))) === before, 2000), JSON.stringify(optionRoles(viewOnDisk(VIEW))))
+
+  await must('show P8 Stages', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: VIEW }))
+  await openCollection(cdp)
+  const bands = await until('the P8 Stages bands', () => cdp.evaluate(`(() => {
+    const rows = [...document.querySelectorAll('.group-band-row')]
+    return rows.length >= 2 ? rows.map((r) => ({ text: r.textContent.trim(), collapsed: r.hasAttribute('data-collapsed') })) : null
+  })()`))
+  item(G, 'D-2', 'the table shows the new label in the band the view keeps collapsed, in its saved order',
+    bands[0].text.includes('Finished') && bands[0].collapsed && bands[1].text.includes('Option 1') && !bands[1].collapsed, JSON.stringify(bands))
+  await escapeAll(cdp)
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -420,6 +470,7 @@ try {
   if (GROUPS.has('4')) await group4()
   if (GROUPS.has('5')) await group5(cdp)
   if (GROUPS.has('6')) await group6(cdp)
+  if (GROUPS.has('7')) await group7(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
