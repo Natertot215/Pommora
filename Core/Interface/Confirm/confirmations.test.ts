@@ -4,7 +4,6 @@ import {
   askClearOption,
   askEmptyTrash,
   askDeleteView,
-  askDestroyProperty,
   askFormatChange,
   askDeleteOption,
   askTrashing,
@@ -53,13 +52,14 @@ describe('what the Confirm Before Deletion switch governs', () => {
     )
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
     useSession.setState({
+      mutate: (async () => ({})) as never,
       askConfirm: async (r) => {
         asked.push(`${r.message} ${r.detail}`)
         return true
       },
     })
     switchOff()
-    await askDestroyProperty('p1', 'Status')
+    await confirmDelete({ propertyId: 'p1', title: 'Status' })
     await askDeleteOption('p1', 'Active')
     await askClearOption('p1', 'Active')
     expect(holders.mock.calls).toEqual([
@@ -77,6 +77,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
       'property:holders': async () => ok(1),
     })
     useSession.setState({
+      mutate: (async () => ({})) as never,
       askConfirm: async (r) => {
         asked.push(`${r.message} ${r.detail}`)
         return true
@@ -84,7 +85,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     })
     expect(await askClearOption('p1', 'Active')).toBe(true)
     expect(asked).toEqual([])
-    await askDestroyProperty('p1', 'Status')
+    await confirmDelete({ propertyId: 'p1', title: 'Status' })
     await askDeleteOption('p1', 'Active')
     expect(asked).toHaveLength(2)
     expect(asked[0]).toContain('stripped from 1 Item;')
@@ -95,12 +96,13 @@ describe('what the Confirm Before Deletion switch governs', () => {
       'property:holders': async () => ok(0),
     })
     useSession.setState({
+      mutate: (async () => ({})) as never,
       askConfirm: async (r) => {
         asked.push(r.detail)
         return true
       },
     })
-    await askDestroyProperty('p1', 'Status')
+    await confirmDelete({ propertyId: 'p1', title: 'Status' })
     await askDeleteOption('p1', 'Active')
     expect(asked).toEqual([
       'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
@@ -205,6 +207,29 @@ describe('a delete through the confirmation', () => {
     mutate.mockResolvedValue({ bundled: { bundlePath: '.trash/b1' } })
     useSession.setState({ mutate: mutate as never })
     clearNotification()
+  })
+
+  it('a property delete asks its own question, counting what holds it, deletes through its op, and offers its reply’s retry', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'property:holders': async () => ok(2),
+    })
+    const details: string[] = []
+    useSession.setState({
+      askConfirm: async (r) => {
+        details.push(`${r.message} ${r.detail}`)
+        return true
+      },
+    })
+    mutate.mockResolvedValueOnce({
+      bundled: { bundlePath: '.trash/p1' },
+      cascade: { pages: [], hosts: [], warning: 'W' },
+      retry: { op: 'finishOwed' },
+    })
+    expect(await confirmDelete({ propertyId: 'p1', title: 'Status' })).toBe(true)
+    expect(details[0]).toMatch(/^Delete “Status” everywhere\? .*stripped from 2 Items; /)
+    expect(mutate).toHaveBeenCalledWith({ op: 'deleteProperty', propertyId: 'p1' })
+    await currentNotification()?.action?.run()
+    expect(mutate).toHaveBeenLastCalledWith({ op: 'finishOwed' })
   })
 
   it('with the switch off, deletes a page unasked while a container, Space, or Context still asks', async () => {

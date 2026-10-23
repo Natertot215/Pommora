@@ -58,11 +58,7 @@ import { nexusReorderIndex, PaneAllGroup, type PaneDrop, paneSpec } from '../pan
 import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDisplay'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import {
-  askDestroyProperty,
-  askFormatChange,
-  notifyTrashed,
-} from '../../Interface/Confirm/confirmations'
+import { askFormatChange, confirmDelete } from '../../Interface/Confirm/confirmations'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
@@ -286,13 +282,11 @@ export function PropertyFrame({
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'editor' }))
     if (action === 'property:remove') await remove(def.id)
-    else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.label))) {
-      const deleted = await mutate({ op: 'deleteProperty', propertyId: def.id })
-      if (!deleted) return
+    else if (
+      action === 'property:destroy' &&
+      (await confirmDelete({ propertyId: def.id, title: def.label }))
+    )
       backToList()
-      const { retry } = deleted
-      notifyTrashed(def.label, deleted, retry && (() => void mutate(retry)))
-    }
   }
   const rowMenu = async (d: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'assigned-row' }))
