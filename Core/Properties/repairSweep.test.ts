@@ -117,6 +117,14 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
+  it('with no setting written, the sweep repairs', async () => {
+    await rm(join(root, '.nexus', 'settings.json'))
+    await refreshTree(root)
+    await frontmatter('Status: Open')
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open')
+  })
+
   it('a canonical page is never rewritten', async () => {
     await frontmatter('Status:\n  - Open')
     const before = (await stat(page)).mtimeMs

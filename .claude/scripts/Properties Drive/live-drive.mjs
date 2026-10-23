@@ -1,13 +1,14 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  frontmatter, pageIds, pagePath,
   ask, boxOf, click, createPage, escapeAll, labels, launch, mouseClick, must, NEXUS, openCollection, pickNative,
   popNative, portalOpen, restore, results, row, sel, SETTINGS_BUTTON, settles, shot, sleep, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2']
+const LANDED = ['1', '2', '3']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -25,6 +26,7 @@ function item(group, decision, name, pass, detail) {
   ledger.push({ group: String(group), decision, name, mark })
 }
 const show = (v) => JSON.stringify(v)
+const same = (a, b) => show(a) === show(b)
 
 // ── The Nexus and its surfaces ──────────────────────────────────────────────
 
@@ -143,6 +145,57 @@ async function group2(cdp) {
   item(2, 'M-1', 'a compact Select chip keeps its tag glyph', tagged, show({ tagged }))
 }
 
+// ── Group 3 · The Value Write's One Home ────────────────────────────────────
+
+async function group3(cdp) {
+  const space = '.nexus/contexts/Areas/Area One'
+  const files = [REGISTRY, join(NEXUS, 'Collection A/_pagecollection.json'), join(NEXUS, space, '_space.json')]
+  const stored = files.map((f) => readFileSync(f, 'utf8'))
+  const status = await must('Status', ask(cdp, 'schema:add', 'Collection A', {
+    id: '', label: 'Status', type: 'select',
+    select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
+  }))
+  const notes = await must('Notes', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Notes', type: 'text' }))
+  const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.id, notes.id], hidden_properties: [] }
+  await must('save Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
+  await must('show Drive Values', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
+  await openCollection(cdp)
+  for (const title of ['Tidy', 'Spaces', 'Filled']) await createPage(cdp, title)
+  // Written by hand, as Obsidian or another app would leave them.
+  const byHand = (title, yaml) => writeFileSync(join(NEXUS, pagePath(title)), `---\nID: ${pageIds[title]}\n${yaml}\n---\n`)
+  byHand('Tidy', 'Status:\n  - Option 1\n  - Option 2')
+  byHand('Spaces', 'Notes: "   "')
+  byHand('Filled', 'Notes: x')
+
+  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.id, value: { kind: 'text', value: 'edited' } }))
+  const tidied = await settles(async () => same(frontmatter('Tidy').Status, ['Option 2']))
+  item(3, 'P-1', 'editing another property writes a several-word Select as the option it shows', tidied, show(frontmatter('Tidy')))
+
+  await must('filter Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {
+    filter: { match: 'all', rules: [{ property_id: notes.id, op: 'is_empty' }] },
+    filter_enabled: true,
+  }))
+  const empties = await settles(async () => (await cdp.evaluate(`!!${row('Spaces')} && !${row('Filled')}`)))
+  item(3, 'J-1', 'a Text value of only spaces matches "is empty"', empties)
+
+  const sidecar = files[2]
+  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.id, value: { kind: 'text', value: 'held' } }))
+  await pick()
+  const before = { text: readFileSync(sidecar, 'utf8'), mtime: statSync(sidecar).mtimeMs }
+  await sleep(1100)
+  await pick()
+  const untouched = readFileSync(sidecar, 'utf8') === before.text && statSync(sidecar).mtimeMs === before.mtime
+  item(3, 'J-9', 're-picking a value a Space holds leaves its file and modified time alone', untouched)
+
+  await escapeAll(cdp)
+  for (const title of ['Tidy', 'Spaces', 'Filled']) {
+    rmSync(join(NEXUS, pagePath(title)))
+    delete pageIds[title]
+  }
+  files.forEach((f, i) => writeFileSync(f, stored[i]))
+  await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.id))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -150,6 +203,7 @@ try {
   cdp = (await launch(PORT, 'properties-shots')).cdp
   if (GROUPS.has('1')) await group1(cdp)
   if (GROUPS.has('2')) await group2(cdp)
+  if (GROUPS.has('3')) await group3(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
