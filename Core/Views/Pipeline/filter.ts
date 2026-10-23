@@ -14,13 +14,14 @@ import {
   checkboxWord,
   isBlankValue,
   type PropertyValue,
+  readNumber,
   selectedValues,
   type ValueKind,
 } from '../../Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
 import { linkDisplayText, shownProse } from '../../Connections/linkValue'
-import { dayMs, readDate, readNumber } from '../../Properties/formatValue'
+import { dayMs, readDate } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
 import { isUlidShaped } from '../../Nexus/identityMark'
 

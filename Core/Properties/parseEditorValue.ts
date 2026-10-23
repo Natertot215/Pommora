@@ -1,7 +1,6 @@
-import type { PropertyValue } from './propertyValue'
+import { type PropertyValue, readNumber } from './propertyValue'
 import type { ColumnType } from './properties'
 import { linkValueFromEdit } from '../Connections/linkValue'
-import { readNumber } from './formatValue'
 import type { ConnPage, PageIndex } from '../Connections/pageIndex'
 
 interface LinkEditContext {
