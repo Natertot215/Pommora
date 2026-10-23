@@ -1128,7 +1128,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 3-8 · The value picker's Status gate keeps its reason
   - [x] Task 3-9 · Drive group 2
   - [x] Review Checkpoint
-  - [ ] Closeout P3 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P3 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: every remaining task applied in order in a throwaway worktree of Phase 3's head, its refusals recorded; c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 4A opens]`
 - [ ] **Phase 4A** — The Value Write's One Home
   - [ ] Task 4A-1 · `governedSweep.ts` moves to `Core/Nexus`
@@ -6516,7 +6516,7 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 - [ ] Run the gates.
 - [ ] Properties Drive groups 1 and 2 pass.
 - [ ] The Number: `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-3-delta.md` over this phase's own commits, its fixes included; its **Actionable** column is recorded in *§Net Ledger* beside the *Line Total* below, and a figure above it is reported in chat with what the increase buys before Phase 4A opens.
-- [ ] **Closeout P3:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 3's base>..HEAD` with the asks Phase 3 names; each correctness finding is fixed before Phase 4A opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
+- [x] **Closeout P3:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 3's base>..HEAD` with the asks Phase 3 names; each correctness finding is fixed before Phase 4A opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
 
 #### Behavior Changes and Disclosures
 
