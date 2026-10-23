@@ -1192,15 +1192,15 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 7-8 · The drives and scripts call `mutate`; drive group 6
   - [x] Review Checkpoint
   - [x] Closeout P7 (two `opus-high` agents, inward and outward)
-- [ ] **Phase 8** — Option Identity
-  - [ ] Task 8-1 · Every option carries an `id`
-  - [ ] Task 8-2 · Select values decode to option ids, and displays read the label
-  - [ ] Task 8-3 · An option rename stops reaching configuration
-  - [ ] Task 8-4 · One `bandKey`
-  - [ ] Task 8-5 · Option ops and the option editor address an option by its id
-  - [ ] Task 8-6 · The Benchmark generator and the existing drives name option ids
-  - [ ] Task 8-7 · Drive group 7
-  - [ ] Review Checkpoint
+- [x] **Phase 8** — Option Identity
+  - [x] Task 8-1 · Every option carries an `id`
+  - [x] Task 8-2 · Select values decode to option ids, and displays read the label
+  - [x] Task 8-3 · An option rename stops reaching configuration
+  - [x] Task 8-4 · One `bandKey`
+  - [x] Task 8-5 · Option ops and the option editor address an option by its id
+  - [x] Task 8-6 · The Benchmark generator and the existing drives name option ids
+  - [x] Task 8-7 · Drive group 7
+  - [x] Review Checkpoint
   - [ ] Halfway Review (Closeout P8: four `opus-high` agents, two inward and two outward, over `BASELINE..HEAD`)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 9 opens]`
 - [ ] **Phase 9** — List First and One Replay Point
