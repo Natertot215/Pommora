@@ -42,14 +42,14 @@ describe('cellMenuModel', () => {
     )
   })
 
-  it('style-only: the per-type Format ▸ row alone', () => {
+  it('style-only: the per-type Style ▸ row alone', () => {
     const m = cellMenuModel({
       kind: 'style-only',
       type: 'number',
       current: { ...DATES, look: 'bar' },
       barCapable: true,
     })
-    expect(m.map((i) => i.label)).toEqual(['Format'])
+    expect(m.map((i) => i.label)).toEqual(['Style'])
     expect(m[0].submenu?.map((r) => r.label)).toEqual(['Number', 'Bar'])
   })
 

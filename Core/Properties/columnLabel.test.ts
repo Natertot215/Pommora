@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel } from './columnLabel'
-import { contextsByIdOf } from '../../Contexts/contextIdentity'
-import { FILEDATA, type PropertyDefinition } from '../properties'
+import { contextsByIdOf } from '../Contexts/contextIdentity'
+import { FILEDATA, type PropertyDefinition } from './properties'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
@@ -21,7 +21,7 @@ describe('columnLabel', () => {
     const tree = {
       contexts: [{ def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] }],
       config: { personalization: {} },
-    } as unknown as import('../../Nexus/tree').NexusTree
+    } as unknown as import('../Nexus/tree').NexusTree
     const contexts = contextsByIdOf(tree)
     expect(columnLabel('ctx_areas', schema, contexts)).toBe('Areas')
     expect(columnLabel('ctx_topics', schema, contexts)).toBe('ctx_topics')

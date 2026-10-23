@@ -168,9 +168,9 @@ describe('styleBranch', () => {
   const label = (type: PropertyType, barCapable?: boolean): string | undefined =>
     styleBranch({ type, current: { ...dateDefaults('full'), look: 'standard' }, barCapable })[0]
       ?.label
-  it('says Format for the two whose rows are one', () => {
+  it("names Link's look Format and Number's Style", () => {
     expect(label('link')).toBe('Format')
-    expect(label('number', true)).toBe('Format')
+    expect(label('number', true)).toBe('Style')
   })
   it('offers no branch for a lone choice: a number with no bar to fill', () => {
     expect(label('number')).toBeUndefined()

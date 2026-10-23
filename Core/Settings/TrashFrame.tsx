@@ -12,7 +12,7 @@ import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import type { Personalization } from './personalization'
 import type { BundleRow } from '../Bundles/rows'
-import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
+import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
@@ -98,7 +98,7 @@ function TrashBody(): React.JSX.Element {
       <div className={cx('trash-head', 'table-head')}>
         <span className="trash-head-name col-header">
           <span className="trash-head-glyph">
-            <PropertyTypeIcon type="title" size="body" />
+            <Icon name={propertyTypeIconName('title')} size="body" />
           </span>
           File Name
         </span>

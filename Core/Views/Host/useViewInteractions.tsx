@@ -17,7 +17,7 @@ import { carries, groupedLine, lineList, rowLine, rowStep } from '@pommora/uix/I
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { columnLabel } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/columnLabel'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'

@@ -1,5 +1,5 @@
 import { useRef, useState, type RefObject } from 'react'
-import type { OptionAppearance, PropertyDefinition } from '../properties'
+import type { OptionAppearance, PropertyDefinition, PropertyType } from '../properties'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { ColorGrid } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
@@ -33,7 +33,7 @@ export function OptionEditPopup({
 }: {
   open: boolean
   contentKey: string
-  type: string
+  type: PropertyType
   option: OptionChipData
   def: Pick<PropertyDefinition, 'status_groups'>
   triggerRef: RefObject<Element | null>

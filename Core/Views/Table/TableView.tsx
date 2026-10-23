@@ -32,11 +32,11 @@ import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
+import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnLabel } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
 import { numberBarCapable } from '../../Properties/formatValue'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -425,7 +425,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        <PropertyTypeIcon type={t} size="body" />
+        <Icon name={propertyTypeIconName(t)} size="body" />
       </span>
     )
   }

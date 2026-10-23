@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import type { PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition, PropertyType } from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
@@ -21,7 +21,12 @@ import { formatBucketLabel } from '../Pipeline/group'
 // ── Nodes ───────────────────────────────────────────────────────────────────
 
 type BucketFace =
-  | { kind: 'option'; type: string; option: OptionChipData; def: PropertyDefinition | undefined }
+  | {
+      kind: 'option'
+      type: PropertyType | undefined
+      option: OptionChipData
+      def: PropertyDefinition | undefined
+    }
   | { kind: 'date'; icon: string | undefined }
 
 export type SetBand = SetRef & { set: SetNode; opens: boolean; empty: boolean }
@@ -77,7 +82,7 @@ export function headContextOf(
             label: value,
             face: {
               kind: 'option',
-              type: def?.type ?? '',
+              type: def?.type,
               option: findOption(def, value) ?? { label: value },
               def,
             },

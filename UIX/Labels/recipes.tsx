@@ -2,15 +2,9 @@ import { Icon } from '../Symbols'
 import { fileTypeIcon } from '../Symbols/fileTypes'
 import { cx } from '../Utilities/cx'
 import { Label, type LabelProps } from './Label'
-import type { LabelShape } from './label-base.css'
 import { fileChip, fileChipIcon, fileChipUnresolved } from './label-recipes.css'
 
 type Recipe = Omit<LabelProps, 'shape'>
-
-/** One source, so no surface renders a status as an option. */
-export function optionShapeFor(type: string): LabelShape {
-  return type === 'status' ? 'pill' : 'tag'
-}
 
 export function NeutralChip({
   title,

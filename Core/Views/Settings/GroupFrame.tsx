@@ -414,7 +414,7 @@ function LocationHierarchy({
       id={subGroupKey(setId, o.label)}
       className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.label) && hiddenRow)}
     >
-      <OptionChip type={subDef?.type ?? ''} option={o} />
+      <OptionChip type={subDef?.type} option={o} />
       {rowEye(o.label, o.label, subControls)}
     </LineRow>
   )
