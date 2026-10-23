@@ -44,7 +44,7 @@ export function stripKeys(root: Json, keys: readonly string[]): Json | null {
 
 export type KeyCollision = 'prefer-new' | 'merge'
 
-/** A JSON root with `from` moved to `to`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule. */
+/** A JSON root with `from` moved to `to`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule, landing through `landValue`. */
 export function rekeyHeld(
   raw: Json,
   from: string,
@@ -53,8 +53,8 @@ export function rekeyHeld(
 ): Json | null {
   if (from === to || !Object.hasOwn(raw, from)) return null
   const { [from]: moved, ...rest } = raw
-  if (!Object.hasOwn(rest, to)) return { ...rest, [to]: moved }
-  return collision === 'prefer-new' ? rest : { ...rest, [to]: joinValues(rest[to], moved) }
+  if (!Object.hasOwn(rest, to)) return landValue(rest, to, moved)
+  return collision === 'prefer-new' ? rest : landValue(rest, to, joinValues(rest[to], moved))
 }
 
 /** Each member an edit names, matched by `memberKey`, and the member it becomes, or null to strip it. */

@@ -212,7 +212,7 @@ export function mergeFrontmatter(
   return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
 
-/** Renames `from` to `to` in its place; null when nothing moves. A held `to` is the rival: under `'prefer-new'` it keeps its value and `from` goes; under `'merge'` the two combine through `joinValues` in `from`'s place. */
+/** Renames `from` to `to` in its place; null when nothing moves. A held `to` is the rival: under `'prefer-new'` it keeps its value and `from` goes; under `'merge'` the two combine through `joinValues` in `from`'s place. The value lands through `setAbove`, so a blank one leaves. */
 export function renameFrontmatterKey(
   content: string,
   from: string,
@@ -231,12 +231,12 @@ export function renameFrontmatterKey(
   if (rival && collision === 'prefer-new') {
     items.splice(items.indexOf(pair), 1)
   } else {
-    if (rival) {
-      const values = valuesOf(doc)
-      const joined = joinValues(values[to], values[from])
-      doc.set(from, nodeSpelledAs(doc, joined, [pair.value, rival.value]))
-      items.splice(items.indexOf(rival), 1)
-    }
+    const values = valuesOf(doc)
+    const node = rival
+      ? nodeSpelledAs(doc, joinValues(values[to], values[from]), [pair.value, rival.value])
+      : pair.value
+    if (rival) items.splice(items.indexOf(rival), 1)
+    setAbove(doc, from, node)
     ;(pair.key as { value: string }).value = to
   }
   const out = serialized(doc)
