@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writePageValue, writeSpaceValue } from '../Testing/propertyWrites'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { writeSpaceSidecar } from '../Contexts/contextWrite'
+import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
 import { mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
@@ -80,14 +82,15 @@ describe('deleteProperty', () => {
     const p1 = await createTestPage(notes, 'A', { body: 'b' })
     const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
-    await writePageValue(p1.value.path, await liveDef(id), {
-      kind: 'select',
-      value: 'hi',
-    })
-    await writePageValue(p2.value.path, await liveDef(id), {
-      kind: 'select',
-      value: 'hi',
-    })
+    const key = (await liveDef(id)).key
+    await rewriteRootAt(
+      p1.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
+    await rewriteRootAt(
+      p2.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
 
     recordedBeforeScrub = undefined
     expect((await deleteProperty(root, id)).ok).toBe(true)
@@ -133,7 +136,11 @@ describe('deleteProperty', () => {
     await assignProperty(root, notes, id)
     const p = await createTestPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
-    await writePageValue(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
+    const key = (await liveDef(id)).key
+    await rewriteRootAt(
+      p.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
     await removeProperty(root, notes, id)
     const before = await readJsonObject(sidecarPath(notes, 'collection'))
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
@@ -160,10 +167,11 @@ describe('propertyHolders', () => {
     const page = await createTestPage(notes, 'A', { body: 'b' })
     await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await writePageValue(page.value.path, await liveDef(c.value.id), {
-      kind: 'select',
-      value: 'hi',
-    })
+    const key = (await liveDef(c.value.id)).key
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Priority: ['hi'] })
 
     expect(await propertyHolders(root, c.value.id)).toEqual(ok(2))
@@ -181,10 +189,11 @@ describe('propertyHolders', () => {
     await assignProperty(root, notes, c.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await writePageValue(page.value.path, await liveDef(c.value.id), {
-      kind: 'select',
-      value: 'hi',
-    })
+    const key = (await liveDef(c.value.id)).key
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
     const pid = splitFrontmatter(await readFile(page.value.path, 'utf8'))[ID_KEY] as string
     const idless = join(notes, 'Loose.md')
     await writeFile(idless, '---\nPriority: [hi]\n---\nb\n')
@@ -314,10 +323,10 @@ describe('a global delete reaches a Space sidecar', () => {
       icon: 'https://draft.example',
     })
 
-    const set = await writeSpaceValue(root, dirname(pom), await liveDef(c.value.id), {
-      kind: 'link',
-      value: 'https://final.example',
-    })
+    const key = (await liveDef(c.value.id)).key
+    const set = await writeSpaceSidecar(dirname(pom), (raw) =>
+      landValue(raw, key, 'https://final.example'),
+    )
     expect(set.ok).toBe(true)
     expect(await readJsonAt(pom)).toEqual({
       id: 'sp1',

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { writePageValue } from '../Testing/propertyWrites'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
 import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -67,10 +68,11 @@ beforeEach(async () => {
   await assignProperty(root, col, propId)
   const page = await createTestPage(col, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await writePageValue(page.value.path, (await readRegistry(root)).defs[propId], {
-    kind: 'select',
-    value: 'Done',
-  })
+  const key = (await readRegistry(root)).defs[propId].key
+  await rewriteRootAt(
+    page.value.path,
+    rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+  )
   surfaces = await seedConfigSurfaces(root, col, viewOn(propId, 'Done'))
   await openSession(root)
 })
@@ -107,10 +109,11 @@ describe('the property channels', () => {
       if (!locked.ok) throw new Error('setup failed')
       const held = await createTestPage(locked.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await writePageValue(held.value.path, (await readRegistry(root)).defs[propId], {
-        kind: 'select',
-        value: 'Done',
-      })
+      const key = (await readRegistry(root)).defs[propId].key
+      await rewriteRootAt(
+        held.value.path,
+        rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+      )
       await chmod(locked.value.path, 0o555)
       try {
         const r = await propertiesHandlers['schema:unassign'](ctx, relative(root, col), propId)
@@ -256,7 +259,10 @@ describe('the property channels', () => {
     expect((await propertiesHandlers['property:editOption'](ctx, propId, add)).ok).toBe(true)
     const page = `${col}/A.md`
     const def = (await readRegistry(root)).defs[propId]
-    await writePageValue(page, def, { kind: 'select', value: 'Done' })
+    await rewriteRootAt(
+      page,
+      rewriteRaw((raw) => landValue(raw, def.key, ['Done'])),
+    )
     const before = await readFile(page, 'utf8')
     expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     expect(await readFile(page, 'utf8')).toBe(before)

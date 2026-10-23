@@ -13,7 +13,8 @@ import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
 import { removeProperty } from './removeProperty'
-import { writePageValue } from '../Testing/propertyWrites'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { landValue } from '../Files/rootValues'
 import { refreshTree } from '../Nexus/liveTree'
 
 let root: string
@@ -57,10 +58,9 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
   await assignProperty(root, notes, pC)
   const page = await createTestPage(notes, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await writePageValue(
+  await rewriteRootAt(
     page.value.path,
-    { id: pC, label: 'Gone', key: 'Gone', type: 'number' } as PropertyDefinition,
-    { kind: 'number', value: 7 },
+    rewriteRaw((raw) => landValue(raw, 'Gone', 7)),
   )
 
   // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its cache block intact, pB assigned.

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writePageValue } from '../Testing/propertyWrites'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -78,7 +79,10 @@ async function pageHolding(id: string, value: string): Promise<string> {
   if (!p.ok) throw new Error('page failed')
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error('definition missing')
-  await writePageValue(p.value.path, def, { kind: 'select', value })
+  await rewriteRootAt(
+    p.value.path,
+    rewriteRaw((raw) => landValue(raw, def.key, [value])),
+  )
   return p.value.path
 }
 
@@ -548,7 +552,7 @@ describe('renameOption', () => {
       value_format: 'kebab-case',
       select_options: [{ key: 'light-blue', label: 'Light Blue' }],
     })
-    const page = await pageHolding(id, 'Light Blue')
+    const page = await pageHolding(id, 'light-blue')
     expect(await readFile(page, 'utf8')).toContain('light-blue')
 
     expect((await renameOption(root, id, 'Light Blue', 'Dark Blue')).ok).toBe(true)
@@ -614,10 +618,11 @@ describe('renameOption', () => {
   it('is refused for a value the definition lacks, and rewrites no page', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
-    await writePageValue(page, (await readRegistry(root)).defs[id], {
-      kind: 'select',
-      value: 'Stray',
-    })
+    const key = (await readRegistry(root)).defs[id].key
+    await rewriteRootAt(
+      page,
+      rewriteRaw((raw) => landValue(raw, key, ['Stray'])),
+    )
     const stray = await readFile(page, 'utf8')
     expect(stray).toContain('Stray')
     expect(await renameOption(root, id, 'Stray', 'B')).toMatchObject({
@@ -648,7 +653,10 @@ describe('renameOption', () => {
       for (const title of titles) {
         const p = await createTestPage(col.value.path, title, { body: 'b' })
         if (!p.ok) throw new Error('page failed')
-        await writePageValue(p.value.path, def, { kind: 'select', value: 'A' })
+        await rewriteRootAt(
+          p.value.path,
+          rewriteRaw((raw) => landValue(raw, def.key, ['A'])),
+        )
       }
     }
     await openSession(root)
@@ -723,10 +731,11 @@ describe('an owed record holds option changes', () => {
       if (!set.ok) throw new Error('set failed')
       const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
       if (!p.ok) throw new Error('page failed')
-      await writePageValue(p.value.path, (await readRegistry(root)).defs[id], {
-        kind: 'select',
-        value: 'A',
-      })
+      const key = (await readRegistry(root)).defs[id].key
+      await rewriteRootAt(
+        p.value.path,
+        rewriteRaw((raw) => landValue(raw, key, ['A'])),
+      )
       await chmod(set.value.path, 0o555)
       try {
         expect((await renameOption(root, id, 'A', 'Z')).ok).toBe(true)
@@ -763,10 +772,11 @@ describe('an owed record holds option changes', () => {
       const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
       if (!p.ok) throw new Error('page failed')
       const two = p.value.path
-      await writePageValue(two, (await readRegistry(root)).defs[id], {
-        kind: 'select',
-        value: 'In Progress',
-      })
+      const key = (await readRegistry(root)).defs[id].key
+      await rewriteRootAt(
+        two,
+        rewriteRaw((raw) => landValue(raw, key, ['In Progress'])),
+      )
       await chmod(set.value.path, 0o555)
       try {
         expect((await setValueFormat(root, id, 'kebab-case')).ok).toBe(true)
@@ -818,10 +828,11 @@ describe('remove and clear on a value the definition lacks', () => {
   const stray = async (): Promise<{ id: string; page: string; bytes: string }> => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
-    await writePageValue(page, (await readRegistry(root)).defs[id], {
-      kind: 'select',
-      value: 'Stray',
-    })
+    const key = (await readRegistry(root)).defs[id].key
+    await rewriteRootAt(
+      page,
+      rewriteRaw((raw) => landValue(raw, key, ['Stray'])),
+    )
     return { id, page, bytes: await readFile(page, 'utf8') }
   }
 
@@ -887,7 +898,10 @@ describe('clearOption', () => {
     if (!p.ok) throw new Error('page failed')
     const def = (await readRegistry(root)).defs[id]
     if (!def) throw new Error('definition missing')
-    await writePageValue(p.value.path, def, { kind: 'select', value: 'hi' })
+    await rewriteRootAt(
+      p.value.path,
+      rewriteRaw((raw) => landValue(raw, def.key, ['hi'])),
+    )
     await chmod(set.value.path, 0o555)
     try {
       const r = await clearOption(root, id, 'hi').catch(fault)
@@ -1111,10 +1125,11 @@ describe('option cascades reach saved views', () => {
     if (!set.ok) throw new Error('set failed')
     const p = await createTestPage(set.value.path, 'Held', { body: 'b' })
     if (!p.ok) throw new Error('page failed')
-    await writePageValue(p.value.path, (await readRegistry(root)).defs[id], {
-      kind: 'select',
-      value: 'Done',
-    })
+    const key = (await readRegistry(root)).defs[id].key
+    await rewriteRootAt(
+      p.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+    )
     await chmod(set.value.path, 0o555)
     return set.value.path
   }

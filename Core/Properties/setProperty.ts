@@ -1,38 +1,18 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { setGovernedRootKey, writtenRoot } from './governedWrite'
 import { writeSpaceSidecar } from '../Contexts/contextWrite'
-import { type GovernedWorld, pageWorldOf, spaceWorldOf } from '../Nexus/governedRoot'
-import { pathExists } from '../Files/atomicWrite'
-import { fail, ok, type Result } from '../Contract/result'
+import {
+  pageWorldOf,
+  rewriteRaw,
+  rewriteRootAt,
+  spaceWorldOf,
+  writtenRoot,
+} from '../Nexus/governedRoot'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
 import { valueToWrite } from './propertyValue'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
-
-export async function landPageValue(
-  absFile: string,
-  key: string,
-  value: unknown,
-  world?: GovernedWorld,
-): Promise<Result<null>> {
-  if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  await setGovernedRootKey(absFile, key, value, world)
-  return ok(null)
-}
-
-export async function landSpaceValue(
-  root: string,
-  absSpaceDir: string,
-  key: string,
-  value: unknown,
-): Promise<Result<null>> {
-  const world = spaceWorldOf(await liveTreeOf(root))
-  return writeSpaceSidecar(absSpaceDir, (raw) =>
-    value === undefined && !Object.hasOwn(raw, key) ? null : writtenRoot(raw, key, value, world),
-  )
-}
 
 type ValueRequest = Extract<MutateRequest, { op: 'setProperty' | 'restoreValue' }>
 
@@ -53,7 +33,15 @@ export async function setSpacePropertyOp(
   if (!resolved.ok) return resolved
   const def = (await readRegistry(root)).defs[req.propertyId]
   if (!def) return NO_PROPERTY
-  return done(await landSpaceValue(root, resolved.value, def.key, requestedValue(req, def)))
+  const value = requestedValue(req, def)
+  const world = spaceWorldOf(await liveTreeOf(root))
+  return done(
+    await writeSpaceSidecar(resolved.value, (raw) =>
+      value === undefined && !Object.hasOwn(raw, def.key)
+        ? null
+        : writtenRoot(raw, def.key, value, world),
+    ),
+  )
 }
 
 export async function setPagePropertyOp(
@@ -67,11 +55,11 @@ export async function setPagePropertyOp(
     await machine().lock(resolved.value, async () => {
       const def = (await readRegistry(root)).defs[req.propertyId]
       if (!def) return NO_PROPERTY
-      return landPageValue(
+      const value = requestedValue(req, def)
+      const world = await pageWorldOf(root, resolved.value)
+      return rewriteRootAt(
         resolved.value,
-        def.key,
-        requestedValue(req, def),
-        await pageWorldOf(root, resolved.value),
+        rewriteRaw((raw) => writtenRoot(raw, def.key, value, world)),
       )
     }),
   )

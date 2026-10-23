@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { writePageValue } from '../Testing/propertyWrites'
 import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
@@ -233,53 +232,5 @@ describe('movePage', () => {
     await createTestPage(other, 'Clash', { body: 'b' })
     if (!a.ok) throw new Error('setup failed')
     expect((await movePage(a.value.path, other)).ok).toBe(false)
-  })
-})
-
-describe('a page property write', () => {
-  it('sets, replaces, and clears values; preserves siblings + other frontmatter', async () => {
-    const c = await createTestPage(typeDir, 'Props', { body: 'x' })
-    if (!c.ok) throw new Error('setup failed')
-    const f = c.value.path
-    const at = async (name: string): Promise<unknown> =>
-      (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
-
-    await writePageValue(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
-    await writePageValue(f, defOf('prop_tags', 'multiSelect'), {
-      kind: 'multiSelect',
-      value: ['a', 'b'],
-    })
-    expect(await at('status')).toEqual(['todo'])
-    expect(await at('tags')).toEqual(['a', 'b'])
-    expect(splitFrontmatter(await readFile(f, 'utf8'))[ID_KEY]).toBe(c.value.id)
-
-    await writePageValue(f, defOf('prop_status'), { kind: 'select', value: 'done' })
-    expect(await at('status')).toEqual(['done'])
-
-    await writePageValue(f, defOf('prop_status'), null)
-    expect(await at('status')).toBeUndefined()
-    expect(await at('tags')).toEqual(['a', 'b'])
-  })
-
-  it('writes the key and leaves a key spelled as the label as written', async () => {
-    const c = await createTestPage(typeDir, 'Keyed', { body: 'x' })
-    if (!c.ok) throw new Error('setup failed')
-    const f = c.value.path
-    const held = (await readFile(f, 'utf8')).replace('---\n', '---\nStage: Held\n')
-    await writeFile(f, held)
-
-    await writePageValue(f, defOf('prop_stage'), { kind: 'select', value: 'doing' })
-
-    const fm = splitFrontmatter(await readFile(f, 'utf8'))
-    expect(fm.stage).toEqual(['doing'])
-    expect(fm.Stage).toBe('Held')
-  })
-
-  it('errors when the page is missing', async () => {
-    const r = await writePageValue(join(typeDir, 'nope.md'), defOf('p'), {
-      kind: 'select',
-      value: 'x',
-    })
-    expect(r.ok).toBe(false)
   })
 })

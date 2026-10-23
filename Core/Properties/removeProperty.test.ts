@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { writePageValue } from '../Testing/propertyWrites'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, mkdir, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from '../Paths/posix'
@@ -71,8 +72,14 @@ beforeEach(async () => {
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await writePageValue(pageA, liveDef, { kind: 'select', value: 'active' })
-  await writePageValue(pageB, liveDef, { kind: 'select', value: 'done' })
+  await rewriteRootAt(
+    pageA,
+    rewriteRaw((raw) => landValue(raw, liveDef.key, ['active'])),
+  )
+  await rewriteRootAt(
+    pageB,
+    rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+  )
 })
 afterEach(async () => {
   closeSession()
@@ -190,7 +197,10 @@ describe('removeProperty — strip + cache', () => {
       if (!set.ok) throw new Error('setup failed')
       const held = await createTestPage(set.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await writePageValue(held.value.path, liveDef, { kind: 'select', value: 'done' })
+      await rewriteRootAt(
+        held.value.path,
+        rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+      )
       await chmod(set.value.path, 0o555)
       try {
         const r = await removeProperty(root, folder, propId).catch(fault)
@@ -204,7 +214,10 @@ describe('removeProperty — strip + cache', () => {
   it.skipIf(noModeBits)('a holder it can’t read is answered as a skip, not left out', async () => {
     const held = await createTestPage(folder, 'C', { body: 'b' })
     if (!held.ok) throw new Error('setup failed')
-    await writePageValue(held.value.path, liveDef, { kind: 'select', value: 'done' })
+    await rewriteRootAt(
+      held.value.path,
+      rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+    )
     await chmod(held.value.path, 0o000)
     try {
       expect(await removeProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
@@ -297,7 +310,10 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       ...cur,
       properties: [...assignedIds(cur), propId],
     }))
-    await writePageValue(pageA, liveDef, { kind: 'select', value: 'active' })
+    await rewriteRootAt(
+      pageA,
+      rewriteRaw((raw) => landValue(raw, liveDef.key, ['active'])),
+    )
     await removeProperty(root, folder, propId)
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['active'])
@@ -375,7 +391,10 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     const c = await createTestPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const selDef = (await readRegistry(root)).defs[id]
-    await writePageValue(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
+    await rewriteRootAt(
+      c.value.path,
+      rewriteRaw((raw) => landValue(raw, selDef.key, ['2024-01-01'])),
+    )
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8'))
@@ -393,10 +412,11 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await assignProperty(root, folder, tags.value.id)
     const p = await createTestPage(folder, 'T', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
-    await writePageValue(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
-      kind: 'multiSelect',
-      value: ['alpha', 'zeta'],
-    })
+    const key = (await readRegistry(root)).defs[tags.value.id].key
+    await rewriteRootAt(
+      p.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['alpha', 'zeta'])),
+    )
     await removeProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)
     const fm = splitFrontmatter(await readFile(p.value.path, 'utf8'))

@@ -1,8 +1,18 @@
 // Everything that lands a value in one governed file: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, and the one-parse writer.
 
-import { join, relative } from '../Paths/posix'
+import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { listOf } from '../Contract/validators'
-import { memberKey } from '../Files/rootValues'
+import { fail, fault, ok, type Result } from '../Contract/result'
+import { landValue, memberKey } from '../Files/rootValues'
+import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
+import { machine } from '../Platform/machine'
+import {
+  splitFrontmatter,
+  sweepParse,
+  type SweptPage,
+  UNPARSED_FRONTMATTER,
+} from '../Files/pageFile'
+import type { Json } from '../Files/stableJson'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
 import { contextTitles } from '../Contexts/contexts'
 import { type ContextWorld, contextWorldOf, groupOf } from '../Contexts/contextResolve'
@@ -13,6 +23,7 @@ import {
   decodeValue,
   encodeValue,
   isBlankValue,
+  keepingForeignWords,
 } from '../Properties/propertyValue'
 import { spelledNumber } from '../Properties/formatValue'
 import { namesValue } from '../Properties/pageValue'
@@ -134,4 +145,53 @@ export function reconcileGovernedRoot(
     if (JSON.stringify(next) !== JSON.stringify(raw)) changed.push(key)
   }
   return { root: out, changed }
+}
+
+/** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key. */
+export function writtenRoot(raw: Json, key: string, value: unknown, world: GovernedWorld): Json {
+  const reconciled = reconcileGovernedRoot(raw, world, undefined, key).root
+  const def = world.defs.get(key)
+  const kept = def ? keepingForeignWords(def, value, raw[key]) : value
+  return landValue(reconciled, key, writtenSpelling(kept, raw[key]))
+}
+
+/** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
+export const governedRoot = (file: string, text: string): Json =>
+  isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
+
+export const changedKeys = (raw: Json, next: Json): string[] =>
+  [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
+    (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
+  )
+
+/** A page's next text with the keys `rewrite` changes merged in; null when it changes none. A changed key the next root holds no value for is deleted. */
+export const rewriteRaw =
+  (rewrite: (raw: Json) => Json | null) =>
+  (page: SweptPage): string | null => {
+    const next = rewrite(page.raw)
+    if (next === null) return null
+    const keys = changedKeys(page.raw, next)
+    if (!keys.length) return null
+    const modeled: Json = {}
+    for (const k of keys) if (k in next) modeled[k] = next[k]
+    return page.merge(modeled, keys)
+  }
+
+/** Rewrites the page at `absFile` in one parse, writing the text `rewrite` answers for it, or nothing for null. Takes no lock: each caller holds the page's lock over a wider span, and a re-take is refused. */
+export async function rewriteRootAt(
+  absFile: string,
+  rewrite: (page: SweptPage) => string | null,
+): Promise<Result<null>> {
+  let content: string | null
+  try {
+    content = await machine().readText(absFile)
+  } catch {
+    return fault('That page could not be read.')
+  }
+  if (content === null) return fail('not-found', 'Page not found.')
+  const page = sweepParse(content)
+  if (!page) return fault(UNPARSED_FRONTMATTER)
+  const next = rewrite(page)
+  if (next !== null) await atomicWriteFile(absFile, next)
+  return ok(null)
 }
