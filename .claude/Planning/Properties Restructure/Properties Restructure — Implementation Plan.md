@@ -34760,6 +34760,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
 | 6 | −266 | +305 | +39 | −305 / +336 / +31 | −244 |
 | 7 | −622 | +469 | −153 | −600 / +456 / −144 | −388 |
+| Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −390 | +400 | +10 | | |
@@ -34904,3 +34905,7 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 #### Deviations
 
 Filled during execution: each in-flight call that changes an outcome, with its task, its reason, and its measured effect on *§Net Ledger*.
+
+- **Rulings I-4 and E-4, Between Phases 7 and 8 (Nathan, 10-23-2026):** two calls execution raised, ruled after Phase 7's closeout, land outside any task, measured in *§Net Ledger*'s own row over `acfd53fa4^..974e60755`.
+  - **I-4:** a Date, Created Time, or Last Edited Time column's right-click names its date and time choices "Format", one word in each type's `styleLabel` (`acfd53fa4`, ±0).
+  - **E-4's undo half:** a write records the key its line stood above (`aboveOf`), the put-back carries it (`PutBack.above`), and one doc-level setter, `setAbove`, lands a key the page no longer holds above that key, or last when it's gone; `mergeInto` places by the next root's order, so `rewriteRaw` passes its root whole (`974e60755`, +26). E-4's restore half (a property's Trash restore, a removed property's re-add, a Context or Space restore's tags, and a Link key a page delete took) rides the same setter through `landValue`, written into Tasks 11B-2, 11B-5, 12-2, 12-4, and 12-5.
