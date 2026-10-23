@@ -132,6 +132,13 @@ export const containerSchema = (
   return tree && owner ? schemaOf(tree, owner.propertyIds) : NO_SCHEMA
 }
 
+/** A Space holds any registry property; anything else takes its Collection's schema. */
+export const holderSchema = (
+  tree: NexusTree | null,
+  holder: SpaceNode | string,
+): PropertyDefinition[] =>
+  typeof holder === 'string' ? containerSchema(tree, holder) : (tree?.config.registry ?? NO_SCHEMA)
+
 const schemas = new WeakMap<
   readonly string[],
   { registry: PropertyDefinition[]; schema: PropertyDefinition[] }

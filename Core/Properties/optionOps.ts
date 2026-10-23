@@ -37,7 +37,7 @@ import {
 import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
-import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
+import { containerAt, holderSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
 import type { Json } from '../Files/stableJson'
 import { isMarkdownFile, join } from '../Paths/posix'
 
@@ -147,7 +147,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       for (const rel of rels ?? everywhere) {
         const pages = isMarkdownFile(rel) ? [rel] : null
         const space = pages ? null : spaceAt(tree, rel)
-        const defs = (space ? tree.config.registry : containerSchema(tree, rel)).filter(
+        const defs = holderSchema(tree, space ?? rel).filter(
           (d) => PROPERTY_TYPES[d.type].registersMembers,
         )
         if (!defs.length) continue

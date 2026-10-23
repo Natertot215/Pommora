@@ -15,7 +15,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, type ValueWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
-import { containerSchema } from '../../Nexus/treePatch'
+import { holderSchema, NO_SCHEMA } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import type { ContainerKind } from '../../Nexus/entities'
 import {
@@ -57,11 +57,7 @@ export async function showEntityMenu(
       row = await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
     else if (node && s.tree) row = spaceRowOf(s.tree, node)
   }
-  const schema = !row
-    ? []
-    : node
-      ? (s.tree?.config.registry ?? [])
-      : containerSchema(s.tree, target.path)
+  const schema = row ? holderSchema(s.tree, node ?? target.path) : NO_SCHEMA
   const propertyTarget: PropertyMenuTarget | null = row ? { tree: s.tree, schema, row } : null
   const shown: EntityMenuTarget = {
     ...target,
