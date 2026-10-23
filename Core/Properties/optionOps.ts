@@ -42,9 +42,8 @@ import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, holderSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
 import type { Json } from '../Files/stableJson'
 import { isMarkdownFile, join } from '../Paths/posix'
-import { findOption } from './propertyValue'
+import { findOption, NO_OPTION } from './propertyValue'
 
-const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
 // A replay over a partly swept file can't tell a moved word from an unmoved one.
 const CROSSED = fail(

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { fail, ok, type Result } from '../Contract/result'
 import { isScalar, listOf, scalarMembers } from '../Contract/validators'
 import {
   CURRENCY_CODES,
@@ -248,8 +249,18 @@ export function encodeValue(def: PropertyDefinition, value: PropertyValue): unkn
   }
 }
 
-export const valueToWrite = (def: PropertyDefinition, value: PropertyValue | null): unknown =>
-  value === null || isBlankValue(value) ? undefined : encodeValue(def, value)
+export const NO_OPTION = fail('not-found', 'That option no longer exists.')
+
+/** What `value` writes under `def`; an option id no option holds refuses, so a stale renderer id never serializes as a guess. */
+export function valueToWrite(
+  def: PropertyDefinition,
+  value: PropertyValue | null,
+): Result<unknown> {
+  if (value === null || isBlankValue(value)) return ok(undefined)
+  const kind = value.kind === 'select' || value.kind === 'multiSelect'
+  if (kind && selectedValues(value).some((id) => !findOption(def, id))) return NO_OPTION
+  return ok(encodeValue(def, value))
+}
 
 /** Blank as a file spells it, before any definition reads it. */
 export const isBlankRaw = (raw: unknown): boolean =>
