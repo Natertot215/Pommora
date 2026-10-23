@@ -1,7 +1,8 @@
 import { PROPERTY_TYPES, propertyDefinition } from '../Properties/properties'
 import { patchSidecar } from '../Files/sidecar'
-import { fail, ok, type Result, fault } from '../Contract/result'
-import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
+import { ok, type Result, fault } from '../Contract/result'
+import { serializeSchemaOp } from '../Properties/propertiesRegistry'
+import { exactTitle } from '../Paths/caseFold'
 import type { RecordFile } from '../Bundles/record'
 import { linkWorld, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -21,6 +22,8 @@ interface RestoredProperty {
   unrestored: string[]
   /** Each Link value left out for naming a page gone, for the restore to park. */
   dropped: StrippedLink[]
+  /** The label it took when its own was taken since. */
+  landedAs?: string
 }
 
 export function restoreProperty(
@@ -34,17 +37,13 @@ async function restoreInner(
   root: string,
   record: PropertyRecord,
 ): Promise<Result<RestoredProperty>> {
-  if ((await readRegistry(root)).defs[record.id])
-    return fail('exists', 'Something in the nexus already carries this identity.')
   const parsed = propertyDefinition.safeParse({ ...record.def, id: record.id })
   if (!parsed.success) return fault('That deleted property’s definition no longer reads.')
-
   const created = await createProperty(root, parsed.data)
   if (!created.ok) return created
-  const def = (await readRegistry(root)).defs[record.id]
-  if (!def) return fault('The restored property could not be read back.')
-
-  const byId = new Map((await liveTreeOf(root)).collections.map((c) => [c.id, join(root, c.path)]))
+  const def = created.value
+  const tree = await liveTreeOf(root)
+  const byId = new Map(tree.collections.map((c) => [c.id, join(root, c.path)]))
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
     if (folder) await assignInner(root, folder, record.id)
@@ -54,8 +53,6 @@ async function restoreInner(
     if (folder)
       await patchSidecar(folder, 'collection', (cur) => patchCacheBlock(cur, record.id, { values }))
   }
-
-  const tree = await liveTreeOf(root)
   const { byId: roots, archived } = await nexusPages(root, tree)
   const frozen = frozenWorld(linkWorld(tree, archived))
   const dropped: StrippedLink[] = []
@@ -77,5 +74,6 @@ async function restoreInner(
       taken.has(id) ? [] : (shownTitle(tree, roots, id) ?? []),
     ),
     dropped,
+    ...(def.label === exactTitle(parsed.data.label) ? {} : { landedAs: def.label }),
   })
 }
