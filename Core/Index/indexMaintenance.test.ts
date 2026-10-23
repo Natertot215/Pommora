@@ -129,14 +129,19 @@ describe('the writers maintain the rows', () => {
   })
 
   it('a property write lands in page_values; a create is born indexed', async () => {
-    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
+    await createProperty(root, {
+      id: 'prop_s',
+      label: 'Stage',
+      type: 'select',
+      select_options: [{ id: 'opt_open', key: 'Open', label: 'Open' }],
+    })
     const set = await settledMutate(
       root,
       {
         op: 'setProperty',
         path: 'Notes/Daily/Alpha.md',
         propertyId: 'prop_s',
-        value: { kind: 'select', value: 'Open' },
+        value: { kind: 'select', value: 'opt_open' },
       },
       deps,
     )

@@ -17,8 +17,9 @@ export async function setSpacePropertyOp(
   const def = (await readRegistry(root)).defs[req.propertyId]
   if (!def) return NO_PROPERTY
   const value = valueToWrite(def, req.value)
+  if (!value.ok) return value
   const world = spaceWorldOf(await liveTreeOf(root))
-  const was = await writeGovernedKey(resolved.value, def.key, value, world)
+  const was = await writeGovernedKey(resolved.value, def.key, value.value, world)
   return was.ok ? undoOf([{ file: req.path, fieldId: def.id, ...was.value }]) : was
 }
 
@@ -33,8 +34,10 @@ export async function setPagePropertyOp(
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return NO_PROPERTY
     const value = valueToWrite(def, req.value)
+    if (!value.ok) return value
+    if (!value.ok) return value
     const world = await pageWorldOf(root, resolved.value)
-    const was = await writeGovernedKey(resolved.value, def.key, value, world)
+    const was = await writeGovernedKey(resolved.value, def.key, value.value, world)
     return was.ok ? undoOf([{ file: req.path, fieldId: def.id, ...was.value }]) : was
   })
 }

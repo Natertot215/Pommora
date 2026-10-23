@@ -71,7 +71,8 @@ import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesF
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
 import { listBundles } from '../Bundles/bundle'
-import { fault, ok } from '../Contract/result'
+import { fail, fault, ok } from '../Contract/result'
+import type { PropertyValue } from '../Properties/propertyValue'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import { nexusHandlers } from './handlers'
@@ -198,7 +199,7 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Untitled (2).md'))).toBe(true)
   })
 
-  it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
+  it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key; a stale option refuses the create', async () => {
     await createProperty(root, {
       id: 'prop_stage',
       label: 'Stage',
@@ -237,6 +238,20 @@ describe('handleMutate — create', () => {
     )
     expect(blank.ok).toBe(true)
     expect('Stage' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
+
+    const stale = await settledMutate(
+      root,
+      {
+        op: 'createPage',
+        id: newContentId('page'),
+        parentPath: 'Notes/Daily',
+        name: 'Stale Seed',
+        seeds: { prop_stage: { kind: 'select', value: 'opt_gone' } },
+      },
+      nexusDeps,
+    )
+    expect(stale).toEqual(fail('not-found', 'That option no longer exists.'))
+    expect(await pathExists(join(root, 'Notes/Daily/Stale Seed.md'))).toBe(false)
   })
 
   it('createPage writes a Context seed in the birth write; an unknown Space refuses the create', async () => {
@@ -2134,6 +2149,23 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       nexusDeps,
     )
     expect('modified_at' in splitFrontmatter(await read('Notes/Daily/Beta.md'))).toBe(false)
+  })
+
+  it('refuses an option id no option holds, leaving the page untouched', async () => {
+    const before = await read('Notes/Daily/Beta.md')
+    const stale: [string, PropertyValue][] = [
+      ['prop_s', { kind: 'select', value: 'opt_gone' }],
+      ['prop_m', { kind: 'multiSelect', value: ['opt_a', 'opt_gone'] }],
+    ]
+    for (const [propertyId, value] of stale) {
+      const r = await settledMutate(
+        root,
+        { op: 'setProperty', path: 'Notes/Daily/Beta.md', propertyId, value },
+        nexusDeps,
+      )
+      expect(r).toEqual(fail('not-found', 'That option no longer exists.'))
+    }
+    expect(await read('Notes/Daily/Beta.md')).toBe(before)
   })
 
   it('a null value clears the property key', async () => {

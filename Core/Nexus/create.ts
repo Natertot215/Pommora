@@ -32,8 +32,11 @@ export async function createPageOp(
   const frontmatter: Json = {}
   if (req.seeds) {
     const defs = (await readRegistry(root)).defs
-    for (const [id, value] of Object.entries(req.seeds))
-      if (defs[id]) frontmatter[defs[id].key] = valueToWrite(defs[id], value)
+    for (const [id, value] of Object.entries(req.seeds)) {
+      const seed = defs[id] ? valueToWrite(defs[id], value) : null
+      if (seed && !seed.ok) return seed
+      if (seed) frontmatter[defs[id].key] = seed.value
+    }
   }
   const world = contextWorldOf((await liveTreeOf(root)).contexts)
   for (const [contextId, spaceIds] of contextSeeds(req)) {
