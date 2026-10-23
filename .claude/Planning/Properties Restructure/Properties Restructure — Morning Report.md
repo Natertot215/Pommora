@@ -1,7 +1,7 @@
 ## Properties Restructure — Morning Report
 
 **DATE:** 10-22-2026
-**STATUS:** The plan is complete and awaits ratification.
+**STATUS:** Ratified (10-22-2026); execution runs through `c/plan-execution`.
 
 ### What the Plan Is
 
@@ -62,8 +62,8 @@ Ratify the plan, or tell me what to change.
 
 ### Where It Stands
 
-- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,548 changes with no mismatches and skips 9 that land only if a speed measurement fails.
-- **The Numbers:** about −448 production lines if every speed measurement passes; about −372 if F3 fails, and about −310 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +226 after Phase 12) before Phase 16A brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +307 after Phase 12) before Phase 16B brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
+- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,559 changes with no mismatches and skips 9 that land only if a speed measurement fails.
+- **The Numbers:** about −514 production lines if every speed measurement passes; about −438 if F3 fails, and about −376 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +177 after Phase 12) before Phase 15 brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +258 after Phase 12) before Phase 16A brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
 - **The Dry Run:** the whole plan was applied in a throwaway copy and type-checked at every phase end. Phase 1 compiles clean; from Phase 2 on, each phase end shows new errors, about 120 in app code and more in tests, mostly from steps the plan states in words, like rewriting a test. Execution fixes these in the real code, where each phase's checks prove the fix, so the rule that every phase leaves a working state is true at execution rather than on paper.
 

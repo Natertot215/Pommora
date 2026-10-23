@@ -1,7 +1,7 @@
 ### Properties Restructure — Decisions & Intention
 
 **DATE:** 10-22-2026
-**STATUS:** ACTIVE
+**STATUS:** Ratified (10-22-2026)
 
 ### Context
 
