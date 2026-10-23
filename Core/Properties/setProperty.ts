@@ -18,8 +18,8 @@ export async function setSpacePropertyOp(
   if (!def) return NO_PROPERTY
   const value = valueToWrite(def, req.value)
   const world = spaceWorldOf(await liveTreeOf(root))
-  const before = await writeGovernedKey(resolved.value, def.key, value, world)
-  return before.ok ? undoOf([{ file: req.path, fieldId: def.id, before: before.value }]) : before
+  const was = await writeGovernedKey(resolved.value, def.key, value, world)
+  return was.ok ? undoOf([{ file: req.path, fieldId: def.id, ...was.value }]) : was
 }
 
 export async function setPagePropertyOp(
@@ -34,7 +34,7 @@ export async function setPagePropertyOp(
     if (!def) return NO_PROPERTY
     const value = valueToWrite(def, req.value)
     const world = await pageWorldOf(root, resolved.value)
-    const before = await writeGovernedKey(resolved.value, def.key, value, world)
-    return before.ok ? undoOf([{ file: req.path, fieldId: def.id, before: before.value }]) : before
+    const was = await writeGovernedKey(resolved.value, def.key, value, world)
+    return was.ok ? undoOf([{ file: req.path, fieldId: def.id, ...was.value }]) : was
   })
 }

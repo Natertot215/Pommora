@@ -436,6 +436,19 @@ describe('a swept page’s pairs', () => {
     )
   })
 
+  it('a new pair lands above the key it stood above, last when that key is gone, and a held one stays in place', () => {
+    const held = `---\n${ID}Status: Done\nOther: 1\n---\nbody\n`
+    expect(swept(held).withPair('Total', 'Total: 5\n', 'Other')).toBe(
+      `---\n${ID}Status: Done\nTotal: 5\nOther: 1\n---\nbody\n`,
+    )
+    expect(swept(held).withPair('Total', 'Total: 5\n', 'Gone')).toBe(
+      `---\n${ID}Status: Done\nOther: 1\nTotal: 5\n---\nbody\n`,
+    )
+    expect(swept(held).withPair('Status', 'Status: Doing\n', 'ID')).toBe(
+      `---\n${ID}Status: Doing\nOther: 1\n---\nbody\n`,
+    )
+  })
+
   it('a pair the key already holds lands nothing', () => {
     expect(swept(SPELLED).withPair('Tags', 'Tags: [a, "b"] # c\n')).toBeNull()
     expect(swept(SPELLED).withPair('Due', undefined)).toBeNull()

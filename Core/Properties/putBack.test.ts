@@ -208,6 +208,29 @@ describe('an undo on a page', () => {
     expect(await page.held('Status')).toBe('Status:')
   })
 
+  it('a cleared key between two others leaves no line, and its undo puts it back where it stood, byte for byte', async () => {
+    await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nNote: a\nCount: 1\nZed: z\n---\nb\n`)
+    await refreshTree(root)
+    const bytes = await readFile(pageFile(), 'utf8')
+    const written = await set(page, 'Count', null)
+    expect(await readFile(pageFile(), 'utf8')).toBe(
+      `---\nID: ${PAGE_ID}\nNote: a\nZed: z\n---\nb\n`,
+    )
+    await undo(written)
+    expect(await readFile(pageFile(), 'utf8')).toBe(bytes)
+  })
+
+  it('a cleared key whose neighbour below left since comes back last', async () => {
+    await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nCount: 1\nNote: a\nZed: z\n---\nb\n`)
+    await refreshTree(root)
+    const written = await set(page, 'Count', null)
+    await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nZed: z\n---\nb\n`)
+    await undo(written)
+    expect(await readFile(pageFile(), 'utf8')).toBe(
+      `---\nID: ${PAGE_ID}\nZed: z\nCount: 1\n---\nb\n`,
+    )
+  })
+
   it('a tidied sibling stays tidied', async () => {
     await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nStatus: [Doing, Done]\nCount: 1\n---\nb\n`)
     await refreshTree(root)

@@ -61,8 +61,13 @@ const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon' | 'aliases'>> = z.obje
   title_icon: z.boolean().nullable().optional(),
   locked: z.literal(true).nullable().optional(),
 } satisfies { [K in Exclude<keyof PageMetaPatch, 'icon' | 'aliases'>]: z.ZodType })
-/** What one file held under a property's or Context's key before a value write: a page's pair as its frontmatter spelled it, a Space's JSON value; absent when the file held no key. */
-const putBack = z.object({ file: z.string(), fieldId: z.string(), before: z.unknown().optional() })
+/** What one file held under a property's or Context's key before a value write: a page's pair as its frontmatter spelled it, a Space's JSON value, absent when the file held no key; on a page, `above` is the key its line stood above, absent when it stood last. */
+const putBack = z.object({
+  file: z.string(),
+  fieldId: z.string(),
+  before: z.unknown().optional(),
+  above: z.string().optional(),
+})
 export type PutBack = z.infer<typeof putBack>
 
 // Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.

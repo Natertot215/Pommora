@@ -4,7 +4,7 @@ import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { landValue, memberKey, namesValue } from '../Files/rootValues'
+import { aboveOf, landValue, memberKey, namesValue } from '../Files/rootValues'
 import { atomicWriteFile, parseJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
@@ -179,7 +179,7 @@ export const changedKeys = (raw: Json, next: Json): string[] =>
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
 
-/** A page's next text with the keys `rewrite` changes merged in; null when it changes none. A changed key the next root holds no value for is deleted. */
+/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing where the next root places it; null when it changes none. A changed key the next root holds no value for is deleted. */
 export const rewriteRaw =
   (rewrite: (raw: Json) => Json | null) =>
   (page: SweptPage): string | null => {
@@ -187,9 +187,7 @@ export const rewriteRaw =
     if (next === null) return null
     const keys = changedKeys(page.raw, next)
     if (!keys.length) return null
-    const modeled: Json = {}
-    for (const k of keys) if (k in next) modeled[k] = next[k]
-    return page.merge(modeled, keys)
+    return page.merge(next, keys)
   }
 
 /** Rewrites the page at `absFile` in one parse, writing the text `rewrite` answers for it, or nothing for null. Takes no lock: each caller holds the page's lock over a wider span, and a re-take is refused. */
@@ -219,24 +217,25 @@ export async function writeSpaceSidecar(
   return written.ok ? ok(null) : written
 }
 
-/** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before, as `PutBack.before` spells it. Takes no lock, as `rewriteRootAt` takes none. */
+/** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before and, on a page, the key its line stood above, as `PutBack` spells them. Takes no lock, as `rewriteRootAt` takes none. */
 export async function writeGovernedKey(
   abs: string,
   key: string,
   value: unknown,
   world: GovernedWorld,
-): Promise<Result<unknown>> {
-  let before: unknown
+): Promise<Result<Pick<PutBack, 'before' | 'above'>>> {
+  const was: Pick<PutBack, 'before' | 'above'> = {}
   const written = isMarkdownFile(abs)
     ? await rewriteRootAt(abs, (page) => {
-        before = page.pair(key)
+        was.before = page.pair(key)
+        was.above = aboveOf(page.raw, [key])[key]
         return rewriteRaw((raw) => writtenRoot(raw, key, value, world))(page)
       })
     : await writeSpaceSidecar(abs, (raw) => {
-        before = raw[key]
+        was.before = raw[key]
         return writtenRoot(raw, key, value, world)
       })
-  return written.ok ? ok(before) : written
+  return written.ok ? ok(was) : written
 }
 
 /** The key a property or a Context is written under now. A Context resolves from the tree first, so a tag's undo never reads the property list, which a damaged file makes throw. */
@@ -246,7 +245,7 @@ async function keyNow(root: string, id: string): Promise<string | undefined> {
   return (await readRegistry(root)).defs[id]?.key
 }
 
-/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node so a bare key comes back bare, leaving every other key as it now stands and a file whose key already reads so unwritten; answers the entries it couldn't put back. */
+/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node so a bare key comes back bare, and a key the page no longer holds above the key it stood above, leaving every other key as it now stands and a file whose key already reads so unwritten; answers the entries it couldn't put back. */
 export async function putBackEntries(
   root: string,
   entries: readonly PutBack[],
@@ -257,7 +256,10 @@ export async function putBackEntries(
 }
 
 // A page's key is read inside its lock, as the write read it, so a key renamed since lands under its new name.
-async function landEntry(root: string, { file, fieldId, before }: PutBack): Promise<boolean> {
+async function landEntry(
+  root: string,
+  { file, fieldId, before, above }: PutBack,
+): Promise<boolean> {
   if (!isMarkdownFile(file)) {
     const at = await mutableTarget(root, file, ['space'])
     const key = at.ok ? await keyNow(root, fieldId) : undefined
@@ -273,6 +275,6 @@ async function landEntry(root: string, { file, fieldId, before }: PutBack): Prom
   return machine().lock(at.value, async () => {
     const key = await keyNow(root, fieldId)
     if (key === undefined) return false
-    return (await rewriteRootAt(at.value, (page) => page.withPair(key, before))).ok
+    return (await rewriteRootAt(at.value, (page) => page.withPair(key, before, above))).ok
   })
 }
