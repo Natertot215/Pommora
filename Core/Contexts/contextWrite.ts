@@ -1,22 +1,16 @@
-import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
+import { basename, join, isMarkdownFile } from '../Paths/posix'
 import { contextKey } from './contexts'
 import { namesValue, stripList } from '../Properties/pageValue'
-import {
-  contextWorldOf,
-  governedWorld,
-  spaceWorldOf,
-  type ContextWorld,
-  type GovernedWorld,
-} from './contextResolve'
+import { contextWorldOf, type ContextWorld } from './contextResolve'
+import { pageWorldOf, spaceWorldOf } from '../Nexus/governedRoot'
 import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { reachReport } from '../Nexus/configReach'
-import { owningCollection, spaceAt } from '../Nexus/treePatch'
+import { spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
-import { assignedDefs } from '../Properties/assignment'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
@@ -70,12 +64,6 @@ export async function setPageContext(
     await setGovernedRootKey(absFile, key, value, governed)
     return ok(null)
   })
-}
-
-export async function pageWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
-  const tree = await liveTreeOf(root)
-  const owner = owningCollection(tree, relative(root, absFile))
-  return governedWorld(tree, await assignedDefs(root, owner ? join(root, owner.path) : null))
 }
 
 export async function writeSpaceSidecar(

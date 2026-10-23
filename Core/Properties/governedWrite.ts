@@ -1,7 +1,7 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a changed key the next root holds no value for is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
-import { reconcileGovernedRoot, type GovernedWorld } from '../Contexts/contextResolve'
-import { keepingForeignWords, writtenSpelling } from './propertyValue'
+import { reconcileGovernedRoot, type GovernedWorld, writtenSpelling } from '../Nexus/governedRoot'
+import { keepingForeignWords } from './propertyValue'
 import { changedKeys } from '../Nexus/governedSweep'
 import { landValue } from '../Files/rootValues'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
