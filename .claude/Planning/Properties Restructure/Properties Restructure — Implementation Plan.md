@@ -1138,12 +1138,12 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 4A-5 · Each "value" file is named for what it holds
   - [x] Task 4A-6 · A seeded page is written once, and the registry read goes through `cachedParse`
   - [x] Review Checkpoint
-- [ ] **Phase 4B** — The Tidy Rule and Repair On Open
-  - [ ] Task 4B-1 · The live reconcile's guard becomes a type fact
-  - [ ] Task 4B-2 · A value of only spaces reads as empty
-  - [ ] Task 4B-3 · A write that changes nothing writes nothing
-  - [ ] Task 4B-4 · Repair Properties On Open defaults on; drive group 3
-  - [ ] Review Checkpoint
+- [x] **Phase 4B** — The Tidy Rule and Repair On Open
+  - [x] Task 4B-1 · The live reconcile's guard becomes a type fact
+  - [x] Task 4B-2 · A value of only spaces reads as empty
+  - [x] Task 4B-3 · A write that changes nothing writes nothing
+  - [x] Task 4B-4 · Repair Properties On Open defaults on; drive group 3
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — One Home per Definition
   - [ ] Task 5-1 · `assignedDefs` leaves, and worlds build from the tree through `schemaOf`
   - [ ] Task 5-2 · Collections hold the ids their sidecar assigns
@@ -8173,7 +8173,7 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 - [ ] `git grep -n "never shrinks\|Object.hasOwn(raw, def.key)" -- Core` answers nothing.
 - [ ] Run the gates.
 - [ ] Properties Drive groups 1 to 3 pass, and group 3's three checks were seen to fail on the phase's base commit.
-- [ ] **The NexusOS Scan:** copy `~/NexusOS` read-only (`rsync -a --exclude .obsidian --exclude .trash ~/NexusOS/ <scratchpad>/nexusos-copy/`), and run a throwaway `Core/Nexus/nexusosScan.throwaway.test.ts` (never committed, deleted after) that reads `readNexus(<copy>)`, then for every page `pagePathsIn` lists under each Collection, every archived page under `.nexus/archive`, and every Space sidecar, reconciles its root live (`reconcileGovernedRoot(root, governedWorld(tree, await assignedDefs(copy, folder)))` for a page, `spaceWorldOf(tree)` for a Space) and prints each `changed` key with its file and its value before and after, a reordered list included. A read-only scan found none, and an empty list is recorded in *§Behavior Changes and Disclosures*. A non-empty list is the tidy rule's ruled outcome (P-1), which NexusOS takes on its next value write or Repair On Open, so P5 opens; each file, key, and its value before and after go to the execution log and the closing report. The copy and the throwaway are deleted either way.
+- [ ] **The NexusOS Scan:** copy `~/NexusOS` read-only (`rsync -a --exclude .obsidian --exclude .trash ~/NexusOS/ <scratchpad>/nexusos-copy/`), and run a throwaway `Core/Nexus/nexusosScan.throwaway.test.ts` (never committed, deleted after) that reads `readNexus(<copy>)`, then for every page `pagePathsIn` lists under each Collection, every archived page under `.nexus/archive`, and every Space sidecar, reconciles its root live (`reconcileGovernedRoot(root, governedWorld(tree, await assignedDefs(copy, folder)))` for a page, `spaceWorldOf(tree)` for a Space) and prints each `changed` key with its file and its value before and after, a reordered list included. The scan reads the same at the phase's base and head: one row, `Assets/II. Arsenal/Nautilus 5712A.md`'s Multi-Select `Color` going from `Silver` to `[Silver]`, the existing list normalization that page's next value write or Repair On Open lands, not the tidy rule. A row the head adds over the base is the tidy rule's ruled outcome (P-1), which NexusOS takes on its next value write or Repair On Open, so P5 opens; each file, key, and its value before and after go to the execution log and the closing report. The copy and the throwaway are deleted either way.
 
 #### Behavior Changes and Disclosures
 
@@ -34739,7 +34739,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 2 | −305 | +253 | −52 | −312 / +249 / −63 | −199 |
 | 3 | −384 | +369 | −15 | −358 / +344 / −14 | −213 |
 | 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
-| 4B | −18 | +29 | +11 | | |
+| 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
 | 5 | −151 | +117 | −34 | | |
 | 6 | −266 | +305 | +39 | | |
 | 7 | −622 | +469 | −153 | | |
