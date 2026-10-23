@@ -8,7 +8,6 @@ import type { StepPart } from '@pommora/uix/Interactions/keyboard'
 import { type Geometry, INTO_EDGE, rank, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
 import type { OptionChipData } from '../../Properties/Cells/OptionChip'
-import { formatBucketLabel } from '../../Properties/formatValue'
 import {
   type BandDrop,
   type BandRef,
@@ -17,6 +16,7 @@ import {
   type SetRef,
 } from './bandRouter'
 import type { SetIndex } from '../Pipeline/setIndex'
+import { formatBucketLabel } from '../Pipeline/group'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
 

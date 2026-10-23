@@ -11,6 +11,7 @@ import {
 } from '../viewRow'
 import {
   type DateGranularity,
+  type DateSeparator,
   type EmptyPlacement,
   type GroupConfig,
   granularityOf,
@@ -26,7 +27,8 @@ import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
 import { groupable, optionLabels, type PropertyDefinition } from '../../Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
-import { readDate } from '../../Properties/formatValue'
+import { dateFmt, formatDate, NUMERIC_FORMATS, readDate } from '../../Properties/formatValue'
+import type { DateFormat } from '../../Properties/columnStyles'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { SetIndex } from './setIndex'
 
@@ -163,6 +165,37 @@ export function dateBucketKey(iso: string, granularity: DateGranularity): string
     case 'week': {
       const [wy, w] = isoWeek(year, month, day)
       return `${pad(wy, 4)}-W${pad(w, 2)}`
+    }
+  }
+}
+
+export function formatBucketLabel(
+  key: string,
+  granularity: DateGranularity,
+  dateFormat: DateFormat,
+  separator: DateSeparator,
+): string {
+  const numeric = NUMERIC_FORMATS.has(dateFormat)
+  const sep = separator === 'slash' ? '/' : '-'
+  switch (granularity) {
+    case 'year':
+      return key
+    case 'week': {
+      const m = /^(\d{4})-W(\d{2})$/.exec(key)
+      if (!m) return key
+      return numeric ? `W${m[2]}${sep}${m[1]}` : `Week ${Number(m[2])}, ${m[1]}`
+    }
+    case 'month': {
+      const m = /^(\d{4})-(\d{2})$/.exec(key)
+      if (!m) return key
+      if (numeric) return `${m[2]}${sep}${m[1]}`
+      const month = dateFmt({ month: 'long' }).format(new Date(`${key}-01T00:00:00`))
+      return `${month} ${m[1]}`
+    }
+    case 'day': {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return key
+      const out = formatDate(key, dateFormat, 'none')
+      return numeric && separator === 'dash' ? out.replaceAll('/', '-') : out
     }
   }
 }
