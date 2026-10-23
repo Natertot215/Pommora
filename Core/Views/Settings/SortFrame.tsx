@@ -86,11 +86,7 @@ export function SortFrame({
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
-  const targets = [
-    TITLE_TARGET,
-    ...STAMP_TARGETS,
-    ...schemaTargets(schema, (d) => PROPERTY_TYPES[d.type].origin === 'user'),
-  ]
+  const targets = [TITLE_TARGET, ...STAMP_TARGETS, ...schemaTargets(schema, () => true)]
 
   const pickPrimary = (id: string | null): void => {
     if (id === null) {

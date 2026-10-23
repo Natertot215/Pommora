@@ -171,11 +171,10 @@ const commitTitle = (input: HTMLInputElement, value: string): void => {
   input.dispatchEvent(new Event('input', { bubbles: true }))
   input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
 }
-const titleDef: PropertyDefinition = { id: '_title', label: 'Title', key: 'Title', type: 'link' }
 
 describe('the All Properties section', () => {
-  it('lists only unassigned, unreserved registry defs, in registry order', async () => {
-    useSession.setState({ tree: { config: { registry: [effortDef, defs[0], titleDef] } } as never })
+  it('lists only unassigned registry defs, in registry order', async () => {
+    useSession.setState({ tree: { config: { registry: [effortDef, defs[0]] } } as never })
     await mountPane([defs[0]])
     await act(async () => {
       rowFor('All Properties').click()
@@ -183,7 +182,6 @@ describe('the All Properties section', () => {
     const all = allGroup()
     expect(all.textContent).toContain('Effort')
     expect(all.textContent).not.toContain('Status')
-    expect(all.textContent).not.toContain('Title')
   })
 
   it('+ assigns through the IPC; the push carries the promotion, not a reload', async () => {

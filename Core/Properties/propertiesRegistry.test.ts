@@ -68,6 +68,26 @@ describe('propertiesRegistry', () => {
     expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_a'])
   })
 
+  it('sets aside a Context-typed, Filedata-typed, or reserved-id definition, and writes it back as stored', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    const setAside: Record<string, Record<string, unknown>> = {
+      prop_ctx: { id: 'prop_ctx', label: 'Area', key: 'Area', type: 'context' },
+      prop_made: { id: 'prop_made', label: 'Made', key: 'Made', type: 'createdTime' },
+      _title: { id: '_title', label: 'Heading', key: 'Heading', type: 'text' },
+    }
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_a', ...Object.keys(setAside)],
+        defs: { prop_a: def('prop_a', 'Priority'), ...setAside },
+      }),
+    )
+    expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_a'])
+    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
+    for (const [id, stored] of Object.entries(setAside)) expect(kept.defs[id]).toEqual(stored)
+  })
+
   it('reads two options that fold alike as the first, and two definitions whose names fold alike as the first', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     const options = [

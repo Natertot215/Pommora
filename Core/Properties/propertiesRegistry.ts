@@ -8,7 +8,7 @@ import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
-import { validateName, withUniqueOptions } from './validation'
+import { admissible, validateName, withUniqueOptions } from './validation'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
@@ -29,7 +29,11 @@ function normalizeRegistry(obj: Record<string, unknown>): {
     const value = rawDefs[id]
     const parsed = propertyDefinition.safeParse(value)
     // The first definition by id to hold a label or a key in any casing is the one admitted.
-    if (parsed.success && validateName(parsed.data, Object.values(defs)).ok)
+    if (
+      parsed.success &&
+      admissible(parsed.data) &&
+      validateName(parsed.data, Object.values(defs)).ok
+    )
       defs[id] = withUniqueOptions(parsed.data)
     // Only a plausible def (a plain object) rides through writes; a scalar under an id key is corrupt noise.
     else if (isPlainObject(value)) unadmitted[id] = value

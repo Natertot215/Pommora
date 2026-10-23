@@ -1,6 +1,7 @@
 import {
   byKey,
   isReservedPropertyId,
+  isUserType,
   KEY_REFUSAL,
   optionGroupsOf,
   optionsOf,
@@ -55,15 +56,18 @@ export function validateName(
   return ok(null)
 }
 
+/** What the property list holds: a user type under an id Pommora doesn't reserve. A create refuses, and a registry read sets aside, everything else. */
+export const admissible = ({ id, type }: Pick<PropertyDefinition, 'id' | 'type'>): boolean =>
+  isUserType(type) && !isReservedPropertyId(id)
+
 export function validateDefinition(
   def: PropertyDefinition,
   existing: PropertyDefinition[],
 ): Result<null> {
   const nameCheck = validateName(def, existing, def.id)
   if (!nameCheck.ok) return nameCheck
-  if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
-  if (PROPERTY_TYPES[def.type].origin !== 'user')
-    return fail('invalid-property', 'A Context or timestamp column is not a property.')
+  if (!admissible(def))
+    return fail('invalid-property', 'A reserved id or a Context column is not a property.')
   if (existing.some((d) => d.id === def.id))
     return fail('invalid-property', 'That property id already exists.')
   if (PROPERTY_TYPES[def.type].options) {

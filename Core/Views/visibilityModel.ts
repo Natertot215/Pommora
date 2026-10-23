@@ -1,4 +1,4 @@
-import { isReservedPropertyId, type PropertyDefinition, STAMP_TYPE } from '../Properties/properties'
+import { type PropertyDefinition, STAMP_TYPE } from '../Properties/properties'
 import type { SavedView } from './views'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
@@ -14,7 +14,7 @@ export function hiddenListIds(
   const nonShown = (id: string): boolean => set.has(id) || !shown.has(id)
   return [
     ...contextIds.filter(nonShown),
-    ...schema.filter((d) => !isReservedPropertyId(d.id) && nonShown(d.id)).map((d) => d.id),
+    ...schema.filter((d) => nonShown(d.id)).map((d) => d.id),
     ...Object.keys(STAMP_TYPE).filter(nonShown),
   ]
 }
