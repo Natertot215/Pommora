@@ -13,7 +13,6 @@ import {
   pickViewState,
   mapTiles,
   mapViews,
-  editHiddenBucket,
   clearHiddenBuckets,
   type SavedView,
 } from './views'
@@ -524,34 +523,6 @@ describe('the saved-view traversal', () => {
 })
 
 describe('the stored hidden-group keys', () => {
-  it('a rename moves the encoded key at both levels', () => {
-    expect(
-      editHiddenBucket(
-        ['prop_A/Done', 'sub/prop_A/Done', 'prop_B/Done'],
-        'prop_A',
-        'Done',
-        'Closed',
-      ),
-    ).toEqual(['prop_A/Closed', 'sub/prop_A/Closed', 'prop_B/Done'])
-  })
-
-  it('a removal drops the encoded key at both levels', () => {
-    expect(
-      editHiddenBucket(['prop_A/Done', 'sub/prop_A/Done', 'x'], 'prop_A', 'Done', null),
-    ).toEqual(['x'])
-  })
-
-  it('a rename onto a key the list already holds keeps one copy', () => {
-    expect(editHiddenBucket(['prop_A/Done', 'prop_A/Closed'], 'prop_A', 'Done', 'Closed')).toEqual([
-      'prop_A/Closed',
-    ])
-  })
-
-  it('answers null when nothing matches', () => {
-    expect(editHiddenBucket(['prop_B/Done', 'Done'], 'prop_A', 'Done', 'Closed')).toBeNull()
-    expect(editHiddenBucket([], 'prop_A', 'Done', null)).toBeNull()
-  })
-
   it('a clear drops the property’s encoded keys at both levels and keeps another property’s', () => {
     expect(
       clearHiddenBuckets(

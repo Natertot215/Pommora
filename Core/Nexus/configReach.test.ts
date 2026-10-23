@@ -4,12 +4,8 @@ import { dirname, join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, homepageDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
-import type { PropertyDefinition } from '../Properties/properties'
-import { dropLiveTree, heldTreeOf, liveTreeOf, refreshTree } from './liveTree'
-import { readNexus } from './readNexus'
-import { closeSession, openSession } from './session'
+import { dropLiveTree, liveTreeOf } from './liveTree'
 import './settle'
-import { stabilize } from './treeStabilize'
 import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
 import { forgetLastReads } from '../Files/atomicWrite'
 import { unsweptLine } from './entities'
@@ -21,26 +17,7 @@ vi.mock('./liveTree', async (importOriginal) => {
 
 type Raw = Record<string, unknown>
 
-const STAGE: PropertyDefinition = {
-  id: 'prop_s',
-  label: 'Stage',
-  key: 'Stage',
-  type: 'select',
-  select_options: [
-    { id: 'opt_Done', key: 'Done', label: 'Done' },
-    { id: 'opt_Todo', key: 'Todo', label: 'Todo' },
-  ],
-}
-const TAGS: PropertyDefinition = {
-  id: 'prop_m',
-  label: 'Tags',
-  key: 'Tags',
-  type: 'multiSelect',
-  select_options: [{ id: 'opt_A', key: 'A', label: 'A' }],
-}
-
-const rename = { kind: 'option' as const, def: STAGE, labels: ['Done', 'Closed'] as const }
-const removal = { kind: 'option' as const, def: STAGE, labels: ['Done', null] as const }
+const removal = { kind: 'gone' as const, propertyId: 'prop_s', ids: ['opt_Done'] }
 const clear = { kind: 'property' as const, propertyId: 'prop_s' }
 
 const rich = (id: string): Raw => ({
@@ -55,23 +32,31 @@ const rich = (id: string): Raw => ({
   filter: {
     match: 'all',
     rules: [
-      { property_id: 'prop_s', op: 'is', value: 'Done' },
-      { match: 'any', rules: [{ property_id: 'prop_s', op: 'is_not', values: ['Done', 'Todo'] }] },
-      { property_id: 'prop_s', op: 'is', value: 'Todo', values: ['Done'] },
+      { property_id: 'prop_s', op: 'is', value: 'opt_Done' },
+      {
+        match: 'any',
+        rules: [{ property_id: 'prop_s', op: 'is_not', values: ['opt_Done', 'opt_Todo'] }],
+      },
+      { property_id: 'prop_s', op: 'is', value: 'opt_Todo', values: ['opt_Done'] },
       { property_id: 'prop_s', op: 'contains', value: 'Done' },
       { property_id: 'prop_s', op: 'is_empty' },
-      { property_id: 'prop_x', op: 'is', value: 'Done' },
+      { property_id: 'prop_x', op: 'is', value: 'opt_Done' },
       null,
     ],
   },
   sort: [
-    { property_id: 'prop_s', direction: 'ascending', order: ['Todo', 'Done'] },
+    { property_id: 'prop_s', direction: 'ascending', order: ['opt_Todo', 'opt_Done'] },
     { property_id: 'prop_x', direction: 'ascending' },
   ],
-  group: { kind: 'property', property_id: 'prop_s', order_mode: 'manual', order: ['Done', 'Todo'] },
-  sub_group: { property_id: 'prop_s', order_mode: 'manual', order: ['Done'] },
-  hidden_groups: ['prop_s/Done', 'sub/prop_s/Done', 'prop_x/Done'],
-  collapsed_groups: ['Done', 'set_1/Done', 'Todo'],
+  group: {
+    kind: 'property',
+    property_id: 'prop_s',
+    order_mode: 'manual',
+    order: ['opt_Done', 'opt_Todo'],
+  },
+  sub_group: { property_id: 'prop_s', order_mode: 'manual', order: ['opt_Done'] },
+  hidden_groups: ['prop_s/opt_Done', 'sub/prop_s/opt_Done', 'prop_x/opt_Done'],
+  collapsed_groups: ['prop_s/opt_Done', 'set_1/prop_s/opt_Done', 'prop_s/opt_Todo', 'set_1'],
 })
 
 const elsewhere = (id: string): Raw => ({
@@ -81,8 +66,8 @@ const elsewhere = (id: string): Raw => ({
   property_order: [],
   hidden_properties: [],
   group: { kind: 'property', property_id: 'prop_x', order_mode: 'configured' },
-  hidden_groups: ['prop_x/Done', 'sub/prop_x/Done'],
-  collapsed_groups: ['Done', 'set_1/Done'],
+  hidden_groups: ['prop_x/opt_Done', 'sub/prop_x/opt_Done'],
+  collapsed_groups: ['prop_x/opt_Done', 'set_1/prop_x/opt_Done'],
 })
 
 let root: string
@@ -146,7 +131,7 @@ beforeEach(async () => {
   await putJson(homeTiles(), { tiles: [{ id: 'm', type: 'markdown' }] })
   await seedStandalone({
     match: 'all',
-    rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null],
+    rules: [{ property_id: 'prop_s', op: 'is', value: 'opt_Done' }, null],
   })
 })
 
@@ -155,13 +140,9 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('an option rename', () => {
-  it('reaches every field that holds the option on a Collection, a Set, a tile, and the Matrix, and leaves the cache', async () => {
-    const reach = await reachConfig(root, rename)
-    expect(reach).toEqual({
-      skipped: 0,
-      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
-    })
+describe('an option removal', () => {
+  it('drops the option’s id from the rules, the orders, and the bucket keys on a Collection, a Set, a tile, and the Matrix, and leaves another property’s like-named id', async () => {
+    await reachConfig(root, removal)
     for (const view of [
       (await viewsOf(colFile()))[0],
       (await viewsOf(setFile()))[0],
@@ -170,104 +151,19 @@ describe('an option rename', () => {
       expect(view.filter).toEqual({
         match: 'all',
         rules: [
-          { property_id: 'prop_s', op: 'is', value: 'Closed' },
-          {
-            match: 'any',
-            rules: [{ property_id: 'prop_s', op: 'is_not', values: ['Closed', 'Todo'] }],
-          },
-          { property_id: 'prop_s', op: 'is', value: 'Todo', values: ['Closed'] },
+          { match: 'any', rules: [{ property_id: 'prop_s', op: 'is_not', values: ['opt_Todo'] }] },
           { property_id: 'prop_s', op: 'contains', value: 'Done' },
           { property_id: 'prop_s', op: 'is_empty' },
-          { property_id: 'prop_x', op: 'is', value: 'Done' },
+          { property_id: 'prop_x', op: 'is', value: 'opt_Done' },
           null,
         ],
       })
-      expect((view.sort as Raw[])[0].order).toEqual(['Todo', 'Closed'])
-      expect((view.group as Raw).order).toEqual(['Closed', 'Todo'])
-      expect((view.sub_group as Raw).order).toEqual(['Closed'])
-      expect(view.hidden_groups).toEqual(['prop_s/Closed', 'sub/prop_s/Closed', 'prop_x/Done'])
-      expect(view.collapsed_groups).toEqual(['Closed', 'set_1/Closed', 'Todo'])
+      expect((view.sort as Raw[])[0].order).toEqual(['opt_Todo'])
+      expect((view.group as Raw).order).toEqual(['opt_Todo'])
+      expect((view.sub_group as Raw).order).toEqual([])
+      expect(view.hidden_groups).toEqual(['prop_x/opt_Done'])
+      expect(view.collapsed_groups).toEqual(['prop_s/opt_Todo', 'set_1'])
     }
-    expect(await matrixRules()).toEqual({
-      match: 'all',
-      rules: [{ property_id: 'prop_s', op: 'is', value: 'Closed' }, null],
-    })
-    expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
-      values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
-    })
-  })
-
-  it('reaches an archived Set’s sidecar as it reaches a live one', async () => {
-    const archived = archivedFile('col_notes', 'Notes')
-    await putJson(archived, { id: 'set_old', views: [rich('view_o')] })
-    await reachConfig(root, rename)
-    const idAside = (view: Raw): Raw => ({ ...view, id: '', name: '' })
-    expect(idAside((await viewsOf(archived))[0])).toEqual(idAside((await viewsOf(setFile()))[0]))
-    expect((await viewsOf(archived))[0]).not.toEqual(rich('view_o'))
-  })
-
-  it('leaves the keys a view holds under another grouping, and an entry it cannot read', async () => {
-    await reachConfig(root, rename)
-    const [, kept, foreign] = await viewsOf(colFile())
-    expect(kept).toEqual(elsewhere('view_e'))
-    expect(foreign).toBe('foreign')
-  })
-
-  it('edits a Multi-Select contains rule, which compares whole values', async () => {
-    await putJson(setFile(), {
-      id: 'set_deep',
-      views: [
-        {
-          ...elsewhere('v'),
-          filter: {
-            match: 'all',
-            rules: [{ property_id: 'prop_m', op: 'contains', values: ['A'] }],
-          },
-        },
-      ],
-    })
-    await reachConfig(root, { kind: 'option', def: TAGS, labels: ['A', 'B'] })
-    expect((await viewsOf(setFile()))[0].filter).toEqual({
-      match: 'all',
-      rules: [{ property_id: 'prop_m', op: 'contains', values: ['B'] }],
-    })
-  })
-
-  it('writes nothing on a second run', async () => {
-    await reachConfig(root, rename)
-    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile(), settingsFile()]
-    const before = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
-    expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
-  })
-
-  it('the held tree follows each container it wrote', async () => {
-    await openSession(root)
-    await refreshTree(root)
-    await reachConfig(root, rename)
-    const held = heldTreeOf(root)
-    expect(stabilize(await readNexus(root), held)).toBe(held)
-    closeSession()
-  })
-})
-
-describe('an option removal', () => {
-  it('drops a rule it leaves with no operand, or whose chip list it empties beside a value, and leaves the cache', async () => {
-    await reachConfig(root, removal)
-    const [view] = await viewsOf(colFile())
-    expect(view.filter).toEqual({
-      match: 'all',
-      rules: [
-        { match: 'any', rules: [{ property_id: 'prop_s', op: 'is_not', values: ['Todo'] }] },
-        { property_id: 'prop_s', op: 'contains', value: 'Done' },
-        { property_id: 'prop_s', op: 'is_empty' },
-        { property_id: 'prop_x', op: 'is', value: 'Done' },
-        null,
-      ],
-    })
-    expect(view.hidden_groups).toEqual(['prop_x/Done'])
-    expect(view.collapsed_groups).toEqual(['Todo'])
-    expect((view.group as Raw).order).toEqual(['Todo'])
     expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
       values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
     })
@@ -292,14 +188,14 @@ describe('a property clear', () => {
         match: 'all',
         rules: [
           { match: 'any', rules: [] },
-          { property_id: 'prop_x', op: 'is', value: 'Done' },
+          { property_id: 'prop_x', op: 'is', value: 'opt_Done' },
           null,
         ],
       })
       expect(view.sort).toEqual([{ property_id: 'prop_x', direction: 'ascending' }])
       expect(view.group).toEqual({ kind: 'structural' })
       expect('sub_group' in view).toBe(false)
-      expect(view.hidden_groups).toEqual(['prop_x/Done'])
+      expect(view.hidden_groups).toEqual(['prop_x/opt_Done'])
       expect(view.collapsed_groups).toEqual([])
     }
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
@@ -322,25 +218,22 @@ describe('what the pass skips', () => {
   it('leaves an absent matrix.json and Space board untouched', async () => {
     await rm(matrixFile())
     await rm(spaceTiles())
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 0, hosts: [] })
     await expect(stat(matrixFile())).rejects.toThrow()
     await expect(stat(spaceTiles())).rejects.toThrow()
   })
 
   it('leaves an absent settings.json uncreated', async () => {
     await rm(settingsFile())
-    expect((await reachConfig(root, rename)).skipped).toBe(0)
+    expect((await reachConfig(root, removal)).skipped).toBe(0)
     await expect(stat(settingsFile())).rejects.toThrow()
   })
 
   it('counts an unparseable settings.json as one skip and leaves its bytes', async () => {
     vi.mocked(liveTreeOf).mockResolvedValueOnce(await liveTreeOf(root))
     await writeFile(settingsFile(), '{ not json')
-    expect((await reachConfig(root, rename)).skipped).toBe(1)
-    expect(await matrixRules()).toEqual({
-      match: 'all',
-      rules: [{ property_id: 'prop_s', op: 'is', value: 'Closed' }, null],
-    })
+    expect((await reachConfig(root, removal)).skipped).toBe(1)
+    expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
     expect(await readFile(settingsFile(), 'utf8')).toBe('{ not json')
   })
 
@@ -358,7 +251,7 @@ describe('what the pass skips', () => {
   it('counts a directory at a Set sidecar as one skip', async () => {
     await rm(setFile())
     await mkdir(setFile())
-    expect((await reachConfig(root, rename)).skipped).toBe(1)
+    expect((await reachConfig(root, removal)).skipped).toBe(1)
   })
 
   it.skipIf(noModeBits)('counts an archived Set’s sidecar it can’t read as one skip', async () => {
@@ -366,7 +259,7 @@ describe('what the pass skips', () => {
     await putJson(archived, { id: 'set_old', views: [rich('view_o')] })
     await chmod(archived, 0o000)
     try {
-      expect((await reachConfig(root, rename)).skipped).toBe(1)
+      expect((await reachConfig(root, removal)).skipped).toBe(1)
     } finally {
       await chmod(archived, 0o644)
     }
@@ -374,7 +267,7 @@ describe('what the pass skips', () => {
 
   it('leaves a corrupt sidecar’s bytes and holds nothing owed for it', async () => {
     await writeFile(setFile(), '{ not json')
-    expect((await reachConfig(root, rename)).skipped).toBe(0)
+    expect((await reachConfig(root, removal)).skipped).toBe(0)
     expect(await readFile(setFile(), 'utf8')).toBe('{ not json')
   })
 
@@ -383,13 +276,9 @@ describe('what the pass skips', () => {
     async () => {
       await chmod(set(), 0o555)
       try {
-        const reach = await reachConfig(root, rename)
+        const reach = await reachConfig(root, removal)
         expect(reach.skipped).toBe(1)
-        expect((await tileViews('t_deep'))[0].hidden_groups).toEqual([
-          'prop_s/Closed',
-          'sub/prop_s/Closed',
-          'prop_x/Done',
-        ])
+        expect((await tileViews('t_deep'))[0].hidden_groups).toEqual(['prop_x/opt_Done'])
       } finally {
         await chmod(set(), 0o755)
       }
@@ -399,35 +288,31 @@ describe('what the pass skips', () => {
 
   it('reaches the board of a Space the walk listed as unreadable, with no host to push', async () => {
     await writeFile(join(space(), SIDECAR_FILENAME.space), '{ not json')
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
-    expect((await tileViews('t_deep'))[0].hidden_groups).toEqual([
-      'prop_s/Closed',
-      'sub/prop_s/Closed',
-      'prop_x/Done',
-    ])
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 0, hosts: [] })
+    expect((await tileViews('t_deep'))[0].hidden_groups).toEqual(['prop_x/opt_Done'])
   })
 
   it('counts an unreadable Contexts registry as one skip, since no Space can be found', async () => {
     await rm(join(root, '.nexus', 'contexts', 'contexts.json'))
     await mkdir(join(root, '.nexus', 'contexts', 'contexts.json'))
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 1, hosts: [] })
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 1, hosts: [] })
   })
 
   it('counts no skip for an unreadable property list, whose Spaces still read', async () => {
     forgetLastReads()
     await rm(join(root, '.nexus', 'properties.json'), { force: true })
     await mkdir(join(root, '.nexus', 'properties.json'))
-    expect((await reachConfig(root, rename)).skipped).toBe(0)
+    expect((await reachConfig(root, removal)).skipped).toBe(0)
   })
 
   it('holds nothing owed for a Contexts registry that doesn’t parse', async () => {
     await writeFile(join(root, '.nexus', 'contexts', 'contexts.json'), '{ not json')
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 0, hosts: [] })
   })
 
   it('answers one skip and writes nothing when the walk throws', async () => {
     vi.mocked(liveTreeOf).mockRejectedValueOnce(new Error('walk failed'))
-    expect(await reachConfig(root, rename)).toEqual({ skipped: 1, hosts: [] })
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 1, hosts: [] })
     expect((await viewsOf(setFile()))[0]).toEqual(rich('view_s'))
   })
 })
@@ -445,7 +330,7 @@ describe('a pass scoped under one Collection', () => {
     expect((await tileViews('t_other'))[0]).toEqual(rich('tv_other'))
     const untouched = {
       match: 'all',
-      rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null],
+      rules: [{ property_id: 'prop_s', op: 'is', value: 'opt_Done' }, null],
     }
     expect(await matrixRules()).toEqual(untouched)
     expect(await previewRules()).toEqual(untouched)
@@ -661,9 +546,11 @@ describe('a gone edit', () => {
 
   it('writes nothing on a second run', async () => {
     await reachConfig(root, setGone)
+    await reachConfig(root, removal)
     const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile(), settingsFile()]
     const before = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
     expect(await reachConfig(root, setGone)).toEqual({ skipped: 0, hosts: [] })
+    expect(await reachConfig(root, removal)).toEqual({ skipped: 0, hosts: [] })
     expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
   })
 

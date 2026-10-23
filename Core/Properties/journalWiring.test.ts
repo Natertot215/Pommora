@@ -237,7 +237,7 @@ describe('the option-op writers', () => {
 
   it('option-remove writes every saved view while the record is held', async () => {
     await withOptions()
-    await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'Draft'))
+    await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'opt_Draft'))
     await refreshTree(root)
     observed = []
     expect((await deleteOption(root, 'prop_t', 'Draft')).ok).toBe(true)

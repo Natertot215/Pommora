@@ -608,7 +608,7 @@ describe('renameOption', () => {
     expect(content).not.toContain('light-blue')
   })
 
-  it('an adopted word renamed onto the key its Value Format writes keeps its key, leaves its pages, and relabels the views', async () => {
+  it('an adopted word renamed onto the key its Value Format writes keeps its key, leaves its pages, and leaves the views as written', async () => {
     const id = await mkProperty({
       label: 'Tags',
       key: 'Tags',
@@ -621,7 +621,7 @@ describe('renameOption', () => {
     await assignProperty(root, col.value.path, id)
     const page = join(col.value.path, 'One.md')
     await writeFile(page, '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nTags: [in-progress]\n---\nb\n')
-    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'in-progress'))
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'opt_in-progress'))
     const bytes = await readFile(page, 'utf8')
     const mtime = (await stat(page)).mtimeMs
 
@@ -631,7 +631,7 @@ describe('renameOption', () => {
     ])
     expect(await readFile(page, 'utf8')).toBe(bytes)
     expect((await stat(page)).mtimeMs).toBe(mtime)
-    expect((await surfaces.read()).collection).toEqual(viewOn(id, 'In Progress'))
+    expect((await surfaces.read()).collection).toEqual(viewOn(id, 'opt_in-progress'))
   })
 
   it('rejects a whitespace rename, leaving the option as it was', async () => {
@@ -1092,15 +1092,10 @@ describe('the option cascades reach the Collection caches', () => {
     const file = sidecarPath(other.value.path, 'collection')
     await rm(file)
     await mkdir(file)
-    const r = await renameOption(root, id, 'A', 'Z')
+    const r = await deleteOption(root, id, 'A')
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.retry).toEqual({ op: 'finishOwed' })
-    expect(await readSchemaJournal(root)).toEqual({
-      op: 'option-rename',
-      id,
-      keys: [['A', 'Z']],
-      labels: ['A', 'Z'],
-    })
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'A' })
   })
 })
 
@@ -1165,7 +1160,7 @@ describe('option cascades reach saved views', () => {
     ])
     const page = await pageHolding(id, 'Done')
     const col = join(page, '..')
-    return { id, col, surfaces: await seedConfigSurfaces(root, col, viewOn(id, 'Done')) }
+    return { id, col, surfaces: await seedConfigSurfaces(root, col, viewOn(id, 'opt_Done')) }
   }
 
   async function lockedHolder(id: string, col: string): Promise<string> {
@@ -1182,15 +1177,17 @@ describe('option cascades reach saved views', () => {
     return set.value.path
   }
 
-  it('a rename reaches the Collection, the Set, the tile, and the Matrix', async () => {
-    const { id, surfaces } = await seeded()
+  it('a rename leaves the Collection, the Set, the tile, and the Matrix as written, its sort order included', async () => {
+    const { id, col, surfaces } = await seeded()
+    const files = [sidecarPath(col, 'collection'), sidecarPath(surfaces.set, 'set'), surfaces.tiles]
+    const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
+    const mtimes = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
     expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
-      ok({ cascade: { pages: [], hosts: [HOME] } }),
+      ok({ cascade: { pages: [], hosts: [] } }),
     )
-    const views = await surfaces.read()
-    const want = viewOn(id, 'Closed')
-    expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
-    expect(views.matrix).toEqual(want.filter)
+    expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
+    expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(mtimes)
+    expect((await surfaces.read()).matrix).toEqual(viewOn(id, 'opt_Done').filter)
   })
 
   it('a removal strips the value and drops the rule it emptied', async () => {
@@ -1198,7 +1195,7 @@ describe('option cascades reach saved views', () => {
     expect(await deleteOption(root, id, 'Done')).toEqual(
       ok({ cascade: { pages: [], hosts: [HOME] } }),
     )
-    const held = viewOn(id, 'Done')
+    const held = viewOn(id, 'opt_Done')
     const want = {
       ...held,
       filter: undefined,
@@ -1229,7 +1226,7 @@ describe('option cascades reach saved views', () => {
         await chmod(locked, 0o755)
       }
       const views = await surfaces.read()
-      const held = viewOn(id, 'Done')
+      const held = viewOn(id, 'opt_Done')
       expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
       expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
       expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
@@ -1240,21 +1237,21 @@ describe('option cascades reach saved views', () => {
   )
 
   it.skipIf(noModeBits)(
-    'a rename with a page skip still reaches the views, answers the skip, and holds the journal',
+    'a rename with a page skip answers the skip and holds the journal, the views as written',
     async () => {
       const { id, col, surfaces } = await seeded()
       const locked = await lockedHolder(id, col)
       try {
         expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
           ok({
-            cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
+            cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
             retry: { op: 'finishOwed' },
           }),
         )
       } finally {
         await chmod(locked, 0o755)
       }
-      expect((await surfaces.read()).set).toEqual(viewOn(id, 'Closed'))
+      expect((await surfaces.read()).set).toEqual(viewOn(id, 'opt_Done'))
       expect(await readSchemaJournal(root)).toEqual({
         op: 'option-rename',
         id,
@@ -1264,14 +1261,14 @@ describe('option cascades reach saved views', () => {
     },
   )
 
-  it('a rename to the option’s own key leaves its pages, relabels the views, and journals no key', async () => {
+  it('a rename to the option’s own key leaves its pages and its views, and journals no key', async () => {
     const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
-    const surfaces = await seedConfigSurfaces(root, join(page, '..'), viewOn(id, 'Urgent'))
+    const surfaces = await seedConfigSurfaces(root, join(page, '..'), viewOn(id, 'opt_urgent'))
     const bytes = await readFile(page, 'utf8')
     expect((await renameOption(root, id, 'Urgent', 'urgent')).ok).toBe(true)
     expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect((await surfaces.read()).set).toEqual(viewOn(id, 'urgent'))
+    expect((await surfaces.read()).set).toEqual(viewOn(id, 'opt_urgent'))
     expect(writeSchemaJournal).toHaveBeenCalledWith(root, {
       op: 'option-rename',
       id,
@@ -1309,23 +1306,23 @@ describe('option cascades reach saved views', () => {
     const { id, surfaces } = await seeded()
     expect(await clearOption(root, id, 'Done')).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
     const views = await surfaces.read()
-    const held = viewOn(id, 'Done')
+    const held = viewOn(id, 'opt_Done')
     expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
     expect(views.matrix).toEqual(held.filter)
   })
 
-  it('a rename and a removal edit files by key and views by label', async () => {
+  it('a rename and a removal edit files by key and views by id', async () => {
     const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
     await assignProperty(root, col.value.path, id)
     const page = join(col.value.path, 'One.md')
     await writeFile(page, '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nTags: [urgent]\n---\nb\n')
-    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'Urgent'))
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'opt_urgent'))
 
     expect((await renameOption(root, id, 'Urgent', 'Critical')).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['Critical'])
-    expect((await surfaces.read()).collection.filter).toEqual(viewOn(id, 'Critical').filter)
+    expect((await surfaces.read()).collection.filter).toEqual(viewOn(id, 'opt_urgent').filter)
 
     expect((await deleteOption(root, id, 'Critical')).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
@@ -1334,7 +1331,7 @@ describe('option cascades reach saved views', () => {
     expect((await surfaces.read()).collection.filter).toBeUndefined()
   })
 
-  it("a removal leaves the views on another option whose label is the removed one's key", async () => {
+  it('a removal leaves the views on another option', async () => {
     const id = await mkSelect([
       { id: 'opt_a', key: 'a', label: 'Z' },
       { id: 'opt_B2', key: 'B2', label: 'a' },
@@ -1342,11 +1339,11 @@ describe('option cascades reach saved views', () => {
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
     await assignProperty(root, col.value.path, id)
-    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'a'))
+    const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'opt_B2'))
 
     expect((await deleteOption(root, id, 'Z')).ok).toBe(true)
     const views = await surfaces.read()
-    const held = viewOn(id, 'a')
+    const held = viewOn(id, 'opt_B2')
     expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
   })
 })
@@ -1394,7 +1391,7 @@ async function toned(
       property_cache: { [id]: { values: { [PAGE_ID]: [select_options[0].key] } } },
     }),
   )
-  const surfaces = await seedConfigSurfaces(root, col, viewOn(id, select_options[0].label))
+  const surfaces = await seedConfigSurfaces(root, col, viewOn(id, select_options[0].id))
   const cache = async () => (await readJsonAt(file)).property_cache
   return { id, page, space, cache, surfaces }
 }

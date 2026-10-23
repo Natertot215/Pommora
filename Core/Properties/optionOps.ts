@@ -247,22 +247,24 @@ async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit
   )
 }
 
-/** Rewrites the files and caches holding `keys`' old keys, and with `labels` every configuration reference to the option's label. */
+/** Rewrites the files and caches holding `keys`' old keys. A delete names its option: a skipped file stops it there, so the option stays while its replay is owed, and otherwise every saved view, tile, and filter drops the option's id. */
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
   keys: ValueEdit,
-  labels?: readonly [string, string | null],
+  removed?: string,
 ): Promise<ConfigReach> {
   let skipped = 0
   if (keys.size) {
     const { files, plan } = await valueEditPlan(root, def, keys)
     skipped = (await sweepGovernedRoots(root, files, plan)).skipped.length
-    // A Remove that skipped a file stops here, so the option and every reference to it stay while its replay is owed.
-    if (skipped && labels?.[1] === null) return { skipped, hosts: [] }
+    if (skipped && removed !== undefined) return { skipped, hosts: [] }
     skipped += await cacheSweep(root, def, keys)
   }
-  const reach = labels ? await reachConfig(root, { kind: 'option', def, labels }) : NO_REACH
+  const reach =
+    removed === undefined
+      ? NO_REACH
+      : await reachConfig(root, { kind: 'gone', propertyId: def.id, ids: [removed] })
   return { skipped: skipped + reach.skipped, hosts: reach.hosts }
 }
 
@@ -293,7 +295,7 @@ async function rekeyOptions(
     await clearSchemaJournal(root, record)
     return edit
   }
-  const reach = await optionCascade(root, edit.value, keys, record.labels)
+  const reach = await optionCascade(root, edit.value, keys)
   if (!reach.skipped) await clearSchemaJournal(root, record)
   return ok(schemaCascade(reach, record))
 }
@@ -408,7 +410,7 @@ export function deleteOption(
     const { def, option } = r.value
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, key: option.key }
     if (!(await writeSchemaJournal(root, record))) return OWED
-    const reach = await optionCascade(root, def, new Map([[option.key, null]]), [label, null])
+    const reach = await optionCascade(root, def, new Map([[option.key, null]]), option.id)
     if (!reach.skipped) {
       const dropped = await dropOptionFromDef(root, propertyId, option.key)
       if (!dropped.ok) return dropped

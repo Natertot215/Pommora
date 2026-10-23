@@ -19,7 +19,7 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { createProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { deleteOption, renameOption } from './optionOps'
-import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from '../Nexus/entities'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
@@ -446,53 +446,13 @@ describe('option replay', () => {
 })
 
 describe('option replay reaches saved views', () => {
-  const renamedDef = (root: string): Promise<null> =>
-    mutateRegistry(root, (registry) => ({
-      next: {
-        ...registry,
-        defs: {
-          ...registry.defs,
-          prop_s: {
-            ...registry.defs.prop_s,
-            select_options: [
-              { id: 'opt_Queued', key: 'Queued', label: 'Queued' },
-              { id: 'opt_Done', key: 'Done', label: 'Done' },
-            ],
-          },
-        },
-      },
-      result: null,
-    }))
-
-  it('option-rename rewrites a view still holding the old value, and replaying twice equals once', async () => {
-    const root = await seedNexus()
-    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
-    const record: SchemaJournal = {
-      op: 'option-rename',
-      id: 'prop_s',
-      keys: [['Draft', 'Queued']],
-      labels: ['Draft', 'Queued'],
-    }
-    await writeSchemaJournal(root, record)
-    await renamedDef(root)
-    await openSession(root)
-    await replaySchemaCascade(root)
-    const once = await surfaces.read()
-    const want = viewOn('prop_s', 'Queued')
-    expect([once.collection, once.set, once.tile]).toEqual([want, want, want])
-    expect(once.matrix).toEqual(want.filter)
-    expect(await readSchemaJournal(root)).toBeNull()
-    const tilesAt = (await stat(surfaces.tiles)).mtimeMs
-    await writeSchemaJournal(root, record)
-    await replaySchemaCascade(root)
-    expect(await surfaces.read()).toEqual(once)
-    expect((await stat(surfaces.tiles)).mtimeMs).toBe(tilesAt)
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
   it('a record of two keys and no labels rewrites both words on every page and leaves the views as written', async () => {
     const root = await seedNexus()
-    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
+    const surfaces = await seedConfigSurfaces(
+      root,
+      join(root, 'Col'),
+      viewOn('prop_s', 'opt_Draft'),
+    )
     await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nStage: Todo\n---\nbody\n`)
     await writeSchemaJournal(root, {
       op: 'option-rename',
@@ -527,40 +487,13 @@ describe('option replay reaches saved views', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
-  it('a record whose labels the definition no longer holds clears untouched', async () => {
-    const root = await seedNexus()
-    await writeSchemaJournal(root, {
-      op: 'option-rename',
-      id: 'prop_s',
-      keys: [['Draft', 'Queued']],
-      labels: ['Draft', 'Queued'],
-    })
-    await mutateRegistry(root, (registry) => ({
-      next: {
-        ...registry,
-        defs: {
-          ...registry.defs,
-          prop_s: {
-            ...registry.defs.prop_s,
-            select_options: [
-              { id: 'opt_Queued', key: 'Queued', label: 'Draft' },
-              { id: 'opt_Done', key: 'Done', label: 'Done' },
-            ],
-          },
-        },
-      },
-      result: null,
-    }))
-    const before = await page(root, 'A')
-    await openSession(root)
-    await replaySchemaCascade(root)
-    expect(await page(root, 'A')).toBe(before)
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
   it('option-remove with clean pages strips a view still holding the value, then drops the option', async () => {
     const root = await seedNexus()
-    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
+    const surfaces = await seedConfigSurfaces(
+      root,
+      join(root, 'Col'),
+      viewOn('prop_s', 'opt_Draft'),
+    )
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
     await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })

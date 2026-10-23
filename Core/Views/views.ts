@@ -340,21 +340,6 @@ export const hiddenBuckets = (
   return held.flatMap((k) => (k.startsWith(prefix) ? [k.slice(prefix.length)] : []))
 }
 
-export function editHiddenBucket(
-  held: readonly string[],
-  propertyId: string,
-  from: string,
-  to: string | null,
-): string[] | null {
-  const renamed = new Map<string, string[]>()
-  for (const level of ['group', 'sub'] as const) {
-    const into = to === null ? [] : [hiddenBucketKey(level, propertyId, to)]
-    renamed.set(hiddenBucketKey(level, propertyId, from), into)
-  }
-  if (!held.some((k) => renamed.has(k))) return null
-  return [...new Set(held.flatMap((k) => renamed.get(k) ?? [k]))]
-}
-
 export function clearHiddenBuckets(held: readonly string[], propertyId: string): string[] | null {
   const own = (k: string): boolean =>
     k.startsWith(hiddenBucketKey('group', propertyId, '')) ||

@@ -8,7 +8,7 @@ import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption, setValueFormat } from '../Properties/optionOps'
 import * as optionOps from '../Properties/optionOps'
-import { optionLabels, type PropertyDefinition } from '../Properties/properties'
+import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { writeSchemaJournal } from '../Properties/propertyJournal'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import type { Pushes } from '../Contract/bridge'
@@ -904,7 +904,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
     expect(channels()).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
     const pushed = applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)
     const def = pushed.config.registry.find((d) => d.id === 'tags') as PropertyDefinition
-    expect(optionLabels(def)).toEqual(['alpha', 'Ideas'])
+    expect(optionsOf(def).map((o) => o.label)).toEqual(['alpha', 'Ideas'])
   })
 
   it('an in-app toggle of another option registers the member the page already holds', async () => {

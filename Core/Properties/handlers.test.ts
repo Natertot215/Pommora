@@ -82,7 +82,7 @@ beforeEach(async () => {
     page.value.path,
     rewriteRaw((raw) => landValue(raw, key, ['Done'])),
   )
-  surfaces = await seedConfigSurfaces(root, col, viewOn(propId, 'Done'))
+  surfaces = await seedConfigSurfaces(root, col, viewOn(propId, 'opt_Done'))
   await openSession(root)
 })
 
@@ -101,11 +101,11 @@ describe('the property ops', () => {
     expect((await readRegistry(root)).defs[r.value.created.propertyId]?.key).toBe('Due Date')
   })
 
-  it('a rename pushes each board it wrote once, and the held tree holds the containers it wrote', async () => {
-    const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
+  it('an option delete pushes each board it wrote once, and the held tree holds the containers it wrote', async () => {
+    const r = await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(tilePushes()).toEqual([HOME])
-    expect(liveViewAt(surfaces.set)).toEqual(viewOn(propId, 'Closed'))
+    expect(liveViewAt(surfaces.set)).not.toHaveProperty('filter')
   })
 
   it.skipIf(noModeBits)(
@@ -135,29 +135,6 @@ describe('the property ops', () => {
       expect(tilePushes()).toEqual([HOME])
     },
   )
-
-  it('an option rename held by an unreadable Set sidecar warns with a Try Again that heals it once the file reads', async () => {
-    const setFile = sidecarPath(surfaces.set, 'set')
-    const held = await readFile(setFile, 'utf8')
-    await rm(setFile)
-    await mkdir(setFile)
-    const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
-    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual(FINISH)
-    expect(await readSchemaJournal(root)).toEqual({
-      op: 'option-rename',
-      id: propId,
-      keys: [['Done', 'Closed']],
-      labels: ['Done', 'Closed'],
-    })
-    expect((liveViewAt(col) as { filter: unknown }).filter).toEqual(viewOn(propId, 'Closed').filter)
-    await rm(setFile, { recursive: true })
-    await writeFile(setFile, held)
-    await refreshTree(root)
-    expect(await send(FINISH)).toMatchObject(ok({ cascade: { pages: [] } }))
-    expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
 
   it('an option delete held by an unreadable Set sidecar keeps the option and offers Try Again', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
@@ -321,13 +298,13 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     await refreshTree(root)
   }
 
-  it('an option rename holds nothing owed, and the Collection keeps the old label once it reads', async () => {
+  it('an option rename holds nothing owed, and the Collection reads as written', async () => {
     const held = await damaged()
     const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
-    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
+    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
     expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)
-    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Done')])
+    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'opt_Done')])
   })
 
   it('an option delete holds nothing owed and drops the option, and the Collection keeps its filter once it reads', async () => {
@@ -336,7 +313,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)
-    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Done')])
+    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'opt_Done')])
     const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)
     expect(options).toEqual(['Todo'])
   })
