@@ -44,8 +44,8 @@ export function resolveContextKeys(
     const group = groupOf(key, world)
     if (!group) continue
     const byTitle = world.spacesByTitle.get(group.def.id)
-    const ids = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.id ?? [])
-    if (ids.length) links.set(group.def.id, ids)
+    const ids = new Set(contextTitles(raw).flatMap((title) => byTitle?.get(title)?.id ?? []))
+    if (ids.size) links.set(group.def.id, [...ids])
   }
   return links
 }
