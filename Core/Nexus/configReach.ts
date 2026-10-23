@@ -1,6 +1,5 @@
 import {
   clearHiddenBuckets,
-  editHiddenBucket,
   groupsOn,
   mapTiles,
   mapViews,
@@ -14,10 +13,9 @@ import {
   mapRules,
   NO_FILTER,
   OPERANDLESS_OPS,
-  SUBSTRING_OPS,
 } from '../Views/filterRules'
-import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
-import { editList, type Matcher, stripList } from '../Files/rootValues'
+import { FILEDATA } from '../Properties/properties'
+import { type Matcher, stripList } from '../Files/rootValues'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
@@ -90,12 +88,8 @@ const ROLES = {
 } as const satisfies Record<keyof SavedView, Role>
 
 // ── Edits ──
-type OptionReach = { def: PropertyDefinition; labels: readonly [string, string | null] }
 type Gone = { propertyId: string; ids: readonly string[] }
-type ConfigEdit =
-  | ({ kind: 'option' } & OptionReach)
-  | { kind: 'property'; propertyId: string }
-  | ({ kind: 'gone' } & Gone)
+type ConfigEdit = { kind: 'property'; propertyId: string } | ({ kind: 'gone' } & Gone)
 
 type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
@@ -119,9 +113,6 @@ function overStrings(held: unknown, edit: (keys: string[]) => string[] | null): 
   return next ? [...next, ...held.filter((k) => typeof k !== 'string')] : held
 }
 
-const wholeValues = (def: PropertyDefinition, op: unknown): boolean =>
-  PROPERTY_TYPES[def.type].kind === 'multiSelect' || !SUBSTRING_OPS.has(String(op))
-
 function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | null): Raw | null {
   const value = typeof rule.value === 'string' ? edit([rule.value]) : null
   const values = Array.isArray(rule.values) ? edit(rule.values) : null
@@ -140,53 +131,23 @@ function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | n
   return answerable(next as FilterRule) ? next : null
 }
 
-const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
-  onProperty(e.def.id, rule) && wholeValues(e.def, rule.op)
-    ? editOperands(rule, (xs) => editList(xs, new Map([e.labels])))
-    : rule
-
+// A gone id answers whole or as a key's head (a Set's sub-bands), or as the bucket closing a key its property scopes (an option's bands).
 const gone =
   (e: Gone): Matcher =>
   (el) =>
-    typeof el === 'string' && e.ids.some((id) => isAtOrUnder(el, id))
+    typeof el === 'string' &&
+    e.ids.some((id) => isAtOrUnder(el, id) || `/${el}`.endsWith(`/${e.propertyId}/${id}`))
 
 const goneRule = (e: Gone, rule: Raw): Raw | null =>
   onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
 
-const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
-  if (!onProperty(e.def.id, holder) || !Array.isArray(holder.order)) return holder
-  const order = editList(holder.order, new Map([e.labels]))
+const goneOrder = (e: Gone, holder: unknown): unknown => {
+  if (!onProperty(e.propertyId, holder) || !Array.isArray(holder.order)) return holder
+  const order = stripList(holder.order, gone(e))
   return order ? { ...holder, order } : holder
 }
 
-function collapsedKeys(e: OptionReach, view: SavedView, keys: unknown[]): unknown[] {
-  const top = groupsOn(view, 'group', e.def.id)
-  const sub = groupsOn(view, 'sub', e.def.id)
-  const [from, to] = e.labels
-  const rename = (k: string): string | null => {
-    if (top && k === from) return to
-    if (!sub || !k.endsWith(`/${from}`)) return k
-    return to === null ? null : `${k.slice(0, -from.length)}${to}`
-  }
-  const renamed = keys.map((k) => (typeof k === 'string' ? rename(k) : k))
-  return [...new Set(renamed)].filter((k) => k !== null)
-}
-
 const keep: Handler<unknown> = (_e, held) => held
-
-const RENAME: Record<Role, Handler<OptionReach>> = {
-  none: keep,
-  idList: keep,
-  idMap: keep,
-  setIds: keep,
-  rules: (e, held) => editRules(held, (r) => optionRule(e, r)),
-  criteria: (e, held) => (Array.isArray(held) ? held.map((c) => scopedOrder(e, c)) : held),
-  group: scopedOrder,
-  subGroup: scopedOrder,
-  hiddenKeys: (e, held) =>
-    overStrings(held, (keys) => editHiddenBucket(keys, e.def.id, ...e.labels)),
-  bandKeys: (e, held, view) => (Array.isArray(held) ? collapsedKeys(e, view, held) : held),
-}
 
 const CLEAR: Record<Role, Handler<string>> = {
   none: keep,
@@ -218,9 +179,9 @@ const GONE: Record<Role, Handler<Gone>> = {
   idMap: keep,
   setIds: stripGone,
   rules: (e, held) => editRules(held, (r) => goneRule(e, r)),
-  criteria: keep,
-  group: keep,
-  subGroup: keep,
+  criteria: (e, held) => (Array.isArray(held) ? held.map((c) => goneOrder(e, c)) : held),
+  group: goneOrder,
+  subGroup: goneOrder,
   hiddenKeys: stripGone,
   bandKeys: stripGone,
 }
@@ -244,8 +205,6 @@ export const propertyClear = (propertyId: string): ViewEdit => viewEdit(CLEAR, p
 
 function editsOf(e: ConfigEdit): { view: ViewEdit; rule: (rule: Raw) => Raw | null } {
   switch (e.kind) {
-    case 'option':
-      return { view: viewEdit(RENAME, e), rule: (r) => optionRule(e, r) }
     case 'property':
       return { view: propertyClear(e.propertyId), rule: (r) => clearRule(e.propertyId, r) }
     case 'gone':

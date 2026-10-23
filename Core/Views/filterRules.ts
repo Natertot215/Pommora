@@ -53,12 +53,6 @@ export const FILTER_OPS = {
 /** The ops that are complete without an operand; everything else is unauthored until one arrives. */
 export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
-export const SUBSTRING_OPS = new Set<string>([
-  FILTER_OPS.contains,
-  FILTER_OPS.doesNotContain,
-  FILTER_OPS.startsWith,
-])
-
 /** A chip list wins over a single value, as the pane writes one or the other. */
 export const ruleOperands = (rule: FilterRule): string[] =>
   rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []

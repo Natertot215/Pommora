@@ -8,7 +8,7 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
-import { optionLabels, optionsOf } from './properties'
+import { optionsOf } from './properties'
 import { same } from '../Files/stableJson'
 import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
 
@@ -67,10 +67,9 @@ async function replay(
       const def = defs[journal.id]
       if (!def) return NO_REACH
       const keys = optionsOf(def).map((o) => o.key)
-      // Every new key and the new label held, and no old one, = the commit landed cleanly; every other state is not this record's.
+      // Every new key held, and no old one, = the commit landed cleanly; every other state is not this record's.
       if (!renamesApplied(journal.keys, keys)) return NO_REACH
-      if (journal.labels && !renamesApplied([journal.labels], optionLabels(def))) return NO_REACH
-      return optionCascade(root, def, new Map(journal.keys), journal.labels)
+      return optionCascade(root, def, new Map(journal.keys))
     }
     case 'option-remove': {
       // Pages-first order holds the key in the def until the strip completes, so the key still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the key listed may have been added again.
@@ -79,10 +78,7 @@ async function replay(
       if (!def || !held || !same(held, journal)) return NO_REACH
       const option = optionsOf(def).find((o) => o.key === journal.key)
       if (!option) return NO_REACH
-      const owed = await optionCascade(root, def, new Map([[journal.key, null]]), [
-        option.label,
-        null,
-      ])
+      const owed = await optionCascade(root, def, new Map([[journal.key, null]]), option.id)
       if (owed.skipped) return owed
       return (await dropOptionFromDef(root, journal.id, journal.key)).ok
         ? owed
