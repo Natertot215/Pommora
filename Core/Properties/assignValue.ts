@@ -9,7 +9,6 @@ import { shownAlias } from '../Connections/linkValue'
 import { pageIndexOf } from '../Nexus/record'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
-import { landValue } from '../Files/rootValues'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -23,53 +22,46 @@ export interface ValueWriter {
   ) => void
 }
 
+/** Sends `req` with `value` laid over the row while it's in flight; undefined for a property the writer's schema lacks. */
 function send(
-  w: ValueWriter,
-  row: ViewRow,
-  req: MutateRequest,
-  patched: PageFrontmatter,
-  contexts?: Record<string, string[]>,
-): Promise<boolean> {
-  const pending = w.mutate(req).then((done) => done !== null)
-  w.apply(row.id, patched, pending, contexts)
-  return pending
-}
-
-function write(
   w: ValueWriter,
   row: ViewRow,
   column: ResolvedColumn,
   value: PropertyValue | null,
-): Promise<boolean> | undefined {
-  if (column.kind === 'context') {
-    const ids = value?.kind === 'context' ? value.value : []
-    const req: MutateRequest = {
-      op: 'setContext',
-      path: row.path,
-      contextId: column.id,
-      spaceIds: ids,
-    }
-    return send(w, row, req, row.frontmatter, { [column.id]: ids })
+  req: MutateRequest,
+): Promise<MutateOutcome | null> | undefined {
+  let patched = row.frontmatter
+  let contexts: Record<string, string[]> | undefined
+  if (column.kind === 'context')
+    contexts = { [column.id]: value?.kind === 'context' ? value.value : [] }
+  else {
+    const def = w.schema.find((d) => d.id === column.id)
+    if (!def) return undefined
+    patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
   }
-  const def = w.schema.find((d) => d.id === column.id)
-  if (!def) return undefined
-  const patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
-  return send(w, row, { op: 'setProperty', path: row.path, propertyId: column.id, value }, patched)
+  const sent = w.mutate(req)
+  w.apply(
+    row.id,
+    patched,
+    sent.then((done) => done !== null),
+    contexts,
+  )
+  return sent
 }
 
-function restore(
-  w: ValueWriter,
+const valueRequest = (
   row: ViewRow,
   column: ResolvedColumn,
-  prior: PropertyValue | null,
-  held: unknown,
-): Promise<boolean> | undefined {
-  if (column.kind === 'context') return write(w, row, column, prior)
-  const def = w.schema.find((d) => d.id === column.id)
-  if (!def) return undefined
-  const patched = landValue(row.frontmatter, def.key, held) as PageFrontmatter
-  return send(w, row, { op: 'restoreValue', path: row.path, propertyId: column.id, held }, patched)
-}
+  value: PropertyValue | null,
+): MutateRequest =>
+  column.kind === 'context'
+    ? {
+        op: 'setContext',
+        path: row.path,
+        contextId: column.id,
+        spaceIds: value?.kind === 'context' ? value.value : [],
+      }
+    : { op: 'setProperty', path: row.path, propertyId: column.id, value }
 
 // A landed Link value newly showing an alias for a page gives that page the alias, as authoring one in a body does.
 function rememberedAlias(
@@ -95,26 +87,37 @@ export function assignValue(
   const target = w.rowOf(row.id) ?? row
   const resolved = resolveFieldValue(target, column.id, w.schema)
   const prior = isBlankValue(resolved) ? null : resolved
-  const def = w.schema.find((d) => d.id === column.id)
-  const held = def && target.frontmatter[def.key]
-  const pending = write(w, target, column, value)
-  if (!pending) return pending
-  // Pushed now, so a sweep's group collects it; a refused write leaves nothing to revert.
-  let landed: boolean | null = null
-  void pending.then((ok) => {
-    landed = ok
-    const remember = ok && rememberedAlias(value, prior)
+  const sent = send(w, target, column, value, valueRequest(target, column, value))
+  if (!sent) return sent
+  // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
+  const undone = sent.then((done) => {
+    const remember = done && rememberedAlias(value, prior)
     if (remember) void w.mutate(remember)
+    return done?.undo ? [done.undo] : []
   })
-  const revert = (): boolean => {
+  let reverts: MutateRequest[] | undefined
+  void undone.then((r) => {
+    reverts = r
+  })
+  const revert = (requests: MutateRequest[]): boolean => {
     const live = writer.current
     const current = live?.rowOf(row.id)
-    return !!live && !!current && restore(live, current, column, prior, held) !== undefined
+    if (!live || !current) return false
+    let reverted = false
+    for (const req of requests)
+      if (req.op === 'putBack') {
+        const entries = req.entries.map((e) =>
+          e.file === target.path ? { ...e, file: current.path } : e,
+        )
+        reverted =
+          send(live, current, column, prior, { op: 'putBack', entries }) !== undefined || reverted
+      }
+    return reverted
   }
   pushUndo(() => {
-    if (landed !== null) return landed && revert()
-    void pending.then((ok) => ok && revert())
+    if (reverts) return revert(reverts)
+    void undone.then(revert)
     return true
   })
-  return pending
+  return sent.then((done) => done !== null)
 }
