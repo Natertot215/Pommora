@@ -30,6 +30,8 @@ One line per fold found in a file a later task touches: the file, what folds, an
 
 #### Scan and Conversion Records
 
+- **The NexusOS Scan (Phase 4B's Checkpoint, 10-23-2026):** 569 roots read (6 Collections' pages, no archive, 10 Space sidecars); one changed key. `Assets/II. Arsenal/Nautilus 5712A.md`, `Color`: before `Silver`, after `[Silver]`. The same scan at the phase's base answers the same one row, so it's the reconcile's existing list spelling of a scalar Select, and Phase 4B's rules change no NexusOS value.
+
 #### Executor Insights
 
 - **Phase 2, Task 2-4:** the AFTER removed `RESERVED_PROPERTY_ID` while leaving `Core/Views/Pipeline/sort.ts` importing it until Task 2-5, so 2-4's head failed typecheck; 2-4 pointed `sort.ts` at `FILEDATA.title.id`, and 2-5 completed its two `sort.ts` hunks by hand.
@@ -41,3 +43,6 @@ One line per fold found in a file a later task touches: the file, what folds, an
 - **Phase 4A, Task 4A-3:** the AFTER's `rewriteRootAt` read through `readTextOrNull`, which answers null for an unreadable file too, so a page refusing its read answered "Page not found." where HEAD answered "That page could not be read." (`mutate.test.ts`' permission case); it reads through `machine().readText`, null answering not-found and a throw the fault. The re-seed rule's `(await liveDef(id)).key` can't sit inside the sync rewrite, so each awaited key is a `const key` before its write, and two seeds whose option label differs from its key write the key (`'wip'`, `'light-blue'`), as `encodeValue` does.
 - **Phase 4A, Task 4A-5:** `pageValuesOf` joining `viewRow.ts` made it value-import `pageFrontmatter` from `Core/Nexus/schemas.ts`, which value-imported `VIEW_BUTTONS` from `viewRow.ts`; the cycle failed every test file that loaded `viewRow` first. `VIEW_BUTTONS`, `ViewButton`, `VIEW_STYLES`, and `ViewStyle` moved to `schemas.ts` above the field that reads them, with `tree.ts`, `tiles.ts`, `viewMenus.ts`, and `containerConfig.ts` re-pointed.
 - **Phase 4A, Task 4A-6:** `Core/Trash/deleteReach.test.ts`' `page` helper, which the CHANGE doesn't name, seeded a Link through `createTestPage`'s `values`; it seeds `frontmatter: { [RELATED.key]: `[[…]]` }` instead, and committed with 4A-6.
+- **Phase 4B, Task 4B-1:** `reencode` answering `{ next, listed }` broke the eight direct calls in `governedRoot.test.ts`' "reencode — a frozen copy names only what still exists", which the CHANGE doesn't name; each reads `.next`, and committed with 4B-1.
+- **Phase 4B, Task 4B-2:** `Core/Properties/Cells/Cell.test.tsx`' "gives a repeated value its own chip, so the one pressed is the one that moves" seeded a File value `[a, b, a]`, which now reads `[a, b]`; a Context value still keeps a repeat (`contextTitles` and `resolveContextKeys` don't dedupe), so the test seeds `contextValues: { ctx_areas: [a, b, a] }` and expects `{ kind: 'context', value: [b, a, a] }`, committed with 4B-2.
+- **Phase 4B, Task 4B-4:** group 3's three checks failed at the phase's base (`23ff2e745`) and passed at the head, with groups 1 and 2 green and `~/Test` restored byte-for-byte.
