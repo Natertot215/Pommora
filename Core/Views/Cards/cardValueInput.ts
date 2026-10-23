@@ -9,13 +9,13 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { columnLabel } from '../../Properties/Cells/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
-/** A blank value of this type fills in place: a checkbox draws its own box, and a stamp has no fill path. */
+/** A blank value of this type fills in place, unless the type draws its blank (a checkbox's box) or is Filedata, which has no fill path. */
 export const fillsBlank = (type: ColumnType | undefined): boolean => {
   const spec = specOf(type)
-  return spec !== undefined && spec.origin !== 'filedata' && spec.kind !== 'checkbox'
+  return spec !== undefined && spec.origin !== 'filedata' && !spec.blankDraws
 }
 
-/** Compact's label-less flow can't render an empty value, so it drops blanks — EXCEPT a checkbox, whose unchecked box is the on-card toggle. */
+/** Compact's label-less flow can't render an empty value, so it drops blanks, except a type whose blank draws, such as a checkbox's unchecked box, the on-card toggle. */
 export function shownColumnsFor(
   row: ViewRow,
   columns: ResolvedColumn[],
@@ -27,7 +27,7 @@ export function shownColumnsFor(
       c.kind !== 'title' &&
       (!compactLayout ||
         !isBlankValue(resolveFieldValue(row, c.id, ctx.schema)) ||
-        ctx.schema.find((d) => d.id === c.id)?.type === 'checkbox'),
+        specOf(ctx.schema.find((d) => d.id === c.id)?.type)?.blankDraws === true),
   )
 }
 

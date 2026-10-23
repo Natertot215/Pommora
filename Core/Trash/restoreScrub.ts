@@ -4,6 +4,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
 import { editHeldList, rekeyHeld, stripKeys } from '../Files/rootValues'
 import { byKey, optionsOf, PROPERTY_TYPES } from '../Properties/properties'
+import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { spellingsOf } from '../Properties/keyFormat'
 import { editList } from '../Properties/pageValue'
 import { contextKey, parseContextKey } from '../Contexts/contexts'
@@ -145,7 +146,7 @@ export async function scrubReturning(
   const world = governedWorld(tree, await assignedDefs(root, destCollectionFolder))
   const spaceWorld = spaceWorldOf(tree)
   const current = currentKeys(tree, inTransitKey)
-  const links = byKey(tree.config.registry.filter((d) => d.type === 'link'))
+  const links = byKey(linkDefsOf(tree.config.registry))
   const dropped: StrippedLink[] = []
   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
   const unlinked = (raw: Record<string, unknown>): Record<string, string> =>

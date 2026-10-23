@@ -6,6 +6,7 @@ import { useSession } from '../../Session/store'
 import { storesChanged } from '../../Session/nexusSlice'
 import { DEFAULT_LINK_DISPLAY } from '../../Connections/linkValue'
 import {
+  CREATABLE_TYPES,
   optionGroupsOf,
   type PropertyDefinition,
   PROPERTY_TYPES,
@@ -51,12 +52,7 @@ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex, PaneAllGroup, type PaneDrop, paneSpec } from '../paneDrop'
-import {
-  CREATABLE_TYPES,
-  PropertyTypeIcon,
-  propertyIcon,
-  propertyTypeLabel,
-} from '../Cells/PropertyTypes'
+import { PropertyTypeIcon, propertyIcon, propertyTypeLabel } from '../Cells/PropertyTypes'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import {

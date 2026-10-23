@@ -1,8 +1,6 @@
 import {
   type ColumnType,
   FILEDATA,
-  isUserType,
-  PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyType,
 } from '../properties'
@@ -36,8 +34,6 @@ export const propertyTypeIconName = (type: ColumnType): IconName => TYPE_META[ty
 
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
-
-export const CREATABLE_TYPES = Object.keys(PROPERTY_TYPES).filter(isUserType)
 
 export function PropertyTypeIcon({
   type,

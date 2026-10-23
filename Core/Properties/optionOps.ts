@@ -130,7 +130,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
         const pages = isMarkdownFile(rel) ? [rel] : null
         const space = pages ? null : spaceAt(tree, rel)
         const defs = (space ? tree.config.registry : containerSchema(tree, rel)).filter(
-          (d) => d.type === 'multiSelect',
+          (d) => PROPERTY_TYPES[d.type].registersMembers,
         )
         if (!defs.length) continue
         if (space) collect(space.values ?? {}, defs)

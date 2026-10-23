@@ -3,10 +3,10 @@ import { defaultStatusSeed } from './registryProperty'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import {
   byKey,
+  CREATABLE_TYPES,
   propertyDefinition,
   typeIds,
   isReservedPropertyId,
-  isUserType,
   groupable,
   optionsOf,
   pickKindOf,
@@ -200,8 +200,8 @@ describe('PROPERTY_TYPES', () => {
     expect(grouping).toEqual(['dateTime', 'select', 'status'])
   })
 
-  it('admits the nine user types and nothing a Context or Filedata column wears', () => {
-    expect(Object.keys(PROPERTY_TYPES).filter(isUserType)).toEqual([
+  it('creates the user types in the New Property order, and every other type is Context or Filedata', () => {
+    expect(CREATABLE_TYPES).toEqual([
       'text',
       'number',
       'checkbox',
@@ -212,7 +212,20 @@ describe('PROPERTY_TYPES', () => {
       'link',
       'file',
     ])
-    expect(isUserType('nope')).toBe(false)
+    const others = Object.entries(PROPERTY_TYPES).filter(
+      ([t]) => !(CREATABLE_TYPES as string[]).includes(t),
+    )
+    for (const [, s] of others) expect(['context', 'filedata']).toContain(s.origin)
+  })
+
+  it("holds connections on Link's value and Text's prose, registers members on Multi-Select, and draws a blank on Checkbox alone", () => {
+    const entries = Object.entries(PROPERTY_TYPES)
+    expect(entries.filter(([, s]) => s.connections).map(([t, s]) => [t, s.connections])).toEqual([
+      ['text', 'prose'],
+      ['link', 'value'],
+    ])
+    expect(entries.filter(([, s]) => s.registersMembers).map(([t]) => t)).toEqual(['multiSelect'])
+    expect(entries.filter(([, s]) => s.blankDraws).map(([t]) => t)).toEqual(['checkbox'])
   })
 
   it('Status keeps its options in status_groups and wears the select kind', () => {
