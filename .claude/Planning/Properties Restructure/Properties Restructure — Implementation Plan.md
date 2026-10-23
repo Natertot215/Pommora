@@ -1106,16 +1106,16 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 1-7 · Unread exports close, and comments that restate code leave
   - [x] Task 1-8 · The test describers' sweep
   - [x] Review Checkpoint
-- [ ] **Phase 2** — What Counts as a Property
-  - [ ] Task 2-1 · `schema.ts` becomes `validation.ts`
-  - [ ] Task 2-2 · Nine user types plus Context, and `ColumnType` keys `PROPERTY_TYPES`
-  - [ ] Task 2-3 · `admissible` sets aside a non-user definition on the way in
-  - [ ] Task 2-4 · `FILEDATA` names Title, the stamps, and Location once
-  - [ ] Task 2-5 · Title reads as text, and its three special cases leave
-  - [ ] Task 2-6 · The catalog's misplaced pieces move to their readers
-  - [ ] Task 2-7 · `formatBucketLabel` moves into `group.ts`
-  - [ ] Task 2-8 · The Properties Drive opens with group 1
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — What Counts as a Property
+  - [x] Task 2-1 · `schema.ts` becomes `validation.ts`
+  - [x] Task 2-2 · Nine user types plus Context, and `ColumnType` keys `PROPERTY_TYPES`
+  - [x] Task 2-3 · `admissible` sets aside a non-user definition on the way in
+  - [x] Task 2-4 · `FILEDATA` names Title, the stamps, and Location once
+  - [x] Task 2-5 · Title reads as text, and its three special cases leave
+  - [x] Task 2-6 · The catalog's misplaced pieces move to their readers
+  - [x] Task 2-7 · `formatBucketLabel` moves into `group.ts`
+  - [x] Task 2-8 · The Properties Drive opens with group 1
+  - [x] Review Checkpoint
   - [ ] Closeout P1–P2 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 3** — Type Records and Looks
   - [ ] Task 3-1 · The link-display vocabulary moves into `linkValue.ts`
@@ -34737,7 +34737,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | Phase | Written Removed | Written Added | Written Net | Actionable | Cumulative |
 |---|---|---|---|---|---|
 | 1 | −300 | +164 | −136 | −300 / +164 / −136 | −136 |
-| 2 | −305 | +253 | −52 | | |
+| 2 | −305 | +253 | −52 | −294 / +242 / −52 | −188 |
 | 3 | −384 | +369 | −15 | | |
 | 4A | −531 | +484 | −47 | | |
 | 4B | −18 | +29 | +11 | | |
