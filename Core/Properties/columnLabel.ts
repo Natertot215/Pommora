@@ -1,5 +1,5 @@
-import { FILEDATA_BY_ID, type PropertyDefinition } from '../properties'
-import type { ContextIdentity } from '../../Contexts/contextIdentity'
+import { FILEDATA_BY_ID, type PropertyDefinition } from './properties'
+import type { ContextIdentity } from '../Contexts/contextIdentity'
 
 export function columnLabel(
   columnId: string,

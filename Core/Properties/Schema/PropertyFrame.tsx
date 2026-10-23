@@ -52,7 +52,7 @@ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex, PaneAllGroup, type PaneDrop, paneSpec } from '../paneDrop'
-import { PropertyTypeIcon, propertyIcon, propertyTypeLabel } from '../Cells/PropertyTypes'
+import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDisplay'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import {
@@ -307,7 +307,7 @@ export function PropertyFrame({
       {CREATABLE_TYPES.map((type) => (
         <MenuItem
           key={type}
-          leading={<PropertyTypeIcon type={type} size={s.ICON.doc} />}
+          leading={<Icon name={propertyTypeIconName(type)} size={s.ICON.doc} />}
           trailing={<Icon name="chevron-right" />}
           onClick={() => void create(type)}
         >

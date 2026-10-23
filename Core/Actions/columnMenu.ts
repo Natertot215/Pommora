@@ -18,6 +18,7 @@ import {
 } from '../Properties/displayLabels'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
+import { styleLabel } from '../Properties/typeDisplay'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 import type { ActionItem } from './menuModel'
 
@@ -38,10 +39,6 @@ export interface StyleMenuContext {
   type: ColumnType
   current: ColumnStyle
   barCapable?: boolean
-}
-
-function styleMenuLabel(type: ColumnType): string {
-  return type === 'link' || type === 'number' ? 'Format' : 'Style'
 }
 
 export function alignRows(
@@ -99,7 +96,7 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
 /** Offered only where there's a choice to make: a lone row would only restate what renders. */
 export function styleBranch(ctx: StyleMenuContext): ActionItem<StyleAction>[] {
   const submenu = styleMenuItems(ctx)
-  return submenu.length > 1 ? [{ label: styleMenuLabel(ctx.type), submenu }] : []
+  return submenu.length > 1 ? [{ label: styleLabel(ctx.type), submenu }] : []
 }
 
 export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAction>[] {

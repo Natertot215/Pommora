@@ -7,7 +7,7 @@ import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
-import { columnLabel } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/columnLabel'
 import { pickFileInto } from '../../Properties/Pickers/filePick'
 import {
   pickedValue,

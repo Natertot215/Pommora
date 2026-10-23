@@ -1,7 +1,7 @@
 import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { ColumnLook } from '../columnStyles'
-import type { PropertyDefinition } from '../properties'
+import type { PropertyDefinition, PropertyType } from '../properties'
 import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
 import { ghostAnchorProps, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
@@ -18,7 +18,7 @@ export function OptionSlot({
   onOpenMenu,
 }: {
   option: OptionChipData
-  type: string
+  type: PropertyType
   look: ColumnLook | undefined
   def: Pick<PropertyDefinition, 'status_groups'>
   editing: boolean

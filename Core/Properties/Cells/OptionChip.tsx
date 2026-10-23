@@ -1,7 +1,7 @@
 import type { ColumnLook } from '../columnStyles'
-import type { OptionAppearance, PropertyDefinition } from '../properties'
+import type { OptionAppearance, PropertyDefinition, PropertyType } from '../properties'
+import { chipOf } from '../typeDisplay'
 import { Label } from '@pommora/uix/Labels/Label'
-import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 
@@ -19,14 +19,15 @@ const STATUS_GROUP_GLYPH: Record<string, IconName> = {
 }
 
 export function optionGlyph(
-  type: string,
+  type: PropertyType | undefined,
   option: OptionChipData | undefined,
   def?: Pick<PropertyDefinition, 'status_groups'>,
 ): string {
-  if (type !== 'status') return iconNameOr(option?.icon, type === 'multiSelect' ? 'tags' : 'tag')
+  const fallback = chipOf(type).glyph
+  if (type !== 'status') return iconNameOr(option?.icon, fallback)
   const label = option?.label ?? ''
   const group = def?.status_groups?.find((g) => g.options.some((o) => o.label === label))
-  return iconNameOr(option?.icon, (group && STATUS_GROUP_GLYPH[group.id]) ?? 'circle-dashed')
+  return iconNameOr(option?.icon, (group && STATUS_GROUP_GLYPH[group.id]) ?? fallback)
 }
 
 export function OptionChip({
@@ -37,7 +38,7 @@ export function OptionChip({
   onRemove,
   className,
 }: {
-  type: string
+  type: PropertyType | undefined
   look?: ColumnLook
   option: OptionChipData | undefined
   def?: Pick<PropertyDefinition, 'status_groups'>
@@ -47,7 +48,7 @@ export function OptionChip({
   const label = option?.label ?? ''
   return (
     <Label
-      shape={optionShapeFor(type)}
+      shape={chipOf(type).shape}
       color={colorNameFor(option?.color)}
       {...(option?.appearance === 'clear' ? { fill: 'none' as const } : {})}
       className={className}

@@ -7,11 +7,11 @@ import type { LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { Label } from '@pommora/uix/Labels/Label'
-import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
-import type { PropertyDefinition } from '../properties'
+import type { PropertyDefinition, PropertyType } from '../properties'
+import { chipOf } from '../typeDisplay'
 import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
 import { warnOwed, write } from '../propertyWrite'
 import { dialer } from '../../Platform/dialer'
@@ -195,12 +195,12 @@ export function OptionDraft({
   color,
 }: {
   edit: OptionEditApi
-  type: string
+  type: PropertyType
   color?: string
 }): React.JSX.Element {
   return (
     <Reveal open enterOnMount fill>
-      <Label shape={optionShapeFor(type)} color={colorNameFor(color)}>
+      <Label shape={chipOf(type).shape} color={colorNameFor(color)}>
         <RenamableLabel
           renames="title"
           editing

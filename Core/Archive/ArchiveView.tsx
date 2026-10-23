@@ -21,7 +21,7 @@ import { usePublishCount } from '../Interface/Subfield/publish'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { containerOwner } from '../Nexus/treeIndex'
 import { owningCollection } from '../Nexus/treePatch'
-import { PropertyTypeIcon } from '../Properties/Cells/PropertyTypes'
+import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import type { Personalization } from '../Settings/personalization'
 import { useSession } from '../Session/store'
@@ -124,7 +124,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
           <div className="table-head">
             <div className="col-header">
               <span className="col-header-icon">
-                <PropertyTypeIcon type="title" size="body" />
+                <Icon name={propertyTypeIconName('title')} size="body" />
               </span>
               Title
             </div>
@@ -135,7 +135,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
               label={
                 <span>
                   <span className="col-header-icon">
-                    <PropertyTypeIcon type="dateTime" size="body" />
+                    <Icon name={propertyTypeIconName('dateTime')} size="body" />
                   </span>
                   Archived
                 </span>

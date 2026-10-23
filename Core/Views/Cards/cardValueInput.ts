@@ -6,7 +6,7 @@ import { isCompact, type SavedView } from '../views'
 import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
-import { columnLabel } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
 /** A blank value of this type fills in place, unless the type draws its blank (a checkbox's box) or is Filedata, which has no fill path. */
