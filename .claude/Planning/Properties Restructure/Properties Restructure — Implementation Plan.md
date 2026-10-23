@@ -1130,14 +1130,14 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Review Checkpoint
   - [x] Closeout P3 (two `opus-high` agents, inward and outward)
 - [x] `[Compaction checkpoint: every remaining task applied in order in a throwaway worktree of Phase 3's head, its refusals recorded; c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 4A opens]`
-- [ ] **Phase 4A** — The Value Write's One Home
-  - [ ] Task 4A-1 · `governedSweep.ts` moves to `Core/Nexus`
-  - [ ] Task 4A-2 · `Core/Nexus/governedRoot.ts` and one `reencode`
-  - [ ] Task 4A-3 · One single-file writer, `rewriteRootAt`, and `governedWrite.ts` leaves
-  - [ ] Task 4A-4 · `propertyValue.ts` narrows to the codec
-  - [ ] Task 4A-5 · Each "value" file is named for what it holds
-  - [ ] Task 4A-6 · A seeded page is written once, and the registry read goes through `cachedParse`
-  - [ ] Review Checkpoint
+- [x] **Phase 4A** — The Value Write's One Home
+  - [x] Task 4A-1 · `governedSweep.ts` moves to `Core/Nexus`
+  - [x] Task 4A-2 · `Core/Nexus/governedRoot.ts` and one `reencode`
+  - [x] Task 4A-3 · One single-file writer, `rewriteRootAt`, and `governedWrite.ts` leaves
+  - [x] Task 4A-4 · `propertyValue.ts` narrows to the codec
+  - [x] Task 4A-5 · Each "value" file is named for what it holds
+  - [x] Task 4A-6 · A seeded page is written once, and the registry read goes through `cachedParse`
+  - [x] Review Checkpoint
 - [ ] **Phase 4B** — The Tidy Rule and Repair On Open
   - [ ] Task 4B-1 · The live reconcile's guard becomes a type fact
   - [ ] Task 4B-2 · A value of only spaces reads as empty
@@ -34738,7 +34738,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 1 | −300 | +164 | −136 | −300 / +164 / −136 | −136 |
 | 2 | −305 | +253 | −52 | −312 / +249 / −63 | −199 |
 | 3 | −384 | +369 | −15 | −358 / +344 / −14 | −213 |
-| 4A | −531 | +484 | −47 | | |
+| 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
 | 4B | −18 | +29 | +11 | | |
 | 5 | −151 | +117 | −34 | | |
 | 6 | −266 | +305 | +39 | | |
