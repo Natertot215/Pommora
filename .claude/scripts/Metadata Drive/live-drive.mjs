@@ -605,14 +605,14 @@ async function group3(cdp) {
     ["\n  - 'Work'", 'Work', ['Work', 'Life'], "\n  - 'Work'\n  - 'Life'"], ['\n  - "Work"', 'Work', ['Work', 'Life'], '\n  - "Work"\n  - "Life"'],
     [' ["Work", Life]', 'Work|Life', ['Work', 'Life', 'Home'], ' ["Work", Life, "Home"]'], ['\n  - 2024', '2024', ['2024', 'Work'], '\n  - 2024\n  - Work'],
     [" ['2024']", '2024', ['2024', 'Work', '2025'], " ['2024', Work, '2025']"], [' Work', 'Work', ['Work', 'Life'], '\n  - Work\n  - Life'],
-    [' [work, "Life"]', 'Life', ['Work'], ' ["Work", work]', 'E-1 E-3'], [' ["Work", "Life"]', 'Work|Life', ['Life'], ' ["Life"]'],
-    [' [Work, work]', 'Work', null, '', 'E-3'], [' [Work, LIFE]', 'Work', ['Work', 'Home'], ' [Work, Home, LIFE]', 'E-3'],
-    [' [life, Work]', 'Work', ['Home'], ' [Home, life]', 'E-3'],
+    [' [work, "Life"]', 'Life', ['Work'], ' ["Work"]', 'E-1 E-3'], [' ["Work", "Life"]', 'Work|Life', ['Life'], ' ["Life"]'],
+    [' [Work, work]', 'Work', null, '', 'E-3'], [' [Work, LIFE]', 'Work', ['Work', 'Home'], ' [Work, Home]', 'E-3'],
+    [' [life, Work]', 'Work', ['Home'], ' [Home]', 'E-3'],
   ])
     row('Labels', decision, C.labels, `M3 Labels:${held}`, shown, [set('multiSelect', next), want === '' ? '' : `M3 Labels:${want}`])
 
   // Adoption under Match Title: a foreign word of any casing becomes an option unless it duplicates one without regard to case.
-  row('Colors', 'E-1 E-3', C.colors, 'M3 Colors: [red, green, PURPLE, Red]', 'red|green|PURPLE', [set('multiSelect', ['red']), 'M3 Colors: [red, Red]'])
+  row('Colors', 'E-1 E-3', C.colors, 'M3 Colors: [red, green, PURPLE, Red]', 'red|green|PURPLE', [set('multiSelect', ['red']), 'M3 Colors: [red]'])
 
   // Spaces: a Space title matches exactly, quoted or bare, a title in another casing is foreign data, and a Space write
   // keeps the file's quotes and list style.
@@ -642,7 +642,7 @@ async function group3(cdp) {
   // Undo lives only in the interface: each gesture's revert puts back what the file held, byte for byte.
   const U = { tags: 'M3 Tags', pick: 'M3 Pick', count: 'M3 Count' }
   const undos = [
-    { name: 'a Multi-Select pick over a word no option names', decision: 'A-1 E-3 Undo', column: U.tags, held: 'M3 Tags: [work]', pick: 'Work', want: 'M3 Tags: [Work, work]' },
+    { name: "a Multi-Select pick over an option's case-variant", decision: 'A-1 E-3 Undo', column: U.tags, held: 'M3 Tags: [work]', pick: 'Work', want: 'M3 Tags: [Work]' },
     { name: 'unpicking beside an adopted word', decision: 'E-1 Undo', column: U.tags, held: 'M3 Tags: [Work, ideas]', pick: 'Work', want: 'M3 Tags: [ideas]' },
     { name: 'a Select pick over another casing', decision: 'A-1 E-2 Undo', column: U.pick, held: 'M3 Pick: done', pick: 'Doing', want: 'M3 Pick:\n  - Doing' },
     { name: "a Number typed over a value it can't read", decision: 'Undo', column: U.count, held: 'M3 Count: abc', typed: '5', want: 'M3 Count: 5' },
@@ -1019,8 +1019,8 @@ async function group7(cdp) {
   const wifi = pageAt('M7 Wifi')
   const hues = pageAt('M7 Hues')
   const { cases: shades, add: row } = caseTable('M7')
-  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [red, green, PURPLE, Red]', 'red|green', [set('multiSelect', ['red']), 'Shades: [red, PURPLE, Red]'])
-  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [Red]', '', [set('multiSelect', ['blue']), 'Shades: [blue, Red]'])
+  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [red, green, PURPLE, Red]', 'red|green', [set('multiSelect', ['red']), 'Shades: [red, PURPLE]'])
+  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [Red]', '', [set('multiSelect', ['blue']), 'Shades: [blue]'])
   const owedPage = [pageAt('M7 Owed 1'), pageAt('M7 Owed 2')]
   const skipKey = [pageAt('M7 Skip Key 1'), pageAt('M7 Skip Key 2')]
   const skipValue = [pageAt('M7 Skip Value 1'), pageAt('M7 Skip Value 2')]
@@ -1432,7 +1432,7 @@ async function group9(cdp) {
   pin(G, 'E-3', 'the value picker offers the options alone', offered.includes('Work') && offered.includes('Life') && !offered.includes('work'), show(offered))
   await shot(cdp, 'value-picker')
   await mouseAt(cdp, await boxOf(cdp, pickerRowOf('Life')))
-  pin(G, 'E-3', 'a pick in the value picker keeps the foreign word after the picked options', await wrote(labels, 'M9 Labels: [Work, Life, work]'), show(blockOf(labels)))
+  pin(G, 'E-3', "a pick in the value picker drops an option's case-variant", await wrote(labels, 'M9 Labels: [Work, Life]'), show(blockOf(labels)))
   await escapeAll(cdp)
 
   // The rows: Label Format and Value Format at the top of every property's settings, divided from the type's own.
