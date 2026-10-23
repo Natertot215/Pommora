@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { type ColumnStyle, dateDefaults } from '../Properties/columnStyles'
-import type { PropertyType } from '../Properties/properties'
+import type { ColumnType } from '../Properties/properties'
 import {
   columnMenuItems,
   parseStyleAction,
@@ -165,18 +165,20 @@ describe('parseStyleAction', () => {
 })
 
 describe('styleBranch', () => {
-  const label = (type: PropertyType, barCapable?: boolean): string | undefined =>
+  const label = (type: ColumnType, barCapable?: boolean): string | undefined =>
     styleBranch({ type, current: { ...dateDefaults('full'), look: 'standard' }, barCapable })[0]
       ?.label
-  it("names Link's look Format and Number's Style", () => {
+  it("names Link's and every date's choices Format, and Number's Style", () => {
     expect(label('link')).toBe('Format')
+    for (const t of ['dateTime', 'createdTime', 'lastEditedTime'] as const)
+      expect(label(t)).toBe('Format')
     expect(label('number', true)).toBe('Style')
   })
   it('offers no branch for a lone choice: a number with no bar to fill', () => {
     expect(label('number')).toBeUndefined()
   })
   it('leaves the rest as Style, and offers nothing where no style exists', () => {
-    for (const t of ['status', 'checkbox', 'dateTime'] as const) expect(label(t)).toBe('Style')
+    for (const t of ['status', 'checkbox'] as const) expect(label(t)).toBe('Style')
     expect(label('file')).toBeUndefined()
   })
 })
