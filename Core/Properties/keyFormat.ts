@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export const KEY_FORMATS = [
   'Match Title',
   'lowercase',
@@ -10,9 +12,14 @@ export const KEY_FORMATS = [
   'UPPER_SNAKE_CASE',
   'UPPER-KEBAB-CASE',
 ] as const
-export type KeyFormat = (typeof KEY_FORMATS)[number]
+export const keyFormat = z.enum(KEY_FORMATS)
+export type KeyFormat = z.infer<typeof keyFormat>
 
-export type FormatChange = { key_format: KeyFormat } | { value_format: KeyFormat }
+export const formatChange = z.union([
+  z.object({ key_format: keyFormat }),
+  z.object({ value_format: keyFormat }),
+])
+export type FormatChange = z.infer<typeof formatChange>
 
 export const DEFAULT_KEY_FORMAT: KeyFormat = KEY_FORMATS[0]
 

@@ -22,7 +22,7 @@ import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
 import type { PropertyRename } from '../Properties/registryProperty'
-import type { FormatChange, KeyFormat } from '../Properties/keyFormat'
+import type { KeyFormat } from '../Properties/keyFormat'
 import type { Personalization } from '../Settings/personalization'
 import type { InsertTarget } from '../Tiles/Layout/model'
 import type {
@@ -34,7 +34,13 @@ import type {
   TilePick,
   TilesChanged,
 } from '../Tiles/tiles'
-import type { FileConfig, LinkConfig, NumberConfig, PropertyDraft } from '../Properties/properties'
+import type {
+  CountedChange,
+  FileConfig,
+  LinkConfig,
+  NumberConfig,
+  PropertyDraft,
+} from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 import type { SyncState, SyncStatus } from '../Sync/Contract/wire'
@@ -183,10 +189,7 @@ export interface Asks {
     reply: Result<SchemaCascade>
   }
   'property:clearOption': { args: [propertyId: string, label: string]; reply: Result<null> }
-  'property:holders': {
-    args: [propertyId: string, of?: string | FormatChange]
-    reply: Result<number>
-  }
+  'property:holders': { args: [propertyId: string, change: CountedChange]; reply: Result<number> }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }

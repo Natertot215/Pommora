@@ -1,6 +1,7 @@
-// The one list of entity kinds and what each one is; every alias below is derived from this table, with its resolved members beside it.
+// The one list of entity kinds and what each one is; every alias below is derived from this table, with its resolved members beside it, and the words that count them close the file.
 
 import type { AgendaKind } from '../Paths/nexusPaths'
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 
 type Entity = { held?: true; node?: true; container?: true; mark?: string }
 
@@ -48,3 +49,26 @@ export const isContainer = <T extends { kind: unknown }>(
 export const namesContainer = <T extends { kind: unknown }>(
   n: T | null | undefined,
 ): n is T & { kind: ContainerKind | 'archive' } => isContainer(n) || n?.kind === 'archive'
+
+export type Counted = { kind: HeldKind | 'property' }
+
+const PLURALS: Record<Counted['kind'], string> = {
+  page: 'Pages',
+  collection: 'Collections',
+  set: 'Sets',
+  space: 'Spaces',
+  context: 'Contexts',
+  property: 'Properties',
+}
+
+export const itemCount = (n: number): string => `${n} ${n === 1 ? 'Item' : 'Items'}`
+
+export function countPhrase(items: readonly Counted[]): string {
+  const kinds = new Set(items.map((r) => r.kind))
+  const kind = kinds.size === 1 ? [...kinds][0] : null
+  if (kind === null) return itemCount(items.length)
+  return items.length === 1 ? `1 ${capitalize(kind)}` : `${items.length} ${PLURALS[kind]}`
+}
+
+export const unsweptLine = (count: number, what = ''): string =>
+  `Couldn’t update ${what}${itemCount(count)}.`

@@ -6,7 +6,7 @@ import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
-import { KEY_FORMATS } from './keyFormat'
+import { formatChange, keyFormat } from './keyFormat'
 
 export const typeIds = z.enum([
   'text',
@@ -146,8 +146,8 @@ const propertyDefinitionFields = z.object({
   key: z.string(),
   label: z.string().optional(),
   type: typeIds,
-  key_format: z.enum(KEY_FORMATS).optional().catch(undefined),
-  value_format: z.enum(KEY_FORMATS).optional().catch(undefined),
+  key_format: keyFormat.optional().catch(undefined),
+  value_format: keyFormat.optional().catch(undefined),
   icon: z.string().optional(),
   select_options: selectOptions.optional(),
   status_groups: statusGroups.optional(),
@@ -183,6 +183,14 @@ export const propertyDraft = looseDecoder(
   propertyDefinitionFields.omit({ key: true }).extend({ label: z.string() }),
 )
 export type PropertyDraft = z.infer<typeof propertyDraft>
+
+/** The change a confirmation counts the holders of before it asks: the property's delete, an option's strip, or a format's rewrite. */
+export const countedChange = z.discriminatedUnion('of', [
+  z.object({ of: z.literal('property') }),
+  z.object({ of: z.literal('option'), label: z.string() }),
+  z.object({ of: z.literal('format'), change: formatChange }),
+])
+export type CountedChange = z.infer<typeof countedChange>
 
 export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
 
@@ -238,8 +246,6 @@ export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
 )
 
 export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
-
-export const itemCount = (n: number): string => `${n} ${n === 1 ? 'Item' : 'Items'}`
 
 /** An option without its own color wears its group's. */
 export const groupOptions = (g: StatusGroup): StatusOption[] =>

@@ -36,7 +36,8 @@ import { contentPages } from '../Bundles/bundle'
 import type { RecordFile } from '../Bundles/record'
 import { hiddenFolder } from '../Paths/exclusion'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { sweepGovernedRoots, unsweptLine } from '../Nexus/governedSweep'
+import { sweepGovernedRoots } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 
 type Match = (word: string) => string | undefined
 

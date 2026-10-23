@@ -2,7 +2,6 @@ import {
   byKey,
   isReservedPropertyId,
   isUserType,
-  itemCount,
   optionGroupsOf,
   optionsOf,
   PROPERTY_TYPES,
@@ -10,6 +9,7 @@ import {
   type StatusGroup,
   withOptionGroups,
 } from './properties'
+import { itemCount } from '../Nexus/entities'
 import { fail, ok, type Result } from '../Contract/result'
 import { normalizeTitle } from '../Paths/caseFold'
 import { PAGE_MODELED_KEYS } from '../Nexus/identityMark'

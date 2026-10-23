@@ -18,6 +18,7 @@ import {
 } from './optionOps'
 import { optionEdit, type OptionEdit } from './optionModel'
 import {
+  countedChange,
   type FileConfig,
   narrowFileConfig,
   narrowLinkConfig,
@@ -36,7 +37,7 @@ import {
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
-import { unsweptLine } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 import { decodeSchemaJournal, type SchemaCascade, type SchemaJournal } from './propertyJournal'
 import type { TilesChanged } from '../Tiles/tiles'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
@@ -196,14 +197,19 @@ export const propertiesHandlers = {
   'property:setValueFormat': registryChannel(idAndFormat, setValueFormat, cascadeReply),
   'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
-  'property:holders': withRoot(async (root, _ctx, id: unknown, of: unknown) => {
-    if (typeof id !== 'string') return NEEDS_PROPERTY_ID
-    if (of === undefined) return propertyHolders(root, id)
-    if (typeof of === 'string') return optionHolders(root, id, of)
-    if (isPlainObject(of) && isKeyFormat(of.key_format))
-      return keyFormatHolders(root, id, of.key_format)
-    if (isPlainObject(of) && isKeyFormat(of.value_format))
-      return valueFormatHolders(root, id, of.value_format)
-    return NEEDS_ID_AND_VALUE
+  'property:holders': withRoot(async (root, _ctx, propertyId: unknown, change: unknown) => {
+    const read = countedChange.safeParse(change)
+    if (typeof propertyId !== 'string' || !read.success) return NEEDS_ID_AND_VALUE
+    const counted = read.data
+    switch (counted.of) {
+      case 'property':
+        return propertyHolders(root, propertyId)
+      case 'option':
+        return optionHolders(root, propertyId, counted.label)
+      case 'format':
+        return 'key_format' in counted.change
+          ? keyFormatHolders(root, propertyId, counted.change.key_format)
+          : valueFormatHolders(root, propertyId, counted.change.value_format)
+    }
   }),
 } satisfies Partial<Handlers>
