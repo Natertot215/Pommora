@@ -1,14 +1,14 @@
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  frontmatter, pageIds, pagePath,
-  ask, boxOf, click, createPage, escapeAll, labels, launch, mouseClick, must, NEXUS, openCollection, pickNative,
-  popNative, portalOpen, read, relaunch, restore, results, row, sel, SETTINGS_BUTTON, settles, shot, sleep, until,
+  frontmatter, frontRaw, pageFile, pageIds, pagePath,
+  ask, boxOf, click, createPage, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, openCollection, pickNative,
+  popNative, portalOpen, pressKey, read, relaunch, restore, results, row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4']
+const LANDED = ['1', '2', '3', '4', '5']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -243,6 +243,59 @@ async function group4() {
   item(4, '—', 'the group leaves the property list and Collection A as it found them', left && read(SIDECAR_A) === kept.sidecar, show(ids(await stateTree())))
 }
 
+// ── Group 5 · Undo From the File ────────────────────────────────────────────
+
+const UNDO_VIEW = { id: 'view_01KZPROPDRIVE0000UNDOTABLE', name: 'Drive Undo Table' }
+const META_DIR = '.nexus/metadata'
+const aliasesOf = (title) =>
+  readdirSync(join(NEXUS, META_DIR)).filter((n) => n.endsWith('.json'))
+    .map((n) => JSON.parse(read(`${META_DIR}/${n}`)).pages?.[pageIds[title]]).find(Boolean)?.aliases ?? []
+const bareKey = (title, key) => {
+  const lines = frontRaw(title).split('\n')
+  const at = lines.indexOf(`${key}:`)
+  return at >= 0 && !/^\s/.test(lines[at + 1] ?? '')
+}
+
+async function group5(cdp) {
+  const pick = await must('Drive Undo Pick', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Pick', type: 'select' }))
+  const link = await must('Drive Undo Link', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Link', type: 'link' }))
+  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'property:editOption', pick.id, { op: 'add', groupId: 'select', label }))
+  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.id, link.id], hidden_properties: [] }, {}))
+  for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
+  await must('Drive Undo Target keeps an alias', ask(cdp, 'mutate', { op: 'editAliases', path: pagePath('Drive Undo Target'), edit: { op: 'add', alias: 'kept' } }))
+  const text = pageFile('Drive Undo Page')
+  writeFileSync(join(NEXUS, pagePath('Drive Undo Page')), text.replace(/^---\n/, '---\nDrive Undo Pick:\n'))
+  await sleep(1200)
+  await openCollection(cdp)
+  await must('show the undo table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: UNDO_VIEW.id }))
+  await until('the undo table', () => cdp.evaluate(`!!${row('Drive Undo Page')}`))
+  const cell = (n) => `${row('Drive Undo Page')}.querySelectorAll('.data-cell')[${n}]`
+
+  await escapeAll(cdp)
+  await mouseClick(cdp, cell(1))
+  await until('the value picker', () => portalOpen(cdp))
+  await mouseAt(cdp, await boxOf(cdp, `[...document.querySelectorAll('[data-picker-portal] [data-line-row]')].find((e) => e.textContent.trim() === 'Doing')`))
+  await escapeAll(cdp)
+  const picked = await settles(async () => JSON.stringify(frontmatter('Drive Undo Page')['Drive Undo Pick']) === '["Doing"]')
+  await pressKey(cdp, 'z', META)
+  const bare = await settles(async () => bareKey('Drive Undo Page', 'Drive Undo Pick'))
+  item(5, 'E-1 E-2', 'a pick on a bare key, undone, leaves the key bare', picked && bare, frontRaw('Drive Undo Page'))
+
+  const box = await boxOf(cdp, cell(2))
+  await mouseAt(cdp, { x: box.left + 4, y: box.y })
+  await until('the Link field', () => cdp.evaluate(`!!(${field})`))
+  await selectField(cdp)
+  await typeText(cdp, '[[Drive Undo Target|launch]]')
+  await sleep(300)
+  await escapeAll(cdp)
+  await pressKey(cdp, 'Enter')
+  const added = await settles(async () => aliasesOf('Drive Undo Target').includes('launch'))
+  await escapeAll(cdp)
+  await pressKey(cdp, 'z', META)
+  const gone = await settles(async () => JSON.stringify(aliasesOf('Drive Undo Target')) === '["kept"]' && !Object.hasOwn(frontmatter('Drive Undo Page'), 'Drive Undo Link'))
+  item(5, 'E-3', 'undoing a Link value takes back the alias it added and keeps the one the page had', added && gone, JSON.stringify(aliasesOf('Drive Undo Target')))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -252,6 +305,7 @@ try {
   if (GROUPS.has('2')) await group2(cdp)
   if (GROUPS.has('3')) await group3(cdp)
   if (GROUPS.has('4')) await group4()
+  if (GROUPS.has('5')) await group5(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
