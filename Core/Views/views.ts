@@ -302,7 +302,7 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
 }
 
 export type GroupLevel = 'group' | 'sub'
-export type GroupedView = Pick<SavedView, 'group' | 'sub_group' | 'hidden_groups'>
+type GroupedView = Pick<SavedView, 'group' | 'sub_group'>
 
 const LEVEL_PREFIX: Record<GroupLevel, string> = { group: '', sub: 'sub/' }
 
@@ -314,50 +314,34 @@ export const groupsOn = (v: GroupedView, level: GroupLevel, propertyId: string):
 const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
   `${LEVEL_PREFIX[level]}${propertyId}/${bucket}`
 
-const legacyBucketKey = (
-  v: GroupedView,
-  level: GroupLevel,
-  propertyId: string,
-  bucket: string,
-): string | undefined =>
-  groupsOn(v, level, propertyId) ? `${LEVEL_PREFIX[level]}${bucket}` : undefined
-
-export function isBucketHidden(
-  v: GroupedView,
+export const isBucketHidden = (
   hidden: ReadonlySet<string>,
   level: GroupLevel,
   propertyId: string,
   bucket: string,
-): boolean {
-  const legacy = legacyBucketKey(v, level, propertyId, bucket)
-  return (
-    hidden.has(hiddenBucketKey(level, propertyId, bucket)) ||
-    (legacy !== undefined && hidden.has(legacy))
-  )
-}
+): boolean => hidden.has(hiddenBucketKey(level, propertyId, bucket))
 
 export function toggleHiddenBucket(
-  v: GroupedView,
+  held: readonly string[],
   level: GroupLevel,
   propertyId: string,
   bucket: string,
 ): string[] {
-  const held = v.hidden_groups ?? []
   const own = hiddenBucketKey(level, propertyId, bucket)
-  const legacy = legacyBucketKey(v, level, propertyId, bucket)
-  const shown = held.filter((k) => k !== own && k !== legacy)
-  return shown.length < held.length ? shown : [...held, own]
+  return held.includes(own) ? held.filter((k) => k !== own) : [...held, own]
 }
 
-export const hiddenBuckets = (v: GroupedView, level: GroupLevel, propertyId: string): string[] => {
+export const hiddenBuckets = (
+  held: readonly string[],
+  level: GroupLevel,
+  propertyId: string,
+): string[] => {
   const prefix = hiddenBucketKey(level, propertyId, '')
-  return (v.hidden_groups ?? []).flatMap((k) =>
-    k.startsWith(prefix) ? [k.slice(prefix.length)] : [],
-  )
+  return held.flatMap((k) => (k.startsWith(prefix) ? [k.slice(prefix.length)] : []))
 }
 
 export function editHiddenBucket(
-  v: GroupedView,
+  held: readonly string[],
   propertyId: string,
   from: string,
   to: string | null,
@@ -366,20 +350,15 @@ export function editHiddenBucket(
   for (const level of ['group', 'sub'] as const) {
     const into = to === null ? [] : [hiddenBucketKey(level, propertyId, to)]
     renamed.set(hiddenBucketKey(level, propertyId, from), into)
-    const legacy = legacyBucketKey(v, level, propertyId, from)
-    if (legacy !== undefined) renamed.set(legacy, into)
   }
-  const held = v.hidden_groups ?? []
   if (!held.some((k) => renamed.has(k))) return null
   return [...new Set(held.flatMap((k) => renamed.get(k) ?? [k]))]
 }
 
-export function clearHiddenBuckets(v: GroupedView, propertyId: string): string[] | null {
-  const held = v.hidden_groups ?? []
+export function clearHiddenBuckets(held: readonly string[], propertyId: string): string[] | null {
   const own = (k: string): boolean =>
     k.startsWith(hiddenBucketKey('group', propertyId, '')) ||
-    k.startsWith(hiddenBucketKey('sub', propertyId, '')) ||
-    (groupsOn(v, 'sub', propertyId) && k.startsWith('sub/') && !k.slice(4).includes('/'))
+    k.startsWith(hiddenBucketKey('sub', propertyId, ''))
   const next = held.filter((k) => !own(k))
   return next.length === held.length ? null : next
 }

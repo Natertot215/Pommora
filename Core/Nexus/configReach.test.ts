@@ -69,7 +69,7 @@ const rich = (id: string): Raw => ({
   ],
   group: { kind: 'property', property_id: 'prop_s', order_mode: 'manual', order: ['Done', 'Todo'] },
   sub_group: { property_id: 'prop_s', order_mode: 'manual', order: ['Done'] },
-  hidden_groups: ['prop_s/Done', 'sub/prop_s/Done', 'Done', 'sub/Done', 'prop_x/Done'],
+  hidden_groups: ['prop_s/Done', 'sub/prop_s/Done', 'prop_x/Done'],
   collapsed_groups: ['Done', 'set_1/Done', 'Todo'],
 })
 
@@ -80,7 +80,7 @@ const elsewhere = (id: string): Raw => ({
   property_order: [],
   hidden_properties: [],
   group: { kind: 'property', property_id: 'prop_x', order_mode: 'configured' },
-  hidden_groups: ['Done', 'sub/Done'],
+  hidden_groups: ['prop_x/Done', 'sub/prop_x/Done'],
   collapsed_groups: ['Done', 'set_1/Done'],
 })
 
@@ -298,7 +298,7 @@ describe('a property clear', () => {
       expect(view.sort).toEqual([{ property_id: 'prop_x', direction: 'ascending' }])
       expect(view.group).toEqual({ kind: 'structural' })
       expect('sub_group' in view).toBe(false)
-      expect(view.hidden_groups).toEqual(['Done', 'prop_x/Done'])
+      expect(view.hidden_groups).toEqual(['prop_x/Done'])
       expect(view.collapsed_groups).toEqual([])
     }
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })

@@ -257,25 +257,10 @@ describe('GroupFrame rows', () => {
       eye.click()
     })
     expect(lastSaved().hidden_groups).toEqual(['prop_status/Queued'])
-    await mount({ ...propView, hidden_groups: ['Queued'] })
+    await mount({ ...propView, hidden_groups: ['prop_status/Queued'] })
     const unhide = host.querySelector('button[aria-label="Show Queued"]') as HTMLElement
     await act(async () => {
       unhide.click()
-    })
-    expect(lastSaved().hidden_groups).toEqual([])
-  })
-
-  it('a date bucket hidden under its legacy bare key keeps a row, and showing it drops the key', async () => {
-    await mount(
-      view({
-        group: { kind: 'property', property_id: 'prop_when', order_mode: 'configured' },
-        hidden_groups: ['2024-05'],
-      }),
-    )
-    const shown = host.querySelectorAll('button[aria-label^="Show "]')
-    expect(shown).toHaveLength(1)
-    await act(async () => {
-      ;(shown[0] as HTMLElement).click()
     })
     expect(lastSaved().hidden_groups).toEqual([])
   })

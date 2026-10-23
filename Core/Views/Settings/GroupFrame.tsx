@@ -134,7 +134,8 @@ export function GroupFrame({
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const saveGroup = (group: GroupConfig): void => save({ group })
 
-  const hidden = new Set(view.hidden_groups ?? [])
+  const held = view.hidden_groups ?? []
+  const hidden = new Set(held)
   const setControls: HideControls = {
     isHidden: (id) => hidden.has(id),
     onToggleHidden: (id) =>
@@ -143,9 +144,9 @@ export function GroupFrame({
       }),
   }
   const bucketControls = (level: GroupLevel, propertyId: string): HideControls => ({
-    isHidden: (bucket) => isBucketHidden(view, hidden, level, propertyId, bucket),
+    isHidden: (bucket) => isBucketHidden(hidden, level, propertyId, bucket),
     onToggleHidden: (bucket) =>
-      save({ hidden_groups: toggleHiddenBucket(view, level, propertyId, bucket) }),
+      save({ hidden_groups: toggleHiddenBucket(held, level, propertyId, bucket) }),
   })
 
   const group = view.group ?? { kind: 'structural' as const }
@@ -506,9 +507,7 @@ function DateBucketList({
       const key = bucketKey(row, group.property_id, schema, granularity)
       if (key) set.add(key)
     }
-    for (const b of hiddenBuckets(view, 'group', group.property_id)) set.add(b)
-    // A legacy bare key under this grouping is a date bucket when it starts with a year; a leftover Set id or option value never does.
-    for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) set.add(key)
+    for (const b of hiddenBuckets(view.hidden_groups ?? [], 'group', group.property_id)) set.add(b)
     return set
   }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null

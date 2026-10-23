@@ -509,7 +509,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   it('a hidden option bucket drops with its rows; the others are untouched', () => {
     const { groups } = resolve({
       ...selInput(),
-      view: view({ group: propertyGroup(), hidden_groups: ['Alpha'] }),
+      view: view({ group: propertyGroup(), hidden_groups: ['prop_sel/Alpha'] }),
     })
     expect(keys(groups)).toEqual(['Beta', 'Gamma'])
     expect(groups.flatMap((g) => g.items.map((r) => r.id))).toEqual(['p2'])
@@ -552,72 +552,6 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       'p_inner',
       'p_outer',
     ])
-  })
-
-  it('sub/<value> hides that sub-bucket under EVERY set', () => {
-    const twoSets: CollectionNode = {
-      kind: 'collection',
-      id: 'col',
-      title: 'Col',
-      path: 'Col',
-      sets: [set('sA', [page('p1'), page('p2')]), set('sB', [page('p3')])],
-      pages: [],
-    }
-    const values = pageValues({
-      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
-      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
-      p3: { [ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
-    })
-    const { rows, setTree } = flattenContainer(twoSets, values, {})
-    const { groups } = resolve({
-      rows,
-      setTree,
-      view: view({
-        sub_group: { property_id: 'prop_sel', order_mode: 'configured' },
-        hidden_groups: ['sub/Beta'],
-      }),
-      schema: selectSchema,
-    })
-    const buckets = (id: string): string[] | undefined =>
-      groups
-        .find((g) => g.key === id)
-        ?.children?.map((c) => (c.kind === 'bucket' ? c.value : c.key))
-    expect(buckets('sA')).toEqual(['Alpha'])
-    expect(groups.find((g) => g.key === 'sB')?.children).toBeUndefined()
-  })
-
-  it('a hidden date bucket drops by its bucket key', () => {
-    const dateSchema: PropertyDefinition[] = [
-      { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
-    ]
-    const values = pageValues({
-      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
-      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
-    })
-    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values, {})
-    const { groups } = resolve({
-      rows,
-      setTree,
-      view: view({
-        group: {
-          kind: 'property',
-          property_id: 'prop_when',
-          order_mode: 'configured',
-          date_granularity: 'month',
-        },
-        hidden_groups: ['2025-07'],
-      }),
-      schema: dateSchema,
-    })
-    expect(keys(groups)).toEqual(['2025-08'])
-  })
-
-  it('an encoded option bucket drops as its legacy spelling does', () => {
-    const { groups } = resolve({
-      ...selInput(),
-      view: view({ group: propertyGroup(), hidden_groups: ['prop_sel/Alpha'] }),
-    })
-    expect(keys(groups)).toEqual(['Beta', 'Gamma'])
   })
 
   it('an encoded sub key hides that sub-bucket under every set', () => {
