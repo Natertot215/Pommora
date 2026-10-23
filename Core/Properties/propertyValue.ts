@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { fail, ok, type Result } from '../Contract/result'
 import { isScalar, listOf, scalarMembers } from '../Contract/validators'
 import {
   optionsOf,
@@ -260,7 +259,6 @@ export function encodeValue(def: PropertyDefinition, value: PropertyValue): unkn
       return value.value
     case 'null':
       return null
-    // A value carrying a kind outside the union came from outside the app; undefined is the refusal every writer checks, never a silent clear.
     default: {
       const _exhaustive: never = value
       void _exhaustive
@@ -269,16 +267,8 @@ export function encodeValue(def: PropertyDefinition, value: PropertyValue): unkn
   }
 }
 
-export function valueToWrite(
-  def: PropertyDefinition,
-  value: PropertyValue | null,
-): Result<unknown> {
-  if (value === null || isBlankValue(value)) return ok(undefined)
-  const encoded = encodeValue(def, value)
-  return encoded === undefined
-    ? fail('invalid-property', `"${def.label}" was given a value it has no shape for.`)
-    : ok(encoded)
-}
+export const valueToWrite = (def: PropertyDefinition, value: PropertyValue | null): unknown =>
+  value === null || isBlankValue(value) ? undefined : encodeValue(def, value)
 
 /** Blank as a file spells it, before any definition reads it. */
 export const isBlankRaw = (raw: unknown): boolean =>
@@ -316,11 +306,5 @@ export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
-): Record<string, unknown> => {
-  const written = valueToWrite(def, value)
-  return landValue(
-    root,
-    def.key,
-    written.ok ? keepingForeignWords(def, written.value, root[def.key]) : undefined,
-  )
-}
+): Record<string, unknown> =>
+  landValue(root, def.key, keepingForeignWords(def, valueToWrite(def, value), root[def.key]))

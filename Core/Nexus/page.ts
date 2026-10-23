@@ -26,9 +26,8 @@ export async function createPage(
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
     const encoded = valueToWrite(def, value)
-    if (!encoded.ok) return encoded
-    if (encoded.value === undefined) continue
-    modeled[def.key] = encoded.value
+    if (encoded === undefined) continue
+    modeled[def.key] = encoded
     keys.push(def.key)
   }
   return machine().lock(file, async () => {
