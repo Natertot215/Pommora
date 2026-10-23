@@ -34,7 +34,7 @@ export function resolveFieldValue(
   schema: PropertyDefinition[],
 ): PropertyValue {
   // Title and the stamps read the row, not the frontmatter the memo is keyed on.
-  if (propertyId === FILEDATA.title.id) return { kind: 'select', value: row.title }
+  if (propertyId === FILEDATA.title.id) return { kind: 'text', value: row.title }
   if (propertyId === FILEDATA.createdAt.id) return stampValue(row.createdAt)
   if (propertyId === FILEDATA.modifiedAt.id) return stampValue(row.modifiedAt)
   const ids = row.contextValues?.[propertyId]

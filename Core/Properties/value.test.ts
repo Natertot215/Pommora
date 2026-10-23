@@ -71,6 +71,7 @@ describe('declaredType', () => {
     expect(declaredType('_title', schema)).toBe('title')
     expect(declaredType('_created_at', schema)).toBe('createdTime')
     expect(declaredType('_modified_at', schema)).toBe('lastEditedTime')
+    expect(declaredType('_location', schema)).toBeUndefined()
   })
 
   it('classifies a Context column only when its id is among the registry ids', () => {
@@ -102,7 +103,7 @@ describe('declaredType', () => {
 
 describe('resolveFieldValue', () => {
   it('reads reserved columns from the row, not the frontmatter', () => {
-    expect(rfv(row, '_title')).toEqual({ kind: 'select', value: 'My Page' })
+    expect(rfv(row, '_title')).toEqual({ kind: 'text', value: 'My Page' })
     expect(rfv(row, '_created_at')).toEqual({
       kind: 'dateTime',
       value: '2026-06-01T08:00:00Z',
@@ -264,8 +265,8 @@ describe('resolveFieldValue memoization', () => {
       { id: 'p1', title: 'New', path: 'C/New.md', frontmatter: fm, ...stamps },
       '_title',
     )
-    expect(a).toEqual({ kind: 'select', value: 'Old' })
-    expect(b).toEqual({ kind: 'select', value: 'New' })
+    expect(a).toEqual({ kind: 'text', value: 'Old' })
+    expect(b).toEqual({ kind: 'text', value: 'New' })
   })
 })
 

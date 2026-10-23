@@ -44,9 +44,7 @@ function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
 ): PickerOption<Direction>[] {
-  const t = declaredType(propertyId, schema)
-  if (t === 'title') return TEXT_DIRECTIONS
-  switch (specOf(t)?.kind) {
+  switch (specOf(declaredType(propertyId, schema))?.kind) {
     case 'select':
       return OPTION_DIRECTIONS
     case 'link':

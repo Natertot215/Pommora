@@ -3,12 +3,7 @@
 import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
-import {
-  optionLabels,
-  type PropertyDefinition,
-  FILEDATA,
-  specOf,
-} from '../../Properties/properties'
+import { optionLabels, type PropertyDefinition, specOf } from '../../Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
 import { linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
@@ -76,8 +71,6 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
-  if (c.property_id === FILEDATA.title.id)
-    return { extract: (r) => r.title, less: ciLess, ascending }
   switch (specOf(declaredType(c.property_id, schema))?.kind) {
     case 'select': {
       // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.

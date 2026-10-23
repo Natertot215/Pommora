@@ -75,8 +75,7 @@ export function prepareRule(
   if (id === FILEDATA.location.id) return prepareLocation(op, want, setTree)
   const t = declaredType(id, schema, contextIds)
   if (t === undefined) return undefined
-  // resolveFieldValue('_title') carries row.title as a select-kind string — the text evaluator reads it.
-  const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind, op)
+  const evaluate = evaluatorOf(PROPERTY_TYPES[t].kind, op)
   const operands = evaluate === evaluateText ? want.map(foldKey) : want
   return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands)
 }
