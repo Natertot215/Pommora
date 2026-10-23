@@ -8,7 +8,7 @@ import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
-import { owningCollection } from '../../Nexus/treePatch'
+import { containerSchema, owningCollection } from '../../Nexus/treePatch'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityFrame } from './VisibilityFrame'
@@ -73,7 +73,7 @@ function ContainerSettings({
   const scope = useViewTileScope()
   const saveView = useSaveView(node)
 
-  const schema = schemaCollection.properties ?? []
+  const schema = containerSchema(tree, schemaCollection)
   const view = useActiveView(node, schema)
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'

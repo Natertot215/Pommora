@@ -61,7 +61,8 @@ export interface SetNode extends ContainerNode {
 export interface CollectionNode extends ContainerNode {
   kind: 'collection'
   sets: SetNode[]
-  properties?: PropertyDefinition[]
+  /** The property ids its sidecar assigns, as written; `containerSchema` resolves them against the registry. */
+  propertyIds: string[]
   /** The properties a Remove cached values for, so a Link cascade opens only the sidecars that could hold one. */
   cached?: string[]
 }

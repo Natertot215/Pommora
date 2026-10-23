@@ -35,12 +35,7 @@ import { pathExists, readAppFile, readJsonObject, readJsonStrictly } from '../Fi
 import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
-import {
-  orderedDefs,
-  readKeptRegistry,
-  registryOf,
-  type PropertyRegistry,
-} from '../Properties/propertiesRegistry'
+import { orderedDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
@@ -90,7 +85,6 @@ const readSidecar = (absPath: string): Promise<Json | null> =>
 interface Walk {
   kindCtx: FolderKindContext
   scope: WatchScope
-  registry: PropertyRegistry
   unreadable: Unreadable[]
   link: ReturnType<typeof contextLinker>
 }
@@ -188,7 +182,7 @@ async function readContainer(
     readChildSets(absDir, relDir, walk),
     readDirectPages(absDir, relDir, walk),
   ])
-  return containerNodeFrom(kind, { title: name, path: relDir }, meta, sets, pages, walk.registry)
+  return containerNodeFrom(kind, { title: name, path: relDir }, meta, sets, pages)
 }
 
 async function readRootFolder(
@@ -232,7 +226,6 @@ export async function readFolder(
     // An Agenda folder is no Collection or Set whether or not its slot is registered, so the registration isn't read.
     kindCtx: await agendaContext(root, null),
     scope: scopeOf(tree.config),
-    registry: registryOf(tree.config.registry),
     unreadable: [],
     link: contextLinker(tree.contexts),
   }
@@ -330,7 +323,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const walk: Walk = {
     kindCtx,
     scope,
-    registry: registry.defs,
     unreadable,
     link: contextLinker(contexts),
   }

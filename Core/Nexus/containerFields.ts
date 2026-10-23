@@ -4,8 +4,6 @@ import type { CollectionNode, PageNode, SetNode } from './tree'
 import type { ContainerKind } from './entities'
 import { containerViewIds, savedView, type SavedView } from '../Views/views'
 import { coerceViewButton } from './schemas'
-import type { PropertyDefinition } from '../Properties/properties'
-import type { PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { isPlainObject } from '../Contract/validators'
@@ -31,18 +29,6 @@ export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
     ? raw.properties.filter((id): id is string => typeof id === 'string')
     : []
 
-function resolveAssignedSchema(
-  ids: unknown,
-  registry: PropertyRegistry,
-): PropertyDefinition[] | undefined {
-  if (!Array.isArray(ids)) return undefined
-  const defs = ids
-    .filter((id): id is string => typeof id === 'string')
-    .map((id) => registry[id])
-    .filter((d): d is PropertyDefinition => Boolean(d))
-  return defs.length ? defs : undefined
-}
-
 // An `active_view` naming no view in `views` is carried verbatim; pickView already falls back.
 export function containerNodeFrom(
   kind: ContainerKind,
@@ -50,7 +36,6 @@ export function containerNodeFrom(
   meta: Record<string, unknown>,
   sets: SetNode[],
   pages: PageNode[],
-  registry: PropertyRegistry,
 ): CollectionNode | SetNode | null {
   const id = asString(meta.id)
   if (!id) return null
@@ -73,7 +58,7 @@ export function containerNodeFrom(
   return {
     kind,
     ...shared,
-    properties: resolveAssignedSchema(meta.properties, registry),
+    propertyIds: assignedIds(meta),
     cached: cachedIds(meta),
   }
 }
