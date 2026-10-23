@@ -1144,14 +1144,14 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 4B-3 · A write that changes nothing writes nothing
   - [x] Task 4B-4 · Repair Properties On Open defaults on; drive group 3
   - [x] Review Checkpoint
-- [ ] **Phase 5** — One Home per Definition
-  - [ ] Task 5-1 · `assignedDefs` leaves, and worlds build from the tree through `schemaOf`
-  - [ ] Task 5-2 · Collections hold the ids their sidecar assigns
-  - [ ] Task 5-3 · One `holderSchema`
-  - [ ] Task 5-4 · Registration at open reads the content index
-  - [ ] Task 5-5 · A damaged property list opens the Nexus
-  - [ ] Task 5-6 · Drive group 4
-  - [ ] Review Checkpoint
+- [x] **Phase 5** — One Home per Definition
+  - [x] Task 5-1 · `assignedDefs` leaves, and worlds build from the tree through `schemaOf`
+  - [x] Task 5-2 · Collections hold the ids their sidecar assigns
+  - [x] Task 5-3 · One `holderSchema`
+  - [x] Task 5-4 · Registration at open reads the content index
+  - [x] Task 5-5 · A damaged property list opens the Nexus
+  - [x] Task 5-6 · Drive group 4
+  - [x] Review Checkpoint
   - [ ] Closeout P4A–P5 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 6** — Undo From the File
   - [ ] Task 6-1 · A swept page reads and lands one key's node
@@ -34740,7 +34740,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 3 | −384 | +369 | −15 | −358 / +344 / −14 | −213 |
 | 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
 | 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
-| 5 | −151 | +117 | −34 | | |
+| 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
 | 6 | −266 | +305 | +39 | | |
 | 7 | −622 | +469 | −153 | | |
 | 8 | −434 | +404 | −30 | | |
