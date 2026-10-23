@@ -4,7 +4,7 @@ import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { landValue, memberKey, namesValue } from '../Files/rootValues'
+import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
 import { atomicWriteFile, parseJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
@@ -141,8 +141,9 @@ export function reconcileGovernedRoot(
       const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
-    // A live reconcile never blanks a value, and never drops a list member it can't resolve: either stays as written for the user to settle. A single value lands as it reads.
-    if (!frozen && (next === undefined || (listed && memberCount(next) < memberCount(raw)))) {
+    // A live reconcile never blanks a value, and never drops a list member it can't resolve: either stays as written for the user to settle. A single value lands as it reads, and a blank one leaves.
+    const blanks = next === undefined && !isBlankRaw(raw)
+    if (!frozen && (blanks || (listed && memberCount(next) < memberCount(raw)))) {
       out[key] = raw
       continue
     }
@@ -245,7 +246,7 @@ async function keyNow(root: string, id: string): Promise<string | undefined> {
   return (await readRegistry(root)).defs[id]?.key
 }
 
-/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node so a bare key comes back bare, and a key the page no longer holds above the key it stood above, leaving every other key as it now stands and a file whose key already reads so unwritten; answers the entries it couldn't put back. */
+/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node verbatim and a blank one as no line, and a key the page no longer holds above the key it stood above, leaving every other key as it now stands and a file whose key already reads so unwritten; answers the entries it couldn't put back. */
 export async function putBackEntries(
   root: string,
   entries: readonly PutBack[],

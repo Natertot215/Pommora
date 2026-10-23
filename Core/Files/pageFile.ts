@@ -3,6 +3,7 @@ import {
   type Node,
   type Scalar,
   parseDocument,
+  isCollection,
   isMap,
   isScalar,
   isSeq,
@@ -18,7 +19,7 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import { readTextOrNull } from './atomicWrite'
-import { joinValues, type KeyCollision } from './rootValues'
+import { isBlankRaw, joinValues, type KeyCollision } from './rootValues'
 
 interface PageEnvelope {
   frontmatter: string
@@ -167,29 +168,28 @@ function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
 export const UNPARSED_FRONTMATTER =
   'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.'
 
-/** `key` holding `node`: in its place when the block holds it; otherwise above the key `above` names when the block holds that key, and last when it doesn't. */
+/** `key` holding `node`: in its place when the block holds it; otherwise above the key `above` names when the block holds that key, and last when it doesn't. A node holding a blank value drops `key`, as `landValue` drops one. */
 function setAbove(doc: Document, key: string, node: unknown, above?: string): void {
+  if (isBlankRaw(isScalar(node) ? node.value : isCollection(node) ? node.items : node))
+    return void doc.delete(key)
   const items = isMap(doc.contents) && !doc.has(key) ? doc.contents.items : null
   doc.set(key, node)
   const at = items?.findIndex((p) => String(p.key) === above) ?? -1
   if (items && at >= 0) items.splice(at, 0, ...items.splice(-1))
 }
 
-/** Lands each of `modeledKeys` as `modeled` holds it and drops one it holds nothing for; a key the block doesn't hold lands last. */
+/** Lands each of `modeledKeys` as `modeled` holds it through `setAbove`, which drops one it holds blank or nothing for; a key the block doesn't hold lands last. */
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
   modeledKeys: readonly string[],
 ): string {
   if (mergeable(doc)) {
-    const written = (key: string): boolean => modeled[key] !== undefined
-    const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
     const held = valuesOf(doc)
-    for (const key of modeledKeys.filter(written)) {
+    for (const key of modeledKeys) {
       if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
-      doc.set(key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]))
+      setAbove(doc, key, nodeSpelledAs(doc, modeled[key] ?? null, [doc.get(key, true)]))
     }
-    for (const key of dropped) doc.delete(key)
   }
   return mergedBlock(doc)
 }
@@ -267,7 +267,7 @@ export interface SweptPage {
   pair: (key: string) => string | undefined
   /** The key after `key` in the block's own order, which its line stands above; undefined when the block holds no `key` or it's last. */
   above: (key: string) => string | undefined
-  /** The page with `key` holding the node `landing` spells, verbatim under E-1 and whatever key `landing` names, landed by `setAbove`, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
+  /** The page with `key` holding the node `landing` spells, verbatim under E-1 and whatever key `landing` names, landed by `setAbove`, or without `key` when `landing` is undefined or spells a blank value; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
   withPair: (key: string, landing: string | undefined, above?: string) => string | null
 }
 
@@ -297,8 +297,7 @@ export function sweepParse(content: string): SweptPage | null {
       const one = landing === undefined ? null : parseDocument(landing).contents
       if (landing !== undefined && !(isMap(one) && one.items.length === 1)) return null
       const held = pair(key)
-      if (isMap(one)) setAbove(doc, key, one.items[0].value, above)
-      else doc.delete(key)
+      setAbove(doc, key, isMap(one) ? one.items[0].value : null, above)
       return pair(key) === held ? null : envelope(fenced, mergedBlock(doc), body)
     },
   }

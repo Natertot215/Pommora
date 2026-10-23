@@ -2,10 +2,16 @@ import type { Json } from './stableJson'
 import { exactTitle } from '../Paths/caseFold'
 import { isScalar, listOf } from '../Contract/validators'
 
-/** `root` with `value` under `key`, in its place when the root holds it; `undefined` drops the key. */
+/** Blank as a file spells it, before any definition reads it: nothing, only spaces, or an empty list. */
+export const isBlankRaw = (raw: unknown): boolean =>
+  raw == null ||
+  (typeof raw === 'string' && raw.trim() === '') ||
+  (Array.isArray(raw) && raw.length === 0)
+
+/** `root` with `value` under `key`, in its place when the root holds it; a blank value drops the key, so no file holds an empty one. */
 export function landValue(root: Json, key: string, value: unknown): Json {
   const next = { ...root }
-  if (value === undefined) delete next[key]
+  if (isBlankRaw(value)) delete next[key]
   else next[key] = value
   return next
 }
@@ -27,7 +33,7 @@ export function editHeldList(
   edit: (held: unknown[]) => unknown[] | null,
 ): Json | null {
   const list = Object.hasOwn(raw, key) ? edit(listOf(raw[key])) : null
-  return list && landValue(raw, key, list.length ? list : undefined)
+  return list && landValue(raw, key, list)
 }
 
 /** `root` without `keys`; null when it holds none of them. */

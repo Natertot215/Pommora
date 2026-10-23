@@ -30,7 +30,7 @@ export async function setBannerOp(
       const rel = adopted.value
       const written = await rewriteRootAt(
         abs,
-        rewriteRaw((raw) => landValue(raw, 'banner', rel || undefined)),
+        rewriteRaw((raw) => landValue(raw, 'banner', rel)),
       )
       return written.ok ? landed(rel) : written
     })
