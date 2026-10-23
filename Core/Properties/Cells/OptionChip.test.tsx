@@ -36,13 +36,19 @@ describe('optionGlyph', () => {
   })
 
   it('draws a Status option by its group when the option has no icon', () => {
-    expect(optionGlyph('status', { label: 'not_started' }, def)).toBe('circle-dashed')
-    expect(optionGlyph('status', { label: 'active' }, def)).toBe('minus')
-    expect(optionGlyph('status', { label: 'complete' }, def)).toBe('check')
+    expect(optionGlyph('status', { id: 'opt_not_started', label: 'not_started' }, def)).toBe(
+      'circle-dashed',
+    )
+    expect(optionGlyph('status', { id: 'opt_active', label: 'active' }, def)).toBe('minus')
+    expect(optionGlyph('status', { id: 'opt_complete', label: 'complete' }, def)).toBe('check')
+  })
+
+  it('a Status option’s glyph follows its id, so a label edited in place keeps its group’s glyph', () => {
+    expect(optionGlyph('status', { id: 'opt_active', label: 'Doing' }, def)).toBe('minus')
   })
 
   it('falls back to the upcoming glyph for an unknown value or a missing def', () => {
     expect(optionGlyph('status', { label: 'nope' }, def)).toBe('circle-dashed')
-    expect(optionGlyph('status', { label: 'active' })).toBe('circle-dashed')
+    expect(optionGlyph('status', { id: 'opt_active', label: 'active' })).toBe('circle-dashed')
   })
 })

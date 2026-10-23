@@ -242,11 +242,11 @@ describe('the persist fold', () => {
           group: {
             ...CONFIGURED,
             order_mode: 'manual',
-            order: ['shipped', 'complete', 'archived'],
+            order: ['opt_shipped', 'opt_complete', 'opt_archived'],
           },
         }),
     )
-    expect(bandKeys()).toEqual(['shipped', 'complete', 'archived'])
+    expect(bandKeys()).toEqual(['opt_shipped', 'opt_complete', 'opt_archived'])
     await mount(collection({ group: { ...CONFIGURED, order_mode: 'reversed' } }))
     expect(bandKeys()).toEqual([...configured].reverse())
     act(() => api?.toggleCollapse('g1'))
@@ -522,7 +522,7 @@ describe('the values epoch', () => {
 
   it('an override keyed by field outlives a key rename', async () => {
     await mountValues()
-    const picked = { prop_status: { kind: 'select', value: 'Done' } } as const
+    const picked = { prop_status: { kind: 'select', value: 'opt_complete' } } as const
     act(() => vals?.setValueOverride({ p2: { picked, write: 0 } }))
     act(() => useSession.getState().bumpValuesEpoch())
     await act(async () => {})
@@ -846,8 +846,8 @@ describe('creation seeding', () => {
         filter: {
           match: 'any',
           rules: [
-            { property_id: 'prop_pri', op: 'is', value: 'High' },
-            { property_id: 'prop_status', op: 'is', value: 'complete' },
+            { property_id: 'prop_pri', op: 'is', value: 'opt_High' },
+            { property_id: 'prop_status', op: 'is', value: 'opt_complete' },
           ],
         },
       }),
@@ -857,7 +857,7 @@ describe('creation seeding', () => {
     await act(async () => void creation.createAdjacent(p1!, 'below'))
     const mutate = useSession.getState().mutate as ReturnType<typeof vi.fn>
     expect(mutate.mock.calls[0][0].seeds).toEqual({
-      prop_status: { kind: 'select', value: 'complete' },
+      prop_status: { kind: 'select', value: 'opt_complete' },
     })
   })
 })
@@ -943,7 +943,7 @@ describe('a create placed ahead of its reply', () => {
       useSession.getState().applyChange({ version: 2, delta: deltaOf(held, next)! })
     })
     expect(commits.find((c) => c.band !== undefined)).toEqual({
-      band: 'complete',
+      band: 'opt_complete',
       order: ['p2', 'p3', 'p1'],
     })
     await act(async () => {
@@ -1009,7 +1009,7 @@ describe('the root seat', () => {
       collection({
         filter: {
           match: 'all',
-          rules: [{ property_id: 'prop_status', op: 'is', value: 'archived' }],
+          rules: [{ property_id: 'prop_status', op: 'is', value: 'opt_archived' }],
         },
       } as unknown as Partial<SavedView>),
     )

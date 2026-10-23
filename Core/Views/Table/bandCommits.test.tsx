@@ -267,7 +267,7 @@ describe('property band reorder', () => {
       kind: 'property',
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['not_started', 'complete', 'active'],
+      order: ['opt_not_started', 'opt_complete', 'opt_active'],
     })
     expect(lastSavedView().group_order).toBeUndefined()
     expect(mutateSpy).not.toHaveBeenCalled()
@@ -364,7 +364,7 @@ describe('sub-group bucket band drag', () => {
     expect(lastSavedView().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['complete', 'active', 'not_started'],
+      order: ['opt_complete', 'opt_active', 'opt_not_started'],
     })
     expect(mutateSpy).not.toHaveBeenCalled()
   })
@@ -375,7 +375,7 @@ describe('sub-group bucket band drag', () => {
         sub_group: {
           property_id: 'prop_status',
           order_mode: 'manual',
-          order: ['not_started', 'active', 'complete'],
+          order: ['opt_not_started', 'opt_active', 'opt_complete'],
         },
       }),
     )
@@ -397,7 +397,7 @@ describe('sub-group bucket band drag', () => {
     expect(lastSavedView().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['complete', 'active', 'not_started'],
+      order: ['opt_complete', 'opt_active', 'opt_not_started'],
     })
     expect(mutateSpy).not.toHaveBeenCalled()
   })
@@ -420,7 +420,7 @@ describe('sub-group bucket band drag', () => {
     expect(lastSavedView().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['not_started', 'complete', 'active'],
+      order: ['opt_not_started', 'opt_complete', 'opt_active'],
     })
     expect(mutateSpy).not.toHaveBeenCalled()
     const posted = currentNotification()
@@ -471,7 +471,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
       op: 'setProperty',
       path: 'Col/A/A Two.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'active' },
+      value: { kind: 'select', value: 'opt_active' },
     })
     expect(mutateSpy).toHaveBeenNthCalledWith(2, {
       op: 'movePage',
@@ -488,7 +488,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
       op: 'setProperty',
       path: 'Col/A/A Two.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'active' },
+      value: { kind: 'select', value: 'opt_active' },
     })
   })
 

@@ -4,11 +4,11 @@ import { groupKeyToValue, reassignable, reassignTarget } from './reassign'
 
 describe('groupKeyToValue — destination group key → PropertyValue', () => {
   it('status: the key is the status value', () => {
-    expect(groupKeyToValue('done', 'status')).toEqual({ kind: 'select', value: 'done' })
+    expect(groupKeyToValue('opt_done', 'status')).toEqual({ kind: 'select', value: 'opt_done' })
   })
 
   it('select: the key is the select value', () => {
-    expect(groupKeyToValue('red', 'select')).toEqual({ kind: 'select', value: 'red' })
+    expect(groupKeyToValue('opt_red', 'select')).toEqual({ kind: 'select', value: 'opt_red' })
   })
 
   it('checkbox: the true key checks, any other key clears — a checkbox is true or absent', () => {
@@ -47,12 +47,12 @@ describe('groupKeyToValue — destination group key → PropertyValue', () => {
 
 describe('reassignTarget - the sorted-run drop', () => {
   const keys: Record<string, string> = {
-    a: 'todo',
-    b: 'todo',
-    c: 'doing',
-    d: 'doing',
-    e: 'doing',
-    lone: 'blocked',
+    a: 'opt_todo',
+    b: 'opt_todo',
+    c: 'opt_doing',
+    d: 'opt_doing',
+    e: 'opt_doing',
+    lone: 'opt_blocked',
     f: UNGROUPED,
     g: UNGROUPED,
   }
@@ -60,7 +60,7 @@ describe('reassignTarget - the sorted-run drop', () => {
     reassignTarget(order, dragged, (id) => keys[id])
 
   it('a slot strictly inside a foreign run takes that run value', () => {
-    expect(run(['a', 'c', 'b', 'd', 'e'], 'b')).toBe('doing')
+    expect(run(['a', 'c', 'b', 'd', 'e'], 'b')).toBe('opt_doing')
   })
 
   it('the seam between two runs changes nothing', () => {

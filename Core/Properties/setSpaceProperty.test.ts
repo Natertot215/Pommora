@@ -38,7 +38,19 @@ beforeEach(async () => {
   const space = await createSpace(root, groupId, 'Pommora', newId())
   if (!space.ok) throw new Error('setup failed')
   spaceRel = space.value.path
-  const made = await createProperty(root, def({ label: 'Status', type: 'select' }))
+  const made = await createProperty(
+    root,
+    def({
+      label: 'Status',
+      type: 'select',
+      select_options: [
+        { id: 'opt_Option%201', key: 'Option 1', label: 'Option 1' },
+        { id: 'opt_Option%202', key: 'Option 2', label: 'Option 2' },
+        { id: 'opt_Doing', key: 'Doing', label: 'Doing' },
+        { id: 'opt_Shipped', key: 'Shipped', label: 'Shipped' },
+      ],
+    }),
+  )
   if (!made.ok) throw new Error('setup failed')
   statusId = made.value.id
 })
@@ -55,7 +67,7 @@ const write = (value: PropertyValue | null) =>
 describe('setProperty on a Space path', () => {
   it('lands a bare root key and moves nothing else', async () => {
     const before = await sidecar()
-    const r = await write({ kind: 'select', value: 'Doing' })
+    const r = await write({ kind: 'select', value: 'opt_Doing' })
     expect(r.ok).toBe(true)
     const after = await sidecar()
     expect(after.Status).toEqual(['Doing'])
@@ -64,10 +76,10 @@ describe('setProperty on a Space path', () => {
   })
 
   it('deletes the key on null and on a blank value', async () => {
-    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    expect((await write({ kind: 'select', value: 'opt_Doing' })).ok).toBe(true)
     expect((await write(null)).ok).toBe(true)
     expect('Status' in (await sidecar())).toBe(false)
-    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    expect((await write({ kind: 'select', value: 'opt_Doing' })).ok).toBe(true)
     expect((await write({ kind: 'multiSelect', value: [] })).ok).toBe(true)
     expect('Status' in (await sidecar())).toBe(false)
   })
@@ -82,19 +94,19 @@ describe('setProperty on a Space path', () => {
   })
 
   it('re-picking the value a Space holds leaves the file, and its modification time, alone', async () => {
-    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    expect((await write({ kind: 'select', value: 'opt_Doing' })).ok).toBe(true)
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(sidecarFile(), past, past)
     const bytes = await readFile(sidecarFile(), 'utf8')
     const before = Math.floor((await stat(sidecarFile())).mtimeMs / 1000)
-    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    expect((await write({ kind: 'select', value: 'opt_Doing' })).ok).toBe(true)
     expect(await readFile(sidecarFile(), 'utf8')).toBe(bytes)
     expect(Math.floor((await stat(sidecarFile())).mtimeMs / 1000)).toBe(before)
   })
 
   it('writes a property no Collection assigns', async () => {
     expect(Object.keys((await readRegistry(root)).defs)).toContain(statusId)
-    const r = await write({ kind: 'select', value: 'Shipped' })
+    const r = await write({ kind: 'select', value: 'opt_Shipped' })
     expect(r.ok).toBe(true)
     expect((await sidecar()).Status).toEqual(['Shipped'])
   })
@@ -181,7 +193,7 @@ describe('a value write reconciles the Space it lands on', () => {
 
   it('writes the exact key, leaving another casing of it as written', async () => {
     await seed({ status: 'Option 1' })
-    expect((await set(statusId, { kind: 'select', value: 'Option 2' })).ok).toBe(true)
+    expect((await set(statusId, { kind: 'select', value: 'opt_Option%202' })).ok).toBe(true)
     const after = await sidecar()
     expect(after.status).toBe('Option 1')
     expect(after.Status).toEqual(['Option 2'])

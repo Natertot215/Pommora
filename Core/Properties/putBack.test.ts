@@ -134,7 +134,7 @@ const cases: Case[] = [
     key: 'Tags',
     raw: ['work'],
     line: 'Tags:\n  - work',
-    value: { kind: 'multiSelect', value: ['Work'] },
+    value: { kind: 'multiSelect', value: ['opt_Work'] },
     picked: { page: 'Tags:\n  - Work\n  - work', space: '["Work","work"]' },
   },
   {
@@ -150,7 +150,7 @@ const cases: Case[] = [
     key: 'Status',
     raw: 'done',
     line: 'Status: done',
-    value: { kind: 'select', value: 'Doing' },
+    value: { kind: 'select', value: 'opt_Doing' },
     picked: { page: 'Status:\n  - Doing', space: '["Doing"]' },
   },
   {
@@ -166,7 +166,7 @@ const cases: Case[] = [
     key: 'Tags',
     raw: ['Work'],
     line: 'Tags:\n  - Work',
-    value: { kind: 'multiSelect', value: ['Work', 'Life'] },
+    value: { kind: 'multiSelect', value: ['opt_Work', 'opt_Life'] },
     picked: { page: 'Tags:\n  - Work\n  - Life', space: '["Work","Life"]' },
   },
   {
@@ -202,7 +202,7 @@ describe.each([
 describe('an undo on a page', () => {
   it('a bare key comes back bare', async () => {
     await page.seed('Status', null, 'Status:')
-    const written = await set(page, 'Status', { kind: 'select', value: 'Doing' })
+    const written = await set(page, 'Status', { kind: 'select', value: 'opt_Doing' })
     expect(await page.held('Status')).toBe('Status:\n  - Doing')
     await undo(written)
     expect(await page.held('Status')).toBe('Status:')

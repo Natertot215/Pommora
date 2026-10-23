@@ -716,13 +716,13 @@ describe('rewriteRootAt — spellings', () => {
     expect(await readFile(page, 'utf8')).toBe(before)
   })
 
-  it('a write of an option’s label over the key it holds leaves the file byte-identical, as the reconcile leaves it', async () => {
+  it('a write of an option’s id over the key it holds leaves the file byte-identical, as the reconcile leaves it', async () => {
     await seeded('Stage: [done]')
     const before = await readFile(page, 'utf8')
     await rewriteRootAt(
       page,
       rewriteRaw((raw) =>
-        writtenRoot(raw, 'Stage', encodeValue(stage, { kind: 'select', value: 'Done' }), world),
+        writtenRoot(raw, 'Stage', encodeValue(stage, { kind: 'select', value: 'opt_done' }), world),
       ),
     )
     expect(await readFile(page, 'utf8')).toBe(before)

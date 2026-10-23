@@ -145,7 +145,7 @@ describe('a card value', () => {
       op: 'setProperty',
       path: 'Col/One.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'Complete' },
+      value: { kind: 'select', value: 'opt_Complete' },
     })
   })
 })

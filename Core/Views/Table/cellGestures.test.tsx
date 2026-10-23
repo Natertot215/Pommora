@@ -243,7 +243,7 @@ describe('status cell gestures', () => {
       op: 'setProperty',
       path: 'Col/Page One.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'complete' },
+      value: { kind: 'select', value: 'opt_complete' },
     })
   })
 })
@@ -536,7 +536,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
           target={{
             kind: 'options',
             def: multiDef,
-            current: { kind: 'multiSelect', value: ['a'] },
+            current: { kind: 'multiSelect', value: ['opt_a'] },
           }}
           open
           triggerRef={{ current: host }}
@@ -549,7 +549,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
     await act(async () => {
       beta?.click()
     })
-    expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['a', 'b'] })
+    expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['opt_a', 'opt_b'] })
     expect(onDismiss).not.toHaveBeenCalled()
 
     const alpha = pickerButtons().find((b) => b.textContent === 'a')
@@ -633,7 +633,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       op: 'setProperty',
       path: 'Col/Page One.md',
       propertyId: 'prop_tags',
-      value: { kind: 'multiSelect', value: ['b'] },
+      value: { kind: 'multiSelect', value: ['opt_b'] },
     })
   })
 

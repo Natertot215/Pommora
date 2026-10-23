@@ -220,7 +220,7 @@ describe('a chip list', () => {
     press(chips()[0], 'Enter')
     press(window, 'ArrowRight')
     press(window, 'Enter')
-    expect(commit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['b', 'a', 'c'] })
+    expect(commit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['opt_b', 'opt_a', 'opt_c'] })
   })
 
   it('keeps every chip off the tab order', () => {

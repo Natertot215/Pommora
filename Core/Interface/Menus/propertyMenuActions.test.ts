@@ -11,6 +11,7 @@ import { makeTree } from '../../Testing/testTree'
 import { propertyMenuBranches, runPropertyAction } from './propertyMenuActions'
 import { dateDefaults } from '../../Properties/columnStyles'
 import { useSession } from '../../Session/store'
+import { encodeValue } from '../../Properties/propertyValue'
 
 const SCHEMA: PropertyDefinition[] = [
   {
@@ -127,8 +128,8 @@ describe('propertyMenuBranches', () => {
     const { properties } = branchesFor({ stage: 'b' })
     expect(properties.find((r) => r.name === 'stage')?.options).toEqual([
       [
-        { value: 'a', label: 'a', checked: false },
-        { value: 'b', label: 'b', checked: true },
+        { value: 'opt_a', label: 'a', checked: false },
+        { value: 'opt_b', label: 'b', checked: true },
       ],
     ])
     expect(properties.find((r) => r.name === 'Count')?.options).toBeUndefined()
@@ -176,8 +177,8 @@ describe('propertyMenuBranches', () => {
       row: row(),
     })
     expect(properties[0].options?.map((run) => run.map((o) => o.value))).toEqual([
-      ['Open'],
-      ['Done', 'Dropped'],
+      ['opt_Open'],
+      ['opt_Done', 'opt_Dropped'],
     ])
   })
 })
@@ -185,33 +186,33 @@ describe('propertyMenuBranches', () => {
 describe('a property pick from the page menu', () => {
   it('writes the option it landed on', () => {
     const { run, sent } = harness()
-    expect(run('prop:prop_sel:b')).toBe(true)
+    expect(run('prop:prop_sel:opt_b')).toBe(true)
     expect(sent).toEqual([
       {
         op: 'setProperty',
         path: 'Notes/Alpha.md',
         propertyId: 'prop_sel',
-        value: { kind: 'select', value: 'b' },
+        value: { kind: 'select', value: 'opt_b' },
       },
     ])
   })
 
   it('clears a select when the option it already holds is picked again', () => {
     const { run, sent } = harness({ stage: 'b' })
-    run('prop:prop_sel:b')
+    run('prop:prop_sel:opt_b')
     expect(sent[0]).toMatchObject({ propertyId: 'prop_sel', value: null })
   })
 
   it('appends to a multi-select without disturbing what stands', () => {
     const { run, sent } = harness({ Tags: ['x'] })
-    run('prop:prop_tags:y')
-    expect(sent[0]).toMatchObject({ value: { kind: 'multiSelect', value: ['x', 'y'] } })
+    run('prop:prop_tags:opt_y')
+    expect(sent[0]).toMatchObject({ value: { kind: 'multiSelect', value: ['opt_x', 'opt_y'] } })
   })
 
   it('toggles a held multi-select option off', () => {
     const { run, sent } = harness({ Tags: ['x', 'y'] })
-    run('prop:prop_tags:x')
-    expect(sent[0]).toMatchObject({ value: { kind: 'multiSelect', value: ['y'] } })
+    run('prop:prop_tags:opt_x')
+    expect(sent[0]).toMatchObject({ value: { kind: 'multiSelect', value: ['opt_y'] } })
   })
 
   it('checks a box, and unchecks it by clearing rather than storing false', () => {
@@ -252,15 +253,15 @@ describe('a property pick from the page menu', () => {
       if (req.op === 'setProperty')
         frontmatter = {
           ...frontmatter,
-          Tags: req.value?.kind === 'multiSelect' ? req.value.value : undefined,
+          Tags: req.value?.kind === 'multiSelect' ? encodeValue(SCHEMA[1], req.value) : undefined,
         }
       return req
     }
-    expect(pick('prop:prop_tags:x')).toMatchObject({
-      value: { kind: 'multiSelect', value: ['x'] },
+    expect(pick('prop:prop_tags:opt_x')).toMatchObject({
+      value: { kind: 'multiSelect', value: ['opt_x'] },
     })
-    expect(pick('prop:prop_tags:y')).toMatchObject({
-      value: { kind: 'multiSelect', value: ['x', 'y'] },
+    expect(pick('prop:prop_tags:opt_y')).toMatchObject({
+      value: { kind: 'multiSelect', value: ['opt_x', 'opt_y'] },
     })
     expect(frontmatter.Tags).toEqual(['x', 'y'])
   })

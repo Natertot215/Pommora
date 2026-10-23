@@ -3,6 +3,7 @@ import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ResolvedGroup } from '../viewRow'
 import type { SavedView } from '../views'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { setIndexOf } from '../Pipeline/setIndex'
 import {
   type BandModel,
@@ -233,5 +234,27 @@ describe('which Set bands open', () => {
       ['A1', true],
     ])
     expect(opensOf(top as never, [band('A1')], true)).toEqual([['A1', true]])
+  })
+})
+
+describe('a bucket head', () => {
+  it('a Select bucket’s head reads its option’s label', () => {
+    const def: PropertyDefinition = {
+      id: 'prop_sel',
+      label: 'Sel',
+      key: 'Sel',
+      type: 'select',
+      select_options: [{ id: 'opt_a', key: 'a', label: 'Alpha' }],
+    }
+    const head = headContextOf(
+      { kind: 'collection' } as CollectionNode,
+      new Map() as never,
+      { kind: 'property', property_id: 'prop_sel' } as never,
+      [def],
+      {} as SavedView,
+      () => ({}) as never,
+      false,
+    ).bucket('opt_a')
+    expect(head.label).toBe('Alpha')
   })
 })

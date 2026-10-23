@@ -43,8 +43,8 @@ export const optionList = (raw: unknown): string[] =>
   scalarMembers(raw).filter((x) => exactTitle(x) !== '')
 
 type OptionWords = {
-  labelOf: Map<string, string>
-  byLabel: Map<string, SelectOption>
+  idOf: Map<string, string>
+  byId: Map<string, SelectOption>
 }
 
 const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
@@ -55,26 +55,30 @@ function wordsOf(def: PropertyDefinition): OptionWords {
   if (!words) {
     const options = optionsOf(def)
     words = {
-      labelOf: new Map(options.map((o) => [exactTitle(o.key), o.label])),
-      byLabel: new Map(options.map((o) => [o.label, o])),
+      idOf: new Map(options.map((o) => [exactTitle(o.key), o.id])),
+      byId: new Map(options.map((o) => [o.id, o])),
     }
     optionWords.set(def, words)
   }
   return words
 }
 
-/** The label of the option whose key `written` names. */
+/** The id of the option whose key `written` names. */
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
-  wordsOf(def).labelOf.get(exactTitle(written))
+  wordsOf(def).idOf.get(exactTitle(written))
 
 export const findOption = (
   def: PropertyDefinition | undefined,
-  label: string,
-): SelectOption | undefined => (def ? wordsOf(def).byLabel.get(label) : undefined)
+  id: string,
+): SelectOption | undefined => (def ? wordsOf(def).byId.get(id) : undefined)
 
-/** The key of the option `label` names; a label no option holds is written as given. */
-const keyOf = (def: PropertyDefinition, label: string): string =>
-  wordsOf(def).byLabel.get(label)?.key ?? label
+/** The label an option id shows: its option's, or the id itself where no option holds it. */
+export const optionLabel = (def: PropertyDefinition | undefined, id: string): string =>
+  findOption(def, id)?.label ?? id
+
+/** The keys `ids`' options write; an id no option holds writes nothing. */
+const optionKeys = (def: PropertyDefinition, ids: readonly string[]): string[] =>
+  ids.flatMap((id) => findOption(def, id)?.key ?? [])
 
 const CHECKBOX_WORDS = [
   ['true', 'false'],
@@ -219,9 +223,9 @@ export function checkedSpelling(raw: unknown): unknown {
 export function encodeValue(def: PropertyDefinition, value: PropertyValue): unknown {
   switch (value.kind) {
     case 'select':
-      return [keyOf(def, value.value)]
+      return optionKeys(def, [value.value])
     case 'multiSelect':
-      return value.value.map((label) => keyOf(def, label))
+      return optionKeys(def, value.value)
     case 'number':
     case 'checkbox':
     case 'link':

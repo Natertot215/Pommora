@@ -25,7 +25,7 @@ import {
 import { ID_KEY } from '../../Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
-import { groupable, optionLabels, type PropertyDefinition } from '../../Properties/properties'
+import { groupable, optionIds, type PropertyDefinition } from '../../Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { dateFmt, formatDate, NUMERIC_FORMATS, readDate } from '../../Properties/formatValue'
 import type { DateFormat } from '../../Properties/columnStyles'
@@ -225,7 +225,7 @@ export function bucketKey(
 
 function schemaOptionOrder(def: PropertyDefinition | undefined): string[] | null {
   if (!def) return null
-  const values = optionLabels(def)
+  const values = optionIds(def)
   return values.length ? values : null
 }
 
@@ -245,7 +245,7 @@ export function liveBucketOrder(
   def: PropertyDefinition | undefined,
   present: Iterable<string>,
 ): string[] {
-  return bucketOrder(config, def, new Set([...(def ? optionLabels(def) : []), ...present]))
+  return bucketOrder(config, def, new Set([...(def ? optionIds(def) : []), ...present]))
 }
 
 export function bucketOrder(

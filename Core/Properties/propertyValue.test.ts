@@ -7,6 +7,7 @@ import {
   encodeValue,
   findOption,
   isBlankValue,
+  optionLabel,
   keepingForeignWords,
   type PropertyValue,
 } from './propertyValue'
@@ -71,8 +72,8 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     expect(decodeValue(text, [['007']])).toEqual({ kind: 'text', value: '[[007]]' })
   })
 
-  it('reads a status value as its bare label', () => {
-    expect(decodeValue(statusDef, 'Done')).toEqual({ kind: 'select', value: 'Done' })
+  it('reads a status value as its option’s id', () => {
+    expect(decodeValue(statusDef, 'Done')).toEqual({ kind: 'select', value: 'opt_Done' })
   })
 
   it('never guesses: a select option shaped like a date or a url stays a select', () => {
@@ -83,10 +84,10 @@ describe('decodeValue — the declared type decides, never the shape', () => {
         { id: 'opt_https%3A%2F%2Facme.io', key: 'https://acme.io', label: 'https://acme.io' },
       ],
     })
-    expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
+    expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: 'opt_2024-01-01' })
     expect(decodeValue(shaped, 'https://acme.io')).toEqual({
       kind: 'select',
-      value: 'https://acme.io',
+      value: 'opt_https%3A%2F%2Facme.io',
     })
   })
 
@@ -119,7 +120,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     })
     expect(decodeValue(multiSelectOf('a', 'b'), ['a', 'b'])).toEqual({
       kind: 'multiSelect',
-      value: ['a', 'b'],
+      value: ['opt_a', 'opt_b'],
     })
   })
 
@@ -133,21 +134,21 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       type: 'select',
       select_options: [{ id: 'opt_2024', key: '2024', label: '2024' }],
     })
-    expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
-    expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
+    expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: 'opt_2024' })
+    expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: 'opt_2024' })
     expect(decodeValue(multiSelectOf('true', 'x'), [true, 'x'])).toEqual({
       kind: 'multiSelect',
-      value: ['true', 'x'],
+      value: ['opt_true', 'opt_x'],
     })
   })
 
   it('an option type reads a scalar as a list of one', () => {
     expect(decodeValue(multiSelectOf('zeta'), 'zeta')).toEqual({
       kind: 'multiSelect',
-      value: ['zeta'],
+      value: ['opt_zeta'],
     })
-    expect(decodeValue(selectDef, ['A'])).toEqual({ kind: 'select', value: 'A' })
-    expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'Done' })
+    expect(decodeValue(selectDef, ['A'])).toEqual({ kind: 'select', value: 'opt_A' })
+    expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'opt_Done' })
   })
 })
 
@@ -158,14 +159,14 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
   ]
   for (const [type, d, [first, second, unknown]] of cases) {
     it(`${type}: an externally written list resolves to its newest registered option`, () => {
-      expect(decodeValue(d, [first, second])).toEqual({ kind: 'select', value: second })
-      expect(decodeValue(d, [second, first])).toEqual({ kind: 'select', value: first })
+      expect(decodeValue(d, [first, second])).toEqual({ kind: 'select', value: `opt_${second}` })
+      expect(decodeValue(d, [second, first])).toEqual({ kind: 'select', value: `opt_${first}` })
     })
     it(`${type}: an unregistered trailing option yields to the registered one before it`, () => {
-      expect(decodeValue(d, [first, unknown])).toEqual({ kind: 'select', value: first })
+      expect(decodeValue(d, [first, unknown])).toEqual({ kind: 'select', value: `opt_${first}` })
     })
     it(`${type}: a scalar reads as a list of one`, () => {
-      expect(decodeValue(d, first)).toEqual({ kind: 'select', value: first })
+      expect(decodeValue(d, first)).toEqual({ kind: 'select', value: `opt_${first}` })
     })
     it(`${type}: an option the schema does not offer reads as no value`, () => {
       expect(decodeValue(d, [unknown])).toEqual({ kind: 'null' })
@@ -181,15 +182,15 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
       })
     expect(decodeValue(options('Open', 'Active', 'Done'), ['Open', 'Active'])).toEqual({
       kind: 'select',
-      value: 'Active',
+      value: 'opt_Active',
     })
     expect(decodeValue(options('Red', 'Blue'), ['Green', 'Blue'])).toEqual({
       kind: 'select',
-      value: 'Blue',
+      value: 'opt_Blue',
     })
     expect(decodeValue(options('Open', 'Active'), ['Active', 'Wip'])).toEqual({
       kind: 'select',
-      value: 'Active',
+      value: 'opt_Active',
     })
     expect(decodeValue(options('Open'), ['Wip'])).toEqual({ kind: 'null' })
     expect(decodeValue(options('Open'), [])).toEqual({ kind: 'null' })
@@ -200,12 +201,12 @@ describe('decodeValue — lenient on read', () => {
   it('a select or status names only an option the schema still offers', () => {
     expect(decodeValue(selectDef, 'Gone')).toEqual({ kind: 'null' })
     expect(decodeValue(statusDef, 'Retired')).toEqual({ kind: 'null' })
-    expect(decodeValue(selectDef, 'A')).toEqual({ kind: 'select', value: 'A' })
+    expect(decodeValue(selectDef, 'A')).toEqual({ kind: 'select', value: 'opt_A' })
   })
 
   it('a multi-select drops a value the schema does not offer', () => {
     const d = multiSelectOf('A')
-    expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A'] })
+    expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['opt_A'] })
     expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'null' })
   })
 
@@ -282,12 +283,12 @@ describe('decodeValue — a file value names files', () => {
 })
 
 describe('encodeValue — bare on disk', () => {
-  it('writes each option label’s key, a label no option holds as given, and every other kind as itself', () => {
-    expect(encodeValue(keyedSelect, { kind: 'select', value: 'Done' })).toEqual(['done'])
+  it('writes each option id’s key, an id no option holds as nothing, and every other kind as itself', () => {
+    expect(encodeValue(keyedSelect, { kind: 'select', value: 'opt_done' })).toEqual(['done'])
     expect(
-      encodeValue(keyedMulti, { kind: 'multiSelect', value: ['In Progress', 'Done'] }),
+      encodeValue(keyedMulti, { kind: 'multiSelect', value: ['opt_in-progress', 'opt_done'] }),
     ).toEqual(['in-progress', 'done'])
-    expect(encodeValue(keyedSelect, { kind: 'select', value: 'Gone' })).toEqual(['Gone'])
+    expect(encodeValue(keyedSelect, { kind: 'select', value: 'opt_Gone' })).toEqual([])
     expect(encodeValue(def({ type: 'number' }), { kind: 'number', value: 42 })).toBe(42)
     expect(encodeValue(def({ type: 'checkbox' }), { kind: 'checkbox', value: true })).toBe(true)
     expect(encodeValue(def({ type: 'number' }), { kind: 'null' })).toBeNull()
@@ -306,7 +307,7 @@ describe('encodeValue — bare on disk', () => {
       [def({ type: 'file' }), ['[[y.png]]']],
     ]
     for (const [d, raw] of pairs) expect(encodeValue(d, decodeValue(d, raw))).toEqual(raw)
-    expect(decodeValue(keyedSelect, ['done'])).toEqual({ kind: 'select', value: 'Done' })
+    expect(decodeValue(keyedSelect, ['done'])).toEqual({ kind: 'select', value: 'opt_done' })
   })
 
   it('a hand-edited unquoted wikilink encodes back as the string it meant', () => {
@@ -362,20 +363,20 @@ describe('options decode exactly; checkboxes without regard to case', () => {
 
   it('a Select reads only an option written exactly as registered', () => {
     expect(decodeValue(stage, 'done')).toEqual({ kind: 'null' })
-    expect(decodeValue(stage, ['done', 'Active'])).toEqual({ kind: 'select', value: 'Active' })
+    expect(decodeValue(stage, ['done', 'Active'])).toEqual({ kind: 'select', value: 'opt_Active' })
   })
 
   it('a Multi-Select reads each option written exactly and drops every other word', () => {
     expect(decodeValue(labels, ['claude', 'Docs', 'new'])).toEqual({
       kind: 'multiSelect',
-      value: ['Docs'],
+      value: ['opt_Docs'],
     })
   })
 
   it('a member held twice reads once', () => {
     expect(decodeValue(labels, ['Docs', 'new', 'Docs'])).toEqual({
       kind: 'multiSelect',
-      value: ['Docs'],
+      value: ['opt_Docs'],
     })
   })
 
@@ -409,6 +410,35 @@ describe('keepingForeignWords', () => {
   })
 })
 
+describe('option ids', () => {
+  const ab = def({
+    type: 'multiSelect',
+    select_options: [
+      { id: 'opt_a', key: 'alpha', label: 'Alpha' },
+      { id: 'opt_b', key: 'beta', label: 'Beta' },
+    ],
+  })
+  const abSelect = { ...ab, type: 'select' as const }
+
+  it('decodes each written key to its option’s id, and a label no key spells to nothing', () => {
+    expect(decodeValue(ab, ['alpha', 'zeta'])).toEqual({ kind: 'multiSelect', value: ['opt_a'] })
+    expect(decodeValue(abSelect, ['Beta'])).toEqual({ kind: 'null' })
+  })
+
+  it('encodes each option id as its option’s key, and an id no option holds writes nothing', () => {
+    expect(encodeValue(abSelect, { kind: 'select', value: 'opt_b' })).toEqual(['beta'])
+    expect(encodeValue(ab, { kind: 'multiSelect', value: ['opt_a', 'opt_gone'] })).toEqual([
+      'alpha',
+    ])
+    expect(encodeValue(abSelect, { kind: 'select', value: 'opt_gone' })).toEqual([])
+  })
+
+  it('optionLabel reads an id’s option label, and an id no option holds as itself', () => {
+    expect(optionLabel(ab, 'opt_a')).toBe('Alpha')
+    expect(optionLabel(ab, 'opt_gone')).toBe('opt_gone')
+  })
+})
+
 describe('findOption', () => {
   const tag: PropertyDefinition = {
     id: 'prop_tag',
@@ -418,14 +448,14 @@ describe('findOption', () => {
     select_options: [{ id: 'opt_opt_a', key: 'opt_a', label: 'opt_a', color: 'green' }],
   }
   it('returns the option with its color (the chip tint)', () => {
-    expect(findOption(tag, 'opt_a')).toEqual({
+    expect(findOption(tag, 'opt_opt_a')).toEqual({
       id: 'opt_opt_a',
       key: 'opt_a',
       label: 'opt_a',
       color: 'green',
     })
   })
-  it('returns undefined for an unknown label', () => {
+  it('returns undefined for an unknown id', () => {
     expect(findOption(tag, 'nope')).toBeUndefined()
   })
 })

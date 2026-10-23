@@ -206,14 +206,14 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
   })
 
-  it('a Custom order ranks options it predates after the listed ones, ahead of the no-value rows', () => {
+  it('a Custom order ranks the option ids it lists, then the options it predates, ahead of the no-value rows', () => {
     const rows = [
       makeRow('r1', {}),
       makeRow('r2', { props: { prop_sel: 'c' } }),
       makeRow('r3', { props: { prop_sel: 'a' } }),
     ]
     const sorter = makeSorter(
-      [{ property_id: 'prop_sel', direction: 'ascending', order: ['a', 'b'] }],
+      [{ property_id: 'prop_sel', direction: 'ascending', order: ['opt_a', 'opt_b'] }],
       schema,
     )!
     expect(ids(sorter(rows))).toEqual(['r3', 'r2', 'r1'])
@@ -444,6 +444,31 @@ describe('makeSorter — manual order tiebreaker (manual_order)', () => {
   })
 })
 
+describe('a Multi-Select sort', () => {
+  it('a Multi-Select sorts by its options’ labels, not their ids', () => {
+    const tags: PropertyDefinition = {
+      id: 'prop_tags',
+      label: 'Tags',
+      key: 'Tags',
+      type: 'multiSelect',
+      select_options: [
+        { id: 'opt_z', key: 'z', label: 'Apple' },
+        { id: 'opt_a', key: 'a', label: 'Zebra' },
+      ],
+    }
+    const row = (id: string, key: string): ViewRow => ({
+      id,
+      title: id,
+      path: `${id}.md`,
+      frontmatter: { [ID_KEY]: id, Tags: [key] },
+      createdAt: null,
+      modifiedAt: null,
+    })
+    const sorter = makeSorter([{ property_id: 'prop_tags', direction: 'ascending' }], [tags])!
+    expect(ids(sorter([row('zebra', 'a'), row('apple', 'z')]))).toEqual(['apple', 'zebra'])
+  })
+})
+
 describe('custom option order', () => {
   it('a criterion order ranks rows by the sequence, unknowns last, direction moot', () => {
     const rows = [
@@ -453,7 +478,7 @@ describe('custom option order', () => {
       makeRow('r4', { props: { prop_sel: 'c' } }),
     ]
     const sorter = makeSorter(
-      [{ property_id: 'prop_sel', direction: 'descending', order: ['c', 'a', 'b'] }],
+      [{ property_id: 'prop_sel', direction: 'descending', order: ['opt_c', 'opt_a', 'opt_b'] }],
       schema,
     )!
     expect(ids(sorter(rows))).toEqual(['r4', 'r1', 'r2', 'r3'])

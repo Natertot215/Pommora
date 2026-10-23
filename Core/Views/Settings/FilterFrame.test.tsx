@@ -126,7 +126,7 @@ const twoRules = (): SavedView =>
     filter: {
       match: 'all',
       rules: [
-        { property_id: 'prop_status', op: 'is', values: ['todo'] },
+        { property_id: 'prop_status', op: 'is', values: ['opt_todo'] },
         { property_id: 'prop_check', op: 'is', value: 'true' },
       ],
     },
@@ -191,7 +191,7 @@ describe('FilterFrame', () => {
         filter: {
           match: 'all',
           rules: [
-            { property_id: 'prop_status', op: 'is', value: 'todo' },
+            { property_id: 'prop_status', op: 'is', value: 'opt_todo' },
             { match: 'any', rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }] },
           ],
         },
@@ -236,7 +236,7 @@ describe('FilterFrame', () => {
       view({
         filter: {
           match: 'all',
-          rules: [{ property_id: 'prop_status', op: 'is', values: ['todo'] }],
+          rules: [{ property_id: 'prop_status', op: 'is', values: ['opt_todo'] }],
         },
       }),
     )
@@ -254,7 +254,7 @@ describe('FilterFrame', () => {
     expect(lastSaved().filter).toEqual({
       match: 'all',
       rules: [
-        { property_id: 'prop_status', op: 'is', values: ['todo'] },
+        { property_id: 'prop_status', op: 'is', values: ['opt_todo'] },
         { property_id: 'prop_check', op: 'is', value: 'true' },
       ],
     })
@@ -285,7 +285,7 @@ describe('FilterFrame', () => {
           match: 'all',
           rules: [
             { property_id: '_title', op: 'is' },
-            { property_id: 'prop_status', op: 'is', value: 'todo' },
+            { property_id: 'prop_status', op: 'is', value: 'opt_todo' },
           ],
         },
       }),
@@ -303,7 +303,7 @@ describe('FilterFrame', () => {
       match: 'any',
       rules: [
         { property_id: '_title', op: 'is', value: 'urgent' },
-        { property_id: 'prop_status', op: 'is', value: 'todo' },
+        { property_id: 'prop_status', op: 'is', value: 'opt_todo' },
       ],
     })
   })
@@ -315,7 +315,7 @@ describe('FilterFrame', () => {
           match: 'all',
           rules: [
             { property_id: '_title', op: 'is', value: 'a' },
-            { property_id: 'prop_status', op: 'is', value: 'todo' },
+            { property_id: 'prop_status', op: 'is', value: 'opt_todo' },
             { property_id: 'prop_check', op: 'is', value: 'true' },
           ],
         },
@@ -368,7 +368,7 @@ describe('FilterFrame', () => {
         filter: {
           match: 'all',
           rules: [
-            { property_id: 'prop_status', op: 'is', value: 'todo' },
+            { property_id: 'prop_status', op: 'is', value: 'opt_todo' },
             { match: 'any', rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }] },
           ],
         },
@@ -844,7 +844,7 @@ describe('FilterFrame value editors', () => {
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'todo').at(-1),
     )
     let rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
-    expect(rule.values).toEqual(['todo'])
+    expect(rule.values).toEqual(['opt_todo'])
     expect('value' in rule).toBe(false)
     await mount(view({ filter: lastSaved().filter }))
     await click(host.querySelector('[aria-label="Filter values"]'))
@@ -852,7 +852,7 @@ describe('FilterFrame value editors', () => {
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'done').at(-1),
     )
     rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
-    expect(rule.values).toEqual(['todo', 'done'])
+    expect(rule.values).toEqual(['opt_todo', 'opt_done'])
   })
 
   const contextRule = view({
@@ -892,7 +892,7 @@ describe('FilterFrame value editors', () => {
       [...document.querySelectorAll('*')].filter((el) => el.textContent === 'done').at(-1),
     )
     const rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
-    expect(rule.values).toEqual(['todo', 'done'])
+    expect(rule.values).toEqual(['opt_todo', 'opt_done'])
   })
 
   it('a checkbox rule renders no value editor and its operator carries the clause', async () => {

@@ -119,8 +119,8 @@ describe('resolveFieldValue', () => {
   })
 
   it('decodes a user property against the type its definition declares', () => {
-    expect(rfv(row, 'prop_status')).toEqual({ kind: 'select', value: 'in_progress' })
-    expect(rfv(row, 'prop_sel')).toEqual({ kind: 'select', value: 'opt_a' })
+    expect(rfv(row, 'prop_status')).toEqual({ kind: 'select', value: 'opt_in_progress' })
+    expect(rfv(row, 'prop_sel')).toEqual({ kind: 'select', value: 'opt_opt_a' })
     expect(rfv(row, 'prop_when')).toEqual({
       kind: 'dateTime',
       value: '2026-06-15T09:00:00Z',
@@ -136,7 +136,7 @@ describe('resolveFieldValue', () => {
     expect(rfv(held({ status: 'in_progress' }), 'prop_status')).toEqual({ kind: 'null' })
     expect(rfv(held({ status: 'other', Status: 'in_progress' }), 'prop_status')).toEqual({
       kind: 'select',
-      value: 'in_progress',
+      value: 'opt_in_progress',
     })
     expect(rfv(held({ STATUS: 'in_progress', status: 'other' }), 'prop_status')).toEqual({
       kind: 'null',
@@ -155,7 +155,7 @@ describe('resolveFieldValue', () => {
       ],
     }
     const keyed: ViewRow = { ...row, frontmatter: { [ID_KEY]: '01ROW', S: 'done', s: 'open' } }
-    expect(resolveFieldValue(keyed, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
+    expect(resolveFieldValue(keyed, 'prop_s', [def])).toEqual({ kind: 'select', value: 'opt_open' })
   })
 
   it('returns null for an absent property', () => {
@@ -196,11 +196,14 @@ describe('resolveFieldValue', () => {
       path: 'x.md',
       frontmatter: { [ID_KEY]: 'x', Tag: ['red'] },
       contextValues: { ctx1: ['s1'] },
-      picked: { prop_tag: { kind: 'select', value: 'blue' }, ctx1: NULL_VALUE },
+      picked: { prop_tag: { kind: 'select', value: 'opt_blue' }, ctx1: NULL_VALUE },
       createdAt: null,
       modifiedAt: null,
     }
-    expect(resolveFieldValue(pending, 'prop_tag', [tag])).toEqual({ kind: 'select', value: 'blue' })
+    expect(resolveFieldValue(pending, 'prop_tag', [tag])).toEqual({
+      kind: 'select',
+      value: 'opt_blue',
+    })
     expect(resolveFieldValue(pending, 'ctx1', [tag])).toEqual(NULL_VALUE)
   })
 })
@@ -236,8 +239,8 @@ describe('resolveFieldValue memoization', () => {
     })
     const before = rfv(rowAt(fm1), 'prop_s')
     const after = rfv(rowAt(fm2), 'prop_s')
-    expect(before).toMatchObject({ kind: 'select', value: 'open' })
-    expect(after).toMatchObject({ kind: 'select', value: 'done' })
+    expect(before).toMatchObject({ kind: 'select', value: 'opt_open' })
+    expect(after).toMatchObject({ kind: 'select', value: 'opt_done' })
   })
 
   it('an option added to the definition re-resolves a value pages already held', () => {
@@ -259,7 +262,7 @@ describe('resolveFieldValue memoization', () => {
       ],
     }
     expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
-    expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'Final' })
+    expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'opt_Final' })
   })
 
   it('a rename or a type change re-resolves under the same frontmatter', () => {
@@ -273,14 +276,14 @@ describe('resolveFieldValue memoization', () => {
       modifiedAt: null,
     }
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
-    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'select', value: 'open' })
+    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'select', value: 'opt_open' })
     expect(resolveFieldValue(r, 'prop_s', [{ ...def, label: 'T', key: 'T' }])).toEqual({
       kind: 'select',
-      value: 'done',
+      value: 'opt_done',
     })
     expect(resolveFieldValue(r, 'prop_s', [{ ...def, type: 'multiSelect' }])).toEqual({
       kind: 'multiSelect',
-      value: ['open'],
+      value: ['opt_open'],
     })
   })
 
@@ -350,14 +353,14 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
       resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), 'prop_tag', typedSchema),
     ).toEqual({
       kind: 'select',
-      value: '[URGENT](tel:911)',
+      value: 'opt_%5BURGENT%5D(tel%3A911)',
     })
   })
 
   it('a plain select option is untouched', () => {
     expect(resolveFieldValue(rowOf({ prop_tag: 'opt_a' }), 'prop_tag', typedSchema)).toEqual({
       kind: 'select',
-      value: 'opt_a',
+      value: 'opt_opt_a',
     })
   })
 })

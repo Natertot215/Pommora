@@ -213,12 +213,16 @@ describe('SortFrame rows', () => {
     await click(trigger)
     await click(clickable((el) => el.textContent === 'Custom'))
     expect(lastSaved().sort).toEqual([
-      { property_id: 'prop_status', direction: 'descending', order: ['Shipped', 'Queued'] },
+      { property_id: 'prop_status', direction: 'descending', order: ['opt_Shipped', 'opt_Queued'] },
     ])
     await mount(
       view({
         sort: [
-          { property_id: 'prop_status', direction: 'ascending', order: ['Shipped', 'Queued'] },
+          {
+            property_id: 'prop_status',
+            direction: 'ascending',
+            order: ['opt_Shipped', 'opt_Queued'],
+          },
         ],
       }),
     )
@@ -231,7 +235,11 @@ describe('SortFrame rows', () => {
     await mount(
       view({
         sort: [
-          { property_id: 'prop_status', direction: 'ascending', order: ['Shipped', 'Queued'] },
+          {
+            property_id: 'prop_status',
+            direction: 'ascending',
+            order: ['opt_Shipped', 'opt_Queued'],
+          },
         ],
       }),
     )

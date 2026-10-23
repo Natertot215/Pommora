@@ -387,9 +387,9 @@ function LocationHierarchy({
           children: subDef
             ? subChips.map(
                 (o): ResolvedGroup => ({
-                  key: subGroupKey(id, o.label),
+                  key: subGroupKey(id, o.id),
                   kind: 'bucket',
-                  value: o.label,
+                  value: o.id,
                   items: [],
                 }),
               )
@@ -410,12 +410,12 @@ function LocationHierarchy({
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (
     <LineRow
-      key={o.label}
-      id={subGroupKey(setId, o.label)}
-      className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.label) && hiddenRow)}
+      key={o.id}
+      id={subGroupKey(setId, o.id)}
+      className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.id) && hiddenRow)}
     >
       <OptionChip type={subDef?.type} option={o} />
-      {rowEye(o.label, o.label, subControls)}
+      {rowEye(o.label, o.id, subControls)}
     </LineRow>
   )
 

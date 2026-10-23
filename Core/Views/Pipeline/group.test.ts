@@ -314,14 +314,20 @@ describe('property grouping — status manual order', () => {
     kind: 'property',
     property_id: 'prop_status',
     order_mode: 'manual',
-    order: ['in_progress', 'opt_open', 'not_started', 'done'],
+    order: ['opt_in_progress', 'opt_opt_open', 'opt_not_started', 'opt_done'],
   }
 
   it('orders buckets by manual order — an empty bucket renders as an empty band, no-value tail at bottom', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
-    expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
-    expect(groups.find((g) => g.key === 'opt_open')?.items).toEqual([])
+    expect(keys(groups)).toEqual([
+      'opt_in_progress',
+      'opt_opt_open',
+      'opt_not_started',
+      'opt_done',
+      '_ungrouped',
+    ])
+    expect(groups.find((g) => g.key === 'opt_opt_open')?.items).toEqual([])
   })
 
   it('a stale manual-order key (deleted option) never renders a ghost band; live empty options do', () => {
@@ -334,17 +340,29 @@ describe('property grouping — status manual order', () => {
       null,
       'bottom',
     )
-    expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
+    expect(keys(groups)).toEqual([
+      'opt_in_progress',
+      'opt_opt_open',
+      'opt_not_started',
+      'opt_done',
+      '_ungrouped',
+    ])
   })
 
   it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
-    expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
+    expect(keys(groups)).toEqual([
+      'opt_in_progress',
+      'opt_opt_open',
+      'opt_not_started',
+      'opt_done',
+      '_ungrouped',
+    ])
     expect(keys(pruneEmptyBuckets(groups))).toEqual([
-      'in_progress',
-      'not_started',
-      'done',
+      'opt_in_progress',
+      'opt_not_started',
+      'opt_done',
       '_ungrouped',
     ])
   })
@@ -374,8 +392,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
         value: c.kind === 'bucket' ? c.value : undefined,
       })),
     ).toEqual([
-      { kind: 'bucket', value: 'not_started' },
-      { kind: 'bucket', value: 'done' },
+      { kind: 'bucket', value: 'opt_not_started' },
+      { kind: 'bucket', value: 'opt_done' },
     ])
     expect(itemIds(setA.children![1])).toEqual(['p_sub'])
     expect(groups.some((g) => g.key === 'setA1')).toBe(false)
@@ -386,16 +404,16 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
     const setB = groups.find((g) => g.key === 'setB')!
-    expect(setA.children!.find((c) => c.kind === 'bucket' && c.value === 'done')!.key).toBe(
-      subGroupKey('setA', 'done'),
+    expect(setA.children!.find((c) => c.kind === 'bucket' && c.value === 'opt_done')!.key).toBe(
+      subGroupKey('setA', 'opt_done'),
     )
-    expect(setB.children!.find((c) => c.kind === 'bucket' && c.value === 'done')!.key).toBe(
-      subGroupKey('setB', 'done'),
+    expect(setB.children!.find((c) => c.kind === 'bucket' && c.value === 'opt_done')!.key).toBe(
+      subGroupKey('setB', 'opt_done'),
     )
   })
 
   it('manual sub-order is global; no-value pages sit per-set placed by the knob; loose root pages stay one flat tail', () => {
-    const manual = { ...sub, order_mode: 'manual' as const, order: ['done', 'not_started'] }
+    const manual = { ...sub, order_mode: 'manual' as const, order: ['opt_done', 'opt_not_started'] }
     const values2 = {
       ...values,
       ...pageValues({
@@ -423,8 +441,8 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
       key: subGroupKey('setA', '_ungrouped'),
     })
     expect(setA.children!.flatMap((c) => (c.kind === 'bucket' ? [c.value] : []))).toEqual([
-      'done',
-      'not_started',
+      'opt_done',
+      'opt_not_started',
     ])
   })
 
@@ -476,7 +494,13 @@ describe('ungrouped placement (the view-level knob)', () => {
       order_mode: 'configured',
     }
     const groups = resolveGroups(rows, group, statusSchema, setTree, null, 'top')
-    expect(keys(groups)).toEqual(['_ungrouped', 'not_started', 'opt_open', 'in_progress', 'done'])
+    expect(keys(groups)).toEqual([
+      '_ungrouped',
+      'opt_not_started',
+      'opt_opt_open',
+      'opt_in_progress',
+      'opt_done',
+    ])
   })
 
   it('default stays bottom (legacy behavior)', () => {
@@ -526,12 +550,12 @@ describe('property grouping — configured / reversed / date', () => {
       keys(
         resolveGroups(rows, cfg({ order_mode: 'configured' }), selSchema, setTree, null, 'bottom'),
       ),
-    ).toEqual(['a', 'b', 'c'])
+    ).toEqual(['opt_a', 'opt_b', 'opt_c'])
     expect(
       keys(
         resolveGroups(rows, cfg({ order_mode: 'reversed' }), selSchema, setTree, null, 'bottom'),
       ),
-    ).toEqual(['c', 'b', 'a'])
+    ).toEqual(['opt_c', 'opt_b', 'opt_a'])
   })
 
   it('a checkbox group property falls back to structural; its rows still bucket for sort-run reassign', () => {

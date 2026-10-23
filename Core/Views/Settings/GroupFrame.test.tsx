@@ -256,8 +256,8 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       eye.click()
     })
-    expect(lastSaved().hidden_groups).toEqual(['prop_status/Queued'])
-    await mount({ ...propView, hidden_groups: ['prop_status/Queued'] })
+    expect(lastSaved().hidden_groups).toEqual(['prop_status/opt_Queued'])
+    await mount({ ...propView, hidden_groups: ['prop_status/opt_Queued'] })
     const unhide = host.querySelector('button[aria-label="Show Queued"]') as HTMLElement
     await act(async () => {
       unhide.click()
@@ -337,7 +337,7 @@ describe('GroupFrame rows', () => {
 
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {
     const v = view({
-      sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['Queued'] },
+      sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['opt_Queued'] },
     })
     await mount(v)
     await openPicker('Group By')
@@ -345,7 +345,7 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['Queued'],
+      order: ['opt_Queued'],
     })
   })
 })
@@ -410,7 +410,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
       kind: 'property',
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['Done', 'Queued'],
+      order: ['opt_Done', 'opt_Queued'],
     })
   })
 
@@ -420,7 +420,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
         kind: 'property',
         property_id: 'prop_status',
         order_mode: 'manual',
-        order: ['Done', 'Queued'],
+        order: ['opt_Done', 'opt_Queued'],
       },
     })
     await withStatus(manual)
@@ -432,7 +432,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
     await withStatus(view({ group: { ...manual.group, order_mode: 'configured' } as never }))
     await openPicker('Order')
     await pickOption('Custom')
-    expect((lastSaved().group as { order?: string[] }).order).toEqual(['Queued', 'Done'])
+    expect((lastSaved().group as { order?: string[] }).order).toEqual(['opt_Queued', 'opt_Done'])
   })
 
   it('a Default list drag switches to Custom silently', async () => {
@@ -443,7 +443,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
       kind: 'property',
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['Done', 'Queued'],
+      order: ['opt_Done', 'opt_Queued'],
     })
     expect(document.querySelector('[role="status"]')?.textContent ?? '').not.toContain('Switched')
   })

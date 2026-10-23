@@ -6,6 +6,7 @@ import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 
 export interface OptionChipData {
+  id?: string
   label: string
   color?: string
   icon?: string
@@ -25,8 +26,7 @@ export function optionGlyph(
 ): string {
   const fallback = chipOf(type).glyph
   if (type !== 'status') return iconNameOr(option?.icon, fallback)
-  const label = option?.label ?? ''
-  const group = def?.status_groups?.find((g) => g.options.some((o) => o.label === label))
+  const group = def?.status_groups?.find((g) => g.options.some((o) => o.id === option?.id))
   return iconNameOr(option?.icon, (group && STATUS_GROUP_GLYPH[group.id]) ?? fallback)
 }
 

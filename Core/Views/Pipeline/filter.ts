@@ -13,6 +13,7 @@ import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../../Propert
 import {
   checkboxWord,
   isBlankValue,
+  optionLabel,
   type PropertyValue,
   readNumber,
   selectedValues,
@@ -28,7 +29,7 @@ import { isUlidShaped } from '../../Nexus/identityMark'
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
 type RowTest = (row: ViewRow) => boolean
-type Evaluator = (v: PropertyValue, op: string, want: string[]) => boolean
+type Evaluator = (v: PropertyValue, op: string, want: string[], def?: PropertyDefinition) => boolean
 
 export function applyFilter(
   rows: ViewRow[],
@@ -78,7 +79,8 @@ export function prepareRule(
   if (t === undefined) return undefined
   const evaluate = evaluatorOf(PROPERTY_TYPES[t].kind, op)
   const operands = evaluate === evaluateText ? want.map(foldKey) : want
-  return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands)
+  const def = schema.find((d) => d.id === id)
+  return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands, def)
 }
 
 // Is/Isn't test the immediate parent by id, Contains/Doesn't any depth by id or folder name. Ids naming no folder are dead and abstain; an unmatched name matches nothing.
@@ -131,10 +133,10 @@ function evaluatorOf(kind: ValueKind, op: string): Evaluator {
   }
 }
 
-function textValue(v: PropertyValue): string | null {
+function textValue(v: PropertyValue, def?: PropertyDefinition): string | null {
   switch (v.kind) {
     case 'select':
-      return v.value
+      return optionLabel(def, v.value)
     case 'text':
       return shownProse(v.value)
     case 'link':
@@ -238,8 +240,13 @@ function evaluateCheckbox(v: PropertyValue, op: string, want: string[]): boolean
 }
 
 // `want` arrives folded; the value folds once here.
-function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
-  const s = textValue(v)
+function evaluateText(
+  v: PropertyValue,
+  op: string,
+  want: string[],
+  def?: PropertyDefinition,
+): boolean {
+  const s = textValue(v, def)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return s === null || s === ''

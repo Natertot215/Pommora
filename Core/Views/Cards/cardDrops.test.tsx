@@ -306,7 +306,7 @@ describe('a card dropped across property bands', () => {
       op: 'setProperty',
       path: 'Col/One.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'Complete' },
+      value: { kind: 'select', value: 'opt_Complete' },
     })
   })
 })

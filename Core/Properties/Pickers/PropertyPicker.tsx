@@ -63,7 +63,7 @@ export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[
   contextOptions
     ? [{ id: def.id, options: contextOptions }]
     : optionGroupsOf(def)
-        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.label })) }))
+        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
         .filter((g) => g.options.length > 0)
 
 const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'
@@ -349,13 +349,13 @@ function EditableOptionRows({
             groups={groups}
             selected={selected}
             row={(o, run) => (
-              <Reveal key={edit.rowKeyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
+              <Reveal key={edit.rowKeyOf(o.label)} open enterOnMount={edit.entering(o.label)} fill>
                 <LineRow
-                  id={o.value}
+                  id={o.label}
                   open={() => onPick(o.value)}
                   onContextMenu={(e) => {
                     e.preventDefault()
-                    void edit.openMenu(o.value, e.currentTarget)
+                    void edit.openMenu(o.label, e.currentTarget)
                   }}
                 >
                   <MenuItem picked={run} centered tabIndex={-1} onClick={() => onPick(o.value)}>

@@ -199,7 +199,12 @@ describe('handleMutate — create', () => {
   })
 
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
-    await createProperty(root, { id: 'prop_stage', label: 'Stage', type: 'select' })
+    await createProperty(root, {
+      id: 'prop_stage',
+      label: 'Stage',
+      type: 'select',
+      select_options: [{ id: 'opt_doing', key: 'doing', label: 'doing' }],
+    })
     const r = await settledMutate(
       root,
       {
@@ -208,7 +213,7 @@ describe('handleMutate — create', () => {
         parentPath: 'Notes/Daily',
         name: 'Seeded',
         seeds: {
-          prop_stage: { kind: 'select', value: 'doing' },
+          prop_stage: { kind: 'select', value: 'opt_doing' },
           prop_gone: { kind: 'select', value: 'x' },
         },
       },
@@ -2085,8 +2090,18 @@ describe('handleMutate — setCrop', () => {
 describe('handleMutate — setProperty (the D-4 cross-group reassignment write)', () => {
   // A value only writes for a property the registry knows — the key carries a name, and an unknown name is inert by construction.
   beforeEach(async () => {
-    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
-    await createProperty(root, { id: 'prop_m', label: 'Tags', type: 'multiSelect' })
+    await createProperty(root, {
+      id: 'prop_s',
+      label: 'Stage',
+      type: 'select',
+      select_options: [{ id: 'opt_done', key: 'done', label: 'done' }],
+    })
+    await createProperty(root, {
+      id: 'prop_m',
+      label: 'Tags',
+      type: 'multiSelect',
+      select_options: [{ id: 'opt_a', key: 'a', label: 'a' }],
+    })
   })
 
   it('writes a typed property into the page frontmatter, preserving id + body', async () => {
@@ -2096,7 +2111,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'select', value: 'done' },
+        value: { kind: 'select', value: 'opt_done' },
       },
       nexusDeps,
     )
@@ -2114,7 +2129,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'select', value: 'done' },
+        value: { kind: 'select', value: 'opt_done' },
       },
       nexusDeps,
     )
@@ -2128,7 +2143,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'select', value: 'done' },
+        value: { kind: 'select', value: 'opt_done' },
       },
       nexusDeps,
     )
@@ -2152,7 +2167,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
           op: 'setProperty',
           path: 'Notes/Daily/Beta.md',
           propertyId: 'prop_s',
-          value: { kind: 'select', value: 'done' },
+          value: { kind: 'select', value: 'opt_done' },
         },
         nexusDeps,
       )
@@ -2169,7 +2184,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_m',
-        value: { kind: 'multiSelect', value: ['a'] },
+        value: { kind: 'multiSelect', value: ['opt_a'] },
       },
       nexusDeps,
     )
@@ -3808,7 +3823,12 @@ describe('handleMutate — excluded entries follow their folders', () => {
 describe('each routine operation lands from its own events, with no walk', () => {
   beforeEach(async () => {
     await seedTwoContexts()
-    await createProperty(root, { id: 'prop_s', label: 'Stage', type: 'select' })
+    await createProperty(root, {
+      id: 'prop_s',
+      label: 'Stage',
+      type: 'select',
+      select_options: [{ id: 'opt_done', key: 'done', label: 'done' }],
+    })
     await mkdir(join(root, 'Other'))
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await refreshTree(root)
@@ -3860,7 +3880,7 @@ describe('each routine operation lands from its own events, with no walk', () =>
         op: 'setProperty',
         path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
-        value: { kind: 'select', value: 'done' },
+        value: { kind: 'select', value: 'opt_done' },
       },
     ],
   ]

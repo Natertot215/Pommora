@@ -66,18 +66,18 @@ describe('assignValue', () => {
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     expect(apply).toHaveBeenCalledWith(
       'page1',
-      { prop_tag: { kind: 'select', value: 'blue' } },
+      { prop_tag: { kind: 'select', value: 'opt_blue' } },
       expect.anything(),
     )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setProperty',
       path: row.path,
       propertyId: 'prop_tag',
-      value: { kind: 'select', value: 'blue' },
+      value: { kind: 'select', value: 'opt_blue' },
     })
   })
 
@@ -86,14 +86,14 @@ describe('assignValue', () => {
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     row = { ...rowOf({ id: 'page1', Tag: ['blue'] }), path: '/nexus/Notes/Moved.md' }
     await settled()
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith(
       'page1',
-      { prop_tag: { kind: 'select', value: 'red' } },
+      { prop_tag: { kind: 'select', value: 'opt_red' } },
       expect.anything(),
     )
     expect(mutate).toHaveBeenLastCalledWith({
@@ -107,7 +107,7 @@ describe('assignValue', () => {
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     await settled()
     mutate.mockImplementationOnce(async (req) => ({
@@ -126,7 +126,7 @@ describe('assignValue', () => {
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     row = rowOf({ id: 'page1', Tag: ['blue'] })
     await settled()
@@ -146,7 +146,7 @@ describe('assignValue', () => {
       writer,
       captured,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ path: '/nexus/Notes/Moved.md' }))
   })
@@ -198,7 +198,7 @@ describe('assignValue', () => {
       writer,
       row,
       { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'blue' },
+      { kind: 'select', value: 'opt_blue' },
     )
     await settled()
     apply.mockClear()
@@ -216,7 +216,7 @@ describe('assignValue', () => {
         writer,
         row,
         { id: 'prop_tag', kind: 'property' },
-        { kind: 'select', value: 'blue' },
+        { kind: 'select', value: 'opt_blue' },
       )
       await settled()
       expect(undoValue(null)).toBe(false)
@@ -234,7 +234,7 @@ describe('assignValue', () => {
             writer,
             r,
             { id: 'prop_tag', kind: 'property' },
-            { kind: 'select', value: 'blue' },
+            { kind: 'select', value: 'opt_blue' },
           ) as Promise<boolean>,
         )
     })

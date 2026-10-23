@@ -90,7 +90,7 @@ describe('applyFilter — match mode + recursion', () => {
       ids(rows, {
         match: 'all',
         rules: [
-          { property_id: 'prop_sel', op: 'is', value: 'a' },
+          { property_id: 'prop_sel', op: 'is', value: 'opt_a' },
           { property_id: 'prop_num', op: 'greater_than', value: '3' },
         ],
       }),
@@ -102,7 +102,7 @@ describe('applyFilter — match mode + recursion', () => {
       ids(rows, {
         match: 'any',
         rules: [
-          { property_id: 'prop_sel', op: 'is', value: 'a' },
+          { property_id: 'prop_sel', op: 'is', value: 'opt_a' },
           { property_id: 'prop_num', op: 'greater_than', value: '3' },
         ],
       }),
@@ -117,7 +117,7 @@ describe('applyFilter — match mode + recursion', () => {
           {
             match: 'all',
             rules: [
-              { property_id: 'prop_sel', op: 'is', value: 'a' },
+              { property_id: 'prop_sel', op: 'is', value: 'opt_a' },
               { property_id: 'prop_num', op: 'greater_than', value: '3' },
             ],
           },
@@ -308,12 +308,35 @@ describe('applyFilter — per type', () => {
     ]
     const run = (property_id: string, op: string, value: string): string[] =>
       ids(rows, { match: 'all', rules: [{ property_id, op, value }] })
-    expect(run('prop_sel', 'is', 'ALPHA')).toEqual([])
-    expect(run('prop_sel', 'is', 'alpha')).toEqual(['Bread'])
-    expect(run('prop_sel', 'is_not', 'ALPHA')).toEqual(['Bread', 'Milk'])
+    expect(run('prop_sel', 'is', 'opt_ALPHA')).toEqual([])
+    expect(run('prop_sel', 'is', 'opt_alpha')).toEqual(['Bread'])
+    expect(run('prop_sel', 'is_not', 'opt_ALPHA')).toEqual(['Bread', 'Milk'])
     expect(run('_title', 'is', 'bread')).toEqual(['Bread'])
     expect(run('_title', 'is_not', 'bread')).toEqual(['Milk'])
     expect(run('prop_sel', 'contains', 'ALP')).toEqual(['Bread'])
+  })
+
+  it('a Select’s text ops read the option’s label', () => {
+    const sel: PropertyDefinition = {
+      id: 'prop_p',
+      label: 'P',
+      key: 'P',
+      type: 'select',
+      select_options: [{ id: 'opt_p', key: 'p', label: 'In Progress' }],
+    }
+    const held: ViewRow = {
+      id: 'held',
+      title: 'held',
+      path: 'held.md',
+      frontmatter: { [ID_KEY]: 'held', P: 'p' },
+      createdAt: null,
+      modifiedAt: null,
+    }
+    const rule = {
+      match: 'all' as const,
+      rules: [{ property_id: 'prop_p', op: 'contains', value: 'pro' }],
+    }
+    expect(applyFilter([held], rule, [sel], [], []).map((r) => r.id)).toEqual(['held'])
   })
 
   it('select (text): is / contains / does_not_contain', () => {
@@ -322,7 +345,10 @@ describe('applyFilter — per type', () => {
       row('b', { props: { prop_sel: 'beta' } }),
     ]
     expect(
-      ids(rows, { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is', value: 'alpha' }] }),
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_sel', op: 'is', value: 'opt_alpha' }],
+      }),
     ).toEqual(['a'])
     expect(
       ids(rows, {
@@ -347,7 +373,7 @@ describe('applyFilter — per type', () => {
     expect(
       ids(rows, {
         match: 'all',
-        rules: [{ property_id: 'prop_tags', op: 'contains', value: 'x' }],
+        rules: [{ property_id: 'prop_tags', op: 'contains', value: 'opt_x' }],
       }),
     ).toEqual(['a'])
     expect(
@@ -387,7 +413,7 @@ describe('applyFilter — per type', () => {
     expect(
       ids([done, open], {
         match: 'all',
-        rules: [{ property_id: 'prop_st', op: 'is', value: 'Done' }],
+        rules: [{ property_id: 'prop_st', op: 'is', value: 'opt_Done' }],
       }),
     ).toEqual(['done'])
     expect(
@@ -400,7 +426,7 @@ describe('applyFilter — per type', () => {
     expect(
       ids([done, open], {
         match: 'all',
-        rules: [{ property_id: 'prop_st', op: 'is', value: 'Nothing' }],
+        rules: [{ property_id: 'prop_st', op: 'is', value: 'opt_Nothing' }],
       }),
     ).toEqual([])
   })
@@ -517,7 +543,10 @@ describe('applyFilter — negation + registry', () => {
 
   it("per-rule negation carries what group NOR used to — Isn't keeps the non-matchers", () => {
     expect(
-      ids(rows, { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is_not', value: 'a' }] }),
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_sel', op: 'is_not', value: 'opt_a' }],
+      }),
     ).toEqual(['r2'])
   })
 
@@ -527,7 +556,7 @@ describe('applyFilter — negation + registry', () => {
         match: 'all',
         rules: [
           { property_id: 'prop_sel', op: 'is' },
-          { property_id: 'prop_sel', op: 'is', value: 'a' },
+          { property_id: 'prop_sel', op: 'is', value: 'opt_a' },
         ],
       }),
     ).toEqual(['r1'])
@@ -539,7 +568,7 @@ describe('applyFilter — negation + registry', () => {
         match: 'any',
         rules: [
           { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is' }] },
-          { property_id: 'prop_sel', op: 'is', value: 'b' },
+          { property_id: 'prop_sel', op: 'is', value: 'opt_b' },
         ],
       }),
     ).toEqual(['r2'])
@@ -549,7 +578,7 @@ describe('applyFilter — negation + registry', () => {
     const any = (rule: FilterGroup['rules'][number]) =>
       applyFilter(
         rows,
-        { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'zzz' }] },
+        { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_zzz' }] },
         schema,
         [{ id: 'set_a', title: 'A' }],
       ).map((r) => r.id)
@@ -738,13 +767,13 @@ describe('applyFilter — multi-operand values[]', () => {
     expect(
       ids([rows[0], rows[1]], {
         match: 'all',
-        rules: [{ property_id: 'prop_sel', op: 'is', values: ['a', 'zzz'] }],
+        rules: [{ property_id: 'prop_sel', op: 'is', values: ['opt_a', 'opt_zzz'] }],
       }),
     ).toEqual(['a'])
     expect(
       ids([rows[0], rows[1]], {
         match: 'all',
-        rules: [{ property_id: 'prop_sel', op: 'is_not', values: ['a'] }],
+        rules: [{ property_id: 'prop_sel', op: 'is_not', values: ['opt_a'] }],
       }),
     ).toEqual(['b'])
   })
@@ -753,19 +782,19 @@ describe('applyFilter — multi-operand values[]', () => {
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
-        rules: [{ property_id: 'prop_tags', op: 'contains_all', values: ['a', 'b'] }],
+        rules: [{ property_id: 'prop_tags', op: 'contains_all', values: ['opt_a', 'opt_b'] }],
       }),
     ).toEqual(['ab'])
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
-        rules: [{ property_id: 'prop_tags', op: 'contains_any', values: ['b', 'zzz'] }],
+        rules: [{ property_id: 'prop_tags', op: 'contains_any', values: ['opt_b', 'opt_zzz'] }],
       }),
     ).toEqual(['ab'])
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
-        rules: [{ property_id: 'prop_tags', op: 'does_not_contain', values: ['b'] }],
+        rules: [{ property_id: 'prop_tags', op: 'does_not_contain', values: ['opt_b'] }],
       }),
     ).toEqual(['ac'])
   })
@@ -783,7 +812,7 @@ describe('applyFilter — multi-operand values[]', () => {
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
-        rules: [{ property_id: 'prop_tags', op: 'contains_any', value: 'b', values: [] }],
+        rules: [{ property_id: 'prop_tags', op: 'contains_any', value: 'opt_b', values: [] }],
       }),
     ).toEqual(['ab'])
     expect(

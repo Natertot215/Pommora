@@ -112,7 +112,7 @@ describe('OptionOrderList', () => {
     await mount({ order_mode: 'configured' }, selectDef, onSave)
     await drag(2, 5)
     await release()
-    expect(onSave).toHaveBeenCalledExactlyOnceWith(['Gamma', 'Alpha', 'Beta'])
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(['opt_Gamma', 'opt_Alpha', 'opt_Beta'])
   })
 
   it('a Status list under Reversed saves the reversed order, moved', async () => {
@@ -120,7 +120,11 @@ describe('OptionOrderList', () => {
     await mount({ order_mode: 'reversed' }, statusDef, onSave)
     await drag(0, 70)
     await release()
-    expect(onSave).toHaveBeenCalledExactlyOnceWith(['active', 'complete', 'not_started'])
+    expect(onSave).toHaveBeenCalledExactlyOnceWith([
+      'opt_active',
+      'opt_complete',
+      'opt_not_started',
+    ])
   })
 
   it('without onSave, a press never lifts', async () => {

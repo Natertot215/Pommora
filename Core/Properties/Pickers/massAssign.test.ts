@@ -1,23 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { massPickCommits, massSelected } from './massAssign'
 
-const OPTIONS = ['a', 'b', 'c']
+const OPTIONS = ['opt_a', 'opt_b', 'opt_c']
 
 describe('massSelected', () => {
   it('checks only unanimous values', () => {
-    expect(massSelected(OPTIONS, [['a', 'b'], ['a'], ['a', 'c']])).toEqual(['a'])
+    expect(massSelected(OPTIONS, [['opt_a', 'opt_b'], ['opt_a'], ['opt_a', 'opt_c']])).toEqual([
+      'opt_a',
+    ])
   })
   it('mixed single-value rows check nothing', () => {
-    expect(massSelected(OPTIONS, [['a'], ['b']])).toEqual([])
+    expect(massSelected(OPTIONS, [['opt_a'], ['opt_b']])).toEqual([])
   })
 })
 
 describe('massPickCommits', () => {
   it('multi: completes the set on every row missing the value, preserving other values', () => {
-    const rows = [['a'], ['b', 'x'], []]
-    expect(massPickCommits(rows, 'b', 'multiSelect')).toEqual([
-      { index: 0, next: { kind: 'multiSelect', value: ['a', 'b'] } },
-      { index: 2, next: { kind: 'multiSelect', value: ['b'] } },
+    const rows = [['opt_a'], ['opt_b', 'opt_x'], []]
+    expect(massPickCommits(rows, 'opt_b', 'multiSelect')).toEqual([
+      { index: 0, next: { kind: 'multiSelect', value: ['opt_a', 'opt_b'] } },
+      { index: 2, next: { kind: 'multiSelect', value: ['opt_b'] } },
     ])
   })
   it('multi: a unanimous value strips from every holder', () => {
@@ -31,14 +33,14 @@ describe('massPickCommits', () => {
     ])
   })
   it('single: overwrites every row not already holding the value', () => {
-    const rows = [['a'], ['b'], []]
-    expect(massPickCommits(rows, 'a', 'select')).toEqual([
-      { index: 1, next: { kind: 'select', value: 'a' } },
-      { index: 2, next: { kind: 'select', value: 'a' } },
+    const rows = [['opt_a'], ['opt_b'], []]
+    expect(massPickCommits(rows, 'opt_a', 'select')).toEqual([
+      { index: 1, next: { kind: 'select', value: 'opt_a' } },
+      { index: 2, next: { kind: 'select', value: 'opt_a' } },
     ])
   })
   it('single: a unanimous re-pick clears the value everywhere', () => {
-    expect(massPickCommits([['a'], ['a']], 'a', 'select')).toEqual([
+    expect(massPickCommits([['opt_a'], ['opt_a']], 'opt_a', 'select')).toEqual([
       { index: 0, next: null },
       { index: 1, next: null },
     ])

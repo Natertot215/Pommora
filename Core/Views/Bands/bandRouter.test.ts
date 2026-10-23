@@ -193,9 +193,9 @@ describe('routeBandDrop — buckets', () => {
 
   it('from Default: switches to Custom over every live option and carries the prior config', () => {
     const effect = routeBandDrop(
-      bucket('closed'),
-      { kind: 'before', beforeKey: 'open', parentKey: null },
-      scope({ view: grouped('configured'), shown: ['active'] }),
+      bucket('opt_closed'),
+      { kind: 'before', beforeKey: 'opt_open', parentKey: null },
+      scope({ view: grouped('configured'), shown: ['opt_active'] }),
     )
     expect(effect).toEqual({
       kind: 'view',
@@ -204,7 +204,7 @@ describe('routeBandDrop — buckets', () => {
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'manual',
-          order: ['closed', 'open', 'active', 'review'],
+          order: ['opt_closed', 'opt_open', 'opt_active', 'opt_review'],
         },
       },
       switched: {
@@ -219,21 +219,26 @@ describe('routeBandDrop — buckets', () => {
   it('a sub-group bucket from Reversed writes sub_group and names its own prior', () => {
     const sub_group = { property_id: 'prop_status', order_mode: 'reversed' } as const
     const effect = routeBandDrop(
-      bucket('open', 'sA'),
-      { kind: 'before', beforeKey: 'sB/closed', parentKey: 'sB' },
+      bucket('opt_open', 'sA'),
+      { kind: 'before', beforeKey: 'sB/opt_closed', parentKey: 'sB' },
       scope({ view: view({ sub_group }) }),
     )
     expect(effect).toMatchObject({
-      patch: { sub_group: { order_mode: 'manual', order: ['open', 'closed', 'review', 'active'] } },
+      patch: {
+        sub_group: {
+          order_mode: 'manual',
+          order: ['opt_open', 'opt_closed', 'opt_review', 'opt_active'],
+        },
+      },
       switched: { propertyId: 'prop_status', prior: { sub_group } },
     })
   })
 
   it('already Custom: applies with no switch', () => {
     const effect = routeBandDrop(
-      bucket('open'),
+      bucket('opt_open'),
       { kind: 'before', beforeKey: null, parentKey: null },
-      scope({ view: grouped('manual', ['open', 'active']) }),
+      scope({ view: grouped('manual', ['opt_open', 'opt_active']) }),
     )
     expect(effect).toEqual({
       kind: 'view',
@@ -242,7 +247,7 @@ describe('routeBandDrop — buckets', () => {
           kind: 'property',
           property_id: 'prop_status',
           order_mode: 'manual',
-          order: ['active', 'closed', 'review', 'open'],
+          order: ['opt_active', 'opt_closed', 'opt_review', 'opt_open'],
         },
       },
       switched: undefined,
@@ -252,9 +257,13 @@ describe('routeBandDrop — buckets', () => {
   it('a drop that reproduces the order writes nothing; a bucket never nests', () => {
     const s = scope({ view: grouped('configured') })
     expect(
-      routeBandDrop(bucket('open'), { kind: 'before', beforeKey: 'active', parentKey: null }, s),
+      routeBandDrop(
+        bucket('opt_open'),
+        { kind: 'before', beforeKey: 'opt_active', parentKey: null },
+        s,
+      ),
     ).toBeNull()
-    expect(routeBandDrop(bucket('open'), { kind: 'into', parentKey: 'sA' }, s)).toBeNull()
+    expect(routeBandDrop(bucket('opt_open'), { kind: 'into', parentKey: 'sA' }, s)).toBeNull()
   })
 })
 

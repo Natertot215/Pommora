@@ -362,7 +362,7 @@ describe('editing options from the picker', () => {
       row?.focus()
       row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
-    expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'Alpha' })
+    expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'opt_Alpha' })
   })
 
   it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Delete", async () => {
@@ -378,8 +378,8 @@ describe('editing options from the picker', () => {
 })
 
 describe('pickShape', () => {
-  it('labels and names an option by its label, never by its key', () => {
+  it('offers an option under its id and labels it by its label, never by its key', () => {
     const def = { ...selectDef, select_options: [{ id: 'opt_new', key: 'new', label: 'New' }] }
-    expect(pickShape(def).options.map((o) => [o.value, o.label])).toEqual([['New', 'New']])
+    expect(pickShape(def).options.map((o) => [o.value, o.label])).toEqual([['opt_new', 'New']])
   })
 })
