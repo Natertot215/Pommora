@@ -9,7 +9,7 @@ import {
   editOption,
   optionHolders,
   renameOption,
-  removeOption,
+  deleteOption,
   clearOption,
   setValueFormat,
   unregisteredMembers,
@@ -100,7 +100,7 @@ async function statusValues(id: string): Promise<string[]> {
 describe('editOption', () => {
   it('an emptied options list survives an unrelated property edit — no phantom re-seed', async () => {
     const id = await mkSelect([{ key: 'A', label: 'A' }])
-    expect((await removeOption(root, id, 'A')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'A')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
     await editProperty(root, id, { icon: 'tag' })
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
@@ -349,8 +349,8 @@ describe('an option edit leaves every other stored entry as written', () => {
     ).toBe(true)
     expect((await renameOption(root, 'prop_sel', 'A', 'AA')).ok).toBe(true)
     expect((await renameOption(root, 'prop_st', 'X', 'XX')).ok).toBe(true)
-    expect((await removeOption(root, 'prop_sel', 'C')).ok).toBe(true)
-    expect((await removeOption(root, 'prop_st', 'W')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_sel', 'C')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_st', 'W')).ok).toBe(true)
     expect(
       (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, label: 'c' })).ok,
     ).toBe(true)
@@ -489,9 +489,9 @@ describe('option ops refuse a property without options', () => {
     const id = await mkNumber()
     expect((await renameOption(root, id, 'A', 'B')).ok).toBe(false)
   })
-  it('removeOption', async () => {
+  it('deleteOption', async () => {
     const id = await mkNumber()
-    expect((await removeOption(root, id, 'A')).ok).toBe(false)
+    expect((await deleteOption(root, id, 'A')).ok).toBe(false)
   })
   it('clearOption', async () => {
     const id = await mkNumber()
@@ -676,7 +676,7 @@ describe('renameOption', () => {
   })
 })
 
-describe('removeOption', () => {
+describe('deleteOption', () => {
   it('deletes the def option and strips its value from pages', async () => {
     const id = await mkSelect([
       { key: 'A', label: 'A' },
@@ -684,14 +684,14 @@ describe('removeOption', () => {
     ])
     const page = await pageHolding(id, 'A')
 
-    const r = await removeOption(root, id, 'A')
+    const r = await deleteOption(root, id, 'A')
     expect(r.ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'B', label: 'B' }])
     expect(await readFile(page, 'utf8')).not.toContain(id)
   })
 
   it('fails for an unknown property id', async () => {
-    expect((await removeOption(root, 'prop_nope', 'A')).ok).toBe(false)
+    expect((await deleteOption(root, 'prop_nope', 'A')).ok).toBe(false)
   })
 })
 
@@ -710,7 +710,7 @@ describe('an owed record holds option changes', () => {
 
   it.each([
     ['renameOption', (id: string) => renameOption(root, id, 'A', 'B')],
-    ['removeOption', (id: string) => removeOption(root, id, 'A')],
+    ['deleteOption', (id: string) => deleteOption(root, id, 'A')],
   ])('%s refuses, leaving the registry, every holder, and the held record', async (_, run) => {
     const { id, page, bytes } = await owing()
     expect(await run(id)).toEqual(fail('owed', OWED_MESSAGE))
@@ -821,7 +821,7 @@ describe('an owed record holds option changes', () => {
     })
     expect((await renameOption(root, id, 'A', 'B')).ok).toBe(true)
     await writeSchemaJournal(root, { op: 'option-remove', id, key: 'C' })
-    expect((await removeOption(root, id, 'C')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'C')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual(['B'])
     expect(await readSchemaJournal(root)).toBeNull()
   })
@@ -839,9 +839,9 @@ describe('remove and clear on a value the definition lacks', () => {
     return { id, page, bytes: await readFile(page, 'utf8') }
   }
 
-  it('removeOption is refused, drops nothing, and rewrites no page', async () => {
+  it('deleteOption is refused, drops nothing, and rewrites no page', async () => {
     const { id, page, bytes } = await stray()
-    expect(await removeOption(root, id, 'Stray')).toMatchObject({
+    expect(await deleteOption(root, id, 'Stray')).toMatchObject({
       ok: false,
       error: { code: 'not-found' },
     })
@@ -957,7 +957,7 @@ describe('option cascades reach a Space sidecar', () => {
     ])
     const file = await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A'], icon: 'box' })
 
-    expect((await removeOption(root, id, 'A')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'A')).ok).toBe(true)
     const raw = await readJsonAt(file)
     expect('Tags' in raw).toBe(false)
     expect(raw.icon).toBe('box')
@@ -1021,7 +1021,7 @@ describe('the option cascades reach the Collection caches', () => {
   it('a removal strips the option from every cached list', async () => {
     const { id, pages, cache } = await cached()
     const [, p2, p3] = pages.map((p) => p.id)
-    expect((await removeOption(root, id, 'A')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'A')).ok).toBe(true)
     expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
   })
 
@@ -1082,12 +1082,12 @@ describe('renameOption on a Status', () => {
   })
 })
 
-describe('removeOption on a Status', () => {
+describe('deleteOption on a Status', () => {
   it('drops the option from its group and strips its value from pages', async () => {
     const id = await mkStatus()
     const page = await pageHolding(id, 'Active')
 
-    const r = await removeOption(root, id, 'Active')
+    const r = await deleteOption(root, id, 'Active')
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).not.toContain('Active')
     expect(await readFile(page, 'utf8')).not.toContain(id)
@@ -1150,7 +1150,7 @@ describe('option cascades reach saved views', () => {
 
   it('a removal strips the value and drops the rule it emptied', async () => {
     const { id, surfaces } = await seeded()
-    expect(await removeOption(root, id, 'Done')).toEqual(
+    expect(await deleteOption(root, id, 'Done')).toEqual(
       ok({ cascade: { pages: [], hosts: [HOME] } }),
     )
     const held = viewOn(id, 'Done')
@@ -1174,7 +1174,7 @@ describe('option cascades reach saved views', () => {
       const { id, col, surfaces } = await seeded()
       const locked = await lockedHolder(id, col)
       try {
-        expect(await removeOption(root, id, 'Done')).toEqual(
+        expect(await deleteOption(root, id, 'Done')).toEqual(
           ok({
             cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
             owed: { op: 'option-remove', id, key: 'Done' },
@@ -1240,7 +1240,7 @@ describe('option cascades reach saved views', () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
-    expect(await removeOption(root, id, 'Done')).toEqual(
+    expect(await deleteOption(root, id, 'Done')).toEqual(
       ok({
         cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
         owed: { op: 'option-remove', id, key: 'Done' },
@@ -1256,7 +1256,7 @@ describe('option cascades reach saved views', () => {
   it('a failed drop keeps the journal', async () => {
     const { id } = await seeded()
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
-    expect((await removeOption(root, id, 'Done')).ok).toBe(false)
+    expect((await deleteOption(root, id, 'Done')).ok).toBe(false)
     expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
   })
 
@@ -1282,7 +1282,7 @@ describe('option cascades reach saved views', () => {
     expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['Critical'])
     expect((await surfaces.read()).collection.filter).toEqual(viewOn(id, 'Critical').filter)
 
-    expect((await removeOption(root, id, 'Critical')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'Critical')).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
       ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
     })
@@ -1299,7 +1299,7 @@ describe('option cascades reach saved views', () => {
     await assignProperty(root, col.value.path, id)
     const surfaces = await seedConfigSurfaces(root, col.value.path, viewOn(id, 'a'))
 
-    expect((await removeOption(root, id, 'Z')).ok).toBe(true)
+    expect((await deleteOption(root, id, 'Z')).ok).toBe(true)
     const views = await surfaces.read()
     const held = viewOn(id, 'a')
     expect([views.collection, views.set, views.tile]).toEqual([held, held, held])

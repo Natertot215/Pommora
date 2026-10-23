@@ -6,7 +6,7 @@ import {
   askDeleteView,
   askDestroyProperty,
   askFormatChange,
-  askRemoveOption,
+  askDeleteOption,
   askTrashing,
   confirmArchive,
   confirmDelete,
@@ -47,7 +47,7 @@ const switchOn = (): void => {
 }
 
 describe('what the Confirm Before Deletion switch governs', () => {
-  it('asks before a property delete, an option Remove, and a Clear past one Item whatever the switch says, naming the Items the host counts', async () => {
+  it('asks before a property delete, an option Delete, and a Clear past one Item whatever the switch says, naming the Items the host counts', async () => {
     const holders = vi.fn(async (_id: string, counted: CountedChange) =>
       ok(counted.of === 'property' ? 4 : 2),
     )
@@ -60,7 +60,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     })
     switchOff()
     await askDestroyProperty('p1', 'Status')
-    await askRemoveOption('p1', 'Active')
+    await askDeleteOption('p1', 'Active')
     await askClearOption('p1', 'Active')
     expect(holders.mock.calls).toEqual([
       ['p1', { of: 'property' }],
@@ -68,11 +68,11 @@ describe('what the Confirm Before Deletion switch governs', () => {
       ['p1', { of: 'option', label: 'Active' }],
     ])
     expect(asked[0]).toContain('stripped from 4 Items;')
-    expect(asked[1]).toContain('stripped from 2 Items.')
+    expect(asked[1]).toMatch(/^Delete “Active”\? .*stripped from 2 Items\.$/)
     expect(asked[2]).toMatch(/^Clear “Active” from 2 Items\?/)
   })
 
-  it('clears an option one Item holds unasked, while a property delete and an option Remove still ask', async () => {
+  it('clears an option one Item holds unasked, while a property delete and an option Delete still ask', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => ok(1),
     })
@@ -85,7 +85,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(await askClearOption('p1', 'Active')).toBe(true)
     expect(asked).toEqual([])
     await askDestroyProperty('p1', 'Status')
-    await askRemoveOption('p1', 'Active')
+    await askDeleteOption('p1', 'Active')
     expect(asked).toHaveLength(2)
     expect(asked[0]).toContain('stripped from 1 Item;')
   })
@@ -101,7 +101,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
       },
     })
     await askDestroyProperty('p1', 'Status')
-    await askRemoveOption('p1', 'Active')
+    await askDeleteOption('p1', 'Active')
     expect(asked).toEqual([
       'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
       'The option is deleted from the property.',
@@ -150,7 +150,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => fault('That option no longer exists.'),
     })
-    expect(await askRemoveOption('p1', 'Gone')).toBe(false)
+    expect(await askDeleteOption('p1', 'Gone')).toBe(false)
     expect(asked).toEqual([])
   })
 

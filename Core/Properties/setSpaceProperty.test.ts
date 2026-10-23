@@ -15,7 +15,7 @@ import type { PropertyValue } from './propertyValue'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settledMutate } from '../Testing/settledMutate'
-import { removeOption } from './optionOps'
+import { deleteOption } from './optionOps'
 
 let root: string
 let spaceRel: string
@@ -173,7 +173,7 @@ describe('a value write reconciles the Space it lands on', () => {
       settled,
     )
     if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
-    expect((await removeOption(root, tagsId, 'beta')).ok).toBe(true)
+    expect((await deleteOption(root, tagsId, 'beta')).ok).toBe(true)
     const { bundlePath } = deleted.value.bundled
     expect((await settledMutate(root, { op: 'restore', bundlePath }, settled)).ok).toBe(true)
     expect((await sidecar()).Tags).toEqual(['alpha'])

@@ -18,7 +18,7 @@ import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
 import { parseStyleAction } from '../../Actions/columnMenu'
-import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
+import { askClearOption, askDeleteOption } from '../../Interface/Confirm/confirmations'
 import { OptionEditPopup } from './OptionEditPopup'
 
 export type OptionStyleControl = {
@@ -111,8 +111,8 @@ export function useOptionEdit({
         if (await askClearOption(def.id, label))
           await write(dialer().ask('property:clearOption', def.id, label))
         return
-      case 'option:remove':
-        if (await askRemoveOption(def.id, label))
+      case 'option:delete':
+        if (await askDeleteOption(def.id, label))
           await warnOwed(dialer().ask('property:removeOption', def.id, label))
         return
       default: {

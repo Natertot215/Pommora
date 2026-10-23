@@ -20,7 +20,7 @@ import { listBundles } from '../Bundles/bundle'
 import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
-import { clearOption, editOption, removeOption, renameOption } from './optionOps'
+import { clearOption, editOption, deleteOption, renameOption } from './optionOps'
 import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -224,7 +224,7 @@ describe('the option-op writers', () => {
 
   it('option-remove strips journaled, drops the option, and clears', async () => {
     await withOptions()
-    const r = await removeOption(root, 'prop_t', 'Draft')
+    const r = await deleteOption(root, 'prop_t', 'Draft')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBeGreaterThan(0)
@@ -240,7 +240,7 @@ describe('the option-op writers', () => {
     await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'Draft'))
     await refreshTree(root)
     observed = []
-    expect((await removeOption(root, 'prop_t', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_t', 'Draft')).ok).toBe(true)
     const configWrites = observed.filter((o) =>
       /_page(collection|set)\.json$|_tiles\.json$|matrix\.json$/.test(o.path),
     )

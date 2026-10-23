@@ -324,7 +324,7 @@ describe('a schema op started while another operation’s record holds the journ
       'an option rename',
       () => propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
     ],
-    ['an option removal', () => propertiesHandlers['property:removeOption'](ctx, propId, 'Done')],
+    ['an option delete', () => propertiesHandlers['property:removeOption'](ctx, propId, 'Done')],
   ])('%s is refused, leaving every holder', async (_, run) => {
     const before = await fm()
     expect(await run()).toEqual(fail('owed', 'An earlier change hasn’t reached every file yet.'))

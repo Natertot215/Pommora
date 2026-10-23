@@ -363,7 +363,7 @@ describe('editing options from the picker', () => {
     expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'Alpha' })
   })
 
-  it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Remove", async () => {
+  it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Delete", async () => {
     await render({ target: optionsTarget() })
     await act(async () => {
       rowText('Alpha')?.dispatchEvent(

@@ -154,20 +154,24 @@ describe('the option menu', () => {
     expect(clearOption).toHaveBeenCalledWith('p1', 'Urgent')
   })
 
-  it('Remove asks, then removes the option; a kept record offers Try Again', async () => {
-    menu.mockResolvedValueOnce(ok('option:remove'))
+  it('Delete asks, then deletes the option; a kept record offers Try Again', async () => {
+    menu.mockResolvedValueOnce(ok('option:delete'))
     removeOption.mockResolvedValueOnce(
       ok({ cascade: { warning: 'w' }, owed: { op: 'option-remove', id: 'p1', key: 'Urgent' } }),
     )
     render('select', select)
     await rightClick('Urgent')
+    expect(useSession.getState().pendingConfirm?.req).toMatchObject({
+      message: 'Delete “Urgent”?',
+      action: 'Delete',
+    })
     await confirm()
     expect(removeOption).toHaveBeenCalledWith('p1', 'Urgent')
     expect(currentNotification()).toMatchObject({ message: 'w', action: { label: 'Try Again' } })
   })
 
-  it('a remove refused while another change is owed offers a Try Again that replays the held record', async () => {
-    menu.mockResolvedValueOnce(ok('option:remove'))
+  it('a delete refused while another change is owed offers a Try Again that replays the held record', async () => {
+    menu.mockResolvedValueOnce(ok('option:delete'))
     removeOption.mockResolvedValueOnce(
       fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
@@ -182,8 +186,8 @@ describe('the option menu', () => {
     expect(replay).toHaveBeenCalledWith(undefined)
   })
 
-  it('a remove with no record shows its line without an action', async () => {
-    menu.mockResolvedValueOnce(ok('option:remove'))
+  it('a delete with no record shows its line without an action', async () => {
+    menu.mockResolvedValueOnce(ok('option:delete'))
     removeOption.mockResolvedValueOnce(ok({ cascade: { warning: 'w' } }))
     render('select', select)
     await rightClick('Urgent')

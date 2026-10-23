@@ -18,7 +18,7 @@ import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { createProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
-import { removeOption, renameOption } from './optionOps'
+import { deleteOption, renameOption } from './optionOps'
 import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from '../Nexus/entities'
@@ -374,7 +374,7 @@ describe('option replay', () => {
   it('option-remove forward-completes the strip and the registry drop', async () => {
     const live = await seedNexus()
     await openSession(live)
-    expect((await removeOption(live, 'prop_s', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(live, 'prop_s', 'Draft')).ok).toBe(true)
     const wantA = await page(live, 'A')
     const wantB = await page(live, 'B')
     const wantOptions = (await readRegistry(live)).defs.prop_s?.select_options
@@ -397,7 +397,7 @@ describe('option replay', () => {
     // The op finished and only its clear failed; the user then re-set the value on a page, and the stale record must not take that value with it.
     const root = await seedNexus()
     await openSession(root)
-    expect((await removeOption(root, 'prop_s', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_s', 'Draft')).ok).toBe(true)
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await replaySchemaCascade(root)

@@ -174,11 +174,11 @@ export const askDestroyProperty = (propertyId: string, label: string): Promise<b
     tone: 'destructive',
   }))
 
-export const askRemoveOption = (propertyId: string, label: string): Promise<boolean> =>
+export const askDeleteOption = (propertyId: string, label: string): Promise<boolean> =>
   askHolding(propertyId, { of: 'option', label }, (held) => ({
-    message: `Remove “${label}”?`,
+    message: `Delete “${label}”?`,
     detail: `The option is deleted from the property${held ? ` and its value stripped from ${itemCount(held)}` : ''}.`,
-    action: 'Remove',
+    action: 'Delete',
     tone: 'destructive',
   }))
 

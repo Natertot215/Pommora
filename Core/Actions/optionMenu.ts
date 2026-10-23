@@ -1,9 +1,7 @@
-// Clear strips the option's value from every item holding it; Remove deletes the option and strips it too.
-
 import { styleBranch, type StyleAction, type StyleMenuContext } from './columnMenu'
 import type { ActionItem } from './menuModel'
 
-type OptionMenuAction = 'option:edit' | 'option:clear' | 'option:remove' | StyleAction
+type OptionMenuAction = 'option:edit' | 'option:clear' | 'option:delete' | StyleAction
 
 export function optionMenuModel({
   style,
@@ -18,7 +16,7 @@ export function optionMenuModel({
     ...(destructive
       ? [
           { label: 'Clear', action: 'option:clear' as const, separatorBefore: true },
-          { label: 'Remove', action: 'option:remove' as const },
+          { label: 'Delete', action: 'option:delete' as const },
         ]
       : []),
   ]
