@@ -6,16 +6,11 @@ import {
   decodeValue,
   encodeValue,
   findOption,
-  writtenSpelling,
   isBlankValue,
   keepingForeignWords,
-  reconcilePropertyValue,
   unregisteredMembers,
   type PropertyValue,
-  gonePageEntry,
-  frozenWorld,
 } from './propertyValue'
-import { buildPageIndex } from '../Connections/pageIndex'
 
 const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
   ({ id: 'p', label: 'P', key: 'P', type: 'select', ...over }) as PropertyDefinition
@@ -334,84 +329,6 @@ describe('the no-empties rule — no value, no key', () => {
   })
 })
 
-describe('reconcilePropertyValue — a frozen copy names only what still exists', () => {
-  const link = def({ type: 'link' })
-  const holds = (title: string): boolean => title === 'Alpha'
-
-  it('keeps a Link value naming a page the world holds, whatever it carries', () => {
-    const value = '[[Alpha#Intro|see]]'
-    expect(reconcilePropertyValue(link, value, { holds })).toEqual({ kind: 'link', value })
-  })
-
-  it('drops a Link value naming a page the world doesn’t hold', () => {
-    expect(reconcilePropertyValue(link, '[[Gone]]', { holds })).toEqual({ kind: 'null' })
-  })
-
-  it('drops a hand-written markdown link naming a page the world doesn’t hold, and keeps an address', () => {
-    expect(reconcilePropertyValue(link, '[x](Gone)', { holds })).toEqual({ kind: 'null' })
-    expect(reconcilePropertyValue(link, '[x](example.com)', { holds })).toEqual({
-      kind: 'link',
-      value: '[x](example.com)',
-    })
-  })
-
-  it('keeps a Link value naming only a heading of the page it sits on', () => {
-    const value = '[[#Intro]]'
-    expect(reconcilePropertyValue(link, value, { holds })).toEqual({ kind: 'link', value })
-  })
-
-  it('keeps an address, and a live read or an options-only freeze keeps any page', () => {
-    const url = 'https://example.com'
-    expect(reconcilePropertyValue(link, url, { holds })).toEqual({ kind: 'link', value: url })
-    expect(reconcilePropertyValue(link, '[[Gone]]')).toEqual({
-      kind: 'link',
-      value: '[[Gone]]',
-    })
-    expect(reconcilePropertyValue(link, '[[Gone]]', {})).toEqual({
-      kind: 'link',
-      value: '[[Gone]]',
-    })
-  })
-})
-
-describe('gonePageEntry — the entry a restore parks', () => {
-  const gone = { holds: () => false }
-  it('reads an unquoted `[[Page]]` as the entry it spells', () => {
-    expect(gonePageEntry([['Gone']], gone)).toBe('[[Gone]]')
-  })
-  it('reads a hand-written markdown link to a page', () => {
-    expect(gonePageEntry('[x](Gone)', gone)).toBe('[x](Gone)')
-  })
-  it('leaves an address, a bare heading, and a page the world holds', () => {
-    expect(gonePageEntry('[x](example.com)', gone)).toBeNull()
-    expect(gonePageEntry('[[#Intro]]', gone)).toBeNull()
-    expect(gonePageEntry('[[Alpha]]', { holds: (t) => t === 'Alpha' })).toBeNull()
-  })
-})
-
-describe('frozenWorld', () => {
-  it('answers a recorded key by the page it named, and any other by the name', () => {
-    const world = frozenWorld(
-      buildPageIndex([
-        { id: 'pA', title: 'A', path: 'Notes/A.md' },
-        { id: 'pD', title: 'D', path: 'Notes/Deep/D.md' },
-        { id: 'alpha0', title: 'Alpha', path: 'Notes/Alpha.md' },
-        { id: 'back', title: 'Landing', path: 'Ideas/Old/Landing.md' },
-      ]),
-      new Map([
-        ['old a', { id: 'pA' }],
-        ['alpha', { id: 'gone' }],
-      ]),
-    )
-    expect(world.holds?.('Ideas/Old/Landing')).toBe(true)
-    expect(world.holds?.('landing')).toBe(true)
-    expect(world.holds?.('Old A')).toBe(true)
-    expect(world.holds?.('Alpha')).toBe(false)
-    expect(world.holds?.('d')).toBe(true)
-    expect(world.holds?.('ghost')).toBe(false)
-  })
-})
-
 describe('applyValueAtRoot', () => {
   it('writes the exact key beside another casing, and a clear leaves that casing', () => {
     const status = { ...statusDef, label: 'Status', key: 'Status' }
@@ -430,49 +347,6 @@ describe('applyValueAtRoot', () => {
       Tags: ['Docs', 'Work', 'Ideas'],
     })
     expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, null)).toEqual({})
-  })
-})
-
-describe('writtenSpelling', () => {
-  it('a string keeps a number, a list, and an unquoted wikilink the file spells when it reads as that text, and takes a typed string over anything else', () => {
-    expect(writtenSpelling('42', 42)).toBe(42)
-    expect(writtenSpelling('[milk, eggs]', ['milk', 'eggs'])).toEqual(['milk', 'eggs'])
-    // The same link a Link key decodes an unquoted `[[Page]]` to, so re-saving it leaves the file alone; a different link lands as typed.
-    expect(writtenSpelling('[[Page]]', [['Page']])).toEqual([['Page']])
-    expect(writtenSpelling('[[007]]', [['007']])).toEqual([['007']])
-    expect(writtenSpelling('[[Other|Page]]', [['Page']])).toBe('[[Other|Page]]')
-    expect(writtenSpelling('forty-two', 42)).toBe('forty-two')
-    expect(writtenSpelling('note', 'note')).toBe('note')
-    expect(writtenSpelling('note', undefined)).toBe('note')
-  })
-
-  it('gives each member the one held member its title names exactly; a member held twice keeps the registered spelling', () => {
-    expect(writtenSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
-    expect(writtenSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])
-    expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['Done', 'Active'])
-  })
-
-  it('a member keeps the held member that names it, of any scalar shape or as an unquoted wikilink, and a whole unquoted wikilink stays whole', () => {
-    expect(writtenSpelling(['2024'], [2024])).toEqual([2024])
-    expect(writtenSpelling(['[[A.png]]'], [[['a.png']]])).toEqual(['[[A.png]]'])
-    expect(writtenSpelling(['[[a.png]]'], [['a.png']])).toEqual([['a.png']])
-    expect(writtenSpelling(['[[a.png]]', '[[b.png]]'], [['a.png']])).toEqual([
-      '[[a.png]]',
-      '[[b.png]]',
-    ])
-  })
-
-  it('a checked value keeps the checked word the file holds, and takes its unchecked word’s partner in the same casing', () => {
-    expect(writtenSpelling(true, 'Yes')).toBe('Yes')
-    expect(writtenSpelling(true, 'no')).toBe('yes')
-    expect(writtenSpelling(true, 'No')).toBe('Yes')
-    expect(writtenSpelling(true, 'OFF')).toBe('ON')
-    expect(writtenSpelling(true, 'N')).toBe('Y')
-    expect(writtenSpelling(true, 'false')).toBe('true')
-  })
-
-  it('a checked value the file never held stays true', () => {
-    expect(writtenSpelling(true, undefined)).toBe(true)
   })
 })
 

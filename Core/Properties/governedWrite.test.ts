@@ -2,11 +2,8 @@ import { readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  contextWorldOf,
-  reconcileGovernedRoot,
-  type GovernedWorld,
-} from '../Contexts/contextResolve'
+import { contextWorldOf } from '../Contexts/contextResolve'
+import { reconcileGovernedRoot, type GovernedWorld } from '../Nexus/governedRoot'
 import { splitFrontmatter } from '../Files/pageFile'
 import { byKey, type PropertyDefinition } from './properties'
 import { setGovernedRootKey } from './governedWrite'

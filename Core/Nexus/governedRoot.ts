@@ -1,0 +1,137 @@
+// Everything that lands a value in one governed file: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, and the one-parse writer.
+
+import { join, relative } from '../Paths/posix'
+import { listOf } from '../Contract/validators'
+import { memberKey } from '../Files/rootValues'
+import { linkEntry, readLinkText } from '../Connections/linkValue'
+import { contextTitles } from '../Contexts/contexts'
+import { type ContextWorld, contextWorldOf, groupOf } from '../Contexts/contextResolve'
+import { byKey, type PropertyDefinition } from '../Properties/properties'
+import {
+  asText,
+  checkedSpelling,
+  decodeValue,
+  encodeValue,
+  isBlankValue,
+} from '../Properties/propertyValue'
+import { spelledNumber } from '../Properties/formatValue'
+import { namesValue } from '../Properties/pageValue'
+import { assignedDefs } from '../Properties/assignment'
+import { liveTreeOf } from './liveTree'
+import { owningCollection } from './treePatch'
+import type { ContextGroup, NexusTree } from './tree'
+
+export interface GovernedWorld {
+  contexts: ContextWorld
+  defs: ReadonlyMap<string, PropertyDefinition>
+}
+
+export const governedWorld = (
+  tree: NexusTree,
+  defs: ReadonlyMap<string, PropertyDefinition>,
+): GovernedWorld => ({
+  contexts: contextWorldOf(tree.contexts),
+  defs,
+})
+
+// A Space holds any registry property, so its own values reconcile against every definition, by key.
+export const spaceWorldOf = (tree: NexusTree): GovernedWorld =>
+  governedWorld(tree, byKey(tree.config.registry))
+
+export async function pageWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
+  const tree = await liveTreeOf(root)
+  const owner = owningCollection(tree, relative(root, absFile))
+  return governedWorld(tree, await assignedDefs(root, owner ? join(root, owner.path) : null))
+}
+
+/** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
+export interface Frozen {
+  holds?: (title: string) => boolean
+}
+
+export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
+  const entry = linkEntry(raw, 2)
+  const link = entry === null ? null : readLinkText(entry)
+  const gone =
+    link?.kind === 'page' &&
+    link.title !== '' &&
+    frozen.holds !== undefined &&
+    !frozen.holds(link.title)
+  return gone ? entry : null
+}
+
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a number keeps `raw`'s spelling as `spelledNumber` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title is its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+export function writtenSpelling(next: unknown, raw: unknown): unknown {
+  if (next === true) return checkedSpelling(raw)
+  if (typeof next === 'number') return spelledNumber(next, raw)
+  if (typeof next === 'string')
+    return raw != null && typeof raw !== 'string' && asText(raw) === next ? raw : next
+  if (!Array.isArray(next)) return next
+  if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
+  const held = listOf(raw)
+  return next.map((v) => {
+    const names = namesValue(v)
+    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
+    return named.length === 1 ? named[0] : v
+  })
+}
+
+// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
+/** `raw` read and written back through `def`, spelled as `raw` spells it; undefined when it reads as nothing or, under `frozen`, names a page gone. */
+export function reencode(def: PropertyDefinition, raw: unknown, frozen?: Frozen): unknown {
+  const value = decodeValue(def, raw)
+  const gone = frozen && value.kind === 'link' && gonePageEntry(value.value, frozen) !== null
+  return gone || isBlankValue(value) ? undefined : writtenSpelling(encodeValue(def, value), raw)
+}
+
+interface Reconciled {
+  root: Record<string, unknown>
+  changed: string[]
+}
+
+type Governor = { def: PropertyDefinition } | { group: ContextGroup }
+
+function governorOf(key: string, world: GovernedWorld): Governor | undefined {
+  const def = world.defs.get(key)
+  if (def) return { def }
+  const group = groupOf(key, world.contexts)
+  return group && { group }
+}
+
+const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
+
+export function reconcileGovernedRoot(
+  root: Record<string, unknown>,
+  world: GovernedWorld,
+  frozen?: Frozen,
+  skip?: string,
+): Reconciled {
+  const out: Record<string, unknown> = {}
+  const changed: string[] = []
+  for (const [key, raw] of Object.entries(root)) {
+    const governor = key === skip ? undefined : governorOf(key, world)
+    if (!governor) {
+      out[key] = raw
+      continue
+    }
+    let next: unknown
+    if ('def' in governor) next = reencode(governor.def, raw, frozen)
+    else {
+      const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
+      const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
+      if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
+    }
+    // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, for the user to settle.
+    if (!frozen && (next === undefined || memberCount(next) < memberCount(raw))) {
+      out[key] = raw
+      continue
+    }
+    if (next === undefined) {
+      changed.push(key)
+      continue
+    }
+    out[key] = next
+    if (JSON.stringify(next) !== JSON.stringify(raw)) changed.push(key)
+  }
+  return { root: out, changed }
+}

@@ -12,8 +12,13 @@ import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { keyRefusal } from '../Properties/validation'
 import { scalarMembers } from '../Contract/validators'
 import type { Json } from '../Files/stableJson'
-import { governedWorld, reconcileGovernedRoot, spaceWorldOf } from '../Contexts/contextResolve'
-import { type Frozen, gonePageEntry } from '../Properties/propertyValue'
+import {
+  type Frozen,
+  gonePageEntry,
+  governedWorld,
+  reconcileGovernedRoot,
+  spaceWorldOf,
+} from '../Nexus/governedRoot'
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'
 import { asString } from '../Nexus/coerce'

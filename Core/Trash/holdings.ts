@@ -4,8 +4,9 @@ import { basename, join } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
-import { buildPageIndex } from '../Connections/pageIndex'
+import { buildPageIndex, type PageIndex, pageKey } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
+import type { Frozen } from '../Nexus/governedRoot'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { stampedIdOf } from '../Files/pageFile'
@@ -18,6 +19,18 @@ const appendLinks = (bundleDir: string, links: StrippedLink[]): Promise<void> =>
   patchRecord(bundleDir, (raw) => ({
     links: [...(Array.isArray(raw.links) ? raw.links : []), ...links],
   }))
+/** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
+export function frozenWorld(
+  index: PageIndex,
+  targets: ReadonlyMap<string, { id: string }> = new Map(),
+): Frozen {
+  return {
+    holds: (title) => {
+      const id = targets.get(pageKey(title))?.id
+      return id === undefined ? index.holders(title).length > 0 : index.byId.has(id)
+    },
+  }
+}
 
 /** A Link value dropped for naming a page the Trash holds joins that page's bundle, so its restore writes it back; a key two trashed pages answer names neither. */
 export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {

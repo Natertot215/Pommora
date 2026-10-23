@@ -10,17 +10,9 @@ import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { byKey, PROPERTY_TYPES, type PropertyDefinition } from './properties'
-import {
-  encodeValue,
-  type Frozen,
-  frozenWorld,
-  isBlankRaw,
-  isBlankValue,
-  gonePageEntry,
-  reconcilePropertyValue,
-  writtenSpelling,
-} from './propertyValue'
-import { parkLinks } from '../Trash/holdings'
+import { isBlankRaw } from './propertyValue'
+import { type Frozen, gonePageEntry, reencode } from '../Nexus/governedRoot'
+import { frozenWorld, parkLinks } from '../Trash/holdings'
 import { sweepRootsById } from '../Nexus/governedSweep'
 import { landValue } from '../Files/rootValues'
 import { ok, fail, type Result } from '../Contract/result'
@@ -54,11 +46,8 @@ export async function refillValues(
   frozen: Frozen,
 ): Promise<Set<string>> {
   return sweepRootsById(root, roots, values, (raw, value) => {
-    const restored = reconcilePropertyValue(def, value, frozen)
-    const encoded = isBlankValue(restored) ? undefined : encodeValue(def, restored)
-    if (encoded === undefined) return null
-    if (!isBlankRaw(raw[def.key])) return null
-    return landValue(raw, def.key, writtenSpelling(encoded, value))
+    const next = reencode(def, value, frozen)
+    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
   })
 }
 

@@ -10,11 +10,9 @@ import {
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues, landValue } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
-import { linkEntry, readLinkText } from '../Connections/linkValue'
-import { type PageIndex, pageKey } from '../Connections/pageIndex'
-import { readNumber, spelledNumber } from './formatValue'
+import { linkEntry } from '../Connections/linkValue'
+import { readNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
-import { namesValue } from './pageValue'
 import { formatKey } from './keyFormat'
 
 const strings = z.array(z.string())
@@ -38,7 +36,7 @@ export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
 /** A held value as text: a string as itself, an unquoted `[[x]]` as the connection it spells, anything else as the yaml that spells it. */
-const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
+export const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
@@ -176,70 +174,14 @@ export function keepingForeignWords(
   )
 }
 
-/** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
-export interface Frozen {
-  holds?: (title: string) => boolean
-}
-
-/** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
-export function frozenWorld(
-  index: PageIndex,
-  targets: ReadonlyMap<string, { id: string }> = new Map(),
-): Frozen {
-  return {
-    holds: (title) => {
-      const id = targets.get(pageKey(title))?.id
-      return id === undefined ? index.holders(title).length > 0 : index.byId.has(id)
-    },
-  }
-}
-
-export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
-  const entry = linkEntry(raw, 2)
-  const link = entry === null ? null : readLinkText(entry)
-  const gone =
-    link?.kind === 'page' &&
-    link.title !== '' &&
-    frozen.holds !== undefined &&
-    !frozen.holds(link.title)
-  return gone ? entry : null
-}
-
-// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
-export function reconcilePropertyValue(
-  def: PropertyDefinition,
-  raw: unknown,
-  frozen?: Frozen,
-): PropertyValue {
-  const value = decodeValue(def, raw)
-  const gone = frozen && value.kind === 'link' && gonePageEntry(value.value, frozen) !== null
-  return gone ? NULL_VALUE : value
-}
-
 /** A checked value as `raw` spells one: its checked word as written, or its unchecked word's partner in the same casing (`no` → `yes`, `OFF` → `ON`), else `true`. */
-function checkedSpelling(raw: unknown): unknown {
+export function checkedSpelling(raw: unknown): unknown {
   if (checkboxWord(raw) === true) return raw
   const word = typeof raw === 'string' ? raw.trim() : ''
   const partner = CHECKED_WORD.get(normalizeTitle(word))
   if (partner === undefined) return true
   if (word === word.toUpperCase()) return partner.toUpperCase()
   return word[0] === word[0].toUpperCase() ? capitalize(partner) : partner
-}
-
-/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a number keeps `raw`'s spelling as `spelledNumber` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title is its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
-export function writtenSpelling(next: unknown, raw: unknown): unknown {
-  if (next === true) return checkedSpelling(raw)
-  if (typeof next === 'number') return spelledNumber(next, raw)
-  if (typeof next === 'string')
-    return raw != null && typeof raw !== 'string' && asText(raw) === next ? raw : next
-  if (!Array.isArray(next)) return next
-  if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
-  const held = listOf(raw)
-  return next.map((v) => {
-    const names = namesValue(v)
-    const named = held.filter((w) => names(linkEntry(w, 2) ?? w))
-    return named.length === 1 ? named[0] : v
-  })
 }
 
 export function encodeValue(def: PropertyDefinition, value: PropertyValue): unknown {

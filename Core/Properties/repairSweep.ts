@@ -1,9 +1,5 @@
 import { join } from '../Paths/posix'
-import {
-  governedWorld,
-  reconcileGovernedRoot,
-  type GovernedWorld,
-} from '../Contexts/contextResolve'
+import { governedWorld, reconcileGovernedRoot, type GovernedWorld } from '../Nexus/governedRoot'
 import type { PropertyDefinition } from './properties'
 import { errText } from '../Contract/result'
 import { assignedDefs } from './assignment'
