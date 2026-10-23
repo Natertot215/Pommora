@@ -27,7 +27,7 @@ import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
 import { groupable, optionLabels, type PropertyDefinition } from '../../Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
-import { resolveRowOrder } from '../../Properties/rowOrder'
+import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { SetIndex } from './setIndex'
 
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>

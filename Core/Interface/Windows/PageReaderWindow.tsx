@@ -1,7 +1,7 @@
 import { reportRefusal } from '../Notifications/notifications'
 import { useCallback, useEffect, useState } from 'react'
 import { fault, ok, type Result, valueOr } from '../../Contract/result'
-import { fetchPageValues } from '../../Properties/pageRow'
+import { fetchPageValues } from '../../Views/pageRow'
 import { relDirname } from '../../Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'

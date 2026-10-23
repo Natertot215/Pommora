@@ -7,7 +7,7 @@ import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
-import { resolveRowOrder } from './rowOrder'
+import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import { validateName, withUniqueOptions } from './schema'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
