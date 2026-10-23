@@ -81,6 +81,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **G-1 [CONFIRMED]:** Finding which pages and Spaces hold a property or a tag is meant to run through one shared mechanism, the best available scan for both, unless planning finds evidence that one of them needs its own.
 - **G-2 [INFERRED]:** A change reaches every file where its key means something: a property's key means something on the pages of Collections and the Archive, and a Context tag means something on any page, including loose pages outside every Collection, so the one mechanism keeps that difference as its stated rule.
 - **G-3 [INFERRED]:** A restore from the Trash that can't update a Space's settings file or a returning page still completes, and a warning names what it missed.
+- **G-4 [CONFIRMED]:** G-3's warning is written once, where Phase 11B's notes report a restore's misses, rather than in Phase 10 and rewritten in Phase 11B; until 11B lands, a restore's Space misses go unreported as they did before the work (Nathan, 10-23-2026: "Avoid churn, write it once during 11B").
 
 #### H - Sync
 
@@ -144,6 +145,9 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **P-2 [CONFIRMED]:** Picking a Select value drops words no option names, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
 - **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Planning Findings*' *§Edge Rules* lists stay as they are.
 - **P-4 [CONFIRMED]:** A Space listed twice on a page reads once, as a repeated Multi-Select or File entry does, and the chip code that kept repeats apart leaves.
+- **P-5 [CONFIRMED]:** A value of only spaces is empty everywhere: it reads as empty, a tidy removes its line, and a restore or re-add fills it as it fills a blank one (Nathan, 10-23-2026: "spaces-only are empty and should be removed").
+- **P-6 [CONFIRMED]:** The refusal of a Space linking itself leaves, since no path produces that request (Nathan, 10-23-2026).
+- **P-7 [CONFIRMED]:** A banner that can't be assigned because its file can't be read says "That file could not be read." (Nathan, 10-23-2026), and the History Timeframe row keeps its planned description, "How long file history and the recovery stash are kept."
 
 ---
 
