@@ -135,7 +135,7 @@ const cases: Case[] = [
     raw: ['work'],
     line: 'Tags:\n  - work',
     value: { kind: 'multiSelect', value: ['opt_Work'] },
-    picked: { page: 'Tags:\n  - Work\n  - work', space: '["Work","work"]' },
+    picked: { page: 'Tags:\n  - Work', space: '["Work"]' },
   },
   {
     title: 'a Multi-Select an unpick cleared restores its option and its foreign word',
