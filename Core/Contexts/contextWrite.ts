@@ -7,34 +7,28 @@ import {
   rewriteRaw,
   rewriteRootAt,
   spaceWorldOf,
+  writeSpaceSidecar,
   writtenRoot,
 } from '../Nexus/governedRoot'
-import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { reachReport } from '../Nexus/configReach'
 import { spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
-import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
+import { type MutateReply, type MutateRequest, type PutBack, undoOf } from '../Nexus/mutateRequest'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from './contextsRegistry'
 import { newId } from '../Nexus/ids'
 import { createDisambiguated, freeName, nameError } from '../Paths/names'
-import {
-  atomicWriteFile,
-  pathExists,
-  rmwJsonStrict,
-  setOrDrop,
-  withIds,
-} from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists, setOrDrop, withIds } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
-import type { Json } from '../Files/stableJson'
 import { listOf } from '../Contract/validators'
 
 /** Unknown ids fail — a stale renderer id must never serialize as a guess. */
@@ -54,30 +48,25 @@ export function contextTarget(
   return ok({ key: contextKey(group.def.title), value: titles.length ? titles : undefined })
 }
 
+/** Answers what the page held under the Context's key, as `PutBack.before` spells it. */
 export async function setPageContext(
   absFile: string,
   root: string,
   contextId: string,
   spaceIds: string[],
-): Promise<Result<null>> {
+): Promise<Result<unknown>> {
   return machine().lock(absFile, async () => {
     const governed = await pageWorldOf(root, absFile)
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
-    return rewriteRootAt(
-      absFile,
-      rewriteRaw((raw) => writtenRoot(raw, key, value, governed)),
-    )
+    let before: unknown
+    const written = await rewriteRootAt(absFile, (page) => {
+      before = page.pair(key)
+      return rewriteRaw((raw) => writtenRoot(raw, key, value, governed))(page)
+    })
+    return written.ok ? ok(before) : written
   })
-}
-
-export async function writeSpaceSidecar(
-  absSpaceDir: string,
-  mutate: (raw: Json) => Json | null,
-): Promise<Result<null>> {
-  const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
-  return written.ok ? ok(null) : written
 }
 
 async function setSpaceContext(
@@ -87,13 +76,14 @@ async function setSpaceContext(
   own: ContextGroup,
   contextId: string,
   targetSpaceIds: string[],
-): Promise<Result<number>> {
+): Promise<Result<{ skipped: number; entries: PutBack[] }>> {
   const world = spaceWorldOf(tree)
   if (targetSpaceIds.includes(a.id)) return fault('A Space can’t link itself.')
   const applied = contextTarget(world.contexts, contextId, targetSpaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
   const backKey = contextKey(own.def.title)
+  const entries: PutBack[] = []
   let skipped = 0
   const namesA = namesValue(a.title)
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
@@ -103,16 +93,21 @@ async function setSpaceContext(
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
       const held = listOf(raw[backKey] ?? [])
       if (held.some(namesA) === wants) return null
+      entries.push({ file: far.path, fieldId: own.def.id, before: raw[backKey] })
       const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without
       return writtenRoot(raw, backKey, next.length ? next : undefined, world)
     })
     if (!half.ok) skipped++
   }
-  const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
-    writtenRoot(raw, key, value, world),
-  )
-  return written.ok ? ok(skipped) : written
+  let before: unknown
+  const written = await writeSpaceSidecar(join(root, a.path), (raw) => {
+    before = raw[key]
+    return writtenRoot(raw, key, value, world)
+  })
+  return written.ok
+    ? ok({ skipped, entries: [...entries, { file: a.path, fieldId: contextId, before }] })
+    : written
 }
 
 export async function setContextOp(
@@ -129,14 +124,17 @@ export async function setContextOp(
   const unread =
     under && tree.unreadable?.find((u) => u.kind === 'space' && u.path.startsWith(under))
   if (unread) return fault(`Unreadable Space sidecar: ${basename(unread.path)}`)
-  if (isMarkdownFile(path))
-    return done(await setPageContext(target.value, root, contextId, spaceIds))
+  if (isMarkdownFile(path)) {
+    const before = await setPageContext(target.value, root, contextId, spaceIds)
+    return before.ok ? undoOf([{ file: path, fieldId: contextId, before: before.value }]) : before
+  }
   const owner = spaceAt(tree, path)
   const own = owner && world.groupById.get(owner.contextId)
   if (!owner || !own) return fail('invalid-path', 'Not a context-taggable entity.')
   const linked = await setSpaceContext(root, tree, owner, own, contextId, spaceIds)
   if (!linked.ok) return linked
-  return ok(linked.value ? { cascade: reachReport({ skipped: linked.value, hosts: [] }) } : {})
+  const { skipped, entries } = linked.value
+  return undoOf(entries, skipped ? { cascade: reachReport({ skipped, hosts: [] }) } : {})
 }
 
 export async function createContextGroup(

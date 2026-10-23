@@ -20,10 +20,17 @@ export interface MutateOutcome {
   /** The title a restore stepped aside to, when it couldn't land under its own. */
   landedAs?: string
   retry?: MutateRequest
+  /** The request that takes this write back, which the window's undo sends. */
+  undo?: MutateRequest
+  /** The entries an undo couldn't put back, which its Try Again sends again alone, so it never overwrites an edit made since. */
+  missed?: PutBack[]
 }
 export type MutateReply = Result<MutateOutcome>
 
 export const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
+
+export const undoOf = (entries: PutBack[], outcome: MutateOutcome = {}): MutateReply =>
+  ok({ ...outcome, undo: { op: 'putBack', entries } })
 
 export const DEFAULT_NEW_NAME = 'Untitled'
 
@@ -50,6 +57,9 @@ const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon' | 'aliases'>> = z.obje
   title_icon: z.boolean().nullable().optional(),
   locked: z.literal(true).nullable().optional(),
 } satisfies { [K in Exclude<keyof PageMetaPatch, 'icon' | 'aliases'>]: z.ZodType })
+/** What one file held under a property's or Context's key before a value write: a page's pair as its frontmatter spelled it, a Space's JSON value; absent when the file held no key. */
+const putBack = z.object({ file: z.string(), fieldId: z.string(), before: z.unknown().optional() })
+export type PutBack = z.infer<typeof putBack>
 
 // Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.
 export const mutateRequest = z.discriminatedUnion('op', [
@@ -90,6 +100,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),
   // `held` is what the file held under the property's key, written back as it was; absent, the file held no key.
   op('restoreValue', { path: z.string(), propertyId: z.string(), held: z.unknown().optional() }),
+  op('putBack', { entries: z.array(putBack) }),
   op('setPageMeta', { path: z.string(), patch: pageMetaPatch }),
   op('editAliases', { path: z.string(), edit: aliasEdit }),
   // Absent an order, the destination's order stands, and the page sorts where `resolveOrder` places an id its order doesn't name.
