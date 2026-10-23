@@ -1153,15 +1153,15 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 5-6 · Drive group 4
   - [x] Review Checkpoint
   - [x] Closeout P4A–P5 (two `opus-high` agents, inward and outward)
-- [ ] **Phase 6** — Undo From the File
-  - [ ] Task 6-1 · A swept page reads and lands one key's node
-  - [ ] Task 6-2 · Every value write answers `undo`, and one `putBackEntries` lands it
-  - [ ] Task 6-3 · The undo sends the record its write's reply carried
-  - [ ] Task 6-4 · A Link value's undo removes the alias it added
-  - [ ] Task 6-5 · The renderer stops encoding
-  - [ ] Task 6-6 · Measurement F3 and its outcome
-  - [ ] Task 6-7 · Drive group 5
-  - [ ] Review Checkpoint
+- [x] **Phase 6** — Undo From the File
+  - [x] Task 6-1 · A swept page reads and lands one key's node
+  - [x] Task 6-2 · Every value write answers `undo`, and one `putBackEntries` lands it
+  - [x] Task 6-3 · The undo sends the record its write's reply carried
+  - [x] Task 6-4 · A Link value's undo removes the alias it added
+  - [x] Task 6-5 · The renderer stops encoding
+  - [x] Task 6-6 · Measurement F3 and its outcome
+  - [x] Task 6-7 · Drive group 5
+  - [x] Review Checkpoint
   - [ ] Closeout P6 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 7 opens]`
 - [ ] **Phase 7** — One Door for Property Changes
@@ -34741,7 +34741,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
 | 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
 | 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
-| 6 | −266 | +305 | +39 | | |
+| 6 | −266 | +305 | +39 | −252 / +286 / +34 | −241 |
 | 7 | −622 | +469 | −153 | | |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
