@@ -1021,6 +1021,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **No Leftovers (10-22-2026):** When making any decisions. Ensure you know that I don’t want any leftovers to be allowed to remain format when there’s clear ways for them to be flushed or tidied. That’s a constraint — if you’re making in-flight decisions during planning, assume I don’t want stale leftovers in peoples nexuses or leave things “clogged” when simply removing them is an option without additional cost and rides what’s already established codebase pattern
 - **Try Again Unclogs (10-22-2026):** Anything where an error occurs, and a "Try Agin" option would retry it, it should be available. We shouldnt just report erros with the ActionLabel that cannot be "unclogged" if you get what I'm saying.
 - **Unambiguous Reduction (10-22-2026):** I also need to make the intent clear that were unambigiously reducing how much stuff is wwithin the codebase. You should unarguabaly have an easier time adding more stuff, changing things, explaining it, and patching the codebase in the future from a brefore-and-after perspective.
+- **Adding Code (10-23-2026):** "Why are we adding code?" … "Keep this concern in mind." Every line execution adds answers this question first: a phase, fix, fold, or call that grows the code shows what it removes or why no smaller shape delivers it, and a recommendation that adds lines says so plainly.
 
 ##### Working Rules
 
