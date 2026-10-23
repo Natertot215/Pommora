@@ -1,4 +1,5 @@
-import { LINK_DISPLAY_LABELS } from '../Connections/linkValue'
+import { LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '../Connections/linkValue'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import {
   type ColumnLook,
   DATE_FORMATS,
@@ -6,6 +7,12 @@ import {
   type TimeFormat,
   type WeekdayFormat,
 } from './columnStyles'
+
+/** The labels never widen the values, so a list drawn from part of a vocabulary keeps its own type. */
+export const pickerOptions = <V extends string>(
+  values: readonly V[],
+  labels: Readonly<Record<NoInfer<V>, string>>,
+): PickerOption<V>[] => values.map((value) => ({ value, label: labels[value] }))
 
 export const LOOK_LABELS: Record<ColumnLook, string> = {
   standard: 'Standard',
@@ -17,9 +24,8 @@ export const LOOK_LABELS: Record<ColumnLook, string> = {
   bar: 'Bar',
 }
 
-export const lookOptions = <L extends ColumnLook>(
-  looks: readonly L[],
-): { value: L; label: string }[] => looks.map((value) => ({ value, label: LOOK_LABELS[value] }))
+export const lookOptions = <L extends ColumnLook>(looks: readonly L[]): PickerOption<L>[] =>
+  pickerOptions(looks, LOOK_LABELS)
 
 export const DATE_FORMAT_LABELS: Record<DateFormat, string> = {
   monthDayYear: 'MM/DD/YYYY',
@@ -29,10 +35,9 @@ export const DATE_FORMAT_LABELS: Record<DateFormat, string> = {
   relative: 'Relative',
 }
 
-export const DATE_FORMAT_OPTIONS = DATE_FORMATS.map((value) => ({
-  value,
-  label: DATE_FORMAT_LABELS[value],
-}))
+export const DATE_FORMAT_OPTIONS = pickerOptions(DATE_FORMATS, DATE_FORMAT_LABELS)
+
+export const LINK_DISPLAY_OPTIONS = pickerOptions(LINK_DISPLAYS, LINK_DISPLAY_LABELS)
 
 export const TIME_FORMAT_LABELS: Record<TimeFormat, string> = {
   twelveHour: '12 Hours',

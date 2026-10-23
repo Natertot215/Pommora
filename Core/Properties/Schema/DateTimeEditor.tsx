@@ -1,12 +1,14 @@
 import { showsWeekday, TIME_FORMATS, WEEKDAY_FORMATS, type ColumnStyle } from '../columnStyles'
-import { DATE_FORMAT_OPTIONS, TIME_FORMAT_LABELS, WEEKDAY_FORMAT_LABELS } from '../displayLabels'
+import {
+  DATE_FORMAT_OPTIONS,
+  pickerOptions,
+  TIME_FORMAT_LABELS,
+  WEEKDAY_FORMAT_LABELS,
+} from '../displayLabels'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
-const WEEKDAY_OPTIONS = WEEKDAY_FORMATS.map((value) => ({
-  value,
-  label: WEEKDAY_FORMAT_LABELS[value],
-}))
-const TIME_OPTIONS = TIME_FORMATS.map((value) => ({ value, label: TIME_FORMAT_LABELS[value] }))
+const WEEKDAY_OPTIONS = pickerOptions(WEEKDAY_FORMATS, WEEKDAY_FORMAT_LABELS)
+const TIME_OPTIONS = pickerOptions(TIME_FORMATS, TIME_FORMAT_LABELS)
 
 const ROW_LOOK = { iconSize: 'headline', inert: true } as const
 
