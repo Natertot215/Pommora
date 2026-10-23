@@ -9,6 +9,7 @@ import { newContentId, newId } from '../Nexus/ids'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from '../Bundles/bundle'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -197,7 +198,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
   })
 
-  it('steps aside when the name has been taken since', async () => {
+  it('a restore under a label taken since lands numbered and says so', async () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const impostor = await createProperty(root, {
@@ -207,8 +208,8 @@ describe('restoring a deleted property', () => {
     })
     expect(impostor.ok).toBe(true)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
-    expect(r.ok).toBe(true)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok && r.value.landedAs).toBe('Priority (2)')
     expect((await readRegistry(root)).defs[id]).toMatchObject({
       label: 'Priority (2)',
       key: 'Priority (2)',

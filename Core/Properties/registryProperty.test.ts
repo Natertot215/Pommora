@@ -26,7 +26,7 @@ import { KEY_REFUSAL } from './validation'
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
-import { ok } from '../Contract/result'
+import { fail, ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 
 vi.mock('./propertyJournal', async (importOriginal) => {
@@ -96,6 +96,22 @@ describe('status seed relabel', () => {
 })
 
 describe('createProperty', () => {
+  it('a create handed an id the registry holds refuses it and writes nothing', async () => {
+    const live = await createProperty(root, def({ label: 'Priority', type: 'number' }))
+    if (!live.ok) throw new Error('create failed')
+    const before = await readFile(registryFilePath(), 'utf8')
+    expect(
+      await createProperty(root, def({ id: live.value.id, label: 'Other', type: 'text' })),
+    ).toEqual(fail('exists', 'Something in the nexus already carries this identity.'))
+    expect(await readFile(registryFilePath(), 'utf8')).toBe(before)
+  })
+
+  it('a create answers the definition it landed', async () => {
+    const r = await createProperty(root, def({ label: 'Priority', type: 'number' }))
+    if (!r.ok) throw new Error('create failed')
+    expect(r.value).toEqual((await readRegistry(root)).defs[r.value.id])
+  })
+
   it('writes the landed label as both the label and the key', async () => {
     const r = await createProperty(root, { id: '', label: 'Priority', type: 'number' })
     if (!r.ok) throw new Error('create failed')

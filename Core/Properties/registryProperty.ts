@@ -98,33 +98,35 @@ function freeLabel(
   return free
 }
 
+const ID_HELD = fail('exists', 'Something in the nexus already carries this identity.')
+
 export async function createProperty(
   root: string,
   def: PropertyDraft,
-): Promise<Result<{ id: string }>> {
-  let key = ''
+): Promise<Result<PropertyDefinition>> {
   const journal = await readSchemaJournal(root)
   const owed = journal?.op === 'rename' ? [journal.from] : []
-  const created = await mutateRegistry<Result<{ id: string }>>(root, (registry) => {
+  const created = await mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
+    if (def.id && registry.defs[def.id]) return { result: ID_HELD }
     const defs = Object.values(registry.defs)
     const label = freeLabel(exactTitle(def.label), def.key_format, defs, owed)
-    key = formatKey(label, def.key_format)
+    const key = formatKey(label, def.key_format)
     const candidate = seeded({ ...def, label, key, id: def.id || mintPropertyId() })
     const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
     return {
       next: {
-        order: [...registry.order.filter((id) => id !== candidate.id), candidate.id],
+        order: [...registry.order, candidate.id],
         defs: { ...registry.defs, [candidate.id]: candidate },
       },
-      result: ok({ id: candidate.id }),
+      result: ok(candidate),
     }
   })
   // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (
     created.ok &&
     journal?.op === 'delete' &&
-    (journal.key === key || journal.id === created.value.id)
+    (journal.key === created.value.key || journal.id === created.value.id)
   )
     await clearSchemaJournal(root, journal)
   return created
