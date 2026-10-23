@@ -155,12 +155,18 @@ export function reconcileGovernedRoot(
   return { root: out, changed }
 }
 
-/** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key. */
-export function writtenRoot(raw: Json, key: string, value: unknown, world: GovernedWorld): Json {
+/** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key; null when that changes nothing, so nothing is written. */
+export function writtenRoot(
+  raw: Json,
+  key: string,
+  value: unknown,
+  world: GovernedWorld,
+): Json | null {
   const reconciled = reconcileGovernedRoot(raw, world, undefined, key).root
   const def = world.defs.get(key)
   const kept = def ? keepingForeignWords(def, value, raw[key]) : value
-  return landValue(reconciled, key, writtenSpelling(kept, raw[key]))
+  const next = landValue(reconciled, key, writtenSpelling(kept, raw[key]))
+  return changedKeys(raw, next).length ? next : null
 }
 
 /** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
