@@ -2,13 +2,14 @@ import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync 
 import { join } from 'node:path'
 import {
   frontmatter, frontRaw, pageFile, pageIds, pagePath,
-  ask, boxOf, click, createPage, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, openCollection, pickNative,
-  popNative, portalOpen, pressKey, read, relaunch, restore, results, row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, typeText, until,
+  ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
+  openCollection, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
+  SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5']
+const LANDED = ['1', '2', '3', '4', '5', '6']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -121,9 +122,9 @@ async function headerMenu(cdp, label) {
 async function group2(cdp) {
   const ids = {}
   for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
-    ids[label] = (await must(`add ${label}`, ask(cdp, 'schema:add', 'Collection A', { id: '', label, type }))).id
-  await must('Looks Number as a percent', ask(cdp, 'property:setNumberFormat', ids['Looks Number'], { number_family: 'percent' }))
-  await must('Looks Select gains Alpha', ask(cdp, 'property:editOption', ids['Looks Select'], { op: 'add', groupId: 'select', label: 'Alpha' }))
+    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label, type } }))).created.propertyId
+  await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
+  await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', label: 'Alpha' } }))
   const view = {
     id: 'view_01KZPROPDRIVE00000LOOKSTABL', name: 'Looks Table', type: 'table',
     property_order: ['_title', ids['Looks Number'], ids['Looks Link'], ids['Looks Select']], hidden_properties: [],
@@ -151,12 +152,12 @@ async function group3(cdp) {
   const space = '.nexus/contexts/Areas/Area One'
   const files = [REGISTRY, join(NEXUS, 'Collection A/_pagecollection.json'), join(NEXUS, space, '_space.json')]
   const stored = files.map((f) => readFileSync(f, 'utf8'))
-  const status = await must('Status', ask(cdp, 'schema:add', 'Collection A', {
+  const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
     id: '', label: 'Status', type: 'select',
     select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
-  }))
-  const notes = await must('Notes', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Notes', type: 'text' }))
-  const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.id, notes.id], hidden_properties: [] }
+  } }))
+  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Notes', type: 'text' } }))
+  const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.created.propertyId, notes.created.propertyId], hidden_properties: [] }
   await must('save Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
   await must('show Drive Values', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
   await openCollection(cdp)
@@ -167,19 +168,19 @@ async function group3(cdp) {
   byHand('Spaces', 'Notes: "   "')
   byHand('Filled', 'Notes: x')
 
-  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.id, value: { kind: 'text', value: 'edited' } }))
+  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.created.propertyId, value: { kind: 'text', value: 'edited' } }))
   const tidied = await settles(async () => same(frontmatter('Tidy').Status, ['Option 2']))
   item(3, 'P-1', 'editing another property writes a several-word Select as the option it shows', tidied, show(frontmatter('Tidy')))
 
   await must('filter Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {
-    filter: { match: 'all', rules: [{ property_id: notes.id, op: 'is_empty' }] },
+    filter: { match: 'all', rules: [{ property_id: notes.created.propertyId, op: 'is_empty' }] },
     filter_enabled: true,
   }))
   const empties = await settles(async () => (await cdp.evaluate(`!!${row('Spaces')} && !${row('Filled')}`)))
   item(3, 'J-1', 'a Text value of only spaces matches "is empty"', empties)
 
   const sidecar = files[2]
-  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.id, value: { kind: 'text', value: 'held' } }))
+  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.created.propertyId, value: { kind: 'text', value: 'held' } }))
   await pick()
   const before = { text: readFileSync(sidecar, 'utf8'), mtime: statSync(sidecar).mtimeMs }
   await sleep(1100)
@@ -193,7 +194,7 @@ async function group3(cdp) {
     delete pageIds[title]
   }
   files.forEach((f, i) => writeFileSync(f, stored[i]))
-  await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.id))
+  await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.created.propertyId))
 }
 
 // ── Group 4 — One Home per Definition (P5) ──────────────────────────────────
@@ -257,10 +258,10 @@ const bareKey = (title, key) => {
 }
 
 async function group5(cdp) {
-  const pick = await must('Drive Undo Pick', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Pick', type: 'select' }))
-  const link = await must('Drive Undo Link', ask(cdp, 'schema:add', 'Collection A', { id: '', label: 'Drive Undo Link', type: 'link' }))
-  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'property:editOption', pick.id, { op: 'add', groupId: 'select', label }))
-  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.id, link.id], hidden_properties: [] }, {}))
+  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Pick', type: 'select' } }))
+  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Link', type: 'link' } }))
+  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', label } }))
+  await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
   for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
   await must('Drive Undo Target keeps an alias', ask(cdp, 'mutate', { op: 'editAliases', path: pagePath('Drive Undo Target'), edit: { op: 'add', alias: 'kept' } }))
   const text = pageFile('Drive Undo Page')
@@ -296,6 +297,117 @@ async function group5(cdp) {
   item(5, 'E-3', 'undoing a Link value takes back the alias it added and keeps the one the page had', added && gone, JSON.stringify(aliasesOf('Drive Undo Target')))
 }
 
+// ── Group 6 — One Door for Property Changes (P7) ────────────────────────────
+
+const registryFile = () => JSON.parse(readFileSync(REGISTRY, 'utf8'))
+const defNamed = (label) => Object.values(registryFile().defs).find((d) => d.label === label)
+const trashRows = async (cdp) => (await must('bundles:list', ask(cdp, 'bundles:list', { kind: 'trash' }))) ?? []
+const dialogText = (cdp) => cdp.evaluate(`${DIALOG}?.innerText ?? ''`)
+const addProperty = async (cdp, draft) =>
+  (await must(`add ${draft.label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft }))).created.propertyId
+const deleteProperty = (cdp, id) => must(`delete ${id}`, ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: id }))
+async function openPropertyEditor(cdp, label) {
+  await viewFrame(cdp, 'Properties')
+  await click(cdp, `${textEl('span', label)}.closest('[role=button],button,[data-line-row]')`)
+  await sleep(1000)
+}
+const optionRow = (label) => `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === ${JSON.stringify(label)} && r.querySelector('[aria-label="Edit Option"]'))`
+
+async function group6(cdp) {
+  const kept = new Set((await trashRows(cdp)).map((r) => r.bundlePath))
+  const start = {
+    assigned: JSON.parse(read('Collection A/_pagecollection.json')).properties ?? [],
+    order: registryFile().order,
+    trash: kept.size,
+  }
+  const made = []
+  await openCollection(cdp)
+
+  const choice = await addProperty(cdp, {
+    label: 'Drive Choice',
+    type: 'select',
+    select_options: [{ key: 'Alpha', label: 'Alpha' }, { key: 'Beta', label: 'Beta' }],
+  })
+  made.push(choice)
+  await openPropertyEditor(cdp, 'Drive Choice')
+  const alpha = await chooseNative(cdp, optionRow('Alpha'), 'Delete')
+  const asked = await dialogText(cdp)
+  const hasDelete = await cdp.evaluate(`[...${DIALOG}?.querySelectorAll('button') ?? []].some((b) => b.textContent.trim() === 'Delete')`)
+  await pressDialog(cdp, 'Delete')
+  const left = await settles(async () => same(defNamed('Drive Choice')?.select_options?.map((o) => o.label), ['Beta']))
+  item(6, 'O-1', "an option's menu reads Delete, and a delete nothing holds asks without a strip clause",
+    alpha.rows.includes('Delete') && !alpha.rows.includes('Remove') && asked.includes('Delete “Alpha”?') &&
+      asked.includes('The option is deleted from the property.') && !asked.includes('stripped') && hasDelete && left,
+    show({ rows: alpha.rows, asked, options: defNamed('Drive Choice')?.select_options }))
+
+  await createPage(cdp, 'Drive Held', { [choice]: { kind: 'select', value: 'Beta' } })
+  await sleep(1000)
+  await chooseNative(cdp, optionRow('Beta'), 'Delete')
+  const counted = await dialogText(cdp)
+  await pressDialog(cdp, 'Delete')
+  const stripped = await settles(async () => !Object.hasOwn(frontmatter('Drive Held'), 'Drive Choice'))
+  item(6, 'O-1', 'an option a page holds asks with its count',
+    counted.includes('The option is deleted from the property and its value stripped from 1 Item.') && stripped,
+    show({ counted, held: frontmatter('Drive Held') }))
+  await escapeAll(cdp)
+
+  made.push(await addProperty(cdp, { label: 'Drive Bare', type: 'text' }))
+  await openPropertyEditor(cdp, 'Drive Bare')
+  await chooseNative(cdp, sel('[aria-label="Property Menu"]'), 'Delete', { button: 'left' })
+  const bare = await dialogText(cdp)
+  await pressDialog(cdp, 'Delete')
+  await sleep(1000)
+  const listed = await cdp.evaluate(`!document.querySelector('[aria-label="Property Menu"]')`)
+  const said = await notice(cdp)
+  const trashed = (await trashRows(cdp)).filter((r) => r.kind === 'property' && r.title === 'Drive Bare')
+  item(6, 'O-2', 'deleting a property nothing holds asks without "0 Items"',
+    bare.includes('Delete “Drive Bare” everywhere?') &&
+      bare.includes('It is removed from every collection; a restorable record lands in the nexus’s .trash folder.') &&
+      listed && said.startsWith('Deleted “Drive Bare”') && trashed.length === 1,
+    show({ bare, listed, said, trashed }))
+  await escapeAll(cdp)
+
+  const taken = await addProperty(cdp, { label: 'New Text', type: 'text' })
+  await viewFrame(cdp, 'Properties')
+  await click(cdp, sel('[aria-label="New Property"]'))
+  await sleep(800)
+  await click(cdp, `[...document.querySelectorAll('[role="button"]')].find((el) => el.textContent.trim() === 'Text')`)
+  await sleep(1200)
+  const created = await notice(cdp)
+  const numbered = defNamed('New Text (2)')
+  const opened = await cdp.evaluate(`[...document.querySelectorAll('[aria-label="Edit icon"]')].some((e) => e.parentElement?.textContent === 'New Text (2)')`)
+  item(6, 'O-4', "the pane's + says the numbered name it took",
+    created === 'Created “New Text (2)”.' && !!numbered && opened, show({ created, opened, numbered }))
+  await escapeAll(cdp)
+  for (const id of [taken, numbered?.id].filter(Boolean)) await deleteProperty(cdp, id)
+
+  made.push(await addProperty(cdp, { label: 'Drive Bare', type: 'text' }))
+  await openSettings(cdp, 'Trash')
+  await until('the Drive Bare row', () => cdp.evaluate(`!!(${trashRowEl('Drive Bare')})`))
+  await chooseNative(cdp, trashRowEl('Drive Bare'), 'Restore')
+  await sleep(1200)
+  const restored = await notice(cdp)
+  const labelsNow = Object.values(registryFile().defs).map((d) => d.label)
+  item(6, 'O-4', 'a property restored after its name was taken says the name it took',
+    restored.includes('Restored “Drive Bare” as “Drive Bare (2)”') && labelsNow.includes('Drive Bare') && labelsNow.includes('Drive Bare (2)'),
+    show({ restored, labelsNow }))
+  await closeSettings(cdp)
+
+  for (const id of new Set([...made, defNamed('Drive Bare (2)')?.id])) if (id && registryFile().defs[id]) await deleteProperty(cdp, id)
+  await must('delete Drive Held', ask(cdp, 'mutate', { op: 'delete', path: `${SET}/Drive Held.md`, kind: 'page' }))
+  const permanent = (await config(cdp)).personalization.permanentDelete === true
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  for (const r of (await trashRows(cdp)).filter((r) => !kept.has(r.bundlePath)))
+    await must(`empty ${r.title}`, ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: r.bundlePath }))
+  await must('permanentDelete as it was', ask(cdp, 'personalization:set', 'permanentDelete', permanent))
+  const end = {
+    assigned: JSON.parse(read('Collection A/_pagecollection.json')).properties ?? [],
+    order: registryFile().order,
+    trash: (await trashRows(cdp)).length,
+  }
+  item(6, '—', 'the group leaves Collection A, the registry, and the Trash as it found them', same(end, start), show({ start, end }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -306,6 +418,7 @@ try {
   if (GROUPS.has('3')) await group3(cdp)
   if (GROUPS.has('4')) await group4()
   if (GROUPS.has('5')) await group5(cdp)
+  if (GROUPS.has('6')) await group6(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

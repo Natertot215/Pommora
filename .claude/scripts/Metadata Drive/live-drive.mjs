@@ -101,9 +101,9 @@ async function unreadable(rel, run) {
 /** A rename over two pages, the first unreadable: the reply, the record it owes, and the replay of that record, with `after` run between. */
 async function tryAgain(cdp, [[first], [second]], rename, after) {
   const r = await unreadable(first, rename)
-  const owed = r.ok ? r.value?.owed : undefined
+  const owed = r.ok && r.value?.retry ? slot() : undefined
   await after?.()
-  const replayed = owed ? await ask(cdp, 'property:replay', owed) : null
+  const replayed = owed ? await ask(cdp, 'mutate', r.value.retry) : null
   return { r, owed, replayed, first, second }
 }
 const slotOf = (rel) => {
@@ -111,6 +111,7 @@ const slotOf = (rel) => {
   return text === null ? null : JSON.parse(text)
 }
 const slot = () => slotOf(JOURNAL)
+const FINISH = { op: 'finishOwed' }
 const contextSlot = () => slotOf(CONTEXT_JOURNAL)
 
 // ── Contexts and Spaces ─────────────────────────────────────────────────────
@@ -153,20 +154,20 @@ function writeDef(def) {
 }
 async function handWritten(cdp, def) {
   writeDef(def)
-  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id)).ok)
-  await must(`assign ${def.label ?? def.key}`, ask(cdp, 'schema:assign', COLLECTION, def.id))
+  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id, { of: 'property' })).ok)
+  await must(`assign ${def.label ?? def.key}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: def.id }))
   return def.id
 }
 const mintPropertyId = () => `prop_${ulid()}`
 
 const ids = {}
 const word = (w) => ({ key: w, label: w })
-const add = (cdp, def, container = COLLECTION) => ask(cdp, 'schema:add', container, { id: '', ...def })
+const add = (cdp, def, container = COLLECTION) => ask(cdp, 'mutate', { op: 'addProperty', containerPath: container, draft: def })
 async function define(cdp, def, container = COLLECTION) {
   const r = await add(cdp, def, container)
   if (!r.ok) throw new Error(`The seed stops: schema:add refused ${def.label}: ${show(r)}`)
-  ids[def.label] = r.value.id
-  return r.value.id
+  ids[def.label] = r.value.created.propertyId
+  return r.value.created.propertyId
 }
 const defineAll = async (cdp, defs) => {
   for (const def of defs) await define(cdp, def)
@@ -213,8 +214,8 @@ const matrixFilter = (cdp, ...rules) => must('the Matrix filter', ask(cdp, 'matr
 /** The Collection B cache of `propertyId`, filled the way the app fills it: assigned over a page holding values, then unassigned. */
 async function cached(cdp, propertyId, rel) {
   await indexed(cdp, CACHE_COLLECTION, [rel])
-  await must('assign to Collection B', ask(cdp, 'schema:assign', CACHE_COLLECTION, propertyId))
-  await must('unassign from Collection B', ask(cdp, 'schema:unassign', CACHE_COLLECTION, propertyId))
+  await must('assign to Collection B', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
+  await must('unassign from Collection B', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
   await until('the Collection B cache', async () => Object.keys(cacheOf(propertyId)).length > 0)
 }
 
@@ -351,14 +352,14 @@ async function group1(cdp) {
     same(orderOf(AREA), [group, projects, note, stage]), show(orderOf(AREA)))
   await write(['M1 Group', 'M1 Space'], [stage])
   const area = snapshot([sidecarAt(...AREA)])
-  await must('rename M1 Note', ask(cdp, 'property:rename', note, 'M1 Notes'))
+  await must('rename M1 Note', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: note, label: 'M1 Notes' }))
   pin(G, 'F-5', "a property rename leaves a Space's $order as written", await area.holds(), show(orderOf(AREA)))
   await must('rename M1 Group', ask(cdp, 'mutate', { op: 'renameContext', contextId: group, newName: 'M1 Groups' }))
   pin(G, 'F-5', "a Context rename leaves a Space's $order as written", await area.holds(), show(orderOf(AREA)))
   await must('retitle M1 Space', ask(cdp, 'mutate', { op: 'renameSpace', spaceId: spaceIdOf('M1 Groups', 'M1 Space'), newName: 'M1 Spaced' }))
   pin(G, 'F-5', 'a Space retitle carries its $order unchanged',
     await settles(async () => same(orderOf(['M1 Groups', 'M1 Spaced']), [stage])), show(fileOf(sidecarAt('M1 Groups', 'M1 Spaced'))))
-  await must('delete M1 Stage', ask(cdp, 'property:delete', stage))
+  await must('delete M1 Stage', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: stage }))
   pin(G, 'F-5', "a property delete drops its id from every Space's $order",
     await settles(async () => same(orderOf(AREA), [group, projects, note])), show(orderOf(AREA)))
   pin(G, 'F-5', 'an order the delete empties leaves the Space',
@@ -509,8 +510,8 @@ async function group2(cdp) {
     show(sidecar('Areas', 'Area Two')))
 
   await checkCascades(G, cdp, cascades, {
-    key: { label: 'a property rename', decision: 'A-1', run: () => ask(cdp, 'property:rename', ids['M2 Pick'], 'M2 Picked') },
-    recase: { label: 'a case-only property rename', decision: 'A-1', run: () => ask(cdp, 'property:rename', ids['M2 Memo'], 'm2 memo') },
+    key: { label: 'a property rename', decision: 'A-1', run: () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Pick'], label: 'M2 Picked' }) },
+    recase: { label: 'a case-only property rename', decision: 'A-1', run: () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Memo'], label: 'm2 memo' }) },
     context: { label: 'a Context rename', decision: 'A-2', run: () => ask(cdp, 'mutate', { op: 'renameContext', contextId: team, newName: 'M2 Team' }) },
     contextRecase: { label: 'a case-only Context rename', decision: 'A-2', run: () => ask(cdp, 'mutate', { op: 'renameContext', contextId: team, newName: 'm2 team' }) },
     spaceRecase: { label: 'a case-only Space retitle', decision: 'A-2', run: () => ask(cdp, 'mutate', { op: 'renameSpace', spaceId: spaceIdOf('m2 team', 'M2 Space'), newName: 'm2 space' }) },
@@ -522,35 +523,35 @@ async function group2(cdp) {
 
   const [[held]] = pairs.held
   const heldPage = snapshot([held])
-  const refused = await ask(cdp, 'property:rename', ids['M2 Held'], 'm2 held')
+  const refused = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Held'], label: 'm2 held' })
   pin(G, 'A-1', 'a rename onto a key a page already holds beside it is refused, and nothing moves',
     refusedAs(refused, COPY.itemsHoldingBothKeys, 1, 'M2 Held', 'm2 held') && (await heldPage.holds()) && slot() === null, show(refused))
 
   const [[gone]] = pairs.gone
-  const deleted = await must('delete M2 Gone', ask(cdp, 'property:delete', ids['M2 Gone']))
+  const deleted = await must('delete M2 Gone', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M2 Gone'] }))
   pin(G, 'A-1', 'a property delete strips the exact key and leaves the variant',
     (await wrote(gone, 'm2 gone: y')) && !('M2 Gone' in sidecar('Areas', 'Area Two')), show([blockOf(gone), sidecar('Areas', 'Area Two')]))
-  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.trashed.bundlePath }))
+  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.bundled.bundlePath }))
   pin(G, 'A-1', 'a property restore refills the exact key on the page and the Space',
     await settles(async () => fmOf(gone)['M2 Gone'] === 'x' && fmOf(gone)['m2 gone'] === 'y' && sidecar('Areas', 'Area Two')['M2 Gone'] === 'x'),
     show([fmOf(gone), sidecar('Areas', 'Area Two')]))
 
-  const skip = await tryAgain(cdp, pairs.skip, () => ask(cdp, 'property:rename', ids['M2 Skip'], 'M2 Skipped'), async () => {
+  const skip = await tryAgain(cdp, pairs.skip, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Skip'], label: 'M2 Skipped' }), async () => {
     pin(G, 'F-1', 'a rename that skips an unreadable file owes it through the journal and sweeps the rest',
       slot() !== null && (await wrote(pairs.skip[1][0], 'M2 Skipped: b')), show(slot()))
   })
   pin(G, 'F-1', 'Try Again brings the skipped file current and clears the journal',
     !!skip.owed && skip.replayed?.ok && (await wrote(skip.first, 'M2 Skipped: a')) && slot() === null, show([skip.r, skip.replayed, blockOf(skip.first)]))
 
-  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'property:rename', ids['M2 Chain'], 'M2 Chained'),
-    () => must('rename M2 Chained', ask(cdp, 'property:rename', ids['M2 Chain'], 'M2 Linked')))
+  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Chained' }),
+    () => must('rename M2 Chained', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Linked' })))
   pin(G, 'F-1', "a chained rename's Try Again follows the property off its old key",
     !!chain.owed && (await wrote(chain.second, 'M2 Linked: b')) && (await wrote(chain.first, 'M2 Linked: a')) && slot() === null,
     show([chain.r, blockOf(chain.first), blockOf(chain.second)]))
 
   let twinKept
-  const twin = await tryAgain(cdp, pairs.twin, () => ask(cdp, 'property:rename', ids['M2 Twin'], 'M2 Twins'), async () => {
-    await must('rename M2 Twins back', ask(cdp, 'property:rename', ids['M2 Twin'], 'M2 Twin'))
+  const twin = await tryAgain(cdp, pairs.twin, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twins' }), async () => {
+    await must('rename M2 Twins back', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twin' }))
     await wrote(pairs.twin[1][0], 'M2 Twin: b')
     twinKept = snapshot(pairs.twin.map(([rel]) => rel))
   })
@@ -681,8 +682,8 @@ async function group3(cdp) {
   const undoColumns = Object.values(U)
   const undoView = mintViewId()
   await saveView(cdp, undoView, 'Metadata Drive Undo', undoColumns.map((c) => ids[c]), { filter: filterOf(rule('_title', 'starts_with', 'M3 Undo')) })
-  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], 'green')).ok, 10000)
-  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], 'ideas')).ok, 10000)
+  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], { of: 'option', label: 'green' })).ok, 10000)
+  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], { of: 'option', label: 'ideas' })).ok, 10000)
   await sleep(1500)
   seededAsWritten(G, seeds)
   pin(G, 'E-2', 'a Status adopts no word its options lack', await holds(async () => same(keysOf(ids[C.stage]), ['Todo', 'Done']), 3000), show(wordsOf(ids[C.stage])))
@@ -730,12 +731,12 @@ async function group3(cdp) {
   }
 
   await checkCascades(G, cdp, cascades, {
-    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'property:renameOption', ids[C.labels], 'Work', 'Job') },
+    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: ids[C.labels], from: 'Work', to: 'Job' }) },
     space: { label: 'a Space retitle', decision: 'A-2', run: () => ask(cdp, 'mutate', { op: 'renameSpace', spaceId: spaceIdOf('Areas', 'M3 Place'), newName: 'M3 Plaza' }) },
   })
   pin(G, 'A-1', 'an option rename edits a Space list by the exact word and leaves another casing',
     same(sidecar('Areas', 'Area One')['M3 Labels'], ['work', 'Job']), show(sidecar('Areas', 'Area One')['M3 Labels']))
-  const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'property:rename', ids['M3 Case'], 'm3 case'))
+  const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M3 Case'], label: 'm3 case' }))
   pin(G, 'A-1 F-3', 'a case-only rename owes its skipped file, and Try Again moves the key',
     !!recase.owed && (await wrote(recase.second, 'm3 case: b')) && (await wrote(recase.first, 'm3 case: a')) && slot() === null,
     show([recase.r, blockOf(recase.first), blockOf(recase.second)]))
@@ -784,15 +785,15 @@ async function group4(cdp) {
     await sleep(800)
     pin(G, decision, `${name}: it rewrites exactly the ${itemCount(n)} it counted`, same(before.changed().sort(), [...files].sort()), show(before.changed()))
   }
-  await counted('J-1 F-4', 'a property delete', [priority], [one, two, AREA_ONE, AREA_TWO], 4, () => ask(cdp, 'property:delete', priority))
-  await counted('F-4', 'a Clear', [tagsId, 'a'], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'property:clearOption', tagsId, 'a'))
-  await counted('F-4', 'a Remove', [tagsId, 'b'], [tags[1], tags[2]], 2, () => ask(cdp, 'property:removeOption', tagsId, 'b'))
+  await counted('J-1 F-4', 'a property delete', [priority, { of: 'property' }], [one, two, AREA_ONE, AREA_TWO], 4, () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: priority }))
+  await counted('F-4', 'a Clear', [tagsId, { of: 'option', label: 'a' }], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'mutate', { op: 'clearOption', propertyId: tagsId, label: 'a' }))
+  await counted('F-4', 'a Delete', [tagsId, { of: 'option', label: 'b' }], [tags[1], tags[2]], 2, () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tagsId, label: 'b' }))
 
-  pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'property:rename', ids['M4 Held'], 'm4 held'), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
-  pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'property:rename', ids['M4 Pair'], 'm4 pair'), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
-  const skipped = await unreadable(notice[0], () => ask(cdp, 'property:rename', ids['M4 Notice'], 'M4 Notices'))
+  pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Held'], label: 'm4 held' }), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
+  pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Pair'], label: 'm4 pair' }), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
+  const skipped = await unreadable(notice[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Notice'], label: 'M4 Notices' }))
   pin(G, 'J-1', 'an unswept notice says Items', skipped.ok && skipped.value?.cascade?.warning === 'Couldn’t update 1 Item.', show(skipped))
-  if (skipped.ok && skipped.value?.owed) await must('Try Again', ask(cdp, 'property:replay', skipped.value.owed))
+  if (skipped.ok && skipped.value?.retry) await must('Try Again', ask(cdp, 'mutate', skipped.value.retry))
 }
 
 // ── Group 5 — The label and key registry (Phases 5A and 5B) ────────────────
@@ -837,7 +838,7 @@ async function group5(cdp) {
 
   await setValue(cdp, due[1], dueId, { kind: 'text', value: 'later' })
   pin(G, 'C-2', 'a write lands on the stored key', await wrote(due[1], 'M5 Due: other\nm5_due: later'), show(blockOf(due[1])))
-  await must('an unrelated registry write', ask(cdp, 'property:setIcon', grade, 'tag'))
+  await must('an unrelated registry write', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: grade, patch: { icon: 'tag' } }))
   await sleep(1000)
   pin(G, 'C-3', 'a definition with no label rides through a write as it was written', !('label' in defOf(bareId)) && defOf(bareId).key === 'M5 Bare', show(defOf(bareId)))
   await setValue(cdp, flags, flagsId, { kind: 'multiSelect', value: ['In Progress', 'Done'] })
@@ -845,27 +846,27 @@ async function group5(cdp) {
   await setValue(cdp, kind[1], kindId, { kind: 'select', value: 'Urgent' })
   pin(G, 'C-1', "a Select pick writes the option's key", await wrote(kind[1], 'M5 Kind:\n  - urgent'), show(blockOf(kind[1])))
   const foreignKind = snapshot([kind[2]])
-  await must('clear Urgent', ask(cdp, 'property:clearOption', kindId, 'Urgent'))
+  await must('clear Urgent', ask(cdp, 'mutate', { op: 'clearOption', propertyId: kindId, label: 'Urgent' }))
   pin(G, 'C-1', "Clear names the option by label and strips its key, leaving the label written as a word",
     (await wrote(kind[0], '')) && (await wrote(kind[1], '')) && (await foreignKind.holds()), show(kind.map(blockOf)))
 
   // Uniqueness: labels and keys are each unique without regard to case, and a reserved key is refused on either word.
   const step = await must('create m5 grade', add(cdp, { label: 'm5 grade', type: 'text' }))
   pin(G, 'D-1', 'a create under a label another holds in another casing steps aside on both words',
-    defOf(step.id)?.label === 'm5 grade (2)' && defOf(step.id)?.key === 'm5 grade (2)', show(defOf(step.id)))
+    defOf(step.created.propertyId)?.label === 'm5 grade (2)' && defOf(step.created.propertyId)?.key === 'm5 grade (2)', show(defOf(step.created.propertyId)))
   pin(G, 'D-1', 'a rename onto a label another holds in another casing is refused',
-    refusedAs(await ask(cdp, 'property:rename', kindId, 'm5 grade'), COPY.aLabelAnotherPropertyHolds, 'm5 grade'))
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindId, label: 'm5 grade' }), COPY.aLabelAnotherPropertyHolds, 'm5 grade'))
   pin(G, 'D-1', 'a rename onto a key another property writes is refused',
-    refusedAs(await ask(cdp, 'property:rename', kindId, 'M5_DUE'), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindId, label: 'M5_DUE' }), COPY.aKeyAnotherPropertyWrites, 'M5_DUE') && defOf(kindId).label === 'M5 Kind')
   pin(G, 'D-1', 'a create labelled Id is refused as a key Pommora manages', refusedAs(await add(cdp, { label: 'Id', type: 'text' }), COPY.aKeyPommoraManages))
   pin(G, 'D-1', 'a create labelled Banner is refused as a key Pommora manages', refusedAs(await add(cdp, { label: 'Banner', type: 'text' }), COPY.aKeyPommoraManages))
   const banner = mintPropertyId()
   writeDef({ id: banner, label: 'M5 Banner', key: 'banner', type: 'text' })
   await sleep(1500)
-  pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner)).ok === false)
+  pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner, { of: 'property' })).ok === false)
   const optionsBefore = show(wordsOf(grade))
   pin(G, 'D-2', 'an option label in another casing of one the property holds is refused',
-    refusedAs(await ask(cdp, 'property:editOption', grade, { op: 'add', groupId: 'select', label: 'a' }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
+    refusedAs(await ask(cdp, 'mutate', { op: 'editOption', propertyId: grade, edit: { op: 'add', groupId: 'select', label: 'a' } }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
   pin(G, 'D-2', 'two options writing one key in two casings are refused at create',
     refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey))
   pin(G, 'D-2', 'an option with a blank key is refused at create',
@@ -918,69 +919,69 @@ async function group6(cdp) {
     tile: operandsFor(JSON.parse(read(tiles)), tones),
     matrix: operandsFor(JSON.parse(read(MATRIX)), tones),
   })
-  await must('rename Light Blue', ask(cdp, 'property:renameOption', tones, 'Light Blue', 'Sky Blue'))
+  await must('rename Light Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: tones, from: 'Light Blue', to: 'Sky Blue' }))
   pin(G, 'F-2', 'an option rename rewrites the page, the Space, and the Collection cache by key',
     (await wrote(tone[0], 'M6 Tones: [Sky Blue, Dark Red]')) && same(sidecar('Areas', 'Area One')['M6 Tones'], ['Sky Blue'])
       && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue', 'Mid Grey']),
     show([blockOf(tone[0]), sidecar('Areas', 'Area One')['M6 Tones'], cacheOf(tones)]))
   pin(G, 'F-2', 'an option rename rewrites the saved view, the View Tile, and the Matrix filter by label',
     same(named(), { view: ['Sky Blue'], tile: ['Sky Blue'], matrix: ['Sky Blue'] }), show(named()))
-  await must('rename Urgent', ask(cdp, 'property:renameOption', kindId, 'Urgent', 'Critical'))
+  await must('rename Urgent', ask(cdp, 'mutate', { op: 'renameOption', propertyId: kindId, from: 'Urgent', to: 'Critical' }))
   pin(G, 'F-2', "under Match Title an option's key follows its label on the page, and the view follows the label",
     (await wrote(kind, 'M6 Kind: [Critical]')) && same(operandsFor(viewOf(kindView), kindId), ['Critical']) && same(wordsOf(kindId), [['Critical', 'Critical']]),
     show([blockOf(kind), operandsFor(viewOf(kindView), kindId)]))
-  await must('remove Critical', ask(cdp, 'property:removeOption', kindId, 'Critical'))
-  pin(G, 'F-2', 'an option removal strips the page and the view naming it',
+  await must('delete Critical', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: kindId, label: 'Critical' }))
+  pin(G, 'F-2', 'an option delete strips the page and the view naming it',
     (await wrote(kind, '')) && !operandsFor(viewOf(kindView), kindId).includes('Critical'), show([blockOf(kind), viewOf(kindView).filter]))
-  await must('remove Mid Grey', ask(cdp, 'property:removeOption', tones, 'Mid Grey'))
-  pin(G, 'F-2', 'an option removal strips the page and the Collection cache',
+  await must('delete Mid Grey', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tones, label: 'Mid Grey' }))
+  pin(G, 'F-2', 'an option delete strips the page and the Collection cache',
     (await wrote(tone[1], '')) && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue']), show([blockOf(tone[1]), cacheOf(tones)]))
-  await must('clear Sky Blue', ask(cdp, 'property:clearOption', tones, 'Sky Blue'))
+  await must('clear Sky Blue', ask(cdp, 'mutate', { op: 'clearOption', propertyId: tones, label: 'Sky Blue' }))
   pin(G, 'J-1', 'Clear strips the Collection cache too', await settles(async () => !listOf(cacheOf(tones)[pageIds[cachedPage]]).includes('Sky Blue')), show(cacheOf(tones)))
-  await must('assign M6 Tones to Collection B again', ask(cdp, 'schema:assign', CACHE_COLLECTION, tones))
+  await must('assign M6 Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
   pin(G, 'J-1', 'a reassign after a Clear brings the cleared value back nowhere',
     await holds(async () => !listOf(fmOf(cachedPage)['M6 Tones']).includes('Sky Blue'), 2500), show(blockOf(cachedPage)))
 
   // The journal: every record carries stored keys, an owed option record holds every option change but Clear, and Try
   // Again brings the skipped file current.
-  const renamed = await unreadable(due[0], () => ask(cdp, 'property:rename', dueId, 'M6 When'))
+  const renamed = await unreadable(due[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueId, label: 'M6 When' }))
   pin(G, 'F-1', 'a rename record carries the stored keys',
-    same(renamed.value?.owed, { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }) && same(slot(), renamed.value?.owed), show([renamed, slot()]))
-  await must('Try Again', ask(cdp, 'property:replay', renamed.value.owed))
+    same(renamed.value?.retry, FINISH) && same(slot(), { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }), show([renamed, slot()]))
+  await must('Try Again', ask(cdp, 'mutate', renamed.value.retry))
   pin(G, 'F-1', "the rename's Try Again moves the stored key", (await wrote(due[0], 'M6 When: a')) && slot() === null, show(blockOf(due[0])))
 
   const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']], labels: ['Pale', 'Light'] }
-  const owing = await unreadable(tint[0], () => ask(cdp, 'property:renameOption', tints, 'Pale', 'Light'))
+  const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Pale', to: 'Light' }))
   pin(G, 'F-1', 'an option rename record carries its key pairs and its label pair',
-    same(owing.value?.owed, optionRecord) && same(slot(), optionRecord), show([owing, slot()]))
+    same(owing.value?.retry, FINISH) && same(slot(), optionRecord), show([owing, slot()]))
   const held = snapshot([...tint, REGISTRY, JOURNAL])
   pin(G, 'F-1', 'an option rename waits while a record is owed',
-    refusedAs(await ask(cdp, 'property:renameOption', tints, 'Deep', 'Dark'), COPY.anOptionChangeWaitingForTryAgain))
-  pin(G, 'F-1', 'an option removal waits while a record is owed',
-    refusedAs(await ask(cdp, 'property:removeOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Deep', to: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
+  pin(G, 'F-1', 'an option delete waits while a record is owed',
+    refusedAs(await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
   pin(G, 'F-1', 'a waiting option change writes nothing', await held.holds(), show(held.changed()))
   pin(G, 'F-1', "Clear waits while its own property's option record is owed",
-    refusedAs(await ask(cdp, 'property:clearOption', tints, 'Deep'), COPY.anOptionChangeWaitingForTryAgain))
-  await must('rename M6 Free', ask(cdp, 'property:rename', ids['M6 Free'], 'M6 Freed'))
+    refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
+  await must('rename M6 Free', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }))
   pin(G, 'F-1', 'a property rename still runs while a record is owed', await wrote(free, 'M6 Freed: f'), show(blockOf(free)))
   const shielded = seedPage(pageAt('M6 Tint 3'), 'M6 Tints: [Pale]')
   await indexed(cdp, COLLECTION, [shielded])
   pin(G, 'F-1', "the owed record's old key isn't adopted while it's owed", await holds(async () => !keysOf(tints).includes('Pale'), 3000), show(wordsOf(tints)))
-  await must('Try Again', ask(cdp, 'property:replay', owing.value.owed))
+  await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
   pin(G, 'F-1', "the option rename's Try Again brings the skipped file current and clears the record",
     (await wrote(tint[0], 'M6 Tints: [Light]')) && slot() === null, show([blockOf(tint[0]), slot()]))
 
-  const removedProp = await unreadable(doomed[0], () => ask(cdp, 'property:delete', ids['M6 Doomed']))
+  const removedProp = await unreadable(doomed[0], () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M6 Doomed'] }))
   pin(G, 'F-1', 'a delete record carries the stored key',
-    same(removedProp.value?.owed, { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
-  if (removedProp.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedProp.value.owed))
+    same(removedProp.value?.retry, FINISH) && same(slot(), { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
+  if (removedProp.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedProp.value.retry))
   pin(G, 'F-1', "the delete's Try Again strips the skipped file", (await wrote(doomed[0], '')) && slot() === null, show(blockOf(doomed[0])))
 
-  const removedOption = await unreadable(strike[0], () => ask(cdp, 'property:removeOption', strikeId, 'x'))
-  pin(G, 'F-1', 'an option removal record carries the stored key',
-    same(removedOption.value?.owed, { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
-  if (removedOption.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedOption.value.owed))
-  pin(G, 'F-1', "the option removal's Try Again strips the skipped file",
+  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, label: 'x' }))
+  pin(G, 'F-1', 'an option delete record carries the stored key',
+    same(removedOption.value?.retry, FINISH) && same(slot(), { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
+  if (removedOption.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedOption.value.retry))
+  pin(G, 'F-1', "the option delete's Try Again strips the skipped file",
     (await wrote(strike[0], 'M6 Strike: [y]')) && (await wrote(strike[1], 'M6 Strike: [y]')) && slot() === null, show(strike.map(blockOf)))
 }
 
@@ -1072,9 +1073,9 @@ async function group7(cdp) {
   for (const f of [...FORMATS.slice(1), 'Match Title']) {
     const holders = prior === 'URL Slug' ? 2 : 3
     const untouched = snapshot([...slug, AREA_ONE])
-    const count = await ask(cdp, 'property:holders', slugId, { key_format: f })
+    const count = await ask(cdp, 'property:holders', slugId, { of: 'format', change: { key_format: f } })
     pin(G, 'F-4', `Key Format ${f}: the count is ${itemCount(holders)} and writes nothing`, count.ok && count.value === holders && (await untouched.holds(800)), show(count))
-    const r = await ask(cdp, 'property:setKeyFormat', slugId, f)
+    const r = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { key_format: f } })
     const want = SLUG_KEYS[f]
     const d = defOf(slugId)
     pin(G, 'B-2 B-5 B-6 F-1', `Key Format ${f} writes "${want}" and moves it on every holder`,
@@ -1091,72 +1092,72 @@ async function group7(cdp) {
     prior = want
   }
   const registryKept = snapshot([REGISTRY, ...slug])
-  const unchanged = await ask(cdp, 'property:setKeyFormat', slugId, 'Match Title')
-  pin(G, 'F-1', 'a Key Format change to the format it holds writes nothing', unchanged.ok && unchanged.value === null && (await registryKept.holds()), show(unchanged))
+  const unchanged = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { key_format: 'Match Title' } })
+  pin(G, 'F-1', 'a Key Format change to the format it holds writes nothing', unchanged.ok && same(unchanged.value, {}) && (await registryKept.holds()), show(unchanged))
 
-  const listed = await ask(cdp, 'property:setKeyFormat', kindsId, 'lowercase')
+  const listed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: kindsId, change: { key_format: 'lowercase' } })
   pin(G, 'B-4 F-1', 'a Key Format change moves a list key on its line on the page and on the Space',
-    listed.ok && listed.value?.from === 'Kinds' && listed.value?.to === 'kinds' && (await wrote(kinds, 'x: 1\nkinds: [a]\ny: 2'))
+    listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds' && (await wrote(kinds, 'x: 1\nkinds: [a]\ny: 2'))
       && (await settles(async () => same(sidecar('Areas', 'Area Two').kinds, ['b']))) && slot() === null,
     show([listed, blockOf(kinds), sidecar('Areas', 'Area Two')]))
-  const relabel = await ask(cdp, 'property:rename', kindsId, 'Labels')
+  const relabel = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindsId, label: 'Labels' })
   pin(G, 'C-2', 'a label rename writes the key through the Key Format', relabel.ok && defOf(kindsId).key === 'labels' && (await wrote(kinds, 'x: 1\nlabels: [a]\ny: 2')), show([relabel, defOf(kindsId)]))
   const kindsKept = snapshot([kinds])
-  const recased = await ask(cdp, 'property:rename', kindsId, 'LABELS')
+  const recased = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindsId, label: 'LABELS' })
   pin(G, 'C-2', 'a label rename the format writes as the same key moves nothing',
-    recased.ok && recased.value?.from === 'labels' && recased.value?.to === 'labels' && defOf(kindsId).label === 'LABELS' && (await kindsKept.holds()), show(recased))
+    recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS' && (await kindsKept.holds()), show(recased))
 
   const sortsKept = snapshot([sorts, JOURNAL])
   pin(G, 'D-1 J-1', 'a Key Format change onto a key a page holds beside it is refused, and nothing moves',
-    refusedAs(await ask(cdp, 'property:setKeyFormat', sortsId, 'lowercase'), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'lowercase' } }), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
 
   for (const [label, format, want] of CREATES) {
     const r = await add(cdp, { label, type: 'text', key_format: format })
-    pin(G, 'B-5', `a create of "${label}" under ${format} writes "${want}"`, r.ok && defOf(r.value.id)?.key === want && defOf(r.value.id)?.label === label, show([r, r.ok && defOf(r.value.id)]))
+    pin(G, 'B-5', `a create of "${label}" under ${format} writes "${want}"`, r.ok && defOf(r.value.created.propertyId)?.key === want && defOf(r.value.created.propertyId)?.label === label, show([r, r.ok && defOf(r.value.created.propertyId)]))
   }
   const given = await must('create Given Key', add(cdp, { label: 'Given Key', key: 'whatever', type: 'text' }))
-  pin(G, 'C-2', 'a create writes its key from its label, whatever key it is handed', defOf(given.id)?.key === 'Given Key', show(defOf(given.id)))
+  pin(G, 'C-2', 'a create writes its key from its label, whatever key it is handed', defOf(given.created.propertyId)?.key === 'Given Key', show(defOf(given.created.propertyId)))
   await define(cdp, { label: 'Ship_Date', type: 'text' })
   const stepped = await must('create Ship Date under snake_case', add(cdp, { label: 'Ship Date', type: 'text', key_format: 'snake_case' }))
   pin(G, 'D-1', 'a create whose key alone another property holds steps aside on both words',
-    defOf(stepped.id)?.label === 'Ship Date (2)' && defOf(stepped.id)?.key === 'ship_date_(2)', show(defOf(stepped.id)))
+    defOf(stepped.created.propertyId)?.label === 'Ship Date (2)' && defOf(stepped.created.propertyId)?.key === 'ship_date_(2)', show(defOf(stepped.created.propertyId)))
   const shipDate = await define(cdp, { label: 'Ship Date', type: 'text' })
   pin(G, 'D-1', 'a create neither of whose words is held lands as written', defOf(shipDate)?.label === 'Ship Date' && defOf(shipDate)?.key === 'Ship Date', show(defOf(shipDate)))
   pin(G, 'D-1', 'a Key Format change onto a key another property writes is refused',
-    refusedAs(await ask(cdp, 'property:setKeyFormat', shipDate, 'snake_case'), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shipDate, change: { key_format: 'snake_case' } }), COPY.aKeyAnotherPropertyWrites, 'ship_date') && defOf(shipDate).key === 'Ship Date')
   pin(G, 'B-5', 'a create whose format writes no key is refused', refusedAs(await add(cdp, { label: '---', type: 'text', key_format: 'kebab-case' }), COPY.anEmptyKey, 'Properties'))
   const dashes = await define(cdp, { label: '---', type: 'text' })
   pin(G, 'B-5', 'a Key Format change that writes no key is refused',
-    refusedAs(await ask(cdp, 'property:setKeyFormat', dashes, 'kebab-case'), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: dashes, change: { key_format: 'kebab-case' } }), COPY.anEmptyKey, 'Properties') && defOf(dashes).key === '---')
   const hidden = ids['Heading Icon Hidden'] ?? (await define(cdp, { label: 'Heading Icon Hidden', type: 'text' }))
   pin(G, 'D-1', 'a Key Format change onto a key Pommora manages is refused',
-    refusedAs(await ask(cdp, 'property:setKeyFormat', hidden, 'snake_case'), COPY.aKeyPommoraManages) && defOf(hidden).key === 'Heading Icon Hidden')
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: hidden, change: { key_format: 'snake_case' } }), COPY.aKeyPommoraManages) && defOf(hidden).key === 'Heading Icon Hidden')
   pin(G, 'D-1', 'a create whose format writes a key Pommora manages is refused',
     refusedAs(await add(cdp, { label: 'I D', type: 'text', key_format: 'PascalCase' }), COPY.aKeyPommoraManages))
 
-  await must('rename Due Soon', ask(cdp, 'property:rename', dueSoonId, 'Due Later'))
+  await must('rename Due Soon', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueSoonId, label: 'Due Later' }))
   pin(G, 'C-2', 'the next label change writes that key through the format', defOf(dueSoonId).key === 'due_later' && (await wrote(dueSoon, 'due_later: x')), show([defOf(dueSoonId), blockOf(dueSoon)]))
-  await must('an icon on Kind Of', ask(cdp, 'property:setIcon', kindOf, 'tag'))
+  await must('an icon on Kind Of', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: kindOf, patch: { icon: 'tag' } }))
   pin(G, 'C-2', 'a type changed outside the app seeds its options through the Value Format',
     await settles(async () => same(wordsOf(kindOf), [['option 1', 'Option 1']])), show(defOf(kindOf)))
 
   // The Value Format: seeds, adds, and renames key through it, and a create keeps the keys it's handed.
   const seededStatus = await must('a Status under kebab-case', add(cdp, { label: 'Stage Seed', type: 'status', value_format: 'kebab-case' }))
   pin(G, 'C-2', "a Status seed's keys are written through the Value Format",
-    same(wordsOf(seededStatus.id), [['open', 'Open'], ['active', 'Active'], ['done', 'Done']]), show(defOf(seededStatus.id)))
+    same(wordsOf(seededStatus.created.propertyId), [['open', 'Open'], ['active', 'Active'], ['done', 'Done']]), show(defOf(seededStatus.created.propertyId)))
   const seededSelect = await must('a Select under UPPERCASE', add(cdp, { label: 'Option Seed', type: 'select', value_format: 'UPPERCASE' }))
-  pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.id), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.id)))
+  pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.created.propertyId), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.created.propertyId)))
   pin(G, 'C-2', 'a create keeps the option keys it is handed', same(wordsOf(paletteId), [['x', 'Light Blue']]), show(defOf(paletteId)))
-  await must('add Dark Blue', ask(cdp, 'property:editOption', paletteId, { op: 'add', groupId: 'select', label: 'Dark Blue' }))
+  await must('add Dark Blue', ask(cdp, 'mutate', { op: 'editOption', propertyId: paletteId, edit: { op: 'add', groupId: 'select', label: 'Dark Blue' } }))
   pin(G, 'C-2', "an added option's key is written through the Value Format", same(wordsOf(paletteId), [['x', 'Light Blue'], ['dark-blue', 'Dark Blue']]), show(defOf(paletteId)))
-  await must('rename Dark Blue', ask(cdp, 'property:renameOption', paletteId, 'Dark Blue', 'Navy Blue'))
+  await must('rename Dark Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: paletteId, from: 'Dark Blue', to: 'Navy Blue' }))
   pin(G, 'C-2', "an option label rename writes its key through the Value Format and moves it on the page",
     keysOf(paletteId).includes('navy-blue') && (await wrote(palette, 'Palette: [navy-blue]')), show([defOf(paletteId), blockOf(palette)]))
 
   pin(G, 'E-1', 'under kebab-case adoption takes in-progress and leaves due_date',
     await settles(async () => same(wordsOf(progressId), [['in-progress', 'in-progress']]), 8000), show(defOf(progressId)))
   const progressKept = snapshot([progress])
-  await must('rename in-progress', ask(cdp, 'property:renameOption', progressId, 'in-progress', 'In Progress'))
+  await must('rename in-progress', ask(cdp, 'mutate', { op: 'renameOption', propertyId: progressId, from: 'in-progress', to: 'In Progress' }))
   pin(G, 'E-1 F-2', 'an adopted option renamed to a label its format writes as the same key rewrites no page, and the view follows the label',
     same(wordsOf(progressId), [['in-progress', 'In Progress']]) && (await progressKept.holds()) && same(operandsFor(viewOf(progressView), progressId), ['In Progress']),
     show([defOf(progressId), operandsFor(viewOf(progressView), progressId)]))
@@ -1164,12 +1165,12 @@ async function group7(cdp) {
   // A Value Format change re-keys every option on every holder by key, and touches no configuration.
   const config = snapshot([`${COLLECTION}/_pagecollection.json`, tiles, MATRIX])
   const toneKept = snapshot([tone, AREA_ONE])
-  const toneCount = await ask(cdp, 'property:holders', tones, { value_format: 'kebab-case' })
+  const toneCount = await ask(cdp, 'property:holders', tones, { of: 'format', change: { value_format: 'kebab-case' } })
   pin(G, 'F-4', 'a Value Format count covers the page and the Space and leaves out the Collection cache, writing nothing',
     toneCount.ok && toneCount.value === 2 && (await toneKept.holds(800)), show(toneCount))
-  const changed = await ask(cdp, 'property:setValueFormat', tones, 'kebab-case')
+  const changed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: tones, change: { value_format: 'kebab-case' } })
   pin(G, 'F-1 C-2', 'a Value Format change re-keys every option and keeps every label',
-    changed.ok && !changed.value?.owed && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && slot() === null,
+    changed.ok && !changed.value?.retry && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && slot() === null,
     show([changed, defOf(tones)]))
   pin(G, 'F-1 F-2', 'a Value Format change rewrites the page, the Space, and the Collection cache by key',
     (await wrote(tone, 'Tones: ["light-blue", "dark-red"]')) && same(sidecar('Areas', 'Area One').Tones, ['light-blue'])
@@ -1183,44 +1184,44 @@ async function group7(cdp) {
   pin(G, 'F-2', 'after a Value Format change the View Tile naming Light Blue still shows the page',
     await settles(() => cdp.evaluate(`!!document.querySelector('.data-row[data-rid="${pageIds[tone]}"]')`), 6000))
   await sidebarTo(cdp, 'Collections', COLLECTION)
-  await must('assign Tones to Collection B again', ask(cdp, 'schema:assign', CACHE_COLLECTION, tones))
+  await must('assign Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
   pin(G, 'F-2', 'a reassign after a Value Format change refills the current key', await settles(async () => same(listOf(fmOf(cachedPage).Tones), ['light-blue'])), show(blockOf(cachedPage)))
 
   // A format change over an unreadable file owes it under a record of stored keys alone, and Try Again brings it current.
-  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'property:setKeyFormat', skipKeyId, 'lowercase'))
+  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipKeyId, change: { key_format: 'lowercase' } }))
   const keyRecord = { op: 'rename', id: skipKeyId, from: 'Skip Key', to: 'skip key' }
   pin(G, 'F-1', 'a Key Format change that skips a file owes a rename record of its stored keys and sweeps the rest',
-    same(keySkip.value?.owed, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
-  const keyReplay = await ask(cdp, 'property:replay', keySkip.value?.owed)
+    same(keySkip.value?.retry, FINISH) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
+  const keyReplay = await ask(cdp, 'mutate', keySkip.value?.retry)
   pin(G, 'F-1', "the Key Format change's Try Again moves the skipped file's key and clears the record",
     keyReplay.ok && (await wrote(skipKey[0], 'skip key: a')) && slot() === null, show([keyReplay, blockOf(skipKey[0])]))
-  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'property:setValueFormat', skipValueId, 'kebab-case'))
+  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipValueId, change: { value_format: 'kebab-case' } }))
   const valueRecord = { op: 'option-rename', id: skipValueId, keys: [['Pale Red', 'pale-red']] }
   pin(G, 'F-1', 'a Value Format change that skips a file owes an option-rename record of its key pairs alone and sweeps the rest',
-    same(valueSkip.value?.owed, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
-  const valueReplay = await ask(cdp, 'property:replay', valueSkip.value?.owed)
+    same(valueSkip.value?.retry, FINISH) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
+  const valueReplay = await ask(cdp, 'mutate', valueSkip.value?.retry)
   pin(G, 'F-1', "the Value Format change's Try Again re-keys the skipped file and clears the record",
     valueReplay.ok && (await wrote(skipValue[0], 'Skip Value: [pale-red]')) && slot() === null, show([valueReplay, blockOf(skipValue[0])]))
 
   const collision = snapshot([wifi, REGISTRY, JOURNAL])
   pin(G, 'D-2 F-1', 'a Value Format change giving two options one key is refused, and nothing changes',
-    refusedAs(await ask(cdp, 'property:setValueFormat', wifiId, 'kebab-case'), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: wifiId, change: { value_format: 'kebab-case' } }), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
   const crossing = snapshot([REGISTRY, JOURNAL])
   pin(G, 'F-1', "a Value Format change crossing two options' keys is refused, and nothing changes",
-    refusedAs(await ask(cdp, 'property:setValueFormat', router, 'kebab-case'), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: router, change: { value_format: 'kebab-case' } }), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
   pin(G, 'B-3', 'a Value Format change on a property without options is refused',
-    refusedAs(await ask(cdp, 'property:setValueFormat', slugId, 'kebab-case'), COPY.anOptionEditWithoutOptions))
+    refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: slugId, change: { value_format: 'kebab-case' } }), COPY.anOptionEditWithoutOptions))
   pin(G, 'B-3', 'a Value Format count on a property without options is refused',
-    refusedAs(await ask(cdp, 'property:holders', slugId, { value_format: 'kebab-case' }), COPY.anOptionEditWithoutOptions))
-  const matchTitle = await ask(cdp, 'property:holders', wifiId, { value_format: 'Match Title' })
+    refusedAs(await ask(cdp, 'property:holders', slugId, { of: 'format', change: { value_format: 'kebab-case' } }), COPY.anOptionEditWithoutOptions))
+  const matchTitle = await ask(cdp, 'property:holders', wifiId, { of: 'format', change: { value_format: 'Match Title' } })
   pin(G, 'F-4', 'a Value Format count that moves no key is zero', matchTitle.ok && matchTitle.value === 0, show(matchTitle))
 
-  const owing = await unreadable(owedPage[0], () => ask(cdp, 'property:renameOption', owedColors, 'Red', 'Crimson'))
+  const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, from: 'Red', to: 'Crimson' }))
   pin(G, 'F-1', 'a Value Format change waits while a record is owed',
-    !!owing.value?.owed && refusedAs(await ask(cdp, 'property:setValueFormat', shadesId, 'UPPERCASE'), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
-  const free = await ask(cdp, 'property:setKeyFormat', sortsId, 'UPPERCASE')
+    !!owing.value?.retry && refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shadesId, change: { value_format: 'UPPERCASE' } }), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
+  const free = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })
   pin(G, 'F-1', 'a Key Format change still runs while a record is owed', free.ok && defOf(sortsId).key === 'SORTS', show(free))
-  if (owing.value?.owed) await must('Try Again', ask(cdp, 'property:replay', owing.value.owed))
+  if (owing.value?.retry) await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
 
   // Adoption follows the Value Format: a foreign Multi-Select word becomes an option only when the format could have
   // written it, and a Value Format change owes adoption.
@@ -1230,7 +1231,7 @@ async function group7(cdp) {
   pin(G, 'E-1', 'adoption under lowercase takes green and leaves PURPLE and Red foreign',
     await settles(async () => same(wordsOf(shadesId), [['red', 'red'], ['blue', 'blue'], ['green', 'green']]), 8000), show(wordsOf(shadesId)))
   pin(G, 'E-1', 'under UPPERCASE a lowercase word is not adopted', await holds(async () => same(keysOf(huesId), ['alpha']), 2000), show(wordsOf(huesId)))
-  await must('Value Format lowercase on Hues', ask(cdp, 'property:setValueFormat', huesId, 'lowercase'))
+  await must('Value Format lowercase on Hues', ask(cdp, 'mutate', { op: 'setFormat', propertyId: huesId, change: { value_format: 'lowercase' } }))
   pin(G, 'E-1', 'a Value Format change owes adoption, and the word the new format writes becomes an option',
     await settles(async () => keysOf(huesId).includes('green'), 8000), show(wordsOf(huesId)))
 
@@ -1278,14 +1279,14 @@ async function group8(cdp) {
 
   const originalId = pageIds[P.ID]
   const bundles = {}
-  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).trashed.bundlePath
+  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).bundled.bundlePath
   const hiddenBefore = read(sidecarAt('Topics', 'M8 Hidden'))
   const spaceBundles = {}
   for (const title of ['M8 Returning', 'M8 Hidden'])
-    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).trashed.bundlePath
-  await must('Key Format lowercase on Priority', ask(cdp, 'property:setKeyFormat', ids.Priority, 'lowercase'))
-  await must('Value Format UPPERCASE on Severity', ask(cdp, 'property:setValueFormat', ids.Severity, 'UPPERCASE'))
-  await must('rename Rank', ask(cdp, 'property:rename', ids.Rank, 'Standing'))
+    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).bundled.bundlePath
+  await must('Key Format lowercase on Priority', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Priority, change: { key_format: 'lowercase' } }))
+  await must('Value Format UPPERCASE on Severity', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Severity, change: { value_format: 'UPPERCASE' } }))
+  await must('rename Rank', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids.Rank, label: 'Standing' }))
   await must('retitle M8-Kind', ask(cdp, 'mutate', { op: 'renameContext', contextId: kindContext, newName: 'M8 Kind' }))
   await must('retitle m8-spot', ask(cdp, 'mutate', { op: 'renameSpace', spaceId: kindSpace, newName: 'M8 Spot' }))
   for (const [rel] of seeds) await must(`restore ${rel}`, ask(cdp, 'mutate', { op: 'restore', bundlePath: bundles[rel] }))
@@ -1501,8 +1502,8 @@ async function group9(cdp) {
   const deleteAsk = await settles(() => dialogUp(cdp), 2500) ? await cdp.evaluate(`({ message: ${DIALOG}.getAttribute('aria-label'), text: ${DIALOG}.textContent })`) : null
   if (deleteAsk) await click(cdp, dialogButton(true))
   await sleep(800)
-  pin(G, 'F-4', 'a property Delete over no Items still asks, and a cancel keeps the property',
-    deleting === true && deleteAsk?.message === 'Delete “M9 Gone” everywhere?' && deleteAsk.text.includes('0 Items') && !!defOf(ids['M9 Gone']), show({ deleting, deleteAsk }))
+  pin(G, 'F-4', 'a property Delete over no Items still asks, without a count, and a cancel keeps the property',
+    deleting === true && deleteAsk?.message === 'Delete “M9 Gone” everywhere?' && deleteAsk.text.includes('It is removed from every collection; a restorable record') && !deleteAsk.text.includes('0 Items') && !!defOf(ids['M9 Gone']), show({ deleting, deleteAsk }))
   await escapeAll(cdp)
 
   // The Trash: a page restored through the Trash browser returns in the current spelling.
@@ -1532,7 +1533,7 @@ async function group9(cdp) {
     await settles(async () => same(mine(order()), [B, A]) && order().every((id) => known.has(id))), show(order()))
   pin(G, 'F-5', 'the panel draws the dragged order', same(mine(await panelRows()), [B, A]), show(await panelRows()))
   const orderWas = order()
-  await must('rename M9 A', ask(cdp, 'property:rename', A, 'M9 Alpha'))
+  await must('rename M9 A', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: A, label: 'M9 Alpha' }))
   pin(G, 'F-5', 'a property rename leaves the order and the panel as they were',
     (await holds(async () => same(order(), orderWas))) && same(mine(await panelRows()), [B, A]), show([order(), await panelRows()]))
   await shot(cdp, 'space-panel')

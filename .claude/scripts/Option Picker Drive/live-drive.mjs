@@ -30,13 +30,13 @@ const PROPS = { 'Drive Select': 'select', 'Drive Multi': 'multiSelect', 'Drive S
 const ids = {}
 async function seed(cdp) {
   for (const [name, type] of Object.entries(PROPS)) {
-    const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', label: name, type })
+    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
     check(`seed: ${name} added`, r.ok, JSON.stringify(r))
-    ids[name] = r.value?.id
+    ids[name] = r.value?.created?.propertyId
   }
   for (const [name, titles] of [['Drive Select', ['Alpha', 'Beta']], ['Drive Multi', ['One', 'Two']]])
     for (const title of titles) {
-      const r = await ask(cdp, 'property:editOption', ids[name], { op: 'add', groupId: 'select', label: title })
+      const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[name], edit: { op: 'add', groupId: 'select', label: title } })
       check(`seed: ${name} ${title}`, r.ok, JSON.stringify(r))
     }
   const view = await ask(cdp, 'views:save', 'Collection A', 'collection', { id: 'view_01KZDRIVE0000000000000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title', ...Object.keys(PROPS).map((name) => ids[name])], hidden_properties: [] }, {})
@@ -160,22 +160,21 @@ async function stepEditOption(cdp) {
 }
 
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
-async function stepClearRemove(cdp) {
+const DIALOG_OPEN = `!!document.querySelector('[role="alertdialog"]')`
+async function stepClearDelete(cdp) {
   const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Alpha' } })
   check('clear: Drive Two holds Alpha', r.ok && lists('Drive Two', 'Drive Select', 'Alpha'), JSON.stringify(r))
   await openEditor(cdp, 'Drive Select')
   const alphaRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Alpha' && r.querySelector('[aria-label="Edit Option"]'))`
   await chooseNative(cdp, alphaRow, 'Clear')
-  check('Clear asks, naming the one Item holding Alpha', await cdp.evaluate(`document.body.innerText.includes('Clear “Alpha” from 1 Item?')`))
-  await shot(cdp, 'editor-clear-confirm')
-  await click(cdp, confirmButton('Clear'))
   await sleep(1000)
-  check('Clear strips Alpha from every page and keeps the option', !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))
-  await chooseNative(cdp, alphaRow, 'Remove')
-  check('Remove asks, naming no Item', await cdp.evaluate(`document.body.innerText.includes('stripped from 0 Items.')`))
-  await click(cdp, confirmButton('Remove'))
+  check('Clear over one Item strips it unasked', !(await cdp.evaluate(DIALOG_OPEN)) && !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))
+  await chooseNative(cdp, alphaRow, 'Delete')
+  check('Delete asks to delete Alpha without a strip clause, nothing holding it', await cdp.evaluate(`document.body.innerText.includes('Delete “Alpha”?') && document.body.innerText.includes('The option is deleted from the property.') && !document.body.innerText.includes('stripped')`))
+  await shot(cdp, 'editor-delete-confirm')
+  await click(cdp, confirmButton('Delete'))
   await sleep(1000)
-  check('Remove deletes Alpha from the registry', !optionValues('Drive Select').includes('Alpha'), JSON.stringify(optionValues('Drive Select')))
+  check('Delete removes Alpha from the registry', !optionValues('Drive Select').includes('Alpha'), JSON.stringify(optionValues('Drive Select')))
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
   await pressKey(cdp, 'Escape')
 }
@@ -283,7 +282,7 @@ async function stepEditor(cdp) {
 }
 
 async function stepHostRefusal(cdp) {
-  const r = await ask(cdp, 'property:editOption', ids['Drive Select'], { op: 'add', groupId: 'select', label: '' })
+  const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Drive Select'], edit: { op: 'add', groupId: 'select', label: '' } })
   check('the host refuses a blank option title', r.ok === false, JSON.stringify(r))
 }
 
@@ -302,7 +301,7 @@ try {
   await stepPanel(cdp)
   await stepMulti(cdp)
   await stepEditor(cdp)
-  await stepClearRemove(cdp)
+  await stepClearDelete(cdp)
   await stepHostRefusal(cdp)
   cdp.close()
 } catch (e) {

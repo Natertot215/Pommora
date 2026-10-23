@@ -566,3 +566,21 @@ export async function restore() {
   rmSync(backup, { recursive: true, force: true })
   console.log(`~/Test restored · screenshots in ${shotsDir}`)
 }
+
+
+export const ribbon = (label) => `document.querySelector('.sidebar-ribbon [aria-label="${label}"]')`
+export const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')]`
+export async function openSettings(cdp, frame) {
+  if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, ribbon('Settings'))
+  await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
+  await click(cdp, `${RAIL}.find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
+  await sleep(800)
+}
+export async function closeSettings(cdp) {
+  if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
+  await sleep(600)
+}
+export const DIALOG = `document.querySelector('[role="alertdialog"]')`
+export const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
+export const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`)
+export const trashRowEl = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes(${JSON.stringify(title)}))`

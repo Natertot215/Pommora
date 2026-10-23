@@ -28,3 +28,14 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | A several-word Select | `Status` (Select: Option 1, Option 2) and `Notes` (Text) added to Collection A; `Tidy` written by hand with `Status: [Option 1, Option 2]` | set Tidy's Notes to `edited` | the file's `Status` reads `[Option 2]` | P-1 |
 | Spaces-only Text | `Spaces` written with `Notes: "   "`, `Filled` with `Notes: x` | the `Drive Values` view filters Notes Is Empty | `Spaces` draws and `Filled` doesn't | J-1 |
 | A re-pick on a Space | Area One | set its Notes to `held` twice, a second apart | `_space.json`'s text and modified time are unchanged | J-9 |
+
+#### Group 6 — One Door for Property Changes
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| An option's menu reads Delete, and a delete nothing holds asks without a strip clause | `Drive Choice` (Select: Alpha, Beta) added to Collection A | view settings › Properties › Drive Choice, right-click Alpha › Delete, then Delete | the menu holds Delete and no Remove; the dialog asks `Delete “Alpha”?` with `The option is deleted from the property.`; the registry lists Beta alone | O-1 |
+| An option a page holds asks with its count | `Drive Held` in Set Alpha holding Beta | right-click Beta › Delete, then Delete | the dialog says `…and its value stripped from 1 Item.`; `Drive Held.md` no longer holds `Drive Choice` | O-1 |
+| Deleting a property nothing holds asks without "0 Items" | `Drive Bare` (Text) | its editor's Property Menu › Delete, then Delete | the dialog asks `Delete “Drive Bare” everywhere?` with no count; the pane returns to its list, the notice starts `Deleted “Drive Bare”`, and the Trash holds one property row | O-2 |
+| The pane's + says the numbered name it took | `New Text` (Text) | view settings › Properties › New Property › Text | the notice reads `Created “New Text (2)”.` and the editor opens on `New Text (2)` | O-4 |
+| A property restored after its name was taken says the name it took | `Drive Bare` (Text) added again | Settings › Trash, right-click `Drive Bare` › Restore | the notice reads `Restored “Drive Bare” as “Drive Bare (2)”`; the registry holds both | O-4 |
+| The group leaves things as it found them | everything above | delete each property and `Drive Held`, empty the bundles made | Collection A's `properties`, the registry's `order`, and the Trash's count match the group's start | — |

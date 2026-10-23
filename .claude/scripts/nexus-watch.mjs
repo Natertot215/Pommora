@@ -32,7 +32,7 @@ async function snapshot() {
   )
   const assigned = (json(`${collection}/_pagecollection.json`).properties ?? []).map((id) => (defs[id] ? label(defs[id]) : id))
   const holders = Object.fromEntries(
-    await Promise.all(Object.values(defs).map(async (d) => [label(d), (await ask(cdp, 'property:holders', d.id)).value ?? null])),
+    await Promise.all(Object.values(defs).map(async (d) => [label(d), (await ask(cdp, 'property:holders', d.id, { of: 'property' })).value ?? null])),
   )
   const values = await must('view:loadValues', ask(cdp, 'view:loadValues', collection))
   const pages = Object.fromEntries(

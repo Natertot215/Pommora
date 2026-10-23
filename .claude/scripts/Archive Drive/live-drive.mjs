@@ -2,9 +2,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
-  activeTab, ask, boxOf, chooseNative, click, createPage, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt, mouseClick, must, NEXUS,
-  openCollection, openPage, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressKey, relaunch, restore, results, row, sel,
-  SETTINGS_BUTTON, settles, shot, sleep, textEl, typeText, until, watch, writeBody,
+  activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt,
+  mouseClick, must, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
+  RAIL, relaunch, restore, results, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
@@ -79,26 +79,12 @@ async function createAt(cdp, parent, title, seeds = {}) {
 // ── The sidebar ─────────────────────────────────────────────────────────────
 
 const sidebarRow = (title) => `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === ${JSON.stringify(title)})`
-const ribbon = (label) => `document.querySelector('.sidebar-ribbon [aria-label="${label}"]')`
 async function sidebarTo(cdp, mode, title) {
   if (!(await cdp.evaluate(`!!(${sidebarRow(title)})`))) await click(cdp, ribbon(mode))
   await until(`${title} in the sidebar`, () => cdp.evaluate(`!!(${sidebarRow(title)})`))
   await click(cdp, sidebarRow(title))
 }
-const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')]`
-async function openSettings(cdp, frame) {
-  if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, ribbon('Settings'))
-  await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
-  await click(cdp, `${RAIL}.find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
-  await sleep(800)
-}
-async function closeSettings(cdp) {
-  if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
-  await sleep(600)
-}
 const drawn = (cdp, title) => cdp.evaluate(`!!(${sidebarRow(title)})`)
-const DIALOG = `document.querySelector('[role="alertdialog"]')`
-const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
 /** Scrolled into the Settings body's view first, since a press lands where the element is drawn. */
 async function press(cdp, expr) {
   await cdp.evaluate(`(${expr}).scrollIntoView({ block: 'center' })`)
@@ -223,8 +209,6 @@ const between = (order, [a, x, b]) =>
   order.indexOf(a) >= 0 && order.indexOf(x) === order.indexOf(a) + 1 && order.indexOf(b) === order.indexOf(x) + 1
 const heldTree = async (cdp) => (await ask(cdp, 'nexus:state')).value.tree
 const collectionA = async (cdp) => (await heldTree(cdp)).collections.find((c) => c.path === 'Collection A')
-const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`)
-const trashRowEl = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes(${JSON.stringify(title)}))`
 
 async function createSetIn(cdp, name) {
   const id = containerId()
@@ -332,12 +316,12 @@ const rowIds = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.data-row[d
 async function group3() {
   const colA = JSON.parse(readRel('Collection A/_pagecollection.json')).id
   const alpha = JSON.parse(readRel('Collection A/Set Alpha/_pageset.json')).id
-  const { id: stage } = await must('add Drive Stage', ask(cdp, 'schema:add', 'Collection A', {
+  const { created: { propertyId: stage } } = await must('add Drive Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
     id: '',
     label: 'Drive Stage',
     type: 'select',
     select_options: [{ key: 'Draft', label: 'Draft' }],
-  }))
+  } }))
   const live = { rel: 'Collection A/Set Alpha/Drive Live.md', id: mintPageId() }
   const linker = { rel: 'Collection A/Set Alpha/Drive Linker.md', id: mintPageId() }
   // A Set whose sidecar doesn't parse is listed unreadable and never stamped, so the tree withholds its page while the index and a folder walk still read it.
@@ -386,14 +370,14 @@ async function group3() {
   const loaded = await must('view:loadValues', ask(cdp, 'view:loadValues', 'Collection A'))
   item(3, 'K-2', "Collection A's value load reads the tree's pages, never the archived one or one under a Set whose sidecar doesn't parse", live.id in loaded && !(arc.id in loaded) && !(withheld.id in loaded), show(Object.keys(loaded).length))
 
-  const count = await must('property:holders', ask(cdp, 'property:holders', stage))
+  const count = await must('property:holders', ask(cdp, 'property:holders', stage, { of: 'property' }))
   item(3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
-  await must('rename the Draft option', ask(cdp, 'property:renameOption', stage, 'Draft', 'Final'))
+  await must('rename the Draft option', ask(cdp, 'mutate', { op: 'renameOption', propertyId: stage, from: 'Draft', to: 'Final' }))
   item(3, 'C-1', 'an option rename rewrites the archived page as it rewrites the live one', show(frontOf(arc.rel)['Drive Stage']) === show(['Final']) && show(frontOf(live.rel)['Drive Stage']) === show(['Final']), show([frontOf(arc.rel)['Drive Stage'], frontOf(live.rel)['Drive Stage']]))
   await must('rename Drive Live', ask(cdp, 'mutate', { op: 'rename', path: live.rel, kind: 'page', newName: 'Drive Live 2' }))
   live.rel = 'Collection A/Set Alpha/Drive Live 2.md'
   item(3, 'C-1', "renaming Drive Live re-spells the archived page's link", bodyOf(arc.rel).includes('[[Drive Live 2]]'), show(bodyOf(arc.rel)))
-  await must('delete Drive Stage', ask(cdp, 'property:delete', stage))
+  await must('delete Drive Stage', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: stage }))
   item(3, 'C-2', 'the property delete strips the archived page as it strips the live one', !('Drive Stage' in frontOf(arc.rel)) && !('Drive Stage' in frontOf(live.rel)), show(frontOf(arc.rel)))
 
   // The seeds leave as they came, from outside, and the deleted property's bundle is emptied, so a later group meets Collection A, its Archive, and the Trash as group 3 found them. The watcher holds a file the app just wrote until it's still for 200 ms, and an unlink inside that hold reaches the app as nothing, so the seeds leave once the delete's writes are still.
