@@ -25,7 +25,7 @@ import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
 import { tileDocsSettled } from '../Tiles/tileDocStore'
 import { cancelAllWriters, flushAllWriters, holdSaves, releaseSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
-import { resetUndo } from './undo'
+import { pushUndo, resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
 import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
@@ -254,7 +254,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           (req.op === 'setProperty' || req.op === 'setContext') &&
           res.error.code === 'operation-failed'
         )
-          notifyRetry(res.error.message, () => void get().mutate(req))
+          notifyRetry(res.error.message, async () => {
+            const undo = (await get().mutate(req))?.undo
+            if (undo)
+              pushUndo(() => {
+                void get().mutate(undo)
+                return true
+              })
+          })
         else reportRefusal(res)
         return null
       }

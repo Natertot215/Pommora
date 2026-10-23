@@ -40,6 +40,7 @@ import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { dialer } from '../Platform/dialer'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
+import { resetUndo, undoValue } from './undo'
 
 // Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the load's device-prefs read) so it runs in isolation.
 let channels: Record<string, ReturnType<typeof vi.fn>>
@@ -1194,7 +1195,7 @@ describe('store — the mutate rail', () => {
     )
   })
 
-  it('a value write refused by its file offers Try Again, which sends it again', async () => {
+  it('a value write refused by its file offers Try Again, which sends it again, and ⌘Z then undoes what it landed', async () => {
     const req = {
       op: 'setProperty',
       path: 'Notes/A.md',
@@ -1210,9 +1211,13 @@ describe('store — the mutate rail', () => {
     const note = currentNotification()
     expect(note?.message).toBe('Couldn’t write “A”.')
     expect(note?.action?.label).toBe('Try Again')
-    channels.mutate = vi.fn(async () => ok({}))
+    const undo = { op: 'putBack', entries: [{ file: 'Notes/A.md', fieldId: 'p1' }] } as const
+    channels.mutate = vi.fn(async () => ok({ undo }))
+    resetUndo()
     await note?.action?.run()
     await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(req))
+    expect(undoValue(null)).toBe(true)
+    await vi.waitFor(() => expect(channels.mutate).toHaveBeenLastCalledWith(undo))
   })
 })
 
