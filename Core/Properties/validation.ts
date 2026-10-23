@@ -6,9 +6,11 @@ import {
   optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
+  type SelectOption,
   type StatusGroup,
   withOptionGroups,
 } from './properties'
+import { keyedOptionId } from '../Nexus/ids'
 import { itemCount } from '../Nexus/entities'
 import { fail, ok, type Result } from '../Contract/result'
 import { normalizeTitle } from '../Paths/caseFold'
@@ -91,26 +93,31 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** `groups` holding each option label and each key once, the first of any that fold alike, and none blank. */
+/** `groups` holding each option id once, and each label and key once by its fold, the first of any repeat, and none blank. An option repeating an earlier id under its own label and key takes the id its key derives. */
 export function uniqueOptionGroups(groups: StatusGroup[]): StatusGroup[] {
+  const ids = new Set<string>()
   const labels = new Set<string>()
   const keys = new Set<string>()
-  const keeps = (label: string, key: string): boolean => {
-    if (!label || !key || labels.has(label) || keys.has(key)) return false
+  const kept = (o: SelectOption): SelectOption[] => {
+    const label = normalizeTitle(o.label)
+    const key = normalizeTitle(o.key)
+    if (!label || !key || labels.has(label) || keys.has(key)) return []
+    const id = ids.has(o.id) ? keyedOptionId(o.key) : o.id
+    if (ids.has(id)) return []
+    ids.add(id)
     labels.add(label)
     keys.add(key)
-    return true
+    return [id === o.id ? o : { ...o, id }]
   }
-  return groups.map((g) => ({
-    ...g,
-    options: g.options.filter((o) => keeps(normalizeTitle(o.label), normalizeTitle(o.key))),
-  }))
+  return groups.map((g) => ({ ...g, options: g.options.flatMap(kept) }))
 }
 
 /** `def` with its options made unique as `uniqueOptionGroups` does; a definition already so is answered as it is. */
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
   const groups = optionGroupsOf(def)
-  if (validateOptionValues(groups.flatMap((g) => g.options)).ok) return def
+  const options = groups.flatMap((g) => g.options)
+  const ids = new Set(options.map((o) => o.id))
+  if (validateOptionValues(options).ok && ids.size === options.length) return def
   return withOptionGroups(def, uniqueOptionGroups(groups))
 }
 

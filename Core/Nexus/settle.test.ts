@@ -898,8 +898,8 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     expect(await stored('tags')).toEqual([
-      { key: 'alpha', label: 'alpha', color: 'blue' },
-      { key: 'Ideas', label: 'Ideas' },
+      { id: 'opt_alpha', key: 'alpha', label: 'alpha', color: 'blue' },
+      { id: expect.stringMatching(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/), key: 'Ideas', label: 'Ideas' },
     ])
     expect(channels()).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
     const pushed = applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)

@@ -96,6 +96,24 @@ describe('status seed relabel', () => {
 })
 
 describe('createProperty', () => {
+  it('a created Select or Status seeds options carrying minted ids and no group key', async () => {
+    const status = await createProperty(root, def({ label: 'Stage', type: 'status' }))
+    const select = await createProperty(root, def({ label: 'Kind', type: 'select' }))
+    if (!status.ok || !select.ok) throw new Error('create failed')
+    const raw = await readJsonAt<{
+      defs: Record<string, { select_options?: object[]; status_groups?: { options: object[] }[] }>
+    }>(nexusConfig(root, 'properties.json'))
+    const minted = expect.stringMatching(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/)
+    expect(raw.defs[status.value.id].status_groups?.flatMap((g) => g.options)).toEqual([
+      { id: minted, key: 'Open', label: 'Open', color: 'grey' },
+      { id: minted, key: 'Active', label: 'Active', color: 'blue' },
+      { id: minted, key: 'Done', label: 'Done', color: 'green' },
+    ])
+    expect(raw.defs[select.value.id].select_options).toEqual([
+      { id: minted, key: 'Option 1', label: 'Option 1' },
+    ])
+  })
+
   it('a create handed an id the registry holds refuses it and writes nothing', async () => {
     const live = await createProperty(root, def({ label: 'Priority', type: 'number' }))
     if (!live.ok) throw new Error('create failed')
@@ -254,7 +272,9 @@ describe('createProperty', () => {
       { key: 'active', label: 'Active' },
       { key: 'done', label: 'Done' },
     ])
-    expect(defs[select.value.id].select_options).toEqual([{ key: 'OPTION 1', label: 'Option 1' }])
+    expect(defs[select.value.id].select_options).toEqual([
+      { id: expect.stringMatching(/^opt_/), key: 'OPTION 1', label: 'Option 1' },
+    ])
   })
 
   it('keeps the option keys a create is handed, whatever the Value Format', async () => {
@@ -264,12 +284,12 @@ describe('createProperty', () => {
         label: 'Tone',
         type: 'select',
         value_format: 'kebab-case',
-        select_options: [{ key: 'x', label: 'Light Blue' }],
+        select_options: [{ id: 'opt_x', key: 'x', label: 'Light Blue' }],
       }),
     )
     if (!r.ok) throw new Error('create failed')
     expect((await readRegistry(root)).defs[r.value.id].select_options).toEqual([
-      { key: 'x', label: 'Light Blue' },
+      { id: 'opt_x', key: 'x', label: 'Light Blue' },
     ])
   })
 
@@ -467,7 +487,7 @@ describe('renameProperty and configureProperty', () => {
     })
     expect(await configureProperty(root, 'prop_k', { icon: 'tag' })).toEqual(ok(null))
     expect((await readRegistry(root)).defs.prop_k.select_options).toEqual([
-      { key: 'option 1', label: 'Option 1' },
+      { id: expect.stringMatching(/^opt_/), key: 'option 1', label: 'Option 1' },
     ])
   })
 

@@ -204,7 +204,7 @@ describe('openNexusSequence', () => {
           label: 'Tags',
           key: 'Tags',
           type: 'multiSelect',
-          select_options: [{ key: 'alpha', label: 'alpha' }],
+          select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
         },
       ],
     })

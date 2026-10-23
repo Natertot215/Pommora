@@ -24,7 +24,7 @@ const statusDef: PropertyDefinition = {
       id: 'g1',
       label: 'Open',
       color: 'gray',
-      options: [{ key: 'todo', label: 'todo', group_id: 'g1' }],
+      options: [{ id: 'opt_todo', key: 'todo', label: 'todo' }],
     },
   ],
 }

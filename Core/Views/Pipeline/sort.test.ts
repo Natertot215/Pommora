@@ -14,9 +14,9 @@ const schema: PropertyDefinition[] = [
     key: 'Sel',
     type: 'select',
     select_options: [
-      { key: 'a', label: 'a' },
-      { key: 'b', label: 'b' },
-      { key: 'c', label: 'c' },
+      { id: 'opt_a', key: 'a', label: 'a' },
+      { id: 'opt_b', key: 'b', label: 'b' },
+      { id: 'opt_c', key: 'c', label: 'c' },
     ],
   },
   {
@@ -29,19 +29,19 @@ const schema: PropertyDefinition[] = [
         id: 'upcoming',
         label: 'U',
         color: 'gray',
-        options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
+        options: [{ id: 'opt_not_started', key: 'not_started', label: 'not_started' }],
       },
       {
         id: 'in_progress',
         label: 'IP',
         color: 'blue',
-        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'in_progress' }],
+        options: [{ id: 'opt_in_progress', key: 'in_progress', label: 'in_progress' }],
       },
       {
         id: 'done',
         label: 'D',
         color: 'green',
-        options: [{ key: 'done', label: 'done', group_id: 'done' }],
+        options: [{ id: 'opt_done', key: 'done', label: 'done' }],
       },
     ],
   },
@@ -147,15 +147,15 @@ describe('makeSorter — type-aware single criterion', () => {
       key: 'Stale',
       type: 'select',
       select_options: [
-        { key: 'a', label: 'a' },
-        { key: 'b', label: 'b' },
+        { id: 'opt_a', key: 'a', label: 'a' },
+        { id: 'opt_b', key: 'b', label: 'b' },
       ],
       status_groups: [
         {
           id: 'g',
           label: 'G',
           color: 'grey',
-          options: [{ key: 'a', label: 'a', group_id: 'g' }],
+          options: [{ id: 'opt_a', key: 'a', label: 'a' }],
         },
       ],
     }
@@ -179,15 +179,15 @@ describe('makeSorter — type-aware single criterion', () => {
       label: 'Stale',
       key: 'Stale',
       type: 'status',
-      select_options: [{ key: 'done', label: 'done' }],
+      select_options: [{ id: 'opt_done', key: 'done', label: 'done' }],
       status_groups: [
         {
           id: 'g',
           label: 'G',
           color: 'grey',
           options: [
-            { key: 'todo', label: 'todo', group_id: 'g' },
-            { key: 'done', label: 'done', group_id: 'g' },
+            { id: 'opt_todo', key: 'todo', label: 'todo' },
+            { id: 'opt_done', key: 'done', label: 'done' },
           ],
         },
       ],

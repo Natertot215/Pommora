@@ -117,8 +117,8 @@ describe('a value write reconciles the Space it lands on', () => {
         label: 'Tags',
         type: 'multiSelect',
         select_options: [
-          { key: 'alpha', label: 'alpha' },
-          { key: 'beta', label: 'beta' },
+          { id: 'opt_alpha', key: 'alpha', label: 'alpha' },
+          { id: 'opt_beta', key: 'beta', label: 'beta' },
         ],
       }),
     )

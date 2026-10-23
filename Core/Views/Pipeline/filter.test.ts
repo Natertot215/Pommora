@@ -18,8 +18,8 @@ const schema: PropertyDefinition[] = [
         label: 'G',
         color: 'blue',
         options: [
-          { key: 'Done', label: 'Done', group_id: 'g' },
-          { key: 'Open', label: 'Open', group_id: 'g' },
+          { id: 'opt_Done', key: 'Done', label: 'Done' },
+          { id: 'opt_Open', key: 'Open', label: 'Open' },
         ],
       },
     ],
@@ -30,6 +30,7 @@ const schema: PropertyDefinition[] = [
     key: 'Sel',
     type: 'select',
     select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((value) => ({
+      id: `opt_${value}`,
       key: value,
       label: value,
     })),
@@ -43,7 +44,11 @@ const schema: PropertyDefinition[] = [
     label: 'Tags',
     key: 'Tags',
     type: 'multiSelect',
-    select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({ key: value, label: value })),
+    select_options: ['x', 'y', 'z', 'a', 'b', 'c'].map((value) => ({
+      id: `opt_${value}`,
+      key: value,
+      label: value,
+    })),
   },
   { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]

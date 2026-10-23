@@ -21,8 +21,8 @@ const stageDef: PropertyDefinition = {
   key: 'Stage',
   type: 'select',
   select_options: [
-    { key: 'Alpha', label: 'Alpha' },
-    { key: 'Beta', label: 'Beta' },
+    { id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' },
+    { id: 'opt_Beta', key: 'Beta', label: 'Beta' },
   ],
 }
 const noteDef: PropertyDefinition = { id: 'prop_note', label: 'Note', key: 'Note', type: 'number' }

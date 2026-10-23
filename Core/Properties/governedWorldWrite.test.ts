@@ -46,7 +46,7 @@ beforeEach(async () => {
     id: '',
     label: 'Status',
     type: 'select',
-    select_options: [{ key: 'Open', label: 'Open' }],
+    select_options: [{ id: 'opt_Open', key: 'Open', label: 'Open' }],
   })
   const priority = await createProperty(root, {
     id: '',

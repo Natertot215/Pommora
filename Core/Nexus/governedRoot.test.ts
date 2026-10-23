@@ -56,8 +56,8 @@ const statusDef: PropertyDefinition = {
   key: 'Status',
   type: 'select',
   select_options: [
-    { key: 'Open', label: 'Open' },
-    { key: 'Active', label: 'Active' },
+    { id: 'opt_Open', key: 'Open', label: 'Open' },
+    { id: 'opt_Active', key: 'Active', label: 'Active' },
   ],
 }
 const tagsDef: PropertyDefinition = {
@@ -65,7 +65,7 @@ const tagsDef: PropertyDefinition = {
   label: 'Tags',
   key: 'Tags',
   type: 'multiSelect',
-  select_options: [{ key: 'alpha', label: 'alpha' }],
+  select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
 }
 const stageDef: PropertyDefinition = {
   id: 'prop_stage',
@@ -73,8 +73,8 @@ const stageDef: PropertyDefinition = {
   key: 'Stage',
   type: 'select',
   select_options: [
-    { key: 'Done', label: 'Done' },
-    { key: 'Open', label: 'Open' },
+    { id: 'opt_Done', key: 'Done', label: 'Done' },
+    { id: 'opt_Open', key: 'Open', label: 'Open' },
   ],
 }
 const notesDef: PropertyDefinition = {
@@ -528,14 +528,14 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     label: 'Priority',
     key: 'Priority',
     type: 'select',
-    select_options: [{ key: 'High', label: 'High' }],
+    select_options: [{ id: 'opt_High', key: 'High', label: 'High' }],
   }
   const status: PropertyDefinition = {
     id: 'prop_status',
     label: 'Status',
     key: 'Status',
     type: 'select',
-    select_options: [{ key: 'Open', label: 'Open' }],
+    select_options: [{ id: 'opt_Open', key: 'Open', label: 'Open' }],
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([
@@ -609,7 +609,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
       label: 'Tags',
       key: 'Tags',
       type: 'multiSelect',
-      select_options: [{ key: 'alpha', label: 'alpha' }],
+      select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
     }
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
     await rewriteRootAt(
@@ -633,9 +633,9 @@ describe('rewriteRootAt — spellings', () => {
     key: 'Tags',
     type: 'multiSelect',
     select_options: [
-      { key: 'a', label: 'a' },
-      { key: 'Docs', label: 'Docs' },
-      { key: 'Work', label: 'Work' },
+      { id: 'opt_a', key: 'a', label: 'a' },
+      { id: 'opt_Docs', key: 'Docs', label: 'Docs' },
+      { id: 'opt_Work', key: 'Work', label: 'Work' },
     ],
   }
   const done: PropertyDefinition = { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' }
@@ -651,8 +651,8 @@ describe('rewriteRootAt — spellings', () => {
     key: 'Status',
     type: 'select',
     select_options: [
-      { key: 'Open', label: 'Open' },
-      { key: 'Done', label: 'Done' },
+      { id: 'opt_Open', key: 'Open', label: 'Open' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
     ],
   }
   const stage: PropertyDefinition = {
@@ -660,7 +660,7 @@ describe('rewriteRootAt — spellings', () => {
     label: 'Stage',
     key: 'Stage',
     type: 'select',
-    select_options: [{ key: 'done', label: 'Done' }],
+    select_options: [{ id: 'opt_done', key: 'done', label: 'Done' }],
   }
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),

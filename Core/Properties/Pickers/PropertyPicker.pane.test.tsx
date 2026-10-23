@@ -25,8 +25,8 @@ const selectDef: PropertyDefinition = {
   key: 'Stage',
   type: 'select',
   select_options: [
-    { key: 'Alpha', label: 'Alpha' },
-    { key: 'Beta', label: 'Beta' },
+    { id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' },
+    { id: 'opt_Beta', key: 'Beta', label: 'Beta' },
   ],
 }
 const dateDef: PropertyDefinition = { id: 'prop_d', label: 'Due', key: 'Due', type: 'dateTime' }
@@ -379,7 +379,7 @@ describe('editing options from the picker', () => {
 
 describe('pickShape', () => {
   it('labels and names an option by its label, never by its key', () => {
-    const def = { ...selectDef, select_options: [{ key: 'new', label: 'New' }] }
+    const def = { ...selectDef, select_options: [{ id: 'opt_new', key: 'new', label: 'New' }] }
     expect(pickShape(def).options.map((o) => [o.value, o.label])).toEqual([['New', 'New']])
   })
 })

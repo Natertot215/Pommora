@@ -67,8 +67,8 @@ beforeEach(async () => {
     label: 'Stage',
     type: 'select',
     select_options: [
-      { key: 'Done', label: 'Done' },
-      { key: 'Todo', label: 'Todo' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+      { id: 'opt_Todo', key: 'Todo', label: 'Todo' },
     ],
   })
   if (!c.ok || !p.ok) throw new Error('setup failed')
@@ -221,6 +221,7 @@ describe('the property ops', () => {
       fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
+      id: 'opt_Done',
       key: 'Done',
       label: 'Done',
     })
@@ -251,6 +252,7 @@ describe('the property ops', () => {
     expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
     expect(await readFile(page, 'utf8')).toBe(before)
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
+      id: expect.stringMatching(/^opt_/),
       key: 'Done',
       label: 'Done',
     })

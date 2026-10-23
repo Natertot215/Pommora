@@ -23,7 +23,7 @@ const statusDef: PropertyDefinition = {
       id: 'g1',
       label: 'Open',
       color: 'gray',
-      options: [{ key: 'Queued', label: 'Queued', group_id: 'g1' }],
+      options: [{ id: 'opt_Queued', key: 'Queued', label: 'Queued' }],
     },
   ],
 }
@@ -358,13 +358,13 @@ describe('GroupFrame lists — dragging in the pane', () => {
         id: 'g1',
         label: 'Open',
         color: 'gray',
-        options: [{ key: 'Queued', label: 'Queued', group_id: 'g1' }],
+        options: [{ id: 'opt_Queued', key: 'Queued', label: 'Queued' }],
       },
       {
         id: 'g2',
         label: 'Closed',
         color: 'green',
-        options: [{ key: 'Done', label: 'Done', group_id: 'g2' }],
+        options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
       },
     ],
   }

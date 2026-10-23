@@ -11,13 +11,13 @@ export const STATUS_DEF: PropertyDefinition = {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ id: 'opt_Active', key: 'Active', label: 'Active', color: 'blue' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'Complete', label: 'Complete', color: 'green', group_id: 'done' }],
+      options: [{ id: 'opt_Complete', key: 'Complete', label: 'Complete', color: 'green' }],
     },
   ],
 }
@@ -35,8 +35,8 @@ export const FIXTURE_DEFS: Readonly<Record<string, PropertyDefinition>> = {
         label: 'Upcoming',
         color: 'gray',
         options: [
-          { key: 'not_started', label: 'not_started', group_id: 'upcoming' },
-          { key: 'opt_open', label: 'opt_open', color: 'green', group_id: 'upcoming' },
+          { id: 'opt_not_started', key: 'not_started', label: 'not_started' },
+          { id: 'opt_opt_open', key: 'opt_open', label: 'opt_open', color: 'green' },
         ],
       },
       {
@@ -44,14 +44,14 @@ export const FIXTURE_DEFS: Readonly<Record<string, PropertyDefinition>> = {
         label: 'In Progress',
         color: 'blue',
         options: [
-          { key: 'in_progress', label: 'in_progress', color: 'blue', group_id: 'in_progress' },
+          { id: 'opt_in_progress', key: 'in_progress', label: 'in_progress', color: 'blue' },
         ],
       },
       {
         id: 'done',
         label: 'Done',
         color: 'green',
-        options: [{ key: 'done', label: 'done', color: 'red', group_id: 'done' }],
+        options: [{ id: 'opt_done', key: 'done', label: 'done', color: 'red' }],
       },
     ],
   },

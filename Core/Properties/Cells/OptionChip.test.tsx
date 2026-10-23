@@ -12,19 +12,19 @@ const def: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
+      options: [{ id: 'opt_not_started', key: 'not_started', label: 'not_started' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ key: 'active', label: 'active', group_id: 'in_progress' }],
+      options: [{ id: 'opt_active', key: 'active', label: 'active' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'complete', label: 'complete', group_id: 'done' }],
+      options: [{ id: 'opt_complete', key: 'complete', label: 'complete' }],
     },
   ],
 }

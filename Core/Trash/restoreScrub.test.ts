@@ -41,8 +41,8 @@ const PRIORITY: PropertyDefinition = {
   key: 'Priority',
   type: 'select',
   select_options: [
-    { key: 'hi', label: 'hi', color: 'red' },
-    { key: 'lo', label: 'lo', color: 'blue' },
+    { id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' },
+    { id: 'opt_lo', key: 'lo', label: 'lo', color: 'blue' },
   ],
 }
 const RELATED: PropertyDefinition = { id: LINK, label: 'Related', key: 'Related', type: 'link' }
@@ -51,7 +51,12 @@ const tags = (keys: string[]): PropertyDefinition => ({
   label: 'Tags',
   key: 'Tags',
   type: 'multiSelect',
-  select_options: keys.map((k) => ({ key: k, label: k, color: k === 'a' ? 'red' : 'blue' })),
+  select_options: keys.map((k) => ({
+    id: `opt_${k}`,
+    key: k,
+    label: k,
+    color: k === 'a' ? 'red' : 'blue',
+  })),
 })
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
@@ -250,7 +255,12 @@ describe('a returning artifact is reconciled against the world it comes back to'
     // The definition still stands; the value it held no longer can. Both restore routes ask the same standing check, so this cannot survive here and be dropped by a property restore.
     await cycle('Notes/Alpha.md', 'page', async () => {
       await seedNexus(root, {
-        defs: [{ ...PRIORITY, select_options: [{ key: 'lo', label: 'lo', color: 'blue' }] }],
+        defs: [
+          {
+            ...PRIORITY,
+            select_options: [{ id: 'opt_lo', key: 'lo', label: 'lo', color: 'blue' }],
+          },
+        ],
       })
     })
     expect((await fm('Notes/Alpha.md')).Priority).toBeUndefined()
@@ -377,8 +387,8 @@ describe('a returning page takes the current keys', () => {
       await priority({
         value_format: 'UPPERCASE',
         select_options: [
-          { key: 'HI', label: 'hi', color: 'red' },
-          { key: 'LO', label: 'lo', color: 'blue' },
+          { id: 'opt_HI', key: 'HI', label: 'hi', color: 'red' },
+          { id: 'opt_LO', key: 'LO', label: 'lo', color: 'blue' },
         ],
       })
     })
@@ -397,8 +407,8 @@ describe('a returning page takes the current keys', () => {
   it('a blank value takes no option whose label is only separators', async () => {
     await priority({
       select_options: [
-        { key: 'hi', label: 'hi', color: 'red' },
-        { key: '-', label: '-' },
+        { id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' },
+        { id: 'opt_-', key: '-', label: '-' },
       ],
     })
     await page('Priority: ""')

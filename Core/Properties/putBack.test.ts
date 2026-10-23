@@ -32,8 +32,8 @@ const DEFS: PropertyDefinition[] = [
     label: 'Tags',
     type: 'multiSelect',
     select_options: [
-      { key: 'Work', label: 'Work' },
-      { key: 'Life', label: 'Life' },
+      { id: 'opt_Work', key: 'Work', label: 'Work' },
+      { id: 'opt_Life', key: 'Life', label: 'Life' },
     ],
   },
   {
@@ -42,8 +42,8 @@ const DEFS: PropertyDefinition[] = [
     label: 'Status',
     type: 'select',
     select_options: [
-      { key: 'Doing', label: 'Doing' },
-      { key: 'Done', label: 'Done' },
+      { id: 'opt_Doing', key: 'Doing', label: 'Doing' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
     ],
   },
   { id: newId(), key: 'Count', label: 'Count', type: 'number' },

@@ -188,8 +188,8 @@ describe('the option-op writers', () => {
       label: 'Tags',
       type: 'select',
       select_options: [
-        { key: 'Draft', label: 'Draft' },
-        { key: 'Done', label: 'Done' },
+        { id: 'opt_Draft', key: 'Draft', label: 'Draft' },
+        { id: 'opt_Done', key: 'Done', label: 'Done' },
       ],
     })
     await writeFile(

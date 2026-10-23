@@ -40,7 +40,7 @@ const statusDef: PropertyDefinition = {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'complete', label: 'complete', color: 'green', group_id: 'done' }],
+      options: [{ id: 'opt_complete', key: 'complete', label: 'complete', color: 'green' }],
     },
   ],
 }
@@ -179,9 +179,9 @@ const threeStatus: PropertyDefinition = {
       label: 'Done',
       color: 'green',
       options: [
-        { key: 'complete', label: 'complete', color: 'green', group_id: 'done' },
-        { key: 'shipped', label: 'shipped', color: 'green', group_id: 'done' },
-        { key: 'archived', label: 'archived', color: 'green', group_id: 'done' },
+        { id: 'opt_complete', key: 'complete', label: 'complete', color: 'green' },
+        { id: 'opt_shipped', key: 'shipped', label: 'shipped', color: 'green' },
+        { id: 'opt_archived', key: 'archived', label: 'archived', color: 'green' },
       ],
     },
   ],

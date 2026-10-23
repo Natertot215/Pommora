@@ -80,21 +80,21 @@ const statusSchema: PropertyDefinition[] = [
         label: 'U',
         color: 'gray',
         options: [
-          { key: 'not_started', label: 'not_started', group_id: 'upcoming' },
-          { key: 'opt_open', label: 'opt_open', group_id: 'upcoming' },
+          { id: 'opt_not_started', key: 'not_started', label: 'not_started' },
+          { id: 'opt_opt_open', key: 'opt_open', label: 'opt_open' },
         ],
       },
       {
         id: 'in_progress',
         label: 'IP',
         color: 'blue',
-        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'in_progress' }],
+        options: [{ id: 'opt_in_progress', key: 'in_progress', label: 'in_progress' }],
       },
       {
         id: 'done',
         label: 'D',
         color: 'green',
-        options: [{ key: 'done', label: 'done', group_id: 'done' }],
+        options: [{ id: 'opt_done', key: 'done', label: 'done' }],
       },
     ],
   },
@@ -498,9 +498,9 @@ describe('property grouping — configured / reversed / date', () => {
       key: 'Sel',
       type: 'select',
       select_options: [
-        { key: 'a', label: 'a' },
-        { key: 'b', label: 'b' },
-        { key: 'c', label: 'c' },
+        { id: 'opt_a', key: 'a', label: 'a' },
+        { id: 'opt_b', key: 'b', label: 'b' },
+        { id: 'opt_c', key: 'c', label: 'c' },
       ],
     },
   ]

@@ -135,7 +135,7 @@ describe('resolveView — full pipeline over the fixture', () => {
             id: 'in_progress',
             label: 'IP',
             color: 'blue',
-            options: [{ key: 'in_progress', label: 'in_progress', group_id: 'in_progress' }],
+            options: [{ id: 'opt_in_progress', key: 'in_progress', label: 'in_progress' }],
           },
         ],
       },
@@ -270,7 +270,7 @@ describe('resolveView — group_order', () => {
             id: 'g',
             label: 'G',
             color: 'blue',
-            options: [{ key: 'todo', label: 'todo', group_id: 'g' }],
+            options: [{ id: 'opt_todo', key: 'todo', label: 'todo' }],
           },
         ],
       },
@@ -461,9 +461,9 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       key: 'Sel',
       type: 'select',
       select_options: [
-        { key: 'Alpha', label: 'Alpha' },
-        { key: 'Beta', label: 'Beta' },
-        { key: 'Gamma', label: 'Gamma' },
+        { id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' },
+        { id: 'opt_Beta', key: 'Beta', label: 'Beta' },
+        { id: 'opt_Gamma', key: 'Gamma', label: 'Gamma' },
       ],
     },
   ]
@@ -628,7 +628,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
         label: 'Other',
         key: 'Other',
         type: 'select',
-        select_options: [{ key: 'Alpha', label: 'Alpha' }],
+        select_options: [{ id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' }],
       },
     ]
     const values = pageValues({

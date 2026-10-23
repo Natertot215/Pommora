@@ -19,8 +19,8 @@ const SCHEMA: PropertyDefinition[] = [
     key: 'stage',
     type: 'select',
     select_options: [
-      { key: 'a', label: 'a' },
-      { key: 'b', label: 'b' },
+      { id: 'opt_a', key: 'a', label: 'a' },
+      { id: 'opt_b', key: 'b', label: 'b' },
     ],
   },
   {
@@ -29,8 +29,8 @@ const SCHEMA: PropertyDefinition[] = [
     key: 'Tags',
     type: 'multiSelect',
     select_options: [
-      { key: 'x', label: 'x' },
-      { key: 'y', label: 'y' },
+      { id: 'opt_x', key: 'x', label: 'x' },
+      { id: 'opt_y', key: 'y', label: 'y' },
     ],
   },
   { id: 'prop_num', label: 'Count', key: 'Count', type: 'number' },
@@ -156,7 +156,7 @@ describe('propertyMenuBranches', () => {
           id: 'upcoming',
           label: 'Open',
           color: 'grey',
-          options: [{ key: 'Open', label: 'Open', group_id: 'upcoming' }],
+          options: [{ id: 'opt_Open', key: 'Open', label: 'Open' }],
         },
         { id: 'in_progress', label: 'Active', color: 'blue', options: [] },
         {
@@ -164,8 +164,8 @@ describe('propertyMenuBranches', () => {
           label: 'Done',
           color: 'green',
           options: [
-            { key: 'Done', label: 'Done', group_id: 'done' },
-            { key: 'Dropped', label: 'Dropped', group_id: 'done' },
+            { id: 'opt_Done', key: 'Done', label: 'Done' },
+            { id: 'opt_Dropped', key: 'Dropped', label: 'Dropped' },
           ],
         },
       ],

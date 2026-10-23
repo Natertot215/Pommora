@@ -50,8 +50,8 @@ async function seedPriority(): Promise<string> {
     label: 'Priority',
     type: 'select',
     select_options: [
-      { key: 'hi', label: 'hi', color: 'red' },
-      { key: 'lo', label: 'lo', color: 'blue' },
+      { id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' },
+      { id: 'opt_lo', key: 'lo', label: 'lo', color: 'blue' },
     ],
   })
   if (!c.ok) throw new Error('seed failed')
@@ -176,7 +176,7 @@ describe('restoring a deleted property', () => {
       label: 'Phase',
       type: 'select',
       value_format: 'Match Title',
-      select_options: [{ key: 'wip', label: 'In Progress' }],
+      select_options: [{ id: 'opt_wip', key: 'wip', label: 'In Progress' }],
     })
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)
@@ -193,7 +193,7 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect((await liveDef(c.value.id)).select_options).toEqual([
-      { key: 'wip', label: 'In Progress' },
+      { id: 'opt_wip', key: 'wip', label: 'In Progress' },
     ])
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
   })
@@ -224,7 +224,7 @@ describe('restoring a deleted property', () => {
       id,
       label: 'Urgency',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi', color: 'red' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
     })
     expect(back.ok).toBe(true)
 
@@ -476,7 +476,7 @@ describe('restoring a deleted property', () => {
       id: '',
       label: 'Tags',
       type: 'multiSelect',
-      select_options: [{ key: 'alpha', label: 'alpha' }],
+      select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
     })
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)

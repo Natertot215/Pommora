@@ -18,7 +18,7 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ key: 'in_progress', label: 'in_progress', group_id: 'g' }],
+        options: [{ id: 'opt_in_progress', key: 'in_progress', label: 'in_progress' }],
       },
     ],
   },
@@ -27,7 +27,7 @@ const schema: PropertyDefinition[] = [
     label: 'Sel',
     key: 'Sel',
     type: 'select',
-    select_options: [{ key: 'opt_a', label: 'opt_a' }],
+    select_options: [{ id: 'opt_opt_a', key: 'opt_a', label: 'opt_a' }],
   },
   {
     id: 'prop_s',
@@ -35,8 +35,8 @@ const schema: PropertyDefinition[] = [
     key: 'S',
     type: 'select',
     select_options: [
-      { key: 'open', label: 'open' },
-      { key: 'done', label: 'done' },
+      { id: 'opt_open', key: 'open', label: 'open' },
+      { id: 'opt_done', key: 'done', label: 'done' },
     ],
   },
   { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
@@ -150,8 +150,8 @@ describe('resolveFieldValue', () => {
       key: 's',
       type: 'select',
       select_options: [
-        { key: 'open', label: 'open' },
-        { key: 'done', label: 'done' },
+        { id: 'opt_open', key: 'open', label: 'open' },
+        { id: 'opt_done', key: 'done', label: 'done' },
       ],
     }
     const keyed: ViewRow = { ...row, frontmatter: { [ID_KEY]: '01ROW', S: 'done', s: 'open' } }
@@ -186,8 +186,8 @@ describe('resolveFieldValue', () => {
       key: 'Tag',
       type: 'select',
       select_options: [
-        { key: 'red', label: 'red' },
-        { key: 'blue', label: 'blue' },
+        { id: 'opt_red', key: 'red', label: 'red' },
+        { id: 'opt_blue', key: 'blue', label: 'blue' },
       ],
     }
     const pending: ViewRow = {
@@ -253,7 +253,10 @@ describe('resolveFieldValue memoization', () => {
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
     const gained = {
       ...def,
-      select_options: [...(def.select_options ?? []), { key: 'Final', label: 'Final' }],
+      select_options: [
+        ...(def.select_options ?? []),
+        { id: 'opt_Final', key: 'Final', label: 'Final' },
+      ],
     }
     expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
     expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'Final' })
@@ -306,8 +309,8 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
       key: 'Tag',
       type: 'select',
       select_options: [
-        { key: 'opt_a', label: 'opt_a' },
-        { key: '[URGENT](tel:911)', label: '[URGENT](tel:911)' },
+        { id: 'opt_opt_a', key: 'opt_a', label: 'opt_a' },
+        { id: 'opt_%5BURGENT%5D(tel%3A911)', key: '[URGENT](tel:911)', label: '[URGENT](tel:911)' },
       ],
     },
   ]

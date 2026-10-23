@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { index, op } from '../Files/decoders'
+import { mintOptionId } from '../Nexus/ids'
 import { formatKey, type KeyFormat } from './keyFormat'
-import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
+import { optionAppearance, type SelectOption, type StatusGroup } from './properties'
 
 export function mapOptions(
   groups: StatusGroup[],
-  fn: (o: StatusOption) => StatusOption,
+  fn: (o: SelectOption) => SelectOption,
 ): StatusGroup[] {
   return groups.map((g) => ({ ...g, options: g.options.map(fn) }))
 }
@@ -13,7 +14,7 @@ export function mapOptions(
 function mapOption(
   groups: StatusGroup[],
   label: string,
-  fn: (o: StatusOption) => StatusOption,
+  fn: (o: SelectOption) => SelectOption,
 ): StatusGroup[] {
   return mapOptions(groups, (o) => (o.label === label ? fn(o) : o))
 }
@@ -26,15 +27,13 @@ function withField<T, K extends keyof T>(o: T, key: K, v: T[K] | undefined): T {
 export function addOption(
   groups: StatusGroup[],
   groupId: string,
-  label: string,
-  key: string,
+  option: SelectOption,
   atIndex?: number,
 ): StatusGroup[] {
   return groups.map((g) => {
     if (g.id !== groupId) return g
-    const next = { key, label, group_id: g.id }
     const i = atIndex ?? g.options.length
-    return { ...g, options: [...g.options.slice(0, i), next, ...g.options.slice(i)] }
+    return { ...g, options: [...g.options.slice(0, i), option, ...g.options.slice(i)] }
   })
 }
 
@@ -46,11 +45,10 @@ function moveOption(
 ): StatusGroup[] {
   const moved = groups.flatMap((g) => g.options).find((o) => o.label === label)
   if (!moved) return groups
-  const next = { ...moved, group_id: toGroupId }
   return groups.map((g) => {
     const without = g.options.filter((o) => o.label !== label)
     return g.id === toGroupId
-      ? { ...g, options: [...without.slice(0, toIndex), next, ...without.slice(toIndex)] }
+      ? { ...g, options: [...without.slice(0, toIndex), moved, ...without.slice(toIndex)] }
       : { ...g, options: without }
   })
 }
@@ -75,7 +73,12 @@ export function applyOptionEdit(
 ): StatusGroup[] {
   switch (e.op) {
     case 'add':
-      return addOption(groups, e.groupId, e.label, formatKey(e.label, format), e.atIndex)
+      return addOption(
+        groups,
+        e.groupId,
+        { id: mintOptionId(), key: formatKey(e.label, format), label: e.label },
+        e.atIndex,
+      )
     case 'recolor':
       return mapOption(groups, e.option, (o) => withField(o, 'color', e.color))
     case 'icon':

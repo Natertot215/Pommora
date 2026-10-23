@@ -5,7 +5,7 @@ import type { MutateReply } from '../Nexus/mutateRequest'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { KEY_REFUSAL, validateDefinition, validateName } from './validation'
-import { mintPropertyId } from '../Nexus/ids'
+import { mintOptionId, mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { formatKey, type KeyFormat } from './keyFormat'
@@ -46,24 +46,26 @@ export function defaultStatusSeed(): StatusGroup[] {
       id: 'upcoming',
       label: 'Open',
       color: 'grey',
-      options: [{ key: 'Open', label: 'Open', color: 'grey', group_id: 'upcoming' }],
+      options: [{ id: mintOptionId(), key: 'Open', label: 'Open', color: 'grey' }],
     },
     {
       id: 'in_progress',
       label: 'Active',
       color: 'blue',
-      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ id: mintOptionId(), key: 'Active', label: 'Active', color: 'blue' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'Done', label: 'Done', color: 'green', group_id: 'done' }],
+      options: [{ id: mintOptionId(), key: 'Done', label: 'Done', color: 'green' }],
     },
   ]
 }
 
-const defaultSelectSeed = (): SelectOption[] => [{ key: 'Option 1', label: 'Option 1' }]
+const defaultSelectSeed = (): SelectOption[] => [
+  { id: mintOptionId(), key: 'Option 1', label: 'Option 1' },
+]
 
 const withOptionKeys = (def: PropertyDefinition): PropertyDefinition =>
   withOptionGroups(

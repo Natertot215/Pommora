@@ -49,13 +49,13 @@ const stageDef = {
       id: 'upcoming',
       label: 'To-do',
       color: 'gray',
-      options: [{ key: 'active', label: 'active', group_id: 'upcoming' }],
+      options: [{ key: 'active', label: 'active' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'done', label: 'done', group_id: 'done' }],
+      options: [{ key: 'done', label: 'done' }],
     },
   ],
 } as PropertyDefinition
@@ -352,7 +352,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
           id: 'done',
           label: 'Done',
           color: 'green',
-          options: [{ key: 'done', label: 'done', group_id: 'done' }],
+          options: [{ id: 'opt_done', key: 'done', label: 'done' }],
         },
       ],
     })
@@ -391,9 +391,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       label: 'Milestone',
       type: 'select',
       select_options: [
-        { key: '2024-01-01', label: '2024-01-01' },
-        { key: 'https://acme.io', label: 'https://acme.io' },
-        { key: 'note:draft', label: 'note:draft' },
+        { id: 'opt_2024-01-01', key: '2024-01-01', label: '2024-01-01' },
+        { id: 'opt_https%3A%2F%2Facme.io', key: 'https://acme.io', label: 'https://acme.io' },
+        { id: 'opt_note%3Adraft', key: 'note:draft', label: 'note:draft' },
       ],
     })
     if (!sel.ok) throw new Error('setup failed')
@@ -417,7 +417,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       id: '',
       label: 'Tags',
       type: 'multiSelect',
-      select_options: [{ key: 'alpha', label: 'alpha' }],
+      select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
     })
     if (!tags.ok) throw new Error('setup failed')
     await assignProperty(root, folder, tags.value.id)

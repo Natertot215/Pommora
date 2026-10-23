@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import { decodeTime } from 'ulidx'
 import { isUlidShaped } from './identityMark'
-import { newId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
+import {
+  newId,
+  mintPropertyId,
+  mintOptionId,
+  keyedOptionId,
+  idTime,
+  idAt,
+  contentIdAt,
+  shardOf,
+} from './ids'
 
 describe('newId / isUlidShaped', () => {
   it('mints valid, unique ULIDs', () => {
@@ -72,5 +81,22 @@ describe('mintPropertyId', () => {
 
   it('mints unique ids', () => {
     expect(mintPropertyId()).not.toBe(mintPropertyId())
+  })
+})
+
+describe('mintOptionId', () => {
+  it('mints opt_ and a fresh ULID on each call', () => {
+    const a = mintOptionId()
+    expect(a).toMatch(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/)
+    expect(mintOptionId()).not.toBe(a)
+  })
+})
+
+describe('keyedOptionId', () => {
+  it('derives one id from a key, the same on every call, its slashes and spaces encoded', () => {
+    expect(keyedOptionId('Done')).toBe('opt_Done')
+    expect(keyedOptionId('Done')).toBe(keyedOptionId('Done'))
+    expect(keyedOptionId('In Progress')).toBe('opt_In%20Progress')
+    expect(keyedOptionId('a/b')).toBe('opt_a%2Fb')
   })
 })

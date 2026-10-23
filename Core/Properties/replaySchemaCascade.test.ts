@@ -47,8 +47,8 @@ async function seedNexus(): Promise<string> {
     label: 'Stage',
     type: 'select',
     select_options: [
-      { key: 'Draft', label: 'Draft' },
-      { key: 'Done', label: 'Done' },
+      { id: 'opt_Draft', key: 'Draft', label: 'Draft' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
     ],
   })
   await writeFile(
@@ -340,8 +340,8 @@ describe('option replay', () => {
           prop_s: {
             ...registry.defs.prop_s,
             select_options: [
-              { key: 'Queued', label: 'Queued' },
-              { key: 'Done', label: 'Done' },
+              { id: 'opt_Queued', key: 'Queued', label: 'Queued' },
+              { id: 'opt_Done', key: 'Done', label: 'Done' },
             ],
           },
         },
@@ -422,8 +422,8 @@ describe('option replay', () => {
           prop_s: {
             ...registry.defs.prop_s,
             select_options: [
-              { key: 'Queued', label: 'Queued' },
-              { key: 'Done', label: 'Done' },
+              { id: 'opt_Queued', key: 'Queued', label: 'Queued' },
+              { id: 'opt_Done', key: 'Done', label: 'Done' },
             ],
           },
         },
@@ -455,8 +455,8 @@ describe('option replay reaches saved views', () => {
           prop_s: {
             ...registry.defs.prop_s,
             select_options: [
-              { key: 'Queued', label: 'Queued' },
-              { key: 'Done', label: 'Done' },
+              { id: 'opt_Queued', key: 'Queued', label: 'Queued' },
+              { id: 'opt_Done', key: 'Done', label: 'Done' },
             ],
           },
         },
@@ -510,8 +510,8 @@ describe('option replay reaches saved views', () => {
           prop_s: {
             ...registry.defs.prop_s,
             select_options: [
-              { key: 'Done', label: 'Done' },
-              { key: 'Later', label: 'Later' },
+              { id: 'opt_Done', key: 'Done', label: 'Done' },
+              { id: 'opt_Later', key: 'Later', label: 'Later' },
             ],
           },
         },
@@ -543,8 +543,8 @@ describe('option replay reaches saved views', () => {
           prop_s: {
             ...registry.defs.prop_s,
             select_options: [
-              { key: 'Queued', label: 'Draft' },
-              { key: 'Done', label: 'Done' },
+              { id: 'opt_Queued', key: 'Queued', label: 'Draft' },
+              { id: 'opt_Done', key: 'Done', label: 'Done' },
             ],
           },
         },
@@ -571,7 +571,7 @@ describe('option replay reaches saved views', () => {
     expect(views.tile.hidden_groups).toEqual([])
     expect(views.matrix).toBeNull()
     expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([
-      { key: 'Done', label: 'Done' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
     ])
     expect(await readSchemaJournal(root)).toBeNull()
   })

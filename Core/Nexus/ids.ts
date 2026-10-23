@@ -41,3 +41,12 @@ export function shardOf(id: string): string | null {
 export function mintPropertyId(): string {
   return `prop_${newId()}`
 }
+
+export function mintOptionId(): string {
+  return `opt_${newId()}`
+}
+
+/** The id an option stored without one answers to: derived from its key, so every device reads the same id until a write stores one. */
+export function keyedOptionId(key: string): string {
+  return `opt_${encodeURIComponent(key)}`
+}

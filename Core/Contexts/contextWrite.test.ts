@@ -249,7 +249,7 @@ describe('setContext reads the held tree', () => {
       id: '',
       label: 'Tags',
       type: 'multiSelect',
-      select_options: [{ key: 'alpha', label: 'alpha' }],
+      select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
     })
     if (!tags.ok) throw new Error('setup')
     await mkdir(join(contextsDir(root), 'Projects', 'Athena'), { recursive: true })

@@ -29,22 +29,22 @@ const statusDef: PropertyDefinition = {
       id: 'todo',
       label: 'To Do',
       color: 'gray',
-      options: [{ key: 'open', label: 'open', group_id: 'todo' }],
+      options: [{ id: 'opt_open', key: 'open', label: 'open' }],
     },
     {
       id: 'doing',
       label: 'Doing',
       color: 'blue',
       options: [
-        { key: 'active', label: 'active', group_id: 'doing' },
-        { key: 'review', label: 'review', group_id: 'doing' },
+        { id: 'opt_active', key: 'active', label: 'active' },
+        { id: 'opt_review', key: 'review', label: 'review' },
       ],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'closed', label: 'closed', group_id: 'done' }],
+      options: [{ id: 'opt_closed', key: 'closed', label: 'closed' }],
     },
   ],
 }

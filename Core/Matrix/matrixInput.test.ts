@@ -141,8 +141,8 @@ const STATUS: PropertyDefinition = {
   key: 'Status',
   type: 'select',
   select_options: [
-    { key: 'Active', label: 'Active' },
-    { key: 'Done', label: 'Done' },
+    { id: 'opt_Active', key: 'Active', label: 'Active' },
+    { id: 'opt_Done', key: 'Done', label: 'Done' },
   ],
 }
 

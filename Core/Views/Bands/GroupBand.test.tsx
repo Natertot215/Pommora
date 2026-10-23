@@ -26,7 +26,7 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ key: 'active', label: 'active', color: 'blue', group_id: 'g' }],
+        options: [{ key: 'active', label: 'active', color: 'blue' }],
       },
     ],
   },

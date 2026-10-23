@@ -7,7 +7,7 @@ import {
   validateOptionValues,
   withUniqueOptions,
 } from './validation'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDefinition, SelectOption } from './properties'
 
 const def = (
   over: Partial<PropertyDefinition> & {
@@ -100,14 +100,14 @@ describe('validateDefinition', () => {
       key: 'Tag2',
       type: 'select',
       select_options: [
-        { key: 'a', label: 'a' },
-        { key: 'a', label: 'a' },
+        { id: 'opt_a', key: 'a', label: 'a' },
+        { id: 'opt_a', key: 'a', label: 'a' },
       ],
     })
     expect(validateDefinition(dupOpts, existing).ok).toBe(false)
   })
 
-  const status = (options: { key: string; label: string }[]) =>
+  const status = (options: SelectOption[]) =>
     def({
       id: 'p6',
       label: 'Phase',
@@ -118,13 +118,13 @@ describe('validateDefinition', () => {
           id: 'upcoming',
           label: 'Upcoming',
           color: 'grey',
-          options: options.slice(0, 1).map((o) => ({ ...o, group_id: 'upcoming' })),
+          options: options.slice(0, 1),
         },
         {
           id: 'done',
           label: 'Done',
           color: 'green',
-          options: options.slice(1).map((o) => ({ ...o, group_id: 'done' })),
+          options: options.slice(1),
         },
       ],
     })
@@ -137,12 +137,12 @@ describe('validateDefinition', () => {
     expect(
       refusalOf(
         status([
-          { key: 'Done', label: 'Done' },
-          { key: 'done', label: 'done' },
+          { id: 'opt_Done', key: 'Done', label: 'Done' },
+          { id: 'opt_done', key: 'done', label: 'done' },
         ]),
       ),
     ).toBe('Option titles must be unique.')
-    expect(refusalOf(status([{ key: ' ', label: 'Open' }]))).toBe(
+    expect(refusalOf(status([{ id: 'opt_%20', key: ' ', label: 'Open' }]))).toBe(
       'Options cannot contain an invalid name.',
     )
   })
@@ -221,32 +221,58 @@ describe('validateOptionValues', () => {
 })
 
 describe('withUniqueOptions', () => {
-  const select = (select_options: { key: string; label: string }[]) =>
+  const select = (select_options: SelectOption[]) =>
     def({ id: 'p1', label: 'Tag', key: 'Tag', type: 'select', select_options })
 
   it('keeps the first of two options whose keys fold alike', () => {
     expect(
       withUniqueOptions(
         select([
-          { key: 'x', label: 'A' },
-          { key: 'X', label: 'B' },
+          { id: 'opt_x', key: 'x', label: 'A' },
+          { id: 'opt_X', key: 'X', label: 'B' },
         ]),
       ).select_options,
-    ).toEqual([{ key: 'x', label: 'A' }])
+    ).toEqual([{ id: 'opt_x', key: 'x', label: 'A' }])
   })
 
   it('keeps an option whose key clashed only with one already dropped', () => {
     expect(
       withUniqueOptions(
         select([
-          { key: '1', label: 'x' },
-          { key: '1', label: 'y' },
-          { key: '2', label: 'y' },
+          { id: 'opt_1', key: '1', label: 'x' },
+          { id: 'opt_1', key: '1', label: 'y' },
+          { id: 'opt_2', key: '2', label: 'y' },
         ]),
       ).select_options,
     ).toEqual([
-      { key: '1', label: 'x' },
-      { key: '2', label: 'y' },
+      { id: 'opt_1', key: '1', label: 'x' },
+      { id: 'opt_2', key: '2', label: 'y' },
+    ])
+  })
+
+  it('an option repeating an earlier option’s id under its own label and key takes the id its key derives, and leaves when that id is taken too', () => {
+    expect(
+      withUniqueOptions(
+        select([
+          { id: 'opt_a', key: 'A', label: 'A' },
+          { id: 'opt_a', key: 'B', label: 'B' },
+        ]),
+      ).select_options,
+    ).toEqual([
+      { id: 'opt_a', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
+    ])
+    expect(
+      withUniqueOptions(
+        select([
+          { id: 'opt_a', key: 'A', label: 'A' },
+          { id: 'opt_B', key: 'C', label: 'C' },
+          { id: 'opt_a', key: 'B', label: 'B' },
+        ]),
+      ).select_options,
+    ).toEqual([
+      { id: 'opt_a', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'C', label: 'C' },
     ])
   })
 
@@ -254,11 +280,11 @@ describe('withUniqueOptions', () => {
     expect(
       withUniqueOptions(
         select([
-          { key: 'a', label: 'A' },
-          { key: '', label: 'C' },
+          { id: 'opt_a', key: 'a', label: 'A' },
+          { id: 'opt_', key: '', label: 'C' },
         ]),
       ).select_options,
-    ).toEqual([{ key: 'a', label: 'A' }])
+    ).toEqual([{ id: 'opt_a', key: 'a', label: 'A' }])
   })
 })
 

@@ -44,6 +44,7 @@ import type { Pushes } from '../Contract/bridge'
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree } from '../Nexus/liveTree'
 import type { Json } from '../Files/stableJson'
+const MINTED = expect.stringMatching(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/)
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -99,7 +100,7 @@ async function statusValues(id: string): Promise<string[]> {
 
 describe('editOption', () => {
   it('an emptied options list survives an unrelated property edit — no phantom re-seed', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     expect((await deleteOption(root, id, 'A')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
     await configureProperty(root, id, { icon: 'tag' })
@@ -118,25 +119,29 @@ describe('editOption', () => {
       await editOption(root, id, { op: 'add', groupId: 'select', label: 'Light Blue' }),
     ).toEqual(ok(null))
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'light-blue', label: 'Light Blue' },
+      { id: MINTED, key: 'light-blue', label: 'Light Blue' },
     ])
   })
 
   it('add refuses a title another option holds', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const r = await editOption(root, id, { op: 'add', groupId: 'select', label: 'A' })
     expect(r.ok).toBe(false)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_A', key: 'A', label: 'A' },
+    ])
   })
 
   it('add refuses a blank or whitespace title', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     for (const label of ['', '  ']) {
       const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, label })
       expect(r.ok).toBe(false)
       if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
     }
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_A', key: 'A', label: 'A' },
+    ])
   })
 
   it('fails for an unknown property id', async () => {
@@ -144,7 +149,7 @@ describe('editOption', () => {
   })
 
   it('serializes on the schema lock — queues behind an in-flight schema op, never interleaving', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const order: string[] = []
     let release!: () => void
     const gate = new Promise<void>((r) => {
@@ -173,17 +178,19 @@ describe('editOption', () => {
   })
 
   it('relabelGroup is refused on a Select', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const r = await editOption(root, id, { op: 'relabelGroup', groupId: 'select', label: 'Named' })
     expect(r).toMatchObject({ ok: false, error: { code: 'not-found' } })
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_A', key: 'A', label: 'A' },
+    ])
   })
 
   it('a definition stored with a blank option takes an added option, written without the blank', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     await mutateRegistry(root, (registry) => {
       ;(registry.defs[id] as PropDefLike).select_options = [
-        { key: 'A', label: 'A' },
+        { id: 'opt_A', key: 'A', label: 'A' },
         { key: ' ', label: ' ' },
       ]
       return { registry, result: null }
@@ -192,8 +199,8 @@ describe('editOption', () => {
       true,
     )
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: MINTED, key: 'B', label: 'B' },
     ])
   })
 
@@ -211,9 +218,41 @@ describe('editOption', () => {
   })
 })
 
+describe('a definition stored with options that carry no id', () => {
+  it('reads each option under the id its key derives, and an option edit stores every option of the property with that id', async () => {
+    const id = await mkSelect([{ id: 'opt_x', key: 'x', label: 'x' }])
+    const file = join(root, '.nexus', 'properties.json')
+    const raw = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
+    raw.defs[id].select_options = [
+      { key: 'Done', label: 'Done' },
+      { key: 'Todo', label: 'Todo' },
+    ]
+    await writeFile(file, JSON.stringify(raw))
+    const ids = async () =>
+      ((await readRegistry(root)).defs[id].select_options ?? []).map((o) => o.id)
+    expect(await ids()).toEqual(['opt_Done', 'opt_Todo'])
+    expect(await ids()).toEqual(['opt_Done', 'opt_Todo'])
+    raw.defs[id].select_options = [
+      { id: '', key: 'Done', label: 'Done' },
+      { key: 'Todo', label: 'Todo' },
+    ]
+    await writeFile(file, JSON.stringify(raw))
+    expect(await ids()).toEqual(['opt_Done', 'opt_Todo'])
+    expect((await editOption(root, id, { op: 'recolor', option: 'Todo', color: 'red' })).ok).toBe(
+      true,
+    )
+    expect(
+      (await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)).defs[id].select_options,
+    ).toEqual([
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+      { id: 'opt_Todo', key: 'Todo', label: 'Todo', color: 'red' },
+    ])
+  })
+})
+
 describe('a definition stored with options that carry no label', () => {
   it('takes a recolor on a labelled option, storing every option with its label', async () => {
-    const id = await mkSelect([{ key: 'a', label: 'a' }])
+    const id = await mkSelect([{ id: 'opt_a', key: 'a', label: 'a' }])
     const file = join(root, '.nexus', 'properties.json')
     const raw = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
     raw.defs[id].select_options = [{ key: 'a' }, { key: 'b' }, { key: 'c', label: 'C' }]
@@ -221,16 +260,16 @@ describe('a definition stored with options that carry no label', () => {
     expect((await editOption(root, id, { op: 'recolor', option: 'C', color: 'red' })).ok).toBe(true)
     const after = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
     expect(after.defs[id].select_options).toEqual([
-      { key: 'a', label: 'a' },
-      { key: 'b', label: 'b' },
-      { key: 'c', label: 'C', color: 'red' },
+      { id: 'opt_a', key: 'a', label: 'a' },
+      { id: 'opt_b', key: 'b', label: 'b' },
+      { id: 'opt_c', key: 'c', label: 'C', color: 'red' },
     ])
   })
 })
 
 describe('a definition stored with two options that fold alike', () => {
   it('takes an added option, written with the first of the pair alone', async () => {
-    const id = await mkSelect([{ key: 'alpha', label: 'alpha' }])
+    const id = await mkSelect([{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }])
     const file = join(root, '.nexus', 'properties.json')
     const raw = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
     raw.defs[id].select_options = [
@@ -243,15 +282,15 @@ describe('a definition stored with two options that fold alike', () => {
     )
     const after = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
     expect(after.defs[id].select_options).toEqual([
-      { key: 'alpha', label: 'alpha' },
-      { key: 'beta', label: 'beta' },
+      { id: 'opt_alpha', key: 'alpha', label: 'alpha' },
+      { id: MINTED, key: 'beta', label: 'beta' },
     ])
   })
 })
 
 describe('a rename followed by a registry-only edit', () => {
   it('an edit still addressed to the old value is refused, and the new title holds in the registry and on the page', async () => {
-    const id = await mkSelect([{ key: 'Urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
     const rename = renameOption(root, id, 'Urgent', 'Critical')
     const recolor = editOption(root, id, { op: 'recolor', option: 'Urgent', color: 'red' })
@@ -259,7 +298,7 @@ describe('a rename followed by a registry-only edit', () => {
     expect(renamed.ok).toBe(true)
     expect(recolored).toMatchObject({ ok: false, error: { code: 'not-found' } })
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'Critical', label: 'Critical' },
+      { id: 'opt_Urgent', key: 'Critical', label: 'Critical' },
     ])
     const content = await readFile(page, 'utf8')
     expect(content).toContain('Critical')
@@ -267,7 +306,7 @@ describe('a rename followed by a registry-only edit', () => {
   })
 
   it('an edit addressed to the new title lands on it', async () => {
-    const id = await mkSelect([{ key: 'Urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
     const rename = renameOption(root, id, 'Urgent', 'Critical')
     const recolor = editOption(root, id, { op: 'recolor', option: 'Critical', color: 'red' })
@@ -275,7 +314,7 @@ describe('a rename followed by a registry-only edit', () => {
     expect(renamed.ok).toBe(true)
     expect(recolored.ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'Critical', label: 'Critical', color: 'red' },
+      { id: 'opt_Urgent', key: 'Critical', label: 'Critical', color: 'red' },
     ])
     expect(await readFile(page, 'utf8')).toContain('Critical')
   })
@@ -283,9 +322,9 @@ describe('a rename followed by a registry-only edit', () => {
 
 describe('an option edit leaves every other stored entry as written', () => {
   const selectSeed = [
-    { key: 'A', label: 'A' },
-    { key: 'B', label: 'B', appearance: 'outline', icon: 7, tint: 'x' },
-    { key: 'C', label: 'C' },
+    { id: 'opt_A', key: 'A', label: 'A' },
+    { id: 'opt_B', key: 'B', label: 'B', appearance: 'outline', icon: 7, tint: 'x' },
+    { id: 'opt_C', key: 'C', label: 'C' },
   ]
   const statusSeed = [
     {
@@ -293,16 +332,16 @@ describe('an option edit leaves every other stored entry as written', () => {
       label: 'One',
       color: 'grey',
       options: [
-        { key: 'X', label: 'X', group_id: 'g1' },
-        { key: 'Y', label: 'Y', group_id: 'g1', appearance: 'outline', icon: 7, tint: 'x' },
-        { key: 'W', label: 'W', group_id: 'g1' },
+        { id: 'opt_X', key: 'X', label: 'X' },
+        { id: 'opt_Y', key: 'Y', label: 'Y', appearance: 'outline', icon: 7, tint: 'x' },
+        { id: 'opt_W', key: 'W', label: 'W' },
       ],
     },
-    { id: 'g2', label: 'Two', color: 42, options: [{ key: 'Z', label: 'Z', group_id: 'g2' }] },
+    { id: 'g2', label: 'Two', color: 42, options: [{ id: 'opt_Z', key: 'Z', label: 'Z' }] },
   ]
   const multiSeed = [
-    { key: 'a', label: 'a' },
-    { key: 'b', label: 'b', appearance: 'outline', icon: 7, tint: 'x' },
+    { id: 'opt_a', key: 'a', label: 'a' },
+    { id: 'opt_b', key: 'b', label: 'b', appearance: 'outline', icon: 7, tint: 'x' },
   ]
   const registryFile = () => join(root, '.nexus', 'properties.json')
   const rawDefs = async () => (await readJsonAt<RegistryFile>(registryFile())).defs
@@ -356,20 +395,20 @@ describe('an option edit leaves every other stored entry as written', () => {
     ).toBe(true)
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([
-      { key: 'AA', label: 'AA', color: 'red' },
+      { id: 'opt_A', key: 'AA', label: 'AA', color: 'red' },
       selectSeed[1],
     ])
     expect(defs.prop_st.status_groups).toEqual([
       {
         ...statusSeed[0],
-        options: [
-          { key: 'XX', label: 'XX', group_id: 'g1', color: 'red' },
-          statusSeed[0].options[1],
-        ],
+        options: [{ id: 'opt_X', key: 'XX', label: 'XX', color: 'red' }, statusSeed[0].options[1]],
       },
       statusSeed[1],
     ])
-    expect(defs.prop_multi.select_options).toEqual([...multiSeed, { key: 'c', label: 'c' }])
+    expect(defs.prop_multi.select_options).toEqual([
+      ...multiSeed,
+      { id: MINTED, key: 'c', label: 'c' },
+    ])
   })
 
   it("a move keeps the moved option's own keys and the target group's color", async () => {
@@ -380,7 +419,7 @@ describe('an option edit leaves every other stored entry as written', () => {
     const defs = await rawDefs()
     expect(defs.prop_st.status_groups![1]).toEqual({
       ...statusSeed[1],
-      options: [{ ...statusSeed[0].options[1], group_id: 'g2' }, ...statusSeed[1].options],
+      options: [{ ...statusSeed[0].options[1] }, ...statusSeed[1].options],
     })
     expect(defs.prop_st.status_groups![0].options).toEqual([
       statusSeed[0].options[0],
@@ -391,11 +430,13 @@ describe('an option edit leaves every other stored entry as written', () => {
   it('resetting a field to its default removes the stored value, whatever its neighbors hold', async () => {
     const file = await readJsonAt<RegistryFile>(registryFile())
     file.defs.prop_sel.select_options = [
-      { key: 'A', label: 'A', appearance: 'outline', color: 7, icon: 7 },
-      { key: 'B', label: 'B', appearance: 'outline', color: 7, icon: 7 },
-      { key: 'C', label: 'C' },
+      { id: 'opt_A', key: 'A', label: 'A', appearance: 'outline', color: 7, icon: 7 },
+      { id: 'opt_B', key: 'B', label: 'B', appearance: 'outline', color: 7, icon: 7 },
+      { id: 'opt_C', key: 'C', label: 'C' },
     ]
-    file.defs.prop_multi.select_options = [{ key: 'a', label: 'a', appearance: 'outline' }]
+    file.defs.prop_multi.select_options = [
+      { id: 'opt_a', key: 'a', label: 'a', appearance: 'outline' },
+    ]
     await writeFile(registryFile(), JSON.stringify(file))
     expect(
       (await editOption(root, 'prop_sel', { op: 'appearance', option: 'A', appearance: 'filled' }))
@@ -413,11 +454,11 @@ describe('an option edit leaves every other stored entry as written', () => {
     ).toBe(true)
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([
-      { key: 'A', label: 'A', color: 7, icon: 7 },
-      { key: 'B', label: 'B', appearance: 'outline', icon: 7 },
-      { key: 'C', label: 'C' },
+      { id: 'opt_A', key: 'A', label: 'A', color: 7, icon: 7 },
+      { id: 'opt_B', key: 'B', label: 'B', appearance: 'outline', icon: 7 },
+      { id: 'opt_C', key: 'C', label: 'C' },
     ])
-    expect(defs.prop_multi.select_options).toEqual([{ key: 'a', label: 'a' }])
+    expect(defs.prop_multi.select_options).toEqual([{ id: 'opt_a', key: 'a', label: 'a' }])
   })
 })
 
@@ -450,13 +491,13 @@ describe('an option rename keeps every stored label', () => {
                 id: 'g1',
                 label: 'One',
                 color: 'grey',
-                options: [{ key: 'x', label: 'X', group_id: 'g1' }],
+                options: [{ key: 'x', label: 'X' }],
               },
               {
                 id: 'g2',
                 label: 'Two',
                 color: 'blue',
-                options: [{ key: 'y', label: 'Y', group_id: 'g2' }],
+                options: [{ key: 'y', label: 'Y' }],
               },
             ],
           },
@@ -467,12 +508,12 @@ describe('an option rename keeps every stored label', () => {
     expect((await renameOption(root, 'prop_st', 'X', 'XX')).ok).toBe(true)
     const defs = (await readJsonAt<RegistryFile>(registryFile)).defs
     expect(defs.prop_sel.select_options).toEqual([
-      { key: 'AA', label: 'AA' },
-      { key: 'b', label: 'B' },
+      { id: 'opt_a', key: 'AA', label: 'AA' },
+      { id: 'opt_b', key: 'b', label: 'B' },
     ])
     expect(defs.prop_st.status_groups!.map((g) => g.options)).toEqual([
-      [{ key: 'XX', label: 'XX', group_id: 'g1' }],
-      [{ key: 'y', label: 'Y', group_id: 'g2' }],
+      [{ id: 'opt_x', key: 'XX', label: 'XX' }],
+      [{ id: 'opt_y', key: 'y', label: 'Y' }],
     ])
   })
 })
@@ -501,13 +542,13 @@ describe('option ops refuse a property without options', () => {
 
 describe('renameOption', () => {
   it('rewrites the def and cascades the value across pages', async () => {
-    const id = await mkSelect([{ key: 'Urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
 
     const r = await renameOption(root, id, 'Urgent', 'Critical')
     expect(r.ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'Critical', label: 'Critical' },
+      { id: 'opt_Urgent', key: 'Critical', label: 'Critical' },
     ])
     const content = await readFile(page, 'utf8')
     expect(content).toContain('Critical')
@@ -519,13 +560,13 @@ describe('renameOption', () => {
       label: 'Status',
       key: 'Status',
       type: 'select',
-      select_options: [{ key: 'Done', label: 'Done' }],
+      select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
     })
     const tags = await mkProperty({
       label: 'Tags',
       key: 'Tags',
       type: 'multiSelect',
-      select_options: [{ key: 'Done', label: 'Done' }],
+      select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
     })
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
@@ -553,14 +594,14 @@ describe('renameOption', () => {
       key: 'Tags',
       type: 'select',
       value_format: 'kebab-case',
-      select_options: [{ key: 'light-blue', label: 'Light Blue' }],
+      select_options: [{ id: 'opt_light-blue', key: 'light-blue', label: 'Light Blue' }],
     })
     const page = await pageHolding(id, 'light-blue')
     expect(await readFile(page, 'utf8')).toContain('light-blue')
 
     expect((await renameOption(root, id, 'Light Blue', 'Dark Blue')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'dark-blue', label: 'Dark Blue' },
+      { id: 'opt_light-blue', key: 'dark-blue', label: 'Dark Blue' },
     ])
     const content = await readFile(page, 'utf8')
     expect(content).toContain('dark-blue')
@@ -573,7 +614,7 @@ describe('renameOption', () => {
       key: 'Tags',
       type: 'multiSelect',
       value_format: 'kebab-case',
-      select_options: [{ key: 'in-progress', label: 'in-progress' }],
+      select_options: [{ id: 'opt_in-progress', key: 'in-progress', label: 'in-progress' }],
     })
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
@@ -586,7 +627,7 @@ describe('renameOption', () => {
 
     expect((await renameOption(root, id, 'in-progress', 'In Progress')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'in-progress', label: 'In Progress' },
+      { id: 'opt_in-progress', key: 'in-progress', label: 'In Progress' },
     ])
     expect(await readFile(page, 'utf8')).toBe(bytes)
     expect((await stat(page)).mtimeMs).toBe(mtime)
@@ -594,19 +635,19 @@ describe('renameOption', () => {
   })
 
   it('rejects a whitespace rename, leaving the option as it was', async () => {
-    const id = await mkSelect([{ key: 'Alpha', label: 'Alpha' }])
+    const id = await mkSelect([{ id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' }])
     const r = await renameOption(root, id, 'Alpha', '  ')
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
-      { key: 'Alpha', label: 'Alpha' },
+      { id: 'opt_Alpha', key: 'Alpha', label: 'Alpha' },
     ])
   })
 
   it('rejects a rename that collides with an existing title (no page writes)', async () => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
     ])
     const page = await pageHolding(id, 'A')
     const r = await renameOption(root, id, 'A', 'B')
@@ -619,7 +660,7 @@ describe('renameOption', () => {
   })
 
   it('is refused for a value the definition lacks, and rewrites no page', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
     const key = (await readRegistry(root)).defs[id].key
     await rewriteRootAt(
@@ -636,7 +677,7 @@ describe('renameOption', () => {
   })
 
   it('is refused for a label no option holds', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     expect(await renameOption(root, id, 'Gone', 'X')).toMatchObject({
       ok: false,
       error: { code: 'not-found' },
@@ -644,7 +685,7 @@ describe('renameOption', () => {
   })
 
   it('notes every rewritten page once per container for the values:changed push', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const def = (await readRegistry(root)).defs[id]
     for (const [folder, titles] of [
       ['Col', ['One', 'Two']],
@@ -679,14 +720,16 @@ describe('renameOption', () => {
 describe('deleteOption', () => {
   it('deletes the def option and strips its value from pages', async () => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
     ])
     const page = await pageHolding(id, 'A')
 
     const r = await deleteOption(root, id, 'A')
     expect(r.ok).toBe(true)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'B', label: 'B' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_B', key: 'B', label: 'B' },
+    ])
     expect(await readFile(page, 'utf8')).not.toContain(id)
   })
 
@@ -700,8 +743,8 @@ describe('an owed record holds option changes', () => {
   const held = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
   const owing = async (): Promise<{ id: string; page: string; bytes: string }> => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'C', label: 'C' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_C', key: 'C', label: 'C' },
     ])
     const page = await pageHolding(id, 'A')
     await writeSchemaJournal(root, held)
@@ -726,8 +769,8 @@ describe('an owed record holds option changes', () => {
     'an add taking back an owed rename’s old key refuses, leaving the record',
     async () => {
       const id = await mkSelect([
-        { key: 'A', label: 'A' },
-        { key: 'C', label: 'C' },
+        { id: 'opt_A', key: 'A', label: 'A' },
+        { id: 'opt_C', key: 'C', label: 'C' },
       ])
       await pageHolding(id, 'A')
       const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
@@ -768,7 +811,9 @@ describe('an owed record holds option changes', () => {
   it.skipIf(noModeBits)(
     'clearOption refuses while the same property’s option record is owed, writing nothing',
     async () => {
-      const id = await mkSelect([{ key: 'In Progress', label: 'In Progress' }])
+      const id = await mkSelect([
+        { id: 'opt_In%20Progress', key: 'In Progress', label: 'In Progress' },
+      ])
       const one = await pageHolding(id, 'In Progress')
       const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
       if (!set.ok) throw new Error('set failed')
@@ -799,7 +844,7 @@ describe('an owed record holds option changes', () => {
   )
 
   it('clearOption strips while another property’s option record is owed', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
     const other = { op: 'option-remove', id: 'prop_x', key: 'A' } as const
     await writeSchemaJournal(root, other)
@@ -810,8 +855,8 @@ describe('an owed record holds option changes', () => {
 
   it('a held record identical to the one the op writes runs the op', async () => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'C', label: 'C' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_C', key: 'C', label: 'C' },
     ])
     await writeSchemaJournal(root, {
       op: 'option-rename',
@@ -829,7 +874,7 @@ describe('an owed record holds option changes', () => {
 
 describe('remove and clear on a value the definition lacks', () => {
   const stray = async (): Promise<{ id: string; page: string; bytes: string }> => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
     const key = (await readRegistry(root)).defs[id].key
     await rewriteRootAt(
@@ -846,7 +891,9 @@ describe('remove and clear on a value the definition lacks', () => {
       error: { code: 'not-found' },
     })
     expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_A', key: 'A', label: 'A' },
+    ])
   })
 
   it('clearOption is refused and rewrites no page', async () => {
@@ -861,12 +908,14 @@ describe('remove and clear on a value the definition lacks', () => {
 
 describe('clearOption', () => {
   it('strips the value from pages but KEEPS the option', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const page = await pageHolding(id, 'A')
 
     const r = await clearOption(root, id, 'A')
     expect(r.ok).toBe(true)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ key: 'A', label: 'A' }])
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { id: 'opt_A', key: 'A', label: 'A' },
+    ])
     expect(await readFile(page, 'utf8')).not.toContain(id)
   })
 
@@ -875,7 +924,7 @@ describe('clearOption', () => {
   })
 
   it("strips the option's key and leaves a word spelled as its label", async () => {
-    const id = await mkSelect([{ key: 'urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
     await assignProperty(root, col.value.path, id)
@@ -893,7 +942,7 @@ describe('clearOption', () => {
   })
 
   it.skipIf(noModeBits)('a clear that can’t write a holder warns', async () => {
-    const id = await mkSelect([{ key: 'hi', label: 'hi' }])
+    const id = await mkSelect([{ id: 'opt_hi', key: 'hi', label: 'hi' }])
     await pageHolding(id, 'hi')
     const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
     if (!set.ok) throw new Error('set failed')
@@ -919,8 +968,8 @@ describe('clearOption', () => {
 describe('optionHolders', () => {
   it('counts the pages and Spaces holding the value, and no holder of another', async () => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
     ])
     const files = [
       await pageHolding(id, 'A'),
@@ -935,14 +984,14 @@ describe('optionHolders', () => {
   })
 
   it('is refused for a value the definition lacks', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     expect((await optionHolders(root, id, 'Stray')).ok).toBe(false)
   })
 })
 
 describe('option cascades reach a Space sidecar', () => {
   it('a rename rewrites a scalar value and a list element', async () => {
-    const id = await mkSelect([{ key: 'Urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
     const scalar = await spaceSidecar('Pommora', { id: 'sp1', Tags: 'Urgent' })
     const list = await spaceSidecar('Sapphire', { id: 'sp2', Tags: ['Urgent', 'Keep'] })
 
@@ -953,8 +1002,8 @@ describe('option cascades reach a Space sidecar', () => {
 
   it('a remove empties a one-element list and the key leaves the sidecar', async () => {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
     ])
     const file = await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A'], icon: 'box' })
 
@@ -965,7 +1014,7 @@ describe('option cascades reach a Space sidecar', () => {
   })
 
   it('a sidecar holding neither value is left byte-identical', async () => {
-    const id = await mkSelect([{ key: 'A', label: 'A' }])
+    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
     const file = await spaceSidecar('Pommora', { id: 'sp1', Tags: ['B'] })
     const bytes = await readFile(file, 'utf8')
     const mtime = (await stat(file)).mtimeMs
@@ -984,8 +1033,8 @@ describe('the option cascades reach the Collection caches', () => {
     cache: () => Promise<unknown>
   }> {
     const id = await mkSelect([
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
     ])
     const made = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!made.ok) throw new Error('folder failed')
@@ -1111,8 +1160,8 @@ describe('option cascades reach saved views', () => {
     surfaces: ConfigSurfaces
   }> {
     const id = await mkSelect([
-      { key: 'Done', label: 'Done' },
-      { key: 'Todo', label: 'Todo' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+      { id: 'opt_Todo', key: 'Todo', label: 'Todo' },
     ])
     const page = await pageHolding(id, 'Done')
     const col = join(page, '..')
@@ -1216,7 +1265,7 @@ describe('option cascades reach saved views', () => {
   )
 
   it('a rename to the option’s own key leaves its pages, relabels the views, and journals no key', async () => {
-    const id = await mkSelect([{ key: 'urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
     const surfaces = await seedConfigSurfaces(root, join(page, '..'), viewOn(id, 'Urgent'))
     const bytes = await readFile(page, 'utf8')
@@ -1266,7 +1315,7 @@ describe('option cascades reach saved views', () => {
   })
 
   it('a rename and a removal edit files by key and views by label', async () => {
-    const id = await mkSelect([{ key: 'urgent', label: 'Urgent' }])
+    const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
     await assignProperty(root, col.value.path, id)
@@ -1287,8 +1336,8 @@ describe('option cascades reach saved views', () => {
 
   it("a removal leaves the views on another option whose label is the removed one's key", async () => {
     const id = await mkSelect([
-      { key: 'a', label: 'Z' },
-      { key: 'B2', label: 'a' },
+      { id: 'opt_a', key: 'a', label: 'Z' },
+      { id: 'opt_B2', key: 'B2', label: 'a' },
     ])
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
@@ -1352,8 +1401,8 @@ async function toned(
 
 const tones = (): Promise<Awaited<ReturnType<typeof toned>>> =>
   toned([
-    { key: 'Light Blue', label: 'Light Blue' },
-    { key: 'Dark Red', label: 'Dark Red' },
+    { id: 'opt_Light%20Blue', key: 'Light Blue', label: 'Light Blue' },
+    { id: 'opt_Dark%20Red', key: 'Dark Red', label: 'Dark Red' },
   ])
 
 describe('a Value Format change re-keys every option', () => {
@@ -1367,8 +1416,8 @@ describe('a Value Format change re-keys every option', () => {
     const def = (await readRegistry(root)).defs[id]
     expect(def.value_format).toBe('kebab-case')
     expect(def.select_options).toEqual([
-      { key: 'light-blue', label: 'Light Blue' },
-      { key: 'dark-red', label: 'Dark Red' },
+      { id: 'opt_Light%20Blue', key: 'light-blue', label: 'Light Blue' },
+      { id: 'opt_Dark%20Red', key: 'dark-red', label: 'Dark Red' },
     ])
     expect(await readFile(page, 'utf8')).toContain('Tones: ["light-blue", "dark-red"]')
     expect((await readJsonAt(space)).Tones).toEqual(['light-blue'])
@@ -1379,8 +1428,8 @@ describe('a Value Format change re-keys every option', () => {
 
   it('refuses two options the format gives one key, changing nothing', async () => {
     const { id, page } = await toned([
-      { key: 'Wifi Pro', label: 'Wifi Pro' },
-      { key: 'Wifi-Pro', label: 'Wifi-Pro' },
+      { id: 'opt_Wifi%20Pro', key: 'Wifi Pro', label: 'Wifi Pro' },
+      { id: 'opt_Wifi-Pro', key: 'Wifi-Pro', label: 'Wifi-Pro' },
     ])
     const def = (await readRegistry(root)).defs[id]
     const bytes = await readFile(page, 'utf8')
@@ -1394,8 +1443,8 @@ describe('a Value Format change re-keys every option', () => {
   it('refuses an option taking the key another option writes now, changing nothing', async () => {
     const { id, page } = await toned(
       [
-        { key: 'wifipro', label: 'WifiPro' },
-        { key: 'wifi-pro', label: 'WiFi-Pro' },
+        { id: 'opt_wifipro', key: 'wifipro', label: 'WifiPro' },
+        { id: 'opt_wifi-pro', key: 'wifi-pro', label: 'WiFi-Pro' },
       ],
       'lowercase',
     )
@@ -1409,7 +1458,7 @@ describe('a Value Format change re-keys every option', () => {
   })
 
   it('an option whose new key differs from its old one only by padding isn’t a crossing', async () => {
-    const { id } = await toned([{ key: ' green ', label: ' green ' }])
+    const { id } = await toned([{ id: 'opt_%20green%20', key: ' green ', label: ' green ' }])
     expect((await setValueFormat(root, id, 'kebab-case')).ok).toBe(true)
     expect((await readRegistry(root)).defs[id].select_options).toEqual([
       expect.objectContaining({ key: 'green', label: ' green ' }),
@@ -1501,8 +1550,8 @@ describe('valueFormatHolders', () => {
   it('answers the crossing refusal', async () => {
     const { id } = await toned(
       [
-        { key: 'wifipro', label: 'WifiPro' },
-        { key: 'wifi-pro', label: 'WiFi-Pro' },
+        { id: 'opt_wifipro', key: 'wifipro', label: 'WifiPro' },
+        { id: 'opt_wifi-pro', key: 'wifi-pro', label: 'WiFi-Pro' },
       ],
       'lowercase',
     )
@@ -1521,20 +1570,20 @@ describe('unregisteredMembers', () => {
   const multiSelectOf = (...values: string[]): PropertyDefinition =>
     def({
       type: 'multiSelect',
-      select_options: values.map((value) => ({ key: value, label: value })),
+      select_options: values.map((value) => ({ id: `opt_${value}`, key: value, label: value })),
     })
   const keyedMulti = def({
     type: 'multiSelect',
     select_options: [
-      { key: 'done', label: 'Done' },
-      { key: 'in-progress', label: 'In Progress' },
+      { id: 'opt_done', key: 'done', label: 'Done' },
+      { id: 'opt_in-progress', key: 'in-progress', label: 'In Progress' },
     ],
   })
   const labels = def({
     type: 'multiSelect',
     select_options: [
-      { key: 'Claude', label: 'Claude' },
-      { key: 'Docs', label: 'Docs' },
+      { id: 'opt_Claude', key: 'Claude', label: 'Claude' },
+      { id: 'opt_Docs', key: 'Docs', label: 'Docs' },
     ],
   })
 

@@ -4,8 +4,8 @@ import {
   optionGroupsOf,
   withOptionGroups,
   type PropertyDefinition,
+  type SelectOption,
   type StatusGroup,
-  type StatusOption,
 } from './properties'
 
 const groups: StatusGroup[] = [
@@ -13,33 +13,32 @@ const groups: StatusGroup[] = [
     id: 'upcoming',
     label: 'Open',
     color: 'grey',
-    options: [{ key: 'A', label: 'A', group_id: 'upcoming' }],
+    options: [{ id: 'opt_A', key: 'A', label: 'A' }],
   },
   {
     id: 'done',
     label: 'Done',
     color: 'green',
-    options: [{ key: 'D', label: 'D', group_id: 'done', color: 'red' }],
+    options: [{ id: 'opt_D', key: 'D', label: 'D', color: 'red' }],
   },
 ]
 const A = groups[0].options[0]
 const D = groups[1].options[0]
 
 describe('optionModel', () => {
-  it('addOption inserts the label and key it is handed into the matched group only, carrying its group_id', () => {
-    expect(addOption(groups, 'upcoming', 'Triage', 'triage', 0)[0].options).toEqual([
-      { key: 'triage', label: 'Triage', group_id: 'upcoming' },
-      A,
-    ])
-    const next = addOption(groups, 'upcoming', 'Backlog', 'Backlog')
-    expect(next[0].options).toEqual([A, { key: 'Backlog', label: 'Backlog', group_id: 'upcoming' }])
+  it('addOption inserts the option it is handed into the matched group only', () => {
+    const triage = { id: 'opt_triage', key: 'triage', label: 'Triage' }
+    expect(addOption(groups, 'upcoming', triage, 0)[0].options).toEqual([triage, A])
+    const backlog = { id: 'opt_Backlog', key: 'Backlog', label: 'Backlog' }
+    const next = addOption(groups, 'upcoming', backlog)
+    expect(next[0].options).toEqual([A, backlog])
     expect(next[1]).toBe(groups[1])
   })
 
-  it('applyOptionEdit move reassigns group_id and inserts at the target index (cross-group)', () => {
+  it('applyOptionEdit move carries the option as stored and inserts at the target index (cross-group)', () => {
     const next = applyOptionEdit(groups, { op: 'move', option: 'A', groupId: 'done', toIndex: 0 })
     expect(next[0].options).toEqual([])
-    expect(next[1].options).toEqual([{ ...A, group_id: 'done' }, D])
+    expect(next[1].options).toEqual([{ ...A }, D])
   })
 
   it('applyOptionEdit recolor sets a color on one option and clears it on another', () => {
@@ -47,9 +46,9 @@ describe('optionModel', () => {
       applyOptionEdit(groups, { op: 'recolor', option: 'A', color: 'red' })[0].options[0],
     ).toEqual({ ...A, color: 'red' })
     expect(applyOptionEdit(groups, { op: 'recolor', option: 'D' })[1].options[0]).toEqual({
+      id: 'opt_D',
       key: 'D',
       label: 'D',
-      group_id: 'done',
     })
   })
 
@@ -71,7 +70,7 @@ describe('optionModel', () => {
   })
 
   it('every applyOptionEdit op keeps the keys it does not build fresh on every entry', () => {
-    type Raw = StatusOption & { tint?: string; appearance?: string }
+    type Raw = SelectOption & { tint?: string; appearance?: string }
     const raw = [
       {
         id: 'g1',
@@ -79,8 +78,8 @@ describe('optionModel', () => {
         color: 'grey',
         tint: 'x',
         options: [
-          { key: 'A', label: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
-          { key: 'B', label: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { key: 'A', label: 'A', tint: 'x', appearance: 'outline' },
+          { key: 'B', label: 'B', tint: 'x', appearance: 'outline' },
         ],
       },
       {
@@ -88,7 +87,7 @@ describe('optionModel', () => {
         label: 'Two',
         color: 'green',
         tint: 'x',
-        options: [{ key: 'C', label: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
+        options: [{ key: 'C', label: 'C', tint: 'x', appearance: 'outline' }],
       },
     ] as unknown as StatusGroup[]
     const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
@@ -113,10 +112,10 @@ describe('optionModel', () => {
     }
   })
 
-  it('withOptionGroups(optionGroupsOf(select)) round-trips a Select with no group_id on any entry', () => {
+  it('withOptionGroups(optionGroupsOf(select)) round-trips a Select', () => {
     const options = [
-      { key: 'A', label: 'A' },
-      { key: 'B', label: 'B', color: 'red' },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B', color: 'red' },
     ]
     const select = {
       id: 'p',
@@ -127,16 +126,14 @@ describe('optionModel', () => {
     } as PropertyDefinition
     const selectGroups = optionGroupsOf(select)
     expect(selectGroups).toHaveLength(1)
-    expect(selectGroups[0].options.every((o) => o.group_id === 'select')).toBe(true)
     const back = withOptionGroups(select, selectGroups)
     expect(back).toEqual(select)
-    expect(back.select_options?.some((o) => 'group_id' in o)).toBe(false)
     expect(
       withOptionGroups(
         select,
         applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', label: 'C' }),
       ).select_options,
-    ).toEqual([...options, { key: 'C', label: 'C' }])
+    ).toEqual([...options, { id: expect.stringMatching(/^opt_/), key: 'C', label: 'C' }])
   })
 
   it('optionGroupsOf(status) is status_groups by reference', () => {

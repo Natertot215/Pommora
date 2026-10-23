@@ -22,8 +22,8 @@ const statusDef: PropertyDefinition = {
       label: 'Open',
       color: 'gray',
       options: [
-        { key: 'Queued', label: 'Queued', group_id: 'g1' },
-        { key: 'Shipped', label: 'Shipped', group_id: 'g1' },
+        { id: 'opt_Queued', key: 'Queued', label: 'Queued' },
+        { id: 'opt_Shipped', key: 'Shipped', label: 'Shipped' },
       ],
     },
   ],

@@ -24,19 +24,19 @@ const statusDef: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ key: 'not_started', label: 'not_started', group_id: 'upcoming' }],
+      options: [{ id: 'opt_not_started', key: 'not_started', label: 'not_started' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ key: 'active', label: 'active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ id: 'opt_active', key: 'active', label: 'active', color: 'blue' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'complete', label: 'complete', color: 'green', group_id: 'done' }],
+      options: [{ id: 'opt_complete', key: 'complete', label: 'complete', color: 'green' }],
     },
   ],
 }
@@ -55,8 +55,8 @@ const multiDef: PropertyDefinition = {
   key: 'Tags',
   type: 'multiSelect',
   select_options: [
-    { key: 'a', label: 'a' },
-    { key: 'b', label: 'b' },
+    { id: 'opt_a', key: 'a', label: 'a' },
+    { id: 'opt_b', key: 'b', label: 'b' },
   ],
 }
 

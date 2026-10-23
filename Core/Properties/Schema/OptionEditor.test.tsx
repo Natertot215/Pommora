@@ -21,7 +21,7 @@ const status = [
     id: 'todo',
     label: 'To-do',
     color: 'grey',
-    options: [{ key: 'Open', label: 'Open', group_id: 'todo' }],
+    options: [{ id: 'opt_Open', key: 'Open', label: 'Open' }],
   },
 ] as StatusGroup[]
 
@@ -31,8 +31,8 @@ const select = [
     label: '',
     color: '',
     options: [
-      { key: 'Urgent', label: 'Urgent', group_id: 'select' },
-      { key: 'Later', label: 'Later', group_id: 'select' },
+      { id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' },
+      { id: 'opt_Later', key: 'Later', label: 'Later' },
     ],
   },
 ] as StatusGroup[]
@@ -248,7 +248,7 @@ describe('creating an option', () => {
     render('select', [
       {
         ...select[0],
-        options: [...select[0].options, { key: 'Fresh', label: 'Fresh', group_id: 'select' }],
+        options: [...select[0].options, { id: 'opt_Fresh', key: 'Fresh', label: 'Fresh' }],
       },
     ])
     expect(host.querySelector('input')).toBeNull()
@@ -336,7 +336,7 @@ describe('the popup through a rename', () => {
     const refreshed = [
       {
         ...select[0],
-        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
       },
     ]
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -357,7 +357,7 @@ describe('the popup through a rename', () => {
     render('select', [
       {
         ...select[0],
-        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
       },
     ])
     await commit(titleField(), 'Severe')
@@ -367,7 +367,7 @@ describe('the popup through a rename', () => {
     render('select', [
       {
         ...select[0],
-        options: [{ key: 'Severe', label: 'Severe', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_Severe', key: 'Severe', label: 'Severe' }, select[0].options[1]],
       },
     ])
     expect(titleField()).toBe(field)
@@ -384,14 +384,14 @@ describe('the popup through a rename', () => {
     render('select', [
       {
         ...select[0],
-        options: [{ key: 'High', label: 'High', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_High', key: 'High', label: 'High' }, select[0].options[1]],
       },
     ])
     expect(titleField()?.value).toBe('Critical')
     render('select', [
       {
         ...select[0],
-        options: [{ key: 'Critical', label: 'Critical', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
       },
     ])
     expect(errors).not.toHaveBeenCalled()
@@ -419,18 +419,18 @@ describe('the popup through a rename', () => {
     render('select', [
       {
         ...select[0],
-        options: [{ key: 'High', label: 'High', group_id: 'select' }, select[0].options[1]],
+        options: [{ id: 'opt_High', key: 'High', label: 'High' }, select[0].options[1]],
       },
     ])
     await commit(titleField(), 'Critical')
     const refreshed = [
-      { key: 'Critical', label: 'Critical', group_id: 'select' },
+      { id: 'opt_Critical', key: 'Critical', label: 'Critical' },
       select[0].options[1],
     ]
     render('select', [{ ...select[0], options: refreshed }])
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
     render('select', [
-      { ...select[0], options: [...refreshed, { key: 'High', label: 'High', group_id: 'select' }] },
+      { ...select[0], options: [...refreshed, { id: 'opt_High', key: 'High', label: 'High' }] },
     ])
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
@@ -508,8 +508,8 @@ describe('the option drag', () => {
       label: 'To-do',
       color: 'grey',
       options: [
-        { key: 'Open', label: 'Open', group_id: 'todo' },
-        { key: 'Next', label: 'Next', group_id: 'todo' },
+        { id: 'opt_Open', key: 'Open', label: 'Open' },
+        { id: 'opt_Next', key: 'Next', label: 'Next' },
       ],
     },
     { id: 'doing', label: 'Doing', color: 'blue', options: [] },
@@ -517,7 +517,7 @@ describe('the option drag', () => {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ key: 'Closed', label: 'Closed', group_id: 'done' }],
+      options: [{ id: 'opt_Closed', key: 'Closed', label: 'Closed' }],
     },
   ] as StatusGroup[]
   const row = (value: string): Element => span(value)!.closest('[data-line-row]')!

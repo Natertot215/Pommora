@@ -71,7 +71,7 @@ describe('deleteProperty', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi', color: 'red' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
     })
     expect(c.ok).toBe(true)
     if (!c.ok) return
@@ -128,7 +128,7 @@ describe('deleteProperty', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi', color: 'red' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
     })
     if (!c.ok) return
     const id = c.value.id
@@ -159,7 +159,7 @@ describe('propertyHolders', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi' }],
     })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
@@ -182,7 +182,7 @@ describe('propertyHolders', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi' }],
     })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)
@@ -216,7 +216,7 @@ describe('propertyHolders', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi' }],
     })
     if (!c.ok) throw new Error('setup failed')
     const notesId = (await readJsonObject(sidecarPath(notes, 'collection')))?.id as string
@@ -248,7 +248,7 @@ describe('a global delete reaches a Space sidecar', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi' }],
     })
     if (!c.ok) throw new Error('setup failed')
     return c.value.id
@@ -289,8 +289,8 @@ describe('a global delete reaches a Space sidecar', () => {
       label: 'Tags',
       type: 'multiSelect',
       select_options: [
-        { key: 'a', label: 'a' },
-        { key: 'b', label: 'b' },
+        { id: 'opt_a', key: 'a', label: 'a' },
+        { id: 'opt_b', key: 'b', label: 'b' },
       ],
     })
     if (!c.ok) throw new Error('setup failed')
@@ -382,7 +382,7 @@ describe('a delete reaches saved views', () => {
       id: '',
       label: 'Priority',
       type: 'select',
-      select_options: [{ key: 'hi', label: 'hi' }],
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi' }],
     })
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)

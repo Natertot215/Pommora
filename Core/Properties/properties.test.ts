@@ -45,6 +45,28 @@ describe('typeIds', () => {
 })
 
 describe('propertyDefinition', () => {
+  it('an option stored without an id answers to the id its key derives, and a stored id reads as written', () => {
+    const ids = (options: unknown[]) =>
+      propertyDefinition
+        .parse({ id: 'p', key: 'S', type: 'select', select_options: options })
+        .select_options?.map((o) => o.id)
+    expect(ids([{ key: 'Done' }, { id: 'opt_X', key: 'Todo' }])).toEqual(['opt_Done', 'opt_X'])
+    expect(ids([{ id: '', key: 'Done' }])).toEqual(['opt_Done'])
+  })
+
+  it('a Status option stored without its group’s id is admitted', () => {
+    const r = propertyDefinition.safeParse({
+      id: 'p',
+      key: 'Stage',
+      type: 'status',
+      status_groups: [
+        { id: 'done', label: 'Done', options: [{ key: 'Done' }, { key: 'Shipped' }] },
+      ],
+    })
+    expect(r.success).toBe(true)
+    expect(r.data?.status_groups?.[0].options.map((o) => o.id)).toEqual(['opt_Done', 'opt_Shipped'])
+  })
+
   it('a stored denominator of zero or less reads as unset, and the definition stays admitted', () => {
     const denominator = (n: number) => {
       const r = propertyDefinition.safeParse({
@@ -285,7 +307,7 @@ describe('optionsOf', () => {
       label: 'x',
       key: 'x',
       type: 'select' as const,
-      select_options: [{ key: 'a', label: 'a' }],
+      select_options: [{ id: 'opt_a', key: 'a', label: 'a' }],
     }
     expect(optionsOf(def).map((o) => o.label)).toEqual(['a'])
   })
@@ -302,7 +324,7 @@ describe('optionsOf', () => {
       key: 'x',
       type: 'status' as const,
       status_groups: defaultStatusSeed(),
-      select_options: [{ key: 'stale', label: 'stale' }],
+      select_options: [{ id: 'opt_stale', key: 'stale', label: 'stale' }],
     }
     expect(optionsOf(def).map((o) => o.label)).toEqual(['Open', 'Active', 'Done'])
   })
@@ -316,15 +338,15 @@ describe('an option label', () => {
       type: 'select',
       select_options: [{ key: 'a' }],
     })
-    expect(def.select_options).toEqual([{ key: 'a', label: 'a' }])
+    expect(def.select_options).toEqual([{ id: 'opt_a', key: 'a', label: 'a' }])
   })
 
   it('stays through an option write', () => {
     const def: PropertyDefinition = { id: 'p', label: 'x', key: 'x', type: 'select' }
-    const options = [{ key: 'a', label: 'A', group_id: SELECT_GROUP }]
+    const options = [{ id: 'opt_a', key: 'a', label: 'A' }]
     expect(
       withOptionGroups(def, [{ id: SELECT_GROUP, label: '', color: '', options }]).select_options,
-    ).toEqual([{ key: 'a', label: 'A' }])
+    ).toEqual([{ id: 'opt_a', key: 'a', label: 'A' }])
   })
 })
 
@@ -336,14 +358,14 @@ describe('keys this build does not know', () => {
       key: 'Stage',
       type: 'status',
       foreign_block: { key: 'a', scope: 'deep' },
-      select_options: [{ key: 'a', label: 'a', tint: 'warm' }],
+      select_options: [{ id: 'opt_a', key: 'a', label: 'a', tint: 'warm' }],
       status_groups: [
         {
           id: 'todo',
           label: 'To Do',
           color: 'grey',
           collapsed: true,
-          options: [{ key: 'open', label: 'open', group_id: 'todo', glyph: 'o' }],
+          options: [{ id: 'opt_open', key: 'open', label: 'open', glyph: 'o' }],
         },
       ],
     })

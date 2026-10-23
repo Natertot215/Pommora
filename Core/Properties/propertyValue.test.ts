@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDefinition, SelectOption } from './properties'
 import {
   readNumber,
   spelledNumber,
@@ -22,8 +22,8 @@ const statusDef = def({
       label: 'G',
       color: 'blue',
       options: [
-        { key: 'Done', label: 'Done', group_id: 'g' },
-        { key: 'Open', label: 'Open', group_id: 'g' },
+        { id: 'opt_Done', key: 'Done', label: 'Done' },
+        { id: 'opt_Open', key: 'Open', label: 'Open' },
       ],
     },
   ],
@@ -32,20 +32,20 @@ const statusDef = def({
 const selectDef = def({
   type: 'select',
   select_options: [
-    { key: 'A', label: 'A' },
-    { key: 'B', label: 'B' },
+    { id: 'opt_A', key: 'A', label: 'A' },
+    { id: 'opt_B', key: 'B', label: 'B' },
   ],
 })
 
 const multiSelectOf = (...values: string[]): PropertyDefinition =>
   def({
     type: 'multiSelect',
-    select_options: values.map((value) => ({ key: value, label: value })),
+    select_options: values.map((value) => ({ id: `opt_${value}`, key: value, label: value })),
   })
 
-const keyedOptions = [
-  { key: 'done', label: 'Done' },
-  { key: 'in-progress', label: 'In Progress' },
+const keyedOptions: SelectOption[] = [
+  { id: 'opt_done', key: 'done', label: 'Done' },
+  { id: 'opt_in-progress', key: 'in-progress', label: 'In Progress' },
 ]
 const keyedSelect = def({ type: 'select', select_options: keyedOptions })
 const keyedMulti = def({ type: 'multiSelect', select_options: keyedOptions })
@@ -79,8 +79,8 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     const shaped = def({
       type: 'select',
       select_options: [
-        { key: '2024-01-01', label: '2024-01-01' },
-        { key: 'https://acme.io', label: 'https://acme.io' },
+        { id: 'opt_2024-01-01', key: '2024-01-01', label: '2024-01-01' },
+        { id: 'opt_https%3A%2F%2Facme.io', key: 'https://acme.io', label: 'https://acme.io' },
       ],
     })
     expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
@@ -129,7 +129,10 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   })
 
   it('a YAML number or boolean names the option it spells — an outside `- 2024` is the option "2024"', () => {
-    const year = def({ type: 'select', select_options: [{ key: '2024', label: '2024' }] })
+    const year = def({
+      type: 'select',
+      select_options: [{ id: 'opt_2024', key: '2024', label: '2024' }],
+    })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(multiSelectOf('true', 'x'), [true, 'x'])).toEqual({
@@ -172,7 +175,10 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
 
   it("decodeValue's select case is that rule", () => {
     const options = (...values: string[]) =>
-      def({ type: 'select', select_options: values.map((value) => ({ key: value, label: value })) })
+      def({
+        type: 'select',
+        select_options: values.map((value) => ({ id: `opt_${value}`, key: value, label: value })),
+      })
     expect(decodeValue(options('Open', 'Active', 'Done'), ['Open', 'Active'])).toEqual({
       kind: 'select',
       value: 'Active',
@@ -341,15 +347,15 @@ describe('options decode exactly; checkboxes without regard to case', () => {
   const stage = def({
     type: 'select',
     select_options: [
-      { key: 'Done', label: 'Done' },
-      { key: 'Active', label: 'Active' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+      { id: 'opt_Active', key: 'Active', label: 'Active' },
     ],
   })
   const labels = def({
     type: 'multiSelect',
     select_options: [
-      { key: 'Claude', label: 'Claude' },
-      { key: 'Docs', label: 'Docs' },
+      { id: 'opt_Claude', key: 'Claude', label: 'Claude' },
+      { id: 'opt_Docs', key: 'Docs', label: 'Docs' },
     ],
   })
   const checkbox = def({ type: 'checkbox' })
@@ -409,10 +415,15 @@ describe('findOption', () => {
     label: 'Tag',
     key: 'Tag',
     type: 'select',
-    select_options: [{ key: 'opt_a', label: 'opt_a', color: 'green' }],
+    select_options: [{ id: 'opt_opt_a', key: 'opt_a', label: 'opt_a', color: 'green' }],
   }
   it('returns the option with its color (the chip tint)', () => {
-    expect(findOption(tag, 'opt_a')).toEqual({ key: 'opt_a', label: 'opt_a', color: 'green' })
+    expect(findOption(tag, 'opt_a')).toEqual({
+      id: 'opt_opt_a',
+      key: 'opt_a',
+      label: 'opt_a',
+      color: 'green',
+    })
   })
   it('returns undefined for an unknown label', () => {
     expect(findOption(tag, 'nope')).toBeUndefined()
