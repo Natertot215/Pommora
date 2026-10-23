@@ -17,7 +17,13 @@ import type { Result } from '../../Contract/result'
 import type { FormatChange } from '../keyFormat'
 import type { PropertyRename } from '../registryProperty'
 import { FormatRows } from './FormatRows'
-import { type ColumnStyle, OPTION_LOOKS } from '../columnStyles'
+import {
+  CHECKBOX_LOOKS,
+  type ColumnStyle,
+  lookIn,
+  NUMBER_LOOKS,
+  OPTION_LOOKS,
+} from '../columnStyles'
 import { lookOptions } from '../displayLabels'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -354,7 +360,7 @@ export function PropertyFrame({
     checkbox: (def, style) => (
       <CheckboxEditor
         color={def.checkbox_color}
-        look={style.look === 'switch' ? 'switch' : 'checkbox'}
+        look={lookIn(CHECKBOX_LOOKS, style.look)}
         onSetColor={(next) => void write(dialer().ask('property:setCheckboxColor', def.id, next))}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
@@ -362,7 +368,7 @@ export function PropertyFrame({
     number: (def, style) => (
       <NumberEditor
         config={def}
-        look={style.look === 'bar' ? 'bar' : 'number'}
+        look={lookIn(NUMBER_LOOKS, style.look)}
         onSetConfig={(patch) => void write(dialer().ask('property:setNumberFormat', def.id, patch))}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
@@ -398,7 +404,7 @@ export function PropertyFrame({
     }
     const columnStyle = styleFor(def.id, schema, activeView)
     const settings = SETTINGS[def.type](def, columnStyle)
-    const optionLook = columnStyle.look === 'compact' ? 'compact' : 'standard'
+    const optionLook = lookIn(OPTION_LOOKS, columnStyle.look)
     const styleFooting =
       PROPERTY_TYPES[def.type].options !== undefined ? (
         <MenuFooting>

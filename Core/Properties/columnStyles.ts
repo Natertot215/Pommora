@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { looseDecoder } from '../Files/decoders'
-import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Connections/linkValue'
-import { type ColumnType, type PropertyDefinition, specOf } from './properties'
+import { LINK_DISPLAYS } from '../Connections/linkValue'
+import type { ColumnType, PropertyDefinition } from './properties'
 
 export const OPTION_LOOKS = ['standard', 'compact'] as const
 export const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const
@@ -13,6 +13,27 @@ export const COLUMN_LOOKS = [
   ...NUMBER_LOOKS,
 ] as const
 export type ColumnLook = (typeof COLUMN_LOOKS)[number]
+
+/** The looks a column of each type offers a view, its default first; Date styles by its date, time, and weekday forms instead. */
+export const LOOKS = {
+  text: [],
+  number: NUMBER_LOOKS,
+  checkbox: CHECKBOX_LOOKS,
+  dateTime: [],
+  select: OPTION_LOOKS,
+  multiSelect: OPTION_LOOKS,
+  status: OPTION_LOOKS,
+  link: LINK_DISPLAYS,
+  file: [],
+  context: [],
+  title: [],
+  createdTime: [],
+  lastEditedTime: [],
+} as const satisfies Readonly<Record<ColumnType, readonly ColumnLook[]>>
+
+/** A resolved look as one of the type's own, its default when the stored one names another type's. */
+export const lookIn = <L extends ColumnLook>(looks: readonly [L, ...L[]], look?: ColumnLook): L =>
+  looks.find((l) => l === look) ?? looks[0]
 
 export const DATE_FORMATS = ['monthDayYear', 'dayMonthYear', 'short', 'full', 'relative'] as const
 export type DateFormat = (typeof DATE_FORMATS)[number]
@@ -89,22 +110,8 @@ export function defaultStyleFor(
   type: ColumnType | undefined,
   def?: Pick<PropertyDefinition, 'link_display'>,
 ): Pick<StoredColumnStyle, 'look'> {
-  switch (specOf(type)?.kind) {
-    case 'select':
-    case 'multiSelect':
-      return { look: 'standard' }
-    case 'checkbox':
-      return { look: 'checkbox' }
-    // A Link column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
-    case 'link':
-      return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
-    case 'number':
-      return { look: 'number' }
-    case 'dateTime':
-    case 'context':
-    case 'file':
-    case 'text':
-    case undefined:
-      return {}
-  }
+  const looks: readonly ColumnLook[] = type === undefined ? [] : LOOKS[type]
+  // A Link column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
+  const look = type === 'link' ? (def?.link_display ?? looks.at(0)) : looks.at(0)
+  return look === undefined ? {} : { look }
 }
