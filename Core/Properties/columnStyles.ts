@@ -84,7 +84,7 @@ export const columnStyle = looseDecoder(
     weekday: z.enum(WEEKDAY_FORMATS).optional().catch(undefined),
   }),
 )
-export type StoredColumnStyle = z.infer<typeof columnStyle>
+type StoredColumnStyle = z.infer<typeof columnStyle>
 
 export interface DateStyle {
   date_format: DateFormat

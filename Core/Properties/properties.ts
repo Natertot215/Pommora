@@ -24,7 +24,7 @@ export const typeIds = z.enum([
 export type PropertyType = z.infer<typeof typeIds>
 
 // `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
-export type TypeSpec = Readonly<{
+type TypeSpec = Readonly<{
   kind: ValueKind
   origin: 'user' | 'stamp' | 'context'
   groups?: true
@@ -90,7 +90,7 @@ export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
 }
 
 /** `percent` stores the literal (30 → "30%"), NOT ×100; `currency` stores an ISO code. */
-export const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
+const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
 export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
 
 export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as const

@@ -5,7 +5,6 @@ import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 
 const c = colorVars.color
 
-// KNOB — the dropdown panel's content-driven width ceiling.
 const PANEL_MAX_WIDTH = '350px'
 
 export const frame = style({

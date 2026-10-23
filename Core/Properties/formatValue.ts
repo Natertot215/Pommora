@@ -191,7 +191,7 @@ function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberF
 }
 
 /** A run of a formatted number, flagged where it's the format's own glyph rather than the value. */
-export type NumberPart = { text: string; glyph: boolean }
+type NumberPart = { text: string; glyph: boolean }
 
 /** Percent is LITERAL — the number plus '%', never Intl's ×100 percent style. */
 function formatScalar(n: number, cfg: NumberConfig | undefined): NumberPart[] {
@@ -234,7 +234,7 @@ export function formatNumber(n: number, cfg: NumberConfig | undefined): NumberPa
 }
 
 /** The divisor a bar fills against; undefined when there's none, so the bar never divides by zero. */
-export function numberDivisor(cfg: NumberConfig | undefined): number | undefined {
+function numberDivisor(cfg: NumberConfig | undefined): number | undefined {
   return cfg?.number_family === 'percent' ? 100 : fractionDenominator(cfg)
 }
 

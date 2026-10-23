@@ -13,8 +13,7 @@ import { menuDropLine } from '@pommora/uix/Menus'
 import { allHighlight } from '@pommora/uix/Menus/frames.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 
-// The schema pane and the view-visibility pane derive from this vocabulary and refuse drops differently by design: the schema pane's bottom zone is the ordered nexus registry and reorders, the view pane's is a derived hidden list with no order and can't.
-// Title and every reserved property is never removable: the schema pane filters reserved ids out of both zones, the view pane refuses to hide Title.
+// The schema pane's bottom zone is the ordered Nexus registry and reorders; the view-visibility pane's is a hidden list with no order.
 export type PaneDrop =
   | { kind: 'reorder-assigned'; propId: string; toIndex: number } // → schema.reorder
   | { kind: 'reorder-nexus'; propId: string; toIndex: number } // → registry.reorder

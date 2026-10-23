@@ -7,7 +7,6 @@ export const RESERVED_LABEL: Readonly<Record<string, string>> = {
   [RESERVED_PROPERTY_ID.modifiedAt]: 'Last Modified',
 }
 
-/** `contexts` is REQUIRED and deliberately un-defaulted: a caller that omits them falls through to the raw id, a header reading as a ULID. */
 export function columnLabel(
   columnId: string,
   schema: PropertyDefinition[],
