@@ -191,12 +191,13 @@ async function rekeyPlan(
   return ok({ prior, moved })
 }
 
-export async function keyFormatHolders(
+/** What a rename or a Label Format change would rewrite: the holders of the key it moves, or none when the key holds. */
+export async function rekeyHolders(
   root: string,
   propertyId: string,
-  key_format: KeyFormat,
+  change: Retitle,
 ): Promise<Result<number>> {
-  const planned = await rekeyPlan(root, propertyId, { key_format })
+  const planned = await rekeyPlan(root, propertyId, change)
   if (!planned.ok) return planned
   if (!planned.value || planned.value.moved.key === planned.value.prior.key) return ok(0)
   const { files, plan } = await renamePlan(root, planned.value.prior.key, planned.value.moved.key)

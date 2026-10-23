@@ -8,7 +8,7 @@ import {
   createProperty,
   defaultStatusSeed,
   configureProperty,
-  keyFormatHolders,
+  rekeyHolders,
   renameProperty,
   removeFromRegistry,
   reorderRegistry,
@@ -623,7 +623,7 @@ describe('a Key Format change is a rename of the key', () => {
   })
 })
 
-describe('keyFormatHolders', () => {
+describe('rekeyHolders', () => {
   it('counts the page and the Space holding the old key, not a page holding only the new one, and writes nothing', async () => {
     const { id, page } = await seedHeld(def({ label: 'Tags', type: 'multiSelect' }), 'Tags: [a]\n')
     const other = await createTestPage(join(root, 'Col'), 'Other', { body: 'b' })
@@ -633,7 +633,7 @@ describe('keyFormatHolders', () => {
     const files = [page, other.value.path, space, registryFilePath()]
     const before = await Promise.all(files.map((f) => readFile(f, 'utf8')))
 
-    expect(await keyFormatHolders(root, id, 'lowercase')).toEqual(ok(2))
+    expect(await rekeyHolders(root, id, { key_format: 'lowercase' })).toEqual(ok(2))
     expect(await Promise.all(files.map((f) => readFile(f, 'utf8')))).toEqual(before)
   })
 
@@ -642,13 +642,13 @@ describe('keyFormatHolders', () => {
       def({ label: 'Heading Icon Hidden', type: 'text' }),
       'Heading Icon Hidden: x\n',
     )
-    const r = await keyFormatHolders(root, id, 'snake_case')
+    const r = await rekeyHolders(root, id, { key_format: 'snake_case' })
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved)
   })
 
   it('counts nothing for a format writing the key already stored', async () => {
     await seedRegistry({ id: 'prop_t', label: 'tags', key: 'tags', type: 'text' })
-    expect(await keyFormatHolders(root, 'prop_t', 'lowercase')).toEqual(ok(0))
+    expect(await rekeyHolders(root, 'prop_t', { key_format: 'lowercase' })).toEqual(ok(0))
   })
 })
 

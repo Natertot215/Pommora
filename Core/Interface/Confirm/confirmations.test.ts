@@ -4,8 +4,8 @@ import {
   askClearOption,
   askEmptyTrash,
   askDeleteView,
-  askFormatChange,
   askDeleteOption,
+  askRewrite,
   askTrashing,
   confirmArchive,
   confirmDelete,
@@ -60,12 +60,12 @@ describe('what the Confirm Before Deletion switch governs', () => {
     })
     switchOff()
     await confirmDelete({ propertyId: 'p1', title: 'Status' })
-    await askDeleteOption('p1', 'Active')
-    await askClearOption('p1', 'Active')
+    await askDeleteOption('p1', { id: 'opt_Active', label: 'Active' })
+    await askClearOption('p1', { id: 'opt_Active', label: 'Active' })
     expect(holders.mock.calls).toEqual([
       ['p1', { of: 'property' }],
-      ['p1', { of: 'option', label: 'Active' }],
-      ['p1', { of: 'option', label: 'Active' }],
+      ['p1', { of: 'option', optionId: 'opt_Active' }],
+      ['p1', { of: 'option', optionId: 'opt_Active' }],
     ])
     expect(asked[0]).toContain('stripped from 4 Items;')
     expect(asked[1]).toMatch(/^Delete “Active”\? .*stripped from 2 Items\.$/)
@@ -83,10 +83,10 @@ describe('what the Confirm Before Deletion switch governs', () => {
         return true
       },
     })
-    expect(await askClearOption('p1', 'Active')).toBe(true)
+    expect(await askClearOption('p1', { id: 'opt_Active', label: 'Active' })).toBe(true)
     expect(asked).toEqual([])
     await confirmDelete({ propertyId: 'p1', title: 'Status' })
-    await askDeleteOption('p1', 'Active')
+    await askDeleteOption('p1', { id: 'opt_Active', label: 'Active' })
     expect(asked).toHaveLength(2)
     expect(asked[0]).toContain('stripped from 1 Item;')
   })
@@ -103,7 +103,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
       },
     })
     await confirmDelete({ propertyId: 'p1', title: 'Status' })
-    await askDeleteOption('p1', 'Active')
+    await askDeleteOption('p1', { id: 'opt_Active', label: 'Active' })
     expect(asked).toEqual([
       'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
       'The option is deleted from the property.',
@@ -113,7 +113,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
   it('asks before a format change rewriting more than one Item, counting the change, and rewrites one or none unasked', async () => {
     const holders = vi.fn(async (): Promise<Result<number>> => ok(2))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
-    expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(true)
+    expect(await askRewrite('p1', { of: 'format', change: { key_format: 'lowercase' } })).toBe(true)
     expect(asked).toEqual(['This action would rewrite metadata in 2 Items.'])
     expect(holders.mock.calls).toEqual([
       ['p1', { of: 'format', change: { key_format: 'lowercase' } }],
@@ -121,12 +121,30 @@ describe('what the Confirm Before Deletion switch governs', () => {
     asked.length = 0
     for (const count of [1, 0]) {
       holders.mockResolvedValueOnce(ok(count))
-      expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(true)
+      expect(await askRewrite('p1', { of: 'format', change: { key_format: 'lowercase' } })).toBe(
+        true,
+      )
     }
     expect(asked).toEqual([])
     holders.mockResolvedValueOnce(fault('That property no longer exists.'))
-    expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(false)
+    expect(await askRewrite('p1', { of: 'format', change: { key_format: 'lowercase' } })).toBe(
+      false,
+    )
     expect(asked).toEqual([])
+  })
+
+  it('a rename that moves a key asks with the rewrite count, and one that keeps it asks nothing', async () => {
+    const holders = vi.fn(async (): Promise<Result<number>> => ok(3))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
+    expect(await askRewrite('p1', { of: 'rename', label: 'Stage' })).toBe(true)
+    expect(asked).toEqual(['This action would rewrite metadata in 3 Items.'])
+    holders.mockResolvedValueOnce(ok(0))
+    expect(await askRewrite('p1', { of: 'rename', label: 'stage' })).toBe(true)
+    expect(asked).toHaveLength(1)
+    expect(holders.mock.calls).toEqual([
+      ['p1', { of: 'rename', label: 'Stage' }],
+      ['p1', { of: 'rename', label: 'stage' }],
+    ])
   })
 
   it('tells a Key Format change its keys change and a Value Format change its values do, each keeping its display label', async () => {
@@ -140,8 +158,8 @@ describe('what the Confirm Before Deletion switch governs', () => {
         return true
       },
     })
-    await askFormatChange('p1', { key_format: 'lowercase' })
-    await askFormatChange('p1', { value_format: 'lowercase' })
+    await askRewrite('p1', { of: 'format', change: { key_format: 'lowercase' } })
+    await askRewrite('p1', { of: 'format', change: { value_format: 'lowercase' } })
     expect(details).toEqual([
       'Each key changes to the new format; its display label stays the same.',
       'Each value changes to the new format; its display label stays the same.',
@@ -152,7 +170,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => fault('That option no longer exists.'),
     })
-    expect(await askDeleteOption('p1', 'Gone')).toBe(false)
+    expect(await askDeleteOption('p1', { id: 'opt_Gone', label: 'Gone' })).toBe(false)
     expect(asked).toEqual([])
   })
 

@@ -10,7 +10,7 @@ import { fail } from '../Contract/result'
 export type SchemaJournal =
   | { op: 'rename'; id: string; from: string; to: string }
   | { op: 'delete'; id: string; key: string }
-  | { op: 'option-rename'; id: string; keys: [string, string][]; labels?: [string, string] }
+  | { op: 'option-rename'; id: string; keys: [string, string][] }
   | { op: 'option-remove'; id: string; key: string }
 
 const isPair = (v: unknown): v is [string, string] =>
@@ -28,13 +28,7 @@ export function decodeSchemaJournal(raw: Record<string, unknown>): SchemaJournal
       return { op: raw.op, id: raw.id, key: raw.key }
     case 'option-rename':
       if (!Array.isArray(raw.keys) || !raw.keys.every(isPair)) return null
-      if (raw.labels !== undefined && !isPair(raw.labels)) return null
-      return {
-        op: raw.op,
-        id: raw.id,
-        keys: raw.keys,
-        ...(raw.labels ? { labels: raw.labels } : {}),
-      }
+      return { op: raw.op, id: raw.id, keys: raw.keys }
     default:
       return null
   }

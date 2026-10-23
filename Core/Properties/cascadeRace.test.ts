@@ -79,7 +79,9 @@ describe('the cascade takes the cell-write lock', () => {
       await gate
       order.push('cell-write')
     })
-    const cascade = renameOption(root, propertyId, 'old', 'new').then(() => order.push('cascade'))
+    const cascade = renameOption(root, propertyId, 'opt_old', 'new').then(() =>
+      order.push('cascade'),
+    )
     await lock.contended
     lock.restore()
     release()

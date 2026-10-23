@@ -185,7 +185,7 @@ describe('a value write reconciles the Space it lands on', () => {
       settled,
     )
     if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
-    expect((await deleteOption(root, tagsId, 'beta')).ok).toBe(true)
+    expect((await deleteOption(root, tagsId, 'opt_beta')).ok).toBe(true)
     const { bundlePath } = deleted.value.bundled
     expect((await settledMutate(root, { op: 'restore', bundlePath }, settled)).ok).toBe(true)
     expect((await sidecar()).Tags).toEqual(['alpha'])

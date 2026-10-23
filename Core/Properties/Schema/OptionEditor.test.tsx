@@ -42,10 +42,10 @@ let root: Root
 const menu = vi.fn(async () => ok<string | null>(null))
 const editOption = vi.fn(async (_id: string, _edit: unknown): Promise<MutateReply> => ok({}))
 const renameOption = vi.fn(
-  async (_id: string, _from: string, _to: string): Promise<MutateReply> => ok({}),
+  async (_id: string, _optionId: string, _label: string): Promise<MutateReply> => ok({}),
 )
-const deleteOption = vi.fn(async (_id: string, _label: string): Promise<MutateReply> => ok({}))
-const clearOption = vi.fn(async (_id: string, _label: string): Promise<MutateReply> => ok({}))
+const deleteOption = vi.fn(async (_id: string, _optionId: string): Promise<MutateReply> => ok({}))
+const clearOption = vi.fn(async (_id: string, _optionId: string): Promise<MutateReply> => ok({}))
 const finishOwed = vi.fn(async (): Promise<MutateReply> => ok({}))
 const holders = vi.fn(async () => ok(2))
 const style = { current: { ...dateDefaults('full'), look: 'standard' as const }, set: vi.fn() }
@@ -55,11 +55,11 @@ const mutate = (req: MutateRequest): Promise<MutateReply> => {
     case 'editOption':
       return editOption(req.propertyId, req.edit)
     case 'renameOption':
-      return renameOption(req.propertyId, req.from, req.to)
+      return renameOption(req.propertyId, req.optionId, req.label)
     case 'deleteOption':
-      return deleteOption(req.propertyId, req.label)
+      return deleteOption(req.propertyId, req.optionId)
     case 'clearOption':
-      return clearOption(req.propertyId, req.label)
+      return clearOption(req.propertyId, req.optionId)
     default:
       return finishOwed()
   }
@@ -118,9 +118,6 @@ const commit = async (field: HTMLInputElement | null, next: string): Promise<voi
 }
 const refuse = fail('invalid-property', 'taken')
 
-const portalButton = (label: string): HTMLButtonElement | null =>
-  document.querySelector(`[data-picker-portal] button[aria-label="${label}"]`)
-
 const pickSwatch = (): string => {
   const swatch = document.querySelector<HTMLButtonElement>(
     '[data-picker-portal] button[aria-label="red-4"]',
@@ -162,10 +159,10 @@ describe('the option menu', () => {
     render('select', select)
     await rightClick('Urgent')
     expect(clearOption).not.toHaveBeenCalled()
-    expect(holders).toHaveBeenCalledWith('p1', { of: 'option', label: 'Urgent' })
+    expect(holders).toHaveBeenCalledWith('p1', { of: 'option', optionId: 'opt_Urgent' })
     expect(useSession.getState().pendingConfirm?.req.message).toBe('Clear “Urgent” from 2 Items?')
     await confirm()
-    expect(clearOption).toHaveBeenCalledWith('p1', 'Urgent')
+    expect(clearOption).toHaveBeenCalledWith('p1', 'opt_Urgent')
   })
 
   it('Delete asks, then deletes the option; a kept record offers Try Again', async () => {
@@ -180,7 +177,7 @@ describe('the option menu', () => {
       action: 'Delete',
     })
     await confirm()
-    expect(deleteOption).toHaveBeenCalledWith('p1', 'Urgent')
+    expect(deleteOption).toHaveBeenCalledWith('p1', 'opt_Urgent')
     expect(currentNotification()).toMatchObject({ message: 'w', action: { label: 'Try Again' } })
     await act(async () => currentNotification()?.action?.run())
     expect(finishOwed).toHaveBeenCalledOnce()
@@ -224,6 +221,7 @@ describe('creating an option', () => {
     expect(editOption).toHaveBeenCalledWith('p1', {
       op: 'add',
       groupId: 'select',
+      id: expect.stringMatching(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/),
       label: 'Fresh',
       atIndex: 2,
     })
@@ -245,11 +243,9 @@ describe('creating an option', () => {
     plus()
     await commit(host.querySelector('input'), 'Fresh')
     expect(host.querySelector('input')?.value).toBe('Fresh')
+    const { id } = editOption.mock.calls[0][1] as { id: string }
     render('select', [
-      {
-        ...select[0],
-        options: [...select[0].options, { id: 'opt_Fresh', key: 'Fresh', label: 'Fresh' }],
-      },
+      { ...select[0], options: [...select[0].options, { id, key: 'Fresh', label: 'Fresh' }] },
     ])
     expect(host.querySelector('input')).toBeNull()
     await act(async () => reply(ok({})))
@@ -285,159 +281,52 @@ describe('creating an option', () => {
 })
 
 describe('the popup through a rename', () => {
-  it('a recolor after a rename addresses the new title, and the popup stays open', async () => {
+  it('a recolor after a rename addresses the same option id, and the popup stays open', async () => {
+    holders.mockResolvedValueOnce(ok(0))
     render('select', select)
     openPopup()
     await commit(titleField(), 'Critical')
-    expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'Critical')
+    expect(renameOption).toHaveBeenCalledWith('p1', 'opt_Urgent', 'Critical')
+    render('select', [
+      {
+        ...select[0],
+        options: [{ id: 'opt_Urgent', key: 'Critical', label: 'Critical' }, select[0].options[1]],
+      },
+    ])
+    expect(titleField()?.value).toBe('Critical')
     const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
-    act(() => portalButton('Appearance')?.click())
-    expect(editOption).toHaveBeenCalledWith('p1', {
-      op: 'appearance',
-      option: 'Critical',
-      appearance: 'clear',
-    })
-    act(() => portalButton('Edit Icon')?.click())
-    act(() =>
-      document
-        .querySelector<HTMLButtonElement>('[data-picker-portal] button[title="anchor"]')
-        ?.click(),
-    )
-    expect(editOption).toHaveBeenCalledWith('p1', {
-      op: 'icon',
-      option: 'Critical',
-      icon: 'anchor',
-    })
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', optionId: 'opt_Urgent', color })
     expect(popup()).not.toBeNull()
-    await commit(titleField(), 'Critical')
-    expect(renameOption).toHaveBeenCalledTimes(1)
   })
 
-  it("a rename back to the row's own title re-keys the popup to it", async () => {
+  it('an option rename that would rewrite pages asks first', async () => {
     render('select', select)
     openPopup()
     await commit(titleField(), 'Critical')
-    await commit(titleField(), 'Urgent')
-    expect(renameOption.mock.calls).toEqual([
-      ['p1', 'Urgent', 'Critical'],
-      ['p1', 'Critical', 'Urgent'],
-    ])
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
+    expect(holders).toHaveBeenCalledWith('p1', {
+      of: 'rename',
+      label: 'Critical',
+      optionId: 'opt_Urgent',
+    })
+    expect(useSession.getState().pendingConfirm?.req.message).toBe(
+      'This action would rewrite metadata in 2 Items.',
+    )
+    expect(renameOption).not.toHaveBeenCalled()
+    await confirm()
+    expect(renameOption).toHaveBeenCalledWith('p1', 'opt_Urgent', 'Critical')
   })
 
-  it('the row and its popup survive the refresh that carries the rename', async () => {
-    render('select', select)
-    openPopup()
-    await commit(titleField(), 'Critical')
-    const field = titleField()
-    const row = host.querySelector('[data-reveal-host] [data-reveal-host]')
-    const refreshed = [
-      {
-        ...select[0],
-        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
-      },
-    ]
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
-    render('select', refreshed)
-    expect(errors).not.toHaveBeenCalled()
-    errors.mockRestore()
-    expect(titleField()).toBe(field)
-    expect(row?.isConnected).toBe(true)
-    expect(row?.textContent).toContain('Critical')
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
-  })
-
-  it('a second rename after the refresh keeps the popup on its row', async () => {
-    render('select', select)
-    openPopup()
-    await commit(titleField(), 'Critical')
-    render('select', [
-      {
-        ...select[0],
-        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
-      },
-    ])
-    await commit(titleField(), 'Severe')
-    expect(renameOption).toHaveBeenLastCalledWith('p1', 'Critical', 'Severe')
-    const field = titleField()
-    expect(field?.value).toBe('Severe')
-    render('select', [
-      {
-        ...select[0],
-        options: [{ id: 'opt_Severe', key: 'Severe', label: 'Severe' }, select[0].options[1]],
-      },
-    ])
-    expect(titleField()).toBe(field)
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Severe', color })
-  })
-
-  it('two renames before a refresh lands keep the popup through both refreshes', async () => {
-    render('select', select)
-    openPopup()
-    await commit(titleField(), 'High')
-    await commit(titleField(), 'Critical')
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
-    render('select', [
-      {
-        ...select[0],
-        options: [{ id: 'opt_High', key: 'High', label: 'High' }, select[0].options[1]],
-      },
-    ])
-    expect(titleField()?.value).toBe('Critical')
-    render('select', [
-      {
-        ...select[0],
-        options: [{ id: 'opt_Critical', key: 'Critical', label: 'Critical' }, select[0].options[1]],
-      },
-    ])
-    expect(errors).not.toHaveBeenCalled()
-    errors.mockRestore()
-    expect(titleField()?.value).toBe('Critical')
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Critical', color })
-  })
-
-  it('a rename the host refuses leaves the popup addressed to the old title, and the field reads it again', async () => {
+  it('a rename the host refuses leaves the field reading the old title', async () => {
+    holders.mockResolvedValueOnce(ok(0))
     renameOption.mockResolvedValueOnce(refuse)
     render('select', select)
     openPopup()
     await commit(titleField(), 'later')
-    expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'later')
+    expect(renameOption).toHaveBeenCalledWith('p1', 'opt_Urgent', 'later')
     expect(titleField()?.value).toBe('Urgent')
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
   })
 
-  it('a later option taking an intermediate name keys apart from the renamed row', async () => {
-    render('select', select)
-    openPopup()
-    await commit(titleField(), 'High')
-    render('select', [
-      {
-        ...select[0],
-        options: [{ id: 'opt_High', key: 'High', label: 'High' }, select[0].options[1]],
-      },
-    ])
-    await commit(titleField(), 'Critical')
-    const refreshed = [
-      { id: 'opt_Critical', key: 'Critical', label: 'Critical' },
-      select[0].options[1],
-    ]
-    render('select', [{ ...select[0], options: refreshed }])
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
-    render('select', [
-      { ...select[0], options: [...refreshed, { id: 'opt_High', key: 'High', label: 'High' }] },
-    ])
-    expect(errors).not.toHaveBeenCalled()
-    errors.mockRestore()
-    expect(span('High')).toBeTruthy()
-  })
-
-  it('the popup closes when its option is removed from under it, and stays closed when it returns', async () => {
+  it('the popup closes when its option is deleted from under it', async () => {
     render('select', select)
     openPopup()
     expect(titleField()).toBeTruthy()
@@ -447,23 +336,6 @@ describe('the popup through a rename', () => {
     })
     expect(titleField()).toBeNull()
     expect(host.querySelector('[data-reveal-held]')).toBeNull()
-    render('select', select)
-    expect(titleField()).toBeNull()
-    act(() => host.querySelector<HTMLButtonElement>('button[aria-label="Edit Option"]')?.click())
-    expect(titleField()?.value).toBe('Urgent')
-  })
-
-  it('a refused rename leaves one popup, on the old option', async () => {
-    renameOption.mockResolvedValueOnce(refuse)
-    render('select', select)
-    openPopup()
-    await commit(titleField(), 'Later')
-    expect(
-      document.querySelectorAll('[data-picker-portal] input[aria-label="Option Title"]'),
-    ).toHaveLength(1)
-    expect(host.querySelectorAll('[data-reveal-held]')).toHaveLength(1)
-    const color = pickSwatch()
-    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', option: 'Urgent', color })
   })
 })
 
@@ -545,7 +417,7 @@ describe('the option drag', () => {
     drag('Open', 20, 40, 80)
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      option: 'Open',
+      optionId: 'opt_Open',
       groupId: 'doing',
       toIndex: 0,
     })
@@ -555,7 +427,7 @@ describe('the option drag', () => {
     drag('Closed', 120, 100, 15)
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      option: 'Closed',
+      optionId: 'opt_Closed',
       groupId: 'todo',
       toIndex: 0,
     })
@@ -579,7 +451,7 @@ describe('the option drag', () => {
     key(' ')
     expect(editOption).toHaveBeenCalledExactlyOnceWith('p1', {
       op: 'move',
-      option: 'Open',
+      optionId: 'opt_Open',
       groupId: 'doing',
       toIndex: 0,
     })

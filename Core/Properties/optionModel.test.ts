@@ -36,16 +36,21 @@ describe('optionModel', () => {
   })
 
   it('applyOptionEdit move carries the option as stored and inserts at the target index (cross-group)', () => {
-    const next = applyOptionEdit(groups, { op: 'move', option: 'A', groupId: 'done', toIndex: 0 })
+    const next = applyOptionEdit(groups, {
+      op: 'move',
+      optionId: 'opt_A',
+      groupId: 'done',
+      toIndex: 0,
+    })
     expect(next[0].options).toEqual([])
     expect(next[1].options).toEqual([{ ...A }, D])
   })
 
   it('applyOptionEdit recolor sets a color on one option and clears it on another', () => {
     expect(
-      applyOptionEdit(groups, { op: 'recolor', option: 'A', color: 'red' })[0].options[0],
+      applyOptionEdit(groups, { op: 'recolor', optionId: 'opt_A', color: 'red' })[0].options[0],
     ).toEqual({ ...A, color: 'red' })
-    expect(applyOptionEdit(groups, { op: 'recolor', option: 'D' })[1].options[0]).toEqual({
+    expect(applyOptionEdit(groups, { op: 'recolor', optionId: 'opt_D' })[1].options[0]).toEqual({
       id: 'opt_D',
       key: 'D',
       label: 'D',
@@ -54,13 +59,23 @@ describe('optionModel', () => {
 
   it('applyOptionEdit icon and appearance set and clear the field on the option in whichever group holds it', () => {
     const icon = (gs: StatusGroup[], icon?: string) =>
-      applyOptionEdit(gs, { op: 'icon', option: 'D', icon })
+      applyOptionEdit(gs, { op: 'icon', optionId: 'opt_D', icon })
     const appearance = (gs: StatusGroup[], appearance: 'clear' | 'filled') =>
-      applyOptionEdit(gs, { op: 'appearance', option: 'A', appearance })
+      applyOptionEdit(gs, { op: 'appearance', optionId: 'opt_A', appearance })
     expect(icon(groups, 'star')[1].options[0]).toEqual({ ...D, icon: 'star' })
     expect(icon(icon(groups, 'star'), undefined)[1].options[0]).toEqual(D)
     expect(appearance(groups, 'clear')[0].options[0]).toEqual({ ...A, appearance: 'clear' })
     expect(appearance(appearance(groups, 'clear'), 'filled')[0].options[0]).toEqual(A)
+  })
+
+  it('add lands the option under the id it carries', () => {
+    const next = applyOptionEdit(
+      groups,
+      { op: 'add', groupId: 'done', id: 'opt_x', label: 'X' },
+      'lowercase',
+    )
+    expect(next[1].options).toEqual([D, { id: 'opt_x', key: 'x', label: 'X' }])
+    expect(next[0]).toBe(groups[0])
   })
 
   it('applyOptionEdit relabelGroup renames the label, keeping id + options', () => {
@@ -78,8 +93,8 @@ describe('optionModel', () => {
         color: 'grey',
         tint: 'x',
         options: [
-          { key: 'A', label: 'A', tint: 'x', appearance: 'outline' },
-          { key: 'B', label: 'B', tint: 'x', appearance: 'outline' },
+          { id: 'opt_A', key: 'A', label: 'A', tint: 'x', appearance: 'outline' },
+          { id: 'opt_B', key: 'B', label: 'B', tint: 'x', appearance: 'outline' },
         ],
       },
       {
@@ -87,16 +102,16 @@ describe('optionModel', () => {
         label: 'Two',
         color: 'green',
         tint: 'x',
-        options: [{ key: 'C', label: 'C', tint: 'x', appearance: 'outline' }],
+        options: [{ id: 'opt_C', key: 'C', label: 'C', tint: 'x', appearance: 'outline' }],
       },
     ] as unknown as StatusGroup[]
     const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
     const edits = [
-      { op: 'add', groupId: 'g1', label: 'N' },
-      { op: 'recolor', option: 'A', color: 'red' },
-      { op: 'icon', option: 'A', icon: 'star' },
-      { op: 'appearance', option: 'A', appearance: 'clear' },
-      { op: 'move', option: 'A', groupId: 'g2', toIndex: 0 },
+      { op: 'add', groupId: 'g1', id: 'opt_N', label: 'N' },
+      { op: 'recolor', optionId: 'opt_A', color: 'red' },
+      { op: 'icon', optionId: 'opt_A', icon: 'star' },
+      { op: 'appearance', optionId: 'opt_A', appearance: 'clear' },
+      { op: 'move', optionId: 'opt_A', groupId: 'g2', toIndex: 0 },
       { op: 'relabelGroup', groupId: 'g1', label: 'Uno' },
     ] as const
     for (const e of edits) {
@@ -131,9 +146,9 @@ describe('optionModel', () => {
     expect(
       withOptionGroups(
         select,
-        applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', label: 'C' }),
+        applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', id: 'opt_C', label: 'C' }),
       ).select_options,
-    ).toEqual([...options, { id: expect.stringMatching(/^opt_/), key: 'C', label: 'C' }])
+    ).toEqual([...options, { id: 'opt_C', key: 'C', label: 'C' }])
   })
 
   it('optionGroupsOf(status) is status_groups by reference', () => {

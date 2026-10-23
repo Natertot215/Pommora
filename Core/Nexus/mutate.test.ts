@@ -3937,11 +3937,11 @@ describe('the property ops', () => {
     {
       op: 'editOption',
       propertyId: stage.id,
-      edit: { op: 'recolor', option: 'Done', color: 'red' },
+      edit: { op: 'recolor', optionId: 'opt_Done', color: 'red' },
     },
-    { op: 'renameOption', propertyId: stage.id, from: 'Done', to: 'Closed' },
-    { op: 'deleteOption', propertyId: stage.id, label: 'Todo' },
-    { op: 'clearOption', propertyId: stage.id, label: 'Done' },
+    { op: 'renameOption', propertyId: stage.id, optionId: 'opt_Done', label: 'Closed' },
+    { op: 'deleteOption', propertyId: stage.id, optionId: 'opt_Todo' },
+    { op: 'clearOption', propertyId: stage.id, optionId: 'opt_Done' },
   ])('$op takes the schema lock exactly once', async (req) => {
     const lock = vi.spyOn(machine(), 'lock')
     expect((await handleMutate(root, req, nexusDeps)).ok).toBe(true)

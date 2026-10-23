@@ -205,7 +205,7 @@ describe('the option-op writers', () => {
 
   it('option-rename holds the record across the cascade and clears on settle', async () => {
     await withOptions()
-    const r = await renameOption(root, 'prop_t', 'Draft', 'Queued')
+    const r = await renameOption(root, 'prop_t', 'opt_Draft', 'Queued')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBeGreaterThan(0)
@@ -216,7 +216,7 @@ describe('the option-op writers', () => {
 
   it('a refused option-rename clears with no page touched', async () => {
     await withOptions()
-    const r = await renameOption(root, 'prop_t', 'Draft', 'Done')
+    const r = await renameOption(root, 'prop_t', 'opt_Draft', 'Done')
     expect(r.ok).toBe(false)
     expect(pageWrites().length).toBe(0)
     expect(await readSchemaJournal(root)).toBeNull()
@@ -224,7 +224,7 @@ describe('the option-op writers', () => {
 
   it('option-remove strips journaled, drops the option, and clears', async () => {
     await withOptions()
-    const r = await deleteOption(root, 'prop_t', 'Draft')
+    const r = await deleteOption(root, 'prop_t', 'opt_Draft')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBeGreaterThan(0)
@@ -240,7 +240,7 @@ describe('the option-op writers', () => {
     await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'opt_Draft'))
     await refreshTree(root)
     observed = []
-    expect((await deleteOption(root, 'prop_t', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_t', 'opt_Draft')).ok).toBe(true)
     const configWrites = observed.filter((o) =>
       /_page(collection|set)\.json$|_tiles\.json$|matrix\.json$/.test(o.path),
     )
@@ -256,7 +256,7 @@ describe('the option-op writers', () => {
 
   it('option-clear never writes a record — its residue disagrees with nothing', async () => {
     await withOptions()
-    const r = await clearOption(root, 'prop_t', 'Draft')
+    const r = await clearOption(root, 'prop_t', 'opt_Draft')
     expect(r.ok).toBe(true)
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
     const def = (await readRegistry(root)).defs.prop_t
@@ -266,7 +266,12 @@ describe('the option-op writers', () => {
 
   it('editOption never writes a record', async () => {
     await withOptions()
-    await editOption(root, 'prop_t', { op: 'add', groupId: 'select', label: 'Solo' })
+    await editOption(root, 'prop_t', {
+      op: 'add',
+      groupId: 'select',
+      id: 'opt_Solo',
+      label: 'Solo',
+    })
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
   })
 })

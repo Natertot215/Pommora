@@ -155,7 +155,7 @@ describe('one write through each channel leaves the held tree as the disk reads,
         nexusHandlers.mutate(ctx, {
           op: 'editOption',
           propertyId: 'prop_s',
-          edit: { op: 'recolor', option: 'A', color: 'red' },
+          edit: { op: 'recolor', optionId: 'opt_A', color: 'red' },
         }),
       ['nexus:changed'],
     ],

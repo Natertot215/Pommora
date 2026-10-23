@@ -10,7 +10,7 @@ import {
   type PropertyDefinition,
   SELECT_GROUP,
 } from '../properties'
-import { NULL_VALUE, type PropertyValue, selectedValues } from '../propertyValue'
+import { NULL_VALUE, optionLabel, type PropertyValue, selectedValues } from '../propertyValue'
 import { OptionDraft, type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -307,8 +307,8 @@ function EditableOptionRows({
   onPick: (value: string) => void
 }): React.JSX.Element {
   const look = style?.current.look
-  const options = groups.flatMap((g) => g.options)
-  const edit = useOptionEdit({ def, options, style })
+  const optionGroups = optionGroupsOf(def)
+  const edit = useOptionEdit({ def, options: optionGroups.flatMap(groupOptions), style })
   // A Status option belongs to one of its groups, which a quick create here would have to guess.
   const creates = PROPERTY_TYPES[def.type].options === 'select'
   return (
@@ -339,9 +339,9 @@ function EditableOptionRows({
       >
         <LineZone
           {...lineList({
-            ...edit.moves(groups),
+            ...edit.moves(optionGroups),
             line: menuDropLine,
-            label: (value) => value,
+            label: (value) => optionLabel(def, value),
             watch: [def],
           })}
         >
@@ -349,13 +349,13 @@ function EditableOptionRows({
             groups={groups}
             selected={selected}
             row={(o, run) => (
-              <Reveal key={edit.rowKeyOf(o.label)} open enterOnMount={edit.entering(o.label)} fill>
+              <Reveal key={o.value} open enterOnMount={edit.entering(o.value)} fill>
                 <LineRow
-                  id={o.label}
+                  id={o.value}
                   open={() => onPick(o.value)}
                   onContextMenu={(e) => {
                     e.preventDefault()
-                    void edit.openMenu(o.label, e.currentTarget)
+                    void edit.openMenu(o.value, e.currentTarget)
                   }}
                 >
                   <MenuItem picked={run} centered tabIndex={-1} onClick={() => onPick(o.value)}>

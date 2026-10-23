@@ -291,6 +291,7 @@ describe('editing options from the picker', () => {
     expect(editOption).toHaveBeenCalledWith('prop_sel', {
       op: 'add',
       groupId: 'select',
+      id: expect.stringMatching(/^opt_[0-9A-HJKMNP-TV-Z]{26}$/),
       label: 'Fresh',
     })
     expect(onCommit).not.toHaveBeenCalled()

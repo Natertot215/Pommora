@@ -201,7 +201,7 @@ describe('governedReach', () => {
 
   it('an option rename rewrites an archived holder', async () => {
     const held = await archived('Q9B', 'Stage: Draft\n')
-    expect((await renameOption(root, 'prop_s', 'Draft', 'Sketch')).ok).toBe(true)
+    expect((await renameOption(root, 'prop_s', 'opt_Draft', 'Sketch')).ok).toBe(true)
     expect(await readFile(held, 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
   })
@@ -251,7 +251,7 @@ describe('keyedHolders', () => {
 
 describe('the property cascades open only the holders', () => {
   it('an option rename opens exactly the 2 holders, and the un-governed note keeps its value', async () => {
-    const r = await renameOption(root, 'prop_s', 'Draft', 'Sketch')
+    const r = await renameOption(root, 'prop_s', 'opt_Draft', 'Sketch')
     expect(r.ok).toBe(true)
     expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(2)
     expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Sketch')

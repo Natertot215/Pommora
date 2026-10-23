@@ -3,7 +3,7 @@ import { fault } from '../Contract/result'
 import { propertyHolders } from './deleteProperty'
 import { optionHolders, valueFormatHolders } from './optionOps'
 import { countedChange } from './properties'
-import { keyFormatHolders } from './registryProperty'
+import { rekeyHolders } from './registryProperty'
 
 const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
 
@@ -17,11 +17,15 @@ export const propertiesHandlers = {
       case 'property':
         return propertyHolders(root, propertyId)
       case 'option':
-        return optionHolders(root, propertyId, counted.label)
+        return optionHolders(root, propertyId, counted.optionId)
       case 'format':
         return 'key_format' in counted.change
-          ? keyFormatHolders(root, propertyId, counted.change.key_format)
+          ? rekeyHolders(root, propertyId, { key_format: counted.change.key_format })
           : valueFormatHolders(root, propertyId, counted.change.value_format)
+      case 'rename':
+        return counted.optionId === undefined
+          ? rekeyHolders(root, propertyId, { label: counted.label })
+          : optionHolders(root, propertyId, counted.optionId, counted.label)
     }
   }),
 } satisfies Partial<Handlers>

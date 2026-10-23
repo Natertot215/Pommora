@@ -319,7 +319,7 @@ describe('option replay', () => {
   it('option-rename lands the disk an uninterrupted rename lands', async () => {
     const live = await seedNexus()
     await openSession(live)
-    expect((await renameOption(live, 'prop_s', 'Draft', 'Queued')).ok).toBe(true)
+    expect((await renameOption(live, 'prop_s', 'opt_Draft', 'Queued')).ok).toBe(true)
     const wantA = await page(live, 'A')
     const wantB = await page(live, 'B')
     closeSession()
@@ -330,7 +330,6 @@ describe('option replay', () => {
       op: 'option-rename',
       id: 'prop_s',
       keys: [['Draft', 'Queued']],
-      labels: ['Draft', 'Queued'],
     })
     await mutateRegistry(crashed, (registry) => ({
       next: {
@@ -362,7 +361,6 @@ describe('option replay', () => {
       op: 'option-rename',
       id: 'prop_s',
       keys: [['Draft', 'Done']],
-      labels: ['Draft', 'Done'],
     })
     const before = await page(root, 'A')
     await openSession(root)
@@ -374,7 +372,7 @@ describe('option replay', () => {
   it('option-remove forward-completes the strip and the registry drop', async () => {
     const live = await seedNexus()
     await openSession(live)
-    expect((await deleteOption(live, 'prop_s', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(live, 'prop_s', 'opt_Draft')).ok).toBe(true)
     const wantA = await page(live, 'A')
     const wantB = await page(live, 'B')
     const wantOptions = (await readRegistry(live)).defs.prop_s?.select_options
@@ -397,7 +395,7 @@ describe('option replay', () => {
     // The op finished and only its clear failed; the user then re-set the value on a page, and the stale record must not take that value with it.
     const root = await seedNexus()
     await openSession(root)
-    expect((await deleteOption(root, 'prop_s', 'Draft')).ok).toBe(true)
+    expect((await deleteOption(root, 'prop_s', 'opt_Draft')).ok).toBe(true)
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', key: 'Draft' })
     await replaySchemaCascade(root)
@@ -412,7 +410,6 @@ describe('option replay', () => {
       op: 'option-rename',
       id: 'prop_s',
       keys: [['Draft', 'Queued']],
-      labels: ['Draft', 'Queued'],
     })
     await mutateRegistry(root, (registry) => ({
       next: {
@@ -446,7 +443,7 @@ describe('option replay', () => {
 })
 
 describe('option replay reaches saved views', () => {
-  it('a record of two keys and no labels rewrites both words on every page and leaves the views as written', async () => {
+  it('a record of two keys rewrites both words on every page and leaves the views as written', async () => {
     const root = await seedNexus()
     const surfaces = await seedConfigSurfaces(
       root,

@@ -478,6 +478,7 @@ describe('native menus + the inline-rename channel', () => {
   })
 
   it('a row right-click Rename flips the title to the inline input; Enter commits the rename', async () => {
+    holdersSpy.mockResolvedValueOnce(ok(0))
     propertyMenuSpy.mockResolvedValueOnce('property:rename')
     await mountPane()
     await act(async () => {
@@ -519,6 +520,7 @@ describe('native menus + the inline-rename channel', () => {
         input.blur()
       })
     }
+    holdersSpy.mockResolvedValue(ok(0))
     await mountPane()
     const before = useSession.getState().valuesEpoch
     await renameTo('status', {})
@@ -526,6 +528,28 @@ describe('native menus + the inline-rename channel', () => {
     await renameTo('Phase', SWEPT)
     expect(useSession.getState().valuesEpoch).not.toBe(before)
     expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
+  })
+
+  it('a rename that would rewrite pages asks first, and Cancel sends nothing', async () => {
+    propertyMenuSpy.mockResolvedValueOnce('property:rename')
+    await mountPane()
+    await act(async () => {
+      lineRow('Status')
+        .querySelector('[class*="item"]')!
+        .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const input = host.querySelector<HTMLInputElement>('.row-title-input')!
+    await act(async () => {
+      commitTitle(input, 'Phase')
+      input.blur()
+    })
+    expect(holdersSpy).toHaveBeenCalledWith('prop_status', { of: 'rename', label: 'Phase' })
+    const pending = useSession.getState().pendingConfirm
+    expect(pending?.req.message).toBe('This action would rewrite metadata in 3 Items.')
+    await act(async () => {
+      pending!.settle(false)
+    })
+    expect(mutate).not.toHaveBeenCalled()
   })
 
   const openCount = async (): Promise<void> => {

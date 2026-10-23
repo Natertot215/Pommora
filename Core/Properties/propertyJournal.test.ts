@@ -26,7 +26,7 @@ afterEach(async () => {
 const SHAPES: SchemaJournal[] = [
   { op: 'rename', id: 'prop_a', from: 'Foo', to: 'Bar' },
   { op: 'delete', id: 'prop_a', key: 'Foo' },
-  { op: 'option-rename', id: 'prop_a', keys: [['Draft', 'Done']], labels: ['Draft', 'Done'] },
+  { op: 'option-rename', id: 'prop_a', keys: [['Draft', 'Done']] },
   {
     op: 'option-rename',
     id: 'prop_a',
@@ -42,6 +42,15 @@ describe('the record round-trips', () => {
   it.each(SHAPES.map((s) => [s.op, s] as const))('%s', async (_op, shape) => {
     await writeSchemaJournal(root, shape)
     expect(await readSchemaJournal(root)).toEqual(shape)
+  })
+
+  it('an option-rename record decodes its key pairs alone', async () => {
+    const keys = [['Draft', 'Done']]
+    await writeFile(
+      journalPath(),
+      JSON.stringify({ op: 'option-rename', id: 'prop_a', keys, labels: ['Draft', 'Done'] }),
+    )
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-rename', id: 'prop_a', keys })
   })
 
   it('a held record is never displaced — the stranded heal outranks the new op', async () => {
@@ -67,7 +76,6 @@ describe('the validator refuses what the writer never produces', () => {
     ['delete without key', { op: 'delete', id: 'x' }],
     ['remove without key', { op: 'option-remove', id: 'x' }],
     ['option-rename with a half pair', { op: 'option-rename', id: 'x', keys: [['a']] }],
-    ['option-rename with mistyped labels', { op: 'option-rename', id: 'x', keys: [], labels: 'a' }],
   ])('%s → null', async (_label, raw) => {
     if (raw !== null) await writeFile(journalPath(), JSON.stringify(raw))
     expect(await readSchemaJournal(root)).toBeNull()

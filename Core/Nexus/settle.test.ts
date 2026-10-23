@@ -1006,7 +1006,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
     const release = gate<void>()
     sweep.entered = () => entered.open()
     sweep.hold = release.promise
-    const renaming = renameOption(root, 'tags', 'alpha', 'beta')
+    const renaming = renameOption(root, 'tags', 'opt_alpha', 'beta')
     await entered.promise
     const settling = settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     expect(
@@ -1032,7 +1032,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
     const opened = gate<void>()
     sweep.entered = () => entered.open()
     sweep.hold = release.promise
-    const renaming = renameOption(root, 'tags', 'alpha', 'beta')
+    const renaming = renameOption(root, 'tags', 'opt_alpha', 'beta')
     await entered.promise
     const settling = settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     await new Promise((wake) => setTimeout(wake, 50))
@@ -1056,7 +1056,6 @@ describe('held options — the Multi-Select members a changed file holds are reg
       op: 'option-rename',
       id: 'tags',
       keys: [['alpha', 'beta']],
-      labels: ['alpha', 'beta'],
     })
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])

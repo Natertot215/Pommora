@@ -146,9 +146,9 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('deleteProperty', { propertyId: z.string() }),
   op('finishOwed', {}),
   op('editOption', { propertyId: z.string(), edit: optionEdit }),
-  op('renameOption', { propertyId: z.string(), from: z.string(), to: z.string() }),
-  op('deleteOption', { propertyId: z.string(), label: z.string() }),
-  op('clearOption', { propertyId: z.string(), label: z.string() }),
+  op('renameOption', { propertyId: z.string(), optionId: z.string(), label: z.string() }),
+  op('deleteOption', { propertyId: z.string(), optionId: z.string() }),
+  op('clearOption', { propertyId: z.string(), optionId: z.string() }),
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 

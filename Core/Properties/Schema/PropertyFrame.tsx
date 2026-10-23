@@ -58,7 +58,7 @@ import { nexusReorderIndex, PaneAllGroup, type PaneDrop, paneSpec } from '../pan
 import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDisplay'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { askFormatChange, confirmDelete } from '../../Interface/Confirm/confirmations'
+import { askRewrite, confirmDelete } from '../../Interface/Confirm/confirmations'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
@@ -233,10 +233,11 @@ export function PropertyFrame({
     if (created && 'propertyId' in created) setView({ kind: 'edit', id: created.propertyId })
   }
   const rename = async (id: string, label: string): Promise<void> => {
+    if (!(await askRewrite(id, { of: 'rename', label }))) return
     if ((await mutate({ op: 'renameProperty', propertyId: id, label }))?.cascade) bumpValuesEpoch()
   }
   const setFormat = async (id: string, change: FormatChange): Promise<void> => {
-    if (!(await askFormatChange(id, change))) return
+    if (!(await askRewrite(id, { of: 'format', change }))) return
     const done = await mutate({ op: 'setFormat', propertyId: id, change })
     if (done?.cascade && 'key_format' in change) bumpValuesEpoch()
   }

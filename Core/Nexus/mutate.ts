@@ -350,13 +350,13 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await editOption(root, req.propertyId, req.edit))
 
     case 'renameOption':
-      return renameOption(root, req.propertyId, req.from, req.to)
+      return renameOption(root, req.propertyId, req.optionId, req.label)
 
     case 'deleteOption':
-      return deleteOption(root, req.propertyId, req.label)
+      return deleteOption(root, req.propertyId, req.optionId)
 
     case 'clearOption':
-      return clearOption(root, req.propertyId, req.label)
+      return clearOption(root, req.propertyId, req.optionId)
 
     default: {
       const _exhaustive: never = req

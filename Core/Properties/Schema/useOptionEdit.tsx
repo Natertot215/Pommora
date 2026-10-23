@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { useRenameKeys } from '@pommora/uix/Animations/useRenameKeys'
 import type { LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
@@ -10,15 +9,16 @@ import { Label } from '@pommora/uix/Labels/Label'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
-import type { PropertyDefinition, PropertyType } from '../properties'
+import type { PropertyDefinition, PropertyType, SelectOption } from '../properties'
 import { chipOf } from '../typeDisplay'
-import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
+import { OptionChip } from '../Cells/OptionChip'
+import { mintOptionId } from '../../Nexus/ids'
 import { useSession } from '../../Session/store'
 import type { MutateRequest } from '../../Nexus/mutateRequest'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
 import { parseStyleAction } from '../../Actions/columnMenu'
-import { askClearOption, askDeleteOption } from '../../Interface/Confirm/confirmations'
+import { askClearOption, askDeleteOption, askRewrite } from '../../Interface/Confirm/confirmations'
 import { OptionEditPopup } from './OptionEditPopup'
 
 export type OptionStyleControl = {
@@ -28,20 +28,20 @@ export type OptionStyleControl = {
 
 type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
-type Editing = { row: string; label: string }
-type Draft = { row: string; groupId: string; index?: number }
+/** The open option's id, and the label a rename in flight shows until the host answers. */
+type Editing = { id: string; label?: string }
+type Draft = { id: string; groupId: string; index?: number }
 
 type OptionEditApi = {
-  rowKeyOf: (label: string) => string
-  entering: (label: string) => boolean
-  isOpen: (row: string) => boolean
-  toggle: (label: string, anchor: HTMLElement | undefined) => void
-  openMenu: (label: string, row: HTMLElement) => Promise<void>
+  entering: (id: string) => boolean
+  isOpen: (id: string) => boolean
+  toggle: (id: string, anchor: HTMLElement | undefined) => void
+  openMenu: (id: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<boolean>
-  moves: (groups: readonly { id: string; options: readonly { label: string }[] }[]) => {
-    laneOf: () => (label: string) => string | undefined
-    commit: (label: string, slot: LaneSlot) => void
-    chip: (label: string) => React.JSX.Element
+  moves: (groups: readonly { id: string; options: readonly { id: string }[] }[]) => {
+    laneOf: () => (id: string) => string | undefined
+    commit: (id: string, slot: LaneSlot) => void
+    chip: (id: string) => React.JSX.Element
   }
   draft: Draft | null
   beginDraft: (groupId: string, index?: number) => void
@@ -58,7 +58,7 @@ export function useOptionEdit({
   destructive = false,
 }: {
   def: OptionDef
-  options: readonly OptionChipData[]
+  options: readonly SelectOption[]
   style?: OptionStyleControl
   destructive?: boolean
 }): OptionEditApi {
@@ -67,37 +67,32 @@ export function useOptionEdit({
   const anchor = useRef<HTMLElement | null>(null)
   const mutate = useSession((st) => st.mutate)
   const landed = async (req: MutateRequest): Promise<boolean> => (await mutate(req)) !== null
-  const keys = useRenameKeys(
-    options.map((o) => o.label),
-    editing?.label,
-  )
-  const { rowKeyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<boolean> =>
     landed({ op: 'editOption', propertyId: def.id, edit })
-  const enteringKey = useEntrance(options, (o) => rowKeyOf(o.label))
-  const entering = (label: string): boolean =>
-    rowKeyOf(label) !== draft?.row && enteringKey(rowKeyOf(label))
-  const isOpen = (row: string): boolean =>
-    editing !== null && rowKeyOf(row) === rowKeyOf(editing.row)
-  const open = (label: string, el: HTMLElement | undefined): void => {
+  const enteringKey = useEntrance(options, (o) => o.id)
+  const entering = (id: string): boolean => id !== draft?.id && enteringKey(id)
+  const isOpen = (id: string): boolean => editing?.id === id
+  const open = (id: string, el: HTMLElement | undefined): void => {
     anchor.current = el ?? null
-    setEditing({ row: label, label })
+    setEditing({ id })
   }
-  const toggle = (label: string, el: HTMLElement | undefined): void =>
-    isOpen(label) ? setEditing(null) : open(label, el)
+  const toggle = (id: string, el: HTMLElement | undefined): void =>
+    isOpen(id) ? setEditing(null) : open(id, el)
+  const opened = editing && options.find((o) => o.id === editing.id)
 
   const rename = async (label: string): Promise<void> => {
-    if (!editing || label === editing.label) return
-    const { row, label: from } = editing
-    setEditing((e) => (e && e.label === from ? { row: e.row, label } : e))
-    const renamed = (): Promise<boolean> =>
-      landed({ op: 'renameOption', propertyId: def.id, from, to: label })
-    if (!(await keys.land(row, label, renamed)))
-      setEditing((e) => (e && e.label === label ? { row: e.row, label: from } : e))
+    if (!opened || label === (editing?.label ?? opened.label)) return
+    const { id } = opened
+    if (!(await askRewrite(def.id, { of: 'rename', label, optionId: id }))) return
+    setEditing((e) => (e?.id === id ? { id, label } : e))
+    if (!(await landed({ op: 'renameOption', propertyId: def.id, optionId: id, label })))
+      setEditing((e) => (e?.id === id && e.label === label ? { id } : e))
   }
 
-  const openMenu = async (label: string, row: HTMLElement): Promise<void> => {
+  const openMenu = async (id: string, row: HTMLElement): Promise<void> => {
+    const option = options.find((o) => o.id === id)
+    if (!option) return
     const action = await popMenu(
       optionMenuModel({
         style: style && { type: def.type, current: style.current },
@@ -108,14 +103,14 @@ export function useOptionEdit({
       case null:
         return
       case 'option:edit':
-        return open(label, row)
+        return open(id, row)
       case 'option:clear':
-        if (await askClearOption(def.id, label))
-          await mutate({ op: 'clearOption', propertyId: def.id, label })
+        if (await askClearOption(def.id, option))
+          await mutate({ op: 'clearOption', propertyId: def.id, optionId: id })
         return
       case 'option:delete':
-        if (await askDeleteOption(def.id, label))
-          await mutate({ op: 'deleteOption', propertyId: def.id, label })
+        if (await askDeleteOption(def.id, option))
+          await mutate({ op: 'deleteOption', propertyId: def.id, optionId: id })
         return
       default: {
         const picked = parseStyleAction(action)
@@ -126,16 +121,16 @@ export function useOptionEdit({
 
   const moves: OptionEditApi['moves'] = (groups) => ({
     laneOf: () => {
-      const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.label, g.id] as const)))
-      return (label) => laneOf.get(label)
+      const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.id, g.id] as const)))
+      return (id) => laneOf.get(id)
     },
-    commit: (label, slot) =>
-      void editOption({ op: 'move', option: label, groupId: slot.lane, toIndex: slot.index }),
-    chip: (label) => (
+    commit: (id, slot) =>
+      void editOption({ op: 'move', optionId: id, groupId: slot.lane, toIndex: slot.index }),
+    chip: (id) => (
       <OptionChip
         type={def.type}
         look={style?.current.look}
-        option={options.find((o) => o.label === label)}
+        option={options.find((o) => o.id === id)}
         def={def}
       />
     ),
@@ -143,39 +138,39 @@ export function useOptionEdit({
 
   const commitDraft = (label: string): void => {
     if (!draft) return
-    const add = (): Promise<boolean> =>
-      editOption({ op: 'add', groupId: draft.groupId, label, atIndex: draft.index })
-    void keys.land(draft.row, label, add).then((ok) => {
+    const { id, groupId, index } = draft
+    void editOption({ op: 'add', groupId, id, label, atIndex: index }).then((ok) => {
       if (ok) setDraft((d) => (d === draft ? null : d))
     })
   }
-  const drafted = draft && !options.some((o) => rowKeyOf(o.label) === draft.row) ? draft : null
+  const drafted = draft && !options.some((o) => o.id === draft.id) ? draft : null
 
-  const option = editing && options.find((o) => rowKeyOf(o.label) === rowKeyOf(editing.row))
   useEffect(() => {
-    if (editing && !option) setEditing(null)
-  }, [editing, option])
-  const held = useHeld(editing && option ? { ...editing, option } : null, !!option)
+    if (editing && !opened) setEditing(null)
+  }, [editing, opened])
+  const held = useHeld(
+    opened ? { option: opened, label: editing?.label ?? opened.label } : null,
+    !!opened,
+  )
   const popup = held ? (
     <OptionEditPopup
-      open={!!option}
-      contentKey={held.label}
+      open={!!opened}
+      contentKey={held.option.id}
       type={def.type}
       option={{ ...held.option, label: held.label }}
       def={def}
       triggerRef={anchor}
       onDismiss={() => setEditing(null)}
       onRename={(label) => void rename(label)}
-      onPickIcon={(icon) => void editOption({ op: 'icon', option: held.label, icon })}
-      onPickColor={(color) => void editOption({ op: 'recolor', option: held.label, color })}
+      onPickIcon={(icon) => void editOption({ op: 'icon', optionId: held.option.id, icon })}
+      onPickColor={(color) => void editOption({ op: 'recolor', optionId: held.option.id, color })}
       onPickAppearance={(appearance) =>
-        void editOption({ op: 'appearance', option: held.label, appearance })
+        void editOption({ op: 'appearance', optionId: held.option.id, appearance })
       }
     />
   ) : null
 
   return {
-    rowKeyOf,
     entering,
     isOpen,
     toggle,
@@ -183,7 +178,7 @@ export function useOptionEdit({
     editOption,
     moves,
     draft: drafted,
-    beginDraft: (groupId, index) => setDraft({ row: keys.mint(), groupId, index }),
+    beginDraft: (groupId, index) => setDraft({ id: mintOptionId(), groupId, index }),
     commitDraft,
     cancelDraft: () => setDraft(null),
     busy: editing !== null || draft !== null,
