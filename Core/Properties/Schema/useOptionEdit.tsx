@@ -13,8 +13,8 @@ import type { OptionEdit } from '../optionModel'
 import type { PropertyDefinition, PropertyType } from '../properties'
 import { chipOf } from '../typeDisplay'
 import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
-import { warnOwed, write } from '../propertyWrite'
-import { dialer } from '../../Platform/dialer'
+import { useSession } from '../../Session/store'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
 import { parseStyleAction } from '../../Actions/columnMenu'
@@ -65,6 +65,8 @@ export function useOptionEdit({
   const [editing, setEditing] = useState<Editing | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const anchor = useRef<HTMLElement | null>(null)
+  const mutate = useSession((st) => st.mutate)
+  const landed = async (req: MutateRequest): Promise<boolean> => (await mutate(req)) !== null
   const keys = useRenameKeys(
     options.map((o) => o.label),
     editing?.label,
@@ -72,7 +74,7 @@ export function useOptionEdit({
   const { rowKeyOf } = keys
 
   const editOption = (edit: OptionEdit): Promise<boolean> =>
-    write(dialer().ask('property:editOption', def.id, edit))
+    landed({ op: 'editOption', propertyId: def.id, edit })
   const enteringKey = useEntrance(options, (o) => rowKeyOf(o.label))
   const entering = (label: string): boolean =>
     rowKeyOf(label) !== draft?.row && enteringKey(rowKeyOf(label))
@@ -90,7 +92,7 @@ export function useOptionEdit({
     const { row, label: from } = editing
     setEditing((e) => (e && e.label === from ? { row: e.row, label } : e))
     const renamed = (): Promise<boolean> =>
-      warnOwed(dialer().ask('property:renameOption', def.id, from, label))
+      landed({ op: 'renameOption', propertyId: def.id, from, to: label })
     if (!(await keys.land(row, label, renamed)))
       setEditing((e) => (e && e.label === label ? { row: e.row, label: from } : e))
   }
@@ -109,11 +111,11 @@ export function useOptionEdit({
         return open(label, row)
       case 'option:clear':
         if (await askClearOption(def.id, label))
-          await write(dialer().ask('property:clearOption', def.id, label))
+          await mutate({ op: 'clearOption', propertyId: def.id, label })
         return
       case 'option:delete':
         if (await askDeleteOption(def.id, label))
-          await warnOwed(dialer().ask('property:removeOption', def.id, label))
+          await mutate({ op: 'deleteOption', propertyId: def.id, label })
         return
       default: {
         const picked = parseStyleAction(action)

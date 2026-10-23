@@ -15,7 +15,6 @@ import { nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import {
   clearSchemaJournal,
-  type SchemaCascade,
   schemaCascade,
   type SchemaJournal,
   writeSchemaJournal,
@@ -36,7 +35,7 @@ import { spaceSidecars, withoutOrderId } from '../Contexts/spaceSidecar'
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { join, relative } from '../Paths/posix'
-import type { MutateOutcome } from '../Nexus/mutateRequest'
+import type { MutateReply } from '../Nexus/mutateRequest'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
 async function snapshot(
@@ -86,8 +85,6 @@ async function snapshot(
   return bundle
 }
 
-export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'bundled'>>
-
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
@@ -95,14 +92,11 @@ export async function propertyHolders(root: string, propertyId: string): Promise
   return ok(await sweepCount(root, held.strip, plan))
 }
 
-export function deleteProperty(
-  root: string,
-  propertyId: string,
-): Promise<Result<PropertyDeletion>> {
+export function deleteProperty(root: string, propertyId: string): Promise<MutateReply> {
   return serializeSchemaOp(root, () => deleteInner(root, propertyId))
 }
 
-async function deleteInner(root: string, propertyId: string): Promise<Result<PropertyDeletion>> {
+async function deleteInner(root: string, propertyId: string): Promise<MutateReply> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const key = def.key

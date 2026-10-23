@@ -16,6 +16,8 @@ import { gonePageEntry } from '../Nexus/governedRoot'
 import { frozenWorld, parkLinks } from '../Trash/trashedCopies'
 import { refillValues } from '../Nexus/governedSweep'
 import { ok, fail, type Result } from '../Contract/result'
+import type { MutateReply } from '../Nexus/mutateRequest'
+import { exactTitle } from '../Paths/caseFold'
 
 async function restoreCachedValues(
   root: string,
@@ -111,7 +113,7 @@ export function addProperty(
   root: string,
   collectionFolder: string,
   draft: PropertyDraft,
-): Promise<Result<{ id: string }>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const created = await createProperty(root, draft)
     if (!created.ok) return created
@@ -121,7 +123,11 @@ export function addProperty(
       await removeFromRegistry(root, id)
       return assigned
     }
-    return ok({ id })
+    const { label } = created.value
+    return ok({
+      created: { propertyId: id },
+      ...(label === exactTitle(draft.label) ? {} : { landedAs: label }),
+    })
   })
 }
 

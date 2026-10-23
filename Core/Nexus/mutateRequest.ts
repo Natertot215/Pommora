@@ -3,6 +3,9 @@ import { aliasEdit } from '../Connections/aliasMemory'
 import { op } from '../Files/decoders'
 import { ok, type Result } from '../Contract/result'
 import { propertyValue } from '../Properties/propertyValue'
+import { propertyConfig, propertyDraft } from '../Properties/properties'
+import { optionEdit } from '../Properties/optionModel'
+import { formatChange } from '../Properties/keyFormat'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
 import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
@@ -10,7 +13,8 @@ import { newContentId, newId } from './ids'
 import { isUlidShaped } from './identityMark'
 
 export interface MutateOutcome {
-  created?: { path: string }
+  /** What a create made: a page's, a container's, or a Space's path, or a property's id. */
+  created?: { path: string } | { propertyId: string }
   cascade?: CascadeReport
   adopted?: string
   /** The bundle a removal minted, in the Trash or an Archive; absent when the system trash took it. */
@@ -122,6 +126,24 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('reorderSpaces', { contextId: z.string(), ids }),
   op('setSpaceRowOrder', { path: z.string(), ids }),
   op('retryUnreadable', { path: z.string() }),
+  op('addProperty', { containerPath: z.string(), draft: propertyDraft }),
+  op('assignProperty', {
+    containerPath: z.string(),
+    propertyId: z.string(),
+    toIndex: z.number().optional(),
+  }),
+  op('unassignProperty', { containerPath: z.string(), propertyId: z.string() }),
+  op('reorderAssigned', { containerPath: z.string(), propertyId: z.string(), toIndex: z.number() }),
+  op('reorderProperty', { propertyId: z.string(), toIndex: z.number() }),
+  op('renameProperty', { propertyId: z.string(), label: z.string() }),
+  op('setFormat', { propertyId: z.string(), change: formatChange }),
+  op('configureProperty', { propertyId: z.string(), patch: propertyConfig }),
+  op('deleteProperty', { propertyId: z.string() }),
+  op('finishOwed', {}),
+  op('editOption', { propertyId: z.string(), edit: optionEdit }),
+  op('renameOption', { propertyId: z.string(), from: z.string(), to: z.string() }),
+  op('deleteOption', { propertyId: z.string(), label: z.string() }),
+  op('clearOption', { propertyId: z.string(), label: z.string() }),
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 
@@ -138,7 +160,7 @@ export type OrderRequest = Extract<
 
 export type UnmintedCreate<R = CreateRequest> = R extends unknown ? Omit<R, 'id'> : never
 
-// A `mutate` create carries the ID the window minted, since its ask places the newborn by ID; a create on a feature's own channel, a tile's or a property's, places nothing in its ask and learns its ID from the reply.
+// A `mutate` create carries the ID the window minted, since its ask places the newborn by ID; a create whose ask places nothing, a tile's on its own channel or a property's, learns its ID from the reply.
 export const minted = <R extends UnmintedCreate>(req: R): R & { id: string } => ({
   ...req,
   id: req.op === 'createPage' ? newContentId('page') : newId(),
@@ -171,4 +193,5 @@ export const changesStores = (req: MutateRequest): boolean =>
   req.op === 'emptyBundle' ||
   req.op === 'moveSet' ||
   req.op === 'renameContext' ||
+  req.op === 'deleteProperty' ||
   (req.op === 'rename' && req.kind !== 'page')

@@ -10,17 +10,18 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { governedReach, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { ok, type Result } from '../Contract/result'
+import { ok } from '../Contract/result'
 import { mapViews } from '../Views/views'
-import { type ConfigReach, NO_REACH, propertyClear, reachConfig } from '../Nexus/configReach'
+import { propertyClear, reachConfig, reachReport } from '../Nexus/configReach'
+import type { MutateReply } from '../Nexus/mutateRequest'
 
-const NOTHING_TO_REMOVE = ok<ConfigReach>(NO_REACH)
+const NOTHING_TO_REMOVE: MutateReply = ok({})
 
 export function unassignProperty(
   root: string,
   collectionFolder: string,
   propertyId: string,
-): Promise<Result<ConfigReach>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, () => unassignInner(root, collectionFolder, propertyId))
 }
 
@@ -28,7 +29,7 @@ async function unassignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,
-): Promise<Result<ConfigReach>> {
+): Promise<MutateReply> {
   const sidecar = await readJsonObject(sidecarPath(collectionFolder, 'collection'))
   if (!assignedIds(sidecar).includes(propertyId)) return NOTHING_TO_REMOVE
 
@@ -58,5 +59,7 @@ async function unassignInner(
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
   const { skipped } = await sweepGovernedRoots(root, strip, { raw: (r) => stripKeys(r, [key]) })
-  return ok({ skipped: skipped.length + reach.skipped, hosts: reach.hosts })
+  return ok({
+    cascade: reachReport({ skipped: skipped.length + reach.skipped, hosts: reach.hosts }),
+  })
 }

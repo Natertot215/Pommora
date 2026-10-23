@@ -18,11 +18,6 @@ import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { ContainerKind } from '../Nexus/entities'
-import type { OptionEdit } from '../Properties/optionModel'
-import type { PropertyDeletion } from '../Properties/deleteProperty'
-import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
-import type { PropertyRename } from '../Properties/registryProperty'
-import type { KeyFormat } from '../Properties/keyFormat'
 import type { Personalization } from '../Settings/personalization'
 import type { InsertTarget } from '../Tiles/Layout/model'
 import type {
@@ -34,13 +29,7 @@ import type {
   TilePick,
   TilesChanged,
 } from '../Tiles/tiles'
-import type {
-  CountedChange,
-  FileConfig,
-  LinkConfig,
-  NumberConfig,
-  PropertyDraft,
-} from '../Properties/properties'
+import type { CountedChange } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
 import type { SyncState, SyncStatus } from '../Sync/Contract/wire'
@@ -134,61 +123,6 @@ export interface Asks {
     reply: Result<Record<string, PageValues>>
   }
 
-  'schema:add': {
-    args: [containerPath: string, def: PropertyDraft]
-    reply: Result<{ id: string }>
-  }
-  'schema:reorder': {
-    args: [containerPath: string, propertyId: string, toIndex: number]
-    reply: Result<null>
-  }
-  'schema:unassign': { args: [containerPath: string, propertyId: string]; reply: Result<null> }
-  'schema:assign': {
-    args: [containerPath: string, propertyId: string, toIndex?: number]
-    reply: Result<null>
-  }
-  'registry:reorder': { args: [propertyId: string, toIndex: number]; reply: Result<null> }
-  'property:rename': {
-    args: [propertyId: string, label: string]
-    reply: Result<PropertyRename | null>
-  }
-  'property:setKeyFormat': {
-    args: [propertyId: string, format: KeyFormat]
-    reply: Result<PropertyRename | null>
-  }
-  'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }
-  'property:replay': { args: [record?: SchemaJournal]; reply: Result<null> }
-  'property:setLinkConfig': {
-    args: [propertyId: string, patch: LinkConfig]
-    reply: Result<null>
-  }
-  'property:setCheckboxColor': {
-    args: [propertyId: string, color: string | undefined]
-    reply: Result<null>
-  }
-  'property:setIcon': { args: [propertyId: string, icon: string | undefined]; reply: Result<null> }
-  'property:setNumberFormat': {
-    args: [propertyId: string, patch: NumberConfig]
-    reply: Result<null>
-  }
-  'property:setFileDirectory': {
-    args: [propertyId: string, patch: FileConfig]
-    reply: Result<null>
-  }
-  'property:editOption': { args: [propertyId: string, edit: OptionEdit]; reply: Result<null> }
-  'property:renameOption': {
-    args: [propertyId: string, oldLabel: string, newLabel: string]
-    reply: Result<SchemaCascade>
-  }
-  'property:setValueFormat': {
-    args: [propertyId: string, format: KeyFormat]
-    reply: Result<SchemaCascade>
-  }
-  'property:removeOption': {
-    args: [propertyId: string, label: string]
-    reply: Result<SchemaCascade>
-  }
-  'property:clearOption': { args: [propertyId: string, label: string]; reply: Result<null> }
   'property:holders': { args: [propertyId: string, change: CountedChange]; reply: Result<number> }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }

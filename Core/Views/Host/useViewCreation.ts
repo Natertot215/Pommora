@@ -166,7 +166,8 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       flight.then((done) => done !== null),
     )
     const path = flight.then((done) => {
-      const landed = done?.created?.path ?? null
+      const created = done?.created
+      const landed = created && 'path' in created ? created.path : null
       const latest = cfg()
       const order =
         landed !== null && latest.view.id === c.view.id

@@ -19,6 +19,10 @@ import { liveTreeOf, mutableTarget } from './liveTree'
 const created = (parentPath: string, r: { path: string }): MutateReply =>
   ok({ created: { path: relJoin(parentPath, basename(r.path)) } })
 
+/** A Space or Context create that stepped past a taken name answers the one it landed under, which the slice announces; a page, Collection, or Set numbers itself silently, since their titles may repeat. */
+export const landedAs = (asked: string, path: string): { landedAs?: string } =>
+  basename(path) === asked ? {} : { landedAs: basename(path) }
+
 export async function createPageOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'createPage' }>,
@@ -81,5 +85,5 @@ export async function createSpaceOp(
   const r = await createSpace(root, req.contextId, req.name, req.id)
   if (!r.ok) return r
   if (req.order) await setSpaceOrder(root, req.contextId, req.order)
-  return ok({ created: r.value })
+  return ok({ created: r.value, ...landedAs(req.name, r.value.path) })
 }

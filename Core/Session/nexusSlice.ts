@@ -249,8 +249,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const res = await dialer().ask('mutate', req)
       if (!res.ok) {
         if (quiet) return null
+        if (res.error.code === 'owed')
+          notifyRetry(res.error.message, () => void get().mutate({ op: 'finishOwed' }))
         // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
-        if (
+        else if (
           (req.op === 'setProperty' || req.op === 'setContext') &&
           res.error.code === 'operation-failed'
         )
@@ -268,7 +270,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!quiet) {
         if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
         const { cascade, retry, missed } = res.value
-        if (req.op !== 'delete' && cascade)
+        if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
           warnCascade(
             cascade,
             retry
@@ -277,6 +279,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 ? () => void get().mutate({ op: 'putBack', entries: missed })
                 : undefined,
           )
+        if (res.value.created && res.value.landedAs)
+          notifyReport(`Created “${res.value.landedAs}”.`, false)
         if (changesStores(req)) storesChanged.emit()
       }
       // The host pushed what this write changed before it replied, so the tree already holds it.

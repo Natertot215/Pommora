@@ -1,3 +1,7 @@
+import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
+import { rootSegs } from '../Paths/exclusion'
+import { readWatchScope } from '../Settings/settings'
+import type { MutateReply } from '../Nexus/mutateRequest'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { KEY_REFUSAL, validateDefinition, validateName } from './validation'
@@ -10,6 +14,7 @@ import {
   optionGroupsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
+  type PropertyConfig,
   type PropertyDraft,
   type SelectOption,
   type StatusGroup,
@@ -31,7 +36,6 @@ import {
   readSchemaJournal,
   schemaCascade,
   writeSchemaJournal,
-  type SchemaCascade,
   type SchemaJournal,
 } from './propertyJournal'
 
@@ -151,8 +155,6 @@ export async function renameSweep(root: string, from: string, to: string): Promi
   return (await sweepGovernedRoots(root, files, plan)).skipped.length
 }
 
-export type PropertyRename = { from: string; to: string } & SchemaCascade
-
 async function bothKeyHolders(root: string, from: string, to: string): Promise<string[]> {
   const fromHolders = await confirmedKeyHolders(root, from)
   if (fromHolders.length === 0) return []
@@ -199,15 +201,11 @@ export async function keyFormatHolders(
 }
 
 /** Validated before the journal and again on the registry it commits to, since a writer outside the app, a sync arrival or a hand edit, can land between the two while every schema op of the app's own waits on the schema lock. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
-function rekeyProperty(
-  root: string,
-  propertyId: string,
-  change: Retitle,
-): Promise<Result<PropertyRename | null>> {
+function rekeyProperty(root: string, propertyId: string, change: Retitle): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const planned = await rekeyPlan(root, propertyId, change)
     if (!planned.ok) return planned
-    if (!planned.value) return ok(null)
+    if (!planned.value) return ok({})
     const { prior, moved } = planned.value
     const moves = moved.key !== prior.key
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to: moved.key }
@@ -233,7 +231,7 @@ function rekeyProperty(
     const { from, def } = edit.value
     const skipped = from === def.key ? 0 : await renameSweep(root, from, def.key)
     if (moves && !skipped) await clearSchemaJournal(root, record)
-    return ok({ from, to: def.key, ...schemaCascade({ skipped, hosts: [] }, record) })
+    return ok(from === def.key ? {} : schemaCascade({ skipped, hosts: [] }, record))
   })
 }
 
@@ -241,24 +239,24 @@ export const renameProperty = (
   root: string,
   propertyId: string,
   label: string,
-): Promise<Result<PropertyRename | null>> =>
-  rekeyProperty(root, propertyId, { label: exactTitle(label) })
+): Promise<MutateReply> => rekeyProperty(root, propertyId, { label: exactTitle(label) })
 
 export const setKeyFormat = (
   root: string,
   propertyId: string,
   key_format: KeyFormat,
-): Promise<Result<PropertyRename | null>> => rekeyProperty(root, propertyId, { key_format })
+): Promise<MutateReply> => rekeyProperty(root, propertyId, { key_format })
 
-/** Every definition edit but the label, the key, and the formats, which ride the rename paths since each can move keys in every file. */
-export function editProperty(
+/** A definition's display settings; its label, key, formats, type, and options ride their own ops, since each can move what files hold. A file directory is stored relative to the asset root, an empty one being the root itself. */
+export async function configureProperty(
   root: string,
   propertyId: string,
-  changes: Omit<
-    Partial<PropertyDefinition>,
-    'id' | 'label' | 'key' | 'key_format' | 'value_format'
-  >,
+  patch: PropertyConfig,
 ): Promise<Result<null>> {
+  const dir = patch.file_directory && rootSegs(patch.file_directory.trim()).join('/')
+  if (dir && !validPropertyDir(dir, (await readWatchScope(root)).assetDir))
+    return NOT_A_PROPERTY_DIR
+  const changes = 'file_directory' in patch ? { ...patch, file_directory: dir || undefined } : patch
   return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
