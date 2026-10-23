@@ -47,7 +47,12 @@ async function session(url) {
     }
     pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id)
   }
-  const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
+  const send = (method, params = {}, ms = 60000) => new Promise((r) => {
+    const id = ++next
+    const timer = setTimeout(() => { pending.delete(id); r(Promise.reject(new Error(`${method} got no reply in ${ms} ms`))) }, ms)
+    pending.set(id, (v) => { clearTimeout(timer); r(v) })
+    ws.send(JSON.stringify({ id, method, params }))
+  })
   const event = (method) => new Promise((r) => waiting.set(method, r))
   const evaluate = async (expression, extra = {}) => {
     const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, ...extra })
