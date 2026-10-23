@@ -472,7 +472,6 @@ async function group2(cdp) {
     gone: [[pageAt('M2 Gone 1'), 'M2 Gone: x\nm2 gone: y']],
     skip: twoStep('M2 Skip', 'M2 Skip'),
     chain: twoStep('M2 Chain', 'M2 Chain'),
-    twin: twoStep('M2 Twin', 'M2 Twin'),
     back: [[pageAt('M2 Back 1'), '<M2 Back>: [M2 Spot]'], [pageAt('M2 Back 2'), '<M2 Back>: [M2 Spot]']],
   }
   const seeds = [
@@ -492,7 +491,7 @@ async function group2(cdp) {
     { label: C.note, type: 'text' },
     { label: C.ref, type: 'link' },
     { label: C.files, type: 'file' },
-    ...['M2 Pick', 'M2 Memo', 'M2 Held', 'M2 Gone', 'M2 Skip', 'M2 Chain', 'M2 Twin'].map((label) => ({ label, type: 'text' })),
+    ...['M2 Pick', 'M2 Memo', 'M2 Held', 'M2 Gone', 'M2 Skip', 'M2 Chain'].map((label) => ({ label, type: 'text' })),
   ])
   ids[C.areas] = contextIdOf('Areas')
   const columns = Object.values(C)
@@ -543,21 +542,16 @@ async function group2(cdp) {
   pin(G, 'F-1', 'Try Again brings the skipped file current and clears the journal',
     !!skip.owed && skip.replayed?.ok && (await wrote(skip.first, 'M2 Skipped: a')) && slot() === null, show([skip.r, skip.replayed, blockOf(skip.first)]))
 
-  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Chained' }),
-    () => must('rename M2 Chained', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Linked' })))
-  pin(G, 'F-1', "a chained rename's Try Again follows the property off its old key",
-    !!chain.owed && (await wrote(chain.second, 'M2 Linked: b')) && (await wrote(chain.first, 'M2 Linked: a')) && slot() === null,
-    show([chain.r, blockOf(chain.first), blockOf(chain.second)]))
-
-  let twinKept
-  const twin = await tryAgain(cdp, pairs.twin, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twins' }), async () => {
-    await must('rename M2 Twins back', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Twin'], label: 'M2 Twin' }))
-    await wrote(pairs.twin[1][0], 'M2 Twin: b')
-    twinKept = snapshot(pairs.twin.map(([rel]) => rel))
+  const relink = () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Linked' })
+  let waited
+  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Chained' }), async () => {
+    const owed = slot()
+    waited = refusedAs(await relink(), COPY.anOptionChangeWaitingForTryAgain) && same(slot(), owed) && defOf(ids['M2 Chain']).label === 'M2 Chained'
   })
-  pin(G, 'F-1', 'Try Again after a rename back writes nothing, and no holder loses the key',
-    !!twin.owed && twin.replayed?.ok && (await twinKept.holds()) && slot() === null && blockOf(twin.first) === 'M2 Twin: a' && blockOf(twin.second) === 'M2 Twin: b',
-    show([twin.r, twin.replayed, blockOf(twin.first), blockOf(twin.second)]))
+  pin(G, 'F-1', "a second rename waits for the first one's Try Again, then lands on every holder",
+    !!chain.owed && waited && chain.replayed?.ok && (await wrote(chain.first, 'M2 Chained: a')) && slot() === null &&
+      (await relink()).ok && (await wrote(chain.second, 'M2 Linked: b')) && (await wrote(chain.first, 'M2 Linked: a')),
+    show([chain.r, chain.replayed, blockOf(chain.first), blockOf(chain.second)]))
 
   const [[back1], [back2]] = pairs.back
   const moved = await unreadable(back1, () => ask(cdp, 'mutate', { op: 'renameContext', contextId: back, newName: 'M2 Front' }))
@@ -962,8 +956,8 @@ async function group6(cdp) {
   pin(G, 'F-1', 'a waiting option change writes nothing', await held.holds(), show(held.changed()))
   pin(G, 'F-1', "Clear waits while its own property's option record is owed",
     refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
-  await must('rename M6 Free', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }))
-  pin(G, 'F-1', 'a property rename still runs while a record is owed', await wrote(free, 'M6 Freed: f'), show(blockOf(free)))
+  pin(G, 'F-1', 'a property rename waits while a record is owed',
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }), COPY.anOptionChangeWaitingForTryAgain) && blockOf(free) === 'M6 Free: f')
   const shielded = seedPage(pageAt('M6 Tint 3'), 'M6 Tints: [Pale]')
   await indexed(cdp, COLLECTION, [shielded])
   pin(G, 'F-1', "the owed record's old key isn't adopted while it's owed", await holds(async () => !keysOf(tints).includes('Pale'), 3000), show(wordsOf(tints)))
@@ -1219,8 +1213,8 @@ async function group7(cdp) {
   const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, from: 'Red', to: 'Crimson' }))
   pin(G, 'F-1', 'a Value Format change waits while a record is owed',
     !!owing.value?.retry && refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shadesId, change: { value_format: 'UPPERCASE' } }), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
-  const free = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })
-  pin(G, 'F-1', 'a Key Format change still runs while a record is owed', free.ok && defOf(sortsId).key === 'SORTS', show(free))
+  const waiting = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })
+  pin(G, 'F-1', 'a Key Format change waits while a record is owed', refusedAs(waiting, COPY.anOptionChangeWaitingForTryAgain) && defOf(sortsId).key === 'Sorts', show(waiting))
   if (owing.value?.retry) await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
 
   // Adoption follows the Value Format: a foreign Multi-Select word becomes an option only when the format could have

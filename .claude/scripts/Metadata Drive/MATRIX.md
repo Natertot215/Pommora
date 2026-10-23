@@ -56,8 +56,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Both spellings on one page | page | rename onto the variant | refused; nothing moves, no record | A-1 |
 | Property delete and restore | page, Area Two | `property:delete`, `restore` | strips and refills the exact key; the variant stays | A-1 |
 | Try Again after a skip | two pages, one unreadable | rename, `property:replay` | the rest sweep, the record is owed, the replay brings the file current and clears | F-1 |
-| Chained rename | as above | rename, rename again, replay the first | the replay follows the property to its current key | F-1 |
-| Rename back | as above | rename, rename back, replay | the replay answers, writes nothing, and clears the journal; no holder loses the key | F-1 |
+| A second rename while owed | as above | rename, rename again, replay the first, rename again | the second rename waits with the record unchanged; after the replay it lands on every holder | F-1 |
 | Context rename back | two pages, one unreadable | `renameContext`, back, the reply's `retry` | the retry answers, writes nothing, and clears the Context journal | F-1 |
 
 #### Group 3 — Exact Words
@@ -110,7 +109,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Option removal | page, cache | `removeOption` | strips the page and the cache | F-2 |
 | Clear | cache, Collection B | Clear, reassign | the cache loses the value and the reassign brings it back nowhere | J-1 |
 | Records carry keys | journal | rename, option rename, delete, option removal, each over an unreadable file | `{ op: 'rename', from, to }` in keys; `{ op: 'option-rename', keys, labels }`; `{ op: 'delete', key }`; `{ op: 'option-remove', key }` | F-1 |
-| An owed record | registry, pages, journal | option rename and removal; Clear; property rename | the two option changes and a Clear on the owed property are refused and write nothing; a property rename runs | F-1 |
+| An owed record | registry, pages, journal | option rename and removal; Clear; property rename | the two option changes and a Clear on the owed property are refused and write nothing; a property rename waits | F-1 |
 | Adoption shield | a new page holding the old word | settle | the owed record's old key isn't adopted | F-1 |
 | Try Again | the skipped files | `property:replay` | each record's replay brings its file current and clears | F-1 |
 
@@ -132,7 +131,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Adopted rename | page, view | rename `in-progress` to `In Progress` under kebab-case | no page rewritten, the view follows the label | E-1, F-2 |
 | Value Format change | page, Area One, cache, view, View Tile, Matrix filter | count, then `setValueFormat` kebab-case | count 2 with the cache left out; every option re-keyed, labels kept; files and cache by key; the configuration byte-identical; the table, the view, and the View Tile still read labels; a reassign refills the new key | F-1, F-2, F-4, C-2 |
 | Format skips | two pages each, one unreadable | `setKeyFormat` lowercase, `setValueFormat` kebab-case, `property:replay` | each sweeps the rest and owes a record of stored keys alone, `{ op: 'rename', from, to }` and `{ op: 'option-rename', keys }`; Try Again brings the file current and clears | F-1 |
-| Value Format refusals | registry, pages, journal | collision, crossing, a Text property, an owed record | each refused, nothing changes; a Key Format change still runs while owed | D-2, F-1, B-3 |
+| Value Format refusals | registry, pages, journal | collision, crossing, a Text property, an owed record | each refused, nothing changes; a Key Format change waits while owed | D-2, F-1, B-3 |
 | Adoption per format | ten Multi-Selects | settle | `Red`, `BLUE`, `green` adopt as B-6's table says; `AB` and `J.Crew` don't under PascalCase; `in-progress` does and `due_date` doesn't under kebab-case | E-1, B-6 |
 | Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` and `Red` stay foreign through a pick | E-1, E-3 |
 | A Value Format change owes adoption | page | `setValueFormat` lowercase | `green`, refused under UPPERCASE, adopts | E-1 |
