@@ -309,6 +309,7 @@ function EditableOptionRows({
   const look = style?.current.look
   const options = groups.flatMap((g) => g.options)
   const edit = useOptionEdit({ def, options, style })
+  // A Status option belongs to one of its groups, which a quick create here would have to guess.
   const creates = PROPERTY_TYPES[def.type].options === 'select'
   return (
     <>
