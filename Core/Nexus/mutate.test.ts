@@ -1777,6 +1777,23 @@ describe('handleMutate — setBanner', () => {
   const setBanner = (source: string | null) =>
     settledMutate(root, { op: 'setBanner', path: 'Notes', kind: 'collection', source }, nexusDeps)
 
+  it('a page whose file refuses the read refuses its banner and adopts nothing', async () => {
+    const file = join(root, 'Notes/Daily/Beta.md')
+    await refreshTree(root)
+    await chmod(file, 0o000)
+    try {
+      const r = await handleMutate(
+        root,
+        { op: 'setBanner', path: 'Notes/Daily/Beta.md', kind: 'page', source: await pick('B.png') },
+        nexusDeps,
+      )
+      expect(r).toEqual(fault('That file could not be read.'))
+      expect(await pathExists(join(root, '.nexus/assets/B.png'))).toBe(false)
+    } finally {
+      await chmod(file, 0o644)
+    }
+  })
+
   it('adopts a picked file under its own name and names it by wikilink', async () => {
     const assets = await withAssetDir()
     const r = await setBanner(await pick('Sunset.png'))

@@ -13,7 +13,7 @@ import { NOT_A_PROPERTY_DIR, underAssetRoot, validPropertyDir } from './assetRoo
 import { UNSPELLABLE, writeAssetFile } from './assetWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
-const UNREADABLE = 'That file could not be read.'
+export const UNREADABLE = fault('That file could not be read.')
 
 export async function adoptFile(
   root: string,
@@ -46,14 +46,14 @@ export async function adoptFile(
         .realpath(absSource)
         .catch(() => null)
     : null
-  if (source === null) return fault(UNREADABLE)
+  if (source === null) return UNREADABLE
   const srcRel = relative(await machine().realpath(root), source)
   if (underAssetRoot(srcRel, assetDir) && indexable(srcRel, assetDir)) return ok(fileLinkText(base))
 
   const bytes = await machine()
     .readBytes(absSource)
     .catch(() => null)
-  if (!bytes) return fault(UNREADABLE)
+  if (!bytes) return UNREADABLE
   const held = hit
     ? await machine()
         .readBytes(join(root, hit))
