@@ -10,7 +10,8 @@ import { assignedIds } from '../Nexus/containerFields'
 import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import { PROPERTY_TYPES, type PropertyDefinition, type PropertyDraft } from './properties'
+import { createProperty, removeFromRegistry } from './registryProperty'
 import { isBlankRaw } from './propertyValue'
 import { type Frozen, gonePageEntry, reencode } from '../Nexus/governedRoot'
 import { frozenWorld, parkLinks } from '../Trash/holdings'
@@ -119,6 +120,24 @@ export function assignProperty(
     const a = await assignInner(root, collectionFolder, propertyId)
     if (!a.ok || toIndex === undefined) return a
     return reorderInner(collectionFolder, propertyId, toIndex)
+  })
+}
+/** A new property lands created and assigned in one hold of the schema lock, and a failed assign takes the create back inside it. */
+export function addProperty(
+  root: string,
+  collectionFolder: string,
+  draft: PropertyDraft,
+): Promise<Result<{ id: string }>> {
+  return serializeSchemaOp(root, async () => {
+    const created = await createProperty(root, draft)
+    if (!created.ok) return created
+    const { id } = created.value
+    const assigned = await assignInner(root, collectionFolder, id)
+    if (!assigned.ok) {
+      await removeFromRegistry(root, id)
+      return assigned
+    }
+    return ok({ id })
   })
 }
 

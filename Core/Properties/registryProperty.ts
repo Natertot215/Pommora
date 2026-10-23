@@ -196,7 +196,7 @@ export async function keyFormatHolders(
   return ok(await sweepCount(root, files, plan))
 }
 
-/** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
+/** Validated before the journal and again on the registry it commits to, since a writer outside the app, a sync arrival or a hand edit, can land between the two while every schema op of the app's own waits on the schema lock. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
 function rekeyProperty(
   root: string,
   propertyId: string,
@@ -287,10 +287,12 @@ export function reorderRegistry(
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
-    if (!(propertyId in registry.defs)) return { result: NO_PROPERTY }
-    const order = registry.order.filter((id) => id !== propertyId)
-    order.splice(clamp(toIndex, 0, order.length), 0, propertyId)
-    return { next: { ...registry, order }, result: ok(null) }
-  })
+  return serializeSchemaOp(root, () =>
+    mutateRegistry<Result<null>>(root, (registry) => {
+      if (!(propertyId in registry.defs)) return { result: NO_PROPERTY }
+      const order = registry.order.filter((id) => id !== propertyId)
+      order.splice(clamp(toIndex, 0, order.length), 0, propertyId)
+      return { next: { ...registry, order }, result: ok(null) }
+    }),
+  )
 }

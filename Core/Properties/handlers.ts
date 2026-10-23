@@ -5,7 +5,7 @@ import { isFiniteNumber, isPlainObject, NEEDS_CONFIG_PATCH } from '../Contract/v
 import { mutableTarget } from '../Nexus/liveTree'
 import { oweCascade } from '../Nexus/fileEvents'
 import { readWatchScope } from '../Settings/settings'
-import { assignProperty, reorderAssignment } from './assignment'
+import { addProperty, assignProperty, reorderAssignment } from './assignment'
 import { deleteProperty, propertyHolders } from './deleteProperty'
 import {
   clearOption,
@@ -27,10 +27,8 @@ import {
 } from './properties'
 import { isKeyFormat, type KeyFormat } from './keyFormat'
 import {
-  createProperty,
   editProperty,
   keyFormatHolders,
-  removeFromRegistry,
   renameProperty,
   reorderRegistry,
   setKeyFormat,
@@ -156,14 +154,7 @@ export const propertiesHandlers = {
     if (!c.ok) return c
     const parsed = propertyDraft.safeParse(def)
     if (!parsed.success) return fault('Invalid property definition.')
-    const created = await createProperty(root, parsed.data)
-    if (!created.ok) return created
-    const assigned = await assignProperty(root, c.value, created.value.id)
-    if (!assigned.ok) {
-      await removeFromRegistry(root, created.value.id)
-      return assigned
-    }
-    return ok({ id: created.value.id })
+    return addProperty(root, c.value, parsed.data)
   }),
 
   'schema:reorder': schemaChannel(idAndIndex, reorderAssignment),

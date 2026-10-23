@@ -131,6 +131,6 @@ export async function mutateRegistry<T>(
   return result
 }
 
-// Schema ops that cascade to pages queue on the `.nexus` folder's lock, which nothing they run takes, so one can't land inside another's cascade; a re-taken lock rejects, so only entry points are wrapped.
+// Every op that writes the registry or a schema sidecar takes the `.nexus` folder's lock once, at its entry, so none lands inside another's cascade; the lock rejects a re-take, so a step a held op composes, a create, an assign, or a removal, takes none.
 export const serializeSchemaOp = <T>(root: string, fn: () => Promise<T>): Promise<T> =>
   machine().lock(nexusDir(root), fn)

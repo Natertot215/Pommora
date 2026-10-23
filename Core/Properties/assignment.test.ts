@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { assignProperty, reorderAssignment } from './assignment'
+import { addProperty, assignProperty, reorderAssignment } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
-import { sidecarPath } from '../Paths/paths'
+import { nexusDir, sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -16,6 +16,8 @@ import { removeProperty } from './removeProperty'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { refreshTree } from '../Nexus/liveTree'
+import { machine } from '../Platform/machine'
+import { readRegistry } from './propertiesRegistry'
 
 let root: string
 let notes: string
@@ -164,5 +166,33 @@ describe('a re-assign puts a cached value back', () => {
       'Related: "[[Old]]"',
     )
     expect(fm.Related).toBe('[[Old]]')
+  })
+})
+
+describe('addProperty', () => {
+  const schemaHolds = () => {
+    const lock = vi.spyOn(machine(), 'lock')
+    return () => lock.mock.calls.filter(([key]) => key === nexusDir(root)).length
+  }
+  const labels = async (): Promise<string[]> =>
+    Object.values((await readRegistry(root)).defs).map((d) => d.label)
+  afterEach(() => vi.restoreAllMocks())
+
+  it('lands the property created and assigned in one hold of the schema lock', async () => {
+    const holds = schemaHolds()
+    const r = await addProperty(root, notes, { id: '', label: 'Due', type: 'text' } as never)
+    expect(r.ok).toBe(true)
+    expect(holds()).toBe(1)
+    expect(await labels()).toContain('Due')
+    expect((await ids(notes)).at(-1)).toBe(r.ok ? r.value.id : '')
+  })
+
+  it('a failed assign takes the create back inside the same hold', async () => {
+    await writeFile(sidecarPath(notes, 'collection'), '{ not json')
+    const holds = schemaHolds()
+    const r = await addProperty(root, notes, { id: '', label: 'Due', type: 'text' } as never)
+    expect(r.ok).toBe(false)
+    expect(await labels()).not.toContain('Due')
+    expect(holds()).toBe(1)
   })
 })
