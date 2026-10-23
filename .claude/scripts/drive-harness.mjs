@@ -227,7 +227,7 @@ export const mintPageId = () => { const id = ulid(); return `${id.slice(0, 10)}P
 /** The id the app reads an option of `def` under: its stored id, or the one its key derives. */
 export const optionId = (def, label) => {
   const o = (def.status_groups ? def.status_groups.flatMap((g) => g.options) : (def.select_options ?? [])).find((x) => (x.label ?? x.key) === label)
-  return o?.id ?? `opt_${encodeURIComponent(o?.key ?? label)}`
+  return o?.id || `opt_${encodeURIComponent(o?.key ?? label)}`
 }
 export const mintOptionId = () => `opt_${ulid()}`
 export const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
