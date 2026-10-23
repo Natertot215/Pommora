@@ -143,7 +143,7 @@ const SETTINGS = {
   // Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was.
   muteCheckedItems: flag(false),
   hideChevrons: flag(false),
-  repairOnOpen: flag(false),
+  repairOnOpen: flag(true),
   outlinerLines: flag(false),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
