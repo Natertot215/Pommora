@@ -1485,7 +1485,7 @@ describe('handleMutate — renameHeading', () => {
   })
 
   it('answers a heading rename whose cascade can’t start with a warning, not a fault', async () => {
-    await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
+    await writeFile(join(root, '.nexus', 'nexus.json'), '{ not json')
     const r = await handleMutate(root, req, nexusDeps)
     expect(r.ok && r.value.cascade?.warning).toMatch(/^Links to “Beta#Setup” weren't updated: /)
     expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Setup]].')

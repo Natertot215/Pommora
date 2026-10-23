@@ -822,6 +822,22 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
     expect(currentNotification()?.action?.label).toBe('Try Again')
   })
 
+  it('a damaged property list posts the invalid notice naming its file', () => {
+    useSession.getState().applyChange({
+      version: 0,
+      delta: {
+        set: listing({
+          path: '.nexus/properties.json',
+          kind: 'registry',
+          registry: 'properties',
+          reason: 'unparsed',
+        }),
+      },
+    })
+    expect(currentNotification()?.message).toBe("'properties.json' contains invalid metadata")
+    expect(currentNotification()?.action?.label).toBe('Try Again')
+  })
+
   it('a tree whose list didn’t change posts nothing', () => {
     useSession.getState().applyChange({
       version: 0,

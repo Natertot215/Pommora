@@ -198,7 +198,7 @@ describe('latchBaseline', () => {
     })
   })
 
-  it('an unusable registry carries every prior context and space through', () => {
+  it('an unusable Contexts registry carries every prior context and space through, and an unusable property list carries none', () => {
     const prior: Baseline = {
       'ctx-areas': {
         id: 'ctx-areas',
@@ -221,12 +221,33 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(),
-      [{ path: '.nexus/contexts/contexts.json', kind: 'registry', reason: 'unparsed' }],
+      [
+        {
+          path: '.nexus/contexts/contexts.json',
+          kind: 'registry',
+          registry: 'contexts',
+          reason: 'unparsed',
+        },
+      ],
       prior,
     )
     expect(latched['ctx-areas']).toEqual(prior['ctx-areas'])
     expect(latched['space-personal']).toEqual(prior['space-personal'])
     expect(latched['page-gone']).toBeUndefined()
+    const properties = latchBaseline(
+      projected(),
+      [
+        {
+          path: '.nexus/properties.json',
+          kind: 'registry',
+          registry: 'properties',
+          reason: 'unparsed',
+        },
+      ],
+      prior,
+    )
+    expect(properties['ctx-areas']).toBeUndefined()
+    expect(properties['space-personal']).toBeUndefined()
   })
 
   it('a duplicated id whose recorded path is unreadable defers, never guesses', () => {

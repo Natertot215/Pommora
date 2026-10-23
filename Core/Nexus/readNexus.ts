@@ -15,6 +15,7 @@ import type {
   NexusOrder,
   NexusTree,
   PageNode,
+  RegistryName,
   SetNode,
   SpaceNode,
   Unreadable,
@@ -43,6 +44,7 @@ import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
 import { contextsDir, contextsRegistryFile, nexusConfig } from '../Paths/paths'
 import {
   CONTEXTS_REGISTRY_REL,
+  nexusConfigRel,
   spaceDirRel,
   NEXUS_CONFIG_FILES,
   SIDECAR_FILENAME,
@@ -276,7 +278,7 @@ export async function readNexus(root: string): Promise<NexusTree> {
   }
 }
 
-/** The three hand-authored files every read of the Nexus rests on. */
+/** The three hand-authored files every read of the Nexus rests on: a damaged identity or settings file fails the read, and a damaged property list reads as null. */
 export const readNexusConfig = (root: string) =>
   Promise.all([readIdentity(root), readSettings(root), readKeptRegistry(root)])
 
@@ -305,14 +307,14 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
   const order = readOrder(state)
   const unreadable: Unreadable[] = []
-  // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
-  const ctxRead = ctxRegistry ? null : (await readJsonStrictly(contextsRegistryFile(root))).kind
-  if (ctxRead !== null && ctxRead !== 'absent')
-    unreadable.push({
-      path: CONTEXTS_REGISTRY_REL,
-      kind: 'registry',
-      reason: ctxRead === 'unreadable' ? 'unreadable' : 'unparsed',
-    })
+  // An unusable registry blanks its layer for the session: every Context, or every definition. Absent stays silent; present names the registry, so the blank reads as damage, never as mass deletion.
+  const listDamaged = async (registry: RegistryName, path: string): Promise<void> => {
+    const read = (await readJsonStrictly(join(root, path))).kind
+    const reason = read === 'unreadable' ? 'unreadable' : 'unparsed'
+    if (read !== 'absent') unreadable.push({ path, kind: 'registry', registry, reason })
+  }
+  if (!ctxRegistry) await listDamaged('contexts', CONTEXTS_REGISTRY_REL)
+  if (!registry) await listDamaged('properties', nexusConfigRel('properties'))
   const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, order.spaces, unreadable)
     : []
@@ -344,7 +346,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
       crops: readCropLeaves(cropsConfig),
       pageMetadata,
       order,
-      registry: orderedDefs(registry),
+      registry: registry ? orderedDefs(registry) : [],
     },
     ...(unreadable.length ? { unreadable: unreadable.sort(comparePaths) } : {}),
   }

@@ -48,7 +48,9 @@ export const tileHostsOf = (
   hosts: ARMS.flatMap((arm) =>
     arm.boards(tree).map((b) => ({ host: b.host, dir: join(root, b.rel) })),
   ),
-  unreadable: tree.unreadable?.some((u) => u.kind === 'registry' && u.reason === 'unreadable')
+  unreadable: tree.unreadable?.some(
+    (u) => u.kind === 'registry' && u.registry === 'contexts' && u.reason === 'unreadable',
+  )
     ? 1
     : 0,
 })

@@ -467,16 +467,12 @@ describe('readNexus — the walk names what it cannot read', () => {
     }
   })
 
-  it.each([
-    'nexus.json',
-    'properties.json',
-  ])('a damaged %s fails a first walk and names itself', async (file) => {
+  it('a damaged nexus.json fails a first walk and names itself', async () => {
     const r = tempRoot('pom-unread-first-')
     try {
       d(join(r, '.nexus'))
-      w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxs' }))
-      w(join(r, '.nexus', file), '{ corrupt')
-      await expect(readNexus(r)).rejects.toThrow(`Couldn’t read “${file}”.`)
+      w(join(r, '.nexus', 'nexus.json'), '{ corrupt')
+      await expect(readNexus(r)).rejects.toThrow('Couldn’t read “nexus.json”.')
     } finally {
       rmSync(r, { recursive: true, force: true })
     }
@@ -524,7 +520,12 @@ describe('readNexus — the walk names what it cannot read', () => {
       const t = await readNexus(r)
       expect(t.contexts).toEqual([])
       expect(t.unreadable).toEqual([
-        { path: '.nexus/contexts/contexts.json', kind: 'registry', reason: 'unparsed' },
+        {
+          path: '.nexus/contexts/contexts.json',
+          kind: 'registry',
+          registry: 'contexts',
+          reason: 'unparsed',
+        },
       ])
     } finally {
       rmSync(r, { recursive: true, force: true })

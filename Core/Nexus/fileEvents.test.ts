@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
+import { forgetLastReads } from '../Files/atomicWrite'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -520,6 +521,28 @@ describe('the parity cases', () => {
       'prop_status',
       'prop_due',
     ])
+    await agrees()
+  })
+
+  it('a damaged property list’s fix restores every Collection’s schema with no walk and leaves the unreadable list', async () => {
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['prop_status'] }),
+    )
+    await writeFile(abs('.nexus', 'properties.json'), '{ corrupt')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    forgetLastReads()
+    await refreshTree(root)
+    expect(held().unreadable?.map((u) => u.path)).toEqual(['.nexus/properties.json'])
+    expect(containerSchema(held(), held().collections[0])).toEqual([])
+    walk.mockClear()
+    await registry({
+      prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
+    })
+    await settled([ev('change', '.nexus', 'properties.json')])
+    expect(walk).not.toHaveBeenCalled()
+    expect(held().unreadable).toBeUndefined()
+    expect(containerSchema(held(), held().collections[0]).map((d) => d.label)).toEqual(['Status'])
     await agrees()
   })
 

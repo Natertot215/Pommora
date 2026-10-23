@@ -67,6 +67,7 @@ import {
   pagePathsIn,
   placeNode,
   removeNodeInTree,
+  repointUnreadable,
   listUnreadable,
   spaceAt,
   updateNodeInTree,
@@ -487,7 +488,10 @@ async function applyRegistry(root: string, ev: Changed, owed: Owed): Promise<App
   const defs = orderedDefs(registryFrom((await jsonOf(ev, readKept)) ?? {}))
   return applyPatch(root, (t) => {
     const registry = stabilize(defs, t.config.registry)
-    const next = registry === t.config.registry ? t : { ...t, config: { ...t.config, registry } }
+    // A list the open couldn't read reads now, so its unreadable entry leaves.
+    const read = repointUnreadable(t, nexusConfigRel('properties'), null)
+    const next =
+      registry === read.config.registry ? read : { ...read, config: { ...read.config, registry } }
     oweNamedKeys(owed, t.config.registry, next)
     return next
   })

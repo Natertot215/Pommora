@@ -144,14 +144,45 @@ describe('openNexusSequence', () => {
   it('a waiting open stamps, walks, and syncs nothing', async () => {
     const loose = join(root, 'Library', 'Loose.md')
     await writeFile(loose, 'no id yet')
-    await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
+    await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
     vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, true)
     await turn(100)
-    expect(waitingOpen()?.why).toBe('Couldn’t read “properties.json”.')
+    expect(waitingOpen()?.why).toBe('Couldn’t read “settings.json”.')
     expect(await readFile(loose, 'utf8')).toBe('no id yet')
     expect(heldTreeOf(root)).toBeNull()
     expect(currentSession()).toBeNull()
+  })
+
+  it('opens a Nexus whose property list is damaged, with no definitions, the list named unreadable, its Collections keeping their ids, and its Spaces listed', async () => {
+    await writeFile(
+      join(root, 'Library', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-lib', properties: ['tags'] }),
+    )
+    await mkdir(join(contextsDir(root), 'Areas', 'Home'), { recursive: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx-areas', title: 'Areas' }] }),
+    )
+    await writeFile(
+      join(contextsDir(root), 'Areas', 'Home', '_space.json'),
+      JSON.stringify({ id: HOME }),
+    )
+    await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, false)
+    expect(sessionRoot()).toBe(root)
+    expect(waitingOpen()).toBeNull()
+    const tree = heldTreeOf(root)
+    expect(tree?.config.registry).toEqual([])
+    expect(tree?.unreadable).toContainEqual({
+      path: '.nexus/properties.json',
+      kind: 'registry',
+      registry: 'properties',
+      reason: 'unparsed',
+    })
+    expect(tree?.collections.find((c) => c.id === 'col-lib')?.propertyIds).toEqual(['tags'])
+    expect(tree?.contexts.flatMap((g) => g.spaces.map((s) => s.id))).toEqual([HOME])
   })
 
   it('a reopen of the open Nexus keeps its id while its identity file is damaged', async () => {

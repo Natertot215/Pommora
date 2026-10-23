@@ -11,6 +11,7 @@ import { closeSession, openSession } from './session'
 import './settle'
 import { stabilize } from './treeStabilize'
 import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
+import { forgetLastReads } from '../Files/atomicWrite'
 import { unsweptLine } from './governedSweep'
 
 vi.mock('./liveTree', async (importOriginal) => {
@@ -410,6 +411,13 @@ describe('what the pass skips', () => {
     await rm(join(root, '.nexus', 'contexts', 'contexts.json'))
     await mkdir(join(root, '.nexus', 'contexts', 'contexts.json'))
     expect(await reachConfig(root, rename)).toEqual({ skipped: 1, hosts: [] })
+  })
+
+  it('counts no skip for an unreadable property list, whose Spaces still read', async () => {
+    forgetLastReads()
+    await rm(join(root, '.nexus', 'properties.json'), { force: true })
+    await mkdir(join(root, '.nexus', 'properties.json'))
+    expect((await reachConfig(root, rename)).skipped).toBe(0)
   })
 
   it('holds nothing owed for a Contexts registry that doesn’t parse', async () => {
