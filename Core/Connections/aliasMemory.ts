@@ -52,3 +52,16 @@ export function applyAliasEdit(worn: readonly string[], e: AliasEdit, title: str
     }
   }
 }
+
+/** The edit that takes back an add of `alias`: re-adding the spelling it respelled, forgetting the alias it appended, or none when it changed nothing. */
+export function addUndo(
+  worn: readonly string[],
+  alias: string,
+  title: string,
+): AliasEdit | undefined {
+  const named = alias.trim()
+  if (!keepsAlias(named, title)) return undefined
+  const was = heldAliases(worn, title).find((a) => normalizeTitle(a) === normalizeTitle(named))
+  if (was === undefined) return { op: 'forget', alias: named }
+  return was === named ? undefined : { op: 'add', alias: was }
+}
