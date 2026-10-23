@@ -220,6 +220,15 @@ describe('an undo on a page', () => {
     expect(await readFile(pageFile(), 'utf8')).toBe(bytes)
   })
 
+  it('a cleared key above a number-like key comes back above it, byte for byte', async () => {
+    await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nNote: a\nCount: 1\n2026: x\nZed: z\n---\nb\n`)
+    await refreshTree(root)
+    const bytes = await readFile(pageFile(), 'utf8')
+    const written = await set(page, 'Count', null)
+    await undo(written)
+    expect(await readFile(pageFile(), 'utf8')).toBe(bytes)
+  })
+
   it('a cleared key whose neighbour below left since comes back last', async () => {
     await writeFile(pageFile(), `---\nID: ${PAGE_ID}\nCount: 1\nNote: a\nZed: z\n---\nb\n`)
     await refreshTree(root)

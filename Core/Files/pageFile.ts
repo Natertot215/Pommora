@@ -175,7 +175,7 @@ function setAbove(doc: Document, key: string, node: unknown, above?: string): vo
   if (items && at >= 0) items.splice(at, 0, ...items.splice(-1))
 }
 
-/** Lands each of `modeledKeys` as `modeled` holds it and drops one it holds nothing for; a key the block doesn't hold lands above the first key after it in `modeled` the block holds, and last when none follows. */
+/** Lands each of `modeledKeys` as `modeled` holds it and drops one it holds nothing for; a key the block doesn't hold lands last. */
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
@@ -185,11 +185,9 @@ function mergeInto(
     const written = (key: string): boolean => modeled[key] !== undefined
     const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
     const held = valuesOf(doc)
-    const order = Object.keys(modeled)
     for (const key of modeledKeys.filter(written)) {
       if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
-      const above = order.slice(order.indexOf(key) + 1).find((k) => Object.hasOwn(held, k))
-      setAbove(doc, key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]), above)
+      doc.set(key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]))
     }
     for (const key of dropped) doc.delete(key)
   }
@@ -267,7 +265,9 @@ export interface SweptPage {
   merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
   /** `key`'s pair as the block was parsed, its quoting, style, comment, and alias kept; undefined when the block holds no `key`. */
   pair: (key: string) => string | undefined
-  /** The page with `key` holding the node `landing` spells, verbatim under E-1 and whatever key `landing` names, landed by `setAbove` rather than `mergeInto`'s root order, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
+  /** The key after `key` in the block's own order, which its line stands above; undefined when the block holds no `key` or it's last. */
+  above: (key: string) => string | undefined
+  /** The page with `key` holding the node `landing` spells, verbatim under E-1 and whatever key `landing` names, landed by `setAbove`, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
   withPair: (key: string, landing: string | undefined, above?: string) => string | null
 }
 
@@ -288,6 +288,11 @@ export function sweepParse(content: string): SweptPage | null {
     raw,
     merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body),
     pair,
+    above: (key) => {
+      const order = isMap(doc.contents) ? doc.contents.items.map((p) => String(p.key)) : []
+      const at = order.indexOf(key)
+      return at < 0 ? undefined : order[at + 1]
+    },
     withPair: (key, landing, above) => {
       const one = landing === undefined ? null : parseDocument(landing).contents
       if (landing !== undefined && !(isMap(one) && one.items.length === 1)) return null

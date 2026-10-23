@@ -403,6 +403,13 @@ describe('sweepParse — the field-write gate', () => {
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\nStatus: Done\n---\nbody',
     )
   })
+
+  it('a new number-like key lands last', () => {
+    const page = sweepParse(HEALTHY)
+    expect(page?.merge({ ...page.raw, 2026: 'x' }, ['2026'])).toBe(
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n"2026": x\n---\nbody',
+    )
+  })
 })
 
 describe('a swept page’s pairs', () => {
