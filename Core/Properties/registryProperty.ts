@@ -1,6 +1,6 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { validateDefinition, validateName } from './schema'
+import { validateDefinition, validateName } from './validation'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'

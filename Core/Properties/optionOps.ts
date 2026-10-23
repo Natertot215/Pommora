@@ -1,5 +1,5 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { uniqueOptionGroups, validateOptionValues } from './schema'
+import { uniqueOptionGroups, validateOptionValues } from './validation'
 import { queryKeyHolders } from '../Index/contentIndex'
 import {
   governedReach,
