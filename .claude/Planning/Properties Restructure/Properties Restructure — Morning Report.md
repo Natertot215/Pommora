@@ -33,9 +33,9 @@ Most of it changes nothing you'll see. Where something does change, it's either 
 - **P17 · The Properties Pane:** one drag model and one editor spacing. The five type editors become row lists in one file, and an editor whose property disappears returns to the list.
 - **P18 · The Documents Read True:** feature documents, Issues entries, drives, and matrices are updated to match.
 
-**How It Runs:** one agent per phase applies each step with the plan-replay tool, finishes what the tool can't, and proves the phase with the type check, tests, lint, and a click-through drive of the app. Two reviewers read Phases 6, 8, 11B, 12, 16B, and 17, the phases that rewrite your data, rebuild crash recovery, or change a shared surface. A neutral check runs after Phase 12 and at the end, and one final review covers everything.
+**How It Runs:** one agent per phase applies each step with the plan-replay tool, finishes what the tool can't, and proves the phase with the type check, tests, lint, and a click-through drive of the app. Every second phase ends with two reviewers reading the two phases just finished: one checks that they work and are as simple as they can be, the other how they fit the rest of the app and what else can be folded away to cut more lines. What doesn't work is fixed before the next phase starts; a fold lands right away unless a later step still edits that file, in which case it waits for the final review. The documents phase gets a lighter check of its own. A neutral check runs after Phase 12 and at the end, and one final review covers everything.
 
-**When It's Done:** Pommora has about 759 fewer lines of production code, each property type's facts live in one place, every value change reaches its file one way, every big multi-file change can be finished with one Try Again, options have permanent ids, and the documents describing all of it are accurate.
+**When It's Done:** Pommora has about 448 fewer lines of production code, each property type's facts live in one place, every value change reaches its file one way, every big multi-file change can be finished with one Try Again, options have permanent ids, and the documents describing all of it are accurate.
 
 ### What I Need From You
 
@@ -62,8 +62,8 @@ Ratify the plan, or tell me what to change.
 
 ### Where It Stands
 
-- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,539 changes with no mismatches and skips 9 that land only if a speed measurement fails.
-- **The Numbers:** about −518 production lines if every speed measurement passes; about −442 if F3 fails, and about −380 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +156 after Phase 12) before Phase 15 brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +237 after Phase 12) before Phase 16A brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
+- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,548 changes with no mismatches and skips 9 that land only if a speed measurement fails.
+- **The Numbers:** about −448 production lines if every speed measurement passes; about −372 if F3 fails, and about −310 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +226 after Phase 12) before Phase 16A brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +307 after Phase 12) before Phase 16B brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
 - **The Dry Run:** the whole plan was applied in a throwaway copy and type-checked at every phase end. Phase 1 compiles clean; from Phase 2 on, each phase end shows new errors, about 120 in app code and more in tests, mostly from steps the plan states in words, like rewriting a test. Execution fixes these in the real code, where each phase's checks prove the fix, so the rule that every phase leaves a working state is true at execution rather than on paper.
 
@@ -142,7 +142,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 - Clearing an option that misses pages offers Try Again, which clears the pages still holding that option; a page you've since set to another option keeps it, and one you've set back to the cleared option is cleared with the rest.
 - A change made while a rename is still unfinished, such as renaming an option while Priority's rename owes two pages, counts those two pages in its own notice with Try Again instead of reporting success.
 - A page Pommora can't safely rewrite (no ID, an ID another page shares, or malformed properties at the top) counts as unfinished with Try Again for every change: renames, deletes, option changes, and Context and Space changes, not only Remove.
-- Deleting a page, Collection, or Set, emptying the Trash, moving a page or Set, and restoring something also note what they owe: a link or saved view they can't reach is finished by the same Try Again, and a crash halfway is finished at the next open. Moving a page again before that carries the missed links to where it ends up.
+- Deleting a page, Collection, or Set, emptying the Trash, moving a page or Set, and restoring something also note what they owe: a link or saved view they can't reach is finished by the same Try Again, and a crash halfway is finished at the next open. Moving a page again before that carries the missed links to where it ends up. A restore that worked out a value it couldn't write, such as a returning page's tidied tags or a link going back into a trashed page, remembers exactly what it worked out, and Try Again writes it unless you've changed that value since.
 - Clearing the exclusion cache, and restoring or emptying several Trash entries at once, offer Try Again when something was missed.
 - A damaged settings file goes to your computer's Trash when Pommora rebuilds it, instead of staying in the Nexus as a hidden `.bad-` copy; the notes file follows the same rule, and it's removed once nothing is owed. A notes file damaged before Pommora could read it says once that its unfinished work was lost, where today that loss is silent.
 
@@ -164,7 +164,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** To change a property or tag across the Nexus, Pommora first finds the files that hold it. For pages, it asks its index, a quick-lookup record of every page's values. For Spaces, it opens every Space's settings file on disk every time, though it already holds them all in memory. Context changes find pages a third way that skips the "only inside Collections" filter, so a Context rename reaches loose pages outside every Collection, like NexusOS's quick-filter page in the Agenda folder, while a property rename doesn't; nobody ever stated that as a rule. Four Trash and restore routines write Space files with their own loops, and two of them ignore a failed write. On every open, Pommora also re-reads every page in every Collection with a Multi-Select, to register words added while it was closed.
 
-**What Changes:** A restore that couldn't update a Space's file or a returning page tells you with a warning, and the restore still completes. Otherwise, nothing you'll see.
+**What Changes:** A restore that couldn't update a Space's file or a returning page still completes and tells you; one it could read offers Try Again, and one it couldn't read gets a warning. Otherwise, nothing you'll see.
 
 **Your Calls:**
 - [G-1] One shared way of finding files for every change: pages from the index, Spaces from what Pommora already holds.
@@ -413,5 +413,5 @@ Every other collapsed group in NexusOS holds only folders and stays as it is, an
 ### Good to Know
 
 - **The Issues Renumbering:** when Phase 18 closes three entries, the index script renumbers the rest, so I-076 and I-077 become I-073 and I-074.
-- **Speed Checks:** a speed check that fails its threshold comes back to you as a call with its numbers, never as a new Issue.
+- **Speed Checks:** a speed check that fails its threshold takes the fallback its rule names, and the final report gives its numbers; none becomes a new Issue or waits on you.
 - **`reveal-parity`:** one older test script looks for a page `~/Test` doesn't hold; it sits outside Properties and stays as it is.
