@@ -1,7 +1,7 @@
 import { parseContextKey } from './contexts'
 import { asString, asStringArray } from '../Nexus/coerce'
 import type { Json } from '../Files/stableJson'
-import type { Rewrite } from '../Properties/governedSweep'
+import type { Rewrite } from '../Nexus/governedSweep'
 import { pathExists, readJsonObject, withoutId } from '../Files/atomicWrite'
 import { visibleFolders } from '../Files/walk'
 import { contextsDir, sidecarPath } from '../Paths/paths'

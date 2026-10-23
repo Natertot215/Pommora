@@ -7,7 +7,7 @@ import {
   sweepGovernedRoots,
   type SweepPlan,
   unsweptLine,
-} from './governedSweep'
+} from '../Nexus/governedSweep'
 import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
 import { editHeldList, memberKey } from '../Files/rootValues'

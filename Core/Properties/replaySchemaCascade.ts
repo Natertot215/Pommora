@@ -3,7 +3,7 @@
 import { errText, fault, ok, type Result } from '../Contract/result'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { collectionFolders } from './governedSweep'
+import { collectionFolders } from '../Nexus/governedSweep'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { renameSweep } from './registryProperty'
 import { deletePlan, stripAndRemove } from './deleteProperty'

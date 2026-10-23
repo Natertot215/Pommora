@@ -5,7 +5,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { fault, ok, type Result } from '../Contract/result'
-import { type Rewrite, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { type Rewrite, sweepGovernedRoots, unsweptLine } from '../Nexus/governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import {
   excludedMatcher,

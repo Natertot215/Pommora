@@ -27,7 +27,7 @@ import {
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
-} from './governedSweep'
+} from '../Nexus/governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'

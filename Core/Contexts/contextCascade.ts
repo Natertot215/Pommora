@@ -18,7 +18,7 @@ import {
   sweepGovernedRoots,
   undoSweep,
   unsweptLine,
-} from '../Properties/governedSweep'
+} from '../Nexus/governedSweep'
 import { withoutOrderId } from './spaceSidecar'
 import { editHeldList, rekeyHeld, stripKeys, type KeyCollision } from '../Files/rootValues'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
