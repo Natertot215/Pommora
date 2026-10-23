@@ -87,6 +87,14 @@ it holds each group's cases and the decision each proves. It takes the groups to
 `node live-drive.mjs 1 6B` — seeds each group's own Sets, pages, and settings in `~/Test`'s
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 
+**Properties Drive** (`Properties Drive/live-drive.mjs`) drives the Properties Restructure's visible
+surfaces in groups that follow the plan's phases: group 1 reads the Filedata columns' labels and
+glyphs on a table, its Sort By picker, and its filter picker, and writes a Context-typed definition
+into `~/Test/.nexus/properties.json` by hand to see it set aside. `MATRIX.md` beside it holds each
+group's cases and the decision each proves. It takes the groups to run as arguments —
+`node live-drive.mjs 1` — puts back what each group seeds, on debug port 9403, and exits non-zero
+on any failed check.
+
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build
 with its own userData and the drive's debug port, writes a screenshot of each state to
 `$POMMORA_DRIVE_SHOTS` (a per-drive folder in the system temp directory otherwise), and restores
