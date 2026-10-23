@@ -196,7 +196,6 @@ describe('renames and casing', () => {
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'pommora',
-      skipped: [page()],
     })
     const projects = (title: string) => join(contextsDir(root), 'Projects', title)
 
@@ -224,7 +223,6 @@ describe('renames and casing', () => {
         contextId: 'ctx_projects',
         oldTitle: 'Projects',
         newTitle: 'projects',
-        skipped: [],
       })
       await replayPendingRename(root)
       expect(await readdir(contextsDir(root))).toContain('projects')
@@ -238,7 +236,6 @@ describe('renames and casing', () => {
         contextId: 'ctx_projects',
         oldTitle: 'Projects',
         newTitle: 'projects',
-        skipped: [],
       })
       await replayPendingRename(root)
       expect(await readdir(contextsDir(root))).toContain('projects')
@@ -356,7 +353,7 @@ describe('renameContextOp', () => {
       await chmod(page(), 0o644)
       expect(r).toEqual(fault(`refused ${unsweptLine(1)}`))
       expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
-      expect((await readJournal(root))?.skipped).toEqual([page()])
+      expect(await readJournal(root)).toMatchObject({ oldTitle: 'Ventures', newTitle: 'Projects' })
       await replayPendingRename(root)
       expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
       expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
@@ -502,7 +499,6 @@ describe('a rename the journal refused reports what it skipped, with a retry', (
       spaceId: 'sp-cs',
       oldTitle: 'CS 161',
       newTitle: 'CS 162',
-      skipped: [],
     })
     await refreshTree(root)
   })
@@ -579,7 +575,11 @@ describe('a rename the journal took reports what it skipped, with a retry', () =
     'answers the line and a retry, and a retry that reaches everything clears the journal',
     async () => {
       expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
-      expect((await readJournal(root))?.skipped).toEqual([broken()])
+      expect(await readJournal(root)).toMatchObject({
+        spaceId: 'sp-pom',
+        oldTitle: 'Pommora',
+        newTitle: 'Pom',
+      })
       await rm(broken())
       await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
       await refreshTree(root)
@@ -594,7 +594,11 @@ describe('a rename the journal took reports what it skipped, with a retry', () =
     async () => {
       expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
       expect(await settledMutate(root, retry, deps)).toEqual(skippedLine)
-      expect((await readJournal(root))?.skipped).toEqual([broken()])
+      expect(await readJournal(root)).toMatchObject({
+        spaceId: 'sp-pom',
+        oldTitle: 'Pommora',
+        newTitle: 'Pom',
+      })
     },
   )
 
@@ -640,8 +644,7 @@ describe('skip-aware journal (D-7b)', () => {
       const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
       expect(r.ok).toBe(true)
       expect(await regTitle('ctx_projects')).toBe('Ventures')
-      const j = await readJournal(root)
-      expect(j?.skipped).toEqual([broken])
+      expect(await readJournal(root)).toMatchObject({ oldTitle: 'Projects', newTitle: 'Ventures' })
 
       await rm(broken)
       await writeFile(broken, '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
@@ -808,7 +811,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
-      skipped: [],
     })
     await rm(join(contextsDir(root), 'Projects'), { recursive: true })
     await mkdir(join(contextsDir(root), 'Ventures', 'Pommora'), { recursive: true })
@@ -827,7 +829,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
-      skipped: [],
     })
     await replayPendingRename(root)
     await replayPendingRename(root)
@@ -841,7 +842,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       contextId: 'ctx_projects',
       oldTitle: 'SomethingElse',
       newTitle: 'Ventures',
-      skipped: [],
     })
     await replayPendingRename(root)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
@@ -867,7 +867,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'Pommora 2',
-      skipped: [],
     })
     await replayPendingRename(root)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
@@ -886,7 +885,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'Pommora 2',
-      skipped: [],
     })
     await replayPendingRename(root)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
@@ -897,7 +895,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     contextId: 'ctx_projects',
     oldTitle: 'Projects',
     newTitle: 'Ventures',
-    skipped: [],
   }
 
   it('an unreadable registry holds the journal and leaves every page as it was', async () => {
@@ -925,7 +922,6 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       spaceId: 'sp-pom',
       oldTitle: 'Pommora',
       newTitle: 'Pommora 2',
-      skipped: [],
     }
     await writeJournal(root, j)
     await replayPendingRename(root)
@@ -948,16 +944,13 @@ describe('the journal slot law', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Projects 2',
-      skipped: ['Notes/A.md'],
     }
     await writeJournal(root, owed)
-    const stranger = { contextId: 'ctxC', oldTitle: 'Classes', newTitle: 'Classes 2', skipped: [] }
+    const stranger = { contextId: 'ctxC', oldTitle: 'Classes', newTitle: 'Classes 2' }
     await writeJournal(root, stranger)
     expect((await readJournal(root))?.contextId).toBe('ctx_projects')
     await clearJournal(root, stranger)
     expect(await readJournal(root)).not.toBeNull()
-    await writeJournal(root, { ...owed, skipped: [] })
-    expect((await readJournal(root))?.skipped).toEqual([])
     await clearJournal(root, owed)
     expect(await readJournal(root)).toBeNull()
   })
@@ -967,14 +960,12 @@ describe('the journal slot law', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Work',
-      skipped: ['Notes/A.md'],
     })
     // The newer intent must displace the abandoned one, or the next open's replay re-applies "Projects → Work" over the user's choice.
     await writeJournal(root, {
       contextId: 'ctx_projects',
       oldTitle: 'Work',
       newTitle: 'Projects',
-      skipped: [],
     })
     expect((await readJournal(root))?.newTitle).toBe('Projects')
   })
@@ -986,7 +977,6 @@ describe('the journal slot law', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Work',
-      skipped: ['Notes/A.md'],
     })
     expect((await renameContextOp(root, 'ctx_projects', 'Projects')).ok).toBe(true)
     expect(await readJournal(root)).toBeNull()

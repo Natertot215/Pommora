@@ -416,7 +416,6 @@ describe('openNexusSequence', () => {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
-      skipped: [],
     })
 
     try {

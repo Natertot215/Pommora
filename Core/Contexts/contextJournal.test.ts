@@ -11,7 +11,7 @@ describe('readJournal', () => {
     const root = tempRoot('journal-')
     const file = nexusConfig(root, CONTEXT_JOURNAL_FILENAME)
     await mkdir(dirname(file), { recursive: true })
-    const record = { contextId: 'c', oldTitle: 'Areas', newTitle: '../../outside', skipped: [] }
+    const record = { contextId: 'c', oldTitle: 'Areas', newTitle: '../../outside' }
     await writeFile(file, JSON.stringify(record))
     expect(await readJournal(root)).toBeNull()
     await writeFile(file, JSON.stringify({ ...record, newTitle: 'Realms' }))

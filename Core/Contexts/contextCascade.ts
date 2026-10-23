@@ -181,8 +181,7 @@ async function unlinkMembers(
 }
 
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {
-  if (skipped.length) await writeJournal(root, { ...j, skipped })
-  else await clearJournal(root, j)
+  if (!skipped.length) await clearJournal(root, j)
 }
 
 const commitTitle = (root: string, id: string, title: string) =>
@@ -190,7 +189,7 @@ const commitTitle = (root: string, id: string, title: string) =>
     contexts: cur.contexts.map((c) => (c.id === id ? { ...c, title } : c)),
   }))
 
-/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse and a journal that holds what the reverse skipped. */
+/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse, whose own record stays while it skipped a file. */
 export async function renameContextOp(
   root: string,
   contextId: string,
@@ -206,14 +205,14 @@ export async function renameContextOp(
   // A retry sweeps what the rename left to the title the Context holds now, which a later rename may have moved on.
   if (from !== undefined) {
     const taken = reg.value.contexts.some(rivalTitled(from, contextId))
-    const again = { contextId, oldTitle: from, newTitle: entry.title, skipped: [] }
+    const again = { contextId, oldTitle: from, newTitle: entry.title }
     return taken ? ok(null) : sweepAgain(root, entry.title, again)
   }
   if (entry.title === newName) return ok(null)
   if (reg.value.contexts.some(rivalTitled(newName, contextId)))
     return fail('exists', `"${newName}" already exists.`)
 
-  const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
+  const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName }
   await writeJournal(root, j)
 
   const oldDir = join(contextsDir(root), entry.title)
@@ -260,7 +259,7 @@ export async function renameSpaceOp(
   if (from !== undefined) {
     const taken = group.spaces.some(rivalTitled(from, spaceId))
     const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: space.title }
-    return taken ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
+    return taken ? ok(null) : sweepAgain(root, group.def.title, again)
   }
   if (space.title === newName) return ok(null)
   const dir = join(root, space.path)
@@ -272,7 +271,6 @@ export async function renameSpaceOp(
     spaceId,
     oldTitle: space.title,
     newTitle: newName,
-    skipped: [],
   }
   await writeJournal(root, j)
   try {
