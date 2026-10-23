@@ -5,8 +5,8 @@ import { patchSidecar } from '../Files/sidecar'
 import { writeNavigationState } from '../Navigation/navigationFile'
 import { landValue } from '../Files/rootValues'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
-import { adoptImageSource } from '../Assets/adoptFile'
-import { fault, ok, type Result } from '../Contract/result'
+import { adoptImageSource, UNREADABLE } from '../Assets/adoptFile'
+import { ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
@@ -24,7 +24,7 @@ export async function setBannerOp(
     const abs = resolved.value
     return machine().lock(abs, async () => {
       // Checked before the adoption, so a page gone since the tree held it adopts no image.
-      if ((await readTextOrNull(abs)) === null) return fault('That page could not be read.')
+      if ((await readTextOrNull(abs)) === null) return UNREADABLE
       const adopted = await adopt()
       if (!adopted.ok) return adopted
       const rel = adopted.value
