@@ -10955,6 +10955,7 @@ No repository file changes on **Pass**. On **Fail**, the tree reads as Task 6-4'
 
 #### Behavior Changes and Disclosures
 
+- **A Space Listed Twice Reads Once (P-4, ruled 10-23-2026):** `resolveContextKeys` keeps each Space once, in first-seen order, as a repeated Multi-Select or File entry reads since Phase 4B, so `Areas: [Home, Home]` shows one chip where it showed two until the next write, and `Cell.tsx`'s repeat-key block leaves with the case it served; it lands at Phase 6's head with its own commit (−7), counted in this phase's row.
 - **An Undo That Misses a File Offers Try Again (Try Again Unclogs, Nathan's Ruling):** an undo whose put-back can't reach a file (gone, unreadable, unwritable) answers "Couldn’t update N Items." with Try Again, which sends only the entries that missed, so a file the undo already put back is never written again over an edit made since; at HEAD's put-back plan the warning carried no Try Again.
 - **A Value Write Its File Refused Offers Try Again (Try Again Unclogs, Nathan's Intent):** a value set from a cell, a picker, or the panel that fails on its file (unreadable, unwritable, or busy writing) shows the refusal with Try Again, which sends the same value again; a refusal no retry can change (the page is gone, or the value is refused) reads as today.
 - **Undo Puts Back the File's Own Spelling (E-1, E-2; Nathan's Intent):** a bare `Status:` comes back bare, a key's quoting, flow style, trailing comment, and a YAML alias (`B: *x`) come back as written, and only the edited key changes; a sibling the write tidied stays tidied. I-063's unfixed half no longer occurs (its text is P18's).
@@ -34741,7 +34742,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
 | 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
 | 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
-| 6 | −266 | +305 | +39 | −252 / +286 / +34 | −241 |
+| 6 | −266 | +305 | +39 | −266 / +293 / +27 | −248 |
 | 7 | −622 | +469 | −153 | | |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
