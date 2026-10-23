@@ -158,7 +158,7 @@ export function spelledNumber(next: number, raw: unknown): unknown {
 }
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
-  if (isBlankRaw(typeof raw === 'string' ? raw.trim() : raw)) return NULL_VALUE
+  if (isBlankRaw(raw)) return NULL_VALUE
   const kind = PROPERTY_TYPES[def.type].kind
   switch (kind) {
     case 'number': {
@@ -262,9 +262,11 @@ export function valueToWrite(
   return ok(encodeValue(def, value))
 }
 
-/** Blank as a file spells it, before any definition reads it. */
+/** Blank as a file spells it, before any definition reads it: nothing, only spaces, or an empty list. */
 export const isBlankRaw = (raw: unknown): boolean =>
-  raw == null || raw === '' || (Array.isArray(raw) && raw.length === 0)
+  raw == null ||
+  (typeof raw === 'string' && raw.trim() === '') ||
+  (Array.isArray(raw) && raw.length === 0)
 
 export const selectedValues = (current: PropertyValue | null): string[] => {
   if (!current) return []
@@ -273,22 +275,6 @@ export const selectedValues = (current: PropertyValue | null): string[] => {
   return []
 }
 
-export function isBlankValue(value: PropertyValue | null): boolean {
-  if (value === null) return true
-  switch (value.kind) {
-    case 'null':
-      return true
-    case 'multiSelect':
-    case 'context':
-    case 'file':
-      return value.value.length === 0
-    case 'select':
-    case 'link':
-    case 'dateTime':
-    case 'text':
-      return value.value === ''
-    case 'number':
-    case 'checkbox':
-      return false
-  }
-}
+/** A value holding nothing by `isBlankRaw`'s rule; a number or a checked box always holds one. */
+export const isBlankValue = (value: PropertyValue | null): boolean =>
+  value === null || !('value' in value) || isBlankRaw(value.value)

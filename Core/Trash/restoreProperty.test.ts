@@ -198,6 +198,33 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
   })
 
+  it('refills a page whose key holds only spaces, as it fills a blank one', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Phase',
+      type: 'select',
+      select_options: [{ id: 'opt_wip', key: 'wip', label: 'wip' }],
+    })
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    const page = await createTestPage(notes, 'P', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    const key = (await liveDef(c.value.id)).key
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['wip'])),
+    )
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, '   ')),
+    )
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
+  })
+
   it('a restore under a label taken since lands numbered and says so', async () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)
