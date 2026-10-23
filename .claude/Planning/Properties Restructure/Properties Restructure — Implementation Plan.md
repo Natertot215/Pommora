@@ -1153,6 +1153,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [ ] Task 5-6 · Drive group 4
   - [ ] Review Checkpoint
   - [ ] Closeout P4A–P5 (two `opus-high` agents, inward and outward)
+- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 6 opens]`
 - [ ] **Phase 6** — Undo From the File
   - [ ] Task 6-1 · A swept page reads and lands one key's node
   - [ ] Task 6-2 · Every value write answers `undo`, and one `putBackEntries` lands it
