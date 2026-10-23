@@ -148,14 +148,6 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
-  it('never removes a value — a mixed Select list keeps its unregistered member', async () => {
-    await frontmatter('Status:\n  - Open\n  - Blocked')
-    await runRepairSweep(root, await seedContentIndex(root))
-    const out = await readFile(page, 'utf8')
-    expect(out).toContain('- Open')
-    expect(out).toContain('- Blocked')
-  })
-
   it('never removes a value — a mixed Context list keeps its unresolvable Space', async () => {
     await writeFile(
       contextsRegistryFile(root),

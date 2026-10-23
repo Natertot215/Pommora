@@ -193,6 +193,30 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual([])
   })
 
+  it('a Select holding several words lands as the one option it shows, and one naming no option stays as written', () => {
+    const several = reconcileGovernedRoot({ Stage: ['Open', 'Done'] }, world)
+    expect(several.root.Stage).toEqual(['Done'])
+    expect(several.changed).toEqual(['Stage'])
+    const mixed = reconcileGovernedRoot({ Stage: ['Open', 'Zed'] }, world)
+    expect(mixed.root.Stage).toEqual(['Open'])
+    expect(mixed.changed).toEqual(['Stage'])
+    const none = reconcileGovernedRoot({ Stage: ['Zed'] }, world)
+    expect(none.root.Stage).toEqual(['Zed'])
+    expect(none.changed).toEqual([])
+  })
+
+  it('a Multi-Select holding a word no option names collapses its duplicates, keeping the word', () => {
+    const { root, changed } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta', 'alpha'] }, world)
+    expect(root.Tags).toEqual(['alpha', 'zeta'])
+    expect(changed).toEqual(['Tags'])
+  })
+
+  it('a Multi-Select’s options move ahead of the words no option names, as its own pick writes them', () => {
+    const { root, changed } = reconcileGovernedRoot({ Tags: ['zeta', 'alpha'] }, world)
+    expect(root.Tags).toEqual(['alpha', 'zeta'])
+    expect(changed).toEqual(['Tags'])
+  })
+
   it('a registered key the Collection does not assign passes verbatim', () => {
     const { root, changed } = reconcileGovernedRoot({ Priority: 5 }, world)
     expect(root.Priority).toBe(5)
@@ -282,28 +306,28 @@ describe('reencode — a frozen copy names only what still exists', () => {
 
   it('keeps a Link value naming a page the world holds, whatever it carries', () => {
     const value = '[[Alpha#Intro|see]]'
-    expect(reencode(link, value, { holds })).toBe(value)
+    expect(reencode(link, value, { holds }).next).toBe(value)
   })
 
   it('drops a Link value naming a page the world doesn’t hold', () => {
-    expect(reencode(link, '[[Gone]]', { holds })).toBeUndefined()
+    expect(reencode(link, '[[Gone]]', { holds }).next).toBeUndefined()
   })
 
   it('drops a hand-written markdown link naming a page the world doesn’t hold, and keeps an address', () => {
-    expect(reencode(link, '[x](Gone)', { holds })).toBeUndefined()
-    expect(reencode(link, '[x](example.com)', { holds })).toBe('[x](example.com)')
+    expect(reencode(link, '[x](Gone)', { holds }).next).toBeUndefined()
+    expect(reencode(link, '[x](example.com)', { holds }).next).toBe('[x](example.com)')
   })
 
   it('keeps a Link value naming only a heading of the page it sits on', () => {
     const value = '[[#Intro]]'
-    expect(reencode(link, value, { holds })).toBe(value)
+    expect(reencode(link, value, { holds }).next).toBe(value)
   })
 
   it('keeps an address, and a live read or an options-only freeze keeps any page', () => {
     const url = 'https://example.com'
-    expect(reencode(link, url, { holds })).toBe(url)
-    expect(reencode(link, '[[Gone]]')).toBe('[[Gone]]')
-    expect(reencode(link, '[[Gone]]', {})).toBe('[[Gone]]')
+    expect(reencode(link, url, { holds }).next).toBe(url)
+    expect(reencode(link, '[[Gone]]').next).toBe('[[Gone]]')
+    expect(reencode(link, '[[Gone]]', {}).next).toBe('[[Gone]]')
   })
 })
 

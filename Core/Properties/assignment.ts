@@ -46,7 +46,7 @@ export async function refillValues(
   frozen: Frozen,
 ): Promise<Set<string>> {
   return sweepRootsById(root, roots, values, (raw, value) => {
-    const next = reencode(def, value, frozen)
+    const { next } = reencode(def, value, frozen)
     return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
   })
 }
