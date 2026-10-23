@@ -145,7 +145,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **P-2 [CONFIRMED]:** Picking a Select value drops words no option names, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
 - **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Planning Findings*' *§Edge Rules* lists stay as they are.
 - **P-4 [CONFIRMED]:** A Space listed twice on a page reads once, as a repeated Multi-Select or File entry does, and the chip code that kept repeats apart leaves.
-- **P-5 [CONFIRMED]:** A value of only spaces is empty everywhere: it reads as empty, a tidy removes its line, and a restore or re-add fills it as it fills a blank one (Nathan, 10-23-2026: "spaces-only are empty and should be removed").
+- **P-5 [CONFIRMED]:** Pommora never leaves an empty property line: a property's or Context's key whose value is blank (bare, null, empty, only spaces, or an empty list) comes off the page on every write, tidy, and undo, reads as empty, and is filled by a restore or re-add; keys Pommora doesn't govern are left alone (Nathan, 10-23-2026: "spaces-only are empty and should be removed"; "Option B. That's what I've over-and-over again told you").
 - **P-6 [CONFIRMED]:** The refusal of a Space linking itself leaves, since no path produces that request (Nathan, 10-23-2026).
 - **P-7 [CONFIRMED]:** A banner that can't be assigned because its file can't be read says "That file could not be read." (Nathan, 10-23-2026), and the History Timeframe row keeps its planned description, "How long file history and the recovery stash are kept."
 
