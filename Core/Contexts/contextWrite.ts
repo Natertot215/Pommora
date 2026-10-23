@@ -4,9 +4,8 @@ import { namesValue, stripList } from '../Files/rootValues'
 import { contextWorldOf, type ContextWorld } from './contextResolve'
 import {
   pageWorldOf,
-  rewriteRaw,
-  rewriteRootAt,
   spaceWorldOf,
+  writeGovernedKey,
   writeSpaceSidecar,
   writtenRoot,
 } from '../Nexus/governedRoot'
@@ -60,12 +59,7 @@ export async function setPageContext(
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
-    let before: unknown
-    const written = await rewriteRootAt(absFile, (page) => {
-      before = page.pair(key)
-      return rewriteRaw((raw) => writtenRoot(raw, key, value, governed))(page)
-    })
-    return written.ok ? ok(before) : written
+    return writeGovernedKey(absFile, key, value, governed)
   })
 }
 
@@ -100,14 +94,13 @@ async function setSpaceContext(
     })
     if (!half.ok) skipped++
   }
-  let before: unknown
-  const written = await writeSpaceSidecar(join(root, a.path), (raw) => {
-    before = raw[key]
-    return writtenRoot(raw, key, value, world)
-  })
-  return written.ok
-    ? ok({ skipped, entries: [...entries, { file: a.path, fieldId: contextId, before }] })
-    : written
+  const before = await writeGovernedKey(join(root, a.path), key, value, world)
+  return before.ok
+    ? ok({
+        skipped,
+        entries: [...entries, { file: a.path, fieldId: contextId, before: before.value }],
+      })
+    : before
 }
 
 export async function setContextOp(

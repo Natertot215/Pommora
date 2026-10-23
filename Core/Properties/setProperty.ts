@@ -1,13 +1,6 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import {
-  pageWorldOf,
-  rewriteRaw,
-  rewriteRootAt,
-  spaceWorldOf,
-  writeSpaceSidecar,
-  writtenRoot,
-} from '../Nexus/governedRoot'
+import { pageWorldOf, spaceWorldOf, writeGovernedKey } from '../Nexus/governedRoot'
 import type { MutateContext } from '../Nexus/mutate'
 import { type MutateReply, type MutateRequest, undoOf } from '../Nexus/mutateRequest'
 import { valueToWrite } from './propertyValue'
@@ -25,12 +18,8 @@ export async function setSpacePropertyOp(
   if (!def) return NO_PROPERTY
   const value = valueToWrite(def, req.value)
   const world = spaceWorldOf(await liveTreeOf(root))
-  let before: unknown
-  const written = await writeSpaceSidecar(resolved.value, (raw) => {
-    before = raw[def.key]
-    return writtenRoot(raw, def.key, value, world)
-  })
-  return written.ok ? undoOf([{ file: req.path, fieldId: def.id, before }]) : written
+  const before = await writeGovernedKey(resolved.value, def.key, value, world)
+  return before.ok ? undoOf([{ file: req.path, fieldId: def.id, before: before.value }]) : before
 }
 
 export async function setPagePropertyOp(
@@ -45,11 +34,7 @@ export async function setPagePropertyOp(
     if (!def) return NO_PROPERTY
     const value = valueToWrite(def, req.value)
     const world = await pageWorldOf(root, resolved.value)
-    let before: unknown
-    const written = await rewriteRootAt(resolved.value, (page) => {
-      before = page.pair(def.key)
-      return rewriteRaw((raw) => writtenRoot(raw, def.key, value, world))(page)
-    })
-    return written.ok ? undoOf([{ file: req.path, fieldId: def.id, before }]) : written
+    const before = await writeGovernedKey(resolved.value, def.key, value, world)
+    return before.ok ? undoOf([{ file: req.path, fieldId: def.id, before: before.value }]) : before
   })
 }
