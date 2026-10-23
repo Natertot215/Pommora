@@ -1,8 +1,7 @@
 import { dirname, join } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
-import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { landingRefusal, renameFolderEntity } from './folderEntity'
@@ -18,8 +17,7 @@ export async function renameOp(
   if (req.kind !== 'page') {
     const refused = await landingRefusal(root, dirname(abs), req.newName)
     if (refused) return refused
-    const r = await renameFolderEntity(root, abs, req.newName)
-    return r.ok ? ok({}) : r
+    return done(await renameFolderEntity(root, abs, req.newName))
   }
   const r = req.fromCreate
     ? await createDisambiguated(
@@ -28,5 +26,5 @@ export async function renameOp(
         (name) => pathExists(join(dirname(abs), `${name}.md`)),
       )
     : await renamePage(abs, req.newName)
-  return r.ok ? ok({}) : r
+  return done(r)
 }
