@@ -87,7 +87,7 @@ function answers(
   if (t === 'title') return true
   switch (specOf(t)?.origin) {
     case undefined:
-    case 'stamp':
+    case 'filedata':
       return false
     case 'context':
       return true

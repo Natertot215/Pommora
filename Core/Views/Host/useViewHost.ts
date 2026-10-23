@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { type PropertyType, specOf } from '../../Properties/properties'
+import { type ColumnType, specOf } from '../../Properties/properties'
 import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
@@ -188,7 +188,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const commitGroupValue = (
     pageId: string,
     propertyId: string,
-    type: PropertyType | 'title' | undefined,
+    type: ColumnType | undefined,
     groupKey: string,
   ): Promise<boolean> | undefined => {
     const row = rowById.get(pageId)

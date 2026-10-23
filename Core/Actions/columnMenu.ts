@@ -14,7 +14,7 @@ import {
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
-import { LINK_DISPLAYS, PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
+import { type ColumnType, LINK_DISPLAYS, PROPERTY_TYPES } from '../Properties/properties'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 import type { ActionItem } from './menuModel'
 
@@ -32,12 +32,12 @@ interface ColumnMenuContext {
 
 /** `current` is the RESOLVED style (defaults applied), so the checked row reflects what renders. */
 export interface StyleMenuContext {
-  type: PropertyType
+  type: ColumnType
   current: ColumnStyle
   barCapable?: boolean
 }
 
-function styleMenuLabel(type: PropertyType): string {
+function styleMenuLabel(type: ColumnType): string {
   return type === 'link' || type === 'number' ? 'Format' : 'Style'
 }
 

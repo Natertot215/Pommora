@@ -1,7 +1,7 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { isPlainObject } from '../Contract/validators'
+import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
@@ -16,22 +16,22 @@ export const typeIds = z.enum([
   'multiSelect',
   'status',
   'link',
-  'context', // the type of a column synthesized from a registry Context; creating a property with it is refused
-  'createdTime',
-  'lastEditedTime',
   'file',
+  'context', // the type of a column synthesized from a registry Context; the property list never holds it
 ])
 export type PropertyType = z.infer<typeof typeIds>
+type FiledataType = 'title' | 'createdTime' | 'lastEditedTime'
+export type ColumnType = PropertyType | FiledataType
 
 // `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
 type TypeSpec = Readonly<{
   kind: ValueKind
-  origin: 'user' | 'stamp' | 'context'
+  origin: 'user' | 'context' | 'filedata'
   groups?: true
   options?: 'select' | 'status'
 }>
 
-export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
+export const PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>> = {
   text: { kind: 'text', origin: 'user' },
   number: { kind: 'number', origin: 'user' },
   checkbox: { kind: 'checkbox', origin: 'user' },
@@ -40,24 +40,27 @@ export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
   multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select' },
   status: { kind: 'select', origin: 'user', groups: true, options: 'status' },
   link: { kind: 'link', origin: 'user' },
-  context: { kind: 'context', origin: 'context' },
-  createdTime: { kind: 'dateTime', origin: 'stamp' },
-  lastEditedTime: { kind: 'dateTime', origin: 'stamp' },
   file: { kind: 'file', origin: 'user' },
+  context: { kind: 'context', origin: 'context' },
+  title: { kind: 'text', origin: 'filedata' },
+  createdTime: { kind: 'dateTime', origin: 'filedata' },
+  lastEditedTime: { kind: 'dateTime', origin: 'filedata' },
 }
+
+export const isUserType = (t: string): t is PropertyType =>
+  isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'
 
 export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string, D> =>
   new Map(Array.from(defs, (d) => [d.key, d]))
 
-export const specOf = (t: PropertyType | 'title' | undefined): TypeSpec | undefined =>
-  t === undefined || t === 'title' ? undefined : PROPERTY_TYPES[t]
+export const specOf = (t: ColumnType | undefined): TypeSpec | undefined =>
+  t === undefined ? undefined : PROPERTY_TYPES[t]
 
-export const groupable = (t: PropertyType | 'title' | undefined): boolean =>
-  specOf(t)?.groups === true
+export const groupable = (t: ColumnType | undefined): boolean => specOf(t)?.groups === true
 
 export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
 
-export function pickKindOf(t: PropertyType | 'title' | undefined): OptionPickKind | null {
+export function pickKindOf(t: ColumnType | undefined): OptionPickKind | null {
   const kind = specOf(t)?.kind
   switch (kind) {
     case 'select':
@@ -235,7 +238,7 @@ export const RESERVED_PROPERTY_ID = {
   location: '_location',
 } as const
 
-export const STAMP_TYPE: Readonly<Partial<Record<string, PropertyType>>> = {
+export const STAMP_TYPE: Readonly<Partial<Record<string, ColumnType>>> = {
   [RESERVED_PROPERTY_ID.createdAt]: 'createdTime',
   [RESERVED_PROPERTY_ID.modifiedAt]: 'lastEditedTime',
 }

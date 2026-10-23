@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '../../Actions/columnMenu'
 import { defaultStyleFor, type ColumnStyle } from '../../Properties/columnStyles'
-import type { PropertyDefinition, PropertyType } from '../../Properties/properties'
+import type { ColumnType, PropertyDefinition } from '../../Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '../views'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
@@ -29,7 +29,7 @@ interface ColumnWidth {
 
 // Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
-export const WIDTHS: Record<PropertyType | 'title', ColumnWidth> = {
+export const WIDTHS: Record<ColumnType, ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },
   context: { min: 80, default: 140, max: 350 },
   status: { min: 65, default: 120, max: 250 },
@@ -49,7 +49,7 @@ const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 
 // Per-look min overrides replace the type's base min; status, select and multi-select are one option-chip family, so they share OPTION_MIN.
 const OPTION_MIN = { compact: 65, standard: 80 } as const
-const STYLE_MIN: Partial<Record<PropertyType | 'title', Partial<Record<string, number>>>> = {
+const STYLE_MIN: Partial<Record<ColumnType, Partial<Record<string, number>>>> = {
   checkbox: { switch: 70 },
   status: OPTION_MIN,
   select: OPTION_MIN,
@@ -100,7 +100,7 @@ export function clampWidth(
 // ── Alignment ───────────────────────────────────────────────────────────────
 
 // The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. Both stamps keep Title's left metadata treatment.
-const DEFAULT_ALIGN: Record<PropertyType | 'title', ColumnAlign> = {
+const DEFAULT_ALIGN: Record<ColumnType, ColumnAlign> = {
   title: 'left',
   checkbox: 'center',
   status: 'center',
