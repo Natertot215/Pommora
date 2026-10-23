@@ -10,6 +10,17 @@ export function landValue(root: Json, key: string, value: unknown): Json {
   return next
 }
 
+/** For each of `keys` that `root` holds, the key after it in `root`'s order, which its line stands above in a page; a key that's last has none. */
+export function aboveOf(root: Json, keys: readonly string[]): Record<string, string> {
+  const order = Object.keys(root)
+  return Object.fromEntries(
+    keys.flatMap((k) => {
+      const above = order.includes(k) ? order[order.indexOf(k) + 1] : undefined
+      return above === undefined ? [] : [[k, above]]
+    }),
+  )
+}
+
 /** What a member matches by: a scalar's trimmed text, or the member itself. */
 export const memberKey = (v: unknown): unknown => (isScalar(v) ? exactTitle(v) : v)
 

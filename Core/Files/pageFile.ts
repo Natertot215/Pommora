@@ -167,6 +167,15 @@ function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
 export const UNPARSED_FRONTMATTER =
   'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.'
 
+/** `key` holding `node`: in its place when the block holds it; otherwise above the key `above` names when the block holds that key, and last when it doesn't. */
+function setAbove(doc: Document, key: string, node: unknown, above?: string): void {
+  const items = isMap(doc.contents) && !doc.has(key) ? doc.contents.items : null
+  doc.set(key, node)
+  const at = items?.findIndex((p) => String(p.key) === above) ?? -1
+  if (items && at >= 0) items.splice(at, 0, ...items.splice(-1))
+}
+
+/** Lands each of `modeledKeys` as `modeled` holds it and drops one it holds nothing for; a key the block doesn't hold lands above the first key after it in `modeled` the block holds, and last when none follows. */
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
@@ -176,9 +185,11 @@ function mergeInto(
     const written = (key: string): boolean => modeled[key] !== undefined
     const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
     const held = valuesOf(doc)
+    const order = Object.keys(modeled)
     for (const key of modeledKeys.filter(written)) {
       if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
-      doc.set(key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]))
+      const above = order.slice(order.indexOf(key) + 1).find((k) => Object.hasOwn(held, k))
+      setAbove(doc, key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]), above)
     }
     for (const key of dropped) doc.delete(key)
   }
@@ -256,8 +267,8 @@ export interface SweptPage {
   merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
   /** `key`'s pair as the block was parsed, its quoting, style, comment, and alias kept; undefined when the block holds no `key`. */
   pair: (key: string) => string | undefined
-  /** The page with `key` holding the node `landing` spells, whatever key `landing` names, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
-  withPair: (key: string, landing: string | undefined) => string | null
+  /** The page with `key` holding the node `landing` spells, verbatim under E-1 and whatever key `landing` names, landed by `setAbove` rather than `mergeInto`'s root order, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
+  withPair: (key: string, landing: string | undefined, above?: string) => string | null
 }
 
 // One parse serves a sweep's admission, its read of the values, and its merge. Any identity short of unknown admits it, so an identity-less page is still swept: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. Its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
@@ -277,11 +288,11 @@ export function sweepParse(content: string): SweptPage | null {
     raw,
     merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body),
     pair,
-    withPair: (key, landing) => {
+    withPair: (key, landing, above) => {
       const one = landing === undefined ? null : parseDocument(landing).contents
       if (landing !== undefined && !(isMap(one) && one.items.length === 1)) return null
       const held = pair(key)
-      if (isMap(one)) doc.set(key, one.items[0].value)
+      if (isMap(one)) setAbove(doc, key, one.items[0].value, above)
       else doc.delete(key)
       return pair(key) === held ? null : envelope(fenced, mergedBlock(doc), body)
     },

@@ -47,13 +47,13 @@ export function contextTarget(
   return ok({ key: contextKey(group.def.title), value: titles.length ? titles : undefined })
 }
 
-/** Answers what the page held under the Context's key, as `PutBack.before` spells it. */
+/** Answers what the page held under the Context's key and the key its line stood above, as `PutBack` spells them. */
 export async function setPageContext(
   absFile: string,
   root: string,
   contextId: string,
   spaceIds: string[],
-): Promise<Result<unknown>> {
+): Promise<Result<Pick<PutBack, 'before' | 'above'>>> {
   return machine().lock(absFile, async () => {
     const governed = await pageWorldOf(root, absFile)
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
@@ -94,13 +94,13 @@ async function setSpaceContext(
     })
     if (!half.ok) skipped++
   }
-  const before = await writeGovernedKey(join(root, a.path), key, value, world)
-  return before.ok
+  const was = await writeGovernedKey(join(root, a.path), key, value, world)
+  return was.ok
     ? ok({
         skipped,
-        entries: [...entries, { file: a.path, fieldId: contextId, before: before.value }],
+        entries: [...entries, { file: a.path, fieldId: contextId, ...was.value }],
       })
-    : before
+    : was
 }
 
 export async function setContextOp(
@@ -118,8 +118,8 @@ export async function setContextOp(
     under && tree.unreadable?.find((u) => u.kind === 'space' && u.path.startsWith(under))
   if (unread) return fault(`Unreadable Space sidecar: ${basename(unread.path)}`)
   if (isMarkdownFile(path)) {
-    const before = await setPageContext(target.value, root, contextId, spaceIds)
-    return before.ok ? undoOf([{ file: path, fieldId: contextId, before: before.value }]) : before
+    const was = await setPageContext(target.value, root, contextId, spaceIds)
+    return was.ok ? undoOf([{ file: path, fieldId: contextId, ...was.value }]) : was
   }
   const owner = spaceAt(tree, path)
   const own = owner && world.groupById.get(owner.contextId)
