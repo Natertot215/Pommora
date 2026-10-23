@@ -1,6 +1,6 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { uniqueOptionGroups, validateOptionValues } from './validation'
-import { queryKeyHolders } from '../Index/contentIndex'
+import { queryKeyHolders, readPageRelations } from '../Index/contentIndex'
 import {
   governedReach,
   type Rewrite,
@@ -127,7 +127,7 @@ export function unregisteredMembers(def: PropertyDefinition, raw: unknown): stri
   })
 }
 
-/** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole. */
+/** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole: an open's pages from the index its seed just filled, and a settle's from the files it was handed, which a rescope's reseed has yet to index. */
 export async function registerHeldOptions(root: string, rels?: readonly string[]): Promise<void> {
   try {
     await serializeSchemaOp(root, async () => {
@@ -151,9 +151,13 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           (d) => PROPERTY_TYPES[d.type].registersMembers,
         )
         if (!defs.length) continue
+        const files = pages ?? pagePathsIn(containerAt(tree, rel))
+        const indexed = rels || space ? null : readPageRelations(files)
         if (space) collect(space.values ?? {}, defs)
+        else if (indexed)
+          for (const { values } of Object.values(indexed.pages)) collect(values, defs)
         else
-          for (const page of pages ?? pagePathsIn(containerAt(tree, rel))) {
+          for (const page of files) {
             const read = await readPageRecord(join(root, page), page).catch(() => null)
             if (read?.kind === 'read') collect(read.fm, defs)
           }

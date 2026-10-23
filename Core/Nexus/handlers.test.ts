@@ -26,6 +26,7 @@ import { projectBaseline, readBaseline } from './remintLedger'
 import { stabilize } from './treeStabilize'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY, isUlidShaped } from './identityMark'
+import { registerHeldOptions } from '../Properties/optionOps'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
@@ -163,7 +164,7 @@ describe('openNexusSequence', () => {
     expect(openStores).toHaveBeenLastCalledWith(root, NEXUS)
   })
 
-  it('registers the Multi-Select member a page already holds once the Nexus opens', async () => {
+  it('the open registers the Multi-Select members its pages hold from the index, and a settle registers from the file it’s handed', async () => {
     const registry = join(root, '.nexus', 'properties.json')
     await seedNexus(root, {
       defs: [
@@ -184,14 +185,23 @@ describe('openNexusSequence', () => {
       join(root, 'Library', 'Notes.md'),
       `---\nID: ${NOTES}\nTags:\n  - Ideas\n---\nbody`,
     )
+    const options = async (): Promise<string[]> =>
+      (
+        await readJsonAt<{ defs: { tags: { select_options: { label: string }[] } } }>(registry)
+      ).defs.tags.select_options.map((o) => o.label)
     await openNexusSequence(ctx, root, false)
-    await vi.waitFor(async () =>
-      expect(
-        (
-          await readJsonAt<{ defs: { tags: { select_options: { label: string }[] } } }>(registry)
-        ).defs.tags.select_options.map((o) => o.label),
-      ).toEqual(['alpha', 'Ideas']),
-    )
+    await vi.waitFor(async () => expect(await options()).toEqual(['alpha', 'Ideas']))
+    // Changed on disk with no event, so the index still holds what the open's seed read.
+    const notes = join(root, 'Library', 'Notes.md')
+    await writeFile(notes, `---\nID: ${NOTES}\nTags:\n  - Ideas\n  - Later\n---\nbody`)
+    const reads = vi.spyOn(readNexusModule, 'readPageRecord')
+    // The open's repair-and-register chain may still be settling a write of its own; only this call's reads count.
+    reads.mockClear()
+    await registerHeldOptions(root)
+    expect(reads).not.toHaveBeenCalled()
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+    await registerHeldOptions(root, ['Library/Notes.md'])
+    expect(await options()).toEqual(['alpha', 'Ideas', 'Later'])
   })
 
   it('stamps a folder of ID-less notes and holds each under the ID in its file', async () => {
