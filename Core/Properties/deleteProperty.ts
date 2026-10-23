@@ -15,6 +15,8 @@ import { nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import {
   clearSchemaJournal,
+  OWED,
+  readSchemaJournal,
   schemaCascade,
   type SchemaJournal,
   writeSchemaJournal,
@@ -99,6 +101,7 @@ export function deleteProperty(root: string, propertyId: string): Promise<Mutate
 async function deleteInner(root: string, propertyId: string): Promise<MutateReply> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
+  if (await readSchemaJournal(root)) return OWED
   const key = def.key
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id.

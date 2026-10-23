@@ -5,6 +5,7 @@ import { same } from '../Files/stableJson'
 import { journalSlot } from './journalSlot'
 import { type ConfigReach, reachReport } from '../Nexus/configReach'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
+import { fail } from '../Contract/result'
 
 export type SchemaJournal =
   | { op: 'rename'; id: string; from: string; to: string }
@@ -44,6 +45,8 @@ const slot = journalSlot<SchemaJournal>(PROPERTY_JOURNAL_FILENAME, decodeSchemaJ
 export const writeSchemaJournal = slot.write
 export const readSchemaJournal = slot.read
 export const clearSchemaJournal = slot.clear
+
+export const OWED = fail('owed', 'An earlier change hasn’t reached every file yet.')
 
 /** A schema op's answer: its cascade, and while it skipped a file, its record's replay as the Try Again. */
 export const schemaCascade = (reach: ConfigReach, _record: SchemaJournal): MutateOutcome => ({

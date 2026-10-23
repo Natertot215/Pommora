@@ -27,6 +27,7 @@ import {
 } from './properties'
 import {
   clearSchemaJournal,
+  OWED,
   readSchemaJournal,
   schemaCascade,
   type SchemaJournal,
@@ -42,7 +43,6 @@ import { isMarkdownFile, join } from '../Paths/posix'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
-const OWED = fail('owed', 'An earlier change hasn’t reached every file yet.')
 // A replay over a partly swept file can't tell a moved word from an unmoved one.
 const CROSSED = fail(
   'invalid-property',
