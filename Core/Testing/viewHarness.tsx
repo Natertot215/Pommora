@@ -4,7 +4,6 @@ import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '../Nexus/tree'
-import type { PropertyDefinition } from '../Properties/properties'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { stubPointerCapture } from '@pommora/uix/Utilities/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
@@ -53,25 +52,3 @@ export const settle = (ms = 1): Promise<void> =>
   act(async () => {
     await new Promise((r) => setTimeout(r, ms))
   })
-
-/** The two-group Status property the card suites group and reassign across. */
-export const STATUS_DEF: PropertyDefinition = {
-  id: 'prop_status',
-  label: 'Status',
-  key: 'Status',
-  type: 'status',
-  status_groups: [
-    {
-      id: 'in_progress',
-      label: 'In Progress',
-      color: 'blue',
-      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
-    },
-    {
-      id: 'done',
-      label: 'Done',
-      color: 'green',
-      options: [{ key: 'Complete', label: 'Complete', color: 'green', group_id: 'done' }],
-    },
-  ],
-}

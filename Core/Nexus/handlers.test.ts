@@ -10,7 +10,7 @@ import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { currentSession, startSession, stopSession } from '../Sync/Client/session'
 import { currentStatus } from '../Sync/Client/status'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import * as indexSeedModule from '../Index/indexSeed'
@@ -179,20 +179,17 @@ describe('openNexusSequence', () => {
 
   it('registers the Multi-Select member a page already holds once the Nexus opens', async () => {
     const registry = join(root, '.nexus', 'properties.json')
-    await writeFile(
-      registry,
-      JSON.stringify({
-        defs: {
-          tags: {
-            id: 'tags',
-            label: 'Tags',
-            key: 'Tags',
-            type: 'multiSelect',
-            select_options: [{ key: 'alpha', label: 'alpha' }],
-          },
+    await seedNexus(root, {
+      defs: [
+        {
+          id: 'tags',
+          label: 'Tags',
+          key: 'Tags',
+          type: 'multiSelect',
+          select_options: [{ key: 'alpha', label: 'alpha' }],
         },
-      }),
-    )
+      ],
+    })
     await writeFile(
       join(root, 'Library', '_pagecollection.json'),
       JSON.stringify({ id: 'col-lib', properties: ['tags'] }),

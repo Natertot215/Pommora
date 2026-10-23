@@ -3,7 +3,7 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
@@ -18,6 +18,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './discard'
+import type { PropertyDefinition } from '../Properties/properties'
 
 const trashWrites = vi.hoisted(() => ({ fail: false }))
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -34,15 +35,30 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
 const LINK = 'prop_01KVGMT8BFP350FZZXAMG1QDVY'
+const PRIORITY: PropertyDefinition = {
+  id: PROP,
+  label: 'Priority',
+  key: 'Priority',
+  type: 'select',
+  select_options: [
+    { key: 'hi', label: 'hi', color: 'red' },
+    { key: 'lo', label: 'lo', color: 'blue' },
+  ],
+}
+const RELATED: PropertyDefinition = { id: LINK, label: 'Related', key: 'Related', type: 'link' }
+const tags = (keys: string[]): PropertyDefinition => ({
+  id: PROP,
+  label: 'Tags',
+  key: 'Tags',
+  type: 'multiSelect',
+  select_options: keys.map((k) => ({ key: k, label: k, color: k === 'a' ? 'red' : 'blue' })),
+})
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
 const fm = async (rel: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(join(root, rel), 'utf8'))
-
-const registry = (assigned: string[]): string =>
-  JSON.stringify({ id: 'col-notes', properties: assigned })
 
 async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promise<void>) {
   const d = await settledMutate(root, { op: 'delete', path: rel, kind }, nexusDeps)
@@ -71,26 +87,8 @@ beforeEach(async () => {
     join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
     JSON.stringify({ id: 'sp-pom' }),
   )
-  await writeFile(
-    join(root, '.nexus', 'properties.json'),
-    JSON.stringify({
-      order: [PROP],
-      defs: {
-        [PROP]: {
-          id: PROP,
-          label: 'Priority',
-          key: 'Priority',
-          type: 'select',
-          select_options: [
-            { key: 'hi', label: 'hi', color: 'red' },
-            { key: 'lo', label: 'lo', color: 'blue' },
-          ],
-        },
-      },
-    }),
-  )
+  await seedNexus(root, { defs: [PRIORITY], assigned: { Notes: [PROP] } })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
-  await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([PROP]))
   await writeFile(
     join(root, 'Notes', 'Daily', '_pageset.json'),
     JSON.stringify({ id: 'set-daily' }),
@@ -118,11 +116,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
 
   it('keeps a value whose property was deleted while it sat in the trash — the key is now foreign frontmatter', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(
-        join(root, '.nexus', 'properties.json'),
-        JSON.stringify({ order: [], defs: {} }),
-      )
-      await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
+      await seedNexus(root, { defs: [], assigned: { Notes: [] } })
     })
     const f = await fm('Notes/Alpha.md')
     expect(f.Priority).toBe('hi')
@@ -131,7 +125,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
 
   it('keeps a value whose property is no longer assigned to the destination Collection', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(join(root, 'Notes', '_pagecollection.json'), registry([]))
+      await seedNexus(root, { assigned: { Notes: [] } })
     })
     expect((await fm('Notes/Alpha.md')).Priority).toBe('hi')
   })
@@ -255,64 +249,21 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('drops a Select value whose option was deleted while it sat in the Trash', async () => {
     // The definition still stands; the value it held no longer can. Both restore routes ask the same standing check, so this cannot survive here and be dropped by a property restore.
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(
-        join(root, '.nexus', 'properties.json'),
-        JSON.stringify({
-          order: [PROP],
-          defs: {
-            [PROP]: {
-              id: PROP,
-              label: 'Priority',
-              key: 'Priority',
-              type: 'select',
-              select_options: [{ key: 'lo', label: 'lo', color: 'blue' }],
-            },
-          },
-        }),
-      )
+      await seedNexus(root, {
+        defs: [{ ...PRIORITY, select_options: [{ key: 'lo', label: 'lo', color: 'blue' }] }],
+      })
     })
     expect((await fm('Notes/Alpha.md')).Priority).toBeUndefined()
   })
 
   it('keeps a multi-value tag’s survivors when only some options died', async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: [PROP],
-        defs: {
-          [PROP]: {
-            id: PROP,
-            label: 'Tags',
-            key: 'Tags',
-            type: 'multi_select',
-            select_options: [
-              { key: 'a', label: 'a', color: 'red' },
-              { key: 'b', label: 'b', color: 'blue' },
-            ],
-          },
-        },
-      }),
-    )
+    await seedNexus(root, { defs: [tags(['a', 'b'])] })
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\nTags:\n  - a\n  - b\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await writeFile(
-        join(root, '.nexus', 'properties.json'),
-        JSON.stringify({
-          order: [PROP],
-          defs: {
-            [PROP]: {
-              id: PROP,
-              label: 'Tags',
-              key: 'Tags',
-              type: 'multi_select',
-              select_options: [{ key: 'a', label: 'a', color: 'red' }],
-            },
-          },
-        }),
-      )
+      await seedNexus(root, { defs: [tags(['a'])] })
     })
     expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
     const def = (
@@ -324,13 +275,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   })
 
   it('drops a gone Link held under its key in another casing and parks it', async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: [LINK],
-        defs: { [LINK]: { id: LINK, label: 'Related', key: 'Related', type: 'link' } },
-      }),
-    )
+    await seedNexus(root, { defs: [RELATED] })
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\nrelated: "[[Nowhere]]"\n---\nbody`,
@@ -361,13 +306,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   })
 
   it('keeps a Link naming a page renamed meanwhile, which follows it once landed', async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: [LINK],
-        defs: { [LINK]: { id: LINK, label: 'Related', key: 'Related', type: 'link' } },
-      }),
-    )
+    await seedNexus(root, { defs: [RELATED] })
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\nRelated: "[[Beta]]"\n---\nbody`,
@@ -411,26 +350,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
 })
 
 describe('a returning page takes the current keys', () => {
-  const priority = (fields: Record<string, unknown>): Promise<void> =>
-    writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: [PROP],
-        defs: {
-          [PROP]: {
-            id: PROP,
-            label: 'Priority',
-            key: 'Priority',
-            type: 'select',
-            select_options: [
-              { key: 'hi', label: 'hi', color: 'red' },
-              { key: 'lo', label: 'lo', color: 'blue' },
-            ],
-            ...fields,
-          },
-        },
-      }),
-    )
+  const priority = (fields: Partial<PropertyDefinition>): Promise<void> =>
+    seedNexus(root, { defs: [{ ...PRIORITY, ...fields }] })
   const page = (frontmatter: string): Promise<void> =>
     writeFile(join(root, 'Notes', 'Alpha.md'), `---\nID: ${PAGE_A}\n${frontmatter}\n---\nbody`)
 
@@ -494,16 +415,12 @@ describe('a returning page takes the current keys', () => {
   })
 
   it('leaves a spelling two current keys share as written', async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_due_date', 'prop_due_dash'],
-        defs: {
-          prop_due_date: { id: 'prop_due_date', label: 'Due Date', key: 'Due Date', type: 'text' },
-          prop_due_dash: { id: 'prop_due_dash', label: 'Due-Date', key: 'Due-Date', type: 'text' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [
+        { id: 'prop_due_date', label: 'Due Date', key: 'Due Date', type: 'text' },
+        { id: 'prop_due_dash', label: 'Due-Date', key: 'Due-Date', type: 'text' },
+      ],
+    })
     await page('due-date: x')
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
@@ -759,20 +676,16 @@ describe('a Space sidecar is a context root too', () => {
 
   it('a returning Space keeps a key Pommora manages byte-identical though a property spells it', async () => {
     await seedPassenger()
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_hidden'],
-        defs: {
-          prop_hidden: {
-            id: 'prop_hidden',
-            label: 'Heading Icon Hidden',
-            key: 'Heading Icon Hidden',
-            type: 'text',
-          },
+    await seedNexus(root, {
+      defs: [
+        {
+          id: 'prop_hidden',
+          label: 'Heading Icon Hidden',
+          key: 'Heading Icon Hidden',
+          type: 'text',
         },
-      }),
-    )
+      ],
+    })
     const held = JSON.stringify({ id: 'sp-sap', heading_icon_hidden: true })
     const file = join(contextsDir(root), 'Projects', 'Sapphire', '_space.json')
     await writeFile(file, held)

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import fixture from '../../Testing/fixtures/collection-with-status.json'
-import registry from '../../Testing/fixtures/registry.json'
+import { FIXTURE_DEFS } from '../../Testing/definitions'
 import { savedView, type SavedView } from '../views'
-import { propertyDefinition, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { resolveColumns } from './columns'
 
 const schema: PropertyDefinition[] = [
@@ -21,9 +21,7 @@ const ids = (cols: { id: string }[]): string[] => cols.map((c) => c.id)
 describe('resolveColumns — fixture', () => {
   it('emits propertyOrder verbatim, never auto-shows an unaccounted prop, no _modified_at default-on', () => {
     const v = savedView.parse(fixture.views[0])
-    const fixtureSchema = fixture.properties.map((id) =>
-      propertyDefinition.parse((registry as Record<string, unknown>)[id]),
-    )
+    const fixtureSchema = fixture.properties.map((id) => FIXTURE_DEFS[id])
     const cols = resolveColumns(v, fixtureSchema, CONTEXT_IDS)
     expect(ids(cols)).toEqual(['prop_status', '_title', 'ctx_projects', 'ctx_topics', 'ctx_areas'])
     expect(cols.map((c) => c.kind)).toEqual(['property', 'title', 'context', 'context', 'context'])

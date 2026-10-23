@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '../../Nexus/identityMark'
 import fixture from '../../Testing/fixtures/collection-with-status.json'
-import registry from '../../Testing/fixtures/registry.json'
+import { FIXTURE_DEFS } from '../../Testing/definitions'
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
 import { savedView, mintDefaultView, LOCATION_SORT, type SavedView } from '../views'
-import { propertyDefinition, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { flattenContainer, groupPlan } from './group'
 import { resolveView as resolveViewOf } from './resolveView'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
@@ -80,9 +80,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
 describe('resolveView — full pipeline over the fixture', () => {
   it('resolves columns (status-first) + grouped rows (manual order, empty band rendered, no-value tail)', () => {
     const view = savedView.parse(fixture.views[0])
-    const schema = fixture.properties.map((id) =>
-      propertyDefinition.parse((registry as Record<string, unknown>)[id]),
-    )
+    const schema = fixture.properties.map((id) => FIXTURE_DEFS[id])
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'in_progress' }, schema) },
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'opt_open' }, schema) },
@@ -233,9 +231,7 @@ describe('resolveView — group_order', () => {
       ...fixture.views[0],
       structural_order_mode: 'location',
     })
-    const schema = fixture.properties.map((id) =>
-      propertyDefinition.parse((registry as Record<string, unknown>)[id]),
-    )
+    const schema = fixture.properties.map((id) => FIXTURE_DEFS[id])
     const { rows, setTree } = flattenContainer(
       collection([page('p1')]),
       pageValues({
