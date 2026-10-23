@@ -4,7 +4,7 @@ import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { aboveOf, landValue, memberKey, namesValue } from '../Files/rootValues'
+import { landValue, memberKey, namesValue } from '../Files/rootValues'
 import { atomicWriteFile, parseJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
@@ -179,7 +179,7 @@ export const changedKeys = (raw: Json, next: Json): string[] =>
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
 
-/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing where the next root places it; null when it changes none. A changed key the next root holds no value for is deleted. */
+/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing last; null when it changes none. A changed key the next root holds no value for is deleted. */
 export const rewriteRaw =
   (rewrite: (raw: Json) => Json | null) =>
   (page: SweptPage): string | null => {
@@ -228,7 +228,7 @@ export async function writeGovernedKey(
   const written = isMarkdownFile(abs)
     ? await rewriteRootAt(abs, (page) => {
         was.before = page.pair(key)
-        was.above = aboveOf(page.raw, [key])[key]
+        was.above = page.above(key)
         return rewriteRaw((raw) => writtenRoot(raw, key, value, world))(page)
       })
     : await writeSpaceSidecar(abs, (raw) => {
