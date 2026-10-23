@@ -41,7 +41,7 @@ export async function click(c, selector, text) {
 
 // Opens a Collection A page from its card, the way a person would.
 export async function openPage(c, title) {
-  await click(c, 'button[aria-label=collections]')
+  await click(c, 'button[aria-label=Collections]')
   await sleep(300)
   await click(c, '.row', 'Collection A')
   await sleep(600)

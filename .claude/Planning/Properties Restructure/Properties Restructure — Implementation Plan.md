@@ -1096,16 +1096,16 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 #### Process Overview
 
-- [ ] **Phase 1** — Removal First
-  - [ ] Task 1-1 · The shared test seed: `seedNexus` and `Core/Testing/definitions.ts`
-  - [ ] Task 1-2 · The migration layer leaves, and `typeIds` is the one type enum
-  - [ ] Task 1-3 · The bare hidden-group keys stop being read
-  - [ ] Task 1-4 · The value encoder stops refusing a shape no path produces
-  - [ ] Task 1-5 · `RenameJournal.skipped` leaves
-  - [ ] Task 1-6 · `resolveRowOrder` and `pageRow.ts` move to their owners
-  - [ ] Task 1-7 · Unread exports close, and comments that restate code leave
-  - [ ] Task 1-8 · The test describers' sweep
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — Removal First
+  - [x] Task 1-1 · The shared test seed: `seedNexus` and `Core/Testing/definitions.ts`
+  - [x] Task 1-2 · The migration layer leaves, and `typeIds` is the one type enum
+  - [x] Task 1-3 · The bare hidden-group keys stop being read
+  - [x] Task 1-4 · The value encoder stops refusing a shape no path produces
+  - [x] Task 1-5 · `RenameJournal.skipped` leaves
+  - [x] Task 1-6 · `resolveRowOrder` and `pageRow.ts` move to their owners
+  - [x] Task 1-7 · Unread exports close, and comments that restate code leave
+  - [x] Task 1-8 · The test describers' sweep
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — What Counts as a Property
   - [ ] Task 2-1 · `schema.ts` becomes `validation.ts`
   - [ ] Task 2-2 · Nine user types plus Context, and `ColumnType` keys `PROPERTY_TYPES`
@@ -3077,7 +3077,7 @@ The folded describe renames `items` to `rows`, since `moveItem.test.ts:4` alread
 
 - [ ] Gates clean from a clean state: `npm run typecheck && npm run test && npm run lint`; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` green, the engine graph's UIX leaf list unchanged.
 - [ ] Every task's sibling-sweep grep answers as stated, and `git grep -nwE "migrateConfig|LEGACY_TYPE_IDS|legacyBucketKey|has no shape for|Properties/rowOrder|Properties/pageRow|fixtures/registry" -- Core UIX Desktop .claude/scripts` answers nothing.
-- [ ] `Core/Sync/` is byte-identical to `BASELINE` (`git diff 7b5e294ab -- Core/Sync` is empty), `mergePolicy.test.ts:120-136` included.
+- [ ] `Core/Sync/` is byte-identical to `BASELINE` (`git diff 807baac3b -- Core/Sync` is empty), `mergePolicy.test.ts:120-136` included.
 - [ ] The Number: `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-1-delta.md` over this phase's own commits, its fixes included; its **Actionable** column is recorded in *§Net Ledger* beside the *Line Total* below, and a figure above it is reported in chat with what the increase buys before Phase 2 opens.
 - [ ] No drive group: the phase has no visible surface. A read-only open of a copy of `~/NexusOS` (or `~/Test`) through `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` shows every Collection's views, hidden groups, and property columns as before; the copy is deleted afterward.
 
@@ -34736,7 +34736,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 
 | Phase | Written Removed | Written Added | Written Net | Actionable | Cumulative |
 |---|---|---|---|---|---|
-| 1 | −300 | +164 | −136 | | |
+| 1 | −300 | +164 | −136 | −300 / +164 / −136 | −136 |
 | 2 | −305 | +253 | −52 | | |
 | 3 | −384 | +369 | −15 | | |
 | 4A | −531 | +484 | −47 | | |
