@@ -3,7 +3,6 @@ import type { PropertyDefinition } from './properties'
 import {
   readNumber,
   spelledNumber,
-  applyValueAtRoot,
   decodeValue,
   encodeValue,
   findOption,
@@ -335,27 +334,6 @@ describe('the no-empties rule — no value, no key', () => {
   it('number 0 and a checked checkbox are real values, not blanks', () => {
     expect(isBlankValue({ kind: 'number', value: 0 })).toBe(false)
     expect(isBlankValue({ kind: 'checkbox', value: true })).toBe(false)
-  })
-})
-
-describe('applyValueAtRoot', () => {
-  it('writes the exact key beside another casing, and a clear leaves that casing', () => {
-    const status = { ...statusDef, label: 'Status', key: 'Status' }
-    const done = { kind: 'select', value: 'Done' } as const
-    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({
-      status: 'Open',
-      Status: ['Done'],
-    })
-    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({ status: 'Open' })
-  })
-
-  it('a Multi-Select pick keeps the words no option names after it, and a clear drops the key', () => {
-    const tags = { ...multiSelectOf('Docs', 'Work'), label: 'Tags', key: 'Tags' }
-    const picked: PropertyValue = { kind: 'multiSelect', value: ['Docs', 'Work'] }
-    expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, picked)).toEqual({
-      Tags: ['Docs', 'Work', 'Ideas'],
-    })
-    expect(applyValueAtRoot({ Tags: ['Docs', 'Ideas'] }, tags, null)).toEqual({})
   })
 })
 

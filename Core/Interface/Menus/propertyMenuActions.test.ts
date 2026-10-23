@@ -5,7 +5,6 @@ import type { PageFrontmatter } from '../../Nexus/schemas'
 import type { NexusTree } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { assignValue, type ValueWriter } from '../../Properties/assignValue'
-import { applyValueAtRoot } from '../../Properties/propertyValue'
 import { pageRowOf, spaceRowOf } from '../../Views/pageRow'
 import type { ViewRow } from '../../Views/viewRow'
 import { makeTree } from '../../Testing/testTree'
@@ -250,10 +249,11 @@ describe('a property pick from the page menu', () => {
       const { run, sent } = harness(frontmatter)
       run(action)
       const req = sent[0]
-      if (req.op === 'setProperty') {
-        const def = SCHEMA.find((d) => d.id === req.propertyId)
-        if (def) frontmatter = applyValueAtRoot(frontmatter as PageFrontmatter, def, req.value)
-      }
+      if (req.op === 'setProperty')
+        frontmatter = {
+          ...frontmatter,
+          Tags: req.value?.kind === 'multiSelect' ? req.value.value : undefined,
+        }
       return req
     }
     expect(pick('prop:prop_tags:x')).toMatchObject({

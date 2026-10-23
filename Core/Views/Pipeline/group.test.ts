@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { NULL_VALUE } from '../../Properties/propertyValue'
 import { ID_KEY } from '../../Nexus/identityMark'
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
 import type { ViewRow } from '../viewRow'
@@ -265,7 +266,7 @@ describe('toRow stamps', () => {
     }
   })
 
-  it('a pending Context patch overrides the node links per Context', () => {
+  it('a pending pick rides beside the node links, which stand as read', () => {
     const linked: PageNode = { ...page('p1'), contextValues: { g1: ['a'], g2: ['b'] } }
     const { rows } = flattenContainer(
       collection([], [linked]),
@@ -274,12 +275,13 @@ describe('toRow stamps', () => {
           frontmatter: { [ID_KEY]: 'p1' },
           createdAt: null,
           modifiedAt: null,
-          contextValues: { g2: [] },
+          picked: { g2: NULL_VALUE },
         },
       },
       {},
     )
-    expect(rows[0]?.contextValues).toEqual({ g1: ['a'], g2: [] })
+    expect(rows[0]?.contextValues).toEqual({ g1: ['a'], g2: ['b'] })
+    expect(rows[0]?.picked).toEqual({ g2: NULL_VALUE })
   })
 
   it('a page absent from the batch stands on a ID-keyed frontmatter', () => {

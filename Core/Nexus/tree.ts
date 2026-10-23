@@ -84,7 +84,7 @@ export interface ValueChange {
 }
 
 export type ValuesEpoch = { n: number } & (
-  | { kind: 'rename'; oldKey: string; newKey: string }
+  | { kind: 'rename' }
   | { kind: 'container'; changes: ValueChange[] }
 )
 

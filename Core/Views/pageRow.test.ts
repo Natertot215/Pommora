@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PageFrontmatter } from '../Nexus/schemas'
+import { NULL_VALUE } from '../Properties/propertyValue'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { linkedSpacesTree } from '../Testing/testTree'
 import { spaceRowOf } from './pageRow'
@@ -22,11 +22,11 @@ describe('spaceRowOf', () => {
     expect(row.path).toBe('.nexus/contexts/Realms/Work')
   })
 
-  it('lets pending frontmatter stand in for the node values and a Context patch override the union per Context', () => {
+  it('carries the pending picks beside the node’s values and links', () => {
     const { tree, node } = linked()
-    const fm = { Status: ['Paused'] } as unknown as PageFrontmatter
-    const row = spaceRowOf(tree, node, fm, { g2: [] })
-    expect(row.frontmatter).toBe(fm)
-    expect(row.contextValues).toEqual({ g2: [] })
+    const row = spaceRowOf(tree, node, { g2: NULL_VALUE })
+    expect(row.frontmatter).toEqual({ Status: ['Active'], ID: 'a1' })
+    expect(row.contextValues).toEqual({ g2: ['b1'] })
+    expect(row.picked).toEqual({ g2: NULL_VALUE })
   })
 })

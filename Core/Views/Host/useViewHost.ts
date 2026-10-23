@@ -174,7 +174,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
       schema,
       mutate,
       rowOf: (id) => rows.find((r) => r.id === id),
-      apply: (id, fm, write, contexts) => patchOverride(setValueOverride, id, fm, write, contexts),
+      apply: (id, picked, write) => patchOverride(setValueOverride, id, picked, write),
     }
     return () => {
       writer.current = null

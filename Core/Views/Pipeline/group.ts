@@ -109,9 +109,6 @@ export function toRow(
   pageMetadata: Record<string, PageMeta>,
 ): ViewRow {
   const v = values[page.id]
-  const contextValues = v?.contextValues
-    ? { ...page.contextValues, ...v.contextValues }
-    : page.contextValues
   return {
     id: page.id,
     title: page.title,
@@ -121,7 +118,8 @@ export function toRow(
     frontmatter: frontmatterOf(values, page.id),
     createdAt: v?.createdAt ?? null,
     modifiedAt: v?.modifiedAt ?? null,
-    ...(contextValues !== undefined ? { contextValues } : {}),
+    ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
+    ...(v?.picked ? { picked: v.picked } : {}),
   }
 }
 

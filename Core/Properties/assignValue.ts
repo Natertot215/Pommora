@@ -1,9 +1,8 @@
 import type { RefObject } from 'react'
-import type { PageFrontmatter } from '../Nexus/schemas'
 import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
-import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyValue'
-import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import { isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
 import { pageIndexOf } from '../Nexus/record'
@@ -14,12 +13,7 @@ export interface ValueWriter {
   schema: PropertyDefinition[]
   mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
   rowOf: (id: string) => ViewRow | undefined
-  apply: (
-    pageId: string,
-    fm: PageFrontmatter,
-    write: Promise<boolean>,
-    contexts?: Record<string, string[]>,
-  ) => void
+  apply: (pageId: string, picked: Picked, write: Promise<boolean>) => void
 }
 
 /** Sends `req` with `value` laid over the row while it's in flight; undefined for a property the writer's schema lacks. */
@@ -30,21 +24,12 @@ function send(
   value: PropertyValue | null,
   req: MutateRequest,
 ): Promise<MutateOutcome | null> | undefined {
-  let patched = row.frontmatter
-  let contexts: Record<string, string[]> | undefined
-  if (column.kind === 'context')
-    contexts = { [column.id]: value?.kind === 'context' ? value.value : [] }
-  else {
-    const def = w.schema.find((d) => d.id === column.id)
-    if (!def) return undefined
-    patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
-  }
+  if (column.kind !== 'context' && !w.schema.some((d) => d.id === column.id)) return undefined
   const sent = w.mutate(req)
   w.apply(
     row.id,
-    patched,
+    { [column.id]: value ?? NULL_VALUE },
     sent.then((done) => done !== null),
-    contexts,
   )
   return sent
 }

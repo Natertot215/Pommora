@@ -6,6 +6,7 @@ import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
+import { NULL_VALUE } from './propertyValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -69,9 +70,8 @@ describe('assignValue', () => {
     )
     expect(apply).toHaveBeenCalledWith(
       'page1',
-      { id: 'page1', Tag: ['blue'] },
+      { prop_tag: { kind: 'select', value: 'blue' } },
       expect.anything(),
-      undefined,
     )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setProperty',
@@ -93,9 +93,8 @@ describe('assignValue', () => {
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith(
       'page1',
-      { id: 'page1', Tag: ['red'] },
+      { prop_tag: { kind: 'select', value: 'red' } },
       expect.anything(),
-      undefined,
     )
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'putBack',
@@ -117,7 +116,7 @@ describe('assignValue', () => {
     row = rowOf({ id: 'page1', Tag: ['blue'] })
     await settled()
     expect(undoValue(null)).toBe(true)
-    expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything(), undefined)
+    expect(apply).toHaveBeenLastCalledWith('page1', { prop_tag: NULL_VALUE }, expect.anything())
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'putBack',
       entries: [{ file: row.path, fieldId: 'prop_tag' }],
@@ -127,19 +126,14 @@ describe('assignValue', () => {
 
   it('patches the live row, not the one the caller captured', () => {
     const captured = row
-    row = rowOf({ id: 'page1', Tag: ['red'], Note: 'landed' })
+    row = { ...rowOf({ id: 'page1', Tag: ['red'] }), path: '/nexus/Notes/Moved.md' }
     assignValue(
       writer,
       captured,
       { id: 'prop_tag', kind: 'property' },
       { kind: 'select', value: 'blue' },
     )
-    expect(apply).toHaveBeenCalledWith(
-      'page1',
-      { id: 'page1', Tag: ['blue'], Note: 'landed' },
-      expect.anything(),
-      undefined,
-    )
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ path: '/nexus/Notes/Moved.md' }))
   })
 
   it('lays the Context patch beside the frontmatter and mutates the context', async () => {
@@ -157,9 +151,11 @@ describe('assignValue', () => {
         value: ['space1'],
       },
     )
-    expect(apply).toHaveBeenCalledWith('page1', { id: 'page1', Tag: ['red'] }, expect.anything(), {
-      ctx_areas: ['space1'],
-    })
+    expect(apply).toHaveBeenCalledWith(
+      'page1',
+      { ctx_areas: { kind: 'context', value: ['space1'] } },
+      expect.anything(),
+    )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setContext',
       path: row.path,

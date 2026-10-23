@@ -5,6 +5,7 @@ import type { PropertyDefinition } from './properties'
 import { columnType, declaredType, resolveFieldValue } from './fieldValue'
 import { fileName } from '../Connections/linkValue'
 import { propsAtRoot } from '../Testing/pageValues'
+import { NULL_VALUE } from './propertyValue'
 
 const schema: PropertyDefinition[] = [
   {
@@ -176,6 +177,31 @@ describe('resolveFieldValue', () => {
     }
     expect(rfv(bare, '_created_at')).toEqual({ kind: 'null' })
     expect(rfv(bare, '_modified_at')).toEqual({ kind: 'null' })
+  })
+
+  it('a picked value stands in for what the frontmatter holds, a Context’s ids included', () => {
+    const tag: PropertyDefinition = {
+      id: 'prop_tag',
+      label: 'Tag',
+      key: 'Tag',
+      type: 'select',
+      select_options: [
+        { key: 'red', label: 'red' },
+        { key: 'blue', label: 'blue' },
+      ],
+    }
+    const pending: ViewRow = {
+      id: 'x',
+      title: 'X',
+      path: 'x.md',
+      frontmatter: { [ID_KEY]: 'x', Tag: ['red'] },
+      contextValues: { ctx1: ['s1'] },
+      picked: { prop_tag: { kind: 'select', value: 'blue' }, ctx1: NULL_VALUE },
+      createdAt: null,
+      modifiedAt: null,
+    }
+    expect(resolveFieldValue(pending, 'prop_tag', [tag])).toEqual({ kind: 'select', value: 'blue' })
+    expect(resolveFieldValue(pending, 'ctx1', [tag])).toEqual(NULL_VALUE)
   })
 })
 

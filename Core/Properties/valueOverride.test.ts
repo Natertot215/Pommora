@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PageFrontmatter } from '../Nexus/schemas'
+import type { PropertyValue } from './propertyValue'
 import {
   patchOverride,
   retireSettled,
@@ -7,11 +7,11 @@ import {
   type Overrides,
 } from './valueOverride'
 
-const fm = (id: string): PageFrontmatter => ({ id }) as never
+const select = (value: string): PropertyValue => ({ kind: 'select', value })
 const inFlight = new Promise<boolean>(() => {})
 const overrides: Overrides = {
-  a: { fm: fm('a'), write: inFlight },
-  b: { fm: fm('b'), write: 0 },
+  a: { picked: { p: select('a') }, write: inFlight },
+  b: { picked: { p: select('b') }, write: 0 },
 }
 
 describe('retireSettled', () => {
@@ -39,12 +39,12 @@ describe('patchOverride', () => {
     const settled = new Promise<boolean>((r) => {
       land = r
     })
-    patchOverride(set, 'a', fm('a'), settled)
-    expect(state).toEqual({ a: { fm: fm('a'), write: settled } })
+    patchOverride(set, 'a', { p: select('a') }, settled)
+    expect(state).toEqual({ a: { picked: { p: select('a') }, write: settled } })
     land(true)
     await settled
     await Promise.resolve()
-    expect(state).toEqual({ a: { fm: fm('a'), write: settleCount() } })
+    expect(state).toEqual({ a: { picked: { p: select('a') }, write: settleCount() } })
   })
 
   it('an older write landing does not settle a newer override on the same page', async () => {
@@ -53,11 +53,11 @@ describe('patchOverride', () => {
       state = typeof next === 'function' ? next(state) : next
     }
     const first = Promise.resolve(true)
-    patchOverride(set, 'a', fm('a'), first)
-    patchOverride(set, 'a', fm('a2'), inFlight)
+    patchOverride(set, 'a', { p: select('a') }, first)
+    patchOverride(set, 'a', { p: select('a2') }, inFlight)
     await first
     await Promise.resolve()
-    expect(state).toEqual({ a: { fm: fm('a2'), write: inFlight } })
+    expect(state).toEqual({ a: { picked: { p: select('a2') }, write: inFlight } })
     expect(retireSettled(state, null)).toEqual(state)
   })
 
@@ -67,23 +67,23 @@ describe('patchOverride', () => {
       state = typeof next === 'function' ? next(state) : next
     }
     const settled = Promise.resolve(true)
-    patchOverride(set, 'a', fm('a'), settled)
+    patchOverride(set, 'a', { p: select('a') }, settled)
     state = null
     await settled
     await Promise.resolve()
     expect(state).toBeNull()
   })
 
-  it('a pending Context patch outlives a later property edit and merges per Context', () => {
+  it('a pending pick outlives a later pick on another field and merges per field', () => {
     let state: Overrides | null = null
     const set: Parameters<typeof patchOverride>[0] = (next) => {
       state = typeof next === 'function' ? next(state) : next
     }
-    patchOverride(set, 'a', fm('a'), inFlight, { ctx1: ['s1'] })
-    patchOverride(set, 'a', fm('a2'), inFlight)
-    patchOverride(set, 'a', fm('a2'), inFlight, { ctx2: ['s2'] })
+    patchOverride(set, 'a', { ctx1: { kind: 'context', value: ['s1'] } }, inFlight)
+    patchOverride(set, 'a', { p: select('a') }, inFlight)
+    patchOverride(set, 'a', { p: select('a2') }, inFlight)
     expect(state).toEqual({
-      a: { fm: fm('a2'), contexts: { ctx1: ['s1'], ctx2: ['s2'] }, write: inFlight },
+      a: { picked: { ctx1: { kind: 'context', value: ['s1'] }, p: select('a2') }, write: inFlight },
     })
   })
 
@@ -93,7 +93,7 @@ describe('patchOverride', () => {
       state = typeof next === 'function' ? next(state) : next
     }
     const refused = Promise.resolve(false)
-    patchOverride(set, 'a', fm('a'), refused)
+    patchOverride(set, 'a', { p: select('a') }, refused)
     await refused
     await Promise.resolve()
     expect(state).toEqual({ b: overrides.b })

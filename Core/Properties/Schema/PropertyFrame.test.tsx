@@ -501,15 +501,11 @@ describe('native menus + the inline-rename channel', () => {
       input!.blur()
     })
     expect(renameSpy).toHaveBeenCalledWith('prop_status', 'Stage')
-    expect(useSession.getState().valuesEpoch).toMatchObject({
-      kind: 'rename',
-      oldKey: 'Status',
-      newKey: 'Stage',
-    })
+    expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
     expect(host.querySelector('.row-title-input')).toBeNull()
   })
 
-  it('a rename keeping its key leaves the values epoch, and one moving it bumps with its pair', async () => {
+  it('a rename keeping its key leaves the values epoch, and one moving it bumps it', async () => {
     const renameTo = async (from: string, to: string): Promise<void> => {
       renameSpy.mockResolvedValueOnce({
         ok: true,
@@ -532,11 +528,8 @@ describe('native menus + the inline-rename channel', () => {
     await renameTo('status', 'status')
     expect(useSession.getState().valuesEpoch).toBe(before)
     await renameTo('Stage', 'Phase')
-    expect(useSession.getState().valuesEpoch).toMatchObject({
-      kind: 'rename',
-      oldKey: 'Stage',
-      newKey: 'Phase',
-    })
+    expect(useSession.getState().valuesEpoch).not.toBe(before)
+    expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
   })
 
   const openCount = async (): Promise<void> => {
@@ -564,7 +557,7 @@ describe('native menus + the inline-rename channel', () => {
     expect(host.querySelector('button[aria-label="Value Format"]')!.textContent).toBe('Match Title')
   })
 
-  it('a Label Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch with its pair', async () => {
+  it('a Label Format pick over more than one Item asks with the count, then sets the format and bumps the values epoch', async () => {
     await openCount()
     await pick('Label Format', 'lowercase')
     const pending = useSession.getState().pendingConfirm
@@ -574,11 +567,7 @@ describe('native menus + the inline-rename channel', () => {
       pending!.settle(true)
     })
     expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
-    expect(useSession.getState().valuesEpoch).toMatchObject({
-      kind: 'rename',
-      oldKey: 'Count',
-      newKey: 'count',
-    })
+    expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
   })
 
   it('a Label Format pick over one Item sets the format unasked', async () => {

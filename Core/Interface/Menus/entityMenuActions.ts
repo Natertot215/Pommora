@@ -82,8 +82,8 @@ function valueCommitFor(
       schema,
       mutate: (req) => useSession.getState().mutate(req),
       rowOf: (id) => (id === row.id ? row : undefined),
-      apply: (_, frontmatter) => {
-        row = { ...row, frontmatter }
+      apply: (_, picked) => {
+        row = { ...row, picked: { ...row.picked, ...picked } }
       },
     },
   }

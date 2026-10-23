@@ -266,7 +266,7 @@ describe('PropertyPanel', () => {
     await act(async () => push(['p1']))
     await act(async () => {})
     expect(text()).toContain('Beta')
-    await act(async () => useSession.getState().bumpValuesEpoch('Stage', 'Stage'))
+    await act(async () => useSession.getState().bumpValuesEpoch())
     expect(reads()).toEqual([
       ['view:loadValues', 'Col', ['p1']],
       ['view:loadValues', 'Col', ['p1']],
