@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import { parse } from 'yaml'
 import {
+  mintOptionId, optionId,
   ask, check, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
   closePanel, must, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
   settles, shot, sleep, textEl, typeText, until,
@@ -138,7 +139,7 @@ async function makeContext(cdp, title, spaces) {
   return id
 }
 const spaceValue = (cdp, context, title, propertyId, value) =>
-  must(`${title}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: spacePath(context, title), propertyId, value }))
+  must(`${title}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: spacePath(context, title), propertyId, value: byId(propertyId, value) }))
 
 // ── The registry, as Phase 5 leaves it ──────────────────────────────────────
 
@@ -174,11 +175,18 @@ const defineAll = async (cdp, defs) => {
 }
 const set = (kind, value) => ({ set: value === null ? null : { kind, value } })
 const spaces = (context, titles) => ({ context, spaces: titles })
+/** A value naming its options by the ids the property's current definition reads them under. */
+function byId(propertyId, value) {
+  const id = (label) => optionId(defOf(propertyId), label)
+  if (value?.kind === 'select') return { ...value, value: id(value.value) }
+  if (value?.kind === 'multiSelect') return { ...value, value: value.value.map(id) }
+  return value
+}
 const setValue = (cdp, rel, propertyId, value) =>
-  must(`${rel}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: rel, propertyId, value }))
+  must(`${rel}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: rel, propertyId, value: byId(propertyId, value) }))
 const statusGroups = (todo, complete) => [
-  { id: 'todo', label: 'To-do', color: 'grey', options: todo.map((w) => ({ ...word(w), group_id: 'todo' })) },
-  { id: 'complete', label: 'Complete', color: 'green', options: complete.map((w) => ({ ...word(w), group_id: 'complete' })) },
+  { id: 'todo', label: 'To-do', color: 'grey', options: todo.map(word) },
+  { id: 'complete', label: 'Complete', color: 'green', options: complete.map(word) },
 ]
 
 // ── Views, tiles, and the Matrix filter ─────────────────────────────────────
@@ -669,15 +677,14 @@ async function group3(cdp) {
   const columns = Object.values(C)
   const view = mintViewId()
   const exact = mintViewId()
-  const folded = mintViewId()
   await saveView(cdp, view, 'Metadata Drive Words', columns.map((c) => ids[c]))
-  await saveView(cdp, exact, 'Metadata Drive Work', [], { filter: filterOf(rule(ids[C.labels], 'contains_any', ['Work'])) })
-  await saveView(cdp, folded, 'Metadata Drive work', [], { filter: filterOf(rule(ids[C.labels], 'contains_any', ['work'])) })
+  const work = optionId(defOf(ids[C.labels]), 'Work')
+  await saveView(cdp, exact, 'Metadata Drive Work', [], { filter: filterOf(rule(ids[C.labels], 'contains_any', [work])) })
   const undoColumns = Object.values(U)
   const undoView = mintViewId()
   await saveView(cdp, undoView, 'Metadata Drive Undo', undoColumns.map((c) => ids[c]), { filter: filterOf(rule('_title', 'starts_with', 'M3 Undo')) })
-  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], { of: 'option', label: 'green' })).ok, 10000)
-  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], { of: 'option', label: 'ideas' })).ok, 10000)
+  await until('green adopted', async () => (await ask(cdp, 'property:holders', ids[C.colors], { of: 'option', optionId: optionId(defOf(ids[C.colors]), 'green') })).ok, 10000)
+  await until('ideas adopted', async () => (await ask(cdp, 'property:holders', ids[U.tags], { of: 'option', optionId: optionId(defOf(ids[U.tags]), 'ideas') })).ok, 10000)
   await sleep(1500)
   seededAsWritten(G, seeds)
   pin(G, 'E-2', 'a Status adopts no word its options lack', await holds(async () => same(keysOf(ids[C.stage]), ['Todo', 'Done']), 3000), show(wordsOf(ids[C.stage])))
@@ -687,16 +694,13 @@ async function group3(cdp) {
 
   // Is and Is Not compare an option exactly, as Contains Any does; Contains stays folded as search.
   const titled = rule('_title', 'starts_with', 'M3 Filter')
+  const done = optionId(defOf(ids[C.choice]), 'Done')
   for (const [decision, name, r, want] of [
-    ['F-2', 'Select Is names its option exactly', rule(ids[C.choice], 'is', 'Done'), [FILTER_A]],
-    ['F-2', 'Select Is with another casing matches nothing', rule(ids[C.choice], 'is', 'done'), []],
-    ['F-2', 'Select Is Not with another casing excludes nothing', rule(ids[C.choice], 'is_not', 'done'), [FILTER_A, FILTER_B]],
-    ['F-2', 'Select Is Not names its option exactly', rule(ids[C.choice], 'is_not', 'Done'), [FILTER_B]],
+    ['F-2', 'Select Is names its option by id', rule(ids[C.choice], 'is', done), [FILTER_A]],
+    ['F-2', 'Select Is Not names its option by id', rule(ids[C.choice], 'is_not', done), [FILTER_B]],
     ['F-2', 'Select Contains stays folded as search', rule(ids[C.choice], 'contains', 'DON'), [FILTER_A]],
-    ['F-2', 'Status Is with another casing matches nothing', rule(ids[C.stage], 'is', 'todo'), []],
-    ['F-2', 'Status Is names its option exactly', rule(ids[C.stage], 'is', 'Todo'), [FILTER_A]],
-    ['F-2', 'Multi-Select Contains Any with another casing matches nothing', rule(ids[C.labels], 'contains_any', ['work']), []],
-    ['F-2', 'Multi-Select Contains Any names its option exactly', rule(ids[C.labels], 'contains_any', ['Work']), [FILTER_A]],
+    ['F-2', 'Status Is names its option by id', rule(ids[C.stage], 'is', optionId(defOf(ids[C.stage]), 'Todo')), [FILTER_A]],
+    ['F-2', 'Multi-Select Contains Any names its option by id', rule(ids[C.labels], 'contains_any', [work]), [FILTER_A]],
   ]) {
     const filterView = mintViewId()
     await saveView(cdp, filterView, name, [], { filter: filterOf(titled, r) })
@@ -725,7 +729,7 @@ async function group3(cdp) {
   }
 
   await checkCascades(G, cdp, cascades, {
-    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: ids[C.labels], from: 'Work', to: 'Job' }) },
+    option: { label: 'an option rename', decision: 'A-1 F-2', run: () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: ids[C.labels], optionId: work, label: 'Job' }) },
     space: { label: 'a Space retitle', decision: 'A-2', run: () => ask(cdp, 'mutate', { op: 'renameSpace', spaceId: spaceIdOf('Areas', 'M3 Place'), newName: 'M3 Plaza' }) },
   })
   pin(G, 'A-1', 'an option rename edits a Space list by the exact word and leaves another casing',
@@ -734,9 +738,8 @@ async function group3(cdp) {
   pin(G, 'A-1 F-3', 'a case-only rename owes its skipped file, and Try Again moves the key',
     !!recase.owed && (await wrote(recase.second, 'm3 case: b')) && (await wrote(recase.first, 'm3 case: a')) && slot() === null,
     show([recase.r, blockOf(recase.first), blockOf(recase.second)]))
-  pin(G, 'F-2', 'an option rename rewrites a saved view naming the option and leaves one naming another casing',
-    same(operandsFor(viewOf(exact), ids[C.labels]), ['Job']) && same(operandsFor(viewOf(folded), ids[C.labels]), ['work']),
-    show([operandsFor(viewOf(exact), ids[C.labels]), operandsFor(viewOf(folded), ids[C.labels])]))
+  pin(G, 'F-2', "an option rename leaves a saved view naming the option's id",
+    same(operandsFor(viewOf(exact), ids[C.labels]), [work]), show(operandsFor(viewOf(exact), ids[C.labels])))
 }
 
 // ── Group 4 — Counts and Items (Phase 4) ────────────────────────────────────
@@ -780,8 +783,9 @@ async function group4(cdp) {
     pin(G, decision, `${name}: it rewrites exactly the ${itemCount(n)} it counted`, same(before.changed().sort(), [...files].sort()), show(before.changed()))
   }
   await counted('J-1 F-4', 'a property delete', [priority, { of: 'property' }], [one, two, AREA_ONE, AREA_TWO], 4, () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: priority }))
-  await counted('F-4', 'a Clear', [tagsId, { of: 'option', label: 'a' }], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'mutate', { op: 'clearOption', propertyId: tagsId, label: 'a' }))
-  await counted('F-4', 'a Delete', [tagsId, { of: 'option', label: 'b' }], [tags[1], tags[2]], 2, () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tagsId, label: 'b' }))
+  const [a, b] = ['a', 'b'].map((label) => optionId(defOf(tagsId), label))
+  await counted('F-4', 'a Clear', [tagsId, { of: 'option', optionId: a }], [tags[0], tags[1], AREA_TWO], 3, () => ask(cdp, 'mutate', { op: 'clearOption', propertyId: tagsId, optionId: a }))
+  await counted('F-4', 'a Delete', [tagsId, { of: 'option', optionId: b }], [tags[1], tags[2]], 2, () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tagsId, optionId: b }))
 
   pin(G, 'J-1', 'the rename refusal counts one Item', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Held'], label: 'm4 held' }), COPY.itemsHoldingBothKeys, 1, 'M4 Held', 'm4 held'))
   pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Pair'], label: 'm4 pair' }), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
@@ -836,12 +840,12 @@ async function group5(cdp) {
   await sleep(1000)
   pin(G, 'C-3', 'a definition with no label rides through a write as it was written', !('label' in defOf(bareId)) && defOf(bareId).key === 'M5 Bare', show(defOf(bareId)))
   await setValue(cdp, flags, flagsId, { kind: 'multiSelect', value: ['In Progress', 'Done'] })
-  pin(G, 'C-1', "a write encodes each label as its option's key", await wrote(flags, 'M5 Flags: [in-progress, done]'), show(blockOf(flags)))
+  pin(G, 'C-1', "a write encodes each option id as its option's key", await wrote(flags, 'M5 Flags: [in-progress, done]'), show(blockOf(flags)))
   await setValue(cdp, kind[1], kindId, { kind: 'select', value: 'Urgent' })
   pin(G, 'C-1', "a Select pick writes the option's key", await wrote(kind[1], 'M5 Kind:\n  - urgent'), show(blockOf(kind[1])))
   const foreignKind = snapshot([kind[2]])
-  await must('clear Urgent', ask(cdp, 'mutate', { op: 'clearOption', propertyId: kindId, label: 'Urgent' }))
-  pin(G, 'C-1', "Clear names the option by label and strips its key, leaving the label written as a word",
+  await must('clear Urgent', ask(cdp, 'mutate', { op: 'clearOption', propertyId: kindId, optionId: optionId(defOf(kindId), 'Urgent') }))
+  pin(G, 'C-1', "Clear names the option by id and strips its key, leaving the label written as a word",
     (await wrote(kind[0], '')) && (await wrote(kind[1], '')) && (await foreignKind.holds()), show(kind.map(blockOf)))
 
   // Uniqueness: labels and keys are each unique without regard to case, and a reserved key is refused on either word.
@@ -860,7 +864,7 @@ async function group5(cdp) {
   pin(G, 'D-1', 'a definition written by hand onto a reserved key is not admitted', (await ask(cdp, 'property:holders', banner, { of: 'property' })).ok === false)
   const optionsBefore = show(wordsOf(grade))
   pin(G, 'D-2', 'an option label in another casing of one the property holds is refused',
-    refusedAs(await ask(cdp, 'mutate', { op: 'editOption', propertyId: grade, edit: { op: 'add', groupId: 'select', label: 'a' } }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
+    refusedAs(await ask(cdp, 'mutate', { op: 'editOption', propertyId: grade, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'a' } }), COPY.twoOptionsTitledAlike) && show(wordsOf(grade)) === optionsBefore)
   pin(G, 'D-2', 'two options writing one key in two casings are refused at create',
     refusedAs(await add(cdp, { label: 'M5 Twins', type: 'select', select_options: [{ key: 'A', label: 'A' }, { key: 'a', label: 'B' }] }), COPY.twoOptionsWritingOneKey))
   pin(G, 'D-2', 'an option with a blank key is refused at create',
@@ -868,7 +872,7 @@ async function group5(cdp) {
   pin(G, 'J-1', 'a Status create holding two options in two casings is refused',
     refusedAs(await add(cdp, { label: 'M5 Doubled', type: 'status', status_groups: statusGroups(['Done'], ['done']) }), COPY.twoOptionsTitledAlike))
   pin(G, 'J-1', 'a Status create holding a blank key is refused',
-    refusedAs(await add(cdp, { label: 'M5 Hollow', type: 'status', status_groups: [{ id: 'todo', label: 'To-do', color: 'grey', options: [{ key: ' ', label: 'Open', group_id: 'todo' }] }] }), COPY.anEmptyKey, 'Options'))
+    refusedAs(await add(cdp, { label: 'M5 Hollow', type: 'status', status_groups: [{ id: 'todo', label: 'To-do', color: 'grey', options: [{ key: ' ', label: 'Open' }] }] }), COPY.anEmptyKey, 'Options'))
 }
 
 // ── Group 6 — The journal and the cascades (Phase 6) ───────────────────────
@@ -901,10 +905,12 @@ async function group6(cdp) {
   await cached(cdp, tones, cachedPage)
   const toneView = mintViewId()
   const kindView = mintViewId()
-  await saveView(cdp, toneView, 'Metadata Drive Tones', [tones], { filter: filterOf(rule(tones, 'contains_any', ['Light Blue'])) })
-  await saveView(cdp, kindView, 'Metadata Drive Kind', [kindId], { filter: filterOf(rule(kindId, 'is', 'Urgent')) })
+  const lightBlue = optionId(defOf(tones), 'Light Blue')
+  const urgent = optionId(defOf(kindId), 'Urgent')
+  await saveView(cdp, toneView, 'Metadata Drive Tones', [tones], { filter: filterOf(rule(tones, 'contains_any', [lightBlue])) })
+  await saveView(cdp, kindView, 'Metadata Drive Kind', [kindId], { filter: filterOf(rule(kindId, 'is', urgent)) })
   const tiles = await viewTile(cdp, 'Areas', 'Area Two', toneView)
-  await matrixFilter(cdp, rule(tones, 'contains_any', ['Light Blue']))
+  await matrixFilter(cdp, rule(tones, 'contains_any', [lightBlue]))
   await sleep(1500)
   seededAsWritten(G, seeds)
 
@@ -913,24 +919,25 @@ async function group6(cdp) {
     tile: operandsFor(JSON.parse(read(tiles)), tones),
     matrix: operandsFor(JSON.parse(read(MATRIX)), tones),
   })
-  await must('rename Light Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: tones, from: 'Light Blue', to: 'Sky Blue' }))
+  const namedBefore = named()
+  await must('rename Light Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: tones, optionId: lightBlue, label: 'Sky Blue' }))
   pin(G, 'F-2', 'an option rename rewrites the page, the Space, and the Collection cache by key',
     (await wrote(tone[0], 'M6 Tones: [Sky Blue, Dark Red]')) && same(sidecar('Areas', 'Area One')['M6 Tones'], ['Sky Blue'])
       && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue', 'Mid Grey']),
     show([blockOf(tone[0]), sidecar('Areas', 'Area One')['M6 Tones'], cacheOf(tones)]))
-  pin(G, 'F-2', 'an option rename rewrites the saved view, the View Tile, and the Matrix filter by label',
-    same(named(), { view: ['Sky Blue'], tile: ['Sky Blue'], matrix: ['Sky Blue'] }), show(named()))
-  await must('rename Urgent', ask(cdp, 'mutate', { op: 'renameOption', propertyId: kindId, from: 'Urgent', to: 'Critical' }))
-  pin(G, 'F-2', "under Match Title an option's key follows its label on the page, and the view follows the label",
-    (await wrote(kind, 'M6 Kind: [Critical]')) && same(operandsFor(viewOf(kindView), kindId), ['Critical']) && same(wordsOf(kindId), [['Critical', 'Critical']]),
+  pin(G, 'F-2', "an option rename leaves the saved view, the View Tile, and the Matrix filter naming the option's id",
+    same(namedBefore, { view: [lightBlue], tile: [lightBlue], matrix: [lightBlue] }) && same(named(), namedBefore), show([namedBefore, named()]))
+  await must('rename Urgent', ask(cdp, 'mutate', { op: 'renameOption', propertyId: kindId, optionId: urgent, label: 'Critical' }))
+  pin(G, 'F-2', "under Match Title an option's key follows its label on the page, and the view keeps naming the option's id",
+    (await wrote(kind, 'M6 Kind: [Critical]')) && same(operandsFor(viewOf(kindView), kindId), [urgent]) && same(wordsOf(kindId), [['Critical', 'Critical']]),
     show([blockOf(kind), operandsFor(viewOf(kindView), kindId)]))
-  await must('delete Critical', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: kindId, label: 'Critical' }))
+  await must('delete Critical', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: kindId, optionId: urgent }))
   pin(G, 'F-2', 'an option delete strips the page and the view naming it',
-    (await wrote(kind, '')) && !operandsFor(viewOf(kindView), kindId).includes('Critical'), show([blockOf(kind), viewOf(kindView).filter]))
-  await must('delete Mid Grey', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tones, label: 'Mid Grey' }))
+    (await wrote(kind, '')) && !operandsFor(viewOf(kindView), kindId).includes(urgent), show([blockOf(kind), viewOf(kindView).filter]))
+  await must('delete Mid Grey', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tones, optionId: optionId(defOf(tones), 'Mid Grey') }))
   pin(G, 'F-2', 'an option delete strips the page and the Collection cache',
     (await wrote(tone[1], '')) && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue']), show([blockOf(tone[1]), cacheOf(tones)]))
-  await must('clear Sky Blue', ask(cdp, 'mutate', { op: 'clearOption', propertyId: tones, label: 'Sky Blue' }))
+  await must('clear Sky Blue', ask(cdp, 'mutate', { op: 'clearOption', propertyId: tones, optionId: lightBlue }))
   pin(G, 'J-1', 'Clear strips the Collection cache too', await settles(async () => !listOf(cacheOf(tones)[pageIds[cachedPage]]).includes('Sky Blue')), show(cacheOf(tones)))
   await must('assign M6 Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
   pin(G, 'J-1', 'a reassign after a Clear brings the cleared value back nowhere',
@@ -944,18 +951,19 @@ async function group6(cdp) {
   await must('Try Again', ask(cdp, 'mutate', renamed.value.retry))
   pin(G, 'F-1', "the rename's Try Again moves the stored key", (await wrote(due[0], 'M6 When: a')) && slot() === null, show(blockOf(due[0])))
 
-  const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']], labels: ['Pale', 'Light'] }
-  const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Pale', to: 'Light' }))
-  pin(G, 'F-1', 'an option rename record carries its key pairs and its label pair',
+  const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']] }
+  const [pale, deep] = ['Pale', 'Deep'].map((label) => optionId(defOf(tints), label))
+  const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: pale, label: 'Light' }))
+  pin(G, 'F-1', 'an option rename record carries its key pairs',
     same(owing.value?.retry, FINISH) && same(slot(), optionRecord), show([owing, slot()]))
   const held = snapshot([...tint, REGISTRY, JOURNAL])
   pin(G, 'F-1', 'an option rename waits while a record is owed',
-    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Deep', to: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: deep, label: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
   pin(G, 'F-1', 'an option delete waits while a record is owed',
-    refusedAs(await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
+    refusedAs(await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tints, optionId: deep }), COPY.anOptionChangeWaitingForTryAgain))
   pin(G, 'F-1', 'a waiting option change writes nothing', await held.holds(), show(held.changed()))
   pin(G, 'F-1', "Clear waits while its own property's option record is owed",
-    refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, label: 'Deep' }), COPY.anOptionChangeWaitingForTryAgain))
+    refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, optionId: deep }), COPY.anOptionChangeWaitingForTryAgain))
   pin(G, 'F-1', 'a property rename waits while a record is owed',
     refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }), COPY.anOptionChangeWaitingForTryAgain) && blockOf(free) === 'M6 Free: f')
   const shielded = seedPage(pageAt('M6 Tint 3'), 'M6 Tints: [Pale]')
@@ -971,7 +979,7 @@ async function group6(cdp) {
   if (removedProp.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedProp.value.retry))
   pin(G, 'F-1', "the delete's Try Again strips the skipped file", (await wrote(doomed[0], '')) && slot() === null, show(blockOf(doomed[0])))
 
-  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, label: 'x' }))
+  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, optionId: optionId(defOf(strikeId), 'x') }))
   pin(G, 'F-1', 'an option delete record carries the stored key',
     same(removedOption.value?.retry, FINISH) && same(slot(), { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
   if (removedOption.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedOption.value.retry))
@@ -1054,10 +1062,10 @@ async function group7(cdp) {
   const toneView = mintViewId()
   const progressView = mintViewId()
   await saveView(cdp, slugView, 'Metadata Drive Formats', [slugId, tones, shadesId, dueSoonId])
-  await saveView(cdp, toneView, 'Metadata Drive Tones Filter', [tones], { filter: filterOf(rule(tones, 'contains_any', ['Light Blue'])) })
-  await saveView(cdp, progressView, 'Metadata Drive Progress', [progressId], { filter: filterOf(rule(progressId, 'contains_any', ['in-progress'])) })
+  const lightBlue = optionId(defOf(tones), 'Light Blue')
+  await saveView(cdp, toneView, 'Metadata Drive Tones Filter', [tones], { filter: filterOf(rule(tones, 'contains_any', [lightBlue])) })
   const tiles = await viewTile(cdp, 'Areas', 'Area Two', toneView)
-  await matrixFilter(cdp, rule(tones, 'contains_any', ['Light Blue']))
+  await matrixFilter(cdp, rule(tones, 'contains_any', [lightBlue]))
   await sleep(2500)
   seededAsWritten(G, seeds)
 
@@ -1142,18 +1150,20 @@ async function group7(cdp) {
   const seededSelect = await must('a Select under UPPERCASE', add(cdp, { label: 'Option Seed', type: 'select', value_format: 'UPPERCASE' }))
   pin(G, 'C-2', "a Select seed's key is written through the Value Format", same(wordsOf(seededSelect.created.propertyId), [['OPTION 1', 'Option 1']]), show(defOf(seededSelect.created.propertyId)))
   pin(G, 'C-2', 'a create keeps the option keys it is handed', same(wordsOf(paletteId), [['x', 'Light Blue']]), show(defOf(paletteId)))
-  await must('add Dark Blue', ask(cdp, 'mutate', { op: 'editOption', propertyId: paletteId, edit: { op: 'add', groupId: 'select', label: 'Dark Blue' } }))
+  await must('add Dark Blue', ask(cdp, 'mutate', { op: 'editOption', propertyId: paletteId, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'Dark Blue' } }))
   pin(G, 'C-2', "an added option's key is written through the Value Format", same(wordsOf(paletteId), [['x', 'Light Blue'], ['dark-blue', 'Dark Blue']]), show(defOf(paletteId)))
-  await must('rename Dark Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: paletteId, from: 'Dark Blue', to: 'Navy Blue' }))
+  await must('rename Dark Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: paletteId, optionId: optionId(defOf(paletteId), 'Dark Blue'), label: 'Navy Blue' }))
   pin(G, 'C-2', "an option label rename writes its key through the Value Format and moves it on the page",
     keysOf(paletteId).includes('navy-blue') && (await wrote(palette, 'Palette: [navy-blue]')), show([defOf(paletteId), blockOf(palette)]))
 
   pin(G, 'E-1', 'under kebab-case adoption takes in-progress and leaves due_date',
     await settles(async () => same(wordsOf(progressId), [['in-progress', 'in-progress']]), 8000), show(defOf(progressId)))
+  const inProgress = optionId(defOf(progressId), 'in-progress')
+  await saveView(cdp, progressView, 'Metadata Drive Progress', [progressId], { filter: filterOf(rule(progressId, 'contains_any', [inProgress])) })
   const progressKept = snapshot([progress])
-  await must('rename in-progress', ask(cdp, 'mutate', { op: 'renameOption', propertyId: progressId, from: 'in-progress', to: 'In Progress' }))
-  pin(G, 'E-1 F-2', 'an adopted option renamed to a label its format writes as the same key rewrites no page, and the view follows the label',
-    same(wordsOf(progressId), [['in-progress', 'In Progress']]) && (await progressKept.holds()) && same(operandsFor(viewOf(progressView), progressId), ['In Progress']),
+  await must('rename in-progress', ask(cdp, 'mutate', { op: 'renameOption', propertyId: progressId, optionId: inProgress, label: 'In Progress' }))
+  pin(G, 'E-1 F-2', "an adopted option renamed to a label its format writes as the same key rewrites no page, and the view keeps naming the option's id",
+    same(wordsOf(progressId), [['in-progress', 'In Progress']]) && (await progressKept.holds()) && same(operandsFor(viewOf(progressView), progressId), [inProgress]),
     show([defOf(progressId), operandsFor(viewOf(progressView), progressId)]))
 
   // A Value Format change re-keys every option on every holder by key, and touches no configuration.
@@ -1210,7 +1220,7 @@ async function group7(cdp) {
   const matchTitle = await ask(cdp, 'property:holders', wifiId, { of: 'format', change: { value_format: 'Match Title' } })
   pin(G, 'F-4', 'a Value Format count that moves no key is zero', matchTitle.ok && matchTitle.value === 0, show(matchTitle))
 
-  const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, from: 'Red', to: 'Crimson' }))
+  const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, optionId: optionId(defOf(owedColors), 'Red'), label: 'Crimson' }))
   pin(G, 'F-1', 'a Value Format change waits while a record is owed',
     !!owing.value?.retry && refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shadesId, change: { value_format: 'UPPERCASE' } }), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
   const waiting = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })

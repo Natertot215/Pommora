@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  mintOptionId,
   against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
   launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel,
   PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
@@ -77,7 +78,7 @@ async function seed(cdp) {
     if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
     ids[name] = r.value.created.propertyId
   }
-  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[CHOICE], edit: { op: 'add', groupId: 'select', label: title } }))
+  for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[CHOICE], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: title } }))
   await must('the Drive table', ask(cdp, 'views:save', 'Collection A', 'collection', { id: VIEW.id, name: VIEW.name, type: 'table', property_order: ['_title', ...COLUMNS.map((c) => ids[c])], hidden_properties: [] }, {}))
   for (const title of [TARGET, BARE, SOURCE, GRID, RACE]) await createPage(cdp, title)
   await createPage(cdp, HOST, { [ids[NOTES]]: { kind: 'text', value: 'host notes' } })

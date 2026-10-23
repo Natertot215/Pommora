@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
+  optionId,
   activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt,
   mouseClick, must, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
   RAIL, relaunch, restore, results, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, watch, writeBody,
@@ -372,7 +373,7 @@ async function group3() {
 
   const count = await must('property:holders', ask(cdp, 'property:holders', stage, { of: 'property' }))
   item(3, 'C-4', 'the delete confirmation’s count leaves the archived holder out', count === 1, show(count))
-  await must('rename the Draft option', ask(cdp, 'mutate', { op: 'renameOption', propertyId: stage, from: 'Draft', to: 'Final' }))
+  await must('rename the Draft option', ask(cdp, 'mutate', { op: 'renameOption', propertyId: stage, optionId: optionId(JSON.parse(readRel('.nexus/properties.json')).defs[stage], 'Draft'), label: 'Final' }))
   item(3, 'C-1', 'an option rename rewrites the archived page as it rewrites the live one', show(frontOf(arc.rel)['Drive Stage']) === show(['Final']) && show(frontOf(live.rel)['Drive Stage']) === show(['Final']), show([frontOf(arc.rel)['Drive Stage'], frontOf(live.rel)['Drive Stage']]))
   await must('rename Drive Live', ask(cdp, 'mutate', { op: 'rename', path: live.rel, kind: 'page', newName: 'Drive Live 2' }))
   live.rel = 'Collection A/Set Alpha/Drive Live 2.md'

@@ -1,4 +1,5 @@
 import {
+  mintOptionId, optionId,
   ask, boxOf, check, chooseNative, click, COPY, drag, frontmatter, launch, mintPageId, mouseClick, portalOpen, pressKey, read,
   refusal, restore, results, sel, shot, sleep, sweep, textEl, until,
 } from '../drive-harness.mjs'
@@ -36,13 +37,13 @@ async function seed(cdp) {
   }
   for (const [name, titles] of [['Drive Select', ['Alpha', 'Beta']], ['Drive Multi', ['One', 'Two']]])
     for (const title of titles) {
-      const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[name], edit: { op: 'add', groupId: 'select', label: title } })
+      const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[name], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: title } })
       check(`seed: ${name} ${title}`, r.ok, JSON.stringify(r))
     }
   const view = await ask(cdp, 'views:save', 'Collection A', 'collection', { id: 'view_01KZDRIVE0000000000000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title', ...Object.keys(PROPS).map((name) => ids[name])], hidden_properties: [] }, {})
   check('seed: Drive Table view', view.ok, JSON.stringify(view))
-  const one = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive One', seeds: { [ids['Drive Select']]: { kind: 'select', value: 'Alpha' }, [ids['Drive Multi']]: { kind: 'multiSelect', value: ['One'] } } })
-  const two = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive Two', seeds: { [ids['Drive Select']]: { kind: 'select', value: 'Beta' } } })
+  const one = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive One', seeds: { [ids['Drive Select']]: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Alpha') }, [ids['Drive Multi']]: { kind: 'multiSelect', value: [optionId(defNamed('Drive Multi'), 'One')] } } })
+  const two = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive Two', seeds: { [ids['Drive Select']]: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Beta') } } })
   check('seed: Drive One and Drive Two', one.ok && two.ok && lists('Drive One', 'Drive Select', 'Alpha') && lists('Drive Two', 'Drive Select', 'Beta'), JSON.stringify([one, two]))
   await sleep(1500)
   await openDriveTable(cdp)
@@ -162,7 +163,7 @@ async function stepEditOption(cdp) {
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
 const DIALOG_OPEN = `!!document.querySelector('[role="alertdialog"]')`
 async function stepClearDelete(cdp) {
-  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Alpha' } })
+  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Alpha') } })
   check('clear: Drive Two holds Alpha', r.ok && lists('Drive Two', 'Drive Select', 'Alpha'), JSON.stringify(r))
   await openEditor(cdp, 'Drive Select')
   const alphaRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Alpha' && r.querySelector('[aria-label="Edit Option"]'))`
@@ -210,7 +211,7 @@ async function stepCardsAndMass(cdp) {
 }
 
 async function stepPanel(cdp) {
-  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive One.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Fresh' } })
+  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive One.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Fresh') } })
   check('panel: Drive One holds Fresh, so its row shows', r.ok && lists('Drive One', 'Drive Select', 'Fresh'), JSON.stringify(r))
   await sleep(800)
   await mouseClick(cdp, textEl('.data-row .cell-title-text', 'Drive One'))
@@ -282,7 +283,7 @@ async function stepEditor(cdp) {
 }
 
 async function stepHostRefusal(cdp) {
-  const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Drive Select'], edit: { op: 'add', groupId: 'select', label: '' } })
+  const r = await ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Drive Select'], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: '' } })
   check('the host refuses a blank option title', r.ok === false, JSON.stringify(r))
 }
 

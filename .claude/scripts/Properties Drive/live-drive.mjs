@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
+  mintOptionId, optionId,
   frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
@@ -124,7 +125,7 @@ async function group2(cdp) {
   for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
     ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label, type } }))).created.propertyId
   await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
-  await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', label: 'Alpha' } }))
+  await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'Alpha' } }))
   const view = {
     id: 'view_01KZPROPDRIVE00000LOOKSTABL', name: 'Looks Table', type: 'table',
     property_order: ['_title', ids['Looks Number'], ids['Looks Link'], ids['Looks Select']], hidden_properties: [],
@@ -132,7 +133,7 @@ async function group2(cdp) {
   }
   await must('save the Looks Table', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
   await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
-  await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: 'Alpha' } })
+  await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: optionId(defNamed('Looks Select'), 'Alpha') } })
   await openCollection(cdp)
   // An earlier group's view settings panel covers the right-hand headers.
   if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
@@ -260,7 +261,7 @@ const bareKey = (title, key) => {
 async function group5(cdp) {
   const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Pick', type: 'select' } }))
   const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Link', type: 'link' } }))
-  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', label } }))
+  for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label } }))
   await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
   for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
   await must('Drive Undo Target keeps an alias', ask(cdp, 'mutate', { op: 'editAliases', path: pagePath('Drive Undo Target'), edit: { op: 'add', alias: 'kept' } }))
@@ -340,7 +341,7 @@ async function group6(cdp) {
       asked.includes('The option is deleted from the property.') && !asked.includes('stripped') && hasDelete && left,
     show({ rows: alpha.rows, asked, options: defNamed('Drive Choice')?.select_options }))
 
-  await createPage(cdp, 'Drive Held', { [choice]: { kind: 'select', value: 'Beta' } })
+  await createPage(cdp, 'Drive Held', { [choice]: { kind: 'select', value: optionId(defNamed('Drive Choice'), 'Beta') } })
   await sleep(1000)
   await chooseNative(cdp, optionRow('Beta'), 'Delete')
   const counted = await dialogText(cdp)
