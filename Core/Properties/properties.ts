@@ -1,13 +1,13 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { isKeyOf, isPlainObject } from '../Contract/validators'
+import { isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
 import { KEY_FORMATS } from './keyFormat'
 
-const typeIds = z.enum([
+export const typeIds = z.enum([
   'text',
   'number',
   'checkbox',
@@ -74,18 +74,6 @@ export function pickKindOf(t: PropertyType | 'title' | undefined): OptionPickKin
       return null
   }
 }
-
-// The spellings written to disk before the ids went camelCase; a Trash record and an older build's synced file keep them, so they read forever.
-export const LEGACY_TYPE_IDS = {
-  multi_select: 'multiSelect',
-  url: 'link',
-  datetime: 'dateTime',
-} as const satisfies Record<string, PropertyType>
-
-export const propertyType = z.preprocess(
-  (v) => (isKeyOf(LEGACY_TYPE_IDS, v) ? LEGACY_TYPE_IDS[v] : v),
-  typeIds,
-)
 
 export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
 export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
@@ -161,7 +149,7 @@ const propertyDefinitionFields = z.object({
   id: z.string(),
   key: z.string(),
   label: z.string().optional(),
-  type: propertyType,
+  type: typeIds,
   key_format: z.enum(KEY_FORMATS).optional().catch(undefined),
   value_format: z.enum(KEY_FORMATS).optional().catch(undefined),
   icon: z.string().optional(),
