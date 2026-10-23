@@ -1,13 +1,12 @@
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import {
-  CHECKBOX_LOOKS,
   COLUMN_LOOKS,
   DATE_FORMATS,
-  NUMBER_LOOKS,
-  OPTION_LOOKS,
+  LOOKS,
   showsWeekday,
   TIME_FORMATS,
   WEEKDAY_FORMATS,
+  type ColumnLook,
   type ColumnStyle,
 } from '../Properties/columnStyles'
 import {
@@ -16,7 +15,6 @@ import {
   TIME_FORMAT_LABELS,
   WEEKDAY_FORMAT_LABELS,
 } from '../Properties/displayLabels'
-import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
 import { styleLabel } from '../Properties/typeDisplay'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
@@ -61,36 +59,21 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
       checked: checked === value,
       ...(separatorBefore ? { separatorBefore } : {}),
     })
-  const look = row('look', current.look)
-  switch (PROPERTY_TYPES[type].kind) {
-    case 'select':
-    case 'multiSelect':
-      return OPTION_LOOKS.map((l) => look(LOOK_LABELS[l], l))
-    case 'checkbox':
-      return CHECKBOX_LOOKS.map((l) => look(LOOK_LABELS[l], l))
-    case 'link':
-      return LINK_DISPLAYS.map((l) => look(LOOK_LABELS[l], l))
-    case 'number':
-      return NUMBER_LOOKS.filter((l) => ctx.barCapable || l !== 'bar').map((l) =>
-        look(LOOK_LABELS[l], l),
-      )
-    case 'dateTime': {
-      const date = row('date_format', current.date_format)
-      const weekday = row('weekday', current.weekday)
-      const time = row('time_format', current.time_format)
-      return [
-        ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
-        ...(showsWeekday(current.date_format)
-          ? WEEKDAY_FORMATS.map((w, i) => weekday(WEEKDAY_FORMAT_LABELS[w], w, i === 0))
-          : []),
-        ...TIME_FORMATS.map((t, i) => time(TIME_FORMAT_LABELS[t], t, i === 0)),
-      ]
-    }
-    case 'context':
-    case 'file':
-    case 'text':
-      return []
+  if (PROPERTY_TYPES[type].kind === 'dateTime') {
+    const date = row('date_format', current.date_format)
+    const weekday = row('weekday', current.weekday)
+    const time = row('time_format', current.time_format)
+    return [
+      ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
+      ...(showsWeekday(current.date_format)
+        ? WEEKDAY_FORMATS.map((w, i) => weekday(WEEKDAY_FORMAT_LABELS[w], w, i === 0))
+        : []),
+      ...TIME_FORMATS.map((t, i) => time(TIME_FORMAT_LABELS[t], t, i === 0)),
+    ]
   }
+  const look = row('look', current.look)
+  const looks: readonly ColumnLook[] = LOOKS[type]
+  return looks.filter((l) => ctx.barCapable || l !== 'bar').map((l) => look(LOOK_LABELS[l], l))
 }
 
 /** Offered only where there's a choice to make: a lone row would only restate what renders. */
