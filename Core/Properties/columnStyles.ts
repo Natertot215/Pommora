@@ -1,13 +1,7 @@
 import { z } from 'zod'
 import { looseDecoder } from '../Files/decoders'
-import {
-  DEFAULT_LINK_DISPLAY,
-  LINK_DISPLAY_LABELS,
-  LINK_DISPLAYS,
-  type PropertyDefinition,
-  type ColumnType,
-  specOf,
-} from './properties'
+import { DEFAULT_LINK_DISPLAY, LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '../Connections/linkValue'
+import { type ColumnType, type PropertyDefinition, specOf } from './properties'
 
 export const OPTION_LOOKS = ['standard', 'compact'] as const
 export const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const

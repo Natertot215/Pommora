@@ -23,7 +23,6 @@ import { isHttpLink, isValidLink, linkDomain, normalizeLinkUrl } from '../Paths/
 import { isScalar } from '../Contract/validators'
 import { normalizeTitle } from '../Paths/caseFold'
 import { titleFromPath } from '../Paths/posix'
-import type { LinkDisplay } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 import type { ConnPage, PageIndex } from './pageIndex'
 
@@ -193,6 +192,20 @@ export function linkValueFromEdit(
   const target = resolveLink(written, index, own)
   if (!written || (target.kind !== 'page' && target.kind !== 'url')) return undefined
   return { kind: 'link', value: retarget('wiki', resolvedTarget(written, index, own)).text }
+}
+
+export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
+export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
+
+export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
+  (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
+
+export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
+
+export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
+  'link-full': 'Full Link',
+  'link-short': 'Short Link',
+  'link-title': 'Page Title',
 }
 
 /** What a written link shows: its alias, a markdown link's default label, a wikilink's title, heading, or `Title § Heading`, or an address under its display; a markdown heading link shows the heading alone because its default label is what it draws, where a wikilink shows `Title § Heading`, the Heading Link Style's default, since display text carries no style; no display means the raw address, so sort and filter never move when a property's look changes. */

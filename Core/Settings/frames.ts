@@ -11,7 +11,7 @@ import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Utilities/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
-import type { LinkDisplay } from '../Properties/properties'
+import type { LinkDisplay } from '../Connections/linkValue'
 import type { PathFormat } from '../Paths/pathFormat'
 import {
   HEADING_LINK_STYLE_LABELS,

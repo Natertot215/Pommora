@@ -6,8 +6,7 @@ import {
   type PageOpenAction,
   pageOpenRows,
 } from './pageMenu'
-import { LINK_DISPLAYS, LINK_DISPLAY_LABELS } from '../Properties/properties'
-import type { ResolvedLink } from '../Connections/linkValue'
+import { LINK_DISPLAYS, LINK_DISPLAY_LABELS, type ResolvedLink } from '../Connections/linkValue'
 
 export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean } } & (
   | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }

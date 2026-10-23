@@ -4,8 +4,8 @@ import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
 import { storesChanged } from '../../Session/nexusSlice'
+import { DEFAULT_LINK_DISPLAY } from '../../Connections/linkValue'
 import {
-  DEFAULT_LINK_DISPLAY,
   optionGroupsOf,
   type PropertyDefinition,
   PROPERTY_TYPES,

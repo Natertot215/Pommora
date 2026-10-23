@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import type { EditorState } from '@codemirror/state'
 import {
+  isLinkDisplay,
   readLinkText,
   resolvedTarget,
   retarget,
@@ -9,7 +10,6 @@ import {
 import { pasteAsWrite, type PasteMode, type PasteWrite } from '../../Actions/pasteAsMenu'
 import { matchesCommand } from '../../Actions/commands'
 import { isWebAddress } from '../../Paths/urlPath'
-import { isLinkDisplay } from '../../Properties/properties'
 import { docScan } from '../docCache'
 import { inCodeNear, scanDoc, type DocScan } from '../Engine/docScan'
 import { linkAt, openLinkAt } from '../Input/edits'
