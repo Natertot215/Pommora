@@ -29,6 +29,16 @@ describe('renameSweep', () => {
     expect(out).not.toContain('Status')
   })
 
+  it.each([
+    'Status:',
+    'Status: "   "',
+    'Status: []',
+  ])('a rename over a page holding `%s` leaves no line', async (line) => {
+    await seed(`id: p1\n${line}\nauthor: Username\n`)
+    await renameSweep(root, 'Status', 'Stage')
+    expect(await readFile(page, 'utf8')).toBe('---\nid: p1\nauthor: Username\n---\nbody\n')
+  })
+
   it('keeps the key’s position and the comment attached to it', async () => {
     await seed('id: p1\n# which stage this is at\nStatus: Old\nauthor: Username\n')
     await renameSweep(root, 'Status', 'Stage')
@@ -119,6 +129,14 @@ describe('renameSweep reaches a Space sidecar', () => {
     expect(raw.Stage).toBe('Old')
     expect('Status' in raw).toBe(false)
     expect(raw.$order).toEqual(['ctxA', 'prop_other', 'prop_s'])
+  })
+
+  it('a blank value leaves rather than moving', async () => {
+    const file = await seedSpace({ id: 'sp1', Status: null })
+    await renameSweep(root, 'Status', 'Stage')
+    const raw = await readJsonAt(file)
+    expect('Status' in raw).toBe(false)
+    expect('Stage' in raw).toBe(false)
   })
 
   it('leaves a sidecar without the key byte-identical', async () => {
