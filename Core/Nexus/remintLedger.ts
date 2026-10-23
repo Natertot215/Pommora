@@ -52,8 +52,8 @@ export function latchBaseline(
     if (id in out || id in projection.duplicates) continue
     if (unreadable.has(p.path) || withheld(p.path)) out[id] = p
   }
-  // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
-  if (listed.some((u) => u.kind === 'registry')) {
+  // An unusable Contexts registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
+  if (listed.some((u) => u.kind === 'registry' && u.registry === 'contexts')) {
     for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out)) out[id] = p
     }

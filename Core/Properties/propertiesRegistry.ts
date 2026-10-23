@@ -61,9 +61,10 @@ export async function readRegistry(root: string): Promise<RegistryFile> {
   })
 }
 
-/** A read that writes no definition: a damaged file reads as its last parse. Every reader that gates a registry write stays strict. */
-export async function readKeptRegistry(root: string): Promise<RegistryFile> {
-  return registryFrom((await readKept(registryPath(root))) ?? {})
+/** A read that writes no definition: a damaged file reads as its last parse, and as null when this session never saw it parse. Every reader that gates a registry write stays strict. */
+export async function readKeptRegistry(root: string): Promise<RegistryFile | null> {
+  const raw = await readKept(registryPath(root)).catch(() => undefined)
+  return raw === undefined ? null : registryFrom(raw ?? {})
 }
 
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
