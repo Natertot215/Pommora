@@ -1117,17 +1117,17 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 2-8 · The Properties Drive opens with group 1
   - [x] Review Checkpoint
   - [x] Closeout P1–P2 (two `opus-high` agents, inward and outward)
-- [ ] **Phase 3** — Type Records and Looks
-  - [ ] Task 3-1 · The link-display vocabulary moves into `linkValue.ts`
-  - [ ] Task 3-2 · The pane targets move to `Core/Views/paneTargets.ts`
-  - [ ] Task 3-3 · The renderer label module, `displayLabels.ts`
-  - [ ] Task 3-4 · The engine record states `connections`, `registersMembers`, and `blankDraws`
-  - [ ] Task 3-5 · `PropertyTypes.tsx` becomes the renderer type record `typeDisplay.ts`
-  - [ ] Task 3-6 · One `pickerOptions` replaces eight hand-rolled maps
-  - [ ] Task 3-7 · One `LOOKS` record keyed by column type
-  - [ ] Task 3-8 · The value picker's Status gate keeps its reason
-  - [ ] Task 3-9 · Drive group 2
-  - [ ] Review Checkpoint
+- [x] **Phase 3** — Type Records and Looks
+  - [x] Task 3-1 · The link-display vocabulary moves into `linkValue.ts`
+  - [x] Task 3-2 · The pane targets move to `Core/Views/paneTargets.ts`
+  - [x] Task 3-3 · The renderer label module, `displayLabels.ts`
+  - [x] Task 3-4 · The engine record states `connections`, `registersMembers`, and `blankDraws`
+  - [x] Task 3-5 · `PropertyTypes.tsx` becomes the renderer type record `typeDisplay.ts`
+  - [x] Task 3-6 · One `pickerOptions` replaces eight hand-rolled maps
+  - [x] Task 3-7 · One `LOOKS` record keyed by column type
+  - [x] Task 3-8 · The value picker's Status gate keeps its reason
+  - [x] Task 3-9 · Drive group 2
+  - [x] Review Checkpoint
   - [ ] Closeout P3 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: every remaining task applied in order in a throwaway worktree of Phase 3's head, its refusals recorded; c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 4A opens]`
 - [ ] **Phase 4A** — The Value Write's One Home
@@ -34735,7 +34735,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 |---|---|---|---|---|---|
 | 1 | −300 | +164 | −136 | −300 / +164 / −136 | −136 |
 | 2 | −305 | +253 | −52 | −312 / +249 / −63 | −199 |
-| 3 | −384 | +369 | −15 | | |
+| 3 | −384 | +369 | −15 | −358 / +344 / −14 | −213 |
 | 4A | −531 | +484 | −47 | | |
 | 4B | −18 | +29 | +11 | | |
 | 5 | −151 | +117 | −34 | | |
