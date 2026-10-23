@@ -188,10 +188,8 @@ const RENAME: Record<Role, Handler<OptionReach>> = {
   criteria: (e, held) => (Array.isArray(held) ? held.map((c) => scopedOrder(e, c)) : held),
   group: scopedOrder,
   subGroup: scopedOrder,
-  hiddenKeys: (e, held, view) =>
-    overStrings(held, (keys) =>
-      editHiddenBucket({ ...view, hidden_groups: keys }, e.def.id, ...e.labels),
-    ),
+  hiddenKeys: (e, held) =>
+    overStrings(held, (keys) => editHiddenBucket(keys, e.def.id, ...e.labels)),
   bandKeys: (e, held, view) => (Array.isArray(held) ? collapsedKeys(e, view, held) : held),
 }
 
@@ -207,8 +205,7 @@ const CLEAR: Record<Role, Handler<string>> = {
   criteria: (id, held) => (Array.isArray(held) ? held.filter((c) => !onProperty(id, c)) : held),
   group: (id, held) => (onProperty(id, held) ? { kind: 'structural' } : held),
   subGroup: (id, held) => (onProperty(id, held) ? undefined : held),
-  hiddenKeys: (id, held, view) =>
-    overStrings(held, (keys) => clearHiddenBuckets({ ...view, hidden_groups: keys }, id)),
+  hiddenKeys: (id, held) => overStrings(held, (keys) => clearHiddenBuckets(keys, id)),
   bandKeys: (id, held, view) =>
     groupsOn(view, 'group', id)
       ? []

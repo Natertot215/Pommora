@@ -13,7 +13,6 @@ import {
   type DateGranularity,
   type EmptyPlacement,
   type GroupConfig,
-  type GroupedView,
   granularityOf,
   isBucketHidden,
   LOCATION_SORT,
@@ -81,17 +80,16 @@ export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>
 export function dropHiddenGroups(
   groups: ResolvedGroup[],
   hidden: ReadonlySet<string>,
-  view: GroupedView,
   plan: GroupPlan,
 ): ResolvedGroup[] {
   const top = plan.kind === 'property' ? plan.group.property_id : undefined
   const sub = plan.kind === 'sets' ? plan.sub?.property_id : undefined
   return groups.flatMap((group) => {
-    if (group.kind === 'bucket' && top && isBucketHidden(view, hidden, 'group', top, group.value))
+    if (group.kind === 'bucket' && top && isBucketHidden(hidden, 'group', top, group.value))
       return []
     const { children: nested, ...band } = group
     const children = nested?.filter(
-      (c) => c.kind !== 'bucket' || !sub || !isBucketHidden(view, hidden, 'sub', sub, c.value),
+      (c) => c.kind !== 'bucket' || !sub || !isBucketHidden(hidden, 'sub', sub, c.value),
     )
     return [children?.length ? { ...band, children } : band]
   })
