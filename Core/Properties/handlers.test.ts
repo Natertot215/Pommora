@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { relative } from '../Paths/posix'
+import { existsSync } from 'node:fs'
+import { join, relative } from '../Paths/posix'
+import { TRASH_DIR } from '../Paths/nexusPaths'
 import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
@@ -18,7 +20,7 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { unsweptLine } from '../Nexus/entities'
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { OWED, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { propertiesHandlers } from './handlers'
 import { nexusHandlers } from '../Nexus/handlers'
 import type { MutateRequest } from '../Nexus/mutateRequest'
@@ -212,21 +214,6 @@ describe('the property ops', () => {
     expect(await readFile(`${col}/A.md`, 'utf8')).toBe(page)
   })
 
-  it('a delete that finds another operation owed in the journal leaves the journal’s, and its own record’s replay leaves it too', async () => {
-    const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
-    await writeSchemaJournal(root, owed)
-    const setFile = sidecarPath(surfaces.set, 'set')
-    await rm(setFile)
-    await mkdir(setFile)
-    const r = await send({ op: 'deleteProperty', propertyId: propId })
-    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual(FINISH)
-    expect(
-      await replaySchemaCascade(root, { op: 'delete', id: propId, key: 'Stage' }),
-    ).toMatchObject(ok({ skipped: 1 }))
-    expect(await readSchemaJournal(root)).toEqual(owed)
-  })
-
   it('an option delete that finds another operation owed in the journal is refused, keeping the option', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
@@ -298,14 +285,6 @@ describe('the property ops', () => {
 describe('a schema op started while another operation’s record holds the journal', () => {
   const other = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
   const pageA = (): string => `${col}/A.md`
-  const unreadable = async <T>(fn: () => T): Promise<Awaited<T>> => {
-    await chmod(pageA(), 0o000)
-    try {
-      return await fn()
-    } finally {
-      await chmod(pageA(), 0o644)
-    }
-  }
   const fm = async (): Promise<string> => readFile(pageA(), 'utf8')
   beforeEach(async () => {
     await writeSchemaJournal(root, other)
@@ -314,63 +293,16 @@ describe('a schema op started while another operation’s record holds the journ
   it.each<[string, MutateRequest]>([
     ['an option rename', { op: 'renameOption', propertyId: '', from: 'Done', to: 'Closed' }],
     ['an option delete', { op: 'deleteOption', propertyId: '', label: 'Done' }],
-  ])('%s is refused, leaving every holder', async (_, req) => {
+    ['a property rename', { op: 'renameProperty', propertyId: '', label: 'Phase' }],
+    ['a property delete', { op: 'deleteProperty', propertyId: '' }],
+  ])('%s is refused, writing nothing', async (_, req) => {
     const before = await fm()
-    expect(await send({ ...req, propertyId: propId } as MutateRequest)).toEqual(
-      fail('owed', 'An earlier change hasn’t reached every file yet.'),
-    )
+    const registry = await readRegistry(root)
+    expect(await send({ ...req, propertyId: propId } as MutateRequest)).toEqual(OWED)
     expect(await fm()).toBe(before)
+    expect(await readRegistry(root)).toEqual(registry)
+    expect(existsSync(join(root, TRASH_DIR))).toBe(false)
     expect(await readSchemaJournal(root)).toEqual(other)
-  })
-
-  it.skipIf(noModeBits)('a property delete', async () => {
-    const record = { op: 'delete' as const, id: propId, key: 'Stage' }
-    const r = await unreadable(() => send({ op: 'deleteProperty', propertyId: propId }))
-    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual(FINISH)
-    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
-    expect(await fm()).not.toContain('Stage')
-    expect(await readSchemaJournal(root)).toEqual(other)
-  })
-
-  describe('a property rename', () => {
-    const renamed = async () => {
-      const r = await unreadable(() =>
-        send({ op: 'renameProperty', propertyId: propId, label: 'Phase' }),
-      )
-      expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-      expect(r.ok && r.value.retry).toEqual(FINISH)
-      return { op: 'rename' as const, id: propId, from: 'Stage', to: 'Phase' }
-    }
-
-    it.skipIf(noModeBits)('replays its record once the holder reads', async () => {
-      const owed = await renamed()
-      expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
-      expect(await fm()).toContain('Phase:\n  - Done')
-      expect(await fm()).not.toContain('Stage')
-      expect(await readSchemaJournal(root)).toEqual(other)
-    })
-
-    it.skipIf(noModeBits)(
-      'sweeps to the current name once the property is renamed again',
-      async () => {
-        const owed = await renamed()
-        expect(
-          (await send({ op: 'renameProperty', propertyId: propId, label: 'Phase 2' })).ok,
-        ).toBe(true)
-        expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
-        expect(await fm()).toContain('Phase 2:\n  - Done')
-        expect(await fm()).not.toContain('Stage')
-      },
-    )
-
-    it.skipIf(noModeBits)('changes nothing once another property takes the old name', async () => {
-      const owed = await renamed()
-      expect((await createProperty(root, { id: '', label: 'Stage', type: 'number' })).ok).toBe(true)
-      const before = await fm()
-      expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
-      expect(await fm()).toBe(before)
-    })
   })
 })
 

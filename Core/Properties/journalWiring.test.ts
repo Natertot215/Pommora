@@ -303,21 +303,6 @@ describe('the create-side consumer', () => {
   })
 })
 
-describe('the slot protects a stranded record', () => {
-  it('an unrelated op neither displaces nor clears a held heal', async () => {
-    // A rename record stranded by a prior faulted session, unrelated to any live op.
-    await writeSchemaJournal(root, { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' })
-    const r = await deleteProperty(root, 'prop_s')
-    expect(r.ok).toBe(true)
-    expect(await readSchemaJournal(root)).toEqual({
-      op: 'rename',
-      id: 'prop_x',
-      from: 'Old',
-      to: 'New',
-    })
-  })
-})
-
 describe('the slot writes over nothing it cannot read', () => {
   const record = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
 

@@ -33,6 +33,7 @@ import {
 import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
   clearSchemaJournal,
+  OWED,
   readSchemaJournal,
   schemaCascade,
   writeSchemaJournal,
@@ -209,7 +210,7 @@ function rekeyProperty(root: string, propertyId: string, change: Retitle): Promi
     const { prior, moved } = planned.value
     const moves = moved.key !== prior.key
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to: moved.key }
-    if (moves) await writeSchemaJournal(root, record)
+    if (moves && !(await writeSchemaJournal(root, record))) return OWED
     const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
       root,
       (registry) => {
