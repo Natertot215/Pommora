@@ -10,8 +10,8 @@ import {
   governedReach,
   outsideArchive,
   sweepGovernedRoots,
-  unsweptLine,
 } from './governedSweep'
+import { unsweptLine } from './entities'
 import { byKey } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf, liveTreeOf } from './liveTree'

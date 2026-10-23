@@ -17,7 +17,7 @@ import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
-import { unsweptLine } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { propertiesHandlers } from './handlers'
 import { handleMutate } from '../Nexus/mutate'
@@ -284,16 +284,15 @@ describe('the property channels', () => {
     )
   })
 
-  it('property:holders counts the Items a Value Format or a Key Format change rewrites, and refuses a format that isn’t a Key Format', async () => {
-    expect(
-      await propertiesHandlers['property:holders'](ctx, propId, { value_format: 'kebab-case' }),
-    ).toEqual(ok(1))
-    expect(
-      await propertiesHandlers['property:holders'](ctx, propId, { key_format: 'lowercase' }),
-    ).toEqual(ok(1))
-    expect(
-      await propertiesHandlers['property:holders'](ctx, propId, { key_format: 'Shouting' }),
-    ).toEqual(fault('A property id and value are required.'))
+  it('property:holders counts the Items each change it names rewrites, and refuses a change it can’t read', async () => {
+    const holders = (change?: unknown) =>
+      propertiesHandlers['property:holders'](ctx, propId, change)
+    expect(await holders({ of: 'property' })).toEqual(ok(1))
+    expect(await holders({ of: 'option', label: 'Done' })).toEqual(ok(1))
+    expect(await holders({ of: 'format', change: { value_format: 'kebab-case' } })).toEqual(ok(1))
+    expect(await holders({ of: 'format', change: { key_format: 'lowercase' } })).toEqual(ok(1))
+    for (const change of [{ of: 'format', change: { key_format: 'Shouting' } }, undefined])
+      expect(await holders(change)).toEqual(fault('A property id and value are required.'))
   })
 
   it('a removal whose drop fails still lands the Set it wrote in the held tree', async () => {

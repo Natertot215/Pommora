@@ -7,10 +7,10 @@ import {
   askEmptyTrash,
   askTrashing,
   confirmDelete,
-  countPhrase,
   offerUndo,
   spendUndo,
 } from '../Interface/Confirm/confirmations'
+import { countPhrase } from '../Nexus/entities'
 import {
   notifyOutcome,
   notifyReport,

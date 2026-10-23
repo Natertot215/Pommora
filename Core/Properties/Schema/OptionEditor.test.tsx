@@ -148,7 +148,7 @@ describe('the option menu', () => {
     render('select', select)
     await rightClick('Urgent')
     expect(clearOption).not.toHaveBeenCalled()
-    expect(holders).toHaveBeenCalledWith('p1', 'Urgent')
+    expect(holders).toHaveBeenCalledWith('p1', { of: 'option', label: 'Urgent' })
     expect(useSession.getState().pendingConfirm?.req.message).toBe('Clear “Urgent” from 2 Items?')
     await confirm()
     expect(clearOption).toHaveBeenCalledWith('p1', 'Urgent')

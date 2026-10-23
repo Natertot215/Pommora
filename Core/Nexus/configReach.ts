@@ -18,7 +18,6 @@ import {
 } from '../Views/filterRules'
 import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
 import { editList, type Matcher, stripList } from '../Files/rootValues'
-import { unsweptLine } from './governedSweep'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
@@ -37,7 +36,7 @@ import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
-import type { ContainerKind, HeldKind } from './entities'
+import { type ContainerKind, type HeldKind, unsweptLine } from './entities'
 import { archiveReach, containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
 
 // ── Roles ──

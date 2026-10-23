@@ -10,7 +10,8 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from './contextCascade'
-import { sweepGovernedRoots, unsweptLine } from '../Nexus/governedSweep'
+import { sweepGovernedRoots } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'

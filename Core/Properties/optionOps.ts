@@ -7,8 +7,8 @@ import {
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
-  unsweptLine,
 } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 import { editCaches } from './propertyCache'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'

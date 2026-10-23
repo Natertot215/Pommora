@@ -17,8 +17,8 @@ import {
   type SweepResult,
   sweepGovernedRoots,
   undoSweep,
-  unsweptLine,
 } from '../Nexus/governedSweep'
+import { unsweptLine } from '../Nexus/entities'
 import { withoutOrderId } from './spaceSidecar'
 import {
   editHeldList,

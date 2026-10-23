@@ -1,5 +1,5 @@
 import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
-import type { HeldKind } from '../../Nexus/entities'
+import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
 import { useSession } from '../../Session/store'
@@ -7,9 +7,8 @@ import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
-import { itemCount } from '../../Properties/properties'
-import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import type { FormatChange } from '../../Properties/keyFormat'
+import type { CountedChange } from '../../Properties/properties'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -25,24 +24,6 @@ export interface ConfirmRequest {
 }
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
-
-type Counted = { kind: HeldKind | 'property' }
-
-const PLURALS: Record<Counted['kind'], string> = {
-  page: 'Pages',
-  collection: 'Collections',
-  set: 'Sets',
-  space: 'Spaces',
-  context: 'Contexts',
-  property: 'Properties',
-}
-
-export function countPhrase(items: readonly Counted[]): string {
-  const kinds = new Set(items.map((r) => r.kind))
-  const kind = kinds.size === 1 ? [...kinds][0] : null
-  if (kind === null) return itemCount(items.length)
-  return items.length === 1 ? `1 ${capitalize(kind)}` : `${items.length} ${PLURALS[kind]}`
-}
 
 type Asked = Counted & { title: string }
 
@@ -176,27 +157,27 @@ export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise
 
 const askHolding = async (
   propertyId: string,
-  of: string | FormatChange | undefined,
-  req: (held: string) => ConfirmRequest,
+  change: CountedChange,
+  req: (held: number) => ConfirmRequest,
   asksPastOne = false,
 ): Promise<boolean> => {
-  const r = await dialer().ask('property:holders', propertyId, of)
+  const r = await dialer().ask('property:holders', propertyId, change)
   if (!reportRefusal(r)) return false
-  return (asksPastOne && r.value <= 1) || ask(req(itemCount(r.value)))
+  return (asksPastOne && r.value <= 1) || ask(req(r.value))
 }
 
 export const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>
-  askHolding(propertyId, undefined, (held) => ({
+  askHolding(propertyId, { of: 'property' }, (held) => ({
     message: `Delete “${label}” everywhere?`,
-    detail: `It is removed from every collection and stripped from ${held}; a restorable record lands in the nexus’s .trash folder.`,
+    detail: `It is removed from every collection${held ? ` and stripped from ${itemCount(held)}` : ''}; a restorable record lands in the nexus’s .trash folder.`,
     action: 'Delete',
     tone: 'destructive',
   }))
 
 export const askRemoveOption = (propertyId: string, label: string): Promise<boolean> =>
-  askHolding(propertyId, label, (held) => ({
+  askHolding(propertyId, { of: 'option', label }, (held) => ({
     message: `Remove “${label}”?`,
-    detail: `The option is deleted from the property and its value stripped from ${held}.`,
+    detail: `The option is deleted from the property${held ? ` and its value stripped from ${itemCount(held)}` : ''}.`,
     action: 'Remove',
     tone: 'destructive',
   }))
@@ -204,9 +185,9 @@ export const askRemoveOption = (propertyId: string, label: string): Promise<bool
 export const askClearOption = (propertyId: string, label: string): Promise<boolean> =>
   askHolding(
     propertyId,
-    label,
+    { of: 'option', label },
     (held) => ({
-      message: `Clear “${label}” from ${held}?`,
+      message: `Clear “${label}” from ${itemCount(held)}?`,
       detail: 'The option stays; only its assigned values are removed.',
       action: 'Clear',
       tone: 'destructive',
@@ -217,9 +198,9 @@ export const askClearOption = (propertyId: string, label: string): Promise<boole
 export const askFormatChange = (propertyId: string, change: FormatChange): Promise<boolean> =>
   askHolding(
     propertyId,
-    change,
+    { of: 'format', change },
     (held) => ({
-      message: `This action would rewrite metadata in ${held}.`,
+      message: `This action would rewrite metadata in ${itemCount(held)}.`,
       detail: `Each ${'key_format' in change ? 'key' : 'value'} changes to the new format; its display label stays the same.`,
       action: 'Rewrite',
       tone: 'positive',

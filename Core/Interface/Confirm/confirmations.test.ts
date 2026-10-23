@@ -10,7 +10,6 @@ import {
   askTrashing,
   confirmArchive,
   confirmDelete,
-  countPhrase,
   offerUndo,
   spendUndo,
 } from './confirmations'
@@ -23,6 +22,7 @@ import {
   notifyUndoable,
 } from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
+import type { CountedChange } from '../../Properties/properties'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
 import { bundleRow as row } from '../../Testing/fixtures'
@@ -48,7 +48,9 @@ const switchOn = (): void => {
 
 describe('what the Confirm Before Deletion switch governs', () => {
   it('asks before a property delete, an option Remove, and a Clear past one Item whatever the switch says, naming the Items the host counts', async () => {
-    const holders = vi.fn(async (_id: string, value?: string) => ok(value === undefined ? 4 : 2))
+    const holders = vi.fn(async (_id: string, counted: CountedChange) =>
+      ok(counted.of === 'property' ? 4 : 2),
+    )
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
     useSession.setState({
       askConfirm: async (r) => {
@@ -61,9 +63,9 @@ describe('what the Confirm Before Deletion switch governs', () => {
     await askRemoveOption('p1', 'Active')
     await askClearOption('p1', 'Active')
     expect(holders.mock.calls).toEqual([
-      ['p1', undefined],
-      ['p1', 'Active'],
-      ['p1', 'Active'],
+      ['p1', { of: 'property' }],
+      ['p1', { of: 'option', label: 'Active' }],
+      ['p1', { of: 'option', label: 'Active' }],
     ])
     expect(asked[0]).toContain('stripped from 4 Items;')
     expect(asked[1]).toContain('stripped from 2 Items.')
@@ -88,12 +90,32 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked[0]).toContain('stripped from 1 Item;')
   })
 
+  it('a property or an option nothing holds still asks to delete, without the strip clause', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'property:holders': async () => ok(0),
+    })
+    useSession.setState({
+      askConfirm: async (r) => {
+        asked.push(r.detail)
+        return true
+      },
+    })
+    await askDestroyProperty('p1', 'Status')
+    await askRemoveOption('p1', 'Active')
+    expect(asked).toEqual([
+      'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
+      'The option is deleted from the property.',
+    ])
+  })
+
   it('asks before a format change rewriting more than one Item, counting the change, and rewrites one or none unasked', async () => {
     const holders = vi.fn(async (): Promise<Result<number>> => ok(2))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
     expect(await askFormatChange('p1', { key_format: 'lowercase' })).toBe(true)
     expect(asked).toEqual(['This action would rewrite metadata in 2 Items.'])
-    expect(holders.mock.calls).toEqual([['p1', { key_format: 'lowercase' }]])
+    expect(holders.mock.calls).toEqual([
+      ['p1', { of: 'format', change: { key_format: 'lowercase' } }],
+    ])
     asked.length = 0
     for (const count of [1, 0]) {
       holders.mockResolvedValueOnce(ok(count))
@@ -412,26 +434,5 @@ describe('a delete’s question', () => {
     await askTrashing([row({}), row({})])
     await askTrashing([row({}), row({ kind: 'set' })])
     expect(asked).toEqual(['Delete “Ideas”?', 'Delete these 2 Pages?', 'Delete these 2 Items?'])
-  })
-})
-
-describe('countPhrase', () => {
-  it('names the kind when every row shares one', () => {
-    expect(countPhrase([row({}), row({})])).toBe('2 Pages')
-    expect(countPhrase([row({ kind: 'set' }), row({ kind: 'set' })])).toBe('2 Sets')
-    expect(countPhrase([row({ kind: 'context' }), row({ kind: 'context' })])).toBe('2 Contexts')
-  })
-
-  it('generalizes when they do not', () => {
-    expect(countPhrase([row({}), row({ kind: 'space' })])).toBe('2 Items')
-  })
-
-  it('stays singular for one', () => {
-    expect(countPhrase([row({})])).toBe('1 Page')
-    expect(countPhrase([row({ kind: 'space' })])).toBe('1 Space')
-  })
-
-  it('reports none honestly', () => {
-    expect(countPhrase([])).toBe('0 Items')
   })
 })

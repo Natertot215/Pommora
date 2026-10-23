@@ -18,7 +18,6 @@ import { addressable, type NexusPages } from './heldPages'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { itemCount } from '../Properties/properties'
 import { changedKeys, governedRoot, rewriteRaw } from './governedRoot'
 
 export interface SweepResult {
@@ -56,9 +55,6 @@ export async function governedReach(
     .map((rel) => join(root, rel))
     .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
 }
-
-export const unsweptLine = (count: number, what = ''): string =>
-  `Couldn’t update ${what}${itemCount(count)}.`
 
 // A file whose lock or write throws costs only itself, so the files after it are still reached.
 const guarded = (file: string, missed: string[], body: () => Promise<void>): Promise<void> =>

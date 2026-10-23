@@ -12,7 +12,7 @@ import './settle'
 import { stabilize } from './treeStabilize'
 import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
 import { forgetLastReads } from '../Files/atomicWrite'
-import { unsweptLine } from './governedSweep'
+import { unsweptLine } from './entities'
 
 vi.mock('./liveTree', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./liveTree')>()

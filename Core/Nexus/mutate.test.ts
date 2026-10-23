@@ -57,6 +57,7 @@ import * as governedRoot from './governedRoot'
 import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
 import * as governedSweep from './governedSweep'
+import { unsweptLine } from './entities'
 import { updatePageBody } from './page'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -2947,7 +2948,7 @@ describe('the Contexts lock', () => {
         const reply = await running
         expect(await readFile(first, 'utf8')).toBe(made)
         expect(splitFrontmatter(await readFile(last, 'utf8'))['<Areas>']).toEqual(['Work'])
-        expect(reply).toEqual(fault(governedSweep.unsweptLine(2)))
+        expect(reply).toEqual(fault(unsweptLine(2)))
       } finally {
         vi.restoreAllMocks()
         await chmod(locked, 0o644)
