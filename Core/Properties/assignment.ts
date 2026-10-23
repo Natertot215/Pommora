@@ -1,41 +1,22 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import { join, relative } from '../Paths/posix'
+import { relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { assignedIds } from '../Nexus/containerFields'
 import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { byKey, PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import { PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { isBlankRaw } from './propertyValue'
 import { type Frozen, gonePageEntry, reencode } from '../Nexus/governedRoot'
 import { frozenWorld, parkLinks } from '../Trash/holdings'
 import { sweepRootsById } from '../Nexus/governedSweep'
 import { landValue } from '../Files/rootValues'
 import { ok, fail, type Result } from '../Contract/result'
-
-export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
-  Array.isArray(raw?.properties)
-    ? raw.properties.filter((id): id is string => typeof id === 'string')
-    : []
-
-export async function assignedDefs(
-  root: string,
-  collectionFolder: string | null,
-): Promise<ReadonlyMap<string, PropertyDefinition>> {
-  if (collectionFolder === null) return new Map()
-  const held = heldTreeOf(root)
-  if (held) {
-    const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
-    if (node) return byKey(node.properties ?? [])
-  }
-  const registry = (await readRegistry(root)).defs
-  const assigned = assignedIds(await readJsonObject(sidecarPath(collectionFolder, 'collection')))
-  return byKey(assigned.flatMap((id) => registry[id] ?? []))
-}
 
 /** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
 export async function refillValues(

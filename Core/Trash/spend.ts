@@ -23,7 +23,7 @@ import {
   pageIdsOf,
 } from '../Bundles/bundle'
 import { collectionOf, originOf } from '../Bundles/record'
-import { relocate, removeOwn, rmwJsonStrict } from '../Files/atomicWrite'
+import { readJsonObject, relocate, removeOwn, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -38,7 +38,9 @@ import { deleteCascade, joinCascades, type StrippedLink, withUnswept } from '../
 import { frozenWorld, parkLinks, refillTrashed } from './holdings'
 import type { TrashDeps } from './discard'
 import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
-import { owningCollection } from '../Nexus/treePatch'
+import { containerSchema, schemaOf } from '../Nexus/treePatch'
+import { assignedIds } from '../Nexus/containerFields'
+import { sidecarPath } from '../Paths/paths'
 import { contextWorldOf } from '../Contexts/contextResolve'
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
@@ -127,14 +129,17 @@ export async function restoreTrashed(
   const targets = new Map(Object.entries(record.targets ?? {}))
   const world = linkWorld(tree, archived, back)
   const frozen = frozenWorld(world, targets)
-  const owner =
-    record.entity === 'page' || record.entity === 'set' ? owningCollection(tree, dir) : undefined
+  // A returning Collection sits in the Trash, outside the tree, so its own sidecar names its schema; a page or Set takes its destination's, and nothing under `.nexus/contexts` has one.
+  const schema =
+    record.entity === 'collection'
+      ? schemaOf(tree, assignedIds(await readJsonObject(sidecarPath(artifactAbs, 'collection'))))
+      : containerSchema(tree, dir)
   const dropped = await scrubReturning(
     root,
     tree,
     record.entity,
     artifactAbs,
-    record.entity === 'collection' ? artifactAbs : owner ? join(root, owner.path) : null,
+    schema,
     frozen,
     record.entity === 'context' ? contextKey(record.registry.title) : undefined,
   )

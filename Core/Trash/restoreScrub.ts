@@ -1,9 +1,8 @@
 // A bundle froze at its delete while the world moved on; replaying it verbatim would reintroduce governed keys nothing stands behind, so returning content is reconciled before it lands, and its own links repaired once it has.
 
 import type { NexusTree } from '../Nexus/tree'
-import { assignedDefs } from '../Properties/assignment'
 import { editHeldList, editList, rekeyHeld, stripKeys } from '../Files/rootValues'
-import { byKey, optionsOf, PROPERTY_TYPES } from '../Properties/properties'
+import { byKey, optionsOf, PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
 import { spellingsOf } from '../Properties/keyFormat'
 import { contextKey, parseContextKey } from '../Contexts/contexts'
@@ -137,17 +136,17 @@ async function artifactFiles(
   return { pages, sidecars: sidecars.map((rel) => join(root, rel)) }
 }
 
-/** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
+/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
   root: string,
   tree: NexusTree,
   entity: RecordFile['entity'],
   absArtifact: string,
-  destCollectionFolder: string | null,
+  schema: readonly PropertyDefinition[],
   frozen: Frozen,
   inTransitKey?: string,
 ): Promise<StrippedLink[]> {
-  const world = governedWorld(tree, await assignedDefs(root, destCollectionFolder))
+  const world = governedWorld(tree, schema)
   const spaceWorld = spaceWorldOf(tree)
   const current = currentKeys(tree, inTransitKey)
   const links = byKey(linkDefsOf(tree.config.registry))

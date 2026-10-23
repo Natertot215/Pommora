@@ -1,6 +1,6 @@
 import { mintBundle } from '../Bundles/bundle'
 import { type RecordFile, writeRecord } from '../Bundles/record'
-import { assignedIds } from './assignment'
+import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import {
   readRegistry,

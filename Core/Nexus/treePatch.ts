@@ -130,6 +130,22 @@ export const containerSchema = (
   of: string | CollectionNode | SetNode,
 ): PropertyDefinition[] => owningCollection(tree, of)?.properties ?? NO_SCHEMA
 
+const schemas = new WeakMap<
+  readonly string[],
+  { registry: PropertyDefinition[]; schema: PropertyDefinition[] }
+>()
+
+/** The definitions `ids` names, in its order, against the tree's registry; an id the registry lacks reads as nothing. One answer is held per id list and kept whole while the definitions it names stay the same, so a render keyed on a schema reruns only when its definitions change. */
+export function schemaOf(tree: NexusTree, ids: readonly string[]): PropertyDefinition[] {
+  const { registry } = tree.config
+  const held = schemas.get(ids)
+  if (held?.registry === registry) return held.schema
+  const next = ids.flatMap((id) => registry.find((d) => d.id === id) ?? [])
+  const schema = held && sameItems(next, held.schema) ? held.schema : next
+  schemas.set(ids, { registry, schema })
+  return schema
+}
+
 export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
   containerTrailWhere(tree, (n) => n.path === rel)?.at(-1) ?? null
 
