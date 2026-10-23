@@ -59,7 +59,7 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
 import {
   chipRegion,
   hiddenRow,

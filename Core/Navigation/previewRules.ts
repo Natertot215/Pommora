@@ -2,11 +2,7 @@
 
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { entityMemo, type NexusTree } from '../Nexus/tree'
-import {
-  contextPaneTargets,
-  FILEDATA_TARGETS,
-  type PaneTarget,
-} from '../Properties/Cells/PropertyTypes'
+import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget } from '../Views/paneTargets'
 import { containerAt } from '../Nexus/treePatch'
 import { relDirname } from '../Paths/posix'
 import { settingOf } from '../Settings/personalization'
