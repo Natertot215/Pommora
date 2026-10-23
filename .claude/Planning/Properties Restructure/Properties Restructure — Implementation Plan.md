@@ -1162,7 +1162,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 6-6 · Measurement F3 and its outcome
   - [x] Task 6-7 · Drive group 5
   - [x] Review Checkpoint
-  - [ ] Closeout P6 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P6 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 7 opens]`
 - [ ] **Phase 7** — One Door for Property Changes
   - [ ] Task 7-1 · The counting module in `entities.ts`, and one `property:holders` switch
@@ -10950,11 +10950,13 @@ No repository file changes on **Pass**. On **Fail**, the tree reads as Task 6-4'
 - [ ] Behavior: Properties Drive group 5, the Metadata Drive's group 3 (its `M3 Undo` cases), the Alias Drive's group 1, the Option Picker Drive, and the Text Property Drive's groups 1–4 green.
 - [ ] Task 6-6's outcome is recorded where its rule sends it, with its numbers.
 - [ ] The number: `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-6-delta.md` over the phase's own commits, its fixes included; its **Actionable** column goes into *§Net Ledger*'s P6 row beside *§Line Total*'s figure for the outcome F3 took.
-- [ ] **Asks for Closeout P6:** the closeout's briefs ask in particular whether `landEntry`'s page arm and the value writers read as callers of one page writer, `rewriteRootAt`, with no second path to a page's text; whether `PutBack.before`'s two spellings (pair text, JSON value) read unambiguously where `landEntry` dispatches on the file; whether `withPair`'s null for "nothing changes" and P4B's `writtenRoot` null read as one rule; whether the `undo` field, read as "the request that takes this write back", stays one concept across value writes and the alias add; whether the `picked` overlay misses any reader of `row.frontmatter` or `contextValues` that a pending write must reach; and whether any behavior below is something Nathan wouldn't intend.
-- [ ] **Closeout P6:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 6's base>..HEAD` with the asks Phase 6 names; each correctness finding is fixed before Phase 7 opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
+- [x] **Asks for Closeout P6:** the closeout's briefs ask in particular whether `landEntry`'s page arm and the value writers read as callers of one page writer, `rewriteRootAt`, with no second path to a page's text; whether `PutBack.before`'s two spellings (pair text, JSON value) read unambiguously where `landEntry` dispatches on the file; whether `withPair`'s null for "nothing changes" and P4B's `writtenRoot` null read as one rule; whether the `undo` field, read as "the request that takes this write back", stays one concept across value writes and the alias add; whether the `picked` overlay misses any reader of `row.frontmatter` or `contextValues` that a pending write must reach; and whether any behavior below is something Nathan wouldn't intend.
+- [x] **Closeout P6:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 6's base>..HEAD` with the asks Phase 6 names; each correctness finding is fixed before Phase 7 opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
 
 #### Behavior Changes and Disclosures
 
+- **A Write That Lands on Try Again Can Be Undone:** a refused value write's Try Again pushes the retried write's own undo, so ⌘Z takes back what the retry landed; a refused write that's never retried spends no ⌘Z, which still reaches the edit before it.
+- **An Undo That Misses Its File Shows the Value the File Holds:** a put-back answering `missed` no longer counts as landed, so the row stops showing the undone value over a file that still holds the write.
 - **A Space Listed Twice Reads Once (P-4, ruled 10-23-2026):** `resolveContextKeys` keeps each Space once, in first-seen order, as a repeated Multi-Select or File entry reads since Phase 4B, so `Areas: [Home, Home]` shows one chip where it showed two until the next write, and `Cell.tsx`'s repeat-key block leaves with the case it served; it lands at Phase 6's head with its own commit (−7), counted in this phase's row.
 - **An Undo That Misses a File Offers Try Again (Try Again Unclogs, Nathan's Ruling):** an undo whose put-back can't reach a file (gone, unreadable, unwritable) answers "Couldn’t update N Items." with Try Again, which sends only the entries that missed, so a file the undo already put back is never written again over an edit made since; at HEAD's put-back plan the warning carried no Try Again.
 - **A Value Write Its File Refused Offers Try Again (Try Again Unclogs, Nathan's Intent):** a value set from a cell, a picker, or the panel that fails on its file (unreadable, unwritable, or busy writing) shows the refusal with Try Again, which sends the same value again; a refusal no retry can change (the page is gone, or the value is refused) reads as today.
@@ -34742,7 +34744,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 4A | −531 | +484 | −47 | −540 / +501 / −39 | −252 |
 | 4B | −18 | +29 | +11 | −18 / +29 / +11 | −241 |
 | 5 | −151 | +117 | −34 | −150 / +116 / −34 | −275 |
-| 6 | −266 | +305 | +39 | −266 / +293 / +27 | −248 |
+| 6 | −266 | +305 | +39 | −305 / +336 / +31 | −244 |
 | 7 | −622 | +469 | −153 | | |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
