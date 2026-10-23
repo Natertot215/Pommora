@@ -4,7 +4,7 @@ import { PROPERTY_JOURNAL_FILENAME } from '../Paths/nexusPaths'
 import { same } from '../Files/stableJson'
 import { journalSlot } from './journalSlot'
 import { type ConfigReach, reachReport } from '../Nexus/configReach'
-import type { CascadeReport } from '../Nexus/cascade'
+import type { MutateOutcome } from '../Nexus/mutateRequest'
 
 export type SchemaJournal =
   | { op: 'rename'; id: string; from: string; to: string }
@@ -45,10 +45,8 @@ export const writeSchemaJournal = slot.write
 export const readSchemaJournal = slot.read
 export const clearSchemaJournal = slot.clear
 
-/** A schema op's answer: its cascade, and the record whose replay reaches the files it skipped. */
-export type SchemaCascade = { cascade: CascadeReport; owed?: SchemaJournal }
-
-export const schemaCascade = (reach: ConfigReach, record: SchemaJournal): SchemaCascade => ({
+/** A schema op's answer: its cascade, and while it skipped a file, its record's replay as the Try Again. */
+export const schemaCascade = (reach: ConfigReach, _record: SchemaJournal): MutateOutcome => ({
   cascade: reachReport(reach),
-  ...(reach.skipped ? { owed: record } : {}),
+  ...(reach.skipped ? { retry: { op: 'finishOwed' as const } } : {}),
 })

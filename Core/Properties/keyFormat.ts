@@ -23,9 +23,6 @@ export type FormatChange = z.infer<typeof formatChange>
 
 export const DEFAULT_KEY_FORMAT: KeyFormat = KEY_FORMATS[0]
 
-export const isKeyFormat = (v: unknown): v is KeyFormat =>
-  (KEY_FORMATS as readonly unknown[]).includes(v)
-
 const LOWER = /\p{Ll}/u
 const UPPER = /\p{Lu}/u
 

@@ -646,9 +646,10 @@ describe('unreadable holders hold the record', () => {
       const deleted = await deleteProperty(root, 'prop_s')
       await chmod(b, 0o644)
       if (!deleted.ok) throw new Error('delete refused')
-      expect(deleted.value.owed).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
-      expect(deleted.value.cascade.warning).toBeDefined()
-      expect(await readRecord(join(root, deleted.value.bundled.bundlePath))).toMatchObject({
+      expect(deleted.value.retry).toEqual({ op: 'finishOwed' })
+      expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
+      expect(deleted.value.cascade?.warning).toBeDefined()
+      expect(await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))).toMatchObject({
         partial: true,
       })
       await indexWrittenPage(root, b)
@@ -671,7 +672,7 @@ describe('an unreadable Space sidecar', () => {
       try {
         await openSession(root)
         const deleted = await deleteProperty(root, 'prop_s')
-        expect(deleted.ok && deleted.value.cascade.warning).toBe(unsweptLine(1))
+        expect(deleted.ok && deleted.value.cascade?.warning).toBe(unsweptLine(1))
       } finally {
         await chmod(sidecar, 0o644)
       }

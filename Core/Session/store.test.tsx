@@ -2,12 +2,12 @@
 import { detail as pageDetail } from '../Testing/fixtures'
 import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
-import { ok } from '../Contract/result'
+import { fail, ok } from '../Contract/result'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { NexusTree } from '../Nexus/tree'
 import { deltaOf } from '../Nexus/treeDelta'
 import type { PageDetail } from '../Pages/pageDetail'
-import { movedHeadings } from './nexusSlice'
+import { movedHeadings, storesChanged } from './nexusSlice'
 import {
   type PageTarget,
   type SelectTarget,
@@ -1172,6 +1172,61 @@ describe('store — the mutate rail', () => {
     channels.mutate = vi.fn(async () => ok({}))
     await note?.action?.run()
     await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(retry))
+  })
+
+  it('an owed refusal offers Try Again, which replays the journal’s record', async () => {
+    channels.mutate = vi.fn(async () =>
+      fail('owed', 'An earlier change hasn’t reached every file yet.'),
+    )
+    clearNotification()
+    const edit = { op: 'recolor', option: 'Done', color: 'red' } as const
+    await useSession.getState().mutate({ op: 'editOption', propertyId: 'p', edit })
+    const note = currentNotification()
+    expect(note?.message).toBe('An earlier change hasn’t reached every file yet.')
+    expect(note?.action?.label).toBe('Try Again')
+    channels.mutate = vi.fn(async () => ok({}))
+    await note?.action?.run()
+    await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith({ op: 'finishOwed' }))
+  })
+
+  it('leaves a property delete’s pass warning to the Deleted notice', async () => {
+    channels.mutate = vi.fn(async () => ok({ cascade: { pages: [], hosts: [], warning: 'W' } }))
+    clearNotification()
+    const listed = vi.fn()
+    const off = storesChanged.subscribe(listed)
+    await useSession.getState().mutate({ op: 'deleteProperty', propertyId: 'p' })
+    off()
+    expect(currentNotification()).toBeNull()
+    expect(listed).toHaveBeenCalledOnce()
+  })
+
+  it('a create that took a numbered name says so', async () => {
+    const draft = { label: 'New Select', type: 'select' } as const
+    channels.mutate = vi.fn(async () =>
+      ok({ created: { propertyId: 'p' }, landedAs: 'New Select (2)' }),
+    )
+    clearNotification()
+    await useSession.getState().mutate({ op: 'addProperty', containerPath: 'Notes', draft })
+    expect(currentNotification()?.message).toBe('Created “New Select (2)”.')
+    channels.mutate = vi.fn(async () => ok({ created: { propertyId: 'q' } }))
+    clearNotification()
+    await useSession.getState().mutate({ op: 'addProperty', containerPath: 'Notes', draft })
+    expect(currentNotification()).toBeNull()
+  })
+
+  it('a Space create that took a numbered name says so', async () => {
+    channels.mutate = vi.fn(async () =>
+      ok({ created: { path: 'Areas/New Space (2)' }, landedAs: 'New Space (2)' }),
+    )
+    clearNotification()
+    await useSession
+      .getState()
+      .mutate({ op: 'createSpace', id: 'sp', contextId: 'c', name: 'New Space' })
+    expect(currentNotification()?.message).toBe('Created “New Space (2)”.')
+    channels.mutate = vi.fn(async () => ok({ landedAs: 'Notes (2)' }))
+    clearNotification()
+    await useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b' })
+    expect(currentNotification()).toBeNull()
   })
 
   it('an undo that missed a file offers Try Again, which sends only the missed entries', async () => {

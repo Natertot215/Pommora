@@ -27,7 +27,7 @@ export async function newPageAdjacent(
     where,
   )
   const done = await mutate(req)
-  if (done?.created) beginRename(done.created.path, true, host)
+  if (done?.created && 'path' in done.created) beginRename(done.created.path, true, host)
 }
 
 export async function newSpaceAdjacent(
@@ -45,7 +45,7 @@ export async function newSpaceAdjacent(
     where,
   )
   const done = await mutate(req)
-  if (done?.created) beginRename(done.created.path, true, host)
+  if (done?.created && 'path' in done.created) beginRename(done.created.path, true, host)
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
@@ -54,7 +54,7 @@ export async function createNamed(ask: UnmintedCreate, host?: RenameHost): Promi
   const { tree, mutate, beginRename } = s
   const req = minted(ask)
   const done = await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req)
-  if (done?.created) beginRename(done.created.path, true, host)
+  if (done?.created && 'path' in done.created) beginRename(done.created.path, true, host)
 }
 
 export async function newPage(inWindow: boolean): Promise<void> {
@@ -73,7 +73,7 @@ export async function newPage(inWindow: boolean): Promise<void> {
     personalizationOf(s),
   )
   const created = (await mutate(req))?.created
-  if (!created) return
+  if (!created || !('path' in created)) return
   const page = { kind: 'page', id: req.id, path: created.path } as const
   await (inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false }))
 }

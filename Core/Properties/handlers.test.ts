@@ -20,6 +20,9 @@ import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { unsweptLine } from '../Nexus/entities'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { propertiesHandlers } from './handlers'
+import { nexusHandlers } from '../Nexus/handlers'
+import type { MutateRequest } from '../Nexus/mutateRequest'
+import { replaySchemaCascade } from './replaySchemaCascade'
 import { handleMutate } from '../Nexus/mutate'
 import type { TrashDeps } from '../Trash/discard'
 
@@ -41,7 +44,11 @@ const ctx = {
   push: (channel: string, payload: unknown) => {
     pushes.push({ channel, payload })
   },
+  trashMode: async () => 'nexus',
 } as unknown as HostContext
+
+const send = (req: MutateRequest) => nexusHandlers.mutate(ctx, req)
+const FINISH = { op: 'finishOwed' as const }
 
 const tilePushes = (): unknown[] =>
   pushes.filter((p) => p.channel === 'tiles:changed').map((p) => p.payload)
@@ -83,27 +90,24 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('the property channels', () => {
-  it('schema:add writes the key from the label, replacing a key the payload carries', async () => {
-    const r = await propertiesHandlers['schema:add'](ctx, relative(root, col), {
-      id: '',
-      label: 'Due Date',
-      key: 'whatever',
-      type: 'text',
-    })
-    if (!r.ok) throw new Error('add failed')
-    expect((await readRegistry(root)).defs[r.value.id]?.key).toBe('Due Date')
+describe('the property ops', () => {
+  it('addProperty writes the key from the label, replacing a key the payload carries', async () => {
+    const draft = { label: 'Due Date', key: 'whatever', type: 'text' as const }
+    const r = await send({ op: 'addProperty', containerPath: relative(root, col), draft })
+    if (!r.ok || !r.value.created || !('propertyId' in r.value.created))
+      throw new Error('add failed')
+    expect((await readRegistry(root)).defs[r.value.created.propertyId]?.key).toBe('Due Date')
   })
 
   it('a rename pushes each board it wrote once, and the held tree holds the containers it wrote', async () => {
-    const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(tilePushes()).toEqual([HOME])
     expect(liveViewAt(surfaces.set)).toEqual(viewOn(propId, 'Closed'))
   })
 
   it.skipIf(noModeBits)(
-    'an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault',
+    'an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the skip on its cascade',
     async () => {
       const locked = await createFolderEntity(col, 'set', 'Locked', newId())
       if (!locked.ok) throw new Error('setup failed')
@@ -116,8 +120,12 @@ describe('the property channels', () => {
       )
       await chmod(locked.value.path, 0o555)
       try {
-        const r = await propertiesHandlers['schema:unassign'](ctx, relative(root, col), propId)
-        expect(r).toEqual(fault(unsweptLine(1)))
+        const r = await send({
+          op: 'unassignProperty',
+          containerPath: relative(root, col),
+          propertyId: propId,
+        })
+        expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } }))
       } finally {
         await chmod(locked.value.path, 0o755)
       }
@@ -126,72 +134,60 @@ describe('the property channels', () => {
     },
   )
 
-  it('an option rename held by an unreadable Set sidecar warns with a replay that heals it once the file reads', async () => {
+  it('an option rename held by an unreadable Set sidecar warns with a Try Again that heals it once the file reads', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
-    const record = {
+    const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
+    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.retry).toEqual(FINISH)
+    expect(await readSchemaJournal(root)).toEqual({
       op: 'option-rename',
       id: propId,
       keys: [['Done', 'Closed']],
       labels: ['Done', 'Closed'],
-    }
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
+    })
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual(viewOn(propId, 'Closed').filter)
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await send(FINISH)).toMatchObject(ok({ cascade: { pages: [] } }))
     expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
-  it('a replay asked with no record replays the one the journal holds', async () => {
-    const setFile = sidecarPath(surfaces.set, 'set')
-    const held = await readFile(setFile, 'utf8')
-    await rm(setFile)
-    await mkdir(setFile)
-    await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
-    await rm(setFile, { recursive: true })
-    await writeFile(setFile, held)
-    await refreshTree(root)
-    expect(await propertiesHandlers['property:replay'](ctx)).toEqual(ok(null))
-    expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
-  it('an option removal held by an unreadable Set sidecar keeps the option and offers the replay', async () => {
+  it('an option delete held by an unreadable Set sidecar keeps the option and offers Try Again', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, key: 'Done' })
+    const r = await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })
+    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.retry).toEqual(FINISH)
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id: propId, key: 'Done' })
     expect(liveViewAt(col)).not.toHaveProperty('filter')
     expect(tilePushes()).toEqual([HOME])
   })
 
-  it('a delete held by an unreadable Set sidecar warns, and the replay channel heals it once the file reads', async () => {
+  it('a delete held by an unreadable Set sidecar warns, and Try Again heals it once the file reads', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:delete'](ctx, propId)
-    const record = { op: 'delete', id: propId, key: 'Stage' }
+    const r = await send({ op: 'deleteProperty', propertyId: propId })
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
+    expect(r.ok && r.value.retry).toEqual(FINISH)
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: propId, key: 'Stage' })
     expect(tilePushes()).toEqual([HOME])
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
+    expect(await send(FINISH)).toMatchObject(
+      ok({ cascade: { pages: [], warning: unsweptLine(1) }, retry: FINISH }),
+    )
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual({
-      ok: true,
-      value: null,
-    })
+    const finished = await send(FINISH)
+    expect(finished).toMatchObject(ok({ cascade: { pages: [] } }))
+    expect(finished.ok && finished.value.retry).toBeUndefined()
     const views = (await readJsonAt(setFile)).views as { filter: unknown }[]
     expect(views[0]).not.toHaveProperty('filter')
   })
@@ -201,39 +197,40 @@ describe('the property channels', () => {
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:delete'](ctx, propId)
-    if (!r.ok || !r.value.owed || !r.value.bundled) throw new Error('setup failed')
-    const record = r.value.owed
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
+    const r = await send({ op: 'deleteProperty', propertyId: propId })
+    const record = await readSchemaJournal(root)
+    if (!r.ok || !record || !r.value.bundled) throw new Error('setup failed')
+    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 1 }))
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
     const bundlePath = r.value.bundled.bundlePath
     expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
     const page = await readFile(`${col}/A.md`, 'utf8')
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
     expect((await readRegistry(root)).defs[propId]?.label).toBe('Stage')
     expect(await readFile(`${col}/A.md`, 'utf8')).toBe(page)
   })
 
-  it('a delete that finds another operation owed in the journal answers its own record, whose replay leaves the journal’s', async () => {
+  it('a delete that finds another operation owed in the journal leaves the journal’s, and its own record’s replay leaves it too', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:delete'](ctx, propId)
-    const record = { op: 'delete', id: propId, key: 'Stage' }
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
+    const r = await send({ op: 'deleteProperty', propertyId: propId })
+    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.retry).toEqual(FINISH)
+    expect(
+      await replaySchemaCascade(root, { op: 'delete', id: propId, key: 'Stage' }),
+    ).toMatchObject(ok({ skipped: 1 }))
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('an option removal that finds another operation owed in the journal is refused, keeping the option', async () => {
+  it('an option delete that finds another operation owed in the journal is refused, keeping the option', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
-    expect(await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).toEqual(
+    expect(await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })).toEqual(
       fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
@@ -243,20 +240,20 @@ describe('the property channels', () => {
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('an option removal’s record replayed after the option is removed and added again leaves the option and its values', async () => {
+  it('an option delete’s record replayed after the option is deleted and added again leaves the option and its values', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
     await mkdir(setFile)
-    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
-    if (!r.ok || !r.value.owed) throw new Error('setup failed')
-    const record = r.value.owed
+    expect((await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })).ok).toBe(true)
+    const record = await readSchemaJournal(root)
+    if (!record) throw new Error('setup failed')
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect((await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).ok).toBe(true)
+    expect((await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })).ok).toBe(true)
     const add = { op: 'add' as const, groupId: 'select', label: 'Done' }
-    expect((await propertiesHandlers['property:editOption'](ctx, propId, add)).ok).toBe(true)
+    expect((await send({ op: 'editOption', propertyId: propId, edit: add })).ok).toBe(true)
     const page = `${col}/A.md`
     const def = (await readRegistry(root)).defs[propId]
     await rewriteRootAt(
@@ -264,7 +261,7 @@ describe('the property channels', () => {
       rewriteRaw((raw) => landValue(raw, def.key, ['Done'])),
     )
     const before = await readFile(page, 'utf8')
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
     expect(await readFile(page, 'utf8')).toBe(before)
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
       key: 'Done',
@@ -272,16 +269,11 @@ describe('the property channels', () => {
     })
   })
 
-  it('property:setKeyFormat refuses a format that isn’t a Key Format', async () => {
-    expect(await propertiesHandlers['property:setKeyFormat'](ctx, propId, 'Shouting')).toEqual(
-      fault('A property id and format are required.'),
-    )
-  })
-
-  it('property:setValueFormat refuses a format that isn’t a Key Format', async () => {
-    expect(await propertiesHandlers['property:setValueFormat'](ctx, propId, 'Shouting')).toEqual(
-      fault('A property id and format are required.'),
-    )
+  it('a format change that isn’t a Key Format is refused as malformed', async () => {
+    for (const change of [{ key_format: 'Shouting' }, { value_format: 'Shouting' }])
+      expect(
+        await nexusHandlers.mutate(ctx, { op: 'setFormat', propertyId: propId, change }),
+      ).toEqual(fault('Malformed request.'))
   })
 
   it('property:holders counts the Items each change it names rewrites, and refuses a change it can’t read', async () => {
@@ -295,9 +287,9 @@ describe('the property channels', () => {
       expect(await holders(change)).toEqual(fault('A property id and value are required.'))
   })
 
-  it('a removal whose drop fails still lands the Set it wrote in the held tree', async () => {
+  it('a delete whose drop fails still lands the Set it wrote in the held tree', async () => {
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
-    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
+    const r = await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })
     expect(r.ok).toBe(false)
     expect(liveViewAt(surfaces.set)).not.toHaveProperty('filter')
   })
@@ -319,41 +311,41 @@ describe('a schema op started while another operation’s record holds the journ
     await writeSchemaJournal(root, other)
   })
 
-  it.each([
-    [
-      'an option rename',
-      () => propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
-    ],
-    ['an option delete', () => propertiesHandlers['property:removeOption'](ctx, propId, 'Done')],
-  ])('%s is refused, leaving every holder', async (_, run) => {
+  it.each<[string, MutateRequest]>([
+    ['an option rename', { op: 'renameOption', propertyId: '', from: 'Done', to: 'Closed' }],
+    ['an option delete', { op: 'deleteOption', propertyId: '', label: 'Done' }],
+  ])('%s is refused, leaving every holder', async (_, req) => {
     const before = await fm()
-    expect(await run()).toEqual(fail('owed', 'An earlier change hasn’t reached every file yet.'))
+    expect(await send({ ...req, propertyId: propId } as MutateRequest)).toEqual(
+      fail('owed', 'An earlier change hasn’t reached every file yet.'),
+    )
     expect(await fm()).toBe(before)
     expect(await readSchemaJournal(root)).toEqual(other)
   })
 
   it.skipIf(noModeBits)('a property delete', async () => {
-    const record = { op: 'delete', id: propId, key: 'Stage' }
-    const r = await unreadable(() => propertiesHandlers['property:delete'](ctx, propId))
-    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    const record = { op: 'delete' as const, id: propId, key: 'Stage' }
+    const r = await unreadable(() => send({ op: 'deleteProperty', propertyId: propId }))
+    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.retry).toEqual(FINISH)
+    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
     expect(await fm()).not.toContain('Stage')
     expect(await readSchemaJournal(root)).toEqual(other)
   })
 
   describe('a property rename', () => {
-    const record = { op: 'rename' as const, id: '', from: 'Stage', to: 'Phase' }
     const renamed = async () => {
-      const r = await unreadable(() => propertiesHandlers['property:rename'](ctx, propId, 'Phase'))
-      expect(r.ok && r.value?.cascade.warning).toBe(unsweptLine(1))
-      expect(r.ok && r.value?.owed).toEqual({ ...record, id: propId })
-      return { ...record, id: propId }
+      const r = await unreadable(() =>
+        send({ op: 'renameProperty', propertyId: propId, label: 'Phase' }),
+      )
+      expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+      expect(r.ok && r.value.retry).toEqual(FINISH)
+      return { op: 'rename' as const, id: propId, from: 'Stage', to: 'Phase' }
     }
 
     it.skipIf(noModeBits)('replays its record once the holder reads', async () => {
       const owed = await renamed()
-      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+      expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
       expect(await fm()).toContain('Phase:\n  - Done')
       expect(await fm()).not.toContain('Stage')
       expect(await readSchemaJournal(root)).toEqual(other)
@@ -363,8 +355,10 @@ describe('a schema op started while another operation’s record holds the journ
       'sweeps to the current name once the property is renamed again',
       async () => {
         const owed = await renamed()
-        expect((await propertiesHandlers['property:rename'](ctx, propId, 'Phase 2')).ok).toBe(true)
-        expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+        expect(
+          (await send({ op: 'renameProperty', propertyId: propId, label: 'Phase 2' })).ok,
+        ).toBe(true)
+        expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
         expect(await fm()).toContain('Phase 2:\n  - Done')
         expect(await fm()).not.toContain('Stage')
       },
@@ -374,7 +368,7 @@ describe('a schema op started while another operation’s record holds the journ
       const owed = await renamed()
       expect((await createProperty(root, { id: '', label: 'Stage', type: 'number' })).ok).toBe(true)
       const before = await fm()
-      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+      expect(await replaySchemaCascade(root, owed)).toMatchObject(ok({ skipped: 0 }))
       expect(await fm()).toBe(before)
     })
   })
@@ -395,16 +389,16 @@ describe('a Collection whose sidecar doesn’t parse', () => {
 
   it('an option rename holds nothing owed, and the Collection keeps the old label once it reads', async () => {
     const held = await damaged()
-    const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    const r = await send({ op: 'renameOption', propertyId: propId, from: 'Done', to: 'Closed' })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)
     expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Done')])
   })
 
-  it('an option removal holds nothing owed and drops the option, and the Collection keeps its filter once it reads', async () => {
+  it('an option delete holds nothing owed and drops the option, and the Collection keeps its filter once it reads', async () => {
     const held = await damaged()
-    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
+    const r = await send({ op: 'deleteOption', propertyId: propId, label: 'Done' })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(await readSchemaJournal(root)).toBeNull()
     await repaired(held)

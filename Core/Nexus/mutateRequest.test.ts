@@ -70,4 +70,25 @@ describe('mutateRequest — what the window sends is held to the shape before an
     expect(read({ op: 'setProperty', path: 'a.md', propertyId: 'p', value: null })).toBe(true)
     expect(read({ op: 'setCrop', image: 'i.png', crop: { x: 'left', y: 0, zoom: 1 } })).toBe(false)
   })
+
+  it('reads each property op, and holds a configure patch to the definition’s display fields', () => {
+    const patch = (raw: object) =>
+      mutateRequest.parse({ op: 'configureProperty', propertyId: 'p', patch: raw }) as {
+        patch: object
+      }
+    expect(patch({ icon: 'tag', type: 'text', select_options: [] })).toEqual({
+      op: 'configureProperty',
+      propertyId: 'p',
+      patch: { icon: 'tag' },
+    })
+    expect(Object.keys(patch({ checkbox_color: undefined }).patch)).toEqual(['checkbox_color'])
+    expect(read({ op: 'setFormat', propertyId: 'p', change: { key_format: 'Shouting' } })).toBe(
+      false,
+    )
+    expect(read({ op: 'addProperty', containerPath: 'A', draft: { type: 'text' } })).toBe(false)
+  })
+
+  it('a property delete re-lists the stores', () => {
+    expect(changesStores({ op: 'deleteProperty', propertyId: 'p' })).toBe(true)
+  })
 })

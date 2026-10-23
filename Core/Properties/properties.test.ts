@@ -15,8 +15,7 @@ import {
   type PropertyDefinition,
   type SelectOption,
   type StatusGroup,
-  narrowLinkConfig,
-  narrowNumberFormat,
+  propertyConfig,
   SELECT_GROUP,
   withOptionGroups,
 } from './properties'
@@ -367,16 +366,15 @@ const _mistypedFields = (d: PropertyDefinition, o: SelectOption, g: StatusGroup)
   g.options[0].grup_id,
 ]
 
-describe("the display-config narrowers decode against the definition's own fields", () => {
-  it('keeps only the fields a config names, leaves an absent one, and resets an invalid one', () => {
-    expect(narrowLinkConfig({ link_underline: true, type: 'text', id: 'x' })).toStrictEqual({
+describe('propertyConfig', () => {
+  it("the configure patch decodes against the definition's own display fields", () => {
+    expect(propertyConfig.parse({ link_underline: true, type: 'text', id: 'x' })).toStrictEqual({
       link_underline: true,
     })
-    expect(narrowNumberFormat({ number_decimals: 101, number_family: 'percent' })).toStrictEqual({
+    expect(propertyConfig.parse({ number_decimals: 101, number_family: 'percent' })).toStrictEqual({
       number_decimals: undefined,
       number_family: 'percent',
     })
-    expect(narrowNumberFormat('nope')).toBeNull()
   })
 })
 

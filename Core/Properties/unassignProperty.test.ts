@@ -5,7 +5,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, mkdir, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
-import { fault, ok } from '../Contract/result'
+import { ok } from '../Contract/result'
 import { editJsonStrict, readJsonObject } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -13,14 +13,15 @@ import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { unassignProperty } from './unassignProperty'
+import { unsweptLine } from '../Nexus/entities'
 import { assignProperty } from './assignment'
 import { assignedIds } from '../Nexus/containerFields'
-import { createProperty, editProperty } from './registryProperty'
+import { createProperty } from './registryProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { patchSidecar } from '../Files/sidecar'
-import { readRegistry } from './propertiesRegistry'
+import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
@@ -192,7 +193,7 @@ describe('unassignProperty — strip + cache', () => {
   })
 
   it.skipIf(noModeBits)(
-    'a holder it can’t write is answered as a skip, which the channel turns into the fault',
+    'a holder it can’t write is answered as a skip its cascade warns of',
     async () => {
       const set = await createFolderEntity(folder, 'set', 'Locked', newId())
       if (!set.ok) throw new Error('setup failed')
@@ -204,8 +205,9 @@ describe('unassignProperty — strip + cache', () => {
       )
       await chmod(set.value.path, 0o555)
       try {
-        const r = await unassignProperty(root, folder, propId).catch(fault)
-        expect(r).toEqual(ok({ skipped: 1, hosts: [] }))
+        expect(await unassignProperty(root, folder, propId)).toEqual(
+          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) } }),
+        )
       } finally {
         await chmod(set.value.path, 0o755)
       }
@@ -221,7 +223,9 @@ describe('unassignProperty — strip + cache', () => {
     )
     await chmod(held.value.path, 0o000)
     try {
-      expect(await unassignProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
+      expect(await unassignProperty(root, folder, propId)).toEqual(
+        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) } }),
+      )
     } finally {
       await chmod(held.value.path, 0o644)
     }
@@ -256,7 +260,7 @@ describe('unassignProperty reaches saved views', () => {
     vi.mocked(editJsonStrict).mockClear()
 
     expect(await unassignProperty(root, folder, propId)).toEqual(
-      ok({ skipped: 0, hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }] }),
+      ok({ cascade: { pages: [], hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }] } }),
     )
     const { calls, results } = vi.mocked(editJsonStrict).mock
     const own = calls.flatMap(([path], i) =>
@@ -273,6 +277,12 @@ describe('unassignProperty reaches saved views', () => {
 })
 
 describe('restore on re-assign — per-value schema-currency reconciliation', () => {
+  const redefine = (patch: Partial<PropertyDefinition>) =>
+    mutateRegistry(root, (r) => ({
+      next: { ...r, defs: { ...r.defs, [propId]: { ...r.defs[propId], ...patch } } },
+      result: null,
+    }))
+
   it('removing and re-assigning leaves every page’s modification time where it was', async () => {
     const then = new Date('2020-01-01T00:00:00Z')
     for (const page of [pageA, pageB]) await utimes(page, then, then)
@@ -336,7 +346,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
 
   it('a value whose option no longer exists stays cached; conforming siblings restore', async () => {
     await unassignProperty(root, folder, propId)
-    await editProperty(root, propId, {
+    await redefine({
       status_groups: [
         {
           id: 'done',
@@ -345,7 +355,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
           options: [{ key: 'done', label: 'done', group_id: 'done' }],
         },
       ],
-    } as Partial<PropertyDefinition>)
+    })
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toEqual(['done'])
@@ -357,7 +367,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
 
   it('a value whose def type changed stays cached, restoring nothing', async () => {
     await unassignProperty(root, folder, propId)
-    await editProperty(root, propId, { type: 'number' })
+    await redefine({ type: 'number' })
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()

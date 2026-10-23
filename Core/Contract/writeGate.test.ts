@@ -15,7 +15,6 @@ import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { stabilize } from '../Nexus/treeStabilize'
 import { pagesHandlers } from '../Pages/handlers'
-import { propertiesHandlers } from '../Properties/handlers'
 import { settingsHandlers } from '../Settings/handlers'
 import { viewsHandlers } from '../Views/handlers'
 import type { Pushes } from './bridge'
@@ -135,27 +134,28 @@ describe('one write through each channel leaves the held tree as the disk reads,
       ['nexus:changed'],
     ],
     [
-      'schema:add',
+      'addProperty',
       () =>
-        propertiesHandlers['schema:add'](ctx, 'Notes', {
-          id: '',
-          label: 'Due',
-          type: 'number',
+        nexusHandlers.mutate(ctx, {
+          op: 'addProperty',
+          containerPath: 'Notes',
+          draft: { label: 'Due', type: 'number' },
         }),
       ['nexus:changed'],
     ],
     [
-      'property:rename',
-      () => propertiesHandlers['property:rename'](ctx, 'prop_s', 'Phase'),
+      'renameProperty',
+      () =>
+        nexusHandlers.mutate(ctx, { op: 'renameProperty', propertyId: 'prop_s', label: 'Phase' }),
       ['nexus:changed', 'values:changed'],
     ],
     [
-      'property:editOption',
+      'editOption',
       () =>
-        propertiesHandlers['property:editOption'](ctx, 'prop_s', {
-          op: 'recolor',
-          option: 'A',
-          color: 'red',
+        nexusHandlers.mutate(ctx, {
+          op: 'editOption',
+          propertyId: 'prop_s',
+          edit: { op: 'recolor', option: 'A', color: 'red' },
         }),
       ['nexus:changed'],
     ],

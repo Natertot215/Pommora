@@ -17,6 +17,7 @@ import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { refreshTree } from '../Nexus/liveTree'
 import { machine } from '../Platform/machine'
+import { ok } from '../Contract/result'
 import { readRegistry } from './propertiesRegistry'
 
 let root: string
@@ -180,17 +181,16 @@ describe('addProperty', () => {
 
   it('lands the property created and assigned in one hold of the schema lock', async () => {
     const holds = schemaHolds()
-    const r = await addProperty(root, notes, { id: '', label: 'Due', type: 'text' } as never)
-    expect(r.ok).toBe(true)
+    const r = await addProperty(root, notes, { label: 'Due', type: 'text' })
     expect(holds()).toBe(1)
     expect(await labels()).toContain('Due')
-    expect((await ids(notes)).at(-1)).toBe(r.ok ? r.value.id : '')
+    expect(r).toEqual(ok({ created: { propertyId: (await ids(notes)).at(-1) } }))
   })
 
   it('a failed assign takes the create back inside the same hold', async () => {
     await writeFile(sidecarPath(notes, 'collection'), '{ not json')
     const holds = schemaHolds()
-    const r = await addProperty(root, notes, { id: '', label: 'Due', type: 'text' } as never)
+    const r = await addProperty(root, notes, { label: 'Due', type: 'text' })
     expect(r.ok).toBe(false)
     expect(await labels()).not.toContain('Due')
     expect(holds()).toBe(1)

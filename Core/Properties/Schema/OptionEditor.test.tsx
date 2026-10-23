@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { fail, ok, type Result } from '../../Contract/result'
+import { fail, ok } from '../../Contract/result'
+import type { MutateReply, MutateRequest } from '../../Nexus/mutateRequest'
 import { currentNotification } from '../../Interface/Notifications/notifications'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyType, StatusGroup } from '../properties'
@@ -39,23 +40,36 @@ const select = [
 let host: HTMLDivElement
 let root: Root
 const menu = vi.fn(async () => ok<string | null>(null))
-const editOption = vi.fn(async (): Promise<Result<null>> => ok(null))
-const renameOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
-const removeOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
-const clearOption = vi.fn(async () => ok(null))
+const editOption = vi.fn(async (_id: string, _edit: unknown): Promise<MutateReply> => ok({}))
+const renameOption = vi.fn(
+  async (_id: string, _from: string, _to: string): Promise<MutateReply> => ok({}),
+)
+const deleteOption = vi.fn(async (_id: string, _label: string): Promise<MutateReply> => ok({}))
+const clearOption = vi.fn(async (_id: string, _label: string): Promise<MutateReply> => ok({}))
+const finishOwed = vi.fn(async (): Promise<MutateReply> => ok({}))
 const holders = vi.fn(async () => ok(2))
-const replay = vi.fn(async () => ok(null))
 const style = { current: { ...dateDefaults('full'), look: 'standard' as const }, set: vi.fn() }
+
+const mutate = (req: MutateRequest): Promise<MutateReply> => {
+  switch (req.op) {
+    case 'editOption':
+      return editOption(req.propertyId, req.edit)
+    case 'renameOption':
+      return renameOption(req.propertyId, req.from, req.to)
+    case 'deleteOption':
+      return deleteOption(req.propertyId, req.label)
+    case 'clearOption':
+      return clearOption(req.propertyId, req.label)
+    default:
+      return finishOwed()
+  }
+}
 
 beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     menu,
-    'property:editOption': editOption,
-    'property:renameOption': renameOption,
-    'property:removeOption': removeOption,
-    'property:clearOption': clearOption,
+    mutate,
     'property:holders': holders,
-    'property:replay': replay,
   })
   useSession.setState({ tree: makeTree({ personalization: { iconFavorites: ['anchor'] } }) })
   host = document.createElement('div')
@@ -65,10 +79,10 @@ beforeEach(() => {
     menu,
     editOption,
     renameOption,
-    removeOption,
+    deleteOption,
     clearOption,
     holders,
-    replay,
+    finishOwed,
     style.set,
   ])
     fn.mockClear()
@@ -156,8 +170,8 @@ describe('the option menu', () => {
 
   it('Delete asks, then deletes the option; a kept record offers Try Again', async () => {
     menu.mockResolvedValueOnce(ok('option:delete'))
-    removeOption.mockResolvedValueOnce(
-      ok({ cascade: { warning: 'w' }, owed: { op: 'option-remove', id: 'p1', key: 'Urgent' } }),
+    deleteOption.mockResolvedValueOnce(
+      ok({ cascade: { pages: [], hosts: [], warning: 'w' }, retry: { op: 'finishOwed' } }),
     )
     render('select', select)
     await rightClick('Urgent')
@@ -166,13 +180,15 @@ describe('the option menu', () => {
       action: 'Delete',
     })
     await confirm()
-    expect(removeOption).toHaveBeenCalledWith('p1', 'Urgent')
+    expect(deleteOption).toHaveBeenCalledWith('p1', 'Urgent')
     expect(currentNotification()).toMatchObject({ message: 'w', action: { label: 'Try Again' } })
+    await act(async () => currentNotification()?.action?.run())
+    expect(finishOwed).toHaveBeenCalledOnce()
   })
 
   it('a delete refused while another change is owed offers a Try Again that replays the held record', async () => {
     menu.mockResolvedValueOnce(ok('option:delete'))
-    removeOption.mockResolvedValueOnce(
+    deleteOption.mockResolvedValueOnce(
       fail('owed', 'An earlier change hasn’t reached every file yet.'),
     )
     render('select', select)
@@ -183,12 +199,12 @@ describe('the option menu', () => {
       action: { label: 'Try Again' },
     })
     await act(async () => currentNotification()?.action?.run())
-    expect(replay).toHaveBeenCalledWith(undefined)
+    expect(finishOwed).toHaveBeenCalledOnce()
   })
 
   it('a delete with no record shows its line without an action', async () => {
     menu.mockResolvedValueOnce(ok('option:delete'))
-    removeOption.mockResolvedValueOnce(ok({ cascade: { warning: 'w' } }))
+    deleteOption.mockResolvedValueOnce(ok({ cascade: { pages: [], hosts: [], warning: 'w' } }))
     render('select', select)
     await rightClick('Urgent')
     await confirm()
@@ -223,7 +239,7 @@ describe('creating an option', () => {
   })
 
   it('the draft stays open until its option lands, and gives way to it', async () => {
-    let reply: (r: Result<null>) => void = () => {}
+    let reply: (r: MutateReply) => void = () => {}
     editOption.mockImplementationOnce(() => new Promise((r) => (reply = r)))
     render('select', select)
     plus()
@@ -236,7 +252,7 @@ describe('creating an option', () => {
       },
     ])
     expect(host.querySelector('input')).toBeNull()
-    await act(async () => reply(ok(null)))
+    await act(async () => reply(ok({})))
   })
 
   it('a refused draft repeating a held name keeps its name, and the held row stays put', async () => {

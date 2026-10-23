@@ -6,6 +6,7 @@ import { ok } from '../../Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '../properties'
+import type { MutateOutcome, MutateRequest } from '../../Nexus/mutateRequest'
 import { defaultStatusSeed } from '../registryProperty'
 import {
   firePointer,
@@ -49,57 +50,36 @@ const defs: PropertyDefinition[] = [
 
 let host: HTMLDivElement
 let root: Root
-let loadSpy: ReturnType<typeof vi.fn>
-let assignSpy: ReturnType<typeof vi.fn>
-let renameSpy: ReturnType<typeof vi.fn>
+let mutate: ReturnType<typeof vi.fn>
 let propertyMenuSpy: ReturnType<typeof vi.fn>
-let destroySpy: ReturnType<typeof vi.fn>
-let unassignSpy: ReturnType<typeof vi.fn>
 let holdersSpy: ReturnType<typeof vi.fn>
-let setKeyFormatSpy: ReturnType<typeof vi.fn>
-let setValueFormatSpy: ReturnType<typeof vi.fn>
+let saveSpy: ReturnType<typeof vi.fn>
+
+const SWEPT = { cascade: { pages: [], hosts: [] } }
+const answers: Partial<Record<MutateRequest['op'], MutateOutcome>> = {
+  addProperty: { created: { propertyId: 'prop_new' } },
+  renameProperty: SWEPT,
+  setFormat: SWEPT,
+  deleteProperty: { bundled: { bundlePath: '.trash/s__property-prop_status.deleted' } },
+}
 
 beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  loadSpy = vi.fn(async () => {})
-  assignSpy = vi.fn(async () => ({ ok: true, value: null }))
-  renameSpy = vi.fn(async () => ({
-    ok: true,
-    value: { from: 'Status', to: 'Stage', cascade: { pages: [], hosts: [] } },
-  }))
+  mutate = vi.fn(async (req: MutateRequest) => answers[req.op] ?? {})
   propertyMenuSpy = vi.fn(async () => null)
-  destroySpy = vi.fn(async () => ({
-    ok: true,
-    value: { bundled: { bundlePath: '.trash/s__property-prop_status.deleted' } },
-  }))
-  unassignSpy = vi.fn(async () => ({ ok: true, value: null }))
   holdersSpy = vi.fn(async () => ok(3))
-  setKeyFormatSpy = vi.fn(async () => ({
-    ok: true,
-    value: { from: 'Count', to: 'count', cascade: { pages: [], hosts: [] } },
-  }))
-  setValueFormatSpy = vi.fn(async () => ({
-    ok: true,
-    value: { cascade: { pages: [], hosts: [] } },
-  }))
+  saveSpy = vi.fn(async () => ok({ id: 'v1' }))
   picked = null
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'schema:add': vi.fn(async () => ({ ok: true, value: { id: 'prop_new' } })),
-    'property:rename': renameSpy,
-    'schema:reorder': vi.fn(async () => ({ ok: true, value: null })),
-    'schema:unassign': unassignSpy,
-    'schema:assign': assignSpy,
-    'property:delete': destroySpy,
     'property:holders': holdersSpy,
-    'property:setKeyFormat': setKeyFormatSpy,
-    'property:setValueFormat': setValueFormatSpy,
+    'views:save': saveSpy,
     menu: async (req: unknown) =>
       ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
   })
   useSession.setState({
-    load: loadSpy as never,
+    mutate: mutate as never,
     tree: { config: { registry: [] } } as never,
     renamingProperty: null,
   })
@@ -185,7 +165,7 @@ describe('the All Properties section', () => {
     expect(all.textContent).not.toContain('Status')
   })
 
-  it('+ assigns through the IPC; the push carries the promotion, not a reload', async () => {
+  it('+ assigns the property', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane([])
     await act(async () => {
@@ -194,13 +174,15 @@ describe('the All Properties section', () => {
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Assign Effort"]')!.click()
     })
-    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x')
-    expect(loadSpy).not.toHaveBeenCalled()
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'assignProperty',
+      containerPath: 'Col',
+      propertyId: 'prop_x',
+    })
   })
 
-  it('header ⊕ opens the type picker; the footer create-row is gone', async () => {
+  it("the footer's New Property opens the type picker", async () => {
     await mountPane()
-    expect(host.textContent).not.toContain('New Property')
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
     })
@@ -240,7 +222,13 @@ describe('the All Properties section', () => {
 })
 
 describe('the two-region drag — state-level; geometry truth lives in the live pass', () => {
-  const deleteSpy = (): ReturnType<typeof vi.fn> => unassignSpy
+  const unassigned = { op: 'unassignProperty', containerPath: 'Col', propertyId: 'prop_status' }
+  const assigned = (toIndex: number) => ({
+    op: 'assignProperty',
+    containerPath: 'Col',
+    propertyId: 'prop_x',
+    toIndex,
+  })
 
   const stubGeometry = (): void => {
     stubRect(zone(), { top: 0, bottom: 300 })
@@ -251,7 +239,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
     stubRect(lineRow('Effort'), { top: 70, bottom: 90 })
   }
 
-  it('assigned → all commits the Remove (schema.delete) after an area-highlight hover', async () => {
+  it('assigned → all commits the Remove after an area-highlight hover', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
@@ -268,7 +256,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
     await act(async () => {
       firePointer(window, 'pointerup', { x: 100, y: 80 })
     })
-    expect(deleteSpy()).toHaveBeenCalledWith('Col', 'prop_status')
+    expect(mutate).toHaveBeenCalledWith(unassigned)
   })
 
   it('a slot change repaints the All group alone — no row re-renders', async () => {
@@ -336,7 +324,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
     await act(async () => {
       row.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
     })
-    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 0)
+    expect(mutate).toHaveBeenCalledWith(assigned(0))
   })
 
   it('all → assigned commits the atomic assign at the slot index', async () => {
@@ -353,7 +341,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       firePointer(window, 'pointermove', { x: 100, y: 15 })
       firePointer(window, 'pointerup', { x: 100, y: 15 })
     })
-    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 0)
+    expect(mutate).toHaveBeenCalledWith(assigned(0))
   })
 
   it('Escape aborts an active drag without committing', async () => {
@@ -370,7 +358,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       firePointer(window, 'pointerup', { x: 100, y: 80 })
     })
-    expect(deleteSpy()).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalled()
   })
 
   it('the all region owns its FIELD — a release in the empty space below the rows still unassigns', async () => {
@@ -389,7 +377,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       firePointer(window, 'pointermove', { x: 100, y: 250 })
       firePointer(window, 'pointerup', { x: 100, y: 250 })
     })
-    expect(deleteSpy()).toHaveBeenCalledWith('Col', 'prop_status')
+    expect(mutate).toHaveBeenCalledWith(unassigned)
   })
 
   it("a drag begun on the row's + button lifts the row past 12px and assigns at the slot", async () => {
@@ -405,7 +393,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       firePointer(window, 'pointermove', { x: 100, y: 20 })
       firePointer(window, 'pointerup', { x: 100, y: 20 })
     })
-    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 1)
+    expect(mutate).toHaveBeenCalledWith(assigned(1))
   })
 
   it("a sub-12px wobble on the row's + button still clicks", async () => {
@@ -422,7 +410,11 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       firePointer(window, 'pointerup', { x: 100, y: 84 })
       plus.click()
     })
-    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'assignProperty',
+      containerPath: 'Col',
+      propertyId: 'prop_x',
+    })
   })
 })
 
@@ -434,7 +426,7 @@ describe('native menus + the inline-rename channel', () => {
     })
   }
 
-  it("the editor's ⋮ Remove routes through schema.delete and returns to the list", async () => {
+  it("the editor's ⋮ Remove unassigns and returns to the list", async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:remove')
     await openEditor()
     await act(async () => {
@@ -444,24 +436,27 @@ describe('native menus + the inline-rename channel', () => {
       items: propertyMenuModel({ kind: 'editor' }),
       anchor: undefined,
     })
-    expect(unassignSpy).toHaveBeenCalledWith('Col', 'prop_status')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'unassignProperty',
+      containerPath: 'Col',
+      propertyId: 'prop_status',
+    })
   })
 
-  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE', async () => {
+  it('⋮ Delete asks first, then deletes the property everywhere', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:destroy')
     await openEditor()
-    expect(host.textContent).not.toContain('Delete Property')
     await act(async () => {
       host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!.click()
     })
     const pending = useSession.getState().pendingConfirm
     expect(pending?.req.message).toBe('Delete “Status” everywhere?')
     expect(pending?.req.detail).toContain('stripped from 3 Items;')
-    expect(destroySpy).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalled()
     await act(async () => {
       pending!.settle(true)
     })
-    expect(destroySpy).toHaveBeenCalledWith('prop_status')
+    expect(mutate).toHaveBeenCalledWith({ op: 'deleteProperty', propertyId: 'prop_status' })
     expect(useSession.getState().pendingConfirm).toBeNull()
     expect(currentNotification()).toMatchObject({
       message: 'Deleted “Status”',
@@ -478,11 +473,11 @@ describe('native menus + the inline-rename channel', () => {
     await act(async () => {
       useSession.getState().pendingConfirm!.settle(false)
     })
-    expect(destroySpy).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalled()
     expect(useSession.getState().pendingConfirm).toBeNull()
   })
 
-  it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename', async () => {
+  it('a row right-click Rename flips the title to the inline input; Enter commits the rename', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:rename')
     await mountPane()
     await act(async () => {
@@ -500,17 +495,18 @@ describe('native menus + the inline-rename channel', () => {
       commitTitle(input!, 'Stage')
       input!.blur()
     })
-    expect(renameSpy).toHaveBeenCalledWith('prop_status', 'Stage')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'renameProperty',
+      propertyId: 'prop_status',
+      label: 'Stage',
+    })
     expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
     expect(host.querySelector('.row-title-input')).toBeNull()
   })
 
   it('a rename keeping its key leaves the values epoch, and one moving it bumps it', async () => {
-    const renameTo = async (from: string, to: string): Promise<void> => {
-      renameSpy.mockResolvedValueOnce({
-        ok: true,
-        value: { from, to, cascade: { pages: [], hosts: [] } },
-      })
+    const renameTo = async (to: string, reply: MutateOutcome): Promise<void> => {
+      mutate.mockResolvedValueOnce(reply)
       propertyMenuSpy.mockResolvedValueOnce('property:rename')
       await act(async () => {
         lineRow('Status')
@@ -525,9 +521,9 @@ describe('native menus + the inline-rename channel', () => {
     }
     await mountPane()
     const before = useSession.getState().valuesEpoch
-    await renameTo('status', 'status')
+    await renameTo('status', {})
     expect(useSession.getState().valuesEpoch).toBe(before)
-    await renameTo('Stage', 'Phase')
+    await renameTo('Phase', SWEPT)
     expect(useSession.getState().valuesEpoch).not.toBe(before)
     expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
   })
@@ -562,11 +558,15 @@ describe('native menus + the inline-rename channel', () => {
     await pick('Label Format', 'lowercase')
     const pending = useSession.getState().pendingConfirm
     expect(pending?.req.message).toBe('This action would rewrite metadata in 3 Items.')
-    expect(setKeyFormatSpy).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalled()
     await act(async () => {
       pending!.settle(true)
     })
-    expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setFormat',
+      propertyId: 'prop_n',
+      change: { key_format: 'lowercase' },
+    })
     expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
   })
 
@@ -575,7 +575,11 @@ describe('native menus + the inline-rename channel', () => {
     await openCount()
     await pick('Label Format', 'lowercase')
     expect(useSession.getState().pendingConfirm).toBeNull()
-    expect(setKeyFormatSpy).toHaveBeenCalledWith('prop_n', 'lowercase')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setFormat',
+      propertyId: 'prop_n',
+      change: { key_format: 'lowercase' },
+    })
   })
 
   it('a Value Format pick over no Item sets the format unasked', async () => {
@@ -583,7 +587,11 @@ describe('native menus + the inline-rename channel', () => {
     await openEditor()
     await pick('Value Format', 'kebab-case')
     expect(useSession.getState().pendingConfirm).toBeNull()
-    expect(setValueFormatSpy).toHaveBeenCalledWith('prop_status', 'kebab-case')
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setFormat',
+      propertyId: 'prop_status',
+      change: { value_format: 'kebab-case' },
+    })
   })
 
   it('a registry row opens no menu', async () => {
@@ -598,5 +606,43 @@ describe('native menus + the inline-rename channel', () => {
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(propertyMenuSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('the Date & Time Format editor writes the active view', () => {
+  const dateDef: PropertyDefinition = {
+    id: 'prop_due',
+    label: 'Due',
+    key: 'Due',
+    type: 'dateTime',
+  }
+  const pickIn = async (label: string, value: string): Promise<void> => {
+    await mountPane([dateDef])
+    await act(async () => {
+      rowFor('Due').click()
+    })
+    picked = value
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!.click()
+    })
+  }
+
+  it('picking Short Date saves column_styles on the source node, not the schema', async () => {
+    await pickIn('Date format', 'short')
+    expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
+      column_styles: { prop_due: { date_format: 'short' } },
+    })
+  })
+
+  it("a time on the Nexus's own clock stores as shown, so it keeps following that clock", async () => {
+    useSession.setState({
+      tree: {
+        config: { registry: [], personalization: { timeFormat: 'twentyFourHour' } },
+      } as never,
+    })
+    await pickIn('Time format', 'twentyFourHour')
+    expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
+      column_styles: { prop_due: { time_format: 'shown' } },
+    })
   })
 })

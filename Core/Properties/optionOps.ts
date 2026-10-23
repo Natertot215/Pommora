@@ -8,10 +8,9 @@ import {
   sweepGovernedRoots,
   type SweepPlan,
 } from '../Nexus/governedSweep'
-import { unsweptLine } from '../Nexus/entities'
 import { editCaches } from './propertyCache'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
-import { errText, ok, fail, fault, type Result } from '../Contract/result'
+import { errText, ok, fail, type Result } from '../Contract/result'
 import { findOption, optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
@@ -29,12 +28,12 @@ import {
 import {
   clearSchemaJournal,
   readSchemaJournal,
-  type SchemaCascade,
   schemaCascade,
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
+import { type ConfigReach, NO_REACH, reachConfig, reachReport } from '../Nexus/configReach'
+import type { MutateReply } from '../Nexus/mutateRequest'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, holderSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
@@ -264,7 +263,7 @@ async function rekeyOptions(
   root: string,
   record: Extract<SchemaJournal, { op: 'option-rename' }>,
   value_format?: KeyFormat,
-): Promise<Result<SchemaCascade>> {
+): Promise<MutateReply> {
   // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
   if (!(await writeSchemaJournal(root, record))) return OWED
   const keys = new Map(record.keys)
@@ -297,7 +296,7 @@ export function renameOption(
   propertyId: string,
   oldLabel: string,
   newLabel: string,
-): Promise<Result<SchemaCascade>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, oldLabel)
     if (!r.ok) return r
@@ -339,7 +338,7 @@ export function setValueFormat(
   root: string,
   propertyId: string,
   format: KeyFormat,
-): Promise<Result<SchemaCascade>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const planned = await valueFormatPlan(root, propertyId, format)
     if (!planned.ok) return planned
@@ -364,19 +363,15 @@ export async function valueFormatHolders(
   return ok(await sweepCount(root, files, plan))
 }
 
-export function clearOption(
-  root: string,
-  propertyId: string,
-  label: string,
-): Promise<Result<null>> {
+export function clearOption(root: string, propertyId: string, label: string): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const journal = await readSchemaJournal(root)
     const option = journal?.op === 'option-rename' || journal?.op === 'option-remove'
     if (option && journal.id === propertyId) return OWED
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const { skipped } = await optionCascade(root, r.value.def, new Map([[r.value.key, null]]))
-    return skipped ? fault(unsweptLine(skipped)) : ok(null)
+    const reach = await optionCascade(root, r.value.def, new Map([[r.value.key, null]]))
+    return ok({ cascade: reachReport(reach) })
   })
 }
 
@@ -395,7 +390,7 @@ export function deleteOption(
   root: string,
   propertyId: string,
   label: string,
-): Promise<Result<SchemaCascade>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r

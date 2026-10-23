@@ -18,7 +18,7 @@ import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { listBundles } from '../Bundles/bundle'
 import { readRegistry } from './propertiesRegistry'
-import { createProperty, editProperty, renameProperty } from './registryProperty'
+import { createProperty, configureProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { clearOption, editOption, deleteOption, renameOption } from './optionOps'
 import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
@@ -160,7 +160,7 @@ describe('the rename writer', () => {
   })
 
   it('writes no record for a non-rename edit', async () => {
-    const r = await editProperty(root, 'prop_s', { icon: 'tag' })
+    const r = await configureProperty(root, 'prop_s', { icon: 'tag' })
     expect(r.ok).toBe(true)
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
   })

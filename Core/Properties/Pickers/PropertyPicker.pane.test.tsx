@@ -2,8 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { fail, ok, type Result } from '../../Contract/result'
+import { fail, ok } from '../../Contract/result'
 import { stubDialer } from '../../vitest.setup'
+import type { MutateReply, MutateRequest } from '../../Nexus/mutateRequest'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
 import { defaultStatusSeed } from '../registryProperty'
@@ -74,13 +75,14 @@ const rowButton = (name: string): HTMLElement | undefined =>
 let host: HTMLDivElement
 let root: Root
 const menu = vi.fn(async (_req: unknown) => ok(null))
-const editOption = vi.fn(async (): Promise<Result<null>> => ok(null))
+const editOption = vi.fn(async (_id: string, _edit: unknown): Promise<MutateReply> => ok({}))
 beforeEach(() => {
   menu.mockClear()
   editOption.mockClear()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     menu,
-    'property:editOption': editOption,
+    mutate: (req: MutateRequest) =>
+      req.op === 'editOption' ? editOption(req.propertyId, req.edit) : ok({}),
   })
   host = document.createElement('div')
   document.body.appendChild(host)

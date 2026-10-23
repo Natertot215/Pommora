@@ -1,4 +1,3 @@
-import { reportRefusal } from '../Interface/Notifications/notifications'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
@@ -44,7 +43,6 @@ import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/paneTargets'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
-import { dialer } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { identityOf, isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '../Paths/posix'
@@ -264,7 +262,12 @@ export function PropertyPanel({
     const full = schema.map((d) => d.id)
     sendWithUndo(
       (index) =>
-        void dialer().ask('schema:reorder', collection.path, id, index).then(reportRefusal),
+        void mutate({
+          op: 'reorderAssigned',
+          containerPath: collection.path,
+          propertyId: id,
+          toIndex: index,
+        }),
       nexusReorderIndex(full, shownIds, id, toIndex),
       full.indexOf(id),
     )

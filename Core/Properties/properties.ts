@@ -1,10 +1,9 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { isKeyOf, isPlainObject } from '../Contract/validators'
+import { isKeyOf } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
-import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
 import { formatChange, keyFormat } from './keyFormat'
 
@@ -178,9 +177,11 @@ const propertyDefinitionFields = z.object({
 export const propertyDefinition = looseDecoder(propertyDefinitionFields).transform(labelled)
 export type PropertyDefinition = z.infer<typeof propertyDefinition>
 
-/** What a create is handed: the create writes the key from the label it lands. */
+/** What a create is handed: the create writes the key from the label it lands, and mints the id it isn't given. */
 export const propertyDraft = looseDecoder(
-  propertyDefinitionFields.omit({ key: true }).extend({ label: z.string() }),
+  propertyDefinitionFields
+    .omit({ key: true })
+    .extend({ id: z.string().optional(), label: z.string() }),
 )
 export type PropertyDraft = z.infer<typeof propertyDraft>
 
@@ -192,35 +193,24 @@ export const countedChange = z.discriminatedUnion('of', [
 ])
 export type CountedChange = z.infer<typeof countedChange>
 
-export type LinkConfig = Pick<PropertyDefinition, 'link_underline' | 'link_display' | 'link_color'>
-
-// A display-config write decodes against the definition's own fields, so it can patch nothing else: a key absent from the payload is left, and a present-but-invalid one goes back to its default.
-const linkFields = propertyDefinitionFields.pick({
+// A display-setting write decodes against the definition's own fields, so it can patch nothing else: a key absent from the patch is left, and a present-but-invalid one goes back to its default.
+export const propertyConfig = propertyDefinitionFields.pick({
+  icon: true,
   link_underline: true,
   link_display: true,
   link_color: true,
-})
-const numberFields = propertyDefinitionFields.pick({
+  checkbox_color: true,
   number_family: true,
   number_currency: true,
   number_separators: true,
   number_decimals: true,
   number_fraction: true,
   number_denominator: true,
+  file_directory: true,
 })
-export const narrowLinkConfig = (payload: unknown): LinkConfig | null =>
-  linkFields.safeParse(payload).data ?? null
-export const narrowNumberFormat = (payload: unknown): NumberConfig | null =>
-  numberFields.safeParse(payload).data ?? null
-/** Stored relative to the asset ROOT; an empty result means the root itself — the absence of the field, not a stored empty string. */
-export const narrowFileConfig = (payload: unknown): FileConfig | null => {
-  if (!isPlainObject(payload) || !('file_directory' in payload)) return null
-  const raw = typeof payload.file_directory === 'string' ? payload.file_directory : ''
-  const dir = rootSegs(raw.trim()).join('/')
-  return { file_directory: dir || undefined }
-}
+export type PropertyConfig = z.infer<typeof propertyConfig>
 
-export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
+export type LinkConfig = Pick<PropertyConfig, 'link_underline' | 'link_display' | 'link_color'>
 
 export type NumberConfig = Pick<
   PropertyDefinition,

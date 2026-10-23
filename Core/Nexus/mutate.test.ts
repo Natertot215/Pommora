@@ -15,12 +15,19 @@ import {
   stat,
 } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
+import {
+  readJsonAt,
+  seedNexus,
+  seedSpaceSidecar,
+  tempRoot,
+  noModeBits,
+  windows,
+} from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { settledMutate } from '../Testing/settledMutate'
 import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
-import { contextsDir, nexusConfig, sidecarPath, homepageDir } from '../Paths/paths'
+import { contextsDir, nexusConfig, nexusDir, sidecarPath, homepageDir } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
@@ -65,6 +72,8 @@ import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
 import { listBundles } from '../Bundles/bundle'
 import { fault, ok } from '../Contract/result'
+import { readRegistry } from '../Properties/propertiesRegistry'
+import type { PropertyDefinition } from '../Properties/properties'
 import { nexusHandlers } from './handlers'
 import { setCollectionOrder, setSpaceOrder } from './reorder'
 import { updatePageMetadata } from './pageMetadata'
@@ -130,7 +139,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.created?.path).toBe('Notes/Daily/New.md')
+    expect(r.value.created).toEqual({ path: 'Notes/Daily/New.md' })
     expect(await pathExists(join(root, 'Notes/Daily/New.md'))).toBe(true)
   })
 
@@ -142,7 +151,7 @@ describe('handleMutate — create', () => {
     )
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.created?.path).toBe('Notes/Weekly')
+    expect(r.value.created).toEqual({ path: 'Notes/Weekly' })
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
@@ -157,7 +166,23 @@ describe('handleMutate — create', () => {
     expect(group?.spaces.map((s) => s.title)).toEqual(['Home'])
   })
 
-  it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
+  it('a Context or Space create that stepped past a taken name answers the name it took', async () => {
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(join(contextsDir(root), 'contexts.json'), JSON.stringify({ contexts: [] }))
+    const realms = (id: string) =>
+      settledMutate(root, { op: 'createContextGroup', id, name: 'Realms' }, nexusDeps)
+    const contextId = newId()
+    const first = await realms(contextId)
+    expect(first.ok && first.value.landedAs).toBeUndefined()
+    expect(await realms(newId())).toMatchObject(ok({ landedAs: 'Realms (2)' }))
+    const home = () =>
+      settledMutate(root, { op: 'createSpace', id: newId(), contextId, name: 'Home' }, nexusDeps)
+    const space = await home()
+    expect(space.ok && space.value.landedAs).toBeUndefined()
+    expect(await home()).toMatchObject(ok({ landedAs: 'Home (2)' }))
+  })
+
+  it('disambiguates a colliding create name (Untitled → Untitled (2)) and answers no landedAs', async () => {
     const first = await settledMutate(
       root,
       { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
@@ -168,8 +193,8 @@ describe('handleMutate — create', () => {
       { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
-    expect(first.ok && first.value.created?.path).toBe('Notes/Daily/Untitled.md')
-    expect(second.ok && second.value.created?.path).toBe('Notes/Daily/Untitled (2).md')
+    expect(first).toEqual(ok({ created: { path: 'Notes/Daily/Untitled.md' } }))
+    expect(second).toEqual(ok({ created: { path: 'Notes/Daily/Untitled (2).md' } }))
     expect(await pathExists(join(root, 'Notes/Daily/Untitled (2).md'))).toBe(true)
   })
 
@@ -1148,7 +1173,7 @@ describe('handleMutate — review-round hardening', () => {
       { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Inbox' },
       nexusDeps,
     )
-    expect(r.ok && r.value.created?.path).toBe('Inbox')
+    expect(r.ok && r.value.created).toEqual({ path: 'Inbox' })
     expect(await pathExists(join(root, 'Inbox/_pagecollection.json'))).toBe(true)
   })
 
@@ -1935,7 +1960,7 @@ describe('handleMutate — setBanner', () => {
     await refreshTree(root)
     expect(created.ok).toBe(true)
     if (!created.ok) return
-    const pagePath = created.value.created!.path
+    const { path: pagePath } = created.value.created as { path: string }
     const r = await settledMutate(
       root,
       { op: 'setBanner', path: pagePath, kind: 'page', source: await pick('Page.png') },
@@ -3846,5 +3871,91 @@ describe('each routine operation lands from its own events, with no walk', () =>
     expect(r.ok).toBe(true)
     expect(walk).not.toHaveBeenCalled()
     walk.mockRestore()
+  })
+})
+
+describe('the property ops', () => {
+  const stage = {
+    id: 'prop_stage',
+    label: 'Stage',
+    key: 'Stage',
+    type: 'select',
+    select_options: [
+      { key: 'Done', label: 'Done' },
+      { key: 'Todo', label: 'Todo' },
+    ],
+  } as PropertyDefinition
+  const spare = {
+    id: 'prop_spare',
+    label: 'Spare',
+    key: 'Spare',
+    type: 'text',
+  } as PropertyDefinition
+
+  beforeEach(async () => {
+    await seedNexus(root, { defs: [stage, spare], assigned: { Notes: [stage.id] } })
+    await writeFile(
+      join(root, 'Notes', 'Page.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\nStage: Done\n---\n\nbody',
+    )
+    await refreshTree(root)
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  const at = { containerPath: 'Notes' }
+  it.each<MutateRequest>([
+    { op: 'addProperty', ...at, draft: { label: 'Due', type: 'text' } },
+    { op: 'assignProperty', ...at, propertyId: spare.id },
+    { op: 'unassignProperty', ...at, propertyId: stage.id },
+    { op: 'reorderAssigned', ...at, propertyId: stage.id, toIndex: 0 },
+    { op: 'reorderProperty', propertyId: spare.id, toIndex: 0 },
+    { op: 'renameProperty', propertyId: stage.id, label: 'Phase' },
+    { op: 'setFormat', propertyId: stage.id, change: { value_format: 'kebab-case' } },
+    { op: 'configureProperty', propertyId: stage.id, patch: { icon: 'tag' } },
+    { op: 'deleteProperty', propertyId: stage.id },
+    { op: 'finishOwed' },
+    {
+      op: 'editOption',
+      propertyId: stage.id,
+      edit: { op: 'recolor', option: 'Done', color: 'red' },
+    },
+    { op: 'renameOption', propertyId: stage.id, from: 'Done', to: 'Closed' },
+    { op: 'deleteOption', propertyId: stage.id, label: 'Todo' },
+    { op: 'clearOption', propertyId: stage.id, label: 'Done' },
+  ])('$op takes the schema lock exactly once', async (req) => {
+    const lock = vi.spyOn(machine(), 'lock')
+    expect((await handleMutate(root, req, nexusDeps)).ok).toBe(true)
+    expect(lock.mock.calls.filter(([key]) => key === nexusDir(root))).toHaveLength(1)
+  })
+
+  it('an added property answers its id as what it created', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'addProperty', ...at, draft: { label: 'Due', type: 'text' } },
+      nexusDeps,
+    )
+    const added = Object.values((await readRegistry(root)).defs).find((d) => d.label === 'Due')
+    expect(r).toEqual(ok({ created: { propertyId: added?.id } }))
+  })
+
+  it('a rename that keeps its key answers no cascade, and one that moves it answers the sweep', async () => {
+    const rename = (label: string) =>
+      handleMutate(root, { op: 'renameProperty', propertyId: stage.id, label }, nexusDeps)
+    await seedNexus(root, { defs: [{ ...stage, key: 'stage', key_format: 'lowercase' }] })
+    await refreshTree(root)
+    expect(await rename('STAGE')).toEqual(ok({}))
+    expect(await rename('Phase')).toMatchObject(ok({ cascade: { pages: [] } }))
+  })
+
+  it('a configure under a file directory outside the asset root refuses, and one naming the root itself clears the field', async () => {
+    const configure = (file_directory: string) =>
+      handleMutate(
+        root,
+        { op: 'configureProperty', propertyId: spare.id, patch: { file_directory } },
+        nexusDeps,
+      )
+    expect((await configure('../Elsewhere')).ok).toBe(false)
+    expect(await configure('  ')).toEqual(ok({}))
+    expect((await readRegistry(root)).defs[spare.id]).not.toHaveProperty('file_directory')
   })
 })

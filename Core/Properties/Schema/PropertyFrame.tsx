@@ -3,19 +3,16 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
-import { storesChanged } from '../../Session/nexusSlice'
 import { DEFAULT_LINK_DISPLAY } from '../../Connections/linkValue'
 import {
   CREATABLE_TYPES,
   optionGroupsOf,
+  type PropertyConfig,
   type PropertyDefinition,
   PROPERTY_TYPES,
   type PropertyType,
 } from '../properties'
-import { replay, retryOwed, warnOwed, write } from '../propertyWrite'
-import type { Result } from '../../Contract/result'
 import type { FormatChange } from '../keyFormat'
-import type { PropertyRename } from '../registryProperty'
 import { FormatRows } from './FormatRows'
 import {
   CHECKBOX_LOOKS,
@@ -192,6 +189,7 @@ export function PropertyFrame({
   const saveView = useSaveView(source)
   const activeView = useActiveView(source, schema)
   const registry = useSession((st) => st.tree?.config.registry) ?? []
+  const mutate = useSession((st) => st.mutate)
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
@@ -233,53 +231,49 @@ export function PropertyFrame({
   )
 
   const create = async (type: PropertyType): Promise<void> => {
-    const res = await dialer().ask('schema:add', collectionPath, {
-      id: '',
-      label: `New ${propertyTypeLabel(type)}`,
-      type,
-    })
-    if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
+    const draft = { label: `New ${propertyTypeLabel(type)}`, type }
+    const created = (await mutate({ op: 'addProperty', containerPath: collectionPath, draft }))
+      ?.created
+    if (created && 'propertyId' in created) setView({ kind: 'edit', id: created.propertyId })
   }
-  const renamed = (res: Result<PropertyRename | null>): void => {
-    if (!reportRefusal(res) || !res.value) return
-    if (res.value.from !== res.value.to) bumpValuesEpoch()
-    retryOwed(res.value)
+  const rename = async (id: string, label: string): Promise<void> => {
+    if ((await mutate({ op: 'renameProperty', propertyId: id, label }))?.cascade) bumpValuesEpoch()
   }
-  const rename = async (id: string, label: string): Promise<void> =>
-    renamed(await dialer().ask('property:rename', id, label))
   const setFormat = async (id: string, change: FormatChange): Promise<void> => {
     if (!(await askFormatChange(id, change))) return
-    if ('key_format' in change)
-      renamed(await dialer().ask('property:setKeyFormat', id, change.key_format))
-    else await warnOwed(dialer().ask('property:setValueFormat', id, change.value_format))
+    const done = await mutate({ op: 'setFormat', propertyId: id, change })
+    if (done?.cascade && 'key_format' in change) bumpValuesEpoch()
   }
   const remove = async (id: string): Promise<void> => {
-    if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
+    if (await mutate({ op: 'unassignProperty', containerPath: collectionPath, propertyId: id }))
+      backToList()
   }
-  const saveFileDirectory = (id: string, dir: string): Promise<boolean> =>
-    write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))
+  const configure = (propertyId: string, patch: PropertyConfig): void =>
+    void mutate({ op: 'configureProperty', propertyId, patch })
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     await saveView(activeView, columnStylePatch(activeView, schema, nexus, propId, patch))
   }
-  const handleDrop = (drop: PaneDrop): Promise<boolean> =>
-    write(
+  const handleDrop = (drop: PaneDrop): void => {
+    const at = { containerPath: collectionPath, propertyId: drop.propId }
+    void mutate(
       drop.kind === 'reorder-assigned'
-        ? dialer().ask('schema:reorder', collectionPath, drop.propId, drop.toIndex)
+        ? { op: 'reorderAssigned', ...at, toIndex: drop.toIndex }
         : drop.kind === 'reorder-nexus'
-          ? dialer().ask(
-              'registry:reorder',
-              drop.propId,
-              nexusReorderIndex(
+          ? {
+              op: 'reorderProperty',
+              propertyId: drop.propId,
+              toIndex: nexusReorderIndex(
                 registry.map((d) => d.id),
                 unassigned.map((d) => d.id),
                 drop.propId,
                 drop.toIndex,
               ),
-            )
+            }
           : drop.kind === 'assign'
-            ? dialer().ask('schema:assign', collectionPath, drop.propId, drop.toIndex)
-            : dialer().ask('schema:unassign', collectionPath, drop.propId),
+            ? { op: 'assignProperty', ...at, toIndex: drop.toIndex }
+            : { op: 'unassignProperty', ...at },
     )
+  }
 
   const defOf = (id: string): PropertyDefinition | undefined =>
     schema.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
@@ -293,18 +287,17 @@ export function PropertyFrame({
     const action = await popMenu(propertyMenuModel({ kind: 'editor' }))
     if (action === 'property:remove') await remove(def.id)
     else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.label))) {
-      const deleted = await dialer().ask('property:delete', def.id)
-      if (!reportRefusal(deleted)) return
-      storesChanged.emit()
+      const deleted = await mutate({ op: 'deleteProperty', propertyId: def.id })
+      if (!deleted) return
       backToList()
-      notifyTrashed(def.label, deleted.value, deleted.value.owed && replay(deleted.value.owed))
+      const { retry } = deleted
+      notifyTrashed(def.label, deleted, retry && (() => void mutate(retry)))
     }
   }
   const rowMenu = async (d: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'assigned-row' }))
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
-    else if (action === 'property:remove')
-      reportRefusal(await dialer().ask('schema:unassign', collectionPath, d.id))
+    else if (action === 'property:remove') await remove(d.id)
   }
 
   const typePicker = (
@@ -351,7 +344,7 @@ export function PropertyFrame({
         underline={def.link_underline ?? false}
         display={def.link_display ?? DEFAULT_LINK_DISPLAY}
         color={def.link_color}
-        onSetConfig={(patch) => void write(dialer().ask('property:setLinkConfig', def.id, patch))}
+        onSetConfig={(patch) => configure(def.id, patch)}
       />
     ),
     dateTime: (def, style) => (
@@ -361,7 +354,7 @@ export function PropertyFrame({
       <CheckboxEditor
         color={def.checkbox_color}
         look={lookIn(CHECKBOX_LOOKS, style.look)}
-        onSetColor={(next) => void write(dialer().ask('property:setCheckboxColor', def.id, next))}
+        onSetColor={(next) => configure(def.id, { checkbox_color: next })}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
     ),
@@ -369,20 +362,20 @@ export function PropertyFrame({
       <NumberEditor
         config={def}
         look={lookIn(NUMBER_LOOKS, style.look)}
-        onSetConfig={(patch) => void write(dialer().ask('property:setNumberFormat', def.id, patch))}
+        onSetConfig={(patch) => configure(def.id, patch)}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
     ),
     file: (def) => (
       <FileEditor
         directory={def.file_directory}
-        onSetDirectory={(dir) => void saveFileDirectory(def.id, dir)}
+        onSetDirectory={(dir) => configure(def.id, { file_directory: dir })}
         onBrowse={() => {
           void dialer()
             .ask('assets:chooseDir', 'property', def.file_directory)
             .then((picked) => {
               if (reportRefusal(picked) && picked.value !== null)
-                void saveFileDirectory(def.id, picked.value)
+                configure(def.id, { file_directory: picked.value })
             })
         }}
       />
@@ -469,7 +462,7 @@ export function PropertyFrame({
           titles: TITLES,
           label: labelFor,
           glyph: glyphFor,
-          onDrop: (drop) => void handleDrop(drop),
+          onDrop: handleDrop,
           watch: [schema, registry],
         })}
       >
@@ -482,7 +475,9 @@ export function PropertyFrame({
           }
           onToggleAll={() => setAllOpen((o) => !o)}
           onOpenEditor={(id) => setView({ kind: 'edit', id })}
-          onAssign={(id) => void write(dialer().ask('schema:assign', collectionPath, id))}
+          onAssign={(id) =>
+            void mutate({ op: 'assignProperty', containerPath: collectionPath, propertyId: id })
+          }
           onRowMenu={(d) => void rowMenu(d)}
           onRenameCommit={(id, next) => {
             cancelPropertyRename()
@@ -512,7 +507,7 @@ export function PropertyFrame({
         triggerRef={iconRef}
         value={editingIcon}
         onSelect={(icon) => {
-          if (editingId) void write(dialer().ask('property:setIcon', editingId, icon))
+          if (editingId) configure(editingId, { icon })
         }}
       />
     </>

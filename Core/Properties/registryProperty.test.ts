@@ -7,7 +7,7 @@ import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   defaultStatusSeed,
-  editProperty,
+  configureProperty,
   keyFormatHolders,
   renameProperty,
   removeFromRegistry,
@@ -329,7 +329,7 @@ describe('createProperty', () => {
   })
 })
 
-describe('renameProperty and editProperty', () => {
+describe('renameProperty and configureProperty', () => {
   it('renames in place, keeping the id', async () => {
     const c = await createProperty(root, def({ label: 'Old', type: 'number' }))
     if (!c.ok) return
@@ -390,7 +390,7 @@ describe('renameProperty and editProperty', () => {
     vi.mocked(writeSchemaJournal).mockClear()
 
     const renamed = await renameProperty(root, c.value.id, 'status')
-    expect(renamed.ok && renamed.value).toMatchObject({ from: 'status', to: 'status' })
+    expect(renamed).toEqual(ok({}))
     expect((await readRegistry(root)).defs[c.value.id]).toMatchObject({
       label: 'status',
       key: 'status',
@@ -465,7 +465,7 @@ describe('renameProperty and editProperty', () => {
       type: 'select',
       value_format: 'lowercase',
     })
-    expect(await editProperty(root, 'prop_k', { icon: 'tag' })).toEqual(ok(null))
+    expect(await configureProperty(root, 'prop_k', { icon: 'tag' })).toEqual(ok(null))
     expect((await readRegistry(root)).defs.prop_k.select_options).toEqual([
       { key: 'option 1', label: 'Option 1' },
     ])
@@ -474,9 +474,9 @@ describe('renameProperty and editProperty', () => {
   it('writes and then clears a checkbox property color in place', async () => {
     const c = await createProperty(root, def({ label: 'Done', type: 'checkbox' }))
     if (!c.ok) return
-    await editProperty(root, c.value.id, { checkbox_color: 'blue' })
+    await configureProperty(root, c.value.id, { checkbox_color: 'blue' })
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBe('blue')
-    await editProperty(root, c.value.id, { checkbox_color: undefined })
+    await configureProperty(root, c.value.id, { checkbox_color: undefined })
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBeUndefined()
   })
 })
@@ -510,7 +510,7 @@ describe('a Key Format change is a rename of the key', () => {
     const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Tags: ['b'] })
 
     const r = await setKeyFormat(root, id, 'lowercase')
-    expect(r.ok && r.value).toMatchObject({ from: 'Tags', to: 'tags' })
+    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
     expect((await readRegistry(root)).defs[id]).toMatchObject({
       label: 'Tags',
       key: 'tags',
@@ -565,7 +565,7 @@ describe('a Key Format change is a rename of the key', () => {
     expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
   })
 
-  it('setting the format a definition already stores answers null and writes nothing', async () => {
+  it('setting the format a definition already stores answers nothing and writes nothing', async () => {
     await seedRegistry({
       id: 'prop_t',
       label: 'Tags',
@@ -575,7 +575,7 @@ describe('a Key Format change is a rename of the key', () => {
     })
     const registry = await readFile(registryFilePath(), 'utf8')
     vi.mocked(writeSchemaJournal).mockClear()
-    expect(await setKeyFormat(root, 'prop_t', 'Match Title')).toEqual(ok(null))
+    expect(await setKeyFormat(root, 'prop_t', 'Match Title')).toEqual(ok({}))
     expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
     expect(writeSchemaJournal).not.toHaveBeenCalled()
   })
@@ -597,7 +597,7 @@ describe('a Key Format change is a rename of the key', () => {
     )
     const held = await readFile(page, 'utf8')
     const r = await renameProperty(root, id, 'TAGS')
-    expect(r.ok && r.value).toMatchObject({ from: 'tags', to: 'tags' })
+    expect(r).toEqual(ok({}))
     expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'TAGS', key: 'tags' })
     expect(await readFile(page, 'utf8')).toBe(held)
   })

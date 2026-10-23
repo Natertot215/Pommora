@@ -7,6 +7,23 @@ import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { fault, ok, type Result } from '../Contract/result'
+import { addProperty, assignProperty, reorderAssignment } from '../Properties/assignment'
+import { unassignProperty } from '../Properties/unassignProperty'
+import {
+  configureProperty,
+  renameProperty,
+  reorderRegistry,
+  setKeyFormat,
+} from '../Properties/registryProperty'
+import { deleteProperty } from '../Properties/deleteProperty'
+import {
+  clearOption,
+  deleteOption,
+  editOption,
+  renameOption,
+  setValueFormat,
+} from '../Properties/optionOps'
+import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { emptyBundle, restoreTrashed } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
 import { openBundle, storeOf } from '../Bundles/bundle'
@@ -36,7 +53,7 @@ import {
 import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/discard'
-import { createContainerOp, createPageOp, createSpaceOp } from './create'
+import { createContainerOp, createPageOp, createSpaceOp, landedAs } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { editPageAliases, writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
@@ -44,7 +61,7 @@ import { type CascadeReport, joinCascades, linksNotUpdated, renameCascade } from
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { oweRetry, oweWalk } from './fileEvents'
-import { reachReport } from './configReach'
+import { NO_REACH, reachReport } from './configReach'
 import { inSettleTurn, payOwedWalk, relink, settledIndex } from './settle'
 import { pageMoves } from './record'
 import { putBackEntries } from './governedRoot'
@@ -66,7 +83,7 @@ export async function handleMutate(
   }
 }
 
-// A rename's Try Again is the request again with the title it left, whether the journal took the rename or its slot refused it, since a refused one has no record to replay and a later rename displaces a taken one's; a property cascade's replays its record through `property:replay`.
+// A rename's Try Again is the request again with the title it left, whether the journal took the rename or its slot refused it, since a refused one has no record to replay and a later rename displaces a taken one's; a property cascade's replays its record through the `finishOwed` op.
 function renamed(
   req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
   r: Result<Unswept | null>,
@@ -233,7 +250,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'createContextGroup': {
       const r = await createContextGroup(root, req.name, req.id)
-      return r.ok ? ok({ created: r.value }) : r
+      return r.ok ? ok({ created: r.value, ...landedAs(req.name, r.value.path) }) : r
     }
 
     case 'createSpace':
@@ -279,6 +296,67 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       oweWalk(root)
       return ok({})
     }
+
+    case 'addProperty': {
+      const folder = await mutableTarget(root, req.containerPath, ['collection'])
+      return folder.ok ? addProperty(root, folder.value, req.draft) : folder
+    }
+
+    case 'assignProperty': {
+      const folder = await mutableTarget(root, req.containerPath, ['collection'])
+      if (!folder.ok) return folder
+      return done(await assignProperty(root, folder.value, req.propertyId, req.toIndex))
+    }
+
+    case 'unassignProperty': {
+      const folder = await mutableTarget(root, req.containerPath, ['collection'])
+      return folder.ok ? unassignProperty(root, folder.value, req.propertyId) : folder
+    }
+
+    case 'reorderAssigned': {
+      const folder = await mutableTarget(root, req.containerPath, ['collection'])
+      if (!folder.ok) return folder
+      return done(await reorderAssignment(root, folder.value, req.propertyId, req.toIndex))
+    }
+
+    case 'reorderProperty':
+      return done(await reorderRegistry(root, req.propertyId, req.toIndex))
+
+    case 'renameProperty':
+      return renameProperty(root, req.propertyId, req.label)
+
+    case 'setFormat':
+      return 'key_format' in req.change
+        ? setKeyFormat(root, req.propertyId, req.change.key_format)
+        : setValueFormat(root, req.propertyId, req.change.value_format)
+
+    case 'configureProperty':
+      return done(await configureProperty(root, req.propertyId, req.patch))
+
+    case 'deleteProperty':
+      return deleteProperty(root, req.propertyId)
+
+    // A property cascade's Try Again until each change keeps its own note: the journal's one record, replayed.
+    case 'finishOwed': {
+      const replayed = (await replaySchemaCascade(root)) ?? ok(NO_REACH)
+      if (!replayed.ok) return replayed
+      return ok({
+        cascade: reachReport(replayed.value),
+        ...(replayed.value.skipped ? { retry: req } : {}),
+      })
+    }
+
+    case 'editOption':
+      return done(await editOption(root, req.propertyId, req.edit))
+
+    case 'renameOption':
+      return renameOption(root, req.propertyId, req.from, req.to)
+
+    case 'deleteOption':
+      return deleteOption(root, req.propertyId, req.label)
+
+    case 'clearOption':
+      return clearOption(root, req.propertyId, req.label)
 
     default: {
       const _exhaustive: never = req

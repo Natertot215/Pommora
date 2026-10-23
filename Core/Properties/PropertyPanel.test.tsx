@@ -446,17 +446,17 @@ describe('the property row drag', () => {
 
   it('reorders the schema at the slot index among the shown rows', async () => {
     await drag('prop_note', 30, 15, 2)
-    expect(ask).toHaveBeenCalledWith('schema:reorder', 'Col', 'prop_note', 0)
+    expect(useSession.getState().mutate).toHaveBeenCalledWith({
+      op: 'reorderAssigned',
+      containerPath: 'Col',
+      propertyId: 'prop_note',
+      toIndex: 0,
+    })
   })
 
   it('a release on its own slot writes nothing', async () => {
     await drag('prop_stage', 10, 25, 10)
-    expect(ask).not.toHaveBeenCalledWith(
-      'schema:reorder',
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-    )
+    expect(useSession.getState().mutate).not.toHaveBeenCalled()
   })
 
   it('a Space reorder writes its shown rows by id', async () => {
