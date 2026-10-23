@@ -19,7 +19,7 @@ const TYPE_META: Record<ColumnType, TypeMeta> = {
   text: { label: 'Text', icon: 'text-align-start' },
   number: { label: 'Number', icon: 'hash' },
   checkbox: { label: 'Checkbox', icon: 'square-check' },
-  dateTime: { label: 'Date & Time', icon: 'calendar' },
+  dateTime: { label: 'Date & Time', icon: 'calendar', styleLabel: 'Format' },
   select: { label: 'Select', icon: 'send', chip: TAG },
   multiSelect: { label: 'Multi-Select', icon: 'tags', chip: { shape: 'tag', glyph: 'tags' } },
   status: {
@@ -30,8 +30,8 @@ const TYPE_META: Record<ColumnType, TypeMeta> = {
   link: { label: 'Link', icon: 'link', styleLabel: 'Format' },
   file: { label: 'File', icon: 'file-chart-column' },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
-  createdTime: { label: FILEDATA.createdAt.label, icon: 'clock-plus' },
-  lastEditedTime: { label: FILEDATA.modifiedAt.label, icon: 'repeat' },
+  createdTime: { label: FILEDATA.createdAt.label, icon: 'clock-plus', styleLabel: 'Format' },
+  lastEditedTime: { label: FILEDATA.modifiedAt.label, icon: 'repeat', styleLabel: 'Format' },
 }
 
 export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
@@ -45,5 +45,5 @@ export const propertyIcon = (def: PropertyDefinition): string =>
 export const chipOf = (type: PropertyType | undefined): Chip =>
   type === undefined ? TAG : (TYPE_META[type].chip ?? TAG)
 
-/** What a column's look menu is called: a Link's look is its Format, every other type's its Style. */
+/** A look menu's name: Format where it sets how a value is written (Link and the dates), Style where it sets how it's drawn. */
 export const styleLabel = (type: ColumnType): string => TYPE_META[type].styleLabel ?? 'Style'
