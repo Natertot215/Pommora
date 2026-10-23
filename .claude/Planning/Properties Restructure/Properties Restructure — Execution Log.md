@@ -37,6 +37,11 @@ One line per fold found in a file a later task touches: the file, what folds, an
 
 #### Measurement Outcomes
 
+- **F3 (Phase 6, Task 6-6, 10-23-2026): Pass.** `~/Benchmark-Large`, a Table of `Collection 01 Ledger` (1,000 pages, the largest, tied) over its `Category` Select, baseline Task 6-4's head (`33010b10f`) against Task 6-5's (`078aaa855`), each from its own worktree; commit-to-paint `domMs` from the option press to the DOM showing the chip.
+  - **Single Edits (20 runs each):** baseline 39.7, 40.3, 35.4, 31.3, 29.9, 31.6, 36.4, 31.6, 29.7, 30.3, 32, 30.2, 30.3, 31, 30.6, 31.2, 32, 30.7, 33.4, 31.3 (p95 39.7); head 36, 42, 40, 30.6, 29.9, 26.6, 32.9, 28.6, 30.3, 30.5, 31.5, 30.6, 35.2, 30.7, 36.9, 33.8, 31.2, 30.2, 34.1, 30 (p95 40). Head p95 40 ≤ 39.7 + 16 = 55.7.
+  - **Mass Assigns (200 rows, 5 runs each):** baseline 45.1, 37.6, 36.9, 36.3, 36.7 (median 36.9, so the limit is 1.10 × 36.9 = 40.59); head 36.4, 36, 35.7, 38.5, 40.1, each ≤ 40.59.
+  - **Trace:** the run sweeps rows 6–205 rather than 1–200, since row 1 sits under the sticky header at the top of the 7,200-high viewport; a first attempt stalled because `nexus:state`'s whole 25,000-page tree returned by value over CDP never answered, so the script reads the Collection and property in the page and reloads the window onto the opened Nexus.
+
 #### Scan and Conversion Records
 
 - **The NexusOS Scan (Phase 4B's Checkpoint, 10-23-2026):** 569 roots read (6 Collections' pages, no archive, 10 Space sidecars); one changed key. `Assets/II. Arsenal/Nautilus 5712A.md`, `Color`: before `Silver`, after `[Silver]`. The same scan at the phase's base answers the same one row, so it's the reconcile's existing list spelling of a scalar Select, and Phase 4B's rules change no NexusOS value.
