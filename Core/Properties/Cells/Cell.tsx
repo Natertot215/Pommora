@@ -193,32 +193,24 @@ function Chips({
   children: (item: string, i: number) => React.JSX.Element
 }): React.JSX.Element {
   const items = value.value
-  // A repeat written outside the app gets its own key, so it never shares a chip's identity.
-  const seen = new Map<string, number>()
-  const keys = items.map((item) => {
-    const n = seen.get(item) ?? 0
-    seen.set(item, n + 1)
-    return n === 0 ? item : `${item}\u0000${n}`
-  })
-  const itemOf = (key: string): string => items[keys.indexOf(key)]
   if (!commit || items.length < 2)
     return (
       <OverScroll className="cell-chips">
         {items.map((item, i) => (
-          <Fragment key={keys[i]}>{children(item, i)}</Fragment>
+          <Fragment key={item}>{children(item, i)}</Fragment>
         ))}
       </OverScroll>
     )
   const onMove = (id: string, beforeId: string | null): false | undefined => {
-    const next = moveBefore(keys, (key) => key, id, beforeId)
+    const next = moveBefore(items, (item) => item, id, beforeId)
     if (!next) return false
-    commit({ ...value, value: next.map(itemOf) })
+    commit({ ...value, value: next })
   }
   return (
-    <SortableZone items={keys} axis="x" label={(key) => label(itemOf(key))} onMove={onMove}>
+    <SortableZone items={items} axis="x" label={label} onMove={onMove}>
       <OverScroll className="cell-chips">
         {items.map((item, i) => (
-          <SortableChip key={keys[i]} id={keys[i]}>
+          <SortableChip key={item} id={item}>
             {children(item, i)}
           </SortableChip>
         ))}

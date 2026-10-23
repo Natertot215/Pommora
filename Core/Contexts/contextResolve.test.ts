@@ -65,4 +65,8 @@ describe('resolveContextKeys', () => {
     )
     expect(both.get('ctx_projects')).toEqual(['sp1'])
   })
+  it('keeps a Space listed twice once, in first-seen order', () => {
+    const links = resolveContextKeys({ '<Projects>': ['CS 161', 'Pommora', 'CS 161'] }, contexts)
+    expect(links.get('ctx_projects')).toEqual(['sp2', 'sp1'])
+  })
 })
