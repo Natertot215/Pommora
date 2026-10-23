@@ -1,7 +1,6 @@
 // Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across machines.
 
-import type { DateFormat, TimeFormat, WeekdayFormat } from './columnStyles'
-import type { DateGranularity, DateSeparator } from '../Views/views'
+import { type DateFormat, showsWeekday, type TimeFormat, type WeekdayFormat } from './columnStyles'
 import { CURRENCY_CODES, DEFAULT_CURRENCY, type NumberConfig } from './properties'
 import { pad } from '@pommora/uix/Utilities/pad'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
@@ -21,7 +20,9 @@ const memoFmt = <O, F>(make: (opts: O) => F): ((opts: O) => F) => {
   }
 }
 const numFmt = memoFmt((o: Intl.NumberFormatOptions) => new Intl.NumberFormat('en-US', o))
-const dateFmt = memoFmt((o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', o))
+export const dateFmt = memoFmt(
+  (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', o),
+)
 
 function ordinal(day: number): string {
   if (day % 100 >= 11 && day % 100 <= 13) return `${day}th`
@@ -126,7 +127,7 @@ function formatPoint(
       break
   }
 
-  if ((dateFormat === 'short' || dateFormat === 'full') && weekday !== 'none')
+  if (showsWeekday(dateFormat) && weekday !== 'none')
     out = `${dateFmt({ weekday: weekday === 'long' ? 'long' : 'short' }).format(date)}, ${out}`
   if (hasTime && timeFormat !== 'none') out += ` ${clockOf(date, timeFormat)}`
   return out
@@ -151,37 +152,6 @@ export function formatDate(
 }
 
 export const NUMERIC_FORMATS = new Set<DateFormat>(['dayMonthYear', 'monthDayYear'])
-
-export function formatBucketLabel(
-  key: string,
-  granularity: DateGranularity,
-  dateFormat: DateFormat,
-  separator: DateSeparator,
-): string {
-  const numeric = NUMERIC_FORMATS.has(dateFormat)
-  const sep = separator === 'slash' ? '/' : '-'
-  switch (granularity) {
-    case 'year':
-      return key
-    case 'week': {
-      const m = /^(\d{4})-W(\d{2})$/.exec(key)
-      if (!m) return key
-      return numeric ? `W${m[2]}${sep}${m[1]}` : `Week ${Number(m[2])}, ${m[1]}`
-    }
-    case 'month': {
-      const m = /^(\d{4})-(\d{2})$/.exec(key)
-      if (!m) return key
-      if (numeric) return `${m[2]}${sep}${m[1]}`
-      const month = dateFmt({ month: 'long' }).format(new Date(`${key}-01T00:00:00`))
-      return `${month} ${m[1]}`
-    }
-    case 'day': {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return key
-      const out = formatDate(key, dateFormat, 'none')
-      return numeric && separator === 'dash' ? out.replaceAll('/', '-') : out
-    }
-  }
-}
 
 function fractionDigits(decimals: NumberConfig['number_decimals']): Intl.NumberFormatOptions {
   if (decimals === 'hidden') return { maximumFractionDigits: 0 }
