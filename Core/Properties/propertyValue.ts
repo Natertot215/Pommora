@@ -45,6 +45,7 @@ export const optionList = (raw: unknown): string[] =>
 type OptionWords = {
   idOf: Map<string, string>
   byId: Map<string, SelectOption>
+  folds: Set<string>
 }
 
 const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
@@ -57,6 +58,7 @@ function wordsOf(def: PropertyDefinition): OptionWords {
     words = {
       idOf: new Map(options.map((o) => [exactTitle(o.key), o.id])),
       byId: new Map(options.map((o) => [o.id, o])),
+      folds: new Set(options.flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)])),
     }
     optionWords.set(def, words)
   }
@@ -66,6 +68,10 @@ function wordsOf(def: PropertyDefinition): OptionWords {
 /** The id of the option whose key `written` names. */
 const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   wordsOf(def).idOf.get(exactTitle(written))
+
+/** Whether an option's label or key names `word` without regard to case, the fold option uniqueness compares by. */
+export const claimsWord = (def: PropertyDefinition, word: string): boolean =>
+  wordsOf(def).folds.has(normalizeTitle(word))
 
 export const findOption = (
   def: PropertyDefinition | undefined,
@@ -203,9 +209,7 @@ export function keepingForeignWords(
   return joinValues(
     written,
     listOf(held ?? []).filter((w) =>
-      isScalar(w)
-        ? exactTitle(w) !== '' && registeredOption(def, exactTitle(w)) === undefined
-        : w != null,
+      isScalar(w) ? exactTitle(w) !== '' && !claimsWord(def, exactTitle(w)) : w != null,
     ),
   )
 }
