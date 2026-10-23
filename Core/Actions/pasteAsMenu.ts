@@ -2,6 +2,9 @@ import { expressibleInLink, pageEmbedText, spellsAsWiki } from '../Connections/c
 import { markdownLink } from '../Connections/links'
 import { isHttpLink, normalizeLinkUrl } from '../Paths/urlPath'
 import {
+  LINK_DISPLAY_LABELS,
+  LINK_DISPLAYS,
+  type LinkDisplay,
   linkPaste,
   readLinkText,
   resolvedTarget,
@@ -11,7 +14,6 @@ import {
   type LinkTarget,
 } from '../Connections/linkValue'
 import type { PageIndex } from '../Connections/pageIndex'
-import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
 import { PASTE_LITERAL_ACTION, RESTING_EDITS } from './editorMenu'
 import type { LeafItem } from './menuModel'
 

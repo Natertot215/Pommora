@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
+import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
 import { KEY_FORMATS } from './keyFormat'
@@ -76,20 +77,6 @@ export function pickKindOf(t: ColumnType | undefined): OptionPickKind | null {
     case undefined:
       return null
   }
-}
-
-export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
-export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
-
-export const isLinkDisplay = (v: string | undefined): v is LinkDisplay =>
-  (LINK_DISPLAYS as readonly (string | undefined)[]).includes(v)
-
-export const DEFAULT_LINK_DISPLAY: LinkDisplay = LINK_DISPLAYS[0]
-
-export const LINK_DISPLAY_LABELS: Record<LinkDisplay, string> = {
-  'link-full': 'Full Link',
-  'link-short': 'Short Link',
-  'link-title': 'Page Title',
 }
 
 /** `percent` stores the literal (30 → "30%"), NOT ×100; `currency` stores an ISO code. */

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
-import { LINK_DISPLAYS } from '../Properties/properties'
 import { buildPageIndex } from './pageIndex'
-import type { LinkTarget } from './linkValue'
+import { LINK_DISPLAYS, type LinkTarget } from './linkValue'
 import {
   keepsShown,
   linkDisplayText,

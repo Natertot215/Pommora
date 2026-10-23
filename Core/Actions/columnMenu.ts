@@ -14,7 +14,8 @@ import {
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
-import { type ColumnType, LINK_DISPLAYS, PROPERTY_TYPES } from '../Properties/properties'
+import { LINK_DISPLAYS } from '../Connections/linkValue'
+import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 import type { ActionItem } from './menuModel'
 

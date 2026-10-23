@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { defaultStatusSeed } from './registryProperty'
+import { LINK_DISPLAYS } from '../Connections/linkValue'
 import {
   byKey,
-  LINK_DISPLAYS,
   propertyDefinition,
   typeIds,
   isReservedPropertyId,

@@ -1,11 +1,18 @@
-import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '../properties'
+import type { PropertyDefinition } from '../properties'
 import type { ColumnLook } from '../columnStyles'
 import { isHttpLink } from '../../Paths/urlPath'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { pageLinkText } from '../../Connections/connections'
-import { linkDisplayText, namedPage, readLinkText, resolveLink } from '../../Connections/linkValue'
+import {
+  DEFAULT_LINK_DISPLAY,
+  isLinkDisplay,
+  linkDisplayText,
+  namedPage,
+  readLinkText,
+  resolveLink,
+} from '../../Connections/linkValue'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'

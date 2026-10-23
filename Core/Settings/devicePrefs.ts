@@ -4,7 +4,7 @@ import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { readValue } from '../Platform/localState'
 import { entriesOf, looseDecoder, numberCheck } from '../Files/decoders'
 import { PATH_FORMATS } from '../Paths/pathFormat'
-import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
+import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Connections/linkValue'
 import { TENTHS_SCALE } from './personalization'
 
 export const SIDEBAR_WIDTH = { min: 180, max: 380, default: 240 }
