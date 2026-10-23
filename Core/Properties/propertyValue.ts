@@ -6,7 +6,6 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
   type SelectOption,
-  type StatusOption,
 } from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues } from '../Files/rootValues'
@@ -45,7 +44,7 @@ export const optionList = (raw: unknown): string[] =>
 
 type OptionWords = {
   labelOf: Map<string, string>
-  byLabel: Map<string, SelectOption | StatusOption>
+  byLabel: Map<string, SelectOption>
 }
 
 const optionWords = new WeakMap<PropertyDefinition, OptionWords>()
@@ -71,7 +70,7 @@ const registeredOption = (def: PropertyDefinition, written: string): string | un
 export const findOption = (
   def: PropertyDefinition | undefined,
   label: string,
-): SelectOption | StatusOption | undefined => (def ? wordsOf(def).byLabel.get(label) : undefined)
+): SelectOption | undefined => (def ? wordsOf(def).byLabel.get(label) : undefined)
 
 /** The key of the option `label` names; a label no option holds is written as given. */
 const keyOf = (def: PropertyDefinition, label: string): string =>

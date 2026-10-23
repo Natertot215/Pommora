@@ -15,8 +15,9 @@ import { findOption, optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { addOption, applyOptionEdit, mapOptions, type OptionEdit } from './optionModel'
+import { mintOptionId } from '../Nexus/ids'
 import {
-  labelled,
+  identified,
   optionGroupsOf,
   optionsOf,
   PROPERTY_TYPES,
@@ -62,7 +63,7 @@ function editStoredOptions(
   edit: (groups: StatusGroup[]) => StatusGroup[],
 ): PropertyDefinition {
   const raw = { ...(stored as PropertyDefinition), type: def.type }
-  const named = mapOptions(optionGroupsOf(raw), labelled)
+  const named = mapOptions(optionGroupsOf(raw), identified)
   return withOptionGroups(def, edit(uniqueOptionGroups(named)))
 }
 
@@ -172,7 +173,10 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           const fresh = unregisteredMembers(def, members).filter((v) => !owed.has(memberKey(v)))
           if (!fresh.length) continue
           const next = editStoredOptions(def, stored[id], (groups) =>
-            fresh.reduce((g, v) => addOption(g, SELECT_GROUP, v, v), groups),
+            fresh.reduce(
+              (g, v) => addOption(g, SELECT_GROUP, { id: mintOptionId(), key: v, label: v }),
+              groups,
+            ),
           )
           defs = { ...defs, [id]: next }
         }

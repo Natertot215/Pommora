@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { isKeyOf } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
+import { keyedOptionId } from '../Nexus/ids'
 import type { ValueKind } from './propertyValue'
 import { formatChange, keyFormat } from './keyFormat'
 
@@ -102,39 +103,32 @@ export const labelled = <W extends { key: string; label?: string }>(
   label: w.label ?? w.key,
 })
 
-const selectOption = looseDecoder(
+/** An option stored without an id, or with an empty one, answers to the one its key derives until a write of its property's options stores it, so a hand edit never hides the property and every device reads the same id. */
+export const identified = <O extends { id?: string; key: string; label?: string }>(
+  o: O,
+): O & { id: string; label: string } => ({ ...labelled(o), id: o.id || keyedOptionId(o.key) })
+
+const option = looseDecoder(
   z.object({
+    id: z.string().min(1).optional().catch(undefined),
     key: z.string(),
     label: z.string().optional(),
     icon: z.string().optional().catch(undefined),
     color: z.string().optional().catch(undefined),
     appearance: optionAppearance.optional().catch(undefined),
   }),
-).transform(labelled)
-export type SelectOption = z.infer<typeof selectOption>
-const selectOptions = z.array(selectOption)
+).transform(identified)
+/** A Select, Multi-Select, or Status option; a Status option sits in the group that holds it. */
+export type SelectOption = z.infer<typeof option>
+const options = z.array(option)
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
-const statusGroupId = z.string()
-
-const statusOption = looseDecoder(
-  z.object({
-    key: z.string(),
-    label: z.string().optional(),
-    color: z.string().optional().catch(undefined),
-    icon: z.string().optional().catch(undefined),
-    appearance: optionAppearance.optional().catch(undefined),
-    group_id: statusGroupId,
-  }),
-).transform(labelled)
-export type StatusOption = z.infer<typeof statusOption>
-
 const statusGroup = looseDecoder(
   z.object({
-    id: statusGroupId,
+    id: z.string(),
     label: z.string(),
     color: z.string().catch('grey'),
-    options: z.array(statusOption),
+    options,
   }),
 )
 export type StatusGroup = z.infer<typeof statusGroup>
@@ -148,7 +142,7 @@ const propertyDefinitionFields = z.object({
   key_format: keyFormat.optional().catch(undefined),
   value_format: keyFormat.optional().catch(undefined),
   icon: z.string().optional(),
-  select_options: selectOptions.optional(),
+  select_options: options.optional(),
   status_groups: statusGroups.optional(),
   link_underline: z.boolean().optional().catch(undefined),
   // A per-value alias (`[alias](url)`, set via Rename) overrides link_display — the alias always wins.
@@ -238,10 +232,10 @@ export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
 export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
 
 /** An option without its own color wears its group's. */
-export const groupOptions = (g: StatusGroup): StatusOption[] =>
+export const groupOptions = (g: StatusGroup): SelectOption[] =>
   g.options.map((o) => (o.color ? o : { ...o, color: g.color }))
 
-function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): StatusOption[] {
+function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): SelectOption[] {
   return (def?.status_groups ?? []).flatMap(groupOptions)
 }
 
@@ -250,7 +244,7 @@ export type PickOption = { value: string; label: string; color?: string; icon?: 
 /** Keyed on the DECLARED type, never on which array happens to be present, so a stale `select_options` a hand edit leaves on a Status property is ignored. */
 export const optionsOf = (
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
-): (SelectOption | StatusOption)[] =>
+): SelectOption[] =>
   def && PROPERTY_TYPES[def.type].options === 'status'
     ? statusOptions(def)
     : (def?.select_options ?? [])
@@ -265,8 +259,7 @@ export function optionGroupsOf(
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'>,
 ): StatusGroup[] {
   if (PROPERTY_TYPES[def.type].options === 'status') return def.status_groups ?? []
-  const options = (def.select_options ?? []).map((o) => ({ ...o, group_id: SELECT_GROUP }))
-  return [{ id: SELECT_GROUP, label: '', color: '', options }]
+  return [{ id: SELECT_GROUP, label: '', color: '', options: def.select_options ?? [] }]
 }
 
 export function withOptionGroups(
@@ -274,6 +267,5 @@ export function withOptionGroups(
   groups: StatusGroup[],
 ): PropertyDefinition {
   if (PROPERTY_TYPES[def.type].options === 'status') return { ...def, status_groups: groups }
-  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => o)
-  return { ...def, select_options }
+  return { ...def, select_options: groups[0]?.options ?? [] }
 }
