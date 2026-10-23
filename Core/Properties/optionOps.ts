@@ -12,8 +12,9 @@ import { editList, valueEditRewrite, type ValueEdit } from './pageValue'
 import { editCaches } from './propertyCache'
 import { editHeldList, memberKey } from '../Files/rootValues'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
-import { findOption, unregisteredMembers } from './propertyValue'
+import { findOption, optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
+import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { addOption, applyOptionEdit, mapOptions, type OptionEdit } from './optionModel'
 import {
   labelled,
@@ -106,6 +107,23 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
         result: ok(null),
       }
     })
+  })
+}
+
+/** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, the fold option uniqueness compares by, each once by fold. */
+export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
+  const folds = new Set(
+    optionsOf(def).flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)]),
+  )
+  const writable = optionList(raw).filter(
+    (w) => formatKey(exactTitle(w), def.value_format) === exactTitle(w),
+  )
+  const seen = new Set<string>()
+  return writable.filter((w) => {
+    const fold = normalizeTitle(w)
+    if (seen.has(fold)) return false
+    seen.add(fold)
+    return !folds.has(fold)
   })
 }
 

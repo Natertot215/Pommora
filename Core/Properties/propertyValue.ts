@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { isScalar, listOf, scalarMembers } from '../Contract/validators'
 import {
+  CURRENCY_CODES,
   optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
@@ -11,9 +12,9 @@ import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { joinValues, landValue } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry } from '../Connections/linkValue'
-import { readNumber } from './formatValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
-import { formatKey } from './keyFormat'
+import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
+import { escapeRegExp } from '@pommora/uix/Utilities/escapeRegExp'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -39,7 +40,7 @@ export const NULL_VALUE: PropertyValue = { kind: 'null' }
 export const asText = (raw: unknown): string => linkEntry(raw, 2) ?? yamlInline(raw)
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
-const optionList = (raw: unknown): string[] =>
+export const optionList = (raw: unknown): string[] =>
   scalarMembers(raw).filter((x) => exactTitle(x) !== '')
 
 type OptionWords = {
@@ -97,6 +98,55 @@ export function checkboxWord(raw: unknown): boolean | null {
   return checked === undefined ? null : checked === word
 }
 
+/** The symbol a cell shows for `currency`, spelling out the ambiguous ones (`A$`, `CA$`). */
+export const currencySymbol = (currency: string): string =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency })
+    .formatToParts(0)
+    .find((p) => p.type === 'currency')?.value ?? currency
+
+const SYMBOL = CURRENCY_CODES.map((c) => escapeRegExp(currencySymbol(c))).join('|')
+const NUMBER_SHAPE = new RegExp(`^([+-]?)((?:${SYMBOL})\\s*)?(.*?)(\\s*(?:%|${SYMBOL}))?$`)
+const GROUPED = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/
+
+interface NumberShape {
+  value: number
+  lead: string
+  tail: string
+  grouped: boolean
+  places: number
+}
+
+/** The number a string spells, the inverse of a cell's own formatting: digits as `numberFrom` reads them, commas only as thousands, and a currency symbol before, or a `%` or a symbol after, never both. */
+function numberShape(raw: unknown): NumberShape | null {
+  if (typeof raw !== 'string') return null
+  const m = NUMBER_SHAPE.exec(raw.trim())
+  if (!m || (m[2] && m[4])) return null
+  const [, sign, lead = '', body, tail = ''] = m
+  const grouped = GROUPED.test(body)
+  const value = numberFrom(sign + (grouped ? body.replaceAll(',', '') : body))
+  const places = /\.(\d+)$/.exec(body)?.[1].length ?? 0
+  return value === undefined ? null : { value, lead, tail, grouped, places }
+}
+
+/** The one reading of a stored or typed number: a YAML number as itself, or a string that spells one. */
+export const readNumber = (raw: unknown): number | undefined =>
+  typeof raw === 'number' ? raw : numberShape(raw)?.value
+
+/** `next` as `raw` spells a number: an unchanged value keeps `raw` as written, and over anything but a string spelling a number it lands bare. */
+export function spelledNumber(next: number, raw: unknown): unknown {
+  const shape = numberShape(raw)
+  if (!shape) return next
+  if (shape.value === next) return raw
+  // A changed value keeps the file's currency symbol, percent sign, grouping, and decimal places; its digits are the typed value's.
+  const digits = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: Math.min(shape.places, 20),
+    maximumFractionDigits: 20,
+    useGrouping: shape.grouped,
+  }).format(Math.abs(next))
+  const spelled = `${next < 0 ? '-' : ''}${shape.lead}${digits}${shape.tail}`
+  return readNumber(spelled) === next ? spelled : next
+}
+
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL_VALUE
   const kind = PROPERTY_TYPES[def.type].kind
@@ -138,23 +188,6 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'context':
       return NULL_VALUE
   }
-}
-
-/** The words a Multi-Select's `raw` holds that its Value Format could have written and no option's label or key claims without regard to case, the fold option uniqueness compares by, each once by fold. */
-export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
-  const folds = new Set(
-    optionsOf(def).flatMap((o) => [normalizeTitle(o.label), normalizeTitle(o.key)]),
-  )
-  const writable = optionList(raw).filter(
-    (w) => formatKey(exactTitle(w), def.value_format) === exactTitle(w),
-  )
-  const seen = new Set<string>()
-  return writable.filter((w) => {
-    const fold = normalizeTitle(w)
-    if (seen.has(fold)) return false
-    seen.add(fold)
-    return !folds.has(fold)
-  })
 }
 
 export function keepingForeignWords(

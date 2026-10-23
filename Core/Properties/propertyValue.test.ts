@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import type { KeyFormat } from './keyFormat'
 import {
+  readNumber,
+  spelledNumber,
   applyValueAtRoot,
   decodeValue,
   encodeValue,
   findOption,
   isBlankValue,
   keepingForeignWords,
-  unregisteredMembers,
   type PropertyValue,
 } from './propertyValue'
 
@@ -392,34 +392,6 @@ describe('options decode exactly; checkboxes without regard to case', () => {
     for (const raw of ['No', 'off', 'n', 'false', '1', false, 1])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
   })
-
-  it('unregisteredMembers answers each word no option claims without regard to case, once by fold', () => {
-    expect(unregisteredMembers(labels, ['CLAUDE', 'Ideas', 'ideas'])).toEqual(['Ideas'])
-    expect(unregisteredMembers(multiSelectOf('red', 'blue'), ['green', 'Red', 'PURPLE'])).toEqual([
-      'green',
-      'PURPLE',
-    ])
-  })
-
-  it('unregisteredMembers subtracts every word whose fold an option’s label or key holds', () => {
-    expect(unregisteredMembers(keyedMulti, ['IN-PROGRESS', 'done', 'DONE', 'new'])).toEqual(['new'])
-  })
-
-  it('unregisteredMembers answers only the words the Value Format could have written', () => {
-    const under = (value_format: KeyFormat, ...values: string[]): PropertyDefinition => ({
-      ...multiSelectOf(...values),
-      value_format,
-    })
-    expect(
-      unregisteredMembers(under('lowercase', 'red', 'blue'), ['green', 'PURPLE', 'Red']),
-    ).toEqual(['green'])
-    expect(unregisteredMembers(under('kebab-case'), ['due_date', 'in-progress'])).toEqual([
-      'in-progress',
-    ])
-    expect(unregisteredMembers(under('PascalCase'), ['AB', 'J.Crew', 'Red'])).toEqual(['Red'])
-    expect(unregisteredMembers(under('lowercase'), ['Green', 'green'])).toEqual(['green'])
-    expect(unregisteredMembers(under('lowercase'), [' green '])).toEqual([' green '])
-  })
 })
 
 describe('keepingForeignWords', () => {
@@ -457,5 +429,67 @@ describe('findOption', () => {
   })
   it('returns undefined for an unknown label', () => {
     expect(findOption(tag, 'nope')).toBeUndefined()
+  })
+})
+
+describe('readNumber', () => {
+  it('reads a YAML number as itself and a string as the number it spells', () => {
+    expect(readNumber(42)).toBe(42)
+    expect(readNumber('30')).toBe(30)
+    expect(readNumber(' 3.5 ')).toBe(3.5)
+    expect(readNumber('1,200')).toBe(1200)
+    expect(readNumber('-1,200.50')).toBe(-1200.5)
+    expect(readNumber('30%')).toBe(30)
+    expect(readNumber('30 %')).toBe(30)
+    expect(readNumber('$1,200')).toBe(1200)
+    expect(readNumber('-$30')).toBe(-30)
+    expect(readNumber('+$5')).toBe(5)
+    expect(readNumber('CA$1,300.5')).toBe(1300.5)
+    expect(readNumber('5A$')).toBe(5)
+    expect(readNumber('30 €')).toBe(30)
+    expect(readNumber('£ 7')).toBe(7)
+    expect(readNumber('¥500')).toBe(500)
+  })
+
+  it('reads nothing from a value that spells no number', () => {
+    for (const raw of [
+      'five',
+      '',
+      '$',
+      '%',
+      '1,5',
+      '12,34,567',
+      '$30%',
+      '-$-30',
+      '30 USD',
+      true,
+      null,
+      ['30'],
+    ])
+      expect(readNumber(raw)).toBeUndefined()
+  })
+})
+
+describe('spelledNumber', () => {
+  it('keeps the file’s spelling of an unchanged value', () => {
+    expect(spelledNumber(30, '30.0')).toBe('30.0')
+    expect(spelledNumber(1200, '$1,200.00')).toBe('$1,200.00')
+  })
+
+  it('a changed value keeps the string shape, symbol, percent sign, spacing, grouping, and decimal places, its digits typed', () => {
+    expect(spelledNumber(1300, '$1,200.00')).toBe('$1,300.00')
+    expect(spelledNumber(45.125, '30.50%')).toBe('45.125%')
+    expect(spelledNumber(2, '1.000000000000000000001')).toBe('2.00000000000000000000')
+    expect(spelledNumber(1234567, '1,200')).toBe('1,234,567')
+    expect(spelledNumber(1234, '1200')).toBe('1234')
+    expect(spelledNumber(45, '30%')).toBe('45%')
+    expect(spelledNumber(-40, '$30')).toBe('-$40')
+    expect(spelledNumber(31, '30 €')).toBe('31 €')
+  })
+
+  it('lands bare over anything but a string spelling a number, and where the spelling would not read back', () => {
+    expect(spelledNumber(31, 30)).toBe(31)
+    expect(spelledNumber(31, 'five')).toBe(31)
+    expect(spelledNumber(1e-25, '$30')).toBe(1e-25)
   })
 })

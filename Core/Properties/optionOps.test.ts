@@ -12,6 +12,7 @@ import {
   removeOption,
   clearOption,
   setValueFormat,
+  unregisteredMembers,
   valueFormatHolders,
 } from './optionOps'
 import type { KeyFormat } from './keyFormat'
@@ -1512,5 +1513,57 @@ describe('valueFormatHolders', () => {
   it('counts nothing for Match Title over keys equal to their labels', async () => {
     const { id } = await tones()
     expect(await valueFormatHolders(root, id, 'Match Title')).toEqual(ok(0))
+  })
+})
+
+describe('unregisteredMembers', () => {
+  const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
+    ({ id: 'p', label: 'P', key: 'P', type: 'select', ...over }) as PropertyDefinition
+  const multiSelectOf = (...values: string[]): PropertyDefinition =>
+    def({
+      type: 'multiSelect',
+      select_options: values.map((value) => ({ key: value, label: value })),
+    })
+  const keyedMulti = def({
+    type: 'multiSelect',
+    select_options: [
+      { key: 'done', label: 'Done' },
+      { key: 'in-progress', label: 'In Progress' },
+    ],
+  })
+  const labels = def({
+    type: 'multiSelect',
+    select_options: [
+      { key: 'Claude', label: 'Claude' },
+      { key: 'Docs', label: 'Docs' },
+    ],
+  })
+
+  it('unregisteredMembers answers each word no option claims without regard to case, once by fold', () => {
+    expect(unregisteredMembers(labels, ['CLAUDE', 'Ideas', 'ideas'])).toEqual(['Ideas'])
+    expect(unregisteredMembers(multiSelectOf('red', 'blue'), ['green', 'Red', 'PURPLE'])).toEqual([
+      'green',
+      'PURPLE',
+    ])
+  })
+
+  it('unregisteredMembers subtracts every word whose fold an option’s label or key holds', () => {
+    expect(unregisteredMembers(keyedMulti, ['IN-PROGRESS', 'done', 'DONE', 'new'])).toEqual(['new'])
+  })
+
+  it('unregisteredMembers answers only the words the Value Format could have written', () => {
+    const under = (value_format: KeyFormat, ...values: string[]): PropertyDefinition => ({
+      ...multiSelectOf(...values),
+      value_format,
+    })
+    expect(
+      unregisteredMembers(under('lowercase', 'red', 'blue'), ['green', 'PURPLE', 'Red']),
+    ).toEqual(['green'])
+    expect(unregisteredMembers(under('kebab-case'), ['due_date', 'in-progress'])).toEqual([
+      'in-progress',
+    ])
+    expect(unregisteredMembers(under('PascalCase'), ['AB', 'J.Crew', 'Red'])).toEqual(['Red'])
+    expect(unregisteredMembers(under('lowercase'), ['Green', 'green'])).toEqual(['green'])
+    expect(unregisteredMembers(under('lowercase'), [' green '])).toEqual([' green '])
   })
 })

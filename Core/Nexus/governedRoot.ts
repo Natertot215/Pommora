@@ -24,8 +24,8 @@ import {
   encodeValue,
   isBlankValue,
   keepingForeignWords,
+  spelledNumber,
 } from '../Properties/propertyValue'
-import { spelledNumber } from '../Properties/formatValue'
 import { namesValue } from '../Properties/pageValue'
 import { assignedDefs } from '../Properties/assignment'
 import { liveTreeOf } from './liveTree'
