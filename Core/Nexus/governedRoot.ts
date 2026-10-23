@@ -1,4 +1,4 @@
-// Everything that lands a value in one governed file: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, and the one-parse writer.
+// Everything that lands a value in one governed file, a page or a Space sidecar: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, the one-parse writers, and the put-back that undoes a write.
 
 import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
@@ -217,6 +217,26 @@ export async function writeSpaceSidecar(
 ): Promise<Result<null>> {
   const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
   return written.ok ? ok(null) : written
+}
+
+/** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before, as `PutBack.before` spells it. Takes no lock, as `rewriteRootAt` takes none. */
+export async function writeGovernedKey(
+  abs: string,
+  key: string,
+  value: unknown,
+  world: GovernedWorld,
+): Promise<Result<unknown>> {
+  let before: unknown
+  const written = isMarkdownFile(abs)
+    ? await rewriteRootAt(abs, (page) => {
+        before = page.pair(key)
+        return rewriteRaw((raw) => writtenRoot(raw, key, value, world))(page)
+      })
+    : await writeSpaceSidecar(abs, (raw) => {
+        before = raw[key]
+        return writtenRoot(raw, key, value, world)
+      })
+  return written.ok ? ok(before) : written
 }
 
 /** The key a property or a Context is written under now. A Context resolves from the tree first, so a tag's undo never reads the property list, which a damaged file makes throw. */
