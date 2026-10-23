@@ -1,6 +1,6 @@
 import {
+  type ColumnType,
   type PropertyDefinition,
-  type PropertyType,
   STAMP_TYPE,
   specOf,
 } from '../../Properties/properties'
@@ -15,9 +15,9 @@ import { columnLabel } from '../../Properties/Cells/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
 /** A blank value of this type fills in place: a checkbox draws its own box, and a stamp has no fill path. */
-export const fillsBlank = (type: PropertyType | 'title' | undefined): boolean => {
+export const fillsBlank = (type: ColumnType | undefined): boolean => {
   const spec = specOf(type)
-  return spec !== undefined && spec.origin !== 'stamp' && spec.kind !== 'checkbox'
+  return spec !== undefined && spec.origin !== 'filedata' && spec.kind !== 'checkbox'
 }
 
 /** Compact's label-less flow can't render an empty value, so it drops blanks — EXCEPT a checkbox, whose unchecked box is the on-card toggle. */
@@ -76,7 +76,7 @@ export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedCo
 export type AddEntry = {
   id: string
   name: string
-  type: PropertyType
+  type: ColumnType
   def: PropertyDefinition | null
   revealOnly: boolean
 }

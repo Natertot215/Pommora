@@ -1,4 +1,6 @@
 import {
+  type ColumnType,
+  isUserType,
   PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyType,
@@ -17,8 +19,7 @@ interface TypeMeta {
   icon: IconName
 }
 
-// Title isn't a PropertyType, but it shares the glyph vocabulary, so every surface renders it from here.
-const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
+const TYPE_META: Record<ColumnType, TypeMeta> = {
   title: { label: 'Title', icon: 'text-align-justify' },
   text: { label: 'Text', icon: 'text-align-start' },
   number: { label: 'Number', icon: 'hash' },
@@ -36,20 +37,18 @@ const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
 
 export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
 
-export const propertyTypeIconName = (type: PropertyType | 'title'): IconName => TYPE_META[type].icon
+export const propertyTypeIconName = (type: ColumnType): IconName => TYPE_META[type].icon
 
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
 
-export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
-  (t) => PROPERTY_TYPES[t].origin === 'user',
-)
+export const CREATABLE_TYPES = Object.keys(PROPERTY_TYPES).filter(isUserType)
 
 export function PropertyTypeIcon({
   type,
   size = 'headline',
 }: {
-  type: PropertyType | 'title'
+  type: ColumnType
   size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
   const name = TYPE_META[type].icon
@@ -73,7 +72,7 @@ export const LOCATION_TARGET: PaneTarget = {
   icon: 'folder',
 }
 export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
-  type ? [{ id, label: propertyTypeLabel(type), icon: propertyTypeIconName(type) }] : [],
+  type ? [{ id, label: TYPE_META[type].label, icon: TYPE_META[type].icon }] : [],
 )
 
 export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>

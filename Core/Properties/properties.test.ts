@@ -5,6 +5,7 @@ import {
   propertyDefinition,
   typeIds,
   isReservedPropertyId,
+  isUserType,
   defaultStatusSeed,
   groupable,
   optionsOf,
@@ -21,7 +22,7 @@ import {
 } from './properties'
 
 describe('typeIds', () => {
-  it('accepts the 12 type ids', () => {
+  it('accepts the nine user types and Context', () => {
     for (const t of [
       'text',
       'number',
@@ -31,17 +32,16 @@ describe('typeIds', () => {
       'multiSelect',
       'status',
       'link',
-      'context',
-      'createdTime',
-      'lastEditedTime',
       'file',
+      'context',
     ]) {
       expect(typeIds.safeParse(t).data).toBe(t)
     }
   })
 
-  it('rejects an unknown type', () => {
-    expect(typeIds.safeParse('rich_text').success).toBe(false)
+  it('rejects an unknown type and every Filedata type', () => {
+    for (const t of ['rich_text', 'title', 'createdTime', 'lastEditedTime'])
+      expect(typeIds.safeParse(t).success).toBe(false)
   })
 })
 
@@ -200,10 +200,19 @@ describe('PROPERTY_TYPES', () => {
     expect(grouping).toEqual(['dateTime', 'select', 'status'])
   })
 
-  it('stamps and Context are the only types a user does not create', () => {
-    expect(PROPERTY_TYPES.createdTime.origin).toBe('stamp')
-    expect(PROPERTY_TYPES.lastEditedTime.origin).toBe('stamp')
-    expect(PROPERTY_TYPES.context.origin).toBe('context')
+  it('admits the nine user types and nothing a Context or Filedata column wears', () => {
+    expect(Object.keys(PROPERTY_TYPES).filter(isUserType)).toEqual([
+      'text',
+      'number',
+      'checkbox',
+      'dateTime',
+      'select',
+      'multiSelect',
+      'status',
+      'link',
+      'file',
+    ])
+    expect(isUserType('nope')).toBe(false)
   })
 
   it('Status keeps its options in status_groups and wears the select kind', () => {
@@ -217,8 +226,8 @@ describe('PROPERTY_TYPES', () => {
 })
 
 describe('specOf and pickKindOf', () => {
-  it('title and an unknown type have no spec', () => {
-    expect(specOf('title')).toBeUndefined()
+  it('Title reads as text, and an unknown type has no spec', () => {
+    expect(specOf('title')).toEqual({ kind: 'text', origin: 'filedata' })
     expect(specOf(undefined)).toBeUndefined()
   })
 

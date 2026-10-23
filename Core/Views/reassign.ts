@@ -1,6 +1,6 @@
 import { UNGROUPED } from './viewRow'
 import { checkboxWord, type PropertyValue, type ValueKind } from '../Properties/propertyValue'
-import { type PropertyType, specOf } from '../Properties/properties'
+import { type ColumnType, specOf } from '../Properties/properties'
 
 /** A date bucket isn't a single date, so date grouping can't be reassigned by drag; a kind without a function here never reassigns. */
 const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) | null> = {
@@ -15,17 +15,16 @@ const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) 
   file: null,
 }
 
-const fromGroupKey = (type: PropertyType | 'title' | undefined) => {
+const fromGroupKey = (type: ColumnType | undefined) => {
   const kind = specOf(type)?.kind
   return kind ? FROM_GROUP_KEY[kind] : null
 }
 
-export const reassignable = (type: PropertyType | 'title' | undefined): boolean =>
-  fromGroupKey(type) !== null
+export const reassignable = (type: ColumnType | undefined): boolean => fromGroupKey(type) !== null
 
 export function groupKeyToValue(
   groupKey: string,
-  type: PropertyType | 'title' | undefined,
+  type: ColumnType | undefined,
 ): PropertyValue | null {
   return groupKey === UNGROUPED ? null : (fromGroupKey(type)?.(groupKey) ?? null)
 }

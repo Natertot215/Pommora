@@ -48,7 +48,6 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
   { id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' },
   { id: 'prop_when', label: 'When', key: 'When', type: 'dateTime' },
-  { id: 'prop_led', label: 'Edited', key: 'Edited', type: 'lastEditedTime' },
   {
     id: 'prop_rel',
     label: 'Rel',
@@ -274,16 +273,6 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(
       ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!(rows)),
     ).toEqual(['r3', 'r2', 'r1'])
-  })
-
-  it('lastEditedTime sorts by date (routes to the date branch)', () => {
-    const rows = [
-      makeRow('r1', { props: { prop_led: '2026-06-20T10:00:00Z' } }),
-      makeRow('r2', { props: { prop_led: '2026-06-15T10:00:00Z' } }),
-    ]
-    expect(
-      ids(makeSorter([{ property_id: 'prop_led', direction: 'ascending' }], schema)!(rows)),
-    ).toEqual(['r2', 'r1'])
   })
 
   it('a Context criterion resolves to nothing, so it neither sorts nor counts', () => {

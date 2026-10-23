@@ -3,8 +3,8 @@
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import {
+  type ColumnType,
   type PropertyDefinition,
-  type PropertyType,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
 } from './properties'
@@ -15,7 +15,7 @@ export function declaredType(
   propertyId: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
-): PropertyType | 'title' | undefined {
+): ColumnType | undefined {
   if (propertyId === RESERVED_PROPERTY_ID.title) return 'title'
   const stamp = STAMP_TYPE[propertyId]
   if (stamp) return stamp
@@ -27,7 +27,7 @@ export function declaredType(
 export const columnType = (
   column: ResolvedColumn,
   schema: PropertyDefinition[],
-): PropertyType | 'title' | undefined =>
+): ColumnType | undefined =>
   column.kind === 'context' ? 'context' : declaredType(column.id, schema)
 
 const stampValue = (iso: string | null): PropertyValue =>

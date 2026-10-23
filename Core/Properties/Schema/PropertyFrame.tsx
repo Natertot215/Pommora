@@ -386,11 +386,9 @@ export function PropertyFrame({
         }}
       />
     ),
-    // Text, a registry Context, and the two stamps carry no settings of their own.
+    // Text and a registry Context carry no settings of their own.
     text: NO_SETTINGS,
     context: NO_SETTINGS,
-    createdTime: NO_SETTINGS,
-    lastEditedTime: NO_SETTINGS,
   }
 
   const editor = (id: string): React.JSX.Element => {

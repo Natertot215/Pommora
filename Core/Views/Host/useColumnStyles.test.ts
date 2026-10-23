@@ -84,12 +84,8 @@ describe('styleFor', () => {
     expect(styleFor('prop_date', schema, v, nexus('relative')).date_format).toBe('short')
   })
 
-  it('reaches Modified columns, which share the dateTime arm', () => {
-    const withModified: PropertyDefinition[] = [
-      ...schema,
-      { id: 'prop_m', label: 'Modified', key: 'Modified', type: 'lastEditedTime' },
-    ]
-    expect(styleFor('prop_m', withModified, view({}), nexus('dayMonthYear')).date_format).toBe(
+  it('reaches the Last Modified column, which shares the dateTime arm', () => {
+    expect(styleFor('_modified_at', schema, view({}), nexus('dayMonthYear')).date_format).toBe(
       'dayMonthYear',
     )
   })

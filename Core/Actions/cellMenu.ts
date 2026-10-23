@@ -7,7 +7,7 @@ import {
   pageMetaMenuItems,
 } from './pageMenu'
 import type { PropertyAction } from './propertyRows'
-import { PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
+import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
 import { type ActionItem, joinGroups } from './menuModel'
 import { type ConnCellAction, type ConnEditAction, cellClosingRows } from './connectionMenu'
 
@@ -15,7 +15,7 @@ type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
   | {
       kind: 'style-only'
-      type: PropertyType
+      type: ColumnType
       current: ColumnStyle
       clearable?: boolean
       barCapable?: boolean
@@ -41,7 +41,7 @@ export type CellMenuAction =
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
-  type: PropertyType | 'title' | undefined,
+  type: ColumnType | undefined,
   style: ColumnStyle,
   filled: boolean,
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
@@ -52,7 +52,7 @@ export function cellMenuContextFor(
 }
 
 function baseCellMenu(
-  type: PropertyType | 'title' | undefined,
+  type: ColumnType | undefined,
   style: ColumnStyle,
   filled: boolean,
   barCapable: boolean,

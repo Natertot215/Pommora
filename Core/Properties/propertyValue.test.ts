@@ -152,17 +152,6 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     expect(decodeValue(selectDef, ['A'])).toEqual({ kind: 'select', value: 'A' })
     expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'Done' })
   })
-
-  it('both stamp types decode as a dateTime', () => {
-    expect(decodeValue(def({ type: 'lastEditedTime' }), '2026-06-15T14:30:00Z')).toEqual({
-      kind: 'dateTime',
-      value: '2026-06-15T14:30:00Z',
-    })
-    expect(decodeValue(def({ type: 'createdTime' }), '2026-06-15T14:30:00Z')).toEqual({
-      kind: 'dateTime',
-      value: '2026-06-15T14:30:00Z',
-    })
-  })
 })
 
 describe('the single-option resolution — one rule, tested on Select and on Status', () => {

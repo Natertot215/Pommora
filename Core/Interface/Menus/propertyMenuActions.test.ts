@@ -36,7 +36,6 @@ const SCHEMA: PropertyDefinition[] = [
   },
   { id: 'prop_num', label: 'Count', key: 'Count', type: 'number' },
   { id: 'prop_box', label: 'Done', key: 'Done', type: 'checkbox' },
-  { id: 'prop_made', label: 'Made', key: 'Made', type: 'createdTime' },
 ]
 
 const CONTEXT_ID = makeTree().contexts[0].def.id
@@ -90,7 +89,7 @@ const branchesFor = (
   propertyMenuBranches({ tree: treeWithSchema(), schema: SCHEMA, row: row(frontmatter) })
 
 describe('propertyMenuBranches', () => {
-  it('hands back the registry contexts and the schema apart, dropping the stamps', () => {
+  it('hands back the registry contexts and the schema apart', () => {
     const { spaces, properties } = branchesFor()
     expect(spaces.map((r) => r.name)).toEqual(['Realms'])
     expect(properties.map((r) => [r.name, r.options !== undefined])).toEqual([

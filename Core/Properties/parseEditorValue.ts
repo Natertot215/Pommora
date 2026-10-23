@@ -1,5 +1,5 @@
 import type { PropertyValue } from './propertyValue'
-import type { PropertyType } from './properties'
+import type { ColumnType } from './properties'
 import { linkValueFromEdit } from '../Connections/linkValue'
 import { readNumber } from './formatValue'
 import type { ConnPage, PageIndex } from '../Connections/pageIndex'
@@ -28,7 +28,7 @@ function textFromEdit(raw: string, current?: PropertyValue | null): PropertyValu
 
 /** `null` clears (empty input); `undefined` means invalid — don't commit. */
 export function parseEditorValue(
-  type: PropertyType | 'title' | undefined,
+  type: ColumnType | undefined,
   raw: string,
   current?: PropertyValue | null,
   link?: LinkEditContext,

@@ -5,7 +5,7 @@ import {
   LINK_DISPLAY_LABELS,
   LINK_DISPLAYS,
   type PropertyDefinition,
-  type PropertyType,
+  type ColumnType,
   specOf,
 } from './properties'
 
@@ -131,7 +131,7 @@ export function storedPick(
 }
 
 export function defaultStyleFor(
-  type: PropertyType | 'title' | undefined,
+  type: ColumnType | undefined,
   def?: Pick<PropertyDefinition, 'link_display'>,
 ): Pick<StoredColumnStyle, 'look'> {
   switch (specOf(type)?.kind) {
