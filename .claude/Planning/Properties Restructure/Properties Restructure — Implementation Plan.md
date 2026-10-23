@@ -1034,6 +1034,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Adding Code (10-23-2026):** "Why are we adding code?" … "Keep this concern in mind." Every line execution adds answers this question first: a phase, fix, fold, or call that grows the code shows what it removes or why no smaller shape delivers it, and a recommendation that adds lines says so plainly.
 - **Reduction Floor (10-23-2026):** "Anything under 550 lines total removed raises concern for scope creep." The bar is the whole plan's measured net production delta: the written −453 sits 97 lines short of it, and the projected −427, with the rulings landed between Phases 7 and 8 (+26), 123 short, so the deferred folds and the post-plan fold carry the gap.
 - **No Negligent Sacrifices (10-23-2026):** "Also, don't maek negligent sacrifices JUST for less lines" — a reduction lands only when the code reads at least as clearly, keeps every behavior and ruling, and stays correct; *Reduction Floor* is met by folds that also improve the code, never by cramming, obscuring, or dropping something that earns its place.
+- **One Rule, Not Cases (10-23-2026):** "That's the issue, you're hand-rolling it for every case." A behavior lands once, at the one point every path already passes through, and the guards or branches that produced the exceptions leave; a rule is never applied path by path, and a path that bypasses the shared point folds into it.
 
 ##### Working Rules
 
