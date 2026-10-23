@@ -39,7 +39,7 @@ Most of it changes nothing you'll see. Where something does change, it's either 
 
 ### What I Need From You
 
-Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is two calls execution raised and a short list of small visible changes, for awareness only.
+Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is one call execution raised and a short list of small visible changes, for awareness only.
 
 #### Calls From Execution
 
@@ -48,12 +48,6 @@ Your seven decisions are folded into the plan as its own design, and the walkthr
   - **As Planned:** it stays this way. The pane's wording is frozen, and I-4 named every type but Link "Style" in the right-click, so Date keeps the mismatch.
   - **Alternative:** Date's right-click reads "Format," matching its own pane and Link. Its choices, such as MM/DD/YYYY, Full Date, or Relative, and the time's format, are how the date is written rather than how it's drawn. It's one word in Date's type entry, with no line cost.
   - **Recommendation:** take the alternative. The line you drew for Number, where "Format" is how the number is written and "Style" is how it's drawn, puts Date's choices on the Format side.
-- **A Space Listed Twice on a Page:**
-  - **Today:** a page whose front matter lists the same Space twice, like `Areas: [Home, Home]`, shows two Home chips until its next edit, when Pommora writes it once. Since Phase 4B, a Multi-Select or File value that repeats an entry already shows it once.
-  - **As Planned:** Space values keep showing the repeat until the next write.
-  - **Alternative:** a repeated Space shows once, as Multi-Select and File now do. It removes about 6 lines, the chip code that exists only for this case.
-  - **Recommendation:** take the alternative. It's the rule the other list types already follow, and the file itself is tidied on the next write either way.
-
 #### Small Things You'll See
 
 No action needed. These are visible changes the plan makes on its own; speak up if one sounds wrong. Bug fixes and behind-the-scenes changes aren't listed, since they aren't yours to call.
@@ -106,6 +100,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 - A value holding only spaces reads as empty for every type, in cells, in "is empty" filters, and in sorting.
 - Clearing a property a Space doesn't hold tidies its other properties, as a page already does, and a write that changes nothing writes nothing.
 - A Select or Status holding several words is written as the one option it shows whenever any value on its page changes, or at Repair On Open; one naming no option stays as written.
+- A repeated entry reads once: a Multi-Select or File value, and a Space listed twice on a page.
 
 **Your Calls:**
 - [J-1] Text holding only spaces counts as empty on every surface.
@@ -114,6 +109,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 - [P-1] A Select or Status holding several words ignores the ones no option names, shows the valid one written latest, and tidies to that one option on the next value edit.
 - [P-2] Picking a Select drops unrecognized words, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
 - [A-5] A Multi-Select keeps registering words added outside Pommora as its options.
+- [P-4] A Space listed twice on a page shows once.
 
 **Behind the Scenes:**
 - One module owns landing a value in a file, so each edit reads the file once, and the hand-made copies of the same tidying step become one.

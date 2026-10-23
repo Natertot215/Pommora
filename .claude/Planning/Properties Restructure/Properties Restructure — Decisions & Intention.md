@@ -142,6 +142,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **P-1 [CONFIRMED]:** A Select or Status holding several words ignores the ones no option names, shows the most recently added valid option, and tidies to that one value on the next change. Planning checks where this differs from today's rule of showing the last registered word.
 - **P-2 [CONFIRMED]:** Picking a Select value drops words no option names, a Multi-Select pick keeps them after the picked options, and a Context pick drops Space names Pommora can't find, as today.
 - **P-3 [CONFIRMED]:** The remaining edge rules *Properties Restructure — Planning Findings*' *§Edge Rules* lists stay as they are.
+- **P-4 [CONFIRMED]:** A Space listed twice on a page reads once, as a repeated Multi-Select or File entry does, and the chip code that kept repeats apart leaves.
 
 ---
 
