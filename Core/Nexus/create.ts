@@ -3,11 +3,11 @@ import { createDisambiguated } from '../Paths/names'
 import { pathExists } from '../Files/atomicWrite'
 import { fail, ok } from '../Contract/result'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { contextTarget, createSpace, setPageContext } from '../Contexts/contextWrite'
+import { contextTarget, createSpace } from '../Contexts/contextWrite'
 import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
-import type { PropertyDefinition } from '../Properties/properties'
-import type { PropertyValue } from '../Properties/propertyValue'
+import { valueToWrite } from '../Properties/propertyValue'
+import type { Json } from '../Files/stableJson'
 import { contextSeeds, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
@@ -25,28 +25,24 @@ export async function createPageOp(
 ): Promise<MutateReply> {
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
-  const contexts = contextSeeds(req)
-  const world = contextWorldOf((await liveTreeOf(root)).contexts)
-  for (const [contextId, spaceIds] of contexts) {
-    const target = contextTarget(world, contextId, spaceIds)
-    if (!target.ok) return target
-  }
-  let values: { def: PropertyDefinition; value: PropertyValue }[] | undefined
+  const frontmatter: Json = {}
   if (req.seeds) {
     const defs = (await readRegistry(root)).defs
-    values = Object.entries(req.seeds).flatMap(([id, value]) => {
-      const def = defs[id]
-      return def ? [{ def, value }] : []
-    })
+    for (const [id, value] of Object.entries(req.seeds))
+      if (defs[id]) frontmatter[defs[id].key] = valueToWrite(defs[id], value)
+  }
+  const world = contextWorldOf((await liveTreeOf(root)).contexts)
+  for (const [contextId, spaceIds] of contextSeeds(req)) {
+    const target = contextTarget(world, contextId, spaceIds)
+    if (!target.ok) return target
+    frontmatter[target.value.key] = target.value.value
   }
   const r = await createDisambiguated(
     req.name,
-    (name) => createPage(parent.value, name, { id: req.id, values }),
+    (name) => createPage(parent.value, name, { id: req.id, frontmatter }),
     (name) => pathExists(join(parent.value, `${name}.md`)),
   )
   if (!r.ok) return r
-  for (const [contextId, spaceIds] of contexts)
-    await setPageContext(r.value.path, root, contextId, spaceIds)
   if (req.order) await setChildOrder(parent.value, 'page_order', req.order)
   return created(req.parentPath, r.value)
 }

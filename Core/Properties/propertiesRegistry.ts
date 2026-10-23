@@ -3,6 +3,7 @@ import { machine } from '../Platform/machine'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { fail, valueOr } from '../Contract/result'
 import { readJsonStrict, readKept, updateNexusFile } from '../Files/atomicWrite'
+import { cachedParse } from '../Files/walkCache'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
@@ -52,9 +53,12 @@ export const registryFrom = (raw: Record<string, unknown>): RegistryFile =>
   normalizeRegistry(raw).registry
 
 export async function readRegistry(root: string): Promise<RegistryFile> {
-  const read = await readJsonStrict(registryPath(root))
-  if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
-  return registryFrom(valueOr(read, {}))
+  const path = registryPath(root)
+  return cachedParse(path, async () => {
+    const read = await readJsonStrict(path)
+    if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
+    return registryFrom(valueOr(read, {}))
+  })
 }
 
 /** A read that writes no definition: a damaged file reads as its last parse. Every reader that gates a registry write stays strict. */
