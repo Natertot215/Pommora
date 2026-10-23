@@ -2,7 +2,7 @@ import { resolveColor } from '@pommora/uix/Theme/ramp'
 import type { LinkDisplay } from '../../Connections/linkValue'
 import type { LinkConfig } from '../properties'
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
-import { LINK_FORMAT_OPTIONS } from './linkFormatOptions'
+import { LINK_DISPLAY_OPTIONS } from '../displayLabels'
 import * as s from '@pommora/uix/Menus/frames.css'
 
 export function LinkEditor({
@@ -51,7 +51,7 @@ export function LinkEditor({
                 undefined,
                 'Format',
                 display,
-                LINK_FORMAT_OPTIONS,
+                LINK_DISPLAY_OPTIONS,
                 (v: LinkDisplay) => onSetConfig({ link_display: v }),
                 { ariaLabel: 'Link format', inert: true },
               ),

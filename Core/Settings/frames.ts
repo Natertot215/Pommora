@@ -10,7 +10,6 @@ import {
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Utilities/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
-import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import type { LinkDisplay } from '../Connections/linkValue'
 import type { PathFormat } from '../Paths/pathFormat'
 import {
@@ -35,7 +34,12 @@ import {
 } from './personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
 import type { DateFormat } from '../Properties/columnStyles'
-import { DATE_FORMAT_OPTIONS, TIME_FORMAT_LABELS } from '../Properties/displayLabels'
+import {
+  DATE_FORMAT_OPTIONS,
+  LINK_DISPLAY_OPTIONS,
+  pickerOptions,
+  TIME_FORMAT_LABELS,
+} from '../Properties/displayLabels'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'
@@ -167,18 +171,6 @@ type Frame = {
   | { Surface: () => React.JSX.Element; sections?: never }
 )
 
-const timeFormatOptions: readonly PickerOption<TimeFormatSetting>[] = TIME_FORMAT_SETTINGS.map(
-  (value) => ({ value, label: TIME_FORMAT_LABELS[value] }),
-)
-const headingLinkStyleOptions: readonly PickerOption<HeadingLinkStyle>[] = HEADING_LINK_STYLES.map(
-  (value) => ({ value, label: HEADING_LINK_STYLE_LABELS[value] }),
-)
-const inPageHeadingResolutionOptions: readonly PickerOption<InPageHeadingResolution>[] =
-  IN_PAGE_HEADING_RESOLUTIONS.map((value) => ({
-    value,
-    label: IN_PAGE_HEADING_RESOLUTION_LABELS[value],
-  }))
-
 const roster = <const T extends readonly Frame[]>(
   leaves: T,
 ): readonly (Frame & { key: T[number]['key'] })[] => leaves
@@ -203,7 +195,7 @@ export const FRAMES = roster([
             key: 'timeFormat',
             label: 'Time Format',
             hint: "The nexus's clock — twelve-hour segments or a flat twenty-four-hour time.",
-            options: timeFormatOptions,
+            options: pickerOptions(TIME_FORMAT_SETTINGS, TIME_FORMAT_LABELS),
           },
         ],
       },
@@ -546,7 +538,7 @@ export const FRAMES = roster([
             device: true,
             label: 'Default Link Format',
             hint: 'The format an external link is pasted with by default.',
-            options: LINK_FORMAT_OPTIONS,
+            options: LINK_DISPLAY_OPTIONS,
           },
           {
             kind: 'picker',
@@ -880,13 +872,13 @@ export const FRAMES = roster([
             kind: 'picker',
             key: 'headingLinkStyle',
             label: 'Heading Link Style',
-            options: headingLinkStyleOptions,
+            options: pickerOptions(HEADING_LINK_STYLES, HEADING_LINK_STYLE_LABELS),
           },
           {
             kind: 'picker',
             key: 'inPageHeadingResolution',
             label: 'In-Page Heading Resolution',
-            options: inPageHeadingResolutionOptions,
+            options: pickerOptions(IN_PAGE_HEADING_RESOLUTIONS, IN_PAGE_HEADING_RESOLUTION_LABELS),
           },
         ],
       },
