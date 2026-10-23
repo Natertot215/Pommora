@@ -1,5 +1,5 @@
 import {
-  type Document,
+  Document,
   type Node,
   type Scalar,
   parseDocument,
@@ -7,6 +7,7 @@ import {
   isScalar,
   isSeq,
   stringify,
+  YAMLMap,
 } from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
 import { type Admission, admitContentFile, ID_KEY } from '../Nexus/identityMark'
@@ -180,9 +181,13 @@ function mergeInto(
       doc.set(key, nodeSpelledAs(doc, modeled[key], [doc.get(key, true)]))
     }
     for (const key of dropped) doc.delete(key)
-    const out = serialized(doc)
-    if (out !== null) return out
   }
+  return mergedBlock(doc)
+}
+
+function mergedBlock(doc: Document): string {
+  const out = mergeable(doc) ? serialized(doc) : null
+  if (out !== null) return out
   throw new Error(UNPARSED_FRONTMATTER)
 }
 
@@ -249,6 +254,10 @@ export async function readPage(rootPath: string, relPath: string): Promise<Resul
 export interface SweptPage {
   raw: Record<string, unknown>
   merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
+  /** `key`'s pair as the block was parsed, its quoting, style, comment, and alias kept; undefined when the block holds no `key`. */
+  pair: (key: string) => string | undefined
+  /** The page with `key` holding the node `landing` spells, whatever key `landing` names, or without `key` when `landing` is undefined; null when that leaves `key` as it is, or when `landing` isn't one key's pair. */
+  withPair: (key: string, landing: string | undefined) => string | null
 }
 
 // One parse serves a sweep's admission, its read of the values, and its merge. Any identity short of unknown admits it, so an identity-less page is still swept: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. Its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
@@ -257,5 +266,24 @@ export function sweepParse(content: string): SweptPage | null {
   const doc = parseDocument(frontmatter)
   const raw = valuesOf(doc)
   if (admitContentFile(raw, 'page').state === 'unknown' || !writable(doc)) return null
-  return { raw, merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body) }
+  const pair = (key: string): string | undefined => {
+    const held = isMap(doc.contents) && doc.contents.items.find((p) => String(p.key) === key)
+    if (!held) return undefined
+    const one = new YAMLMap()
+    one.items.push(held.clone())
+    return new Document(one).toString({ ...YAML_OUT, verifyAliasOrder: false })
+  }
+  return {
+    raw,
+    merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body),
+    pair,
+    withPair: (key, landing) => {
+      const one = landing === undefined ? null : parseDocument(landing).contents
+      if (landing !== undefined && !(isMap(one) && one.items.length === 1)) return null
+      const held = pair(key)
+      if (isMap(one)) doc.set(key, one.items[0].value)
+      else doc.delete(key)
+      return pair(key) === held ? null : envelope(fenced, mergedBlock(doc), body)
+    },
+  }
 }

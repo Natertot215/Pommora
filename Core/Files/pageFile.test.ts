@@ -404,3 +404,46 @@ describe('sweepParse — the field-write gate', () => {
     )
   })
 })
+
+describe('a swept page’s pairs', () => {
+  const ID = 'ID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\n'
+  const SPELLED = `---\n${ID}Status:\nTags: [a, "b"] # c\nA: &x foo\nB: *x\n---\nbody\n`
+  const swept = (text: string) => {
+    const page = sweepParse(text)
+    if (!page) throw new Error('unswept')
+    return page
+  }
+
+  it('a key’s pair reads as the block spells it, an alias as written, and none for a key the block lacks', () => {
+    const page = swept(SPELLED)
+    expect(page.pair('Status')).toBe('Status:\n')
+    expect(page.pair('Tags')).toBe('Tags: [a, "b"] # c\n')
+    expect(page.pair('B')).toBe('B: *x\n')
+    expect(page.pair('Due')).toBeUndefined()
+  })
+
+  it('a pair lands its node under the key it’s given, bare stays bare, held in place and new last', () => {
+    const held = `---\n${ID}Status: Done\nOther: 1\n---\nbody\n`
+    expect(swept(held).withPair('Status', 'Status:\n')).toBe(
+      `---\n${ID}Status:\nOther: 1\n---\nbody\n`,
+    )
+    expect(swept(held).withPair('Total', 'Count: 5\n')).toBe(
+      `---\n${ID}Status: Done\nOther: 1\nTotal: 5\n---\nbody\n`,
+    )
+    expect(swept(held).withPair('Other', undefined)).toBe(`---\n${ID}Status: Done\n---\nbody\n`)
+    expect(swept(`---\n${ID}A: &x foo\nB: 5\n---\nbody\n`).withPair('B', 'B: *x\n')).toBe(
+      `---\n${ID}A: &x foo\nB: *x\n---\nbody\n`,
+    )
+  })
+
+  it('a pair the key already holds lands nothing', () => {
+    expect(swept(SPELLED).withPair('Tags', 'Tags: [a, "b"] # c\n')).toBeNull()
+    expect(swept(SPELLED).withPair('Due', undefined)).toBeNull()
+    expect(swept(`---\n${ID}Total: 1\n---\nbody\n`).withPair('Total', 'Count: 1\n')).toBeNull()
+  })
+
+  it('a string that isn’t one key’s pair lands nothing', () => {
+    expect(swept(SPELLED).withPair('Status', '- a\n')).toBeNull()
+    expect(swept(SPELLED).withPair('Status', 'A: 1\nB: 2\n')).toBeNull()
+  })
+})
