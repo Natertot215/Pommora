@@ -5,26 +5,14 @@ import {
   type SetOverrides,
   settled,
 } from '../../Properties/valueOverride'
-import type { PageFrontmatter } from '../../Nexus/schemas'
-import { rekeyHeld } from '../../Files/rootValues'
-import type { Json } from '../../Files/stableJson'
 import type { PageValues, RowValues } from '../viewRow'
+import { frontmatterOf } from '../Pipeline/group'
 import { fetchPageValues } from '../pageRow'
 import { isAtOrUnder } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
-const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Overrides | null => {
-  if (!o) return o
-  return Object.fromEntries(
-    Object.entries(o).map(([id, entry]) => {
-      const fm = rekeyHeld(entry.fm as unknown as Json, oldKey, newKey, 'prefer-new')
-      return [id, fm ? { ...entry, fm: fm as PageFrontmatter } : entry]
-    }),
-  )
-}
-
-/** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a push retires overrides only once its read lands, since a row retired ahead of it paints its identity-only fallback for the round trip. */
+/** A rename refetches, its overrides standing since they're keyed by field; a push retires overrides only once its read lands, since a row retired ahead of it paints its identity-only fallback for the round trip. */
 export function useValuesEpoch(
   path: string | null,
   land: (values: Record<string, PageValues>, scoped: boolean) => void,
@@ -43,9 +31,6 @@ export function useValuesEpoch(
       if (!mine.length) return
       if (mine.every((c) => c.pageIds.length > 0)) named = mine.flatMap((c) => c.pageIds)
       if (pageId && named && !named.includes(pageId)) return
-    } else {
-      const { oldKey, newKey } = valuesEpoch
-      setValueOverride((prev) => rekeyOverrides(prev, oldKey, newKey))
     }
     handled.current = valuesEpoch
     const only = pageId ? [pageId] : named
@@ -93,8 +78,8 @@ export function useContainerValues(path: string): {
       out[id] = {
         createdAt: prior?.createdAt ?? null,
         modifiedAt: prior?.modifiedAt ?? null,
-        frontmatter: e.fm,
-        contextValues: e.contexts,
+        frontmatter: frontmatterOf(values, id),
+        picked: e.picked,
       }
     }
     return out

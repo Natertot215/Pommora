@@ -11,9 +11,9 @@ export interface CacheSlice {
   resolveLinkTitle: (url: string) => Promise<string | null>
   assetMap: AssetMap
   applyAssetMap: (map: AssetMap) => void
-  /** A view's values snapshot is fetched once per container open, so a property rename or a pushed value change bumps this to refresh it; a rename's key pair rides along to re-key the optimistic overrides. */
+  /** A view's values snapshot is fetched once per container open, so a property rename or a pushed value change bumps this to refresh it. */
   valuesEpoch: ValuesEpoch | null
-  bumpValuesEpoch: (oldKey: string, newKey: string) => void
+  bumpValuesEpoch: () => void
   bumpContainerValues: (changes: ValueChange[]) => void
   resetCaches: () => void
 }
@@ -52,10 +52,8 @@ export const createCacheSlice: Slice<CacheSlice> = (set, get) => ({
   },
 
   valuesEpoch: null,
-  bumpValuesEpoch: (oldKey, newKey) =>
-    set((st) => ({
-      valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename', oldKey, newKey },
-    })),
+  bumpValuesEpoch: () =>
+    set((st) => ({ valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'rename' } })),
   bumpContainerValues: (changes) =>
     set((st) => ({
       valuesEpoch: { n: (st.valuesEpoch?.n ?? 0) + 1, kind: 'container', changes },

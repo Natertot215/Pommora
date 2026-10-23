@@ -1,12 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react'
-import type { PageFrontmatter } from '../Nexus/schemas'
+import type { Picked } from '../Views/viewRow'
 
 // `write` is the save while it's pending and the settle count it took once it lands, so a read retires only what settled before it was issued.
-type OverrideEntry = {
-  fm: PageFrontmatter
-  contexts?: Record<string, string[]>
-  write: Promise<boolean> | number
-}
+type OverrideEntry = { picked: Picked; write: Promise<boolean> | number }
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
@@ -17,17 +13,13 @@ export const settled = (): number => settles
 export const patchOverride = (
   set: SetOverrides,
   pageId: string,
-  fm: PageFrontmatter,
+  picked: Picked,
   write: Promise<boolean>,
-  contexts?: Record<string, string[]>,
 ): void => {
-  set((prev) => {
-    const held = prev?.[pageId]?.contexts
-    return {
-      ...prev,
-      [pageId]: { fm, contexts: contexts ? { ...held, ...contexts } : held, write },
-    }
-  })
+  set((prev) => ({
+    ...prev,
+    [pageId]: { picked: { ...prev?.[pageId]?.picked, ...picked }, write },
+  }))
   // A refused write never pushes the values that would retire its override, so the override leaves with the refusal.
   void write.then((landed) =>
     set((prev) => {

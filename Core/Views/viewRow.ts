@@ -2,6 +2,7 @@ import { localIso } from '@pommora/uix/Utilities/pad'
 import { ID_KEY } from '../Nexus/identityMark'
 import { idTime } from '../Nexus/ids'
 import { type PageFrontmatter, pageFrontmatter } from '../Nexus/schemas'
+import type { PropertyValue } from '../Properties/propertyValue'
 
 export interface PageValues {
   frontmatter: PageFrontmatter
@@ -21,7 +22,10 @@ export function pageValuesOf(
   }
 }
 
-export type RowValues = PageValues & Pick<ViewRow, 'contextValues'>
+export type RowValues = PageValues & Pick<ViewRow, 'picked'>
+
+/** The values a page's pending writes picked, by field id. */
+export type Picked = Record<string, PropertyValue>
 
 /** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies an identity-only entry so the row still sorts/groups/filters on intrinsic fields. */
 export interface ViewRow {
@@ -34,6 +38,7 @@ export interface ViewRow {
   createdAt: string | null
   modifiedAt: string | null
   contextValues?: Record<string, string[]>
+  picked?: Picked
 }
 
 export type ColumnKind = 'title' | 'property' | 'context' | 'stamp'

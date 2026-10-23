@@ -1,15 +1,9 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller's rename opens its naming surface over the row once it lands.
 
 import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
-import type { PageFrontmatter } from '../../Nexus/schemas'
 import { patchOverride } from '../../Properties/valueOverride'
-import {
-  applyValueAtRoot,
-  isBlankValue,
-  type PropertyValue,
-  type ValueKind,
-} from '../../Properties/propertyValue'
-import { type PropertyDefinition, specOf } from '../../Properties/properties'
+import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properties/propertyValue'
+import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
 import { relDirname, relJoin } from '../../Paths/posix'
@@ -18,7 +12,7 @@ import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { filterSeeds } from '../Pipeline/creationSeeds'
-import { flattenContainer, frontmatterOf } from '../Pipeline/group'
+import { flattenContainer } from '../Pipeline/group'
 import { placeAt, placementSlot, tieOrderWith } from '../creationOrder'
 import type { Slot } from '../../Nexus/order'
 import { pageIdsIn } from '../../Nexus/treePatch'
@@ -41,21 +35,6 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   file: false,
 }
 
-function withSeeds(
-  schema: PropertyDefinition[],
-  frontmatter: Record<string, unknown>,
-  seeds: Record<string, PropertyValue>,
-): { frontmatter: PageFrontmatter; contexts?: Record<string, string[]> } {
-  let patched = frontmatter
-  let contexts: Record<string, string[]> | undefined
-  for (const [propId, value] of Object.entries(seeds)) {
-    const def = schema.find((d) => d.id === propId)
-    if (def) patched = applyValueAtRoot(patched, def, value)
-    else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
-  }
-  return { frontmatter: patched as PageFrontmatter, contexts }
-}
-
 export interface CreateFlight {
   id: string
   path: Promise<string | null>
@@ -67,7 +46,6 @@ type ViewCreationConfig = Pick<
   | 'view'
   | 'schema'
   | 'contextIds'
-  | 'values'
   | 'setValueOverride'
   | 'effectiveValues'
   | 'sortKeys'
@@ -106,7 +84,6 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   ): Record<string, PropertyValue> => {
     const c = cfg()
     const values = pageValuesOf(req.id, {}, null)
-    const { frontmatter, contexts } = withSeeds(c.schema, values.frontmatter, gestureSeeds)
     return filterSeeds({
       filter: viewOption(c.view, 'filter_enabled') ? c.view.filter : undefined,
       blank: {
@@ -115,8 +92,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         title: req.name,
         path: relJoin(req.parentPath, `${req.name}.md`),
         ...(parentSetId !== undefined ? { parentSetId } : {}),
-        frontmatter,
-        ...(contexts ? { contextValues: contexts } : {}),
+        picked: gestureSeeds,
       },
       schema: c.schema,
       setTree: c.source.sets ?? [],
@@ -130,9 +106,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     landed: Promise<boolean>,
   ): void => {
     if (Object.keys(seeds).length === 0) return
-    const c = cfg()
-    const { frontmatter, contexts } = withSeeds(c.schema, frontmatterOf(c.values, pageId), seeds)
-    patchOverride(c.setValueOverride, pageId, frontmatter, landed, contexts)
+    patchOverride(cfg().setValueOverride, pageId, seeds, landed)
   }
   const glideToRow = (pageId: string): void => {
     const viewEl = cfg().viewRootRef.current

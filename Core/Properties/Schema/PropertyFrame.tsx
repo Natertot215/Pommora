@@ -242,7 +242,7 @@ export function PropertyFrame({
   }
   const renamed = (res: Result<PropertyRename | null>): void => {
     if (!reportRefusal(res) || !res.value) return
-    if (res.value.from !== res.value.to) bumpValuesEpoch(res.value.from, res.value.to)
+    if (res.value.from !== res.value.to) bumpValuesEpoch()
     retryOwed(res.value)
   }
   const rename = async (id: string, label: string): Promise<void> =>

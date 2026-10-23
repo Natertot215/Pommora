@@ -173,12 +173,8 @@ export function PropertyPanel({
   const dateFormat = useSetting('dateFormat')
   const pending = override?.[subjectId]
   const row = useMemo<ViewRow | null>(() => {
-    if (isSpace)
-      return tree && spaceNode ? spaceRowOf(tree, spaceNode, pending?.fm, pending?.contexts) : null
-    const frontmatter = pending?.fm ?? base
-    return frontmatter
-      ? pageRowOf(tree, { id: subjectId, path, title }, frontmatter, pending?.contexts)
-      : null
+    if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, pending?.picked) : null
+    return base ? pageRowOf(tree, { id: subjectId, path, title }, base, pending?.picked) : null
   }, [isSpace, tree, spaceNode, pending, base, subjectId, path, title])
   const fm = row?.frontmatter ?? null
   const contextValues = row?.contextValues
@@ -191,7 +187,7 @@ export function PropertyPanel({
       schema,
       mutate,
       rowOf: (id) => (row?.id === id ? row : undefined),
-      apply: (id, next, write, contexts) => patchOverride(setOverride, id, next, write, contexts),
+      apply: (id, picked, write) => patchOverride(setOverride, id, picked, write),
     }
     return () => {
       writer.current = null
@@ -203,8 +199,13 @@ export function PropertyPanel({
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
   const schemaFields: Field[] = schemaTargets(schema, () => true)
-  const held = (f: Field): boolean =>
-    f.def ? fm !== null && Object.hasOwn(fm, f.def.key) : (contextValues?.[f.id]?.length ?? 0) > 0
+  const held = (f: Field): boolean => {
+    const picked = row?.picked?.[f.id]
+    if (picked) return !isBlankValue(picked)
+    return f.def
+      ? fm !== null && Object.hasOwn(fm, f.def.key)
+      : (contextValues?.[f.id]?.length ?? 0) > 0
+  }
   const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
   const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
   const fields: Record<GroupKey, Field[]> = {

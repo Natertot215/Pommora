@@ -3,7 +3,7 @@ import type { PageFrontmatter } from '../Nexus/schemas'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { ID_KEY } from '../Nexus/identityMark'
 import { spaceLinksOf } from '../Nexus/treeIndex'
-import type { PageValues, ViewRow } from './viewRow'
+import type { PageValues, Picked, ViewRow } from './viewRow'
 import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
 import { relDirname } from '../Paths/posix'
 import { dialer } from '../Platform/dialer'
@@ -12,7 +12,7 @@ export function pageRowOf(
   tree: NexusTree | null,
   page: { id: string; path: string; title: string },
   fm: PageFrontmatter,
-  contexts?: Record<string, string[]>,
+  picked?: Picked,
 ): ViewRow {
   const links = tree ? resolveContextKeys(fm, contextWorldOf(tree.contexts)) : null
   return {
@@ -21,30 +21,24 @@ export function pageRowOf(
     frontmatter: fm,
     createdAt: null,
     modifiedAt: null,
-    ...(links && (links.size || contexts)
-      ? { contextValues: { ...Object.fromEntries(links), ...contexts } }
-      : {}),
+    ...(links?.size ? { contextValues: Object.fromEntries(links) } : {}),
+    ...(picked ? { picked } : {}),
   }
 }
 
 // A Space has no ID key on disk; this one exists to satisfy ViewRow and is never written back.
-export function spaceRowOf(
-  tree: NexusTree,
-  node: SpaceNode,
-  fm?: PageFrontmatter,
-  contexts?: Record<string, string[]>,
-): ViewRow {
-  const frontmatter = fm ?? ({ ...node.values, [ID_KEY]: node.id } as PageFrontmatter)
+export function spaceRowOf(tree: NexusTree, node: SpaceNode, picked?: Picked): ViewRow {
   const links = spaceLinksOf(tree).get(node.id)
   return {
     id: node.id,
     title: node.title,
     icon: node.icon,
     path: node.path,
-    frontmatter,
+    frontmatter: { ...node.values, [ID_KEY]: node.id } as PageFrontmatter,
     createdAt: null,
     modifiedAt: null,
-    ...(links || contexts ? { contextValues: { ...links, ...contexts } } : {}),
+    ...(links ? { contextValues: links } : {}),
+    ...(picked ? { picked } : {}),
   }
 }
 

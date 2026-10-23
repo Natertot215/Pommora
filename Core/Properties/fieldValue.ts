@@ -26,7 +26,7 @@ export const columnType = (
 const stampValue = (iso: string | null): PropertyValue =>
   iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }
 
-/** A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own `contextValues`, the optimistic patch winning while a commit is in flight. */
+/** A value a pending write picked stands in until a read retires it. A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own `contextValues`. */
 export function resolveFieldValue(
   row: ViewRow,
   propertyId: string,
@@ -36,6 +36,8 @@ export function resolveFieldValue(
   if (propertyId === FILEDATA.title.id) return { kind: 'text', value: row.title }
   if (propertyId === FILEDATA.createdAt.id) return stampValue(row.createdAt)
   if (propertyId === FILEDATA.modifiedAt.id) return stampValue(row.modifiedAt)
+  const picked = row.picked?.[propertyId]
+  if (picked) return picked
   const ids = row.contextValues?.[propertyId]
   if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : NULL_VALUE
   const def = schema.find((d) => d.id === propertyId)

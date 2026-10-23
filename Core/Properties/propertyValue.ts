@@ -9,7 +9,7 @@ import {
   type StatusOption,
 } from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
-import { joinValues, landValue } from '../Files/rootValues'
+import { joinValues } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry } from '../Connections/linkValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
@@ -274,11 +274,3 @@ export function isBlankValue(value: PropertyValue | null): boolean {
       return false
   }
 }
-
-/** The renderer's copy of a value write, landed where the host's lands, a Multi-Select keeping the words no option claims after the picked ones. */
-export const applyValueAtRoot = (
-  root: Record<string, unknown>,
-  def: PropertyDefinition,
-  value: PropertyValue | null,
-): Record<string, unknown> =>
-  landValue(root, def.key, keepingForeignWords(def, valueToWrite(def, value), root[def.key]))
