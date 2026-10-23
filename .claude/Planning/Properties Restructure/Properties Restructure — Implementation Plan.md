@@ -232,7 +232,7 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `unassignInner` • function | `removeInner` renamed. | `Core/Properties/unassignProperty.ts` |
 | `Core/Properties/unassignProperty.test.ts` • test file | `removeProperty.test.ts` renamed. | `Core/Properties/unassignProperty.test.ts` |
 | `Core/Trash/trashedCopies.ts` • file | `holdings.ts` renamed; holds the Link values parked with trashed copies and the refill into them. | `Core/Trash/trashedCopies.ts` |
-| `seedPropertyBundle` • function | Test support that mints a trash bundle and writes a property record into it, seeding the four test files `writePropertyBundle` served. | `Core/Testing/hostFs.ts` |
+| `seedPropertyBundle` • function | Test support that mints a trash bundle and writes a property record into it, seeding the four test files `writePropertyBundle` served. | `Core/Testing/fixtures.ts` |
 | `"Delete"` • string | The option menu row and its confirmation button, replacing "Remove" (O-1). | `Core/Actions/optionMenu.ts` |
 | `Delete “${label}”?` • string | The option delete's question, replacing `Remove “${label}”?` (O-1). | `Core/Interface/Confirm/confirmations.ts` |
 | `'option:delete'` • constant | The option menu's delete action id, replacing `'option:remove'`. | `Core/Actions/optionMenu.ts` |
@@ -1166,16 +1166,16 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Review Checkpoint
   - [x] Closeout P6 (two `opus-high` agents, inward and outward)
 - [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 7 opens]`
-- [ ] **Phase 7** — One Door for Property Changes
-  - [ ] Task 7-1 · The counting module in `entities.ts`, and one `property:holders` switch
-  - [ ] Task 7-2 · One schema-lock hold per op, and create and assign in one hold
-  - [ ] Task 7-3 · `createProperty` refuses a held id and answers its definition
-  - [ ] Task 7-4 · The small folds and renames
-  - [ ] Task 7-5 · An option's Remove reads Delete
-  - [ ] Task 7-6 · Nineteen writing channels become fourteen `mutate` ops
-  - [ ] Task 7-7 · A property delete runs through `confirmDelete`
-  - [ ] Task 7-8 · The drives and scripts call `mutate`; drive group 6
-  - [ ] Review Checkpoint
+- [x] **Phase 7** — One Door for Property Changes
+  - [x] Task 7-1 · The counting module in `entities.ts`, and one `property:holders` switch
+  - [x] Task 7-2 · One schema-lock hold per op, and create and assign in one hold
+  - [x] Task 7-3 · `createProperty` refuses a held id and answers its definition
+  - [x] Task 7-4 · The small folds and renames
+  - [x] Task 7-5 · An option's Remove reads Delete
+  - [x] Task 7-6 · Nineteen writing channels become fourteen `mutate` ops
+  - [x] Task 7-7 · A property delete runs through `confirmDelete`
+  - [x] Task 7-8 · The drives and scripts call `mutate`; drive group 6
+  - [x] Review Checkpoint
   - [ ] Closeout P7 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 8 opens]`
 - [ ] **Phase 8** — Option Identity
@@ -11634,7 +11634,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Tests first, failing: `Core/Properties/properties.test.ts` › `describe('propertyDefinition')` gains "a stored denominator of zero or less reads as unset, and the definition stays admitted": `propertyDefinition.safeParse({ id: 'p', key: 'N', type: 'number', number_denominator: 0 })` succeeds with `number_denominator` undefined, as do `-4`; `8` reads `8`.
 - [ ] `removeProperty.ts` → `unassignProperty.ts` (`git mv`); `removeProperty.test.ts` → `unassignProperty.test.ts`; the seven importers follow.
 - [ ] `refillValues` moves byte for byte, as P4 left it, from `assignment.ts` to `Core/Nexus/governedSweep.ts` after `sweepRootsById`, and `assignment.ts`, `restoreProperty.ts`, and `spend.ts` import it from the sweep module.
-- [ ] `writePropertyBundle` folds into `snapshot`; `Core/Testing/hostFs.ts` gains `seedPropertyBundle`, for the four test files' seeds; `spend.test.ts:663`'s describe is retitled "a property bundle" and its case "two deletes in one stamp keep both records".
+- [ ] `writePropertyBundle` folds into `snapshot`; `Core/Testing/fixtures.ts` gains `seedPropertyBundle`, for the four test files' seeds (`hostFs.ts` loads in every test's setup, where importing the bundle modules breaks `journalWiring.test.ts`' `atomicWrite` mock); `spend.test.ts:663`'s describe is retitled "a property bundle" and its case "two deletes in one stamp keep both records".
 - [ ] `holdings.ts` → `trashedCopies.ts` and `holdings.test.ts` → `trashedCopies.test.ts` (`git mv`); the four other importers follow.
 - [ ] `properties.ts:190` (AFTER).
 - [ ] Commit: `git commit --only -- Core/Properties Core/Nexus/governedSweep.ts Core/Trash Core/Testing/hostFs.ts Core/Bundles/handlers.test.ts Core/Bundles/rows.test.ts` with "The refill joined the sweep module, the bundle write folded into its caller, two files took names saying what they hold, and a non-positive denominator read as unset."
@@ -11754,15 +11754,16 @@ The five remaining `unsweptLine` readers change one import each:
 +import { writeRecord } from '../Bundles/record'
 ```
 
-```Core/Testing/hostFs.ts diff
+```Core/Testing/fixtures.ts diff
 @@ imports @@
 +import { mintBundle } from '../Bundles/bundle'
 +import { type RecordFile, writeRecord } from '../Bundles/record'
-@@ seedPropertyBundle, after seedSpaceSidecar @@
-+export const seedPropertyBundle = async (
++import { join } from '../Paths/posix'
+@@ seedPropertyBundle, after bundleRow @@
++export async function seedPropertyBundle(
 +  root: string,
 +  record: Extract<RecordFile, { entity: 'property' }>,
-+): Promise<string> => {
++): Promise<string> {
 +  const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`))
 +  await writeRecord(bundle, record)
 +  return bundle
@@ -11783,7 +11784,7 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
-**Lines:** +5 production (+47 / −42); `refillValues`' move counted on both sides and `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) inside.
+**Lines:** +5 production (+47 / −42); `refillValues`' move counted on both sides and `Core/Testing/fixtures.ts`' `seedPropertyBundle` (+10) inside.
 
 #### Task 7-5
 
@@ -11877,7 +11878,7 @@ The five remaining `unsweptLine` readers change one import each:
 
 - [ ] Tests first, failing:
   - `Core/Nexus/mutateRequest.test.ts` gains "reads each property op, and holds a configure patch to the definition's display fields": `{ op: 'configureProperty', propertyId: 'p', patch: { icon: 'tag', type: 'text', select_options: [] } }` parses to a patch of `{ icon: 'tag' }`; `{ checkbox_color: undefined }` keeps its key; `{ op: 'setFormat', propertyId: 'p', change: { key_format: 'Shouting' } }` and `{ op: 'addProperty', containerPath: 'A', draft: { type: 'text' } }` (no label) are refused; and "a property delete re-lists the stores": `changesStores({ op: 'deleteProperty', propertyId: 'p' })` is true.
-  - `Core/Nexus/mutate.test.ts` gains `describe('the property ops')` over a Collection `Notes` assigning a Select `Stage` (options `Done`, `Todo`), a page holding `Done`, and an unassigned Text `Spare`, seeded through `seedNexus` (P1): "<op> takes the schema lock exactly once" for each of the fourteen ops (`addProperty`, `assignProperty` of `Spare`, `unassignProperty`, `reorderAssigned`, `reorderProperty`, `renameProperty`, `setFormat` with a `value_format`, `configureProperty` with an icon, `deleteProperty`, `finishOwed`, `editOption` recoloring `Done`, `renameOption`, `deleteOption` of `Todo`, `clearOption` of `Done`), each through `handleMutate` with a `vi.spyOn(machine(), 'lock')` counting calls keyed `nexusDir(root)` (exactly 1) and the reply ok; "an added property answers its id as what it created" (`created` equals `{ propertyId }` naming the registry's new entry); "a rename that keeps its key answers no cascade, and one that moves it answers the sweep" (`Stage` → `stage` under `lowercase` key format answers `{}`; `Stage` → `Phase` answers `cascade`); "a configure under a file directory outside the asset root refuses, and one naming the root itself clears the field" (`{ file_directory: '  ' }` leaves the definition without `file_directory`); "a replay handed a malformed record refuses" (`{ op: 'finishOwed' }ord: { op: 'rename' } }` → `fault('A schema record is required.')`).
+  - `Core/Nexus/mutate.test.ts` gains `describe('the property ops')` over a Collection `Notes` assigning a Select `Stage` (options `Done`, `Todo`), a page holding `Done`, and an unassigned Text `Spare`, seeded through `seedNexus` (P1): "<op> takes the schema lock exactly once" for each of the fourteen ops (`addProperty`, `assignProperty` of `Spare`, `unassignProperty`, `reorderAssigned`, `reorderProperty`, `renameProperty`, `setFormat` with a `value_format`, `configureProperty` with an icon, `deleteProperty`, `finishOwed`, `editOption` recoloring `Done`, `renameOption`, `deleteOption` of `Todo`, `clearOption` of `Done`), each through `handleMutate` with a `vi.spyOn(machine(), 'lock')` counting calls keyed `nexusDir(root)` (exactly 1) and the reply ok; "an added property answers its id as what it created" (`created` equals `{ propertyId }` naming the registry's new entry); "a rename that keeps its key answers no cascade, and one that moves it answers the sweep" (`Stage` → `stage` under `lowercase` key format answers `{}`; `Stage` → `Phase` answers `cascade`); "a configure under a file directory outside the asset root refuses, and one naming the root itself clears the field" (`{ file_directory: '  ' }` leaves the definition without `file_directory`).
   - `Core/Session/store.test.tsx` › the slice's `mutate` describe (beside "posts a warning that carries a retry with Try Again, which sends the retry", `:1145`) gains "an owed refusal offers Try Again, which replays the journal's record" (`channels.mutate` answers `fail('owed', 'An earlier change hasn’t reached every file yet.')` to an `editOption`; the notice reads that message with `Try Again`, whose run sends `{ op: 'finishOwed' }`), "leaves a property delete's pass warning to the Deleted notice" (`deleteProperty` answering a warning posts nothing; `storesChanged` fires once), and "a create that took a numbered name says so" (`addProperty` answering `landedAs: 'New Select (2)'` posts `Created “New Select (2)”.`; one answering no `landedAs` posts nothing).
 - [ ] `mutateRequest.ts`: the fourteen ops, `created`'s two shapes, and `deleteProperty` in `changesStores`, as AFTER.
 - [ ] `mutate.ts`: the fourteen arms, as AFTER. The `finishOwed` arm is today's `property:replay` handler moved: `replaySchemaCascade` over the journal's one record and `unsweptReply`'s skipped line, with the request itself as the retry where `property:replay`'s renderer re-offered `replay(record)`; the slot holds the record a reply would carry, since its `write` refuses a different one while it holds one, so no record travels and `journalRecord`'s decode leaves with the channel.
@@ -11909,8 +11910,8 @@ The five remaining `unsweptLine` readers change one import each:
 - [ ] `nexusSlice.ts`: an `'owed'` refusal offers Try Again as `mutate({ op: 'finishOwed' })`; a property delete's cascade is left to its Deleted notice; a create's reply carrying `landedAs` posts "Created “…”." (O-4), as AFTER, and `create.ts`' Space create and `mutate.ts`' Context create answer `landedAs` when they stepped past a taken name, through `create.ts`' one `landedAs`, while the page, Collection, and Set creates answer `created` alone. Tests first, watched failing: `Core/Nexus/create.test.ts` › "a Space create that stepped past a taken name answers the name it took, and a page create answers none" (a Space created twice under one name: the second reply's `landedAs` reads `New Space (2)` and the first carries none; a page created twice answers no `landedAs` either time), `Core/Nexus/mutate.test.ts` › the same for `createContextGroup`, and `Core/Session/store.test.tsx` › "a Space create that took a numbered name says so" (the dialer answers a `createSpace` with `{ created: { path: 'Areas/New Space (2)' }, landedAs: 'New Space (2)' }`; the notice reads `Created “New Space (2)”.`, and a `restore` reply carrying `landedAs` posts none here).
 - [ ] The renderer: `PropertyFrame.tsx`, `useOptionEdit.tsx`, and `PropertyPanel.tsx` as AFTER; `createActions.ts` and `useViewCreation.ts` read `created.path` only where `created` holds one. `bumpValuesEpoch` takes no arguments from Task 6-5, so the frame calls `bumpValuesEpoch()` as it does. On F3's Fail (Task 6-6's revert), `rekeyOverrides` and `bumpValuesEpoch(oldKey, newKey)` stand: the frame reads `from` as `defOf(id)?.key` before the send and `to` as that definition's key in `useSession.getState().tree` after it, which the write gate pushes before the reply leaves (`Core/Contract/handlers.ts:98`), and calls `bumpValuesEpoch(from, to)` when the reply carries a cascade, which a rekey answers only when the key moves; `cacheSlice.ts` and `useContainerValues.ts` stay as P6 left them.
 - [ ] Rewrite the tests the fold makes false, each by one rule:
-  - **Channel calls become ops:** `Core/Properties/handlers.test.ts` calls `nexusHandlers.mutate(ctx, req)` (its `ctx` gains `trashMode: async () => 'nexus'`, which `trashDeps` reads) in place of `propertiesHandlers['<channel>'](ctx, …)`, by the table above; "schema:add writes the key from the label, replacing a key the payload carries" sends `draft: { label: 'Due Date', key: 'whatever', type: 'text' }` and reads `created.propertyId`; "an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault" becomes "…then answers the skip on its cascade" (`ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } })`); every replay that answered `ok(null)` answers `ok({ cascade: { pages: [], hosts: <its hosts> } })` and every one that answered `fault(unsweptLine(1))` answers `ok({ cascade: { pages: [], hosts: <its hosts>, warning: unsweptLine(1) }, retry: { op: 'finishOwed' } })` (`toMatchObject` where hosts vary); `r.value.owed` reads `r.value.retry` as `{ op: 'finishOwed' }ord }`; "property:setKeyFormat refuses a format that isn’t a Key Format" and its Value Format twin become one case, "a format change that isn’t a Key Format is refused as malformed" (`fault('Malformed request.')`). `Core/Contract/writeGate.test.ts:138-159`'s three property rows call `nexusHandlers.mutate` with `addProperty`, `renameProperty`, and `editOption`, keeping their push lists.
-  - **Direct calls read the one reply:** in `registryProperty.test.ts`, `optionOps.test.ts`, `deleteProperty.test.ts`, `replaySchemaCascade.test.ts`, `unassignProperty.test.ts`, `assignment.test.ts`, `journalWiring.test.ts`, `cascadeRace.test.ts`, `Core/Nexus/settle.test.ts`, `keyHolders.test.ts`, `restoreProperty.test.ts`, and `trashRecovery.test.ts`, `.value.owed` reads `.value.retry?.record`; a `ConfigReach` expectation `ok({ skipped: n, hosts })` on Remove reads `ok({ cascade: { pages: [], hosts, ...(n ? { warning: unsweptLine(n) } : {}) } })`; a rename's `ok(null)` reads `ok({})`, and its `from`/`to` are read off the registry; `editProperty(` calls read `configureProperty(`. `typecheck` lists every site.
+  - **Channel calls become ops:** `Core/Properties/handlers.test.ts` calls `nexusHandlers.mutate(ctx, req)` (its `ctx` gains `trashMode: async () => 'nexus'`, which `trashDeps` reads) in place of `propertiesHandlers['<channel>'](ctx, …)`, by the table above; "schema:add writes the key from the label, replacing a key the payload carries" sends `draft: { label: 'Due Date', key: 'whatever', type: 'text' }` and reads `created.propertyId`; "an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault" becomes "…then answers the skip on its cascade" (`ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } })`); every replay that answered `ok(null)` answers `ok({ cascade: { pages: [], hosts: <its hosts> } })` and every one that answered `fault(unsweptLine(1))` answers `ok({ cascade: { pages: [], hosts: <its hosts>, warning: unsweptLine(1) }, retry: { op: 'finishOwed' } })` (`toMatchObject` where hosts vary); `r.value.owed` reads `r.value.retry` as `{ op: 'finishOwed' }`; "property:setKeyFormat refuses a format that isn’t a Key Format" and its Value Format twin become one case, "a format change that isn’t a Key Format is refused as malformed" (`fault('Malformed request.')`). `Core/Contract/writeGate.test.ts:138-159`'s three property rows call `nexusHandlers.mutate` with `addProperty`, `renameProperty`, and `editOption`, keeping their push lists.
+  - **Direct calls read the one reply:** in `registryProperty.test.ts`, `optionOps.test.ts`, `deleteProperty.test.ts`, `replaySchemaCascade.test.ts`, `unassignProperty.test.ts`, `assignment.test.ts`, `journalWiring.test.ts`, `cascadeRace.test.ts`, `Core/Nexus/settle.test.ts`, `keyHolders.test.ts`, `restoreProperty.test.ts`, and `trashRecovery.test.ts`, `.value.owed` reads `.value.retry` as `{ op: 'finishOwed' }`, with the record read from the journal's slot; a `ConfigReach` expectation `ok({ skipped: n, hosts })` on Remove reads `ok({ cascade: { pages: [], hosts, ...(n ? { warning: unsweptLine(n) } : {}) } })`; a rename's `ok(null)` reads `ok({})`, and its `from`/`to` are read off the registry; `editProperty(` calls read `configureProperty(`. `typecheck` lists every site.
   - **Renderer harnesses stub the slice:** `PropertyFrame.test.tsx`, `OptionEditor.test.tsx`, `PropertyPicker.pane.test.tsx`, and `PropertyPanel.test.tsx` stub `useSession`'s `mutate` with one `vi.fn` answering per `req.op`, as `confirmations.test.ts` › *a delete through the confirmation* does (`:174-185`), and assert the request (`toHaveBeenCalledWith({ op: 'assignProperty', containerPath: 'Col', propertyId: 'prop_x', toIndex: 0 })`, `{ op: 'reorderAssigned', containerPath: 'Col', propertyId: 'prop_note', toIndex: 0 }`, and so on); `OptionEditor.test.tsx`'s Try Again case asserts the notice's run sends the reply's `retry`. `PropertyFrame.dateTime.test.tsx` merges into `PropertyFrame.test.tsx` as `describe('the Date & Time Format editor writes the active view')` on the one harness (`setMenuDoor`, the slice stub, `views:save` stubbed on the dialer), and the file is deleted. In the same pass the false names leave (05-13): `deleteSpy` (`:244`) reads `unassignSpy`'s place directly as the `unassignProperty` request; `:255` reads "assigned → all commits the Remove after an area-highlight hover"; `:438` "the editor's ⋮ Remove unassigns and returns to the list"; `:486` "a row right-click Rename flips the title to the inline input; Enter commits the rename"; `:202` "the footer's New Property opens the type picker". The history pins `:199` (`loadSpy` never called) and `:454` (a removed "Delete Property" row absent) leave with `loadSpy` (`:51,65,101`). The two values-epoch cases (`:505-542`) assert `kind: 'rename'` on a reply carrying `cascade` and no bump on `{}`.
   - **The narrowers' test** (`properties.test.ts:352-363`) pins `propertyConfig`: `{ link_underline: true, type: 'text', id: 'x' }` decodes to `{ link_underline: true }`; `{ number_decimals: 101, number_family: 'percent' }` to `{ number_decimals: undefined, number_family: 'percent' }`; it's retitled "the configure patch decodes against the definition's own display fields".
 - [ ] Commit: `git commit --only -- Core Desktop` (the paths `git status` lists; no drive yet) with "Every property change went through the one change channel with one reply shape, and the property channels, their adapters, and the renderer's own round trip left."
@@ -12868,7 +12869,7 @@ A create whose name must stay unique answers `landedAs` beside `created` when it
 **CHANGE**
 
 - [ ] Re-point every call by Task 7-6's table, reading replies by its right column (AFTER).
-  A record compared by value reads `r.value?.retry?.record` (`Metadata :948,955,975,981,1193,1200`, and `tryAgain`'s `owed` at `:104`, whose replay sends `r.value.retry`). The Metadata Drive's `add` and `define` (`:164-170`) send `draft: def` and answer `created.propertyId`; every `X.id` read off an `add` result (`:854-855,1115,1118,1121-1122,1145,1148`) reads `X.created.propertyId`. `:1099` reads `listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds'` and `:1107` `recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS'`. `:533,1281,1285` read `.bundled.bundlePath`.
+  A record compared by value reads the journal's slot, with `r.value?.retry` reading `FINISH`, `{ op: 'finishOwed' }` (`Metadata :948,955,975,981,1193,1200`, and `tryAgain`'s `owed` at `:104`, whose replay sends `r.value.retry`). The Metadata Drive's `add` and `define` (`:164-170`) send `draft: def` and answer `created.propertyId`; every `X.id` read off an `add` result (`:854-855,1115,1118,1121-1122,1145,1148`) reads `X.created.propertyId`. `:1099` reads `listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds'` and `:1107` `recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS'`. `:533,1281,1285` read `.bundled.bundlePath`.
 - [ ] The Metadata Drive's O-1 names read Delete (AFTER): `:789` "a Delete", `:932` "delete Critical", `:933`'s pin "an option delete strips the page and the view naming it", `:935` "delete Mid Grey" and its pin "an option delete strips the page and the Collection cache", `:959-960` "an option delete waits while a record is owed", `:977-982` "an option delete record carries the stored key" and "the option delete's Try Again strips the skipped file". The Metadata Drive's `MATRIX.md`, whose `:110` names the option removal, is Task 18-6's, which rewrites the matrix once on the landed head.
 - [ ] The Option Picker Drive's `stepClearRemove` becomes `stepClearDelete`: Clear over the one Item holding Alpha runs unasked (`check('Clear over one Item strips it unasked', !(await cdp.evaluate(DIALOG_OPEN)) && !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))`, `DIALOG_OPEN` reading `!!document.querySelector('[role="alertdialog"]')`), with no click on a Clear button; then `chooseNative(cdp, alphaRow, 'Delete')`, `check('Delete asks to delete Alpha without a strip clause, nothing holding it', …innerText.includes('Delete “Alpha”?') && …includes('The option is deleted from the property.') && !…includes('stripped'))`, `click(cdp, confirmButton('Delete'))`, and `check('Delete removes Alpha from the registry', …)`. Its call site follows the new name.
 - [ ] `openSettings`, `closeSettings`, `DIALOG`, `pressDialog`, `notice`, and `trashRowEl` move from the Archive Drive into `drive-harness.mjs` (exported, bodies unchanged, with `RAIL` and `ribbon` they read); the Archive Drive imports them.
@@ -12960,10 +12961,13 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 ```.claude/scripts/Metadata Drive/live-drive.mjs diff
 @@ :104 @@
 -  const owed = r.ok ? r.value?.owed : undefined
-+  const owed = r.ok ? r.value?.retry?.record : undefined
++  const owed = r.ok && r.value?.retry ? slot() : undefined
 @@ :106 @@
 -  const replayed = owed ? await ask(cdp, 'property:replay', owed) : null
 +  const replayed = owed ? await ask(cdp, 'mutate', r.value.retry) : null
+@@ const slot = () => slotOf(JOURNAL) @@
+ const slot = () => slotOf(JOURNAL)
++const FINISH = { op: 'finishOwed' }
 @@ :156 @@
 -  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id)).ok)
 +  await until(`${def.label ?? def.key} admitted`, async () => (await ask(cdp, 'property:holders', def.id, { of: 'property' })).ok)
@@ -13104,7 +13108,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  const renamed = await unreadable(due[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueId, label: 'M6 When' }))
 @@ :948 @@
 -    same(renamed.value?.owed, { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }) && same(slot(), renamed.value?.owed), show([renamed, slot()]))
-+    same(renamed.value?.retry?.record, { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }) && same(slot(), renamed.value?.retry?.record), show([renamed, slot()]))
++    same(renamed.value?.retry, FINISH) && same(slot(), { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }), show([renamed, slot()]))
 @@ :949 @@
 -  await must('Try Again', ask(cdp, 'property:replay', renamed.value.owed))
 +  await must('Try Again', ask(cdp, 'mutate', renamed.value.retry))
@@ -13113,7 +13117,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Pale', to: 'Light' }))
 @@ :955 @@
 -    same(owing.value?.owed, optionRecord) && same(slot(), optionRecord), show([owing, slot()]))
-+    same(owing.value?.retry?.record, optionRecord) && same(slot(), optionRecord), show([owing, slot()]))
++    same(owing.value?.retry, FINISH) && same(slot(), optionRecord), show([owing, slot()]))
 @@ :958 @@
 -    refusedAs(await ask(cdp, 'property:renameOption', tints, 'Deep', 'Dark'), COPY.anOptionChangeWaitingForTryAgain))
 +    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, from: 'Deep', to: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
@@ -13137,7 +13141,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  const removedProp = await unreadable(doomed[0], () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M6 Doomed'] }))
 @@ :975 @@
 -    same(removedProp.value?.owed, { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
-+    same(removedProp.value?.retry?.record, { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
++    same(removedProp.value?.retry, FINISH) && same(slot(), { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
 @@ :976 @@
 -  if (removedProp.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedProp.value.owed))
 +  if (removedProp.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedProp.value.retry))
@@ -13149,7 +13153,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  pin(G, 'F-1', 'an option delete record carries the stored key',
 @@ :981 @@
 -    same(removedOption.value?.owed, { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
-+    same(removedOption.value?.retry?.record, { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
++    same(removedOption.value?.retry, FINISH) && same(slot(), { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
 @@ :982 @@
 -  if (removedOption.value?.owed) await must('Try Again', ask(cdp, 'property:replay', removedOption.value.owed))
 +  if (removedOption.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedOption.value.retry))
@@ -13239,7 +13243,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipKeyId, change: { key_format: 'lowercase' } }))
 @@ :1193 @@
 -    same(keySkip.value?.owed, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
-+    same(keySkip.value?.retry?.record, keyRecord) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
++    same(keySkip.value?.retry, FINISH) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
 @@ :1194 @@
 -  const keyReplay = await ask(cdp, 'property:replay', keySkip.value?.owed)
 +  const keyReplay = await ask(cdp, 'mutate', keySkip.value?.retry)
@@ -13248,7 +13252,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 +  const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipValueId, change: { value_format: 'kebab-case' } }))
 @@ :1200 @@
 -    same(valueSkip.value?.owed, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
-+    same(valueSkip.value?.retry?.record, valueRecord) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
++    same(valueSkip.value?.retry, FINISH) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
 @@ :1201 @@
 -  const valueReplay = await ask(cdp, 'property:replay', valueSkip.value?.owed)
 +  const valueReplay = await ask(cdp, 'mutate', valueSkip.value?.retry)
@@ -13449,7 +13453,7 @@ Every folded call, by the table, with the replies and the O-1 names the CHANGE s
 | **Phase 7 (F3's Pass)** | **−622** | **+469** | **−153** |
 | **Phase 7 (F3's Fail)** | **−622** | **+475** | **−147** |
 
-- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Fail, Task 7-6 lands −178, its frame reading each rekey's old and new key for the two-argument `bumpValuesEpoch` Task 6-6's revert keeps. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/hostFs.ts`' `seedPropertyBundle` (+10) counts in 7-4.
+- **The Rule:** *§Plan Constraints › The Number*'s. On F3's Fail, Task 7-6 lands −178, its frame reading each rekey's old and new key for the two-argument `bumpValuesEpoch` Task 6-6's revert keeps. Blank lines count, so `handlers.ts`' write half and `bridge.ts`' nineteen entries count with their separators; `Core/Testing/fixtures.ts`' `seedPropertyBundle` (+10) counts in 7-4.
 - **Task 7-1's +23:** the counting words' move nets about +2, `keyFormat`'s two decoders about +6, and the typed request with its `switch` about +12 over the sniff, which buys one decoded change where four hand checks read its shape, and the holder count's request named apart from the finder's.
 - **What Leaves:** `Core/Properties/propertyWrite.ts`; nineteen bridge entries; `resolveSchemaFolder`, `Reply`, `asIs`, `unsweptReply`, `cascadeReply`, `answer`, `registryChannel`, `schemaChannel`, nine positional narrowers, `journalRecord`, `defEditOp`; `SchemaCascade`, `PropertyRename`, `PropertyDeletion`, `FileConfig`; `linkFields`, `numberFields`, `narrowLinkConfig`, `narrowNumberFormat`, `narrowFileConfig`; `isKeyFormat` and the holder count's argument sniff; `writePropertyBundle`; `notifyTrashed`; `restoreInner`'s pre-check, read-back, and second tree read; the count copy's second home.
 - **Tests:** about +160 (+240 / −80): the fourteen lock cases and the op, slice, restore, and zero-wording pins are new, while the merged `PropertyFrame` harness, the history pins, `isKeyFormat`'s case, and the two format-refusal cases leave. The drive group and the script re-points are apart.
