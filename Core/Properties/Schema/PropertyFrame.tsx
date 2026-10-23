@@ -6,7 +6,6 @@ import { useSession } from '../../Session/store'
 import { storesChanged } from '../../Session/nexusSlice'
 import {
   DEFAULT_LINK_DISPLAY,
-  isReservedPropertyId,
   optionGroupsOf,
   type PropertyDefinition,
   PROPERTY_TYPES,
@@ -199,9 +198,8 @@ export function PropertyFrame({
   const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
 
-  const props = schema.filter((d) => !isReservedPropertyId(d.id))
   const assignedIds = new Set(schema.map((d) => d.id))
-  const unassigned = registry.filter((d) => !assignedIds.has(d.id) && !isReservedPropertyId(d.id))
+  const unassigned = registry.filter((d) => !assignedIds.has(d.id))
   const backToList = (): void => setView({ kind: 'list' })
 
   const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
@@ -281,7 +279,7 @@ export function PropertyFrame({
     )
 
   const defOf = (id: string): PropertyDefinition | undefined =>
-    props.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
+    schema.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
   const labelFor = (id: string): string => defOf(id)?.label ?? ''
   const glyphFor = (id: string): ReactNode => {
     const d = defOf(id)
@@ -392,7 +390,7 @@ export function PropertyFrame({
   }
 
   const editor = (id: string): React.JSX.Element => {
-    const def = props.find((d) => d.id === id)
+    const def = schema.find((d) => d.id === id)
     if (!def) {
       return (
         <>
@@ -463,7 +461,7 @@ export function PropertyFrame({
       <LineZone
         className={s.frameZone}
         {...paneSpec({
-          assigned: props.map((d) => d.id),
+          assigned: schema.map((d) => d.id),
           ordersAll: true,
           titles: TITLES,
           label: labelFor,
@@ -473,7 +471,7 @@ export function PropertyFrame({
         })}
       >
         <ListGroups
-          assigned={props}
+          assigned={schema}
           unassigned={unassigned}
           allOpen={allOpen}
           renamingId={

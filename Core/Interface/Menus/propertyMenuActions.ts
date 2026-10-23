@@ -1,7 +1,7 @@
 import { parsePropertyAction, type PropertyMenuRow } from '../../Actions/propertyRows'
 import type { NexusTree } from '../../Nexus/tree'
 import { pagesByIdOf } from '../../Nexus/record'
-import { pickKindOf, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import { pickKindOf, type PropertyDefinition } from '../../Properties/properties'
 import { type PropertyValue, selectedValues } from '../../Properties/propertyValue'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
@@ -65,9 +65,7 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
       ),
     }
   }
-  const built = schema
-    .filter((d) => PROPERTY_TYPES[d.type].origin === 'user')
-    .map((def) => build(def.id, def))
+  const built = schema.map((def) => build(def.id, def))
   return {
     spaces: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
     properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],
