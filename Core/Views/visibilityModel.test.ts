@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 import type { SavedView } from './views'
 import { hiddenListIds, hideShown, placeInShown, unhide } from './visibilityModel'
 
-const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID
+const [title, createdAt, modifiedAt] = [
+  FILEDATA.title.id,
+  FILEDATA.createdAt.id,
+  FILEDATA.modifiedAt.id,
+]
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
 const stamps = [createdAt, modifiedAt]
 

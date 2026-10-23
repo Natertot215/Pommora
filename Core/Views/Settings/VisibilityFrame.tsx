@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import {
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-  STAMP_TYPE,
-} from '../../Properties/properties'
+import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
@@ -23,8 +19,7 @@ import * as s from '@pommora/uix/Menus/frames.css'
 function rowGlyph(id: string, schema: PropertyDefinition[]): string {
   const def = schema.find((d) => d.id === id)
   if (def) return propertyIcon(def)
-  if (id === RESERVED_PROPERTY_ID.title) return propertyTypeIconName('title')
-  return propertyTypeIconName(STAMP_TYPE[id] ?? 'context')
+  return propertyTypeIconName(FILEDATA_BY_ID.get(id)?.type ?? 'context')
 }
 
 function VisibilityGroups({
@@ -52,7 +47,7 @@ function VisibilityGroups({
             icon: <Icon name={rowGlyph(id, schema)} size={s.ICON.doc} />,
             label: nameFor(id),
             trailing:
-              id === RESERVED_PROPERTY_ID.title
+              id === FILEDATA.title.id
                 ? {
                     // PLACEHOLDER
                     kind: 'button',
@@ -133,7 +128,7 @@ export function VisibilityFrame({
         {...paneSpec({
           assigned: shownIds,
           ordersAll: false,
-          pinned: RESERVED_PROPERTY_ID.title,
+          pinned: FILEDATA.title.id,
           titles: { assigned: 'Shown Properties', all: 'Hidden Properties' },
           label: nameFor,
           glyph: (id) => <Icon name={rowGlyph(id, schema)} />,

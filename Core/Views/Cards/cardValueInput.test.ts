@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
 import type { SavedView } from '../views'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -105,11 +105,10 @@ describe('addEntriesFor', () => {
   const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
 
   it('a stamp entry carries its stamp type and only ever reveals, even while blank', () => {
-    const { createdAt, modifiedAt } = RESERVED_PROPERTY_ID
     const entries = addEntriesFor(row, view, ctx, [{ id: '_title', kind: 'title' }])
     expect(entries.map((e) => [e.id, e.type, e.revealOnly])).toEqual([
-      [createdAt, 'createdTime', true],
-      [modifiedAt, 'lastEditedTime', true],
+      [FILEDATA.createdAt.id, 'createdTime', true],
+      [FILEDATA.modifiedAt.id, 'lastEditedTime', true],
     ])
   })
 

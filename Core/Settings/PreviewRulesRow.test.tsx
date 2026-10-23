@@ -7,8 +7,7 @@ import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
 import { makeTree } from '../Testing/testTree'
 import type { FilterGroup, FilterRule, StandaloneFilter } from '../Views/filterRules'
-import { RESERVED_PROPERTY_ID } from '../Properties/properties'
-import { RESERVED_LABEL } from '../Properties/Cells/columnLabel'
+import { FILEDATA } from '../Properties/properties'
 import { trailingFigure } from '@pommora/uix/Menus/menu-row.css'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -17,11 +16,11 @@ let host: HTMLDivElement
 let root: Root
 
 const titleRule: FilterRule = {
-  property_id: RESERVED_PROPERTY_ID.title,
+  property_id: FILEDATA.title.id,
   op: 'contains',
   value: 'a',
 }
-const createdRule: FilterRule = { property_id: RESERVED_PROPERTY_ID.createdAt, op: 'is_empty' }
+const createdRule: FilterRule = { property_id: FILEDATA.createdAt.id, op: 'is_empty' }
 
 const render = async (openInPreview?: StandaloneFilter): Promise<void> => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -78,11 +77,11 @@ describe('PreviewRulesRow', () => {
     await render()
     await click(manage())
     await click(byLabel('Filter property')[0])
-    await click(option(RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt]))
+    await click(option(FILEDATA.createdAt.label))
     expect(stored()).toEqual({
       rules: {
         match: 'any',
-        rules: [expect.objectContaining({ property_id: RESERVED_PROPERTY_ID.createdAt })],
+        rules: [expect.objectContaining({ property_id: FILEDATA.createdAt.id })],
       },
       enabled: true,
     })
@@ -108,9 +107,9 @@ describe('PreviewRulesRow', () => {
     await click(manage())
     await click(byLabel('Filter property')[0])
     const labels = offered()
-    for (const t of ['Title', 'Location', RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], 'Realms'])
+    for (const t of ['Title', 'Location', FILEDATA.createdAt.label, 'Realms'])
       expect(labels).toContain(t)
-    expect(labels).not.toContain(RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt])
+    expect(labels).not.toContain(FILEDATA.modifiedAt.label)
     expect(labels).not.toContain('Mood')
   })
 })

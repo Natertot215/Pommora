@@ -9,7 +9,7 @@ import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
 import { filterGroup } from './filterRules'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
-import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 
 export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
 export type ViewType = (typeof VIEW_TYPES)[number]
@@ -416,7 +416,7 @@ export function mintNewView(name: string, schema: PropertyDefinition[]): SavedVi
     icon: VIEW_KINDS[DEFAULT_VIEW_TYPE].icon,
     type: DEFAULT_VIEW_TYPE,
     group: { kind: 'structural' },
-    property_order: [RESERVED_PROPERTY_ID.title],
+    property_order: [FILEDATA.title.id],
     hidden_properties: schema.map((d) => d.id),
   }
 }

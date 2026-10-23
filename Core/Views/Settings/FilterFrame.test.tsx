@@ -9,7 +9,7 @@ import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
 import { itemPicked, menuCompact } from '@pommora/uix/Menus/menu-row.css'
-import { TITLE_TARGET } from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS } from '../../Properties/Cells/PropertyTypes'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -175,7 +175,7 @@ describe('FilterFrame', () => {
   })
 
   it('a supplied target list replaces the derived one', async () => {
-    seams = { targets: [TITLE_TARGET] }
+    seams = { targets: [FILEDATA_TARGETS.title] }
     await mount(view())
     await click(byLabel('Filter property'))
     const offered = [...document.querySelectorAll('[data-picker-portal] *')].map(

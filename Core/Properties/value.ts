@@ -2,12 +2,7 @@
 
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
-import {
-  type ColumnType,
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-  STAMP_TYPE,
-} from './properties'
+import { type ColumnType, FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from './properties'
 import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 import { wikiTitle } from '../Connections/linkValue'
 
@@ -16,9 +11,8 @@ export function declaredType(
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): ColumnType | undefined {
-  if (propertyId === RESERVED_PROPERTY_ID.title) return 'title'
-  const stamp = STAMP_TYPE[propertyId]
-  if (stamp) return stamp
+  const filedata = FILEDATA_BY_ID.get(propertyId)
+  if (filedata) return filedata.type
   if (contextIds.includes(propertyId)) return 'context'
   return schema.find((d) => d.id === propertyId)?.type
 }
@@ -40,9 +34,9 @@ export function resolveFieldValue(
   schema: PropertyDefinition[],
 ): PropertyValue {
   // Title and the stamps read the row, not the frontmatter the memo is keyed on.
-  if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
-  if (propertyId === RESERVED_PROPERTY_ID.createdAt) return stampValue(row.createdAt)
-  if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) return stampValue(row.modifiedAt)
+  if (propertyId === FILEDATA.title.id) return { kind: 'select', value: row.title }
+  if (propertyId === FILEDATA.createdAt.id) return stampValue(row.createdAt)
+  if (propertyId === FILEDATA.modifiedAt.id) return stampValue(row.modifiedAt)
   const ids = row.contextValues?.[propertyId]
   if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : NULL_VALUE
   const def = schema.find((d) => d.id === propertyId)

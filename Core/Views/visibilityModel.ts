@@ -1,4 +1,4 @@
-import { type PropertyDefinition, STAMP_TYPE } from '../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 import type { SavedView } from './views'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
@@ -15,7 +15,7 @@ export function hiddenListIds(
   return [
     ...contextIds.filter(nonShown),
     ...schema.filter((d) => nonShown(d.id)).map((d) => d.id),
-    ...Object.keys(STAMP_TYPE).filter(nonShown),
+    ...[FILEDATA.createdAt.id, FILEDATA.modifiedAt.id].filter(nonShown),
   ]
 }
 

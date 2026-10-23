@@ -184,9 +184,9 @@ describe('propertyDefinition', () => {
 })
 
 describe('reserved property ids', () => {
-  it('recognizes reserved vs user ids', () => {
-    expect(isReservedPropertyId('_title')).toBe(true)
-    expect(isReservedPropertyId('_modified_at')).toBe(true)
+  it('recognizes every Filedata id and no user id', () => {
+    for (const id of ['_title', '_created_at', '_modified_at', '_location'])
+      expect(isReservedPropertyId(id)).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
   })

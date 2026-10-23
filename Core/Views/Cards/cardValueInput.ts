@@ -1,16 +1,11 @@
-import {
-  type ColumnType,
-  type PropertyDefinition,
-  STAMP_TYPE,
-  specOf,
-} from '../../Properties/properties'
+import { type ColumnType, type PropertyDefinition, specOf } from '../../Properties/properties'
 import { isBlankValue } from '../../Properties/propertyValue'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
 import { isCompact, type SavedView } from '../views'
 import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { resolveFieldValue } from '../../Properties/value'
+import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { columnLabel } from '../../Properties/Cells/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
@@ -57,7 +52,7 @@ export function addEntriesFor(
     .filter((id) => !shownIds.has(id))
     .map((id) => {
       const def = bySchema.get(id) ?? null
-      const type = STAMP_TYPE[id] ?? def?.type ?? 'context'
+      const type = declaredType(id, ctx.schema, contextIds) ?? 'context'
       return {
         id,
         name: columnLabel(id, ctx.schema, contextsByIdOf(tree)),

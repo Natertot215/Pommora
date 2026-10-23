@@ -18,7 +18,7 @@ import {
   type SavedView,
 } from './views'
 import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
-import { RESERVED_PROPERTY_ID } from '../Properties/properties'
+import { FILEDATA } from '../Properties/properties'
 
 describe('SavedView decode', () => {
   it('parses the fixture Table view (type, property_order, group, sort)', () => {
@@ -367,14 +367,14 @@ describe('mint seam', () => {
     expect(v.name).toBe('Untitled')
     expect(v.type).toBe('table')
     expect(v.icon).toBe('view-table')
-    expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
+    expect(v.property_order).toEqual([FILEDATA.title.id])
     // Context columns take no entry — absence from property_order is what hides them.
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
   })
   it('mintDefaultView mints title-only (every prop + Context columns hidden) with the table glyph', () => {
     const v = mintDefaultView(schema)
     expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
-    expect(v.property_order).toEqual([RESERVED_PROPERTY_ID.title])
+    expect(v.property_order).toEqual([FILEDATA.title.id])
     expect(v.icon).toBe('view-table')
   })
 })

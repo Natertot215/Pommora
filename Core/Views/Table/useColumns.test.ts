@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import { savedView, type SavedView } from '../views'
 import {
   alignFor,
@@ -24,10 +24,10 @@ const schema: PropertyDefinition[] = [
 describe('column widths', () => {
   describe('widthFor', () => {
     it('keys reserved columns by their declared type', () => {
-      expect(widthFor(RESERVED_PROPERTY_ID.title, schema).default).toBe(280)
+      expect(widthFor(FILEDATA.title.id, schema).default).toBe(280)
       expect(widthFor('ctx_areas', schema, ['ctx_areas']).default).toBe(140)
-      expect(widthFor(RESERVED_PROPERTY_ID.modifiedAt, schema).default).toBe(120)
-      expect(widthFor(RESERVED_PROPERTY_ID.createdAt, schema).default).toBe(120)
+      expect(widthFor(FILEDATA.modifiedAt.id, schema).default).toBe(120)
+      expect(widthFor(FILEDATA.createdAt.id, schema).default).toBe(120)
     })
 
     it('keys user properties by their schema type', () => {
@@ -74,9 +74,9 @@ describe('column widths', () => {
 
   describe('clampWidth', () => {
     it('clamps a resized width up to its min; the title grows uncapped, typed columns cap per-type', () => {
-      expect(clampWidth(10, RESERVED_PROPERTY_ID.title, schema)).toBe(120)
-      expect(clampWidth(9999, RESERVED_PROPERTY_ID.title, schema)).toBe(9999)
-      expect(clampWidth(300, RESERVED_PROPERTY_ID.title, schema)).toBe(300)
+      expect(clampWidth(10, FILEDATA.title.id, schema)).toBe(120)
+      expect(clampWidth(9999, FILEDATA.title.id, schema)).toBe(9999)
+      expect(clampWidth(300, FILEDATA.title.id, schema)).toBe(300)
       expect(clampWidth(999, 'prop_status', schema)).toBe(250)
     })
 
@@ -109,11 +109,11 @@ describe('column alignment', () => {
     })
 
     it('left-aligns title, number, link, text, and modified', () => {
-      expect(defaultAlignFor(RESERVED_PROPERTY_ID.title, schema)).toBe('left')
+      expect(defaultAlignFor(FILEDATA.title.id, schema)).toBe('left')
       expect(defaultAlignFor('prop_n', schema)).toBe('left')
       expect(defaultAlignFor('prop_url', schema)).toBe('left')
       expect(defaultAlignFor('prop_notes', schema)).toBe('left')
-      expect(defaultAlignFor(RESERVED_PROPERTY_ID.modifiedAt, schema)).toBe('left')
+      expect(defaultAlignFor(FILEDATA.modifiedAt.id, schema)).toBe('left')
     })
 
     it('falls back to left for an unknown column', () => {

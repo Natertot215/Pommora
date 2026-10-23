@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { menuDropLine } from '@pommora/uix/Menus'
-import { RESERVED_PROPERTY_ID } from './properties'
+import { FILEDATA } from './properties'
 import { nexusReorderIndex, type PaneDrop, paneSpec } from './paneDrop'
 
 const r = (id: string, top: number, bottom: number): Row => ({
@@ -111,7 +111,7 @@ describe('paneSpec — the visibility pane', () => {
     assigned: [0, 50],
     all: [50, 100],
   })
-  const pane = { assigned: ['a', 'b'], ordersAll: false, pinned: RESERVED_PROPERTY_ID.title }
+  const pane = { assigned: ['a', 'b'], ordersAll: false, pinned: FILEDATA.title.id }
   const at = (id: string, y: number) => drive(pane, g, id, y)
 
   it('reorders a shown row within the properties region', () => {
@@ -134,17 +134,14 @@ describe('paneSpec — the visibility pane', () => {
   })
 
   it('never hides Title — a drop into the hidden zone is a no-op', () => {
-    const withTitle = geometry(
-      [r(RESERVED_PROPERTY_ID.title, 0, 20), r('b', 20, 40), r('h', 60, 80)],
-      {
-        assigned: [0, 50],
-        all: [50, 100],
-      },
-    )
+    const withTitle = geometry([r(FILEDATA.title.id, 0, 20), r('b', 20, 40), r('h', 60, 80)], {
+      assigned: [0, 50],
+      all: [50, 100],
+    })
     const s = drive(
-      { ...pane, assigned: [RESERVED_PROPERTY_ID.title, 'b'] },
+      { ...pane, assigned: [FILEDATA.title.id, 'b'] },
       withTitle,
-      RESERVED_PROPERTY_ID.title,
+      FILEDATA.title.id,
       70,
     )
     expect(s.slot).toBeNull()

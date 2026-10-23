@@ -59,7 +59,7 @@ import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import {
   chipRegion,
   hiddenRow,
@@ -269,11 +269,13 @@ export function GroupFrame({
             row={pickerRow(
               'layers',
               'Sub-Group',
-              subGroup?.property_id ?? '_location',
-              [{ value: '_location', label: 'Location', icon: 'folder' }, ...propertyOptions],
+              subGroup?.property_id ?? FILEDATA_TARGETS.location.id,
+              [targetOption(FILEDATA_TARGETS.location), ...propertyOptions],
               (v) =>
                 saveSub(
-                  v === '_location' ? undefined : { property_id: v, order_mode: 'configured' },
+                  v === FILEDATA_TARGETS.location.id
+                    ? undefined
+                    : { property_id: v, order_mode: 'configured' },
                 ),
             )}
           />

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { columnLabel } from './columnLabel'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../properties'
+import { FILEDATA, type PropertyDefinition } from '../properties'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
@@ -11,10 +11,10 @@ const schema: PropertyDefinition[] = [
 const NO_CONTEXTS = new Map()
 
 describe('columnLabel', () => {
-  it('resolves reserved built-in columns', () => {
-    expect(columnLabel(RESERVED_PROPERTY_ID.title, schema, NO_CONTEXTS)).toBe('Title')
-    expect(columnLabel(RESERVED_PROPERTY_ID.createdAt, schema, NO_CONTEXTS)).toBe('Creation Time')
-    expect(columnLabel(RESERVED_PROPERTY_ID.modifiedAt, schema, NO_CONTEXTS)).toBe('Last Modified')
+  it('names each Filedata column', () => {
+    expect(columnLabel(FILEDATA.title.id, schema, NO_CONTEXTS)).toBe('Title')
+    expect(columnLabel(FILEDATA.createdAt.id, schema, NO_CONTEXTS)).toBe('Creation Time')
+    expect(columnLabel(FILEDATA.modifiedAt.id, schema, NO_CONTEXTS)).toBe('Last Modified')
   })
 
   it('resolves a Context column through the registry, and an unregistered one falls to its id', () => {

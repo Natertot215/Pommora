@@ -1,17 +1,16 @@
 import {
   type ColumnType,
+  FILEDATA,
+  type Filedata,
   isUserType,
   PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyType,
-  RESERVED_PROPERTY_ID,
-  STAMP_TYPE,
 } from '../properties'
 import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
 import type { NexusTree } from '../../Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
-import { RESERVED_LABEL } from './columnLabel'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 interface TypeMeta {
@@ -20,7 +19,7 @@ interface TypeMeta {
 }
 
 const TYPE_META: Record<ColumnType, TypeMeta> = {
-  title: { label: 'Title', icon: 'text-align-justify' },
+  title: { label: FILEDATA.title.label, icon: 'text-align-justify' },
   text: { label: 'Text', icon: 'text-align-start' },
   number: { label: 'Number', icon: 'hash' },
   checkbox: { label: 'Checkbox', icon: 'square-check' },
@@ -31,8 +30,8 @@ const TYPE_META: Record<ColumnType, TypeMeta> = {
   link: { label: 'Link', icon: 'link' },
   file: { label: 'File', icon: 'file-chart-column' },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
-  createdTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
-  lastEditedTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'repeat' },
+  createdTime: { label: FILEDATA.createdAt.label, icon: 'clock-plus' },
+  lastEditedTime: { label: FILEDATA.modifiedAt.label, icon: 'repeat' },
 }
 
 export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
@@ -61,19 +60,18 @@ export interface PaneTarget {
   icon: string
 }
 
-export const TITLE_TARGET: PaneTarget = {
-  id: RESERVED_PROPERTY_ID.title,
-  label: TYPE_META.title.label,
-  icon: TYPE_META.title.icon,
+// Location has no column type, so its glyph is named here.
+const filedataTarget = ({ id, label, type }: Filedata): PaneTarget => ({
+  id,
+  label,
+  icon: type ? TYPE_META[type].icon : 'folder',
+})
+export const FILEDATA_TARGETS = {
+  title: filedataTarget(FILEDATA.title),
+  createdAt: filedataTarget(FILEDATA.createdAt),
+  modifiedAt: filedataTarget(FILEDATA.modifiedAt),
+  location: filedataTarget(FILEDATA.location),
 }
-export const LOCATION_TARGET: PaneTarget = {
-  id: RESERVED_PROPERTY_ID.location,
-  label: 'Location',
-  icon: 'folder',
-}
-export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
-  type ? [{ id, label: TYPE_META[type].label, icon: TYPE_META[type].icon }] : [],
-)
 
 export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>
   [...contextsByIdOf(tree)].map(([id, c]) => ({ id, label: c.title, icon: c.icon }))

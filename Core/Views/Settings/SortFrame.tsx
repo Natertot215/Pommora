@@ -13,12 +13,7 @@ import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'
-import {
-  STAMP_TARGETS,
-  schemaTargets,
-  TITLE_TARGET,
-  targetOption,
-} from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 
 type Direction = SortCriterion['direction']
@@ -86,7 +81,12 @@ export function SortFrame({
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
-  const targets = [TITLE_TARGET, ...STAMP_TARGETS, ...schemaTargets(schema, () => true)]
+  const targets = [
+    FILEDATA_TARGETS.title,
+    FILEDATA_TARGETS.createdAt,
+    FILEDATA_TARGETS.modifiedAt,
+    ...schemaTargets(schema, () => true),
+  ]
 
   const pickPrimary = (id: string | null): void => {
     if (id === null) {
