@@ -5,6 +5,7 @@ import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
+  defaultStatusSeed,
   editProperty,
   keyFormatHolders,
   renameProperty,
@@ -20,9 +21,10 @@ import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
+import { KEY_REFUSAL } from './validation'
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
-import { KEY_REFUSAL, type PropertyDraft } from './properties'
+import type { PropertyDraft } from './properties'
 import { ok } from '../Contract/result'
 
 vi.mock('./propertyJournal', async (importOriginal) => {
@@ -74,6 +76,20 @@ describe('the registry file is never replaced by a failed read', () => {
     const after = await readJsonAt<RegistryFile>(registryFilePath())
     expect(after.defs.prop_mystery).toEqual({ garbage: true })
     expect((await readRegistry(root)).defs.prop_mystery).toBeUndefined()
+  })
+})
+
+describe('status seed relabel', () => {
+  it('seeds Open/Active/Done with value=title and group colors', () => {
+    const g = defaultStatusSeed()
+    expect(g.map((x) => x.id)).toEqual(['upcoming', 'in_progress', 'done'])
+    expect(g.map((x) => x.label)).toEqual(['Open', 'Active', 'Done'])
+    for (const grp of g) {
+      expect(grp.options).toHaveLength(1)
+      expect(grp.options[0].key).toBe(grp.label)
+      expect(grp.options[0].label).toBe(grp.label)
+      expect(grp.options[0].color).toBe(grp.color)
+    }
   })
 })
 

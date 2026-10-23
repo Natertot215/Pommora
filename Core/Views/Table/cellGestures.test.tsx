@@ -502,7 +502,7 @@ describe('open actions + row-click narrowing', () => {
 
 describe('PropertyPicker (direct mount) — seed values', () => {
   it('a seed status def shows its option values (values show regardless of name)', async () => {
-    const { defaultStatusSeed } = await import('../../Properties/properties')
+    const { defaultStatusSeed } = await import('../../Properties/registryProperty')
     const seedDef: PropertyDefinition = {
       id: 'prop_seed',
       label: 'Status',

@@ -2,12 +2,11 @@ import {
   byKey,
   isReservedPropertyId,
   isUserType,
-  KEY_REFUSAL,
+  itemCount,
   optionGroupsOf,
   optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
-  RESERVED_NAME_PREFIX,
   type StatusGroup,
   withOptionGroups,
 } from './properties'
@@ -15,6 +14,19 @@ import { fail, ok, type Result } from '../Contract/result'
 import { normalizeTitle } from '../Paths/caseFold'
 import { PAGE_MODELED_KEYS } from '../Nexus/identityMark'
 import { SPACE_MODELED_KEYS } from '../Contexts/spaceSidecar'
+
+const RESERVED_NAME_PREFIX = '$'
+
+export const KEY_REFUSAL = {
+  empty: 'A name cannot be empty.',
+  reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
+  reserved: 'Name is taken by an app-managed key.',
+  duplicate: (label: string) => `A property named "${label}" already exists.`,
+  duplicateKey: (key: string) => `A property already writes "${key}" to files.`,
+  noKey: 'Properties cannot contain an invalid name.',
+  held: (from: string, to: string, n: number) =>
+    `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
+} as const
 
 const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
   [...PAGE_MODELED_KEYS, ...SPACE_MODELED_KEYS].map(normalizeTitle),

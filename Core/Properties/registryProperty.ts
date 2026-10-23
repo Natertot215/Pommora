@@ -1,19 +1,18 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { validateDefinition, validateName } from './validation'
+import { KEY_REFUSAL, validateDefinition, validateName } from './validation'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { mapOptions } from './optionModel'
 import {
-  defaultStatusSeed,
-  defaultSelectSeed,
-  KEY_REFUSAL,
   optionGroupsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyDraft,
+  type SelectOption,
+  type StatusGroup,
   withOptionGroups,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
@@ -30,6 +29,31 @@ import {
   type SchemaCascade,
   type SchemaJournal,
 } from './propertyJournal'
+
+export function defaultStatusSeed(): StatusGroup[] {
+  return [
+    {
+      id: 'upcoming',
+      label: 'Open',
+      color: 'grey',
+      options: [{ key: 'Open', label: 'Open', color: 'grey', group_id: 'upcoming' }],
+    },
+    {
+      id: 'in_progress',
+      label: 'Active',
+      color: 'blue',
+      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+    },
+    {
+      id: 'done',
+      label: 'Done',
+      color: 'green',
+      options: [{ key: 'Done', label: 'Done', color: 'green', group_id: 'done' }],
+    },
+  ]
+}
+
+const defaultSelectSeed = (): SelectOption[] => [{ key: 'Option 1', label: 'Option 1' }]
 
 const withOptionKeys = (def: PropertyDefinition): PropertyDefinition =>
   withOptionGroups(

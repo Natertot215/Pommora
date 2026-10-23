@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
+  KEY_REFUSAL,
   linkKeysOf,
   validateName,
   validateDefinition,
   validateOptionValues,
   withUniqueOptions,
 } from './validation'
-import { KEY_REFUSAL, type PropertyDefinition } from './properties'
+import type { PropertyDefinition } from './properties'
 
 const def = (
   over: Partial<PropertyDefinition> & {

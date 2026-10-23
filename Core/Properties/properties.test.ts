@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { defaultStatusSeed } from './registryProperty'
 import {
   byKey,
   LINK_DISPLAYS,
@@ -6,7 +7,6 @@ import {
   typeIds,
   isReservedPropertyId,
   isUserType,
-  defaultStatusSeed,
   groupable,
   optionsOf,
   pickKindOf,
@@ -267,7 +267,7 @@ describe('optionsOf', () => {
     expect(optionsOf(undefined)).toEqual([])
   })
 
-  it('reads a status def from its groups, ignoring a stale select_options left by a type change', () => {
+  it('reads a status def from its groups, ignoring a stale select_options a hand edit left', () => {
     const def = {
       id: 'p',
       label: 'x',
@@ -297,20 +297,6 @@ describe('an option label', () => {
     expect(
       withOptionGroups(def, [{ id: SELECT_GROUP, label: '', color: '', options }]).select_options,
     ).toEqual([{ key: 'a', label: 'A' }])
-  })
-})
-
-describe('status seed relabel', () => {
-  it('seeds Open/Active/Done with value=title and group colors', () => {
-    const g = defaultStatusSeed()
-    expect(g.map((x) => x.id)).toEqual(['upcoming', 'in_progress', 'done'])
-    expect(g.map((x) => x.label)).toEqual(['Open', 'Active', 'Done'])
-    for (const grp of g) {
-      expect(grp.options).toHaveLength(1)
-      expect(grp.options[0].key).toBe(grp.label)
-      expect(grp.options[0].label).toBe(grp.label)
-      expect(grp.options[0].color).toBe(grp.color)
-    }
   })
 })
 

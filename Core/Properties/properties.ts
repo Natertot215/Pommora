@@ -246,20 +246,7 @@ export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
 
 export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
 
-export const RESERVED_NAME_PREFIX = '$'
-
 export const itemCount = (n: number): string => `${n} ${n === 1 ? 'Item' : 'Items'}`
-
-export const KEY_REFUSAL = {
-  empty: 'A name cannot be empty.',
-  reservedPrefix: `A name cannot start with ${RESERVED_NAME_PREFIX} or <.`,
-  reserved: 'Name is taken by an app-managed key.',
-  duplicate: (label: string) => `A property named "${label}" already exists.`,
-  duplicateKey: (key: string) => `A property already writes "${key}" to files.`,
-  noKey: 'Properties cannot contain an invalid name.',
-  held: (from: string, to: string, n: number) =>
-    `${itemCount(n)} ${n === 1 ? 'holds' : 'hold'} both "${from}" and "${to}".`,
-} as const
 
 /** An option without its own color wears its group's. */
 export const groupOptions = (g: StatusGroup): StatusOption[] =>
@@ -271,7 +258,7 @@ function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefine
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
 
-/** Keyed on the DECLARED type, never on which array happens to be present — a type change retains the array it moved away from, so a Status property can still carry a stale select_options. */
+/** Keyed on the DECLARED type, never on which array happens to be present, so a stale `select_options` a hand edit leaves on a Status property is ignored. */
 export const optionsOf = (
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
 ): (SelectOption | StatusOption)[] =>
@@ -300,31 +287,4 @@ export function withOptionGroups(
   if (PROPERTY_TYPES[def.type].options === 'status') return { ...def, status_groups: groups }
   const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => o)
   return { ...def, select_options }
-}
-
-export function defaultStatusSeed(): StatusGroup[] {
-  return [
-    {
-      id: 'upcoming',
-      label: 'Open',
-      color: 'grey',
-      options: [{ key: 'Open', label: 'Open', color: 'grey', group_id: 'upcoming' }],
-    },
-    {
-      id: 'in_progress',
-      label: 'Active',
-      color: 'blue',
-      options: [{ key: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
-    },
-    {
-      id: 'done',
-      label: 'Done',
-      color: 'green',
-      options: [{ key: 'Done', label: 'Done', color: 'green', group_id: 'done' }],
-    },
-  ]
-}
-
-export function defaultSelectSeed(): SelectOption[] {
-  return [{ key: 'Option 1', label: 'Option 1' }]
 }

@@ -5,7 +5,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { fail, ok, type Result } from '../../Contract/result'
 import { stubDialer } from '../../vitest.setup'
 import { dateDefaults } from '../columnStyles'
-import { defaultStatusSeed, type PropertyDefinition } from '../properties'
+import type { PropertyDefinition } from '../properties'
+import { defaultStatusSeed } from '../registryProperty'
 import { separator } from '@pommora/uix/Menus/menu-row.css'
 import {
   PropertyPicker,

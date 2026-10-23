@@ -5,7 +5,8 @@ import { currentNotification } from '../../Interface/Notifications/notifications
 import { ok } from '../../Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { defaultStatusSeed, type PropertyDefinition } from '../properties'
+import type { PropertyDefinition } from '../properties'
+import { defaultStatusSeed } from '../registryProperty'
 import {
   firePointer,
   pressEscape,
