@@ -62,8 +62,8 @@ Ratify the plan, or tell me what to change.
 
 ### Where It Stands
 
-- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,427 changes with no mismatches and skips 7 that land only if a speed measurement fails.
-- **The Numbers:** about −759 production lines if every speed measurement passes; about −692 if F3 fails, and about −636 if all three fail. The count stays below zero after every phase, closest at about −4 after Phase 12 if F3 fails. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
+- **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,533 changes with no mismatches and skips 9 that land only if a speed measurement fails.
+- **The Numbers:** about −546 production lines if every speed measurement passes; about −470 if F3 fails, and about −408 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 12 (about +128) before Phase 14 brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +209 after Phase 12) before Phase 16A brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
 - **The Dry Run:** the whole plan was applied in a throwaway copy and type-checked at every phase end. Phase 1 compiles clean; from Phase 2 on, each phase end shows new errors, about 120 in app code and more in tests, mostly from steps the plan states in words, like rewriting a test. Execution fixes these in the real code, where each phase's checks prove the fix, so the rule that every phase leaves a working state is true at execution rather than on paper.
 
@@ -117,7 +117,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** The screen keeps undo's memory: it notes what it last read of the page before the change, and undo sends that back. That's close to the file but not exact. A property written bare (just `Status:` with nothing after it) comes back as `Status: null`. Undoing a Context pick on a tag naming a Space Pommora can't find, such as an Obsidian typo, deletes the unknown names. A second edit made before the screen catches up can make undo send back the screen's guess. Giving a Link value a new display name also gives the linked page that alias, and undo leaves the alias behind.
 
-**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. Also: LC-16.
+**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. An undo that can't reach a file offers Try Again, which puts back only what it missed, so it never overwrites an edit you made since. Also: LC-16.
 
 **Your Calls:**
 - [E-1] Undo puts back what the file held, recorded by the part of Pommora that writes the file.
@@ -142,7 +142,9 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 - Clearing an option that misses pages offers Try Again, which clears the pages still holding that option; a page you've since set to another option keeps it, and one you've set back to the cleared option is cleared with the rest.
 - A change made while a rename is still unfinished, such as renaming an option while Priority's rename owes two pages, counts those two pages in its own notice with Try Again instead of reporting success.
 - A page Pommora can't safely rewrite (no ID, an ID another page shares, or malformed properties at the top) counts as unfinished with Try Again for every change: renames, deletes, option changes, and Context and Space changes, not only Remove.
-- A damaged settings file goes to your computer's Trash when Pommora rebuilds it, instead of staying in the Nexus as a hidden `.bad-` copy; the notes file follows the same rule, and it's removed once nothing is owed.
+- Deleting a page, Collection, or Set, emptying the Trash, moving a page or Set, and restoring something also note what they owe: a link or saved view they can't reach is finished by the same Try Again, and a crash halfway is finished at the next open. Moving a page again before that carries the missed links to where it ends up.
+- Clearing the exclusion cache, and restoring or emptying several Trash entries at once, offer Try Again when something was missed.
+- A damaged settings file goes to your computer's Trash when Pommora rebuilds it, instead of staying in the Nexus as a hidden `.bad-` copy; the notes file follows the same rule, and it's removed once nothing is owed. A notes file damaged before Pommora could read it says once that its unfinished work was lost, where today that loss is silent.
 
 **Your Calls:**
 - [B-1] Every property, Context, and Space keeps its own note; dropping the notes was rejected, since nothing could finish a change the app quit during.
@@ -290,14 +292,15 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 #### The Trash, the Archive, and Confirmations
 
-**Today:** Every remove, clear, and delete question already lives in one place shared with the Trash and the Archive, but the counting words are split across two places, and deleting a property or option held by nothing still asks and says "stripped from 0 Items." An option's "Remove" deletes it for good, while Remove everywhere else can be undone. Every Trash entry records whether it's partial, meaning the delete couldn't record everything it touched, and nothing shows it. A taken name quietly becomes "Name (2)."
+**Today:** Every remove, clear, and delete question already lives in one place shared with the Trash and the Archive, but the counting words are split across two places, and deleting a property or option held by nothing still asks and says "stripped from 0 Items." An option's "Remove" deletes it for good, while Remove everywhere else can be undone. Every Trash entry records whether it's partial, meaning the delete couldn't record everything it touched, and nothing shows it. A taken name quietly becomes "Name (2)." Label Format and Value Format changes ask before rewriting your pages, while a property or option rename rewrites the same pages without asking.
 
-**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. A restore that takes a numbered name says so, and so does the Properties pane's `+` when its default name is taken ("Created “New Select (2)”."). Emptying a deleted property from the Trash drops it from every Collection still listing it, one restored since or one still in the Trash. Also: LC-13, LC-37.
+**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. A restore that takes a numbered name says so, and so does every create, a property, page, Collection, Set, Context, or Space, when its name is taken ("Created “New Page 2”."). Any change that rewrites a key or option word on your pages asks first with the same count, a rename included, while changing only the display label asks nothing. A Trash entry is marked partial only when something it held truly couldn't be recorded. Emptying a deleted property from the Trash drops it from every Collection still listing it, one restored since or one still in the Trash. Also: LC-13, LC-37.
 
 **Your Calls:**
 - [O-1] An option's Remove reads Delete, so Remove only names something that can be undone or restored.
 - [O-2] Every confirmation counts its Items correctly, zero included, in one vocabulary from one home the Archive and the Trash share.
-- [O-4] Creating a property under a taken name tells you it took a numbered name.
+- [O-4] Creating anything under a taken name tells you it took a numbered name (your ruling: everywhere).
+- [Ruled] Keys ask, labels don't: every change that rewrites a key or option word on pages asks with the existing count, and a label-only change asks nothing.
 - [N-1] The partial mark shows on the Trash entry, and a partial restore tells you so.
 - [N-2] Deleting a property keeps creating a Trash entry in either Trash mode.
 
