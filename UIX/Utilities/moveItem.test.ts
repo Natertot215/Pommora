@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { moveBefore, nextOrder } from './moveItem'
+import { moveBefore, nextOrder, resolveRowOrder } from './moveItem'
 
 const items = (...ids: string[]) => ids.map((id) => ({ id }))
 const idOf = (item: { id: string }): string => item.id
@@ -36,5 +36,23 @@ describe('nextOrder', () => {
   it('falls back to append on an unknown beforeId or empty group', () => {
     expect(nextOrder(['a', 'b'], 'c', 'z')).toEqual(['a', 'b', 'c'])
     expect(nextOrder([], 'd', null)).toEqual(['d'])
+  })
+})
+
+describe('resolveRowOrder', () => {
+  const rows = [{ k: 'a' }, { k: 'b' }, { k: 'c' }]
+  const keyOf = (i: { k: string }): string => i.k
+
+  it('puts the listed first in listed order and the unlisted after in arrival order', () => {
+    expect(resolveRowOrder(rows, keyOf, ['c', 'a']).map(keyOf)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('ignores a listed key no item answers', () => {
+    expect(resolveRowOrder(rows, keyOf, ['z', 'b']).map(keyOf)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('is identity over an empty or absent list', () => {
+    expect(resolveRowOrder(rows, keyOf, []).map(keyOf)).toEqual(['a', 'b', 'c'])
+    expect(resolveRowOrder(rows, keyOf).map(keyOf)).toEqual(['a', 'b', 'c'])
   })
 })
