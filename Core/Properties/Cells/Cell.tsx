@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import type { ColumnStyle } from '../columnStyles'
-import { findOption, isBlankValue, type PropertyValue } from '../propertyValue'
+import { findOption, optionLabel, isBlankValue, type PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
@@ -78,7 +78,7 @@ export function Cell({
     }
     case 'multiSelect':
       return (
-        <Chips value={v} label={(val) => val} commit={commit}>
+        <Chips value={v} label={(val) => optionLabel(def, val)} commit={commit}>
           {(val) => (
             <OptionChip
               type={dt}

@@ -1,7 +1,7 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { PropertyDefinition, PropertyType } from '../../Properties/properties'
-import { findOption } from '../../Properties/propertyValue'
+import { findOption, optionLabel } from '../../Properties/propertyValue'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'
@@ -79,7 +79,7 @@ export function headContextOf(
       date
         ? { label: date(value), face: { kind: 'date', icon } }
         : {
-            label: value,
+            label: optionLabel(def, value),
             face: {
               kind: 'option',
               type: def?.type,

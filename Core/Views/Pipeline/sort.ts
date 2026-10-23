@@ -3,8 +3,9 @@
 import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
-import { optionLabels, type PropertyDefinition, specOf } from '../../Properties/properties'
+import { optionIds, type PropertyDefinition, specOf } from '../../Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { optionLabel } from '../../Properties/propertyValue'
 import { fileName, linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
 
@@ -47,7 +48,12 @@ function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
   return v.kind === 'checkbox' && v.value ? 1 : 0
 }
 
-function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
+function sortText(
+  row: ViewRow,
+  propertyId: string,
+  schema: PropertyDefinition[],
+  def: PropertyDefinition | undefined,
+): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
     case 'text':
@@ -55,7 +61,7 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
     case 'link':
       return linkDisplayText(v.value)
     case 'multiSelect':
-      return v.value.join(',')
+      return v.value.map((id) => optionLabel(def, id)).join(',')
     case 'file':
       // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the leading bracket and order by whatever follows it.
       return v.value.map(fileName).join(',')
@@ -71,13 +77,13 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
+  const def = schema.find((d) => d.id === c.property_id)
   switch (specOf(declaredType(c.property_id, schema))?.kind) {
     case 'select': {
       // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.
-      const def = schema.find((d) => d.id === c.property_id)
       const custom = c.order?.length ? c.order : undefined
       const listed = new Set(custom)
-      const tail = (def ? optionLabels(def) : []).filter((v) => !listed.has(v))
+      const tail = (def ? optionIds(def) : []).filter((v) => !listed.has(v))
       const order = Object.fromEntries([...(custom ?? []), ...tail].map((v, i) => [v, i]))
       return {
         extract: (r) => rank(r, c.property_id, order, schema),
@@ -95,7 +101,7 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'text':
     case 'multiSelect':
     case 'file':
-      return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }
+      return { extract: (r) => sortText(r, c.property_id, schema, def), less: ciLess, ascending }
     case 'context':
     case undefined:
       return null

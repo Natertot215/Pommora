@@ -1,8 +1,8 @@
 import type { PropertyValue } from '../propertyValue'
 import type { OptionPickKind } from '../properties'
 
-export function massSelected(labels: string[], rows: string[][]): string[] {
-  return labels.filter((v) => rows.every((r) => r.includes(v)))
+export function massSelected(values: string[], rows: string[][]): string[] {
+  return values.filter((v) => rows.every((r) => r.includes(v)))
 }
 
 export function massPickCommits(

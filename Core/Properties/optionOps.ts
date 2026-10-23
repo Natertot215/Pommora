@@ -11,7 +11,7 @@ import {
 import { editCaches } from './propertyCache'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
 import { errText, ok, fail, type Result } from '../Contract/result'
-import { findOption, optionList } from './propertyValue'
+import { optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { addOption, applyOptionEdit, mapOptions, type OptionEdit } from './optionModel'
@@ -23,6 +23,7 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
   SELECT_GROUP,
+  type SelectOption,
   type StatusGroup,
   withOptionGroups,
 } from './properties'
@@ -56,6 +57,8 @@ const NO_OPTIONS = fail(
 
 const optionDef = (def: PropertyDefinition | undefined): Result<PropertyDefinition> =>
   !def ? NO_PROPERTY : PROPERTY_TYPES[def.type].options ? ok(def) : NO_OPTIONS
+const labelledOption = (def: PropertyDefinition, label: string): SelectOption | undefined =>
+  optionsOf(def).find((o) => o.label === label)
 
 function editStoredOptions(
   def: PropertyDefinition,
@@ -68,7 +71,7 @@ function editStoredOptions(
 }
 
 function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
-  if ('option' in e && !findOption(def, e.option)) return NO_OPTION
+  if ('option' in e && !labelledOption(def, e.option)) return NO_OPTION
   if ('groupId' in e && !optionGroupsOf(def).some((g) => g.id === e.groupId)) return NO_GROUP
   if (e.op === 'relabelGroup' && PROPERTY_TYPES[def.type].options !== 'status') return NO_GROUP
   if (e.op === 'relabelGroup' && !e.label.trim())
@@ -212,11 +215,11 @@ async function resolveForCascade(
   root: string,
   propertyId: string,
   label: string,
-): Promise<Result<{ def: PropertyDefinition; key: string }>> {
+): Promise<Result<{ def: PropertyDefinition; option: SelectOption }>> {
   const found = optionDef((await readRegistry(root)).defs[propertyId])
   if (!found.ok) return found
-  const option = findOption(found.value, label)
-  return option ? ok({ def: found.value, key: option.key }) : NO_OPTION
+  const option = labelledOption(found.value, label)
+  return option ? ok({ def: found.value, option }) : NO_OPTION
 }
 
 export const valueEditRewrite =
@@ -277,7 +280,7 @@ async function rekeyOptions(
     const found = optionDef(registry.defs[record.id])
     if (!found.ok) return { result: found }
     const def = found.value
-    if (record.labels && !findOption(def, record.labels[0])) return { result: NO_OPTION }
+    if (record.labels && !labelledOption(def, record.labels[0])) return { result: NO_OPTION }
     const current = value_format ? { ...def, value_format } : def
     const next = editStoredOptions(current, stored[record.id], (groups) =>
       mapOptions(groups, (o) => ({ ...o, key: keys.get(o.key) ?? o.key, label: relabel(o.label) })),
@@ -304,12 +307,12 @@ export function renameOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, oldLabel)
     if (!r.ok) return r
-    const { def, key } = r.value
+    const { def, option } = r.value
     const to = formatKey(newLabel, def.value_format)
     return rekeyOptions(root, {
       op: 'option-rename',
       id: propertyId,
-      keys: key === to ? [] : [[key, to]],
+      keys: option.key === to ? [] : [[option.key, to]],
       labels: [oldLabel, newLabel],
     })
   })
@@ -374,7 +377,7 @@ export function clearOption(root: string, propertyId: string, label: string): Pr
     if (option && journal.id === propertyId) return OWED
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const reach = await optionCascade(root, r.value.def, new Map([[r.value.key, null]]))
+    const reach = await optionCascade(root, r.value.def, new Map([[r.value.option.key, null]]))
     return ok({ cascade: reachReport(reach) })
   })
 }
@@ -386,7 +389,11 @@ export async function optionHolders(
 ): Promise<Result<number>> {
   const r = await resolveForCascade(root, propertyId, label)
   if (!r.ok) return r
-  const { files, plan } = await valueEditPlan(root, r.value.def, new Map([[r.value.key, null]]))
+  const { files, plan } = await valueEditPlan(
+    root,
+    r.value.def,
+    new Map([[r.value.option.key, null]]),
+  )
   return ok(await sweepCount(root, files, plan))
 }
 
@@ -398,12 +405,12 @@ export function deleteOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, label)
     if (!r.ok) return r
-    const { def, key } = r.value
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, key }
+    const { def, option } = r.value
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, key: option.key }
     if (!(await writeSchemaJournal(root, record))) return OWED
-    const reach = await optionCascade(root, def, new Map([[key, null]]), [label, null])
+    const reach = await optionCascade(root, def, new Map([[option.key, null]]), [label, null])
     if (!reach.skipped) {
-      const dropped = await dropOptionFromDef(root, propertyId, key)
+      const dropped = await dropOptionFromDef(root, propertyId, option.key)
       if (!dropped.ok) return dropped
       await clearSchemaJournal(root, record)
     }

@@ -1,5 +1,5 @@
 import { PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
-import { findOption } from '../../Properties/propertyValue'
+import { findOption, optionLabel } from '../../Properties/propertyValue'
 import { heading, menuDropLine, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
@@ -52,7 +52,7 @@ function sectionsOf(
   const reversed = group.order_mode === 'reversed'
   const groups = def.status_groups ?? []
   return (reversed ? [...groups].reverse() : groups).map((g) => {
-    const values = g.options.map((o) => o.label)
+    const values = g.options.map((o) => o.id)
     return { key: g.id, label: g.label, values: reversed ? values.reverse() : values }
   })
 }
@@ -82,7 +82,7 @@ export function OptionOrderList({
           if (next) onSave?.(next)
         },
         line: menuDropLine,
-        label: (v) => v,
+        label: (v) => optionLabel(def, v),
         chip,
         watch: [def, group.order_mode, group.order],
       })}
@@ -95,7 +95,7 @@ export function OptionOrderList({
               ? [
                   <LineRow key={v} id={v} className={cx(optionRow, isHidden?.(v) && hiddenRow)}>
                     {chip(v)}
-                    {rowEye(v, v, { isHidden, onToggleHidden })}
+                    {rowEye(optionLabel(def, v), v, { isHidden, onToggleHidden })}
                   </LineRow>,
                 ]
               : [],
