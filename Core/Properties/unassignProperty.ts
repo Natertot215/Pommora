@@ -16,15 +16,15 @@ import { type ConfigReach, NO_REACH, propertyClear, reachConfig } from '../Nexus
 
 const NOTHING_TO_REMOVE = ok<ConfigReach>(NO_REACH)
 
-export function removeProperty(
+export function unassignProperty(
   root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<ConfigReach>> {
-  return serializeSchemaOp(root, () => removeInner(root, collectionFolder, propertyId))
+  return serializeSchemaOp(root, () => unassignInner(root, collectionFolder, propertyId))
 }
 
-async function removeInner(
+async function unassignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,

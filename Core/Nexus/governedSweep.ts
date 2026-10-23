@@ -18,7 +18,10 @@ import { addressable, type NexusPages } from './heldPages'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { changedKeys, governedRoot, rewriteRaw } from './governedRoot'
+import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
+import type { PropertyDefinition } from '../Properties/properties'
+import { isBlankRaw } from '../Properties/propertyValue'
+import { landValue } from '../Files/rootValues'
 
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
@@ -188,4 +191,18 @@ export async function sweepRootsById<T>(
   })
   for (const file of skipped) asked.delete(file)
   return new Set(asked.values())
+}
+
+/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
+export async function refillValues(
+  root: string,
+  def: PropertyDefinition,
+  roots: NexusPages['byId'],
+  values: Record<string, unknown>,
+  frozen: Frozen,
+): Promise<Set<string>> {
+  return sweepRootsById(root, roots, values, (raw, value) => {
+    const { next } = reencode(def, value, frozen)
+    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
+  })
 }
