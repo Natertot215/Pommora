@@ -6,7 +6,7 @@ import { readJsonStrict, readKept, updateNexusFile } from '../Files/atomicWrite'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
-import { propertyDefinition, type PropertyDefinition } from './properties'
+import { PROPERTY_TYPES, propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import { admissible, validateName, withUniqueOptions } from './validation'
 
@@ -69,7 +69,7 @@ export const registryOf = (defs: PropertyDefinition[]): PropertyRegistry =>
   Object.fromEntries(defs.map((d) => [d.id, d]))
 
 export const linkDefsOf = (defs: readonly PropertyDefinition[]): PropertyDefinition[] =>
-  defs.filter((d) => d.type === 'link')
+  defs.filter((d) => PROPERTY_TYPES[d.type].connections === 'value')
 
 const OPTION_KEYS = ['select_options', 'status_groups'] as const
 

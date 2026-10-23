@@ -1,4 +1,4 @@
-import { propertyDefinition } from '../Properties/properties'
+import { PROPERTY_TYPES, propertyDefinition } from '../Properties/properties'
 import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
@@ -62,7 +62,8 @@ async function restoreInner(
       const at = roots.get(id)
       if ((at !== null && at?.kind !== 'page' && at?.kind !== 'space') || isBlankRaw(raw))
         return false
-      const entry = def.type === 'link' ? gonePageEntry(raw, frozen) : null
+      const entry =
+        PROPERTY_TYPES[def.type].connections === 'value' ? gonePageEntry(raw, frozen) : null
       if (entry === null) return true
       dropped.push({ page: id, property: def.id, value: entry })
       return false

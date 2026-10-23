@@ -4,7 +4,7 @@ import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { pickKindOf } from '../../Properties/properties'
+import { pickKindOf, specOf } from '../../Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -214,8 +214,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!row) return setValuePicker(null)
     if (valuePicker.revealOnCommit) return
     const cur = resolveFieldValue(row, valuePicker.column.id, ctx.schema)
-    const isCheckbox = ctx.schema.find((d) => d.id === valuePicker.column.id)?.type === 'checkbox'
-    if (isCompact(view) && isBlankValue(cur) && !isCheckbox) setValuePicker(null)
+    const draws = specOf(ctx.schema.find((d) => d.id === valuePicker.column.id)?.type)?.blankDraws
+    if (isCompact(view) && isBlankValue(cur) && !draws) setValuePicker(null)
   }, [valuePicker, rowById, ctx, view])
   useEffect(() => {
     if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)

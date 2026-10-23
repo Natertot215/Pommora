@@ -25,22 +25,26 @@ type FiledataType = 'title' | 'createdTime' | 'lastEditedTime'
 export type ColumnType = PropertyType | FiledataType
 
 // `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
+// `connections` names a type whose values hold connections: Link's whole value, or the links inside Text's prose.
 type TypeSpec = Readonly<{
   kind: ValueKind
   origin: 'user' | 'context' | 'filedata'
   groups?: true
   options?: 'select' | 'status'
+  connections?: 'value' | 'prose'
+  registersMembers?: true
+  blankDraws?: true
 }>
 
 export const PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>> = {
-  text: { kind: 'text', origin: 'user' },
+  text: { kind: 'text', origin: 'user', connections: 'prose' },
   number: { kind: 'number', origin: 'user' },
-  checkbox: { kind: 'checkbox', origin: 'user' },
+  checkbox: { kind: 'checkbox', origin: 'user', blankDraws: true },
   dateTime: { kind: 'dateTime', origin: 'user', groups: true },
   select: { kind: 'select', origin: 'user', groups: true, options: 'select' },
-  multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select' },
+  multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select', registersMembers: true },
   status: { kind: 'select', origin: 'user', groups: true, options: 'status' },
-  link: { kind: 'link', origin: 'user' },
+  link: { kind: 'link', origin: 'user', connections: 'value' },
   file: { kind: 'file', origin: 'user' },
   context: { kind: 'context', origin: 'context' },
   title: { kind: 'text', origin: 'filedata' },
@@ -50,6 +54,8 @@ export const PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>> = {
 
 export const isUserType = (t: string): t is PropertyType =>
   isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'
+
+export const CREATABLE_TYPES = Object.keys(PROPERTY_TYPES).filter(isUserType)
 
 export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string, D> =>
   new Map(Array.from(defs, (d) => [d.key, d]))

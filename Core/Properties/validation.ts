@@ -42,12 +42,14 @@ export function keyRefusal(word: string): string | null {
     : null
 }
 
-/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: Link and Text, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One lookup, built once per reader. */
+/** Which frontmatter keys hold links the graph relates and a rename rewrites, asked of a registry: a type that holds connections, and a key the registry hasn't typed unless Pommora keeps it; never File, whose references name assets. One lookup, built once per reader. */
 export const linkKeysOf = (defs: readonly PropertyDefinition[]): ((key: string) => boolean) => {
   const typed = byKey(defs)
   return (key) => {
     const type = typed.get(key)?.type
-    return type === undefined ? keyRefusal(key) === null : type === 'link' || type === 'text'
+    return type === undefined
+      ? keyRefusal(key) === null
+      : PROPERTY_TYPES[type].connections !== undefined
   }
 }
 

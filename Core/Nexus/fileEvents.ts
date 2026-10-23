@@ -55,7 +55,7 @@ import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
 import { spaceNodeFrom } from '../Contexts/spaceSidecar'
-import type { PropertyDefinition } from '../Properties/properties'
+import { PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
 import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesRegistry'
 import { stabilize } from './treeStabilize'
 import {
@@ -525,8 +525,11 @@ export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusT
       .filter((d) => {
         const p = prior[d.id]
         return (
-          d.type === 'multiSelect' &&
-          (p?.type !== 'multiSelect' || p.key !== d.key || p.value_format !== d.value_format)
+          PROPERTY_TYPES[d.type].registersMembers === true &&
+          (!p ||
+            !PROPERTY_TYPES[p.type].registersMembers ||
+            p.key !== d.key ||
+            p.value_format !== d.value_format)
         )
       })
       .map((d) => d.id),

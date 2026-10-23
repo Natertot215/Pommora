@@ -9,7 +9,7 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { linkWorld, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { byKey, type PropertyDefinition } from './properties'
+import { byKey, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import {
   encodeValue,
   type Frozen,
@@ -90,7 +90,7 @@ async function restoreCachedValues(
   const frozen = frozenWorld(linkWorld(tree, archived))
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
-    def.type === 'link'
+    PROPERTY_TYPES[def.type].connections === 'value'
       ? [...members.keys()].flatMap((id) => {
           const entry = gonePageEntry(cached[id], frozen)
           return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
