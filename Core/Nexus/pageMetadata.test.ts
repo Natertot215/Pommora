@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { mkdir, readdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, readJsonAt, seedNexus } from '../Testing/hostFs'
+import { dropLiveTree } from './liveTree'
+import { closeSession, openSession } from './session'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
@@ -8,6 +10,7 @@ import { contentIdAt } from './ids'
 import {
   copyPageMetadata,
   dropPageMetadata,
+  editPageAliases,
   readShard,
   updatePageMetadata,
   withShards,
@@ -125,6 +128,41 @@ describe('the writer', () => {
     expect((await stat(metadataShardPath(root, '09-2026'))).mtimeMs).toBe(past.getTime())
     await updatePageMetadata(root, SEP_A, { icon: null, locked: null })
     expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_A]: { pinned: true } } })
+  })
+
+  it('an alias add answers the edit that takes it back, and sending it restores the list', async () => {
+    const rel = 'Notes/One.md'
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: 'x' }),
+    )
+    await seedNexus(root, { assigned: { Notes: [] } })
+    await writeFile(join(root, rel), `---\nID: ${SEP_A}\n---\nb\n`)
+    await openSession(root)
+    onTestFinished(() => {
+      dropLiveTree()
+      closeSession()
+    })
+    const takenBack = async (held: string[], alias: string): Promise<unknown> => {
+      await updatePageMetadata(root, SEP_A, { aliases: held })
+      const added = await editPageAliases(root, rel, { op: 'add', alias })
+      if (!added.ok || added.value.undo?.op !== 'editAliases') throw new Error('no undo')
+      const { undo } = added.value
+      expect((await editPageAliases(root, undo.path, undo.edit)).ok).toBe(true)
+      expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_A]: { aliases: held } } })
+      return undo
+    }
+    expect(await takenBack(['other'], 'launch')).toEqual({
+      op: 'editAliases',
+      path: rel,
+      edit: { op: 'forget', alias: 'launch' },
+    })
+    expect(await takenBack(['Launch'], 'LAUNCH')).toEqual({
+      op: 'editAliases',
+      path: rel,
+      edit: { op: 'add', alias: 'Launch' },
+    })
   })
 
   it('refuses an ID that maps to no month', async () => {

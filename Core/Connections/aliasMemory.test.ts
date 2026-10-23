@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type AliasEdit, aliasEdit, applyAliasEdit, heldAliases } from './aliasMemory'
+import { type AliasEdit, addUndo, aliasEdit, applyAliasEdit, heldAliases } from './aliasMemory'
 
 const edit = (worn: string[], e: AliasEdit, title = 'Alpha') => applyAliasEdit(worn, e, title)
 
@@ -118,5 +118,20 @@ describe('a name a link can’t carry', () => {
   it.each(['a]b', 'two\nlines', 'cr\rhere'])('%j is never added or renamed to', (n) => {
     expect(edit(['x'], { op: 'add', alias: n })).toEqual(['x'])
     expect(edit(['x'], { op: 'rename', from: 'x', to: n })).toEqual(['x'])
+  })
+})
+
+describe('taking back an add', () => {
+  it('an appended alias is forgotten', () => {
+    expect(addUndo(['other'], 'launch', 'Page')).toEqual({ op: 'forget', alias: 'launch' })
+  })
+
+  it('a respelled alias gets its old spelling back', () => {
+    expect(addUndo(['Launch'], 'LAUNCH', 'Page')).toEqual({ op: 'add', alias: 'Launch' })
+  })
+
+  it('an add that changed nothing has nothing to take back', () => {
+    expect(addUndo(['launch'], ' launch ', 'Page')).toBeUndefined()
+    expect(addUndo([], 'page', 'Page')).toBeUndefined()
   })
 })

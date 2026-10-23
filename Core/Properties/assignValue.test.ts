@@ -41,6 +41,8 @@ const recorded = (req: MutateRequest): MutateOutcome =>
       }
     : {}
 
+const settled = () => new Promise((r) => setTimeout(r))
+
 let apply: Mock<ValueWriter['apply']>
 let mutate: Mock<ValueWriter['mutate']>
 let row: ViewRow
@@ -87,6 +89,7 @@ describe('assignValue', () => {
       { kind: 'select', value: 'blue' },
     )
     row = { ...rowOf({ id: 'page1', Tag: ['blue'] }), path: '/nexus/Notes/Moved.md' }
+    await settled()
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith(
       'page1',
@@ -112,6 +115,7 @@ describe('assignValue', () => {
       { kind: 'select', value: 'blue' },
     )
     row = rowOf({ id: 'page1', Tag: ['blue'] })
+    await settled()
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything(), undefined)
     expect(mutate).toHaveBeenLastCalledWith({
@@ -163,6 +167,7 @@ describe('assignValue', () => {
       spaceIds: ['space1'],
     })
     mutate.mockClear()
+    await settled()
     expect(undoValue(null)).toBe(true)
     expect(mutate.mock.calls).toEqual([[record]])
   })
@@ -184,6 +189,7 @@ describe('assignValue', () => {
       { id: 'prop_tag', kind: 'property' },
       { kind: 'select', value: 'blue' },
     )
+    await settled()
     apply.mockClear()
     mutate.mockClear()
     live.rowOf = () => undefined
@@ -201,6 +207,7 @@ describe('assignValue', () => {
         { id: 'prop_tag', kind: 'property' },
         { kind: 'select', value: 'blue' },
       )
+      await settled()
       expect(undoValue(null)).toBe(false)
     }
   })
@@ -222,6 +229,7 @@ describe('assignValue', () => {
     })
     await Promise.all(writes)
     mutate.mockClear()
+    await settled()
     expect(undoValue(null)).toBe(true)
     expect(mutate).toHaveBeenCalledTimes(2)
     expect(undoValue(null)).toBe(false)
@@ -232,7 +240,6 @@ describe('a landed Link value remembers the alias it shows', () => {
   const column = { id: 'prop_link', kind: 'property' } as const
   const link = (value: string) => ({ kind: 'link', value }) as const
   const remembered = () => mutate.mock.calls.filter(([req]) => req.op === 'editAliases')
-  const settled = () => new Promise((r) => setTimeout(r))
 
   beforeEach(() => {
     live.schema = [...schema, { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }]
@@ -263,6 +270,26 @@ describe('a landed Link value remembers the alias it shows', () => {
     expect(undoValue(null)).toBe(true)
     await settled()
     expect(mutate.mock.calls.map(([req]) => req.op)).toEqual(['putBack'])
+  })
+
+  it('an undo takes back the alias its write added', async () => {
+    const forget: MutateRequest = {
+      op: 'editAliases',
+      path: 'Notes/Alpha.md',
+      edit: { op: 'forget', alias: 'the notes' },
+    }
+    mutate.mockImplementation(async (req) =>
+      req.op === 'editAliases' ? { undo: forget } : recorded(req),
+    )
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    await settled()
+    mutate.mockClear()
+    expect(undoValue(null)).toBe(true)
+    await settled()
+    expect(mutate.mock.calls.map(([req]) => req)).toEqual([
+      { op: 'putBack', entries: [{ file: row.path, fieldId: 'prop_tag', before: BEFORE }] },
+      forget,
+    ])
   })
 
   it('a new spelling of the alias it showed is remembered', async () => {

@@ -63,7 +63,7 @@ const valueRequest = (
       }
     : { op: 'setProperty', path: row.path, propertyId: column.id, value }
 
-// A landed Link value newly showing an alias for a page gives that page the alias, as authoring one in a body does.
+// A landed Link value newly showing an alias for a page gives that page the alias, as authoring one in a body does, and its undo takes the alias back.
 function rememberedAlias(
   value: PropertyValue | null,
   prior: PropertyValue | null,
@@ -90,10 +90,10 @@ export function assignValue(
   const sent = send(w, target, column, value, valueRequest(target, column, value))
   if (!sent) return sent
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
-  const undone = sent.then((done) => {
+  const undone = sent.then(async (done) => {
     const remember = done && rememberedAlias(value, prior)
-    if (remember) void w.mutate(remember)
-    return done?.undo ? [done.undo] : []
+    const aliased = remember ? await w.mutate(remember) : null
+    return [done?.undo, aliased?.undo].filter((r): r is MutateRequest => r !== undefined)
   })
   let reverts: MutateRequest[] | undefined
   void undone.then((r) => {
@@ -111,7 +111,7 @@ export function assignValue(
         )
         reverted =
           send(live, current, column, prior, { op: 'putBack', entries }) !== undefined || reverted
-      }
+      } else if (reverted) void live.mutate(req)
     return reverted
   }
   pushUndo(() => {

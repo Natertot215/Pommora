@@ -7,7 +7,7 @@ import { liveTreeOf, NOT_HELD } from './liveTree'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
-import { type AliasEdit, applyAliasEdit } from '../Connections/aliasMemory'
+import { addUndo, applyAliasEdit, type AliasEdit } from '../Connections/aliasMemory'
 import { metadataShardFile, type PageMeta, type PageMetaPatch, pageMetaEntry } from './schemas'
 import { shardOf } from './ids'
 import { done, type MutateReply } from './mutateRequest'
@@ -170,10 +170,12 @@ export async function editPageAliases(
 ): Promise<MutateReply> {
   const page = pageAt(await liveTreeOf(root), relPath)
   if (!page) return NOT_HELD
-  return done(
-    await updatePageMetadata(root, page.id, (had) => {
-      const next = applyAliasEdit(had.aliases ?? [], e, page.title)
-      return { aliases: next.length ? next : null }
-    }),
-  )
+  let undo: AliasEdit | undefined
+  const written = await updatePageMetadata(root, page.id, (had) => {
+    if (e.op === 'add') undo = addUndo(had.aliases ?? [], e.alias, page.title)
+    const next = applyAliasEdit(had.aliases ?? [], e, page.title)
+    return { aliases: next.length ? next : null }
+  })
+  if (!written.ok) return written
+  return ok(undo ? { undo: { op: 'editAliases', path: relPath, edit: undo } } : {})
 }
