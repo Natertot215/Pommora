@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
+import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import {
@@ -277,6 +277,16 @@ describe('setContext reads the held tree', () => {
       expect(sc['<Classes>']).toEqual(['CS 161'])
       expect(sc.id).toBe('sp-pom')
       expect('modified_at' in sc).toBe(false)
+    })
+
+    it('a link the Space already holds leaves its file, and its modification time, alone', async () => {
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+      const past = new Date('2020-06-01T12:00:00Z')
+      await utimes(path, past, past)
+      const before = (await stat(path)).mtimeMs
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      expect((await stat(path)).mtimeMs).toBe(before)
     })
 
     const nearMiss = async (): Promise<string> => {

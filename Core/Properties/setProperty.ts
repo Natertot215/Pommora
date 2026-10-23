@@ -36,11 +36,7 @@ export async function setSpacePropertyOp(
   const value = requestedValue(req, def)
   const world = spaceWorldOf(await liveTreeOf(root))
   return done(
-    await writeSpaceSidecar(resolved.value, (raw) =>
-      value === undefined && !Object.hasOwn(raw, def.key)
-        ? null
-        : writtenRoot(raw, def.key, value, world),
-    ),
+    await writeSpaceSidecar(resolved.value, (raw) => writtenRoot(raw, def.key, value, world)),
   )
 }
 

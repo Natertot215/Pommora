@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, stat, mkdir, writeFile } from 'node:fs/promises'
+import { rm, readFile, stat, mkdir, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusDir } from '../Paths/paths'
@@ -81,6 +81,17 @@ describe('setProperty on a Space path', () => {
     expect((await stat(sidecarFile())).mtimeMs).toBe(before)
   })
 
+  it('re-picking the value a Space holds leaves the file, and its modification time, alone', async () => {
+    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(sidecarFile(), past, past)
+    const bytes = await readFile(sidecarFile(), 'utf8')
+    const before = Math.floor((await stat(sidecarFile())).mtimeMs / 1000)
+    expect((await write({ kind: 'select', value: 'Doing' })).ok).toBe(true)
+    expect(await readFile(sidecarFile(), 'utf8')).toBe(bytes)
+    expect(Math.floor((await stat(sidecarFile())).mtimeMs / 1000)).toBe(before)
+  })
+
   it('writes a property no Collection assigns', async () => {
     expect(Object.keys((await readRegistry(root)).defs)).toContain(statusId)
     const r = await write({ kind: 'select', value: 'Shipped' })
@@ -132,6 +143,12 @@ describe('a value write reconciles the Space it lands on', () => {
     await seed({ Status: 'Option 1' })
     expect((await set(priorityId, { kind: 'number', value: 3 })).ok).toBe(true)
     expect(await sidecar()).toMatchObject({ Priority: 3, Status: ['Option 1'] })
+  })
+
+  it('clearing a key the Space never held still tidies its other values', async () => {
+    await seed({ Status: 'Option 1' })
+    expect((await set(priorityId, null)).ok).toBe(true)
+    expect((await sidecar()).Status).toEqual(['Option 1'])
   })
 
   it('leaves a value it can’t place as written', async () => {
