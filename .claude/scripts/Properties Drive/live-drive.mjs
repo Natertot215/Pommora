@@ -1,14 +1,14 @@
-import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   frontmatter, pageIds, pagePath,
   ask, boxOf, click, createPage, escapeAll, labels, launch, mouseClick, must, NEXUS, openCollection, pickNative,
-  popNative, portalOpen, restore, results, row, sel, SETTINGS_BUTTON, settles, shot, sleep, until,
+  popNative, portalOpen, read, relaunch, restore, results, row, sel, SETTINGS_BUTTON, settles, shot, sleep, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3']
+const LANDED = ['1', '2', '3', '4']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -196,6 +196,53 @@ async function group3(cdp) {
   await until('the definitions leave', async () => !(await config(cdp)).registry.some((d) => d.id === notes.id))
 }
 
+// ── Group 4 — One Home per Definition (P5) ──────────────────────────────────
+
+const REGISTRY_REL = '.nexus/properties.json'
+const SIDECAR_A = 'Collection A/_pagecollection.json'
+const spacesOf = (tree) => tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)).sort()
+const stateTree = async () => (await must('nexus:state', ask(cdp, 'nexus:state'))).tree
+
+// Group 4 relaunches, so it drives the run's own `cdp`, and a failure inside it leaves the run holding the live session.
+async function group4() {
+  // An empty registry may never have been written; the group writes `{}` and leaves no file behind it.
+  const absent = !existsSync(join(NEXUS, REGISTRY_REL))
+  if (absent) writeFileSync(join(NEXUS, REGISTRY_REL), '{}')
+  const kept = { registry: read(REGISTRY_REL), sidecar: read(SIDECAR_A) }
+  const def = { id: 'prop_drive_damage', label: 'Drive Damage', key: 'Drive Damage', type: 'checkbox' }
+  const held = JSON.parse(kept.registry)
+  const sidecar = JSON.parse(kept.sidecar)
+  const fixed = JSON.stringify({ ...held, order: [...(held.order ?? []), def.id], defs: { ...held.defs, [def.id]: def } })
+  const before = await stateTree()
+  cdp = await relaunch(cdp, async () => {
+    writeFileSync(join(NEXUS, SIDECAR_A), JSON.stringify({ ...sidecar, properties: [...(sidecar.properties ?? []), def.id] }))
+    writeFileSync(join(NEXUS, REGISTRY_REL), '{ not json')
+  })
+
+  const opened = await ask(cdp, 'nexus:state')
+  const tree = opened.value?.tree
+  const entry = tree?.unreadable?.find((u) => u.path === REGISTRY_REL)
+  item(4, 'O-6', 'a damaged property list opens the Nexus with no definitions and names the list unreadable',
+    opened.ok && tree.config.registry.length === 0 && entry?.kind === 'registry' && entry.registry === 'properties', show({ ok: opened.ok, entry }))
+  item(4, 'O-6', 'every Space still reads, so tiles keep their Space boards', same(spacesOf(tree), spacesOf(before)), show(spacesOf(tree)))
+  const assigned = tree.collections.find((c) => c.path === 'Collection A')?.propertyIds ?? []
+  item(4, 'R4', 'Collection A keeps the ids its sidecar assigns while the list can’t be read', assigned.includes(def.id), show(assigned))
+
+  writeFileSync(join(NEXUS, REGISTRY_REL), fixed)
+  const back = await settles(async () => {
+    const t = await stateTree()
+    return t.config.registry.some((d) => d.id === def.id) && !t.unreadable?.some((u) => u.path === REGISTRY_REL)
+  })
+  item(4, 'O-6', 'fixing the file brings the definitions back and clears the entry without a reopen', back, show((await stateTree()).unreadable))
+
+  writeFileSync(join(NEXUS, SIDECAR_A), kept.sidecar)
+  writeFileSync(join(NEXUS, REGISTRY_REL), kept.registry)
+  if (absent) rmSync(join(NEXUS, REGISTRY_REL))
+  const ids = (t) => t.config.registry.map((d) => d.id)
+  const left = await settles(async () => same(ids(await stateTree()), ids(before)))
+  item(4, '—', 'the group leaves the property list and Collection A as it found them', left && read(SIDECAR_A) === kept.sidecar, show(ids(await stateTree())))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -204,6 +251,7 @@ try {
   if (GROUPS.has('1')) await group1(cdp)
   if (GROUPS.has('2')) await group2(cdp)
   if (GROUPS.has('3')) await group3(cdp)
+  if (GROUPS.has('4')) await group4()
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
