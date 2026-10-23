@@ -1,4 +1,4 @@
-import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
+import type { RestoreDestination } from '../../Nexus/mutateRequest'
 import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
@@ -70,20 +70,6 @@ export function offerUndo(
   for (const bundlePath of bundlePaths) armed.set(bundlePath, spend)
 }
 
-/** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. `undoTo` returns it where the delete took it from rather than to its origin. */
-export function notifyTrashed(
-  title: string,
-  { bundled, cascade }: Pick<MutateOutcome, 'bundled' | 'cascade'>,
-  retry?: () => void,
-  undoTo?: RestoreDestination,
-): void {
-  offerUndo(
-    bundled ? [bundled.bundlePath] : [],
-    (undo) => notifyDeleted(title, undo, cascade, retry),
-    undoTo,
-  )
-}
-
 /** The one question a move into the Trash asks, put once for a batch: unasked only while Confirm Before Deletion is off and nothing in it always asks. */
 export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> => {
   if (targets.every(({ kind }) => waived('confirmDeletion', kind))) return true
@@ -100,18 +86,32 @@ export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> =
   })
 }
 
-export const confirmDelete = async (target: {
-  path: string
-  kind: HeldKind
-  title: string
-  undoTo?: RestoreDestination
-}): Promise<boolean> => {
-  if (!(await askTrashing([target]))) return false
-  const done = await useSession
-    .getState()
-    .mutate({ op: 'delete', path: target.path, kind: target.kind })
-  if (done) notifyTrashed(target.title, done, undefined, target.undoTo)
-  return done !== null
+/** A held item asks the Trash's question and a property its own, counting what holds it. A system-trash delete mints no bundle, so it offers no Undo; `undoTo` returns a held item where the delete took it from rather than to its origin, and a property, which a restore lands only in the registry, takes none. */
+export const confirmDelete = async (
+  target: { title: string } & (
+    | { path: string; kind: HeldKind; undoTo?: RestoreDestination }
+    | { propertyId: string; undoTo?: never }
+  ),
+): Promise<boolean> => {
+  const asked =
+    'propertyId' in target
+      ? askDestroyProperty(target.propertyId, target.title)
+      : askTrashing([target])
+  if (!(await asked)) return false
+  const { mutate } = useSession.getState()
+  const done = await mutate(
+    'propertyId' in target
+      ? { op: 'deleteProperty', propertyId: target.propertyId }
+      : { op: 'delete', path: target.path, kind: target.kind },
+  )
+  if (!done) return false
+  const { bundled, cascade, retry } = done
+  offerUndo(
+    bundled ? [bundled.bundlePath] : [],
+    (undo) => notifyDeleted(target.title, undo, cascade, retry && (() => void mutate(retry))),
+    target.undoTo,
+  )
+  return true
 }
 
 export const confirmArchive = async (target: {
@@ -166,7 +166,7 @@ const askHolding = async (
   return (asksPastOne && r.value <= 1) || ask(req(r.value))
 }
 
-export const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>
+const askDestroyProperty = (propertyId: string, label: string): Promise<boolean> =>
   askHolding(propertyId, { of: 'property' }, (held) => ({
     message: `Delete “${label}” everywhere?`,
     detail: `It is removed from every collection${held ? ` and stripped from ${itemCount(held)}` : ''}; a restorable record lands in the nexus’s .trash folder.`,
