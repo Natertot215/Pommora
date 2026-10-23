@@ -102,6 +102,21 @@ describe('assignValue', () => {
     })
   })
 
+  it('an undo that misses its file drops the undone value it laid over the row', async () => {
+    await assignValue(
+      writer,
+      row,
+      { id: 'prop_tag', kind: 'property' },
+      { kind: 'select', value: 'blue' },
+    )
+    await settled()
+    mutate.mockImplementationOnce(async (req) => ({
+      missed: req.op === 'putBack' ? req.entries : [],
+    }))
+    expect(undoValue(null)).toBe(true)
+    await expect(apply.mock.lastCall?.[2]).resolves.toBe(false)
+  })
+
   it('a record without `before` sends that entry as it came, and pushes no second entry', async () => {
     row = rowOf({ id: 'page1' })
     mutate.mockResolvedValueOnce({
