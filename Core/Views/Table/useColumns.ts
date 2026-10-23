@@ -15,7 +15,7 @@ import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
-import { declaredType } from '../../Properties/value'
+import { declaredType } from '../../Properties/fieldValue'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
 import type { ViewHostApi } from '../Host/useViewHost'
 

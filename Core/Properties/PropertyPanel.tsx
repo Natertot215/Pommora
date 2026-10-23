@@ -32,7 +32,7 @@ import { pageRowOf, spaceRowOf } from '../Views/pageRow'
 import { containerSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
-import { resolveFieldValue } from './value'
+import { resolveFieldValue } from './fieldValue'
 import { buildValueContext, holderOf, type ValueContext } from './valueContext'
 import {
   runValueIntent,

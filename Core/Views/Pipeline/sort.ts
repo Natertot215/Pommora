@@ -4,8 +4,8 @@ import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
 import { optionLabels, type PropertyDefinition, specOf } from '../../Properties/properties'
-import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
-import { linkDisplayText, shownProse } from '../../Connections/linkValue'
+import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { fileName, linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
 
 type SortKey = number | string

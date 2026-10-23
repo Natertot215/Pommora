@@ -134,6 +134,8 @@ export const wikiTitle = (raw: string): string | null => {
   return t?.kind === 'page' && t.syntax === 'wiki' ? t.title : null
 }
 
+export const fileName = (reference: string): string => wikiTitle(reference) ?? reference
+
 /** The alias a link of either syntax shows for the one page it names, where that page can hold it and it names more than the target. A link naming a heading never remembers: its shown text names the section, not the page. Against `was`, how the link read before, neither the alias it already showed that page nor the target it showed counts: a label kept through a retarget is the old target, not a name given. */
 export function shownAlias(
   text: string,

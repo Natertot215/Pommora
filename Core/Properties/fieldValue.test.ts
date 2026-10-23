@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
-import { columnType, declaredType, fileName, resolveFieldValue } from './value'
+import { columnType, declaredType, resolveFieldValue } from './fieldValue'
+import { fileName } from '../Connections/linkValue'
 import { propsAtRoot } from '../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [

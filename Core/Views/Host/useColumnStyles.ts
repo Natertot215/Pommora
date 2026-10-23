@@ -10,7 +10,7 @@ import {
 } from '../../Properties/columnStyles'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView, ViewPatch } from '../views'
-import { declaredType } from '../../Properties/value'
+import { declaredType } from '../../Properties/fieldValue'
 import type { ViewHostApi } from './useViewHost'
 import { useSetting } from '../../Session/store'
 

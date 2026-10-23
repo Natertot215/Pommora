@@ -10,7 +10,7 @@ import {
 import { type ColumnAlign, viewOption } from '../views'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
-import { columnType, declaredType, resolveFieldValue } from '../../Properties/value'
+import { columnType, declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'

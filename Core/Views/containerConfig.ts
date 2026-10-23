@@ -1,5 +1,5 @@
 import type { ContainerKind } from '../Nexus/entities'
-import type { ViewButton } from './viewRow'
+import type { ViewButton } from '../Nexus/schemas'
 import { ok, type Result } from '../Contract/result'
 import { patchSidecar } from '../Files/sidecar'
 

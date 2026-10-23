@@ -14,7 +14,7 @@ import {
   pickGroups,
   syntheticContextDef,
 } from '../../Properties/Pickers/PropertyPicker'
-import { resolveFieldValue } from '../../Properties/value'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { useSession } from '../../Session/store'
 
 const CHECKBOX_OPTIONS = [

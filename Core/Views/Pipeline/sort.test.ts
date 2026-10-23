@@ -4,7 +4,7 @@ import type { ViewRow } from '../viewRow'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { makeSorter, resolvedSortCount } from './sort'
 import { applyFilter } from './filter'
-import { resolveFieldValue } from '../../Properties/value'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propsAtRoot } from '../../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [

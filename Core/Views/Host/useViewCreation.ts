@@ -1,6 +1,6 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller's rename opens its naming surface over the row once it lands.
 
-import { type ViewRow, UNGROUPED } from '../viewRow'
+import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
 import type { PageFrontmatter } from '../../Nexus/schemas'
 import { patchOverride } from '../../Properties/valueOverride'
 import {
@@ -16,7 +16,7 @@ import { relDirname, relJoin } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
 import { placeAt, placementSlot, tieOrderWith } from '../creationOrder'
@@ -26,7 +26,6 @@ import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
-import { pageValuesOf } from '../pageValues'
 import { stageView, unstageView } from './pendingView'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link and a text aside; under anything else the row simply lands where the sort puts it.

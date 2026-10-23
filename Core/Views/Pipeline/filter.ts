@@ -18,7 +18,7 @@ import {
   selectedValues,
   type ValueKind,
 } from '../../Properties/propertyValue'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import type { SetTreeNode } from './group'
 import { linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { dayMs, readDate } from '../../Properties/formatValue'

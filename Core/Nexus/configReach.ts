@@ -17,7 +17,7 @@ import {
   SUBSTRING_OPS,
 } from '../Views/filterRules'
 import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
-import { editList, type Matcher, stripList } from '../Properties/pageValue'
+import { editList, type Matcher, stripList } from '../Files/rootValues'
 import { unsweptLine } from './governedSweep'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'

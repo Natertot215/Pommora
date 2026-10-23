@@ -1,10 +1,9 @@
 import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SettingsLeaves } from '../Settings/codec'
-import type { ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
 import type { NodeKind } from './entities'
-import type { Crop, PageMeta } from './schemas'
+import type { Crop, PageMeta, ViewButton } from './schemas'
 import type { Delta } from './treeDelta'
 
 interface BaseNode {

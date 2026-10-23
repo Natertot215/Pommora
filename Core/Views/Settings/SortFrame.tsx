@@ -9,7 +9,7 @@ import {
   pickerRow,
 } from '@pommora/uix/Menus'
 import { useSaveView } from '../viewWrite'
-import { declaredType } from '../../Properties/value'
+import { declaredType } from '../../Properties/fieldValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'

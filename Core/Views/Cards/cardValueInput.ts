@@ -5,7 +5,7 @@ import type { ResolvedColumn, ViewRow } from '../viewRow'
 import { isCompact, type SavedView } from '../views'
 import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { columnLabel } from '../../Properties/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
