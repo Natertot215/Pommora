@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
+import type { PropertyDefinition } from '../Properties/properties'
 import {
   archiveReach,
   containerSchema,
@@ -12,6 +13,7 @@ import {
   owningCollection,
   placeNode,
   removeNodeInTree,
+  schemaOf,
 } from './treePatch'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -242,6 +244,24 @@ describe('archiveReach', () => {
     expect(archiveReach(tree())).toBe('.nexus/archive')
     expect(archiveReach(tree(), 'Notes/Sub')).toBe('.nexus/archive/c1')
     expect(archiveReach(tree(), 'Loose')).toBeNull()
+  })
+})
+
+describe('schemaOf', () => {
+  const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'text' })
+  const withRegistry = (registry: PropertyDefinition[]): NexusTree => ({
+    ...tree(),
+    config: { ...tree().config, registry },
+  })
+
+  it('resolves ids in their order against the registry, an id it lacks reading as nothing, and holds one answer while the definitions it names stay the same', () => {
+    const [a, b, c] = [def('prop_a'), def('prop_b'), def('prop_c')]
+    const ids = ['prop_b', 'prop_gone', 'prop_a']
+    const schema = schemaOf(withRegistry([a, b]), ids)
+    expect(schema).toEqual([b, a])
+    expect(schemaOf(withRegistry([a, b, c]), ids)).toBe(schema)
+    const renamed = { ...a, label: 'Renamed' }
+    expect(schemaOf(withRegistry([renamed, b]), ids)).toEqual([b, renamed])
   })
 })
 

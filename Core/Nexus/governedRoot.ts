@@ -1,6 +1,6 @@
 // Everything that lands a value in one governed file: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, and the one-parse writer.
 
-import { isMarkdownFile, join, relative } from '../Paths/posix'
+import { isMarkdownFile, relative } from '../Paths/posix'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { landValue, memberKey, namesValue } from '../Files/rootValues'
@@ -26,9 +26,8 @@ import {
   keepingForeignWords,
   spelledNumber,
 } from '../Properties/propertyValue'
-import { assignedDefs } from '../Properties/assignment'
 import { liveTreeOf } from './liveTree'
-import { owningCollection } from './treePatch'
+import { containerSchema } from './treePatch'
 import type { ContextGroup, NexusTree } from './tree'
 
 export interface GovernedWorld {
@@ -38,20 +37,19 @@ export interface GovernedWorld {
 
 export const governedWorld = (
   tree: NexusTree,
-  defs: ReadonlyMap<string, PropertyDefinition>,
+  schema: readonly PropertyDefinition[],
 ): GovernedWorld => ({
   contexts: contextWorldOf(tree.contexts),
-  defs,
+  defs: byKey(schema),
 })
 
 // A Space holds any registry property, so its own values reconcile against every definition, by key.
 export const spaceWorldOf = (tree: NexusTree): GovernedWorld =>
-  governedWorld(tree, byKey(tree.config.registry))
+  governedWorld(tree, tree.config.registry)
 
 export async function pageWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
   const tree = await liveTreeOf(root)
-  const owner = owningCollection(tree, relative(root, absFile))
-  return governedWorld(tree, await assignedDefs(root, owner ? join(root, owner.path) : null))
+  return governedWorld(tree, containerSchema(tree, relative(root, absFile)))
 }
 
 /** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */

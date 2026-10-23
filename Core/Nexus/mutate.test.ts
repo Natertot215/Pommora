@@ -53,7 +53,7 @@ import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import * as indexSeed from '../Index/indexSeed'
-import * as assignment from '../Properties/assignment'
+import * as governedRoot from './governedRoot'
 import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
 import * as governedSweep from './governedSweep'
@@ -2614,11 +2614,12 @@ describe('the Contexts lock', () => {
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
       nexusDeps,
     )
-    const defsOf = assignment.assignedDefs
-    const tagWaits = vi.spyOn(assignment, 'assignedDefs').mockImplementation(async (r, folder) => {
+    const worldOf = governedRoot.pageWorldOf
+    const tagWaits = vi.spyOn(governedRoot, 'pageWorldOf').mockImplementation(async (r, file) => {
+      const world = await worldOf(r, file)
       worldLoaded()
       await renaming
-      return defsOf(r, folder)
+      return world
     })
     const tagged = await settledMutate(
       root,
@@ -2709,11 +2710,12 @@ describe('the Contexts lock', () => {
       return unlink(...args)
     }) as never)
     const deleting = settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
-    const defsOf = assignment.assignedDefs
-    const tagWaits = vi.spyOn(assignment, 'assignedDefs').mockImplementation(async (r, folder) => {
+    const worldOf = governedRoot.pageWorldOf
+    const tagWaits = vi.spyOn(governedRoot, 'pageWorldOf').mockImplementation(async (r, file) => {
+      const world = await worldOf(r, file)
       worldLoaded()
       await deleting
-      return defsOf(r, folder)
+      return world
     })
     const tagged = await settledMutate(
       root,

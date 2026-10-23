@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -9,6 +9,7 @@ import {
   reconcileGovernedRoot,
   reencode,
   gonePageEntry,
+  pageWorldOf,
   rewriteRaw,
   rewriteRootAt,
   writtenRoot,
@@ -20,6 +21,13 @@ import { splitFrontmatter, UNPARSED_FRONTMATTER } from '../Files/pageFile'
 import { byKey, type PropertyDefinition } from '../Properties/properties'
 import { decodeValue, encodeValue } from '../Properties/propertyValue'
 import type { ContextGroup, SpaceNode } from './tree'
+import * as liveTree from './liveTree'
+import { assignProperty } from '../Properties/assignment'
+import { createFolderEntity } from './folderEntity'
+import { newId } from './ids'
+import { createTestPage } from '../Testing/createTestPage'
+import { createProperty } from '../Properties/registryProperty'
+import { openSession } from './session'
 
 const space = (id: string, title: string, contextId: string): SpaceNode => ({
   id,
@@ -745,5 +753,60 @@ describe('rewriteRootAt — spellings', () => {
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Banner).toBe('x')
     expect(fm.banner).toBe('[[b.png]]')
+  })
+})
+
+describe('pageWorldOf', () => {
+  let root: string
+  let notes: string
+  let statusId: string
+
+  beforeEach(async () => {
+    root = tempRoot('pom-world-')
+    await openSession(root)
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: 'x' }),
+    )
+    const col = await createFolderEntity(root, 'collection', 'Notes', newId())
+    if (!col.ok) throw new Error('setup')
+    notes = col.value.path
+    const status = await createProperty(root, {
+      id: '',
+      label: 'Status',
+      type: 'select',
+    })
+    const priority = await createProperty(root, {
+      id: '',
+      label: 'Priority',
+      type: 'number',
+    })
+    if (!status.ok || !priority.ok) throw new Error('setup')
+    statusId = status.value.id
+    await assignProperty(root, notes, statusId)
+    await mkdir(join(root, 'Tasks'), { recursive: true })
+    await writeFile(join(root, 'Tasks', '_taskconfig.json'), JSON.stringify({ id: 't1' }))
+  })
+  afterEach(async () => {
+    liveTree.dropLiveTree()
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('reads a page two Sets deep by its Collection’s definitions, and an Agenda page or a Space by none', async () => {
+    const set = await createFolderEntity(notes, 'set', 'Daily', newId())
+    if (!set.ok) throw new Error('setup')
+    const inner = await createFolderEntity(set.value.path, 'set', 'Week', newId())
+    if (!inner.ok) throw new Error('setup')
+    const page = await createTestPage(inner.value.path, 'Deep', { body: 'b' })
+    if (!page.ok) throw new Error('setup')
+    const names = async (file: string): Promise<string[]> => [
+      ...(await pageWorldOf(root, file)).defs.keys(),
+    ]
+    expect(await names(page.value.path)).toEqual(['Status'])
+    expect(await names(join(root, 'Tasks', 'T.md'))).toEqual([])
+    expect(await names(join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'))).toEqual(
+      [],
+    )
   })
 })

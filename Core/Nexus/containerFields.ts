@@ -26,6 +26,11 @@ function cachedIds(meta: Record<string, unknown>): string[] | undefined {
   return ids.length ? ids : undefined
 }
 
+export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
+  Array.isArray(raw?.properties)
+    ? raw.properties.filter((id): id is string => typeof id === 'string')
+    : []
+
 function resolveAssignedSchema(
   ids: unknown,
   registry: PropertyRegistry,

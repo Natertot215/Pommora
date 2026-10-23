@@ -1,4 +1,4 @@
-import { assignedIds } from './assignment'
+import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { keyedHolders } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'

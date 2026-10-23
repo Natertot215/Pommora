@@ -2367,4 +2367,39 @@ describe('restore — into a chosen destination', () => {
     expect(r.ok).toBe(true)
     expect((await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('- live')).toBe(true)
   })
+
+  it('a Collection comes back reconciled against the definitions its own sidecar assigns', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_tags'],
+        defs: {
+          prop_tags: {
+            id: 'prop_tags',
+            label: 'Tags',
+            key: 'Tags',
+            type: 'multiSelect',
+            select_options: [{ key: 'alpha', label: 'alpha' }],
+          },
+        },
+      }),
+    )
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-notes', properties: ['prop_tags'] }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Beta.md'),
+      `---\nID: ${PAGE_B}\nTags: alpha\n---\nbody`,
+    )
+    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+    const r = await settledMutate(
+      root,
+      { op: 'restore', bundlePath: await lastBundle('Notes') },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    const landed = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Beta.md'), 'utf8'))
+    expect(landed.Tags).toEqual(['alpha'])
+  })
 })
