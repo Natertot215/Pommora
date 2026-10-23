@@ -242,6 +242,7 @@ describe('owningCollection', () => {
     const schema = containerSchema(t, 'Notes/Sub/B.md')
     expect(schema.map((d) => d.id)).toEqual(['prop_a'])
     expect(containerSchema(t, t.collections[0])).toBe(schema)
+    expect(containerSchema(t, t.collections[0].sets[0])).toBe(schema)
     expect(containerSchema(t, t.collections[1])).toEqual([])
     expect(containerSchema(tree(), 'Tasks/T.md')).toBe(NO_SCHEMA)
     expect(containerSchema(null, 'Notes/A.md')).toBe(NO_SCHEMA)

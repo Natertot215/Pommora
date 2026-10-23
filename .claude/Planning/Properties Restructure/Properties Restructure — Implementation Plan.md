@@ -1152,7 +1152,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 5-5 · A damaged property list opens the Nexus
   - [x] Task 5-6 · Drive group 4
   - [x] Review Checkpoint
-  - [ ] Closeout P4A–P5 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P4A–P5 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 6** — Undo From the File
   - [ ] Task 6-1 · A swept page reads and lands one key's node
   - [ ] Task 6-2 · Every value write answers `undo`, and one `putBackEntries` lands it
@@ -9499,7 +9499,7 @@ The entry keeps `isBlankRaw`, so an empty list (`[]`), which the Text arm read a
 - [ ] Properties Drive groups 1–4 pass.
 - [ ] The Number: `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-5-delta.md` over this phase's own commits, its fixes included; its **Actionable** column is recorded in *§Net Ledger* beside the *Line Total* below, and a figure above it is reported in chat with what the increase buys before Phase 6 opens.
 - [ ] Render identity holds: the `schemaOf` and `containerSchema` tests pin one array answered across an unrelated registry change and across a page, a Set, and its Collection; the P4A–P5 closeout's inward agent confirms every render-path reader (`useViewHost.ts:60`, `ViewTile.tsx:258`, `PropertyPanel.tsx`, `SettingsFrame.tsx`) reaches its schema only through `containerSchema` or `holderSchema`.
-- [ ] **Closeout P4A–P5:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 4A's base>..HEAD` with the asks Phases 4A, 4B, and 5 name; each correctness finding is fixed before Phase 6 opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
+- [x] **Closeout P4A–P5:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 4A's base>..HEAD` with the asks Phases 4A, 4B, and 5 name; each correctness finding is fixed before Phase 6 opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
 
 #### Behavior Changes and Disclosures
 
