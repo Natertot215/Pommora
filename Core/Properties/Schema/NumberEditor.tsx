@@ -1,4 +1,5 @@
-import { lookOptions, NUMBER_LOOKS } from '../columnStyles'
+import { NUMBER_LOOKS } from '../columnStyles'
+import { lookOptions } from '../displayLabels'
 import {
   type NumberConfig,
   type NumberFamily,

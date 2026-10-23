@@ -2,18 +2,20 @@ import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import {
   CHECKBOX_LOOKS,
   COLUMN_LOOKS,
-  DATE_FORMAT_LABELS,
   DATE_FORMATS,
-  LOOK_LABELS,
   NUMBER_LOOKS,
   OPTION_LOOKS,
   showsWeekday,
-  TIME_FORMAT_LABELS,
   TIME_FORMATS,
-  WEEKDAY_FORMAT_LABELS,
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
+import {
+  DATE_FORMAT_LABELS,
+  LOOK_LABELS,
+  TIME_FORMAT_LABELS,
+  WEEKDAY_FORMAT_LABELS,
+} from '../Properties/displayLabels'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { type ColumnType, PROPERTY_TYPES } from '../Properties/properties'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'

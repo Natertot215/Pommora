@@ -34,11 +34,8 @@ import {
   type SettingValue,
 } from './personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
-import {
-  DATE_FORMAT_OPTIONS,
-  TIME_FORMAT_LABELS,
-  type DateFormat,
-} from '../Properties/columnStyles'
+import type { DateFormat } from '../Properties/columnStyles'
+import { DATE_FORMAT_OPTIONS, TIME_FORMAT_LABELS } from '../Properties/displayLabels'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'

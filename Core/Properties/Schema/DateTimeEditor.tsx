@@ -1,12 +1,5 @@
-import {
-  DATE_FORMAT_OPTIONS,
-  showsWeekday,
-  TIME_FORMAT_LABELS,
-  TIME_FORMATS,
-  WEEKDAY_FORMAT_LABELS,
-  WEEKDAY_FORMATS,
-  type ColumnStyle,
-} from '../columnStyles'
+import { showsWeekday, TIME_FORMATS, WEEKDAY_FORMATS, type ColumnStyle } from '../columnStyles'
+import { DATE_FORMAT_OPTIONS, TIME_FORMAT_LABELS, WEEKDAY_FORMAT_LABELS } from '../displayLabels'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
 const WEEKDAY_OPTIONS = WEEKDAY_FORMATS.map((value) => ({
