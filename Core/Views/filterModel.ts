@@ -12,12 +12,7 @@ import {
 import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
-import {
-  contextPaneTargets,
-  FILEDATA_TARGETS,
-  type PaneTarget,
-  schemaTargets,
-} from '../Properties/Cells/PropertyTypes'
+import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget, schemaTargets } from './paneTargets'
 
 export type DecodedFilter =
   | { kind: 'rows'; mode: MatchMode; rules: FilterRule[] }

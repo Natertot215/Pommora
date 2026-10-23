@@ -9,7 +9,7 @@ import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
 import { itemPicked, menuCompact } from '@pommora/uix/Menus/menu-row.css'
-import { FILEDATA_TARGETS } from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS } from '../paneTargets'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',

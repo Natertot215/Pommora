@@ -41,7 +41,7 @@ import {
   valueMenuIntent,
 } from './Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
-import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
+import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/paneTargets'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
 import { dialer } from '../Platform/dialer'

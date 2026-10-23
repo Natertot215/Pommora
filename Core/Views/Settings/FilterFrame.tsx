@@ -8,7 +8,7 @@ import {
   ruleOperands,
   type StandaloneFilter,
 } from '../filterRules'
-import type { PaneTarget } from '../../Properties/Cells/PropertyTypes'
+import type { PaneTarget } from '../paneTargets'
 import { Icon } from '@pommora/uix/Symbols'
 import { leading } from '@pommora/uix/Fields/fields.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'

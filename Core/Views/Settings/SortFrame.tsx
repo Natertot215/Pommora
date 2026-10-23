@@ -13,7 +13,7 @@ import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'
-import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
+import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
 import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 
 type Direction = SortCriterion['direction']
