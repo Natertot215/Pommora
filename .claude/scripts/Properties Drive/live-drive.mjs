@@ -277,8 +277,8 @@ async function group5(cdp) {
   await escapeAll(cdp)
   const picked = await settles(async () => JSON.stringify(frontmatter('Drive Undo Page')['Drive Undo Pick']) === '["Doing"]')
   await pressKey(cdp, 'z', META)
-  const gone = await settles(async () => !holdsLine('Drive Undo Page', 'Drive Undo Pick'))
-  item(5, 'E-2 P-5', 'a pick on a bare key, undone, leaves no line', picked && gone, `the frontmatter still holds a Drive Undo Pick line: ${show(frontRaw('Drive Undo Page'))}`)
+  const lifted = await settles(async () => !holdsLine('Drive Undo Page', 'Drive Undo Pick'))
+  item(5, 'E-2 P-5', 'a pick on a bare key, undone, leaves no line', picked && lifted, `the frontmatter still holds a Drive Undo Pick line: ${show(frontRaw('Drive Undo Page'))}`)
 
   const box = await boxOf(cdp, cell(2))
   await mouseAt(cdp, { x: box.left + 4, y: box.y })
