@@ -29,7 +29,7 @@ function send(
   w.apply(
     row.id,
     { [column.id]: value ?? NULL_VALUE },
-    sent.then((done) => done !== null),
+    sent.then((done) => done !== null && !done.missed),
   )
   return sent
 }
