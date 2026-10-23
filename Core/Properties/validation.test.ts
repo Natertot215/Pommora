@@ -5,7 +5,7 @@ import {
   validateDefinition,
   validateOptionValues,
   withUniqueOptions,
-} from './schema'
+} from './validation'
 import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 
 const def = (

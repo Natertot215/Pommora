@@ -8,7 +8,7 @@ import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
-import { validateName, withUniqueOptions } from './schema'
+import { validateName, withUniqueOptions } from './validation'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
