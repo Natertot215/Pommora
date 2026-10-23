@@ -19,6 +19,7 @@ const tree: NexusTree = {
   collections: [
     {
       kind: 'collection',
+      propertyIds: [],
       id: 'c1',
       title: 'Col',
       path: 'Col',
@@ -45,6 +46,7 @@ const tree: NexusTree = {
     },
     {
       kind: 'collection',
+      propertyIds: [],
       id: 'c2',
       title: 'Other',
       path: 'Other',
@@ -53,6 +55,7 @@ const tree: NexusTree = {
     },
     {
       kind: 'collection',
+      propertyIds: [],
       id: 'c3',
       title: 'Far',
       path: 'Far',

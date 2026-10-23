@@ -29,6 +29,7 @@ const treeWith = (contexts: ContextGroup[], collections: CollectionNode[]): Nexu
 
 const library = (pages: PageNode[], sets: SetNode[] = []): CollectionNode => ({
   kind: 'collection',
+  propertyIds: [],
   id: '01COLZZKBKACTAV9WEVGEMMVRZ',
   title: 'Library',
   path: 'Library',

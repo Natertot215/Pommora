@@ -12,6 +12,7 @@ import { pageValues, propsAtRoot } from '../../Testing/pageValues'
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const collection = (pages: PageNode[]): CollectionNode => ({
   kind: 'collection',
+  propertyIds: [],
   id: 'col',
   title: 'Col',
   path: 'Col',
@@ -36,6 +37,7 @@ describe('resolveView — Sort By: Location (cards)', () => {
   })
   const withSets: CollectionNode = {
     kind: 'collection',
+    propertyIds: [],
     id: 'c',
     title: 'C',
     path: 'C',
@@ -173,6 +175,7 @@ describe('resolveView — group_order', () => {
     })
     const col: CollectionNode = {
       kind: 'collection',
+      propertyIds: [],
       id: 'col',
       title: 'Col',
       path: 'Col',
@@ -204,6 +207,7 @@ describe('resolveView — group_order', () => {
     })
     const col: CollectionNode = {
       kind: 'collection',
+      propertyIds: [],
       id: 'col',
       title: 'Col',
       path: 'Col',
@@ -245,6 +249,7 @@ describe('resolveView — group_order', () => {
   it('a DEAD-property grouping is effectively structural: location gate honored, tail placed, sub-group threaded', () => {
     const nested: CollectionNode = {
       kind: 'collection',
+      propertyIds: [],
       id: 'col',
       title: 'Col',
       path: 'Col',
@@ -327,6 +332,7 @@ describe('resolveView — a biting filter prunes emptied structural bands', () =
   // sOuter holds one page of its own and nests sInner (one page); sBare holds nothing at all.
   const nested: CollectionNode = {
     kind: 'collection',
+    propertyIds: [],
     id: 'col',
     title: 'Col',
     path: 'Col',
@@ -480,6 +486,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   }
   const nested: CollectionNode = {
     kind: 'collection',
+    propertyIds: [],
     id: 'col',
     title: 'Col',
     path: 'Col',
@@ -557,6 +564,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   it('an encoded sub key hides that sub-bucket under every set', () => {
     const twoSets: CollectionNode = {
       kind: 'collection',
+      propertyIds: [],
       id: 'col',
       title: 'Col',
       path: 'Col',

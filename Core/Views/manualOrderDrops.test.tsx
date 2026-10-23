@@ -43,7 +43,7 @@ const source = (view?: Partial<SavedView>): CollectionNode =>
     path: 'Col',
     sets: [],
     pages: [page('p1', 'One'), page('p2', 'Two')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -75,7 +75,7 @@ const banded = (view?: Partial<SavedView>): CollectionNode =>
       },
     ],
     pages: [page('p1', 'One')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -118,7 +118,7 @@ beforeEach(() => {
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
-    tree: makeTree(),
+    tree: makeTree({ registry: [statusDef] }),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     mutate: mutateSpy as never,

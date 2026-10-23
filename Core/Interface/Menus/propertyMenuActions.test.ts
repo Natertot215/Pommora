@@ -42,7 +42,8 @@ const CONTEXT_ID = makeTree().contexts[0].def.id
 
 const treeWithSchema = (): NexusTree => {
   const tree = makeTree()
-  tree.collections[0].properties = SCHEMA
+  tree.collections[0].propertyIds = SCHEMA.map((d) => d.id)
+  tree.config.registry = SCHEMA
   return tree
 }
 

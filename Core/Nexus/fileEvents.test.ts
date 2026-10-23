@@ -16,7 +16,7 @@ import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/discard'
 import type { Changed, FileEvent } from '../Files/writeEcho'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
-import { containerAt } from './treePatch'
+import { containerAt, containerSchema } from './treePatch'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -494,24 +494,32 @@ describe('the parity cases', () => {
       prop_status: { id: 'prop_status', label: 'State', key: 'State', type: 'number' },
     })
     await settled([ev('change', '.nexus', 'properties.json')])
-    expect(held().collections[0]?.properties?.map((d) => d.label)).toEqual(['State'])
+    expect(containerSchema(held(), held().collections[0]).map((d) => d.label)).toEqual(['State'])
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
 
-  it('a properties.json edit that adds a definition walks', async () => {
+  it('a properties.json edit adding a definition a Collection already assigns resolves it with no walk', async () => {
     await registry({
       prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
     })
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['prop_status', 'prop_due'] }),
+    )
     await refreshTree(root)
+    expect(containerSchema(held(), held().collections[0]).map((d) => d.id)).toEqual(['prop_status'])
     walk.mockClear()
     await registry({
       prop_status: { id: 'prop_status', label: 'Status', key: 'Status', type: 'number' },
       prop_due: { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' },
     })
     await settled([ev('change', '.nexus', 'properties.json')])
-    expect(walk).toHaveBeenCalledTimes(1)
-    expect(held().config.registry.map((d) => d.id)).toEqual(['prop_status', 'prop_due'])
+    expect(walk).not.toHaveBeenCalled()
+    expect(containerSchema(held(), held().collections[0]).map((d) => d.id)).toEqual([
+      'prop_status',
+      'prop_due',
+    ])
     await agrees()
   })
 

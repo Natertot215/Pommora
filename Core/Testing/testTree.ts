@@ -39,6 +39,7 @@ export function makeTree(config: Partial<NexusConfig> = {}): NexusTree {
         id: 'c1',
         title: 'Notes',
         path: 'Notes',
+        propertyIds: [],
         pages: [{ kind: 'page', id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }],
         sets: [
           {

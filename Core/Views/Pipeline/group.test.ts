@@ -32,6 +32,7 @@ const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode 
 })
 const collection = (sets: SetNode[] = [], pages: PageNode[] = []): CollectionNode => ({
   kind: 'collection',
+  propertyIds: [],
   id: 'col',
   title: 'Col',
   path: 'Col',

@@ -51,7 +51,7 @@ const source = {
   path: 'Col',
   sets: [],
   pages: [],
-  properties: [statusDef, dateDef],
+  propertyIds: [statusDef.id, dateDef.id],
 } as unknown as CollectionNode
 
 let host: HTMLDivElement

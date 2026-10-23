@@ -170,6 +170,7 @@ describe('the hook', () => {
 describe('a drag painted ahead of its write', () => {
   const notes = (): CollectionNode => ({
     kind: 'collection',
+    propertyIds: [],
     id: 'c1',
     title: 'Notes',
     path: 'Notes',
@@ -187,6 +188,7 @@ describe('a drag painted ahead of its write', () => {
   })
   const work = (): CollectionNode => ({
     kind: 'collection',
+    propertyIds: [],
     id: 'c2',
     title: 'Work',
     path: 'Work',

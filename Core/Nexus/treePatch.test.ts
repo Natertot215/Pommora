@@ -23,6 +23,7 @@ function tree(): NexusTree {
     id: 'c1',
     title: 'Notes',
     path: 'Notes',
+    propertyIds: ['prop_a'],
     sets: [
       {
         kind: 'set',
@@ -40,6 +41,7 @@ function tree(): NexusTree {
     id: 'c2',
     title: 'Work',
     path: 'Work',
+    propertyIds: [],
     sets: [],
     pages: [],
   }
@@ -57,7 +59,7 @@ function tree(): NexusTree {
       commands: DEFAULT_COMMANDS,
       assetDirectory: ASSETS_DIR_REL,
       excluded: [],
-      registry: [],
+      registry: [{ id: 'prop_a', label: 'A', key: 'A', type: 'text' }],
     },
   }
 }
@@ -143,6 +145,7 @@ describe('placeNode', () => {
     base.config.order = { ...base.config.order, collections: ['c3', 'c1', 'c2'] }
     const t = placeNode(base, {
       kind: 'collection',
+      propertyIds: [],
       id: 'c3',
       title: 'Inbox',
       path: 'Inbox',
@@ -233,7 +236,12 @@ describe('owningCollection', () => {
     expect(owningCollection(null, detached)).toBe(detached)
   })
 
-  it('hands an unowned path the one empty schema', () => {
+  it('hands a page, a Set, and its Collection the Collection’s schema, and an unowned path the one empty schema', () => {
+    const t = tree()
+    const schema = containerSchema(t, 'Notes/Sub/B.md')
+    expect(schema.map((d) => d.id)).toEqual(['prop_a'])
+    expect(containerSchema(t, t.collections[0])).toBe(schema)
+    expect(containerSchema(t, t.collections[1])).toEqual([])
     expect(containerSchema(tree(), 'Tasks/T.md')).toBe(NO_SCHEMA)
     expect(containerSchema(null, 'Notes/A.md')).toBe(NO_SCHEMA)
   })

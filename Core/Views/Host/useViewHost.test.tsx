@@ -60,7 +60,7 @@ const collection = (view?: Partial<SavedView>): CollectionNode =>
     path: 'Col',
     sets: [],
     pages: [page('p1', 'One', 'Col/One.md'), page('p2', 'Two', 'Col/Two.md')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -91,11 +91,15 @@ const deepSets = (): { a: SetNode; b: SetNode } => {
     path: 'Col',
     sets: [{ kind: 'set', id: 'sP', title: 'Parent', path: 'Col/Parent', pages: [], sets: [a, b] }],
     pages: [],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [],
   }
   useSession.setState({
-    tree: { collections: [root], contexts: [], config: { personalization: {} } } as never,
+    tree: {
+      collections: [root],
+      contexts: [],
+      config: { personalization: {}, registry: [statusDef] },
+    } as never,
   })
   return { a: a as unknown as SetNode, b: b as unknown as SetNode }
 }
@@ -144,7 +148,11 @@ beforeEach(() => {
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
-    tree: { collections: [], contexts: [], config: { personalization: {} } } as never,
+    tree: {
+      collections: [],
+      contexts: [],
+      config: { personalization: {}, registry: [statusDef] },
+    } as never,
     mutate: vi.fn(async () => ({})) as never,
     activeTabId: 't1',
     viewSearch: {},
@@ -183,8 +191,10 @@ const CONFIGURED = {
   property_id: 'prop_status',
   order_mode: 'configured',
 } as const
-const banded = (group: SavedView['group']): CollectionNode =>
-  ({ ...collection({ group }), properties: [threeStatus] }) as CollectionNode
+const holdThreeStatus = (): void =>
+  useSession.setState((s) => ({
+    tree: { ...s.tree!, config: { ...s.tree!.config, registry: [threeStatus] } },
+  }))
 const bandKeys = (): string[] =>
   api?.groups.flatMap((g) => (g.kind === 'bucket' ? [g.key] : [])) ?? []
 
@@ -223,7 +233,8 @@ describe('the persist fold', () => {
   })
 
   it('a band order the walker replaced paints and saves as the walker wrote it', async () => {
-    await mount(banded(CONFIGURED))
+    holdThreeStatus()
+    await mount(collection({ group: CONFIGURED }))
     const configured = bandKeys()
     act(
       () =>
@@ -236,7 +247,7 @@ describe('the persist fold', () => {
         }),
     )
     expect(bandKeys()).toEqual(['shipped', 'complete', 'archived'])
-    await mount(banded({ ...CONFIGURED, order_mode: 'reversed' }))
+    await mount(collection({ group: { ...CONFIGURED, order_mode: 'reversed' } }))
     expect(bandKeys()).toEqual([...configured].reverse())
     act(() => api?.toggleCollapse('g1'))
     expect(lastSavedView().group).toEqual({ ...CONFIGURED, order_mode: 'reversed' })
@@ -553,7 +564,7 @@ const setCollection = (view?: Partial<SavedView>): CollectionNode =>
       },
     ],
     pages: [page('pLoose', 'Loose', 'Col/Loose.md')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -649,7 +660,11 @@ describe('the manual order fold', () => {
       settle = () => resolve(null)
     })
     useSession.setState({
-      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
+      tree: {
+        collections: [source],
+        contexts: [],
+        config: { personalization: {}, registry: [statusDef] },
+      } as never,
       mutate: vi.fn(() => pending) as never,
     })
     await mount(source)
@@ -665,7 +680,11 @@ describe('the manual order fold', () => {
   it('a refused move rolls the paint back', async () => {
     const source = collection({ structural_order_mode: 'location' })
     useSession.setState({
-      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
+      tree: {
+        collections: [source],
+        contexts: [],
+        config: { personalization: {}, registry: [statusDef] },
+      } as never,
       mutate: vi.fn(async () => null) as never,
     })
     await mount(source)
@@ -685,7 +704,11 @@ describe('the manual order fold', () => {
     } as unknown as CollectionNode
     let settle: () => void = () => {}
     useSession.setState({
-      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
+      tree: {
+        collections: [source],
+        contexts: [],
+        config: { personalization: {}, registry: [statusDef] },
+      } as never,
       mutate: vi.fn(
         () =>
           new Promise<null>((resolve) => {
@@ -828,11 +851,12 @@ describe('creation seeding', () => {
       key: 'Priority',
       type: 'select',
     }
-    useSession.setState({
+    useSession.setState((s) => ({
+      tree: { ...s.tree!, config: { ...s.tree!.config, registry: [statusDef, priorityDef] } },
       mutate: vi.fn(async (req: { id: string }) => ({
         created: { path: `Col/${req.id}.md` },
       })) as never,
-    })
+    }))
     await mount({
       ...collection({
         ...SORTED,
@@ -844,7 +868,7 @@ describe('creation seeding', () => {
           ],
         },
       }),
-      properties: [statusDef, priorityDef],
+      propertyIds: [statusDef.id, priorityDef.id],
     } as CollectionNode)
     const p1 = api?.rowById.get('p1')
     await act(async () => void creation.createAdjacent(p1!, 'below'))
@@ -877,9 +901,15 @@ describe('a create placed ahead of its reply', () => {
     ids.map((id) => page(id, id === 'p3' ? 'Untitled' : id, `Col/${id}.md`))
   const source = (ids: string[]): CollectionNode =>
     ({
-      ...banded(CONFIGURED),
+      ...collection({ group: CONFIGURED }),
       pages: pages(...ids),
-      views: [{ ...banded(CONFIGURED).views?.[0], ...SORTED, manual_order: ['p2', 'p1'] }],
+      views: [
+        {
+          ...collection({ group: CONFIGURED }).views?.[0],
+          ...SORTED,
+          manual_order: ['p2', 'p1'],
+        },
+      ],
     }) as unknown as CollectionNode
 
   beforeEach(async () => {
@@ -896,7 +926,10 @@ describe('a create placed ahead of its reply', () => {
         reply = res
       })
     useSession.setState({
-      tree: { ...makeTree(), collections: [source(['p1', 'p2'])] } as NexusTree,
+      tree: {
+        ...makeTree({ registry: [threeStatus] }),
+        collections: [source(['p1', 'p2'])],
+      } as NexusTree,
       version: 1,
       mutate: realMutate,
     })
@@ -1078,7 +1111,11 @@ describe('view search', () => {
 describe('the value writer', () => {
   it('a Context edit paints on its row while the save is in flight, and leaves the frontmatter as loaded', async () => {
     useSession.setState({
-      tree: { collections: [collection()], contexts: [], config: { personalization: {} } } as never,
+      tree: {
+        collections: [collection()],
+        contexts: [],
+        config: { personalization: {}, registry: [statusDef] },
+      } as never,
       mutate: vi.fn(() => new Promise(() => {})) as never,
     })
     await mount(collection())

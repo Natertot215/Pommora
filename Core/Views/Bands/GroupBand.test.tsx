@@ -48,7 +48,7 @@ const source = {
   path: 'Inbox',
   sets: [setA as unknown as SetNode],
   pages: [],
-  properties: [],
+  propertyIds: [],
   views: [],
 } as unknown as CollectionNode
 

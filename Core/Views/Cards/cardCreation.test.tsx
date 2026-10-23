@@ -22,7 +22,7 @@ const source = (): CollectionNode =>
       { kind: 'page', id: 'p1', title: 'One', path: 'Col/One.md' },
       { kind: 'page', id: 'p2', title: 'Two', path: 'Col/Two.md' },
     ],
-    properties: [],
+    propertyIds: [],
     views: [
       {
         id: 'view_1',

@@ -29,7 +29,7 @@ const collection = (
     path: 'Col',
     sets,
     pages,
-    properties: [STATUS_DEF],
+    propertyIds: [STATUS_DEF.id],
     views: [
       {
         id: 'view_1',
@@ -98,7 +98,7 @@ beforeEach(() => {
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
-    tree: makeTree(),
+    tree: makeTree({ registry: [STATUS_DEF] }),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     mutate: mutateSpy as never,

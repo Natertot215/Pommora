@@ -22,7 +22,7 @@ const source = {
   path: 'Col',
   sets: [setNode('A', [setNode('A1')]), setNode('B')],
   pages: [],
-  properties: [],
+  propertyIds: [],
   views: [],
 } as unknown as CollectionNode
 const view = {

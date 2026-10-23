@@ -87,7 +87,7 @@ const setTree = (
           path: 'Col',
           sets: [],
           pages: [{ kind: 'page', id: 'p1', title: 'Page', path: 'Col/Page.md' }],
-          properties: [stageDef, noteDef],
+          propertyIds: [stageDef.id, noteDef.id],
           views: [],
         },
       ],
@@ -177,10 +177,10 @@ describe('PropertyPanel', () => {
     setTree()
     const tree = useSession.getState().tree as unknown as {
       config: { registry: PropertyDefinition[] }
-      collections: { properties: PropertyDefinition[] }[]
+      collections: { propertyIds: string[] }[]
     }
     tree.config.registry.push(siteDef)
-    tree.collections[0].properties.push(siteDef)
+    tree.collections[0].propertyIds.push(siteDef.id)
     ask = vi.fn(async (channel: string) => ({
       ok: true,
       value: channel === 'menu' ? 'cell:hide' : null,
@@ -219,10 +219,10 @@ describe('PropertyPanel', () => {
     setTree()
     const tree = useSession.getState().tree as unknown as {
       config: { registry: PropertyDefinition[] }
-      collections: { properties: PropertyDefinition[] }[]
+      collections: { propertyIds: string[] }[]
     }
     tree.config.registry.push(siteDef)
-    tree.collections[0].properties.push(siteDef)
+    tree.collections[0].propertyIds.push(siteDef.id)
     ask = vi.fn(async (channel: string) => ({
       ok: true,
       value: channel === 'menu' ? 'editLink' : null,

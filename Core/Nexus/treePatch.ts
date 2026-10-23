@@ -1,6 +1,5 @@
 // The tree's path-addressed steps, and the order and filters of its unreadable list. The host applies the steps as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
 
-import { stabilize } from './treeStabilize'
 import type {
   CollectionNode,
   ContextGroup,
@@ -128,7 +127,10 @@ export const NO_SCHEMA: PropertyDefinition[] = []
 export const containerSchema = (
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
-): PropertyDefinition[] => owningCollection(tree, of)?.properties ?? NO_SCHEMA
+): PropertyDefinition[] => {
+  const owner = owningCollection(tree, of)
+  return tree && owner ? schemaOf(tree, owner.propertyIds) : NO_SCHEMA
+}
 
 const schemas = new WeakMap<
   readonly string[],
@@ -163,27 +165,6 @@ export const contextAt = (tree: NexusTree, rel: string): ContextGroup | null =>
 
 export const pageIdsIn = (tree: NexusTree, path: string): string[] | undefined =>
   containerAt(tree, path)?.pages.map((p) => p.id)
-
-/** Keeps one def reference-identical in both homes (`config.registry` and each Collection's `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
-export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
-  const defs = stabilize(registry, tree.config.registry)
-  const byId = new Map(defs.map((d) => [d.id, d]))
-  let moved = false
-  const collections = tree.collections.map((c) => {
-    const held = c.properties
-    if (!held) return c
-    const next = held.flatMap((d) => byId.get(d.id) ?? [])
-    if (sameItems(next, held)) return c
-    moved = true
-    return { ...c, properties: next.length ? next : undefined }
-  })
-  if (!moved && defs === tree.config.registry) return tree
-  return {
-    ...tree,
-    config: { ...tree.config, registry: defs },
-    collections: moved ? collections : tree.collections,
-  }
-}
 
 type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
 

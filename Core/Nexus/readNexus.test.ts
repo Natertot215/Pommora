@@ -5,6 +5,7 @@ import { homedir } from 'node:os'
 import { join } from '../Paths/posix'
 import { posixPath, tempRoot } from '../Testing/hostFs'
 import { readNexus } from './readNexus'
+import { containerSchema } from './treePatch'
 import {
   HISTORY_DAYS,
   SETTING_DEFAULTS,
@@ -242,8 +243,7 @@ describe('readNexus — sidecar mode', () => {
     expect(notes.sets.map((s) => s.title)).toEqual(['Daily'])
     expect(notes.pages.map((p) => p.title)).toEqual(['Loose'])
     expect(notes.sets[0].pages.map((p) => p.title)).toEqual(['Entry'])
-    expect(notes.properties?.length).toBe(1)
-    expect((notes.properties?.[0] as { label?: string })?.label).toBe('Status')
+    expect(containerSchema(t, notes).map((d) => d.label)).toEqual(['Status'])
   })
 })
 
@@ -854,8 +854,8 @@ describe('PropertiesV2 — registry-resolved collection schema', () => {
 
     const tree = await readNexus(root)
     const notes = tree.collections!.find((c) => c.id === 'col_notes')!
-    expect(notes.properties?.map((p) => p.id)).toEqual(['prop_a', 'prop_b'])
-    expect(notes.properties?.map((p) => p.label)).toEqual(['Priority', 'Done'])
+    expect(notes.propertyIds).toEqual(['prop_a', 'prop_gone', 'prop_b'])
+    expect(containerSchema(tree, notes).map((p) => p.label)).toEqual(['Priority', 'Done'])
     rmSync(root, { recursive: true, force: true })
   })
 })

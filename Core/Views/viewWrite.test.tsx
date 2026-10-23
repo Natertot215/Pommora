@@ -36,7 +36,7 @@ const source = {
   path: 'Col',
   sets: [],
   pages: [],
-  properties: [statusDef],
+  propertyIds: [statusDef.id],
 } as unknown as CollectionNode
 
 const view: SavedView = {

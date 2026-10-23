@@ -67,7 +67,6 @@ import {
   pagePathsIn,
   placeNode,
   removeNodeInTree,
-  repointRegistryInTree,
   listUnreadable,
   spaceAt,
   updateNodeInTree,
@@ -427,7 +426,6 @@ async function applyContainer(
       meta,
       node.sets ?? [],
       node.pages,
-      registryOf(t.config.registry),
     )
     const had = containerSchema(t, node)
     if (next && containerSchema(t, next).some((d) => !had.some((p) => p.id === d.id)))
@@ -486,14 +484,10 @@ async function applyContexts(root: string, ev: Changed): Promise<Applied> {
 }
 
 async function applyRegistry(root: string, ev: Changed, owed: Owed): Promise<Applied> {
-  const registry = registryFrom((await jsonOf(ev, readKept)) ?? {})
+  const defs = orderedDefs(registryFrom((await jsonOf(ev, readKept)) ?? {}))
   return applyPatch(root, (t) => {
-    // A definition arriving from outside may be one a sidecar already assigns, which only a read of the sidecars finds.
-    const arrived = Object.keys(registry.defs).some(
-      (id) => !t.config.registry.some((d) => d.id === id),
-    )
-    if (arrived && ev.origin === 'watched') return null
-    const next = repointRegistryInTree(t, orderedDefs(registry))
+    const registry = stabilize(defs, t.config.registry)
+    const next = registry === t.config.registry ? t : { ...t, config: { ...t.config, registry } }
     oweNamedKeys(owed, t.config.registry, next)
     return next
   })
@@ -536,7 +530,7 @@ export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusT
   )
   if (!named.size) return
   for (const c of tree.collections)
-    if (c.properties?.some((d) => named.has(d.id))) owed.options.add(c.path)
+    if (c.propertyIds.some((id) => named.has(id))) owed.options.add(c.path)
   for (const s of tree.contexts.flatMap((g) => g.spaces)) owed.options.add(s.path)
 }
 

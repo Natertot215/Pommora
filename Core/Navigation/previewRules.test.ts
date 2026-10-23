@@ -16,6 +16,7 @@ function treeWith(openInPreview?: StandaloneFilter): NexusTree {
     collections: [
       {
         kind: 'collection',
+        propertyIds: [],
         id: 'c1',
         title: 'Notes',
         path: 'Notes',

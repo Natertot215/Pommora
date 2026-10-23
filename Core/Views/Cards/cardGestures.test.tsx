@@ -26,7 +26,7 @@ const source = (): CollectionNode =>
       { kind: 'page', id: 'p1', title: 'One', path: 'Col/One.md' },
       { kind: 'page', id: 'p2', title: 'Two', path: 'Col/Two.md' },
     ],
-    properties: [STATUS_DEF, numberDef],
+    propertyIds: [STATUS_DEF.id, numberDef.id],
     views: [
       {
         id: 'view_1',
@@ -68,7 +68,7 @@ beforeEach(() => {
     menu: menuSpy,
   })
   useSession.setState({
-    tree: makeTree(),
+    tree: makeTree({ registry: [STATUS_DEF, numberDef] }),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     tabs: [] as never,
@@ -180,12 +180,13 @@ describe('a card’s link value', () => {
     const base = source()
     const withSite = {
       ...base,
-      properties: [STATUS_DEF, numberDef, siteDef],
+      propertyIds: [STATUS_DEF.id, numberDef.id, siteDef.id],
       views: base.views?.map((v) => ({
         ...v,
         property_order: ['_title', 'prop_status', 'prop_site'],
       })),
     } as CollectionNode
+    useSession.setState({ tree: makeTree({ registry: [STATUS_DEF, numberDef, siteDef] }) })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'view:loadValues': async () =>
         valuesReply({

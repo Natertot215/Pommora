@@ -68,7 +68,7 @@ const structuralSource = (view?: Partial<SavedView>): CollectionNode =>
       { kind: 'set', id: 'sB', title: 'B', path: 'Col/B', pages: [], sets: [] },
     ],
     pages: [page('pLoose', 'Loose', 'Col/Loose.md')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -90,7 +90,7 @@ const propertySource = (): CollectionNode =>
     path: 'Col',
     sets: [],
     pages: [page('p1', 'One', 'Col/One.md'), page('p2', 'Two', 'Col/Two.md')],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',
@@ -140,7 +140,7 @@ beforeEach(() => {
     tree: {
       collections: [],
       contexts: [],
-      config: { personalization: {} },
+      config: { personalization: {}, registry: [statusDef] },
     } as never,
     selection: { kind: 'none' } as never,
     select: selectSpy as never,
@@ -330,7 +330,7 @@ const subGroupSource = (view?: Partial<SavedView>): CollectionNode =>
       },
     ],
     pages: [],
-    properties: [statusDef],
+    propertyIds: [statusDef.id],
     views: [
       {
         id: 'view_1',

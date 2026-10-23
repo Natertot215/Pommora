@@ -8,6 +8,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree, dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { containerSchema } from '../Nexus/treePatch'
 import { assignProperty } from './assignment'
 import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -158,10 +159,7 @@ describe('a registry definition named for a key Pommora manages', () => {
     const tree = await liveTreeOf(root)
     const names = (defs: readonly PropertyDefinition[] = []) => defs.map((d) => d.label)
     expect(names(tree.config.registry)).toEqual(['Status', 'Priority'])
-    expect(names(tree.collections.find((c) => c.path === rel(notes))?.properties)).toEqual([
-      'Status',
-      'Priority',
-    ])
+    expect(names(containerSchema(tree, rel(notes)))).toEqual(['Status', 'Priority'])
 
     for (const path of [rel(page.value.path), rel(space)]) {
       const r = await handleMutate(

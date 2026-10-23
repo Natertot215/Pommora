@@ -286,7 +286,7 @@ describe('a view without an id of its own', () => {
   ]
   const MINTED = /^view_[0-9A-HJKMNP-TV-Z]{26}$/
   const shown = () =>
-    containerNodeFrom('set', { title: 'S', path: 'S' }, { id: 's', views: stored }, [], [], {})
+    containerNodeFrom('set', { title: 'S', path: 'S' }, { id: 's', views: stored }, [], [])
       ?.views ?? []
   const onDisk = async () => (await readRaw('_pagecollection.json')) as Record<string, unknown>
   const named = async () => ((await onDisk()).views as SavedView[]).map((v) => v.name)

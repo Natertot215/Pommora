@@ -12,6 +12,7 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
     collections: [
       {
         kind: 'collection',
+        propertyIds: [],
         id: 'c1',
         title: 'Notes',
         path: 'Notes',
@@ -68,6 +69,7 @@ describe('reconcileSelection', () => {
       collections: [
         {
           kind: 'collection',
+          propertyIds: [],
           id: 'c1',
           title: 'C',
           path: 'C',
@@ -122,6 +124,7 @@ describe('reconcileSelection', () => {
       collections: [
         {
           kind: 'collection',
+          propertyIds: [],
           id: 'c1',
           title: 'C',
           path: 'C',

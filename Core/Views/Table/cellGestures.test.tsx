@@ -80,7 +80,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
       { kind: 'page', id: 'p1', title: 'Page One', path: 'Col/Page One.md' },
       { kind: 'page', id: 'p2', title: 'Page Two', path: 'Col/Page Two.md' },
     ],
-    properties: [statusDef, checkboxDef, numberDef, linkDef, fileDef],
+    propertyIds: [statusDef.id, checkboxDef.id, numberDef.id, linkDef.id, fileDef.id],
     views: [
       {
         id: 'view_1',
@@ -154,7 +154,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: {
-      ...makeTree(),
+      ...makeTree({ registry: allDefs }),
       personalization: { defaultIcons: {} },
       contexts: [
         {
@@ -577,7 +577,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
           contextValues: { ctx_areas: ['area_work', 'area_life'] },
         },
       ],
-      properties: [statusDef, multiDef],
+      propertyIds: [statusDef.id, multiDef.id],
       views: [
         {
           id: 'view_1',
