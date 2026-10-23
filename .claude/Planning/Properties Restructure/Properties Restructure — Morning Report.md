@@ -1,7 +1,7 @@
 ## Properties Restructure — Morning Report
 
 **DATE:** 10-22-2026
-**STATUS:** Ratified (10-22-2026); execution runs through `c/plan-execution`.
+**STATUS:** Executing through `c/plan-execution`; Phases 1–3 landed (10-23-2026).
 
 ### What the Plan Is
 
@@ -39,7 +39,15 @@ Most of it changes nothing you'll see. Where something does change, it's either 
 
 ### What I Need From You
 
-Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is a short list of small visible changes, for awareness only, and the ratification.
+Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is one call execution raised and a short list of small visible changes, for awareness only.
+
+#### Calls From Execution
+
+- **Date's Menu Name:**
+  - **Today:** a Date column's right-click calls its date and time choices "Style," while the Date settings in the Properties pane head the same choices "Format." Number reads "Style" in both places for its Number-or-Bar choice, as you ruled in I-4, and Link reads "Format" in both.
+  - **As Planned:** it stays this way. The pane's wording is frozen, and I-4 named every type but Link "Style" in the right-click, so Date keeps the mismatch.
+  - **Alternative:** Date's right-click reads "Format," matching its own pane and Link. Its choices, such as MM/DD/YYYY, Full Date, or Relative, and the time's format, are how the date is written rather than how it's drawn. It's one word in Date's type entry, with no line cost.
+  - **Recommendation:** take the alternative. The line you drew for Number, where "Format" is how the number is written and "Style" is how it's drawn, puts Date's choices on the Format side.
 
 #### Small Things You'll See
 
@@ -56,12 +64,9 @@ No action needed. These are visible changes the plan makes on its own; speak up 
 - **LC-55:** every property editor uses the same 8px row spacing. The Date editor's rows were at 4px.
 - **LC-60:** if a property disappears while its editor is open and then comes back (an undo or a sync), its editor reopens.
 
-#### Ratify
-
-Ratify the plan, or tell me what to change.
-
 ### Where It Stands
 
+- **Execution:** Phases 1 through 3 of 21 have landed, at −213 production lines against a written −203; the review after Phase 2 folded 11 more lines out. Both reviews so far found no defects, and their smaller folds either landed or wait in the execution log for the last phase that touches their files. Every remaining change was then applied in a throwaway copy of the landed code, and it fits exactly as the plan does on its own.
 - **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,559 changes with no mismatches and skips 9 that land only if a speed measurement fails.
 - **The Numbers:** about −514 production lines if every speed measurement passes; about −438 if F3 fails, and about −376 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +177 after Phase 12) before Phase 15 brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +258 after Phase 12) before Phase 16A brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
