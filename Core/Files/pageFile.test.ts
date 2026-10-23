@@ -429,11 +429,9 @@ describe('a swept page’s pairs', () => {
     expect(page.pair('Due')).toBeUndefined()
   })
 
-  it('a pair lands its node under the key it’s given, bare stays bare, held in place and new last', () => {
+  it('a pair lands its node under the key it’s given, held in place and new last, and a blank one drops the key', () => {
     const held = `---\n${ID}Status: Done\nOther: 1\n---\nbody\n`
-    expect(swept(held).withPair('Status', 'Status:\n')).toBe(
-      `---\n${ID}Status:\nOther: 1\n---\nbody\n`,
-    )
+    expect(swept(held).withPair('Status', 'Status:\n')).toBe(`---\n${ID}Other: 1\n---\nbody\n`)
     expect(swept(held).withPair('Total', 'Count: 5\n')).toBe(
       `---\n${ID}Status: Done\nOther: 1\nTotal: 5\n---\nbody\n`,
     )

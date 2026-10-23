@@ -2,7 +2,7 @@
 
 import { basename, join } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { landValue } from '../Files/rootValues'
+import { isBlankRaw, landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
 import { buildPageIndex, type PageIndex, pageKey } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -11,7 +11,6 @@ import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { stampedIdOf } from '../Files/pageFile'
 import { sweepGovernedRoots } from '../Nexus/governedSweep'
-import { isBlankRaw } from '../Properties/propertyValue'
 import { contentPages, listBundles, originPagesIn } from '../Bundles/bundle'
 import { patchRecord } from '../Bundles/record'
 

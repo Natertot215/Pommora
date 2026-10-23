@@ -90,7 +90,7 @@ async function setSpaceContext(
       entries.push({ file: far.path, fieldId: own.def.id, before: raw[backKey] })
       const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without
-      return writtenRoot(raw, backKey, next.length ? next : undefined, world)
+      return writtenRoot(raw, backKey, next, world)
     })
     if (!half.ok) skipped++
   }

@@ -107,6 +107,20 @@ describe('runRepairSweep', () => {
     walks.mockRestore()
   })
 
+  it.each([
+    'Status:',
+    'Status: null',
+    'Status: ""',
+    'Status: "   "',
+  ])('lifts the blank governed lines `%s` and `Tags: []`, leaving an ungoverned bare key', async (line) => {
+    await frontmatter(`${line}\nTags: []\nMood:`)
+    await runRepairSweep(root, await seedContentIndex(root))
+    const out = await readFile(page, 'utf8')
+    expect(out).not.toContain('Status')
+    expect(out).not.toContain('Tags')
+    expect(out).toContain('Mood:\n')
+  })
+
   it('with the toggle off nothing is written', async () => {
     await settings(false)
     await refreshTree(root)

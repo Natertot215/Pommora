@@ -199,13 +199,38 @@ describe.each([
   })
 })
 
+describe('a write on a page', () => {
+  it.each([
+    'Status:',
+    'Status: null',
+    'Status: ""',
+    'Status: "   "',
+  ])('a write lifts the blank governed lines `%s` and `Tags: []`, leaving an ungoverned bare key', async (line) => {
+    await page.seed('Status', null, `${line}\nTags: []\nMood:`)
+    await set(page, 'Count', { kind: 'number', value: 5 })
+    expect(await readFile(pageFile(), 'utf8')).toBe(
+      `---\nID: ${PAGE_ID}\nMood:\nCount: 5\n---\nb\n`,
+    )
+  })
+})
+
+describe('an undo on a Space', () => {
+  it('an undo of a write over a blank value leaves no key', async () => {
+    await space.seed('Status', null, '')
+    const written = await set(space, 'Status', { kind: 'select', value: 'opt_Doing' })
+    expect(await space.held('Status')).toBe('["Doing"]')
+    await undo(written)
+    expect(await space.held('Status')).toBeUndefined()
+  })
+})
+
 describe('an undo on a page', () => {
-  it('a bare key comes back bare', async () => {
+  it('an undo of a write over a bare key leaves no line', async () => {
     await page.seed('Status', null, 'Status:')
     const written = await set(page, 'Status', { kind: 'select', value: 'opt_Doing' })
     expect(await page.held('Status')).toBe('Status:\n  - Doing')
     await undo(written)
-    expect(await page.held('Status')).toBe('Status:')
+    expect(await page.held('Status')).toBeUndefined()
   })
 
   it('a cleared key between two others leaves no line, and its undo puts it back where it stood, byte for byte', async () => {

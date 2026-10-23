@@ -9,7 +9,7 @@ import {
   type SelectOption,
 } from './properties'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
-import { joinValues } from '../Files/rootValues'
+import { isBlankRaw, joinValues } from '../Files/rootValues'
 import { yamlInline } from '../Files/pageFile'
 import { linkEntry } from '../Connections/linkValue'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
@@ -261,12 +261,6 @@ export function valueToWrite(
   if (kind && selectedValues(value).some((id) => !findOption(def, id))) return NO_OPTION
   return ok(encodeValue(def, value))
 }
-
-/** Blank as a file spells it, before any definition reads it: nothing, only spaces, or an empty list. */
-export const isBlankRaw = (raw: unknown): boolean =>
-  raw == null ||
-  (typeof raw === 'string' && raw.trim() === '') ||
-  (Array.isArray(raw) && raw.length === 0)
 
 export const selectedValues = (current: PropertyValue | null): string[] => {
   if (!current) return []

@@ -20,8 +20,7 @@ import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
 import type { PropertyDefinition } from '../Properties/properties'
-import { isBlankRaw } from '../Properties/propertyValue'
-import { landValue } from '../Files/rootValues'
+import { isBlankRaw, landValue } from '../Files/rootValues'
 
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */

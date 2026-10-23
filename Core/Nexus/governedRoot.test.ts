@@ -124,10 +124,10 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
   })
 
-  it('a live reconcile keeps an empty list, a bare key, and a key naming only an unknown Space as written', () => {
+  it('a live reconcile removes an empty list and a bare key, and keeps a key naming only an unknown Space as written', () => {
     const r = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas })
-    expect(r.root).toEqual(emptied)
-    expect(r.changed).toEqual([])
+    expect(r.root).toEqual({ '<Projects>': ['Pomora'] })
+    expect(r.changed.sort()).toEqual(['<Areas>', '<Classes>'])
   })
 
   it('writes a Space named twice once', () => {
@@ -225,13 +225,12 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual(['Tags'])
   })
 
-  it('a spaces-only Text value reads as nothing, so a sibling write keeps it and a restore drops it', () => {
-    const live = reconcileGovernedRoot({ Notes: '   ' }, world)
-    expect(live.root).toEqual({ Notes: '   ' })
-    expect(live.changed).toEqual([])
-    const frozen = reconcileGovernedRoot({ Notes: '   ' }, world, {})
-    expect('Notes' in frozen.root).toBe(false)
-    expect(frozen.changed).toEqual(['Notes'])
+  it('a spaces-only Text value reads as nothing, so a sibling write and a restore both drop it', () => {
+    for (const frozen of [undefined, {}]) {
+      const r = reconcileGovernedRoot({ Notes: '   ' }, world, frozen)
+      expect(r.root).toEqual({})
+      expect(r.changed).toEqual(['Notes'])
+    }
   })
 
   it('a registered key the Collection does not assign passes verbatim', () => {
