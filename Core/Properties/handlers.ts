@@ -36,7 +36,7 @@ import {
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
-import { unsweptLine } from './governedSweep'
+import { unsweptLine } from '../Nexus/governedSweep'
 import { decodeSchemaJournal, type SchemaCascade, type SchemaJournal } from './propertyJournal'
 import type { TilesChanged } from '../Tiles/tiles'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'

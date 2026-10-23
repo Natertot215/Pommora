@@ -11,7 +11,7 @@ import { closeSession, openSession } from './session'
 import './settle'
 import { stabilize } from './treeStabilize'
 import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
-import { unsweptLine } from '../Properties/governedSweep'
+import { unsweptLine } from './governedSweep'
 
 vi.mock('./liveTree', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./liveTree')>()

@@ -12,7 +12,7 @@ import {
   outsideArchive,
   sweepGovernedRoots,
   unsweptLine,
-} from '../Properties/governedSweep'
+} from './governedSweep'
 import { byKey } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf, liveTreeOf } from './liveTree'

@@ -7,7 +7,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { governedReach, outsideArchive } from './governedSweep'
+import { governedReach, outsideArchive } from '../Nexus/governedSweep'
 import { addressable, type NexusPages } from '../Nexus/heldPages'
 
 // A confirmation names only what's outside the Archive. Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.

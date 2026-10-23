@@ -38,8 +38,8 @@ import * as bundles from '../Bundles/bundle'
 import { handleMutate } from './mutate'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
-vi.mock('../Properties/governedSweep', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../Properties/governedSweep')>()
+vi.mock('./governedSweep', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./governedSweep')>()
   return {
     ...real,
     sweepGovernedRoots: async (...args: Parameters<typeof real.sweepGovernedRoots>) => {

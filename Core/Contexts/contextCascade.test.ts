@@ -10,7 +10,7 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from './contextCascade'
-import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { sweepGovernedRoots, unsweptLine } from '../Nexus/governedSweep'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -31,8 +31,8 @@ import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
 import { newId } from '../Nexus/ids'
 
-vi.mock('../Properties/governedSweep', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
+vi.mock('../Nexus/governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Nexus/governedSweep')>()
   return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
 })
 

@@ -19,7 +19,12 @@ import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import { confirmedKeyHolders } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'
-import { governedReach, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
+import {
+  governedReach,
+  sweepCount,
+  sweepGovernedRoots,
+  type SweepPlan,
+} from '../Nexus/governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
   clearSchemaJournal,

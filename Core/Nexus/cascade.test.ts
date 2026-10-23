@@ -3,7 +3,7 @@ import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { deleteCascade, renameCascade } from './cascade'
-import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { createTestPage } from '../Testing/createTestPage'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
@@ -21,8 +21,8 @@ import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesF
 import { landedId } from '../Testing/tileLayouts'
 import { titled } from '../Testing/fixtures'
 
-vi.mock('../Properties/governedSweep', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
+vi.mock('./governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./governedSweep')>()
   return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
 })
 

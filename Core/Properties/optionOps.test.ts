@@ -30,7 +30,7 @@ type PropDefLike = Record<string, unknown> & {
 }
 type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
 import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
-import { unsweptLine } from './governedSweep'
+import { unsweptLine } from '../Nexus/governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import { splitFrontmatter } from '../Files/pageFile'

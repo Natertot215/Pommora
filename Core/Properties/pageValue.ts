@@ -1,6 +1,6 @@
 // Option lists are edited IN PLACE, never decode-to-strings→re-encode — a holder may carry foreign or non-string elements, and an op must touch only its target.
 
-import type { Rewrite } from './governedSweep'
+import type { Rewrite } from '../Nexus/governedSweep'
 import { editHeldList, memberKey } from '../Files/rootValues'
 import type { PropertyDefinition } from './properties'
 

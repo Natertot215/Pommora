@@ -21,7 +21,7 @@ import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
 import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
-import { unsweptLine } from './governedSweep'
+import { unsweptLine } from '../Nexus/governedSweep'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 

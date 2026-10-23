@@ -14,11 +14,11 @@ import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
 import { confirmedKeyHolders, keyedHolders } from './keyHolders'
 import { queryKeyHolders } from '../Index/contentIndex'
-import { collectionFolders, governedReach, sweepGovernedRoots } from './governedSweep'
+import { collectionFolders, governedReach, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
 
-vi.mock('./governedSweep', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('./governedSweep')>()
+vi.mock('../Nexus/governedSweep', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Nexus/governedSweep')>()
   return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
 })
 

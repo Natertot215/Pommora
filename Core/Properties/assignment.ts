@@ -21,7 +21,7 @@ import {
   writtenSpelling,
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
-import { sweepRootsById } from './governedSweep'
+import { sweepRootsById } from '../Nexus/governedSweep'
 import { landValue } from '../Files/rootValues'
 import { ok, fail, type Result } from '../Contract/result'
 
