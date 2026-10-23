@@ -8,7 +8,6 @@ import {
   type Rewrite,
   type RewriteText,
   governedReach,
-  governedRoot,
   outsideArchive,
   sweepGovernedRoots,
   unsweptLine,
@@ -29,7 +28,7 @@ import { rewriteTileConnections, tilesLink } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
-import { gonePageEntry } from './governedRoot'
+import { gonePageEntry, governedRoot } from './governedRoot'
 import { addressable, nexusPages } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'

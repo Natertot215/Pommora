@@ -3,7 +3,8 @@ import { mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { writeNavigationState } from '../Navigation/navigationFile'
-import { setGovernedRootKey } from '../Properties/governedWrite'
+import { landValue } from '../Files/rootValues'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { adoptImageSource } from '../Assets/adoptFile'
 import { fault, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -22,12 +23,16 @@ export async function setBannerOp(
     if (!resolved.ok) return resolved
     const abs = resolved.value
     return machine().lock(abs, async () => {
+      // Checked before the adoption, so a page gone since the tree held it adopts no image.
       if ((await readTextOrNull(abs)) === null) return fault('That page could not be read.')
       const adopted = await adopt()
       if (!adopted.ok) return adopted
       const rel = adopted.value
-      await setGovernedRootKey(abs, 'banner', rel || undefined)
-      return landed(rel)
+      const written = await rewriteRootAt(
+        abs,
+        rewriteRaw((raw) => landValue(raw, 'banner', rel || undefined)),
+      )
+      return written.ok ? landed(rel) : written
     })
   }
 

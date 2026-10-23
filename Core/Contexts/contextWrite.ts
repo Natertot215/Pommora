@@ -2,7 +2,13 @@ import { basename, join, isMarkdownFile } from '../Paths/posix'
 import { contextKey } from './contexts'
 import { namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf, type ContextWorld } from './contextResolve'
-import { pageWorldOf, spaceWorldOf } from '../Nexus/governedRoot'
+import {
+  pageWorldOf,
+  rewriteRaw,
+  rewriteRootAt,
+  spaceWorldOf,
+  writtenRoot,
+} from '../Nexus/governedRoot'
 import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
@@ -25,7 +31,6 @@ import {
   withIds,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { setGovernedRootKey, writtenRoot } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
@@ -56,13 +61,14 @@ export async function setPageContext(
   spaceIds: string[],
 ): Promise<Result<null>> {
   return machine().lock(absFile, async () => {
-    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     const governed = await pageWorldOf(root, absFile)
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
-    await setGovernedRootKey(absFile, key, value, governed)
-    return ok(null)
+    return rewriteRootAt(
+      absFile,
+      rewriteRaw((raw) => writtenRoot(raw, key, value, governed)),
+    )
   })
 }
 

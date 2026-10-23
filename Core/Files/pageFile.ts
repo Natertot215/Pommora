@@ -163,6 +163,9 @@ function nodeSpelledAs(doc: Document, value: unknown, held: unknown[]): Node {
   return node
 }
 
+export const UNPARSED_FRONTMATTER =
+  'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.'
+
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
@@ -180,9 +183,7 @@ function mergeInto(
     const out = serialized(doc)
     if (out !== null) return out
   }
-  throw new Error(
-    'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
-  )
+  throw new Error(UNPARSED_FRONTMATTER)
 }
 
 export function mergeFrontmatter(
