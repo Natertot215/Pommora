@@ -221,15 +221,15 @@ describe('a chip list', () => {
 
   it('gives a repeated value its own chip, so the one pressed is the one that moves', () => {
     const commit = vi.fn()
-    const [a, b] = ['[[a.png]]', '[[b.png]]']
-    mount(rowWith({ prop_files: [a, b, a] }), 'prop_files', {}, { commit })
+    const [a, b] = ['sp-a', 'sp-b']
+    mount({ ...rowWith({}), contextValues: { ctx_areas: [a, b, a] } }, 'ctx_areas', {}, { commit })
     chips().forEach((chip, i) => {
       chip.getBoundingClientRect = () => new DOMRect(i * 50, 0, 40, 20)
     })
     press(chips()[0], 'Enter')
     press(window, 'ArrowRight')
     press(window, 'Enter')
-    expect(commit).toHaveBeenCalledWith({ kind: 'file', value: [b, a, a] })
+    expect(commit).toHaveBeenCalledWith({ kind: 'context', value: [b, a, a] })
   })
 
   it('keeps every chip off the tab order', () => {

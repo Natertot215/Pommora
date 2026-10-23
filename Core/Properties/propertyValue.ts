@@ -148,7 +148,7 @@ export function spelledNumber(next: number, raw: unknown): unknown {
 }
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
-  if (raw === null || raw === undefined) return NULL_VALUE
+  if (isBlankRaw(typeof raw === 'string' ? raw.trim() : raw)) return NULL_VALUE
   const kind = PROPERTY_TYPES[def.type].kind
   switch (kind) {
     case 'number': {
@@ -164,7 +164,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'dateTime':
       return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
     case 'text':
-      return isBlankRaw(raw) ? NULL_VALUE : { kind, value: asText(raw) }
+      return { kind, value: asText(raw) }
     case 'select': {
       // The one rule for an externally written option list: the newest registered element wins.
       const value = optionList(raw)
@@ -177,13 +177,13 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return value.length === 0 ? NULL_VALUE : { kind, value }
     }
     case 'file': {
-      // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
-      const entries: string[] = []
+      // An entry nothing can spell, or spelling only spaces, is dropped rather than nulling the whole list and losing the other attachments; an entry listed twice reads once.
+      const entries = new Set<string>()
       for (const x of listOf(raw)) {
         const entry = linkEntry(x)
-        if (entry !== null && entry !== '') entries.push(entry)
+        if (entry !== null && entry.trim() !== '') entries.add(entry)
       }
-      return entries.length === 0 ? NULL_VALUE : { kind, value: entries }
+      return entries.size === 0 ? NULL_VALUE : { kind, value: [...entries] }
     }
     case 'context':
       return NULL_VALUE

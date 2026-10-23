@@ -204,8 +204,10 @@ describe('decodeValue — lenient on read', () => {
     expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'null' })
   })
 
-  it('an empty string is a link value', () => {
-    expect(decodeValue(def({ type: 'link' }), '')).toEqual({ kind: 'link', value: '' })
+  it('an empty or spaces-only string reads as no value, whatever the type', () => {
+    for (const type of ['text', 'dateTime', 'link', 'select', 'number', 'file'] as const)
+      for (const raw of ['', '   '])
+        expect(decodeValue(def({ type }), raw)).toEqual({ kind: 'null' })
   })
 })
 
@@ -257,6 +259,13 @@ describe('decodeValue — a file value names files', () => {
 
   it('a nested sequence holding more than one entry is not a wikilink and reads as null', () => {
     expect(decodeValue(fileDef, [['a.pdf', 'b.pdf']])).toEqual({ kind: 'null' })
+  })
+
+  it('drops a spaces-only entry and reads an entry listed twice once', () => {
+    expect(decodeValue(fileDef, ['[[a.png]]', '   ', '[[a.png]]', '[[b.png]]'])).toEqual({
+      kind: 'file',
+      value: ['[[a.png]]', '[[b.png]]'],
+    })
   })
 
   it('nothing left to name is nothing', () => {

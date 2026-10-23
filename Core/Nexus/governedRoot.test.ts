@@ -217,6 +217,15 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual(['Tags'])
   })
 
+  it('a spaces-only Text value reads as nothing, so a sibling write keeps it and a restore drops it', () => {
+    const live = reconcileGovernedRoot({ Notes: '   ' }, world)
+    expect(live.root).toEqual({ Notes: '   ' })
+    expect(live.changed).toEqual([])
+    const frozen = reconcileGovernedRoot({ Notes: '   ' }, world, {})
+    expect('Notes' in frozen.root).toBe(false)
+    expect(frozen.changed).toEqual(['Notes'])
+  })
+
   it('a registered key the Collection does not assign passes verbatim', () => {
     const { root, changed } = reconcileGovernedRoot({ Priority: 5 }, world)
     expect(root.Priority).toBe(5)
