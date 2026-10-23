@@ -1,9 +1,15 @@
 import { useMemo } from 'react'
 import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { groupable, type PropertyDefinition, type PropertyType } from '../../Properties/properties'
+import {
+  groupable,
+  type PropertyDefinition,
+  type PropertyType,
+  type SelectOption,
+} from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
 import {
+  bandKey,
   type DateGranularity,
   type GroupConfig,
   type GroupLevel,
@@ -47,7 +53,6 @@ import {
   liveBucketOrder,
   orderedChildren,
   type PropertyGroup,
-  subGroupKey,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
 import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
@@ -387,7 +392,7 @@ function LocationHierarchy({
           children: subDef
             ? subChips.map(
                 (o): ResolvedGroup => ({
-                  key: subGroupKey(id, o.id),
+                  key: bandKey(subDef.id, o.id, id),
                   kind: 'bucket',
                   value: o.id,
                   items: [],
@@ -408,13 +413,17 @@ function LocationHierarchy({
     dropIO(nodeLabel(model.byKey.get(dragged.key)), persist),
   )
 
-  const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (
+  const subChipRow = (
+    setId: string,
+    o: SelectOption,
+    def: PropertyDefinition,
+  ): React.JSX.Element => (
     <LineRow
       key={o.id}
-      id={subGroupKey(setId, o.id)}
+      id={bandKey(def.id, o.id, setId)}
       className={cx(optionRow, gp.subChip, subControls.isHidden?.(o.id) && hiddenRow)}
     >
-      <OptionChip type={subDef?.type} option={o} />
+      <OptionChip type={def.type} option={o} />
       {rowEye(o.label, o.id, subControls)}
     </LineRow>
   )
@@ -422,7 +431,9 @@ function LocationHierarchy({
   const setsIn = (parentKey: string | null): SetNode[] =>
     orderedChildren(sets, parentKey, plan, view).map((id) => sets.node.get(id)!)
   const renderSet = (s: SetNode): React.JSX.Element => {
-    const body = subDef ? subChips.map((o) => subChipRow(s.id, o)) : setsIn(s.id).map(renderSet)
+    const body = subDef
+      ? subChips.map((o) => subChipRow(s.id, o, subDef))
+      : setsIn(s.id).map(renderSet)
     const disclosable = body.length > 0
     const setHidden = isHidden?.(s.id) ?? false
     const node = model.byKey.get(s.id)
