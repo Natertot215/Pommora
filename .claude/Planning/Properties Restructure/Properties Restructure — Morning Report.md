@@ -39,20 +39,7 @@ Most of it changes nothing you'll see. Where something does change, it's either 
 
 ### What I Need From You
 
-Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is two calls execution raised and a short list of small visible changes, for awareness only.
-
-#### Calls From Execution
-
-- **Date's Menu Name:**
-  - **Today:** a Date column's right-click calls its date and time choices "Style," while the Date settings in the Properties pane head the same choices "Format." Number reads "Style" in both places for its Number-or-Bar choice, as you ruled in I-4, and Link reads "Format" in both.
-  - **As Planned:** it stays this way. The pane's wording is frozen, and I-4 named every type but Link "Style" in the right-click, so Date keeps the mismatch.
-  - **Alternative:** Date's right-click reads "Format," matching its own pane and Link. Its choices, such as MM/DD/YYYY, Full Date, or Relative, and the time's format, are how the date is written rather than how it's drawn. It's one word in Date's type entry, with no line cost.
-  - **Recommendation:** take the alternative. The line you drew for Number, where "Format" is how the number is written and "Style" is how it's drawn, puts Date's choices on the Format side.
-- **Where an Undone Property Comes Back:**
-  - **Today:** unchecking a Checkbox or clearing a value removes its line from the page's front matter. Undo puts the line back, but at the bottom of the front matter rather than where it stood, so it shows wherever the file's order shows, such as Obsidian's properties list in NexusOS.
-  - **As Planned:** it keeps landing at the bottom. Phase 6 made undo put back exactly what the file held for the edited property, but not its position.
-  - **Alternative:** undo puts the line back where it stood. The record of what the file held also notes the line's place, and the put-back lands it there, for a few added lines.
-  - **Recommendation:** take the alternative. "Undo puts back exactly what the file held" is the plan's own promise, and NexusOS is read in Obsidian, where the order is visible.
+Your seven decisions are folded into the plan as its own design, and the walkthrough below reads with them. What's left is a short list of small visible changes, for awareness only.
 
 #### Small Things You'll See
 
@@ -129,12 +116,13 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** The screen keeps undo's memory: it notes what it last read of the page before the change, and undo sends that back. That's close to the file but not exact. A property written bare (just `Status:` with nothing after it) comes back as `Status: null`. Undoing a Context pick on a tag naming a Space Pommora can't find, such as an Obsidian typo, deletes the unknown names. A second edit made before the screen catches up can make undo send back the screen's guess. Giving a Link value a new display name also gives the linked page that alias, and undo leaves the alias behind.
 
-**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. An undo that can't reach a file offers Try Again, which puts back only what it missed, so it never overwrites an edit you made since. Also: LC-16.
+**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. An undo that can't reach a file offers Try Again, which puts back only what it missed, so it never overwrites an edit you made since. A line undo puts back lands where it stood in the front matter rather than at the bottom. Also: LC-16.
 
 **Your Calls:**
 - [E-1] Undo puts back what the file held, recorded by the part of Pommora that writes the file.
 - [E-2] Undo puts back only the edited property.
 - [E-3] Undoing a Link value also takes back the alias it added.
+- [E-4] Undo puts a line back where it stood, across all front matter.
 
 **Behind the Scenes:**
 - Two undo routes and two ways of putting text back become one each, shared with the put-back multi-file changes already use.
@@ -280,7 +268,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **What Changes:**
 - Every type's editor shares one layout (LC-55).
-- A column's right-click calls Number's look "Style," while Link's stays "Format."
+- A column's right-click calls Number's look "Style," while Link's stays "Format" and Date's choices read "Format," as Date's own settings pane heads them.
 - A fraction denominator of zero or less is refused.
 - An editor whose property disappears returns to the property list (LC-60).
 - The standard header's spoken "Edit icon" reads "Edit Icon," as every menu spells it.
@@ -293,7 +281,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 - [I-1] The pane's layout and wording stay for your I-076 pass; no row moves and no row's words change.
 - [I-2] Each type's settings keep reaching where they reach today.
 - [I-3] An unset Link Format stays Full Link, since Default Link Format is set per device and governs pasting.
-- [I-4] Number's look reads "Style" in a column's right-click.
+- [I-4] Number's look reads "Style" in a column's right-click, and Date's choices read "Format."
 - [O-5] An editor whose property disappears returns to the property list.
 
 **Behind the Scenes:**

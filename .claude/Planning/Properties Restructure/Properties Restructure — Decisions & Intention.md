@@ -68,6 +68,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **E-1 [CONFIRMED]:** Undo is meant to put back what the file held, recorded by the part of Pommora that writes the file, rather than re-sending what a cell or the panel showed.
 - **E-2 [CONFIRMED]:** Undo puts back only the property that was edited, leaving the tidy-ups the edit made to other properties on the page in place.
 - **E-3 [CONFIRMED]:** Undoing a Link value also takes back the page alias that value added.
+- **E-4 [CONFIRMED]:** Undo puts a front-matter line back where it stood rather than at the end, across all front matter (Nathan, 10-23-2026: "have undo put it back across ALL frontmatter").
 
 #### F - Property Types
 
@@ -91,7 +92,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **I-1 [CONFIRMED]:** How the property settings panes are laid out, and how a row's wording says whether it sets the property or only the current view, stay as they are and are filed as I-076 for Nathan's own later pass; this work moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording, such as the Date and Decimals rows, as it reads.
 - **I-2 [CONFIRMED]:** Each type's settings keep reaching where they reach today. A Date's display stays per view, following the Settings window's Date Format and Time Format until a view picks its own, with nothing about it on the property. A Link keeps its Format on the property as the default every view shows, a column's menu overriding it for that view, and its Underline and Color on the property, Color falling back to the Settings window's External Link Color. A Number keeps Format, Currency, Separators, Decimals, and Fraction on the property and its Number or Bar look per view. A Checkbox keeps its Color on the property, falling back to the Settings window's Checkbox Color, and its Checkbox or Switch look per view.
 - **I-3 [CONFIRMED]:** A Link property whose Format was never set may follow the existing Default Link Format setting rather than a fixed default, where planning finds that cohesive; that setting is kept per device today and governs the format an external link is pasted with, so planning weighs that difference before tying them together, and otherwise leaves the default as it is.
-- **I-4 [CONFIRMED]:** A column's right-click names Number's Number or Bar choice "Style," as every other type's look reads there, while a Link's display choice keeps the name "Format"; I-076's note on the column menu's wording is rewritten to match when this lands.
+- **I-4 [CONFIRMED]:** A column's right-click names Number's Number or Bar choice "Style," as every other type's look reads there, while a Link's display choice and a Date's date and time choices read "Format," since they set how the value is written (Date's ruled 10-23-2026); I-076's note on the column menu's wording is rewritten to match when this lands.
 
 #### J - Value Surfaces
 
