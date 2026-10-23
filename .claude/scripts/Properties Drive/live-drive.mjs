@@ -1,13 +1,13 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  ask, click, escapeAll, launch, mouseClick, must, NEXUS, openCollection, portalOpen, restore, results, sel,
-  SETTINGS_BUTTON, settles, shot, sleep, until,
+  ask, boxOf, click, createPage, escapeAll, labels, launch, mouseClick, must, NEXUS, openCollection, pickNative,
+  popNative, portalOpen, restore, results, row, sel, SETTINGS_BUTTON, settles, shot, sleep, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1']
+const LANDED = ['1', '2']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -106,12 +106,50 @@ async function group1(cdp) {
   await until('the registry as it was', async () => !(await held(cdp, witness.id)))
 }
 
+// ── Group 2 · Type Records and Looks ────────────────────────────────────────
+
+const header = (label) => `[...document.querySelectorAll('.table-head .col-header')].find((h) => h.textContent.trim() === ${JSON.stringify(label)})`
+/** A header's native menu, read and closed without a choice. */
+async function headerMenu(cdp, label) {
+  const rows = await popNative(cdp, await boxOf(cdp, header(label)), 'right')
+  await pickNative([])
+  return labels(rows)
+}
+
+async function group2(cdp) {
+  const ids = {}
+  for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
+    ids[label] = (await must(`add ${label}`, ask(cdp, 'schema:add', 'Collection A', { id: '', label, type }))).id
+  await must('Looks Number as a percent', ask(cdp, 'property:setNumberFormat', ids['Looks Number'], { number_family: 'percent' }))
+  await must('Looks Select gains Alpha', ask(cdp, 'property:editOption', ids['Looks Select'], { op: 'add', groupId: 'select', label: 'Alpha' }))
+  const view = {
+    id: 'view_01KZPROPDRIVE00000LOOKSTABL', name: 'Looks Table', type: 'table',
+    property_order: ['_title', ids['Looks Number'], ids['Looks Link'], ids['Looks Select']], hidden_properties: [],
+    column_styles: { [ids['Looks Select']]: { look: 'compact' } },
+  }
+  await must('save the Looks Table', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
+  await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
+  await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: 'Alpha' } })
+  await openCollection(cdp)
+  // An earlier group's view settings panel covers the right-hand headers.
+  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await until('the Looks Table headers', () => cdp.evaluate(`!!(${header('Looks Select')})`))
+
+  const number = await headerMenu(cdp, 'Looks Number')
+  item(2, 'I-4', "a Number column's right-click names its look Style", number.includes('Style') && !number.includes('Format'), show(number))
+  const link = await headerMenu(cdp, 'Looks Link')
+  item(2, 'I-4', "a Link column's right-click names its look Format", link.includes('Format') && !link.includes('Style'), show(link))
+  const tagged = await settles(() => cdp.evaluate(`!!${row('Looks One')}?.querySelector('.cell-chips svg.lucide-tag')`))
+  item(2, 'M-1', 'a compact Select chip keeps its tag glyph', tagged, show({ tagged }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
 try {
   cdp = (await launch(PORT, 'properties-shots')).cdp
   if (GROUPS.has('1')) await group1(cdp)
+  if (GROUPS.has('2')) await group2(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
