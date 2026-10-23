@@ -5,7 +5,7 @@ import type { HeldKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
 import type { NexusPages } from '../Nexus/heldPages'
 import { containerTrailById } from '../Nexus/treePatch'
-import { type PropertyType, propertyType } from '../Properties/properties'
+import { type PropertyType, typeIds } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { type BundleStore, type ListedBundle, layoutOf, storedAtOf } from './bundle'
 import { resolveRecord } from './placement'
@@ -88,7 +88,7 @@ export function bundleRowOf(
 ): BundleRow | null {
   const { record, bundlePath, artifactName } = bundle
   if (record.entity === 'property') {
-    const type = propertyType.safeParse(record.def.type)
+    const type = typeIds.safeParse(record.def.type)
     return matched({
       bundlePath,
       kind: 'property',

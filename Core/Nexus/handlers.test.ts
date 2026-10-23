@@ -163,20 +163,6 @@ describe('openNexusSequence', () => {
     expect(openStores).toHaveBeenLastCalledWith(root, NEXUS)
   })
 
-  it('respells a legacy property type in the registry it opens', async () => {
-    const registry = join(root, '.nexus', 'properties.json')
-    await writeFile(
-      registry,
-      JSON.stringify({
-        defs: { a: { id: 'a', label: 'Tags', key: 'Tags', type: 'multi_select' } },
-      }),
-    )
-    await openNexusSequence(ctx, root, false)
-    expect((await readJsonAt<{ defs: { a: { type: string } } }>(registry)).defs.a.type).toBe(
-      'multiSelect',
-    )
-  })
-
   it('registers the Multi-Select member a page already holds once the Nexus opens', async () => {
     const registry = join(root, '.nexus', 'properties.json')
     await seedNexus(root, {

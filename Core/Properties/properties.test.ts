@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  LEGACY_TYPE_IDS,
   byKey,
   LINK_DISPLAYS,
   propertyDefinition,
-  propertyType,
+  typeIds,
   isReservedPropertyId,
   defaultStatusSeed,
   groupable,
@@ -21,7 +20,7 @@ import {
   withOptionGroups,
 } from './properties'
 
-describe('propertyType', () => {
+describe('typeIds', () => {
   it('accepts the 12 type ids', () => {
     for (const t of [
       'text',
@@ -37,17 +36,12 @@ describe('propertyType', () => {
       'lastEditedTime',
       'file',
     ]) {
-      expect(propertyType.safeParse(t).data).toBe(t)
+      expect(typeIds.safeParse(t).data).toBe(t)
     }
   })
 
-  it('reads each legacy spelling as its current id', () => {
-    for (const [legacy, id] of Object.entries(LEGACY_TYPE_IDS))
-      expect(propertyType.safeParse(legacy).data).toBe(id)
-  })
-
   it('rejects an unknown type', () => {
-    expect(propertyType.safeParse('rich_text').success).toBe(false)
+    expect(typeIds.safeParse('rich_text').success).toBe(false)
   })
 })
 

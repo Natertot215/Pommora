@@ -19,11 +19,11 @@ export async function listEntries(dir: string): Promise<DirEntry[]> {
   }
 }
 
-async function filesUnder(dir: string): Promise<string[]> {
+export async function listFilesRecursive(dir: string): Promise<string[]> {
   const out: string[] = []
   for (const e of await listEntries(dir)) {
     const abs = join(dir, e.name)
-    if (e.kind === 'dir') out.push(...(await filesUnder(abs)))
+    if (e.kind === 'dir') out.push(...(await listFilesRecursive(abs)))
     else if (e.kind === 'file') out.push(abs)
   }
   return out
@@ -101,9 +101,4 @@ export async function sidecarsUnder(
     files.push(...rels.map((rel) => join(root, rel)))
   }
   return files
-}
-
-export async function listFilesRecursive(dir: string, suffixes?: string[]): Promise<string[]> {
-  const all = await filesUnder(dir)
-  return suffixes ? all.filter((abs) => suffixes.some((s) => abs.endsWith(s))) : all
 }

@@ -412,26 +412,6 @@ describe('an option edit leaves every other stored entry as written', () => {
     ])
     expect(defs.prop_multi.select_options).toEqual([{ key: 'a', label: 'a' }])
   })
-
-  it('an entry stored under a legacy type spelling keeps that spelling and its neighbors through every writer', async () => {
-    const file = await readJsonAt<RegistryFile>(registryFile())
-    file.defs.prop_multi.type = 'multi_select'
-    await writeFile(registryFile(), JSON.stringify(file))
-    expect(
-      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, label: 'c' })).ok,
-    ).toBe(true)
-    expect(
-      (await editOption(root, 'prop_multi', { op: 'recolor', option: 'a', color: 'red' })).ok,
-    ).toBe(true)
-    expect((await renameOption(root, 'prop_multi', 'a', 'aa')).ok).toBe(true)
-    const defs = await rawDefs()
-    expect(defs.prop_multi.type).toBe('multi_select')
-    expect(defs.prop_multi.select_options).toEqual([
-      { key: 'aa', label: 'aa', color: 'red' },
-      multiSeed[1],
-      { key: 'c', label: 'c' },
-    ])
-  })
 })
 
 describe('an option rename keeps every stored label', () => {

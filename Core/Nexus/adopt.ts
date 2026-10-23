@@ -25,7 +25,6 @@ import { readIdentity } from './identity'
 import { idHeld } from './heldPages'
 import { asString } from './coerce'
 import { recordWrite } from '../Files/writeEcho'
-import { renamedSidecar } from './migrateConfig'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
 import {
@@ -106,11 +105,10 @@ async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<string
   const written = await rmwJsonStrict(
     file,
     (cur) => {
-      const renamed = renamedSidecar(cur)
       id = asString(cur.id) ?? null
-      if (id) return renamed
+      if (id) return null
       id = newId()
-      return { ...(renamed ?? cur), id }
+      return { ...cur, id }
     },
     () => ({}),
   )
