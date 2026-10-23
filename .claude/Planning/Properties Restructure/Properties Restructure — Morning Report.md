@@ -1,7 +1,7 @@
 ## Properties Restructure — Morning Report
 
 **DATE:** 10-22-2026
-**STATUS:** Executing through `c/plan-execution`; Phases 1–5 landed (10-23-2026).
+**STATUS:** Executing through `c/plan-execution`; Phases 1–6 landed (10-23-2026).
 
 ### What the Plan Is
 
@@ -70,7 +70,7 @@ No action needed. These are visible changes the plan makes on its own; speak up 
 
 ### Where It Stands
 
-- **Execution:** Phases 1 through 5 of 21 have landed, at −275 production lines against a written −273; the review after Phase 2 folded 11 more lines out, and Phase 4A landed 8 over its figure to keep a read error's wording and break an import loop. Both reviews so far found no defects, and their smaller folds either landed or wait in the execution log for the last phase that touches their files. Every remaining change was then applied in a throwaway copy of the landed code, and it fits exactly as the plan does on its own.
+- **Execution:** Phases 1 through 6 of 21 have landed, at −244 production lines against a written −234; the review after Phase 2 folded 11 more lines out, Phase 4A landed 8 over its figure to keep a read error's wording and break an import loop, your P-4 took 7 out, and Phase 6's review fixed two undo defects and folded four hand-built writers into one. Phase 6's speed check, F3, passed. Both reviews so far found no defects, and their smaller folds either landed or wait in the execution log for the last phase that touches their files. Every remaining change was then applied in a throwaway copy of the landed code, and it fits exactly as the plan does on its own.
 - **The Plan:** 21 phases and 140 tasks. Every code change applies mechanically: the replay tool applies 2,559 changes with no mismatches and skips 9 that land only if a speed measurement fails.
 - **The Numbers:** about −514 production lines if every speed measurement passes; about −438 if F3 fails, and about −376 if all three fail. The plan ends below zero on every outcome; the running count rises above zero after Phase 11B (peaking at about +177 after Phase 12) before Phase 15 brings it back down, and if F3 fails it rises above zero after Phase 11B (peaking at about +258 after Phase 12) before Phase 16A brings it back down. Seven phases add lines (P4B, P6, P10, P11A, P11B, and P12, plus P15 only if its speed check fails), each because it lands a ruling or a repair no existing code performs; *Planning Findings › §The Ledger* gives each one's reason.
 - **The Reviews:** two reviewers raised 114 findings; 103 were applied, 5 rejected with reasons, 5 became Last Calls, and 1 was replaced by a different fix. Replaying the plan in order then found 48 defects that would have broken a phase, such as a removed import still in use, and two correction passes fixed them.
