@@ -253,11 +253,7 @@ const META_DIR = '.nexus/metadata'
 const aliasesOf = (title) =>
   readdirSync(join(NEXUS, META_DIR)).filter((n) => n.endsWith('.json'))
     .map((n) => JSON.parse(read(`${META_DIR}/${n}`)).pages?.[pageIds[title]]).find(Boolean)?.aliases ?? []
-const bareKey = (title, key) => {
-  const lines = frontRaw(title).split('\n')
-  const at = lines.indexOf(`${key}:`)
-  return at >= 0 && !/^\s/.test(lines[at + 1] ?? '')
-}
+const holdsLine = (title, key) => frontRaw(title).split('\n').some((l) => l.startsWith(`${key}:`))
 
 async function group5(cdp) {
   const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Pick', type: 'select' } }))
@@ -281,8 +277,8 @@ async function group5(cdp) {
   await escapeAll(cdp)
   const picked = await settles(async () => JSON.stringify(frontmatter('Drive Undo Page')['Drive Undo Pick']) === '["Doing"]')
   await pressKey(cdp, 'z', META)
-  const bare = await settles(async () => bareKey('Drive Undo Page', 'Drive Undo Pick'))
-  item(5, 'E-1 E-2', 'a pick on a bare key, undone, leaves the key bare', picked && bare, frontRaw('Drive Undo Page'))
+  const gone = await settles(async () => !holdsLine('Drive Undo Page', 'Drive Undo Pick'))
+  item(5, 'E-2 P-5', 'a pick on a bare key, undone, leaves no line', picked && gone, `the frontmatter still holds a Drive Undo Pick line: ${show(frontRaw('Drive Undo Page'))}`)
 
   const box = await boxOf(cdp, cell(2))
   await mouseAt(cdp, { x: box.left + 4, y: box.y })
