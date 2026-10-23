@@ -13,7 +13,8 @@ import {
   pickViewState,
   mapTiles,
   mapViews,
-  clearHiddenBuckets,
+  bandKey,
+  clearBandKeys,
   type SavedView,
 } from './views'
 import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
@@ -522,17 +523,29 @@ describe('the saved-view traversal', () => {
   })
 })
 
-describe('the stored hidden-group keys', () => {
-  it('a clear drops the property’s encoded keys at both levels and keeps another property’s', () => {
+describe('bandKey', () => {
+  it('spells a property band <property>/<bucket>, and a sub-band under its Set <set>/<property>/<bucket>', () => {
+    expect(bandKey('prop_A', 'opt_x')).toBe('prop_A/opt_x')
+    expect(bandKey('prop_A', 'opt_x', 'set_1')).toBe('set_1/prop_A/opt_x')
+  })
+})
+
+describe('clearBandKeys', () => {
+  it('drops every hidden and collapsed key a property’s buckets hold, and keeps Set ids and another property’s keys', () => {
     expect(
-      clearHiddenBuckets(
-        ['prop_A/Done', 'sub/prop_A/Todo', 'prop_B/Done', 'sub/prop_B/Todo'],
+      clearBandKeys(
+        [
+          'prop_A/opt_x',
+          'sub/prop_A/opt_x',
+          'set_1/prop_A/opt_x',
+          'set_1/prop_A/_ungrouped',
+          'set_1',
+          'prop_B/opt_x',
+          'set_1/prop_B/opt_x',
+        ],
         'prop_A',
       ),
-    ).toEqual(['prop_B/Done', 'sub/prop_B/Todo'])
-  })
-
-  it('a clear answers null when no key is the property’s own', () => {
-    expect(clearHiddenBuckets(['prop_B/Done'], 'prop_A')).toBeNull()
+    ).toEqual(['set_1', 'prop_B/opt_x', 'set_1/prop_B/opt_x'])
+    expect(clearBandKeys(['set_1'], 'prop_A')).toBeNull()
   })
 })

@@ -10,6 +10,7 @@ import {
   isEmptyBand,
 } from '../viewRow'
 import {
+  bandKey,
   type DateGranularity,
   type DateSeparator,
   type EmptyPlacement,
@@ -274,12 +275,13 @@ function property(
   const buckets = byBucket as Map<string, ViewRow[]>
 
   const groups: ResolvedGroup[] = []
-  // Only LIVE schema keys earn an empty band: a stale manual-order key (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
-  const liveKeys = new Set(schemaOptionOrder(def) ?? [])
-  for (const key of liveBucketOrder(group, def, buckets.keys())) {
-    const items = buckets.get(key) ?? []
-    if (items.length === 0 && !liveKeys.has(key)) continue
-    groups.push({ key, kind: 'bucket', value: key, items: applySort(items, sorter) })
+  // Only a LIVE option earns an empty band: a stale manual-order entry (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
+  const live = new Set(schemaOptionOrder(def) ?? [])
+  for (const bucket of liveBucketOrder(group, def, buckets.keys())) {
+    const items = buckets.get(bucket) ?? []
+    if (items.length === 0 && !live.has(bucket)) continue
+    const key = bandKey(group.property_id, bucket)
+    groups.push({ key, kind: 'bucket', value: bucket, items: applySort(items, sorter) })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
   return placeTail(groups, noValue, sorter, placement)
@@ -336,9 +338,6 @@ function locationFlat(
   return [{ key: UNGROUPED, kind: 'tail', items: bands.flatMap((g) => g.items) }]
 }
 
-/** Set ids are ULIDs, never containing `/`, so one set's collapse never bleeds into its twin bucket in another set. */
-export const subGroupKey = (setId: string, bucket: string): string => `${setId}/${bucket}`
-
 function structuralSubGrouped(
   rows: ViewRow[],
   setTree: SetTreeNode[],
@@ -362,11 +361,11 @@ function structuralSubGrouped(
     let children = bucketOrder(sub, def, new Set(buckets.keys())).flatMap((b): ResolvedGroup[] => {
       const items = buckets.get(b)
       if (!items) return []
-      return [
-        { key: subGroupKey(node.id, b), kind: 'bucket', value: b, items: applySort(items, sorter) },
-      ]
+      const key = bandKey(sub.property_id, b, node.id)
+      return [{ key, kind: 'bucket', value: b, items: applySort(items, sorter) }]
     })
-    children = placeTail(children, noValue, sorter, placement, subGroupKey(node.id, UNGROUPED))
+    const tail = bandKey(sub.property_id, UNGROUPED, node.id)
+    children = placeTail(children, noValue, sorter, placement, tail)
     return {
       key: node.id,
       kind: 'set',

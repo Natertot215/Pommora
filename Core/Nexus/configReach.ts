@@ -1,6 +1,6 @@
 import {
-  clearHiddenBuckets,
-  groupsOn,
+  bandKey,
+  clearBandKeys,
   mapTiles,
   mapViews,
   type SavedView,
@@ -47,7 +47,6 @@ type Role =
   | 'criteria'
   | 'group'
   | 'subGroup'
-  | 'hiddenKeys'
   | 'bandKeys'
 
 const ROLES = {
@@ -63,7 +62,7 @@ const ROLES = {
   column_styles: 'idMap',
   collapsed_groups: 'bandKeys',
   manual_order: 'none',
-  hidden_groups: 'hiddenKeys',
+  hidden_groups: 'bandKeys',
   hide_empty_groups: 'none',
   card_size: 'none',
   view_scale: 'none',
@@ -93,7 +92,7 @@ type ConfigEdit = { kind: 'property'; propertyId: string } | ({ kind: 'gone' } &
 
 type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
-type Handler<E> = (e: E, held: unknown, view: SavedView) => unknown
+type Handler<E> = (e: E, held: unknown) => unknown
 
 /** A group the edit leaves without a rule is absent, as the filter pane writes it. */
 function editRules(held: unknown, fn: (rule: Raw) => Raw | null): unknown {
@@ -136,7 +135,7 @@ const gone =
   (e: Gone): Matcher =>
   (el) =>
     typeof el === 'string' &&
-    e.ids.some((id) => isAtOrUnder(el, id) || `/${el}`.endsWith(`/${e.propertyId}/${id}`))
+    e.ids.some((id) => isAtOrUnder(el, id) || `/${el}`.endsWith(`/${bandKey(e.propertyId, id)}`))
 
 const goneRule = (e: Gone, rule: Raw): Raw | null =>
   onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
@@ -161,13 +160,7 @@ const CLEAR: Record<Role, Handler<string>> = {
   criteria: (id, held) => (Array.isArray(held) ? held.filter((c) => !onProperty(id, c)) : held),
   group: (id, held) => (onProperty(id, held) ? { kind: 'structural' } : held),
   subGroup: (id, held) => (onProperty(id, held) ? undefined : held),
-  hiddenKeys: (id, held) => overStrings(held, (keys) => clearHiddenBuckets(keys, id)),
-  bandKeys: (id, held, view) =>
-    groupsOn(view, 'group', id)
-      ? []
-      : groupsOn(view, 'sub', id) && Array.isArray(held)
-        ? held.filter((k) => typeof k !== 'string' || !k.includes('/'))
-        : held,
+  bandKeys: (id, held) => overStrings(held, (keys) => clearBandKeys(keys, id)),
 }
 
 const stripGone: Handler<Gone> = (e, held) =>
@@ -182,18 +175,16 @@ const GONE: Record<Role, Handler<Gone>> = {
   criteria: (e, held) => (Array.isArray(held) ? held.map((c) => goneOrder(e, c)) : held),
   group: goneOrder,
   subGroup: goneOrder,
-  hiddenKeys: stripGone,
   bandKeys: stripGone,
 }
 
 function viewEdit<E>(table: Record<Role, Handler<E>>, e: E): ViewEdit {
   return (raw) => {
-    const view = savedView.safeParse(raw).data
-    if (!view) return null
+    if (!savedView.safeParse(raw).success) return null
     const next: Raw = { ...raw }
     for (const [field, role] of Object.entries(ROLES) as [keyof SavedView, Role][]) {
       if (role === 'none' || !(field in raw)) continue
-      const held = table[role](e, raw[field], view)
+      const held = table[role](e, raw[field])
       if (held === undefined) delete next[field]
       else next[field] = held
     }

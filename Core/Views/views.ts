@@ -302,17 +302,15 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
 }
 
 export type GroupLevel = 'group' | 'sub'
-type GroupedView = Pick<SavedView, 'group' | 'sub_group'>
 
 const LEVEL_PREFIX: Record<GroupLevel, string> = { group: '', sub: 'sub/' }
 
-export const groupsOn = (v: GroupedView, level: GroupLevel, propertyId: string): boolean =>
-  level === 'group'
-    ? v.group?.kind === 'property' && v.group.property_id === propertyId
-    : v.sub_group?.property_id === propertyId
+/** A property band's key, `<property>/<bucket>`, under its Set's id when it sub-groups one: hidden and collapsed groups share it, so neither names another property's bucket and one Set's collapse never reaches its twin bucket in another. */
+export const bandKey = (propertyId: string, bucket: string, setId?: string): string =>
+  `${setId === undefined ? '' : `${setId}/`}${propertyId}/${bucket}`
 
 const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
-  `${LEVEL_PREFIX[level]}${propertyId}/${bucket}`
+  `${LEVEL_PREFIX[level]}${bandKey(propertyId, bucket)}`
 
 export const isBucketHidden = (
   hidden: ReadonlySet<string>,
@@ -340,12 +338,10 @@ export const hiddenBuckets = (
   return held.flatMap((k) => (k.startsWith(prefix) ? [k.slice(prefix.length)] : []))
 }
 
-export function clearHiddenBuckets(held: readonly string[], propertyId: string): string[] | null {
-  const own = (k: string): boolean =>
-    k.startsWith(hiddenBucketKey('group', propertyId, '')) ||
-    k.startsWith(hiddenBucketKey('sub', propertyId, ''))
-  const next = held.filter((k) => !own(k))
-  return next.length === held.length ? null : next
+/** `keys` without the hidden and collapsed keys a property's buckets hold, or null when none does. */
+export function clearBandKeys(keys: readonly string[], propertyId: string): string[] | null {
+  const next = keys.filter((k) => !`/${k}`.includes(`/${bandKey(propertyId, '')}`))
+  return next.length === keys.length ? null : next
 }
 
 export const LOCATION_SORT = '__location__'

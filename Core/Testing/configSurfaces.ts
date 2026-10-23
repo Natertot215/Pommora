@@ -5,6 +5,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { putJson, readJsonAt } from './hostFs'
+import { bandKey } from '../Views/views'
 
 type Raw = Record<string, unknown>
 
@@ -32,8 +33,8 @@ export const viewOn = (propertyId: string, value: string): Raw => ({
   filter: { match: 'all', rules: [{ property_id: propertyId, op: 'is', value }] },
   sort: [{ property_id: propertyId, direction: 'ascending', order: [value] }],
   group: { kind: 'property', property_id: propertyId, order_mode: 'manual', order: [value] },
-  hidden_groups: [`${propertyId}/${value}`],
-  collapsed_groups: [value],
+  hidden_groups: [bandKey(propertyId, value)],
+  collapsed_groups: [bandKey(propertyId, value)],
 })
 
 export async function seedConfigSurfaces(

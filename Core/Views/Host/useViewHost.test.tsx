@@ -246,7 +246,11 @@ describe('the persist fold', () => {
           },
         }),
     )
-    expect(bandKeys()).toEqual(['opt_shipped', 'opt_complete', 'opt_archived'])
+    expect(bandKeys()).toEqual([
+      'prop_status/opt_shipped',
+      'prop_status/opt_complete',
+      'prop_status/opt_archived',
+    ])
     await mount(collection({ group: { ...CONFIGURED, order_mode: 'reversed' } }))
     expect(bandKeys()).toEqual([...configured].reverse())
     act(() => api?.toggleCollapse('g1'))
@@ -943,7 +947,7 @@ describe('a create placed ahead of its reply', () => {
       useSession.getState().applyChange({ version: 2, delta: deltaOf(held, next)! })
     })
     expect(commits.find((c) => c.band !== undefined)).toEqual({
-      band: 'opt_complete',
+      band: 'prop_status/opt_complete',
       order: ['p2', 'p3', 'p1'],
     })
     await act(async () => {

@@ -103,24 +103,30 @@ describe('BandGlyph', () => {
   })
 
   it('status → the option value (a Chip)', () => {
-    const node = nodeOf(group('bucket', 'active'), heads(grouping('prop_status')))
+    const node = nodeOf(
+      group('bucket', 'prop_status/active', 'active'),
+      heads(grouping('prop_status')),
+    )
     expect(textOf(<BandGlyph node={node} />)).toContain('active')
   })
 
   it('select → the option value (a Chip)', () => {
-    const node = nodeOf(group('bucket', 'red'), heads(grouping('prop_select')))
+    const node = nodeOf(group('bucket', 'prop_select/red', 'red'), heads(grouping('prop_select')))
     expect(textOf(<BandGlyph node={node} />)).toContain('red')
   })
 
   it('a sub-band inside a Set band → its bucket value, not its composite key', () => {
-    const node = nodeOf(group('bucket', 'sA/red', 'red'), heads(grouping('prop_select')))
+    const node = nodeOf(
+      group('bucket', 'sA/prop_select/red', 'red'),
+      heads(grouping('prop_select')),
+    )
     expect(textOf(<BandGlyph node={node} />)).toContain('red')
     expect(textOf(<BandGlyph node={node} />)).not.toContain('sA')
   })
 
   it('dateTime → the formatted bucket label', () => {
     const node = nodeOf(
-      group('bucket', '2026-07'),
+      group('bucket', 'prop_date/2026-07', '2026-07'),
       heads(grouping('prop_date', { date_granularity: 'month' })),
     )
     expect(node.kind === 'bucket' && node.label).toBe('July 2026')
@@ -129,7 +135,7 @@ describe('BandGlyph', () => {
 
   it("a date band with no form of its own takes the Nexus's", () => {
     const node = nodeOf(
-      group('bucket', '2026-07'),
+      group('bucket', 'prop_date/2026-07', '2026-07'),
       heads(grouping('prop_date', { date_granularity: 'month' }), 'monthDayYear'),
     )
     expect(textOf(<BandGlyph node={node} />)).toContain('07-2026')
@@ -160,7 +166,7 @@ describe('GroupBand', () => {
 
   it("a Date band's head carries no drag handle", () => {
     const h = heads(grouping('prop_date', { date_granularity: 'month' }))
-    const bands = bandModelOf([group('bucket', '2026-07')], h)
+    const bands = bandModelOf([group('bucket', 'prop_date/2026-07', '2026-07')], h)
     const spec = bandSpec({
       bands,
       collapsed: new Set(),
@@ -168,7 +174,7 @@ describe('GroupBand', () => {
       routing: { drop: vi.fn(), moves: () => () => true },
     })
     const geometry: Geometry = { rows: [], groups: new Map(), bottom: 0 }
-    expect(spec.snap('2026-07', geometry)).toBeNull()
+    expect(spec.snap('prop_date/2026-07', geometry)).toBeNull()
   })
 })
 
@@ -192,7 +198,7 @@ describe('band and row lines grouped in one zone', () => {
   it('a band resolves one slot object per slot, so the engine compares its slots by identity', () => {
     const h = heads(grouping('prop_status'))
     const bands = bandModelOf(
-      ['a', 'b', 'c'].map((v) => group('bucket', v)),
+      ['a', 'b', 'c'].map((v) => group('bucket', `prop_status/${v}`, v)),
       h,
     )
     const head = (id: string, top: number): Row => ({
@@ -204,7 +210,7 @@ describe('band and row lines grouped in one zone', () => {
       right: 200,
     })
     const g: Geometry = {
-      rows: [head('a', 0), head('b', 30), head('c', 60)],
+      rows: [head('prop_status/a', 0), head('prop_status/b', 30), head('prop_status/c', 60)],
       groups: new Map(),
       bottom: 90,
     }
@@ -215,10 +221,10 @@ describe('band and row lines grouped in one zone', () => {
       routing: { drop: vi.fn(), moves: () => () => true },
     })
     const spec = groupedLine(isRow, rowsSpec(), band)
-    const snap = spec.snap('a', g)!
-    const first = spec.resolve('a', { x: 0, y: 44 }, snap)
+    const snap = spec.snap('prop_status/a', g)!
+    const first = spec.resolve('prop_status/a', { x: 0, y: 44 }, snap)
     expect(first).not.toBeNull()
-    expect(spec.resolve('a', { x: 0, y: 47 }, snap)).toBe(first)
+    expect(spec.resolve('prop_status/a', { x: 0, y: 47 }, snap)).toBe(first)
   })
 
   it("a band head's lower half targets the start of the band below", () => {

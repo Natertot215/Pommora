@@ -112,15 +112,17 @@ describe('resolveView — full pipeline over the fixture', () => {
     ])
     // manual order ['opt_in_progress','opt_opt_open','opt_not_started','opt_done'] — done empty → an empty band; no-value tail last
     expect(groups.map((g) => g.key)).toEqual([
-      'opt_in_progress',
-      'opt_opt_open',
-      'opt_not_started',
-      'opt_done',
+      'prop_status/opt_in_progress',
+      'prop_status/opt_opt_open',
+      'prop_status/opt_not_started',
+      'prop_status/opt_done',
       '_ungrouped',
     ])
-    expect(groups.find((g) => g.key === 'opt_in_progress')?.items.map((r) => r.id)).toEqual(['p1'])
+    expect(
+      groups.find((g) => g.key === 'prop_status/opt_in_progress')?.items.map((r) => r.id),
+    ).toEqual(['p1'])
     expect(groups.find((g) => g.key === '_ungrouped')?.items.map((r) => r.id)).toEqual(['p4'])
-    expect(groups.find((g) => g.key === 'opt_done')?.items).toEqual([])
+    expect(groups.find((g) => g.key === 'prop_status/opt_done')?.items).toEqual([])
   })
 
   it('sorts rows within each group', () => {
@@ -159,10 +161,9 @@ describe('resolveView — full pipeline over the fixture', () => {
     })
     const { rows, setTree } = flattenContainer(collection([page('a'), page('b')]), values, {})
     const { groups } = resolve({ rows, setTree, view, schema })
-    expect(groups.find((g) => g.key === 'opt_in_progress')?.items.map((r) => r.id)).toEqual([
-      'b',
-      'a',
-    ])
+    expect(
+      groups.find((g) => g.key === 'prop_status/opt_in_progress')?.items.map((r) => r.id),
+    ).toEqual(['b', 'a'])
   })
 })
 
@@ -507,7 +508,11 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       view: view({ group: propertyGroup(), hidden_groups: [] }),
     })
     expect(base.groups).toEqual(empty.groups)
-    expect(keys(base.groups)).toEqual(['opt_Alpha', 'opt_Beta', 'opt_Gamma'])
+    expect(keys(base.groups)).toEqual([
+      'prop_sel/opt_Alpha',
+      'prop_sel/opt_Beta',
+      'prop_sel/opt_Gamma',
+    ])
   })
 
   const propertyGroup = () => ({
@@ -521,7 +526,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       ...selInput(),
       view: view({ group: propertyGroup(), hidden_groups: ['prop_sel/opt_Alpha'] }),
     })
-    expect(keys(groups)).toEqual(['opt_Beta', 'opt_Gamma'])
+    expect(keys(groups)).toEqual(['prop_sel/opt_Beta', 'prop_sel/opt_Gamma'])
     expect(groups.flatMap((g) => g.items.map((r) => r.id))).toEqual(['p2'])
   })
 
@@ -620,7 +625,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       }),
       schema: dateSchema,
     })
-    expect(keys(groups)).toEqual(['2025-08'])
+    expect(keys(groups)).toEqual(['prop_when/2025-08'])
   })
 
   it('a bucket hidden under one property leaves the same bucket of another', () => {
@@ -647,7 +652,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       }),
       schema: twoStatus,
     })
-    expect(keys(groups)).toEqual(['opt_Alpha'])
+    expect(keys(groups)).toEqual(['prop_other/opt_Alpha'])
   })
 
   it('Hide Empty Groups (view-level) drops empty option bands and empty sets alike', () => {
@@ -655,7 +660,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       ...selInput(),
       view: view({ group: propertyGroup(), hide_empty_groups: true }),
     })
-    expect(keys(prop.groups)).toEqual(['opt_Alpha', 'opt_Beta'])
+    expect(keys(prop.groups)).toEqual(['prop_sel/opt_Alpha', 'prop_sel/opt_Beta'])
     const { rows, setTree } = flattenContainer(nested, {}, {})
     const structural = resolve({
       rows,

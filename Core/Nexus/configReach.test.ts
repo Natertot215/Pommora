@@ -196,7 +196,7 @@ describe('a property clear', () => {
       expect(view.group).toEqual({ kind: 'structural' })
       expect('sub_group' in view).toBe(false)
       expect(view.hidden_groups).toEqual(['prop_x/opt_Done'])
-      expect(view.collapsed_groups).toEqual([])
+      expect(view.collapsed_groups).toEqual(['set_1'])
     }
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
   })
@@ -208,7 +208,7 @@ describe('a property clear', () => {
         ...elsewhere('v'),
         group: { kind: 'structural' },
         sub_group: { property_id: 'prop_s', order_mode: 'configured' },
-        collapsed_groups: ['set_1', 'set_1/Done'],
+        collapsed_groups: ['set_1', 'set_1/prop_s/opt_Done'],
       })?.collapsed_groups,
     ).toEqual(['set_1'])
   })

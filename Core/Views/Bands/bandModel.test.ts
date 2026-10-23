@@ -113,33 +113,39 @@ describe('bandSlot — Sets', () => {
 describe('bandSlot — buckets', () => {
   const heads: BandRef[] = [
     setRef('S', null, 0),
-    { kind: 'bucket', key: 'S/x', depth: 1, parentKey: 'S', value: 'x' },
-    { kind: 'bucket', key: 'S/y', depth: 1, parentKey: 'S', value: 'y' },
+    { kind: 'bucket', key: 'S/prop_status/x', depth: 1, parentKey: 'S', value: 'x' },
+    { kind: 'bucket', key: 'S/prop_status/y', depth: 1, parentKey: 'S', value: 'y' },
     setRef('T', null, 0),
-    { kind: 'bucket', key: 'T/y', depth: 1, parentKey: 'T', value: 'y' },
+    { kind: 'bucket', key: 'T/prop_status/y', depth: 1, parentKey: 'T', value: 'y' },
   ]
   const bg = geo(
-    [row('S', 0), row('S/x', 30), row('S/y', 60), row('T', 100), row('T/y', 130)],
     [
-      ['S/x', 30, 55],
-      ['S/y', 60, 85],
-      ['T/y', 130, 155],
+      row('S', 0),
+      row('S/prop_status/x', 30),
+      row('S/prop_status/y', 60),
+      row('T', 100),
+      row('T/prop_status/y', 130),
+    ],
+    [
+      ['S/prop_status/x', 30, 55],
+      ['S/prop_status/y', 60, 85],
+      ['T/prop_status/y', 130, 155],
     ],
     200,
   )
 
   it('never lights a Set: a Set head resolves to the nearest bucket gap', () => {
-    const s = bandSnap(bg, heads, 'S/x', true, ANY)
+    const s = bandSnap(bg, heads, 'S/prop_status/x', true, ANY)
     expect(drop(90, s)).toMatchObject({ drop: { kind: 'before', beforeKey: null, parentKey: 'S' } })
     expect(drop(118, s)).toMatchObject({
-      drop: { kind: 'before', beforeKey: 'T/y', parentKey: 'T' },
+      drop: { kind: 'before', beforeKey: 'T/prop_status/y', parentKey: 'T' },
     })
   })
 
   it('a slot before the same value in another Set declines', () => {
-    expect(drop(132, bandSnap(bg, heads, 'S/y', true, ANY))).toBeNull()
-    expect(drop(132, bandSnap(bg, heads, 'S/x', true, ANY))).toMatchObject({
-      drop: { beforeKey: 'T/y' },
+    expect(drop(132, bandSnap(bg, heads, 'S/prop_status/y', true, ANY))).toBeNull()
+    expect(drop(132, bandSnap(bg, heads, 'S/prop_status/x', true, ANY))).toMatchObject({
+      drop: { beforeKey: 'T/prop_status/y' },
     })
   })
 })
@@ -164,7 +170,7 @@ describe('the model', () => {
       opens: false,
       empty: true,
     },
-    { kind: 'tail', key: 'A/_ungrouped', depth: 1, parentKey: 'A' },
+    { kind: 'tail', key: 'A/prop_status/_ungrouped', depth: 1, parentKey: 'A' },
     {
       kind: 'set',
       key: 'B',
