@@ -231,23 +231,20 @@ export type NumberConfig = Pick<
   | 'number_denominator'
 >
 
-export const RESERVED_PROPERTY_ID = {
-  title: '_title',
-  createdAt: '_created_at',
-  modifiedAt: '_modified_at',
-  location: '_location',
-} as const
+// Location is a sort, filter, and preview target rather than a shown column, so it carries no column type. `PROPERTY_TYPES` answers what a Filedata column type does; this answers which reserved id holds it and what it's called.
+export const FILEDATA = {
+  title: { id: '_title', type: 'title', label: 'Title' },
+  createdAt: { id: '_created_at', type: 'createdTime', label: 'Creation Time' },
+  modifiedAt: { id: '_modified_at', type: 'lastEditedTime', label: 'Last Modified' },
+  location: { id: '_location', label: 'Location' },
+} as const satisfies Record<string, Filedata>
+export type Filedata = Readonly<{ id: string; type?: FiledataType; label: string }>
 
-export const STAMP_TYPE: Readonly<Partial<Record<string, ColumnType>>> = {
-  [RESERVED_PROPERTY_ID.createdAt]: 'createdTime',
-  [RESERVED_PROPERTY_ID.modifiedAt]: 'lastEditedTime',
-}
+export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
+  Object.values(FILEDATA).map((f) => [f.id, f]),
+)
 
-const RESERVED_SET = new Set<string>(Object.values(RESERVED_PROPERTY_ID))
-
-export function isReservedPropertyId(id: string): boolean {
-  return RESERVED_SET.has(id)
-}
+export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
 
 export const RESERVED_NAME_PREFIX = '$'
 

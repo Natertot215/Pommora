@@ -9,11 +9,7 @@ import {
   ruleOperands,
 } from '../filterRules'
 import type { ViewRow } from '../viewRow'
-import {
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-} from '../../Properties/properties'
+import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import {
   checkboxWord,
   isBlankValue,
@@ -76,7 +72,7 @@ export function prepareRule(
   const { op, property_id: id } = rule
   const want = ruleOperands(rule)
   if (!FILTER_OP_SET.has(op) || !answerable(rule)) return undefined
-  if (id === RESERVED_PROPERTY_ID.location) return prepareLocation(op, want, setTree)
+  if (id === FILEDATA.location.id) return prepareLocation(op, want, setTree)
   const t = declaredType(id, schema, contextIds)
   if (t === undefined) return undefined
   // resolveFieldValue('_title') carries row.title as a select-kind string — the text evaluator reads it.

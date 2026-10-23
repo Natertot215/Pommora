@@ -16,11 +16,7 @@ import {
   OPERANDLESS_OPS,
   SUBSTRING_OPS,
 } from '../Views/filterRules'
-import {
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-} from '../Properties/properties'
+import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
 import { editList, type Matcher, stripList } from '../Properties/pageValue'
 import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tileHosts'
@@ -280,7 +276,7 @@ const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] =>
 /** The containers a removal took, as locations every saved view, View Tile, and filter drops: read from the tree, or from an archived Set's sidecars on disk. */
 export const goneContainers = (ids: string[]): ConfigEdit => ({
   kind: 'gone',
-  propertyId: RESERVED_PROPERTY_ID.location,
+  propertyId: FILEDATA.location.id,
   ids,
 })
 

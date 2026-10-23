@@ -2,15 +2,11 @@
 
 import type { ColumnKind, ResolvedColumn } from '../viewRow'
 import type { SavedView } from '../views'
-import {
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-  STAMP_TYPE,
-} from '../../Properties/properties'
+import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
 
 function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
-  if (id === RESERVED_PROPERTY_ID.title) return 'title'
-  if (STAMP_TYPE[id]) return 'stamp'
+  if (id === FILEDATA.title.id) return 'title'
+  if (FILEDATA_BY_ID.get(id)?.type) return 'stamp'
   return contextIds.includes(id) ? 'context' : 'property'
 }
 
@@ -40,7 +36,7 @@ export function resolveColumns(
   contextIds: readonly string[] = [],
 ): ResolvedColumn[] {
   const result = visibleColumns(view, schema, contextIds)
-  if (!result.some((c) => c.id === RESERVED_PROPERTY_ID.title))
-    result.unshift({ id: RESERVED_PROPERTY_ID.title, kind: 'title' })
+  if (!result.some((c) => c.id === FILEDATA.title.id))
+    result.unshift({ id: FILEDATA.title.id, kind: 'title' })
   return result
 }

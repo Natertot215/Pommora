@@ -6,7 +6,7 @@ import { compareTitles } from '../../Paths/caseFold'
 import {
   optionLabels,
   type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
+  FILEDATA,
   specOf,
 } from '../../Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
@@ -76,7 +76,7 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
-  if (c.property_id === RESERVED_PROPERTY_ID.title)
+  if (c.property_id === FILEDATA.title.id)
     return { extract: (r) => r.title, less: ciLess, ascending }
   switch (specOf(declaredType(c.property_id, schema))?.kind) {
     case 'select': {

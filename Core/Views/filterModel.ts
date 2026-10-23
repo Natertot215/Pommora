@@ -1,6 +1,6 @@
 // Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
 
-import { type PropertyDefinition, RESERVED_PROPERTY_ID, specOf } from '../Properties/properties'
+import { FILEDATA, type PropertyDefinition, specOf } from '../Properties/properties'
 import type { ValueKind } from '../Properties/propertyValue'
 import {
   FILTER_OPS,
@@ -14,11 +14,9 @@ import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import {
   contextPaneTargets,
-  LOCATION_TARGET,
+  FILEDATA_TARGETS,
   type PaneTarget,
-  STAMP_TARGETS,
   schemaTargets,
-  TITLE_TARGET,
 } from '../Properties/Cells/PropertyTypes'
 
 export type DecodedFilter =
@@ -124,8 +122,8 @@ export function operatorsFor(
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): OperatorChoice[] {
-  if (propertyId === RESERVED_PROPERTY_ID.title) return TITLE_OPS
-  if (propertyId === RESERVED_PROPERTY_ID.location) return LOCATION_OPS
+  if (propertyId === FILEDATA.title.id) return TITLE_OPS
+  if (propertyId === FILEDATA.location.id) return LOCATION_OPS
   const kind = specOf(declaredType(propertyId, schema, contextIds))?.kind
   return kind ? KIND_OPS[kind] : []
 }
@@ -137,10 +135,11 @@ export function filterTargets(
 ): PaneTarget[] {
   const contextIds = contextIdsOf(tree)
   return [
-    TITLE_TARGET,
+    FILEDATA_TARGETS.title,
     // Every Location operator needs a location to point at, so with none it's a target that can never complete.
-    ...(hasLocations ? [LOCATION_TARGET] : []),
-    ...STAMP_TARGETS,
+    ...(hasLocations ? [FILEDATA_TARGETS.location] : []),
+    FILEDATA_TARGETS.createdAt,
+    FILEDATA_TARGETS.modifiedAt,
     ...contextPaneTargets(tree),
     ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
   ]
