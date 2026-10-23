@@ -47,7 +47,8 @@ Your seven decisions are folded into the plan as its own design, and the walkthr
   - **Today:** a Date column's right-click calls its date and time choices "Style," while the Date settings in the Properties pane head the same choices "Format." Number reads "Style" in both places for its Number-or-Bar choice, as you ruled in I-4, and Link reads "Format" in both.
   - **As Planned:** it stays this way. The pane's wording is frozen, and I-4 named every type but Link "Style" in the right-click, so Date keeps the mismatch.
   - **Alternative:** Date's right-click reads "Format," matching its own pane and Link. Its choices, such as MM/DD/YYYY, Full Date, or Relative, and the time's format, are how the date is written rather than how it's drawn. It's one word in Date's type entry, with no line cost.
-  - **Recommendation:** take the alternative. The line you drew for Number, where "Format" is how the number is written and "Style" is how it's drawn, puts Date's choices on the Format side.- **Where an Undone Property Comes Back:**
+  - **Recommendation:** take the alternative. The line you drew for Number, where "Format" is how the number is written and "Style" is how it's drawn, puts Date's choices on the Format side.
+- **Where an Undone Property Comes Back:**
   - **Today:** unchecking a Checkbox or clearing a value removes its line from the page's front matter. Undo puts the line back, but at the bottom of the front matter rather than where it stood, so it shows wherever the file's order shows, such as Obsidian's properties list in NexusOS.
   - **As Planned:** it keeps landing at the bottom. Phase 6 made undo put back exactly what the file held for the edited property, but not its position.
   - **Alternative:** undo puts the line back where it stood. The record of what the file held also notes the line's place, and the put-back lands it there, for a few added lines.

@@ -1164,7 +1164,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 6-7 · Drive group 5
   - [x] Review Checkpoint
   - [x] Closeout P6 (two `opus-high` agents, inward and outward)
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 7 opens]`
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 7 opens]`
 - [ ] **Phase 7** — One Door for Property Changes
   - [ ] Task 7-1 · The counting module in `entities.ts`, and one `property:holders` switch
   - [ ] Task 7-2 · One schema-lock hold per op, and create and assign in one hold
