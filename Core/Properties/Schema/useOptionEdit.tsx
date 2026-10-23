@@ -26,12 +26,12 @@ export type OptionStyleControl = {
   set: (key: keyof ColumnStyle & string, value: string) => void
 }
 
-export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
+type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
 type Editing = { row: string; label: string }
 type Draft = { row: string; groupId: string; index?: number }
 
-export type OptionEditApi = {
+type OptionEditApi = {
   rowKeyOf: (label: string) => string
   entering: (label: string) => boolean
   isOpen: (row: string) => boolean

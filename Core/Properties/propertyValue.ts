@@ -26,7 +26,6 @@ export const propertyValue = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('dateTime'), value: z.string() }),
   z.object({ kind: z.literal('select'), value: z.string() }),
   z.object({ kind: z.literal('multiSelect'), value: strings }),
-  // Kept while the Status tag goes, because Context is NOT derivable from the schema on the value path — the type resolver runs there without the Context id list.
   z.object({ kind: z.literal('context'), value: strings }),
   z.object({ kind: z.literal('link'), value: z.string() }),
   // `[[Name.ext]]` wikilinks, resolved in the asset basename domain

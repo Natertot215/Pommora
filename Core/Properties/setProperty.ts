@@ -11,7 +11,6 @@ import type { PropertyDefinition } from './properties'
 import { valueToWrite } from './propertyValue'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 
-// Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
 export async function landPageValue(
   absFile: string,
   key: string,

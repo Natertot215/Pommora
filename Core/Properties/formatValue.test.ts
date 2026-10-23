@@ -3,7 +3,7 @@ import {
   formatDate,
   formatNumber,
   fractionDenominator,
-  numberDivisor,
+  barDivisor,
   numberFormatGlyph,
   readDate,
   readNumber,
@@ -253,19 +253,19 @@ describe('numberFormatGlyph', () => {
   })
 })
 
-describe('numberDivisor', () => {
+describe('barDivisor', () => {
   it('is 100 for percent, the denominator for fraction, undefined otherwise', () => {
-    expect(numberDivisor({ number_family: 'percent' })).toBe(100)
+    expect(barDivisor('bar', { number_family: 'percent' })).toBe(100)
     expect(
-      numberDivisor({ number_family: 'number', number_fraction: true, number_denominator: 10 }),
+      barDivisor('bar', { number_family: 'number', number_fraction: true, number_denominator: 10 }),
     ).toBe(10)
-    expect(numberDivisor({ number_family: 'number', number_fraction: false })).toBeUndefined()
+    expect(barDivisor('bar', { number_family: 'number', number_fraction: false })).toBeUndefined()
   })
   it('guards a zero / missing denominator', () => {
     expect(
-      numberDivisor({ number_family: 'number', number_fraction: true, number_denominator: 0 }),
+      barDivisor('bar', { number_family: 'number', number_fraction: true, number_denominator: 0 }),
     ).toBeUndefined()
-    expect(numberDivisor({ number_family: 'number', number_fraction: true })).toBeUndefined()
+    expect(barDivisor('bar', { number_family: 'number', number_fraction: true })).toBeUndefined()
   })
 })
 

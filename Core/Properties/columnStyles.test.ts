@@ -6,7 +6,6 @@ import {
   dateDefaults,
   defaultStyleFor,
   WEEKDAY_FORMATS,
-  type StoredColumnStyle,
 } from './columnStyles'
 
 describe('COLUMN_LOOKS', () => {
@@ -96,6 +95,6 @@ describe('columnStyle weekday + relative', () => {
 })
 
 // Compiled by the typecheck and never run: a field the decoder doesn't declare is no field of the type.
-const _mistypedStyleField = (s: StoredColumnStyle): unknown =>
+const _mistypedStyleField = (s: ReturnType<typeof columnStyle.parse>): unknown =>
   // @ts-expect-error
   s.lok
