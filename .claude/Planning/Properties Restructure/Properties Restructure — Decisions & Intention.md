@@ -68,7 +68,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **E-1 [CONFIRMED]:** Undo is meant to put back what the file held, recorded by the part of Pommora that writes the file, rather than re-sending what a cell or the panel showed.
 - **E-2 [CONFIRMED]:** Undo puts back only the property that was edited, leaving the tidy-ups the edit made to other properties on the page in place.
 - **E-3 [CONFIRMED]:** Undoing a Link value also takes back the page alias that value added.
-- **E-4 [CONFIRMED]:** Undo puts a front-matter line back where it stood rather than at the end, across all front matter, and a Trash restore and a removed property's re-add land their lines the same way; a Clear or an uncheck removes the line and never leaves an empty one (Nathan, 10-23-2026: "have undo put it back across ALL frontmatter"; "trash should use the most cohesive behavior, clear doesn't leave empty lines ever").
+- **E-4 [CONFIRMED]:** Every put-back lands a front-matter line where it stood rather than at the end, across all front matter: undo, a property's Trash restore, a removed property's re-add, a Context or Space restore's tags, and a Link key a page delete took away when that page comes back. A line lands above the line it stood above, and last when that line is gone. A Clear or an uncheck removes the line and never leaves an empty one (Nathan, 10-23-2026: "have undo put it back across ALL frontmatter"; "trash should use the most cohesive behavior, clear doesn't leave empty lines ever"; "Restores should behave the best way possible. Make the choice that we'd wish we went for in a year. Same place, not at the bottom.").
 
 #### F - Property Types
 

@@ -116,13 +116,13 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** The screen keeps undo's memory: it notes what it last read of the page before the change, and undo sends that back. That's close to the file but not exact. A property written bare (just `Status:` with nothing after it) comes back as `Status: null`. Undoing a Context pick on a tag naming a Space Pommora can't find, such as an Obsidian typo, deletes the unknown names. A second edit made before the screen catches up can make undo send back the screen's guess. Giving a Link value a new display name also gives the linked page that alias, and undo leaves the alias behind.
 
-**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. An undo that can't reach a file offers Try Again, which puts back only what it missed, so it never overwrites an edit you made since. A line undo puts back lands where it stood in the front matter rather than at the bottom. Also: LC-16.
+**What Changes:** Undo puts back exactly what the file held. The part of Pommora that writes the file notes what the edited property said just before the change and hands that note back, and undo restores it for that one property only, leaving the tidy-ups to other properties in place. A bare `Status:` comes back bare, unknown tag names survive, and undoing a Link value also takes back the alias it added without touching an alias the page already had. An undo that can't reach a file offers Try Again, which puts back only what it missed, so it never overwrites an edit you made since. A line undo puts back lands where it stood in the front matter, above the line it sat above, rather than at the bottom; if that line is gone since, it lands at the bottom. Also: LC-16.
 
 **Your Calls:**
 - [E-1] Undo puts back what the file held, recorded by the part of Pommora that writes the file.
 - [E-2] Undo puts back only the edited property.
 - [E-3] Undoing a Link value also takes back the alias it added.
-- [E-4] Undo puts a line back where it stood, across all front matter.
+- [E-4] Every put-back lands a line where it stood, across all front matter: undo, Trash restores, and re-adding a removed property.
 
 **Behind the Scenes:**
 - Two undo routes and two ways of putting text back become one each, shared with the put-back multi-file changes already use.
@@ -185,6 +185,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 **What Changes:**
 - Re-adding a property drops stash entries for pages that left the Collection.
 - Stash entries are cleaned out once they're older than the History Timeframe setting (LC-26).
+- A re-added property's values land where their lines stood on each page, rather than at the bottom (E-4).
 
 **Your Calls:**
 - [C-1] Remove keeps moving values off the pages and into the stash; retiring the stash was rejected, since it would leave hidden values on pages, which you ruled out in July.
@@ -294,7 +295,7 @@ How each area works today, what you'll notice, the decisions it rests on, and th
 
 **Today:** Every remove, clear, and delete question already lives in one place shared with the Trash and the Archive, but the counting words are split across two places, and deleting a property or option held by nothing still asks and says "stripped from 0 Items." An option's "Remove" deletes it for good, while Remove everywhere else can be undone. Every Trash entry records whether it's partial, meaning the delete couldn't record everything it touched, and nothing shows it. A taken name quietly becomes "Name (2)." Label Format and Value Format changes ask before rewriting your pages, while a property or option rename rewrites the same pages without asking.
 
-**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. A restore that takes a numbered name says so, and so does a property, Context, or Space create when its name is taken ("Created “New Space (2)”."); a page, Collection, or Set keeps numbering itself quietly, since their titles can repeat. Any change that rewrites a key or option word on your pages asks first with the same count, a rename included, while changing only the display label asks nothing. A Trash entry is marked partial only when something it held truly couldn't be recorded. Emptying a deleted property from the Trash drops it from every Collection still listing it, one restored since or one still in the Trash. Also: LC-13, LC-37.
+**What Changes:** An option's Remove reads Delete. Confirmations count correctly, zero included. A restore that takes a numbered name says so, and so does a property, Context, or Space create when its name is taken ("Created “New Space (2)”."); a page, Collection, or Set keeps numbering itself quietly, since their titles can repeat. Any change that rewrites a key or option word on your pages asks first with the same count, a rename included, while changing only the display label asks nothing. A Trash entry is marked partial only when something it held truly couldn't be recorded. Emptying a deleted property from the Trash drops it from every Collection still listing it, one restored since or one still in the Trash. A restore puts each line back where it stood on its page, for a property's values, a Context's or Space's tags, and a Link a deleted page took away, rather than at the bottom (E-4). Also: LC-13, LC-37.
 
 **Your Calls:**
 - [O-1] An option's Remove reads Delete, so Remove only names something that can be undone or restored.
