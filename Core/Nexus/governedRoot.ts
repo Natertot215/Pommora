@@ -1,10 +1,11 @@
 // Everything that lands a value in one governed file: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, and the one-parse writer.
 
-import { isMarkdownFile, relative } from '../Paths/posix'
+import { isMarkdownFile, join, relative } from '../Paths/posix'
+import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { landValue, memberKey, namesValue } from '../Files/rootValues'
-import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
+import { atomicWriteFile, parseJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
   splitFrontmatter,
@@ -14,9 +15,10 @@ import {
 } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { linkEntry, readLinkText } from '../Connections/linkValue'
-import { contextTitles } from '../Contexts/contexts'
+import { contextKey, contextTitles } from '../Contexts/contexts'
 import { type ContextWorld, contextWorldOf, groupOf } from '../Contexts/contextResolve'
 import { byKey, type PropertyDefinition } from '../Properties/properties'
+import { readRegistry } from '../Properties/propertiesRegistry'
 import {
   asText,
   checkedSpelling,
@@ -26,9 +28,10 @@ import {
   keepingForeignWords,
   spelledNumber,
 } from '../Properties/propertyValue'
-import { liveTreeOf } from './liveTree'
+import { liveTreeOf, mutableTarget } from './liveTree'
 import { containerSchema } from './treePatch'
 import type { ContextGroup, NexusTree } from './tree'
+import type { PutBack } from './mutateRequest'
 
 export interface GovernedWorld {
   contexts: ContextWorld
@@ -206,4 +209,50 @@ export async function rewriteRootAt(
   const next = rewrite(page)
   if (next !== null) await atomicWriteFile(absFile, next)
   return ok(null)
+}
+
+export async function writeSpaceSidecar(
+  absSpaceDir: string,
+  mutate: (raw: Json) => Json | null,
+): Promise<Result<null>> {
+  const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
+  return written.ok ? ok(null) : written
+}
+
+/** The key a property or a Context is written under now. A Context resolves from the tree first, so a tag's undo never reads the property list, which a damaged file makes throw. */
+async function keyNow(root: string, id: string): Promise<string | undefined> {
+  const group = contextWorldOf((await liveTreeOf(root)).contexts).groupById.get(id)
+  if (group) return contextKey(group.def.title)
+  return (await readRegistry(root)).defs[id]?.key
+}
+
+/** Puts each entry's key back as its file held it before the write that recorded it, a page's own node so a bare key comes back bare, leaving every other key as it now stands and a file whose key already reads so unwritten; answers the entries it couldn't put back. */
+export async function putBackEntries(
+  root: string,
+  entries: readonly PutBack[],
+): Promise<PutBack[]> {
+  const missed: PutBack[] = []
+  for (const entry of entries) if (!(await landEntry(root, entry))) missed.push(entry)
+  return missed
+}
+
+// A page's key is read inside its lock, as the write read it, so a key renamed since lands under its new name.
+async function landEntry(root: string, { file, fieldId, before }: PutBack): Promise<boolean> {
+  if (!isMarkdownFile(file)) {
+    const at = await mutableTarget(root, file, ['space'])
+    const key = at.ok ? await keyNow(root, fieldId) : undefined
+    if (!at.ok || key === undefined) return false
+    const back = await writeSpaceSidecar(at.value, (raw) => {
+      const next = landValue(raw, key, before)
+      return changedKeys(raw, next).length ? next : null
+    })
+    return back.ok
+  }
+  const at = await mutableTarget(root, file, ['page'])
+  if (!at.ok || !(before === undefined || typeof before === 'string')) return false
+  return machine().lock(at.value, async () => {
+    const key = await keyNow(root, fieldId)
+    if (key === undefined) return false
+    return (await rewriteRootAt(at.value, (page) => page.withPair(key, before))).ok
+  })
 }

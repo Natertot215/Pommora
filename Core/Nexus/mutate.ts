@@ -47,6 +47,7 @@ import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { inSettleTurn, payOwedWalk, relink, settledIndex } from './settle'
 import { pageMoves } from './record'
+import { putBackEntries } from './governedRoot'
 
 export interface MutateContext {
   root: string
@@ -200,6 +201,16 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return isMarkdownFile(req.path)
         ? setPagePropertyOp(ctx, req)
         : underContexts(() => setSpacePropertyOp(ctx, req))
+
+    // A put-back resolves a Context's key as a tag write does, so it holds the Contexts lock whichever files it reaches.
+    case 'putBack': {
+      const missed = await underContexts(() => putBackEntries(root, req.entries))
+      return ok(
+        missed.length
+          ? { cascade: reachReport({ skipped: missed.length, hosts: [] }), missed }
+          : {},
+      )
+    }
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)

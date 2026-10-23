@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
-import { writeSpaceSidecar } from '../Contexts/contextWrite'
+import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
 import { mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'

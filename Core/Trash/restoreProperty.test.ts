@@ -1,6 +1,5 @@
 import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
-import { writeSpaceSidecar } from '../Contexts/contextWrite'
+import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { dirname, join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'

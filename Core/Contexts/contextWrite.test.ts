@@ -235,10 +235,7 @@ describe('setContext reads the held tree', () => {
       'sp-ath',
       'sp-sap',
     ])
-    expect(r).toEqual({
-      ok: true,
-      value: { cascade: { pages: [], hosts: [], warning: unsweptLine(1) } },
-    })
+    expect(r.ok && r.value.cascade).toEqual({ pages: [], hosts: [], warning: unsweptLine(1) })
     expect((await readJsonAt(sidecarOf('Projects', 'Pommora')))['<Projects>']).toEqual([
       'Athena',
       'Sapphire',
