@@ -7,14 +7,6 @@ import { renamePage, updatePageBody, movePage } from './page'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
-import type { PropertyDefinition, PropertyType } from '../Properties/properties'
-
-/** The writer takes a definition, not an id. The type only has to be one the value's kind can hold; the key is the label lowercased, so a write that reads the label lands on the wrong key. */
-const defOf = (id: string, type: PropertyType = 'select'): PropertyDefinition => {
-  const stem = id.replace(/^prop_/, '')
-  const label = stem.charAt(0).toUpperCase() + stem.slice(1)
-  return { id, label, key: label.toLowerCase(), type }
-}
 
 let root: string
 let typeDir: string
@@ -55,33 +47,6 @@ describe('createPage', () => {
       createTestPage(typeDir, 'Twin'),
     ])
     expect(both.map((r) => r.ok).sort()).toEqual([false, true])
-  })
-
-  it('writes resolved values in the birth write; blank values write no key', async () => {
-    const r = await createTestPage(typeDir, 'Born Stamped', {
-      values: [
-        { def: defOf('prop_status'), value: { kind: 'select', value: 'doing' } },
-        { def: defOf('prop_empty'), value: { kind: 'select', value: '' } },
-      ],
-    })
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    const fm = splitFrontmatter(await readFile(r.value.path, 'utf8'))
-    expect(fm.status).toEqual(['doing'])
-    expect('empty' in fm).toBe(false)
-    expect(isUlidShaped(fm[ID_KEY])).toBe(true)
-  })
-
-  it('writes each Multi-Select label as its option’s key', async () => {
-    const tags: PropertyDefinition = {
-      ...defOf('prop_tags', 'multiSelect'),
-      select_options: [{ key: 'in-progress', label: 'In Progress' }],
-    }
-    const r = await createTestPage(typeDir, 'Keyed Birth', {
-      values: [{ def: tags, value: { kind: 'multiSelect', value: ['In Progress'] } }],
-    })
-    if (!r.ok) throw new Error('setup failed')
-    expect(await readFile(r.value.path, 'utf8')).toContain('tags:\n  - in-progress\n')
   })
 })
 

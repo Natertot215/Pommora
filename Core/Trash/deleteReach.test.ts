@@ -70,7 +70,7 @@ const addRelated = (): Promise<void> =>
 
 const page = async (parent: string, name: string, links?: string): Promise<string> => {
   const made = await createTestPage(parent, name, {
-    values: links ? [{ def: RELATED, value: { kind: 'link', value: `[[${links}]]` } }] : [],
+    frontmatter: links ? { [RELATED.key]: `[[${links}]]` } : {},
   })
   if (!made.ok) throw new Error(`${name} failed`)
   return made.value.path

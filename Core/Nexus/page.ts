@@ -1,35 +1,25 @@
 import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
+import type { Json } from '../Files/stableJson'
 import { machine } from '../Platform/machine'
-import { type PropertyValue, valueToWrite } from '../Properties/propertyValue'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
-import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
 
 export async function createPage(
   parentDir: string,
   name: string,
-  opts: {
-    id: string
-    body?: string
-    values?: { def: PropertyDefinition; value: PropertyValue }[]
-  },
+  opts: { id: string; body?: string; frontmatter?: Json },
 ): Promise<Result<{ path: string }>> {
   const why = nameError(name, 'page')
   if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
-  const modeled: Record<string, unknown> = { [ID_KEY]: opts.id }
-  const keys: string[] = [...PAGE_MODELED_KEYS]
-  for (const { def, value } of opts.values ?? []) {
-    const encoded = valueToWrite(def, value)
-    if (encoded === undefined) continue
-    modeled[def.key] = encoded
-    keys.push(def.key)
-  }
+  const seeded = opts.frontmatter ?? {}
+  const modeled = { ...seeded, [ID_KEY]: opts.id }
+  const keys = [...PAGE_MODELED_KEYS, ...Object.keys(seeded)]
   return machine().lock(file, async () => {
     if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
     await atomicWriteFile(file, mergeFrontmatter('', modeled, keys, opts.body ?? ''))

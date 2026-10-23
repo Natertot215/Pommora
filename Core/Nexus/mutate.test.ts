@@ -119,6 +119,8 @@ afterEach(async () => {
 })
 
 describe('handleMutate — create', () => {
+  const tap = captureWriteTap()
+
   it('createPage writes a .md in the resolved container + returns its relative path', async () => {
     const r = await settledMutate(
       root,
@@ -206,7 +208,7 @@ describe('handleMutate — create', () => {
     expect('Stage' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
   })
 
-  it('createPage lands a Context seed through the Context writer; an unknown Space refuses the create', async () => {
+  it('createPage writes a Context seed in the birth write; an unknown Space refuses the create', async () => {
     await seedSpaceSidecar(root, 'Areas', 'Work', { id: 'sp-work' })
     await writeFile(
       join(root, '.nexus', 'contexts', 'contexts.json'),
@@ -221,6 +223,7 @@ describe('handleMutate — create', () => {
     })
     expect((await settledMutate(root, seeded('In Work', 'sp-work'), nexusDeps)).ok).toBe(true)
     expect(splitFrontmatter(await read('Notes/Daily/In Work.md'))['<Areas>']).toEqual(['Work'])
+    expect(tap.wrote.filter((p) => p.endsWith('/Notes/Daily/In Work.md'))).toHaveLength(1)
     expect((await settledMutate(root, seeded('Stale', 'sp-gone'), nexusDeps)).ok).toBe(false)
     expect(await pathExists(join(root, 'Notes/Daily/Stale.md'))).toBe(false)
   })

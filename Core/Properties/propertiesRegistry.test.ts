@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, writeFile, mkdir } from 'node:fs/promises'
+import { rm, writeFile, mkdir, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { mutateRegistry, orderedDefs, readKeptRegistry, readRegistry } from './propertiesRegistry'
@@ -54,6 +54,29 @@ describe('propertiesRegistry', () => {
     }
     await mutateRegistry(root, () => ({ next: reg, result: undefined }))
     expect(await readRegistry(root)).toEqual(reg)
+  })
+
+  it('an unchanged registry answers the parse it holds, and a write is read fresh', async () => {
+    const file = join(root, '.nexus', 'properties.json')
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      file,
+      JSON.stringify({ order: ['prop_a'], defs: { prop_a: def('prop_a', 'Priority') } }),
+    )
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(file, past, past)
+    const a = await readRegistry(root)
+    expect(await readRegistry(root)).toBe(a)
+    await mutateRegistry(root, (reg) => ({
+      next: {
+        order: [...reg.order, 'prop_b'],
+        defs: { ...reg.defs, prop_b: def('prop_b', 'Status') },
+      },
+      result: undefined,
+    }))
+    const b = await readRegistry(root)
+    expect(b).not.toBe(a)
+    expect(b.order).toEqual(['prop_a', 'prop_b'])
   })
 
   it('drops entries that fail the def schema, keeps valid ones', async () => {
