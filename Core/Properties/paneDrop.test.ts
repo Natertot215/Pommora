@@ -60,26 +60,26 @@ describe('paneSpec — the schema pane', () => {
     expect(at('x1', 650).drop).toBeUndefined()
   })
 
-  it('assigned→assigned reorders at the slot (C-5)', () => {
+  it('assigned→assigned reorders at the slot', () => {
     const s = at('a2', 15)
     expect(s.drop).toEqual({ kind: 'reorder-assigned', propId: 'a2', toIndex: 0 })
     expect(s.line).toEqual(menuDropLine({ edge: 10 }))
   })
 
-  it('assigned→all is unassign with the area highlight and NO line (C-3/C-4)', () => {
+  it('assigned→all is unassign with the area highlight and NO line', () => {
     const s = at('a1', 80)
     expect(s.slot).toBe('unassign')
     expect(s.drop).toEqual({ kind: 'unassign', propId: 'a1' })
     expect(s.line).toBeNull()
   })
 
-  it('all→assigned assigns at the slot with a line (C-2)', () => {
+  it('all→assigned assigns at the slot with a line', () => {
     const s = at('x1', 30)
     expect(s.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 1 })
     expect(s.line).toEqual(menuDropLine({ edge: 30 }))
   })
 
-  it('all→all reorders the nexus order (C-1)', () => {
+  it('all→all reorders the nexus order', () => {
     expect(at('x1', 105).drop).toEqual({ kind: 'reorder-nexus', propId: 'x1', toIndex: 1 })
   })
 
@@ -177,7 +177,7 @@ describe('paneSpec — the visibility pane', () => {
   })
 })
 
-describe('nexusReorderIndex — visible All-Properties slot → FULL nexus-order index (breaker M-1)', () => {
+describe('nexusReorderIndex — visible All-Properties slot → FULL nexus-order index', () => {
   // Full order [A,B,C,D,E]; A,B assigned (not shown); visible unassigned = [C,D,E].
   const order = ['A', 'B', 'C', 'D', 'E']
   const visible = ['C', 'D', 'E']

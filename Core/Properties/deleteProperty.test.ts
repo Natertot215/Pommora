@@ -121,7 +121,7 @@ describe('deleteProperty', () => {
     expect((await deleteProperty(root, 'prop_nope')).ok).toBe(false)
   })
 
-  it('purges the property_cache block in every sidecar — even non-assigners (D-6)', async () => {
+  it('purges the property_cache block in every sidecar — even non-assigners', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Priority',

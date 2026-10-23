@@ -267,7 +267,7 @@ describe('the property cascades open only the holders', () => {
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Stage: Draft')
   })
 
-  it('a corpus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
+  it('a corpus-wide governed sweep cannot reach an excluded folder', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
     await mkdir(abs('Vault'), { recursive: true })
     const excludedPage = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`

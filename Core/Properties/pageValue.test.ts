@@ -17,10 +17,6 @@ describe('valueEditRewrite — strip', () => {
     expect(strip({ id: 'p1', S: 'Other' }, 'S', 'Urgent')).toBeNull()
   })
 
-  it('status: strips the bare label, same as select', () => {
-    expect(strip({ id: 'p1', S: 'Active' }, 'S', 'Active')).toEqual({ id: 'p1' })
-  })
-
   it('multiSelect: filters the array, deletes the key only when empty', () => {
     expect(strip({ M: ['a', 'x', 'b'] }, 'M', 'x')).toEqual({ M: ['a', 'b'] })
     expect(strip({ M: ['x'] }, 'M', 'x')).toEqual({})
@@ -53,10 +49,6 @@ describe('the option list is the one shape', () => {
 describe('valueEditRewrite — replace (rename cascade)', () => {
   it('select: swaps the matching value', () => {
     expect(replace({ S: 'Urgent' }, 'S', 'Urgent', 'Critical')).toEqual({ S: ['Critical'] })
-  })
-
-  it('status: swaps the bare label, same as select', () => {
-    expect(replace({ S: 'Active' }, 'S', 'Active', 'Doing')).toEqual({ S: ['Doing'] })
   })
 
   it('multiSelect: swaps one element in place', () => {

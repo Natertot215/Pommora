@@ -36,7 +36,7 @@ describe('styleMenuItems', () => {
     ])
   })
 
-  it('checkbox offers Checkbox/Switch; link the three link forms; file Filename/Full Path', () => {
+  it('checkbox offers Checkbox/Switch, link the three link forms, and file nothing', () => {
     expect(items('checkbox', { look: 'checkbox' }).map((r) => r.label)).toEqual([
       'Checkbox',
       'Switch',

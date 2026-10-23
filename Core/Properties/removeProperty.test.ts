@@ -90,7 +90,7 @@ const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undef
       | undefined
   )?.[propId]
 
-describe('removeProperty — strip + cache (C-3/C-6)', () => {
+describe('removeProperty — strip + cache', () => {
   it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
     await openSession(root)
     await refreshTree(root)
@@ -175,7 +175,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(await pageValue(theirs.file)).toEqual(['done'])
   })
 
-  it('is a no-op when the property is not assigned — never overwrites a cache with emptiness (E-6)', async () => {
+  it('is a no-op when the property is not assigned — never overwrites a cache with emptiness', async () => {
     await removeProperty(root, folder, propId)
     const before = await cacheBlock()
     const again = await removeProperty(root, folder, propId)
@@ -214,7 +214,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   })
 })
 
-describe('removeProperty reaches saved views (B-6)', () => {
+describe('removeProperty reaches saved views', () => {
   const cleared = {
     ...viewOn('', ''),
     property_order: ['_title'],
@@ -258,7 +258,7 @@ describe('removeProperty reaches saved views (B-6)', () => {
   })
 })
 
-describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {
+describe('restore on re-assign — per-value schema-currency reconciliation', () => {
   it('removing and re-assigning leaves every page’s modification time where it was', async () => {
     const then = new Date('2020-01-01T00:00:00Z')
     for (const page of [pageA, pageB]) await utimes(page, then, then)
@@ -358,7 +358,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect(Object.keys(block.values)).toHaveLength(1)
   })
 
-  it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred (breaker H-1)', async () => {
+  it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred', async () => {
     const sel = await createProperty(root, {
       id: '',
       label: 'Milestone',

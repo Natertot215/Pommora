@@ -97,7 +97,7 @@ describe('cellMenuModel', () => {
     )
   })
 
-  it('link (a filled Link cell): Edit + Rename, then a separated Clear, no Style (its look is per-property)', () => {
+  it('link (a filled Link cell): Edit + Rename, then a separated Clear, and no Style', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Edit', 'editLink'],

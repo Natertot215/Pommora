@@ -634,7 +634,7 @@ describe('a rename the journal took reports what it skipped, with a retry', () =
   )
 })
 
-describe('skip-aware journal (D-7b)', () => {
+describe('skip-aware journal', () => {
   it.skipIf(windows)(
     'an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it',
     async () => {
@@ -655,7 +655,7 @@ describe('skip-aware journal (D-7b)', () => {
   )
 })
 
-describe('unlink cascades (D-3)', () => {
+describe('unlink cascades', () => {
   it('unlinkContextKey strips the wrapped key from both scopes', async () => {
     const { unlinkContextKey } = await import('./contextCascade')
     const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
@@ -698,7 +698,7 @@ describe('unlink cascades (D-3)', () => {
   })
 })
 
-describe('the sweep tells the truth about what it did (G-2)', () => {
+describe('the sweep tells the truth about what it did', () => {
   const PAGE_C = '01KVGMT8BFP350FZZXAMG1QDTA'
 
   it('unlinkContextKey returns each swept root’s identity and stripped values; an Unknown root is refused, never touched', async () => {
@@ -775,7 +775,7 @@ describe('the Context cascades and $order', () => {
   })
 })
 
-describe('a delete sweep never strips a passenger (G-1a)', () => {
+describe('a delete sweep never strips a passenger', () => {
   const pomSidecar = () => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
 
   it('roots under the deleted Context keep their keys; outside roots still lose them', async () => {
@@ -804,7 +804,7 @@ describe('a delete sweep never strips a passenger (G-1a)', () => {
   })
 })
 
-describe('replayPendingRename (D-7a crash windows)', () => {
+describe('replayPendingRename across crash windows', () => {
   it('completes a rename crashed before the registry commit', async () => {
     // Crash simulation: journal written, folder renamed, files NOT yet cascaded, registry still on the old title.
     await writeJournal(root, {

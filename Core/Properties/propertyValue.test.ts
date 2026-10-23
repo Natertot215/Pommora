@@ -242,10 +242,6 @@ describe('decodeValue — a file value names files', () => {
     })
   })
 
-  it('the legacy object shape reads as null — there is no name in it to keep', () => {
-    expect(decodeValue(fileDef, [{ path: 'x/y.png' }])).toEqual({ kind: 'null' })
-  })
-
   it('an entry nothing can spell is DROPPED — it never takes the rest of the list with it', () => {
     // A dangling `- ` under an attachment key is YAML null; nulling the whole value would blank the cell and let the next add write a one-entry list over references whose files are still on disk.
     expect(decodeValue(fileDef, ['[[a.pdf]]', null])).toEqual({

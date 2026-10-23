@@ -81,7 +81,7 @@ describe('setProperty on a Space path', () => {
     expect((await stat(sidecarFile())).mtimeMs).toBe(before)
   })
 
-  it('writes a property no Collection assigns (A-2)', async () => {
+  it('writes a property no Collection assigns', async () => {
     expect(Object.keys((await readRegistry(root)).defs)).toContain(statusId)
     const r = await write({ kind: 'select', value: 'Shipped' })
     expect(r.ok).toBe(true)

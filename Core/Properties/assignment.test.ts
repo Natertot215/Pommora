@@ -46,7 +46,7 @@ it('reorder moves within the assignment array', async () => {
   expect(await ids(notes)).toEqual(['prop_c', 'prop_a', 'prop_b'])
 })
 
-it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
+it('a Remove racing an Assign on ONE collection never loses either write', async () => {
   const mk = async (name: string): Promise<string> => {
     const r = await createProperty(root, { id: '', label: name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')

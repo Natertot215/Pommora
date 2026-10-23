@@ -78,7 +78,7 @@ describe('declaredType', () => {
     expect(declaredType('ctx_areas', schema)).toBeUndefined()
   })
 
-  it('reads user property types from the schema (snake_case PropertyType)', () => {
+  it('reads user property types from the schema', () => {
     expect(declaredType('prop_status', schema)).toBe('status')
     expect(declaredType('prop_sel', schema)).toBe('select')
     expect(declaredType('prop_num', schema)).toBe('number')

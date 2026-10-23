@@ -131,7 +131,7 @@ const zone = (): Element => host.querySelector('.line-zone')!
 const assignedGroup = (): Element => zone().children[0]
 const allGroup = (): Element => rowFor('All Properties').closest('button')!.parentElement!
 
-describe('the DRY nested slide (A-7)', () => {
+describe('the DRY nested slide', () => {
   it('list → editor renders BOTH slots (inner FrameSlide keeps them mounted) with the editor active', async () => {
     await mountPane()
     await act(async () => {
@@ -173,8 +173,8 @@ const commitTitle = (input: HTMLInputElement, value: string): void => {
 }
 const titleDef: PropertyDefinition = { id: '_title', label: 'Title', key: 'Title', type: 'link' }
 
-describe('the All Properties section (T5)', () => {
-  it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {
+describe('the All Properties section', () => {
+  it('lists only unassigned, unreserved registry defs, in registry order', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef, defs[0], titleDef] } } as never })
     await mountPane([defs[0]])
     await act(async () => {
@@ -199,7 +199,7 @@ describe('the All Properties section (T5)', () => {
     expect(loadSpy).not.toHaveBeenCalled()
   })
 
-  it('header ⊕ opens the type picker; the footer create-row is gone (A-9)', async () => {
+  it('header ⊕ opens the type picker; the footer create-row is gone', async () => {
     await mountPane()
     expect(host.textContent).not.toContain('New Property')
     await act(async () => {
@@ -232,7 +232,7 @@ describe('the All Properties section (T5)', () => {
     expect(assignedGroup().nextElementSibling).toBe(allGroup())
   })
 
-  it('the assigned group renders inside its region wrapper (T6 hangs rects on it)', async () => {
+  it('the assigned group renders inside its region wrapper', async () => {
     await mountPane()
     const assigned = assignedGroup()
     expect(assigned.textContent).toContain('Status')
@@ -240,7 +240,7 @@ describe('the All Properties section (T5)', () => {
   })
 })
 
-describe('the two-region drag (T6) — state-level; geometry truth lives in the live pass', () => {
+describe('the two-region drag — state-level; geometry truth lives in the live pass', () => {
   const deleteSpy = (): ReturnType<typeof vi.fn> => unassignSpy
 
   const stubGeometry = (): void => {
@@ -427,7 +427,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 })
 
-describe('native menus + the inline-rename channel (T7)', () => {
+describe('native menus + the inline-rename channel', () => {
   const openEditor = async (): Promise<void> => {
     await mountPane()
     await act(async () => {
@@ -435,7 +435,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
   }
 
-  it("the editor's ⋮ Remove routes through schema.delete and returns to the list (A-8)", async () => {
+  it("the editor's ⋮ Remove routes through schema.delete and returns to the list", async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:remove')
     await openEditor()
     await act(async () => {
@@ -448,7 +448,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(unassignSpy).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
-  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE (A-8/D-1)', async () => {
+  it('⋮ Delete asks first, then runs the global property.delete — and the footer Delete row is GONE', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:destroy')
     await openEditor()
     expect(host.textContent).not.toContain('Delete Property')
@@ -483,7 +483,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(useSession.getState().pendingConfirm).toBeNull()
   })
 
-  it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename (A-10)', async () => {
+  it('a row right-click Rename flips the title to the inline input; Enter commits schema.rename', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:rename')
     await mountPane()
     await act(async () => {

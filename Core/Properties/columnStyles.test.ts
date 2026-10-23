@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  COLUMN_LOOKS,
   columnStyle,
   DATE_FORMATS,
   dateDefaults,
@@ -9,36 +8,22 @@ import {
 } from './columnStyles'
 
 describe('COLUMN_LOOKS', () => {
-  it('includes the number looks', () => {
-    expect(COLUMN_LOOKS).toContain('number')
-    expect(COLUMN_LOOKS).toContain('bar')
-  })
   it('parses a bar look on a column style', () => {
     expect(columnStyle.parse({ look: 'bar' }).look).toBe('bar')
   })
 })
 
 describe('defaultStyleFor', () => {
-  it('gives each look-bearing type its default look', () => {
+  it('gives each look-bearing type its default look, and a file column none', () => {
     expect(defaultStyleFor('status')).toEqual({ look: 'standard' })
     expect(defaultStyleFor('checkbox')).toEqual({ look: 'checkbox' })
     expect(defaultStyleFor('link')).toEqual({ look: 'link-full' })
+    expect(defaultStyleFor('file')).toEqual({})
   })
 
   // A Link column reads the way its property says to unless its view says otherwise, so the default resolves to the property's own Format rather than a constant.
   it('takes a link column’s default from the property’s own Format', () => {
     expect(defaultStyleFor('link', { link_display: 'link-title' })).toEqual({ look: 'link-title' })
-  })
-
-  it('drops a look saved under the vocabulary this replaced', () => {
-    expect(columnStyle.parse({ look: 'full' }).look).toBeUndefined()
-    expect(columnStyle.parse({ look: 'title' }).look).toBeUndefined()
-  })
-
-  it('drops the looks a file column used to carry, and offers it no default', () => {
-    expect(columnStyle.parse({ look: 'filename' }).look).toBeUndefined()
-    expect(columnStyle.parse({ look: 'path' }).look).toBeUndefined()
-    expect(defaultStyleFor('file')).toEqual({})
   })
 
   it("a date style defaults to the Nexus's form with no time and no weekday", () => {

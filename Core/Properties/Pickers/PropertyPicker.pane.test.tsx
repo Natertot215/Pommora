@@ -142,12 +142,12 @@ describe('PropertyPicker panes', () => {
     expect(portalText()).toContain('Choose a file')
   })
 
-  it('an options target anchored to a click centres its pane (B28)', async () => {
+  it('an options target anchored to a click centres its pane', async () => {
     await render({ target: optionsTarget(), anchorX: 200 })
     expect(isCentred()).toBe(true)
   })
 
-  it('an options target with no click does not centre (B28)', async () => {
+  it('an options target with no click does not centre', async () => {
     await render({ target: optionsTarget() })
     expect(isCentred()).toBe(false)
   })

@@ -55,7 +55,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
   return { propertyId: c.value.id, rel: relative(root, p.value.path) }
 }
 
-describe('F1 — the cascade takes the cell-write lock', () => {
+describe('the cascade takes the cell-write lock', () => {
   it('a rename cascade queues behind an in-flight cell-write on the same page', async () => {
     await openSession(rawRoot) // canonicalizes the root
     const root = sessionRoot()!

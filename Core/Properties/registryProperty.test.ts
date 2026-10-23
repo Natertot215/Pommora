@@ -272,7 +272,7 @@ describe('createProperty', () => {
     expect((await createProperty(root, def({ label: '  ', type: 'number' }))).ok).toBe(false)
   })
 
-  it('appends each new id to the nexus order (A-9)', async () => {
+  it('appends each new id to the nexus order', async () => {
     const a = await createProperty(root, def({ label: 'One', type: 'number' }))
     const b = await createProperty(root, def({ label: 'Two', type: 'number' }))
     if (!a.ok || !b.ok) throw new Error('create failed')
@@ -607,7 +607,7 @@ describe('removeFromRegistry', () => {
 })
 
 describe('reorderRegistry', () => {
-  it('moves an id within the nexus order (C-1)', async () => {
+  it('moves an id within the nexus order', async () => {
     const ids: string[] = []
     for (const name of ['One', 'Two', 'Three']) {
       const r = await createProperty(root, def({ label: name, type: 'number' }))

@@ -74,7 +74,7 @@ const openDueEditor = async (): Promise<void> => {
   })
 }
 
-describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
+describe('the dateTime Format editor writes the ACTIVE view', () => {
   it('picking Short Date saves column_styles on the source node, not the schema', async () => {
     await openDueEditor()
     await act(async () => {

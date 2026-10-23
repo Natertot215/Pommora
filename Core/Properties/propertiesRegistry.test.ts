@@ -120,7 +120,7 @@ describe('propertiesRegistry', () => {
   })
 })
 
-describe('a definition with no label (C-3)', () => {
+describe('a definition with no label', () => {
   it('reads its key as its label, and a mutation of another definition leaves it as stored', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     const file = {
@@ -145,7 +145,7 @@ describe('a definition with no label (C-3)', () => {
   })
 })
 
-describe('hostile hand-edited files (breaker M-2/L-1)', () => {
+describe('hostile hand-edited files', () => {
   it('decodes an unknown Key Format as none', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
@@ -201,7 +201,7 @@ describe('hostile hand-edited files (breaker M-2/L-1)', () => {
 })
 
 describe('RegistryFile shape — { order, defs }', () => {
-  it('element-filters junk order entries — non-strings and ids without defs dropped (B-3)', async () => {
+  it('element-filters junk order entries — non-strings and ids without defs dropped', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'properties.json'),
