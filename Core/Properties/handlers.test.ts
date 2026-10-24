@@ -2,13 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
 import { join, relative } from '../Paths/posix'
-import { TRASH_DIR } from '../Paths/nexusPaths'
-import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
-import { fail, fault, ok } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
@@ -20,12 +19,11 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { unsweptLine } from '../Nexus/entities'
-import { OWED, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { readNotes } from '../Nexus/owed'
 import { propertiesHandlers } from './handlers'
 import { nexusHandlers } from '../Nexus/handlers'
 import type { MutateRequest } from '../Nexus/mutateRequest'
 import type { FormatChange } from './keyFormat'
-import { replaySchemaCascade } from './replaySchemaCascade'
 import { handleMutate } from '../Nexus/mutate'
 import type { TrashDeps } from '../Trash/discard'
 
@@ -137,14 +135,17 @@ describe('the property ops', () => {
     },
   )
 
-  it('an option delete held by an unreadable Set sidecar keeps the option and offers Try Again', async () => {
+  it('an option delete held by an unreadable Set sidecar drops the option and offers Try Again', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
     const r = await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })
-    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual(FINISH)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id: propId, key: 'Done' })
+    expect(r.ok && r.value.cascade).toMatchObject({ warning: unsweptLine(1), owed: true })
+    expect(await readNotes(root)).toEqual({
+      [propId]: { kind: 'property', options: { opt_Done: { strip: ['Done'] } } },
+    })
+    const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)
+    expect(options).toEqual(['Todo'])
     expect(liveViewAt(col)).not.toHaveProperty('filter')
     expect(tilePushes()).toEqual([HOME])
   })
@@ -155,58 +156,55 @@ describe('the property ops', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await send({ op: 'deleteProperty', propertyId: propId })
-    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual(FINISH)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: propId, key: 'Stage' })
+    expect(r.ok && r.value.cascade).toMatchObject({ warning: unsweptLine(1), owed: true })
+    expect(await readNotes(root)).toEqual({ [propId]: { kind: 'property', strip: ['Stage'] } })
     expect(tilePushes()).toEqual([HOME])
     expect(await send(FINISH)).toMatchObject(
-      ok({ cascade: { pages: [], warning: unsweptLine(1) }, retry: FINISH }),
+      ok({ cascade: { pages: [], warning: unsweptLine(1), owed: true } }),
     )
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
     const finished = await send(FINISH)
     expect(finished).toMatchObject(ok({ cascade: { pages: [] } }))
-    expect(finished.ok && finished.value.retry).toBeUndefined()
+    expect(finished.ok && finished.value.cascade?.owed).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
     const views = (await readJsonAt(setFile)).views as { filter: unknown }[]
     expect(views[0]).not.toHaveProperty('filter')
   })
 
-  it('a delete’s record replayed after the property is restored leaves the restored property as it is', async () => {
+  it('a delete finished after the property is restored leaves the restored property as it is', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
     await mkdir(setFile)
     const r = await send({ op: 'deleteProperty', propertyId: propId })
-    const record = await readSchemaJournal(root)
-    if (!r.ok || !record || !r.value.bundled) throw new Error('setup failed')
-    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 1 }))
+    if (!r.ok || !r.value.bundled) throw new Error('setup failed')
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
     const bundlePath = r.value.bundled.bundlePath
     expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
+    expect(await readNotes(root)).toEqual({ [propId]: { kind: 'property', rename: ['Stage'] } })
     const page = await readFile(`${col}/A.md`, 'utf8')
-    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
+    expect(await send(FINISH)).toMatchObject(ok({ cascade: { pages: [] } }))
     expect((await readRegistry(root)).defs[propId]?.label).toBe('Stage')
     expect(await readFile(`${col}/A.md`, 'utf8')).toBe(page)
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('an option delete that finds another operation owed in the journal is refused, keeping the option', async () => {
-    const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
-    await writeSchemaJournal(root, owed)
+  it('an option delete runs while another property owes work, leaving its entry as it stood', async () => {
+    const other = { prop_other: { kind: 'property', rename: ['A'] } }
+    await putJson(join(root, OWED_REL), other)
     expect(await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })).toEqual(
-      fail('owed', 'An earlier change hasn’t reached every file yet.'),
+      ok({ cascade: { pages: [], hosts: [HOME] } }),
     )
-    expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
-      id: 'opt_Done',
-      key: 'Done',
-      label: 'Done',
-    })
-    expect(await readSchemaJournal(root)).toEqual(owed)
+    const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)
+    expect(options).toEqual(['Todo'])
+    expect(await readNotes(root)).toEqual(other)
   })
 
-  it('an option delete’s record replayed after the option is deleted and added again leaves the option and its values', async () => {
+  it('an option delete finished by Try Again leaves an option added again under its word, and its values', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     const held = await readFile(setFile, 'utf8')
     await rm(setFile)
@@ -214,14 +212,11 @@ describe('the property ops', () => {
     expect((await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })).ok).toBe(
       true,
     )
-    const record = await readSchemaJournal(root)
-    if (!record) throw new Error('setup failed')
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect((await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })).ok).toBe(
-      true,
-    )
+    expect((await send(FINISH)).ok).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     const add = { op: 'add' as const, groupId: 'select', id: 'opt_Again', label: 'Done' }
     expect((await send({ op: 'editOption', propertyId: propId, edit: add })).ok).toBe(true)
     const page = `${col}/A.md`
@@ -231,7 +226,7 @@ describe('the property ops', () => {
       rewriteRaw((raw) => landValue(raw, def.key, ['Done'])),
     )
     const before = await readFile(page, 'utf8')
-    expect(await replaySchemaCascade(root, record)).toMatchObject(ok({ skipped: 0 }))
+    expect((await send(FINISH)).ok).toBe(true)
     expect(await readFile(page, 'utf8')).toBe(before)
     expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
       id: 'opt_Again',
@@ -269,20 +264,20 @@ describe('the property ops', () => {
     expect(await holders({ of: 'rename', label: 'DONE', optionId: 'opt_Done' })).toEqual(ok(0))
   })
 
-  it('a delete whose drop fails still lands the Set it wrote in the held tree', async () => {
+  it('a delete whose drop fails writes no Set and owes nothing', async () => {
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     const r = await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })
     expect(r.ok).toBe(false)
-    expect(liveViewAt(surfaces.set)).not.toHaveProperty('filter')
+    const views = (await readJsonAt(sidecarPath(surfaces.set, 'set'))).views as unknown[]
+    expect(views[0]).toHaveProperty('filter')
+    expect(await readNotes(root)).toEqual({})
   })
 })
 
-describe('a schema op started while another operation’s record holds the journal', () => {
-  const other = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
-  const pageA = (): string => `${col}/A.md`
-  const fm = async (): Promise<string> => readFile(pageA(), 'utf8')
+describe('a schema op started while another property owes work', () => {
+  const other = { prop_other: { kind: 'property', rename: ['A'] } }
   beforeEach(async () => {
-    await writeSchemaJournal(root, other)
+    await putJson(join(root, OWED_REL), other)
   })
 
   it.each<[string, MutateRequest]>([
@@ -293,14 +288,9 @@ describe('a schema op started while another operation’s record holds the journ
     ['an option delete', { op: 'deleteOption', propertyId: '', optionId: 'opt_Done' }],
     ['a property rename', { op: 'renameProperty', propertyId: '', label: 'Phase' }],
     ['a property delete', { op: 'deleteProperty', propertyId: '' }],
-  ])('%s is refused, writing nothing', async (_, req) => {
-    const before = await fm()
-    const registry = await readRegistry(root)
-    expect(await send({ ...req, propertyId: propId } as MutateRequest)).toEqual(OWED)
-    expect(await fm()).toBe(before)
-    expect(await readRegistry(root)).toEqual(registry)
-    expect(existsSync(join(root, TRASH_DIR))).toBe(false)
-    expect(await readSchemaJournal(root)).toEqual(other)
+  ])('%s lands, leaving the other entry as it stood', async (_, req) => {
+    expect((await send({ ...req, propertyId: propId } as MutateRequest)).ok).toBe(true)
+    expect(await readNotes(root)).toEqual(other)
   })
 })
 
@@ -326,7 +316,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
       label: 'Closed',
     })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     await repaired(held)
     expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'opt_Done')])
   })
@@ -335,7 +325,7 @@ describe('a Collection whose sidecar doesn’t parse', () => {
     const held = await damaged()
     const r = await send({ op: 'deleteOption', propertyId: propId, optionId: 'opt_Done' })
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     await repaired(held)
     expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'opt_Done')])
     const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.label)

@@ -350,7 +350,7 @@ describe('the edited definition', () => {
     })
   })
 
-  it('hands fn the stored definition with its unrecognized keys intact', async () => {
+  it('hands fn the decoded definition with its unrecognized keys intact', async () => {
     const stored = {
       id: 'prop_f',
       label: 'Money',
@@ -364,11 +364,8 @@ describe('the edited definition', () => {
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({ order: ['prop_f'], defs: { prop_f: stored } }),
     )
-    const seen = await mutateRegistry(root, (reg, raw) => ({
-      result: { decoded: reg.defs.prop_f, raw: raw.prop_f },
-    }))
-    expect(seen.raw).toEqual(stored)
-    expect(seen.decoded).toEqual({
+    const decoded = await mutateRegistry(root, (reg) => ({ result: reg.defs.prop_f }))
+    expect(decoded).toEqual({
       id: 'prop_f',
       label: 'Money',
       key: 'Money',

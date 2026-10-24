@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { MutateRequest } from '../Nexus/mutateRequest'
 import { detail as pageDetail } from '../Testing/fixtures'
 import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
@@ -1174,19 +1175,42 @@ describe('store — the mutate rail', () => {
     await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(retry))
   })
 
-  it('an owed refusal offers Try Again, which replays the journal’s record', async () => {
-    channels.mutate = vi.fn(async () =>
-      fail('owed', 'An earlier change hasn’t reached every file yet.'),
-    )
+  const OWED_LINE = 'An earlier change hasn’t reached every file yet.'
+  const finished = ok({ cascade: { pages: [], hosts: [] } })
+
+  it('a name still owed after the finish is refused with Try Again, which sends { op: finishOwed }', async () => {
+    const asked: string[] = []
+    channels.mutate = vi.fn(async (req: MutateRequest) => {
+      asked.push(req.op)
+      return req.op === 'finishOwed' ? finished : fail('owed', OWED_LINE)
+    })
     clearNotification()
     const edit = { op: 'recolor', option: 'Done', color: 'red' } as const
     await useSession.getState().mutate({ op: 'editOption', propertyId: 'p', edit })
+    expect(asked).toEqual(['editOption', 'finishOwed', 'editOption'])
     const note = currentNotification()
-    expect(note?.message).toBe('An earlier change hasn’t reached every file yet.')
+    expect(note?.message).toBe(OWED_LINE)
     expect(note?.action?.label).toBe('Try Again')
     channels.mutate = vi.fn(async () => ok({}))
     await note?.action?.run()
     await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith({ op: 'finishOwed' }))
+  })
+
+  it('an owed name is finished, then the request lands', async () => {
+    const asked: string[] = []
+    const answers = [fail('owed', OWED_LINE), finished, ok({ created: { propertyId: 'prop_n' } })]
+    channels.mutate = vi.fn(async (req: MutateRequest) => {
+      asked.push(req.op)
+      return answers.shift()
+    })
+    clearNotification()
+    const draft = { label: 'Priority', type: 'text' } as const
+    const r = await useSession
+      .getState()
+      .mutate({ op: 'addProperty', containerPath: 'Notes', draft })
+    expect(asked).toEqual(['addProperty', 'finishOwed', 'addProperty'])
+    expect(r).toEqual({ created: { propertyId: 'prop_n' } })
+    expect(currentNotification()).toBeNull()
   })
 
   it('leaves a property delete’s pass warning to the Deleted notice', async () => {

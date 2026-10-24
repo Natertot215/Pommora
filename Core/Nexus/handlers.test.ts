@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import * as contextCascadeModule from '../Contexts/contextCascade'
 import { readJournal, writeJournal } from '../Contexts/contextJournal'
-import * as replayModule from '../Properties/replaySchemaCascade'
+import * as finishModule from './finishOwed'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { spaceDirRel } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
@@ -81,7 +81,7 @@ beforeEach(async () => {
   stores = memoryStores()
   installStores(stores.stores)
   made = await hubHost({ nexusId: NEXUS })
-  ctx = { ...made.ctx, openStores: () => {} } as HostContext
+  ctx = { ...made.ctx, openStores: () => {}, trashMode: async () => 'nexus' } as HostContext
   writeValue('sync', { address: ADDRESS, pin: null, cursor: 0 })
 })
 
@@ -478,15 +478,15 @@ describe('openNexusSequence', () => {
     }
   })
 
-  it('a Context replay that throws leaves the open whole, its property replay and settle run', async () => {
+  it('a Context replay that throws leaves the open whole, its finishing pass and settle run', async () => {
     vi.spyOn(contextCascadeModule, 'replayPendingRename').mockRejectedValueOnce(
       new Error('unmovable'),
     )
-    const propertyReplay = vi.spyOn(replayModule, 'replaySchemaCascade')
+    const finishing = vi.spyOn(finishModule, 'finishOwed')
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, false)
     expect(logged).toHaveBeenCalledWith('contexts: the rename replay failed:', 'unmovable')
-    expect(propertyReplay).toHaveBeenCalledWith(root)
+    expect(finishing).toHaveBeenCalledWith(root, expect.anything())
     expect(heldTreeOf(root)?.collections[0]?.pages[0]?.id).toBe(NOTES)
     await settledSession()
     expect(currentSession()).not.toBeNull()

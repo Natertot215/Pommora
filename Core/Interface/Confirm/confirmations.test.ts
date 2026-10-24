@@ -227,7 +227,7 @@ describe('a delete through the confirmation', () => {
     clearNotification()
   })
 
-  it('a property delete asks its own question, counting what holds it, deletes through its op, and offers its reply’s retry', async () => {
+  it('a property delete asks its own question, counting what holds it, deletes through its op, and a delete that missed a file offers Try Again, which sends { op: finishOwed }', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'property:holders': async () => ok(2),
     })
@@ -240,8 +240,7 @@ describe('a delete through the confirmation', () => {
     })
     mutate.mockResolvedValueOnce({
       bundled: { bundlePath: '.trash/p1' },
-      cascade: { pages: [], hosts: [], warning: 'W' },
-      retry: { op: 'finishOwed' },
+      cascade: { pages: [], hosts: [], warning: 'W', owed: true },
     })
     expect(await confirmDelete({ propertyId: 'p1', title: 'Status' })).toBe(true)
     expect(details[0]).toMatch(/^Delete “Status” everywhere\? .*stripped from 2 Items; /)

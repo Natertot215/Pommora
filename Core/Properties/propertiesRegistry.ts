@@ -92,10 +92,7 @@ function rebuiltOptions(
 
 export async function mutateRegistry<T>(
   root: string,
-  fn: (
-    registry: RegistryFile,
-    stored: Readonly<Record<string, unknown>>,
-  ) => { next?: RegistryFile; result: T },
+  fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
   let result!: T
   const written = await updateNexusFile(
@@ -103,7 +100,7 @@ export async function mutateRegistry<T>(
     (raw) => {
       const { registry, unadmitted } = normalizeRegistry(raw)
       const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
-      const edit = fn(registry, rawDefs)
+      const edit = fn(registry)
       result = edit.result
       const next = edit.next
       if (!next) return null

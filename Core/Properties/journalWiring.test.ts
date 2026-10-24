@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync } from 'node:fs'
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import {
@@ -12,7 +12,7 @@ import {
   writeJson,
 } from '../Files/atomicWrite'
 import { nexusConfig } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -21,7 +21,7 @@ import { readRegistry } from './propertiesRegistry'
 import { createProperty, configureProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { clearOption, editOption, deleteOption, renameOption } from './optionOps'
-import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { readNotes } from '../Nexus/owed'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
@@ -37,10 +37,10 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
 })
 
 let root: string
-const journalFile = (): string => join(root, '.nexus', 'property-cascade.json')
+const notesFile = (): string => join(root, OWED_REL)
 const abs = (...segs: string[]): string => join(root, ...segs)
 
-let observed: { path: string; journaled: boolean }[]
+let observed: { path: string; noted: boolean }[]
 
 beforeEach(async () => {
   root = tempRoot('pom-jwire-')
@@ -64,7 +64,7 @@ beforeEach(async () => {
   await openSession(root)
   observed = []
   const note = (path: string): void => {
-    observed.push({ path, journaled: existsSync(journalFile()) })
+    observed.push({ path, noted: existsSync(notesFile()) })
   }
   const real = await vi.importActual<typeof import('../Files/atomicWrite')>('../Files/atomicWrite')
   vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
@@ -84,21 +84,20 @@ beforeEach(async () => {
     return real.rewritePreservingTimes(path, data)
   })
   vi.mocked(editJsonStrict).mockImplementation(async (path, mutate) => {
-    const journaled = existsSync(journalFile())
+    const noted = existsSync(notesFile())
     const outcome = await real.editJsonStrict(path, mutate)
-    if (outcome === 'written') observed.push({ path, journaled })
+    if (outcome === 'written') observed.push({ path, noted })
     return outcome
   })
   vi.mocked(updateNexusConfig).mockImplementation(async (at, file, mutate) => {
-    const journaled = existsSync(journalFile())
+    const noted = existsSync(notesFile())
     let changed = false
     const r = await real.updateNexusConfig(at, file, (cur) => {
       const next = mutate(cur)
       changed = next !== null
       return next
     })
-    if (r.ok && changed)
-      observed.push({ path: nexusConfig(at, NEXUS_CONFIG_FILES[file]), journaled })
+    if (r.ok && changed) observed.push({ path: nexusConfig(at, NEXUS_CONFIG_FILES[file]), noted })
     return r
   })
 })
@@ -114,69 +113,45 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const pageWrites = (): { path: string; journaled: boolean }[] =>
+const pageWrites = (): { path: string; noted: boolean }[] =>
   observed.filter((o) => o.path.endsWith('.md'))
 
 describe('the rename writer', () => {
-  it('holds the record across every page rewrite and clears on settle', async () => {
+  it('holds the entry across every page rewrite and clears it on settle', async () => {
     const r = await renameProperty(root, 'prop_s', 'Phase')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBe(2)
-    expect(writes.every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(writes.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     expect(await readFile(abs('Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
   })
 
-  it('writes no record for a rename refused before the commit', async () => {
+  it('writes no entry for a rename refused before the commit', async () => {
     await createProperty(root, { id: 'prop_o', label: 'Other', type: 'select' })
     const r = await renameProperty(root, 'prop_s', 'Other')
     expect(r.ok).toBe(false)
-    expect(observed.some((o) => o.path === journalFile())).toBe(false)
+    expect(observed.some((o) => o.path === notesFile())).toBe(false)
   })
 
-  it('clears the record when a create takes the name between the journal and the commit', async () => {
-    const real =
-      await vi.importActual<typeof import('../Files/atomicWrite')>('../Files/atomicWrite')
-    let raced = false
-    const race = async (path: string): Promise<void> => {
-      if (path !== journalFile() || raced) return
-      raced = true
-      await createProperty(root, { id: 'prop_o', label: 'Other', type: 'select' })
-    }
-    vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
-      await real.atomicWriteFile(path, data)
-      await race(path)
-    })
-    vi.mocked(writeJson).mockImplementation(async (path, data) => {
-      await real.writeJson(path, data)
-      await race(path)
-    })
-    const r = await renameProperty(root, 'prop_s', 'Other')
-    expect(raced).toBe(true)
-    expect(r.ok).toBe(false)
-    expect(pageWrites().length).toBe(0)
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
-  it('writes no record for a non-rename edit', async () => {
+  it('writes no entry for a non-rename edit', async () => {
     const r = await configureProperty(root, 'prop_s', { icon: 'tag' })
     expect(r.ok).toBe(true)
-    expect(observed.some((o) => o.path === journalFile())).toBe(false)
+    expect(observed.some((o) => o.path === notesFile())).toBe(false)
   })
 })
 
 describe('the delete writer', () => {
-  it('journals after the snapshot, holds across the strip, clears after the registry', async () => {
+  it('notes after the snapshot, holds across the strip, and clears once it lands', async () => {
     const r = await deleteProperty(root, 'prop_s')
     expect(r.ok).toBe(true)
     const bundleWrites = observed.filter((o) => o.path.includes('.trash'))
     expect(bundleWrites.length).toBeGreaterThan(0)
-    expect(bundleWrites.every((w) => !w.journaled)).toBe(true)
+    expect(bundleWrites.every((w) => !w.noted)).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBe(2)
-    expect(writes.every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(writes.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
   })
 })
@@ -203,39 +178,39 @@ describe('the option-op writers', () => {
     observed = []
   }
 
-  it('option-rename holds the record across the cascade and clears on settle', async () => {
+  it('option-rename holds the entry across the cascade and clears it on settle', async () => {
     await withOptions()
     const r = await renameOption(root, 'prop_t', 'opt_Draft', 'Queued')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBeGreaterThan(0)
-    expect(writes.every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(writes.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).toContain('- Queued')
   })
 
-  it('a refused option-rename clears with no page touched', async () => {
+  it('a refused option-rename notes nothing and touches no page', async () => {
     await withOptions()
     const r = await renameOption(root, 'prop_t', 'opt_Draft', 'Done')
     expect(r.ok).toBe(false)
     expect(pageWrites().length).toBe(0)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('option-remove strips journaled, drops the option, and clears', async () => {
+  it('option-remove strips noted, drops the option, and clears', async () => {
     await withOptions()
     const r = await deleteOption(root, 'prop_t', 'opt_Draft')
     expect(r.ok).toBe(true)
     const writes = pageWrites()
     expect(writes.length).toBeGreaterThan(0)
-    expect(writes.every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(writes.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.label)).toEqual(['Done'])
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
-  it('option-remove writes every saved view while the record is held', async () => {
+  it('option-remove writes every saved view while the entry is held', async () => {
     await withOptions()
     await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'opt_Draft'))
     await refreshTree(root)
@@ -250,21 +225,24 @@ describe('the option-op writers', () => {
       'Col/Deep/_pageset.json',
       'Col/_pagecollection.json',
     ])
-    expect(configWrites.every((w) => w.journaled)).toBe(true)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(configWrites.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('option-clear never writes a record — its residue disagrees with nothing', async () => {
+  it('option-clear strips noted, keeps the option, and clears', async () => {
     await withOptions()
     const r = await clearOption(root, 'prop_t', 'opt_Draft')
     expect(r.ok).toBe(true)
-    expect(observed.some((o) => o.path === journalFile())).toBe(false)
+    const writes = pageWrites()
+    expect(writes.length).toBeGreaterThan(0)
+    expect(writes.every((w) => w.noted)).toBe(true)
+    expect(await readNotes(root)).toEqual({})
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.label)).toEqual(['Draft', 'Done'])
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
-  it('editOption never writes a record', async () => {
+  it('editOption never writes an entry', async () => {
     await withOptions()
     await editOption(root, 'prop_t', {
       op: 'add',
@@ -272,70 +250,12 @@ describe('the option-op writers', () => {
       id: 'opt_Solo',
       label: 'Solo',
     })
-    expect(observed.some((o) => o.path === journalFile())).toBe(false)
-  })
-})
-
-describe('the create-side consumer', () => {
-  it('a create wearing a journaled delete’s name consumes the record', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
-    await createProperty(root, { id: '', label: 'Priority', type: 'select' })
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
-  it('a restore-shaped create wearing the journaled id consumes the record', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
-    await createProperty(root, { id: 'prop_gone', label: 'Renamed Since', type: 'select' })
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
-
-  it('an unrelated create leaves the record standing', async () => {
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', key: 'Priority' })
-    await createProperty(root, { id: '', label: 'Unrelated', type: 'select' })
-    expect(await readSchemaJournal(root)).toEqual({
-      op: 'delete',
-      id: 'prop_gone',
-      key: 'Priority',
-    })
-  })
-
-  it('a create stepped aside from the journaled name never spends the record it did not displace', async () => {
-    // The crash state: the delete's def still stands, so a same-name create lands as Stage (2).
-    await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', key: 'Stage' })
-    const r = await createProperty(root, { id: '', label: 'Stage', type: 'select' })
-    expect(r.ok).toBe(true)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', key: 'Stage' })
-  })
-})
-
-describe('the slot writes over nothing it cannot read', () => {
-  const record = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
-
-  it('an unreadable slot refuses a write and a clear', async () => {
-    await mkdir(journalFile())
-    await writeSchemaJournal(root, record)
-    await clearSchemaJournal(root, record)
-    expect((await stat(journalFile())).isDirectory()).toBe(true)
-    expect(await readdir(journalFile())).toEqual([])
-  })
-
-  it.each([
-    '{nope',
-    '{ "op": "bogus", "id": "x" }',
-  ])('a corrupt slot (%s) is set aside by the next write', async (bad) => {
-    await writeFile(journalFile(), bad)
-    await writeSchemaJournal(root, record)
-    expect(await readSchemaJournal(root)).toEqual(record)
-    const aside = (await readdir(abs('.nexus'))).filter((f) =>
-      f.startsWith('.property-cascade.json.bad-'),
-    )
-    expect(aside).toHaveLength(1)
-    expect(await readFile(abs('.nexus', aside[0]), 'utf8')).toBe(bad)
+    expect(observed.some((o) => o.path === notesFile())).toBe(false)
   })
 })
 
 describe('a second nexus', () => {
-  it('sweeps and clears its own record while the session is open elsewhere', async () => {
+  it('sweeps and clears its own entry while the session is open elsewhere', async () => {
     const other = tempRoot('pom-jwire2-')
     await mkdir(join(other, '.nexus'), { recursive: true })
     await writeFile(
@@ -356,7 +276,7 @@ describe('a second nexus', () => {
     const r = await renameProperty(other, 'prop_s', 'Phase')
     expect(r.ok).toBe(true)
     expect(await readFile(join(other, 'Col', 'A.md'), 'utf8')).toContain('Phase: Draft')
-    expect(await readSchemaJournal(other)).toBeNull()
+    expect(await readNotes(other)).toEqual({})
     await rm(other, { recursive: true, force: true })
   })
 })

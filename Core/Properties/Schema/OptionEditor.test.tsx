@@ -165,10 +165,10 @@ describe('the option menu', () => {
     expect(clearOption).toHaveBeenCalledWith('p1', 'opt_Urgent')
   })
 
-  it('Delete asks, then deletes the option; a kept record offers Try Again', async () => {
+  it('Delete asks, then deletes the option; a missed page offers Try Again', async () => {
     menu.mockResolvedValueOnce(ok('option:delete'))
     deleteOption.mockResolvedValueOnce(
-      ok({ cascade: { pages: [], hosts: [], warning: 'w' }, retry: { op: 'finishOwed' } }),
+      ok({ cascade: { pages: [], hosts: [], warning: 'w', owed: true } }),
     )
     render('select', select)
     await rightClick('Urgent')
@@ -183,23 +183,7 @@ describe('the option menu', () => {
     expect(finishOwed).toHaveBeenCalledOnce()
   })
 
-  it('a delete refused while another change is owed offers a Try Again that replays the held record', async () => {
-    menu.mockResolvedValueOnce(ok('option:delete'))
-    deleteOption.mockResolvedValueOnce(
-      fail('owed', 'An earlier change hasn’t reached every file yet.'),
-    )
-    render('select', select)
-    await rightClick('Urgent')
-    await confirm()
-    expect(currentNotification()).toMatchObject({
-      message: 'An earlier change hasn’t reached every file yet.',
-      action: { label: 'Try Again' },
-    })
-    await act(async () => currentNotification()?.action?.run())
-    expect(finishOwed).toHaveBeenCalledOnce()
-  })
-
-  it('a delete with no record shows its line without an action', async () => {
+  it('a delete that owes nothing shows its line without an action', async () => {
     menu.mockResolvedValueOnce(ok('option:delete'))
     deleteOption.mockResolvedValueOnce(ok({ cascade: { pages: [], hosts: [], warning: 'w' } }))
     render('select', select)

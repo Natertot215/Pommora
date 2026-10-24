@@ -2,14 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
-import { mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
-import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { deleteProperty, propertyHolders } from './deleteProperty'
-import { createProperty, removeFromRegistry } from './registryProperty'
+import { createProperty, removeFromRegistry, renameProperty } from './registryProperty'
 import { fault, ok } from '../Contract/result'
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
-import { replaySchemaCascade } from './replaySchemaCascade'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { OWED_REL } from '../Paths/nexusPaths'
+import type { TrashDeps } from '../Trash/discard'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { assignProperty } from './assignment'
 import { unassignProperty } from './unassignProperty'
@@ -21,7 +23,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { readRegistry } from './propertiesRegistry'
 import { readRecord } from '../Bundles/record'
 import { sidecarPath } from '../Paths/paths'
-import { readJsonObject } from '../Files/atomicWrite'
+import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 import { installMachine, machine } from '../Platform/machine'
 
@@ -29,6 +31,12 @@ vi.mock('./registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./registryProperty')>()
   return { ...mod, removeFromRegistry: vi.fn(mod.removeFromRegistry) }
 })
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
+  return { ...mod, readTextOrNull: vi.fn(mod.readTextOrNull) }
+})
+
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
 
 /** The registry's copy is the ONLY def that addresses the same key the strip path resolves — one invented here would write somewhere no cascade ever looks. */
 const liveDef = async (id: string): Promise<PropertyDefinition> => {
@@ -408,31 +416,113 @@ describe('a delete reaches saved views', () => {
     await expectCleared(surfaces)
   })
 
-  it('the replayed delete clears the views the same way', async () => {
+  it('a finished delete clears the views the same way', async () => {
     const { id, surfaces } = await seeded()
-    await writeSchemaJournal(root, { op: 'delete', id, key: 'Priority' })
-    await replaySchemaCascade(root)
+    await putJson(join(root, OWED_REL), { [id]: { kind: 'property', strip: ['Priority'] } })
+    await finishOwed(root, deps)
     await expectCleared(surfaces)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('a delete whose registry write fails keeps its record, and the next replay heals it', async () => {
+  it('a delete whose list step fails strips nothing', async () => {
     const { id, surfaces } = await seeded()
+    const before = await surfaces.read()
+    const registry = await readFile(join(root, '.nexus', 'properties.json'), 'utf8')
     vi.mocked(removeFromRegistry).mockResolvedValueOnce(fault('refused'))
     expect((await deleteProperty(root, id)).ok).toBe(false)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id, key: 'Priority' })
-    await expectCleared(surfaces)
-    await replaySchemaCascade(root)
-    expect((await readRegistry(root)).defs[id]).toBeUndefined()
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await surfaces.read()).toEqual(before)
+    expect(await readFile(join(root, '.nexus', 'properties.json'), 'utf8')).toBe(registry)
+    expect(
+      ((await readJsonObject(sidecarPath(notes, 'collection')))?.properties as string[]) ?? [],
+    ).toContain(id)
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('a replay in the freed state with a clean sweep clears the record', async () => {
+  it('a refused list step removes the bundle and puts the entry back', async () => {
     const { id } = await seeded()
-    await writeSchemaJournal(root, { op: 'delete', id, key: 'Priority' })
+    const owed = { [id]: { kind: 'property', rename: ['Old'] } }
+    await putJson(join(root, OWED_REL), owed)
+    vi.mocked(removeFromRegistry).mockResolvedValueOnce(fault('refused'))
+    expect((await deleteProperty(root, id)).ok).toBe(false)
+    const trashed = await readdir(join(root, '.trash')).catch(() => [])
+    expect(trashed.filter((f) => f.includes(`property-${id}`))).toEqual([])
+    expect(await readNotes(root)).toEqual(owed)
+  })
+
+  it('a finish after the list step with a clean sweep clears the entry', async () => {
+    const { id } = await seeded()
+    await putJson(join(root, OWED_REL), { [id]: { kind: 'property', strip: ['Priority'] } })
     await removeFromRegistry(root, id)
-    await replaySchemaCascade(root)
-    expect(await readSchemaJournal(root)).toBeNull()
+    await finishOwed(root, deps)
+    expect(await readNotes(root)).toEqual({})
+  })
+})
+
+describe('the delete’s list step and its keys', () => {
+  async function held(): Promise<{ id: string; pages: string[] }> {
+    const c = await createProperty(root, { id: '', label: 'Priority', type: 'text' })
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    await assignProperty(root, tasks, c.value.id)
+    const pages: string[] = []
+    for (const [folder, title] of [
+      [notes, 'A'],
+      [tasks, 'B'],
+    ]) {
+      const p = await createTestPage(folder, title, { body: 'b' })
+      if (!p.ok) throw new Error('setup failed')
+      await rewriteRootAt(
+        p.value.path,
+        rewriteRaw((raw) => landValue(raw, 'Priority', 'hi')),
+      )
+      pages.push(p.value.path)
+    }
+    return { id: c.value.id, pages }
+  }
+
+  it('takes the definition off the list before it strips a page', async () => {
+    const { id, pages } = await held()
+    let atList = ''
+    vi.mocked(removeFromRegistry).mockImplementationOnce(async (r, pid) => {
+      atList = await readFile(pages[0], 'utf8')
+      const real = await vi.importActual<typeof import('./registryProperty')>('./registryProperty')
+      return real.removeFromRegistry(r, pid)
+    })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    expect(atList).toContain('Priority: hi')
+    expect(await readFile(pages[0], 'utf8')).not.toContain('Priority')
+  })
+
+  it.skipIf(noModeBits)('a delete after an owed rename strips both keys', async () => {
+    const { id, pages } = await held()
+    await chmod(tasks, 0o555)
+    try {
+      expect((await renameProperty(root, id, 'Urgency')).ok).toBe(true)
+    } finally {
+      await chmod(tasks, 0o755)
+    }
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    for (const page of pages) {
+      const content = await readFile(page, 'utf8')
+      expect(content).not.toContain('Priority:')
+      expect(content).not.toContain('Urgency:')
+    }
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a delete reads each holder once per key it holds', async () => {
+    const { id, pages } = await held()
+    vi.mocked(readTextOrNull).mockClear()
+    // Counted at the list step, after the find and the snapshot and before the strip's own read.
+    let found: unknown[][] = []
+    vi.mocked(removeFromRegistry).mockImplementationOnce(async (r, pid) => {
+      found = [...vi.mocked(readTextOrNull).mock.calls]
+      const real = await vi.importActual<typeof import('./registryProperty')>('./registryProperty')
+      return real.removeFromRegistry(r, pid)
+    })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    for (const page of pages) expect(found.filter(([p]) => p === page)).toHaveLength(1)
   })
 })

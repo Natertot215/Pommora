@@ -1,0 +1,648 @@
+// The crash-window suite: each window is the exact on-disk state a killed op leaves with its note, and the finish must land the same disk an uninterrupted op lands.
+
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot, noModeBits, putJson, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
+import { seedPropertyBundle } from '../Testing/fixtures'
+import { closeSession, openSession } from './session'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { dropLiveTree } from './liveTree'
+import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
+import { readRecord } from '../Bundles/record'
+import { listBundles } from '../Bundles/bundle'
+import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
+import { renameFrontmatterKey } from '../Files/pageFile'
+import { sidecarPath } from '../Paths/paths'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { readJsonObject } from '../Files/atomicWrite'
+import * as registryModule from '../Properties/registryProperty'
+import { createProperty, renameProperty } from '../Properties/registryProperty'
+import { deleteProperty } from '../Properties/deleteProperty'
+import { deleteOption, renameOption } from '../Properties/optionOps'
+import { unsweptLine } from './entities'
+import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import type { TrashDeps } from '../Trash/discard'
+import { finishOwed } from './finishOwed'
+import { handleMutate } from './mutate'
+import { readNotes, type Notes } from './owed'
+
+vi.mock('../Properties/registryProperty', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Properties/registryProperty')>()
+  return { ...mod, removeFromRegistry: vi.fn(mod.removeFromRegistry) }
+})
+
+const DEPS: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
+
+const roots: string[] = []
+afterEach(async () => {
+  dropLiveTree()
+  installStores(NO_STORES)
+  closeSession()
+  for (const r of roots.splice(0)) {
+    await chmod(join(r, 'Col'), 0o755).catch(() => {})
+    await rm(r, { recursive: true, force: true })
+  }
+})
+
+const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
+
+async function seedNexus(): Promise<string> {
+  const root = tempRoot('pom-finish-')
+  roots.push(root)
+  await mkdir(join(root, '.nexus'), { recursive: true })
+  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
+  await writeFile(join(root, '.nexus', 'settings.json'), '{}')
+  await mkdir(join(root, 'Col'), { recursive: true })
+  await createProperty(root, {
+    id: 'prop_s',
+    label: 'Stage',
+    type: 'select',
+    select_options: [
+      { id: 'opt_Draft', key: 'Draft', label: 'Draft' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+    ],
+  })
+  await writeFile(
+    join(root, 'Col', '_pagecollection.json'),
+    JSON.stringify({ id: 'c1', properties: ['prop_s'] }),
+  )
+  await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Draft\n---\nbody\n`)
+  await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nStage: Draft\n---\nbody\n`)
+  return root
+}
+
+const page = (root: string, name: string): Promise<string> =>
+  readFile(join(root, 'Col', `${name}.md`), 'utf8')
+
+const seedSpace = (root: string, raw: Record<string, unknown>): Promise<string> =>
+  seedSpaceSidecar(root, 'Projects', 'Pommora', raw)
+
+const seedNotes = (root: string, notes: Notes): Promise<void> =>
+  putJson(join(root, OWED_REL), notes)
+
+const RENAMED: Notes = { prop_s: { kind: 'property', rename: ['Stage'] } }
+const DELETED: Notes = { prop_s: { kind: 'property', strip: ['Stage'] } }
+const optionNote = (part: Record<string, unknown>): Notes =>
+  ({ prop_s: { kind: 'property', options: part } }) as Notes
+
+const relistOptions = (root: string, options: unknown[]) =>
+  mutateRegistry(root, (registry) => ({
+    next: {
+      ...registry,
+      defs: {
+        ...registry.defs,
+        prop_s: { ...registry.defs.prop_s, select_options: options },
+      } as typeof registry.defs,
+    },
+    result: null,
+  }))
+
+const relabel = (root: string, label: string, key = label, over: Record<string, unknown> = {}) =>
+  mutateRegistry(root, (registry) => ({
+    next: {
+      ...registry,
+      defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, label, key, ...over } },
+    },
+    result: null,
+  }))
+
+async function renameCrashState(root: string): Promise<void> {
+  await seedNotes(root, RENAMED)
+  await relabel(root, 'Phase')
+  const half = renameFrontmatterKey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new')
+  if (half === null) throw new Error('fixture: half-fold produced nothing')
+  await writeFile(join(root, 'Col', 'A.md'), half)
+}
+
+describe('the rename arm', () => {
+  it('lands the exact disk an uninterrupted rename lands', async () => {
+    const live = await seedNexus()
+    await openSession(live)
+    expect((await renameProperty(live, 'prop_s', 'Phase')).ok).toBe(true)
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
+    closeSession()
+    dropLiveTree()
+
+    const crashed = await seedNexus()
+    await renameCrashState(crashed)
+    await openSession(crashed)
+    await finishOwed(crashed, DEPS)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
+    expect(await readNotes(crashed)).toEqual({})
+  })
+
+  it('a crash between a rename’s note and its list step owes nothing', async () => {
+    const root = await seedNexus()
+    const beforeA = await page(root, 'A')
+    const beforeB = await page(root, 'B')
+    await seedNotes(root, RENAMED)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(beforeA)
+    expect(await page(root, 'B')).toBe(beforeB)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('finishing a re-planted entry changes nothing — twice equals once', async () => {
+    const root = await seedNexus()
+    await renameCrashState(root)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    const onceA = await page(root, 'A')
+    const onceB = await page(root, 'B')
+    await seedNotes(root, RENAMED)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(onceA)
+    expect(await page(root, 'B')).toBe(onceB)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an entry finishes to the name the definition holds after a chained rename', async () => {
+    const root = await seedNexus()
+    for (const [name, id] of [
+      ['A', PAGE_IDS[0]],
+      ['B', PAGE_IDS[1]],
+    ])
+      await writeFile(join(root, 'Col', `${name}.md`), `---\nID: ${id}\nStatus: Draft\n---\nbody\n`)
+    await relabel(root, 'Phase')
+    await seedNotes(root, { prop_s: { kind: 'property', rename: ['Status', 'Stage'] } })
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nPhase: Draft\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nPhase: Draft\n---\nbody\n`)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an owed case-only rename sweeps its holders and clears', async () => {
+    const root = await seedNexus()
+    await relabel(root, 'stage')
+    await seedNotes(root, RENAMED)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nstage: Draft\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nstage: Draft\n---\nbody\n`)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an owed Key Format change sweeps its holders from the label onto the key and clears', async () => {
+    const root = await seedNexus()
+    for (const [name, id] of [
+      ['A', PAGE_IDS[0]],
+      ['B', PAGE_IDS[1]],
+    ])
+      await writeFile(join(root, 'Col', `${name}.md`), `---\nID: ${id}\nTags: Draft\n---\nbody\n`)
+    await relabel(root, 'Tags', 'tags', { key_format: 'lowercase' })
+    await seedNotes(root, { prop_s: { kind: 'property', rename: ['Tags'] } })
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\ntags: Draft\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\ntags: Draft\n---\nbody\n`)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('the divergence persists without the finish — the fixture is not self-healing', async () => {
+    const root = await seedNexus()
+    await renameCrashState(root)
+    expect((await readRegistry(root)).defs.prop_s?.label).toBe('Phase')
+    expect(await page(root, 'B')).toContain('Stage: Draft')
+  })
+})
+
+describe('the delete arm', () => {
+  it('a crash between the delete’s note and its list step finishes the delete', async () => {
+    const live = await seedNexus()
+    await openSession(live)
+    expect((await deleteProperty(live, 'prop_s')).ok).toBe(true)
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
+    closeSession()
+    dropLiveTree()
+
+    // The crash state: bundle minted and note written, then death before the list step — the def, the assignment, and both pages still standing.
+    const crashed = await seedNexus()
+    const def = (await readRegistry(crashed)).defs.prop_s
+    await seedPropertyBundle(crashed, {
+      entity: 'property',
+      id: 'prop_s',
+      def,
+      values: { [PAGE_IDS[0]]: 'Draft', [PAGE_IDS[1]]: 'Draft' },
+      assignments: ['c1'],
+    })
+    await seedNotes(crashed, DELETED)
+    await openSession(crashed)
+    await finishOwed(crashed, DEPS)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
+    expect((await readRegistry(crashed)).defs.prop_s).toBeUndefined()
+    const sidecar = await readJsonObject(sidecarPath(join(crashed, 'Col'), 'collection'))
+    expect((sidecar?.properties as string[] | undefined) ?? []).toEqual([])
+    expect(await listBundles(crashed, { kind: 'trash' })).toHaveLength(1)
+    expect(await readNotes(crashed)).toEqual({})
+  })
+
+  it('the delete arm reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'], $order: ['prop_s'] })
+    await seedNotes(root, DELETED)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    const raw = await readJsonAt(file)
+    expect('Stage' in raw).toBe(false)
+    expect('$order' in raw).toBe(false)
+  })
+
+  it('strips the pages the live delete strips, leaving an ID-less holder byte-identical', async () => {
+    const root = await seedNexus()
+    const idless = '---\nStage: Draft\n---\nbody\n'
+    await writeFile(join(root, 'Col', 'C.md'), idless)
+    await seedNotes(root, DELETED)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
+    expect(await page(root, 'C')).toBe(idless)
+  })
+
+  it('an entry left beside a create in another casing strips its own key, leaving that casing’s holders byte-identical', async () => {
+    const root = await seedNexus()
+    await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nExample: 1\n---\nbody\n`)
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nexample: 2\n---\nbody\n`)
+    expect((await createProperty(root, { id: '', label: 'example', type: 'number' })).ok).toBe(true)
+    await seedNotes(root, { prop_gone: { kind: 'property', strip: ['Example'] } })
+    const before = await page(root, 'B')
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(before)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a live definition holding a strip part keeps its Collections', async () => {
+    const root = await seedNexus()
+    await seedNotes(root, { prop_s: { kind: 'property', strip: ['Priority'] } })
+    const before = await page(root, 'A')
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(before)
+    expect((await readRegistry(root)).defs.prop_s).toBeDefined()
+    const sidecar = await readJsonObject(sidecarPath(join(root, 'Col'), 'collection'))
+    expect(sidecar?.properties).toEqual(['prop_s'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a name a live definition holds is skipped and dropped', async () => {
+    const root = await seedNexus()
+    await seedNotes(root, { prop_gone: { kind: 'property', strip: ['Stage'] } })
+    const before = await page(root, 'A')
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(before)
+    expect((await readRegistry(root)).defs.prop_s).toBeDefined()
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)('a registry that can’t be written counts one missed file', async () => {
+    const root = await seedNexus()
+    await openSession(root)
+    await readRegistry(root)
+    await seedNotes(root, DELETED)
+    const registry = join(root, '.nexus', 'properties.json')
+    await chmod(registry, 0o000)
+    try {
+      const report = await finishOwed(root, DEPS)
+      expect(report).toMatchObject({ owed: true, warning: unsweptLine(1) })
+    } finally {
+      await chmod(registry, 0o644)
+    }
+    expect(await page(root, 'A')).toContain('Stage: Draft')
+    expect(await page(root, 'B')).toContain('Stage: Draft')
+    expect(await readNotes(root)).toEqual(DELETED)
+  })
+
+  it('an entry whose finish throws counts as missed', async () => {
+    const root = await seedNexus()
+    await seedNotes(root, DELETED)
+    await openSession(root)
+    vi.mocked(registryModule.removeFromRegistry).mockRejectedValueOnce(new Error('boom'))
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const report = await finishOwed(root, DEPS)
+    logged.mockRestore()
+    expect(report).toMatchObject({ owed: true, warning: 'Couldn’t update 1 Item.' })
+    expect(await readNotes(root)).toEqual(DELETED)
+  })
+})
+
+describe('the option arms', () => {
+  it('an option rename lands the disk an uninterrupted rename lands', async () => {
+    const live = await seedNexus()
+    await openSession(live)
+    expect((await renameOption(live, 'prop_s', 'opt_Draft', 'Queued')).ok).toBe(true)
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
+    closeSession()
+    dropLiveTree()
+
+    const crashed = await seedNexus()
+    await seedNotes(crashed, optionNote({ opt_Draft: { rename: ['Draft'] } }))
+    await relistOptions(crashed, [
+      { id: 'opt_Draft', key: 'Queued', label: 'Queued' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+    ])
+    await writeFile(join(crashed, 'Col', 'A.md'), wantA)
+    await openSession(crashed)
+    await finishOwed(crashed, DEPS)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
+    expect(await readNotes(crashed)).toEqual({})
+  })
+
+  it('an option rename whose list step never landed clears untouched', async () => {
+    const root = await seedNexus()
+    await seedNotes(root, optionNote({ opt_Draft: { rename: ['Draft'] } }))
+    const before = await page(root, 'A')
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(before)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a word another option holds now is skipped and dropped', async () => {
+    const root = await seedNexus()
+    await relistOptions(root, [
+      { id: 'opt_Draft', key: 'Queued', label: 'Queued' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+    ])
+    await seedNotes(root, optionNote({ opt_Draft: { rename: ['Done'] } }))
+    const before = await page(root, 'A')
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(before)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an option delete whose list step never landed drops the option and strips its pages', async () => {
+    const live = await seedNexus()
+    await openSession(live)
+    expect((await deleteOption(live, 'prop_s', 'opt_Draft')).ok).toBe(true)
+    const wantA = await page(live, 'A')
+    const wantB = await page(live, 'B')
+    const wantOptions = (await readRegistry(live)).defs.prop_s?.select_options
+    closeSession()
+    dropLiveTree()
+
+    const crashed = await seedNexus()
+    await seedNotes(crashed, optionNote({ opt_Draft: { strip: ['Draft'] } }))
+    await openSession(crashed)
+    await finishOwed(crashed, DEPS)
+    expect(await page(crashed, 'A')).toBe(wantA)
+    expect(await page(crashed, 'B')).toBe(wantB)
+    expect((await readRegistry(crashed)).defs.prop_s?.select_options).toEqual(wantOptions)
+    expect(await readNotes(crashed)).toEqual({})
+  })
+
+  it('an option rename reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'] })
+    await seedNotes(root, optionNote({ opt_Draft: { rename: ['Draft'] } }))
+    await relistOptions(root, [
+      { id: 'opt_Draft', key: 'Queued', label: 'Queued' },
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+    ])
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect((await readJsonAt(file)).Stage).toEqual(['Queued'])
+  })
+
+  it('an option delete reaches a Space sidecar', async () => {
+    const root = await seedNexus()
+    const file = await seedSpace(root, { id: 'sp1', Stage: ['Draft'] })
+    await seedNotes(root, optionNote({ opt_Draft: { strip: ['Draft'] } }))
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect('Stage' in (await readJsonAt(file))).toBe(false)
+  })
+
+  it.skipIf(noModeBits)(
+    'an option part sweeps while its property’s rename is owed and stays whole',
+    async () => {
+      const root = await seedNexus()
+      await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nStage: Old\n---\nbody\n`)
+      await mkdir(join(root, 'Col', 'Locked'))
+      await writeFile(
+        join(root, 'Col', 'Locked', '_pageset.json'),
+        JSON.stringify({ id: 'set_locked' }),
+      )
+      await rm(join(root, 'Col', 'B.md'))
+      const locked = join(root, 'Col', 'Locked', 'B.md')
+      await writeFile(locked, `---\nID: ${PAGE_IDS[1]}\nStatus: Old\n---\nbody\n`)
+      const owed: Notes = {
+        prop_s: {
+          kind: 'property',
+          rename: ['Status'],
+          options: { opt_Draft: { rename: ['Old'] } },
+        },
+      }
+      await seedNotes(root, owed)
+      await openSession(root)
+      await chmod(join(root, 'Col', 'Locked'), 0o555)
+      try {
+        expect((await finishOwed(root, DEPS)).owed).toBe(true)
+      } finally {
+        await chmod(join(root, 'Col', 'Locked'), 0o755)
+      }
+      expect(await page(root, 'A')).toContain('Draft')
+      expect(await page(root, 'A')).not.toContain('Old')
+      expect(await readNotes(root)).toEqual(owed)
+      await finishOwed(root, DEPS)
+      expect(await readFile(locked, 'utf8')).toContain('Stage:')
+      expect(await readFile(locked, 'utf8')).toContain('Draft')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+})
+
+describe('the option arms reach saved views', () => {
+  it('an entry of two words rewrites both on every page and leaves the views as written', async () => {
+    const root = await seedNexus()
+    const surfaces = await seedConfigSurfaces(
+      root,
+      join(root, 'Col'),
+      viewOn('prop_s', 'opt_Draft'),
+    )
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nStage: Todo\n---\nbody\n`)
+    await seedNotes(
+      root,
+      optionNote({ opt_Draft: { rename: ['Draft'] }, opt_Done: { rename: ['Todo'] } }),
+    )
+    await relistOptions(root, [
+      { id: 'opt_Draft', key: 'Queued', label: 'Queued' },
+      { id: 'opt_Done', key: 'Later', label: 'Later' },
+    ])
+    const before = await surfaces.read()
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nStage:\n  - Queued\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nStage:\n  - Later\n---\nbody\n`)
+    expect(await surfaces.read()).toEqual(before)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an option delete with clean pages strips a view still holding the option, then drops it', async () => {
+    const root = await seedNexus()
+    const surfaces = await seedConfigSurfaces(
+      root,
+      join(root, 'Col'),
+      viewOn('prop_s', 'opt_Draft'),
+    )
+    await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
+    await seedNotes(root, optionNote({ opt_Draft: { strip: ['Draft'] } }))
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    const views = await surfaces.read()
+    expect(views.set).not.toHaveProperty('filter')
+    expect(views.tile.hidden_groups).toEqual([])
+    expect(views.matrix).toBeNull()
+    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([
+      { id: 'opt_Done', key: 'Done', label: 'Done' },
+    ])
+    expect(await readNotes(root)).toEqual({})
+  })
+})
+
+describe('unreadable holders keep the entry', () => {
+  it.skipIf(noModeBits)(
+    'a delete that cannot read one holder keeps its entry, and the finish heals it later',
+    async () => {
+      const root = await seedNexus()
+      await openSession(root)
+      await chmod(join(root, 'Col', 'B.md'), 0o000)
+      expect((await deleteProperty(root, 'prop_s')).ok).toBe(true)
+      expect((await readRegistry(root)).defs.prop_s).toBeUndefined()
+      expect(await readNotes(root)).toEqual(DELETED)
+      await finishOwed(root, DEPS)
+      expect(await readNotes(root)).toEqual(DELETED)
+      await chmod(join(root, 'Col', 'B.md'), 0o644)
+      await finishOwed(root, DEPS)
+      expect(await page(root, 'B')).not.toContain('Stage')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'with a warm index, a holder the watcher found unreadable still keeps the entry, and its bundle says it is partial',
+    async () => {
+      const root = await seedNexus()
+      await openSession(root)
+      installStores(memoryStores().stores)
+      await seedContentIndex(root)
+      const b = join(root, 'Col', 'B.md')
+      await chmod(b, 0o000)
+      await indexWrittenPage(root, b)
+      const deleted = await deleteProperty(root, 'prop_s')
+      await chmod(b, 0o644)
+      if (!deleted.ok) throw new Error('delete refused')
+      expect(deleted.value.cascade).toMatchObject({ owed: true })
+      expect(await readNotes(root)).toEqual(DELETED)
+      expect(await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))).toMatchObject({
+        partial: true,
+      })
+      await indexWrittenPage(root, b)
+      await finishOwed(root, DEPS)
+      expect(await page(root, 'B')).not.toContain('Stage')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+})
+
+describe('an unreadable Space sidecar', () => {
+  it.skipIf(noModeBits)(
+    'is counted once by a delete, though its board is reached too',
+    async () => {
+      const root = await seedNexus()
+      await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
+      await ensureContextsRegistry(root)
+      const sidecar = await seedSpace(root, { id: 'sp_1', Stage: 'Draft' })
+      await chmod(sidecar, 0o000)
+      try {
+        await openSession(root)
+        const deleted = await deleteProperty(root, 'prop_s')
+        expect(deleted.ok && deleted.value.cascade?.warning).toBe(unsweptLine(1))
+      } finally {
+        await chmod(sidecar, 0o644)
+      }
+    },
+  )
+})
+
+describe('the index seam', () => {
+  it('the open finishes an owed rename once the index is seeded, and an unindexed holder is outside its sweep', async () => {
+    const root = await seedNexus()
+    await openSession(root)
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    // C landed after the seed with no index row — the queried holder set cannot name it.
+    await writeFile(
+      join(root, 'Col', 'C.md'),
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
+    )
+    await renameCrashState(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'A')).toContain('Phase: Draft')
+    expect(await page(root, 'B')).toContain('Phase: Draft')
+    expect(await page(root, 'C')).toContain('Stage: Draft')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('cold, the corpus fallback reaches every holder', async () => {
+    const root = await seedNexus()
+    await writeFile(
+      join(root, 'Col', 'C.md'),
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nStage: Draft\n---\nbody\n',
+    )
+    await renameCrashState(root)
+    await openSession(root)
+    await finishOwed(root, DEPS)
+    expect(await page(root, 'C')).toContain('Phase: Draft')
+    expect(await readNotes(root)).toEqual({})
+  })
+})
+
+describe('Try Again', () => {
+  it.skipIf(noModeBits)(
+    'Try Again finishes every entry and reports one combined count',
+    async () => {
+      const root = await seedNexus()
+      await createProperty(root, { id: 'prop_t', label: 'New', type: 'text' })
+      await relabel(root, 'Phase')
+      await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nOld: x\n---\nbody\n`)
+      const owed: Notes = {
+        prop_s: { kind: 'property', rename: ['Stage'] },
+        prop_t: { kind: 'property', rename: ['Old'] },
+      }
+      await seedNotes(root, owed)
+      await openSession(root)
+      await chmod(join(root, 'Col'), 0o555)
+      try {
+        const missed = await handleMutate(root, { op: 'finishOwed' }, DEPS)
+        expect(missed.ok && missed.value.cascade).toMatchObject({
+          owed: true,
+          warning: unsweptLine(2),
+        })
+      } finally {
+        await chmod(join(root, 'Col'), 0o755)
+      }
+      expect(await readNotes(root)).toEqual(owed)
+      const done = await handleMutate(root, { op: 'finishOwed' }, DEPS)
+      expect(done.ok && done.value.cascade?.owed).toBeFalsy()
+      expect(await page(root, 'A')).toContain('Phase: Draft')
+      expect(await page(root, 'B')).toContain('New: x')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+})

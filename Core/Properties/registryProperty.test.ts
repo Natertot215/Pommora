@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   defaultStatusSeed,
@@ -20,18 +20,19 @@ import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
-import { replaySchemaCascade } from './replaySchemaCascade'
+import { readNotes, runNoted } from '../Nexus/owed'
 import { KEY_REFUSAL } from './validation'
 import { nexusConfig, nexusDir } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
 import { fail, ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
+import { deleteProperty } from './deleteProperty'
+import { deleteOption, renameOption, setValueFormat } from './optionOps'
 
-vi.mock('./propertyJournal', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('./propertyJournal')>()
-  return { ...mod, writeSchemaJournal: vi.fn(mod.writeSchemaJournal) }
+vi.mock('../Nexus/owed', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Nexus/owed')>()
+  return { ...mod, runNoted: vi.fn(mod.runNoted) }
 })
 
 type RegistryFile = { order: string[]; defs: Record<string, unknown> }
@@ -203,28 +204,11 @@ describe('createProperty', () => {
     })
   })
 
-  it('steps aside from an owed rename’s old key, and the replay then sweeps the skipped file onto the new one', async () => {
-    const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
-    const col = await createFolderEntity(root, 'collection', 'Col', newId())
-    if (!c.ok || !col.ok) throw new Error('setup failed')
-    await assignProperty(root, col.value.path, c.value.id)
-    expect((await renameProperty(root, c.value.id, 'Stage')).ok).toBe(true)
-    const p = await createTestPage(col.value.path, 'Skipped', { body: 'b' })
-    if (!p.ok) throw new Error('setup failed')
-    await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Done\n---\nb\n`)
-    await writeSchemaJournal(root, { op: 'rename', id: c.value.id, from: 'Status', to: 'Stage' })
-
-    const r = await createProperty(root, def({ label: 'Status', type: 'select' }))
-    if (!r.ok) throw new Error('create failed')
-    expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
-      label: 'Status (2)',
-      key: 'Status (2)',
-    })
-    expect((await replaySchemaCascade(root))?.ok).toBe(true)
-    expect(await readFile(p.value.path, 'utf8')).toBe(
-      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStage: Done\n---\nb\n`,
-    )
-    expect(await readSchemaJournal(root)).toBeNull()
+  it('a create under an owed key is refused', async () => {
+    await putJson(join(root, OWED_REL), { prop_x: { kind: 'property', rename: ['Priority'] } })
+    const r = await createProperty(root, def({ label: 'Priority', type: 'select' }))
+    expect(!r.ok && r.error.code).toBe('owed')
+    expect((await readRegistry(root)).order).toEqual([])
   })
 
   it('takes a label whose key no owed record holds', async () => {
@@ -372,7 +356,7 @@ describe('renameProperty and configureProperty', () => {
     expect(await readFile(p.value.path, 'utf8')).toBe(held)
   })
 
-  it('a change of case alone moves the key on every holder and clears the journal', async () => {
+  it('a change of case alone moves the key on every holder and clears its note', async () => {
     const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!c.ok || !col.ok) return
@@ -391,10 +375,10 @@ describe('renameProperty and configureProperty', () => {
     )
     expect(await readJsonAt(space)).toEqual({ id: 'sp1', STATUS: 'x' })
     expect(await readFile(other, 'utf8')).toBe(otherBytes)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('a rename onto its own key writes the label alone, journaling and sweeping nothing', async () => {
+  it('a rename onto its own key writes the label alone, noting and sweeping nothing', async () => {
     const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!c.ok || !col.ok) throw new Error('setup failed')
@@ -407,7 +391,7 @@ describe('renameProperty and configureProperty', () => {
     const stored = registry.defs[c.value.id] as Record<string, unknown>
     registry.defs[c.value.id] = { ...stored, key: 'status' }
     await writeFile(registryFilePath(), JSON.stringify(registry))
-    vi.mocked(writeSchemaJournal).mockClear()
+    vi.mocked(runNoted).mockClear()
 
     const renamed = await renameProperty(root, c.value.id, 'status')
     expect(renamed).toEqual(ok({}))
@@ -415,12 +399,12 @@ describe('renameProperty and configureProperty', () => {
       label: 'status',
       key: 'status',
     })
-    expect(writeSchemaJournal).not.toHaveBeenCalled()
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(runNoted).not.toHaveBeenCalled()
+    expect(await readNotes(root)).toEqual({})
     expect(await readFile(p.value.path, 'utf8')).toBe(held)
   })
 
-  it('refuses a rename onto a key a file holds beside the old one, and stages no journal', async () => {
+  it('refuses a rename onto a key a file holds beside the old one, and writes no note', async () => {
     const c = await createProperty(root, def({ label: 'Status', type: 'select' }))
     if (!c.ok) return
     const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', {
@@ -432,7 +416,7 @@ describe('renameProperty and configureProperty', () => {
     const refused = await renameProperty(root, c.value.id, 'Stage')
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.error.message).toBe('1 Item holds both "Status" and "Stage".')
-    expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
+    expect(await pathExists(join(root, OWED_REL))).toBe(false)
     expect(await readJsonAt(file)).toEqual({
       id: 'sp1',
       Status: ['Active'],
@@ -511,7 +495,7 @@ const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
   const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
   if (!p.ok) throw new Error('setup failed')
   await writeFile(p.value.path, `---\n${ID_LINE}\n${frontmatter}---\nb\n`)
-  vi.mocked(writeSchemaJournal).mockClear()
+  vi.mocked(runNoted).mockClear()
   return { id: c.value.id, page: p.value.path }
 }
 
@@ -522,7 +506,7 @@ describe('a Key Format change is a rename of the key', () => {
     expect((await readRegistry(root)).defs.prop_m).toMatchObject({ label: 'Model', key: 'model' })
   })
 
-  it('moves the key on every holder, in place, and clears the journal', async () => {
+  it('moves the key on every holder, in place, and clears its note', async () => {
     const { id, page } = await seedHeld(
       def({ label: 'Tags', type: 'multiSelect' }),
       'Alpha: 1\nTags: [a]\nZeta: 2\n',
@@ -540,7 +524,7 @@ describe('a Key Format change is a rename of the key', () => {
       `---\n${ID_LINE}\nAlpha: 1\ntags: [a]\nZeta: 2\n---\nb\n`,
     )
     expect(await readJsonAt(space)).toEqual({ id: 'sp1', tags: ['b'] })
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('refuses a format writing a key Pommora manages, changing nothing', async () => {
@@ -555,8 +539,8 @@ describe('a Key Format change is a rename of the key', () => {
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.reserved)
     expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
     expect(await readFile(page, 'utf8')).toBe(held)
-    expect(writeSchemaJournal).not.toHaveBeenCalled()
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(runNoted).not.toHaveBeenCalled()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('refuses a format writing a key another property writes', async () => {
@@ -574,15 +558,15 @@ describe('a Key Format change is a rename of the key', () => {
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.noKey)
   })
 
-  it('refuses a format onto a key a file holds beside the old one, and stages no journal', async () => {
+  it('refuses a format onto a key a file holds beside the old one, and writes no note', async () => {
     const { id } = await seedHeld(
       def({ label: 'Tags', type: 'multiSelect' }),
       'Tags: [a]\ntags: [b]\n',
     )
     const r = await setKeyFormat(root, id, 'lowercase')
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Tags', 'tags', 1))
-    expect(writeSchemaJournal).not.toHaveBeenCalled()
-    expect(await pathExists(join(root, '.nexus', 'property-cascade.json'))).toBe(false)
+    expect(runNoted).not.toHaveBeenCalled()
+    expect(await pathExists(join(root, OWED_REL))).toBe(false)
   })
 
   it('setting the format a definition already stores answers nothing and writes nothing', async () => {
@@ -594,10 +578,10 @@ describe('a Key Format change is a rename of the key', () => {
       key_format: 'Match Title',
     })
     const registry = await readFile(registryFilePath(), 'utf8')
-    vi.mocked(writeSchemaJournal).mockClear()
+    vi.mocked(runNoted).mockClear()
     expect(await setKeyFormat(root, 'prop_t', 'Match Title')).toEqual(ok({}))
     expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
-    expect(writeSchemaJournal).not.toHaveBeenCalled()
+    expect(runNoted).not.toHaveBeenCalled()
   })
 
   it('a rename writes the key from the new label through the Key Format', async () => {
@@ -689,4 +673,120 @@ describe('reorderRegistry', () => {
     expect(lock.mock.calls.filter(([key]) => key === nexusDir(root))).toHaveLength(1)
     lock.mockRestore()
   })
+})
+
+describe('renames on the notes', () => {
+  const notesFile = () => join(root, OWED_REL)
+
+  // A Collection assigning `ids`, holding one page that carries `frontmatter`.
+  const holding = async (title: string, ids: string[], frontmatter: string) => {
+    const col = await createFolderEntity(root, 'collection', title, newId())
+    if (!col.ok) throw new Error('setup failed')
+    for (const id of ids) await assignProperty(root, col.value.path, id)
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) throw new Error('setup failed')
+    const content = await readFile(p.value.path, 'utf8')
+    await writeFile(p.value.path, content.replace('---\n', `---\n${frontmatter}`))
+    return { dir: col.value.path, page: p.value.path }
+  }
+  const created = async (label: string, over: Partial<PropertyDraft> = {}) => {
+    const c = await createProperty(root, def({ label, type: 'select', ...over }))
+    if (!c.ok) throw new Error('setup failed')
+    return c.value.id
+  }
+  const lockedWhile = async <T>(dir: string, fn: () => Promise<T>): Promise<T> => {
+    await chmod(dir, 0o555)
+    try {
+      return await fn()
+    } finally {
+      await chmod(dir, 0o755)
+    }
+  }
+  // Priority's rename to Urgency, missing the locked Collection's page.
+  const owedPriority = async () => {
+    const id = await created('Priority')
+    await holding('Open', [id], 'Priority: hi\n')
+    const locked = await holding('Locked', [id], 'Priority: hi\n')
+    const r = await lockedWhile(locked.dir, () => renameProperty(root, id, 'Urgency'))
+    return { id, r, locked }
+  }
+
+  it.skipIf(noModeBits)('a rename whose sweep missed a page keeps its old key owed', async () => {
+    const { id, r, locked } = await owedPriority()
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+    expect(await readFile(locked.page, 'utf8')).toContain('Priority: hi')
+  })
+
+  it.skipIf(noModeBits)(
+    'one property’s owed rename never blocks or unprotects another’s',
+    async () => {
+      const { id } = await owedPriority()
+      const other = await created('Status')
+      const locked = await holding('Held', [other], 'Status: x\n')
+      const r = await lockedWhile(locked.dir, () => renameProperty(root, other, 'Stage'))
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+      expect(await readNotes(root)).toEqual({
+        [id]: { kind: 'property', rename: ['Priority'] },
+        [other]: { kind: 'property', rename: ['Status'] },
+      })
+    },
+  )
+
+  it.skipIf(noModeBits)('a rename onto an owed key is refused', async () => {
+    const { id } = await owedPriority()
+    const other = await created('Status')
+    const registry = await readFile(registryFilePath(), 'utf8')
+    const r = await renameProperty(root, other, 'Priority')
+    expect(!r.ok && r.error.code).toBe('owed')
+    expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+  })
+
+  it.skipIf(noModeBits)('a Label Format change that keeps the key notes nothing', async () => {
+    const id = await created('tags', { key_format: 'lowercase' })
+    await putJson(notesFile(), {})
+    await chmod(notesFile(), 0o000)
+    try {
+      expect(await setKeyFormat(root, id, 'Match Title')).toEqual(ok({}))
+    } finally {
+      await chmod(notesFile(), 0o644)
+    }
+    expect((await readRegistry(root)).defs[id]).toMatchObject({
+      key: 'tags',
+      key_format: 'Match Title',
+    })
+  })
+
+  it.skipIf(noModeBits)(
+    'a change whose note can’t be written refuses with nothing changed',
+    async () => {
+      const id = await created('Priority', {
+        select_options: [
+          { id: 'opt_hi', key: 'hi', label: 'hi' },
+          { id: 'opt_lo', key: 'lo', label: 'lo' },
+        ],
+      })
+      const { page } = await holding('Open', [id], 'Priority: hi\n')
+      await putJson(notesFile(), { prop_other: { kind: 'property', rename: ['Elsewhere'] } })
+      const registry = await readFile(registryFilePath(), 'utf8')
+      const held = await readFile(page, 'utf8')
+      await chmod(notesFile(), 0o000)
+      try {
+        for (const run of [
+          () => renameProperty(root, id, 'Urgency'),
+          () => deleteProperty(root, id),
+          () => renameOption(root, id, 'opt_hi', 'high'),
+          () => setValueFormat(root, id, 'UPPERCASE'),
+          () => deleteOption(root, id, 'opt_hi'),
+        ]) {
+          expect((await run()).ok).toBe(false)
+          expect(await readFile(registryFilePath(), 'utf8')).toBe(registry)
+          expect(await readFile(page, 'utf8')).toBe(held)
+        }
+      } finally {
+        await chmod(notesFile(), 0o644)
+      }
+    },
+  )
 })

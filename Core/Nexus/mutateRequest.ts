@@ -144,6 +144,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setFormat', { propertyId: z.string(), change: formatChange }),
   op('configureProperty', { propertyId: z.string(), patch: propertyConfig }),
   op('deleteProperty', { propertyId: z.string() }),
+  // Finishes every entry the notes file holds; the refusal or report that offers it can't name the entity that owes the work.
   op('finishOwed', {}),
   op('editOption', { propertyId: z.string(), edit: optionEdit }),
   op('renameOption', { propertyId: z.string(), optionId: z.string(), label: z.string() }),

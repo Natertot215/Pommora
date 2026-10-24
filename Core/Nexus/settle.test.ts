@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { readJsonAt, tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
 import { assignProperty } from '../Properties/assignment'
@@ -9,8 +9,9 @@ import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption, setValueFormat } from '../Properties/optionOps'
 import * as optionOps from '../Properties/optionOps'
 import { optionsOf, type PropertyDefinition } from '../Properties/properties'
-import { writeSchemaJournal } from '../Properties/propertyJournal'
-import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { keyedOptionId } from './ids'
+import { finishOwed } from './finishOwed'
 import type { Pushes } from '../Contract/bridge'
 import type { Changed } from '../Files/writeEcho'
 import * as indexSeed from '../Index/indexSeed'
@@ -1048,35 +1049,34 @@ describe('held options — the Multi-Select members a changed file holds are reg
     expect(await options()).toEqual(['beta', 'Ideas'])
   })
 
-  it('a page a rename’s sweep skipped registers its new member alone, and the rename’s replay still reaches it', async () => {
+  it('a page a rename’s sweep skipped registers its new member alone, and the finish still reaches it', async () => {
     await registry('beta')
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha')))
     await walked()
-    await writeSchemaJournal(root, {
-      op: 'option-rename',
-      id: 'tags',
-      keys: [['alpha', 'beta']],
+    await putJson(abs(OWED_REL), {
+      tags: { kind: 'property', options: { [keyedOptionId('beta')]: { rename: ['alpha'] } } },
     })
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     expect(await options()).toEqual(['beta', 'Ideas'])
-    await replaySchemaCascade(root)
+    await finishOwed(root, DEPS)
     expect(splitFrontmatter(await readFile(abs('Notes', 'A.md'), 'utf8')).Tags).toEqual([
       'beta',
       'Ideas',
     ])
   })
 
-  it('a rename owed over two keys shields every old key its record names', async () => {
+  it('a rename owed over two keys shields every old key its entry names', async () => {
     await registry('beta')
     await walked()
-    await writeSchemaJournal(root, {
-      op: 'option-rename',
-      id: 'tags',
-      keys: [
-        ['alpha', 'beta'],
-        ['gamma', 'delta'],
-      ],
+    await putJson(abs(OWED_REL), {
+      tags: {
+        kind: 'property',
+        options: {
+          [keyedOptionId('beta')]: { rename: ['alpha'] },
+          [keyedOptionId('delta')]: { rename: ['gamma'] },
+        },
+      },
     })
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'gamma')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])

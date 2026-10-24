@@ -3,11 +3,12 @@ import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fail, fault, ok } from '../Contract/result'
 import {
   editOption,
   optionHolders,
+  registerHeldOptions,
   renameOption,
   deleteOption,
   clearOption,
@@ -17,7 +18,6 @@ import {
   valueFormatHolders,
 } from './optionOps'
 import type { KeyFormat } from './keyFormat'
-import { replaySchemaCascade } from './replaySchemaCascade'
 import { createProperty, configureProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { unassignProperty } from './unassignProperty'
@@ -32,7 +32,10 @@ type PropDefLike = Record<string, unknown> & {
   type?: string
 }
 type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
-import { readSchemaJournal, type SchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { OWED, readNotes, runNoted } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { OWED_REL } from '../Paths/nexusPaths'
+import type { TrashDeps } from '../Trash/discard'
 import { unsweptLine } from '../Nexus/entities'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -50,10 +53,14 @@ vi.mock('./propertiesRegistry', async (importOriginal) => {
   return { ...mod, mutateRegistry: vi.fn(mod.mutateRegistry) }
 })
 
-vi.mock('./propertyJournal', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('./propertyJournal')>()
-  return { ...mod, writeSchemaJournal: vi.fn(mod.writeSchemaJournal) }
+vi.mock('../Nexus/owed', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Nexus/owed')>()
+  return { ...mod, runNoted: vi.fn(mod.runNoted) }
 })
+
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
+const seedNotes = (notes: Record<string, unknown>): Promise<void> =>
+  putJson(join(root, OWED_REL), notes)
 
 let root: string
 beforeEach(async () => {
@@ -87,6 +94,25 @@ async function pageHolding(id: string, value: string): Promise<string> {
     rewriteRaw((raw) => landValue(raw, def.key, [value])),
   )
   return p.value.path
+}
+
+// A page in a Set whose folder refuses writes, so a sweep misses it; answers the page and the Set.
+async function lockedPage(
+  col: string,
+  id: string,
+  word: string,
+): Promise<{ page: string; set: string }> {
+  const set = await createFolderEntity(col, 'set', 'Locked', newId())
+  if (!set.ok) throw new Error('set failed')
+  const p = await createTestPage(set.value.path, 'Held', { body: 'b' })
+  if (!p.ok) throw new Error('page failed')
+  const key = (await readRegistry(root)).defs[id].key
+  await rewriteRootAt(
+    p.value.path,
+    rewriteRaw((raw) => landValue(raw, key, [word])),
+  )
+  await chmod(set.value.path, 0o555)
+  return { page: p.value.path, set: set.value.path }
 }
 
 const spaceSidecar = (name: string, raw: Record<string, unknown>): Promise<string> =>
@@ -320,7 +346,7 @@ describe('a definition stored with two options that fold alike', () => {
   })
 })
 
-describe('an option edit leaves every other stored entry as written', () => {
+describe('an option edit stores every other entry as the list decoded it, keeping keys it doesn’t read', () => {
   const selectSeed = [
     { id: 'opt_A', key: 'A', label: 'A' },
     { id: 'opt_B', key: 'B', label: 'B', appearance: 'outline', icon: 7, tint: 'x' },
@@ -343,6 +369,8 @@ describe('an option edit leaves every other stored entry as written', () => {
     { id: 'opt_a', key: 'a', label: 'a' },
     { id: 'opt_b', key: 'b', label: 'b', appearance: 'outline', icon: 7, tint: 'x' },
   ]
+  // The decoder drops a value it can't read (an unknown appearance, a numeric icon or color) and keeps a key it doesn't know.
+  const decoded = (o: { id: string; key: string; label: string }) => ({ ...o, tint: 'x' })
   const registryFile = () => join(root, '.nexus', 'properties.json')
   const rawDefs = async () => (await readJsonAt<RegistryFile>(registryFile())).defs
 
@@ -403,17 +431,21 @@ describe('an option edit leaves every other stored entry as written', () => {
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([
       { id: 'opt_A', key: 'AA', label: 'AA', color: 'red' },
-      selectSeed[1],
+      decoded({ id: 'opt_B', key: 'B', label: 'B' }),
     ])
     expect(defs.prop_st.status_groups).toEqual([
       {
         ...statusSeed[0],
-        options: [{ id: 'opt_X', key: 'XX', label: 'XX', color: 'red' }, statusSeed[0].options[1]],
+        options: [
+          { id: 'opt_X', key: 'XX', label: 'XX', color: 'red' },
+          decoded({ id: 'opt_Y', key: 'Y', label: 'Y' }),
+        ],
       },
-      statusSeed[1],
+      { ...statusSeed[1], color: 'grey' },
     ])
     expect(defs.prop_multi.select_options).toEqual([
-      ...multiSeed,
+      multiSeed[0],
+      decoded({ id: 'opt_b', key: 'b', label: 'b' }),
       { id: 'opt_c', key: 'c', label: 'c' },
     ])
   })
@@ -432,7 +464,8 @@ describe('an option edit leaves every other stored entry as written', () => {
     const defs = await rawDefs()
     expect(defs.prop_st.status_groups![1]).toEqual({
       ...statusSeed[1],
-      options: [{ ...statusSeed[0].options[1] }, ...statusSeed[1].options],
+      color: 'grey',
+      options: [decoded({ id: 'opt_Y', key: 'Y', label: 'Y' }), ...statusSeed[1].options],
     })
     expect(defs.prop_st.status_groups![0].options).toEqual([
       statusSeed[0].options[0],
@@ -472,8 +505,8 @@ describe('an option edit leaves every other stored entry as written', () => {
     ).toBe(true)
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([
-      { id: 'opt_A', key: 'A', label: 'A', color: 7, icon: 7 },
-      { id: 'opt_B', key: 'B', label: 'B', appearance: 'outline', icon: 7 },
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { id: 'opt_B', key: 'B', label: 'B' },
       { id: 'opt_C', key: 'C', label: 'C' },
     ])
     expect(defs.prop_multi.select_options).toEqual([{ id: 'opt_a', key: 'a', label: 'a' }])
@@ -669,14 +702,12 @@ describe('renameOption', () => {
     })
   })
 
-  it('a rename journals its key pairs and no labels', async () => {
+  it('a rename runs on its property’s note, which a clean sweep clears', async () => {
     const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
+    vi.mocked(runNoted).mockClear()
     expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
-    expect(writeSchemaJournal).toHaveBeenCalledWith(root, {
-      op: 'option-rename',
-      id,
-      keys: [['Urgent', 'Critical']],
-    })
+    expect(runNoted).toHaveBeenCalledWith(root, id, expect.anything())
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('notes every rewritten page once per container for the values:changed push', async () => {
@@ -733,137 +764,168 @@ describe('deleteOption', () => {
   })
 })
 
-describe('an owed record holds option changes', () => {
-  const OWED_MESSAGE = 'An earlier change hasn’t reached every file yet.'
-  const held = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
-  const owing = async (): Promise<{ id: string; page: string; bytes: string }> => {
-    const id = await mkSelect([
+describe('each option change keeps its own note', () => {
+  const twoOptions = (): Promise<string> =>
+    mkSelect([
       { id: 'opt_A', key: 'A', label: 'A' },
       { id: 'opt_C', key: 'C', label: 'C' },
     ])
-    const page = await pageHolding(id, 'A')
-    await writeSchemaJournal(root, held)
-    return { id, page, bytes: await readFile(page, 'utf8') }
-  }
+  const labels = async (id: string): Promise<string[] | undefined> =>
+    (await readRegistry(root)).defs[id].select_options?.map((o) => o.label)
 
-  it.each([
-    ['renameOption', (id: string) => renameOption(root, id, 'opt_A', 'B')],
-    ['deleteOption', (id: string) => deleteOption(root, id, 'opt_A')],
-  ])('%s refuses, leaving the registry, every holder, and the held record', async (_, run) => {
-    const { id, page, bytes } = await owing()
-    expect(await run(id)).toEqual(fail('owed', OWED_MESSAGE))
-    expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
-      'A',
-      'C',
-    ])
-    expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect(await readSchemaJournal(root)).toEqual(held)
+  it('an option rename runs while another property owes work', async () => {
+    const id = await twoOptions()
+    const page = await pageHolding(id, 'A')
+    const other = { prop_x: { kind: 'property', rename: ['Old'] } }
+    await seedNotes(other)
+    expect((await renameOption(root, id, 'opt_A', 'B')).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['B'])
+    expect((await clearOption(root, id, 'opt_A')).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
+    expect((await deleteOption(root, id, 'opt_C')).ok).toBe(true)
+    expect(await labels(id)).toEqual(['B'])
+    expect(await readNotes(root)).toEqual(other)
   })
 
-  it.skipIf(noModeBits)(
-    'an add taking back an owed rename’s old key refuses, leaving the record',
-    async () => {
-      const id = await mkSelect([
+  it('an option rename keeps its part while its property’s rename is owed', async () => {
+    const id = await twoOptions()
+    await pageHolding(id, 'A')
+    await seedNotes({ [id]: { kind: 'property', rename: ['Priority'] } })
+    const r = await renameOption(root, id, 'opt_A', 'B')
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect(await readNotes(root)).toEqual({
+      [id]: { kind: 'property', rename: ['Priority'], options: { opt_A: { rename: ['A'] } } },
+    })
+  })
+
+  it('Clear sweeps an owed option rename’s old word with its own', async () => {
+    const id = await twoOptions()
+    const page = await pageHolding(id, 'A')
+    const old = await createTestPage(join(page, '..'), 'Old', { body: 'b' })
+    if (!old.ok) throw new Error('page failed')
+    await rewriteRootAt(
+      old.value.path,
+      rewriteRaw((raw) => landValue(raw, 'Tags', ['a'])),
+    )
+    await seedNotes({ [id]: { kind: 'property', options: { opt_A: { rename: ['a'] } } } })
+    expect((await clearOption(root, id, 'opt_A')).ok).toBe(true)
+    for (const p of [page, old.value.path])
+      expect(splitFrontmatter(await readFile(p, 'utf8'))).not.toHaveProperty('Tags')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)('a Clear that misses a page owes it with Try Again', async () => {
+    const id = await twoOptions()
+    const col = join(await pageHolding(id, 'A'), '..')
+    const { page, set } = await lockedPage(col, id, 'A')
+    try {
+      const r = await clearOption(root, id, 'opt_A')
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+    } finally {
+      await chmod(set, 0o755)
+    }
+    expect(await readNotes(root)).toEqual({
+      [id]: { kind: 'property', options: { opt_A: { strip: ['A'], kept: true } } },
+    })
+    await finishOwed(root, deps)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
+    expect(await labels(id)).toEqual(['A', 'C'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)('a Clear’s Try Again leaves a page picked to another option', async () => {
+    const id = await twoOptions()
+    const col = join(await pageHolding(id, 'A'), '..')
+    const { page, set } = await lockedPage(col, id, 'A')
+    try {
+      await clearOption(root, id, 'opt_A')
+    } finally {
+      await chmod(set, 0o755)
+    }
+    await rewriteRootAt(
+      page,
+      rewriteRaw((raw) => landValue(raw, 'Tags', ['C'])),
+    )
+    await finishOwed(root, deps)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['C'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)('registration skips an owed word', async () => {
+    const id = await mkProperty({
+      label: 'Tags',
+      key: 'Tags',
+      type: 'multiSelect',
+      select_options: [
         { id: 'opt_A', key: 'A', label: 'A' },
         { id: 'opt_C', key: 'C', label: 'C' },
-      ])
-      await pageHolding(id, 'A')
-      const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
-      if (!set.ok) throw new Error('set failed')
-      const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
-      if (!p.ok) throw new Error('page failed')
-      const key = (await readRegistry(root)).defs[id].key
-      await rewriteRootAt(
-        p.value.path,
-        rewriteRaw((raw) => landValue(raw, key, ['A'])),
-      )
-      await chmod(set.value.path, 0o555)
-      try {
-        expect((await renameOption(root, id, 'opt_A', 'Z')).ok).toBe(true)
-      } finally {
-        await chmod(set.value.path, 0o755)
-      }
-      const record = { op: 'option-rename', id, keys: [['A', 'Z']] }
-      expect(await readSchemaJournal(root)).toEqual(record)
-      const add = { op: 'add' as const, groupId: SELECT_GROUP, id: 'opt_new', label: 'A' }
-      expect(await editOption(root, id, add)).toEqual(fail('owed', OWED_MESSAGE))
-      expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
-        'Z',
-        'C',
-      ])
-      expect(await readSchemaJournal(root)).toEqual(record)
-    },
-  )
+      ],
+    })
+    const col = join(await pageHolding(id, 'C'), '..')
+    const { page, set } = await lockedPage(col, id, 'A')
+    try {
+      expect((await deleteOption(root, id, 'opt_A')).ok).toBe(true)
+    } finally {
+      await chmod(set, 0o755)
+    }
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['A'])
+    await openSession(root)
+    await refreshTree(root)
+    try {
+      await registerHeldOptions(root, [page.slice(root.length + 1)])
+    } finally {
+      closeSession()
+    }
+    expect(await labels(id)).toEqual(['C'])
+  })
 
-  it('clearOption strips while another property’s rename record is owed, leaving the record held', async () => {
-    const { id, page, bytes } = await owing()
-    expect(splitFrontmatter(bytes)).toHaveProperty('Tags')
-    expect(await clearOption(root, id, 'opt_A')).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
-    expect(await readSchemaJournal(root)).toEqual(held)
+  it('renameOption, setValueFormat, and editOption refuse a landing on another option’s owed word', async () => {
+    const id = await mkSelect([{ id: 'opt_LB', key: 'Light Blue', label: 'Light Blue' }])
+    await seedNotes({
+      [id]: { kind: 'property', options: { opt_gone: { strip: ['B', 'light-blue'] } } },
+    })
+    const def = (await readRegistry(root)).defs[id]
+    expect(await renameOption(root, id, 'opt_LB', 'B')).toEqual(OWED)
+    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(OWED)
+    expect(
+      await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, id: 'opt_new', label: 'B' }),
+    ).toEqual(OWED)
+    expect((await readRegistry(root)).defs[id]).toEqual(def)
+  })
+
+  it.skipIf(noModeBits)('an add taking back an owed delete’s word refuses', async () => {
+    const id = await twoOptions()
+    const col = join(await pageHolding(id, 'C'), '..')
+    const { set } = await lockedPage(col, id, 'A')
+    try {
+      expect((await deleteOption(root, id, 'opt_A')).ok).toBe(true)
+    } finally {
+      await chmod(set, 0o755)
+    }
+    const add = { op: 'add' as const, groupId: SELECT_GROUP, id: 'opt_new', label: 'A' }
+    expect(await editOption(root, id, add)).toEqual(OWED)
+    expect(await labels(id)).toEqual(['C'])
   })
 
   it.skipIf(noModeBits)(
-    'clearOption refuses while the same property’s option record is owed, writing nothing',
+    'renaming an option whose Clear is owed is refused until the Clear finishes',
     async () => {
-      const id = await mkSelect([
-        { id: 'opt_In%20Progress', key: 'In Progress', label: 'In Progress' },
-      ])
-      const one = await pageHolding(id, 'In Progress')
-      const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
-      if (!set.ok) throw new Error('set failed')
-      const p = await createTestPage(set.value.path, 'Two', { body: 'b' })
-      if (!p.ok) throw new Error('page failed')
-      const two = p.value.path
-      const key = (await readRegistry(root)).defs[id].key
-      await rewriteRootAt(
-        two,
-        rewriteRaw((raw) => landValue(raw, key, ['In Progress'])),
-      )
-      await chmod(set.value.path, 0o555)
+      const id = await mkSelect([{ id: 'opt_High', key: 'High', label: 'High' }])
+      const col = join(await pageHolding(id, 'High'), '..')
+      const { page, set } = await lockedPage(col, id, 'High')
       try {
-        expect((await setValueFormat(root, id, 'kebab-case')).ok).toBe(true)
+        await clearOption(root, id, 'opt_High')
       } finally {
-        await chmod(set.value.path, 0o755)
+        await chmod(set, 0o755)
       }
-      const record = { op: 'option-rename', id, keys: [['In Progress', 'in-progress']] }
-      expect(await readSchemaJournal(root)).toEqual(record)
-      const def = (await readRegistry(root)).defs[id]
-      const bytes = [await readFile(one, 'utf8'), await readFile(two, 'utf8')]
-
-      expect(await clearOption(root, id, 'opt_In%20Progress')).toEqual(fail('owed', OWED_MESSAGE))
-      expect((await readRegistry(root)).defs[id]).toEqual(def)
-      expect([await readFile(one, 'utf8'), await readFile(two, 'utf8')]).toEqual(bytes)
-      expect(await readSchemaJournal(root)).toEqual(record)
+      expect(await renameOption(root, id, 'opt_High', 'Urgent')).toEqual(OWED)
+      expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['High'])
+      await finishOwed(root, deps)
+      expect((await renameOption(root, id, 'opt_High', 'Urgent')).ok).toBe(true)
+      expect(await readFile(page, 'utf8')).not.toContain('Urgent')
+      expect(await labels(id)).toEqual(['Urgent'])
     },
   )
-
-  it('clearOption strips while another property’s option record is owed', async () => {
-    const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
-    const page = await pageHolding(id, 'A')
-    const other = { op: 'option-remove', id: 'prop_x', key: 'A' } as const
-    await writeSchemaJournal(root, other)
-    expect(await clearOption(root, id, 'opt_A')).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
-    expect(await readSchemaJournal(root)).toEqual(other)
-  })
-
-  it('a held record identical to the one the op writes runs the op', async () => {
-    const id = await mkSelect([
-      { id: 'opt_A', key: 'A', label: 'A' },
-      { id: 'opt_C', key: 'C', label: 'C' },
-    ])
-    await writeSchemaJournal(root, {
-      op: 'option-rename',
-      id,
-      keys: [['A', 'B']],
-    })
-    expect((await renameOption(root, id, 'opt_A', 'B')).ok).toBe(true)
-    await writeSchemaJournal(root, { op: 'option-remove', id, key: 'C' })
-    expect((await deleteOption(root, id, 'opt_C')).ok).toBe(true)
-    expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual(['B'])
-    expect(await readSchemaJournal(root)).toBeNull()
-  })
 })
 
 describe('remove and clear on a value the definition lacks', () => {
@@ -951,7 +1013,7 @@ describe('clearOption', () => {
     await chmod(set.value.path, 0o555)
     try {
       expect(await clearOption(root, id, 'opt_hi')).toEqual(
-        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) } }),
+        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true } }),
       )
     } finally {
       await chmod(set.value.path, 0o755)
@@ -1079,7 +1141,7 @@ describe('the option cascades reach the Collection caches', () => {
     for (const p of pages) expect(await readFile(p.path, 'utf8')).not.toMatch(/\bA\b/)
   })
 
-  it('a damaged Collection counts once, as the configuration pass skips it, and the record stays owed', async () => {
+  it('a damaged Collection counts once, as the configuration pass skips it, and the entry stays owed', async () => {
     const { id } = await cached()
     const other = await createFolderEntity(root, 'collection', 'Other', newId())
     if (!other.ok) throw new Error('folder failed')
@@ -1088,8 +1150,10 @@ describe('the option cascades reach the Collection caches', () => {
     await mkdir(file)
     const r = await deleteOption(root, id, 'opt_A')
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.retry).toEqual({ op: 'finishOwed' })
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'A' })
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect(await readNotes(root)).toEqual({
+      [id]: { kind: 'property', options: { opt_A: { strip: ['A'] } } },
+    })
   })
 })
 
@@ -1184,13 +1248,9 @@ describe('option cascades reach saved views', () => {
     expect((await surfaces.read()).matrix).toEqual(viewOn(id, 'opt_Done').filter)
   })
 
-  it('a removal strips the value and drops the rule it emptied', async () => {
-    const { id, surfaces } = await seeded()
-    expect(await deleteOption(root, id, 'opt_Done')).toEqual(
-      ok({ cascade: { pages: [], hosts: [HOME] } }),
-    )
+  const cleared = (id: string) => {
     const held = viewOn(id, 'opt_Done')
-    const want = {
+    return {
       ...held,
       filter: undefined,
       sort: [{ property_id: id, direction: 'ascending', order: [] }],
@@ -1198,100 +1258,99 @@ describe('option cascades reach saved views', () => {
       hidden_groups: [],
       collapsed_groups: [],
     }
+  }
+
+  it('a removal strips the value and drops the rule it emptied', async () => {
+    const { id, surfaces } = await seeded()
+    expect(await deleteOption(root, id, 'opt_Done')).toEqual(
+      ok({ cascade: { pages: [], hosts: [HOME] } }),
+    )
+    const want = cleared(id)
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
     expect(views.matrix).toBeNull()
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it.skipIf(noModeBits)(
-    'a removal with a page skip leaves every view holding the option and the journal held',
+    'a deletion with a page skip drops the option, clears every view, and owes the page',
     async () => {
       const { id, col, surfaces } = await seeded()
       const locked = await lockedHolder(id, col)
       try {
         expect(await deleteOption(root, id, 'opt_Done')).toEqual(
-          ok({
-            cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
-            retry: { op: 'finishOwed' },
-          }),
+          ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1), owed: true } }),
         )
       } finally {
         await chmod(locked, 0o755)
       }
       const views = await surfaces.read()
-      const held = viewOn(id, 'opt_Done')
-      expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
-      expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
+      const want = cleared(id)
+      expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
+      expect(await readNotes(root)).toEqual({
+        [id]: { kind: 'property', options: { opt_Done: { strip: ['Done'] } } },
+      })
       expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
-        'Done',
         'Todo',
       ])
     },
   )
 
   it.skipIf(noModeBits)(
-    'a rename with a page skip answers the skip and holds the journal, the views as written',
+    'a rename with a page skip answers the skip and owes the page, the views as written',
     async () => {
       const { id, col, surfaces } = await seeded()
       const locked = await lockedHolder(id, col)
       try {
         expect(await renameOption(root, id, 'opt_Done', 'Closed')).toEqual(
-          ok({
-            cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
-            retry: { op: 'finishOwed' },
-          }),
+          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true } }),
         )
       } finally {
         await chmod(locked, 0o755)
       }
       expect((await surfaces.read()).set).toEqual(viewOn(id, 'opt_Done'))
-      expect(await readSchemaJournal(root)).toEqual({
-        op: 'option-rename',
-        id,
-        keys: [['Done', 'Closed']],
+      expect(await readNotes(root)).toEqual({
+        [id]: { kind: 'property', options: { opt_Done: { rename: ['Done'] } } },
       })
     },
   )
 
-  it('a rename to the option’s own key leaves its pages and its views, and journals no key', async () => {
+  it('a rename to the option’s own key leaves its pages and its views, and notes nothing', async () => {
     const id = await mkSelect([{ id: 'opt_urgent', key: 'urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')
     const surfaces = await seedConfigSurfaces(root, join(page, '..'), viewOn(id, 'opt_urgent'))
     const bytes = await readFile(page, 'utf8')
+    vi.mocked(runNoted).mockClear()
     expect((await renameOption(root, id, 'opt_urgent', 'urgent')).ok).toBe(true)
     expect(await readFile(page, 'utf8')).toBe(bytes)
     expect((await surfaces.read()).set).toEqual(viewOn(id, 'opt_urgent'))
-    expect(writeSchemaJournal).toHaveBeenCalledWith(root, {
-      op: 'option-rename',
-      id,
-      keys: [],
-    })
+    expect(runNoted).not.toHaveBeenCalled()
   })
 
-  it('a pass skip holds the drop and the journal', async () => {
+  it('a pass skip owes the page with the option already dropped', async () => {
     const { id, surfaces } = await seeded()
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
     expect(await deleteOption(root, id, 'opt_Done')).toEqual(
-      ok({
-        cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
-        retry: { op: 'finishOwed' },
-      }),
+      ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1), owed: true } }),
     )
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
+    expect(await readNotes(root)).toEqual({
+      [id]: { kind: 'property', options: { opt_Done: { strip: ['Done'] } } },
+    })
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.label)).toEqual([
-      'Done',
       'Todo',
     ])
   })
 
-  it('a failed drop keeps the journal', async () => {
-    const { id } = await seeded()
+  it('a failed drop strips nothing and puts the entry back', async () => {
+    const { id, col } = await seeded()
+    const page = join(col, 'One.md')
+    const bytes = await readFile(page, 'utf8')
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     expect((await deleteOption(root, id, 'opt_Done')).ok).toBe(false)
-    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, key: 'Done' })
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('a clear reaches no view', async () => {
@@ -1414,7 +1473,7 @@ describe('a Value Format change re-keys every option', () => {
     expect((await readJsonAt(space)).Tones).toEqual(['light-blue'])
     expect(await cache()).toEqual({ [id]: { values: { [PAGE_ID]: ['light-blue'] } } })
     expect(await surfaces.read()).toEqual(views)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('refuses two options the format gives one key, changing nothing', async () => {
@@ -1428,7 +1487,7 @@ describe('a Value Format change re-keys every option', () => {
     expect(await setValueFormat(root, id, 'kebab-case')).toEqual(SAME_KEY)
     expect((await readRegistry(root)).defs[id]).toEqual(def)
     expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('refuses an option taking the key another option writes now, changing nothing', async () => {
@@ -1445,7 +1504,7 @@ describe('a Value Format change re-keys every option', () => {
     expect(await setValueFormat(root, id, 'kebab-case')).toEqual(CROSSED)
     expect((await readRegistry(root)).defs[id]).toEqual(def)
     expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('an option whose new key differs from its old one only by padding isn’t a crossing', async () => {
@@ -1456,47 +1515,32 @@ describe('a Value Format change re-keys every option', () => {
     ])
   })
 
-  it('waits for an owed record, changing nothing', async () => {
-    const { id, page } = await tones()
-    const held = { op: 'rename', id: 'prop_other', from: 'A', to: 'B' } as const
-    await writeSchemaJournal(root, held)
-    const def = (await readRegistry(root)).defs[id]
-    const bytes = await readFile(page, 'utf8')
-
-    expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
-      fail('owed', 'An earlier change hasn’t reached every file yet.'),
-    )
-    expect((await readRegistry(root)).defs[id]).toEqual(def)
-    expect(await readFile(page, 'utf8')).toBe(bytes)
-    expect(await readSchemaJournal(root)).toEqual(held)
-  })
-
   it.skipIf(noModeBits)(
-    'an unreadable page owes one key-only record, and its replay brings the page current',
+    'an unreadable page owes each option its old word, and Try Again brings the page current',
     async () => {
       const { id, page } = await tones()
-      const owed: SchemaJournal = {
-        op: 'option-rename',
-        id,
-        keys: [
-          ['Light Blue', 'light-blue'],
-          ['Dark Red', 'dark-red'],
-        ],
-      }
       await chmod(page, 0o000)
       try {
         const r = await setValueFormat(root, id, 'kebab-case')
-        expect(r.ok && r.value.retry).toEqual({ op: 'finishOwed' })
+        expect(r.ok && r.value.cascade?.owed).toBe(true)
       } finally {
         await chmod(page, 0o644)
       }
-      expect(await readSchemaJournal(root)).toEqual(owed)
-      expect((await replaySchemaCascade(root))?.ok).toBe(true)
+      expect(await readNotes(root)).toEqual({
+        [id]: {
+          kind: 'property',
+          options: {
+            'opt_Light%20Blue': { rename: ['Light Blue'] },
+            'opt_Dark%20Red': { rename: ['Dark Red'] },
+          },
+        },
+      })
+      await finishOwed(root, deps)
       expect(splitFrontmatter(await readFile(page, 'utf8')).Tones).toEqual([
         'light-blue',
         'dark-red',
       ])
-      expect(await readSchemaJournal(root)).toBeNull()
+      expect(await readNotes(root)).toEqual({})
     },
   )
 
@@ -1511,7 +1555,7 @@ describe('a Value Format change re-keys every option', () => {
       value_format: 'Match Title',
       select_options: options,
     })
-    expect(await readSchemaJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     expect(await Promise.all([page, space].map((f) => readFile(f, 'utf8')))).toEqual(bytes)
     expect(await Promise.all([page, space].map(async (f) => (await stat(f)).mtimeMs))).toEqual(
       mtimes,

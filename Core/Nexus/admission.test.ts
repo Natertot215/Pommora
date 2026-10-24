@@ -72,6 +72,7 @@ const ctx = {
   push: () => {},
   device: null,
   openStores: () => installStores(memoryStores().stores),
+  trashMode: async () => 'nexus',
 } as unknown as HostContext
 const openNexus = async (): Promise<void> => {
   try {

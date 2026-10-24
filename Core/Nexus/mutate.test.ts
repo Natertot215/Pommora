@@ -31,7 +31,8 @@ import { contextsDir, nexusConfig, nexusDir, sidecarPath, homepageDir } from '..
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
-import { cropKeyFor, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { cropKeyFor, NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
+import { readNotes } from './owed'
 import { assetFilePath } from '../Assets/assetRoots'
 import { newContentId, newId, shardOf } from './ids'
 
@@ -3994,6 +3995,24 @@ describe('the property ops', () => {
     const lock = vi.spyOn(machine(), 'lock')
     expect((await handleMutate(root, req, nexusDeps)).ok).toBe(true)
     expect(lock.mock.calls.filter(([key]) => key === nexusDir(root))).toHaveLength(1)
+  })
+
+  it('finishOwed renames the files an owed entry names and clears the notes file', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Page.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\nPhase: Done\n---\n\nbody',
+    )
+    await writeFile(
+      join(root, OWED_REL),
+      JSON.stringify({ [stage.id]: { kind: 'property', rename: ['Phase'] } }),
+    )
+    await refreshTree(root)
+    expect(await handleMutate(root, { op: 'finishOwed' }, nexusDeps)).toEqual(
+      ok({ cascade: { pages: [], hosts: [] } }),
+    )
+    expect(await readNotes(root)).toEqual({})
+    expect(await pathExists(join(root, OWED_REL))).toBe(false)
+    expect(readFileSync(join(root, 'Notes', 'Page.md'), 'utf8')).toContain('Stage: Done')
   })
 
   it('an added property answers its id as what it created', async () => {

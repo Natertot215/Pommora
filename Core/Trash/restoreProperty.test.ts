@@ -1,9 +1,11 @@
-import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
+import { chmod, readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { dirname, join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { newContentId, newId } from '../Nexus/ids'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -168,6 +170,39 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
+  })
+
+  it.skipIf(noModeBits)('a restore turns the delete’s owed strip into renames', async () => {
+    const id = await seedPriority()
+    const p1 = await createTestPage(notes, 'A', { body: 'b' })
+    const set = await createFolderEntity(tasks, 'set', 'Locked', newId())
+    if (!set.ok) throw new Error('set failed')
+    const p2 = await createTestPage(set.value.path, 'B', { body: 'b' })
+    if (!p1.ok || !p2.ok) throw new Error('pages failed')
+    for (const [page, word] of [
+      [p1.value.path, 'hi'],
+      [p2.value.path, 'lo'],
+    ])
+      await rewriteRootAt(
+        page,
+        rewriteRaw((raw) => landValue(raw, 'Priority', [word])),
+      )
+    await chmod(set.value.path, 0o555)
+    try {
+      const r = await deleteProperty(root, id)
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+    } finally {
+      await chmod(set.value.path, 0o755)
+    }
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', strip: ['Priority'] } })
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok).toBe(true)
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+    await finishOwed(root, deps)
+    expect((await readRegistry(root)).defs[id]).toMatchObject({ key: 'Priority' })
+    expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('comes back with the option keys its record holds, refilling the pages that held them', async () => {
