@@ -1236,14 +1236,14 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 11A-3 · Context and Space renames move onto the notes
   - [x] Review Checkpoint
   - [x] Closeout P11A (two `opus-high` agents, inward and outward)
-- [ ] **Phase 11B** — One Note per Item: Deletes and Remove
-  - [ ] Task 11B-1 · `findHolders` falls back to the index's last read
-  - [ ] Task 11B-2 · Context and Space deletes finish
-  - [ ] Task 11B-3 · Remove notes its Collection and shares one finishing routine
-  - [ ] Task 11B-4 · An unpurged Collection settings file and an unaddressed holder count as missed
-  - [ ] Task 11B-5 · Content deletes, Trash emptying, moves, and restores owe their links and views
-  - [ ] Task 11B-6 · Drive group 9
-  - [ ] Review Checkpoint
+- [x] **Phase 11B** — One Note per Item: Deletes and Remove
+  - [x] Task 11B-1 · `findHolders` falls back to the index's last read
+  - [x] Task 11B-2 · Context and Space deletes finish
+  - [x] Task 11B-3 · Remove notes its Collection and shares one finishing routine
+  - [x] Task 11B-4 · An unpurged Collection settings file and an unaddressed holder count as missed
+  - [x] Task 11B-5 · Content deletes, Trash emptying, moves, and restores owe their links and views
+  - [x] Task 11B-6 · Drive group 9
+  - [x] Review Checkpoint
 - [ ] **Phase 12** — The Stash and Trash Records
   - [ ] Task 12-1 · "Cache" becomes "stash"
   - [ ] Task 12-2 · The stash block and its stamp, with the rename's commit
@@ -21534,7 +21534,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 - **A Holder No Id Addresses Under a Delete:** the Trash entry can't file its value, so the record reads partial, and once adoption stamps the page an ID the finish strips the key, the value going with it. The page is counted owed in between rather than keeping the deleted key with nothing said.
 - **The System Trash Mode's Context and Space Deletes:** a finish in System Trash mode sends the folder to the system Trash and strips the tags with no record anywhere, as the live delete does.
 - **Content Deletes, Moves, and Restores Owe What They Miss (Nathan's Ruling, 10-22-2026, Unify):** a page, Collection, or Set delete, a Trash emptying, a Set move, a page move or rename, and a restore's re-spell of the live world that miss a file now keep a note and offer the one Try Again, which strips the gone page's links, reaches the views, or re-spells the links still under the old name; a move made again before the finish carries what the first missed to where the second leaves it. Each answered a warning nothing could finish, and a delete cut short by a crash left its strip undone for good; the next open finishes it now. The warning reads as every owed change's, "Couldn’t update N Items.", where these read "Couldn’t update links in N Items." or "links to “…” in N Items.".
-- **A Delete's Trash Record Is Partial Only Where It's Still True:** a page, Collection, or Set delete no longer writes its record `partial` ahead of the move or marks it for a strip that missed a file, since the miss is owed and each link a finish strips joins the record's `links`; the record keeps `partial` only from what its gather couldn't file, such as a holder with no ID. A content delete whose note can't be written refuses with nothing deleted.
+- **A Delete's Trash Record Is Partial Only Where It's Still True:** a page, Collection, or Set delete no longer writes its record `partial` ahead of the move or marks it for a strip that missed a file, since the miss is owed and each link a finish strips joins the record's `links`; so a page, Collection, or Set record is no longer marked `partial`, and the mark stays readable for an entry an earlier build trashed. A Context's and a Space's record keep it for a holder their gather couldn't file, such as one with no ID. A content delete whose note can't be written refuses with nothing deleted.
 - **A Restore Owes What It Misses (Try Again Unclogs, Nathan's Rulings, 10-22-2026):** a Trash or Archive restore whose repair of its own landed files misses one now keeps a note under the landed path and offers the one Try Again, which re-spells those files alone; it answered "Couldn’t update links in “…” across N Items." that nothing could finish, and now reads "Couldn’t update N Items." as every owed change does. A Context restored under a new title re-keys its Spaces' sidecars on the same note, so a sidecar it misses takes the same Try Again. A landed file moved or deleted before the finish drops out of the note. A trashed copy the restore's refill couldn't write, and a returning file whose values the scrub reconciled but couldn't write, now join the same note with exactly what the restore worked out for each value, what the file read then and what it lands as, so Try Again gives the result an unmissed restore would have; the refill's miss went unreported and the scrub's refused the restore, and nothing could finish either, since the restore's snapshot of links and schema is gone once it lands. A value lands only where the file still reads what the restore found, a blank matching a blank, so an edit made after the restore stands, and a trashed copy restored or emptied before the finish drops out as a moved landed file does. A returning file the scrub couldn't read, or can't round-trip, had nothing worked out, so it joins the warning "Couldn’t update values in “…” across N Items." without Try Again.
 - **A Restore Reports Every File It Couldn't Update, Once (G-3, Nathan's Reading; G-4, Nathan's Ruling, 10-23-2026):** a returning page the scrub can't write no longer refuses the restore, and a Space sidecar the scrub or the trashed-copy refill misses, which went unreported, now reaches the same report: owed with Try Again where the restore worked out what it would write, and in the values line where it couldn't read the file. The page lands un-reconciled, as a Space already did, and the Try Again or the next value write tidies it. **Recommended:** take it, since a restore otherwise refuses over one page while every Space file it misses goes unreported.
 - **A Restore Counts Refused Files Too (11B-3):** an Unknown page or a sidecar that won't parse is left byte-identical by every sweep, and once `skipped` counts it, a restore, which nothing retries, reports it with the files it couldn't read, where its scrub and refill left it silent; `repairLanded` already counted a corrupt sidecar.
@@ -35442,7 +35442,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
 | 10 | −381 | +393 | +12 | −323 / +334 / +11 | −397 |
 | 11A | −634 | +738 | +104 | −642 / +738 / +96 | −301 |
-| 11B | −449 | +835 | +386 | | |
+| 11B | −449 | +835 | +386 | −458 / +852 / +394 | +93 |
 | 12 | −192 | +340 | +148 | | |
 | 13 | −678 | +552 | −126 | | |
 | 14 | −544 | +497 | −47 | | |
