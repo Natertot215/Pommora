@@ -1235,7 +1235,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 11A-2 · The property kind moves onto the notes
   - [x] Task 11A-3 · Context and Space renames move onto the notes
   - [x] Review Checkpoint
-  - [ ] Closeout P11A (two `opus-high` agents, inward and outward)
+  - [x] Closeout P11A (two `opus-high` agents, inward and outward)
 - [ ] **Phase 11B** — One Note per Item: Deletes and Remove
   - [ ] Task 11B-1 · `findHolders` falls back to the index's last read
   - [ ] Task 11B-2 · Context and Space deletes finish
@@ -35441,7 +35441,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
 | 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
 | 10 | −381 | +393 | +12 | −323 / +334 / +11 | −397 |
-| 11A | −634 | +738 | +104 | −642 / +737 / +95 | −302 |
+| 11A | −634 | +738 | +104 | −642 / +738 / +96 | −301 |
 | 11B | −449 | +835 | +386 | | |
 | 12 | −192 | +340 | +148 | | |
 | 13 | −678 | +552 | −126 | | |
@@ -35498,8 +35498,8 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 - `Core/Properties/Schema/OptionEditor.test.tsx:267-448`, `Core/Properties/optionOps.test.ts:245-276` — the label re-keying cases — Task 8-5
 - `Core/Nexus/configReach.test.ts:157-252` — `describe('an option rename')` — Task 8-3
 - `Core/Properties/keyHolders.test.ts:80-216` — `describe('governedReach')`, becoming `describe('findHolders')` — Task 10-2
-- `Core/Properties/journalWiring.test.ts:274-319`, `Core/Properties/optionOps.test.ts:707` — "the create-side consumer" and "the slot protects a stranded record"; the blanket `OWED` refusal cases — Task 11A-2
-- The one-slot pins in `journalWiring.test.ts` — "the slot writes over nothing it cannot read" and the second Nexus's record read — Tasks 11A-2, 11A-3
+- `Core/Properties/notesWiring.test.ts:274-319`, `Core/Properties/optionOps.test.ts:707` — "the create-side consumer" and "the slot protects a stranded record"; the blanket `OWED` refusal cases — Task 11A-2
+- The one-slot pins in `notesWiring.test.ts` — "the slot writes over nothing it cannot read" and the second Nexus's record read — Tasks 11A-2, 11A-3
 - `Core/Properties/cascadeRace.test.ts:58` — "F1 —" and the other plan-round tags — Task 1-8
 - `.claude/scripts/drive-harness.mjs:282`; `Text Property Drive/live-drive.mjs:279,287,292,365` — the pen selected as "Open in TextPane" through `PEN` — Task 15-6
 - `Core/Views/Pipeline/resolveView.test.ts:513`, `Core/Views/Settings/GroupFrame.test.tsx:260`, `Core/Views/views.test.ts:569-578`, `Core/Nexus/configReach.test.ts:72,83` — bare hidden-group keys — Task 1-3
