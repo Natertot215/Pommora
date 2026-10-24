@@ -35,6 +35,8 @@ export interface SpaceNode extends ChromeNode {
   rowOrder?: string[]
   contextValues?: Record<string, string[]>
   values?: Record<string, unknown>
+  /** Each Context key the sidecar holds, as written, which a Context's rename or delete finds its Spaces by. */
+  contextKeys?: Record<string, unknown>
 }
 
 export interface ContextGroup {
