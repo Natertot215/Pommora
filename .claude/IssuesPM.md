@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 77 | 0 | 3 | 13 | 36 | 25 |
+| 78 | 0 | 3 | 13 | 37 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -91,6 +91,7 @@
 | ----- | ----------------------------------------------- | -------- | -------- | ---------- | --------- | ------------- |
 | [I-030](#I-030 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-031](#I-031 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
+| [I-078](#I-078 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-23-2026 |
 | [I-053](#I-053 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-052](#I-052 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-064](#I-064 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-18-2026 |
@@ -1044,6 +1045,37 @@ When a dropdown's list is open inside a pop-up pane, such as a view tile's setti
 
 Either every outside-press dismissal calls `suppressReleaseClick()`, so the tile pane behaves as the toolbar pane does, or clicks keep passing through and `MenuPresenter` holds each presented menu in its own `PickerMenu` until `onExited`, so the closing list finishes its exit while the new one blooms at its own trigger, as pickers that own their `PickerMenu` already do. Keeping the shield up through the exit doesn't reach this case, since the list in a shielded pane never draws one. **Your call:** whether a press that closes a list should also act on what it lands on.
 
+#### I-078 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-23-2026 |
+
+**Description**
+
+Where one element answers both a click and a double-click, the code that tells them apart sits on the surface itself, and the codebase holds no shared home for it. Five strategies are in use. A **wait** holds the single click's action until the double-click window passes. A **`detail` guard** lets the click act at once and ignores the press whose `event.detail` counts a second. **First-press-acts** lets the first press do its single-click work, and the second press reads what the first one left. **Act-then-take-over** acts at once and installs a one-shot listener that reverses it when a second press arrives. The last is **none**, where the single and double handlers both run in full.
+
+| Surface | A single click | A double-click | Strategy |
+|---------|----------------|----------------|----------|
+| Alias picker row | Picks the alias, 300 ms later | Renames it in place | Wait: a local `PICK_DELAY_MS`, cleared by `unpick` |
+| Calendar time part | Opens its hour or minute menu | Closes the menu and types the value | `detail` guard, with `onDoubleClick` |
+| Embedded page tile | Seats the caret at the nearer edge | Falls to the editor's word selection | `detail` guard |
+| Link in the editor | Follows the link, on `click` only at `detail === 1` | Falls to the editor's word selection | `detail` guard, at `mousedown` and again at `click` |
+| Table cell | Enters the cell at the point, unless a drag just selected text | Enters the cell, selecting the word | `detail` guard, for the selection case only |
+| Tab | Activates the tab | Renames it only if the tab was already active at the first press | First-press-acts, through a ref set at `mousedown` |
+| Page title in the detail header | Opens the search at once | Reverses into a rename | Act-then-take-over, through a `mousedown` listener on `window` |
+| Group band glyph | Toggles the group, on a band that doesn't open | Toggles it twice, or opens the Set on a band that does | None |
+| Tab bar | Nothing | Zooms the window | None |
+| Rename labels | Whatever the surrounding row's click does | Begins the rename | None |
+
+The surfaces differ in observable ways. Only the alias picker delays its single click, and its test restates the 300 ms as `PICK_WAIT`, so the window is a number in two files and no other surface reads it. A Set band that doesn't open lets the glyph's click toggle its group on each press of a double-click, so the group folds and unfolds again under the pointer, where the same double-click opens the Set on a band that does. A double-click on an inactive tab activates it and doesn't rename it, so renaming takes a second one, and the detail header's title shows its search for the length of a double-click before the rename replaces it. `RenamableTitle`'s `doubleClick` flag exists so a band can switch the rename door off, which says each surface that disagrees with it has to opt out. The `detail` thresholds also differ: the editor's link and embed guards pass on `detail > 1`, its link click on `detail !== 1`, and the margin press on `detail > 2`.
+
+`Core/Bundles/browser.ts` doesn't read `detail` yet. The ratified Disclosable Bundles plan adds `rowClick(row, detail)` there, where a container discloses and a page checks on `detail === 1` and a page on `detail === 2` makes sure it is checked, and a single click is never delayed. It is the next surface to write the same decision by hand.[^78]
+
+**Solution** [TBD]
+
+One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interactions/` owns the decision. It holds the double-click window as one value and offers the strategies a surface may choose between: acting at once and ignoring the second press, or waiting out the window. The alias picker's timer and constant, the calendar's guard, the editor's guards, the tab's ref, the header's listener, the group band's toggle, and the Bundles browser's `rowClick` move onto it, and `PICK_DELAY_MS` and the test's `PICK_WAIT` leave. A task would touch the primitive and its test, the ten surfaces above, and the plan's Task 4-1. **Your call:** which strategy is the default, with acting at once keeping every click immediate and waiting making a toggle's double-click quiet at the cost of a delay on every single click, and whether a group band's toggle should wait so the double-click stops flickering. Whether the editor's `mousedown` guards, which pass a second press to word selection rather than choose between two actions, belong on the primitive or beside it is the other open point.
+
 #### I-053 • Four waits that let a transition finish each state their own slack.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1386,3 +1418,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^75]: **I-075:** `Desktop/FileWatch/watcher.ts:38` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:106` (`awaitWriteFinish`)
 [^76]: **I-076:** `Core/Properties/Schema/DateTimeEditor.tsx:18,33-61` (`ROW_LOOK`, the icon-led `pickerRow` rows), `Core/Properties/Schema/NumberEditor.tsx:35-143` (the icon-less rows), `Core/Properties/Schema/LinkEditor.tsx:26-56`, `Core/Properties/Schema/CheckboxEditor.tsx:30-46`, `Core/Properties/Schema/FileEditor.tsx:22-40`, `Core/Properties/Schema/FormatRows.tsx:34-46` and `Core/Properties/Schema/PropertyFrame.tsx:410-416` (the icon-led rows elsewhere), `Core/Properties/Schema/PropertyFrame.tsx:347-376` (which editors write the property and which the view), `Core/Actions/columnMenu.ts:40-42,67-73` (the column menu's "Format")
 [^77]: **I-077:** `Core/Properties/removeProperty.ts:44-58` (the stash written on Remove), `Core/Properties/propertyCache.ts:8-28` (`cachedValues`, `patchCacheBlock`), `Core/Properties/assignment.ts:66-106` (the stash read and spent on re-adding), `Core/Settings/personalization.ts:42,189-190,261-263` (`HISTORY_DAYS`, `historyDays`, `archiveHistoryDays`, `SETTING_BOUNDS`), `Core/Settings/settings.ts:82-92` (`readFileHistoryConfig`), `Core/Pages/fileHistory.ts:195-206` (`sweepFileHistory`), `Core/Settings/frames.ts:652-665` (the History section's rows)
+[^78]: **I-078:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:~25-26,~60-65,~84,~145-155` (`PICK_DELAY_MS`, `pick`, `unpick`, the row's `onClick`), `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx:~29-30` (`PICK_WAIT`), `UIX/Pickers/CalendarPicker.tsx:~488-501`, `Core/MarkdownPM/Embeds/embedWidget.tsx:~652-654` (`embedClickSeat`), `Core/MarkdownPM/Gestures/pointerPath.ts:~50,~82-85`, `Core/MarkdownPM/decorations.ts:~717-721` (`pressMargin`), `Core/MarkdownPM/Tables/cellStatic.tsx:~558-565`, `Core/Navigation/TabItem.tsx:~63,~89-91,~110` (`pressedActive`), `Core/Interface/Header/DetailTitleHeader.tsx:~94-106,~132-136` (`openSearch`), `Core/Views/Bands/GroupBand.tsx:~141-142,~178-199,~249` (`outsideRename`, the glyph's handlers), `Core/Interface/RenamableTitle.tsx:~17,~26-27,~55` (`doubleClick`), `UIX/Fields/RenamableLabel.tsx:~52-58`, `Core/Navigation/TabBar.tsx:~137-149` (`onBarDoubleClick`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md:~116` (§Constraints › Rulings › Double-Click) and `:~876-879` (Task 4-1's `rowClick`).
