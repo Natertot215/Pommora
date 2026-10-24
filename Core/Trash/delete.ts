@@ -14,9 +14,14 @@ import { contextKey } from '../Contexts/contexts'
 import { finishEntry } from '../Nexus/finishOwed'
 import { distinct, type Entry, owedDelete, runNoted } from '../Nexus/owed'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
+import {
+  mutateRegistryFile,
+  readRegistryStrict,
+  unlistContext,
+  withContextAt,
+} from '../Contexts/contextsRegistry'
 import type { MutateContext } from '../Nexus/mutate'
-import { dropContextOrder, dropDeparture } from '../Nexus/reorder'
+import { dropDeparture } from '../Nexus/reorder'
 import type { CascadeReport } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
@@ -190,14 +195,7 @@ export async function deleteOp(
       const ran = await deleted(
         entry.id,
         deleteNote(root, { kind: 'context' }, title, bundle),
-        // By id, never by title: two entries sharing a title would otherwise erase both while only one folder is trashed.
-        async () => {
-          const removed = await mutateRegistryFile(root, (cur) => ({
-            contexts: cur.contexts.filter((c) => c.id !== entry.id),
-          }))
-          if (removed.ok && !bundle) await dropContextOrder(root, entry.id)
-          return removed
-        },
+        () => unlistContext(root, entry.id, !bundle),
         () => mutateRegistryFile(root, withContextAt(entry, at)),
       )
       if (!ran.ok) return unminted(ran)

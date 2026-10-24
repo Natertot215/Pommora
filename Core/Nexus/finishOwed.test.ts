@@ -14,8 +14,8 @@ import { readRecord } from '../Bundles/record'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
-import { OWED_REL } from '../Paths/nexusPaths'
+import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import { readJsonObject } from '../Files/atomicWrite'
 import * as registryModule from '../Properties/registryProperty'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
@@ -30,6 +30,7 @@ import type { TrashDeps } from '../Trash/discard'
 import { finishOwed } from './finishOwed'
 import { handleMutate } from './mutate'
 import { readNotes, type Notes } from './owed'
+import { setPanelContextOrder } from './reorder'
 
 vi.mock('../Properties/registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/registryProperty')>()
@@ -710,6 +711,18 @@ describe('the Context and Space rename arms', () => {
     await finishOwed(root, DEPS)
     expect((await tags(root))['<Ventures>']).toEqual(['Pommora'])
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a System Trash Context delete cut short before its list step takes its order with it', async () => {
+    const root = await seedContexts()
+    await setPanelContextOrder(root, ['ctx_projects'])
+    await putJson(join(root, OWED_REL), { ctx_projects: { kind: 'context', strip: ['Projects'] } })
+    await refreshTree(root)
+    await finishOwed(root, { ...DEPS, trashMode: 'system' })
+    expect(await titleOf(root)).toBeUndefined()
+    expect(
+      JSON.stringify(await readJsonAt(nexusConfig(root, NEXUS_CONFIG_FILES.state))),
+    ).not.toContain('ctx_projects')
   })
 
   it('a Context whose new title’s folder is taken keeps its folder and owes its rename', async () => {

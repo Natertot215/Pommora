@@ -20,7 +20,7 @@ import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
 import { basename, join } from '../Paths/posix'
-import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
+import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
   cascadeTitle,
@@ -255,9 +255,7 @@ async function finishContext(
   const listed = contexts.find((c) => c.id === id)?.title
   // The current title sitting in `strip` is a delete whose list step hadn't landed.
   if (listed !== undefined && e.strip?.includes(listed)) {
-    const removed = await mutateRegistryFile(root, (cur) => ({
-      contexts: cur.contexts.filter((c) => c.id !== id),
-    }))
+    const removed = await unlistContext(root, id, !e.bundle)
     if (!removed.ok) return stuck(e)
     contexts = removed.value.contexts
   }

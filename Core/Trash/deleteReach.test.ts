@@ -587,10 +587,8 @@ describe('a Context or Space delete on the notes', () => {
     expect(await readNotes(root)).toEqual({})
 
     vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
-    const mutateRegistry = contextsRegistry.mutateRegistryFile
-    vi.spyOn(contextsRegistry, 'mutateRegistryFile')
-      .mockImplementationOnce(mutateRegistry)
-      .mockResolvedValueOnce(fault('refused'))
+    // The list step leaves through `unlistContext`, so the spy meets only the put-back.
+    vi.spyOn(contextsRegistry, 'mutateRegistryFile').mockResolvedValueOnce(fault('refused'))
     const stuck = await handleMutate(
       root,
       { op: 'delete', path: AREAS, kind: 'context' },
