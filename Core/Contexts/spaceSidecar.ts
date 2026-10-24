@@ -46,7 +46,7 @@ export async function spaceIdsIn(
   return { ids, unread }
 }
 
-/** Every Space sidecar on disk, found by folder rather than by registry: a Context mid-rename has moved on disk before the registry or the tree follows it. */
+/** Every Space sidecar on disk, found by folder rather than from the tree, so the asset migration reports one the tree couldn't read. */
 export async function spaceSidecars(root: string): Promise<string[]> {
   const dir = contextsDir(root)
   const files: string[] = []

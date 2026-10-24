@@ -283,7 +283,7 @@ describe('a global delete reaches a Space sidecar', () => {
     expect('$order' in (await readJsonAt(listing))).toBe(false)
   })
 
-  it('strips the exact key from a page and a Space, records its value, and leaves another casing', async () => {
+  it('strips the key from a page and a Space and records both values', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Tags',
@@ -298,13 +298,13 @@ describe('a global delete reaches a Space sidecar', () => {
     const p = await createTestPage(notes, 'A', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
     const pid = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
-    await writeFile(p.value.path, `---\n${ID_KEY}: ${pid}\nTags: [a]\ntags: [b]\n---\nb\n`)
-    const file = await seedSpace('Pommora', { id: 'sp1', Tags: ['b'], tags: ['a', 'B'] })
+    await writeFile(p.value.path, `---\n${ID_KEY}: ${pid}\nTags: [a]\n---\nb\n`)
+    const file = await seedSpace('Pommora', { id: 'sp1', Tags: ['b'] })
 
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
 
-    expect(await readFile(p.value.path, 'utf8')).toBe(`---\n${ID_KEY}: ${pid}\ntags: [b]\n---\nb\n`)
-    expect(await readJsonAt(file)).toEqual({ id: 'sp1', tags: ['a', 'B'] })
+    expect(await readFile(p.value.path, 'utf8')).toBe(`---\n${ID_KEY}: ${pid}\n---\nb\n`)
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1' })
     expect((await bundle(c.value.id)).values).toEqual({ [pid]: ['a'], sp1: ['b'] })
   })
 

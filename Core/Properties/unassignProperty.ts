@@ -1,8 +1,6 @@
 import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { findHolders, keyedHolders } from '../Index/keyHolders'
-import { nexusPages } from '../Nexus/heldPages'
-import { liveTreeOf } from '../Nexus/liveTree'
+import { findHolders, heldValues } from '../Index/keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -36,12 +34,12 @@ async function unassignInner(
   if (!def) return NOTHING_TO_REMOVE
   const key = def.key
 
-  const { byId } = await nexusPages(root, await liveTreeOf(root))
-  const { pages } = await findHolders(root, {
-    keys: [key],
-    reach: { collection: collectionFolder },
-  })
-  const { values, strip } = await keyedHolders(pages, key, byId)
+  const { pages, held } = await findHolders(
+    root,
+    { keys: [key], reach: { collection: collectionFolder } },
+    'values',
+  )
+  const values = heldValues(held, key)
   const clear = propertyClear(propertyId)
   // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
@@ -57,7 +55,7 @@ async function unassignInner(
   })
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(strip, { raw: (r) => stripKeys(r, [key]) })
+  const { skipped } = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [key]) })
   return ok({
     cascade: reachReport({ skipped: skipped.length + reach.skipped, hosts: reach.hosts }),
   })

@@ -6,13 +6,12 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { indexWrittenPage, nexusCorpus, seedContentIndex } from './indexSeed'
 import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
-import { nexusPages } from '../Nexus/heldPages'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption } from '../Properties/optionOps'
 import { deleteProperty } from '../Properties/deleteProperty'
-import { findHolders, keyedHolders } from './keyHolders'
+import { findHolders, heldValues } from './keyHolders'
 import { collectionFolders, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
 
@@ -297,38 +296,57 @@ describe('findHolders', () => {
   })
 })
 
-describe('keyedHolders', () => {
-  it('files no value for a page holding another casing of the key', async () => {
-    await page('K1', 'tags: [a]\n')
-    const file = abs('Notes', 'K1.md')
-    expect(await keyedHolders([file], 'Tags', new Map())).toEqual({
-      values: {},
-      strip: [file],
-      partial: false,
-    })
-  })
+describe('findHolders, reading', () => {
+  const stageHeld = (): ReturnType<typeof findHolders> =>
+    findHolders(root, { keys: ['Stage'], reach: 'governed' }, 'values')
 
-  it('keeps both claimants of an id the map marks null out of the strip', async () => {
+  it('keeps both claimants of one id out of the strip and files neither', async () => {
     const a = abs('Notes', 'HolderA.md')
     const copy = abs('Notes', 'HolderA copy.md')
     await writeFile(copy, await readFile(a, 'utf8'))
-    const id = '01ARZ3NDEKPSV4RRFFQ69G5ERA'
-    expect(await keyedHolders([a, copy], 'Stage', new Map([[id, null]]))).toEqual({
-      values: {},
-      strip: [],
-      partial: true,
-    })
+    await indexWrittenPage(root, copy)
+    dropLiveTree()
+    const { pages, held } = await stageHeld()
+    expect(pages).not.toContain(a)
+    expect(pages).not.toContain(copy)
+    expect(held.filter((h) => h.file === a || h.file === copy).map((h) => h.id)).toEqual([
+      null,
+      null,
+    ])
   })
 
   it('files and strips an archived holder by its id', async () => {
     const old = await archived('Q9F', 'Stage: Draft\n')
-    const { byId } = await nexusPages(root, await liveTreeOf(root))
-    expect(await keyedHolders([old], 'Stage', byId)).toEqual({
-      values: { '01ARZ3NDEKPSV4RRFFQ69G5Q9F': 'Draft' },
-      strip: [old],
-      partial: false,
+    const { pages, held } = await stageHeld()
+    expect(pages).toContain(old)
+    expect(heldValues(held, 'Stage')).toMatchObject({ '01ARZ3NDEKPSV4RRFFQ69G5Q9F': 'Draft' })
+  })
+
+  it('files a Space’s value by its id from the same read that confirms it', async () => {
+    const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
+    dropLiveTree()
+    expect((await stageHeld()).held).toContainEqual({
+      file,
+      id: 'sp1',
+      keys: ['Stage'],
+      values: { Stage: 'Draft' },
     })
   })
+
+  it.skipIf(noModeBits)(
+    'a holder it can’t read stays in the strip with no value, holding the keys the index last read it holding',
+    async () => {
+      const a = abs('Notes', 'HolderA.md')
+      try {
+        await chmod(a, 0o000)
+        const { pages, held } = await stageHeld()
+        expect(held).toContainEqual({ file: a, id: null, keys: ['Stage'], values: null })
+        expect(pages).toContain(a)
+      } finally {
+        await chmod(a, 0o644)
+      }
+    },
+  )
 })
 
 describe('the property cascades open only the holders', () => {

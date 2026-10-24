@@ -6,11 +6,9 @@ import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { parseContextKey } from '../Contexts/contexts'
-import { ID_KEY } from '../Nexus/identityMark'
-import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from '../Files/rootValues'
 import { collectionFolders, rootId } from '../Nexus/governedSweep'
-import { addressable, nexusPages, type NexusPages } from '../Nexus/heldPages'
+import { addressable, nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { archiveReach } from '../Nexus/treePatch'
@@ -125,39 +123,10 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   return { pages: pages.filter(kept), spaces: spaces.filter(kept), held }
 }
 
-export interface KeyedHolders {
-  values: Record<string, unknown>
-  strip: string[]
-  partial: boolean
-}
-
-/** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or with one `byId` marks as two files' claim, is kept out of the strip, and a file that can't be read is stripped once it reads. */
-export async function keyedHolders(
-  files: string[],
-  key: string,
-  byId: NexusPages['byId'],
-): Promise<KeyedHolders> {
-  const values: Record<string, unknown> = {}
-  const kept: string[] = []
-  let unread = false
-  for (const file of files) {
-    const content = await readTextOrNull(file)
-    if (content === null) {
-      unread = true
-      continue
-    }
-    const fields = splitFrontmatter(content) as Record<string, unknown>
-    if (!Object.hasOwn(fields, key)) continue
-    const id = asString(fields[ID_KEY])
-    if (!addressable(byId, id)) {
-      kept.push(file)
-      continue
-    }
-    if (!isBlankRaw(fields[key])) values[id] = fields[key]
-  }
-  return {
-    values,
-    strip: files.filter((f) => !kept.includes(f)),
-    partial: unread || kept.length > 0,
-  }
-}
+/** Each addressed holder's value under `key`, by its id, a blank one left out. */
+export const heldValues = (held: readonly Held[], key: string): Record<string, unknown> =>
+  Object.fromEntries(
+    held.flatMap((h) =>
+      h.id && h.values && !isBlankRaw(h.values[key]) ? [[h.id, h.values[key]]] : [],
+    ),
+  )

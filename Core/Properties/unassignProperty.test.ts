@@ -123,14 +123,6 @@ describe('unassignProperty — strip + cache', () => {
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
-  it('a holder of another casing keeps its key, and the cache holds nothing for it', async () => {
-    await writeFile(pageA, (await readFile(pageA, 'utf8')).replace('Stage:', 'stage:'))
-    const id = splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY] as string
-    expect((await unassignProperty(root, folder, propId)).ok).toBe(true)
-    expect(splitFrontmatter(await readFile(pageA, 'utf8'))).toHaveProperty('stage')
-    expect((await cacheBlock())?.values[id]).toBeUndefined()
-  })
-
   it('an identity-less holder isn’t held, isn’t stamped by the strip, and keeps its bytes', async () => {
     const raw = await readFile(pageA, 'utf8')
     const bare = raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), '')

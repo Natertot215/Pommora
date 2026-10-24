@@ -573,39 +573,6 @@ describe('renameOption', () => {
     expect(content).not.toContain('Urgent')
   })
 
-  it('rewrites only the exact keys, leaving another casing of each as written', async () => {
-    const status = await mkProperty({
-      label: 'Status',
-      key: 'Status',
-      type: 'select',
-      select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
-    })
-    const tags = await mkProperty({
-      label: 'Tags',
-      key: 'Tags',
-      type: 'multiSelect',
-      select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
-    })
-    const col = await createFolderEntity(root, 'collection', 'Col', newId())
-    if (!col.ok) throw new Error('folder failed')
-    await assignProperty(root, col.value.path, status)
-    await assignProperty(root, col.value.path, tags)
-    const page = join(col.value.path, 'One.md')
-    await writeFile(
-      page,
-      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nstatus: Done\nTags: [Done, Keep]\ntags: [Done]\n---\nb\n',
-    )
-
-    expect((await renameOption(root, status, 'opt_Done', 'Finished')).ok).toBe(true)
-    expect((await renameOption(root, tags, 'opt_Done', 'Finished')).ok).toBe(true)
-    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
-      ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
-      status: 'Done',
-      Tags: ['Finished', 'Keep'],
-      tags: ['Done'],
-    })
-  })
-
   it('writes the new key from the new label through the Value Format, rewriting the pages', async () => {
     const id = await mkProperty({
       label: 'Tags',

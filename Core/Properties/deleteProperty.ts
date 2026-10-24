@@ -9,8 +9,7 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { findHolders, type KeyedHolders, keyedHolders } from '../Index/keyHolders'
-import { nexusPages } from '../Nexus/heldPages'
+import { findHolders, type Held, heldValues, type Holders } from '../Index/keyHolders'
 import { liveTreeOf } from '../Nexus/liveTree'
 import {
   clearSchemaJournal,
@@ -30,7 +29,7 @@ import { stripKeys } from '../Files/rootValues'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
-import { spaceSidecars, withoutOrderId } from '../Contexts/spaceSidecar'
+import { withoutOrderId } from '../Contexts/spaceSidecar'
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { join, relative } from '../Paths/posix'
@@ -42,13 +41,12 @@ async function snapshot(
   propertyId: string,
   def: PropertyRegistry[string],
   folders: string[],
-  held: KeyedHolders,
+  held: readonly Held[],
 ): Promise<string> {
-  const key = def.key
-  const values = { ...held.values }
+  const values = heldValues(held, def.key)
   const assignments: string[] = []
   const caches: Record<string, Record<string, unknown>> = {}
-  let partial = held.partial
+  let partial = held.some((h) => !h.id || !h.values)
   for (const folder of folders) {
     // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
@@ -59,17 +57,6 @@ async function snapshot(
     if ((holds || cached) && !id) partial = true
     if (holds && id) assignments.push(id)
     if (cached && id) caches[id] = cached
-  }
-  for (const file of await spaceSidecars(root)) {
-    const raw = await readJsonObject(file)
-    if (!raw) {
-      partial = true
-      continue
-    }
-    if (!Object.hasOwn(raw, key)) continue
-    const id = typeof raw.id === 'string' ? raw.id : undefined
-    if (!id || id in values) partial = true
-    else values[id] = raw[key]
   }
   const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${propertyId}`))
   await writeRecord(bundle, {
@@ -87,8 +74,8 @@ async function snapshot(
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const { held, spaces, plan } = await deletePlan(root, propertyId, def.key)
-  return ok(await sweepCount(root, [...held.strip, ...spaces], plan))
+  const { holders, plan } = await deletePlan(root, propertyId, def.key)
+  return ok(await sweepCount(root, [...holders.pages, ...holders.spaces], plan))
 }
 
 export function deleteProperty(root: string, propertyId: string): Promise<MutateReply> {
@@ -104,7 +91,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id.
   const folders = collectionFolders(root, await liveTreeOf(root))
   const planned = await deletePlan(root, propertyId, key)
-  const bundle = await snapshot(root, propertyId, def, folders, planned.held)
+  const bundle = await snapshot(root, propertyId, def, folders, planned.holders.held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, key }
   await writeSchemaJournal(root, record)
@@ -116,8 +103,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
 }
 
 interface DeletePlan {
-  held: KeyedHolders
-  spaces: string[]
+  holders: Holders
   plan: SweepPlan
 }
 
@@ -126,23 +112,21 @@ export async function deletePlan(
   propertyId: string,
   key: string,
 ): Promise<DeletePlan> {
-  const { byId } = await nexusPages(root, await liveTreeOf(root))
-  const { pages, spaces } = await findHolders(root, {
-    keys: [key],
-    reach: 'governed',
-    id: propertyId,
-  })
-  const held = await keyedHolders(pages, key, byId)
-  return { held, spaces, plan: { raw: withoutOrderId((r) => stripKeys(r, [key]), propertyId) } }
+  const holders = await findHolders(
+    root,
+    { keys: [key], reach: 'governed', id: propertyId },
+    'values',
+  )
+  return { holders, plan: { raw: withoutOrderId((r) => stripKeys(r, [key]), propertyId) } }
 }
 
 export async function stripAndRemove(
   root: string,
   propertyId: string,
   folders: string[],
-  { held, spaces, plan }: DeletePlan,
+  { holders, plan }: DeletePlan,
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const swept = await sweepGovernedRoots([...held.strip, ...spaces], plan)
+  const swept = await sweepGovernedRoots([...holders.pages, ...holders.spaces], plan)
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const reach = await reachConfig(root, { kind: 'property', propertyId })
   return {

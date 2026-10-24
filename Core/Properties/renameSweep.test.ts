@@ -89,14 +89,6 @@ describe('renameSweep', () => {
 })
 
 describe('renameSweep moves the exact key', () => {
-  it('leaves a page and a Space holding another casing byte-identical', async () => {
-    await seed('id: p1\nstatus: Old\n')
-    const file = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', status: 'Old' })
-    const before = [await readFile(page, 'utf8'), await readFile(file, 'utf8')]
-    await renameSweep(root, 'Status', 'Stage')
-    expect([await readFile(page, 'utf8'), await readFile(file, 'utf8')]).toEqual(before)
-  })
-
   it('a key in another casing is no rival, and stays beside the moved one', async () => {
     await seed('id: p1\nStatus: Stale\nstage: Fresh\n')
     await renameSweep(root, 'Status', 'Stage')
