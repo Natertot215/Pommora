@@ -1202,7 +1202,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 8-6 · The Benchmark generator and the existing drives name option ids
   - [x] Task 8-7 · Drive group 7
   - [x] Review Checkpoint
-  - [ ] Halfway Review (Closeout P8: four `opus-high` agents, two inward and two outward, over `BASELINE..HEAD`)
+  - [x] Halfway Review (Closeout P8: four `opus-high` agents, two inward and two outward, over `BASELINE..HEAD`)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 9 opens]`
 - [ ] **Phase 9** — List First and One Replay Point
   - [ ] Task 9-1 · The open's Context replay moves into the genuine-open block
@@ -35030,7 +35030,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 6 | −266 | +305 | +39 | −305 / +336 / +31 | −244 |
 | 7 | −622 | +469 | −153 | −600 / +456 / −144 | −388 |
 | Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
-| 8 | −434 | +404 | −30 | | |
+| 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
 | 9 | −16 | +9 | −7 | | |
 | 10 | −381 | +387 | +6 | | |
 | 11A | −607 | +734 | +127 | | |
