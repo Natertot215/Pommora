@@ -80,7 +80,6 @@ export async function openNexusSequence(
   const nexusId = (await prepareOpenedNexus(root)) ?? asString(config[0]?.id) ?? null
   await stopSession(ctx)
   ctx.openStores(root, nexusId)
-  await replayPendingRename(root)
   if (root !== priorRoot) {
     try {
       let tree = await readNexus(root)
@@ -105,6 +104,9 @@ export async function openNexusSequence(
     const reread = await seedContentIndex(root)
     oweSeen(root, reread)
     void sweepFileHistory(root)
+    await replayPendingRename(root).catch((e) =>
+      console.error('contexts: the rename replay failed:', errText(e)),
+    )
     await replaySchemaCascade(root)
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)
