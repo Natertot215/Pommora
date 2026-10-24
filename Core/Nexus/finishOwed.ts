@@ -214,8 +214,9 @@ async function finishContext(
           async (old) => {
             const from = join(contextsDir(root), old)
             const to = join(contextsDir(root), title)
-            // A crash between the list step and the folder move left the folder under the old title, and the open's tree read none of the Context's Spaces from the folder the list names, so the tree is read again once the folder is there.
-            if ((await heldName(from)) === old && !(await targetTaken(from, to))) {
+            // A crash between the list step and the folder move left the folder under the old title, and the open's tree read none of the Context's Spaces from the folder the list names, so the tree is read again once the folder is there; a folder already under the new title keeps the rename owed.
+            if ((await heldName(from)) === old) {
+              if (await targetTaken(from, to)) return 1
               await relocate(from, to)
               await refreshTree(root)
             }
