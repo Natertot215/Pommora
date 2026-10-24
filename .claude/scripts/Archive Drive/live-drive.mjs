@@ -641,28 +641,7 @@ async function group5(cdp) {
     show({ restoredAll, after, notice: await notice(cdp) }))
   item(5, 'K-3', 'a notice posted under the pointer drains', drainedUnder)
 
-  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
-  for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
-  const { chosen: deletedAll } = await chooseNative(cdp, g5Row('G5 Note'), 'Delete All')
-  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
-  const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
-  await pressDialog(cdp, 'Delete')
-  const deletedSaid = await settles(async () => (await notice(cdp)).startsWith('Deleted 2 Pages'))
-  const far = await cdp.evaluate(`({ x: 8, y: innerHeight - 8 })`)
-  await moveTo(cdp, far)
-  // Two frames, so Chromium doesn't coalesce the leave into the return and the notice sees the pointer go.
-  await cdp.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))')
-  const band = await boxOf(cdp, LABEL)
-  await moveTo(cdp, band)
-  const stalled = await holds(async () => !(await drained(cdp)), 5000)
-  await moveTo(cdp, far)
-  const drainedAway = await settles(() => drained(cdp), 4500)
-  const gone = ['G5 Note', 'G5 Note Long']
-  item(5, 'K-4', 'Delete All empties the checked rows',
-    deletedAll && asked === 'Delete these 2 Pages?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
-    show({ deletedAll, asked, notice: await notice(cdp) }))
-  item(5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
-
+  // The style checks run while G5 Note and G5 Note Long are still listed, so the widest style has rows to fit.
   const trashStyle = () => (settingsOnDisk().personalization ?? {}).trashColumnStyle
   const { chosen: short } = await chooseNative(cdp, sel('.trash-head-date'), 'Short Date')
   const picked = await settles(async () => same(trashStyle(), { date_format: 'short' }))
@@ -677,6 +656,30 @@ async function group5(cdp) {
   const settled = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
   item(5, 'G-1', 'under its widest style no Trash date and not its heading is cut',
     widest && fit && unweekdayed && settled, show({ widest, fit, style: trashStyle() }))
+
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
+  const { chosen: deletedAll } = await chooseNative(cdp, g5Row('G5 Note'), 'Delete All')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
+  const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
+  await pressDialog(cdp, 'Delete')
+  const deletedSaid = await settles(async () => (await notice(cdp)).startsWith('Deleted 2 Pages'))
+  const far = await cdp.evaluate(`({ x: 8, y: innerHeight - 8 })`)
+  // Two frames around the leave, so the notice's listener is attached before it and Chromium doesn't coalesce it into the return.
+  const frames = () => cdp.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))')
+  await frames()
+  await moveTo(cdp, far)
+  await frames()
+  const band = await boxOf(cdp, LABEL)
+  await moveTo(cdp, band)
+  const stalled = await holds(async () => !(await drained(cdp)), 5000)
+  await moveTo(cdp, far)
+  const drainedAway = await settles(() => drained(cdp), 4500)
+  const gone = ['G5 Note', 'G5 Note Long']
+  item(5, 'K-4', 'Delete All empties the checked rows',
+    deletedAll && asked === 'Delete these 2 Pages?' && gone.every((t) => !!bundles[t] && !exists(bundles[t])) && deletedSaid,
+    show({ deletedAll, asked, notice: await notice(cdp) }))
+  item(5, 'K-3', 'once the pointer has left its band, returning stalls the drain and leaving drains it', stalled && drainedAway, show({ stalled, drainedAway }))
 
   await must('iconFavorites', ask(cdp, 'personalization:set', 'iconFavorites', ['alarm-clock']))
   await until('the favorites in the tree', async () => same((await config(cdp)).personalization.iconFavorites, ['alarm-clock']))
