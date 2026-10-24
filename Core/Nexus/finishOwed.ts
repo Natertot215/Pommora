@@ -47,6 +47,7 @@ import {
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
 import { contentPages, listBundles } from '../Bundles/bundle'
+import { refillStash } from '../Properties/assignment'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
 
@@ -185,16 +186,16 @@ async function finishProperty(
     reach,
   )
   const options = await finishOptions(root, def, e.options ?? {}, reach)
-  // A Collection gone, or assigning the property again, owes nothing more: its pages are the property's again.
-  const owing = new Map(
-    (await liveTreeOf(root)).collections.flatMap((c) =>
-      c.propertyIds.includes(id) ? [] : [[c.id, c.path] as const],
-    ),
-  )
+  // A Collection gone owes nothing more; one assigning the property refills its pages from the stash, and one that doesn't stashes and strips them.
+  const byId = new Map((await liveTreeOf(root)).collections.map((c) => [c.id, c] as const))
   const collections = await sweepEach(
     e.collections,
-    (cid) => !owing.has(cid),
-    (cid) => stashAndStrip(root, join(root, owing.get(cid)!), def),
+    (cid) => !byId.has(cid),
+    async (cid) => {
+      const c = byId.get(cid)!
+      if (!c.propertyIds.includes(id)) return stashAndStrip(root, join(root, c.path), def)
+      return { skipped: await refillStash(root, join(root, c.path), id, cid), hosts: [] }
+    },
     reach,
   )
   // A live definition holding a strip part only arrives by sync; its Collections aren't this entry's to purge, so the part leaves.

@@ -9,6 +9,7 @@ import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/conf
 import type { HostContext } from '../Contract/handlers'
 import { fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { containerAt } from '../Nexus/treePatch'
@@ -187,7 +188,11 @@ describe('the property ops', () => {
     await refreshTree(root)
     const bundlePath = r.value.bundled.bundlePath
     expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
-    expect(await readNotes(root)).toEqual({ [propId]: { kind: 'property', rename: ['Stage'] } })
+    // The re-assign's refill settles once the rename it sits under does.
+    const collectionId = (await readJsonObject(sidecarPath(col, 'collection')))?.id
+    expect(await readNotes(root)).toEqual({
+      [propId]: { kind: 'property', rename: ['Stage'], collections: [collectionId] },
+    })
     const page = await readFile(`${col}/A.md`, 'utf8')
     expect(await send(FINISH)).toMatchObject(ok({ cascade: { pages: [] } }))
     expect((await readRegistry(root)).defs[propId]?.label).toBe('Stage')

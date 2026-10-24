@@ -5,6 +5,7 @@ import { chmod, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, putJson, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
+import { STASHED_AT } from '../Testing/definitions'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -51,6 +52,7 @@ afterEach(async () => {
 })
 
 const PAGE_IDS = ['01ARZ3NDEKPSV4RRFFQ69G5FAA', '01ARZ3NDEKPSV4RRFFQ69G5FAB']
+const TASK_PAGE = '01ARZ3NDEKPSV4RRFFQ69G5FAC'
 
 async function seedNexus(): Promise<string> {
   const root = tempRoot('pom-finish-')
@@ -558,6 +560,48 @@ describe('unreadable holders keep the entry', () => {
       await indexWrittenPage(root, b)
       await finishOwed(root, DEPS)
       expect(await page(root, 'B')).not.toContain('Stage')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+})
+
+describe('an owed Collection', () => {
+  it.skipIf(noModeBits)(
+    'an owed Collection refills while it assigns the property and is stashed and stripped while it doesn’t',
+    async () => {
+      const root = await seedNexus()
+      await writeFile(
+        join(root, 'Col', '_pagecollection.json'),
+        JSON.stringify({
+          id: 'c1',
+          properties: ['prop_s'],
+          property_stash: {
+            prop_s: { removed_at: STASHED_AT, values: { [PAGE_IDS[0]]: 'Done' } },
+          },
+        }),
+      )
+      await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+      await mkdir(join(root, 'Tasks'))
+      await writeFile(join(root, 'Tasks', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+      await writeFile(
+        join(root, 'Tasks', 'T.md'),
+        `---\nID: ${TASK_PAGE}\nStage: Draft\n---\nbody\n`,
+      )
+      await seedNotes(root, { prop_s: { kind: 'property', collections: ['c1', 'c2'] } })
+      await openSession(root)
+      await refreshTree(root)
+      await chmod(join(root, 'Col', 'A.md'), 0o000)
+      const first = await finishOwed(root, DEPS).finally(() =>
+        chmod(join(root, 'Col', 'A.md'), 0o644),
+      )
+      expect(first.owed).toBe(true)
+      expect(await readFile(join(root, 'Tasks', 'T.md'), 'utf8')).not.toContain('Stage')
+      expect(
+        (await readJsonAt(join(root, 'Tasks', '_pagecollection.json'))).property_stash,
+      ).toMatchObject({ prop_s: { values: { [TASK_PAGE]: 'Draft' } } })
+      expect(await readNotes(root)).toEqual({ prop_s: { kind: 'property', collections: ['c1'] } })
+      await finishOwed(root, DEPS)
+      expect(splitFrontmatter(await page(root, 'A')).Stage).toEqual(['Done'])
       expect(await readNotes(root)).toEqual({})
     },
   )

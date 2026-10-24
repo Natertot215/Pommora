@@ -26,6 +26,7 @@ import { deleteProperty } from '../Properties/deleteProperty'
 import { unassignProperty } from '../Properties/unassignProperty'
 import { createProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './discard'
+import { STASHED_AT } from '../Testing/definitions'
 
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
@@ -199,7 +200,13 @@ describe('restoring a deleted property', () => {
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+    // The re-assigns' refills settle once the rename they sit under does.
+    const ids = await Promise.all(
+      [notes, tasks].map(async (f) => (await readJsonObject(sidecarPath(f, 'collection')))?.id),
+    )
+    expect(await readNotes(root)).toEqual({
+      [id]: { kind: 'property', rename: ['Priority'], collections: ids },
+    })
     await finishOwed(root, deps)
     expect((await readRegistry(root)).defs[id]).toMatchObject({ key: 'Priority' })
     expect(await valueOn(p2.value.path, 'Priority')).toEqual(['lo'])
@@ -429,6 +436,33 @@ describe('restoring a deleted property', () => {
     expect(await assigns(tasks, id)).toBe(true)
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['hi'])
   })
+
+  it.skipIf(noModeBits)(
+    'a restore that can’t refill a page from its stash says so with Try Again',
+    async () => {
+      const id = await seedPriority()
+      const page = await createTestPage(tasks, 'A', { body: 'b' })
+      if (!page.ok) throw new Error('page failed')
+      await patchSidecar(tasks, 'collection', (cur) => ({
+        ...cur,
+        property_stash: { [id]: { removed_at: STASHED_AT, values: { [page.value.id]: ['hi'] } } },
+      }))
+      expect((await deleteProperty(root, id)).ok).toBe(true)
+      await refreshTree(root)
+      await chmod(page.value.path, 0o000)
+      const r = await handleMutate(
+        root,
+        { op: 'restore', bundlePath: await onlyBundlePath() },
+        deps,
+      ).finally(() => chmod(page.value.path, 0o644))
+      expect(r.ok && r.value.cascade).toEqual({
+        pages: [],
+        hosts: [],
+        warning: 'Couldn’t update 1 Item.',
+        owed: true,
+      })
+    },
+  )
 
   it('a page that held the key blank neither returns a value nor is named', async () => {
     const id = await seedPriority()

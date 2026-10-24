@@ -22,7 +22,7 @@ import { byKey, type PropertyDefinition } from '../Properties/properties'
 import { decodeValue, encodeValue } from '../Properties/propertyValue'
 import type { ContextGroup, SpaceNode } from './tree'
 import * as liveTree from './liveTree'
-import { assignProperty } from '../Properties/assignment'
+import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from './folderEntity'
 import { newId } from './ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -783,7 +783,11 @@ describe('pageWorldOf', () => {
     })
     if (!status.ok || !priority.ok) throw new Error('setup')
     statusId = status.value.id
-    await assignProperty(root, notes, statusId)
+    await settledMutate(
+      root,
+      { op: 'assignProperty', containerPath: 'Notes', propertyId: statusId },
+      { trashMode: 'nexus', trashToSystem: async () => {} },
+    )
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', '_taskconfig.json'), JSON.stringify({ id: 't1' }))
   })

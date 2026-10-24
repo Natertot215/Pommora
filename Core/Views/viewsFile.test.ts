@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { savedView, type SavedView } from './views'
@@ -13,16 +13,21 @@ import {
   setActiveView,
 } from './viewsFile'
 import { containerNodeFrom } from '../Nexus/containerFields'
+import { dropLiveTree } from '../Nexus/liveTree'
 
 const upsert = (folder: string, kind: 'collection' | 'set', v: SavedView) =>
   saveView(folder, kind, v, v)
 
+let root: string
 let folder: string
 beforeEach(async () => {
-  folder = tempRoot('pom-views-crud-')
+  root = tempRoot('pom-views-crud-')
+  folder = join(root, 'Notes')
+  await mkdir(folder)
 })
 afterEach(async () => {
-  await rm(folder, { recursive: true, force: true })
+  dropLiveTree()
+  await rm(root, { recursive: true, force: true })
 })
 
 const view = (over: Partial<SavedView> & { id: string }): SavedView => ({
@@ -225,7 +230,7 @@ describe('container writes keep what this build does not decode', () => {
       true,
     )
     expect((await setChildOrder(folder, 'page_order', ['p2', 'p1'])).ok).toBe(true)
-    expect((await assignProperty(folder, folder, 'prop_x')).ok).toBe(true)
+    expect((await assignProperty(root, folder, 'prop_x')).ok).toBe(true)
     const after = await readRaw('_pagecollection.json')
     expect(after).toMatchObject({ ...raw, page_order: ['p2', 'p1'], properties: ['prop_x'] })
     expect((after.views as unknown[])[0]).toEqual(gantt)

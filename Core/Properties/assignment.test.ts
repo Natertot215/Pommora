@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { StashBlock } from './propertyStash'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, tempRoot } from '../Testing/hostFs'
 import { addProperty, assignProperty, reorderAssignment } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -20,6 +20,13 @@ import { refreshTree } from '../Nexus/liveTree'
 import { machine } from '../Platform/machine'
 import { ok } from '../Contract/result'
 import { readRegistry } from './propertiesRegistry'
+import { handleMutate } from '../Nexus/mutate'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { closeSession, openSession } from '../Nexus/session'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { patchSidecar } from '../Files/sidecar'
+import type { TrashDeps } from '../Trash/discard'
 
 let root: string
 let notes: string
@@ -167,6 +174,84 @@ describe('a re-assign puts a stashed value back', () => {
     )
     expect(fm.Related).toBe('[[Old]]')
   })
+})
+
+describe('a re-assign that can’t refill a page', () => {
+  let propertyId: string
+  let page: string
+  let collectionId: string
+  const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+  const priority = async (): Promise<unknown> =>
+    splitFrontmatter(await readFile(page, 'utf8')).Priority
+  const stash = async (): Promise<unknown> =>
+    (await readJsonObject(sidecarPath(notes, 'collection')))?.property_stash
+
+  // The session holds the tree, so a page that can't be written still reads as the Collection's.
+  beforeEach(async () => {
+    await openSession(root)
+    const c = await createProperty(root, { id: '', label: 'Priority', type: 'number' } as never)
+    const p = await createTestPage(notes, 'A', { body: 'b' })
+    if (!c.ok || !p.ok) throw new Error('setup failed')
+    propertyId = c.value.id
+    page = p.value.path
+    collectionId = (await readJsonObject(sidecarPath(notes, 'collection')))?.id as string
+    await assignProperty(root, notes, propertyId)
+    await rewriteRootAt(
+      page,
+      rewriteRaw((raw) => landValue(raw, 'Priority', 7)),
+    )
+    await refreshTree(root)
+    await unassignProperty(root, notes, propertyId)
+  })
+  afterEach(() => closeSession())
+
+  it.skipIf(noModeBits)(
+    'answers Couldn’t update 1 Item with Try Again, and Try Again refills it',
+    async () => {
+      await chmod(page, 0o000)
+      const r = await handleMutate(
+        root,
+        { op: 'assignProperty', containerPath: 'Notes', propertyId },
+        deps,
+      ).finally(() => chmod(page, 0o644))
+      expect(r).toEqual(
+        ok({
+          cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true },
+        }),
+      )
+      expect((await readNotes(root))[propertyId]).toMatchObject({ collections: [collectionId] })
+      expect((await handleMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect(await priority()).toBe(7)
+      expect(await stash()).toBeUndefined()
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it('a crash between the assignment and the refill finishes at the next open', async () => {
+    await patchSidecar(notes, 'collection', (cur) => ({
+      ...cur,
+      properties: [...((cur.properties as string[]) ?? []), propertyId],
+    }))
+    await putJson(join(root, OWED_REL), {
+      [propertyId]: { kind: 'property', collections: [collectionId] },
+    })
+    await finishOwed(root, deps)
+    expect(await priority()).toBe(7)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    'a re-add whose note can’t be written refuses with nothing assigned',
+    async () => {
+      const file = join(root, OWED_REL)
+      await putJson(file, { prop_other: { kind: 'property', rename: ['Elsewhere'] } })
+      await chmod(file, 0o000)
+      const r = await assignProperty(root, notes, propertyId).finally(() => chmod(file, 0o644))
+      expect(r.ok).toBe(false)
+      expect(await ids(notes)).not.toContain(propertyId)
+      expect(await priority()).toBeUndefined()
+    },
+  )
 })
 
 describe('addProperty', () => {
