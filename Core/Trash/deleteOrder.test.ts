@@ -13,6 +13,7 @@ import { listBundles } from '../Bundles/bundle'
 import { machine } from '../Platform/machine'
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './discard'
+import { readNotes } from '../Nexus/owed'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -161,15 +162,15 @@ describe('the record is written before the destruction it describes', () => {
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
   })
 
-  it('a content delete records partial until its Link strip lands', async () => {
+  it('a content delete records whole, and the links its strip takes join the record', async () => {
     const r = await handleMutate(
       root,
       { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(atSettle).toMatchObject({ entity: 'page', partial: true })
-    expect(atSweep).toMatchObject({ entity: 'page', partial: true })
+    expect(atSettle).toMatchObject({ entity: 'page' })
+    expect(atSettle).not.toHaveProperty('partial')
     const after = await anyRecord()
     expect(after).toMatchObject({
       entity: 'page',
@@ -216,7 +217,8 @@ describe('the record is written before the destruction it describes', () => {
     expect(archive).toBeDefined()
     const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' }, nexusDeps)
     expect(r.ok).toBe(true)
-    expect(atSettle).toMatchObject({ entity: 'page', archive, partial: true })
+    expect(atSettle).toMatchObject({ entity: 'page', archive })
+    expect(atSettle).not.toHaveProperty('partial')
   })
 
   it('system-trash mode records nothing and mints no bundle', async () => {
@@ -290,8 +292,8 @@ describe('one unparseable page never fails the sweep around it', () => {
   }
 })
 
-describe('a deletion cut short leaves evidence, never silence', () => {
-  it('a content delete that dies before the settle keeps the artifact and skips the listing', async () => {
+describe('a delete whose move fails deletes nothing', () => {
+  it('a content delete whose move throws keeps the artifact and leaves no bundle', async () => {
     settleFails = true
     const r = await handleMutate(
       root,
@@ -300,9 +302,9 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     )
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
-    // The record survives as evidence, and the listing refuses to offer an unfinished deletion.
-    expect(await anyRecord()).toMatchObject({ entity: 'page', id: PAGE_A })
+    expect(await anyRecord()).toBeUndefined()
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
+    expect(await readNotes(root)).toEqual({})
   })
 })
 

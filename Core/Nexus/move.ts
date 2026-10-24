@@ -6,7 +6,8 @@ import type { MutateContext } from './mutate'
 import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
-import { archivedSetIds, goneEdit, reachConfig, reachReport } from './configReach'
+import { archivedSetIds, goneEdit, reachConfig } from './configReach'
+import { runNoted } from './owed'
 import { containerAt, owningCollection } from './treePatch'
 import { dropDeparture, setChildOrder } from './reorder'
 import { archivedWithin } from '../Bundles/bundle'
@@ -65,10 +66,19 @@ export async function moveSetOp(
     ),
   )
   const edit = left === null ? null : goneEdit(held, 'set', req.path, archived.flat())
-  const r = await moveFolderEntity(root, at.value.src, at.value.dst)
-  if (!r.ok) return r
-  await dropDeparture(root, held, 'set', req.path)
-  await setChildOrder(at.value.dst, 'set_order', req.order)
-  const reach = left && edit ? await reachConfig(root, edit, join(root, left)) : null
-  return ok(reach ? { cascade: reachReport(reach) } : {})
+  const move = async (): Promise<Result<null>> => {
+    const r = await moveFolderEntity(root, at.value.src, at.value.dst)
+    if (!r.ok) return r
+    await dropDeparture(root, held, 'set', req.path)
+    await setChildOrder(at.value.dst, 'set_order', req.order)
+    return ok(null)
+  }
+  if (left === null || !edit || !setId) return done(await move())
+  // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
+  return runNoted(root, setId, {
+    note: () => ({ kind: 'container', at: req.path, edit, within: left }),
+    list: move,
+    sweep: () => reachConfig(root, edit, join(root, left)),
+    settle: () => undefined,
+  })
 }

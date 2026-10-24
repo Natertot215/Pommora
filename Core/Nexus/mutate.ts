@@ -122,7 +122,10 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return addressed(req, () => renameOp(ctx, req))
 
     case 'renameHeading':
-      return inSettleTurn(root, async () => ok({ cascade: await renameCascade(root, req, true) }))
+      return inSettleTurn(root, async () => {
+        const { missed: _, ...cascade } = await renameCascade(root, req, true)
+        return ok({ cascade })
+      })
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'

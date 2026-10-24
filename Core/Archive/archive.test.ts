@@ -548,16 +548,19 @@ describe('a delete from the Archive', () => {
     expect(await related()).toBe('[[Beta]]')
   })
 
-  it('a live page’s delete counts an archived linker whose strip failed in its warning, and its record stays partial', async () => {
+  it('a live page’s delete owes an archived linker whose strip failed, and its record stays whole', async () => {
     const linker = await archive('Notes/Linker.md')
     const real = atomicWrite.rewritePreservingTimes
     vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation((file, data) =>
       file.startsWith(at(linker)) ? Promise.reject(new Error('refused')) : real(file, data),
     )
     const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
-    expect(r.ok && r.value.cascade?.warning).toBe('Couldn’t update links in 1 Item.')
+    expect(r.ok && r.value.cascade).toMatchObject({
+      warning: 'Couldn’t update 1 Item.',
+      owed: true,
+    })
     const bundlePath = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
-    expect(await readRecord(at(bundlePath))).toMatchObject({ partial: true })
+    expect(await readRecord(at(bundlePath))).not.toHaveProperty('partial')
     expect(splitFrontmatter(await text(linker, 'Linker.md')).Related).toBe('[[Beta]]')
   })
 

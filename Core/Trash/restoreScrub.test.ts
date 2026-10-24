@@ -1,6 +1,6 @@
 // A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against, so restore can never reintroduce a governed key nothing stands behind.
 
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
@@ -12,13 +12,15 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
 import { stampMissing } from '../Nexus/adopt'
 import { readNexus } from '../Nexus/readNexus'
-import { fault } from '../Contract/result'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './discard'
 import type { PropertyDefinition } from '../Properties/properties'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { noModeBits } from '../Testing/hostFs'
 
 const trashWrites = vi.hoisted(() => ({ fail: false }))
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -161,7 +163,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('a returning page the scrub can’t write refuses the restore and keeps the bundle', async () => {
+  // Alpha holds a Space that leaves while it sits in the Trash, and the scrub can't write its trashed copy.
+  const missedScrub = async (): Promise<Awaited<ReturnType<typeof settledMutate>>> => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
@@ -182,18 +185,110 @@ describe('a returning artifact is reconciled against the world it comes back to'
     const [listed] = await listBundles(root, { kind: 'trash' })
     trashWrites.fail = true
     try {
-      const r = await settledMutate(
-        root,
-        { op: 'restore', bundlePath: listed.bundlePath },
-        nexusDeps,
-      ).catch(fault)
-      expect(r.ok).toBe(false)
+      return await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     } finally {
       trashWrites.fail = false
     }
-    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
-    expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
+  }
+
+  it('a returning page the scrub can’t write owes what it worked out', async () => {
+    const r = await missedScrub()
+    expect(r.ok && r.value.cascade).toMatchObject({
+      owed: true,
+      warning: 'Couldn’t update 1 Item.',
+    })
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
+    expect((await readNotes(root))['Notes/Alpha.md']).toMatchObject({
+      kind: 'relink',
+      values: {
+        'Notes/Alpha.md': { '<Projects>': { from: ['Pommora', 'Sapphire'], to: ['Pommora'] } },
+      },
+    })
+    await finishOwed(root, nexusDeps)
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual({})
   })
+
+  it('an edit made after the restore keeps it through Try Again', async () => {
+    expect((await missedScrub()).ok).toBe(true)
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - Sapphire\n---\nbody`,
+    )
+    await finishOwed(root, nexusDeps)
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Sapphire'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a trashed copy the restore’s refill couldn’t write owes its value', async () => {
+    await seedNexus(root, { defs: [PRIORITY, RELATED], assigned: { Notes: [PROP, LINK] } })
+    const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
+    await writeFile(
+      join(root, 'Notes', 'Beta.md'),
+      `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\n---\nb`,
+    )
+    await refreshTree(root)
+    for (const path of ['Notes/Alpha.md', 'Notes/Beta.md'])
+      expect((await settledMutate(root, { op: 'delete', path, kind: 'page' }, nexusDeps)).ok).toBe(
+        true,
+      )
+    const bundles = await listBundles(root, { kind: 'trash' })
+    const alpha = bundles.find((b) => b.artifactName === 'Alpha.md')
+    const copy = join(
+      bundles.find((b) => b.artifactName === 'Beta.md')?.bundlePath ?? '',
+      'Beta.md',
+    )
+    trashWrites.fail = true
+    try {
+      const r = await settledMutate(
+        root,
+        { op: 'restore', bundlePath: alpha?.bundlePath ?? '' },
+        nexusDeps,
+      )
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+    } finally {
+      trashWrites.fail = false
+    }
+    expect((await readNotes(root))['Notes/Alpha.md']).toMatchObject({
+      kind: 'relink',
+      values: { [copy]: { Related: { to: '[[Alpha]]' } } },
+    })
+    await finishOwed(root, nexusDeps)
+    expect((await fm(copy)).Related).toBe('[[Alpha]]')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    'a restore whose returning Space sidecar can’t be read still restores, and warns',
+    async () => {
+      await writeFile(
+        join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+        JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }),
+      )
+      await refreshTree(root)
+      const d = await settledMutate(
+        root,
+        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+        nexusDeps,
+      )
+      if (!d.ok || !d.value.bundled) throw new Error('the delete did not trash')
+      const { bundlePath } = d.value.bundled
+      const copy = join(root, bundlePath, 'Projects', 'Pommora', '_space.json')
+      await chmod(copy, 0o000)
+      try {
+        const r = await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+        if (!r.ok) throw new Error(r.error.message)
+        expect(await pathExists(join(root, bundlePath))).toBe(false)
+        expect(r.value.cascade?.warning).toContain(
+          'Couldn’t update values in “Projects” across 1 Item.',
+        )
+      } finally {
+        await chmod(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 0o644).catch(
+          () => chmod(copy, 0o644),
+        )
+      }
+    },
+  )
 
   it('rewrites a Space title in another casing into the current title', async () => {
     await writeFile(

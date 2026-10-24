@@ -1473,7 +1473,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it.skipIf(noModeBits)(
-    'finishes a page rename forward when one linker can’t be written, and warns',
+    'finishes a page rename forward when one linker can’t be written, and owes it',
     async () => {
       // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
       await mkdir(join(root, 'Notes', 'Locked'), { recursive: true })
@@ -1492,7 +1492,8 @@ describe('handleMutate — review-round hardening', () => {
         expect(r.ok && r.value.cascade).toEqual({
           pages: ['Notes/Daily/Alpha.md'],
           hosts: [],
-          warning: 'Couldn’t update links to “Beta” in 1 Item.',
+          warning: 'Couldn’t update 1 Item.',
+          owed: true,
         })
         expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
         expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)

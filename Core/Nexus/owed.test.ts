@@ -13,6 +13,7 @@ import {
   owedRename,
   owedSwept,
   readNotes,
+  relinkNote,
   restoreNote,
   runNoted,
   withOption,
@@ -64,6 +65,21 @@ describe('the compose rules', () => {
         owedSwept(o, ['a']),
       ),
     ).toEqual({ kind: 'property' })
+  })
+
+  it('a relink composes onto the move before it', () => {
+    expect(
+      relinkNote(relinkNote(undefined, new Map([['a', 'B']]), 'B'), new Map([['b', 'C']])),
+    ).toEqual({ kind: 'relink', label: 'B', names: { a: 'C', b: 'C' } })
+  })
+
+  it('a restore’s repair follows a later move without taking its keys', () => {
+    expect(
+      relinkNote(
+        { kind: 'relink', label: 'A', names: { a: 'B' }, files: ['X/A.md'] },
+        new Map([['b', 'C']]),
+      ),
+    ).toEqual({ kind: 'relink', label: 'A', names: { a: 'C' }, files: ['X/A.md'] })
   })
 })
 

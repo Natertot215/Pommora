@@ -1,11 +1,13 @@
 // The Link values the Trash keeps for what it holds: a stripped value parked with the trashed page it names, so that page's restore writes it back, and a returning value refilled into a trashed copy it can't reach live.
 
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { readLinkText } from '../Connections/linkValue'
 import { buildPageIndex, type PageIndex, pageKey } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
 import type { Frozen } from '../Nexus/governedRoot'
+import type { Json } from '../Files/stableJson'
+import { type Worked, workedOut } from '../Nexus/owed'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { stampedIdOf } from '../Files/pageFile'
 import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
@@ -75,23 +77,40 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. Answers what it worked out for each copy it couldn't write, by the copy's path: what the copy read and what it would become, or for a copy it couldn't read, every value its page is owed, landing where the copy still reads blank. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],
   defs: readonly PropertyDefinition[],
   frozen: Frozen,
-): Promise<void> {
-  if (!links.length) return
+): Promise<Worked> {
+  if (!links.length) return {}
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
   const refills = new Map(defs.map((d) => [d.id, refillOf(d, frozen)]))
-  await sweepGovernedRoots([...holders.values()], {
+  const refilled = (raw: Json, id: string | undefined): Json => {
+    let next = raw
+    for (const { page, property, value } of links)
+      if (page === id) next = refills.get(property)?.(next, value) ?? next
+    return next
+  }
+  const keyOf = new Map(defs.map((d) => [d.id, d.key]))
+  const seen = new Map<string, [Json, Json]>()
+  const swept = await sweepGovernedRoots([...holders.values()], {
     raw: (raw, file) => {
-      const id = rootId(file, raw)
-      let next = raw
-      for (const { page, property, value } of links)
-        if (page === id) next = refills.get(property)?.(next, value) ?? next
-      return next === raw ? null : next
+      const next = refilled(raw, rootId(file, raw))
+      if (next === raw) return null
+      seen.set(file, [raw, next])
+      return next
     },
+    above: (raw, file) => (key) =>
+      links.find((l) => l.page === rootId(file, raw) && keyOf.get(l.property) === key)?.above,
   })
+  // A copy read and not written is owed what its read became, as the scrub's are; one it couldn't read is owed what lands where it reads blank.
+  const owed = [...holders].flatMap(([id, file]) => {
+    const worked = workedOut(...(seen.get(file) ?? [{}, refilled({}, id)]))
+    return swept.skipped.includes(file) && Object.keys(worked).length
+      ? [[relative(root, file), worked] as const]
+      : []
+  })
+  return Object.fromEntries(owed)
 }

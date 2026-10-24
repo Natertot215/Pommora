@@ -5,7 +5,6 @@ import { index } from '../Files/decoders'
 import { stampedIdOf } from '../Files/pageFile'
 import { sidecarIdentity } from '../Files/sidecar'
 import { contextEntry } from '../Contexts/contexts'
-import type { StrippedLink } from '../Nexus/cascade'
 import type { ContainerKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
 import { containerAt, containerTrailById } from '../Nexus/treePatch'
@@ -27,10 +26,12 @@ const memberRoot = z.object({
 })
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
-const strippedLink: z.ZodType<StrippedLink> = z.object({
+/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above; `StrippedLink` is its type. */
+export const strippedLink = z.object({
   page: z.string(),
   property: z.string(),
   value: z.string(),
+  above: z.string().optional(),
 })
 
 /** The page each outbound link under the artifact named at the delete, by its id and its path then under the key it was written with, so a restore follows it by identity and re-spells only what changed since. */

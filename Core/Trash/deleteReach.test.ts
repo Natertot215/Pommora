@@ -1,6 +1,6 @@
 import { applyEvents } from '../Nexus/fileEvents'
 import { settleNow } from '../Nexus/settle'
-import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -141,10 +141,11 @@ describe('a page delete', () => {
     expect(r.value.cascade).toEqual({
       pages: [],
       hosts: [],
-      warning: unsweptLine(2, 'links in '),
+      warning: unsweptLine(2),
+      owed: true,
     })
     expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
-    expect(await recordOf(r.value.bundled.bundlePath)).toMatchObject({ partial: true })
+    expect(await recordOf(r.value.bundled.bundlePath)).not.toHaveProperty('partial')
     expect((await recordOf(r.value.bundled.bundlePath)).links).toBeUndefined()
   })
 
@@ -371,7 +372,7 @@ describe('a Set delete', () => {
     )
   })
 
-  it.skipIf(noModeBits)('joins the strip’s warning and the pass’s in one line', async () => {
+  it.skipIf(noModeBits)('counts the strip’s miss and the pass’s in one owed line', async () => {
     await addRelated()
     await page(gone.path, 'Inner')
     const other = await entity(root, 'collection', 'Other')
@@ -390,8 +391,8 @@ describe('a Set delete', () => {
     try {
       const r = await del('Notes/Gone', 'set')
       if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-      expect(r.value.cascade?.warning).toBe(`${unsweptLine(1, 'links in ')} ${unsweptLine(1)}`)
-      expect((await recordOf(r.value.bundled.bundlePath)).partial).toBe(true)
+      expect(r.value.cascade).toMatchObject({ warning: unsweptLine(2), owed: true })
+      expect(await recordOf(r.value.bundled.bundlePath)).not.toHaveProperty('partial')
     } finally {
       await chmod(locked.path, 0o755)
     }
@@ -713,6 +714,125 @@ describe('a Context or Space delete on the notes', () => {
       await finishOwed(root, nexusDeps)
       const [view] = (await readJsonAt(sidecar)).views as Raw[]
       expect(view.property_order).toEqual(['_title'])
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+})
+
+describe('a content delete on the notes', () => {
+  const shut = async <T>(file: string, run: () => Promise<T>): Promise<T> => {
+    await chmod(file, 0o000)
+    try {
+      return await run()
+    } finally {
+      await chmod(file, 0o644)
+    }
+  }
+  const relatedOf = async (file: string): Promise<unknown> =>
+    splitFrontmatter(await readFile(file, 'utf8')).Related
+
+  // A Collection `Old`, and a View Tile on Home whose rule names it.
+  const tiled = async (): Promise<{ old: { id: string; path: string }; tiles: string }> => {
+    const old = await entity(root, 'collection', 'Old')
+    const surfaces = await seedConfigSurfaces(
+      root,
+      notes,
+      view([{ property_id: '_location', op: 'is', values: [old.id] }]),
+    )
+    await refreshTree(root)
+    return { old, tiles: surfaces.tiles }
+  }
+
+  beforeEach(async () => {
+    await addRelated()
+  })
+
+  it.skipIf(noModeBits)('a page delete that misses a linker owes it with Try Again', async () => {
+    const target = await page(notes, 'Target')
+    const id = await idOf(target)
+    const linker = await page(notes, 'One', 'Target')
+    await refreshTree(root)
+    const r = await shut(linker, () =>
+      handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }, nexusDeps),
+    )
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    const { bundlePath } = r.value.bundled
+    expect(r.value.cascade?.owed).toBe(true)
+    expect(await readNotes(root)).toEqual({
+      [id as string]: {
+        kind: 'container',
+        at: 'Notes/Target.md',
+        strip: ['Notes/Target.md'],
+        bundle: bundlePath,
+      },
+    })
+    await finishOwed(root, nexusDeps)
+    expect(await relatedOf(linker)).toBeUndefined()
+    expect((await recordOf(bundlePath)).links).toContainEqual(
+      expect.objectContaining({ page: await idOf(linker), value: '[[Target]]' }),
+    )
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    'a Collection delete that misses a view settings file owes it',
+    async () => {
+      const { old, tiles } = await tiled()
+      const r = await shut(tiles, () => del('Old', 'collection'))
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+      expect(JSON.stringify(await readJsonAt(tiles))).toContain(old.id)
+      await finishOwed(root, nexusDeps)
+      expect(JSON.stringify(await readJsonAt(tiles))).not.toContain(old.id)
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it("a clean delete's record carries no partial", async () => {
+    await page(notes, 'Target')
+    await refreshTree(root)
+    const clean = await del('Notes/Target.md', 'page')
+    if (!clean.ok || !clean.value.bundled) throw new Error('the delete did not trash')
+    expect(await recordOf(clean.value.bundled.bundlePath)).not.toHaveProperty('partial')
+  })
+
+  it('a crash between the note and the strip finishes at the open', async () => {
+    const target = await page(notes, 'Target')
+    const id = (await idOf(target)) as string
+    const linker = await page(notes, 'One', 'Target')
+    await refreshTree(root)
+    const bundle = await mintBundle(root, { kind: 'trash' }, target)
+    await rename(target, join(bundle, 'Target.md'))
+    await putJson(join(root, OWED_REL), {
+      [id]: {
+        kind: 'container',
+        at: 'Notes/Target.md',
+        strip: ['Notes/Target.md'],
+        bundle: relative(root, bundle),
+      },
+    })
+    await refreshTree(root)
+    await finishOwed(root, nexusDeps)
+    expect(await relatedOf(linker)).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    "a Collection restored before its delete's Try Again keeps its views",
+    async () => {
+      const { old, tiles } = await tiled()
+      const r = await shut(tiles, async () => {
+        const deleted = await del('Old', 'collection')
+        if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
+        expect(deleted.value.cascade?.owed).toBe(true)
+        return settledMutate(
+          root,
+          { op: 'restore', bundlePath: deleted.value.bundled.bundlePath },
+          nexusDeps,
+        )
+      })
+      expect(r.ok).toBe(true)
+      await finishOwed(root, nexusDeps)
+      expect(JSON.stringify(await readJsonAt(tiles))).toContain(old.id)
       expect(await readNotes(root)).toEqual({})
     },
   )

@@ -13,7 +13,6 @@ import { dropDeparture } from '../Nexus/reorder'
 import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
 import { returningCascade } from '../Nexus/settle'
-import { withUnswept } from '../Nexus/cascade'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
@@ -80,11 +79,10 @@ export async function restoreArchived(
   await writeOrder?.()
   await removeOwn(bundle.abs)
   const title = finalTitle ?? finalName
-  const arrived = await returningCascade(root, tree, back, title, {
+  const { cascade } = await returningCascade(root, tree, back, title, {
     entity: record.entity,
     abs: targetAbs,
   })
-  const cascade = withUnswept(arrived.cascade, title, arrived.unswept)
   await refileLanded(root, record, store.id, dir)
   return ok({
     ...(cascade ? { cascade } : {}),

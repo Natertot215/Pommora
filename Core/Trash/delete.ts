@@ -1,30 +1,23 @@
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { collectionArchive } from '../Archive/archive'
-import { containerAt } from '../Nexus/treePatch'
+import { containerAt, pageAt, spaceAt } from '../Nexus/treePatch'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { pagesOf } from '../Nexus/record'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { isContainer } from '../Nexus/entities'
-import {
-  archivedSetIds,
-  goneContainers,
-  goneEdit,
-  reachConfig,
-  reachReport,
-} from '../Nexus/configReach'
+import { archivedSetIds, goneContainers, goneEdit } from '../Nexus/configReach'
 import { isArchived } from '../Paths/nexusPaths'
 import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
 import { findHolders, type Holders } from '../Index/keyHolders'
 import { contextKey } from '../Contexts/contexts'
-import { spaceAt } from '../Nexus/treePatch'
 import { finishEntry } from '../Nexus/finishOwed'
-import { type Entry, owedDelete, runNoted } from '../Nexus/owed'
+import { distinct, type Entry, owedDelete, runNoted } from '../Nexus/owed'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import type { MutateContext } from '../Nexus/mutate'
 import { dropContextOrder, dropDeparture } from '../Nexus/reorder'
-import { type CascadeReport, deleteCascade, joinCascades } from '../Nexus/cascade'
+import type { CascadeReport } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile } from './discard'
@@ -160,8 +153,6 @@ export async function deleteOp(
         sweep: async (left) => (left ? finishEntry(root, id, deps) : { skipped: 1, hosts: [] }),
       })
     let stripped: CascadeReport | null = null
-    let record: RecordFile | null = null
-    let paths: string[] | null = null
     if (req.kind === 'space') {
       const registry = bundle ? await readRegistryStrict(root) : null
       const space = spaceAt(before, rel)
@@ -212,27 +203,24 @@ export async function deleteOp(
       if (!ran.ok) return unminted(ran)
       stripped = ran.value.cascade
     } else {
-      record = bundle
-        ? (from?.record ?? (await gatherContentRecord(root, before, req.kind, abs)))
-        : null
-      if (record) await write({ ...record, partial: true })
-      paths = from?.keys ?? under
+      await write(
+        bundle ? (from?.record ?? (await gatherContentRecord(root, before, req.kind, abs))) : null,
+      )
+      // Keyed by the item's id, or by its path where an Archive record names none; noted before the move, so a delete cut short finishes its strip and views at the next open.
+      const id = (req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel))?.id ?? rel
+      const ran = await deleted(id, () => ({
+        kind: 'container',
+        at: rel,
+        strip: distinct(from?.keys ?? under, archive?.origins),
+        ...(edit ? { edit } : {}),
+        ...(bundle ? { bundle: relative(root, bundle) } : {}),
+      }))
+      if (!ran.ok) return unminted(ran)
+      stripped = ran.value.cascade
     }
-    if (!stripped) await leave()
-    const gone = paths
-      ? await deleteCascade(root, abs, [...paths, ...(archive?.origins ?? [])])
-      : null
-    if (record && gone)
-      await write({
-        ...record,
-        ...(gone.links.length ? { links: gone.links } : {}),
-        ...(gone.cascade.warning ? { partial: true as const } : {}),
-      })
-    const reach = edit ? reachReport(await reachConfig(root, edit)) : null
-    const cascade = joinCascades(joinCascades(gone?.cascade, reach), stripped)
     return ok({
       ...(bundle ? { bundled: { bundlePath: relative(root, bundle) } } : {}),
-      ...(cascade ? { cascade } : {}),
+      ...(stripped ? { cascade: stripped } : {}),
     })
   } catch (e) {
     if (!moved) await lifted?.value.undo()

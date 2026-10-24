@@ -20,7 +20,9 @@ import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
+import * as atomicWrite from '../Files/atomicWrite'
 import { atomicWriteFile } from '../Files/atomicWrite'
+import { readNotes } from './owed'
 import { updatePageBody } from './page'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
@@ -1285,5 +1287,155 @@ describe('returningNames', () => {
   it('a key the live world still resolves stays out of the cascade', () => {
     expect(holder(own, 'alpha')).toBe('B')
     expect(holder(names, 'alpha')).toBe('A')
+  })
+})
+
+describe('a re-spell on the notes', () => {
+  const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+  const failing: string[] = []
+  const linker = (): string => abs('Notes', 'L.md')
+  const bundleOf = (r: Awaited<ReturnType<typeof settledMutate>>): string => {
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    return r.value.bundled.bundlePath
+  }
+
+  beforeEach(() => {
+    const refusing =
+      (real: (file: string, data: string) => Promise<void>) =>
+      (file: string, data: string): Promise<void> =>
+        failing.some((f) => file.endsWith(f))
+          ? Promise.reject(new Error('refused'))
+          : real(file, data)
+    const { atomicWriteFile: wrote, rewritePreservingTimes: rewrote } = atomicWrite
+    vi.spyOn(atomicWrite, 'atomicWriteFile').mockImplementation(refusing(wrote))
+    vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation(refusing(rewrote))
+  })
+  afterEach(() => {
+    failing.length = 0
+  })
+
+  const renamed = async (from: string, to: string) =>
+    settledMutate(root, { op: 'rename', path: `Notes/${from}.md`, kind: 'page', newName: to }, deps)
+
+  const seedLinked = async (): Promise<void> => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[B]].\n`)
+    await refreshTree(root)
+    failing.push('Notes/L.md')
+  }
+
+  it('a page move that misses a linker owes the re-spell', async () => {
+    await seedLinked()
+    const r = await renamed('B', 'C')
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect((await readNotes(root))[ULID_B]).toMatchObject({ kind: 'relink' })
+    failing.length = 0
+    await finishOwed(root, deps)
+    expect(await readFile(linker(), 'utf8')).toContain('See [[C]].')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a second move carries what the first missed', async () => {
+    await seedLinked()
+    await renamed('B', 'C')
+    await renamed('C', 'D')
+    failing.length = 0
+    await finishOwed(root, deps)
+    expect(await readFile(linker(), 'utf8')).toContain('See [[D]].')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a restore’s re-spell owes what it missed', async () => {
+    await mkdir(abs('Notes', 'Deep'))
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_deep' }))
+    await writeFile(abs('Notes', 'Deep', 'X.md'), `---\nID: ${ULID_D}\n---\n\nx\n`)
+    await refreshTree(root)
+    const bundle = bundleOf(
+      await settledMutate(root, { op: 'delete', path: 'Notes/Deep/X.md', kind: 'page' }, deps),
+    )
+    await writeFile(abs('Notes', 'X.md'), `---\nID: ${ULID_B}\n---\n\nx\n`)
+    await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[X]].\n`)
+    await refreshTree(root)
+    failing.push('Notes/L.md')
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    failing.length = 0
+    await finishOwed(root, deps)
+    expect(await readFile(linker(), 'utf8')).not.toContain('See [[X]].')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  // A Set whose page links its sibling by path, trashed and restored beside a new Set under its name.
+  const repairMissed = async (): Promise<{ landed: string; p: string }> => {
+    await mkdir(abs('Notes', 'Deep'))
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_deep' }))
+    await writeFile(abs('Notes', 'Deep', 'P.md'), `---\nID: ${ULID_B}\n---\n\nSee [[Deep/Q]].\n`)
+    await writeFile(abs('Notes', 'Deep', 'Q.md'), `---\nID: ${ULID_C}\n---\n\nq\n`)
+    await refreshTree(root)
+    const bundle = bundleOf(
+      await settledMutate(root, { op: 'delete', path: 'Notes/Deep', kind: 'set' }, deps),
+    )
+    await mkdir(abs('Notes', 'Deep'))
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_new' }))
+    await refreshTree(root)
+    failing.push('/P.md')
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.owed).toBe(true)
+    const [landed = '', entry] =
+      Object.entries(await readNotes(root)).find(([, e]) => e.kind === 'relink' && e.files) ?? []
+    expect(entry).toMatchObject({ kind: 'relink', files: [`${landed}/P.md`, `${landed}/Q.md`] })
+    return { landed, p: abs(landed, 'P.md') }
+  }
+
+  it('a restore’s repair of its own files owes what it missed', async () => {
+    const { landed, p } = await repairMissed()
+    expect(landed).not.toBe('Notes/Deep')
+    failing.length = 0
+    await finishOwed(root, deps)
+    expect(await readFile(p, 'utf8')).not.toContain('[[Deep/Q]]')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a landed file gone before the finish leaves the repair’s entry', async () => {
+    const { p } = await repairMissed()
+    await rm(p)
+    await refreshTree(root)
+    await finishOwed(root, deps)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Context restored under a new title owes the re-key a Space sidecar missed', async () => {
+    const work = abs('.nexus', 'contexts', 'Areas', 'Work', '_space.json')
+    await putJson(abs('.nexus', 'contexts', 'contexts.json'), {
+      contexts: [{ id: 'ctx_areas', title: 'Areas' }],
+    })
+    await putJson(work, { id: 'sp_w', '<Areas>': ['Home'] })
+    await putJson(abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'), { id: 'sp_h' })
+    await refreshTree(root)
+    const bundle = bundleOf(
+      await settledMutate(
+        root,
+        { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
+        deps,
+      ),
+    )
+    await putJson(abs('.nexus', 'contexts', 'contexts.json'), {
+      contexts: [{ id: 'ctx_new', title: 'Areas' }],
+    })
+    await mkdir(abs('.nexus', 'contexts', 'Areas'))
+    await refreshTree(root)
+    failing.push('Areas (2)/Work/_space.json')
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.owed).toBe(true)
+    expect(Object.values(await readNotes(root))).toContainEqual(
+      expect.objectContaining({ kind: 'relink', rekey: ['Areas', 'Areas (2)'] }),
+    )
+    failing.length = 0
+    await finishOwed(root, deps)
+    const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Work', '_space.json')
+    expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
+    expect(await readNotes(root)).toEqual({})
   })
 })

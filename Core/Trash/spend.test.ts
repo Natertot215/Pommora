@@ -919,6 +919,63 @@ describe('a Link value refilled into a trashed copy', () => {
     await refreshTree(root)
   })
 
+  const placed = `---\nID: ${PAGE_B}\nNote: a\nRelated: "[[Alpha]]"\nZed: z\n---\nb\n`
+  const deleteAlpha = () =>
+    settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }, nexusDeps)
+
+  it('a Link key a delete stripped comes back where it stood', async () => {
+    await writeFile(beta(), placed)
+    await refreshTree(root)
+    await deleteAlpha()
+    expect(splitFrontmatter(await readFile(beta(), 'utf8'))).not.toHaveProperty('Related')
+    await restore('Alpha.md')
+    expect(await readFile(beta(), 'utf8')).toBe(placed)
+    await deleteAlpha()
+    await writeFile(beta(), `---\nID: ${PAGE_B}\nNote: a\n---\nb\n`)
+    await refreshTree(root)
+    await restore('Alpha.md')
+    expect(await readFile(beta(), 'utf8')).toBe(
+      `---\nID: ${PAGE_B}\nNote: a\nRelated: "[[Alpha]]"\n---\nb\n`,
+    )
+  })
+
+  it('a stripped Link key comes back where it stood in a Trash copy', async () => {
+    await writeFile(beta(), placed)
+    await refreshTree(root)
+    await deleteAlpha()
+    await settledMutate(root, { op: 'delete', path: 'Notes/Beta.md', kind: 'page' }, nexusDeps)
+    await restore('Alpha.md')
+    const listed = (await listBundles(root, { kind: 'trash' })).find(
+      (b) => b.artifactName === 'Beta.md',
+    )
+    expect(await readFile(join(root, listed?.bundlePath ?? '', 'Beta.md'), 'utf8')).toBe(placed)
+  })
+
+  it.skipIf(noModeBits)('emptying the Trash owes a linker it couldn’t strip', async () => {
+    await deleteAlpha()
+    const gamma = join(root, 'Notes', 'Gamma.md')
+    await writeFile(gamma, `---\nID: ${PAGE_C}\nRelated: "[[Alpha]]"\n---\nlinker`)
+    await refreshTree(root)
+    const listed = (await listBundles(root, { kind: 'trash' })).find(
+      (b) => b.artifactName === 'Alpha.md',
+    )
+    const { chmod } = await import('node:fs/promises')
+    await chmod(gamma, 0o000)
+    try {
+      const r = await handleMutate(
+        root,
+        { op: 'emptyBundle', bundlePath: listed?.bundlePath ?? '' },
+        nexusDeps,
+      )
+      expect(r.ok && r.value.cascade?.owed).toBe(true)
+    } finally {
+      await chmod(gamma, 0o644)
+    }
+    await finishOwed(root, nexusDeps)
+    expect(splitFrontmatter(await readFile(gamma, 'utf8'))).not.toHaveProperty('Related')
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it('fills the exact key, leaving another casing the copy holds blank', async () => {
     await settledMutate(
       root,

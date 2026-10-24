@@ -3,12 +3,13 @@
 import { fail, ok, type Result } from '../Contract/result'
 import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'
 import { memberKey } from '../Files/rootValues'
-import { same } from '../Files/stableJson'
+import { type Json, same } from '../Files/stableJson'
 import { normalizeTitle } from '../Paths/caseFold'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
 import type { CascadeReport } from './cascade'
-import { type ConfigReach, reachReport, retries } from './configReach'
+import { type ConfigEdit, type ConfigReach, reachReport, retries } from './configReach'
+import { pageKey } from '../Connections/pageIndex'
 
 /** Each name in `rename` becomes the current name wherever a file still holds it; each in `strip` leaves. `kept` marks an option part a Clear wrote: the option stays listed, so its own word in `strip` leaves the pages without the option leaving. */
 export type Owed = { rename?: string[]; strip?: string[]; kept?: true }
@@ -19,7 +20,34 @@ export type PropertyEntry = Owed & {
 }
 export type ContextEntry = Owed & { kind: 'context'; bundle?: string }
 export type SpaceEntry = Owed & { kind: 'space'; contextId: string; bundle?: string }
-export type Entry = PropertyEntry | ContextEntry | SpaceEntry
+/** A page, Collection, or Set delete, a Trash emptying, or a Set move: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes, reached under `within`; the links a finish strips go into `bundle`'s record, or are parked where `park` says the Trash entry is gone. */
+export type ContainerEntry = Owed & {
+  kind: 'container'
+  at: string
+  edit?: ConfigEdit
+  within?: string
+  bundle?: string
+  park?: true
+}
+/** By file, each value a restore worked out and couldn't write: what the file read then and what it lands as, either absent where there was or will be none. */
+export type Worked = Record<string, Record<string, { from?: unknown; to?: unknown }>>
+/** Each value `to` holds other than `from`, as a note keeps it. */
+export const workedOut = (from: Json, to: Json): Worked[string] =>
+  Object.fromEntries(
+    [...new Set([...Object.keys(from), ...Object.keys(to)])].flatMap((k) =>
+      same(from[k], to[k]) ? [] : [[k, { from: from[k], to: to[k] }]],
+    ),
+  )
+/** A move's or a restore's re-spell, each old link key mapped to how it spells its page now; `files` scopes a restore's repair of its own landed files to them alone, `rekey` re-keys a Context restored under a new title in its own Spaces' sidecars among them, and `values` holds, by file, what the restore worked out and couldn't write. */
+export type RelinkEntry = Owed & {
+  kind: 'relink'
+  names: Record<string, string>
+  label: string
+  files?: string[]
+  rekey?: [from: string, to: string]
+  values?: Worked
+}
+export type Entry = PropertyEntry | ContextEntry | SpaceEntry | ContainerEntry | RelinkEntry
 export type Notes = Record<string, Entry>
 
 /** Where a name lives: a property's keys, a Context's titles, a Space's titles inside its Context, or one property's option words. */
@@ -54,7 +82,29 @@ const owes = (o: Owed | undefined): boolean => !!(o?.rename?.length || o?.strip?
 
 const owesAnything = (e: Entry): boolean =>
   owes(e) ||
-  (e.kind === 'property' && (!!e.collections?.length || Object.values(e.options ?? {}).some(owes)))
+  (e.kind === 'property' &&
+    (!!e.collections?.length || Object.values(e.options ?? {}).some(owes))) ||
+  (e.kind === 'container' && !!e.edit) ||
+  (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey || !!e.values))
+
+/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets. */
+export const relinkNote = (
+  e: Entry | undefined,
+  names: ReadonlyMap<string, string>,
+  label?: string,
+): RelinkEntry => {
+  const held = e?.kind === 'relink' ? e : undefined
+  const followed = Object.entries(held?.names ?? {}).map(([k, v]) => [
+    k,
+    names.get(pageKey(v)) ?? v,
+  ])
+  return {
+    kind: 'relink',
+    label: label ?? held?.label ?? '',
+    names: { ...Object.fromEntries(followed), ...(held?.files ? {} : Object.fromEntries(names)) },
+    ...(held?.files ? { files: held.files, rekey: held.rekey, values: held.values } : {}),
+  }
+}
 
 /** Whether `e` still owes a rename. Pages under its old name weren't candidates for any sweep since, so an option part, a Remove's Collection, or a Space under it settles only once the rename lands (H-1). */
 export const owesRename = (e: Entry | undefined): boolean => !!e?.rename?.length
@@ -148,6 +198,23 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
 export const owedReport = (reach: ConfigReach, owed = retries(reach) > 0): CascadeReport => {
   const report = reachReport(reach)
   return owed ? { ...report, warning: report.warning ?? OWED_LINE, owed: true } : report
+}
+
+/** What a restore worked out for the files it couldn't write joins the relink entry its landed path `at` keys, so Try Again lands it where a file still reads what the restore found. A note that can't be written owes nothing. */
+export async function oweWorked(
+  root: string,
+  at: string,
+  label: string,
+  values: Worked,
+): Promise<CascadeReport | undefined> {
+  const reach = { skipped: Object.keys(values).length, hosts: [] }
+  if (!reach.skipped) return undefined
+  const noted = await editNote(root, at, (e) => {
+    const held: RelinkEntry =
+      e?.kind === 'relink' ? e : { kind: 'relink', names: {}, label, files: [] }
+    return { ...held, values: { ...held.values, ...values } }
+  })
+  return noted.ok ? owedReport(reach) : reachReport(reach)
 }
 
 /** `report` with the lost-work line joined, once, after a write set a damaged notes file aside. */

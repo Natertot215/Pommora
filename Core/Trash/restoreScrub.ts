@@ -20,23 +20,24 @@ import {
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'
 import { asString } from '../Nexus/coerce'
-import { fileRewrites, type StrippedLink } from '../Nexus/cascade'
-import { rewriteConnections } from '../Connections/rewrite'
+import { type CascadeReport, noteRelink, type StrippedLink } from '../Nexus/cascade'
+import { type Worked, workedOut } from '../Nexus/owed'
 import { ID_KEY } from '../Nexus/identityMark'
 import {
   mergeFrontmatter,
   renameFrontmatterKey,
   splitEnvelope,
   splitFrontmatter,
+  sweepParse,
+  type Place,
 } from '../Files/pageFile'
-import { basename, isMarkdownFile, join } from '../Paths/posix'
+import { basename, join, relative } from '../Paths/posix'
 import { listPathsUnder } from '../Files/walk'
 import { contentPages } from '../Bundles/bundle'
 import type { RecordFile } from '../Bundles/record'
 import { hiddenFolder } from '../Paths/exclusion'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
-import { unsweptLine } from '../Nexus/entities'
 
 type Match = (word: string) => string | undefined
 
@@ -135,7 +136,7 @@ async function artifactFiles(
   return [...(await contentPages(entity, abs)), ...sidecars.map((rel) => join(root, rel))]
 }
 
-/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
+/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds; what it worked out for each file it couldn't write, by the file's place in the artifact, which the restore owes; and the files it couldn't read or can't round-trip, which the restore reports. */
 export async function scrubReturning(
   root: string,
   tree: NexusTree,
@@ -144,7 +145,7 @@ export async function scrubReturning(
   schema: readonly PropertyDefinition[],
   frozen: Frozen,
   inTransitKey?: string,
-): Promise<StrippedLink[]> {
+): Promise<{ dropped: StrippedLink[]; worked: Worked; unread: string[] }> {
   const world = governedWorld(tree, schema)
   const spaceWorld = spaceWorldOf(tree)
   const current = currentKeys(tree, inTransitKey)
@@ -158,13 +159,13 @@ export async function scrubReturning(
         return entry === null ? [] : [[k, entry]]
       }),
     )
-  const note = (gone: Record<string, string>, id: string | undefined): void => {
+  const note = (gone: Record<string, string>, id: string | undefined, above?: Place): void => {
     for (const [key, value] of Object.entries(gone)) {
       const def = links.get(key)
-      if (def && id) dropped.push({ page: id, property: def.id, value })
+      if (def && id) dropped.push({ page: id, property: def.id, value, above: above?.(key) })
     }
   }
-  const unstamped = new Map<string, Record<string, string>>()
+  const unstamped = new Map<string, [Record<string, string>, Place | undefined]>()
   const text = (held: string, file: string): string | null => {
     const content = current.text(held)
     const { root: raw, changed } = current.words(splitFrontmatter(content))
@@ -173,8 +174,9 @@ export async function scrubReturning(
     const goneKeys = Object.keys(gone)
     const keys = [...new Set([...changed, ...r.changed, ...goneKeys])]
     if (!keys.length) return content === held ? null : content
-    if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, gone)
-    else note(gone, asString(raw[ID_KEY]))
+    const above = goneKeys.length ? sweepParse(content)?.above : undefined
+    if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, [gone, above])
+    else note(gone, asString(raw[ID_KEY]), above)
     const kept = stripKeys(r.root, goneKeys) ?? r.root
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
@@ -187,28 +189,44 @@ export async function scrubReturning(
       stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
     )
   }
+  const seen = new Map<string, [Json, Json]>()
   const swept = await sweepGovernedRoots(await artifactFiles(root, entity, absArtifact), {
-    text,
-    raw: json,
+    text: (held, file) => {
+      const next = text(held, file)
+      if (next !== null) seen.set(file, [splitFrontmatter(held), splitFrontmatter(next)])
+      return next
+    },
+    raw: (held, file) => {
+      const next = json(held, file)
+      if (next !== null) seen.set(file, [held, next])
+      return next
+    },
   })
-  // A page the scrub couldn't write refuses the restore; a Space it couldn't write goes unreported.
-  const missed = swept.skipped.filter(isMarkdownFile)
-  if (missed.length) throw new Error(unsweptLine(missed.length))
   // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
-  for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
-  return dropped
+  for (const [file, [lost, above]] of unstamped)
+    note(lost, valueOr(await ensurePageId(file), undefined), above)
+  const worked: Worked = {}
+  for (const file of swept.skipped) {
+    const pair = seen.get(file)
+    if (pair) worked[relative(absArtifact, file)] = workedOut(...pair)
+  }
+  return { dropped, worked, unread: swept.skipped.filter((file) => !seen.has(file)) }
 }
 
-/** A returning artifact's own links, repaired where it landed: each key in `repair` re-spells to the current name of the page the delete recorded it naming. Answers the files it couldn't write. */
+/** A returning artifact's own links and keys, repaired where it landed under the relink entry keyed by its path: each key in `repair` re-spells, in the landed files alone, to the current name of the page the delete recorded it naming, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
 export async function repairLanded(
   root: string,
-  tree: NexusTree,
-  entity: RecordFile['entity'],
-  targetAbs: string,
+  landed: { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] },
+  label: string,
   repair: ReadonlyMap<string, string>,
-): Promise<string[]> {
-  if (!repair.size) return []
-  const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
-  const files = await artifactFiles(root, entity, targetAbs)
-  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
+): Promise<CascadeReport | undefined> {
+  if (!repair.size && !landed.rekey) return undefined
+  const files = (await artifactFiles(root, landed.entity, landed.abs)).map((f) => relative(root, f))
+  return noteRelink(root, relative(root, landed.abs), () => ({
+    kind: 'relink',
+    names: Object.fromEntries(repair),
+    label,
+    files,
+    rekey: landed.rekey,
+  }))
 }
