@@ -382,7 +382,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   const redefine = (patch: Partial<PropertyDefinition>) =>
     mutateRegistry(root, (r) => ({
       next: { ...r, defs: { ...r.defs, [propId]: { ...r.defs[propId], ...patch } } },
-      result: null,
+      result: ok(null),
     }))
 
   it('removing and re-assigning leaves every page’s modification time where it was', async () => {

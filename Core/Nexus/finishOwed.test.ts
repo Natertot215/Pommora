@@ -32,6 +32,7 @@ import { finishOwed } from './finishOwed'
 import { handleMutate } from './mutate'
 import { readNotes, type Notes } from './owed'
 import { setPanelContextOrder } from './reorder'
+import { ok } from '../Contract/result'
 
 vi.mock('../Properties/registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/registryProperty')>()
@@ -102,7 +103,7 @@ const relistOptions = (root: string, options: unknown[]) =>
         prop_s: { ...registry.defs.prop_s, select_options: options },
       } as typeof registry.defs,
     },
-    result: null,
+    result: ok(null),
   }))
 
 const relabel = (root: string, label: string, key = label, over: Record<string, unknown> = {}) =>
@@ -111,7 +112,7 @@ const relabel = (root: string, label: string, key = label, over: Record<string, 
       ...registry,
       defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, label, key, ...over } },
     },
-    result: null,
+    result: ok(null),
   }))
 
 async function renameCrashState(root: string): Promise<void> {

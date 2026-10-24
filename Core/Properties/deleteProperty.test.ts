@@ -457,14 +457,20 @@ describe('a delete reaches saved views', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
-  it('a delete whose list step fails strips nothing', async () => {
+  it('a delete whose registry write fails strips nothing and leaves no bundle', async () => {
     const { id, surfaces } = await seeded()
     const before = await surfaces.read()
-    const registry = await readFile(join(root, '.nexus', 'properties.json'), 'utf8')
-    vi.mocked(removeFromRegistry).mockResolvedValueOnce(fault('refused'))
+    const registry = join(root, '.nexus', 'properties.json')
+    vi.mocked(removeFromRegistry).mockImplementationOnce(async (...args) => {
+      await writeFile(registry, '{nope')
+      const real = await vi.importActual<typeof import('./registryProperty')>('./registryProperty')
+      return real.removeFromRegistry(...args)
+    })
     expect((await deleteProperty(root, id)).ok).toBe(false)
     expect(await surfaces.read()).toEqual(before)
-    expect(await readFile(join(root, '.nexus', 'properties.json'), 'utf8')).toBe(registry)
+    expect(await readFile(registry, 'utf8')).toBe('{nope')
+    const trashed = await readdir(join(root, '.trash')).catch(() => [])
+    expect(trashed.filter((f) => f.includes(`property-${id}`))).toEqual([])
     expect(
       ((await readJsonObject(sidecarPath(notes, 'collection')))?.properties as string[]) ?? [],
     ).toContain(id)

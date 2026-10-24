@@ -63,7 +63,12 @@ describe('the registry file is never replaced by a failed read', () => {
     const a = await createProperty(root, def({ label: 'Real', type: 'number' }))
     expect(a.ok).toBe(true)
     await writeFile(registryFilePath(), '{ corrupt', 'utf8')
-    await expect(createProperty(root, def({ label: 'Casualty', type: 'number' }))).rejects.toThrow()
+    await expect(
+      createProperty(root, def({ label: 'Casualty', type: 'number' })),
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'operation-failed' },
+    })
     expect(await readFile(registryFilePath(), 'utf8')).toBe('{ corrupt')
   })
 

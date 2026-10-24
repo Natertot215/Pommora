@@ -112,7 +112,7 @@ export async function createProperty(
   def: PropertyDraft,
 ): Promise<Result<PropertyDefinition>> {
   const notes = await readNotes(root)
-  return mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
+  return mutateRegistry(root, (registry) => {
     if (def.id && registry.defs[def.id]) return { result: ID_HELD }
     const defs = Object.values(registry.defs)
     const label = freeLabel(exactTitle(def.label), def.key_format, defs)
@@ -209,7 +209,7 @@ function rekeyProperty(root: string, propertyId: string, change: Retitle): Promi
     if (!planned.value) return ok({})
     const { prior, moved } = planned.value
     const commit = () =>
-      mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(root, (registry) => {
+      mutateRegistry(root, (registry) => {
         const current = registry.defs[propertyId]
         if (!current) return { result: NO_PROPERTY }
         const def = retitled(current, change)
@@ -255,7 +255,7 @@ export async function configureProperty(
     return NOT_A_PROPERTY_DIR
   const changes = 'file_directory' in patch ? { ...patch, file_directory: dir || undefined } : patch
   return serializeSchemaOp(root, () =>
-    mutateRegistry<Result<null>>(root, (registry) => {
+    mutateRegistry(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: NO_PROPERTY }
       const next = seeded({ ...current, ...changes, id: propertyId })
@@ -268,7 +268,7 @@ export async function configureProperty(
 }
 
 export function removeFromRegistry(root: string, propertyId: string): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
+  return mutateRegistry(root, (registry) => {
     if (!registry.defs[propertyId]) return { result: NO_PROPERTY }
     const defs = { ...registry.defs }
     delete defs[propertyId]
@@ -285,7 +285,7 @@ export function reorderRegistry(
   toIndex: number,
 ): Promise<Result<null>> {
   return serializeSchemaOp(root, () =>
-    mutateRegistry<Result<null>>(root, (registry) => {
+    mutateRegistry(root, (registry) => {
       if (!(propertyId in registry.defs)) return { result: NO_PROPERTY }
       const order = registry.order.filter((id) => id !== propertyId)
       order.splice(clamp(toIndex, 0, order.length), 0, propertyId)

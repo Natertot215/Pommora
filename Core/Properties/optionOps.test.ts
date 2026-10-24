@@ -240,18 +240,20 @@ describe('editOption', () => {
 
   it('a definition stored with a blank option takes an added option, written without the blank', async () => {
     const id = await mkSelect([{ id: 'opt_A', key: 'A', label: 'A' }])
-    await mutateRegistry(root, (registry) => {
-      ;(registry.defs[id] as PropDefLike).select_options = [
-        { id: 'opt_A', key: 'A', label: 'A' },
-        { key: ' ', label: ' ' },
-      ]
-      return { registry, result: null }
-    })
+    const file = join(root, '.nexus', 'properties.json')
+    const raw = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
+    raw.defs[id].select_options = [
+      { id: 'opt_A', key: 'A', label: 'A' },
+      { key: ' ', label: ' ' },
+    ]
+    await writeFile(file, JSON.stringify(raw))
     expect(
       (await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, id: 'opt_B', label: 'B' }))
         .ok,
     ).toBe(true)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+    expect(
+      (await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)).defs[id].select_options,
+    ).toEqual([
       { id: 'opt_A', key: 'A', label: 'A' },
       { id: 'opt_B', key: 'B', label: 'B' },
     ])

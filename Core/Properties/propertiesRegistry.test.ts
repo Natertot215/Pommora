@@ -4,6 +4,7 @@ import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { mutateRegistry, orderedDefs, readKeptRegistry, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
+import { ok } from '../Contract/result'
 
 type RegistryFile = {
   order: string[]
@@ -37,12 +38,15 @@ describe('propertiesRegistry', () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
     await expect(readRegistry(root)).rejects.toThrow()
-    await expect(mutateRegistry(root, () => ({ result: undefined }))).rejects.toThrow()
+    await expect(mutateRegistry(root, () => ({ result: ok(null) }))).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'operation-failed' },
+    })
   })
 
   it('a registry damaged after a write keeps that write for a read that writes nothing', async () => {
     const next = { order: ['prop_a'], defs: { prop_a: def('prop_a', 'Priority') } }
-    await mutateRegistry(root, () => ({ next, result: undefined }))
+    await mutateRegistry(root, () => ({ next, result: ok(null) }))
     await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
     expect(await readKeptRegistry(root)).toEqual(next)
   })
@@ -52,7 +56,7 @@ describe('propertiesRegistry', () => {
       order: ['prop_b', 'prop_a'],
       defs: { prop_a: def('prop_a', 'Priority'), prop_b: def('prop_b', 'Status') },
     }
-    await mutateRegistry(root, () => ({ next: reg, result: undefined }))
+    await mutateRegistry(root, () => ({ next: reg, result: ok(null) }))
     expect(await readRegistry(root)).toEqual(reg)
   })
 
@@ -72,7 +76,7 @@ describe('propertiesRegistry', () => {
         order: [...reg.order, 'prop_b'],
         defs: { ...reg.defs, prop_b: def('prop_b', 'Status') },
       },
-      result: undefined,
+      result: ok(null),
     }))
     const b = await readRegistry(root)
     expect(b).not.toBe(a)
@@ -106,7 +110,7 @@ describe('propertiesRegistry', () => {
       }),
     )
     expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_a'])
-    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    await mutateRegistry(root, (registry) => ({ next: registry, result: ok(null) }))
     const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     for (const [id, stored] of Object.entries(setAside)) expect(kept.defs[id]).toEqual(stored)
   })
@@ -137,7 +141,7 @@ describe('propertiesRegistry', () => {
     const { defs } = await readRegistry(root)
     expect(Object.keys(defs)).toEqual(['prop_a'])
     expect(defs.prop_a.select_options?.map((o) => o.label)).toEqual(['alpha', 'beta', 'Gamma'])
-    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    await mutateRegistry(root, (registry) => ({ next: registry, result: ok(null) }))
     const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(kept.defs.prop_b).toEqual(file.defs.prop_b)
     expect(kept.defs.prop_a.select_options).toEqual(options)
@@ -155,7 +159,7 @@ describe('propertiesRegistry', () => {
     }
     await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify(file))
     expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_b'])
-    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    await mutateRegistry(root, (registry) => ({ next: registry, result: ok(null) }))
     expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_b'])
     const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(kept.defs.prop_z).toEqual(file.defs.prop_z)
@@ -180,7 +184,7 @@ describe('a definition with no label', () => {
         ...registry,
         defs: { ...registry.defs, prop_b: { ...registry.defs.prop_b, icon: 'star' } },
       },
-      result: undefined,
+      result: ok(null),
     }))
     const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(kept.defs.prop_a).toEqual(file.defs.prop_a)
@@ -260,21 +264,21 @@ describe('RegistryFile shape — { order, defs }', () => {
 // The file is read-modify-written whole, under its own per-path lock, so neither of two overlapping mutations may drop the other's change.
 describe('serialization', () => {
   it('concurrent mutations both land', async () => {
-    await mutateRegistry(root, () => ({ next: { order: [], defs: {} }, result: undefined }))
+    await mutateRegistry(root, () => ({ next: { order: [], defs: {} }, result: ok(null) }))
     await Promise.all([
       mutateRegistry(root, (reg) => ({
         next: {
           order: [...reg.order, 'prop_a'],
           defs: { ...reg.defs, prop_a: def('prop_a', 'A') },
         },
-        result: undefined,
+        result: ok(null),
       })),
       mutateRegistry(root, (reg) => ({
         next: {
           order: [...reg.order, 'prop_b'],
           defs: { ...reg.defs, prop_b: def('prop_b', 'B') },
         },
-        result: undefined,
+        result: ok(null),
       })),
     ])
     const after = await readRegistry(root)
@@ -307,7 +311,7 @@ describe('untouched definitions', () => {
         ...reg,
         defs: { ...reg.defs, prop_a: { ...reg.defs.prop_a, label: 'Urgency', key: 'Urgency' } },
       },
-      result: undefined,
+      result: ok(null),
     }))
     const after = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(after.defs.prop_f).toEqual(future)
@@ -336,7 +340,7 @@ describe('the edited definition', () => {
       const { icon: _cleared, ...rest } = reg.defs.prop_f
       return {
         next: { ...reg, defs: { prop_f: { ...rest, label: 'Cash', key: 'Cash' } } },
-        result: undefined,
+        result: ok(null),
       }
     })
     const after = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
@@ -364,13 +368,15 @@ describe('the edited definition', () => {
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({ order: ['prop_f'], defs: { prop_f: stored } }),
     )
-    const decoded = await mutateRegistry(root, (reg) => ({ result: reg.defs.prop_f }))
-    expect(decoded).toEqual({
-      id: 'prop_f',
-      label: 'Money',
-      key: 'Money',
-      type: 'number',
-      plugin_key: { keep: 1 },
-    })
+    const decoded = await mutateRegistry(root, (reg) => ({ result: ok(reg.defs.prop_f) }))
+    expect(decoded).toEqual(
+      ok({
+        id: 'prop_f',
+        label: 'Money',
+        key: 'Money',
+        type: 'number',
+        plugin_key: { keep: 1 },
+      }),
+    )
   })
 })
