@@ -1203,11 +1203,11 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 8-7 · Drive group 7
   - [x] Review Checkpoint
   - [x] Halfway Review (Closeout P8: four `opus-high` agents, two inward and two outward, over `BASELINE..HEAD`)
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 9 opens]`
-- [ ] **Phase 9** — List First and One Replay Point
-  - [ ] Task 9-1 · The open's Context replay moves into the genuine-open block
-  - [ ] Task 9-2 · A Context rename commits its title, then moves its folder
-  - [ ] Review Checkpoint
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 9 opens]`
+- [x] **Phase 9** — List First and One Replay Point
+  - [x] Task 9-1 · The open's Context replay moves into the genuine-open block
+  - [x] Task 9-2 · A Context rename commits its title, then moves its folder
+  - [x] Review Checkpoint
 - [ ] **Phase 10** — One Finder
   - [ ] Task 10-1 · The tree keeps each Space's Context keys
   - [ ] Task 10-2 · One finder in `Core/Index/keyHolders.ts` and one writer in `sweepGovernedRoots`
@@ -35031,7 +35031,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 7 | −622 | +469 | −153 | −600 / +456 / −144 | −388 |
 | Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
 | 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
-| 9 | −16 | +9 | −7 | | |
+| 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
 | 10 | −381 | +387 | +6 | | |
 | 11A | −607 | +734 | +127 | | |
 | 11B | −394 | +769 | +375 | | |
