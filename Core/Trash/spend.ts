@@ -8,7 +8,7 @@ import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { readLiveSetting } from '../Settings/settings'
-import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
+import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
 import { rewriteConnections } from '../Connections/rewrite'
 import { linkDefsOf } from '../Properties/propertiesRegistry'
@@ -22,7 +22,7 @@ import {
   pageIdsOf,
 } from '../Bundles/bundle'
 import { collectionOf, originOf } from '../Bundles/record'
-import { readJsonObject, relocate, removeOwn, rmwJsonStrict } from '../Files/atomicWrite'
+import { readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -194,11 +194,11 @@ export async function restoreTrashed(
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
     if (title !== record.registry.title) {
-      const rekey = rekeyContext(record.registry.title, title)
-      for (const { file } of await spaceSidecarsIn(targetAbs)) {
-        const rekeyed = await rmwJsonStrict(file, (raw) => rekey(raw, file)).catch(() => null)
-        if (!rekeyed?.ok) unswept.push(file)
-      }
+      const sidecars = (await spaceSidecarsIn(targetAbs)).map((s) => s.file)
+      const rekeyed = await sweepGovernedRoots(sidecars, {
+        raw: rekeyContext(record.registry.title, title),
+      })
+      unswept.push(...rekeyed.skipped)
     }
     const titlesById = new Map(
       [...(await spaceIdsIn(targetAbs)).ids].map(([name, id]) => [id, name]),
@@ -245,7 +245,7 @@ export async function restoreTrashed(
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
-    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.key])))
+    await refillTrashed(root, trashed, defs, refilled)
   }
   const cascade = withUnswept(arrived.cascade, title, unswept)
   // The record outlives a partial re-tag, so what didn't come back stays written down.

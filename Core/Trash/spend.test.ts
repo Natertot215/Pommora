@@ -24,6 +24,7 @@ import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import type { TrashDeps } from './discard'
+import { refillTrashed } from './trashedCopies'
 import type { ContextsRegistry } from '../Contexts/contexts'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 
@@ -1047,6 +1048,29 @@ describe('a Link value refilled into a trashed copy', () => {
     const fm = splitFrontmatter(await readFile(beta(), 'utf8'))
     expect(fm.Related).toBe('[[Alpha]]')
     expect(fm.related).toBeNull()
+  })
+
+  it('a Link value refilled into a trashed copy is reconciled as a live refill is', async () => {
+    const gamma = join(root, 'Notes', 'Gamma.md')
+    await writeFile(beta(), `---\nID: ${PAGE_B}\n---\nlinker`)
+    await writeFile(gamma, `---\nID: ${PAGE_C}\n---\nlinker`)
+    await refreshTree(root)
+    for (const path of ['Notes/Beta.md', 'Notes/Gamma.md'])
+      await settledMutate(root, { op: 'delete', path, kind: 'page' }, nexusDeps)
+    const related = { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' } as const
+    await refillTrashed(
+      root,
+      [
+        { page: PAGE_B, property: related.id, value: '[[Alpha]]' },
+        { page: PAGE_C, property: related.id, value: '[[Gone]]' },
+      ],
+      [related],
+      { holds: (title) => title === 'Alpha' },
+    )
+    await restore('Beta.md')
+    await restore('Gamma.md')
+    expect(splitFrontmatter(await readFile(beta(), 'utf8')).Related).toBe('[[Alpha]]')
+    expect(splitFrontmatter(await readFile(gamma, 'utf8'))).not.toHaveProperty('Related')
   })
 })
 

@@ -1,16 +1,15 @@
 // The Link values the Trash keeps for what it holds: a stripped value parked with the trashed page it names, so that page's restore writes it back, and a returning value refilled into a trashed copy it can't reach live.
 
-import { basename, join } from '../Paths/posix'
+import { join } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { isBlankRaw, landValue } from '../Files/rootValues'
 import { readLinkText } from '../Connections/linkValue'
 import { buildPageIndex, type PageIndex, pageKey } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
 import type { Frozen } from '../Nexus/governedRoot'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
-import { rmwJsonStrict } from '../Files/atomicWrite'
 import { stampedIdOf } from '../Files/pageFile'
-import { sweepGovernedRoots } from '../Nexus/governedSweep'
+import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
+import type { PropertyDefinition } from '../Properties/properties'
 import { contentPages, listBundles, originPagesIn } from '../Bundles/bundle'
 import { patchRecord } from '../Bundles/record'
 
@@ -76,23 +75,23 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `keys` maps each property's ID to its key. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],
-  keys: ReadonlyMap<string, string>,
+  defs: readonly PropertyDefinition[],
+  frozen: Frozen,
 ): Promise<void> {
   if (!links.length) return
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
-  const fill = (raw: Record<string, unknown>, id: unknown): Record<string, unknown> | null => {
-    let next = raw
-    for (const { page, property, value } of links) {
-      const key = keys.get(property)
-      if (page === id && key && isBlankRaw(next[key])) next = landValue(next, key, value)
-    }
-    return next === raw ? null : next
-  }
-  for (const [id, file] of holders)
-    if (basename(file) === SPACE_SIDECAR) await rmwJsonStrict(file, (raw) => fill(raw, id))
-    else await sweepGovernedRoots([file], { raw: (raw) => fill(raw, id) })
+  const refills = new Map(defs.map((d) => [d.id, refillOf(d, frozen)]))
+  await sweepGovernedRoots([...holders.values()], {
+    raw: (raw, file) => {
+      const id = rootId(file, raw)
+      let next = raw
+      for (const { page, property, value } of links)
+        if (page === id) next = refills.get(property)?.(next, value) ?? next
+      return next === raw ? null : next
+    },
+  })
 }
