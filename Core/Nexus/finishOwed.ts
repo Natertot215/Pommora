@@ -11,7 +11,7 @@ import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
 import { discardFile, type TrashDeps } from '../Trash/discard'
 import type { CascadeReport } from './cascade'
-import { type ConfigReach, reachConfig } from './configReach'
+import { type ConfigReach, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
@@ -41,6 +41,7 @@ import {
   type SpaceEntry,
   withLost,
 } from './owed'
+import { stashAndStrip } from '../Properties/unassignProperty'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
 
@@ -50,11 +51,12 @@ const stuck = <E extends Entry>(e: E): Finished<E> => ({
   reach: { skipped: 1, hosts: [] },
 })
 
-/** Counts `r` into `reach`, answering whether it missed a file. */
+/** Counts `r` into `reach`, answering whether it missed a file a later sweep can reach; a file only a fix by hand reaches is named and let go (B-5). */
 const add = (reach: ConfigReach, r: ConfigReach): boolean => {
   reach.skipped += r.skipped
+  reach.refused = [...(reach.refused ?? []), ...(r.refused ?? [])]
   reach.hosts.push(...r.hosts)
-  return r.skipped > 0
+  return retries(r) > 0
 }
 
 export async function finishOwed(root: string, deps: TrashDeps): Promise<CascadeReport> {
@@ -109,15 +111,13 @@ function finishArm(
 async function sweepEach(
   names: readonly string[] | undefined,
   skip: (name: string) => boolean,
-  sweep: (name: string) => Promise<number>,
+  sweep: (name: string) => Promise<ConfigReach>,
   reach: ConfigReach,
 ): Promise<string[] | undefined> {
   const left: string[] = []
   for (const name of names ?? []) {
     if (skip(name)) continue
-    const missed = await sweep(name)
-    reach.skipped += missed
-    if (missed) left.push(name)
+    if (add(reach, await sweep(name))) left.push(name)
   }
   return left.length ? left : undefined
 }
@@ -152,8 +152,20 @@ async function finishProperty(
     reach,
   )
   const options = await finishOptions(root, def, e.options ?? {}, reach)
+  // A Collection gone, or assigning the property again, owes nothing more: its pages are the property's again.
+  const owing = new Map(
+    (await liveTreeOf(root)).collections.flatMap((c) =>
+      c.propertyIds.includes(id) ? [] : [[c.id, c.path] as const],
+    ),
+  )
+  const collections = await sweepEach(
+    e.collections,
+    (cid) => !owing.has(cid),
+    (cid) => stashAndStrip(root, join(root, owing.get(cid)!), def),
+    reach,
+  )
   // A live definition holding a strip part only arrives by sync; its Collections aren't this entry's to purge, so the part leaves.
-  const left: PropertyEntry = { kind: 'property', rename, options }
+  const left: PropertyEntry = { kind: 'property', rename, options, collections }
   return { left: owesRename(left) ? { ...e, rename } : left, reach }
 }
 
@@ -246,7 +258,7 @@ async function finishContext(
             const to = join(contextsDir(root), title)
             // A crash between the list step and the folder move left the folder under the old title, and the open's tree read none of the Context's Spaces from the folder the list names, so the tree is read again once the folder is there; a folder already under the new title keeps the rename owed.
             if ((await heldName(from)) === old) {
-              if (await targetTaken(from, to)) return 1
+              if (await targetTaken(from, to)) return { skipped: 1, hosts: [] }
               await relocate(from, to)
               await refreshTree(root)
             }

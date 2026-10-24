@@ -29,6 +29,7 @@ import {
   sweepGovernedRoots,
   type SweepPlan,
 } from '../Nexus/governedSweep'
+import { type ConfigReach, NO_REACH, sweptReach } from '../Nexus/configReach'
 import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
   OWED,
@@ -149,9 +150,9 @@ async function renamePlan(
   }
 }
 
-export async function renameSweep(root: string, from: string, to: string): Promise<number> {
+export async function renameSweep(root: string, from: string, to: string): Promise<ConfigReach> {
   const { files, plan } = await renamePlan(root, from, to)
-  return (await sweepGovernedRoots(files, plan)).skipped.length
+  return sweptReach(await sweepGovernedRoots(files, plan))
 }
 
 type Retitle = Pick<PropertyDefinition, 'label'> | Pick<PropertyDefinition, 'key_format'>
@@ -224,10 +225,8 @@ function rekeyProperty(root: string, propertyId: string, change: Retitle): Promi
       lands: [{ owner: { kind: 'property' }, name: moved.key, except: propertyId }],
       note: (e) => ({ ...propertyNote(e), ...owedRename(propertyNote(e), prior.key, moved.key) }),
       list: commit,
-      sweep: async ({ from, def }) => ({
-        skipped: from === def.key ? 0 : await renameSweep(root, from, def.key),
-        hosts: [],
-      }),
+      sweep: async ({ from, def }) =>
+        from === def.key ? NO_REACH : renameSweep(root, from, def.key),
       settle: (e, { from }) => ({ ...e, ...owedSwept(e, [from]) }),
     })
   })

@@ -8,7 +8,7 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
 import type { CascadeReport } from './cascade'
-import { type ConfigReach, reachReport } from './configReach'
+import { type ConfigReach, reachReport, retries } from './configReach'
 
 /** Each name in `rename` becomes the current name wherever a file still holds it; each in `strip` leaves. `kept` marks an option part a Clear wrote: the option stays listed, so its own word in `strip` leaves the pages without the option leaving. */
 export type Owed = { rename?: string[]; strip?: string[]; kept?: true }
@@ -145,7 +145,7 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
 }
 
 /** A many-file change's report, marked owed while an entry still owes work, which Try Again finishes; a pass's total is owed while it missed a file. */
-export const owedReport = (reach: ConfigReach, owed = reach.skipped > 0): CascadeReport => {
+export const owedReport = (reach: ConfigReach, owed = retries(reach) > 0): CascadeReport => {
   const report = reachReport(reach)
   return owed ? { ...report, warning: report.warning ?? OWED_LINE, owed: true } : report
 }
@@ -181,7 +181,7 @@ export async function runNoted<T>(
   const reach = await change.sweep(listed.value, prior.value)
   const { settle } = change
   const held = change.under === undefined ? undefined : notes[change.under]
-  if (settle && !reach.skipped && !owesRename(held))
+  if (settle && !retries(reach) && !owesRename(held))
     await editNote(root, id, (e) => e && settle(e, listed.value))
   return ok({ cascade: withLost(root, owedReport(reach, id in (await readNotes(root)))) })
 }

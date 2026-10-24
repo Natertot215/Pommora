@@ -142,3 +142,7 @@ export const heldValues = (held: readonly Held[], key: string): Record<string, u
       h.id && h.values && !isBlankRaw(h.values[key]) ? [[h.id, h.values[key]]] : [],
     ),
   )
+
+/** The holders a values read leaves out of `pages` because no id addresses them (none, or one another file shares): each keeps its value and counts as unfinished, since no restore could put it back. */
+export const unaddressed = (held: readonly Held[]): number =>
+  held.filter((h) => h.values && !h.id).length

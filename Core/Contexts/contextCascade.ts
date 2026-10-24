@@ -11,6 +11,7 @@ import { contextDirRel } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { owedRename, owedSwept, runNoted } from '../Nexus/owed'
 import { type Rewrite, type RewriteText, sweepGovernedRoots } from '../Nexus/governedSweep'
+import { type ConfigReach, sweptReach } from '../Nexus/configReach'
 import { withoutOrderId } from './spaceSidecar'
 import {
   editHeldList,
@@ -66,19 +67,20 @@ export async function titleHolders(
   return [...pages, ...spaces]
 }
 
-/** Sweeps one title change through `files`: a Context's key from `from` to `to`, or with `space` that Space's name inside `contextTitle`'s key; answers how many it missed. */
+/** Sweeps one title change through `files`: a Context's key from `from` to `to`, or with `space` that Space's name inside `contextTitle`'s key; answers what it missed. */
 export async function cascadeTitle(
   contextTitle: string,
   from: string,
   to: string,
   space: boolean,
   files: string[],
-): Promise<number> {
+): Promise<ConfigReach> {
   const raw: Rewrite = space
     ? (r) => retitleSpace(r, contextTitle, from, to)
     : rekeyContext(from, to)
-  return (await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) }))
-    .skipped.length
+  return sweptReach(
+    await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) }),
+  )
 }
 
 export async function unlinkContextKey(
@@ -86,7 +88,7 @@ export async function unlinkContextKey(
   contextTitle: string,
   contextId: string | undefined,
   skipUnder: string,
-): Promise<number> {
+): Promise<ConfigReach> {
   const key = contextKey(contextTitle)
   const strip: Rewrite = (raw) => (Object.hasOwn(raw, key) ? stripKeys(raw, [key]) : null)
   const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
@@ -98,7 +100,7 @@ export async function unlinkSpaceValue(
   contextTitle: string,
   spaceTitle: string,
   skipUnder: string,
-): Promise<number> {
+): Promise<ConfigReach> {
   const key = contextKey(contextTitle)
   const names = namesValue(spaceTitle)
   const take: Rewrite = (raw) => editHeldList(raw, key, (held) => stripList(held, names))
@@ -111,10 +113,10 @@ async function unlinkMembers(
   holding: Pick<HolderQuery, 'keys' | 'title' | 'id'>,
   rewrite: Rewrite,
   skipUnder: string,
-): Promise<number> {
+): Promise<ConfigReach> {
   const { pages, spaces } = await findHolders(root, { ...holding, reach: 'anywhere' })
   const files = [...pages, ...spaces].filter((file) => !isAtOrUnder(file, skipUnder))
-  return (await sweepGovernedRoots(files, { raw: rewrite })).skipped.length
+  return sweptReach(await sweepGovernedRoots(files, { raw: rewrite }))
 }
 
 const commitTitle = (root: string, id: string, title: string) =>
@@ -157,10 +159,10 @@ export async function renameContextOp(
         return (await commitTitle(root, contextId, entry.title)).ok ? fault(e) : ok(false)
       }
     },
-    sweep: async (relocated) => ({
-      skipped: relocated ? await cascadeTitle(entry.title, entry.title, newName, false, files) : 1,
-      hosts: [],
-    }),
+    sweep: async (relocated) =>
+      relocated
+        ? cascadeTitle(entry.title, entry.title, newName, false, files)
+        : { skipped: 1, hosts: [] },
     settle: (e) => ({ ...e, ...owedSwept(e, [entry.title]) }),
   })
 }
@@ -197,10 +199,7 @@ export async function renameSpaceOp(
       ...owedRename(e ?? {}, space.title, newName),
     }),
     list: () => relocate(dir, target).then(() => ok(null), fault),
-    sweep: async () => ({
-      skipped: await cascadeTitle(group.def.title, space.title, newName, true, files),
-      hosts: [],
-    }),
+    sweep: () => cascadeTitle(group.def.title, space.title, newName, true, files),
     settle: (e) => ({ ...e, ...owedSwept(e, [space.title]) }),
     under: space.contextId,
   })
