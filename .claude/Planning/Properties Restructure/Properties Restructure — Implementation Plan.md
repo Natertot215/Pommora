@@ -1220,13 +1220,13 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 9-1 · The open's Context replay moves into the genuine-open block
   - [x] Task 9-2 · A Context rename commits its title, then moves its folder
   - [x] Review Checkpoint
-- [ ] **Phase 10** — One Finder
-  - [ ] Task 10-1 · The tree keeps each Space's Context keys
-  - [ ] Task 10-2 · One finder in `Core/Index/keyHolders.ts` and one writer in `sweepGovernedRoots`
-  - [ ] Task 10-3 · A finder read confirms each holder and answers its values
-  - [ ] Task 10-4 · Restores write Spaces through the one sweep and report every miss
-  - [ ] Task 10-5 · Drive group 8
-  - [ ] Review Checkpoint
+- [x] **Phase 10** — One Finder
+  - [x] Task 10-1 · The tree keeps each Space's Context keys
+  - [x] Task 10-2 · One finder in `Core/Index/keyHolders.ts` and one writer in `sweepGovernedRoots`
+  - [x] Task 10-3 · A finder read confirms each holder and answers its values
+  - [x] Task 10-4 · Restores write Spaces through the one sweep and report every miss
+  - [x] Task 10-5 · Drive group 8
+  - [x] Review Checkpoint
   - [ ] Closeout P9–P10 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and Phases 11A and 11B before Phase 11A opens]`
 - [ ] **Phase 11A** — One Note per Item: The Notes and the Renames
@@ -35437,7 +35437,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
 | 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
 | 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
-| 10 | −381 | +393 | +12 | | |
+| 10 | −381 | +393 | +12 | −320 / +337 / +17 | −391 |
 | 11A | −634 | +738 | +104 | | |
 | 11B | −449 | +835 | +386 | | |
 | 12 | −192 | +340 | +148 | | |
