@@ -62,17 +62,11 @@ export function spaceNodeFrom(
 ): SpaceNode | null {
   const id = asString(sc.id)
   if (!id) return null
-  let values: Json | undefined
-  let contextKeys: Json | undefined
-  for (const [k, v] of Object.entries(sc)) {
-    if (SPACE_MODELED_KEYS.has(k)) continue
-    if (parseContextKey(k) === null) {
-      values ??= {}
-      values[k] = v
-    } else {
-      contextKeys ??= {}
-      contextKeys[k] = v
-    }
+  const unmodeled = (contextKey: boolean): Json | undefined => {
+    const kept = Object.entries(sc).filter(
+      ([k]) => !SPACE_MODELED_KEYS.has(k) && (parseContextKey(k) !== null) === contextKey,
+    )
+    return kept.length ? Object.fromEntries(kept) : undefined
   }
   return {
     kind: 'space',
@@ -83,8 +77,8 @@ export function spaceNodeFrom(
     headingIconHidden: sc.heading_icon_hidden === true,
     color: asString(sc[COLOR_KEY]),
     rowOrder: asStringArray(sc[ORDER_KEY]),
-    values,
-    contextKeys,
+    values: unmodeled(false),
+    contextKeys: unmodeled(true),
   }
 }
 
