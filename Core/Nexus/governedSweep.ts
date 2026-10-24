@@ -162,6 +162,14 @@ export async function sweepRootsById<T>(
   return new Set(asked.values())
 }
 
+/** A value `frozen` still admits, landed in its written spelling under `def`'s key where `raw` reads blank; null where it doesn't land. */
+export const refillOf =
+  (def: PropertyDefinition, frozen: Frozen) =>
+  (raw: Json, value: unknown): Json | null => {
+    const { next } = reencode(def, value, frozen)
+    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
+  }
+
 /** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
 export async function refillValues(
   root: string,
@@ -170,8 +178,5 @@ export async function refillValues(
   values: Record<string, unknown>,
   frozen: Frozen,
 ): Promise<Set<string>> {
-  return sweepRootsById(root, roots, values, (raw, value) => {
-    const { next } = reencode(def, value, frozen)
-    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
-  })
+  return sweepRootsById(root, roots, values, refillOf(def, frozen))
 }

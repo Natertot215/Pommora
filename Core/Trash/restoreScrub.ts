@@ -23,20 +23,19 @@ import { asString } from '../Nexus/coerce'
 import { fileRewrites, type StrippedLink } from '../Nexus/cascade'
 import { rewriteConnections } from '../Connections/rewrite'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rmwJsonStrict } from '../Files/atomicWrite'
 import {
   mergeFrontmatter,
   renameFrontmatterKey,
   splitEnvelope,
   splitFrontmatter,
 } from '../Files/pageFile'
-import { basename, join } from '../Paths/posix'
+import { basename, isMarkdownFile, join } from '../Paths/posix'
 import { listPathsUnder } from '../Files/walk'
 import { contentPages } from '../Bundles/bundle'
 import type { RecordFile } from '../Bundles/record'
 import { hiddenFolder } from '../Paths/exclusion'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { sweepGovernedRoots } from '../Nexus/governedSweep'
+import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { unsweptLine } from '../Nexus/entities'
 
 type Match = (word: string) => string | undefined
@@ -129,12 +128,11 @@ async function artifactFiles(
   root: string,
   entity: RecordFile['entity'],
   abs: string,
-): Promise<{ pages: string[]; sidecars: string[] }> {
-  const pages = await contentPages(entity, abs)
+): Promise<string[]> {
   const sidecars = await listPathsUnder(root, abs, (rel, kind) =>
     kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
   )
-  return { pages, sidecars: sidecars.map((rel) => join(root, rel)) }
+  return [...(await contentPages(entity, abs)), ...sidecars.map((rel) => join(root, rel))]
 }
 
 /** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
@@ -166,7 +164,6 @@ export async function scrubReturning(
       if (def && id) dropped.push({ page: id, property: def.id, value })
     }
   }
-  const { pages, sidecars } = await artifactFiles(root, entity, absArtifact)
   const unstamped = new Map<string, Record<string, string>>()
   const text = (held: string, file: string): string | null => {
     const content = current.text(held)
@@ -181,20 +178,24 @@ export async function scrubReturning(
     const kept = stripKeys(r.root, goneKeys) ?? r.root
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
-  const { skipped } = await sweepGovernedRoots(pages, { text, raw: () => null })
-  if (skipped.length) throw new Error(unsweptLine(skipped.length))
+  const json: Rewrite = (held) => {
+    const raw = current.words(current.json(held)).root
+    const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
+    const gone = unlinked(r.root)
+    note(gone, asString(raw.id))
+    return (
+      stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
+    )
+  }
+  const swept = await sweepGovernedRoots(await artifactFiles(root, entity, absArtifact), {
+    text,
+    raw: json,
+  })
+  // A page the scrub couldn't write refuses the restore; a Space it couldn't write goes unreported.
+  const missed = swept.skipped.filter(isMarkdownFile)
+  if (missed.length) throw new Error(unsweptLine(missed.length))
   // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
   for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
-  for (const file of sidecars)
-    await rmwJsonStrict(file, (held) => {
-      const raw = current.words(current.json(held)).root
-      const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
-      const gone = unlinked(r.root)
-      note(gone, asString(raw.id))
-      return (
-        stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
-      )
-    })
   return dropped
 }
 
@@ -208,11 +209,6 @@ export async function repairLanded(
 ): Promise<string[]> {
   if (!repair.size) return []
   const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
-  const { pages, sidecars } = await artifactFiles(root, entity, targetAbs)
-  const { skipped } = await sweepGovernedRoots(pages, { text, raw: () => null })
-  for (const file of sidecars) {
-    const wrote = await rmwJsonStrict(file, (raw) => spaceMoved(raw, file)).catch(() => null)
-    if (!wrote?.ok) skipped.push(file)
-  }
-  return skipped
+  const files = await artifactFiles(root, entity, targetAbs)
+  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
 }
