@@ -13,7 +13,8 @@ import { sidecarPath } from '../Paths/paths'
 import { isArchived } from '../Paths/nexusPaths'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
-import { addressable, type NexusPages } from './heldPages'
+import { addressable } from './heldPages'
+import type { EntityRecord } from './record'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { type Frozen, reencode, rewriteRaw } from './governedRoot'
@@ -111,21 +112,24 @@ export async function sweepCount(root: string, files: string[], plan: SweepPlan)
   return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 
-/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
+/** What a by-id sweep reads of each root: where its file is and what kind it is, so a trashed copy joins the live tree's records. */
+export type RootsById = ReadonlyMap<string, Pick<EntityRecord, 'kind' | 'path'> | null>
+
+/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
 export async function sweepRootsById<T>(
   root: string,
-  roots: NexusPages['byId'],
+  roots: RootsById,
   values: Record<string, T>,
   above: Record<string, string | undefined>,
   rewrite: (raw: Json, value: T) => Json | null,
-): Promise<Set<string>> {
+): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
   const asked = new Map<string, string>()
   const files = Object.keys(values).flatMap((id) => {
     const at = roots.get(id)
     if (at?.kind === 'page') return [join(root, at.path)]
     return at?.kind === 'space' ? [sidecarPath(join(root, at.path), 'space')] : []
   })
-  const { skipped } = await sweepGovernedRoots(files, {
+  const swept = await sweepGovernedRoots(files, {
     raw: (raw, file) => {
       const id = rootId(file, raw)
       if (!addressable(roots, id) || !Object.hasOwn(values, id)) return null
@@ -135,8 +139,8 @@ export async function sweepRootsById<T>(
     },
     above: (raw, file) => () => above[rootId(file, raw) ?? ''],
   })
-  for (const file of skipped) asked.delete(file)
-  return new Set(asked.values())
+  for (const file of swept.skipped) asked.delete(file)
+  return { taken: new Set(asked.values()), skipped: swept.skipped.length }
 }
 
 /** A value `frozen` still admits, landed in its written spelling under `def`'s key where `raw` reads blank; null where it doesn't land. */
@@ -151,10 +155,10 @@ export const refillOf =
 export async function refillValues(
   root: string,
   def: PropertyDefinition,
-  roots: NexusPages['byId'],
+  roots: RootsById,
   values: Record<string, unknown>,
   frozen: Frozen,
   above: Record<string, string | undefined> = {},
-): Promise<Set<string>> {
+): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
   return sweepRootsById(root, roots, values, above, refillOf(def, frozen))
 }

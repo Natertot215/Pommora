@@ -58,8 +58,10 @@ export interface NexusPages {
 }
 
 /** Whether `byId` addresses the one file carrying `id`: not where the file carries no ID, nor where two files claim it, so no strip files a value under it and no refill writes it. */
-export const addressable = (byId: NexusPages['byId'], id: string | undefined): id is string =>
-  id !== undefined && byId.get(id) !== null
+export const addressable = (
+  byId: ReadonlyMap<string, unknown>,
+  id: string | undefined,
+): id is string => id !== undefined && byId.get(id) !== null
 
 /** The title the window shows for `id`: its one holder's, or the first-listed page's where two files claim it. */
 export const shownTitle = (
