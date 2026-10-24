@@ -1227,7 +1227,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 10-4 · Restores write Spaces through the one sweep and report every miss
   - [x] Task 10-5 · Drive group 8
   - [x] Review Checkpoint
-  - [ ] Closeout P9–P10 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P9–P10 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and Phases 11A and 11B before Phase 11A opens]`
 - [ ] **Phase 11A** — One Note per Item: The Notes and the Renames
   - [ ] Task 11A-1 · The notes module, `Core/Nexus/owed.ts`
@@ -19402,8 +19402,8 @@ An unreadable page the index answers now carries its id and values in `held`, so
 
 ```Core/Contexts/contextCascade.ts diff
 @@ imports @@
--import { basename, dirname, join } from '../Paths/posix'
-+import { dirname, isAtOrUnder, join } from '../Paths/posix'
+-import { basename, dirname, join, relative } from '../Paths/posix'
++import { dirname, isAtOrUnder, join, relative } from '../Paths/posix'
  …
 -import { ID_KEY } from '../Nexus/identityMark'
 -import { asString } from '../Nexus/coerce'
@@ -35439,7 +35439,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
 | 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
 | 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
-| 10 | −381 | +393 | +12 | −320 / +337 / +17 | −391 |
+| 10 | −381 | +393 | +12 | −323 / +334 / +11 | −397 |
 | 11A | −634 | +738 | +104 | | |
 | 11B | −449 | +835 | +386 | | |
 | 12 | −192 | +340 | +148 | | |
