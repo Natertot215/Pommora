@@ -814,6 +814,45 @@ describe('a content delete on the notes', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
+  it('a crash between the note and the move leaves the live page its links', async () => {
+    const target = await page(notes, 'Target')
+    const id = (await idOf(target)) as string
+    const linker = await page(notes, 'One', 'Target')
+    await refreshTree(root)
+    await putJson(join(root, OWED_REL), {
+      [id]: { kind: 'container', at: 'Notes/Target.md', strip: ['Notes/Target.md'] },
+    })
+    await finishOwed(root, nexusDeps)
+    expect(await relatedOf(linker)).toBe('[[Target]]')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    "a page restored before its delete's Try Again keeps every linker's link",
+    async () => {
+      await page(notes, 'Target')
+      const one = await page(notes, 'One', 'Target')
+      const two = await page(notes, 'Two', 'Target')
+      await refreshTree(root)
+      const deleted = await shut(two, () =>
+        handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }, nexusDeps),
+      )
+      if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
+      expect(deleted.value.cascade?.owed).toBe(true)
+      await refreshTree(root)
+      const r = await settledMutate(
+        root,
+        { op: 'restore', bundlePath: deleted.value.bundled.bundlePath },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(true)
+      await finishOwed(root, nexusDeps)
+      expect(await relatedOf(one)).toBe('[[Target]]')
+      expect(await relatedOf(two)).toBe('[[Target]]')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
   it.skipIf(noModeBits)(
     "a Collection restored before its delete's Try Again keeps its views",
     async () => {
