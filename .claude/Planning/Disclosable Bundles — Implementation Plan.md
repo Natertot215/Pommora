@@ -1,7 +1,7 @@
 ## Disclosable Bundles — Implementation Plan
 
 **DATE:** 10-23-2026
-**STATUS:** Draft
+**STATUS:** Ratified 10-23-2026
 **SOURCE:** This session's conversation. Nathan's request: archived or trashed Sets and Collections disclose like any other disclosable table row, so a single page or Set can be recovered out of one. His rulings are listed under *§Constraints*.
 
 **BASELINE**
@@ -110,6 +110,7 @@ The chevron sits right of the label in both skins.
   - **Search:** narrows top rows only.
   - **Undo:** re-nests an inner item through one shared primitive in `Core/Bundles/`.
   - **Names:** as written in *§Concepts*.
+  - **Partial Mark:** an inner item of a partly recorded container is itself partly recorded. `innerRecord` carries the container's `partial`, so its row shows the Trash's partial mark, and the restore's `recordedPartly` warning names that item under its own landed title, never its container's (Task 1-2, folded into the Restructure's `recordedPartly` at re-grounding).
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root, clean at every Review Checkpoint.
 - **One Derivation:** each of these has exactly one reader:
   - a store path: `bundleAddressOf`;
@@ -270,6 +271,7 @@ The chevron sits right of the label in both skins.
     - it holds only the kept values whose title resolves to `P`.
   - **Missing Sidecar ID:** a folder without one leaves its inner item `unaddressable`.
   - **Page Bundle:** an address inside a page bundle opens as `not-found`.
+  - **Partial Bundle:** an inner item of a bundle recorded `partial` opens `partial`, and one of a whole record opens without it.
   - **`spendBundle`:**
     - on an inner item, it strips exactly that item's carried values from the bundle's record, matched by `page`, `property`, and `value`;
     - on a whole bundle, it removes the bundle.
@@ -346,7 +348,7 @@ The chevron sits right of the label in both skins.
 +  ]
 +}
 +
-+/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable where an id is missing, and the bundle's targets; no place, since the siblings it left are gone with it. */
++/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable where an id is missing, the bundle's targets, and its partial mark, since what the bundle recorded partly it recorded partly for each item it holds; no place, since the siblings it left are gone with it. */
 +async function innerRecord(
 +  held: ContainerRecord,
 +  trail: readonly (string | undefined)[],
@@ -363,6 +365,7 @@ The chevron sits right of the label in both skins.
 +    parent: addressed ? { kind: 'container', id: ids[ids.length - 1] } : { kind: 'unaddressable' },
 +    ...(addressed && ids.length > 1 ? { trail: ids.slice(0, -1) } : {}),
 +    ...(held.targets ? { targets: held.targets } : {}),
++    ...(held.partial ? { partial: true as const } : {}),
 +  }
 +}
 +
@@ -1203,7 +1206,13 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Open Items
 
-- None.
+- **Sequencing:** this plan runs after the Properties Restructure lands, at least its Phase 12 and Closeout P11B–P12, with Task 6-1 and Task 6-2 after its Phase 18. That plan rewrites the same regions of `spend.ts` (`emptyBundle` and the property arm), `delete.ts` (`fromArchive`'s spend), `rows.ts` (`bundleRowOf`, adding `partial`), `browser.ts` (`many`, `restoreOne`, `restoreBatch`, adding `owed`/`finishOwed`), `TrashFrame.tsx`'s `TrashRowView`, `NexusRecordPM.md:14`, `CorePM.md:92`, and `Archive Drive/MATRIX.md`. Both plans share the one `active` checkout.
+- **Re-Grounding Before Execution:** every diff anchor above is re-read against the landed Restructure, and four items are taken into the tasks they touch:
+  - **Kept Links:** the delete's kept Link values are appended through `finishEntry`'s owed note rather than written with the record. `keptLinksUnder` and `spendBundle` (Tasks 1-2 and 1-3) are written against that note model, so a whole-bundle spend never removes a bundle an owed note still names.
+  - **`emptyBundle`:** its note key (`relative(root, bundleAbs)`) stays one key per inner item (Task 1-3).
+  - **`BundleRow.partial`:** this field enters `artifactRow` (Task 3-1).
+  - **Batch Restore:** `many`'s `owed` and `finishOwed` merge with the batch's `destinationOf` (Task 4-2).
+
 
 #### Deviations
 
