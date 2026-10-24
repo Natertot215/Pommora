@@ -535,6 +535,51 @@ describe('the delete’s list step and its keys', () => {
     expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', strip: ['Priority'] } })
   })
 
+  it.skipIf(noModeBits)(
+    "a Collection settings file the delete couldn't purge keeps the delete owed",
+    async () => {
+      const { id } = await held()
+      const file = sidecarPath(tasks, 'collection')
+      await putJson(file, {
+        ...(await readJsonObject(file)),
+        property_cache: { [id]: { values: { [newContentId('page')]: 'hi' } } },
+      })
+      dropLiveTree()
+      await chmod(file, 0o000)
+      try {
+        const r = await deleteProperty(root, id)
+        expect(r.ok && r.value.cascade?.owed).toBe(true)
+        expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', strip: ['Priority'] } })
+      } finally {
+        await chmod(file, 0o644)
+      }
+      await finishOwed(root, deps)
+      const sc = await readJsonObject(file)
+      expect(sc?.properties ?? []).not.toContain(id)
+      expect(sc).not.toHaveProperty('property_cache')
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it('a holder with no id keeps the delete owed', async () => {
+    const { id } = await held()
+    const bare = join(notes, 'Bare.md')
+    await writeFile(bare, '---\nPriority: hi\n---\nb\n')
+    dropLiveTree()
+    const r = await deleteProperty(root, id)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.owed).toBe(true)
+    expect(await readFile(bare, 'utf8')).toContain('Priority: hi')
+    expect(await readRecord(join(root, r.value.bundled?.bundlePath ?? ''))).toMatchObject({
+      partial: true,
+    })
+    await writeFile(bare, `---\n${ID_KEY}: ${newContentId('page')}\nPriority: hi\n---\nb\n`)
+    dropLiveTree()
+    await finishOwed(root, deps)
+    expect(await readFile(bare, 'utf8')).not.toContain('Priority')
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it('a delete reads each holder once per key it holds', async () => {
     const { id, pages } = await held()
     vi.mocked(readTextOrNull).mockClear()

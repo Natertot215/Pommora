@@ -9,7 +9,7 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { findHolders, type Held, heldValues, type Holders } from '../Index/keyHolders'
+import { findHolders, type Held, heldValues, type Holders, unaddressed } from '../Index/keyHolders'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { owedDelete, propertyNote, readNotes, runNoted } from '../Nexus/owed'
 import {
@@ -123,13 +123,18 @@ export async function stripProperty(
   { holders, plan }: DeletePlan,
 ): Promise<ConfigReach> {
   const swept = await sweepGovernedRoots([...holders.pages, ...holders.spaces], plan)
-  for (const folder of folders) await unassignAndPurge(folder, propertyId)
+  let purged = 0
+  for (const folder of folders) if (!(await unassignAndPurge(folder, propertyId))) purged++
   const reach = await reachConfig(root, { kind: 'property', propertyId })
-  return { skipped: swept.skipped.length + reach.skipped, hosts: reach.hosts }
+  return {
+    skipped: swept.skipped.length + unaddressed(holders.held) + purged + reach.skipped,
+    refused: swept.refused,
+    hosts: reach.hosts,
+  }
 }
 
-async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {
-  await patchSidecar(folder, 'collection', (cur) => {
+async function unassignAndPurge(folder: string, propertyId: string): Promise<boolean> {
+  const written = await patchSidecar(folder, 'collection', (cur) => {
     const assigned = assignedIds(cur)
     const hadCache = isPlainObject(cur.property_cache) && propertyId in cur.property_cache
     if (!assigned.includes(propertyId) && !hadCache) return null
@@ -137,4 +142,5 @@ async function unassignAndPurge(folder: string, propertyId: string): Promise<voi
     // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
     return hadCache ? patchCacheBlock(next, propertyId) : next
   })
+  return written.ok
 }
