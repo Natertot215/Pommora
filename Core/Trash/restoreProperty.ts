@@ -9,7 +9,7 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import { join } from '../Paths/posix'
 import { assignInner } from '../Properties/assignment'
 import { refillValues } from '../Nexus/governedSweep'
-import { patchCacheBlock } from '../Properties/propertyCache'
+import { patchStashBlock } from '../Properties/propertyStash'
 import { isBlankRaw } from '../Files/rootValues'
 import { gonePageEntry } from '../Nexus/governedRoot'
 import { frozenWorld } from './trashedCopies'
@@ -53,10 +53,10 @@ async function restoreInner(
     const folder = byId.get(collectionId)
     if (folder) await assignInner(root, folder, record.id)
   }
-  for (const [collectionId, values] of Object.entries(record.caches ?? {})) {
+  for (const [collectionId, block] of Object.entries(record.stashes ?? {})) {
     const folder = byId.get(collectionId)
     if (folder)
-      await patchSidecar(folder, 'collection', (cur) => patchCacheBlock(cur, record.id, { values }))
+      await patchSidecar(folder, 'collection', (cur) => patchStashBlock(cur, record.id, block))
   }
   const { byId: roots, archived } = await nexusPages(root, tree)
   const frozen = frozenWorld(linkWorld(tree, archived))

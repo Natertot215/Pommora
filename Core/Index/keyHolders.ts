@@ -143,6 +143,10 @@ export const heldValues = (held: readonly Held[], key: string): Record<string, u
     ),
   )
 
+/** Each addressed holder's `above` under `key`, by its id, as `heldValues` files its value. */
+export const heldAbove = (held: readonly Held[], key: string): Record<string, string> =>
+  Object.fromEntries(held.flatMap((h) => (h.id && h.above[key] ? [[h.id, h.above[key]]] : [])))
+
 /** The holders a values read leaves out of `pages` because no id addresses them (none, or one another file shares): each keeps its value and counts as unfinished, since no restore could put it back. */
 export const unaddressed = (held: readonly Held[]): number =>
   held.filter((h) => h.values && !h.id).length

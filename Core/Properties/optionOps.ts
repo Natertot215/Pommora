@@ -8,7 +8,7 @@ import {
   sweepGovernedRoots,
   type SweepPlan,
 } from '../Nexus/governedSweep'
-import { editCaches } from './propertyCache'
+import { editStashes } from './propertyStash'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
 import { errText, ok, fail, type Result } from '../Contract/result'
 import { claimsWord, optionList } from './propertyValue'
@@ -227,9 +227,9 @@ async function valueEditPlan(
   return { files: [...pages, ...spaces], plan: { raw: valueEditRewrite(def, keys) } }
 }
 
-async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
+async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
   const { collections } = await liveTreeOf(root)
-  return editCaches(root, collections, new Set([def.id]), (values) =>
+  return editStashes(root, collections, new Set([def.id]), (values) =>
     Object.keys(values).reduce<Json | null>(
       (next, id) => editHeldList(next ?? values, id, (held) => editList(held, keys)) ?? next,
       null,
@@ -237,7 +237,7 @@ async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit
   )
 }
 
-/** Rewrites the files and caches holding `keys`' old keys. A delete names its option, and every saved view, tile, and filter drops the option's id. */
+/** Rewrites the files and stashes holding `keys`' old keys. A delete names its option, and every saved view, tile, and filter drops the option's id. */
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
@@ -248,7 +248,7 @@ export async function optionCascade(
   if (keys.size) {
     const { files, plan } = await valueEditPlan(root, def, keys)
     swept = sweptReach(await sweepGovernedRoots(files, plan))
-    swept.skipped += await cacheSweep(root, def, keys)
+    swept.skipped += await stashSweep(root, def, keys)
   }
   const reach =
     removed === undefined

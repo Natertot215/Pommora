@@ -1,5 +1,6 @@
 import { dirname, join, relative } from '../Paths/posix'
 import { z } from 'zod'
+import { stashBlock } from '../Properties/propertyStash'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { index } from '../Files/decoders'
 import { stampedIdOf } from '../Files/pageFile'
@@ -80,8 +81,9 @@ const recordFile = z.discriminatedUnion('entity', [
     // The definition as it stood, kept whole for the restore to decode.
     def: z.looseObject({ id: z.string() }),
     values: z.record(z.string(), z.unknown()),
+    above: z.record(z.string(), z.string()).optional(),
     assignments: z.array(z.string()).optional(),
-    caches: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
+    stashes: z.record(z.string(), stashBlock).optional(),
     partial: z.literal(true).optional(),
   }),
   z.object({
