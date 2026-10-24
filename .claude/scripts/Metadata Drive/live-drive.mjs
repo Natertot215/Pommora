@@ -23,8 +23,7 @@ const CACHE_COLLECTION = 'Collection B'
 const CACHE_SET = 'Collection B/Set Alpha'
 const CONTEXTS = '.nexus/contexts'
 const REGISTRY = '.nexus/properties.json'
-const JOURNAL = '.nexus/property-cascade.json'
-const CONTEXT_JOURNAL = '.nexus/context-rename.json'
+const NOTES = '.nexus/.owed.json'
 const MATRIX = '.nexus/interface/matrix.json'
 const FORMATS = ['Match Title', 'lowercase', 'UPPERCASE', 'kebab-case', 'PascalCase', 'camelCase', 'snake_case', 'Train-Case', 'UPPER_SNAKE_CASE', 'UPPER-KEBAB-CASE']
 
@@ -99,21 +98,20 @@ async function unreadable(rel, run) {
     chmodSync(abs, 0o644)
   }
 }
-/** A rename over two pages, the first unreadable: the reply, the record it owes, and the replay of that record, with `after` run between. */
-async function tryAgain(cdp, [[first], [second]], rename, after) {
+const FINISH = { op: 'finishOwed' }
+/** The entry `id` owes in the notes file, or null once it owes nothing. */
+const owedOf = (id) => {
+  const text = fileOf(NOTES)
+  return (text === null ? null : JSON.parse(text)[id]) ?? null
+}
+/** A rename of `id` over two pages, the first unreadable: the reply, the entry it owes, and the Try Again that finishes it, with `after` run between. */
+async function tryAgain(cdp, [[first], [second]], id, rename, after) {
   const r = await unreadable(first, rename)
-  const owed = r.ok && r.value?.retry ? slot() : undefined
+  const owed = r.ok && r.value?.cascade?.owed ? owedOf(id) : undefined
   await after?.()
-  const replayed = owed ? await ask(cdp, 'mutate', r.value.retry) : null
+  const replayed = owed ? await ask(cdp, 'mutate', FINISH) : null
   return { r, owed, replayed, first, second }
 }
-const slotOf = (rel) => {
-  const text = fileOf(rel)
-  return text === null ? null : JSON.parse(text)
-}
-const slot = () => slotOf(JOURNAL)
-const FINISH = { op: 'finishOwed' }
-const contextSlot = () => slotOf(CONTEXT_JOURNAL)
 
 // ── Contexts and Spaces ─────────────────────────────────────────────────────
 
@@ -532,7 +530,7 @@ async function group2(cdp) {
   const heldPage = snapshot([held])
   const refused = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Held'], label: 'm2 held' })
   pin(G, 'A-1', 'a rename onto a key a page already holds beside it is refused, and nothing moves',
-    refusedAs(refused, COPY.itemsHoldingBothKeys, 1, 'M2 Held', 'm2 held') && (await heldPage.holds()) && slot() === null, show(refused))
+    refusedAs(refused, COPY.itemsHoldingBothKeys, 1, 'M2 Held', 'm2 held') && (await heldPage.holds()) && owedOf(ids['M2 Held']) === null, show(refused))
 
   const [[gone]] = pairs.gone
   const deleted = await must('delete M2 Gone', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M2 Gone'] }))
@@ -543,35 +541,34 @@ async function group2(cdp) {
     await settles(async () => fmOf(gone)['M2 Gone'] === 'x' && fmOf(gone)['m2 gone'] === 'y' && sidecar('Areas', 'Area Two')['M2 Gone'] === 'x'),
     show([fmOf(gone), sidecar('Areas', 'Area Two')]))
 
-  const skip = await tryAgain(cdp, pairs.skip, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Skip'], label: 'M2 Skipped' }), async () => {
-    pin(G, 'F-1', 'a rename that skips an unreadable file owes it through the journal and sweeps the rest',
-      slot() !== null && (await wrote(pairs.skip[1][0], 'M2 Skipped: b')), show(slot()))
+  const skip = await tryAgain(cdp, pairs.skip, ids['M2 Skip'], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Skip'], label: 'M2 Skipped' }), async () => {
+    pin(G, 'F-1', 'a rename that skips an unreadable file owes its old key in its own entry and sweeps the rest',
+      same(owedOf(ids['M2 Skip']), { kind: 'property', rename: ['M2 Skip'] }) && (await wrote(pairs.skip[1][0], 'M2 Skipped: b')), show(owedOf(ids['M2 Skip'])))
   })
-  pin(G, 'F-1', 'Try Again brings the skipped file current and clears the journal',
-    !!skip.owed && skip.replayed?.ok && (await wrote(skip.first, 'M2 Skipped: a')) && slot() === null, show([skip.r, skip.replayed, blockOf(skip.first)]))
+  pin(G, 'F-1', 'Try Again brings the skipped file current and clears the entry',
+    !!skip.owed && skip.replayed?.ok && (await wrote(skip.first, 'M2 Skipped: a')) && owedOf(ids['M2 Skip']) === null, show([skip.r, skip.replayed, blockOf(skip.first)]))
 
-  const relink = () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Linked' })
-  let waited
-  const chain = await tryAgain(cdp, pairs.chain, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M2 Chain'], label: 'M2 Chained' }), async () => {
-    const owed = slot()
-    waited = refusedAs(await relink(), COPY.anOptionChangeWaitingForTryAgain) && same(slot(), owed) && defOf(ids['M2 Chain']).label === 'M2 Chained'
+  const chainId = ids['M2 Chain']
+  let relinked
+  const chain = await tryAgain(cdp, pairs.chain, chainId, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: chainId, label: 'M2 Chained' }), async () => {
+    relinked = (await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: chainId, label: 'M2 Linked' })).ok
+      && (await wrote(pairs.chain[1][0], 'M2 Linked: b')) && same(owedOf(chainId), { kind: 'property', rename: ['M2 Chain'] })
   })
-  pin(G, 'F-1', "a second rename waits for the first one's Try Again, then lands on every holder",
-    !!chain.owed && waited && chain.replayed?.ok && (await wrote(chain.first, 'M2 Chained: a')) && slot() === null &&
-      (await relink()).ok && (await wrote(chain.second, 'M2 Linked: b')) && (await wrote(chain.first, 'M2 Linked: a')),
+  pin(G, 'F-1', "a second rename lands while the first is owed, and Try Again brings the first's skipped file to the second name",
+    !!chain.owed && relinked && chain.replayed?.ok && (await wrote(chain.first, 'M2 Linked: a')) && owedOf(chainId) === null,
     show([chain.r, chain.replayed, blockOf(chain.first), blockOf(chain.second)]))
 
   const [[back1], [back2]] = pairs.back
   const moved = await unreadable(back1, () => ask(cdp, 'mutate', { op: 'renameContext', contextId: back, newName: 'M2 Front' }))
-  const retry = moved.ok ? moved.value?.retry : undefined
+  const owedBack = moved.ok && !!moved.value?.cascade?.owed && same(owedOf(back), { kind: 'context', rename: ['M2 Back'] })
   await wrote(back2, '<M2 Front>: [M2 Spot]')
   await must('rename M2 Front back', ask(cdp, 'mutate', { op: 'renameContext', contextId: back, newName: 'M2 Back' }))
   await wrote(back2, '<M2 Back>: [M2 Spot]')
   const backKept = snapshot([back1, back2])
-  const retried = retry ? await ask(cdp, 'mutate', retry) : null
-  pin(G, 'F-1', "a Context's Try Again after a rename back writes nothing, and no holder loses the key",
-    !!retry && retried?.ok && (await backKept.holds()) && contextSlot() === null && blockOf(back1) === '<M2 Back>: [M2 Spot]',
-    show([moved, retried, contextSlot(), blockOf(back1), blockOf(back2)]))
+  const retried = owedBack ? await ask(cdp, 'mutate', FINISH) : null
+  pin(G, 'F-1', "a Context renamed back owes nothing, its Try Again writes nothing, and no holder loses the key",
+    owedBack && retried?.ok && (await backKept.holds()) && owedOf(back) === null && blockOf(back1) === '<M2 Back>: [M2 Spot]',
+    show([moved, retried, owedOf(back), blockOf(back1), blockOf(back2)]))
 }
 
 // ── Group 3 — Exact words, foreign words, Is and Is Not (Phase 3) ──────────
@@ -734,9 +731,9 @@ async function group3(cdp) {
   })
   pin(G, 'A-1', 'an option rename edits a Space list by the exact word and leaves another casing',
     same(sidecar('Areas', 'Area One')['M3 Labels'], ['work', 'Job']), show(sidecar('Areas', 'Area One')['M3 Labels']))
-  const recase = await tryAgain(cdp, recasePages, () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M3 Case'], label: 'm3 case' }))
+  const recase = await tryAgain(cdp, recasePages, ids['M3 Case'], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M3 Case'], label: 'm3 case' }))
   pin(G, 'A-1 F-3', 'a case-only rename owes its skipped file, and Try Again moves the key',
-    !!recase.owed && (await wrote(recase.second, 'm3 case: b')) && (await wrote(recase.first, 'm3 case: a')) && slot() === null,
+    !!recase.owed && (await wrote(recase.second, 'm3 case: b')) && (await wrote(recase.first, 'm3 case: a')) && owedOf(ids['M3 Case']) === null,
     show([recase.r, blockOf(recase.first), blockOf(recase.second)]))
   pin(G, 'F-2', "an option rename leaves a saved view naming the option's id",
     same(operandsFor(viewOf(exact), ids[C.labels]), [work]), show(operandsFor(viewOf(exact), ids[C.labels])))
@@ -791,7 +788,7 @@ async function group4(cdp) {
   pin(G, 'J-1', 'the rename refusal counts two Items', refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Pair'], label: 'm4 pair' }), COPY.itemsHoldingBothKeys, 2, 'M4 Pair', 'm4 pair'))
   const skipped = await unreadable(notice[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M4 Notice'], label: 'M4 Notices' }))
   pin(G, 'J-1', 'an unswept notice says Items', skipped.ok && skipped.value?.cascade?.warning === 'Couldn’t update 1 Item.', show(skipped))
-  if (skipped.ok && skipped.value?.retry) await must('Try Again', ask(cdp, 'mutate', skipped.value.retry))
+  if (skipped.ok && skipped.value?.cascade?.owed) await must('Try Again', ask(cdp, 'mutate', FINISH))
 }
 
 // ── Group 5 — The label and key registry (Phases 5A and 5B) ────────────────
@@ -943,48 +940,50 @@ async function group6(cdp) {
   pin(G, 'J-1', 'a reassign after a Clear brings the cleared value back nowhere',
     await holds(async () => !listOf(fmOf(cachedPage)['M6 Tones']).includes('Sky Blue'), 2500), show(blockOf(cachedPage)))
 
-  // The journal: every record carries stored keys, an owed option record holds every option change but Clear, and Try
-  // Again brings the skipped file current.
+  // The notes: each item owes its own entry of stored keys, an option change and Clear run while another owes work, a
+  // name another option still owes is refused, and Try Again brings the skipped file current.
   const renamed = await unreadable(due[0], () => ask(cdp, 'mutate', { op: 'renameProperty', propertyId: dueId, label: 'M6 When' }))
-  pin(G, 'F-1', 'a rename record carries the stored keys',
-    same(renamed.value?.retry, FINISH) && same(slot(), { op: 'rename', id: dueId, from: 'm6_due', to: 'M6 When' }), show([renamed, slot()]))
-  await must('Try Again', ask(cdp, 'mutate', renamed.value.retry))
-  pin(G, 'F-1', "the rename's Try Again moves the stored key", (await wrote(due[0], 'M6 When: a')) && slot() === null, show(blockOf(due[0])))
+  pin(G, 'F-1', 'a rename entry carries the stored key',
+    !!renamed.value?.cascade?.owed && same(owedOf(dueId), { kind: 'property', rename: ['m6_due'] }), show([renamed, owedOf(dueId)]))
+  await must('Try Again', ask(cdp, 'mutate', FINISH))
+  pin(G, 'F-1', "the rename's Try Again moves the stored key", (await wrote(due[0], 'M6 When: a')) && owedOf(dueId) === null, show(blockOf(due[0])))
 
-  const optionRecord = { op: 'option-rename', id: tints, keys: [['Pale', 'Light']] }
   const [pale, deep] = ['Pale', 'Deep'].map((label) => optionId(defOf(tints), label))
+  const optionEntry = { kind: 'property', options: { [pale]: { rename: ['Pale'] } } }
   const owing = await unreadable(tint[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: pale, label: 'Light' }))
-  pin(G, 'F-1', 'an option rename record carries its key pairs',
-    same(owing.value?.retry, FINISH) && same(slot(), optionRecord), show([owing, slot()]))
-  const held = snapshot([...tint, REGISTRY, JOURNAL])
-  pin(G, 'F-1', 'an option rename waits while a record is owed',
-    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: deep, label: 'Dark' }), COPY.anOptionChangeWaitingForTryAgain))
-  pin(G, 'F-1', 'an option delete waits while a record is owed',
-    refusedAs(await ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tints, optionId: deep }), COPY.anOptionChangeWaitingForTryAgain))
-  pin(G, 'F-1', 'a waiting option change writes nothing', await held.holds(), show(held.changed()))
-  pin(G, 'F-1', "Clear waits while its own property's option record is owed",
-    refusedAs(await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, optionId: deep }), COPY.anOptionChangeWaitingForTryAgain))
-  pin(G, 'F-1', 'a property rename waits while a record is owed',
-    refusedAs(await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' }), COPY.anOptionChangeWaitingForTryAgain) && blockOf(free) === 'M6 Free: f')
+  pin(G, 'F-1', "an option rename entry carries the option's old key",
+    !!owing.value?.cascade?.owed && same(owedOf(tints), optionEntry), show([owing, owedOf(tints)]))
+  pin(G, 'B-1', 'another option renames while the property owes work',
+    (await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: deep, label: 'Dark' })).ok && same(owedOf(tints), optionEntry))
+  const held = snapshot([...tint, REGISTRY, NOTES])
+  pin(G, 'F-1', 'an option renamed onto a word another option still owes is refused',
+    refusedAs(await ask(cdp, 'mutate', { op: 'renameOption', propertyId: tints, optionId: deep, label: 'Pale' }), COPY.aNameStillOwed))
+  pin(G, 'F-1', 'a refused option rename writes nothing', await held.holds(), show(held.changed()))
+  pin(G, 'B-1', 'Clear runs while its own property owes work',
+    (await ask(cdp, 'mutate', { op: 'clearOption', propertyId: tints, optionId: deep })).ok && same(owedOf(tints), optionEntry))
+  pin(G, 'B-1', 'a property rename runs while another property owes work',
+    (await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids['M6 Free'], label: 'M6 Freed' })).ok && (await wrote(free, 'M6 Freed: f')))
   const shielded = seedPage(pageAt('M6 Tint 3'), 'M6 Tints: [Pale]')
   await indexed(cdp, COLLECTION, [shielded])
-  pin(G, 'F-1', "the owed record's old key isn't adopted while it's owed", await holds(async () => !keysOf(tints).includes('Pale'), 3000), show(wordsOf(tints)))
-  await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
-  pin(G, 'F-1', "the option rename's Try Again brings the skipped file current and clears the record",
-    (await wrote(tint[0], 'M6 Tints: [Light]')) && slot() === null, show([blockOf(tint[0]), slot()]))
+  pin(G, 'F-1', "the owed entry's old key isn't adopted while it's owed", await holds(async () => !keysOf(tints).includes('Pale'), 3000), show(wordsOf(tints)))
+  await must('Try Again', ask(cdp, 'mutate', FINISH))
+  pin(G, 'F-1', "the option rename's Try Again brings the skipped file current and clears the entry",
+    (await wrote(tint[0], 'M6 Tints: [Light]')) && owedOf(tints) === null, show([blockOf(tint[0]), owedOf(tints)]))
 
   const removedProp = await unreadable(doomed[0], () => ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M6 Doomed'] }))
-  pin(G, 'F-1', 'a delete record carries the stored key',
-    same(removedProp.value?.retry, FINISH) && same(slot(), { op: 'delete', id: ids['M6 Doomed'], key: 'M6 Doomed' }), show(removedProp))
-  if (removedProp.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedProp.value.retry))
-  pin(G, 'F-1', "the delete's Try Again strips the skipped file", (await wrote(doomed[0], '')) && slot() === null, show(blockOf(doomed[0])))
+  pin(G, 'F-1', 'a delete entry carries the stored key',
+    !!removedProp.value?.cascade?.owed && same(owedOf(ids['M6 Doomed']), { kind: 'property', strip: ['M6 Doomed'] }), show(removedProp))
+  if (removedProp.value?.cascade?.owed) await must('Try Again', ask(cdp, 'mutate', FINISH))
+  pin(G, 'F-1', "the delete's Try Again strips the skipped file", (await wrote(doomed[0], '')) && owedOf(ids['M6 Doomed']) === null, show(blockOf(doomed[0])))
 
-  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, optionId: optionId(defOf(strikeId), 'x') }))
-  pin(G, 'F-1', 'an option delete record carries the stored key',
-    same(removedOption.value?.retry, FINISH) && same(slot(), { op: 'option-remove', id: strikeId, key: 'x' }), show(removedOption))
-  if (removedOption.value?.retry) await must('Try Again', ask(cdp, 'mutate', removedOption.value.retry))
+  const x = optionId(defOf(strikeId), 'x')
+  const removedOption = await unreadable(strike[0], () => ask(cdp, 'mutate', { op: 'deleteOption', propertyId: strikeId, optionId: x }))
+  pin(G, 'F-1', 'an option delete entry carries the stored key, the option already off the list',
+    !!removedOption.value?.cascade?.owed && same(owedOf(strikeId), { kind: 'property', options: { [x]: { strip: ['x'] } } }) && !keysOf(strikeId).includes('x'),
+    show([removedOption, owedOf(strikeId)]))
+  if (removedOption.value?.cascade?.owed) await must('Try Again', ask(cdp, 'mutate', FINISH))
   pin(G, 'F-1', "the option delete's Try Again strips the skipped file",
-    (await wrote(strike[0], 'M6 Strike: [y]')) && (await wrote(strike[1], 'M6 Strike: [y]')) && slot() === null, show(strike.map(blockOf)))
+    (await wrote(strike[0], 'M6 Strike: [y]')) && (await wrote(strike[1], 'M6 Strike: [y]')) && owedOf(strikeId) === null, show(strike.map(blockOf)))
 }
 
 // ── Group 7 — The formats, adoption, and the rows' channels (Phases 7A and 7B) ──
@@ -1100,7 +1099,7 @@ async function group7(cdp) {
   const listed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: kindsId, change: { key_format: 'lowercase' } })
   pin(G, 'B-4 F-1', 'a Key Format change moves a list key on its line on the page and on the Space',
     listed.ok && !!listed.value.cascade && defOf(kindsId).key === 'kinds' && (await wrote(kinds, 'x: 1\nkinds: [a]\ny: 2'))
-      && (await settles(async () => same(sidecar('Areas', 'Area Two').kinds, ['b']))) && slot() === null,
+      && (await settles(async () => same(sidecar('Areas', 'Area Two').kinds, ['b']))) && owedOf(kindsId) === null,
     show([listed, blockOf(kinds), sidecar('Areas', 'Area Two')]))
   const relabel = await ask(cdp, 'mutate', { op: 'renameProperty', propertyId: kindsId, label: 'Labels' })
   pin(G, 'C-2', 'a label rename writes the key through the Key Format', relabel.ok && defOf(kindsId).key === 'labels' && (await wrote(kinds, 'x: 1\nlabels: [a]\ny: 2')), show([relabel, defOf(kindsId)]))
@@ -1109,7 +1108,7 @@ async function group7(cdp) {
   pin(G, 'C-2', 'a label rename the format writes as the same key moves nothing',
     recased.ok && !recased.value.cascade && defOf(kindsId).label === 'LABELS' && (await kindsKept.holds()), show(recased))
 
-  const sortsKept = snapshot([sorts, JOURNAL])
+  const sortsKept = snapshot([sorts, NOTES])
   pin(G, 'D-1 J-1', 'a Key Format change onto a key a page holds beside it is refused, and nothing moves',
     refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'lowercase' } }), COPY.itemsHoldingBothKeys, 1, 'Sorts', 'sorts') && (await sortsKept.holds()) && defOf(sortsId).key === 'Sorts')
 
@@ -1174,7 +1173,7 @@ async function group7(cdp) {
     toneCount.ok && toneCount.value === 2 && (await toneKept.holds(800)), show(toneCount))
   const changed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: tones, change: { value_format: 'kebab-case' } })
   pin(G, 'F-1 C-2', 'a Value Format change re-keys every option and keeps every label',
-    changed.ok && !changed.value?.retry && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && slot() === null,
+    changed.ok && !changed.value?.cascade?.owed && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && owedOf(tones) === null,
     show([changed, defOf(tones)]))
   pin(G, 'F-1 F-2', 'a Value Format change rewrites the page, the Space, and the Collection cache by key',
     (await wrote(tone, 'Tones: ["light-blue", "dark-red"]')) && same(sidecar('Areas', 'Area One').Tones, ['light-blue'])
@@ -1191,26 +1190,26 @@ async function group7(cdp) {
   await must('assign Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
   pin(G, 'F-2', 'a reassign after a Value Format change refills the current key', await settles(async () => same(listOf(fmOf(cachedPage).Tones), ['light-blue'])), show(blockOf(cachedPage)))
 
-  // A format change over an unreadable file owes it under a record of stored keys alone, and Try Again brings it current.
+  // A format change over an unreadable file owes it in its own entry of stored keys alone, and Try Again brings it current.
   const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipKeyId, change: { key_format: 'lowercase' } }))
-  const keyRecord = { op: 'rename', id: skipKeyId, from: 'Skip Key', to: 'skip key' }
-  pin(G, 'F-1', 'a Key Format change that skips a file owes a rename record of its stored keys and sweeps the rest',
-    same(keySkip.value?.retry, FINISH) && same(slot(), keyRecord) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, slot()]))
-  const keyReplay = await ask(cdp, 'mutate', keySkip.value?.retry)
-  pin(G, 'F-1', "the Key Format change's Try Again moves the skipped file's key and clears the record",
-    keyReplay.ok && (await wrote(skipKey[0], 'skip key: a')) && slot() === null, show([keyReplay, blockOf(skipKey[0])]))
+  pin(G, 'F-1', 'a Key Format change that skips a file owes its stored key and sweeps the rest',
+    !!keySkip.value?.cascade?.owed && same(owedOf(skipKeyId), { kind: 'property', rename: ['Skip Key'] }) && (await wrote(skipKey[1], 'skip key: b')), show([keySkip, owedOf(skipKeyId)]))
+  const keyReplay = await ask(cdp, 'mutate', FINISH)
+  pin(G, 'F-1', "the Key Format change's Try Again moves the skipped file's key and clears the entry",
+    keyReplay.ok && (await wrote(skipKey[0], 'skip key: a')) && owedOf(skipKeyId) === null, show([keyReplay, blockOf(skipKey[0])]))
+  const paleRed = optionId(defOf(skipValueId), 'Pale Red')
   const valueSkip = await unreadable(skipValue[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipValueId, change: { value_format: 'kebab-case' } }))
-  const valueRecord = { op: 'option-rename', id: skipValueId, keys: [['Pale Red', 'pale-red']] }
-  pin(G, 'F-1', 'a Value Format change that skips a file owes an option-rename record of its key pairs alone and sweeps the rest',
-    same(valueSkip.value?.retry, FINISH) && same(slot(), valueRecord) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')), show([valueSkip, slot()]))
-  const valueReplay = await ask(cdp, 'mutate', valueSkip.value?.retry)
-  pin(G, 'F-1', "the Value Format change's Try Again re-keys the skipped file and clears the record",
-    valueReplay.ok && (await wrote(skipValue[0], 'Skip Value: [pale-red]')) && slot() === null, show([valueReplay, blockOf(skipValue[0])]))
+  pin(G, 'F-1', "a Value Format change that skips a file owes each moved option's old key alone and sweeps the rest",
+    !!valueSkip.value?.cascade?.owed && same(owedOf(skipValueId), { kind: 'property', options: { [paleRed]: { rename: ['Pale Red'] } } }) && (await wrote(skipValue[1], 'Skip Value: [pale-red]')),
+    show([valueSkip, owedOf(skipValueId)]))
+  const valueReplay = await ask(cdp, 'mutate', FINISH)
+  pin(G, 'F-1', "the Value Format change's Try Again re-keys the skipped file and clears the entry",
+    valueReplay.ok && (await wrote(skipValue[0], 'Skip Value: [pale-red]')) && owedOf(skipValueId) === null, show([valueReplay, blockOf(skipValue[0])]))
 
-  const collision = snapshot([wifi, REGISTRY, JOURNAL])
+  const collision = snapshot([wifi, REGISTRY, NOTES])
   pin(G, 'D-2 F-1', 'a Value Format change giving two options one key is refused, and nothing changes',
     refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: wifiId, change: { value_format: 'kebab-case' } }), COPY.aFormatGivingTwoOptionsOneKey) && (await collision.holds()))
-  const crossing = snapshot([REGISTRY, JOURNAL])
+  const crossing = snapshot([REGISTRY, NOTES])
   pin(G, 'F-1', "a Value Format change crossing two options' keys is refused, and nothing changes",
     refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: router, change: { value_format: 'kebab-case' } }), COPY.aValueFormatChangeCrossingTwoOptionsKeys) && (await crossing.holds()))
   pin(G, 'B-3', 'a Value Format change on a property without options is refused',
@@ -1221,11 +1220,12 @@ async function group7(cdp) {
   pin(G, 'F-4', 'a Value Format count that moves no key is zero', matchTitle.ok && matchTitle.value === 0, show(matchTitle))
 
   const owing = await unreadable(owedPage[0], () => ask(cdp, 'mutate', { op: 'renameOption', propertyId: owedColors, optionId: optionId(defOf(owedColors), 'Red'), label: 'Crimson' }))
-  pin(G, 'F-1', 'a Value Format change waits while a record is owed',
-    !!owing.value?.retry && refusedAs(await ask(cdp, 'mutate', { op: 'setFormat', propertyId: shadesId, change: { value_format: 'UPPERCASE' } }), COPY.anOptionChangeWaitingForTryAgain) && defOf(shadesId).value_format === 'lowercase')
-  const waiting = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: sortsId, change: { key_format: 'UPPERCASE' } })
-  pin(G, 'F-1', 'a Key Format change waits while a record is owed', refusedAs(waiting, COPY.anOptionChangeWaitingForTryAgain) && defOf(sortsId).key === 'Sorts', show(waiting))
-  if (owing.value?.retry) await must('Try Again', ask(cdp, 'mutate', owing.value.retry))
+  await must('add red', ask(cdp, 'mutate', { op: 'editOption', propertyId: owedColors, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'red' } }))
+  const owedKept = snapshot([REGISTRY, NOTES, ...owedPage])
+  const onOwed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: owedColors, change: { value_format: 'Train-Case' } })
+  pin(G, 'F-1', 'a Value Format change writing a key another option still owes is refused, and nothing changes',
+    !!owing.value?.cascade?.owed && refusedAs(onOwed, COPY.aNameStillOwed) && (await owedKept.holds()) && defOf(owedColors).value_format !== 'Train-Case', show(onOwed))
+  if (owing.value?.cascade?.owed) await must('Try Again', ask(cdp, 'mutate', FINISH))
 
   // Adoption follows the Value Format: a foreign Multi-Select word becomes an option only when the format could have
   // written it, and a Value Format change owes adoption.
