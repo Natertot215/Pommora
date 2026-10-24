@@ -205,6 +205,7 @@ export function useBundleBrowser(
   const date = useDateColumn(rules.dateKey)
   const nexusId = useSession((s) => s.tree?.nexus.id)
   const mutate = useSession((s) => s.mutate)
+  const finishOwed = useSession((s) => s.finishOwed)
   const [listing, setListing] = useState<Listing>({ status: 'loading' })
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
@@ -272,13 +273,14 @@ export function useBundleBrowser(
     })
     if (!done) return
     spendUndo(row.bundlePath)
-    // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone.
+    // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone. The notice replaces the slice's, so it carries the reply's lines and its Try Again.
     if (done.landedAs || rules.restoreUndo)
       notifyOutcome(
         `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
         undefined,
         [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
         rules.restoreUndo?.([row]),
+        done.cascade?.owed ? finishOwed : undefined,
       )
   }
 
@@ -293,6 +295,7 @@ export function useBundleBrowser(
     warnings: string[]
     renamed: string[]
     bundled: string[]
+    owed: boolean
   } | null> => {
     const done: BundleRow[] = []
     const refused: BundleRow[] = []
@@ -300,6 +303,7 @@ export function useBundleBrowser(
     const warnings = new Set<string>()
     const renamed: string[] = []
     const bundled: string[] = []
+    let owed = false
     const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
     for (const row of targets) {
       if (switched()) break
@@ -314,13 +318,14 @@ export function useBundleBrowser(
       spendUndo(row.bundlePath)
       unrestored.push(...(res.unrestored ?? []))
       if (res.cascade?.warning) warnings.add(res.cascade.warning)
+      owed ||= !!res.cascade?.owed
       if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
       if (res.bundled) bundled.push(res.bundled.bundlePath)
     }
     storesChanged.emit()
     return switched()
       ? null
-      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled }
+      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled, owed }
   }
 
   const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
@@ -330,7 +335,7 @@ export function useBundleBrowser(
     if (addressable.length === 0) return notifyReport(nowhere, true)
     const ran = await many(addressable, 'restore')
     if (!ran) return
-    const { done, refused, unrestored, warnings, renamed } = ran
+    const { done, refused, unrestored, warnings, renamed, owed } = ran
     notifyOutcome(
       `Restored ${countPhrase(done)}`,
       renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
@@ -341,6 +346,7 @@ export function useBundleBrowser(
         ...warnings,
       ],
       done.length > 0 ? rules.restoreUndo?.(done) : undefined,
+      owed ? finishOwed : undefined,
     )
   }
 
@@ -348,7 +354,7 @@ export function useBundleBrowser(
     if (!(await rules.askBatch(targets))) return
     const ran = await many(targets, rules.deleteOp)
     if (!ran) return
-    const { done, refused, warnings, bundled } = ran
+    const { done, refused, warnings, bundled, owed } = ran
     // An empty mints no bundle, so only a batch the Archive moved into the Trash offers its Undo.
     offerUndo(
       bundled,
@@ -358,6 +364,7 @@ export function useBundleBrowser(
           undefined,
           [refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`, ...warnings],
           undo,
+          owed ? finishOwed : undefined,
         ),
       rules.deleteUndo,
     )
