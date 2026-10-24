@@ -1228,7 +1228,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 10-5 · Drive group 8
   - [x] Review Checkpoint
   - [x] Closeout P9–P10 (two `opus-high` agents, inward and outward)
-- [ ] `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and Phases 11A and 11B before Phase 11A opens]`
+- [x] `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and Phases 11A and 11B before Phase 11A opens]`
 - [ ] **Phase 11A** — One Note per Item: The Notes and the Renames
   - [ ] Task 11A-1 · The notes module, `Core/Nexus/owed.ts`
   - [ ] Task 11A-2 · The property kind moves onto the notes
