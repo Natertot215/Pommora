@@ -1,4 +1,4 @@
-// A title rename commits this record FIRST, cascades, commits the registry, then clears it; a crash at any point leaves an exact old→new record that replays idempotently on the next open.
+// A title rename writes this record first, commits the registry title, moves the folder, cascades, then clears it; a crash at any point leaves an exact old→new record that replays idempotently on the next open.
 
 import { CONTEXT_JOURNAL_FILENAME } from '../Paths/nexusPaths'
 import { holdsName } from '../Paths/names'

@@ -36,7 +36,7 @@ import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
 
-/** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
+/** Both keys of a collision hold real tags: the app's own tag writes run under the Contexts lock a rename holds, so a key already wearing the new title was written outside the app or by hand, and neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
 /** Whether another entry would take the folder name `title` gives, which the file system matches without regard to case. */
@@ -196,7 +196,7 @@ const commitTitle = (root: string, id: string, title: string) =>
     contexts: cur.contexts.map((c) => (c.id === id ? { ...c, title } : c)),
   }))
 
-/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse, whose own record stays while it skipped a file. */
+/** Order: note → registry title → folder → key cascade → note settle; a folder that can't move puts the title back, so a live failure renames nothing. */
 export async function renameContextOp(
   root: string,
   contextId: string,
@@ -221,32 +221,23 @@ export async function renameContextOp(
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName }
   await writeJournal(root, j)
+  const committed = await commitTitle(root, contextId, newName)
+  if (!committed.ok) {
+    await clearJournal(root, j)
+    return committed
+  }
 
   const oldDir = join(contextsDir(root), entry.title)
   const newDir = join(contextsDir(root), newName)
   try {
     if (await pathExists(oldDir)) await relocate(oldDir, newDir)
   } catch (e) {
-    await clearJournal(root, j)
+    // The list names the new title while the folder keeps the old, so the title goes back; one that can't go back leaves the note, and the next open moves the folder.
+    if ((await commitTitle(root, contextId, entry.title)).ok) await clearJournal(root, j)
     return fault(e)
   }
 
   const cascade = await cascadeTitle(root, entry.title, j)
-
-  const committed = await commitTitle(root, contextId, newName)
-  if (!committed.ok) {
-    // The way back is a rename of its own, journaled so the next open finishes the files it can't reach now.
-    const back: RenameJournal = { ...j, oldTitle: newName, newTitle: entry.title }
-    await writeJournal(root, back)
-    const undone = await cascadeTitle(root, entry.title, back)
-    try {
-      if (await pathExists(newDir)) await relocate(newDir, oldDir)
-    } catch {}
-    await settleJournal(root, back, undone.skipped)
-    const left = undone.skipped.length
-    return left ? fault(`${committed.error.message} ${unsweptLine(left)}`) : committed
-  }
-
   await settleJournal(root, j, cascade.skipped)
   return ok(unswept(cascade.skipped, j.oldTitle))
 }
