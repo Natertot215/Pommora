@@ -712,6 +712,15 @@ describe('the Context and Space rename arms', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
+  it('a Context whose new title’s folder is taken keeps its folder and owes its rename', async () => {
+    const root = await seedContexts()
+    await retitle(root, 'Ventures')
+    await mkdir(join(contextsDir(root), 'Ventures', 'Stray'), { recursive: true })
+    await finishSeeded(root, ventures)
+    expect(await readdir(join(contextsDir(root), 'Projects'))).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual(ventures)
+  })
+
   it('a crash between a Context rename’s note and its list step owes nothing', async () => {
     const root = await seedContexts()
     const before = await readFile(join(root, 'Notes', 'A.md'), 'utf8')
