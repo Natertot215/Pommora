@@ -1,6 +1,6 @@
 import { stableStringify } from './stableJson'
 import { ok } from '../Contract/result'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/promises'
 import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
@@ -25,7 +25,8 @@ import {
 import { mintBundle } from '../Bundles/bundle'
 import { discardFile, trashFileFlat } from '../Trash/discard'
 import { type FileEvent, isRecentWrite, setOwnTap, setWriteTap } from './writeEcho'
-import { machine } from '../Platform/machine'
+import { installMachine, machine } from '../Platform/machine'
+import { diskMachine } from '../Testing/machines'
 
 let dir: string
 beforeEach(async () => {
@@ -268,6 +269,30 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     expect((await updateNexusFile(file, () => ({ a: 1 }), false)).ok).toBe(false)
     expect(await readFile(file, 'utf8')).toBe('{ corrupt')
     expect(await aside(file)).toBeUndefined()
+  })
+
+  describe('with a system Trash', () => {
+    afterEach(() => installMachine(diskMachine()))
+
+    it('a damaged file goes to the system Trash where the host has one', async () => {
+      const trashToSystem = vi.fn((p: string) => rm(p, { force: true }))
+      installMachine({ ...machine(), trashToSystem })
+      const file = join(dir, 'state.json')
+      await damage(file)
+      await updateNexusFile(file, () => ({ a: 1 }), true)
+      expect(trashToSystem).toHaveBeenCalledWith(file)
+      expect(await aside(file)).toBeUndefined()
+    })
+  })
+
+  it('a file left empty with dropEmpty is removed', async () => {
+    const file = join(dir, 'state.json')
+    await updateNexusFile(file, () => ({ a: 1 }), true)
+    await updateNexusFile(file, () => ({}), true, true)
+    await expect(stat(file)).rejects.toThrow()
+    await updateNexusFile(file, () => ({ a: 1 }), true)
+    await updateNexusFile(file, () => ({}), true)
+    expect(await readJsonAt(file)).toEqual({})
   })
 })
 

@@ -216,9 +216,16 @@ export async function readAppFileKnown(
   return value === undefined && unreadable ? undefined : (value ?? null)
 }
 
-// The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
+/** Whether `absPath` holds bytes that won't parse and this session never saw parse, so a repairable write sets it aside with nothing to rebuild from. */
+export const neverParsed = async (absPath: string): Promise<boolean> => {
+  const { value, unreadable } = await readLast(absPath)
+  return value === undefined && !unreadable
+}
+
+// The damaged bytes go to the system Trash, so the Nexus keeps no copy and nothing is lost; a host without one keeps them under a dotted name beside the file, which neither the watcher nor sync admits.
 export async function setAside(bad: string): Promise<void> {
-  await machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`))
+  await (machine().trashToSystem?.(bad) ??
+    machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`)))
 }
 
 async function rebuild(bad: string): Promise<Record<string, unknown>> {
@@ -226,15 +233,18 @@ async function rebuild(bad: string): Promise<Record<string, unknown>> {
   return lastRead.get(bad) ?? repairSeed(bad) ?? {}
 }
 
-/** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one is set aside and rebuilt from its last read only where `repairable` allows. */
+/** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, a corrupt one is set aside and rebuilt from its last read only where `repairable` allows, and one left empty is removed where `dropEmpty` asks. */
 export function updateNexusFile(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
   repairable: boolean,
+  dropEmpty = false,
 ): Promise<Result<Record<string, unknown>>> {
   return machine().lock(absPath, async () => {
     await machine().mkdir(dirname(absPath))
     const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? rebuild : undefined)
+    if (written.ok && dropEmpty && !Object.keys(written.value).length)
+      await machine().remove(absPath)
     if (written.ok) lastRead.set(absPath, written.value)
     return written
   })

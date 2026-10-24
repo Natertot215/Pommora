@@ -37,6 +37,8 @@ export interface CascadeReport {
   pages: string[]
   hosts: TilesChanged[]
   warning?: string
+  /** An entry still owes what the warning counts, which Try Again finishes. */
+  owed?: true
 }
 
 /** A re-spell that never ran, or stopped on `e`, under the label it would have reported. */
