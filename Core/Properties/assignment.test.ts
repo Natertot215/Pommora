@@ -227,6 +227,39 @@ describe('a re-assign that can’t refill a page', () => {
     },
   )
 
+  it.skipIf(noModeBits)(
+    'keeps the value of a page unreadable at the re-add, and Try Again refills it once it reads',
+    async () => {
+      await chmod(page, 0o000)
+      const r = await refreshTree(root)
+        .then(() =>
+          handleMutate(root, { op: 'assignProperty', containerPath: 'Notes', propertyId }, deps),
+        )
+        .finally(() => chmod(page, 0o644))
+      expect(r).toEqual(
+        ok({
+          cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true },
+        }),
+      )
+      const kept = ((await stash()) as Record<string, StashBlock>)[propertyId]
+      expect(Object.values(kept.values)).toEqual([7])
+      expect((await readNotes(root))[propertyId]).toMatchObject({ collections: [collectionId] })
+      await refreshTree(root)
+      expect((await handleMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect(await priority()).toBe(7)
+      expect(await stash()).toBeUndefined()
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it('drops the value of a page gone from the tree and the Trash', async () => {
+    await rm(page)
+    await refreshTree(root)
+    expect((await assignProperty(root, notes, propertyId)).ok).toBe(true)
+    expect(await stash()).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it('a crash between the assignment and the refill finishes at the next open', async () => {
     await patchSidecar(notes, 'collection', (cur) => ({
       ...cur,

@@ -1,6 +1,6 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import { relative } from '../Paths/posix'
+import { isAtOrUnder, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
@@ -50,6 +50,9 @@ export async function refillStash(
   const trashed = unplaced.size
     ? await trashedHolders(root, unplaced, collectionId)
     : new Map<string, string>()
+  // A page the tree couldn't read under the Collection could be any id it can't place, so while one is, those stay owed.
+  const unread = tree.unreadable?.some((u) => isAtOrUnder(u.path, relative(root, folder)))
+  const unfound = unread ? [...unplaced].filter((id) => !trashed.has(id)) : []
   const roots: RootsById = new Map<string, Pick<EntityRecord, 'kind' | 'path'>>([
     ...members,
     ...[...trashed].map(
@@ -69,14 +72,14 @@ export async function refillStash(
       : []
   const { taken, skipped } = await refillValues(root, def, roots, values, frozen, stash.above)
   await parkLinks(root, gone)
-  const owed = new Set([...roots.keys()].filter((id) => !taken.has(id)))
+  const owed = new Set([...roots.keys()].filter((id) => !taken.has(id)).concat(unfound))
   for (const { page } of gone) owed.delete(page)
   const written = await patchSidecar(folder, 'collection', (cur) => {
     const block = stashedBlock(cur, propertyId)
     const left = Object.entries(block?.values ?? {}).filter(([id]) => owed.has(id))
     return block && patchStashBlock(cur, propertyId, { ...block, values: Object.fromEntries(left) })
   })
-  return skipped + (written.ok ? 0 : 1)
+  return skipped + unfound.length + (written.ok ? 0 : 1)
 }
 
 // The schema lock rejects a re-taken lock, so these are unwrapped internals a wrapped op composes inside its own hold.
