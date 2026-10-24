@@ -11,7 +11,7 @@ import {
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -455,6 +455,40 @@ async function group7(cdp) {
   await escapeAll(cdp)
 }
 
+// ── Group 8 · One Finder ─────────────────────────────────────────────────────
+
+/** A Context rename finds the Spaces inside the Context it moves from the tree, at the folder they went to. */
+async function group8(cdp) {
+  const [title, renamed] = ['Drive Finder', 'Drive Found']
+  const sidecar = (context, space) => `.nexus/contexts/${context}/${space}/_space.json`
+  const read = (rel) => JSON.parse(readFileSync(join(NEXUS, rel), 'utf8'))
+  const contextId = ulid()
+  const [alpha, beta] = [ulid(), ulid()]
+  await must('create the Context', ask(cdp, 'mutate', { op: 'createContextGroup', id: contextId, name: title }))
+  for (const [id, name] of [[alpha, 'Alpha'], [beta, 'Beta']])
+    await must(`create ${name}`, ask(cdp, 'mutate', { op: 'createSpace', id, contextId, name }))
+  await until('both sidecars', async () => existsSync(join(NEXUS, sidecar(title, 'Beta'))))
+  await must(
+    'link Alpha to Beta',
+    ask(cdp, 'mutate', { op: 'setContext', path: `.nexus/contexts/${title}/Alpha`, contextId, spaceIds: [beta] }),
+  )
+  await must('rename the Context', ask(cdp, 'mutate', { op: 'renameContext', contextId, newName: renamed }))
+  const [key, old] = [`<${renamed}>`, `<${title}>`]
+  const rekeyed = await settles(async () => {
+    const [a, b] = [read(sidecar(renamed, 'Alpha')), read(sidecar(renamed, 'Beta'))]
+    return same(a[key], ['Beta']) && same(b[key], ['Alpha']) && !(old in a) && !(old in b)
+  })
+  item(8, 'G-1', 'both sidecars inside the renamed Context carry its new key', rekeyed,
+    show([read(sidecar(renamed, 'Alpha')), read(sidecar(renamed, 'Beta'))]))
+  const linked = await settles(async () => {
+    const { tree } = (await ask(cdp, 'nexus:state')).value
+    const space = tree.contexts.find((g) => g.def.id === contextId)?.spaces.find((s) => s.id === alpha)
+    return same(space?.contextValues?.[contextId], [beta])
+  })
+  item(8, 'G-1', 'the Matrix keeps Alpha linked to Beta', linked)
+  await must('trash the Context', ask(cdp, 'mutate', { op: 'delete', path: `.nexus/contexts/${renamed}`, kind: 'context' }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -467,6 +501,7 @@ try {
   if (GROUPS.has('5')) await group5(cdp)
   if (GROUPS.has('6')) await group6(cdp)
   if (GROUPS.has('7')) await group7(cdp)
+  if (GROUPS.has('8')) await group8(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
