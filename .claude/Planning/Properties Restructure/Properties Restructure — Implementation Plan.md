@@ -16280,16 +16280,18 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 @@ spaceNodeFrom @@
    const id = asString(sc.id)
    if (!id) return null
-   let values: Json | undefined
-+  let contextKeys: Json | undefined
-   for (const [k, v] of Object.entries(sc)) {
+-  let values: Json | undefined
+-  for (const [k, v] of Object.entries(sc)) {
 -    if (SPACE_MODELED_KEYS.has(k) || parseContextKey(k) !== null) continue
 -    values ??= {}
 -    values[k] = v
-+    if (SPACE_MODELED_KEYS.has(k)) continue
-+    if (parseContextKey(k) === null) (values ??= {})[k] = v
-+    else (contextKeys ??= {})[k] = v
-   }
+-  }
++  const unmodeled = (contextKey: boolean): Json | undefined => {
++    const kept = Object.entries(sc).filter(
++      ([k]) => !SPACE_MODELED_KEYS.has(k) && (parseContextKey(k) !== null) === contextKey,
++    )
++    return kept.length ? Object.fromEntries(kept) : undefined
++  }
    return {
      kind: 'space',
      id,
@@ -16299,8 +16301,9 @@ The block is skipped only for a same-root re-adopt. That root's session was open
      headingIconHidden: sc.heading_icon_hidden === true,
      color: asString(sc[COLOR_KEY]),
      rowOrder: asStringArray(sc[ORDER_KEY]),
-     values,
-+    contextKeys,
+-    values,
++    values: unmodeled(false),
++    contextKeys: unmodeled(true),
    }
 ```
 
@@ -16474,11 +16477,8 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 +): string[] =>
 +  tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 +
-+/**
-+ * The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree.
-+ *
-+ * With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `pages` and `spaces` leave out a holder no id addresses, which a strip passes over since no restore could put its value back.
-+ */
++// The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree.
++// With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `pages` and `spaces` leave out a holder no id addresses, which a strip passes over since no restore could put its value back.
 +export async function findHolders(
 +  root: string,
 +  q: HolderQuery,
@@ -16747,10 +16747,10 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 -  const clashes = moved.key === prior.key ? [] : await bothKeyHolders(root, prior.key, moved.key)
 -  if (clashes.length)
 -    return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
-+  // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value, so only the old key's holders are read for the new one.
++  // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
 +  if (moved.key !== prior.key) {
 +    const { held } = await findHolders(root, { keys: [prior.key, moved.key], reach: 'governed' }, 'values')
-+    const clashes = held.filter((h) => h.keys.includes(moved.key) && outsideArchive(root, h.file))
++    const clashes = held.filter((h) => h.keys.length === 2 && outsideArchive(root, h.file))
 +    if (clashes.length)
 +      return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
 +  }
@@ -16851,6 +16851,9 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 
 ```Core/Contexts/contextCascade.ts diff
 @@ imports @@
+-import { basename, dirname, join } from '../Paths/posix'
++import { basename, dirname, join, relative } from '../Paths/posix'
+@@
 -import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 +import { normalizeTitle } from '../Paths/caseFold'
 @@
@@ -17629,7 +17632,6 @@ The other sweep calls drop their first argument and nothing else:
 
 #### Behavior Changes and Disclosures
 
-- **A Trashed Copy Takes a Refilled Link Value as a Live Page Would:** a value naming a page that's gone since stays out of the trashed copy, and one the definition spells differently lands in its written spelling, where both landed as recorded; an accident of the two refills diverging, fixed with the fold.
 - **A Context Rename Reaches a Loose Page and a Property Rename Doesn't, by Stated Rule (G-2, Nathan's Reading):** unchanged in effect; it's now one rule in one doc comment.
 - **One Hold-Out for Every Strip:** `deleteCascade`'s Space arm and the property delete's Space strip hold out a Space no id addresses (none, or one two files claim), as their page arms and `sweepRootsById` already did; only a hand copy inside `.nexus/contexts`, or a sidecar whose id was removed by hand, makes one.
 - **A Space's Blank Value Isn't Filed in a Delete's Trash Entry:** pages never filed one (`keyHolders.ts:59`); Spaces did (`deleteProperty.ts:83`). A restore has nothing to put back for a blank value either way.
