@@ -1,9 +1,9 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
-import { stripKeys } from '../Files/rootValues'
-import type { Json } from '../Files/stableJson'
-import { errText } from '../Contract/result'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import { isBlankRaw, stripKeys } from '../Files/rootValues'
+import { type Json, same } from '../Files/stableJson'
+import { errText, ok } from '../Contract/result'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter, sweepParse } from '../Files/pageFile'
 import {
   type Rewrite,
   type RewriteText,
@@ -31,6 +31,12 @@ import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry, governedRoot } from './governedRoot'
 import { addressable, nexusPages } from './heldPages'
+import { pathExists } from '../Files/atomicWrite'
+import { rekeyContext } from '../Contexts/contextCascade'
+import { type ConfigReach, reachReport } from './configReach'
+import { type Entry, type RelinkEntry, runNoted, type Worked } from './owed'
+import type { z } from 'zod'
+import type { strippedLink } from '../Bundles/record'
 
 export interface CascadeReport {
   /** The Nexus paths written outside the Archive, which feed the `pages:changed` push; nothing displays an archived path. */
@@ -48,18 +54,14 @@ export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
   warning: `Links to “${label}” weren't updated${e === undefined ? '.' : `: ${errText(e)}`}`,
 })
 
-export interface StrippedLink {
-  page: string
-  property: string
-  value: string
-}
+export type StrippedLink = z.infer<typeof strippedLink>
 
 interface DeleteCascade {
-  cascade: CascadeReport
+  reach: ConfigReach
   links: StrippedLink[]
 }
 
-const NO_STRIP: DeleteCascade = { cascade: { pages: [], hosts: [] }, links: [] }
+const NO_STRIP: DeleteCascade = { reach: { skipped: 0, hosts: [] }, links: [] }
 
 export function joinCascades(
   a: CascadeReport | null | undefined,
@@ -74,7 +76,7 @@ export function joinCascades(
   }
 }
 
-/** `cascade` joined with the line counting the files in “title” whose links couldn't be written. */
+/** `cascade` joined with the line counting the files in “title” whose values a restore couldn't reconcile. */
 export function withUnswept(
   cascade: CascadeReport | undefined,
   title: string,
@@ -84,7 +86,7 @@ export function withUnswept(
   return joinCascades(cascade, {
     pages: [],
     hosts: [],
-    warning: unsweptLine(unswept.length, `links in “${title}” across `),
+    warning: unsweptLine(unswept.length, `values in “${title}” across `),
   })
 }
 
@@ -137,27 +139,29 @@ export async function deleteCascade(
     })
     const links: StrippedLink[] = []
     for (const [file, { before }] of swept.touched) {
-      const raw = governedRoot(file, before)
+      const page = isMarkdownFile(file) ? sweepParse(before) : null
+      const raw = page?.raw ?? governedRoot(file, before)
       const id = rootId(file, raw)
       if (!id) continue
-      for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
+      for (const { def, key, value } of named(raw))
+        links.push({ page: id, property: def.id, value, above: page?.above(key) })
     }
     const unswept = swept.skipped.length + heldOut
     return {
-      cascade: {
+      reach: {
+        skipped: unswept,
+        refused: swept.refused,
+        hosts: [],
         pages: [...swept.touched.keys()]
           .filter((file) => outsideArchive(root, file))
           .map((file) => relative(root, file)),
-        hosts: [],
-        warning: unswept ? unsweptLine(unswept, 'links in ') : undefined,
       },
       links,
     }
   } catch (e) {
-    return {
-      cascade: { pages: [], hosts: [], warning: `Links weren’t removed: ${errText(e)}` },
-      links: [],
-    }
+    // A strip that stopped counts as one missed file, so its entry stays owed.
+    console.error('links weren’t removed:', errText(e))
+    return { reach: { skipped: 1, hosts: [] }, links: [] }
   }
 }
 
@@ -224,7 +228,7 @@ export async function renameCascade(
   root: string,
   change: CascadeChange,
   settled = false,
-): Promise<CascadeReport> {
+): Promise<CascadeReport & { missed: number }> {
   const headingKey = 'names' in change ? undefined : normalizeTitle(change.heading)
   const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
   try {
@@ -273,8 +277,62 @@ export async function renameCascade(
         .map((file) => relative(root, file)),
       hosts: tiles.hosts,
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
+      missed: unmoved,
     }
   } catch (e) {
-    return linksNotUpdated(named, e)
+    return { ...linksNotUpdated(named, e), missed: 1 }
   }
+}
+
+/** `raw` with each value a restore worked out for it landed where it still reads what the restore found, blank matching blank; null where none does. */
+function landWorked(raw: Json, worked: Worked[string] = {}): Json | null {
+  const keys = Object.keys(worked).filter((k) =>
+    isBlankRaw(raw[k]) ? isBlankRaw(worked[k].from) : same(raw[k], worked[k].from),
+  )
+  if (!keys.length) return null
+  const landed = keys.flatMap((k) => (worked[k].to === undefined ? [] : [[k, worked[k].to]]))
+  return { ...(stripKeys(raw, keys) ?? raw), ...Object.fromEntries(landed) }
+}
+
+/** A relink entry's sweep: what a restore worked out landed first in the files `values` names, then its names re-spelled in every file naming them, or in those of its `files` still there with its `rekey` applied, counting each file either missed once. */
+export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigReach> {
+  const names = new Map(Object.entries(e.names))
+  if (e.files) {
+    const here = async (files: string[]): Promise<string[]> =>
+      (
+        await Promise.all(
+          files.map(async (f) => ((await pathExists(join(root, f))) ? [join(root, f)] : [])),
+        )
+      ).flat()
+    const landed = await sweepGovernedRoots(await here(Object.keys(e.values ?? {})), {
+      raw: (r, f) => landWorked(r, e.values?.[relative(root, f)]),
+    })
+    const { text, spaceMoved } = fileRewrites(root, await liveTreeOf(root), (t) =>
+      rewriteConnections(t, names),
+    )
+    const rekey = e.rekey && rekeyContext(...e.rekey)
+    const raw: Rewrite = rekey
+      ? (r, f) => rekey(spaceMoved(r, f) ?? r, f) ?? spaceMoved(r, f)
+      : spaceMoved
+    const swept = await sweepGovernedRoots(await here(e.files), { text, raw })
+    const missed = (k: 'skipped' | 'refused'): string[] => [...new Set([...landed[k], ...swept[k]])]
+    return { skipped: missed('skipped').length, refused: missed('refused'), hosts: [] }
+  }
+  const { missed, hosts, pages } = await renameCascade(root, { names, label: e.label })
+  return { skipped: missed, hosts, pages }
+}
+
+/** A move's or a restore's re-spell, on the runner under `id`'s relink entry, so what it misses is owed with Try Again; one whose note can't be written still re-spells, owing nothing. Its list step is the move or the landing, already made. */
+export async function noteRelink(
+  root: string,
+  id: string,
+  note: (prior: Entry | undefined) => RelinkEntry,
+): Promise<CascadeReport> {
+  const ran = await runNoted(root, id, {
+    note,
+    list: async () => ok(null),
+    sweep: (_, prior) => relinkReach(root, note(prior)),
+    settle: () => undefined,
+  })
+  return ran.ok ? ran.value.cascade : reachReport(await relinkReach(root, note(undefined)))
 }

@@ -32,7 +32,14 @@ import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex, livePathOf } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
-import { type CascadeReport, linksNotUpdated, renameCascade } from './cascade'
+import {
+  type CascadeReport,
+  joinCascades,
+  linksNotUpdated,
+  noteRelink,
+  renameCascade,
+} from './cascade'
+import { editNote, readNotes, relinkNote } from './owed'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
@@ -274,7 +281,20 @@ export async function relink(
 ): Promise<CascadeReport | undefined> {
   const names = respellings(before, after, moved, arriving)
   if (!names.size) return undefined
-  return renameCascade(root, { names, label })
+  return respell(root, [...moved, ...arriving], names, label)
+}
+
+/** Re-spells `names` under the relink entry of the first page it re-spells for, which every caller passes since only a page re-spells; every other relink entry follows the pages `names` moves, so a file an earlier move missed lands where this one leaves them. */
+async function respell(
+  root: string,
+  ids: readonly string[],
+  names: Map<string, string>,
+  label: string,
+): Promise<CascadeReport> {
+  for (const [other, e] of Object.entries(await readNotes(root)))
+    if (e.kind === 'relink' && other !== ids[0])
+      await editNote(root, other, (x) => x && relinkNote(x, names))
+  return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
 }
 
 /** A restore's re-spell, two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `own` reads the returning pages' own keys against themselves and joins `names` only where the live world names nothing, so a title-only link that found a namesake meanwhile stays with it. */
@@ -290,7 +310,7 @@ export function returningNames(
   return { names, own }
 }
 
-/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets. Answers the files the repair couldn't write, and the notice that links weren't updated when the index can't settle. */
+/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index can't settle. */
 export async function returningCascade(
   root: string,
   tree: NexusTree,
@@ -299,21 +319,32 @@ export async function returningCascade(
   landed: {
     entity: RecordFile['entity']
     abs: string
+    rekey?: [from: string, to: string]
     repair?: (after: PageIndex) => Map<string, string>
   },
 ): Promise<{
   after: PageIndex | null
   own: Map<string, string>
-  unswept: string[]
   cascade?: CascadeReport
 }> {
   const after = await settledIndex(root)
-  if (!after) return { after, own: new Map(), unswept: [], cascade: linksNotUpdated(title) }
+  if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
   const { names, own } = returningNames(pageIndexOf(tree), after, back)
-  const repair = landed.repair?.(after) ?? own
-  const unswept = await repairLanded(root, tree, landed.entity, landed.abs, repair)
-  if (!names.size) return { after, own, unswept }
-  return { after, own, unswept, cascade: await renameCascade(root, { names, label: title }) }
+  const repaired = await repairLanded(root, landed, title, landed.repair?.(after) ?? own)
+  if (!names.size) return { after, own, cascade: repaired }
+  return {
+    after,
+    own,
+    cascade: joinCascades(
+      repaired,
+      await respell(
+        root,
+        back.map((p) => p.id),
+        names,
+        title,
+      ),
+    ),
+  }
 }
 
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.

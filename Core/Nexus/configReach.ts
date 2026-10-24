@@ -203,6 +203,8 @@ export interface ConfigReach {
   /** The files among `skipped` whose front matter Pommora can't rewrite safely, which a report names once and nothing owes (B-5). */
   refused?: string[]
   hosts: TilesChanged[]
+  /** The pages a link sweep wrote, which feed the `pages:changed` push. */
+  pages?: string[]
 }
 
 export const NO_REACH: ConfigReach = { skipped: 0, hosts: [] }
@@ -217,8 +219,13 @@ export const sweptReach = ({ skipped, refused }: SweepResult): ConfigReach => ({
 export const retries = ({ skipped, refused }: ConfigReach): number =>
   skipped - (refused?.length ?? 0)
 
-export const reachReport = ({ hosts, skipped, refused = [] }: ConfigReach): CascadeReport => ({
-  pages: [],
+export const reachReport = ({
+  hosts,
+  skipped,
+  refused = [],
+  pages = [],
+}: ConfigReach): CascadeReport => ({
+  pages,
   hosts,
   ...(skipped
     ? {

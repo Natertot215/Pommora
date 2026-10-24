@@ -1,4 +1,4 @@
-// The one finishing pass, at the open and on Try Again: Context entries under the Contexts lock, then Space entries, then property entries under the schema lock, the notes file's own lock innermost and never nested; each entry under a catch that logs it and counts it missed, so one that throws costs only itself and still offers Try Again. Every arm re-derives from the lists as they read now: a name a live entity holds now is skipped and dropped, and an entity gone takes its owed renames with it.
+// The one finishing pass, at the open and on Try Again: Context entries under the Contexts lock, then Space entries, then property entries under the schema lock, then the content deletes' and moves' entries in the settle's turn, the notes file's own lock innermost and never nested; each entry under a catch that logs it and counts it missed, so one that throws costs only itself and still offers Try Again. Every arm re-derives from the lists as they read now: a name a live entity holds now is skipped and dropped, and an entity gone takes its owed renames with it.
 
 import { errText } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
@@ -10,7 +10,10 @@ import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
 import { discardFile, type TrashDeps } from '../Trash/discard'
-import type { CascadeReport } from './cascade'
+import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } from './cascade'
+import { patchRecord } from '../Bundles/record'
+import { parkLinks } from '../Trash/trashedCopies'
+import { findContainerById } from './treePatch'
 import { type ConfigReach, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
@@ -26,9 +29,10 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from '../Contexts/contextCascade'
-import { underContexts } from './settle'
+import { inSettleTurn, underContexts } from './settle'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
+  type ContainerEntry,
   type ContextEntry,
   editNote,
   type Entry,
@@ -56,6 +60,7 @@ const add = (reach: ConfigReach, r: ConfigReach): boolean => {
   reach.skipped += r.skipped
   reach.refused = [...(reach.refused ?? []), ...(r.refused ?? [])]
   reach.hosts.push(...r.hosts)
+  if (r.pages?.length) reach.pages = [...(reach.pages ?? []), ...r.pages]
   return retries(r) > 0
 }
 
@@ -77,6 +82,10 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
     await each('space')
   })
   await serializeSchemaOp(root, () => each('property'))
+  await inSettleTurn(root, async () => {
+    await each('container')
+    await each('relink')
+  })
   return withLost(root, owedReport(total))
 }
 
@@ -104,6 +113,13 @@ function finishArm(
       return finishContext(root, id, e, deps)
     case 'space':
       return finishSpace(root, id, e, notes, deps)
+    case 'container':
+      return finishContainer(root, id, e)
+    case 'relink':
+      return relinkReach(root, e).then((reach) => ({
+        left: retries(reach) ? e : { ...e, names: {}, rekey: undefined, values: undefined },
+        reach,
+      }))
   }
 }
 
@@ -338,4 +354,31 @@ async function finishSpace(
       ? e.strip
       : strip)
   return { left: owesRename(parent) ? e : { ...e, rename, strip: views }, reach }
+}
+
+async function finishContainer(
+  root: string,
+  id: string,
+  e: ContainerEntry,
+): Promise<Finished<ContainerEntry>> {
+  const reach: ConfigReach = { skipped: 0, hosts: [] }
+  // A deleted Collection or Set restored since holds its views again, so its delete owes them nothing; a moved Set is live by design.
+  const back = !e.within && !!findContainerById(await liveTreeOf(root), id)
+  const gone = e.strip ? await deleteCascade(root, join(root, e.at), e.strip) : null
+  if (gone?.links.length) {
+    if (e.bundle)
+      await patchRecord(join(root, e.bundle), (raw) => ({
+        links: [...((raw.links as StrippedLink[] | undefined) ?? []), ...gone.links],
+      }))
+    else if (e.park) await parkLinks(root, gone.links)
+  }
+  const stripped = !!gone && add(reach, gone.reach)
+  const viewed =
+    !!e.edit &&
+    !back &&
+    add(reach, await reachConfig(root, e.edit, e.within && join(root, e.within)))
+  return {
+    left: { ...e, strip: stripped ? e.strip : undefined, edit: viewed ? e.edit : undefined },
+    reach,
+  }
 }

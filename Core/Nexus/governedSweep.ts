@@ -147,13 +147,14 @@ export const refillOf =
     return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
   }
 
-/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
+/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */
 export async function refillValues(
   root: string,
   def: PropertyDefinition,
   roots: NexusPages['byId'],
   values: Record<string, unknown>,
   frozen: Frozen,
+  above: Record<string, string | undefined> = {},
 ): Promise<Set<string>> {
-  return sweepRootsById(root, roots, values, {}, refillOf(def, frozen))
+  return sweepRootsById(root, roots, values, above, refillOf(def, frozen))
 }
