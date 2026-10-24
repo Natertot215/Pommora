@@ -28,6 +28,8 @@ export const PROPERTY_JOURNAL_FILENAME = 'property-cascade.json'
 export const CONTEXT_JOURNAL_FILENAME = 'context-rename.json'
 export const PROPERTY_JOURNAL_REL = `${NEXUS_DIR}/${PROPERTY_JOURNAL_FILENAME}`
 export const CONTEXT_JOURNAL_REL = `${NEXUS_DIR}/${CONTEXT_JOURNAL_FILENAME}`
+/** Device-local: dotted, so neither the watcher nor sync admits it. */
+export const OWED_REL = `${NEXUS_DIR}/.owed.json`
 
 export const METADATA_DIR_REL = `${NEXUS_DIR}/metadata`
 export const SHARD_FILE_RE = /^(0[1-9]|1[0-2])-\d{4}\.json$/
