@@ -127,11 +127,11 @@ export async function restoreTrashed(
     if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, stored)
     if (!rebuilt.ok) return rebuilt
-    const { unrestored, dropped, landedAs } = rebuilt.value
+    const { unrestored, dropped, ...said } = rebuilt.value
     await parkLinks(root, dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
     await removeOwn(bundleAbs)
-    return ok({ ...restored(unrestored), ...(landedAs ? { landedAs } : {}) })
+    return ok({ ...restored(unrestored), ...said })
   }
   if (!artifactAbs)
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')

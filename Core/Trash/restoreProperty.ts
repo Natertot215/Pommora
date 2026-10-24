@@ -13,19 +13,19 @@ import { patchStashBlock } from '../Properties/propertyStash'
 import { isBlankRaw } from '../Files/rootValues'
 import { gonePageEntry } from '../Nexus/governedRoot'
 import { frozenWorld } from './trashedCopies'
-import type { StrippedLink } from '../Nexus/cascade'
+import { type CascadeReport, joinCascades, type StrippedLink } from '../Nexus/cascade'
+import type { MutateOutcome } from '../Nexus/mutateRequest'
 import { createProperty } from '../Properties/registryProperty'
 import { restoreNote } from '../Nexus/owed'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
-interface RestoredProperty {
+/** A property restore's answer, its numbered label and what the re-assign couldn't refill from the stash read as the reply reads them. */
+interface RestoredProperty extends Pick<MutateOutcome, 'landedAs' | 'cascade'> {
   /** The titles of what didn't take its value back. */
   unrestored: string[]
   /** Each Link value left out for naming a page gone, for the restore to park. */
   dropped: StrippedLink[]
-  /** The label it took when its own was taken since. */
-  landedAs?: string
 }
 
 export function restoreProperty(
@@ -60,9 +60,11 @@ async function restoreInner(
         patchStashBlock(cur, record.id, { ...block, values }),
       )
   }
+  let refilled: CascadeReport | undefined
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
-    if (folder) await assignInner(root, folder, record.id)
+    const a = folder ? await assignInner(root, folder, record.id) : null
+    if (a?.ok) refilled = joinCascades(refilled, a.value)
   }
   const { byId: roots, archived } = await nexusPages(root, tree)
   const frozen = frozenWorld(linkWorld(tree, archived))
@@ -86,5 +88,6 @@ async function restoreInner(
     ),
     dropped,
     ...(def.label === exactTitle(parsed.data.label) ? {} : { landedAs: def.label }),
+    ...(refilled ? { cascade: refilled } : {}),
   })
 }

@@ -8,7 +8,9 @@ import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { assignedIds } from '../Nexus/containerFields'
 import { linkWorld, nexusPages } from '../Nexus/heldPages'
-import { owningCollection } from '../Nexus/treePatch'
+import type { CascadeReport } from '../Nexus/cascade'
+import { distinct, propertyNote, runNoted } from '../Nexus/owed'
+import { containerAt, owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { PROPERTY_TYPES, type PropertyDraft } from './properties'
 import { createProperty, removeFromRegistry } from './registryProperty'
@@ -21,7 +23,7 @@ import type { MutateReply } from '../Nexus/mutateRequest'
 import { exactTitle } from '../Paths/caseFold'
 
 /** Puts the values the Collection at `folder` stashes for `propertyId` back on its pages, and into the Trash copies of pages trashed from it, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
-async function refillStash(
+export async function refillStash(
   root: string,
   folder: string,
   propertyId: string,
@@ -82,20 +84,34 @@ export async function assignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,
-): Promise<Result<null>> {
-  // The refill stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
+): Promise<Result<CascadeReport | undefined>> {
+  const collectionId = containerAt(await liveTreeOf(root), relative(root, collectionFolder))?.id
+  if (collectionId === undefined) return fail('not-found', 'Unknown Collection.')
+  // A re-add on the runner, as a Remove is: the Collection is noted before the assignment, so a refill a crash cuts short or a page it can't write is owed, and Try Again refills it from the stash. The refill stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
   let appended = false
-  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
-    const ids = assignedIds(cur)
-    if (ids.includes(propertyId)) return null
-    appended = true
-    return { ...cur, properties: [...ids, propertyId] }
+  const ran = await runNoted(root, propertyId, {
+    note: (e) => ({
+      ...propertyNote(e),
+      collections: distinct(propertyNote(e).collections, [collectionId]),
+    }),
+    list: () =>
+      patchSidecar(collectionFolder, 'collection', (cur) => {
+        const ids = assignedIds(cur)
+        if (ids.includes(propertyId)) return null
+        appended = true
+        return { ...cur, properties: [...ids, propertyId] }
+      }),
+    sweep: async () => ({
+      skipped: appended ? await refillStash(root, collectionFolder, propertyId, collectionId) : 0,
+      hosts: [],
+    }),
+    settle: (e) => ({
+      ...propertyNote(e),
+      collections: propertyNote(e).collections?.filter((c) => c !== collectionId),
+    }),
+    under: propertyId,
   })
-  if (!written.ok) return written
-  if (!appended) return ok(null)
-  // patchSidecar writes only a sidecar carrying its id, so the sidecar it answers names the Collection.
-  await refillStash(root, collectionFolder, propertyId, String(written.value.id))
-  return ok(null)
+  return ran.ok ? ok(ran.value.cascade.warning ? ran.value.cascade : undefined) : ran
 }
 
 async function reorderInner(
@@ -117,11 +133,15 @@ export function assignProperty(
   collectionFolder: string,
   propertyId: string,
   toIndex?: number,
-): Promise<Result<null>> {
+): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const a = await assignInner(root, collectionFolder, propertyId)
-    if (!a.ok || toIndex === undefined) return a
-    return reorderInner(collectionFolder, propertyId, toIndex)
+    if (!a.ok) return a
+    if (toIndex !== undefined) {
+      const moved = await reorderInner(collectionFolder, propertyId, toIndex)
+      if (!moved.ok) return moved
+    }
+    return ok(a.value ? { cascade: a.value } : {})
   })
 }
 /** A new property lands created and assigned in one hold of the schema lock, and a failed assign takes the create back inside it. */

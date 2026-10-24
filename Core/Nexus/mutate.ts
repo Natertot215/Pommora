@@ -281,7 +281,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'assignProperty': {
       const folder = await mutableTarget(root, req.containerPath, ['collection'])
       if (!folder.ok) return folder
-      return done(await assignProperty(root, folder.value, req.propertyId, req.toIndex))
+      return assignProperty(root, folder.value, req.propertyId, req.toIndex)
     }
 
     case 'unassignProperty': {
