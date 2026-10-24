@@ -50,6 +50,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **B-2 [CONFIRMED]:** Every change that rewrites many files is meant to update the property or Context list first and the files second, as a property rename does today.
 - **B-3 [CONFIRMED]:** A delete that can't reach every page finishes what it can and offers Try Again for the rest, for properties, Contexts, and Spaces alike.
 - **B-4 [CONFIRMED]:** Creating a property under the name of a deleted property whose cleanup is still unfinished is refused with the general unfinished-change message, and its Try Again gives that cleanup another run; the new property doesn't take the cleanup over.
+- **B-5 [CONFIRMED]:** A page whose front matter Pommora can't safely rewrite is reported once, by name, and then let go rather than kept owed: a Try Again that can never succeed isn't offered, and the old key stays on that page for a hand fix (Nathan, 10-23-2026: "B.").
 
 #### C - The Removed-Values Stash
 
