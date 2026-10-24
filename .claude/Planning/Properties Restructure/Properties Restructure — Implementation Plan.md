@@ -1230,11 +1230,11 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Review Checkpoint
   - [x] Closeout P9–P10 (two `opus-high` agents, inward and outward)
 - [x] `[Compaction checkpoint: c/pre-compaction before the plan's heaviest phase; on the re-prompt, re-read §Constraints, c/plan-execution, and Phases 11A and 11B before Phase 11A opens]`
-- [ ] **Phase 11A** — One Note per Item: The Notes and the Renames
-  - [ ] Task 11A-1 · The notes module, `Core/Nexus/owed.ts`
-  - [ ] Task 11A-2 · The property kind moves onto the notes
-  - [ ] Task 11A-3 · Context and Space renames move onto the notes
-  - [ ] Review Checkpoint
+- [x] **Phase 11A** — One Note per Item: The Notes and the Renames
+  - [x] Task 11A-1 · The notes module, `Core/Nexus/owed.ts`
+  - [x] Task 11A-2 · The property kind moves onto the notes
+  - [x] Task 11A-3 · Context and Space renames move onto the notes
+  - [x] Review Checkpoint
   - [ ] Closeout P11A (two `opus-high` agents, inward and outward)
 - [ ] **Phase 11B** — One Note per Item: Deletes and Remove
   - [ ] Task 11B-1 · `findHolders` falls back to the index's last read
@@ -18738,7 +18738,7 @@ An owed refusal is the one refusal answered by finishing first: every owed refus
   - `Core/Nexus/mutate.test.ts` › "createContextGroup holds the Contexts lock": a `createContextGroup` sent while a Context rename holds the lock lands after it (H-13).
 - [ ] `Core/Nexus/settle.ts`: `underContexts(root, fn)` moves here from `dispatch`, beside `payOwedWalk`, with its comment; every `mutate.ts` call site passes `root`.
 - [ ] `Core/Contexts/contextCascade.ts`: as the AFTER gives it. `retitleSpace`, `pageLeg`, P10's `titleHolders`, and P10's `cascadeTitle` take the old title, the new one, and whether it's a Space's in place of the record; `titleHolders`, `cascadeTitle`, and `rivalTitled` export for the pass; the ops keep P10's find before the runner; `renameContextOp` and `renameSpaceOp` run through `runNoted` (the refusal, the note, the list step, the sweep, the settle) and answer `MutateReply`; `sweepAgain`, `Unswept`, `unswept`, `settleJournal`, both `from` parameters and branches, and `replayPendingRename` leave.
-- [ ] `Core/Contexts/contextWrite.ts`: `createContextGroup` refuses the owed title its registry edit would land on; `createSpace`'s attempt refuses an owed title; `setSpaceContext`'s self-link refusal leaves (P-6, Nathan's ruling, 10-23-2026), since a Space's picker (`contextOptions.ts`) offers every Space but itself, so no path sends one, and no test pins it.
+- [ ] `Core/Contexts/contextWrite.ts`: `createContextGroup` refuses the owed title its registry edit would land on; `createSpace`'s attempt refuses an owed title; `setSpaceContext`'s self-link refusal leaves (P-6, Nathan's ruling, 10-23-2026), since a Space's picker (`contextOptions.ts`) offers every Space but itself, so no path sends one; its one pin, `contextWrite.test.ts` "refuses a self-link and writes nothing", leaves with it.
 - [ ] `Core/Nexus/finishOwed.ts`: the Context and Space rename arms and the Contexts-lock half of the pass.
 - [ ] `Core/Nexus/mutate.ts`: `renamed` and the `Unswept` import leave; the rename arms return `underContexts(root, () => renameContextOp(root, req.contextId, req.newName))` and its Space twin; `createContextGroup` runs under `underContexts`. `Core/Nexus/mutateRequest.ts`: `retry` and the two `from` fields leave. `Core/Session/nexusSlice.ts`: the `retry` half of the `warnCascade` call leaves.
 - [ ] `Core/Nexus/handlers.ts`: P9's Context replay call and the `replayPendingRename` import leave; `finishOwed` is the open's one finishing call.
@@ -19289,7 +19289,7 @@ A Space entry sweeps the holders already under its Context's current title on ev
 - **Each Item Owes Its Own Work (B-1):** one property's unfinished rename never blocks or unprotects another's; option renames, Value Format, option deletes, and Clear stop being refused because some property owes work. Nathan's intent.
 - **An Owed Name Is Finished, Then Used (B-4):** property create, rename, and Label Format, option create and rename, Context and Space create and rename, and every Trash restore landing on a name another item still owes first finish that item's work through the one Try Again and then land, where HEAD numbered a create, left a rename unchecked, and let a Context or Space take another's leftover tags. Only a name still owed after the finish, such as one held on an unreadable page, is refused with "An earlier change hasn’t reached every file yet." and Try Again.
 - **A Note That Can't Be Written Refuses:** every many-file change refuses with nothing changed; a Label Format change or option relabel that moves no key writes no note, so it lands as today.
-- **An Option Edit Reads the Decoded Options:** an option edit, a registration, or an option rename writes the options as the property list decoded them, so a hand-written option id that isn't text, which the read already answers by its derived id, is stored as that id on the next edit rather than written back as found.
+- **An Option Edit Reads the Decoded Options:** an option edit, a registration, or an option rename writes the options as the property list decoded them, so a hand-written value the read already sets aside leaves the stored entry on the next edit rather than being written back as found: an option id that isn't text is stored as its derived id, an unknown look and a numeric icon or color are dropped, and a status group's color that isn't one is stored as the grey it reads as, while a key the read doesn't know stays as written (*No Leftovers*).
 - **One Try Again Finishes Everything:** Try Again finishes every owed entry and reports one combined count, since a refusal knows the name it refused and not which item owes it; the open runs the same pass, once the index is seeded.
 - **The Notes File Leaves Once Nothing Is Owed:** the last entry's clearing removes `.nexus/.owed.json`, as the slot's own clear removed its journal, so a Nexus with nothing owed holds no notes file.
 - **A Damaged Settings File Goes to the System Trash:** `setAside`, which every repairable Nexus file's rebuild runs, sends the damaged bytes to the computer's Trash through the platform seam instead of leaving `.<name>.bad-<id>` beside the rebuilt file forever; a host with no system Trash keeps today's rename. A file rebuilt from scratch, damaged before the session ever read it, holds its only copy of the data, which the Trash keeps recoverable. Nathan's intent.
@@ -35441,7 +35441,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 8 | −434 | +404 | −30 | −498 / +459 / −39 | −401 |
 | 9 | −16 | +9 | −7 | −16 / +9 / −7 | −408 |
 | 10 | −381 | +393 | +12 | −323 / +334 / +11 | −397 |
-| 11A | −634 | +738 | +104 | | |
+| 11A | −634 | +738 | +104 | −642 / +737 / +95 | −302 |
 | 11B | −449 | +835 | +386 | | |
 | 12 | −192 | +340 | +148 | | |
 | 13 | −678 | +552 | −126 | | |
