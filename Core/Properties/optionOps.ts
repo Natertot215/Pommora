@@ -1,8 +1,8 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { uniqueOptionGroups, validateOptionValues } from './validation'
-import { queryKeyHolders, readPageRelations } from '../Index/contentIndex'
+import { readPageRelations } from '../Index/contentIndex'
+import { findHolders } from '../Index/keyHolders'
 import {
-  governedReach,
   type Rewrite,
   sweepCount,
   sweepGovernedRoots,
@@ -227,9 +227,8 @@ async function valueEditPlan(
   def: PropertyDefinition,
   keys: ValueEdit,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
-  const files = await governedReach(root, queryKeyHolders(def.key))
-  const raw = valueEditRewrite(def, keys)
-  return { files, plan: { raw, sidecars: raw } }
+  const { pages, spaces } = await findHolders(root, { keys: [def.key], reach: 'governed' })
+  return { files: [...pages, ...spaces], plan: { raw: valueEditRewrite(def, keys) } }
 }
 
 async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
@@ -252,7 +251,7 @@ export async function optionCascade(
   let skipped = 0
   if (keys.size) {
     const { files, plan } = await valueEditPlan(root, def, keys)
-    skipped = (await sweepGovernedRoots(root, files, plan)).skipped.length
+    skipped = (await sweepGovernedRoots(files, plan)).skipped.length
     if (skipped && removed !== undefined) return { skipped, hosts: [] }
     skipped += await cacheSweep(root, def, keys)
   }

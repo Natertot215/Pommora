@@ -3,14 +3,15 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { stripKeys } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
 import { errText } from '../Contract/result'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
   type Rewrite,
   type RewriteText,
-  governedReach,
   outsideArchive,
+  rootId,
   sweepGovernedRoots,
 } from './governedSweep'
+import { pagesInReach, spaceFiles } from '../Index/keyHolders'
 import { unsweptLine } from './entities'
 import { byKey } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
@@ -30,8 +31,6 @@ import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry, governedRoot } from './governedRoot'
 import { addressable, nexusPages } from './heldPages'
-import { ID_KEY } from './identityMark'
-import { asString } from './coerce'
 
 export interface CascadeReport {
   /** The Nexus paths written outside the Archive, which feed the `pages:changed` push; nothing displays an archived path. */
@@ -59,12 +58,6 @@ interface DeleteCascade {
 }
 
 const NO_STRIP: DeleteCascade = { cascade: { pages: [], hosts: [] }, links: [] }
-
-/** A sweep's Space sidecar arm, planned only when a Space the tree holds answers `rewrite`, since the arm reads every Space sidecar. */
-const spaceArm = (tree: NexusTree, rewrite: Rewrite): { sidecars?: Rewrite } =>
-  tree.contexts.some((g) => g.spaces.some((s) => s.values && rewrite(s.values, '') !== null))
-    ? { sidecars: rewrite }
-    : {}
 
 export function joinCascades(
   a: CascadeReport | null | undefined,
@@ -125,25 +118,24 @@ export async function deleteCascade(
         raw,
         named(raw).map(({ key }) => key),
       )
-    const files = (await governedReach(root, queryMentions([...gone]))).filter(
-      (file) => !inside(relative(root, file)),
-    )
+    const files = [
+      ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
+      ...spaceFiles(root, tree, (s) => !!s.values && strip(s.values, '') !== null),
+    ].filter((file) => !inside(relative(root, file)))
     let heldOut = 0
-    const swept = await sweepGovernedRoots(root, files, {
+    const swept = await sweepGovernedRoots(files, {
       raw: (raw, file) => {
-        const id = asString(raw[ID_KEY])
-        if (named(raw).length && !addressable(byId, id)) {
+        if (named(raw).length && !addressable(byId, rootId(file, raw))) {
           heldOut++
           return null
         }
         return strip(raw, file)
       },
-      ...spaceArm(tree, strip),
     })
     const links: StrippedLink[] = []
     for (const [file, { before }] of swept.touched) {
       const raw = governedRoot(file, before)
-      const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
+      const id = rootId(file, raw)
       if (!id) continue
       for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
     }
@@ -259,11 +251,11 @@ export async function renameCascade(
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
-    const files = [...new Set(rels)].map((rel) => join(root, rel))
-    const swept = await sweepGovernedRoots(root, files, {
-      text,
-      ...spaceArm(tree, spaceMoved),
-    })
+    const files = [
+      ...[...new Set(rels)].map((rel) => join(root, rel)),
+      ...spaceFiles(root, tree, (s) => !!s.values && spaceMoved(s.values, '') !== null),
+    ]
+    const swept = await sweepGovernedRoots(files, { text, raw: spaceMoved })
     const tiles = (await tilesLink(root, keys, headingKey))
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }

@@ -6,18 +6,16 @@ import {
   rewritePreservingTimes,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { nexusCorpus } from '../Index/indexSeed'
-import { liveTreeOf } from './liveTree'
-import { archiveReach, damagedFolders } from './treePatch'
+import { damagedFolders } from './treePatch'
 import type { NexusTree } from './tree'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
+import { sidecarPath } from '../Paths/paths'
 import { isArchived } from '../Paths/nexusPaths'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 import { addressable, type NexusPages } from './heldPages'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { spaceSidecars } from '../Contexts/spaceSidecar'
 import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
 import type { PropertyDefinition } from '../Properties/properties'
 import { isBlankRaw, landValue } from '../Files/rootValues'
@@ -33,7 +31,8 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
-export type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place. */
+export type SweepPlan = { raw: Rewrite; text?: RewriteText }
 
 export const collectionFolders = (root: string, tree: NexusTree): string[] =>
   [
@@ -41,32 +40,26 @@ export const collectionFolders = (root: string, tree: NexusTree): string[] =>
     ...damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection'),
   ].map((c) => join(root, c.path))
 
-/** A property key means something only where a schema governs it, so a property sweep opens its candidates inside a Collection or an Archive, never a loose file the index or the corpus also names. */
-export async function governedReach(
-  root: string,
-  candidates: string[] | null,
-  only?: string,
-): Promise<string[]> {
-  const tree = await liveTreeOf(root)
-  const archive = archiveReach(tree, only && relative(root, only))
-  const folders = [
-    ...(only === undefined ? collectionFolders(root, tree) : [only]),
-    ...(archive === null ? [] : [join(root, archive)]),
-  ]
-  return (candidates ?? (await nexusCorpus(root)))
-    .map((rel) => join(root, rel))
-    .filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
-}
-
 // A file whose lock or write throws costs only itself, so the files after it are still reached.
 const guarded = (file: string, missed: string[], body: () => Promise<void>): Promise<void> =>
   machine()
     .lock(file, body)
     .catch(() => void missed.push(file))
+/** A file's text after `plan`, by its kind: null when nothing changes, undefined when its root can't round-trip (an Unknown page, a sidecar nobody can parse), which won't read any better on a retry, so it's left byte-identical. */
+function rewritten(plan: SweepPlan, file: string, content: string): string | null | undefined {
+  if (!isMarkdownFile(file)) {
+    const raw = parseJsonObject(content)
+    if (!raw) return undefined
+    const next = plan.raw(raw, file)
+    return next === null ? null : jsonText(next)
+  }
+  const page = sweepParse(content)
+  if (!page) return undefined
+  return plan.text ? plan.text(content, file) : rewriteRaw((raw) => plan.raw(raw, file))(page)
+}
 
-/** Files are absolute; a sidecar rewrite in the plan reaches every Space sidecar, which no index names. */
+/** Files are absolute, pages and Space sidecars alike. */
 export async function sweepGovernedRoots(
-  root: string,
   files: string[],
   plan: SweepPlan,
   dry = false,
@@ -80,42 +73,19 @@ export async function sweepGovernedRoots(
         out.skipped.push(file)
         return
       }
-      // An Unknown file, or one whose frontmatter cannot round-trip, is left byte-identical.
-      const page = sweepParse(content)
-      if (!page) {
+      const next = rewritten(plan, file, content)
+      if (next === undefined) {
         out.refused.push(file)
         return
       }
-      const next =
-        'text' in plan ? plan.text(content, file) : rewriteRaw((raw) => plan.raw(raw, file))(page)
       if (next === null) return
-      if (!dry) await rewritePreservingTimes(file, next)
+      if (!dry)
+        await (isMarkdownFile(file)
+          ? rewritePreservingTimes(file, next)
+          : atomicWriteFile(file, next))
       out.touched.set(file, { before: content, after: next })
     })
   }
-
-  const sidecars = plan.sidecars
-  if (sidecars)
-    for (const file of await spaceSidecars(root)) {
-      await guarded(file, out.skipped, async () => {
-        const text = await readTextOrNull(file)
-        if (text === null) {
-          out.skipped.push(file)
-          return
-        }
-        // A sidecar nobody can parse won't read any better on a retry, so it's left byte-identical the way an unparseable page is.
-        const raw = parseJsonObject(text)
-        if (!raw) {
-          out.refused.push(file)
-          return
-        }
-        const next = sidecars(raw, file)
-        if (next === null) return
-        const after = jsonText(next)
-        if (!dry) await atomicWriteFile(file, after)
-        out.touched.set(file, { before: text, after })
-      })
-    }
   return out
 }
 
@@ -123,9 +93,13 @@ export async function sweepGovernedRoots(
 export const outsideArchive = (root: string, file: string): boolean =>
   !isArchived(relative(root, file))
 
+/** The id a governed root carries: a page's `ID`, a Space sidecar's `id`. */
+export const rootId = (file: string, raw: Json): string | undefined =>
+  asString(raw[isMarkdownFile(file) ? ID_KEY : 'id'])
+
 export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
   const shown = files.filter((file) => outsideArchive(root, file))
-  return (await sweepGovernedRoots(root, shown, plan, true)).touched.size
+  return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 
 /** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
@@ -170,23 +144,19 @@ export async function sweepRootsById<T>(
   rewrite: (raw: Json, value: T) => Json | null,
 ): Promise<Set<string>> {
   const asked = new Map<string, string>()
-  const byId =
-    (idKey: string): Rewrite =>
-    (raw, file) => {
-      const id = asString(raw[idKey])
+  const files = Object.keys(values).flatMap((id) => {
+    const at = roots.get(id)
+    if (at?.kind === 'page') return [join(root, at.path)]
+    return at?.kind === 'space' ? [sidecarPath(join(root, at.path), 'space')] : []
+  })
+  const { skipped } = await sweepGovernedRoots(files, {
+    raw: (raw, file) => {
+      const id = rootId(file, raw)
       if (!addressable(roots, id) || !Object.hasOwn(values, id)) return null
       const next = rewrite(raw, values[id])
       if (next !== null) asked.set(file, id)
       return next
-    }
-  const ids = Object.keys(values)
-  const pages = ids.flatMap((id) => {
-    const at = roots.get(id)
-    return at?.kind === 'page' ? join(root, at.path) : []
-  })
-  const { skipped } = await sweepGovernedRoots(root, pages, {
-    raw: byId(ID_KEY),
-    ...(ids.some((id) => roots.get(id)?.kind === 'space') ? { sidecars: byId('id') } : {}),
+    },
   })
   for (const file of skipped) asked.delete(file)
   return new Set(asked.values())

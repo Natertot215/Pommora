@@ -94,5 +94,5 @@ export async function refillTrashed(
   }
   for (const [id, file] of holders)
     if (basename(file) === SPACE_SIDECAR) await rmwJsonStrict(file, (raw) => fill(raw, id))
-    else await sweepGovernedRoots(root, [file], { raw: (raw) => fill(raw, id) })
+    else await sweepGovernedRoots([file], { raw: (raw) => fill(raw, id) })
 }

@@ -181,7 +181,7 @@ export async function scrubReturning(
     const kept = stripKeys(r.root, goneKeys) ?? r.root
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
-  const { skipped } = await sweepGovernedRoots(root, pages, { text })
+  const { skipped } = await sweepGovernedRoots(pages, { text, raw: () => null })
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
   // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
   for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
@@ -209,7 +209,7 @@ export async function repairLanded(
   if (!repair.size) return []
   const { text, spaceMoved } = fileRewrites(root, tree, (t) => rewriteConnections(t, repair))
   const { pages, sidecars } = await artifactFiles(root, entity, targetAbs)
-  const { skipped } = await sweepGovernedRoots(root, pages, { text })
+  const { skipped } = await sweepGovernedRoots(pages, { text, raw: () => null })
   for (const file of sidecars) {
     const wrote = await rmwJsonStrict(file, (raw) => spaceMoved(raw, file)).catch(() => null)
     if (!wrote?.ok) skipped.push(file)

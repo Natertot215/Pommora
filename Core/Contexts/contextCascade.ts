@@ -1,5 +1,5 @@
-import { basename, dirname, join } from '../Paths/posix'
-import { exactTitle, normalizeTitle } from '../Paths/caseFold'
+import { basename, dirname, join, relative } from '../Paths/posix'
+import { normalizeTitle } from '../Paths/caseFold'
 import { contextKey } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
@@ -9,7 +9,7 @@ import { heldName, pathExists, readJsonStrict, relocate, targetTaken } from '../
 import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { contextDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
   type Rewrite,
@@ -30,10 +30,9 @@ import {
   type KeyCollision,
 } from '../Files/rootValues'
 import { contextWorldOf } from './contextResolve'
-import { liveTreeOf } from '../Nexus/liveTree'
+import { liveTreeOf, refreshTree } from '../Nexus/liveTree'
 import { scalarMembers } from '../Contract/validators'
-import { queryMembers } from '../Index/contentIndex'
-import { nexusCorpus } from '../Index/indexSeed'
+import { findHolders, type HolderQuery, type Moved } from '../Index/keyHolders'
 import { nameError } from '../Paths/names'
 
 /** Both keys of a collision hold real tags: the app's own tag writes run under the Contexts lock a rename holds, so a key already wearing the new title was written outside the app or by hand, and neither list is fresher, so dropping either would silently lose tags. */
@@ -63,27 +62,6 @@ export interface SweepCapture {
 
 export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
 
-interface Member {
-  key: string
-  spaceTitle?: string
-}
-
-// Without an index every page is a candidate; the rewrite itself decides what changes.
-async function sweepMembers(
-  root: string,
-  member: Member,
-  raw: Rewrite,
-  pageText?: RewriteText,
-): Promise<SweepResult> {
-  const title = member.spaceTitle === undefined ? undefined : exactTitle(member.spaceTitle)
-  const rels = queryMembers(member.key, title) ?? (await nexusCorpus(root))
-  return sweepGovernedRoots(
-    root,
-    rels.map((rel) => join(root, rel)),
-    pageText ? { text: pageText, sidecars: raw } : { raw, sidecars: raw },
-  )
-}
-
 function captureRoot(raw: Json, file: string, values: string[]): SweepCapture {
   const isSpace = basename(file) === SPACE_SIDECAR
   const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : asString(raw[ID_KEY])
@@ -110,26 +88,37 @@ async function sweepAgain(
   contextTitle: string,
   j: RenameJournal,
 ): Promise<Result<Unswept | null>> {
-  const again = await cascadeTitle(root, contextTitle, j)
+  const again = await cascadeTitle(contextTitle, j, await titleHolders(root, contextTitle, j))
   await settleJournal(root, j, again.skipped)
   return ok(unswept(again.skipped, j.oldTitle))
 }
 
-async function cascadeTitle(
+/** The files holding the key `j` rewrites, found before the rename's list or folder step, so no settle between them can drop a moved Space from the tree; `moved` points a Space the tree still lists under the folder it left at the one it went to. The key comes from the journal, never the registry title, which may already read old or new. */
+async function titleHolders(
   root: string,
   contextTitle: string,
   j: RenameJournal,
-): Promise<SweepResult> {
-  // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
-  const member: Member =
+  moved?: Moved,
+): Promise<string[]> {
+  const { pages, spaces } = await findHolders(
+    root,
     j.spaceId === undefined
-      ? { key: contextKey(j.oldTitle) }
-      : { key: contextKey(contextTitle), spaceTitle: j.oldTitle }
-  const rewrite: Rewrite =
+      ? { keys: [contextKey(j.oldTitle)], reach: 'anywhere', moved }
+      : { keys: [contextKey(contextTitle)], title: j.oldTitle, reach: 'anywhere', moved },
+  )
+  return [...pages, ...spaces]
+}
+
+function cascadeTitle(
+  contextTitle: string,
+  j: RenameJournal,
+  files: string[],
+): Promise<SweepResult> {
+  const raw: Rewrite =
     j.spaceId === undefined
       ? rekeyContext(j.oldTitle, j.newTitle)
-      : (raw) => retitleSpace(raw, contextTitle, j)
-  return sweepMembers(root, member, rewrite, pageLeg(j))
+      : (r) => retitleSpace(r, contextTitle, j)
+  return sweepGovernedRoots(files, { raw, text: pageLeg(j) })
 }
 
 export async function unlinkContextKey(
@@ -146,7 +135,7 @@ export async function unlinkContextKey(
     return stripKeys(raw, [key])
   }
   const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
-  const swept = await unlinkMembers(root, { key }, rewrite, skipUnder)
+  const swept = await unlinkMembers(root, { keys: [key], id: contextId }, rewrite, skipUnder)
   return ok({ ...swept, captured })
 }
 
@@ -167,20 +156,21 @@ export async function unlinkSpaceValue(
     if (next) captured.push(captureRoot(raw, file, taken))
     return next
   }
-  return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
+  return ok({ ...(await unlinkMembers(root, { keys: [key], title: spaceTitle }, take)), captured })
 }
 
 // A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses, counting each file it missed or couldn’t put back. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
 async function unlinkMembers(
   root: string,
-  member: Member,
+  holding: Pick<HolderQuery, 'keys' | 'title' | 'id'>,
   rewrite: Rewrite,
   skipUnder?: string,
 ): Promise<SweepResult> {
   const leaves = (file: string): boolean => !!skipUnder && file.startsWith(`${skipUnder}/`)
-  const swept = await sweepMembers(root, member, (raw, file) =>
-    leaves(file) ? null : rewrite(raw, file),
-  )
+  const { pages, spaces } = await findHolders(root, { ...holding, reach: 'anywhere' })
+  const swept = await sweepGovernedRoots([...pages, ...spaces], {
+    raw: (raw, file) => (leaves(file) ? null : rewrite(raw, file)),
+  })
   const missed = swept.skipped.filter((file) => !leaves(file))
   if (!missed.length) return swept
   const unrestored = await undoSweep(swept.touched)
@@ -220,6 +210,10 @@ export async function renameContextOp(
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName }
+  const files = await titleHolders(root, entry.title, j, {
+    from: contextDirRel(entry.title),
+    to: contextDirRel(newName),
+  })
   await writeJournal(root, j)
   const committed = await commitTitle(root, contextId, newName)
   if (!committed.ok) {
@@ -237,7 +231,7 @@ export async function renameContextOp(
     return fault(e)
   }
 
-  const cascade = await cascadeTitle(root, entry.title, j)
+  const cascade = await cascadeTitle(entry.title, j, files)
   await settleJournal(root, j, cascade.skipped)
   return ok(unswept(cascade.skipped, j.oldTitle))
 }
@@ -270,6 +264,10 @@ export async function renameSpaceOp(
     oldTitle: space.title,
     newTitle: newName,
   }
+  const files = await titleHolders(root, group.def.title, j, {
+    from: space.path,
+    to: relative(root, target),
+  })
   await writeJournal(root, j)
   try {
     await relocate(dir, target)
@@ -278,7 +276,7 @@ export async function renameSpaceOp(
     return fault(e)
   }
 
-  const cascade = await cascadeTitle(root, group.def.title, j)
+  const cascade = await cascadeTitle(group.def.title, j, files)
   await settleJournal(root, j, cascade.skipped)
   return ok(unswept(cascade.skipped, j.oldTitle))
 }
@@ -305,13 +303,13 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     const oldDir = join(contextsDir(root), j.oldTitle)
     const newDir = join(contextsDir(root), j.newTitle)
-    if ((await heldName(oldDir)) === j.oldTitle && !(await targetTaken(oldDir, newDir)))
+    if (entry.title !== j.newTitle && !(await commitTitle(root, j.contextId, j.newTitle)).ok) return
+    if ((await heldName(oldDir)) === j.oldTitle && !(await targetTaken(oldDir, newDir))) {
       await relocate(oldDir, newDir)
-    const cascade = await cascadeTitle(root, entry.title, j)
-    if (entry.title !== j.newTitle) {
-      const committed = await commitTitle(root, j.contextId, j.newTitle)
-      if (!committed.ok) return
+      // The open's tree read this Context's Spaces from the folder its title named; with the title committed first, as the live op commits it, the moved folder is the one the list names, so the tree is read again before the find.
+      await refreshTree(root)
     }
+    const cascade = await cascadeTitle(entry.title, j, await titleHolders(root, entry.title, j))
     await settleJournal(root, j, cascade.skipped)
     return
   }
@@ -343,6 +341,6 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     await relocate(join(ctxDir, j.oldTitle), target)
   }
-  const cascade = await cascadeTitle(root, entry.title, j)
+  const cascade = await cascadeTitle(entry.title, j, await titleHolders(root, entry.title, j))
   await settleJournal(root, j, cascade.skipped)
 }

@@ -23,7 +23,6 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
       return live() ? reconcileGovernedRoot(fm, world).root : null
     }
     await sweepGovernedRoots(
-      root,
       reread.rels.map((rel) => join(root, rel)),
       { raw },
     )
