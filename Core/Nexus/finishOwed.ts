@@ -14,6 +14,7 @@ import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } fro
 import { patchRecord } from '../Bundles/record'
 import { parkLinks } from '../Trash/trashedCopies'
 import { findContainerById } from './treePatch'
+import { pagesByIdOf } from './record'
 import { type ConfigReach, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
@@ -378,9 +379,10 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted Collection or Set restored since holds its views again, so its delete owes them nothing; a moved Set is live by design.
-  const back = !e.within && !!findContainerById(await liveTreeOf(root), id)
-  const gone = e.strip ? await deleteCascade(root, join(root, e.at), e.strip) : null
+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design.
+  const tree = await liveTreeOf(root)
+  const back = !e.within && (pagesByIdOf(tree).has(id) || !!findContainerById(tree, id))
+  const gone = e.strip && !back ? await deleteCascade(root, join(root, e.at), e.strip) : null
   if (gone?.links.length) {
     if (e.bundle)
       await patchRecord(join(root, e.bundle), (raw) => ({
