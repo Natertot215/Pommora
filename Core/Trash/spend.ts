@@ -21,7 +21,7 @@ import {
   originPathOf,
   pageIdsOf,
 } from '../Bundles/bundle'
-import { collectionOf, originOf } from '../Bundles/record'
+import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
 import { readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
@@ -293,7 +293,10 @@ export async function restoreTrashed(
     Object.assign(worked, await refillTrashed(root, trashed, defs, refilled))
   }
   const owed = await oweWorked(root, relative(root, targetAbs), title, worked)
-  const cascade = withUnswept(joinCascades(arrived.cascade, owed), title, scrubbed.unread)
+  const cascade = joinCascades(
+    withUnswept(joinCascades(arrived.cascade, owed), title, scrubbed.unread),
+    recordedPartly(stored, title),
+  )
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) await removeOwn(bundleAbs)
   const left = originOf(stored)

@@ -1,5 +1,6 @@
 import { dirname, join, relative } from '../Paths/posix'
 import { z } from 'zod'
+import type { CascadeReport } from '../Nexus/cascade'
 import { stashBlock } from '../Properties/propertyStash'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { index } from '../Files/decoders'
@@ -97,6 +98,15 @@ const recordFile = z.discriminatedUnion('entity', [
 ])
 
 export type RecordFile = z.infer<typeof recordFile>
+/** A partly recorded entry's restore says so, since some of what it held may not have been written down. */
+export const recordedPartly = (record: RecordFile, title: string): CascadeReport | undefined =>
+  record.partial
+    ? {
+        pages: [],
+        hosts: [],
+        warning: `“${title}” was recorded partly, so some of what it held may not come back.`,
+      }
+    : undefined
 
 /** The property shape is artifact-less — there is nothing to place. */
 export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
