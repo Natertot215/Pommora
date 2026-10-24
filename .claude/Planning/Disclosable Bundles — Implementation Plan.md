@@ -53,9 +53,10 @@ The renderer keeps each open container's inner rows in one map:
   - A container discloses.
   - A page checks.
   - A double-click leaves a page checked, and ArchiveView opens it in the reader.
-- **Batch Restore:** a batch Restore holding homeless rows (every inner item is one) asks once per kind of destination.
+- **Checks Outlive Collapsing:** collapsing a container keeps its inner rows' checks. They're hidden from a batch until it opens again, as a search's hidden rows are.
+- **Batch Restore:** a batch Restore holding homeless rows (every inner item is one) asks once per kind of destination. Only the homeless rows go where the picker says; every row with a home of its own still returns there.
 
-The chevron sits right of the label in both skins.
+The chevron sits right of the label in both skins. An inner row carries its trail like any other row: the bundle's own trail, then the containers inside the bundle above it.
 
 #### Concepts
 
@@ -75,6 +76,7 @@ The chevron sits right of the label in both skins.
 | `OpenBundle.inner` • Field | Marks an open of an inner item. | `Core/Bundles/bundle.ts` |
 | `identityOf` • Function | A page's stamped id, or a container's sidecar id and icon. Shared by `gatherContentRecord` and `innerRecord`. | `Core/Bundles/record.ts` |
 | `artifactRow` • Function | The one builder of an artifact's row, shared by bundle rows and inner rows. | `Core/Bundles/rows.ts` |
+| `bundleCrumbs` • Function | A bundle's trail, live or frozen, which its own row shows and each inner row's trail begins with. | `Core/Bundles/rows.ts` |
 | `innerRows` • Function | The rows of a bundle's inner items. | `Core/Bundles/rows.ts` |
 | `bundles:children` • Channel | Lists each given address's inner items as rows. | `Core/Contract/bridge.ts` |
 | `TreeRow` • Type | A row as a browser shows it: its depth and whether it's open. | `Core/Bundles/browser.ts` |
@@ -108,6 +110,10 @@ The chevron sits right of the label in both skins.
   - **Nesting:** nested Sets disclose recursively. Inner items take Restore, Delete, check, and batch, and a checked ancestor covers its checked descendants.
   - **Single Rows:** Contexts, Spaces, and properties stay single rows.
   - **Search:** narrows top rows only.
+  - **Trails:** an inner row shows its trail. It's the bundle's own trail, then each container inside the bundle down to the row's folder, and it carries the bundle's `historical` mark.
+  - **Collapsing:** checks are remembered. Collapsing a container never unchecks what it hides, and reopening shows the same checks. A hidden check stays out of the batch and the menu's targets while its container is closed, as a search's hidden checked rows do today.
+  - **Batch Destination:** the batch's destination ask applies only to its homeless rows. Every row whose home resolves restores to that home, whatever the picker chose.
+  - **Double-Click:** the click intent uses the codebase's `e.detail` pattern (CalendarPicker, MarkdownPM's pointer gestures), and a single click is never delayed.
   - **Undo:** re-nests an inner item through one shared primitive in `Core/Bundles/`.
   - **Names:** as written in *§Concepts*.
   - **Partial Mark:** an inner item of a partly recorded container is itself partly recorded. `innerRecord` carries the container's `partial`, so its row shows the Trash's partial mark, and the restore's `recordedPartly` warning names that item under its own landed title, never its container's (Task 1-2, folded into the Restructure's `recordedPartly` at re-grounding).
@@ -123,7 +129,7 @@ The chevron sits right of the label in both skins.
 - **Inner-Item Writes:** listing inner items only reads. Among the inner-item paths, only `spendBundle` and `fileInto` write bundle structure.
 - **Never Every-X:** inner items list lazily, never inside `bundles:list`.
   - They're asked for on opening, and once per refresh for every open address in one call.
-  - A closed row's whole subtree is forgotten.
+  - A closed row's loaded subtree is forgotten, while its checks are kept.
 - **Addresses Are Canonical:** a whole bundle's address is its folder, and an inner item's is its own path. `checked`, `spendUndo`'s arming, `outermostOf`, and the open map all key on the address.
 - **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Reuse `Core/Testing/fixtures.ts`, `testTree.ts`, `hostFs.ts`, and `settledMutate.ts`, along with each suite's local seeders.
 - **Comments:** docstrings in the house register where a neighbor has one; no other comments.
@@ -313,7 +319,7 @@ The chevron sits right of the label in both skins.
 +type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
 +
 +const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
-+  record.entity === 'collection' || record.entity === 'set'
++  isContainerKind(record.entity)
 +
 +/** An address read once: its bundle, store, record, and artifact, and the inner item it names, refused when nothing holds that item any more. */
 +async function readBundleAt(root: string, abs: string) {
@@ -690,11 +696,13 @@ A whole bundle still re-mints under its own name, as it does today.
   - **`rows.test.ts`:** an inner row's fields:
     - `bundlePath` is its address, and `stored` is `{ id, path: address }`.
     - Its icon is the page metadata's, or the Set sidecar's.
-    - Its `crumbs` are empty.
+    - Its `crumbs` are its bundle's trail, then the bundled container and each inner Set down to its folder, each with its kind.
+    - Its `historical` follows its bundle's.
     - `storedAt` is the bundle's stamp.
     - `homeResolves` is false.
 - [ ] Add `listInner`, `artifactRow`, and `innerRows`.
   - `bundleRowOf`'s artifact branch becomes one `artifactRow` call, and the existing `rows.test.ts` cases pass unchanged.
+  - Lift `bundleRowOf`'s `liveCrumbs(record, tree) ?? frozenCrumbs(store, bundlePath)` into `bundleCrumbs`. `innerRows` reads it once per listing, then appends one crumb per segment of the path from the bundle folder to `folder`. The first crumb takes the bundled record's kind, and the rest are `'set'`.
   - Inside `artifactRow`, `name` is `basename(at.path)` and `restoring` is `at.bundlePath`. For an inner row, that is its own address, which answers `heldElsewhere` as the bundle would: `byId` holds no Set ids and no Trash pages.
 - [ ] Update the `BundleRow` docs:
   - **`bundlePath`:** "Its address: a bundle's folder, or the inner item's own path."
@@ -703,17 +711,26 @@ A whole bundle still re-mints under its own name, as it does today.
 **AFTER**
 
 ```Core/Bundles/bundle.ts diff
++/** One level of a container address's inner items under the bundle they sit in, its record and store, and the folder they share. */
++export interface InnerListing {
++  bundle: string
++  store: BundleStore
++  record: RecordFile
++  folder: string | null
++  items: { address: string; record: RecordFile }[]
++}
++
 +/** One level of a container address's inner items, its Sets and then its pages, each in the order the folder's sidecar keeps, with the record it carries; the trail above them is read once for the level. */
 +export async function listInner(
 +  root: string,
 +  abs: string,
-+): Promise<Result<{ bundle: string; items: { address: string; record: RecordFile }[] }>> {
++): Promise<Result<InnerListing>> {
 +  const read = await readBundleAt(root, abs)
 +  if (!read.ok) return read
-+  const { bundle, record, artifact, item } = read.value
-+  const listed = { bundle: relative(root, bundle), items: [] }
-+  if (!artifact || !isContainerRecord(record)) return ok(listed)
++  const { bundle, store, record, artifact, item } = read.value
 +  const folder = item ?? artifact
++  const listed = { bundle: relative(root, bundle), store, record, folder: folder && relative(root, folder), items: [] }
++  if (!artifact || !folder || !isContainerRecord(record)) return ok(listed)
 +  const trail = await trailWithin(record, artifact, folder)
 +  const entries = (await listEntries(folder)).filter(
 +    ({ name, kind }) => !hiddenName(name) && (kind === 'dir' || isMarkdownFile(name)),
@@ -746,9 +763,17 @@ A whole bundle still re-mints under its own name, as it does today.
 +  byId: NexusPages['byId'],
 +): BundleRow
  …
-+/** A bundle's inner items as rows: each addressed by its own path, dated by its bundle's stamp, its place told by the row it discloses under. */
++/** A bundle's trail: live from its recorded parent, else frozen from the chain it was filed under. */
++function bundleCrumbs(
++  record: ArtifactRecord,
++  store: BundleStore,
++  bundlePath: string,
++  tree: NexusTree,
++): { crumbs: BundleCrumb[]; historical: boolean }
+ …
++/** A bundle's inner items as rows: each addressed by its own path, dated by its bundle's stamp, its trail the bundle's own followed by the containers inside it down to the row's folder. */
 +export function innerRows(
-+  listed: { bundle: string; items: { address: string; record: RecordFile }[] },
++  listed: InnerListing,
 +  tree: NexusTree,
 +  byId: NexusPages['byId'],
 +): BundleRow[]
@@ -832,16 +857,23 @@ A whole bundle still re-mints under its own name, as it does today.
     - `open` is null for a page.
     - Inner rows sit beneath an open parent only.
   - **`outermostOf`:** a checked Set and its checked page act once, while siblings and look-alike prefixes (`A/B` vs `A/Bc`) both stay.
+  - **Remembered Checks:**
+    - A checked inner row stays checked when its container collapses, shows checked again when it reopens, and is left out of `picked` while hidden.
+    - A check whose row its reopened container no longer lists is dropped once that container's reply lands, and is kept while the reply is still pending.
 - [ ] Hold `open: ReadonlyMap<string, readonly BundleRow[]>` in state, mirrored in a ref for `refresh`. This map is the only record of what's open.
   - **Opening:** `rowClick` on a closed container sets its entry to `[]` at once, so it reads open with its chevron turned. It then asks `bundles:children([address])` and replaces the entry with the reply, but only while the address is still open.
-  - **Closing:** `rowClick` on an open container drops the address and every key `isAtOrUnder` it.
+  - **Closing:** `rowClick` on an open container drops the address and every key `isAtOrUnder` it from `open`. Its rows' checks stay, under the rule below.
   - **Refreshing:** after the listing lands, `refresh` keeps the open addresses that `treeRows` still reaches over the new top rows. It asks for all of them in one `bundles:children` call and sets the map from the reply, under `refresh`'s own `asks` rule.
 - [ ] Derive the rest:
-  - **`live`:** the top rows plus every row in `open`.
+  - **Kept Checks:** `checkSet.ts`'s `retained` takes a predicate in place of a live set, and `PageReaderWindow.tsx:148` passes `(k) => live.has(k)`. The browser's predicate keeps a check in one of two cases:
+    - its row is listed (a top row, or one in `open`);
+    - the nearest listed row above its address is a closed container, whose contents aren't loaded to say otherwise.
+  - **When Checks Are Pruned:** `retained` runs only when a listing lands: after `refresh` sets the top rows and its one `bundles:children` reply, and when a single opening's reply lands. A container that's just been opened holds `[]` until its reply arrives, and pruning then would drop the checks the reply is about to show. Collapsing changes no listing, so it prunes nothing.
   - **`visible`:** `treeRows(filterRows(rows, query), open)`.
   - **`found`:** the top-level match count, which ArchiveView publishes.
+  - **`rowsInView`:** the `BundleRow`s of `visible`, memoized beside it.
   - **`picked`:** `outermostOf(checkedIn(checked, rowsInView, key))`.
-  - **The menu's targets:** `checked.has(row.bundlePath) ? picked : [row]`. `actedOn`'s import goes.
+  - **The menu's targets:** `outermostOf(actedOn(checked, rowsInView, row, key))`, so the right-click rule stays in `actedOn`, which `PageReaderWindow.tsx` also uses.
 - [ ] Add `rowClick(row, detail)`:
   - A container discloses on `detail === 1`.
   - A page toggles its check on `detail === 1`.
@@ -903,7 +935,7 @@ A whole bundle still re-mints under its own name, as it does today.
 **CHANGE**
 
 - [ ] Rewrite two existing cases to the new rule and watch them fail:
-  - **`TrashFrame.test.tsx:322`:** a Restore All of two homeless rows opens one picker, both rows restore to the picked place, and a dismissed picker restores nothing.
+  - **`TrashFrame.test.tsx:322`:** a Restore All of two homeless rows and one homed row opens one picker. The two homeless rows restore to the picked place, and the homed row restores to its own home, its request sent with no destination. A dismissed picker restores nothing.
   - **`ArchiveView.test.tsx:359`:** make its homeless row a disclosed inner item, and run its batch half as a mixed batch that asks once.
 - [ ] Replace `placesFor` with three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
   - **`destinationKind(row)`:** `'context'` for a Space, otherwise `'container'`.
@@ -945,7 +977,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 - [ ] Gates are clean.
 - [ ] A checked inner row survives a refresh while its parent stays open.
-- [ ] Closing a parent forgets its open descendants, and a late reply doesn't reopen a closed row.
+- [ ] Closing a parent forgets its open descendants but keeps their checks, and a late reply doesn't reopen a closed row.
 - [ ] A covered batch acts once per item, and `spendUndo` keys on each row's own address.
 
 ---
@@ -1018,16 +1050,15 @@ A whole bundle still re-mints under its own name, as it does today.
 **CHANGE**
 
 - [ ] Rewrite these cases and watch them fail:
-  - **`:159`:** a page row's click checks it, and its double-click opens the reader with the row checked, whether or not it started checked. The test sends the real click sequence (`detail` 1, then 2, then `dblclick`). The reader's title is the top row's trail, then each row above, then the page.
+  - **`:159`:** a page row's click checks it, and its double-click opens the reader with the row checked, whether or not it started checked. The test sends the real click sequence (`detail` 1, then 2, then `dblclick`). For an inner page, the reader's trail is its row's trail, then the page.
   - **`:174`:** a Set row's click discloses its inner rows beneath it, indented, with the chevron open. A second click folds them, and a double-click leaves them open.
 - [ ] Add these cases:
   - a checked Set and its checked page restore once, as the Set;
+  - an inner row shows its trail: its bundle's trail, then the containers inside the bundle;
   - the published count stays the count of top rows.
 - [ ] Edit `ArchiveRow` and `archive-view.css` as below.
   - **`ArchiveRow`:** it keeps `memo` by taking `depth` and `open` as primitives.
-  - **`api.open(row)`:** it keeps its signature and builds its trail from the current `visible`.
-    - Its ancestors are `visible.filter((s) => s.row !== row && isAtOrUnder(row.bundlePath, s.row.bundlePath))`, already outermost first.
-    - The trail is the outermost row's `crumbSegments`, then each ancestor as `{ title, icon: entityIcon(archivedKind(r), r.icon, icons) }`, then the page.
+  - **`api.open(row)`:** stays as it is at HEAD. An inner row's `crumbs` already hold the bundle's trail and the containers inside it, so `crumbSegments(row.crumbs)` plus the page itself is the reader's trail for every row.
   - **The Chevron:** it is `DropOutline` without `onToggle`, since the row's click is the toggle, as GroupBand's is.
 
 **AFTER**
@@ -1094,7 +1125,8 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 - [ ] Write these `TrashFrame.test.tsx` cases and watch them fail:
   - A Collection row's click discloses its Sets and then its pages, indented, and its checkbox still checks it.
   - An inner row's right-click Restore ▸ lists destinations, and its Delete empties only that item.
-  - A checked inner row stays checked across a refresh.
+  - A checked inner row stays checked across a refresh, and across its container collapsing and reopening.
+  - An inner row's trail reads its bundle's trail, then the containers inside the bundle.
 - [ ] Have `TrashRowView` take its `TreeRow` whole, and wire it as follows:
   - `onClick={(e) => rowClick(row, e.detail)}`;
   - `titleAccessory={open !== null ? <DropOutline open={open} /> : undefined}`;
@@ -1128,6 +1160,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 **CHANGE**
 
 - [ ] Walk *§Reconciliation* and rewrite each claim to current behavior, overview-level, with no correction language.
+- [ ] Add an `IssuesPM.md` entry: a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited.
 
 **VERIFY**
 
@@ -1201,6 +1234,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 - `.claude/Features/InterfacePM.md:80` — "a bundle restored or deleted … spends both" — Task 6-1
 - `.claude/Features/PommoraUIX.md` — MenuItem's slots gain `titleAccessory` — Task 6-1
 - `.claude/IssuesPM.md` I-033 — the batch's per-row requests now include inner items — Task 6-1
+- `.claude/IssuesPM.md` — new entry: an emptied container bundle stays behind — Task 6-1
 - `Core/Bundles/browser.ts:189` — the hook's doc gains the tree and `rowClick` — Task 4-1
 - `Core/Interface/Confirm/confirmations.ts:47` — the `spendUndo` doc reads "A bundle, or an inner item of one, …" — Task 1-3
 
@@ -1212,6 +1246,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
   - **`emptyBundle`:** its note key (`relative(root, bundleAbs)`) stays one key per inner item (Task 1-3).
   - **`BundleRow.partial`:** this field enters `artifactRow` (Task 3-1).
   - **Batch Restore:** `many`'s `owed` and `finishOwed` merge with the batch's `destinationOf` (Task 4-2).
+- **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 6-1 records it in `IssuesPM.md` for a later decision.
 
 
 #### Deviations
