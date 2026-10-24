@@ -51,6 +51,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **B-3 [CONFIRMED]:** A delete that can't reach every page finishes what it can and offers Try Again for the rest, for properties, Contexts, and Spaces alike.
 - **B-4 [CONFIRMED]:** Creating a property under the name of a deleted property whose cleanup is still unfinished is refused with the general unfinished-change message, and its Try Again gives that cleanup another run; the new property doesn't take the cleanup over.
 - **B-5 [CONFIRMED]:** A page whose front matter Pommora can't safely rewrite is reported once, by name, and then let go rather than kept owed: a Try Again that can never succeed isn't offered, and the old key stays on that page for a hand fix (Nathan, 10-23-2026: "B.").
+- **B-6 [CONFIRMED]:** A page unreadable when a property is re-added keeps its stashed value: while the Collection holds an unreadable page, the re-add keeps every entry it can't place and offers Try Again, which refills the page once it reads again; the History Timeframe still ages each entry out (Nathan, 10-24-2026: "Keep it, offer Try Again").
 
 #### C - The Removed-Values Stash
 
