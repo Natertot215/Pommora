@@ -25,7 +25,7 @@ describe('spaceSidecars', () => {
 const AT = { title: 'Home', path: '.nexus/contexts/Areas/Home', contextId: 'g1' }
 
 describe('spaceNodeFrom', () => {
-  it('reads the four modeled fields and leaves values undefined when nothing is left', () => {
+  it('reads the four modeled fields, leaves values undefined when nothing is left, and keeps the Context key apart', () => {
     const node = spaceNodeFrom(
       {
         id: 'sp1',
@@ -46,6 +46,7 @@ describe('spaceNodeFrom', () => {
       headingIconHidden: true,
       color: 'mint',
       values: undefined,
+      contextKeys: { '<Areas>': ['Home'] },
     })
   })
 
@@ -71,6 +72,15 @@ describe('spaceNodeFrom', () => {
       expect(node?.rowOrder).toBeUndefined()
       expect(node?.values).toBeUndefined()
     }
+  })
+
+  it('keeps each Context key as written in contextKeys, never in values', () => {
+    const node = spaceNodeFrom(
+      { id: 'sp1', '<Areas>': ['Home'], '<Gone>': 'x', Status: 'Active', $order: ['g1'] },
+      AT,
+    )
+    expect(node?.values).toEqual({ Status: 'Active' })
+    expect(node?.contextKeys).toEqual({ '<Areas>': ['Home'], '<Gone>': 'x' })
   })
 })
 
