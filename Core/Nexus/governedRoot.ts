@@ -1,13 +1,14 @@
 // Everything that lands a value in one governed file, a page or a Space sidecar: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, the one-parse writers, and the put-back that undoes a write.
 
-import { isMarkdownFile, join, relative } from '../Paths/posix'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { isMarkdownFile, relative } from '../Paths/posix'
+import { patchSidecar } from '../Files/sidecar'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
-import { atomicWriteFile, parseJsonObject, rmwJsonStrict } from '../Files/atomicWrite'
+import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import {
+  type Place,
   splitFrontmatter,
   sweepParse,
   type SweptPage,
@@ -180,15 +181,15 @@ export const changedKeys = (raw: Json, next: Json): string[] =>
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
 
-/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing last; null when it changes none. A changed key the next root holds no value for is deleted. */
+/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing where `above` places it, and last without one; null when it changes none. A changed key the next root holds no value for is deleted. */
 export const rewriteRaw =
-  (rewrite: (raw: Json) => Json | null) =>
+  (rewrite: (raw: Json) => Json | null, above?: Place) =>
   (page: SweptPage): string | null => {
     const next = rewrite(page.raw)
     if (next === null) return null
     const keys = changedKeys(page.raw, next)
     if (!keys.length) return null
-    return page.merge(next, keys)
+    return page.merge(next, keys, above)
   }
 
 /** Rewrites the page at `absFile` in one parse, writing the text `rewrite` answers for it, or nothing for null. Takes no lock: each caller holds the page's lock over a wider span, and a re-take is refused. */
@@ -210,14 +211,6 @@ export async function rewriteRootAt(
   return ok(null)
 }
 
-export async function writeSpaceSidecar(
-  absSpaceDir: string,
-  mutate: (raw: Json) => Json | null,
-): Promise<Result<null>> {
-  const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
-  return written.ok ? ok(null) : written
-}
-
 /** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before and, on a page, the key its line stood above, as `PutBack` spells them. Takes no lock, as `rewriteRootAt` takes none. */
 export async function writeGovernedKey(
   abs: string,
@@ -232,7 +225,7 @@ export async function writeGovernedKey(
         was.above = page.above(key)
         return rewriteRaw((raw) => writtenRoot(raw, key, value, world))(page)
       })
-    : await writeSpaceSidecar(abs, (raw) => {
+    : await patchSidecar(abs, 'space', (raw) => {
         was.before = raw[key]
         return writtenRoot(raw, key, value, world)
       })
@@ -265,7 +258,7 @@ async function landEntry(
     const at = await mutableTarget(root, file, ['space'])
     const key = at.ok ? await keyNow(root, fieldId) : undefined
     if (!at.ok || key === undefined) return false
-    const back = await writeSpaceSidecar(at.value, (raw) => {
+    const back = await patchSidecar(at.value, 'space', (raw) => {
       const next = landValue(raw, key, before)
       return changedKeys(raw, next).length ? next : null
     })

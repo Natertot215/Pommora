@@ -35,7 +35,7 @@ import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
 import { type ContainerKind, type HeldKind, unsweptLine } from './entities'
-import { archiveReach, containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
+import { archiveReach, containerAt, damagedFolders } from './treePatch'
 
 // ── Roles ──
 type Role =
@@ -88,7 +88,7 @@ const ROLES = {
 
 // ── Edits ──
 type Gone = { propertyId: string; ids: readonly string[] }
-type ConfigEdit = { kind: 'property'; propertyId: string } | ({ kind: 'gone' } & Gone)
+export type ConfigEdit = { kind: 'property'; propertyId: string } | ({ kind: 'gone' } & Gone)
 
 type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
@@ -237,15 +237,10 @@ export function goneEdit(
 ): ConfigEdit | null {
   switch (kind) {
     case 'page':
+    // A Context's and a Space's views are reached by their delete's finishing arm, by id.
+    case 'context':
+    case 'space':
       return null
-    case 'context': {
-      const group = contextAt(tree, rel)
-      return group ? { kind: 'property', propertyId: group.def.id } : null
-    }
-    case 'space': {
-      const space = spaceAt(tree, rel)
-      return space ? { kind: 'gone', propertyId: space.contextId, ids: [space.id] } : null
-    }
     case 'collection':
     case 'set': {
       const node = containerAt(tree, rel)

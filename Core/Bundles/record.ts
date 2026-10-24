@@ -20,7 +20,11 @@ const parentRef = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('unaddressable') }),
 ])
 
-const memberRoot = z.object({ id: z.string().optional(), kind: z.enum(['page', 'space']) })
+const memberRoot = z.object({
+  id: z.string().optional(),
+  kind: z.enum(['page', 'space']),
+  above: z.string().optional(),
+})
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
 const strippedLink: z.ZodType<StrippedLink> = z.object({

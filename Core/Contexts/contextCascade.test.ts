@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { rm, mkdir, readdir, symlink, writeFile, readFile } from 'node:fs/promises'
-import { join, relative } from '../Paths/posix'
+import { join } from '../Paths/posix'
 import { tempRoot, windows, readJsonAt, putJson } from '../Testing/hostFs'
 import {
   renameContextOp,
@@ -27,9 +27,7 @@ import { fault, ok } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
-import { readNexus } from '../Nexus/readNexus'
 import '../Nexus/settle'
-import { spaceAt } from '../Nexus/treePatch'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
@@ -52,6 +50,9 @@ let root: string
 const page = () => join(root, 'Notes', 'A.md')
 const other = () => join(root, 'Notes', 'B.md')
 const csSidecar = () => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
+const projectsDir = () => join(contextsDir(root), 'Projects')
+const classesDir = () => join(contextsDir(root), 'Classes')
+const pomDir = () => join(projectsDir(), 'Pommora')
 
 beforeEach(async () => {
   root = tempRoot('pom-cascade-')
@@ -114,12 +115,10 @@ describe('the cascades open only the members the index names', () => {
     expect((await fmOf(classes()))['<Classes>']).toEqual(['CS 161'])
   })
 
-  it('the unlinks open the holders and capture them', async () => {
-    const space = await unlinkSpaceValue(root, 'Projects', 'Pommora')
-    expect(space.ok && space.value.captured.map((c) => c.kind).sort()).toEqual(['page', 'space'])
+  it('the unlinks open the holders alone', async () => {
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toBe(0)
     expect(sweepSpy.mock.calls[0]?.[0]).toEqual([page(), csSidecar()])
-    const key = await unlinkContextKey(root, 'Classes', 'ctxC')
-    expect(key.ok && [...key.value.touched.keys()]).toEqual([classes()])
+    expect(await unlinkContextKey(root, 'Classes', 'ctxC', classesDir())).toBe(0)
     expect(sweepSpy.mock.calls[1]?.[0]).toEqual([classes()])
   })
 
@@ -232,13 +231,12 @@ describe('renames and casing', () => {
     expect((await readJsonAt(csSidecar()))['<projects>']).toEqual(['Pommora'])
   })
 
-  it('unlinking a Context strips and captures its exact key, leaving another casing in place', async () => {
+  it('unlinking a Context strips its exact key, leaving another casing in place', async () => {
     await writeFile(
       other(),
       '---\nid: p2\n<projects>:\n  - Pommora\n<Projects>: Sapphire\n---\nbody',
     )
-    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
-    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['Sapphire'] })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toBe(0)
     expect(await fmOf(other())).toEqual({ id: 'p2', '<projects>': ['Pommora'] })
   })
 })
@@ -582,98 +580,55 @@ describe('renames on the notes', () => {
 describe('unlink cascades', () => {
   it('unlinkContextKey strips the wrapped key from both scopes', async () => {
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
-    expect(r.ok).toBe(true)
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toBe(0)
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 
-  it('unlinkSpaceValue strips and captures the title, dropping an emptied key', async () => {
+  it('unlinkSpaceValue strips the title, dropping an emptied key', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody')
     const { unlinkSpaceValue } = await import('./contextCascade')
-    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
-    expect(r.ok).toBe(true)
-    expect(r.ok && r.value.captured).toContainEqual({
-      kind: 'page',
-      values: ['Pommora'],
-    })
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toBe(0)
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
   })
 
-  it('unlinkSpaceValue strips and captures a member written as a number', async () => {
+  it('unlinkSpaceValue strips a member written as a number', async () => {
     await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
-    const r = await unlinkSpaceValue(root, 'Classes', '2024')
-    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['2024'] })
+    expect(
+      await unlinkSpaceValue(root, 'Classes', '2024', join(contextsDir(root), 'Classes', '2024')),
+    ).toBe(0)
     expect((await fmOf(other()))['<Classes>']).toEqual(['CS 161'])
   })
 
-  it('unlinkContextKey captures a member written as a number', async () => {
-    await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
-    const r = await unlinkContextKey(root, 'Classes', 'ctxC')
-    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['2024', 'CS 161'] })
-  })
-
-  it('unlinkSpaceValue strips and captures a tag written as a single value', async () => {
+  it('unlinkSpaceValue strips a tag written as a single value', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
-    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
-    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toBe(0)
     expect('<Projects>' in (await fmOf(other()))).toBe(false)
   })
 })
 
 describe('the sweep tells the truth about what it did', () => {
-  const PAGE_C = '01KVGMT8BFP350FZZXAMG1QDTA'
-
-  it('unlinkContextKey returns each swept root’s identity and stripped values; an Unknown root is refused, never touched', async () => {
-    await writeFile(
-      join(root, 'Notes', 'C.md'),
-      `---\nID: ${PAGE_C}\n<Projects>:\n  - Pommora\n---\nbody`,
-    )
+  it('unlinkContextKey leaves an Unknown root untouched and owes nothing for it', async () => {
     await writeFile(
       join(root, 'Notes', 'Alien.md'),
       `---\nID: 01KVGMT8BFT350FZZXAMG1QDTB\n<Projects>:\n  - Pommora\n---\nbody`,
     )
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    const { captured, refused } = r.value
-    expect(refused).toEqual([join(root, 'Notes', 'Alien.md')])
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toBe(0)
     expect((await fmOf(join(root, 'Notes', 'Alien.md')))['<Projects>']).toEqual(['Pommora'])
-    // Captures discriminate by id key: the ID page, the id-less legacy page (honest, unrestorable), and the Space sidecar.
-    expect(captured).toContainEqual({ id: PAGE_C, kind: 'page', values: ['Pommora'] })
-    expect(captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
-    expect(captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
-    expect(captured).toHaveLength(3)
+    expect('<Projects>' in (await fmOf(page()))).toBe(false)
   })
 
-  it('a sweep that misses a member puts each Space back, and the held tree follows the rollback', async () => {
-    await refreshTree(root)
+  it('a sweep that misses a member counts it and leaves what it reached stripped', async () => {
     const original = sweepSpy.getMockImplementation()
     sweepSpy.mockImplementationOnce(async (...args) => {
       const swept = await original!(...args)
       return { ...swept, skipped: [join(root, 'Notes', 'Gone.md')] }
     })
     const { unlinkSpaceValue } = await import('./contextCascade')
-    await expect(unlinkSpaceValue(root, 'Projects', 'Pommora')).rejects.toThrow()
-    expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
-    const rel = `${relative(root, contextsDir(root))}/Classes/CS 161`
-    const held = heldTreeOf(root)
-    expect(held && spaceAt(held, rel)).toEqual(spaceAt(await readNexus(root), rel))
-  })
-
-  it('unlinkSpaceValue captures the removed title per root; zero matches is an empty list', async () => {
-    const { unlinkSpaceValue } = await import('./contextCascade')
-    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
-    expect(r.value.captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
-    expect(r.value.captured).toHaveLength(2)
-
-    const again = await unlinkSpaceValue(root, 'Projects', 'Pommora')
-    expect(again.ok && again.value.captured).toEqual([])
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toBe(1)
+    expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 })
 
@@ -688,14 +643,10 @@ describe('the Context cascades and $order', () => {
     expect(await readFile(pom, 'utf8')).toBe(seeded)
   })
 
-  it('a delete drops the id and captures nothing for a Space that only listed it', async () => {
-    await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', $order: ['ctx_projects'] }))
-    const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    const pom = await readJsonAt(pomSidecar())
-    expect('$order' in pom).toBe(false)
-    expect(r.value.captured.some((c) => c.id === 'sp-pom')).toBe(false)
+  it('a delete drops the id from a Space that only listed it', async () => {
+    await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', $order: ['ctx_projects'] }))
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toBe(0)
+    expect('$order' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 })
 
@@ -705,13 +656,7 @@ describe('a delete sweep never strips a passenger', () => {
   it('roots under the deleted Context keep their keys; outside roots still lose them', async () => {
     await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }))
     const { unlinkContextKey } = await import('./contextCascade')
-    const r = await unlinkContextKey(
-      root,
-      'Projects',
-      'ctx_projects',
-      join(contextsDir(root), 'Projects'),
-    )
-    expect(r.ok).toBe(true)
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toBe(0)
     const pom = await readJsonAt(pomSidecar())
     expect(pom['<Projects>']).toEqual(['Sapphire'])
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
@@ -785,7 +730,7 @@ describe('the finish’s Context and Space arms', () => {
 describe('neither clearing a value nor renaming a key writes a modified_at', () => {
   it('unlinkSpaceValue strips the value and nothing else', async () => {
     const { unlinkSpaceValue } = await import('./contextCascade')
-    expect((await unlinkSpaceValue(root, 'Projects', 'Pommora')).ok).toBe(true)
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toBe(0)
     const fm = await fmOf(page())
     expect(fm['<Projects>']).toBeUndefined()
     expect(fm.id).toBe('p1')

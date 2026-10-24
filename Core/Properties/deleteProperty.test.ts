@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { patchSidecar } from '../Files/sidecar'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises'
@@ -334,7 +335,7 @@ describe('a global delete reaches a Space sidecar', () => {
     })
 
     const key = (await liveDef(c.value.id)).key
-    const set = await writeSpaceSidecar(dirname(pom), (raw) =>
+    const set = await patchSidecar(dirname(pom), 'space', (raw) =>
       landValue(raw, key, 'https://final.example'),
     )
     expect(set.ok).toBe(true)

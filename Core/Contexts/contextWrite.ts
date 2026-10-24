@@ -2,13 +2,8 @@ import { basename, join, isMarkdownFile } from '../Paths/posix'
 import { contextKey } from './contexts'
 import { namesValue, stripList } from '../Files/rootValues'
 import { contextWorldOf, type ContextWorld } from './contextResolve'
-import {
-  pageWorldOf,
-  spaceWorldOf,
-  writeGovernedKey,
-  writeSpaceSidecar,
-  writtenRoot,
-} from '../Nexus/governedRoot'
+import { pageWorldOf, spaceWorldOf, writeGovernedKey, writtenRoot } from '../Nexus/governedRoot'
+import { patchSidecar } from '../Files/sidecar'
 import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
@@ -84,7 +79,7 @@ async function setSpaceContext(
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
     // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so its other members stay.
-    const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
+    const half = await patchSidecar(join(root, far.path), 'space', (raw) => {
       const held = listOf(raw[backKey] ?? [])
       if (held.some(namesA) === wants) return null
       entries.push({ file: far.path, fieldId: own.def.id, before: raw[backKey] })
@@ -188,13 +183,13 @@ export async function setSpaceColor(
   root: string,
   spaceId: string,
   color: string | undefined,
-): Promise<Result<null>> {
+): Promise<Result<unknown>> {
   if (color !== undefined && !isColorKey(color))
     return fail('invalid-name', `"${color}" is not a chip color.`)
   const space = contextWorldOf((await liveTreeOf(root)).contexts).spaceById.get(spaceId)
   if (!space) return fail('not-found', 'Unknown Space.')
-  return writeSpaceSidecar(join(root, space.path), (cur) => setOrDrop(cur, COLOR_KEY, color))
+  return patchSidecar(join(root, space.path), 'space', (cur) => setOrDrop(cur, COLOR_KEY, color))
 }
 
-export const setSpaceRowOrder = (absSpaceDir: string, ids: string[]): Promise<Result<null>> =>
-  writeSpaceSidecar(absSpaceDir, (raw) => withIds(raw, ORDER_KEY, ids))
+export const setSpaceRowOrder = (absSpaceDir: string, ids: string[]): Promise<Result<unknown>> =>
+  patchSidecar(absSpaceDir, 'space', (raw) => withIds(raw, ORDER_KEY, ids))

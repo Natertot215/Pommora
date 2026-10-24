@@ -27,6 +27,9 @@ import type { TrashDeps } from './discard'
 import { refillTrashed } from './trashedCopies'
 import type { ContextsRegistry } from '../Contexts/contexts'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { OWED_REL } from '../Paths/nexusPaths'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -356,110 +359,6 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(true)
   })
 
-  it.skipIf(noModeBits)(
-    'a member sweep cut short puts the registry entry back, so the Context can be deleted again',
-    async () => {
-      const { chmod } = await import('node:fs/promises')
-      const around = {
-        contexts: [
-          { id: 'ctx_a', title: 'A' },
-          { id: 'ctx_z', title: 'Z' },
-        ],
-      }
-      const seeded = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
-      await writeFile(
-        contextsRegistryFile(root),
-        JSON.stringify({ contexts: [around.contexts[0], ...seeded.contexts, around.contexts[1]] }),
-      )
-      await chmod(join(root, 'Notes', 'Daily'), 0o555)
-      try {
-        const r = await settledMutate(
-          root,
-          { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-          nexusDeps,
-        )
-        expect(r.ok).toBe(false)
-      } finally {
-        await chmod(join(root, 'Notes', 'Daily'), 0o755)
-      }
-      const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
-      expect(reg.contexts.map((c) => c.id)).toEqual(['ctx_a', 'ctx_projects', 'ctx_z'])
-      const retried = await settledMutate(
-        root,
-        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-        nexusDeps,
-      )
-      expect(retried.ok).toBe(true)
-    },
-  )
-
-  // Each file sits outside the locked folder, so the sweep rewrites it before refusing on Alpha.
-  const refusable: Record<string, string> = {
-    'Notes/Beta.md': `---\n<Projects>:\n  - Pommora\n  - Sapphire\nID: ${PAGE_B}\n---\nbody`,
-    'Notes/Gamma.md': '---\n<Projects>: Other\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody',
-    '.nexus/contexts/Areas/Health/_space.json': JSON.stringify({
-      id: 'sp-health',
-      '<Projects>': ['Pommora', 'Sapphire'],
-      $order: ['ctx_projects'],
-    }),
-  }
-  const watched = [
-    ...Object.keys(refusable),
-    'Notes/Daily/Alpha.md',
-    '.nexus/contexts/Projects/Sapphire/_space.json',
-  ]
-  const texts = (): Promise<string[]> =>
-    Promise.all(watched.map((rel) => readFile(join(root, rel), 'utf8')))
-
-  // The retry runs on the index the refusal left, so a restored file the index forgot would keep its tag.
-  const refuseThenRetry = async (path: string, kind: 'context' | 'space'): Promise<void> => {
-    installStores(memoryStores().stores)
-    const { chmod } = await import('node:fs/promises')
-    try {
-      await seedSpaceSidecar(root, 'Areas', 'Health', {})
-      for (const [rel, text] of Object.entries(refusable)) {
-        await mkdir(dirname(join(root, rel)), { recursive: true })
-        await writeFile(join(root, rel), text)
-      }
-      await refreshTree(root)
-      await seedContentIndex(root)
-      const before = await texts()
-      await chmod(join(root, 'Notes', 'Daily'), 0o555)
-      const r = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
-      await chmod(join(root, 'Notes', 'Daily'), 0o755)
-      expect(r.ok).toBe(false)
-      expect(await texts()).toEqual(before)
-      expect(await pathExists(join(root, path))).toBe(true)
-      expect(await bundleDirs(join(root, '.trash'))).toEqual([])
-      const retried = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
-      expect(retried.ok).toBe(true)
-    } finally {
-      await chmod(join(root, 'Notes', 'Daily'), 0o755)
-      installStores(NO_STORES)
-    }
-  }
-  const projectsOf = async (rel: string): Promise<unknown> =>
-    splitFrontmatter(await readFile(join(root, rel), 'utf8'))['<Projects>']
-
-  it.skipIf(noModeBits)(
-    'a refused Context delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried, the retry dropping its id from a Space’s $order',
-    async () => {
-      await refuseThenRetry('.nexus/contexts/Projects', 'context')
-      expect(await projectsOf('Notes/Beta.md')).toBeUndefined()
-      expect(await projectsOf('Notes/Gamma.md')).toBeUndefined()
-      const health = await readJsonAt(join(root, '.nexus/contexts/Areas/Health/_space.json'))
-      expect('$order' in health).toBe(false)
-    },
-  )
-
-  it.skipIf(noModeBits)(
-    'a refused Space delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried',
-    async () => {
-      await refuseThenRetry('.nexus/contexts/Projects/Pommora', 'space')
-      expect(await projectsOf('Notes/Beta.md')).toEqual(['Sapphire'])
-    },
-  )
-
   it('system trash mode refuses the same Context delete', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
     const trashToSystem = vi.fn(async () => {})
@@ -499,20 +398,6 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(r.ok).toBe(false)
     expect(await listBundles(root, { kind: 'trash' })).toEqual([])
     expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toBe(before)
-  })
-
-  it('a refused root marks the Space record partial — the members list is thinner than the truth', async () => {
-    await writeFile(
-      join(root, 'Notes', 'Daily', 'Alien.md'),
-      '---\nID: 01KVGMT8BFT350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\n---\n',
-    )
-    await settledMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
-      nexusDeps,
-    )
-    const { record } = await onlyBundle()
-    expect(record).toMatchObject({ entity: 'space', partial: true })
   })
 
   it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
@@ -2427,5 +2312,71 @@ describe('restore — into a chosen destination', () => {
     expect(r.ok).toBe(true)
     const landed = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Beta.md'), 'utf8'))
     expect(landed.Tags).toEqual(['alpha'])
+  })
+})
+
+describe('a Context or Space restore', () => {
+  const PROJECTS = '.nexus/contexts/Projects'
+  const POMMORA = `${PROJECTS}/Pommora`
+  const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
+  const placed = `---\nID: ${PAGE_A}\nNote: a\n<Projects>:\n  - Pommora\nZed: z\n---\nb\n`
+
+  const deleted = async (path: string, kind: 'context' | 'space'): Promise<string> => {
+    const r = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    return r.value.bundled.bundlePath
+  }
+  const restored = (bundlePath: string) =>
+    settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+
+  for (const [entity, path, kind] of [
+    ['Context', PROJECTS, 'context'],
+    ['Space', POMMORA, 'space'],
+  ] as const)
+    it(`a ${entity} restore lands its tag in place`, async () => {
+      await writeFile(alpha(), placed)
+      await refreshTree(root)
+      expect((await restored(await deleted(path, kind))).ok).toBe(true)
+      expect(await readFile(alpha(), 'utf8')).toBe(placed)
+      const bundle = await deleted(path, kind)
+      await writeFile(alpha(), `---\nID: ${PAGE_A}\nNote: a\n---\nb\n`)
+      await refreshTree(root)
+      expect((await restored(bundle)).ok).toBe(true)
+      expect(await readFile(alpha(), 'utf8')).toBe(
+        `---\nID: ${PAGE_A}\nNote: a\n<Projects>:\n  - Pommora\n---\nb\n`,
+      )
+    })
+
+  for (const [entity, path, kind, id] of [
+    ['Context', PROJECTS, 'context', 'ctx_projects'],
+    ['Space', POMMORA, 'space', 'sp-pom'],
+  ] as const)
+    it.skipIf(noModeBits)(`a ${entity} restore turns its owed strip into renames`, async () => {
+      const { chmod } = await import('node:fs/promises')
+      await chmod(alpha(), 0o000)
+      try {
+        const bundle = await deleted(path, kind)
+        expect((await readNotes(root))[id]?.strip).toBeDefined()
+        expect((await restored(bundle)).ok).toBe(true)
+        const entry = (await readNotes(root))[id]
+        expect(entry).toMatchObject({ rename: [kind === 'context' ? 'Projects' : 'Pommora'] })
+        expect(entry).not.toHaveProperty('strip')
+      } finally {
+        await chmod(alpha(), 0o644)
+      }
+      await finishOwed(root, nexusDeps)
+      expect(splitFrontmatter(await readFile(alpha(), 'utf8'))['<Projects>']).toEqual(['Pommora'])
+      expect(await readNotes(root)).toEqual({})
+    })
+
+  it("a Context restore under another Context's owed title is refused", async () => {
+    const bundle = await deleted(PROJECTS, 'context')
+    await writeFile(
+      join(root, OWED_REL),
+      JSON.stringify({ ctx_other: { kind: 'context', rename: ['Projects'] } }),
+    )
+    const r = await restored(bundle)
+    expect(r.ok ? 'restored' : r.error.code).toBe('owed')
+    expect(await pathExists(join(root, bundle))).toBe(true)
   })
 })

@@ -1,12 +1,22 @@
 import { applyEvents } from '../Nexus/fileEvents'
 import { settleNow } from '../Nexus/settle'
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
+import * as contextsRegistry from '../Contexts/contextsRegistry'
+import { fault } from '../Contract/result'
+import { handleMutate } from '../Nexus/mutate'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { listBundles, mintBundle } from '../Bundles/bundle'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -17,7 +27,7 @@ import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
 import { type HeldKind, unsweptLine } from '../Nexus/entities'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { NEXUS_CONFIG_FILES, OWED_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import type { FilterGroup } from '../Views/filterRules'
 import { filterSeeds } from '../Views/Pipeline/creationSeeds'
 import type { TrashDeps } from './discard'
@@ -476,4 +486,234 @@ describe('a Collection delete', () => {
       ])
     })
   })
+})
+
+describe('a Context or Space delete on the notes', () => {
+  const AREAS = '.nexus/contexts/Areas'
+  const WORK = `${AREAS}/Work`
+  let a: string
+  let b: string
+
+  const tagsOf = async (file: string): Promise<unknown> =>
+    splitFrontmatter(await readFile(file, 'utf8'))['<Areas>']
+
+  beforeEach(async () => {
+    await putJson(contextsRegistryFile(root), {
+      contexts: [
+        { id: 'ctx_first', title: 'First' },
+        { id: 'ctx_areas', title: 'Areas' },
+        { id: 'ctx_last', title: 'Last' },
+      ],
+    })
+    await addWork()
+    await putJson(join(contextsDir(root), 'Areas', 'Home', SIDECAR_FILENAME.space), {
+      id: 'sp_home',
+    })
+    a = await page(notes, 'A')
+    b = await page(notes, 'B')
+    for (const file of [a, b])
+      await writeFile(file, `---\nID: ${await idOf(file)}\n<Areas>:\n  - Work\n---\nbody\n`)
+    await refreshTree(root)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    installStores(NO_STORES)
+  })
+
+  const shut = async <T>(file: string, run: () => Promise<T>): Promise<T> => {
+    await chmod(file, 0o000)
+    try {
+      return await run()
+    } finally {
+      await chmod(file, 0o644)
+    }
+  }
+
+  it.skipIf(noModeBits)(
+    'a Context delete that misses a page finishes and owes the rest',
+    async () => {
+      const r = await shut(b, () => del(AREAS, 'context'))
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      const { bundlePath } = r.value.bundled
+      expect(r.value.cascade?.owed).toBe(true)
+      expect((await readJsonAt(contextsRegistryFile(root))).contexts).not.toContainEqual(
+        expect.objectContaining({ id: 'ctx_areas' }),
+      )
+      expect(await pathExists(join(root, bundlePath, 'Areas'))).toBe(true)
+      expect(await tagsOf(a)).toBeUndefined()
+      expect(await readNotes(root)).toEqual({
+        ctx_areas: { kind: 'context', strip: ['Areas'], bundle: bundlePath },
+      })
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'a Space delete that misses a page finishes and owes the rest',
+    async () => {
+      const r = await shut(b, () => del(WORK, 'space'))
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      const { bundlePath } = r.value.bundled
+      expect(r.value.cascade?.owed).toBe(true)
+      expect(await pathExists(join(root, WORK))).toBe(false)
+      expect(await pathExists(join(root, bundlePath, 'Work'))).toBe(true)
+      expect(await tagsOf(a)).toBeUndefined()
+      expect(await readNotes(root)).toEqual({
+        sp_work: { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle: bundlePath },
+      })
+    },
+  )
+
+  it("a Space delete whose folder can't move deletes nothing and offers Try Again", async () => {
+    vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
+    const r = await handleMutate(root, { op: 'delete', path: WORK, kind: 'space' }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, WORK))).toBe(true)
+    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
+    expect(await pathExists(join(root, OWED_REL))).toBe(false)
+    expect(await tagsOf(a)).toEqual(['Work'])
+    expect((await del(WORK, 'space')).ok).toBe(true)
+    expect(await pathExists(join(root, WORK))).toBe(false)
+  })
+
+  it("a Context delete whose folder can't move puts its entry back", async () => {
+    vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
+    const r = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' }, nexusDeps)
+    expect(r.ok).toBe(false)
+    expect(
+      (await readJsonAt<{ contexts: Raw[] }>(contextsRegistryFile(root))).contexts.map((c) => c.id),
+    ).toEqual(['ctx_first', 'ctx_areas', 'ctx_last'])
+    expect(await readNotes(root)).toEqual({})
+
+    vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
+    const mutateRegistry = contextsRegistry.mutateRegistryFile
+    vi.spyOn(contextsRegistry, 'mutateRegistryFile')
+      .mockImplementationOnce(mutateRegistry)
+      .mockResolvedValueOnce(fault('refused'))
+    const stuck = await handleMutate(
+      root,
+      { op: 'delete', path: AREAS, kind: 'context' },
+      nexusDeps,
+    )
+    vi.restoreAllMocks()
+    if (!stuck.ok) throw new Error(stuck.error.message)
+    expect(stuck.value.cascade?.owed).toBe(true)
+    expect(await pathExists(join(root, AREAS))).toBe(true)
+    expect(await readNotes(root)).toMatchObject({
+      ctx_areas: { kind: 'context', strip: ['Areas'] },
+    })
+    await finishOwed(root, nexusDeps)
+    expect(await pathExists(join(root, AREAS))).toBe(false)
+    expect(await tagsOf(a)).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    "the Trash record of a partial delete holds the unreached page's tags",
+    async () => {
+      installStores(memoryStores().stores)
+      await seedContentIndex(root)
+      const id = await idOf(b)
+      const r = await shut(b, () => del(AREAS, 'context'))
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      expect((await recordOf(r.value.bundled.bundlePath)).membership).toContainEqual({
+        root: { id, kind: 'page' },
+        spaces: [{ id: 'sp_work', title: 'Work' }],
+      })
+    },
+  )
+
+  it("a Context's record leaves out its own Spaces", async () => {
+    await putJson(join(root, WORK, SIDECAR_FILENAME.space), { id: 'sp_work', '<Areas>': ['Home'] })
+    await putJson(join(contextsDir(root), 'Areas', 'Home', SIDECAR_FILENAME.space), {
+      id: 'sp_home',
+      '<Areas>': ['Work'],
+    })
+    await refreshTree(root)
+    const r = await del(AREAS, 'context')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    const roots = ((await recordOf(r.value.bundled.bundlePath)).membership as Raw[]).map(
+      (m) => (m.root as Raw).id,
+    )
+    expect(roots.sort()).toEqual([await idOf(a), await idOf(b)].sort())
+  })
+
+  it('a crash between the note and the list step finishes the delete', async () => {
+    const sidecar = sidecarPath(notes, 'collection')
+    await putJson(sidecar, {
+      ...(await readJsonAt(sidecar)),
+      views: [viewOn('ctx_areas', 'sp_work')],
+    })
+    await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
+    await refreshTree(root)
+    const bundle = await mintBundle(root, { kind: 'trash' }, join(root, AREAS))
+    const bundlePath = relative(root, bundle)
+    await putJson(join(root, OWED_REL), {
+      ctx_areas: { kind: 'context', strip: ['Areas'], bundle: bundlePath },
+    })
+    await finishOwed(root, nexusDeps)
+    expect((await readJsonAt(contextsRegistryFile(root))).contexts).toEqual([])
+    expect(await pathExists(join(root, bundlePath, 'Areas'))).toBe(true)
+    expect([await tagsOf(a), await tagsOf(b)]).toEqual([undefined, undefined])
+    expect(((await readJsonAt(sidecar)).views as Raw[])[0]?.property_order).toEqual(['_title'])
+    expect(await readNotes(root)).toEqual({})
+
+    await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_last', title: 'Last' }] })
+    await mkdir(join(contextsDir(root), 'Last'))
+    await refreshTree(root)
+    await putJson(join(root, OWED_REL), { ctx_last: { kind: 'context', strip: ['Last'] } })
+    const trashToSystem = vi.fn(async (p: string) => rm(p, { recursive: true, force: true }))
+    await finishOwed(root, { trashMode: 'system', trashToSystem })
+    expect(trashToSystem).toHaveBeenCalledWith(join(contextsDir(root), 'Last'))
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it("a Context delete's own Spaces aren't owed", async () => {
+    await putJson(join(root, WORK, SIDECAR_FILENAME.space), { id: 'sp_work', '<Areas>': ['Home'] })
+    await refreshTree(root)
+    const r = await del(AREAS, 'context')
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.owed).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it("a Space deleted while its Context owes a rename strips the holders under the Context's new title and stays owed", async () => {
+    await putJson(join(contextsDir(root), 'Areas', 'Gym', SIDECAR_FILENAME.space), { id: 'sp_gym' })
+    await writeFile(a, `---\nID: ${await idOf(a)}\n<Areas>:\n  - Gym\n---\nbody\n`)
+    await writeFile(b, `---\nID: ${await idOf(b)}\n<Old>:\n  - Gym\n---\nbody\n`)
+    await refreshTree(root)
+    await putJson(join(root, OWED_REL), { ctx_areas: { kind: 'context', rename: ['Old'] } })
+    const r = await del(`${AREAS}/Gym`, 'space')
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.owed).toBe(true)
+    expect(await tagsOf(a)).toBeUndefined()
+    expect(await readNotes(root)).toMatchObject({
+      sp_gym: { kind: 'space', contextId: 'ctx_areas', strip: ['Gym'] },
+    })
+    await finishOwed(root, nexusDeps)
+    const fm = splitFrontmatter(await readFile(b, 'utf8'))
+    expect([fm['<Old>'], fm['<Areas>']]).toEqual([undefined, undefined])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)(
+    "a view settings file the delete couldn't reach keeps it owed",
+    async () => {
+      const other = await entity(root, 'collection', 'Other')
+      const sidecar = sidecarPath(other.path, 'collection')
+      await putJson(sidecar, {
+        ...(await readJsonAt(sidecar)),
+        views: [viewOn('ctx_areas', 'sp_work')],
+      })
+      await refreshTree(root)
+      const r = await shut(sidecar, () => del(AREAS, 'context'))
+      if (!r.ok) throw new Error(r.error.message)
+      expect(r.value.cascade?.owed).toBe(true)
+      expect(await readNotes(root)).toMatchObject({ ctx_areas: { strip: ['Areas'] } })
+      await finishOwed(root, nexusDeps)
+      const [view] = (await readJsonAt(sidecar)).views as Raw[]
+      expect(view.property_order).toEqual(['_title'])
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
 })

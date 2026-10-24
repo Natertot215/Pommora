@@ -64,9 +64,6 @@ import * as indexSeed from '../Index/indexSeed'
 import * as governedRoot from './governedRoot'
 import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
-import * as governedSweep from './governedSweep'
-import { unsweptLine } from './entities'
-import { updatePageBody } from './page'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
@@ -2961,119 +2958,6 @@ describe('the Contexts lock', () => {
         )
       })
     }
-
-  // A delete whose sweep missed a member refuses and puts back what it took; a page written after the sweep reached it keeps that write, and its tag is back.
-  const writtenDuringRefusal = async (
-    op: MutateRequest,
-    write: (alpha: string) => Promise<unknown>,
-  ): Promise<string> => {
-    const locked = join(root, 'Notes', 'Daily', 'Locked.md')
-    await writeFile(
-      locked,
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n<Areas>:\n  - Work\n---\n\nlocked',
-    )
-    await refreshTree(root)
-    await chmod(locked, 0o000)
-    try {
-      const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
-      const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (files) =>
-        (files as string[]).includes(alpha),
-      )
-      const running = handleMutate(root, op, nexusDeps)
-      await paused.reached
-      expect(splitFrontmatter(await read('Notes/Daily/Alpha.md'))['<Areas>']).toBeUndefined()
-      await write(alpha)
-      paused.release()
-      expect((await running).ok).toBe(false)
-    } finally {
-      vi.restoreAllMocks()
-      await chmod(locked, 0o644)
-    }
-    await applyEvents(root, [{ event: 'change', absPath: locked, origin: 'watched' }])
-    await settleNow({ push: () => {}, watch: async () => {} }, root)
-    const held = heldTreeOf(root)
-    expect(held && stabilize(await readNexus(root), held)).toBe(held)
-    return read('Notes/Daily/Alpha.md')
-  }
-  for (const [entity, op] of deletes) {
-    it.skipIf(noModeBits)(
-      `a page value written after a refused ${entity} delete's sweep reached the page survives the refusal, and the tag is back`,
-      async () => {
-        const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
-        if (!stage.ok) throw new Error('setup')
-        const text = await writtenDuringRefusal(op, async () => {
-          const valued = await handleMutate(
-            root,
-            {
-              op: 'setProperty',
-              path: 'Notes/Daily/Alpha.md',
-              propertyId: stage.value.id,
-              value: { kind: 'number', value: 3 },
-            },
-            nexusDeps,
-          )
-          expect(valued.ok).toBe(true)
-        })
-        const fm = splitFrontmatter(text)
-        expect(fm.Stage).toBe(3)
-        expect(fm['<Areas>']).toEqual(['Work'])
-      },
-    )
-
-    it.skipIf(noModeBits)(
-      `a body saved after a refused ${entity} delete's sweep reached the page survives the refusal, and the tag is back`,
-      async () => {
-        const text = await writtenDuringRefusal(op, (alpha) =>
-          updatePageBody(alpha, 'saved meanwhile\n', undefined, true),
-        )
-        expect(text).toContain('saved meanwhile')
-        expect(splitFrontmatter(text)['<Areas>']).toEqual(['Work'])
-      },
-    )
-  }
-
-  it.skipIf(noModeBits).each([
-    ['unparsable', '---\nID: [unclosed\n---\n\nbroken'],
-    ['foreign', '---\nID: 42\n---\n\nforeign'],
-  ])(
-    'a swept page made %s before a refused delete puts it back doesn’t stop the pages after it, and the refusal counts it',
-    async (_, made) => {
-      const locked = join(root, 'Notes', 'Daily', 'Locked.md')
-      const second = join(root, 'Notes', 'Daily', 'Second.md')
-      await writeFile(
-        locked,
-        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n<Areas>:\n  - Work\n---\n\nlocked',
-      )
-      await writeFile(
-        second,
-        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRS\n<Areas>:\n  - Work\n---\n\nsecond',
-      )
-      await refreshTree(root)
-      await chmod(locked, 0o000)
-      try {
-        const sweeps = (files: unknown) => (files as string[]).includes(locked)
-        const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (files) =>
-          sweeps(files),
-        )
-        const running = handleMutate(root, deletes[0][1], nexusDeps)
-        await paused.reached
-        const files =
-          vi.mocked(governedSweep.sweepGovernedRoots).mock.calls.find(([f]) => sweeps(f))?.[0] ?? []
-        const [first, last] = [join(root, 'Notes', 'Daily', 'Alpha.md'), second].sort(
-          (a, b) => files.indexOf(a) - files.indexOf(b),
-        )
-        await writeFile(first, made)
-        paused.release()
-        const reply = await running
-        expect(await readFile(first, 'utf8')).toBe(made)
-        expect(splitFrontmatter(await readFile(last, 'utf8'))['<Areas>']).toEqual(['Work'])
-        expect(reply).toEqual(fault(unsweptLine(2)))
-      } finally {
-        vi.restoreAllMocks()
-        await chmod(locked, 0o644)
-      }
-    },
-  )
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {
     await refreshTree(root)

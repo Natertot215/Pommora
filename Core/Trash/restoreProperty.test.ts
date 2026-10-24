@@ -1,5 +1,6 @@
 import { chmod, readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
-import { rewriteRaw, rewriteRootAt, writeSpaceSidecar } from '../Nexus/governedRoot'
+import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { patchSidecar } from '../Files/sidecar'
 import { landValue } from '../Files/rootValues'
 import { dirname, join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
@@ -393,8 +394,11 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     const key = (await liveDef(id)).key
     expect(
-      (await writeSpaceSidecar(join(root, space.value.path), (raw) => landValue(raw, key, ['hi'])))
-        .ok,
+      (
+        await patchSidecar(join(root, space.value.path), 'space', (raw) =>
+          landValue(raw, key, ['hi']),
+        )
+      ).ok,
     ).toBe(true)
     expect((await sidecar()).Priority).toEqual(['hi'])
 
@@ -419,7 +423,7 @@ describe('restoring a deleted property', () => {
     const sidecarFile = join(contextsDir(root), 'projects', 'Pommora', '_space.json')
     const id = await seedPriority()
     const key = (await liveDef(id)).key
-    await writeSpaceSidecar(join(root, space.value.path), (raw) => landValue(raw, key, ['hi']))
+    await patchSidecar(join(root, space.value.path), 'space', (raw) => landValue(raw, key, ['hi']))
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)

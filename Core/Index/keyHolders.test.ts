@@ -331,6 +331,7 @@ describe('findHolders, reading', () => {
       id: 'sp1',
       keys: ['Stage'],
       values: { Stage: 'Draft' },
+      above: { Stage: undefined },
     })
   })
 
@@ -374,6 +375,7 @@ describe('findHolders, reading', () => {
             id: `01ARZ3NDEKPSV4RRFFQ69G5V0${i}`,
             keys: [key],
             values: { [key]: want },
+            above: { [key]: undefined },
           })
         }
       } finally {
@@ -393,7 +395,13 @@ describe('findHolders, reading', () => {
       try {
         await chmod(file as string, 0o000)
         const { held, pages } = await typedQuery()
-        expect(held).toContainEqual({ file, id: null, keys: ['Text'], values: null })
+        expect(held).toContainEqual({
+          file,
+          id: null,
+          keys: ['Text'],
+          values: null,
+          above: { Text: undefined },
+        })
         expect(pages).toContain(file)
       } finally {
         await chmod(file as string, 0o644)

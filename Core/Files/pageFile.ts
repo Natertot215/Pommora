@@ -178,17 +178,22 @@ function setAbove(doc: Document, key: string, node: unknown, above?: string): vo
   if (items && at >= 0) items.splice(at, 0, ...items.splice(-1))
 }
 
-/** Lands each of `modeledKeys` as `modeled` holds it through `setAbove`, which drops one it holds blank or nothing for; a key the block doesn't hold lands last. */
+/** The key a key the block doesn't hold lands above; undefined lands it last. */
+export type Place = (key: string) => string | undefined
+
+/** Lands each of `modeledKeys` as `modeled` holds it through `setAbove`, which drops one it holds blank or nothing for; a key the block doesn't hold lands where `above` places it, and last without one. */
 function mergeInto(
   doc: Document,
   modeled: Record<string, unknown>,
   modeledKeys: readonly string[],
+  above?: Place,
 ): string {
   if (mergeable(doc)) {
     const held = valuesOf(doc)
     for (const key of modeledKeys) {
       if (JSON.stringify(held[key]) === JSON.stringify(modeled[key])) continue
-      setAbove(doc, key, nodeSpelledAs(doc, modeled[key] ?? null, [doc.get(key, true)]))
+      const node = nodeSpelledAs(doc, modeled[key] ?? null, [doc.get(key, true)])
+      setAbove(doc, key, node, above?.(key))
     }
   }
   return mergedBlock(doc)
@@ -262,7 +267,7 @@ export async function readPage(rootPath: string, relPath: string): Promise<Resul
 
 export interface SweptPage {
   raw: Record<string, unknown>
-  merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
+  merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[], above?: Place) => string
   /** `key`'s pair as the block was parsed, its quoting, style, comment, and alias kept; undefined when the block holds no `key`. */
   pair: (key: string) => string | undefined
   /** The key after `key` in the block's own order, which its line stands above; undefined when the block holds no `key` or it's last. */
@@ -286,7 +291,7 @@ export function sweepParse(content: string): SweptPage | null {
   }
   return {
     raw,
-    merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body),
+    merge: (modeled, keys, above) => envelope(fenced, mergeInto(doc, modeled, keys, above), body),
     pair,
     above: (key) => {
       const order = isMap(doc.contents) ? doc.contents.items.map((p) => String(p.key)) : []

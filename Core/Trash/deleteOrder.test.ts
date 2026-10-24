@@ -178,32 +178,32 @@ describe('the record is written before the destruction it describes', () => {
     expect(after).not.toHaveProperty('partial')
   })
 
-  it('a Space delete records before the sweep strips a single tag', async () => {
+  it('a Space delete records what its holders held before the move strips a single tag', async () => {
     const r = await handleMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(atSweep).toMatchObject({ entity: 'space', id: 'sp-pom', members: [], partial: true })
     expect(atSettle).toMatchObject({ entity: 'space', members: [{ id: PAGE_A, kind: 'page' }] })
     expect(atSettle).not.toMatchObject({ partial: true })
+    expect(atSweep).toEqual(atSettle)
   })
 
-  it('a Context delete records before the sweep and the registry erase', async () => {
+  it('a Context delete records what its holders held before the move and the strip', async () => {
     const r = await handleMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect(atSweep).toMatchObject({
+    expect(atSettle).toMatchObject({
       entity: 'context',
       registry: { id: 'ctx_projects' },
-      membership: [],
-      partial: true,
+      membership: [{ root: { id: PAGE_A } }],
     })
-    expect(atSettle).toMatchObject({ entity: 'context', membership: [{ root: { id: PAGE_A } }] })
+    expect(atSettle).not.toMatchObject({ partial: true })
+    expect(atSweep).toEqual(atSettle)
   })
 
   it('a delete from the Archive records, with the bundle it left, before the artifact moves', async () => {
@@ -278,9 +278,14 @@ describe('one unparseable page never fails the sweep around it', () => {
       expect(r.ok).toBe(true)
       expect(await tagOf()).toBeUndefined()
       expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
-      // The page nobody can parse is untouched, and the record admits the sweep was thin.
+      // The page nobody can rewrite is untouched, and the record still holds the page the strip reached.
       expect(await readFile(join(root, 'Notes', name), 'utf8')).toBe(content)
-      expect(await anyRecord()).toMatchObject({ entity: 'context', partial: true })
+      expect(await anyRecord()).toMatchObject({
+        entity: 'context',
+        membership: expect.arrayContaining([
+          expect.objectContaining({ root: { id: PAGE_A, kind: 'page' } }),
+        ]),
+      })
     })
   }
 })
@@ -297,20 +302,6 @@ describe('a deletion cut short leaves evidence, never silence', () => {
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     // The record survives as evidence, and the listing refuses to offer an unfinished deletion.
     expect(await anyRecord()).toMatchObject({ entity: 'page', id: PAGE_A })
-    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
-  })
-
-  it('a Space delete that dies before the settle still names what the sweep took', async () => {
-    settleFails = true
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(false)
-    expect(await tagOf()).toBeUndefined()
-    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
-    expect(await anyRecord()).toMatchObject({ members: [{ id: PAGE_A, kind: 'page' }] })
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 })

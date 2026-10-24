@@ -584,15 +584,6 @@ describe('a gone edit', () => {
 
   it('reads the edit a delete owes from the tree', async () => {
     const tree = await liveTreeOf(root)
-    expect(goneEdit(tree, 'context', '.nexus/contexts/Areas')).toEqual({
-      kind: 'property',
-      propertyId: 'ctx_areas',
-    })
-    expect(goneEdit(tree, 'space', '.nexus/contexts/Areas/Home')).toEqual({
-      kind: 'gone',
-      propertyId: 'ctx_areas',
-      ids: ['sp_home'],
-    })
     expect(goneEdit(tree, 'collection', 'Notes')).toEqual({
       kind: 'gone',
       propertyId: '_location',

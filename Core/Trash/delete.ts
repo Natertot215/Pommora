@@ -15,12 +15,16 @@ import {
 } from '../Nexus/configReach'
 import { isArchived } from '../Paths/nexusPaths'
 import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
-import { fail, ok, valueOr } from '../Contract/result'
+import { findHolders, type Holders } from '../Index/keyHolders'
+import { contextKey } from '../Contexts/contexts'
+import { spaceAt } from '../Nexus/treePatch'
+import { finishEntry } from '../Nexus/finishOwed'
+import { type Entry, owedDelete, runNoted } from '../Nexus/owed'
+import { fail, fault, ok, type Result } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
-import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
 import { dropContextOrder, dropDeparture } from '../Nexus/reorder'
-import { deleteCascade, joinCascades } from '../Nexus/cascade'
+import { type CascadeReport, deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile } from './discard'
@@ -55,6 +59,19 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
     record: { ...held, archive: relative(root, bundle) },
   })
 }
+/** A Context's or Space's delete note: every title it still owed and the current one leave, with the bundle a finish moves the folder into. */
+const deleteNote =
+  (
+    root: string,
+    kind: { kind: 'context' } | { kind: 'space'; contextId: string },
+    title: string,
+    bundle: string | null,
+  ) =>
+  (e: Entry | undefined): Entry => ({
+    ...kind,
+    strip: owedDelete(e ?? {}, title).strip,
+    ...(bundle ? { bundle: relative(root, bundle) } : {}),
+  })
 
 export async function deleteOp(
   { root, deps }: MutateContext,
@@ -75,7 +92,7 @@ export async function deleteOp(
   if (lifted && !lifted.ok) return lifted
   let moved = false
   try {
-    // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
+    // Write-ahead: the record lands before anything moves, a Space's or Context's built from what its holders held up front, then its note; every strip runs after the artifact moves, so a failed move strips nothing, and a strip that misses a file leaves the note for Try Again.
     const bundle =
       deps.trashMode === 'system'
         ? null
@@ -99,42 +116,101 @@ export async function deleteOp(
           ...(Object.keys(targets).length ? { targets } : {}),
         })
     }
-    // A refused unlink leaves nothing deleted, so its bundle goes with it.
-    const unmint = async (e: unknown): Promise<never> => {
+    // A refused note or list step leaves nothing deleted, so its bundle goes and a lifted set-aside comes back.
+    const unminted = async <R extends { ok: false }>(r: R): Promise<R> => {
       if (bundle) await removeOwn(bundle)
-      throw e
+      await lifted?.value.undo()
+      return r
     }
+    // What sits under the deleted folder leaves and comes back with it, so its files are neither members to restore nor holders to strip.
+    const outside = (h: Holders): Holders => ({
+      ...h,
+      held: h.held.filter((x) => !isAtOrUnder(x.file, abs)),
+    })
+    // The artifact moves, then what leaves with it.
+    const leave = async (): Promise<void> => {
+      if (bundle) await relocate(abs, join(bundle, basename(abs)))
+      else await machine().lock(abs, () => discardFile(root, abs, deps))
+      moved = true
+      if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
+      if (from) await removeOwn(from.bundle)
+      else await dropDeparture(root, before, req.kind, req.path)
+      await dropPageMetadata(root, pageIds)
+    }
+    // A delete in the one order: its note, its list step and the move, then the finish's own arm. A move that throws puts the list step back and refuses with nothing deleted; a Context entry that can't go back stays owed, and Try Again moves its folder.
+    const deleted = (
+      id: string,
+      note: (e: Entry | undefined) => Entry,
+      unlist = async (): Promise<Result<unknown>> => ok(null),
+      relist = unlist,
+    ) =>
+      runNoted(root, id, {
+        note,
+        list: async () => {
+          const unlisted = await unlist()
+          if (!unlisted.ok) return unlisted
+          return leave().then(
+            () => ok(true),
+            async (e) => {
+              if (moved) throw e
+              return (await relist()).ok ? fault(e) : ok(false)
+            },
+          )
+        },
+        sweep: async (left) => (left ? finishEntry(root, id, deps) : { skipped: 1, hosts: [] }),
+      })
+    let stripped: CascadeReport | null = null
     let record: RecordFile | null = null
     let paths: string[] | null = null
     if (req.kind === 'space') {
       const registry = bundle ? await readRegistryStrict(root) : null
-      if (bundle) await write(await gatherSpaceRecord(before, abs, registry, null))
-      const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs)).catch(
-        unmint,
+      const space = spaceAt(before, rel)
+      if (!space) return fail('not-found', 'Unknown Space.')
+      const query = {
+        keys: [contextKey(basename(dirname(abs)))],
+        reach: 'anywhere' as const,
+        title: space.title,
+      }
+      if (bundle)
+        await write(
+          await gatherSpaceRecord(
+            before,
+            abs,
+            registry,
+            outside(await findHolders(root, query, 'values')),
+          ),
+        )
+      const ran = await deleted(
+        space.id,
+        deleteNote(root, { kind: 'space', contextId: space.contextId }, space.title, bundle),
       )
-      if (bundle) await write(await gatherSpaceRecord(before, abs, registry, valueOr(swept, null)))
+      if (!ran.ok) return unminted(ran)
+      stripped = ran.value.cascade
     } else if (req.kind === 'context') {
       const registry = contexts!.value
       const title = basename(abs)
       const at = registry.contexts.findIndex((c) => c.title === title)
       const entry = registry.contexts[at]
-      const evidence = bundle && entry ? await gatherContextEvidence(abs, entry, at) : null
-      if (evidence) await write(buildContextRecord(evidence, null))
-      // By id, never by title: two entries sharing a title would otherwise erase both while only one folder is trashed.
-      const removed = await mutateRegistryFile(root, (cur) =>
-        entry ? { contexts: cur.contexts.filter((c) => c.id !== entry.id) } : cur,
+      if (!entry) return fail('not-found', 'Unknown Context.')
+      const evidence = bundle ? await gatherContextEvidence(abs, entry, at) : null
+      const query = { keys: [contextKey(title)], reach: 'anywhere' as const }
+      if (evidence)
+        await write(buildContextRecord(evidence, outside(await findHolders(root, query, 'values'))))
+      const ran = await deleted(
+        entry.id,
+        deleteNote(root, { kind: 'context' }, title, bundle),
+        // By id, never by title: two entries sharing a title would otherwise erase both while only one folder is trashed.
+        async () => {
+          const removed = await mutateRegistryFile(root, (cur) => ({
+            contexts: cur.contexts.filter((c) => c.id !== entry.id),
+          }))
+          if (removed.ok && !bundle) await dropContextOrder(root, entry.id)
+          return removed
+        },
+        () => mutateRegistryFile(root, withContextAt(entry, at)),
       )
-      if (!removed.ok) {
-        if (bundle) await removeOwn(bundle)
-        return removed
-      }
-      const swept = await unlinkContextKey(root, title, entry?.id, abs).catch(async (e) => {
-        // A sweep cut short puts the entry back where it stood, so the Context can be deleted again.
-        if (entry) await mutateRegistryFile(root, withContextAt(entry, at))
-        return unmint(e)
-      })
-      if (entry && !bundle) await dropContextOrder(root, entry.id)
-      if (evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
+      if (!ran.ok) return unminted(ran)
+      stripped = ran.value.cascade
     } else {
       record = bundle
         ? (from?.record ?? (await gatherContentRecord(root, before, req.kind, abs)))
@@ -142,13 +218,7 @@ export async function deleteOp(
       if (record) await write({ ...record, partial: true })
       paths = from?.keys ?? under
     }
-    if (bundle) await relocate(abs, join(bundle, basename(abs)))
-    else await machine().lock(abs, () => discardFile(root, abs, deps))
-    moved = true
-    if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
-    if (from) await removeOwn(from.bundle)
-    else await dropDeparture(root, before, req.kind, req.path)
-    await dropPageMetadata(root, pageIds)
+    if (!stripped) await leave()
     const gone = paths
       ? await deleteCascade(root, abs, [...paths, ...(archive?.origins ?? [])])
       : null
@@ -159,7 +229,7 @@ export async function deleteOp(
         ...(gone.cascade.warning ? { partial: true as const } : {}),
       })
     const reach = edit ? reachReport(await reachConfig(root, edit)) : null
-    const cascade = joinCascades(gone?.cascade, reach)
+    const cascade = joinCascades(joinCascades(gone?.cascade, reach), stripped)
     return ok({
       ...(bundle ? { bundled: { bundlePath: relative(root, bundle) } } : {}),
       ...(cascade ? { cascade } : {}),
