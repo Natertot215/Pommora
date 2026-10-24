@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { chmod, rm, mkdir, readdir, rename, symlink, writeFile, readFile } from 'node:fs/promises'
+import { rm, mkdir, readdir, rename, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { noModeBits, tempRoot, windows, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, windows, readJsonAt } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
@@ -132,6 +132,13 @@ const regTitle = async (id: string): Promise<string | undefined> => {
   return reg.contexts.find((c) => c.id === id)?.title
 }
 
+const retitle = async (title: string): Promise<void> => {
+  await mutateRegistryFile(root, (cur) => ({
+    ...cur,
+    contexts: cur.contexts.map((c) => (c.id === 'ctx_projects' ? { ...c, title } : c)),
+  }))
+}
+
 const fmOf = async (file: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
 
@@ -218,7 +225,8 @@ describe('renames and casing', () => {
       expect(await readJournal(root)).toBeNull()
     })
 
-    it('a Context already moved has its key rewritten, its title committed, and the journal clears', async () => {
+    it('a Context committed and moved has its key rewritten, and the journal clears', async () => {
+      await retitle('projects')
       await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'projects'))
       await writeJournal(root, {
         contextId: 'ctx_projects',
@@ -327,13 +335,13 @@ describe('renameContextOp', () => {
     expect(fm.foreign).toBe(1)
   })
 
-  it('a failed title commit backs the rename out: keys, folder, journal, and registry as before', async () => {
+  it('a refused title commit renames nothing: no sweep, no folder moved, no note left', async () => {
     const registryBefore = await readFile(contextsRegistryFile(root), 'utf8')
     sweepSpy.mockClear()
     vi.mocked(mutateRegistryFile).mockResolvedValueOnce(fault('refused'))
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(false)
-    expect(sweepSpy).toHaveBeenCalledTimes(2)
+    expect(sweepSpy).not.toHaveBeenCalled()
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
@@ -343,25 +351,43 @@ describe('renameContextOp', () => {
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registryBefore)
   })
 
-  it.skipIf(noModeBits)(
-    'a failed title commit journals its way back, and the next open finishes a file the reversal couldn’t reach',
-    async () => {
-      vi.mocked(mutateRegistryFile).mockImplementationOnce(async () => {
-        await chmod(page(), 0o000)
-        return fault('refused')
-      })
-      const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
-      await chmod(page(), 0o644)
-      expect(r).toEqual(fault(`refused ${unsweptLine(1)}`))
-      expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
-      expect(await readJournal(root)).toMatchObject({ oldTitle: 'Ventures', newTitle: 'Projects' })
-      await replayPendingRename(root)
-      expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
-      expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
-      expect(await readJournal(root)).toBeNull()
-      expect(await regTitle('ctx_projects')).toBe('Projects')
-    },
-  )
+  const strayAtVentures = (): Promise<string | undefined> =>
+    mkdir(join(contextsDir(root), 'Ventures', 'Stray'), { recursive: true })
+
+  it('a folder that can’t move puts the title back and leaves no note and every holder as it was', async () => {
+    await strayAtVentures()
+    vi.mocked(mutateRegistryFile).mockClear()
+    sweepSpy.mockClear()
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(false)
+    expect(vi.mocked(mutateRegistryFile)).toHaveBeenCalledTimes(2)
+    expect(await regTitle('ctx_projects')).toBe('Projects')
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
+    expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
+    expect(await readJournal(root)).toBeNull()
+    expect(sweepSpy).not.toHaveBeenCalled()
+  })
+
+  it('a folder that can’t move under a title that can’t go back leaves the note, and the replay moves the folder and the keys', async () => {
+    await strayAtVentures()
+    const real = vi.mocked(mutateRegistryFile).getMockImplementation()
+    if (!real) throw new Error('no implementation')
+    vi.mocked(mutateRegistryFile)
+      .mockImplementationOnce(real)
+      .mockResolvedValueOnce(fault('refused'))
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(false)
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
+    expect(await readJournal(root)).toEqual({
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Ventures',
+    })
+    await rm(join(contextsDir(root), 'Ventures'), { recursive: true })
+    await replayPendingRename(root)
+    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
+    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
+    expect(await readJournal(root)).toBeNull()
+  })
 
   it('rejects a taken title without journaling; a sigil glyph is legal', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
@@ -420,25 +446,6 @@ describe('the renames report their folder to sync', () => {
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
     expect(tap.renames).toEqual([
       [join(contextsDir(root), 'Projects', 'Pommora'), join(contextsDir(root), 'Projects', 'Pom')],
-    ])
-  })
-
-  it('a Context rename backed out reports the folder going back', async () => {
-    vi.mocked(mutateRegistryFile).mockResolvedValueOnce(fault('refused'))
-    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(false)
-    const [projects, ventures] = [
-      join(contextsDir(root), 'Projects'),
-      join(contextsDir(root), 'Ventures'),
-    ]
-    expect(tap.renames).toEqual([
-      [projects, ventures],
-      [ventures, projects],
-    ])
-    expect(tap.wrote.filter((path) => path === projects || path === ventures)).toEqual([
-      projects,
-      ventures,
-      ventures,
-      projects,
     ])
   })
 })
@@ -806,20 +813,16 @@ describe('a delete sweep never strips a passenger', () => {
 })
 
 describe('replayPendingRename across crash windows', () => {
-  it('completes a rename crashed before the registry commit', async () => {
-    // Crash simulation: journal written, folder renamed, files NOT yet cascaded, registry still on the old title.
+  it('finishes a rename crashed after its title commit: the folder moves and every holder takes the new key', async () => {
+    // Crash simulation: note written and the title committed, then death — the folder and every file still on the old title.
     await writeJournal(root, {
       contextId: 'ctx_projects',
       oldTitle: 'Projects',
       newTitle: 'Ventures',
     })
-    await rm(join(contextsDir(root), 'Projects'), { recursive: true })
-    await mkdir(join(contextsDir(root), 'Ventures', 'Pommora'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-pom' }),
-    )
+    await retitle('Ventures')
     await replayPendingRename(root)
+    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
