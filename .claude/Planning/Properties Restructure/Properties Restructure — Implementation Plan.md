@@ -121,7 +121,7 @@ The work is removal-first and data-first. Phases 1 through 12 rebuild the data l
 | **17** The Properties Pane | One drag model in the kit, one editor rhythm, one `typeRows.tsx`; an orphaned editor returns to the list | −204 |
 | **18** The Documents Read True | Feature documents, Issues entries, drives, matrices, and test seeds read true | 0 |
 
-**Total:** **−453** production lines (−7,720 / +7,267), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +113, Phase 7's frame keeps the two-argument epoch and lands −147, and Task 13-7's Fail half lands −7, for **−377**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +16 in Phase 17. The plan ends net-negative on every outcome; on the measurements' first outcomes the running total rises above zero at Phase 11B (+81, +238 at Phase 12) before Phase 16A brings it back down, and on F3's Fail it rises above zero at Phase 11B (+162, +319 at Phase 12) before Phase 16B brings it back down. The rulings landed between Phases 7 and 8 measure +26 in *§Net Ledger*'s own row, so the projected end is −427. Measured figures replace these in *§Net Ledger*.
+**Total:** **−495** production lines (−7,739 / +7,244), from each phase's *Line Total*; on F3's Fail outcome, Phase 6 reverts Task 6-5 and lands +113, Phase 7's frame keeps the two-argument epoch and lands −147, and Task 13-7's Fail half lands −7, for **−419**. 02-10's Fail adds +42 in Phase 15 and O-5's Fail +16 in Phase 17. The plan ends net-negative on every outcome; on the measurements' first outcomes the running total rises above zero at Phase 11B (+84, +224 at Phase 12) before Phase 16A brings it back down, and on F3's Fail it rises above zero at Phase 11B (+165, +305 at Phase 12) before Phase 16B brings it back down. The rulings landed between Phases 7 and 8 measure +26 in *§Net Ledger*'s own row, so the projected end is −469. Measured figures replace these in *§Net Ledger*.
 
 #### Concepts
 
@@ -303,7 +303,6 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `Holders` • type | A finder's answer: `pages`, `spaces`, and the `held` list. | `Core/Index/keyHolders.ts` |
 | `rootId` • function | The id a governed root carries, a page's `ID` or a Space sidecar's `id`; the one page-or-Space id read in a sweep. | `Core/Nexus/governedSweep.ts` |
 | `rewritten` • function | Module-private dispatch giving a file's text after a sweep plan by its kind, page or Space sidecar, or undefined when its root can't round-trip. | `Core/Nexus/governedSweep.ts` |
-| `unwritten` • function | Every file a sweep left as it was, skipped or refused alike; the one restore accounting. | `Core/Nexus/governedSweep.ts` |
 | `refillOf` • function | The live refill's per-root reconcile, hoisted out of `refillValues` so the live refill and the trashed-copy refill land a value through one rule. | `Core/Nexus/governedSweep.ts` |
 | `titleHolders` • function | The files holding the key a Context or Space rename rewrites, found before the rename's note and list step, with `moved` pointing at the new folder. | `Core/Contexts/contextCascade.ts` |
 | `holders` • field | `DeletePlan`'s up-front finder answer with values, replacing the `KeyedHolders` it held. | `Core/Properties/deleteProperty.ts` |
@@ -423,8 +422,8 @@ Every file, folder, function, type, field, op, constant, and user-facing string 
 | `currentOf` • function | `PropertyPanel`'s local read of a property's current value through its resolved column, for `editRow`, `panelTarget`, and the popover. | `Core/Properties/PropertyPanel.tsx` |
 | `styleById` • field | The view host's memoized map of every shown column's style, resolved once per pass and read by the table, the cards, and the pickers. | `Core/Views/Host/useViewHost.ts` |
 | `typeOf` • function | `useColumns`' local read of a shown column's type by id, for the resize and commit clamps. | `Core/Views/Table/useColumns.ts` |
-| `ValueContext.headingLinkStyle`, `ValueContext.inPageHeadingResolution` • fields | The two heading-link settings, read once per view or panel where `buildValueContext` is called, so a text value opens one store subscription where it opened three. | `Core/Properties/valueContext.ts` |
-| `useValueContext` • function | The renderer hook around `buildValueContext` that reads the two heading-link settings once per view or panel, the one place a `ValueContext` is built for rendering. | `Core/Properties/valueContext.ts` |
+| `ValueContext.headingLinkStyle`, `ValueContext.inPageHeadingResolution` • fields | The two heading-link settings, read once per view or panel where `useValueContext` is called, so a text value opens one store subscription where it opened three. | `Core/Properties/valueContext.ts` |
+| `useValueContext` • function | The renderer hook that builds a `ValueContext` and reads the two heading-link settings once per view or panel, the one place a `ValueContext` is built for rendering. | `Core/Properties/valueContext.ts` |
 | `DEFAULT_VIEW` • constant | The one default view, minted once at module load under the sentinel id and answered for every container with no saved view. | `Core/Views/Pipeline/pickView.ts` |
 | `patchedValues` • function | The one optimistic split routing a Context column's ids to `contexts` and every other column's value to the row's front matter, read by `send`, `impliedSeeds`, and `patchSeedValues`. Only on F3's Fail outcome. | `Core/Properties/assignValue.ts` |
 | `group11`, `views`, `header`, `activate` • functions | The Properties Drive's group 11 and its helpers, driving a new view's Title-only start, a later property staying hidden, revealing a column, and Text, Link, and Select cells rendering and editing on `~/Test`; `MATRIX.md` gains its table. | `.claude/scripts/Properties Drive/live-drive.mjs` |
@@ -1032,7 +1031,7 @@ What this work looks out for, ratified by Nathan on 10-21-2026.
 - **Try Again Unclogs (10-22-2026):** Anything where an error occurs, and a "Try Agin" option would retry it, it should be available. We shouldnt just report erros with the ActionLabel that cannot be "unclogged" if you get what I'm saying.
 - **Unambiguous Reduction (10-22-2026):** I also need to make the intent clear that were unambigiously reducing how much stuff is wwithin the codebase. You should unarguabaly have an easier time adding more stuff, changing things, explaining it, and patching the codebase in the future from a brefore-and-after perspective.
 - **Adding Code (10-23-2026):** "Why are we adding code?" … "Keep this concern in mind." Every line execution adds answers this question first: a phase, fix, fold, or call that grows the code shows what it removes or why no smaller shape delivers it, and a recommendation that adds lines says so plainly.
-- **Reduction Floor (10-23-2026):** "Anything under 550 lines total removed raises concern for scope creep." The bar is the whole plan's measured net production delta: the written −453 sits 97 lines short of it, and the projected −427, with the rulings landed between Phases 7 and 8 (+26), 123 short, so the deferred folds and the post-plan fold carry the gap.
+- **Reduction Floor (10-23-2026):** "Anything under 550 lines total removed raises concern for scope creep." The bar is the whole plan's measured net production delta: the written −495 sits 55 lines short of it, and the projected −469, with the rulings landed between Phases 7 and 8 (+26), 81 short, so the deferred folds and the post-plan fold carry the gap. Nathan, 10-23-2026: "the floor is light. Don't chase it if that would be stupid" — it's a soft signal weighed under No Negligent Sacrifices, and no cut is taken only to reach it.
 - **No Negligent Sacrifices (10-23-2026):** "Also, don't maek negligent sacrifices JUST for less lines" — a reduction lands only when the code reads at least as clearly, keeps every behavior and ruling, and stays correct; *Reduction Floor* is met by folds that also improve the code, never by cramming, obscuring, or dropping something that earns its place.
 - **One Rule, Not Cases (10-23-2026):** "That's the issue, you're hand-rolling it for every case." A behavior lands once, at the one point every path already passes through, and the guards or branches that produced the exceptions leave; a rule is never applied path by path, and a path that bypasses the shared point folds into it.
 
@@ -1106,7 +1105,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 - **Shape:** a removal, a refactor, a migration, and a handful of fixes. The removal's inventory is *§Concepts › REMOVED*; its never-delete list is **Frozen** above. The refactor's baseline is today's behavior, kept except where a phase's *Behavior Changes and Disclosures* names a change (each tied to a decision or a Last Call) and proven by the tests each task rewrites or adds; every removal task lists its consumers and the `git grep` proving none remain. The migration is Phase 8's one-time NexusOS conversion: a backup to `~/NexusOS-Backup-<MM-DD-YYYY>/` before its first write, a transform that changes nothing on a second run, and the backup removed by its path at *§Final Verification*'s closeout. Each fix sweeps what else consumed the old behavior.
 - **No New Issues:** no task files an Issues entry. I-076 and I-077 are the only deferrals; every existing entry the work touches is closed or narrowed in place with no successor (Phase 18), and anything that can't finish inside the plan takes the rule its task names and is reported in the closing report, never filed.
 - **Measurements:** each measuring task runs *Planning Findings › §Measurement Rules* as written: the Benchmark Nexus (`node .claude/scripts/make-benchmark-nexus.mjs large`), the measurement, the threshold, and both outcomes as concrete steps, so the executor runs a rule; the Benchmark Nexus and its timed sidecar are swept after.
-- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, the fixes of the closeout it ends included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The plan ends net-negative on every outcome; on the first outcomes the written cumulative production delta rises above zero at Phase 11B's head (+81) and peaks at Phase 12's (+238), after the net-positive run of Phases 10 through 12, before Phase 16A's head (−24) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+162) before Phase 16B's head (−173) brings it back down. *§Final Verification* proves the measured cumulative the same way.
+- **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <first>^..<last> --exclude .claude --save <scratch>/phase-<N>-delta.md` over the phase's own commits, from the parent of its first commit to its last, the fixes of the closeout it ends included, and records that file's **Actionable** column in *§Net Ledger* beside the phase's *Written* figure, removals and additions apart, the *Cumulative* column summing the rows. Other sessions commit to `active` between phases, so a range from the BASELINE head would count their work. The counting rule is `view-delta`'s Actionable rule on Biome-formatted code, stated here once and cited by every phase's *Line Total*: production lines are each code file's `+` and `-` lines, blank lines and `Core/Testing/` included, with tests (paths matching `(\.|_|/)(test|spec)s?[./]`), documents (`.md`), `.claude/`, and comment lines (`//`, `/*`, `*`) left out; a line moved between files counts on both sides, a line changed in place counts once on each side, and a file renamed whole counts only the lines it changes. Each *Written* figure is that rule applied to the phase's AFTER blocks, formatted by the repository's Biome as the executor's writes will be, task by task in plan order over HEAD, so a task's row is its own diff against what the earlier tasks leave, and an interim line counts in the task that writes it and again in the task that rewrites it. The written figures are the plan on each measurement's first outcome (F3's Pass, 02-10's Pass, O-5's Pass, and 07-17's Otherwise, the outcome its read gives at HEAD); each other outcome carries its own line in *§Net Ledger*. A phase that lands above its written figure is reported in chat before the next phase opens, with what the increase buys. The plan ends net-negative on every outcome; on the first outcomes the written cumulative production delta rises above zero at Phase 11B's head (+84) and peaks at Phase 12's (+224), after the net-positive run of Phases 10 through 12, before Phase 16A's head (−66) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+165) before Phase 16B's head (−215) brings it back down. *§Final Verification* proves the measured cumulative the same way.
 - **Execution:** the plan runs end to end through `c/plan-execution`, autonomously, in the main checkout on `active`: executors edit in place, each phase commits its own files with `git commit --only` (after `git add` of any new or moved file, which `--only` otherwise skips), and the Properties Drive builds and launches from the checkout. If Nathan's live app runs from this checkout, the drive runs from a worktree of the phase's head built by `.claude/scripts/editor-parity/worktree.sh` and named by `POMMORA_DRIVE_REPO`. Each phase goes to one `execution-agent` carrying *§Context*, *§Overview*, this *§Constraints* whole, and its phase: `opus-low` for Phases 1, 9, and 18, and `opus-medium` for the rest. For each task in order it first runs `python3 .claude/scripts/plan-replay/plan_replay.py apply "<this plan>" <task-id> --base 3c6afcabb`, whose base is the commit every cited line reads from, so a `(moved verbatim, HEAD path:a-b)` summary lands HEAD `3c6afcabb`'s lines rather than the checkout's shifted ones, adding `--outcome <Rule>=<Outcome>` once a measurement has landed on another outcome; the tool writes the task's blocks into the checkout and formats them with Biome. The executor reads its report and `git diff` against the AFTER, completes by hand only the hunks the tool refused and the CHANGE's prose steps, and runs VERIFY, retyping nothing an AFTER already holds. It reports insights, concerns, and suggestions rather than diverging, and what a rule logs (*Deferred Folds*, measurement outcomes, scan and conversion records) goes to the execution log, *Properties Restructure — Execution Log* beside this plan, never into this file, and the orchestrator checks each task's result against its AFTER and VERIFY. Every checkpoint closes on its gates, its drive group, and its measure; every second phase's checkpoint (P2, P3, P5, P6, P7, P8, P10, P11A, P12, P14, P16A, and P17) then runs *§Review Procedure*'s two-agent closeout over the phases since the last, and Phase 18's runs its `opus-medium` documentation spotcheck; the orchestrator verifies each finding against the tree, fixes what holds by the closeout's rule, and weighs the landed work against the Approach and Principles before the next phase opens. An in-flight call is weighed against *§Constraints*, disclosed in chat, and recorded under *§Deviations* where it changes an outcome. Each compaction checkpoint in *§Process Overview* runs `c/pre-compaction`, repeats the Approach, Principles, Perspectives, and Nathan's Constraints verbatim in the handoff, and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files themselves before the next phase opens.
 - **Neutral Gates:** two, each a `fable-high` agent that wrote and reviewed nothing, given only the BASELINE head, the head named, and the intention statement quoted in its gate, with no plan, log, principle, or document; it answers yes or no on whether the range holds, with its corrections; a "no" routes back to the orchestrator, the fix lands, and the gate runs again until it answers yes. The first closes Phase 12, where the data layer completes; the second runs inside *§Final Verification*.
 - **Directive (10-22-2026):** Nathan's, verbatim, which execution and every review answer to as the plan's own reviews did: "If there's any behavior you assume ISNT my intention, that gets flagged. Ensure that the plans own reviews honestly assert its adherence to the approach and principles; concretely less of the flagged practices and perspectives: net-negative delta; zero room for two issues being replaced by one new one except the two previous issue-logged items; codebase must adhere to our standards unambiguously and be the honest better environment as a result." The two previously logged items are I-076 and I-077.
@@ -13854,7 +13853,7 @@ Builds on: P1's shared seed (`seedNexus`, `Core/Testing/definitions.ts`, which h
 **CHANGE**
 
 - [ ] Write and watch fail:
-  - `Core/Properties/propertyValue.test.ts`: the select and multiSelect decode cases (`describe('decodeValue')`) rewrite to ids over a definition holding `{ id: 'opt_a', key: 'alpha', label: 'Alpha' }` and `{ id: 'opt_b', key: 'beta', label: 'Beta' }`: `[alpha, zeta]` decodes `{ kind: 'multiSelect', value: ['opt_a'] }`, `Beta` (a label, no key) decodes null as today; new "encodes each option id as its option's key, and an id no option holds writes nothing" (`{ kind: 'select', value: 'opt_b' }` → `['beta']`; `{ kind: 'multiSelect', value: ['opt_a', 'opt_gone'] }` → `['alpha']`; `{ kind: 'select', value: 'opt_gone' }` → `[]`); new "optionLabel reads an id's option label, and an id no option holds as itself".
+  - `Core/Properties/propertyValue.test.ts`: the select and multiSelect decode cases (`describe('decodeValue')`) rewrite to ids over a definition holding `{ id: 'opt_a', key: 'alpha', label: 'Alpha' }` and `{ id: 'opt_b', key: 'beta', label: 'Beta' }`: `[alpha, zeta]` decodes `{ kind: 'multiSelect', value: ['opt_a'] }`, `Beta` (a label, no key) decodes null as today; new "encodes each option id as its option's key, and a write naming an id no option holds is refused" (`{ kind: 'select', value: 'opt_b' }` → `['beta']`; `valueToWrite` answers `NO_OPTION` for `{ kind: 'multiSelect', value: ['opt_a', 'opt_gone'] }` and `{ kind: 'select', value: 'opt_gone' }`, and the write leaves the page byte-identical); new "optionLabel reads an id's option label, and an id no option holds as itself".
   - `Core/Views/Pipeline/sort.test.ts`: "a Custom order ranks the option ids it lists, then the options it predates" (rewritten to ids); new "a Multi-Select sorts by its options' labels, not their ids" (options `opt_z` labelled `Apple`, `opt_a` labelled `Zebra`: a row holding `opt_z` sorts before one holding `opt_a` ascending).
   - `Core/Views/Pipeline/filter.test.ts`: new "a Select's text ops read the option's label" (a hand-written `contains: 'pro'` over `{ id: 'opt_p', label: 'In Progress' }` matches the row holding `opt_p`); every Is/Isn't/contains-any operand naming an option rewrites to its id.
   - `Core/Views/Bands/bandModel.test.ts`: new "a Select bucket's head reads its option's label".
@@ -15835,7 +15834,11 @@ Every change that rewrites a written key or option word asks through `askRewrite
 - **Every Key Rewrite Asks, and a Label Alone Asks Nothing (Nathan's Ruling, 10-22-2026):** a property rename that moves its key and an option rename that moves its word on pages now ask "This action would rewrite metadata in N Items." before they run, as Label Format and Value Format already did, with the same threshold (asked only past one holder); a rename or relabel that keeps the key or word, the display label alone, asks nothing. At HEAD a rename rewrote the same keys without asking. One `askRewrite` and the one count decide it for all four.
 - **Option Identity's Visible Changes (D-1, D-2, D-3, K-1; LC-40):** an option rename stops rewriting views, tiles, the Matrix filter, and preview rules, and rewrites only pages holding the word; collapsed groups are remembered per property; deleting the property a view groups by keeps folder collapses; Status options stop writing `group_id`; view JSON shows `opt_…` where it showed words; NexusOS's Pommora tile keeps its Status collapses scoped to Status, with `open` and `closed` dropped. Each is Nathan's intent.
 - **A Hand-Written Status Option Without `group_id` Now Reads:** today it sets the whole Status definition aside (08-04). Nathan's intent (D-3, "a hand edit leaving it out makes the whole property vanish" is the accident the Morning Report names).
-- **A Pick Naming an Option Deleted Meanwhile Writes Nothing for It:** `encodeValue` drops an id no option holds, where today an unknown label is written as given. The paths that can hand it one are a picker open while another device deletes the option, and a creation seed from a filter operand a sync race left behind. Today's spelling would write the deleted word, which a Multi-Select's registration then adopts back as an option; the new rule writes `[]` for a Select and leaves the member out of a Multi-Select. An earlier agent's choice made consistent with ids.
+- **A Pick Naming an Option Deleted Meanwhile Is Refused (Halfway Review, `1fb447086`):** a value write or a page create's seed naming an option id no option holds refuses with "That option no longer exists." (`NO_OPTION`) and leaves the file as it was, as a Context write refuses a stale id, where today an unknown label is written as given. The paths that can hand it one are a picker open while another device deletes the option, and a creation seed from a filter operand a sync race left behind. Today's spelling would write the deleted word, which a Multi-Select's registration then adopts back as an option. An earlier agent's choice made consistent with ids.
+- **A Multi-Select Pick Drops a Case-Variant of an Option (Halfway Review, `19f71aa1e`):** with the registry's `Done` and a page holding `Tags: [done]`, picking Done writes `[Done]` where it wrote `["Done","done"]`, judging a foreign word by the case rule registration uses, as a Select pick already did; decode stays exact.
+- **Pommora Never Leaves an Empty Property Line (P-5, Nathan's Ruling, 10-23-2026; `273b4521c`, `9a5c2d45e`, `255d805cb`):** a property's or Context's key whose value is blank (bare, null, empty, only spaces, or an empty list) comes off the page on every write, tidy, undo, and rename, reads as empty, and is filled by a restore or re-add; keys Pommora doesn't govern are left alone. E-1's verbatim undo narrows to match: a recorded pair whose value is blank lands as no line.
+- **A Banner Whose Page Can't Be Read Says So (P-7, Nathan's Ruling, 10-23-2026; `425e79d6a`):** the refusal reads "That file could not be read.", the shared unreadable-file words.
+- **An Undo Puts a Number-Like Key Back in Its Place (E-4, `83e987022`):** the key a line stood above is read from the YAML document's own key order, which a JSON root reorders for an integer-like key such as `2026:`; in `Title / Status / 2026 / Rating`, clearing `Status` and undoing it writes those lines back in that order, where it wrote `Title / 2026 / Status / Rating`. A key a merge adds lands last.
 - **Collapsed Keys Outside NexusOS Lose Their Collapse:** a Nexus whose views hold bare-label collapsed keys from a property grouping (no live Nexus but NexusOS, which the conversion covers; `~/Test` and the Benchmark Nexuses seed none) shows those groups expanded, the bare keys inert. A Set-id collapse is unaffected. This is the D-2 key change itself; no reader of the old spelling stays (*Legacy Versus Interop*).
 - **The Option Popup Keeps Its Content Through a Rename:** its content remounted on every rename (`contentKey` was the label); it remounts only when another option opens. The field's in-flight label and its reversion on a refusal are unchanged (pinned).
 - **A Text-Op Filter on a Select Matches the Label:** a hand-written `contains`/`starts_with` rule on a Select compares the option's label, as it compared the decoded label before; no pane writes one (`filterModel.ts:88-92`).
@@ -16226,7 +16229,7 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 
 ### Phase 10 — One Finder
 
-**GOAL:** Every rename, delete, count, and strip finds its pages from the content index and its Spaces from the tree through one finder, `findHolders` in `Core/Index/keyHolders.ts`, whose doc comment states the one rule: a property reaches the pages of Collections and the Archive, a Context tag reaches any page, and both reach every Space that holds them. Every sweep writes pages and Space sidecars alike through `sweepGovernedRoots(files, plan)`, which dispatches each file by its basename, so the sidecar arm's disk scan, `spaceArm`, `sweepMembers`, `governedReach`, `confirmedKeyHolders`, `keyedHolders`, the delete snapshot's Space loop, and the restore routines' hand-rolled Space loops leave. A finder read answers which keys each holder holds and its values in the same pass that confirms it, and the restore routines report the files they couldn't update as a warning instead of ignoring them.
+**GOAL:** Every rename, delete, count, and strip finds its pages from the content index and its Spaces from the tree through one finder, `findHolders` in `Core/Index/keyHolders.ts`, whose doc comment states the one rule: a property reaches the pages of Collections and the Archive, a Context tag reaches any page, and both reach every Space that holds them. Every sweep writes pages and Space sidecars alike through `sweepGovernedRoots(files, plan)`, which dispatches each file by its basename, so the sidecar arm's disk scan, `spaceArm`, `sweepMembers`, `governedReach`, `confirmedKeyHolders`, `keyedHolders`, the delete snapshot's Space loop, and the restore routines' hand-rolled Space loops leave. A finder read answers which keys each holder holds and its values in the same pass that confirms it, and the restore routines write their Space files through the same sweep, reporting what they miss as HEAD did until Phase 11B reports it once.
 
 **Builds On:** P4's `Core/Nexus/governedSweep.ts` (moved from `Core/Properties`, beside `governedRoot.ts`, which took `governedRoot`, `changedKeys`, and `rewriteRaw` from it); P7's `Core/Properties/unassignProperty.ts` (from `removeProperty.ts`), `Core/Trash/trashedCopies.ts` (from `holdings.ts`), `unsweptLine` in `Core/Nexus/entities.ts`, and `refillValues` beside `sweepRootsById`; P8's option ops addressed by option id; P9's list-first Context rename (note → `commitTitle` → `relocate` → cascade, with the in-op revert) and its one post-seed replay.
 
@@ -16376,11 +16379,10 @@ The block is skipped only for a same-root re-adopt. That root's session was open
 +import { parseContextKey } from '../Contexts/contexts'
  import { ID_KEY } from '../Nexus/identityMark'
  import { asString } from '../Nexus/coerce'
--import { isBlankRaw } from './propertyValue'
+ import { isBlankRaw } from '../Files/rootValues'
 -import { spaceSidecars } from '../Contexts/spaceSidecar'
 -import { governedReach, outsideArchive } from '../Nexus/governedSweep'
 -import { addressable, type NexusPages } from '../Nexus/heldPages'
-+import { isBlankRaw } from '../Properties/propertyValue'
 +import { collectionFolders, rootId } from '../Nexus/governedSweep'
 +import { addressable, nexusPages, type NexusPages } from '../Nexus/heldPages'
 +import { liveTreeOf } from '../Nexus/liveTree'
@@ -17164,7 +17166,7 @@ The other sweep calls drop their first argument and nothing else:
 @@ imports @@
 -import { ID_KEY } from '../Nexus/identityMark'
 -import { asString } from '../Nexus/coerce'
- import { isBlankRaw } from '../Properties/propertyValue'
+ import { isBlankRaw } from '../Files/rootValues'
  import { collectionFolders, rootId } from '../Nexus/governedSweep'
 -import { addressable, nexusPages, type NexusPages } from '../Nexus/heldPages'
 +import { addressable, nexusPages } from '../Nexus/heldPages'
@@ -17327,7 +17329,7 @@ The other sweep calls drop their first argument and nothing else:
 
 #### Task 10-4
 
-**TASK:** The restore routines write their Space sidecars through the one sweep, and every file a restore couldn't update, page or Space, returns into the restore's warning instead of being ignored or refusing it (G-3).
+**TASK:** The restore routines write their Space sidecars and trashed copies through the one sweep, and a trashed copy's refill reconciles a value as a live refill does (G-3's write half). What a restore couldn't update keeps HEAD's report until Phase 11B reports it once (G-4, Nathan's ruling, 10-23-2026): Task 11B-3 counts a refused file among the misses, and Task 11B-5 owes or reports every file the scrub and the refill miss.
 
 **NOW**
 
@@ -17338,35 +17340,26 @@ The other sweep calls drop their first argument and nothing else:
 
 **CHANGE**
 
-- [ ] Write the tests and watch them fail:
-  - `Core/Trash/restoreScrub.test.ts`, new, `it.skipIf(noModeBits)`: "a restore whose returning Space sidecar can't be read still restores, and warns" — delete the Projects Context with Pommora's sidecar holding `<Projects>: [Sapphire]`, set the trashed copy of `Pommora/_space.json` to mode `0o000`, restore: the reply is ok, the bundle is gone, and `cascade.warning` contains `Couldn’t update values in “Projects” across 1 Item.`; the mode is restored in `finally`.
-  - `restoreScrub.test.ts:165` → "a returning page the scrub can’t write still restores, and warns": with `trashWrites.fail`, the restore answers ok and its `cascade.warning` contains `Couldn’t update values in “Alpha” across 1 Item.` where it pinned the refusal.
+- [ ] Write the test and watch it fail:
   - `Core/Trash/spend.test.ts`, new: "a Link value refilled into a trashed copy is reconciled as a live refill is" — a page restored with two recorded Link values whose linkers sit in the Trash, one naming a page that's gone since and one naming a live page; the trashed copy takes the live page's value and not the gone one's, matching what `refillValues` lands on a live linker.
-  - `Core/Trash/spend.test.ts`, new, `it.skipIf(noModeBits)`: "a Link value the refill can't write into a trashed copy is reported with the restore's links" — a page restored with a recorded Link value naming a page in the Trash whose trashed copy is at mode `0o444`; `cascade.warning` contains `Couldn’t update links in “<title>” across 1 Item.`
-- [ ] `Core/Nexus/governedSweep.ts`: add `unwritten(result)`, the one statement that a restore reports both skipped and refused files.
-- [ ] `Core/Trash/restoreScrub.ts`: `artifactFiles` answers one list; `scrubReturning` sweeps pages and sidecars in one call with its page `text` and its sidecar reconcile as `raw`, and answers `{ dropped, unswept }` instead of throwing; `repairLanded` sweeps both in one call and answers `unwritten`; the `rmwJsonStrict` and `unsweptLine` imports leave.
+- [ ] `Core/Trash/restoreScrub.ts`: `artifactFiles` answers one list; `scrubReturning` sweeps pages and sidecars in one call with its page `text` and its sidecar reconcile as `raw`, and still refuses the restore over a page it couldn't write (`:179-180`) while a Space it misses goes unreported, as at HEAD, until Task 11B-5 reports both; `repairLanded` sweeps both in one call and answers the sweep's `skipped`, where a sidecar it can't parse counts from Task 11B-3 on; the `rmwJsonStrict` import leaves.
 - [ ] `Core/Nexus/governedSweep.ts`: `refillValues`' per-root rewrite is hoisted into `refillOf(def, frozen)`, which `refillValues` passes to `sweepRootsById` and `refillTrashed` reads, so one reconcile lands a refilled value live and in the Trash.
-- [ ] `Core/Trash/trashedCopies.ts`: `refillTrashed(root, links, defs, frozen)` takes the Link definitions and the frozen world in place of the key map, lands each value through `refillOf`, sweeps every holder in one call with each rewrite reading its root's id through `rootId`, and answers `unwritten`; the `basename`, `rmwJsonStrict`, `landValue`, and `isBlankRaw` imports leave.
-- [ ] `Core/Nexus/cascade.ts`: `withUnswept` takes `what: 'links' | 'values' = 'links'`.
-- [ ] `Core/Trash/spend.ts`: reads `scrubbed.dropped`; the Context re-key sweeps the landed Context's sidecars; the refill's misses join `unswept`; the cascade joins the links line and the scrub's values line; the `rmwJsonStrict` import leaves.
-- [ ] Sibling sweep: `git grep -nw "rmwJsonStrict" -- Core/Trash` answers nothing; `git grep -n "scrubReturning(\|refillTrashed(\|repairLanded(" -- Core ':!*.test.*'` answers `spend.ts` (two) and `settle.ts:302`, whose `unswept` already reads an array.
-- [ ] Commit: `git commit --only -- Core/Nexus/governedSweep.ts Core/Nexus/cascade.ts Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts Core/Trash/spend.ts Core/Trash/restoreScrub.test.ts Core/Trash/spend.test.ts` — "The restore routines wrote their Space sidecars through the sweep and warned of every file they couldn't update."
+- [ ] `Core/Trash/trashedCopies.ts`: `refillTrashed(root, links, defs, frozen)` takes the Link definitions and the frozen world in place of the key map, lands each value through `refillOf`, sweeps every holder in one call with each rewrite reading its root's id through `rootId`, its misses left unreported, as at HEAD, until Task 11B-5 owes them; the `basename`, `rmwJsonStrict`, `landValue`, and `isBlankRaw` imports leave.
+- [ ] `Core/Trash/spend.ts`: the Context re-key sweeps the landed Context's sidecars, its misses joining `unswept` as before; the trashed-copy refill passes `defs` and the frozen world; the `rmwJsonStrict` import leaves.
+- [ ] Sibling sweep: `git grep -nw "rmwJsonStrict" -- Core/Trash` answers nothing; `git grep -n "scrubReturning(\|refillTrashed(\|repairLanded(" -- Core ':!*.test.*'` answers `spend.ts` (two) and `settle.ts:302`.
+- [ ] Commit: `git commit --only -- Core/Nexus/governedSweep.ts Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts Core/Trash/spend.ts Core/Trash/spend.test.ts` — "The restore routines wrote their Space sidecars and trashed copies through the one sweep, and a trashed copy took a refilled value as a live page does."
 
 **AFTER**
-
-```Core/Nexus/governedSweep.ts diff
-@@ after sweepGovernedRoots @@
-+/** Every file a sweep left as it was, skipped or refused alike: a restore reports both, since nothing retries it. */
-+export const unwritten = ({ skipped, refused }: SweepResult): string[] => [...skipped, ...refused]
-```
 
 ```Core/Trash/restoreScrub.ts diff
 @@ imports @@
 -import { rmwJsonStrict } from '../Files/atomicWrite'
 @@
 -import { sweepGovernedRoots } from '../Nexus/governedSweep'
--import { unsweptLine } from '../Nexus/entities'
-+import { type Rewrite, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
++import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
+@@ the posix import @@
+-import { basename, join } from '../Paths/posix'
++import { basename, isMarkdownFile, join } from '../Paths/posix'
 @@ artifactFiles @@
  /** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
  async function artifactFiles(
@@ -17383,13 +17376,6 @@ The other sweep calls drop their first argument and nothing else:
 +  return [...(await contentPages(entity, abs)), ...sidecars.map((rel) => join(root, rel))]
  }
 @@ scrubReturning @@
--/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
-+/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds, and the files it couldn't reconcile, which the restore reports. */
- export async function scrubReturning(
-   …
--): Promise<StrippedLink[]> {
-+): Promise<{ dropped: StrippedLink[]; unswept: string[] }> {
-   …
 -  const { pages, sidecars } = await artifactFiles(root, entity, absArtifact)
    const unstamped = new Map<string, Record<string, string>>()
    const text = (held: string, file: string): string | null => {
@@ -17408,6 +17394,9 @@ The other sweep calls drop their first argument and nothing else:
 +    text,
 +    raw: json,
 +  })
++  // A page the scrub couldn't write refuses the restore; a Space it couldn't write goes unreported.
++  const missed = swept.skipped.filter(isMarkdownFile)
++  if (missed.length) throw new Error(unsweptLine(missed.length))
    // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
    for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
 -  for (const file of sidecars)
@@ -17420,8 +17409,7 @@ The other sweep calls drop their first argument and nothing else:
 -        stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
 -      )
 -    })
--  return dropped
-+  return { dropped, unswept: unwritten(swept) }
+   return dropped
  }
 @@ repairLanded @@
    if (!repair.size) return []
@@ -17434,7 +17422,7 @@ The other sweep calls drop their first argument and nothing else:
 -  }
 -  return skipped
 +  const files = await artifactFiles(root, entity, targetAbs)
-+  return unwritten(await sweepGovernedRoots(files, { text, raw: spaceMoved }))
++  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
  }
 ```
 
@@ -17443,27 +17431,24 @@ The other sweep calls drop their first argument and nothing else:
 -import { basename, join } from '../Paths/posix'
 +import { join } from '../Paths/posix'
  import { SPACE_SIDECAR } from '../Paths/nexusPaths'
--import { landValue } from '../Files/rootValues'
+-import { isBlankRaw, landValue } from '../Files/rootValues'
 @@
 -import { rmwJsonStrict } from '../Files/atomicWrite'
 @@
 -import { sweepGovernedRoots } from '../Nexus/governedSweep'
--import { isBlankRaw } from '../Properties/propertyValue'
-+import { refillOf, rootId, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
++import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
 +import type { PropertyDefinition } from '../Properties/properties'
 @@ refillTrashed @@
 -/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, so it returns with it; `keys` maps each property's ID to its key. */
-+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. Answers the copies it couldn't write. */
++/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. */
  export async function refillTrashed(
    root: string,
    links: StrippedLink[],
 -  keys: ReadonlyMap<string, string>,
--): Promise<void> {
--  if (!links.length) return
 +  defs: readonly PropertyDefinition[],
 +  frozen: Frozen,
-+): Promise<string[]> {
-+  if (!links.length) return []
+ ): Promise<void> {
+   if (!links.length) return
    const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
 -  const fill = (raw: Record<string, unknown>, id: unknown): Record<string, unknown> | null => {
 -    let next = raw
@@ -17477,7 +17462,7 @@ The other sweep calls drop their first argument and nothing else:
 -    if (basename(file) === SPACE_SIDECAR) await rmwJsonStrict(file, (raw) => fill(raw, id))
 -    else await sweepGovernedRoots([file], { raw: (raw) => fill(raw, id) })
 +  const refills = new Map(defs.map((d) => [d.id, refillOf(d, frozen)]))
-+  const swept = await sweepGovernedRoots([...holders.values()], {
++  await sweepGovernedRoots([...holders.values()], {
 +    raw: (raw, file) => {
 +      const id = rootId(file, raw)
 +      let next = raw
@@ -17486,7 +17471,6 @@ The other sweep calls drop their first argument and nothing else:
 +      return next === raw ? null : next
 +    },
 +  })
-+  return unwritten(swept)
  }
 ```
 
@@ -17516,44 +17500,16 @@ The other sweep calls drop their first argument and nothing else:
  }
 ```
 
-`trashedCopies.ts` imports `refillOf`, `rootId`, `sweepGovernedRoots`, and `unwritten` from `'../Nexus/governedSweep'` and `PropertyDefinition` from `'../Properties/properties'`; `Frozen` is already imported from `'../Nexus/governedRoot'` for `frozenWorld`, and `SPACE_SIDECAR` stays imported for `trashedHolders`.
-
-```Core/Nexus/cascade.ts diff
-@@ withUnswept @@
--/** `cascade` joined with the line counting the files in “title” whose links couldn't be written. */
-+/** `cascade` joined with the line counting the files in “title” whose links, or values, couldn't be written. */
- export function withUnswept(
-   cascade: CascadeReport | undefined,
-   title: string,
-   unswept: readonly string[],
-+  what: 'links' | 'values' = 'links',
- ): CascadeReport | undefined {
-   if (!unswept.length) return cascade
-   return joinCascades(cascade, {
-     pages: [],
-     hosts: [],
--    warning: unsweptLine(unswept.length, `links in “${title}” across `),
-+    warning: unsweptLine(unswept.length, `${what} in “${title}” across `),
-   })
- }
-```
+`trashedCopies.ts` imports `refillOf`, `rootId`, and `sweepGovernedRoots` from `'../Nexus/governedSweep'` and `PropertyDefinition` from `'../Properties/properties'`; `Frozen` is already imported from `'../Nexus/governedRoot'` for `frozenWorld`, and `SPACE_SIDECAR` stays imported for `trashedHolders`.
 
 ```Core/Trash/spend.ts diff
 @@ imports @@
 -import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
-+import { refillValues, sweepGovernedRoots, sweepRootsById, unwritten } from '../Nexus/governedSweep'
++import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
 @@
 -import { readJsonObject, relocate, removeOwn, rmwJsonStrict } from '../Files/atomicWrite'
 +import { readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
 @@ restoreTrashed @@
--  const dropped = await scrubReturning(
-+  const scrubbed = await scrubReturning(
-     root,
-     …
-   )
--  await parkLinks(root, dropped)
-+  await parkLinks(root, scrubbed.dropped)
-@@
    if (record.entity === 'context') {
      if (title !== record.registry.title) {
 -      const rekey = rekeyContext(record.registry.title, title)
@@ -17565,26 +17521,19 @@ The other sweep calls drop their first argument and nothing else:
 +      const rekeyed = await sweepGovernedRoots(sidecars, {
 +        raw: rekeyContext(record.registry.title, title),
 +      })
-+      unswept.push(...unwritten(rekeyed))
++      unswept.push(...rekeyed.skipped)
      }
 @@
      // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
 -    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.key])))
-+    unswept.push(...(await refillTrashed(root, trashed, defs, refilled)))
++    await refillTrashed(root, trashed, defs, refilled)
    }
--  const cascade = withUnswept(arrived.cascade, title, unswept)
-+  const cascade = withUnswept(
-+    withUnswept(arrived.cascade, title, unswept),
-+    title,
-+    scrubbed.unswept,
-+    'values',
-+  )
 ```
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Trash Core/Archive Core/Nexus/settle.test.ts Core/Nexus/cascade.test.ts` passes, each new test failing before its change.
-- [ ] `git grep -nw "rmwJsonStrict" -- Core/Trash` answers nothing; `git grep -n "unwritten(" -- Core ':!*.test.*'` answers `restoreScrub.ts` 2, `trashedCopies.ts` 1, `spend.ts` 1.
+- [ ] `npx vitest run Core/Trash Core/Archive Core/Nexus/settle.test.ts Core/Nexus/cascade.test.ts` passes, the new test failing before its change, and `restoreScrub.test.ts:165` still pins the refusal.
+- [ ] `git grep -nw "rmwJsonStrict" -- Core/Trash` answers nothing; `git grep -n "sweepGovernedRoots(" -- Core/Trash ':!*.test.*'` answers `restoreScrub.ts` 2, `trashedCopies.ts` 1, and `spend.ts` 1.
 - [ ] `npx vitest run Core/Contract/engineGraph.test.ts Desktop/hostGraph.test.ts` passes unchanged.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -17663,14 +17612,11 @@ The other sweep calls drop their first argument and nothing else:
 - [ ] `git grep -nw "governedReach\|confirmedKeyHolders\|bothKeyHolders\|keyedHolders\|KeyedHolders\|spaceArm\|sweepMembers" -- Core Desktop` and `git grep -n "sweepGovernedRoots(root\|plan\.sidecars\|sidecars?: Rewrite" -- Core Desktop` answer nothing; `git grep -n "spaceSidecars(" -- Core ':!*.test.*'` answers `assetMigrate.ts` and the definition; `git grep -nw "rmwJsonStrict" -- Core/Trash` answers nothing.
 - [ ] Run the gates: `npm run typecheck`, `npm run test`, `npm run lint`.
 - [ ] Properties Drive groups 1–8 pass.
-- [ ] One rule per question, checked by reading: `findHolders`' doc comment is the only statement of where a property or a tag reaches; `pagesInReach` is the only page reach filter and the only `?? nexusCorpus` among property and Context sweeps; `spaceFiles` is the only place a key sweep's Space paths come from, `sweepRootsById`'s by-id paths, 10-4's artifact listings, and the asset migration's `spaceSidecars` aside; `rootId` is the only page-or-Space id read in a sweep; `unwritten` is the only restore accounting.
+- [ ] One rule per question, checked by reading: `findHolders`' doc comment is the only statement of where a property or a tag reaches; `pagesInReach` is the only page reach filter and the only `?? nexusCorpus` among property and Context sweeps; `spaceFiles` is the only place a key sweep's Space paths come from, `sweepRootsById`'s by-id paths, 10-4's artifact listings, and the asset migration's `spaceSidecars` aside; `rootId` is the only page-or-Space id read in a sweep.
 - [ ] **Closeout P9–P10:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 9's base>..HEAD` with the asks Phases 9 and 10 name; each correctness finding is fixed before Phase 11A opens, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
 
 #### Behavior Changes and Disclosures
 
-- **A Restore Warns of a Space File It Couldn't Update (G-3, Nathan's Reading):** the scrub's and the trashed-copy refill's Space misses return into the restore's warning, and the restore completes.
-- **A Returning Page the Scrub Can't Update No Longer Refuses the Restore:** the scrub's page misses go into the same warning, so `restoreScrub.ts:180`'s refusal leaves and the page lands un-reconciled, as a Space already did; the next value write or Repair On Open tidies it. It rides beside the Space files: **Recommended:** take it, since a restore otherwise refuses over one page while every Space file it misses only warns.
-- **A Restore Counts Refused Files Too:** an Unknown page or a sidecar that won't parse is left byte-identical by every sweep; a property sweep leaves it silent since a retry reads it no better, while a restore, which nothing retries, now reports it through `unwritten`. `repairLanded` already counted a corrupt sidecar; the scrub's and the refill's refused files, and `repairLanded`'s refused pages, now warn too.
 - **A Trashed Copy Takes a Refilled Link Value as a Live Page Would:** a value naming a page that's gone since stays out of the trashed copy, and one the definition spells differently lands in its written spelling, where both landed as recorded; an accident of the two refills diverging, fixed with the fold.
 - **A Context Rename Reaches a Loose Page and a Property Rename Doesn't, by Stated Rule (G-2, Nathan's Reading):** unchanged in effect; it's now one rule in one doc comment.
 - **One Hold-Out for Every Strip:** `deleteCascade`'s Space arm and the property delete's Space strip hold out a Space no id addresses (none, or one two files claim), as their page arms and `sweepRootsById` already did; only a hand copy inside `.nexus/contexts`, or a sidecar whose id was removed by hand, makes one.
@@ -17687,12 +17633,12 @@ The other sweep calls drop their first argument and nothing else:
 | 10-1 | −3 | +6 | +3 |
 | 10-2 | −243 | +297 | +54 |
 | 10-3 | −81 | +32 | −49 |
-| 10-4 | −63 | +65 | +2 |
+| 10-4 | −54 | +52 | −2 |
 | 10-5 | 0 | 0 | 0 |
-| **Phase 10** | **−390** | **+400** | **+10** |
+| **Phase 10** | **−381** | **+387** | **+6** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Moves count on both sides (`governedReach`'s body into `pagesInReach`, the scrub's sidecar reconcile into `json`, `refillValues`' rewrite into `refillOf`), and `Core/Testing/hostFs.ts`' seed (+6) counts in 10-2. One hunk doesn't replay: 10-2's `registryProperty.ts` imports, whose base line Biome wraps after P4A's re-point; it's counted from its own lines (+2 / −3).
-- **Net-Positive Rationale:** under *Less Stuff*, the phase lands +10 because 10-2's finder (+54) costs more than the scans it replaces: `findHolders`, `pagesInReach`, `spaceFiles`, and their types in `Core/Index/keyHolders.ts`, with the unreadable Spaces as candidates, the clash's index fallback through `Held.keys`, the `id` row-order candidates, the find-before-the-list step and its `titleHolders`, the replay's commit-first order and re-read, and `rootId`, `unwritten`, and `refillOf`, each a correctness requirement HEAD's disk scan met implicitly. 10-3 takes −49 back by deleting `keyedHolders` and the delete's own Space loop. A key sweep's Space candidates come from one place, `spaceFiles`, where five mechanisms stood; page candidate rules go from two to one with the reach stated once; the holder reads per delete go from three to one and per Key Format change from four to two; and the four hand-rolled Space write loops leave with their three different failure accountings.
+- **Net-Positive Rationale:** under *Less Stuff*, the phase lands +6 because 10-2's finder (+54) costs more than the scans it replaces: `findHolders`, `pagesInReach`, `spaceFiles`, and their types in `Core/Index/keyHolders.ts`, with the unreadable Spaces as candidates, the clash's index fallback through `Held.keys`, the `id` row-order candidates, the find-before-the-list step and its `titleHolders`, the replay's commit-first order and re-read, and `rootId` and `refillOf`, each a correctness requirement HEAD's disk scan met implicitly. 10-3 takes −49 back by deleting `keyedHolders` and the delete's own Space loop. A key sweep's Space candidates come from one place, `spaceFiles`, where five mechanisms stood; page candidate rules go from two to one with the reach stated once; the holder reads per delete go from three to one and per Key Format change from four to two; and the four hand-rolled Space write loops leave, their failure accountings kept as HEAD reports them until Phase 11B reports a restore's misses once (G-4).
 - **Tests:** about −110 (the `keyedHolders` describe, `confirmedKeyHolders`' pin, three collapsed exact-key pins, the sidecar-arm fixtures) against about +175 (the finder's seven pins, the writer's dispatch pin, the four rename and replay pins, the four restore pins, and the seed's registration), about +65.
 
 ---
@@ -18011,7 +17957,7 @@ The other sweep calls drop their first argument and nothing else:
   - `Core/Session/store.test.tsx` › the slice's `mutate` describe › "an owed name is finished, then the request lands": the dialer answers `addProperty` `'owed'`, then `finishOwed` with an empty cascade, then `addProperty` landed; the asks run in that order and no notice shows.
 - [ ] `Core/Properties/registryProperty.ts`: as the AFTER gives it — `freeLabel` loses `owed`; `createProperty` refuses an owed landed key inside its registry edit; `rekeyProperty` runs a key move through `runNoted` (the refusal, the note, the commit as its list step, `renameSweep`, the settle of the swept key) and a format change that keeps the key through the commit alone. `renameSweep` and `removeFromRegistry` stay exported for the pass.
 - [ ] `Core/Properties/deleteProperty.ts`: `deletePlan` takes every key the delete strips; `deleteInner` runs through `runNoted` after the bundle mints, its list step `removeFromRegistry` right after the note, and removes the bundle when the runner refuses; `stripAndRemove` becomes `stripProperty(root, propertyId, folders, planned)`, which no longer removes the definition and which the pass imports; `snapshot` files each holder's value under every key it strips; `propertyHolders` passes `[def.key]`.
-- [ ] `Core/Properties/optionOps.ts`: `OWED` moves to `owed.ts`; `owedKeys` folds into `owedName`, which `editOption` and `registerHeldOptions` read; `rekeyOptions` runs through `runNoted`, and `deleteOption` and `clearOption` through one `stripOption` on it, the delete dropping the option right after its note and Clear noting its word in a kept part; `optionCascade`'s delete halt leaves, so a delete reaches the stash and the views on a page skip.
+- [ ] `Core/Properties/optionOps.ts`: `OWED` moves to `owed.ts`; `owedKeys` folds into `owedName`, which `editOption` and `registerHeldOptions` read; `rekeyOptions` runs through `runNoted`, and `deleteOption` and `clearOption` through one `stripOption` on it, the delete dropping the option right after its note and Clear noting its word in a kept part; `optionCascade`'s delete halt leaves, so a delete reaches the stash and the views on a page skip; `dropOptionFromDef` drops the option by the id its note records, as every other option op addresses an option, where it matched the option's word.
 - [ ] `Core/Trash/restoreProperty.ts`: after the create, `restoreNote`; a failed conversion refuses with the bundle unspent, H-4's crash reading.
 - [ ] Write `Core/Nexus/finishOwed.ts` with the pass and its property arm (Task 11A-3 adds the Context and Space arms, Task 11B-3 the `collections` arm).
 - [ ] `Core/Nexus/handlers.ts`: P9's genuine-open replay call for properties becomes `await finishOwed(root, await trashDeps(ctx))`, before `settleNow`; P9's Context replay call stays until Task 11A-3.
@@ -18090,6 +18036,9 @@ The other sweep calls drop their first argument and nothing else:
 -    await clearSchemaJournal(root, journal)
 -  return created
  }
+@@ the mutateRequest import @@
+-import type { MutateReply } from '../Nexus/mutateRequest'
++import { done, type MutateReply } from '../Nexus/mutateRequest'
 @@ rekeyProperty @@
 -/** Validated before the journal and again on the registry it commits to, since a writer outside the app, a sync arrival or a hand edit, can land between the two while every schema op of the app's own waits on the schema lock. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
 +/** Validated before the note and again on the registry it commits to, since an outside writer can land between the two. The note lands before the commit, since after it the old key survives nowhere else; a change that keeps the key notes nothing. */
@@ -18111,10 +18060,7 @@ The other sweep calls drop their first argument and nothing else:
 -    const skipped = from === def.key ? 0 : await renameSweep(root, from, def.key)
 -    if (moves && !skipped) await clearSchemaJournal(root, record)
 -    return ok(from === def.key ? {} : schemaCascade({ skipped, hosts: [] }, record))
-+    if (moved.key === prior.key) {
-+      const kept = await commit()
-+      return kept.ok ? ok({}) : kept
-+    }
++    if (moved.key === prior.key) return done(await commit())
 +    return runNoted(root, propertyId, {
 +      lands: [{ owner: { kind: 'property' }, name: moved.key, except: propertyId }],
 +      note: (e) => ({ ...propertyNote(e), ...owedRename(propertyNote(e), prior.key, moved.key) }),
@@ -18285,6 +18231,9 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 +          const fresh = unregisteredMembers(def, members).filter(
 +            (v) => !owedName(notes, { owner: { kind: 'option', propertyId: id }, name: String(v) }),
 +          )
+@@ the mutateRequest import @@
+-import type { MutateReply } from '../Nexus/mutateRequest'
++import { done, type MutateReply } from '../Nexus/mutateRequest'
 @@ rekeyOptions (P8's `Rekey` change) @@
  async function rekeyOptions(
    root: string,
@@ -18311,10 +18260,7 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 -  if (!reach.skipped) await clearSchemaJournal(root, record)
 -  return ok(schemaCascade(reach, record))
 +  // A relabel that moves no word notes nothing and sweeps nothing.
-+  if (!moved.length) {
-+    const kept = await commit()
-+    return kept.ok ? ok({}) : kept
-+  }
++  if (!moved.length) return done(await commit())
 +  const parts = (e: Entry | undefined, edit: (o: Owed, m: (typeof moved)[number]) => Owed): PropertyEntry =>
 +    moved.reduce((n, m) => withOption(n, m.optionId, (o) => edit(o, m)), propertyNote(e))
 +  return runNoted(root, propertyId, {
@@ -18341,6 +18287,16 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 -    return ok({ cascade: reachReport(reach) })
 +    return r.ok ? stripOption(root, r.value, true) : r
    })
+@@ dropOptionFromDef @@
+ export function dropOptionFromDef(
+   root: string,
+   propertyId: string,
+-  key: string,
++  optionId: string,
+ ): Promise<Result<null>> {
+ …
+-      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.key !== key) })),
++      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.id !== optionId) })),
 @@ optionCascade (P8's `removed`) @@
 -/** Rewrites the files and caches holding `keys`' old keys. A delete names its option: a skipped file stops it there, so the option stays while its replay is owed, and otherwise every saved view, tile, and filter drops the option's id. */
 +/** Rewrites the files and caches holding `keys`' old keys. A delete names its option, and every saved view, tile, and filter drops the option's id. */
@@ -18375,7 +18331,7 @@ P7's `rekeyProperty` already answers `MutateReply` (`{}` while the key holds, th
 +  })
 +  return runNoted(root, def.id, {
 +    note: (e) => withOption(propertyNote(e), option.id, () => part(e)),
-+    list: () => (kept ? Promise.resolve(ok(null)) : dropOptionFromDef(root, def.id, option.key)),
++    list: () => (kept ? Promise.resolve(ok(null)) : dropOptionFromDef(root, def.id, option.id)),
 +    sweep: (_, prior) =>
 +      optionCascade(root, def, new Map((part(prior).strip ?? []).map((w) => [w, null])), kept ? undefined : option.id),
 +    settle: (e) => withOption(propertyNote(e), option.id, () => ({})),
@@ -18550,7 +18506,7 @@ Clear's list step changes nothing, since a Clear changes no list; the runner giv
 +  for (const [optionId, o] of Object.entries(options)) {
 +    let option = findOption(def, optionId)
 +    if (option && !o.kept && o.strip?.includes(option.key)) {
-+      if (!(await dropOptionFromDef(root, def.id, option.key)).ok) {
++      if (!(await dropOptionFromDef(root, def.id, option.id)).ok) {
 +        left[optionId] = o
 +        continue
 +      }
@@ -18630,21 +18586,26 @@ Clear's list step changes nothing, since a Clear changes no list; the runner giv
          if (res.error.code === 'owed')
 -          notifyRetry(res.error.message, () => void get().mutate({ op: 'finishOwed' }))
 +          notifyRetry(res.error.message, get().finishOwed)
-         // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
-         else if ((req.op === 'setProperty' || req.op === 'setContext') && res.error.code === 'operation-failed')
-           notifyRetry(res.error.message, () => void get().mutate(req))
-         else reportRefusal(res)
-         return null
-       }
+ …
        if (!quiet) {
          if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
          const { cascade, retry, missed } = res.value
          if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
--          warnCascade(cascade, retry ? () => void get().mutate(retry) : missed ? () => void get().mutate({ op: 'putBack', entries: missed }) : undefined)
-+          warnCascade(
-+            cascade,
-+            cascade.owed ? get().finishOwed : retry ? () => void get().mutate(retry) : missed ? () => void get().mutate({ op: 'putBack', entries: missed }) : undefined,
-+          )
+           warnCascade(
+             cascade,
+-            retry
+-              ? () => void get().mutate(retry)
+-              : missed
+-                ? () => void get().mutate({ op: 'putBack', entries: missed })
+-                : undefined,
++            cascade.owed
++              ? get().finishOwed
++              : retry
++                ? () => void get().mutate(retry)
++                : missed
++                  ? () => void get().mutate({ op: 'putBack', entries: missed })
++                  : undefined,
+           )
 @@ beside `mutate`'s body @@
        if (moves && held && tree)
          set((s) => ({ headings: movedHeadings(s.headings, pagesByIdOf(held), pagesByIdOf(tree)) }))
@@ -18686,7 +18647,7 @@ An owed refusal is the one refusal answered by finishing first: every owed refus
   - `Core/Nexus/mutate.test.ts` › "createContextGroup holds the Contexts lock": a `createContextGroup` sent while a Context rename holds the lock lands after it (H-13).
 - [ ] `Core/Nexus/settle.ts`: `underContexts(root, fn)` moves here from `dispatch`, beside `payOwedWalk`, with its comment; every `mutate.ts` call site passes `root`.
 - [ ] `Core/Contexts/contextCascade.ts`: as the AFTER gives it. `retitleSpace`, `pageLeg`, P10's `titleHolders`, and P10's `cascadeTitle` take the old title, the new one, and whether it's a Space's in place of the record; `titleHolders`, `cascadeTitle`, and `rivalTitled` export for the pass; the ops keep P10's find before the runner; `renameContextOp` and `renameSpaceOp` run through `runNoted` (the refusal, the note, the list step, the sweep, the settle) and answer `MutateReply`; `sweepAgain`, `Unswept`, `unswept`, `settleJournal`, both `from` parameters and branches, and `replayPendingRename` leave.
-- [ ] `Core/Contexts/contextWrite.ts`: `createContextGroup` refuses the owed title its registry edit would land on; `createSpace`'s attempt refuses an owed title.
+- [ ] `Core/Contexts/contextWrite.ts`: `createContextGroup` refuses the owed title its registry edit would land on; `createSpace`'s attempt refuses an owed title; `setSpaceContext`'s self-link refusal leaves (P-6, Nathan's ruling, 10-23-2026), since a Space's picker (`contextOptions.ts`) offers every Space but itself, so no path sends one, and no test pins it.
 - [ ] `Core/Nexus/finishOwed.ts`: the Context and Space rename arms and the Contexts-lock half of the pass.
 - [ ] `Core/Nexus/mutate.ts`: `renamed` and the `Unswept` import leave; the rename arms return `underContexts(root, () => renameContextOp(root, req.contextId, req.newName))` and its Space twin; `createContextGroup` runs under `underContexts`. `Core/Nexus/mutateRequest.ts`: `retry` and the two `from` fields leave. `Core/Session/nexusSlice.ts`: the `retry` half of the `warnCascade` call leaves.
 - [ ] `Core/Nexus/handlers.ts`: P9's Context replay call and the `replayPendingRename` import leave; `finishOwed` is the open's one finishing call.
@@ -18933,6 +18894,10 @@ An owed refusal is the one refusal answered by finishing first: every owed refus
 ```Core/Contexts/contextWrite.ts diff
 @@ imports @@
 +import { OWED, owedName, readNotes } from '../Nexus/owed'
+@@ setSpaceContext @@
+   const world = spaceWorldOf(tree)
+-  if (targetSpaceIds.includes(a.id)) return fault('A Space can’t link itself.')
+   const applied = contextTarget(world.contexts, contextId, targetSpaceIds)
 @@ createContextGroup @@
    const why = nameError(name, 'directory')
    if (why) return fail('invalid-name', why)
@@ -19162,14 +19127,19 @@ A Space entry sweeps the holders already under its Context's current title on ev
 -        const { cascade, retry, missed } = res.value
 +        const { cascade, missed } = res.value
          if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
--          warnCascade(
--            cascade,
--            cascade.owed ? get().finishOwed : retry ? () => void get().mutate(retry) : missed ? () => void get().mutate({ op: 'putBack', entries: missed }) : undefined,
--          )
-+          warnCascade(
-+            cascade,
-+            cascade.owed ? get().finishOwed : missed ? () => void get().mutate({ op: 'putBack', entries: missed }) : undefined,
-+          )
+           warnCascade(
+             cascade,
+             cascade.owed
+               ? get().finishOwed
+-              : retry
+-                ? () => void get().mutate(retry)
+-                : missed
+-                  ? () => void get().mutate({ op: 'putBack', entries: missed })
+-                  : undefined,
++              : missed
++                ? () => void get().mutate({ op: 'putBack', entries: missed })
++                : undefined,
+           )
 ```
 
 ```Core/Paths/exclusion.ts diff
@@ -19237,18 +19207,20 @@ A Space entry sweeps the holders already under its Context's current title on ev
 - **A Live Op Sweeps Its Own Old Name:** an older name still owed to the same item waits for Try Again rather than being swept by a later rename; a delete strips every owed name.
 - **A Context Rename Whose Folder Can't Move or Go Back Offers Try Again:** P9's order answered the relocate's error and left the note for the next open. The runner reads a title that couldn't go back as a list step that landed, so the reply reads "Couldn’t update 1 Item." with Try Again, which moves the folder and rekeys the files. The reason: the registry already names the new title, so the rename has landed in the list and only its folder and files are owed; Try Again finishes it now instead of at the next open. Recommendation: keep.
 - **A Change Waiting on an Owed Rename Says So (B-3):** while a property's rename is owed, an option rename, Value Format, option delete, Clear, or Remove reaches every page already under the new key; while a Context's rename is owed, a Space rename reaches every holder already under the Context's new title. Each reply stays owed, reading “An earlier change hasn’t reached every file yet.” with the one Try Again, where it would otherwise read as done; the rename's Try Again or the next open finishes the rename and then the change, in that order (H-1). The reply adds no count of its own, since the rename's notice already counted the files under the old name.
+- **An Option Delete Drops the Option by Its Id (Halfway Review):** the list step drops the option its note names by id, as every other option op addresses an option, where it matched the option's word; nothing visible changes, since a definition's words are unique.
+- **The Space Self-Link Refusal Leaves (P-6, Nathan's Ruling, 10-23-2026):** "A Space can’t link itself." had no producer, since a Space's picker leaves the Space out; nothing visible changes.
 
 #### Line Total
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 11A-1 | −1 | +181 | +180 |
-| 11A-2 | −275 | +353 | +78 |
-| 11A-3 | −326 | +201 | −125 |
-| **Phase 11A** | **−602** | **+735** | **+133** |
+| 11A-2 | −279 | +352 | +73 |
+| 11A-3 | −327 | +201 | −126 |
+| **Phase 11A** | **−607** | **+734** | **+127** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Task 11A-2 deletes `propertyJournal.ts` and `replaySchemaCascade.ts` whole, and Task 11A-3 `contextJournal.ts`, `journalSlot.ts`, and `replayPendingRename` (63 lines).
-- **Why It Lands Positive:** 11A-1 (+180) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`, with `setAside`'s system Trash, `dropEmpty`, and the damaged notes file's once-only lost-work line (`neverParsed`, `withLost`); 11A-2 (+78) and 11A-3 (−125) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. Clear's move onto the runner, the owed reply of a change under an owed rename, `dropEmpty`, and `setAside`'s system Trash are ruled behavior in their minimal form. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +334, P11 lands +467, the two deletes' list-first orders and the content deletes' and moves' notes included.
+- **Why It Lands Positive:** 11A-1 (+180) is `owed.ts` whole with `runNoted`, `owedName`, `owesRename`, and `restoreNote`, with `setAside`'s system Trash, `dropEmpty`, and the damaged notes file's once-only lost-work line (`neverParsed`, `withLost`); 11A-2 (+73) and 11A-3 (−126) put the property ops and both renames on the runner and delete the journals, and the slice's four lines finish an owed name's work before sending its request again. Clear's move onto the runner, the owed reply of a change under an owed rename, `dropEmpty`, and `setAside`'s system Trash are ruled behavior in their minimal form. The count carries what keeps each item's work its own: the put-back on a refused list step, the settle of only the names a sweep reached, H-16's per-name skips, H-1's hold, and the Context arm's tree re-read. `runNoted` doesn't shorten the ops much, since each op still passes its own note, list step, sweep, and settle; what it removes is the order spelled seven times, and with it seven hand-placed refusals and seven hand-placed holds, which become one `owedName` and one `owesRename`. With Phase 11B's +375, P11 lands +502, the two deletes' list-first orders and the content deletes' and moves' notes included.
 - **Tests:** about −900 removed (`propertyJournal.test.ts` 102, `replaySchemaCascade.test.ts` 713, `contextJournal.test.ts` 20, the slot and consumer cases in `journalWiring.test.ts`, the `OWED` and `from` cases) and about +480 written (`owed.test.ts` with the runner's cases, `finishOwed.test.ts`, and the cases each task names).
 
 ---
@@ -19305,9 +19277,9 @@ An unreadable page the index answers now carries its id and values in `held`, so
 
 #### Task 11B-2
 
-**TASK:** Context and Space deletes finish: each captures its holders up front (leaving out its own folder's files), writes its record once, notes its entry with the bundle, takes its list step and folder move, then strips and reaches the views through the finish's own arm, and a miss leaves the entry owed with Try Again; the pass gains their strip arms, and their restores refuse an owed title and turn `strip` back into `rename`. The undo-and-throw, the Context put-back and unmint, the second record writes, the sweep-time capture, and `goneEdit`'s Context and Space cases leave. A restore puts a tag key a page no longer holds back where its line stood (E-4): the capture records, per page, the key its tag's line stood above, and `landValue` lands a key a root doesn't hold above that key, or last when it's gone.
+**TASK:** Context and Space deletes finish: each captures its holders up front (leaving out its own folder's files), writes its record once, notes its entry with the bundle, takes its list step and folder move, then strips and reaches the views through the finish's own arm, and a miss leaves the entry owed with Try Again; the pass gains their strip arms, and their restores refuse an owed title and turn `strip` back into `rename`. The undo-and-throw, the Context put-back and unmint, the second record writes, the sweep-time capture, and `goneEdit`'s Context and Space cases leave. A restore puts a tag key a page no longer holds back where its line stood (E-4): the capture records, per page, the key its tag's line stood above, read from the page's own key order, and the sweep's merge lands a key a page doesn't hold above that key through `setAbove`, or last when it's gone.
 
-**NOW:** `deleteOp` (`Core/Trash/delete.ts:59-171`, under the Contexts lock and settle turn, `mutate.ts:131-134`) mints the bundle only in Pommora Trash mode (`:79-82`). A Space writes its record, sweeps through `unlinkSpaceValue`, and rewrites its record with what the sweep captured (`:109-115`); a Context writes its evidence, removes its registry entry by id (`:124-130`), sweeps through `unlinkContextKey` with `skipUnder` its own folder, puts the entry back and unmints on a throw (`:131-135`), and rewrites its record (`:137`); the folder moves after the sweep (`:145-146`), and the configuration pass runs last through `goneEdit(before, req.kind, req.path)` (`:87`, `:163`), whose Context case answers `{ kind: 'property', propertyId: <context id> }` and whose Space case answers `{ kind: 'gone', propertyId: <context id>, ids: [<space id>] }` (`Core/Nexus/configReach.ts:299-306`); `deleteOp` is `goneEdit`'s only reader of those two cases (`move.ts:67` passes `'set'`). `unlinkMembers` (`Core/Contexts/contextCascade.ts:166-181`) puts back what it swept through `undoSweep` (`Core/Nexus/governedSweep.ts`, P4's home; its only caller) and throws on any miss; `SweepCapture`, `UnlinkOutcome`, `captureRoot`, and the two capture closures (`:51-57`, `:80-84`, `:134-143`, `:151-163`) feed the records, whose `partial` reads `sweepIncomplete` (`Core/Trash/gather.ts:57-58`); the Context sweep's `skipUnder` keeps the Context's own Spaces out of both the strip and the capture. After P10 the sweeps take their candidates from `findHolders`. Since Task 11A-2, `confirmDelete` offers `finishOwed` whenever a delete's reply is owed, and the slice skips `warnCascade` for `op: 'delete'` (`nexusSlice.ts:255`). `restoreTrashed` (`Core/Trash/spend.ts`) re-enters a Context's registry entry before the move and reverses it when the move fails, and moves a Space back with no registry step; `placeRecord` lands a Space only under the live Context its record's `parent` names (`Core/Bundles/placement.ts:58-75`), refusing otherwise. `joinCascades` (`Core/Nexus/cascade.ts:69-78`) joins `pages`, `hosts`, and `warning`. A restore's re-tag runs through `reapply` (`spend.ts`), whose `landValue` (`Core/Files/rootValues.ts`) puts a key the root doesn't hold last, so a page whose only tag left with the delete gets its line back at the bottom of its front matter; since the E-4 ruling's undo half (`974e60755`), `aboveOf` reads the key a line stands above and `mergeInto` lands a new key above the first key after it in the root it's handed that the page holds.
+**NOW:** `deleteOp` (`Core/Trash/delete.ts:59-171`, under the Contexts lock and settle turn, `mutate.ts:131-134`) mints the bundle only in Pommora Trash mode (`:79-82`). A Space writes its record, sweeps through `unlinkSpaceValue`, and rewrites its record with what the sweep captured (`:109-115`); a Context writes its evidence, removes its registry entry by id (`:124-130`), sweeps through `unlinkContextKey` with `skipUnder` its own folder, puts the entry back and unmints on a throw (`:131-135`), and rewrites its record (`:137`); the folder moves after the sweep (`:145-146`), and the configuration pass runs last through `goneEdit(before, req.kind, req.path)` (`:87`, `:163`), whose Context case answers `{ kind: 'property', propertyId: <context id> }` and whose Space case answers `{ kind: 'gone', propertyId: <context id>, ids: [<space id>] }` (`Core/Nexus/configReach.ts:299-306`); `deleteOp` is `goneEdit`'s only reader of those two cases (`move.ts:67` passes `'set'`). `unlinkMembers` (`Core/Contexts/contextCascade.ts:166-181`) puts back what it swept through `undoSweep` (`Core/Nexus/governedSweep.ts`, P4's home; its only caller) and throws on any miss; `SweepCapture`, `UnlinkOutcome`, `captureRoot`, and the two capture closures (`:51-57`, `:80-84`, `:134-143`, `:151-163`) feed the records, whose `partial` reads `sweepIncomplete` (`Core/Trash/gather.ts:57-58`); the Context sweep's `skipUnder` keeps the Context's own Spaces out of both the strip and the capture. After P10 the sweeps take their candidates from `findHolders`. Since Task 11A-2, `confirmDelete` offers `finishOwed` whenever a delete's reply is owed, and the slice skips `warnCascade` for `op: 'delete'` (`nexusSlice.ts:255`). `restoreTrashed` (`Core/Trash/spend.ts`) re-enters a Context's registry entry before the move and reverses it when the move fails, and moves a Space back with no registry step; `placeRecord` lands a Space only under the live Context its record's `parent` names (`Core/Bundles/placement.ts:58-75`), refusing otherwise. `joinCascades` (`Core/Nexus/cascade.ts:69-78`) joins `pages`, `hosts`, and `warning`. A restore's re-tag runs through `reapply` (`spend.ts`), whose sweep merges each page's root through `mergeInto` (`Core/Files/pageFile.ts`), which lands a key the page doesn't hold last, so a page whose only tag left with the delete gets its line back at the bottom of its front matter. Since the E-4 ruling's undo half (`974e60755`, `83e987022`), `SweptPage.above` reads the key a line stands above from the YAML document's own key order, which a JSON root loses for a number-like key, and `setAbove` lands a key above it for the undo's `withPair`; `mergeInto` passes it no place.
 
 **CHANGE**
 
@@ -19327,9 +19299,9 @@ An unreadable page the index answers now carries its id and values in `held`, so
 - [ ] `Core/Nexus/configReach.ts`: `goneEdit`'s Context and Space cases leave, since the arms reach the views by id.
 - [ ] `Core/Nexus/finishOwed.ts`: the Context and Space strip arms, with their list step, folder move, and view reach; `deps` is read here.
 - [ ] `Core/Trash/spend.ts`: the owed-title refusal before a Context's registry re-entry or a Space's move, and `restoreNote` after the move; a conversion that can't land refuses with the bundle unspent (H-4's crash reading).
-- [ ] E-4's restore half for tags: `landValue` takes `above`, `sweepRootsById` hands its rewrite each root's id, `Held` carries `above` (read only from a page's own file, since the index's rows don't keep the file's key order, and never from a Space sidecar, whose keys `stableStringify` sorts), `memberRoot` records it, `rootsOf` files it, and `reapply` lands each tag through it, as the AFTER gives them.
+- [ ] E-4's restore half for tags, one landing rule for every restore at the point every sweep's page write passes through: `mergeInto` takes a `Place`, the key each key the page doesn't hold lands above, and hands it to `setAbove`; `SweptPage.merge` and `rewriteRaw` carry it; `SweepPlan` gains `above`, which the sweep asks for each page's place; and `sweepRootsById` takes each root's `above` by id. `Held` carries `above`, read through `SweptPage.above` in the one parse its values already take (never from the index's rows, which don't keep the file's key order, nor from a Space sidecar, whose keys `stableStringify` sorts); `memberRoot` records it, `rootsOf` files it, and `reapply` hands it to `sweepRootsById`, as the AFTER gives them. `landValue` places nothing, since a JSON root's key order reaches no page.
 - [ ] Tests: `contextCascade.test.ts`'s undo-and-throw cases ("a refused delete puts back…") and `deleteOrder.test.ts`'s put-back and unmint cases leave with the behavior; the record cases in `deleteReach.test.ts` and `Core/Trash/gather.test.ts` read the up-front capture; `Core/Nexus/configReach.test.ts`' `goneEdit` Context and Space cases leave.
-- [ ] Run the gates, then commit: `git commit --only -- Core/Trash/delete.ts Core/Trash/gather.ts Core/Trash/spend.ts Core/Contexts/contextCascade.ts Core/Nexus/governedSweep.ts Core/Files/rootValues.ts Core/Index/keyHolders.ts Core/Bundles/record.ts Core/Nexus/finishOwed.ts Core/Nexus/cascade.ts Core/Nexus/configReach.ts Core/Trash/deleteReach.test.ts Core/Trash/deleteOrder.test.ts Core/Trash/spend.test.ts Core/Trash/gather.test.ts Core/Contexts/contextCascade.test.ts Core/Nexus/finishOwed.test.ts Core/Nexus/configReach.test.ts -m "Context and Space deletes capture up front, finish what they can, and owe the rest, and their restores put each tag back where it stood."`
+- [ ] Run the gates, then commit: `git commit --only -- Core/Trash/delete.ts Core/Trash/gather.ts Core/Trash/spend.ts Core/Contexts/contextCascade.ts Core/Nexus/governedSweep.ts Core/Files/pageFile.ts Core/Nexus/governedRoot.ts Core/Index/keyHolders.ts Core/Bundles/record.ts Core/Nexus/finishOwed.ts Core/Nexus/cascade.ts Core/Nexus/configReach.ts Core/Trash/deleteReach.test.ts Core/Trash/deleteOrder.test.ts Core/Trash/spend.test.ts Core/Trash/gather.test.ts Core/Contexts/contextCascade.test.ts Core/Nexus/finishOwed.test.ts Core/Nexus/configReach.test.ts -m "Context and Space deletes capture up front, finish what they can, and owe the rest, and their restores put each tag back where it stood."`
 
 **AFTER**
 
@@ -19438,6 +19410,20 @@ An unreadable page the index answers now carries its id and values in `held`, so
 @@ imports @@
 -import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
 +import { type Frozen, reencode, rewriteRaw } from './governedRoot'
++import type { Place } from '../Files/pageFile'
+@@ SweepPlan @@
+-/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place. */
+-export type SweepPlan = { raw: Rewrite; text?: RewriteText }
++/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place; `above`, when given, places each key a page's rewrite adds. */
++export type SweepPlan = {
++  raw: Rewrite
++  text?: RewriteText
++  above?: (raw: Json, file: string) => Place
++}
+@@ rewritten @@
+-  return plan.text ? plan.text(content, file) : rewriteRaw((raw) => plan.raw(raw, file))(page)
++  if (plan.text) return plan.text(content, file)
++  return rewriteRaw((raw) => plan.raw(raw, file), plan.above?.(page.raw, file))(page)
 @@ undoSweep, keysPutBack @@
    return (await sweepGovernedRoots(shown, plan, true)).touched.size
  }
@@ -19447,51 +19433,94 @@ An unreadable page the index answers now carries its id and values in `held`, so
 -
 -function keysPutBack(file: string, now: string, before: string, after: string): string | null { … }   (HEAD Core/Properties/governedSweep.ts:163-182)
 -
- /** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
+-/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
++/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
 @@ sweepRootsById @@
--  rewrite: (raw: Json, value: T) => Json | null,
-+  rewrite: (raw: Json, value: T, id: string) => Json | null,
+   values: Record<string, T>,
++  above: Record<string, string | undefined>,
+   rewrite: (raw: Json, value: T) => Json | null,
+ ): Promise<Set<string>> {
  …
--      const next = rewrite(raw, values[id])
-+      const next = rewrite(raw, values[id], id)
+       return next
+     },
++    above: (raw, file) => () => above[rootId(file, raw) ?? ''],
+   })
 ```
 
-(`keysPutBack` was the file's last reader of `changedKeys` and `governedRoot`; `rewriteRaw`, `sweepParse`, `parseJsonObject`, `jsonText`, `isMarkdownFile`, `readTextOrNull`, and `rewritePreservingTimes` keep other readers. The rewrite takes the root's id, so a restore lands each root's key where that root's line stood.)
+(`keysPutBack` was the file's last reader of `changedKeys` and `governedRoot`; `rewriteRaw`, `sweepParse`, `parseJsonObject`, `jsonText`, `isMarkdownFile`, `readTextOrNull`, and `rewritePreservingTimes` keep other readers. A by-id sweep's rewrite adds one key, so the place it hands each page names that root's recorded key whichever key asks.)
 
-```Core/Files/rootValues.ts diff
-@@ landValue @@
--/** `root` with `value` under `key`, in its place when the root holds it; `undefined` drops the key. */
--export function landValue(root: Json, key: string, value: unknown): Json {
-+/** `root` with `value` under `key`: in its place when the root holds it, else above the key `above` names when the root holds that key, else last; `undefined` drops the key. */
-+export function landValue(root: Json, key: string, value: unknown, above?: string): Json {
-+  if (value !== undefined && !Object.hasOwn(root, key) && above && Object.hasOwn(root, above))
-+    return Object.fromEntries(
-+      Object.entries(root).flatMap((e) => (e[0] === above ? [[key, value], e] : [e])),
-+    )
-   const next = { ...root }
+```Core/Files/pageFile.ts diff
+@@ mergeInto @@
+-/** Lands each of `modeledKeys` as `modeled` holds it through `setAbove`, which drops one it holds blank or nothing for; a key the block doesn't hold lands last. */
++/** The key a key the block doesn't hold lands above; undefined lands it last. */
++export type Place = (key: string) => string | undefined
++
++/** Lands each of `modeledKeys` as `modeled` holds it through `setAbove`, which drops one it holds blank or nothing for; a key the block doesn't hold lands where `above` places it, and last without one. */
+ function mergeInto(
+   doc: Document,
+   modeled: Record<string, unknown>,
+   modeledKeys: readonly string[],
++  above?: Place,
+ ): string {
+ …
+-      setAbove(doc, key, nodeSpelledAs(doc, modeled[key] ?? null, [doc.get(key, true)]))
++      const node = nodeSpelledAs(doc, modeled[key] ?? null, [doc.get(key, true)])
++      setAbove(doc, key, node, above?.(key))
+@@ SweptPage @@
+-  merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
++  merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[], above?: Place) => string
+@@ sweepParse @@
+-    merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body),
++    merge: (modeled, keys, above) => envelope(fenced, mergeInto(doc, modeled, keys, above), body),
+```
+
+```Core/Nexus/governedRoot.ts diff
+@@ imports @@
+ import {
++  type Place,
+   splitFrontmatter,
+@@ rewriteRaw @@
+-/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing last; null when it changes none. A changed key the next root holds no value for is deleted. */
++/** A page's next text with the keys `rewrite` changes merged in, a key it adds landing where `above` places it, and last without one; null when it changes none. A changed key the next root holds no value for is deleted. */
+ export const rewriteRaw =
+-  (rewrite: (raw: Json) => Json | null) =>
++  (rewrite: (raw: Json) => Json | null, above?: Place) =>
+   (page: SweptPage): string | null => {
+ …
+-    return page.merge(next, keys)
++    return page.merge(next, keys, above)
+   }
 ```
 
 ```Core/Index/keyHolders.ts diff
 @@ imports @@
-+import { aboveOf } from '../Files/rootValues'
+-import { splitFrontmatter } from '../Files/pageFile'
++import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 @@ Held @@
 -/** A holder a finder read: the id `byId` addresses it by, the query keys it holds, and their values as written, or null when it couldn't be read. */
 -export type Held = { file: string; id: string | null; keys: string[]; values: Json | null }
-+/** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, as `aboveOf` reads it. */
++/** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, in the page's own key order. */
 +export type Held = {
 +  file: string
 +  id: string | null
 +  keys: string[]
 +  values: Json | null
-+  above: Record<string, string>
++  above: Record<string, string | undefined>
 +}
 @@ findHolders' read @@
+     const text = await readTextOrNull(file)
++    const page = text !== null && isMarkdownFile(file) ? sweepParse(text) : null
+     const rel = relative(root, file)
+ …
+-          ? splitFrontmatter(text)
++          ? (page?.raw ?? splitFrontmatter(text))
+ …
        values: raw && Object.fromEntries(keys.map((k) => [k, raw[k]])),
-+      above: raw && text !== null && isMarkdownFile(file) ? aboveOf(raw, keys) : {},
++      above: Object.fromEntries(keys.map((k) => [k, page?.above(k)])),
      })
 ```
 
-The index's rows don't keep a page's key order, and a Space sidecar's keys are sorted on every write, so `above` is read only from a page's own file.
+The index's rows don't keep a page's key order, and a Space sidecar's keys are sorted on every write, so `above` is read only from a page's own file, in the parse that already reads its values; a page the sweep can't round-trip still answers its values and, since no sweep writes it, no place.
 
 ```Core/Bundles/record.ts diff
 @@ memberRoot @@
@@ -19865,9 +19894,8 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 +  above: Record<string, string | undefined>,
  ): Promise<string[]> {
 -  const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
--    landValue(raw, key, joinValues(raw[key], titles)),
-+  const taken = await sweepRootsById(root, roots, additions, (raw, titles, id) =>
-+    landValue(raw, key, joinValues(raw[key], titles), above[id]),
++  const taken = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
+     landValue(raw, key, joinValues(raw[key], titles)),
    )
 ```
 
@@ -19875,7 +19903,7 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 
 - [ ] `git grep -nw "SweepCapture\|UnlinkOutcome\|captureRoot\|undoSweep\|keysPutBack\|sweepIncomplete\|unmint" -- Core` answers nothing, and `git grep -nF "withContextAt(entry, at)" -- Core/Trash/delete.ts` answers nothing.
 - [ ] `git grep -n "gatherSpaceRecord(\|buildContextRecord(" -- Core ':!*.test.*'` answers one call each in `delete.ts` (the second record writes gone) beside the declarations in `gather.ts`.
-- [ ] `git grep -n "aboveOf(" -- Core ':!*.test.*'` answers its declaration, `writeGovernedKey`, and `findHolders`; `git grep -n "reapply(" -- Core/Trash/spend.ts` shows both re-tags passing `above`.
+- [ ] `git grep -n "\.above(" -- Core ':!*.test.*'` answers `writeGovernedKey` and `findHolders`; `git grep -n "above?\.(" -- Core ':!*.test.*'` answers `mergeInto` and `rewritten`; `git grep -n "reapply(" -- Core/Trash/spend.ts` shows both re-tags passing `above`.
 - [ ] `git grep -n "case 'context'\|case 'space'" -- Core/Nexus/configReach.ts` shows `goneEdit`'s two cases returning `null`; `git grep -n "() => noted.value\|() => prior.value" -- Core ':!*.test.*'` answers `runNoted`'s put-back and `deleteOp`'s Context branch alone.
 - [ ] The tests named in CHANGE pass, each having failed first; every test file in the commit and `trashRecovery.test.ts` green.
 - [ ] `npm run typecheck`, `npm run test`, `npm run lint` clean; `npm run test -- engineGraph hostGraph` passes.
@@ -19905,7 +19933,7 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
   - `Core/Properties/registryProperty.test.ts` › "a rename owes a page it can't rewrite": a holder whose front matter can't round-trip; the rename's reply is owed, the entry keeps `rename`, and once the page parses `finishOwed` renames it and clears the entry. The same case in `optionOps.test.ts` for an option rename and in `contextCascade.test.ts` for a Context rename.
 - [ ] `Core/Properties/unassignProperty.ts`: as the AFTER gives it; HEAD's one-write comment (`removeProperty.ts:46`), which P7 keeps, loses its cache clause where the stash leaves that write, the clause moving onto `stashAndStrip`'s doc.
 - [ ] `Core/Nexus/finishOwed.ts`: the `collections` arm, after the options, its part held whole while the rename is owed.
-- [ ] `Core/Nexus/governedSweep.ts`: `sweepGovernedRoots` files a root that can't round-trip under `skipped` as well as `refused`, so `refused` is the part of `skipped` only a fix by hand reaches, `unwritten` leaves, and every reader counts `skipped` alone: `restoreScrub.ts` (two), `trashedCopies.ts`, `spend.ts`, and `exclusionScan.ts`, whose `ClearReport.refused`, which no surface reads, leaves with it, so an exclusion clear that can't rewrite a page answers the same "Couldn’t update N Items." as one it can't read.
+- [ ] `Core/Nexus/governedSweep.ts`: `sweepGovernedRoots` files a root that can't round-trip under `skipped` as well as `refused`, so `refused` is the part of `skipped` only a fix by hand reaches, and every reader counts `skipped` alone, so a restore's scrub, repair, trashed-copy refill, and Context re-key report a file they can't round-trip as one they can't read (G-4), and `exclusionScan.ts`, whose `ClearReport.refused`, which no surface reads, leaves with it, so an exclusion clear that can't rewrite a page answers the same "Couldn’t update N Items." as one it can't read.
 - [ ] `Core/Nexus/configReach.ts`: `ConfigReach.refused` counts those files and `sweptReach` reads both counts from a sweep; `renameSweep`, `optionCascade`, `cascadeTitle`, `unlinkMembers` with its two callers, and `stashAndStrip` answer a `ConfigReach`, and Task 11B-4's `stripProperty` carries the count. `finishOwed.ts`: `add` sums it, `sweepEach` reads its arms through `add`, and `finishEntry` marks an entry `refused` when every file it still owes is refused. `owed.ts`: `owedName` passes over a marked entry, and `runNoted`'s note drops the mark.
 - [ ] `Core/Index/keyHolders.ts`: `unaddressed(held)` counts the holders a values read leaves out because no id addresses them; `stashAndStrip` reads it here and `stripProperty` in Task 11B-4.
 - [ ] `Core/Settings/frames.ts`: Clear Exclusion Cache's skip offers Try Again, which sends `exclusions:clear` again without asking, as the AFTER gives it; `ExclusionRows.test.tsx` › "a clear that skipped a page offers Try Again, which clears again without asking" (the dialer answers `fault('Couldn’t update 1 Item.')`, then `ok`; the notice reads that line with `Try Again`, whose run sends `exclusions:clear` once more and asks nothing) is written first and watched failing.
@@ -20039,39 +20067,6 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
          out.refused.push(file)
          return
        }
-@@ unwritten @@
--/** Every file a sweep left as it was, skipped or refused alike: a restore reports both, since nothing retries it. */
--export const unwritten = ({ skipped, refused }: SweepResult): string[] => [...skipped, ...refused]
-```
-
-```Core/Trash/restoreScrub.ts diff
-@@ imports @@
--import { type Rewrite, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
-+import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
-@@ scrubReturning @@
--  return { dropped, unswept: unwritten(swept) }
-+  return { dropped, unswept: swept.skipped }
-@@ repairLanded @@
--  return unwritten(await sweepGovernedRoots(files, { text, raw: spaceMoved }))
-+  return (await sweepGovernedRoots(files, { text, raw: spaceMoved })).skipped
-```
-
-```Core/Trash/trashedCopies.ts diff
-@@ imports @@
--import { refillOf, rootId, sweepGovernedRoots, unwritten } from '../Nexus/governedSweep'
-+import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
-@@ refillTrashed @@
--  return unwritten(swept)
-+  return swept.skipped
-```
-
-```Core/Trash/spend.ts diff
-@@ imports @@
--import { refillValues, sweepGovernedRoots, sweepRootsById, unwritten } from '../Nexus/governedSweep'
-+import { refillValues, sweepGovernedRoots, sweepRootsById } from '../Nexus/governedSweep'
-@@ the Context re-key @@
--      unswept.push(...unwritten(rekeyed))
-+      unswept.push(...rekeyed.skipped)
 ```
 
 ```Core/Settings/exclusionScan.ts diff
@@ -20262,7 +20257,7 @@ A Context's strip runs the views on every finish while its delete is owed, so a 
 
 A sweep counts a root it can't round-trip among `skipped` and again in `refused`, so every arm's count owes it and `sweptReach` carries the second count up through `ConfigReach`. `finishEntry` marks an entry whose every miss was refused; the slice's finish before re-sending an owed-name refusal is what reads the mark fresh, so a create or rename onto a name only such pages still hold lands on its second send.
 
-A rename sweeps by key and never reads a value it would need to put back, so its finder keeps an ID-less page among its files and rewrites it; only a values read, the strip that stashes or files in the Trash, leaves one out, so `unaddressed` is read where those strips count. With a root that can't round-trip counted as skipped, every arm's `skipped.length` already counts it: `renameSweep`, `optionCascade`, `stripProperty`, `cascadeTitle`, `unlinkMembers`, and the restores, which reported both through `unwritten`.
+A rename sweeps by key and never reads a value it would need to put back, so its finder keeps an ID-less page among its files and rewrites it; only a values read, the strip that stashes or files in the Trash, leaves one out, so `unaddressed` is read where those strips count. With a root that can't round-trip counted as skipped, every arm's `skipped.length` already counts it: `renameSweep`, `optionCascade`, `stripProperty`, `cascadeTitle`, `unlinkMembers`, and the restores, which counted only an unreadable file.
 
 `NOTHING_TO_REMOVE` (P7's `ok({})`) and `reachReport`'s import leave, since nothing else here reads them. `pages` already leaves out a holder no id addresses (P10), which keeps its value and is counted; an unreadable one stays in `pages` and is counted as the sweep's miss. The stash lands in its own locked write after the assignment's; a crash between the two leaves the Collection noted, and the finish runs the same `stashAndStrip`.
 
@@ -20360,11 +20355,12 @@ The `collections` part sweeps while the property's rename is owed and stays whol
   - `Core/Trash/spend.test.ts` › "emptying the Trash owes a linker it couldn't strip": one linker `chmod 000`; the reply is owed, and `finishOwed` strips and parks the value once the mode is restored.
   - `Core/Nexus/move.test.ts` (new) › "a Set move that misses a view settings file owes it": the Collection the Set left holds a view `chmod 000`; the reply is owed, and `finishOwed` drops the Set's rule once it reads.
   - `Core/Nexus/settle.test.ts` › "a page move that misses a linker owes the re-spell": one linker `chmod 000`; the reply's `cascade.owed` is `true`, the entry is the page's `relink`, and `finishOwed` re-spells the linker once it reads; "a second move carries what the first missed": move the page again before the finish, and the finish re-spells the missed linker to the second path; "a restore's re-spell owes what it missed": a restore whose live linker is unreadable answers owed, and `finishOwed` re-spells it; "a restore's repair of its own files owes what it missed": a restored page holding a link under its old key, `chmod 000` once it lands, answers owed with the relink entry keyed by its landed path and carrying `files`, and `finishOwed` re-spells it once the mode is restored and clears the entry; "a landed file gone before the finish leaves the repair's entry": the same miss, the page then deleted, and `finishOwed` clears the entry; "a Context restored under a new title owes the re-key a Space sidecar missed": a Context restored as `Areas (2)` whose Space's sidecar is `chmod 000` answers owed with the entry's `rekey` reading `['Areas', 'Areas (2)']`, and `finishOwed` re-keys the sidecar once the mode is restored and clears the entry.
-  - `Core/Trash/restoreScrub.test.ts` › P10's "a returning page the scrub can’t write still restores, and warns" becomes "a returning page the scrub can’t write owes what it worked out": with `trashWrites.fail`, the restore answers ok with `cascade.owed` `true` and the warning `Couldn’t update 1 Item.`; the entry keyed `Notes/Alpha.md` carries `values: { 'Notes/Alpha.md': { '<Projects>': { from: ['Pommora', 'Sapphire'], to: ['Pommora'] } } }`, and `finishOwed` leaves `<Projects>` reading `[Pommora]` on the landed page and clears the entry. "an edit made after the restore keeps it through Try Again": the same miss, then the landed page's `<Projects>` rewritten to `[Sapphire]`; `finishOwed` leaves `[Sapphire]` and clears the entry. "a trashed copy the restore's refill couldn't write owes its value": with Restore Links on Deletion on, `Beta` links `Alpha` through `Related`, `Alpha` is deleted and then `Beta`; with `trashWrites.fail`, restoring `Alpha` answers owed, the entry keyed `Notes/Alpha.md` carries Beta's trashed copy's path with `{ Related: { to: <its recorded value> } }`, and once writes succeed `finishOwed` lands the value in the copy and clears the entry; with the copy also linking `Gamma` through `Related`, the entry's `from` reads `[Gamma]` and the finish lands both links.
+  - `Core/Trash/restoreScrub.test.ts`, new, `it.skipIf(noModeBits)`: "a restore whose returning Space sidecar can't be read still restores, and warns" — delete the Projects Context with Pommora's sidecar holding `<Projects>: [Sapphire]`, set the trashed copy of `Pommora/_space.json` to mode `0o000`, restore: the reply is ok, the bundle is gone, and `cascade.warning` contains `Couldn’t update values in “Projects” across 1 Item.`; the mode is restored in `finally`.
+  - `Core/Trash/restoreScrub.test.ts` › HEAD's `:165` "a returning page the scrub can’t write refuses the restore and keeps the bundle" becomes "a returning page the scrub can’t write owes what it worked out": with `trashWrites.fail`, the restore answers ok with `cascade.owed` `true` and the warning `Couldn’t update 1 Item.`; the entry keyed `Notes/Alpha.md` carries `values: { 'Notes/Alpha.md': { '<Projects>': { from: ['Pommora', 'Sapphire'], to: ['Pommora'] } } }`, and `finishOwed` leaves `<Projects>` reading `[Pommora]` on the landed page and clears the entry. "an edit made after the restore keeps it through Try Again": the same miss, then the landed page's `<Projects>` rewritten to `[Sapphire]`; `finishOwed` leaves `[Sapphire]` and clears the entry. "a trashed copy the restore's refill couldn't write owes its value": with Restore Links on Deletion on, `Beta` links `Alpha` through `Related`, `Alpha` is deleted and then `Beta`; with `trashWrites.fail`, restoring `Alpha` answers owed, the entry keyed `Notes/Alpha.md` carries Beta's trashed copy's path with `{ Related: { to: <its recorded value> } }`, and once writes succeed `finishOwed` lands the value in the copy and clears the entry; with the copy also linking `Gamma` through `Related`, the entry's `from` reads `[Gamma]` and the finish lands both links.
   - `Core/Trash/spend.test.ts` › "a Link key a delete stripped comes back where it stood" (E-4): with Restore Links on Deletion on, `Beta` reads `---\nID: <id>\nNote: a\nRelated: '[[Alpha]]'\nZed: z\n---\nb\n`; deleting `Alpha` strips `Related`, and restoring it leaves `Beta` byte for byte as it was; with `Zed` removed from `Beta` between the delete and the restore, `Related` lands last. "a stripped Link key comes back where it stood in a Trash copy": the same `Beta` trashed after the delete, and the restore of `Alpha` lands `Related` above `Zed` in Beta's Trash copy.
   - `Core/Nexus/owed.test.ts` › "a restore's repair follows a later move without taking its keys": `relinkNote({ kind: 'relink', label: 'A', names: { a: 'B' }, files: ['X/A.md'] }, new Map([['b', 'C']]))` → `{ kind: 'relink', label: 'A', names: { a: 'C' }, files: ['X/A.md'] }`.
 - [ ] `Core/Nexus/owed.ts`, `Core/Nexus/configReach.ts`, `Core/Nexus/cascade.ts`, `Core/Nexus/finishOwed.ts`, `Core/Nexus/settle.ts`, `Core/Trash/restoreScrub.ts`, `Core/Trash/trashedCopies.ts`, `Core/Archive/archive.ts`, `Core/Trash/delete.ts`, `Core/Trash/spend.ts`, and `Core/Nexus/move.ts`: as the AFTER gives them.
-- [ ] E-4's restore half for a stripped Link key: `StrippedLink` and its record schema carry `above`, read from the page's own file at the strip; `refillOf` and `refillValues` take it (their first consumer, so Tasks 12-4 and 12-5 only pass theirs), and the restore's Link refill and `refillTrashed` pass each link's.
+- [ ] E-4's restore half for a stripped Link key: `StrippedLink` and its record schema carry `above`, read through `SweptPage.above` from the page's own text at the strip, and at the scrub for a Link value it parks from a returning page; `refillValues` takes it by ID and hands it to `sweepRootsById` (its first consumer, so Tasks 12-4 and 12-5 only pass theirs), and `refillTrashed`'s sweep places each link's key through the plan's `above`, so every refill lands through Task 11B-2's one place at the merge.
 - [ ] Tests: `deleteReach.test.ts`' and `deleteOrder.test.ts`' cases asserting the write-ahead `partial` on a clean delete, and the warning "Couldn’t update links in N Items.", read the owed reply's "Couldn’t update N Items." and a record without `partial`; `cascade.test.ts`' `deleteCascade` cases read `reach` where they read `cascade`.
 - [ ] Run the gates, then commit: `git commit --only -- Core/Nexus/owed.ts Core/Nexus/owed.test.ts Core/Nexus/configReach.ts Core/Nexus/cascade.ts Core/Nexus/cascade.test.ts Core/Nexus/finishOwed.ts Core/Nexus/settle.ts Core/Nexus/settle.test.ts Core/Trash/restoreScrub.ts Core/Trash/restoreScrub.test.ts Core/Trash/trashedCopies.ts Core/Archive/archive.ts Core/Nexus/move.ts Core/Nexus/move.test.ts Core/Trash/delete.ts Core/Trash/spend.ts Core/Bundles/record.ts Core/Nexus/governedSweep.ts Core/Trash/deleteReach.test.ts Core/Trash/deleteOrder.test.ts Core/Trash/spend.test.ts -m "Content deletes, Trash emptying, moves, and restores note their links and views and owe what they miss with Try Again, and a restored Link key lands where it stood."`
 
@@ -20476,32 +20472,33 @@ The `collections` part sweeps while the property's rename is owed and stays whol
 +import { rekeyContext } from '../Contexts/contextCascade'
 +import { type ConfigReach, reachReport } from './configReach'
 +import { type Entry, type RelinkEntry, runNoted, type Worked } from './owed'
++import type { z } from 'zod'
++import type { strippedLink } from '../Bundles/record'
 @@ the result import @@
 -import { errText } from '../Contract/result'
 +import { errText, ok } from '../Contract/result'
-+import { isBlankRaw } from '../Properties/propertyValue'
 @@ the stableJson import @@
 -import type { Json } from '../Files/stableJson'
 +import { type Json, same } from '../Files/stableJson'
 @@ the rootValues import @@
 -import { stripKeys } from '../Files/rootValues'
-+import { aboveOf, stripKeys } from '../Files/rootValues'
++import { isBlankRaw, stripKeys } from '../Files/rootValues'
+@@ the pageFile import @@
+-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
++import { splitEnvelope, mergeFrontmatter, splitFrontmatter, sweepParse } from '../Files/pageFile'
 @@ StrippedLink @@
-   property: string
-   value: string
-+  above?: string
- }
+-export interface StrippedLink {
+-  page: string
+-  property: string
+-  value: string
+-}
++export type StrippedLink = z.infer<typeof strippedLink>
 @@ withUnswept @@
--/** `cascade` joined with the line counting the files in “title” whose links, or values, couldn't be written. */
+-/** `cascade` joined with the line counting the files in “title” whose links couldn't be written. */
 +/** `cascade` joined with the line counting the files in “title” whose values a restore couldn't reconcile. */
  export function withUnswept(
-   cascade: CascadeReport | undefined,
-   title: string,
-   unswept: readonly string[],
--  what: 'links' | 'values' = 'links',
- ): CascadeReport | undefined {
 ~
--    warning: unsweptLine(unswept.length, `${what} in “${title}” across `),
+-    warning: unsweptLine(unswept.length, `links in “${title}” across `),
 +    warning: unsweptLine(unswept.length, `values in “${title}” across `),
 @@ DeleteCascade @@
  interface DeleteCascade {
@@ -20513,11 +20510,15 @@ The `collections` part sweeps while the property's rename is owed and stays whol
 -const NO_STRIP: DeleteCascade = { cascade: { pages: [], hosts: [] }, links: [] }
 +const NO_STRIP: DeleteCascade = { reach: { skipped: 0, hosts: [] }, links: [] }
 @@ deleteCascade's links @@
+     for (const [file, { before }] of swept.touched) {
+-      const raw = governedRoot(file, before)
++      const page = isMarkdownFile(file) ? sweepParse(before) : null
++      const raw = page?.raw ?? governedRoot(file, before)
+       const id = rootId(file, raw)
        if (!id) continue
 -      for (const { def, value } of named(raw)) links.push({ page: id, property: def.id, value })
-+      const above = isMarkdownFile(file) ? aboveOf(raw, Object.keys(raw)) : {}
 +      for (const { def, key, value } of named(raw))
-+        links.push({ page: id, property: def.id, value, above: above[key] })
++        links.push({ page: id, property: def.id, value, above: page?.above(key) })
 @@ deleteCascade's answer @@
      const unswept = swept.skipped.length + heldOut
      return {
@@ -20615,7 +20616,7 @@ The `collections` part sweeps while the property's rename is owed and stays whol
 -import type { CascadeReport } from './cascade'
 +import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } from './cascade'
 +import { patchRecord } from '../Bundles/record'
-+import { parkLinks } from '../Trash/holdings'
++import { parkLinks } from '../Trash/trashedCopies'
 +import { findContainerById } from './treePatch'
 @@ the settle import @@
 -import { underContexts } from './settle'
@@ -20729,15 +20730,40 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +import { type CascadeReport, noteRelink, type StrippedLink } from '../Nexus/cascade'
 +import { type Worked, workedOut } from '../Nexus/owed'
 @@
--import { basename, join } from '../Paths/posix'
+-import { basename, isMarkdownFile, join } from '../Paths/posix'
 +import { basename, join, relative } from '../Paths/posix'
+@@ the entities import @@
+-import { unsweptLine } from '../Nexus/entities'
+@@ the pageFile import @@
+   splitFrontmatter,
++  sweepParse,
++  type Place,
+ } from '../Files/pageFile'
 @@ scrubReturning @@
--/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds, and the files it couldn't reconcile, which the restore reports. */
+-/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 +/** Reconciles the returning pages against `schema`, the definitions their destination assigns, and answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds; what it worked out for each file it couldn't write, by the file's place in the artifact, which the restore owes; and the files it couldn't read or can't round-trip, which the restore reports. */
  export async function scrubReturning(
 ~
--): Promise<{ dropped: StrippedLink[]; unswept: string[] }> {
+-): Promise<StrippedLink[]> {
 +): Promise<{ dropped: StrippedLink[]; worked: Worked; unread: string[] }> {
+@@ scrubReturning's note @@
+-  const note = (gone: Record<string, string>, id: string | undefined): void => {
++  const note = (gone: Record<string, string>, id: string | undefined, above?: Place): void => {
+     for (const [key, value] of Object.entries(gone)) {
+       const def = links.get(key)
+-      if (def && id) dropped.push({ page: id, property: def.id, value })
++      if (def && id) dropped.push({ page: id, property: def.id, value, above: above?.(key) })
+     }
+   }
+@@ scrubReturning's text @@
+-  const unstamped = new Map<string, Record<string, string>>()
++  const unstamped = new Map<string, [Record<string, string>, Place | undefined]>()
+ …
+-    if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, gone)
+-    else note(gone, asString(raw[ID_KEY]))
++    const above = goneKeys.length ? sweepParse(content)?.above : undefined
++    if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, [gone, above])
++    else note(gone, asString(raw[ID_KEY]), above)
 @@ scrubReturning's sweep @@
 +  const seen = new Map<string, [Json, Json]>()
    const swept = await sweepGovernedRoots(await artifactFiles(root, entity, absArtifact), {
@@ -20754,9 +20780,14 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +      return next
 +    },
    })
+-  // A page the scrub couldn't write refuses the restore; a Space it couldn't write goes unreported.
+-  const missed = swept.skipped.filter(isMarkdownFile)
+-  if (missed.length) throw new Error(unsweptLine(missed.length))
    // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
-   for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
--  return { dropped, unswept: swept.skipped }
+-  for (const [file, lost] of unstamped) note(lost, valueOr(await ensurePageId(file), undefined))
++  for (const [file, [lost, above]] of unstamped)
++    note(lost, valueOr(await ensurePageId(file), undefined), above)
+-  return dropped
 +  const worked: Worked = {}
 +  for (const file of swept.skipped) {
 +    const pair = seen.get(file)
@@ -20806,20 +20837,20 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +import type { Json } from '../Files/stableJson'
 +import { type Worked, workedOut } from '../Nexus/owed'
 @@ refillTrashed @@
--/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. Answers the copies it couldn't write. */
+-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. */
 +/** A Link value whose page or Space sits in the Trash goes back into its trashed copy as a live refill would land it, so it returns with it. Answers what it worked out for each copy it couldn't write, by the copy's path: what the copy read and what it would become, or for a copy it couldn't read, every value its page is owed, landing where the copy still reads blank. */
  export async function refillTrashed(
    root: string,
    links: StrippedLink[],
    defs: readonly PropertyDefinition[],
    frozen: Frozen,
--): Promise<string[]> {
--  if (!links.length) return []
+-): Promise<void> {
+-  if (!links.length) return
 +): Promise<Worked> {
 +  if (!links.length) return {}
    const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
    const refills = new Map(defs.map((d) => [d.id, refillOf(d, frozen)]))
--  const swept = await sweepGovernedRoots([...holders.values()], {
+-  await sweepGovernedRoots([...holders.values()], {
 -    raw: (raw, file) => {
 -      const id = rootId(file, raw)
 -      let next = raw
@@ -20828,13 +20859,13 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 -      return next === raw ? null : next
 -    },
 -  })
--  return swept.skipped
 +  const refilled = (raw: Json, id: string | undefined): Json => {
 +    let next = raw
-+    for (const { page, property, value, above } of links)
-+      if (page === id) next = refills.get(property)?.(next, value, above) ?? next
++    for (const { page, property, value } of links)
++      if (page === id) next = refills.get(property)?.(next, value) ?? next
 +    return next
 +  }
++  const keyOf = new Map(defs.map((d) => [d.id, d.key]))
 +  const seen = new Map<string, [Json, Json]>()
 +  const swept = await sweepGovernedRoots([...holders.values()], {
 +    raw: (raw, file) => {
@@ -20843,6 +20874,8 @@ A finish strips a gone page's links by the keys that still resolve to nothing, s
 +      seen.set(file, [raw, next])
 +      return next
 +    },
++    above: (raw, file) => (key) =>
++      links.find((l) => l.page === rootId(file, raw) && keyOf.get(l.property) === key)?.above,
 +  })
 +  // A copy read and not written is owed what its read became, as the scrub's are; one it couldn't read is owed what lands where it reads blank.
 +  const owed = [...holders].flatMap(([id, file]) => {
@@ -21004,6 +21037,12 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
      entity: record.entity,
      abs: targetAbs,
 +    rekey: record.entity === 'context' && title !== record.registry.title ? [record.registry.title, title] : undefined,
+@@ restoreTrashed — the scrub @@
+-  const dropped = await scrubReturning(
++  const scrubbed = await scrubReturning(
+ …
+-  await parkLinks(root, dropped)
++  await parkLinks(root, scrubbed.dropped)
 @@ restoreTrashed — after the arrival @@
 -  const { after, own, unswept } = arrived
 +  const { after, own } = arrived
@@ -21035,15 +21074,10 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
 +      const taken = await refillValues(root, def, roots, all, refilled, above)
 @@ restoreTrashed — the trashed copies' refill @@
      // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
--    unswept.push(...(await refillTrashed(root, trashed, defs, refilled)))
+-    await refillTrashed(root, trashed, defs, refilled)
 +    Object.assign(worked, await refillTrashed(root, trashed, defs, refilled))
    }
--  const cascade = withUnswept(
--    withUnswept(arrived.cascade, title, unswept),
--    title,
--    scrubbed.unswept,
--    'values',
--  )
+-  const cascade = withUnswept(arrived.cascade, title, unswept)
 +  const owed = await oweWorked(root, relative(root, targetAbs), title, worked)
 +  const cascade = withUnswept(joinCascades(arrived.cascade, owed), title, scrubbed.unread)
 ```
@@ -21051,7 +21085,13 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
 `emptyBundle` takes `deps` already, and `finishEntry` runs inside its settle turn, which it doesn't take.
 
 ```Core/Bundles/record.ts diff
+@@ imports @@
+-import type { StrippedLink } from '../Nexus/cascade'
 @@ strippedLink @@
+-const strippedLink: z.ZodType<StrippedLink> = z.object({
++/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above; `StrippedLink` is its type. */
++export const strippedLink = z.object({
+   page: z.string(),
    property: z.string(),
    value: z.string(),
 +  above: z.string().optional(),
@@ -21059,18 +21099,6 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
 ```
 
 ```Core/Nexus/governedSweep.ts diff
-@@ refillOf @@
--/** A value `frozen` still admits, landed in its written spelling under `def`'s key where `raw` reads blank; null where it doesn't land. */
-+/** A value `frozen` still admits, landed in its written spelling under `def`'s key where `raw` reads blank, above the key `above` names when `raw` holds it; null where it doesn't land. */
- export const refillOf =
-   (def: PropertyDefinition, frozen: Frozen) =>
--  (raw: Json, value: unknown): Json | null => {
-+  (raw: Json, value: unknown, above?: string): Json | null => {
-     const { next } = reencode(def, value, frozen)
--    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
-+    return next === undefined || !isBlankRaw(raw[def.key])
-+      ? null
-+      : landValue(raw, def.key, next, above)
 @@ refillValues @@
 -/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
 +/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */
@@ -21083,8 +21111,7 @@ Every kind's strip now runs through `finishEntry` after the move, so `deleteOp`'
 +  above: Record<string, string | undefined> = {},
  ): Promise<Set<string>> {
 -  return sweepRootsById(root, roots, values, refillOf(def, frozen))
-+  const refill = refillOf(def, frozen)
-+  return sweepRootsById(root, roots, values, (raw, value, id) => refill(raw, value, above[id]))
++  return sweepRootsById(root, roots, values, above, refillOf(def, frozen))
  }
 ```
 
@@ -21127,7 +21154,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 - [ ] `git grep -nw "runNoted" -- Core ':!*.test.*'` answers what Task 11B-3 left, `moveSetOp`, and `noteRelink`; `git grep -nw "unswept" -- Core/Nexus/settle.ts Core/Archive/archive.ts` `git grep -nw "withUnswept" -- Core/Archive` and `git grep -nw "spaceSidecarsIn\|rekeyContext" -- Core/Trash/spend.ts` answer nothing.
 - [ ] The tests named in CHANGE pass, each having failed first; `deleteReach.test.ts`, `deleteOrder.test.ts`, `trashRecovery.test.ts`, `spend.test.ts`, `move.test.ts`, and `settle.test.ts` green.
 - [ ] `npm run typecheck`, `npm run test`, `npm run lint` clean; `npm run test -- engineGraph hostGraph` passes.
-- [ ] `git grep -n "aboveOf(" -- Core ':!*.test.*'` also answers `deleteCascade`; `git grep -n "refillOf(\|refillValues(" -- Core ':!*.test.*'` shows `refillTrashed` and the restore's Link refill passing each link's `above`.
+- [ ] `git grep -n "\.above(" -- Core ':!*.test.*'` also answers `deleteCascade`, and `git grep -n "sweepParse(content)?.above" -- Core/Trash/restoreScrub.ts` answers the scrub; `git grep -n "refillValues(" -- Core ':!*.test.*'` shows the restore's Link refill passing each link's `above`, and `refillTrashed`'s sweep places through `above`; `git grep -n "landValue(" -- Core ':!*.test.*'` shows no call passing a place.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 11B-6
@@ -21221,24 +21248,26 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 - **The System Trash Mode's Context and Space Deletes:** a finish in System Trash mode sends the folder to the system Trash and strips the tags with no record anywhere, as the live delete does.
 - **Content Deletes, Moves, and Restores Owe What They Miss (Nathan's Ruling, 10-22-2026, Unify):** a page, Collection, or Set delete, a Trash emptying, a Set move, a page move or rename, and a restore's re-spell of the live world that miss a file now keep a note and offer the one Try Again, which strips the gone page's links, reaches the views, or re-spells the links still under the old name; a move made again before the finish carries what the first missed to where the second leaves it. Each answered a warning nothing could finish, and a delete cut short by a crash left its strip undone for good; the next open finishes it now. The warning reads as every owed change's, "Couldn’t update N Items.", where these read "Couldn’t update links in N Items." or "links to “…” in N Items.".
 - **A Delete's Trash Record Is Partial Only Where It's Still True:** a page, Collection, or Set delete no longer writes its record `partial` ahead of the move or marks it for a strip that missed a file, since the miss is owed and each link a finish strips joins the record's `links`; the record keeps `partial` only from what its gather couldn't file, such as a holder with no ID. A content delete whose note can't be written refuses with nothing deleted.
-- **A Restore Owes What It Misses (Try Again Unclogs, Nathan's Rulings, 10-22-2026):** a Trash or Archive restore whose repair of its own landed files misses one now keeps a note under the landed path and offers the one Try Again, which re-spells those files alone; it answered "Couldn’t update links in “…” across N Items." that nothing could finish, and now reads "Couldn’t update N Items." as every owed change does. A Context restored under a new title re-keys its Spaces' sidecars on the same note, so a sidecar it misses takes the same Try Again. A landed file moved or deleted before the finish drops out of the note. A trashed copy the restore's refill couldn't write, and a returning file whose values the scrub reconciled but couldn't write, now join the same note with exactly what the restore worked out for each value, what the file read then and what it lands as, so Try Again gives the result an unmissed restore would have; it answered "Couldn’t update links in “…” across N Items." and "Couldn’t update values in “…” across N Items." with no Try Again, since the restore's snapshot of links and schema is gone once it lands. A value lands only where the file still reads what the restore found, a blank matching a blank, so an edit made after the restore stands, and a trashed copy restored or emptied before the finish drops out as a moved landed file does. A returning file the scrub couldn't read, or can't round-trip, had nothing worked out, so it keeps the values line without Try Again.
+- **A Restore Owes What It Misses (Try Again Unclogs, Nathan's Rulings, 10-22-2026):** a Trash or Archive restore whose repair of its own landed files misses one now keeps a note under the landed path and offers the one Try Again, which re-spells those files alone; it answered "Couldn’t update links in “…” across N Items." that nothing could finish, and now reads "Couldn’t update N Items." as every owed change does. A Context restored under a new title re-keys its Spaces' sidecars on the same note, so a sidecar it misses takes the same Try Again. A landed file moved or deleted before the finish drops out of the note. A trashed copy the restore's refill couldn't write, and a returning file whose values the scrub reconciled but couldn't write, now join the same note with exactly what the restore worked out for each value, what the file read then and what it lands as, so Try Again gives the result an unmissed restore would have; the refill's miss went unreported and the scrub's refused the restore, and nothing could finish either, since the restore's snapshot of links and schema is gone once it lands. A value lands only where the file still reads what the restore found, a blank matching a blank, so an edit made after the restore stands, and a trashed copy restored or emptied before the finish drops out as a moved landed file does. A returning file the scrub couldn't read, or can't round-trip, had nothing worked out, so it joins the warning "Couldn’t update values in “…” across N Items." without Try Again.
+- **A Restore Reports Every File It Couldn't Update, Once (G-3, Nathan's Reading; G-4, Nathan's Ruling, 10-23-2026):** a returning page the scrub can't write no longer refuses the restore, and a Space sidecar the scrub or the trashed-copy refill misses, which went unreported, now reaches the same report: owed with Try Again where the restore worked out what it would write, and in the values line where it couldn't read the file. The page lands un-reconciled, as a Space already did, and the Try Again or the next value write tidies it. **Recommended:** take it, since a restore otherwise refuses over one page while every Space file it misses goes unreported.
+- **A Restore Counts Refused Files Too (11B-3):** an Unknown page or a sidecar that won't parse is left byte-identical by every sweep, and once `skipped` counts it, a restore, which nothing retries, reports it with the files it couldn't read, where its scrub and refill left it silent; `repairLanded` already counted a corrupt sidecar.
 - **The Orphan Trash Entry (H-5 Residual):** a crash between a delete's bundle mint and its note leaves a Trash entry for a live item, as at HEAD; its restore refuses `'exists'`, and it can be emptied.
-- **A Restored Tag or Link Key Lands Where It Stood (E-4, Nathan's Ruling, 10-23-2026):** a Context or Space restore that gives a page back a tag key it no longer holds, and a restore that gives a linker back a Link key a delete stripped, live or in its Trash copy, land the line above the line it stood above, and last when that line is gone, where HEAD put it last. The place is read only from a page's own file: a Space sidecar's keys are sorted on every write, and a page the delete couldn't read, whose values come from the index, has no recorded place and lands last. A Link value a restore's scrub drops from a returning page is parked without a place, so it lands last when its page comes back.
+- **A Restored Tag or Link Key Lands Where It Stood (E-4, Nathan's Ruling, 10-23-2026):** a Context or Space restore that gives a page back a tag key it no longer holds, and a restore that gives a linker back a Link key a delete stripped, live or in its Trash copy, land the line above the line it stood above, and last when that line is gone, where HEAD put it last. The place is read only from a page's own key order: a Space sidecar's keys are sorted on every write, and a page the delete couldn't read, whose values come from the index, has no recorded place and lands last. A Link value a restore's scrub drops from a returning page is parked with its place, so it lands where it stood when its page comes back.
 
 #### Line Total
 
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 11B-1 | −3 | +9 | +6 |
-| 11B-2 | −170 | +231 | +61 |
-| 11B-3 | −73 | +127 | +54 |
+| 11B-2 | −175 | +245 | +70 |
+| 11B-3 | −65 | +120 | +55 |
 | 11B-4 | −5 | +11 | +6 |
-| 11B-5 | −134 | +369 | +235 |
+| 11B-5 | −146 | +384 | +238 |
 | 11B-6 | 0 | 0 | 0 |
-| **Phase 11B** | **−385** | **+747** | **+362** |
+| **Phase 11B** | **−394** | **+769** | **+375** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
-- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change, with `refused` threaded once through `ConfigReach` so a refused-only entry frees its names, and Clear Exclusion Cache's skip carries Try Again (+7 with 11B-3's count). Content deletes, Trash emptying, Set moves, page moves, and a restore's re-spell join the notes (11B-5, +227, Nathan's ruling to unify them): the `container` and `relink` entry kinds, their two arms, `noteRelink`, the one runner call `respell` and the restore's repair share, with `respell`'s composition onto an earlier move, `ConfigReach`'s pages, and the relink entry's `files` scope with its `rekey` and `values`, which carries a restore's own link repair, a renamed Context's Space re-key, and what its scrub and trashed-copy refill worked out and couldn't write on the same note and Try Again (Nathan's rulings) and takes `returningCascade`'s `unswept` thread and the Archive restore's `withUnswept` with it, while `deleteOp`'s own configuration pass, its record's second write and write-ahead mark, and `emptyBundle`'s and `moveSetOp`'s inline reaches leave. E-4's restore half for tags and Link keys (Nathan's ruling, +28 across 11B-2 and 11B-5, about 12 of it Biome wrapping `Held`, `memberRoot`, and `rootsOf`'s signature once they gain a field) adds no landing step: `landValue` takes the key a line stood above and `mergeInto`, from the ruling's undo half, carries the root's order to the page, so the records carry one key per page and the restore's re-tag and Link refill pass it. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, `unwritten`, and `ClearReport.refused`.
+- **Why It Lands Positive:** under *Less Stuff*, the added lines are ruled behavior in minimal form: a Context or Space delete that misses a file finishes and owes the rest where HEAD put everything back and refused, so the pass gains the Context and Space strip arms with their list step, folder move, and view reach (11B-2), and the live delete calls the same arm through `finishEntry` rather than keeping a second strip; the up-front capture with its own-folder filter gives a partial delete's Trash entry what it missed. Remove runs on the runner with `stashAndStrip`, the one routine its finish shares (11B-3), and the sweep's one `skipped` list with the finder's `unaddressed` carry the refused-page rule for every change, with `refused` threaded once through `ConfigReach` so a refused-only entry frees its names, and Clear Exclusion Cache's skip carries Try Again (+7 with 11B-3's count). Content deletes, Trash emptying, Set moves, page moves, and a restore's re-spell join the notes (11B-5, +238, Nathan's ruling to unify them): the `container` and `relink` entry kinds, their two arms, `noteRelink`, the one runner call `respell` and the restore's repair share, with `respell`'s composition onto an earlier move, `ConfigReach`'s pages, and the relink entry's `files` scope with its `rekey` and `values`, which carries a restore's own link repair, a renamed Context's Space re-key, and what its scrub and trashed-copy refill worked out and couldn't write on the same note and Try Again (Nathan's rulings) and takes `returningCascade`'s `unswept` thread and the Archive restore's `withUnswept` with it, while `deleteOp`'s own configuration pass, its record's second write and write-ahead mark, and `emptyBundle`'s and `moveSetOp`'s inline reaches leave. E-4's restore half for tags and Link keys (Nathan's ruling, about +44 across 11B-2 and 11B-5, about 12 of it Biome wrapping `Held`, `memberRoot`, and `rootsOf`'s signature once they gain a field) lands through the undo half's one landing step: `mergeInto` hands `setAbove` a `Place`, which `rewriteRaw`, the sweep plan's `above`, and `sweepRootsById` carry from the records, since a JSON root's key order can't place a number-like key; the readers take each page's place through `SweptPage.above` in the parse they already run, so the records carry one key per page, the scrub's parked Link keys among them, and the restore's re-tag, Link refill, and Trash-copy refill pass it. What leaves: the undo-and-throw, `undoSweep` with `keysPutBack`, the Context put-back and unmint, the second record writes, the sweep-time capture with `SweepCapture`, `UnlinkOutcome`, and `captureRoot`, `sweepIncomplete`, `goneEdit`'s Context and Space cases, Remove's inline holders read and one-write stash, and `ClearReport.refused`.
 - **Tests:** about −100 removed (the undo-and-throw, put-back, unmint, `goneEdit`, and skipped-Remove-refusal cases) and about +260 written (the cases each task names, E-4's four in-place restores about 40 of them).
 
 ---
@@ -21247,7 +21276,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 
 **GOAL:** The stash keeps its home in the Collection's settings file, takes one name on disk and in code, records when each property's values were removed, and ages them out after the History Timeframe on that timeframe's two existing triggers. Re-adding a property refills the pages still in the Collection and the Trash copies of pages trashed from it, drops entries for pages that left, and surfaces any page it couldn't write with Try Again; a restored property gets its stash back in the right order and with its original removal time. A partly recorded Trash entry shows its mark and its restore says so, and a restore that reports in its own notice keeps the Try Again its reply owes. This phase is separate because it closes the data layer: every stash writer, the Trash record, and both restores move together, and the Mid-Plan Neutral Gate reads the range it ends.
 
-**Builds On:** P1 (`seedNexus` in `Core/Testing/hostFs.ts`, the shared fixture module `Core/Testing/definitions.ts`); P4 (`Core/Nexus/governedSweep.ts`; `reencode`, `Frozen`, and `gonePageEntry` in `Core/Nexus/governedRoot.ts`; `frozenWorld` in `Core/Trash/holdings.ts`, which P7 renames `trashedCopies.ts`); P5 (`CollectionNode.propertyIds`, `resolveAssignedSchema` gone); P7 (the `mutate` ops `addProperty`, `assignProperty`, `unassignProperty`, `deleteProperty`; `Core/Properties/removeProperty.ts` → `unassignProperty.ts`; `Core/Trash/holdings.ts` → `Core/Trash/trashedCopies.ts`; `refillValues` beside `sweepRootsById` in `Core/Nexus/governedSweep.ts`; `createProperty` answering the landed definition; the counting module `Core/Nexus/entities.ts` holding `unsweptLine`; `openSettings`, `closeSettings`, and `trashRowEl` moved into `drive-harness.mjs`; the `mutate` arm `assignProperty` replying through `done`); P8 (option ids); P9 (list-first orders; replays after the seed); P10 (`findHolders` in `Core/Index/keyHolders.ts`; `sweepGovernedRoots(files, plan)` with no `root`; `sweepRootsById` reading each Space's path from `byId`; `unwritten` and `rootId` in `governedSweep.ts`; `refillOf(def, frozen)`, the one refill rewrite `refillValues` and `refillTrashed(root, links, defs, frozen)` both land through; `spaceArm` gone; G-3's `unswept`); P11 (`Core/Nexus/owed.ts` with `PropertyEntry`, `owesAnything`, `editNote`, `propertyNote`, `owedReport`, `owedDelete`; `Core/Nexus/finishOwed.ts` with `finishProperty` and `sweepEach`; `CascadeReport.owed?: true`, which `joinCascades` carries; the slice's `finishOwed` action, its one Try Again; Remove's note, `stashAndStrip`, and its `unassigned` arm; H-18's counted purge; restores as create → `restoreNote` → spend). Host code only, except Tasks 12-8 and 12-9, which are renderer-side and import nothing host-only.
+**Builds On:** P1 (`seedNexus` in `Core/Testing/hostFs.ts`, the shared fixture module `Core/Testing/definitions.ts`); P4 (`Core/Nexus/governedSweep.ts`; `reencode`, `Frozen`, and `gonePageEntry` in `Core/Nexus/governedRoot.ts`; `frozenWorld` in `Core/Trash/holdings.ts`, which P7 renames `trashedCopies.ts`); P5 (`CollectionNode.propertyIds`, `resolveAssignedSchema` gone); P7 (the `mutate` ops `addProperty`, `assignProperty`, `unassignProperty`, `deleteProperty`; `Core/Properties/removeProperty.ts` → `unassignProperty.ts`; `Core/Trash/holdings.ts` → `Core/Trash/trashedCopies.ts`; `refillValues` beside `sweepRootsById` in `Core/Nexus/governedSweep.ts`; `createProperty` answering the landed definition; the counting module `Core/Nexus/entities.ts` holding `unsweptLine`; `openSettings`, `closeSettings`, and `trashRowEl` moved into `drive-harness.mjs`; the `mutate` arm `assignProperty` replying through `done`); P8 (option ids); P9 (list-first orders; replays after the seed); P10 (`findHolders` in `Core/Index/keyHolders.ts`; `sweepGovernedRoots(files, plan)` with no `root`; `sweepRootsById` reading each Space's path from `byId`; `rootId` in `governedSweep.ts`; `refillOf(def, frozen)`, the one refill rewrite `refillValues` and `refillTrashed(root, links, defs, frozen)` both land through; `spaceArm` gone); P11 (`Core/Nexus/owed.ts` with `PropertyEntry`, `owesAnything`, `editNote`, `propertyNote`, `owedReport`, `owedDelete`; `Core/Nexus/finishOwed.ts` with `finishProperty` and `sweepEach`; `CascadeReport.owed?: true`, which `joinCascades` carries; the slice's `finishOwed` action, its one Try Again; Remove's note, `stashAndStrip`, and its `unassigned` arm; H-18's counted purge; restores as create → `restoreNote` → spend). Host code only, except Tasks 12-8 and 12-9, which are renderer-side and import nothing host-only.
 
 #### Task 12-1
 
@@ -21538,16 +21567,19 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 -// A Collection sidecar's `property_stash`: the values a property Remove set aside, keyed by property and then by page id.
 +// A Collection sidecar's `property_stash`: per property, the values a Remove set aside, keyed by page id, and when it set them aside.
  
++import { z } from 'zod'
  import { isPlainObject } from '../Contract/validators'
  import { join } from '../Paths/posix'
  import { patchSidecar } from '../Files/sidecar'
  import type { CollectionNode } from '../Nexus/tree'
  
-+export type StashBlock = {
-+  removed_at: string
-+  values: Record<string, unknown>
-+  above?: Record<string, string>
-+}
++/** One property's stashed values by page id, when they were removed, and, per page, the key its line stood above; a malformed `above` reads as none. */
++export const stashBlock = z.object({
++  removed_at: z.string(),
++  values: z.record(z.string(), z.unknown()),
++  above: z.record(z.string(), z.string()).optional().catch(undefined),
++})
++export type StashBlock = z.infer<typeof stashBlock>
 +
  export function stashedBlock(
    sidecar: Record<string, unknown> | null,
@@ -21556,13 +21588,8 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 +): StashBlock | null {
    const block = isPlainObject(sidecar?.property_stash) ? sidecar.property_stash[propertyId] : null
 -  return isPlainObject(block) && isPlainObject(block.values) ? { values: block.values } : null
-+  return isPlainObject(block) && typeof block.removed_at === 'string' && isPlainObject(block.values)
-+    ? {
-+        removed_at: block.removed_at,
-+        values: block.values,
-+        above: isPlainObject(block.above) ? (block.above as Record<string, string>) : undefined,
-+      }
-+    : null
++  const read = stashBlock.safeParse(block)
++  return read.success ? read.data : null
  }
  
 -// The one writer of a sidecar's `property_stash` block — an absent block value removes the entry, and an emptied stash leaves no key behind.
@@ -21662,21 +21689,15 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
 ```
 
 ```Core/Bundles/record.ts diff
+@@ imports @@
+ import { z } from 'zod'
++import { stashBlock } from '../Properties/propertyStash'
 @@ recordFile — the property record @@
      values: z.record(z.string(), z.unknown()),
 +    above: z.record(z.string(), z.string()).optional(),
      assignments: z.array(z.string()).optional(),
 -    stashes: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
-+    stashes: z
-+      .record(
-+        z.string(),
-+        z.object({
-+          removed_at: z.string(),
-+          values: z.record(z.string(), z.unknown()),
-+          above: z.record(z.string(), z.string()).optional(),
-+        }),
-+      )
-+      .optional(),
++    stashes: z.record(z.string(), stashBlock).optional(),
      partial: z.literal(true).optional(),
 ```
 
@@ -21723,7 +21744,7 @@ A page move notes nothing in `move.ts`: its links are `relink`'s, which `address
    }
 ```
 
-The refill's spend answers `null` when its block has gone, so `patchSidecar` writes nothing where HEAD rewrote the sidecar unchanged. An `above` rides every writer whole through `{ ...block }`, and the writer drops it with the value it names, so an option edit, a refill's spend, or a restore that drops a page's value drops its place too.
+The refill's spend answers `null` when its block has gone, so `patchSidecar` writes nothing where HEAD rewrote the sidecar unchanged. The block has one shape, `stashBlock`, which `stashedBlock` reads and the property's Trash record validates, so a malformed `above` reads as none in both. An `above` rides every writer whole through `{ ...block }`, and the writer drops it with the value it names, so an option edit, a refill's spend, or a restore that drops a page's value drops its place too.
 
 **VERIFY**
 
@@ -21930,14 +21951,15 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 +
  /** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, … */
 @@ sweepRootsById (P10's body) @@
--/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
-+/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. */
+-/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
++/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
  export async function sweepRootsById<T>(
    root: string,
 -  roots: NexusPages['byId'],
 +  roots: RootsById,
    values: Record<string, T>,
-   rewrite: (raw: Json, value: T, id: string) => Json | null,
+   above: Record<string, string | undefined>,
+   rewrite: (raw: Json, value: T) => Json | null,
 -): Promise<Set<string>> {
 +): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
  …
@@ -21975,14 +21997,12 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 -      const taken = await refillValues(root, def, roots, all, refilled, above)
 +      const { taken } = await refillValues(root, def, roots, all, refilled, above)
 @@ reapply @@
--  const taken = await sweepRootsById(root, roots, additions, (raw, titles, id) =>
-+  const { taken } = await sweepRootsById(root, roots, additions, (raw, titles, id) =>
+-  const taken = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
++  const { taken } = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
 ```
 
 ```Core/Properties/assignment.ts diff
 @@ imports @@
--import { relative } from '../Paths/posix'
-+import { join, relative } from '../Paths/posix'
  …
 -import { frozenWorld, parkLinks } from '../Trash/trashedCopies'
 -import { refillValues } from '../Nexus/governedSweep'
@@ -22015,16 +22035,14 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 -    }),
 -  )
 -  const frozen = frozenWorld(linkWorld(tree, archived))
-+/** Puts the values a Collection's stash holds for `propertyId` back on its pages, and into the Trash copies of pages trashed from it, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
++/** Puts the values the Collection at `folder` stashes for `propertyId` back on its pages, and into the Trash copies of pages trashed from it, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
 +async function refillStash(
 +  root: string,
++  folder: string,
 +  propertyId: string,
 +  collectionId: string,
 +): Promise<number> {
 +  const tree = await liveTreeOf(root)
-+  const node = tree.collections.find((c) => c.id === collectionId)
-+  if (!node) return 0
-+  const folder = join(root, node.path)
 +  const stash = stashedBlock(await readJsonObject(sidecarPath(folder, 'collection')), propertyId)
 +  if (!stash) return 0
 +  // No readable definition → the stash stays whole: a def that reappears later still finds everything waiting.
@@ -22086,7 +22104,7 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
    if (!appended) return ok(null)
 -  return refillStash(root, collectionFolder, propertyId)
 +  // patchSidecar writes only a sidecar carrying its id, so the sidecar it answers names the Collection.
-+  await refillStash(root, propertyId, String(written.value.id))
++  await refillStash(root, collectionFolder, propertyId, String(written.value.id))
 +  return ok(null)
  }
 ```
@@ -22139,10 +22157,10 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 -  if (!appended) return ok(null)
 +  if (!appended) return ok(undefined)
    // patchSidecar writes only a sidecar carrying its id, so the sidecar it answers names the Collection.
--  await refillStash(root, propertyId, String(written.value.id))
+-  await refillStash(root, collectionFolder, propertyId, String(written.value.id))
 -  return ok(null)
 +  const collectionId = String(written.value.id)
-+  const skipped = await refillStash(root, propertyId, collectionId)
++  const skipped = await refillStash(root, collectionFolder, propertyId, collectionId)
 +  if (!skipped) return ok(undefined)
 +  // What a refill couldn't write stays stashed, and the property's entry names the Collection, so Try Again refills it.
 +  const noted = await editNote(root, propertyId, (e) => ({
@@ -22155,6 +22173,7 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 -async function refillStash(
 +export async function refillStash(
    root: string,
+   folder: string,
    propertyId: string,
    collectionId: string,
  ): Promise<number> {
@@ -22209,7 +22228,7 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 +    async (cid) => {
 +      const c = byId.get(cid)!
 +      if (!c.propertyIds.includes(id)) return stashAndStrip(root, join(root, c.path), def)
-+      return { skipped: await refillStash(root, id, cid), hosts: [] }
++      return { skipped: await refillStash(root, join(root, c.path), id, cid), hosts: [] }
 +    },
      reach,
    )
@@ -22219,12 +22238,15 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 @@ imports @@
 -import type { StrippedLink } from '../Nexus/cascade'
 +import { type CascadeReport, joinCascades, type StrippedLink } from '../Nexus/cascade'
++import type { MutateOutcome } from '../Nexus/mutateRequest'
 @@ RestoredProperty @@
+-interface RestoredProperty {
++/** A property restore's answer, its numbered label and what the re-assign couldn't refill from the stash read as the reply reads them. */
++interface RestoredProperty extends Pick<MutateOutcome, 'landedAs' | 'cascade'> {
+ …
    dropped: StrippedLink[]
-   /** The label it took when its own was taken since. */
-   landedAs?: string
-+  /** What the re-assign couldn't refill from the stash. */
-+  cascade?: CascadeReport
+-  /** The label it took when its own was taken since. */
+-  landedAs?: string
  }
 @@ restoreInner — the assignment loop @@
 +  let refilled: CascadeReport | undefined
@@ -22248,16 +22270,12 @@ The arm notes the key, lets the bundle go, and runs the finish for a definition 
 ```Core/Trash/spend.ts diff
 @@ restoreTrashed — the property arm (P7) @@
 -    const { unrestored, dropped, landedAs } = rebuilt.value
-+    const { unrestored, dropped, landedAs, cascade } = rebuilt.value
++    const { unrestored, dropped, ...said } = rebuilt.value
      await parkLinks(root, dropped)
      // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
      await removeOwn(bundleAbs)
 -    return ok({ ...restored(unrestored), ...(landedAs ? { landedAs } : {}) })
-+    return ok({
-+      ...restored(unrestored),
-+      ...(landedAs ? { landedAs } : {}),
-+      ...(cascade ? { cascade } : {}),
-+    })
++    return ok({ ...restored(unrestored), ...said })
 ```
 
 `id` is `finishProperty`'s own; `sweepEach` adds each Collection's skipped files to the finish's `reach`, so the pass's reply counts what the refill still missed. The import order is `finishOwed.ts` → `assignment.ts` → `owed.ts`, and `owed.ts` imports neither, so no cycle forms.
@@ -22414,8 +22432,8 @@ With a tree held, `readFileHistoryConfig` reads its config from the tree, so a s
 
 ```Core/Bundles/record.ts diff
 @@ imports @@
--import type { StrippedLink } from '../Nexus/cascade'
-+import type { CascadeReport, StrippedLink } from '../Nexus/cascade'
+ import { z } from 'zod'
++import type { CascadeReport } from '../Nexus/cascade'
 @@ recordedPartly, after RecordFile @@
 +/** A partly recorded entry's restore says so, since some of what it held may not have been written down. */
 +export const recordedPartly = (record: RecordFile, title: string): CascadeReport | undefined =>
@@ -22752,16 +22770,16 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
 | Task | Removed | Added | Net |
 |---|---|---|---|
 | 12-1 One Vocabulary | −58 | +58 | 0 |
-| 12-2 The Block, Its Stamp, and Its Places | −38 | +69 | +31 |
+| 12-2 The Block, Its Stamp, and Its Places | −38 | +58 | +20 |
 | 12-3 The Purge | −5 | +5 | 0 |
 | 12-4 The Restore Order and the Empty | −13 | +44 | +31 |
-| 12-5 The Refill | −40 | +61 | +21 |
-| 12-6 Refill Skips Surface | −20 | +42 | +22 |
+| 12-5 The Refill | −39 | +58 | +19 |
+| 12-6 Refill Skips Surface | −22 | +39 | +17 |
 | 12-7 The Age Cleanup | −2 | +23 | +21 |
-| 12-8 The Partial Mark | −6 | +30 | +24 |
+| 12-8 The Partial Mark | −5 | +30 | +25 |
 | 12-9 The Restore Notice's Try Again | −3 | +10 | +7 |
 | 12-10 | 0 | 0 | 0 |
-| **Phase 12** | **−185** | **+342** | **+157** |
+| **Phase 12** | **−185** | **+325** | **+140** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s.
 - **Tests:** about +230 (`propertyStash.test.ts` new with about 85; about 19 new cases, E-4's four among them, across `unassignProperty.test.ts`, `assignment.test.ts`, `finishOwed.test.ts`, `restoreProperty.test.ts`, `spend.test.ts`, `rows.test.ts`, and `TrashFrame.test.tsx`; two cases rewritten; fixtures re-seeded with the stamp, line-neutral). The drive group (about 90 lines) is apart.
@@ -22769,10 +22787,10 @@ The plan's mid-point gate: the data layer is complete here (values, definitions,
   - **The stamp and the age cleanup (+21, Tasks 12-2, 12-3, 12-7):** C-3 is ruled behavior (Nathan's intent), delivered in its minimal form on what exists: Remove's one stash write stamps, the one writer takes the block whole, the one editor `editStashes` sweeps, the one conversion `readFileHistoryConfig` gives the cutoff, and the History Timeframe's two existing triggers run it. The stamp is required from the commit that names the store, so no stampless block exists to guard; no pass, module, Sync rule, or timer is added; the three hand-built block literals, `editStashBlocks` with its ternary, the purge's raw read, and its comment leave; and a Nexus with no stash reads zero files.
   - **The restore order and the empty (+31, Task 12-4):** a restored property getting its stash back, with its stamp, is ruled (C-2, LC-26); today's order leaves leftovers unspent by accident, and the fix moves one loop and filters it rather than adding a pass. The empty notes the key and runs the delete's own finish, which reaches the Trash's Collections and pages once no Trash entry for the property remains, rather than a second purge, so a miss keeps Try Again, under *No Leftovers* and *Try Again Unclogs*.
   - **The refill (+19, Task 12-5):** C-2's stale drop and Trash parking are ruled (C-2). Parking rides the existing `trashedHolders` and `refillValues`, so one reconcile, encode, and blank check writes live pages and Trash copies alike, and the Trash is listed only when an id is missing from the tree; the alternative, extending `refillTrashed`, would have added a second value-landing rule with no origin check.
-  - **The refill's report (+22, Task 12-6):** with the timeframe, a skipped value would be lost unseen; the refill's report rides P11's notes entry and its `collections` part, which a Remove's miss already holds, its `finishProperty` step, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
-  - **The partial mark (+24, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
+  - **The refill's report (+17, Task 12-6):** with the timeframe, a skipped value would be lost unseen; the refill's report rides P11's notes entry and its `collections` part, which a Remove's miss already holds, its `finishProperty` step, its `owedReport` and `reachReport` builders, and the one Try Again, and its note write sits in the one function every re-add passes through, so the restore isn't a second, silent path. About 6 of it is `assignProperty` carrying a reply `done` used to discard.
+  - **The partial mark (+25, Task 12-8):** N-1 is Nathan's ruling (LC-37); one row field, one glyph, and one builder read the `partial` field every record already carries.
   - **The Try Again (+7, Task 12-9):** B-3 has every change that left files offer Try Again; the restore's own notice passes the slice's one closure on rather than losing it, and a batch's notice offers it when any reply among the batch was owed.
-  - **Each value's place (+33, Tasks 12-2, 12-4, 12-5):** E-4 is Nathan's ruling: a restored or re-added value lands where its line stood. The one landing step stays `landValue` through `refillOf`, which Task 11B-5 gave its `above`; this phase only records the place beside the values a Remove stashes and a delete files (`heldAbove` and the block's and the record's `above`, about 19 of it Biome wrapping `StashBlock`, `stashedBlock`'s answer, the record schema, and one import), keeps it in the one writer only beside a value the block still holds, and passes it at the restore and the re-add.
+  - **Each value's place (+22, Tasks 12-2, 12-4, 12-5):** E-4 is Nathan's ruling: a restored or re-added value lands where its line stood. The one landing step is the sweep's merge through `setAbove`, which Task 11B-2 gave its `Place` and `refillValues` hands each page's place by ID (11B-5); this phase only records the place beside the values a Remove stashes and a delete files (`heldAbove` and the block's and the record's `above`, which the one `stashBlock` schema states for the sidecar and the record alike), keeps it in the one writer only beside a value the block still holds, and passes it at the restore and the re-add.
   - **The folds (Tasks 12-1, 12-3):** one name for one store, and the purge's spelling, raw read, and stale comment each remove what they replace.
 
 ---
@@ -24969,13 +24987,13 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 
 #### Task 13-5
 
-**TASK:** The two heading-link settings ride the view's `ValueContext`, read once per view or panel by one renderer hook, `useValueContext`, so a text value opens one store subscription (its own page's headings, only when it names one) where it opened three, and a Link value's page-link text reads the same context. The hook takes the block the view host and the panel each spell (the asset map, the identity maps, the memo, and the connections fallback), and `buildValueContext` earns its place by carrying the settings.
+**TASK:** The two heading-link settings ride the view's `ValueContext`, read once per view or panel by one renderer hook, `useValueContext`, so a text value opens one store subscription (its own page's headings, only when it names one) where it opened three, and a Link value's page-link text reads the same context. The hook takes the block the view host and the panel each spell (the asset map, the identity maps, the memo, and the connections fallback), and `buildValueContext`, which only repacks its arguments, folds into it.
 
 **NOW:** `TextCell` opens `useSetting('headingLinkStyle')` and `useSetting('inPageHeadingResolution')` per instance (`Core/Properties/Cells/TextCell.tsx:31-32`), beside `useSession((s) => (ownPath ? s.headings[ownPath] : undefined))` (`:34`), whose selector already answers nothing unless the value may name its own page's heading (`:33`), so N text columns by M rows hold about 3·N·M selectors that every store write evaluates (06-08). `TextCell` is rendered by `Cell.tsx:130` and by `LinkCell.tsx:42-60` for a page link, each handing it `connections` (`Cell.tsx:124,130`; `LinkCell.tsx:57`). `ValueContext` (`Core/Properties/valueContext.ts:8-16`) already exists so "one subscription serves the whole view instead of one per rendered value" (`:12`); `buildValueContext` (`:22-29`) repacks four arguments for its two callers, each wrapping it in the same `assetMap` selector, `identityOf(tree)`, and `useMemo` (`useViewHost.ts:48,121-125`, `PropertyPanel.tsx:92,164-176`, which alone passes its host's connections), and `valueContext.test.ts` pins the repack (02-12). `TextCell.test.tsx` seeds `inPageHeadingResolution: 'automatic'` through the store's tree (`:36`) and passes `connections` (`:44,77,127,150`); `LinkCell.test.tsx` passes `connections` (`:62`).
 
 **CHANGE**
 
-- [ ] Write and watch fail, in `Core/Properties/valueContext.test.ts` › `describe('buildValueContext')`: "carries the view's heading-link settings": `buildValueContext(identityOf(tree), [], EMPTY_ASSET_MAP, { headingLinkStyle: 'heading-only', inPageHeadingResolution: 'automatic' })` answers both on the context. The two existing cases pass the same `headings` argument.
+- [ ] Write and watch fail, in `Core/Properties/valueContext.test.ts`, whose `describe('buildValueContext')` becomes `describe('useValueContext')`: "carries the view's heading-link settings": with the store's tree holding `personalization: { headingLinkStyle: 'heading-only', inPageHeadingResolution: 'automatic' }`, `renderHook(() => useValueContext(tree, []))` answers both on the context. The two existing cases read the same hook's `contextsById` through `renderHook`, and "a missing tree answers no context" pins `useValueContext(null, [])` → `null`.
 - [ ] `TextCell.tsx`: its headings subscription stays as written.
 - [ ] Test sweep: `TextCell.test.tsx`' four renders pass `ctx: { connections: () => …, headingLinkStyle: 'page-heading', inPageHeadingResolution: 'automatic' } as unknown as ValueContext`, the cast `Cell.test.tsx:63` already uses for a partial context, and its store seed drops the `personalization` setting (`:36`) the context now carries; `LinkCell.test.tsx`' render passes `ctx` likewise.
 - [ ] Sibling sweep: `git grep -nw "useSetting" -- Core/Properties/Cells` answers nothing.
@@ -24990,12 +25008,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 +import type { AssetMap, NexusTree } from '../Nexus/tree'
  import type { PropertyDefinition } from './properties'
 -import type { ContextIdentity, IdentityMaps, SpaceIdentity } from '../Contexts/contextIdentity'
-+import {
-+  type ContextIdentity,
-+  type IdentityMaps,
-+  identityOf,
-+  type SpaceIdentity,
-+} from '../Contexts/contextIdentity'
++import { type ContextIdentity, identityOf, type SpaceIdentity } from '../Contexts/contextIdentity'
  import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
  import type { ConnPage } from '../Connections/pageIndex'
  import type { ViewRow } from '../Views/viewRow'
@@ -25009,25 +25022,14 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 +  inPageHeadingResolution: InPageHeadingResolution
  }
  
-@@ buildValueContext @@
- export function buildValueContext(
-   identity: IdentityMaps,
-   schema: PropertyDefinition[],
-   assets: AssetMap,
-+  headings: Pick<ValueContext, 'headingLinkStyle' | 'inPageHeadingResolution'>,
-   connections?: () => ConnectionsApi | undefined,
- ): ValueContext {
+@@ buildValueContext → useValueContext @@
+-export function buildValueContext(
+-  identity: IdentityMaps,
+-  schema: PropertyDefinition[],
+-  assets: AssetMap,
+-  connections?: () => ConnectionsApi | undefined,
+-): ValueContext {
 -  return { schema, contextsById: identity.spaces, contexts: identity.contexts, assets, connections }
-+  return {
-+    schema,
-+    contextsById: identity.spaces,
-+    contexts: identity.contexts,
-+    assets,
-+    connections,
-+    ...headings,
-+  }
- }
-+
 +/** The one context a view or the panel renders its values through; `hostConnections` is a window's own link routing, preview otherwise. */
 +export function useValueContext(
 +  tree: NexusTree | null,
@@ -25040,18 +25042,18 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 +  const identity = tree && identityOf(tree)
 +  return useMemo(
 +    () =>
-+      identity
-+        ? buildValueContext(
-+            identity,
-+            schema,
-+            assets,
-+            { headingLinkStyle, inPageHeadingResolution },
-+            hostConnections ? () => hostConnections : previewConnections,
-+          )
-+        : null,
++      identity && {
++        schema,
++        contextsById: identity.spaces,
++        contexts: identity.contexts,
++        assets,
++        connections: hostConnections ? () => hostConnections : previewConnections,
++        headingLinkStyle,
++        inPageHeadingResolution,
++      },
 +    [identity, schema, assets, hostConnections, headingLinkStyle, inPageHeadingResolution],
 +  )
-+}
+ }
 ```
 
 ```Core/Properties/Cells/TextCell.tsx diff
@@ -25173,7 +25175,7 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 **VERIFY**
 
 - [ ] The new `valueContext.test.ts` case passes and fails with the task reverted; `TextCell.test.tsx` and `LinkCell.test.tsx` pass on the context form (the heading-missing and own-heading cases now read `inPageHeadingResolution` from `ctx`); `Cell.test.tsx` passes.
-- [ ] `git grep -nw "useSetting" -- Core/Properties/Cells` answers nothing (Scoreboard: `TextCell` store subscriptions 3 per cell → 1); `git grep -nw "buildValueContext" -- Core ':!*.test.*'` answers only `valueContext.ts`.
+- [ ] `git grep -nw "useSetting" -- Core/Properties/Cells` answers nothing (Scoreboard: `TextCell` store subscriptions 3 per cell → 1); `git grep -nw "buildValueContext" -- Core` answers nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -25707,13 +25709,13 @@ Builds on P2's AFTER (`ColumnType = PropertyType | FiledataType`, `PROPERTY_TYPE
 | 13-2 One reader; the pipeline resolves once | −220 | +215 | −5 |
 | 13-3 One style map | −121 | +86 | −35 |
 | 13-4 Surfaces read the type; `declaredType` leaves | −117 | +48 | −69 |
-| 13-5 Heading settings on the context | −44 | +65 | +21 |
+| 13-5 Heading settings on the context | −49 | +48 | −1 |
 | 13-6 New views store no hidden list | −38 | +23 | −15 |
 | 13-7 `hideShown` (and `patchedValues` on F3's Fail) | −2 | +2 | 0 |
 | 13-8 07-17's rule | 0 | 0 | 0 |
 | 13-9 | 0 | 0 | 0 |
-| **Phase 13 (F3's Pass)** | **−666** | **+565** | **−101** |
-| **Phase 13 (F3's Fail, With 13-7's `patchedValues`)** | **−703** | **+595** | **−108** |
+| **Phase 13 (F3's Pass)** | **−671** | **+548** | **−123** |
+| **Phase 13 (F3's Fail, With 13-7's `patchedValues`)** | **−708** | **+578** | **−130** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. On F3's Pass, Task 13-7 lands only `commitHide`; on its Fail, the `patchedValues` half adds −37 / +30 (−7), its seven unreplayed hunks counted from their own lines, since they quote the code P6's revert restores. Task 13-8 is 07-17's Otherwise outcome, the one its read gives at HEAD, a comment line; its If outcome threads one `values` prop through `SettingsFrame`, `ViewLeaf`, and `GroupFrame` and has no AFTER.
 - **Tests:** about −40 net: about −100 leave (the `declaredType` and `columnType` describes, the width and alignment fallback cases, the stale-id style case, and the per-schema mint pin) against about +60 for the eight new pins and the column-form rewrites. The drive apart: `live-drive.mjs` about +85, `MATRIX.md` +9.
@@ -26790,8 +26792,9 @@ export function makeSorter(
 
 - [ ] Move `describe('dateBucketKey')` (`group.test.ts:668-696`) into a new `Core/Views/valueKinds.test.ts` as `describe('the Date bucket')`, its five cases reading through `const bucket = (iso: string, g: DateGranularity) => VALUE_KINDS.dateTime.bucket?.({ kind: 'dateTime', value: iso }, g)`; the cases' titles and expectations stay. `group.test.ts` drops `dateBucketKey` from its import.
 - [ ] Move "groups by Select, Status and Date only" into `valueKinds.test.ts` › `describe('groupable')`, over `CREATABLE_TYPES`; `properties.test.ts` drops it, its `groupable` import, and its Status case's `groups: true` line.
-- [ ] Sibling sweep: `git grep -nw "dateBucketKey\|isoWeek" -- Core` answers `valueKinds.ts` alone; `git grep -n "bucketKey(" -- Core ':!*.test.*'` answers the same four readers with their P13 arguments; `git grep -n "groups: true\|groups?: true" -- Core/Properties` answers nothing.
-- [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/valueKinds.test.ts Core/Views/Pipeline/group.ts Core/Views/Pipeline/group.test.ts Core/Views/Settings/GroupFrame.tsx Core/Properties/properties.ts Core/Properties/properties.test.ts -m "Each value kind's band and whether a view groups by it joined the per-kind view record, the date bucket key moving in as the Date entry's own."` (`git add Core/Views/valueKinds.test.ts` first.)
+- [ ] Take Along, in `properties.ts` and its one reader: `isReservedPropertyId`, whose one production reader is `validation.ts`' `admissible`, leaves for `FILEDATA_BY_ID.has(id)` there, and `properties.test.ts`' `describe('reserved property ids')` moves to `validation.test.ts` as `admissible`'s case (each Filedata id refused under a user type, `prop_01H` and `stage` admitted); `statusOptions`, read once, inlines into `optionsOf`.
+- [ ] Sibling sweep: `git grep -nw "isReservedPropertyId\|statusOptions" -- Core` answers nothing; `git grep -nw "dateBucketKey\|isoWeek" -- Core` answers `valueKinds.ts` alone; `git grep -n "bucketKey(" -- Core ':!*.test.*'` answers the same four readers with their P13 arguments; `git grep -n "groups: true\|groups?: true" -- Core/Properties` answers nothing.
+- [ ] Commit: `git commit --only -- Core/Views/valueKinds.ts Core/Views/valueKinds.test.ts Core/Views/Pipeline/group.ts Core/Views/Pipeline/group.test.ts Core/Views/Settings/GroupFrame.tsx Core/Properties/properties.ts Core/Properties/properties.test.ts Core/Properties/validation.ts Core/Properties/validation.test.ts -m "Each value kind's band and whether a view groups by it joined the per-kind view record, the date bucket key moving in as the Date entry's own."` (`git add Core/Views/valueKinds.test.ts` first.)
 
 **AFTER**
 
@@ -26866,6 +26869,34 @@ export function makeSorter(
 -export const groupable = (t: ColumnType | undefined): boolean => specOf(t)?.groups === true
 -
  export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
+@@ isReservedPropertyId, statusOptions @@
+-export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
+-
+ /** An option without its own color wears its group's. */
+ export const groupOptions = (g: StatusGroup): SelectOption[] =>
+   g.options.map((o) => (o.color ? o : { ...o, color: g.color }))
+ 
+-function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): SelectOption[] {
+-  return (def?.status_groups ?? []).flatMap(groupOptions)
+-}
+-
+@@ optionsOf @@
+   def && PROPERTY_TYPES[def.type].options === 'status'
+-    ? statusOptions(def)
++    ? (def.status_groups ?? []).flatMap(groupOptions)
+     : (def?.select_options ?? [])
+```
+
+```Core/Properties/validation.ts diff
+@@ imports @@
+ import {
+   byKey,
+-  isReservedPropertyId,
++  FILEDATA_BY_ID,
+   isUserType,
+@@ admissible @@
+-  isUserType(type) && !isReservedPropertyId(id)
++  isUserType(type) && !FILEDATA_BY_ID.has(id)
 ```
 
 ```Core/Properties/properties.test.ts diff
@@ -27809,12 +27840,12 @@ No repository file changes, on either outcome.
 | 14-1 | −50 | +29 | −21 |
 | 14-2 | −272 | +265 | −7 |
 | 14-3 | −97 | +104 | +7 |
-| 14-4 | −54 | +48 | −6 |
+| 14-4 | −63 | +51 | −12 |
 | 14-5 | −62 | +38 | −24 |
 | 14-6 | 0 | 0 | 0 |
 | 14-7 | 0 | 0 | 0 |
 | 14-8 | 0 | 0 | 0 |
-| **Phase 14** | **−535** | **+484** | **−51** |
+| **Phase 14** | **−544** | **+487** | **−57** |
 
 - **The Rule:** *§Plan Constraints › The Number*'s. Moved lines count on both sides: the seven menus with `OperatorChoice` and `ValueSlot` (about 60), `isoWeek` and `dateBucketKey` (28), and `LIST_OPS` (1). Task 14-4's figure counts `isoWeek` and `dateBucketKey` whole on both sides, where its AFTER writes each moved body as one placeholder line that Task 14-5's full `valueKinds.ts` spells out. Two hunks don't replay: 14-1's and 14-2's `filter.ts` imports, whose `-` lines read `readNumber` from where Task 4A-4 moves it; they're counted from their own lines (+1 / −1 and +1 / −12). K's and 07-10's measurements change no production line on either outcome.
 - **Tests:** about +94 / −13. Written: `shownText`'s case (+29), the two abstain cases and the seed case (+18), the empty-last cases and the multi-select fixture (+46); rewritten in place: the Checkbox, unhandled-op, unreadable-operand, number, date, and stamp cases; moved: the five date-key cases into `valueKinds.test.ts`. Each pins one behavior this phase adds or changes; no record-level duplicate of a pipeline test is written.
@@ -34848,7 +34879,7 @@ Each rewritten title says what its test asserts in today's names; the rows are l
 - **Confirmation:** every "watch it fail" test went red before its change and green after; every VERIFY ran and its output was read; every measurement (F3, K, 07-10, 02-10) and every read rule (07-17) recorded its outcome and applied it as *Planning Findings › §Measurement Rules* states; no check was left to a hand check.
 - **Continuity:** *§Reconciliation* is walked; the feature documents, the Issues entries, the scripts README, and the drive matrices read true (Phase 18); every Behavior Change a phase disclosed is tied to a decision or a ruled Last Call; every deviation is fixed or ruled on under *§Deviations*.
 - **Confidence:** the three gates are green from a clean checkout at HEAD, with `engineGraph.test.ts` and `hostGraph.test.ts` inside them; the test count moved only as the phases' *Tests* lines stated; each phase's measured delta sits in *§Net Ledger* beside its written figure, and any growth past it was reported before the next phase opened with what it bought; both neutral gates answered yes without ambiguity.
-- **Net-Negative:** the plan ends net-negative on every outcome, the cumulative production delta in *§Net Ledger* reading −453 at the final head on the measurements' first outcomes, −427 with the rulings row; on those outcomes the running total rises above zero at Phase 11B's head (+81, after the net-positive Phases 10, 11A, and 11B), peaks at Phase 12's (+238), and stays above zero through Phase 15's (+59) before Phase 16A's head (−24) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+162, +319 at Phase 12's) before Phase 16B's head (−173) brings it back down.
+- **Net-Negative:** the plan ends net-negative on every outcome, the cumulative production delta in *§Net Ledger* reading −495 at the final head on the measurements' first outcomes, −469 with the rulings row; on those outcomes the running total rises above zero at Phase 11B's head (+84, after the net-positive Phases 10, 11A, and 11B), peaks at Phase 12's (+224), and stays above zero through Phase 15's (+17) before Phase 16A's head (−66) brings it back down, and on F3's Fail it rises above zero at Phase 11B's head (+165, +305 at Phase 12's) before Phase 16B's head (−215) brings it back down.
 - **No New Issues:** the work files no Issues entry, compared by entry title, since the index script renumbers every heading after Phase 18's three closures: no title in `.claude/IssuesPM.md` at HEAD is missing at BASELINE (`diff <(git show BASELINE:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort) <(git show HEAD:.claude/IssuesPM.md | sed -n 's/^#### I-[0-9]\{3\} • //p' | sort)` shows no `>` line) apart from I-032's and I-061's titles, which Task 18-4 narrows in place, and any entry another session's commit filed, named in the report by its commit; Task 18-4's title diff over its own commit holds as its VERIFY states. I-076's and I-077's entries, under whatever numbers the index script gives them, are the only deferrals.
 - **Adherence:** *§Adherence Scoreboard* reads its After column true on the final head, each row's check re-run there rather than carried from a phase.
 
@@ -34908,7 +34939,7 @@ Each Today count is HEAD `3c6afcabb`'s; each After is the plan's target, proven 
 | **Describers Get Swept** | One-slot non-displacement pins | 4 files (**Tally**) | 0 | P11A |
 | **Describers Get Swept** | False `PropertiesPM.md` claims | about 12 (**Tally**) | 0 | P18 |
 | **Behavior Is a Decision** | Behaviors met and not put to Nathan | — | 0; every one is in *Morning Report › §What I Need From You* | *Morning Report* |
-| **Directive (10-22-2026)** | Net production delta | — | −453 written on Biome-formatted code (−377 on F3's Fail), −427 projected with the rulings row; seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail); the cumulative rises above zero at Phase 11B's head (+81, peaking at +238 at Phase 12's) before Phase 16A's head brings it back down, and on F3's Fail at Phase 11B's head (+162) before Phase 16B's | *§Net Ledger* |
+| **Directive (10-22-2026)** | Net production delta | — | −495 written on Biome-formatted code (−419 on F3's Fail), −469 projected with the rulings row; seven phases land above zero on some outcome (P4B, P6, P10, P11A, P11B, P12, and P15 on 02-10's Fail); the cumulative rises above zero at Phase 11B's head (+84, peaking at +224 at Phase 12's) before Phase 16A's head brings it back down, and on F3's Fail at Phase 11B's head (+165) before Phase 16B's | *§Net Ledger* |
 | **Directive (10-22-2026)** | Issues entries filed by the work | — | 0; I-076's and I-077's entries the only deferrals | P18 · Task 18-4's title diff over its own commit lists only I-036's, I-039's, and I-063's titles and I-032's and I-061's old ones on its `<` side, and I-032's and I-061's new ones on its `>` side; *§Completion Criteria › No New Issues* runs the same comparison over `BASELINE..HEAD` |
 
 Commands the table cites by number, each written outside a table cell so no pipe is escaped:
@@ -35001,12 +35032,12 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | Rulings I-4 and E-4 | — | — | — | −30 / +56 / +26 | −362 |
 | 8 | −434 | +404 | −30 | | |
 | 9 | −16 | +9 | −7 | | |
-| 10 | −390 | +400 | +10 | | |
-| 11A | −602 | +735 | +133 | | |
-| 11B | −385 | +747 | +362 | | |
-| 12 | −185 | +342 | +157 | | |
-| 13 | −666 | +565 | −101 | | |
-| 14 | −535 | +484 | −51 | | |
+| 10 | −381 | +387 | +6 | | |
+| 11A | −607 | +734 | +127 | | |
+| 11B | −394 | +769 | +375 | | |
+| 12 | −185 | +325 | +140 | | |
+| 13 | −671 | +548 | −123 | | |
+| 14 | −544 | +487 | −57 | | |
 | 15 | −256 | +229 | −27 | | |
 | 16A | −537 | +454 | −83 | | |
 | 16B | −329 | +104 | −225 | | |
@@ -35014,7 +35045,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
-**Written Total:** −7,720 / +7,267, net **−453**, on each measurement's first outcome. The plan ends net-negative on every outcome. On the first outcomes the written cumulative reaches −424 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+10, +133, +362, +157) carry it above zero at Phase 11B's head (+81) and to its peak at Phase 12's (+238), where the Mid-Plan Neutral Gate's range ends, and through Phase 13's (+137), Phase 14's (+86), and Phase 15's (+59) before Phase 16A's head (−24) brings it back down; Phase 11A's head (−281) is the last net-negative point before it. The projected end is the written total plus the measured *Rulings I-4 and E-4* row, which no phase's figure holds: −427 on the first outcomes, 123 lines short of the Reduction Floor's −550. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +113 (−136 / +249), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −147 (−622 / +475), and Task 13-7's `patchedValues` half lands −7 (−39 / +32, its seven hunks counted from their own lines), so the written total becomes **−377** (−351 projected), and the cumulative rises above zero at Phase 11B's head (+162), peaks at +319 at Phase 12's, and stays above zero through Phase 16A's head (+52) before Phase 16B's head (−173) brings it back down. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15, the cumulative stays above zero through Phase 16A's head (+18), and the total is −411. **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −437. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −315, and the cumulative stays above zero from Phase 11B's head through Phase 16A's (+98).
+**Written Total:** −7,739 / +7,244, net **−495**, on each measurement's first outcome. The plan ends net-negative on every outcome. On the first outcomes the written cumulative reaches −424 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+6, +127, +375, +140) carry it above zero at Phase 11B's head (+84) and to its peak at Phase 12's (+224), where the Mid-Plan Neutral Gate's range ends, and through Phase 13's (+101), Phase 14's (+44), and Phase 15's (+17) before Phase 16A's head (−66) brings it back down; Phase 11A's head (−291) is the last net-negative point before it. The projected end is the written total plus the measured *Rulings I-4 and E-4* row, which no phase's figure holds: −469 on the first outcomes, 81 lines short of the Reduction Floor's −550. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +113 (−136 / +249), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −147 (−622 / +475), and Task 13-7's `patchedValues` half lands −7 (−39 / +32, its seven hunks counted from their own lines), so the written total becomes **−419** (−393 projected), and the cumulative rises above zero at Phase 11B's head (+165), peaks at +305 at Phase 12's, and stays above zero through Phase 16A's head (+10) before Phase 16B's head (−215) brings it back down. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15, the cumulative stays above zero through Phase 15's head (+59) before Phase 16A's head (−24) brings it back down, and the total is −453. **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −479. K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −357, and the cumulative stays above zero from Phase 11B's head through Phase 16A's (+56).
 
 #### Reconciliation
 
@@ -35069,7 +35100,7 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 - The Metadata Drive's label-addressed option ops, counts, values, operands, and five pins; the Option Picker Drive's adds and seeded values; `Alias Drive/live-drive.mjs:80`'s id-less adds; `Archive Drive/live-drive.mjs:391`'s rename by label — Task 8-6
 - `Core/Testing/configSurfaces.ts:36` — `viewOn`'s bare collapsed key — Task 8-4
 - `Core/Properties/propertyJournal.test.ts`' `labels` cases — the option-rename record's label pair — Task 8-5
-- `Core/Trash/restoreScrub.test.ts:165` — "a returning page the scrub can't write refuses the restore and keeps the bundle" — Task 10-4
+- `Core/Trash/restoreScrub.test.ts:165` — "a returning page the scrub can't write refuses the restore and keeps the bundle" — Task 11B-5
 - `Core/Contexts/contextCascade.test.ts:93` — "still reaches every sidecar" — Task 10-2
 - `Core/Contexts/spaceSidecar.test.ts:28` — the node read without `contextKeys` — Task 10-1
 - The 19 `seedSpaceSidecar` calls — Spaces seeded without their Context registered — Task 10-2
@@ -35146,4 +35177,10 @@ Filled during execution: each in-flight call that changes an outcome, with its t
 
 - **Rulings I-4 and E-4, Between Phases 7 and 8 (Nathan, 10-23-2026):** two calls execution raised, ruled after Phase 7's closeout, land outside any task, measured in *§Net Ledger*'s own row over `acfd53fa4^..974e60755`.
   - **I-4:** a Date, Created Time, or Last Edited Time column's right-click names its date and time choices "Format", one word in each type's `styleLabel` (`acfd53fa4`, ±0).
-  - **E-4's undo half:** a write records the key its line stood above (`aboveOf`), the put-back carries it (`PutBack.above`), and one doc-level setter, `setAbove`, lands a key the page no longer holds above that key, or last when it's gone; `mergeInto` places by the next root's order, so `rewriteRaw` passes its root whole (`974e60755`, +26). E-4's restore half (a property's Trash restore, a removed property's re-add, a Context or Space restore's tags, and a Link key a page delete took) rides the same setter through `landValue`, written into Tasks 11B-2 and 11B-5 (+28) and 12-2, 12-4, and 12-5 (+33); `findHolders` reads each page holder's place in the one read its values already take, since `aboveOf` walks a root it has parsed, and only the delete captures, Remove, and a rename's clash check read values.
+  - **E-4's undo half:** a write records the key its line stood above (`aboveOf`), the put-back carries it (`PutBack.above`), and one doc-level setter, `setAbove`, lands a key the page no longer holds above that key, or last when it's gone; `mergeInto` places by the next root's order, so `rewriteRaw` passes its root whole (`974e60755`, +26). E-4's restore half (a property's Trash restore, a removed property's re-add, a Context or Space restore's tags, and a Link key a page delete took) rides the same setter through the sweep's merge, written into Tasks 11B-2 and 11B-5 and 12-2, 12-4, and 12-5; `findHolders` reads each page holder's place through `SweptPage.above` in the one parse its values already take, and only the delete captures, Remove, and a rename's clash check read values.
+- **The Halfway Review's Fixes, Closeout P8 (10-23-2026):** seven code commits over `83e987022^..eac4cdcad`, landed outside any task as the fixes of the closeout Phase 8 ends, so Phase 8's *Actionable* row holds them (−91 / +81 / −10 of its own).
+  - **E-4's undo position:** a write records the key its line stood above through `SweptPage.above`, from the YAML document's own key order, and `aboveOf` leaves, since a JSON root lists integer-like keys first; `mergeInto` lands a key it adds last (`83e987022`).
+  - **Option words and ids:** a Multi-Select pick judges a foreign word by registration's case rule, so a case-variant of an option drops (`19f71aa1e`); `valueToWrite` answers `Result` and refuses an option id no option holds with `NO_OPTION` (`1fb447086`).
+  - **P-5 and P-7:** `isBlankRaw` moves to `rootValues.ts` and reads a value of only spaces as blank (`273b4521c`); `setAbove` and `landValue` drop a key whose value is blank, so no write, tidy, undo, or rename leaves an empty property line, and `rekeyHeld` lands through `landValue` (`9a5c2d45e`, `255d805cb`); `setBanner` refuses with `adoptFile.ts`' `UNREADABLE` (`425e79d6a`).
+  - **Take Along:** `rename.ts` answers through `done` (`2dbc52d84`).
+  - **The plan's amendment:** the restore half's place lands through Task 11B-2's one `Place` at the merge rather than a JSON-root reorder in `landValue`; `findHolders`, `deleteCascade`, and the scrub read it through `SweptPage.above`, and the scrub's parked Link keys carry it; the hunks the moved `isBlankRaw` import and the new merge order shifted are re-anchored, with the halfway review's other Part B amendments.
