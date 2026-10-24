@@ -34,7 +34,7 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
 const rewriteSpy = vi.mocked(rewritePageSerialized)
-const sweptFiles = (): string[] => sweepSpy.mock.calls[0]?.[1] ?? []
+const sweptFiles = (): string[] => sweepSpy.mock.calls[0]?.[0] ?? []
 
 let root: string
 let dir: string
@@ -946,7 +946,7 @@ describe('the link cascades reach Spaces and caches', () => {
     sweepSpy.mockClear()
     await deleteCascade(root, join(dir, 'Target.md'), ['Notes/Target.md'])
     await renameCascade(root, titled('Target', 'Omega'))
-    for (const [, , plan] of sweepSpy.mock.calls) expect(plan).not.toHaveProperty('sidecars')
+    for (const [files] of sweepSpy.mock.calls) expect(files).not.toContain(sidecar())
     expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
   })
 })

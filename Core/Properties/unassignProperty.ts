@@ -1,13 +1,12 @@
 import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { keyedHolders } from './keyHolders'
-import { queryKeyHolders } from '../Index/contentIndex'
+import { findHolders, keyedHolders } from '../Index/keyHolders'
 import { nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
-import { governedReach, sweepGovernedRoots } from '../Nexus/governedSweep'
+import { sweepGovernedRoots } from '../Nexus/governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { ok } from '../Contract/result'
@@ -38,11 +37,11 @@ async function unassignInner(
   const key = def.key
 
   const { byId } = await nexusPages(root, await liveTreeOf(root))
-  const { values, strip } = await keyedHolders(
-    await governedReach(root, queryKeyHolders(key), collectionFolder),
-    key,
-    byId,
-  )
+  const { pages } = await findHolders(root, {
+    keys: [key],
+    reach: { collection: collectionFolder },
+  })
+  const { values, strip } = await keyedHolders(pages, key, byId)
   const clear = propertyClear(propertyId)
   // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
@@ -58,7 +57,7 @@ async function unassignInner(
   })
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(root, strip, { raw: (r) => stripKeys(r, [key]) })
+  const { skipped } = await sweepGovernedRoots(strip, { raw: (r) => stripKeys(r, [key]) })
   return ok({
     cascade: reachReport({ skipped: skipped.length + reach.skipped, hosts: reach.hosts }),
   })

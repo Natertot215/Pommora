@@ -22,10 +22,9 @@ import {
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { confirmedKeyHolders } from './keyHolders'
-import { queryKeyHolders } from '../Index/contentIndex'
+import { findHolders } from '../Index/keyHolders'
 import {
-  governedReach,
+  outsideArchive,
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
@@ -147,22 +146,18 @@ async function renamePlan(
   to: string,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
-  const files = await governedReach(root, queryKeyHolders(from))
+  const { pages, spaces } = await findHolders(root, { keys: [from], reach: 'governed' })
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
-  return { files, plan: { text, sidecars: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) } }
+  return {
+    files: [...pages, ...spaces],
+    plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },
+  }
 }
 
 export async function renameSweep(root: string, from: string, to: string): Promise<number> {
   const { files, plan } = await renamePlan(root, from, to)
-  return (await sweepGovernedRoots(root, files, plan)).skipped.length
-}
-
-async function bothKeyHolders(root: string, from: string, to: string): Promise<string[]> {
-  const fromHolders = await confirmedKeyHolders(root, from)
-  if (fromHolders.length === 0) return []
-  const toHolders = new Set(await confirmedKeyHolders(root, to))
-  return fromHolders.filter((f) => toHolders.has(f))
+  return (await sweepGovernedRoots(files, plan)).skipped.length
 }
 
 type Retitle = Pick<PropertyDefinition, 'label'> | Pick<PropertyDefinition, 'key_format'>
@@ -185,9 +180,16 @@ async function rekeyPlan(
   const named = validateName(moved, Object.values(defs), propertyId)
   if (!named.ok) return named
   // A file holding only the new key is adopted, its value going live as a create's would; one holding both would lose its old value.
-  const clashes = moved.key === prior.key ? [] : await bothKeyHolders(root, prior.key, moved.key)
-  if (clashes.length)
-    return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
+  if (moved.key !== prior.key) {
+    const { held } = await findHolders(
+      root,
+      { keys: [prior.key, moved.key], reach: 'governed' },
+      'values',
+    )
+    const clashes = held.filter((h) => h.keys.length === 2 && outsideArchive(root, h.file))
+    if (clashes.length)
+      return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
+  }
   return ok({ prior, moved })
 }
 

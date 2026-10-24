@@ -4,17 +4,16 @@ import { dirname, join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { indexWrittenPage, nexusCorpus, seedContentIndex } from '../Index/indexSeed'
+import { indexWrittenPage, nexusCorpus, seedContentIndex } from './indexSeed'
 import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createProperty, renameProperty } from './registryProperty'
-import { renameOption } from './optionOps'
-import { deleteProperty } from './deleteProperty'
-import { confirmedKeyHolders, keyedHolders } from './keyHolders'
-import { queryKeyHolders } from '../Index/contentIndex'
-import { collectionFolders, governedReach, sweepGovernedRoots } from '../Nexus/governedSweep'
+import { createProperty, renameProperty } from '../Properties/registryProperty'
+import { renameOption } from '../Properties/optionOps'
+import { deleteProperty } from '../Properties/deleteProperty'
+import { findHolders, keyedHolders } from './keyHolders'
+import { collectionFolders, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
 
 vi.mock('../Nexus/governedSweep', async (importOriginal) => {
@@ -26,6 +25,10 @@ const sweepSpy = vi.mocked(sweepGovernedRoots)
 
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
+const stage = async (): Promise<string[]> =>
+  (await findHolders(root, { keys: ['Stage'], reach: 'governed' })).pages
+const sidecar = (context: string, space: string): string =>
+  abs('.nexus', 'contexts', context, space, '_space.json')
 const corpus = async (): Promise<string[]> => (await nexusCorpus(root)).map((rel) => abs(rel))
 const pageText = (n: string, fm: string): string =>
   `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`
@@ -77,20 +80,23 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('governedReach', () => {
+describe('findHolders', () => {
   it('answers the queried holders inside every Collection and the Archive', async () => {
     const old = await archived('Q9C', 'Stage: Draft\n')
-    const files = await governedReach(root, queryKeyHolders('Stage'))
-    expect(files.sort()).toEqual(
+    const { pages, spaces } = await findHolders(root, { keys: ['Stage'], reach: 'governed' })
+    expect(pages.sort()).toEqual(
       [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), old].sort(),
     )
+    expect(spaces).toEqual([])
   })
 
   it('a name registered after the seed finds the pages already holding it, with no re-read', async () => {
     await page('Late', 'Notes: x\n')
     await seedContentIndex(root)
     await createProperty(root, { id: 'prop_n', label: 'Notes', type: 'link' })
-    expect(await governedReach(root, queryKeyHolders('Notes'))).toEqual([abs('Notes', 'Late.md')])
+    expect((await findHolders(root, { keys: ['Notes'], reach: 'governed' })).pages).toEqual([
+      abs('Notes', 'Late.md'),
+    ])
   })
 
   it('a rename onto a key a page holds beside the old one is refused through the index, and the un-governed note never counts', async () => {
@@ -113,7 +119,7 @@ describe('governedReach', () => {
         await page('HolderB', 'Stage: Done\n')
         await chmod(b, 0o000)
         await seedContentIndex(root)
-        expect((await governedReach(root, queryKeyHolders('Stage'))).sort()).toEqual([a, b])
+        expect((await stage()).sort()).toEqual([a, b])
       } finally {
         await chmod(a, 0o644)
         await chmod(b, 0o644)
@@ -152,24 +158,29 @@ describe('governedReach', () => {
     },
   )
 
-  it('confirmedKeyHolders counts only the exact key, never a page or a Space holding another casing', async () => {
+  it('a holder is the exact key, never a page or a Space holding another casing', async () => {
+    const phase = async (): Promise<string[]> =>
+      (await findHolders(root, { keys: ['Phase'], reach: 'governed' }, 'values')).held.map(
+        (h) => h.file,
+      )
     await page('Q9X', 'phase: x\n')
-    await seedContentIndex(root)
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', PHASE: 'y' })
-    expect(await confirmedKeyHolders(root, 'Phase')).toEqual([])
+    dropLiveTree()
+    await seedContentIndex(root)
+    expect(await phase()).toEqual([])
     await page('Q9Y', 'Phase: x\n')
     await seedContentIndex(root)
-    expect(await confirmedKeyHolders(root, 'Phase')).toEqual([abs('Notes', 'Q9Y.md')])
+    expect(await phase()).toEqual([abs('Notes', 'Q9Y.md')])
   })
 
   it('with no index it answers the corpus intersected the same way', async () => {
     installStores(NO_STORES)
-    const files = await governedReach(root, queryKeyHolders('Stage'))
+    const files = await stage()
     expect(files).toHaveLength(30)
     expect(files.some((f) => f.includes('Loose'))).toBe(false)
   })
 
-  it('`only` reaches one Collection folder and its own Archive', async () => {
+  it('`{ collection }` reaches one Collection folder and its own Archive, and no Space', async () => {
     await mkdir(abs('Other'), { recursive: true })
     await writeFile(
       abs('Other', '_pagecollection.json'),
@@ -179,16 +190,87 @@ describe('governedReach', () => {
     await indexWrittenPage(root, abs('Other', 'Elsewhere.md'))
     const own = await archived('Q9D', 'Stage: Draft\n')
     await archived('Q9E', 'Stage: Draft\n', 'c2')
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
     dropLiveTree()
-    const files = await governedReach(root, queryKeyHolders('Stage'), abs('Notes'))
-    expect(files.sort()).toEqual(
+    const { pages, spaces } = await findHolders(root, {
+      keys: ['Stage'],
+      reach: { collection: abs('Notes') },
+    })
+    expect(pages.sort()).toEqual(
       [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), own].sort(),
     )
+    expect(spaces).toEqual([])
   })
 
   it('reaches an Archive whose Collection the tree no longer holds', async () => {
     const orphan = await archived('Orphan', 'Stage: Draft\n', 'c9')
-    expect(await governedReach(root, queryKeyHolders('Stage'))).toContain(orphan)
+    expect(await stage()).toContain(orphan)
+  })
+
+  it('a property key reaches the pages of Collections and the Archive, and a Context key reaches a loose page too', async () => {
+    await writeFile(
+      abs('Loose', 'Note.md'),
+      '---\nStage: Draft\n<Areas>: [Home]\n---\n\nun-governed\n',
+    )
+    await page('HolderA', 'Stage: Draft\n<Areas>: [Home]\n')
+    await seedContentIndex(root)
+    expect(
+      (await findHolders(root, { keys: ['<Areas>'], reach: 'anywhere' })).pages.sort(),
+    ).toEqual([abs('Loose', 'Note.md'), abs('Notes', 'HolderA.md')].sort())
+    expect(await stage()).not.toContain(abs('Loose', 'Note.md'))
+  })
+
+  it('finds a Space by its property values or its Context keys, and every Space the tree couldn’t read', async () => {
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
+    await seedSpaceSidecar(root, 'Projects', 'Sapphire', { id: 'sp2', '<Areas>': ['Home'] })
+    await seedSpaceSidecar(root, 'Projects', 'Quiet', { id: 'sp3' })
+    await writeFile(await seedSpaceSidecar(root, 'Projects', 'Broken', {}), '{ not json')
+    dropLiveTree()
+    const spaces = async (key: string, reach: 'governed' | 'anywhere'): Promise<string[]> =>
+      (await findHolders(root, { keys: [key], reach })).spaces.sort()
+    const broken = sidecar('Projects', 'Broken')
+    expect(await spaces('Stage', 'governed')).toEqual(
+      [sidecar('Projects', 'Pommora'), broken].sort(),
+    )
+    expect(await spaces('<Areas>', 'anywhere')).toEqual(
+      [sidecar('Projects', 'Sapphire'), broken].sort(),
+    )
+    expect(await spaces('Phase', 'governed')).toEqual([broken])
+  })
+
+  it('candidates come from every key', async () => {
+    await page('HolderB', 'Phase: x\n')
+    await seedContentIndex(root)
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
+    await seedSpaceSidecar(root, 'Projects', 'Sapphire', { id: 'sp2', Phase: 'x' })
+    dropLiveTree()
+    const { pages, spaces } = await findHolders(root, {
+      keys: ['Stage', 'Phase'],
+      reach: 'governed',
+    })
+    expect(pages.sort()).toEqual([abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md')])
+    expect(spaces.sort()).toEqual([sidecar('Projects', 'Pommora'), sidecar('Projects', 'Sapphire')])
+  })
+
+  it('`id` adds a Space whose row order lists it', async () => {
+    await seedSpaceSidecar(root, 'Projects', 'Quiet', { id: 'sp3', $order: ['prop_s'] })
+    dropLiveTree()
+    const quiet = sidecar('Projects', 'Quiet')
+    expect(
+      (await findHolders(root, { keys: ['Stage'], reach: 'governed', id: 'prop_s' })).spaces,
+    ).toEqual([quiet])
+    expect((await findHolders(root, { keys: ['Stage'], reach: 'governed' })).spaces).toEqual([])
+  })
+
+  it('`moved` points a Space under the moved folder at where it went', async () => {
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
+    dropLiveTree()
+    const { spaces } = await findHolders(root, {
+      keys: ['Stage'],
+      reach: 'governed',
+      moved: { from: '.nexus/contexts/Projects', to: '.nexus/contexts/Ventures' },
+    })
+    expect(spaces).toEqual([join(root, '.nexus/contexts/Ventures/Pommora/_space.json')])
   })
 
   it('a rename onto a key an archived page holds beside the old one goes through, the archived page keeping the new key’s value', async () => {
@@ -253,7 +335,7 @@ describe('the property cascades open only the holders', () => {
   it('an option rename opens exactly the 2 holders, and the un-governed note keeps its value', async () => {
     const r = await renameOption(root, 'prop_s', 'opt_Draft', 'Sketch')
     expect(r.ok).toBe(true)
-    expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(2)
+    expect(sweepSpy.mock.calls[0]?.[0]).toHaveLength(2)
     expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
   })
@@ -272,7 +354,7 @@ describe('the property cascades open only the holders', () => {
     await mkdir(abs('Vault'), { recursive: true })
     const excludedPage = `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5XYZ\n<Areas>:\n  - Home\n---\n\nbody\n`
     await writeFile(abs('Vault', 'Tagged.md'), excludedPage)
-    const swept = await sweepGovernedRoots(root, await corpus(), {
+    const swept = await sweepGovernedRoots(await corpus(), {
       raw: (raw) => {
         if (!('<Areas>' in raw)) return null
         const next = { ...raw }
@@ -287,7 +369,7 @@ describe('the property cascades open only the holders', () => {
   it("a sweep keeps every holder's modification time", async () => {
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(abs('Notes', 'HolderA.md'), past, past)
-    const swept = await sweepGovernedRoots(root, await corpus(), {
+    const swept = await sweepGovernedRoots(await corpus(), {
       raw: (raw) => {
         if (!('Stage' in raw)) return null
         const next = { ...raw }

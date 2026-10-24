@@ -81,7 +81,7 @@ export async function clearExclusionData(
     if (gone) removed++
   }
   const cleared = new Map<string, string>()
-  const swept = await sweepGovernedRoots(root, pages, { raw: clearRewrite(cleared) })
+  const swept = await sweepGovernedRoots(pages, { raw: clearRewrite(cleared) })
   const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
   await dropPageMetadata(root, ids)
   if (swept.skipped.length) return fault(unsweptLine(swept.skipped.length))

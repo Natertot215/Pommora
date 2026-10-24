@@ -9,8 +9,7 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { type KeyedHolders, keyedHolders } from './keyHolders'
-import { queryKeyHolders } from '../Index/contentIndex'
+import { findHolders, type KeyedHolders, keyedHolders } from '../Index/keyHolders'
 import { nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import {
@@ -23,8 +22,6 @@ import {
 } from './propertyJournal'
 import {
   collectionFolders,
-  governedReach,
-  type Rewrite,
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
@@ -90,8 +87,8 @@ async function snapshot(
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const { held, plan } = await deletePlan(root, propertyId, def.key)
-  return ok(await sweepCount(root, held.strip, plan))
+  const { held, spaces, plan } = await deletePlan(root, propertyId, def.key)
+  return ok(await sweepCount(root, [...held.strip, ...spaces], plan))
 }
 
 export function deleteProperty(root: string, propertyId: string): Promise<MutateReply> {
@@ -120,6 +117,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
 
 interface DeletePlan {
   held: KeyedHolders
+  spaces: string[]
   plan: SweepPlan
 }
 
@@ -129,18 +127,22 @@ export async function deletePlan(
   key: string,
 ): Promise<DeletePlan> {
   const { byId } = await nexusPages(root, await liveTreeOf(root))
-  const held = await keyedHolders(await governedReach(root, queryKeyHolders(key)), key, byId)
-  const raw: Rewrite = (r) => stripKeys(r, [key])
-  return { held, plan: { raw, sidecars: withoutOrderId(raw, propertyId) } }
+  const { pages, spaces } = await findHolders(root, {
+    keys: [key],
+    reach: 'governed',
+    id: propertyId,
+  })
+  const held = await keyedHolders(pages, key, byId)
+  return { held, spaces, plan: { raw: withoutOrderId((r) => stripKeys(r, [key]), propertyId) } }
 }
 
 export async function stripAndRemove(
   root: string,
   propertyId: string,
   folders: string[],
-  { held, plan }: DeletePlan,
+  { held, spaces, plan }: DeletePlan,
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const swept = await sweepGovernedRoots(root, held.strip, plan)
+  const swept = await sweepGovernedRoots([...held.strip, ...spaces], plan)
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   const reach = await reachConfig(root, { kind: 'property', propertyId })
   return {

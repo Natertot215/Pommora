@@ -91,9 +91,9 @@ describe('the cascades open only the members the index names', () => {
     sweepSpy.mockClear()
   })
 
-  it('a Space rename opens the one holder and still reaches every sidecar', async () => {
+  it('a Space rename opens the one page holder and the Spaces holding its Context key', async () => {
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
-    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    expect(sweepSpy.mock.calls[0]?.[0]).toEqual([page(), csSidecar()])
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pom'])
   })
@@ -107,23 +107,23 @@ describe('the cascades open only the members the index names', () => {
 
   it('a Context rename opens the holders of the key alone', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    expect(sweepSpy.mock.calls[0]?.[0]).toEqual([page(), csSidecar()])
     expect((await fmOf(classes()))['<Classes>']).toEqual(['CS 161'])
   })
 
   it('the unlinks open the holders and capture them', async () => {
     const space = await unlinkSpaceValue(root, 'Projects', 'Pommora')
     expect(space.ok && space.value.captured.map((c) => c.kind).sort()).toEqual(['page', 'space'])
-    expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
+    expect(sweepSpy.mock.calls[0]?.[0]).toEqual([page(), csSidecar()])
     const key = await unlinkContextKey(root, 'Classes', 'ctxC')
     expect(key.ok && [...key.value.touched.keys()]).toEqual([classes()])
-    expect(sweepSpy.mock.calls[1]?.[1]).toEqual([classes()])
+    expect(sweepSpy.mock.calls[1]?.[0]).toEqual([classes()])
   })
 
   it('without an index every page is a candidate', async () => {
     installStores(NO_STORES)
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
-    expect(sweepSpy.mock.calls[0]?.[1]).toHaveLength(3)
+    expect(sweepSpy.mock.calls[0]?.[0]).toHaveLength(4)
   })
 })
 
@@ -141,6 +141,21 @@ const retitle = async (title: string): Promise<void> => {
 
 const fmOf = async (file: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(file, 'utf8')) as Record<string, unknown>
+
+const projectSidecar = (context: string, space: string): string =>
+  join(contextsDir(root), context, space, '_space.json')
+
+const linkSpaces = async (): Promise<void> => {
+  await writeFile(
+    projectSidecar('Projects', 'Pommora'),
+    JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }),
+  )
+  await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
+  await writeFile(
+    projectSidecar('Projects', 'Sapphire'),
+    JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
+  )
+}
 
 describe('renames and casing', () => {
   it('a case-only Context rename of itself passes; a case-variant of ANOTHER fails', async () => {
@@ -291,6 +306,19 @@ describe('renames and casing', () => {
 })
 
 describe('renameContextOp', () => {
+  it('rekeys a Space-to-Space link inside the renamed Context', async () => {
+    await linkSpaces()
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await readJsonAt(projectSidecar('Ventures', 'Pommora'))).toEqual({
+      id: 'sp-pom',
+      '<Ventures>': ['Sapphire'],
+    })
+    expect(await readJsonAt(projectSidecar('Ventures', 'Sapphire'))).toEqual({
+      id: 'sp-sap',
+      '<Ventures>': ['Pommora'],
+    })
+  })
+
   it('a single value renamed onto a held list joins it as a list of one, on a page and a Space', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n<Ventures>:\n  - X\n---\nbody')
     await writeFile(
@@ -451,6 +479,17 @@ describe('the renames report their folder to sync', () => {
 })
 
 describe('renameSpaceOp', () => {
+  it('reaches the renamed Space’s own sidecar at its new folder', async () => {
+    await linkSpaces()
+    expect(await renameSpaceOp(root, 'sp-pom', 'Pommora 2')).toEqual(ok(null))
+    expect((await readJsonAt(projectSidecar('Projects', 'Sapphire')))['<Projects>']).toEqual([
+      'Pommora 2',
+    ])
+    expect((await readJsonAt(projectSidecar('Projects', 'Pommora 2')))['<Projects>']).toEqual([
+      'Sapphire',
+    ])
+  })
+
   it('rewrites the title on every holder', async () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Pommora 2')
     expect(r.ok).toBe(true)
@@ -826,6 +865,37 @@ describe('replayPendingRename across crash windows', () => {
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
+  })
+
+  it('a replay after the list moved and before the folder did rekeys the Context’s own Spaces', async () => {
+    await linkSpaces()
+    await retitle('Ventures')
+    await writeJournal(root, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Ventures',
+    })
+    await refreshTree(root)
+    await replayPendingRename(root)
+    expect((await readJsonAt(projectSidecar('Ventures', 'Pommora')))['<Ventures>']).toEqual([
+      'Sapphire',
+    ])
+  })
+
+  it('a replay after the note and before the title commit rekeys the Context’s own Spaces', async () => {
+    await linkSpaces()
+    await writeJournal(root, {
+      contextId: 'ctx_projects',
+      oldTitle: 'Projects',
+      newTitle: 'Ventures',
+    })
+    await refreshTree(root)
+    await replayPendingRename(root)
+    expect(await regTitle('ctx_projects')).toBe('Ventures')
+    expect(await readJsonAt(projectSidecar('Ventures', 'Pommora'))).toEqual({
+      id: 'sp-pom',
+      '<Ventures>': ['Sapphire'],
+    })
   })
 
   it('is idempotent — replaying twice equals once', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { jsonText } from '../Files/atomicWrite'
@@ -30,7 +30,7 @@ async function seedSidecar(root: string): Promise<{ file: string; text: string }
   return { file, text }
 }
 
-const plan: SweepPlan = { text: (c) => `${c}x`, sidecars: (raw) => ({ ...raw, Tags: ['b'] }) }
+const plan: SweepPlan = { text: (c) => `${c}x`, raw: (raw) => ({ ...raw, Tags: ['b'] }) }
 
 describe('sweepGovernedRoots', () => {
   it.skipIf(noModeBits)(
@@ -39,7 +39,7 @@ describe('sweepGovernedRoots', () => {
       const { root, a, b } = await seed()
       await chmod(join(root, 'Locked'), 0o555)
       try {
-        const r = await sweepGovernedRoots(root, [b, a], { text: (c) => `${c}x` })
+        const r = await sweepGovernedRoots([b, a], plan)
         expect(r).toEqual({
           skipped: [b],
           refused: [],
@@ -64,7 +64,7 @@ describe('sweepGovernedRoots', () => {
     const bad = join(root, '.nexus', 'contexts', 'Areas', 'Health', '_space.json')
     await mkdir(join(root, '.nexus', 'contexts', 'Areas', 'Health'), { recursive: true })
     await writeFile(bad, '{ not json')
-    const r = await sweepGovernedRoots(root, [], { raw: () => null, sidecars: (raw) => raw })
+    const r = await sweepGovernedRoots([bad], { raw: (raw) => raw })
     expect(r).toEqual({ skipped: [], refused: [bad], touched: new Map() })
     expect(await readFile(bad, 'utf8')).toBe('{ not json')
   })
@@ -73,7 +73,7 @@ describe('sweepGovernedRoots', () => {
     const { root, a } = await seed()
     const sidecar = await seedSidecar(root)
     const page = await readFile(a, 'utf8')
-    const r = await sweepGovernedRoots(root, [a], plan, true)
+    const r = await sweepGovernedRoots([a, sidecar.file], plan, true)
     expect(r).toEqual({
       skipped: [],
       refused: [],
@@ -92,6 +92,17 @@ describe('sweepGovernedRoots', () => {
     expect(await readFile(sidecar.file, 'utf8')).toBe(sidecar.text)
   })
 
+  it('a page keeps its modification time and a sidecar is re-dated, each written by its kind', async () => {
+    const { root, a } = await seed()
+    const sidecar = await seedSidecar(root)
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(a, past, past)
+    await utimes(sidecar.file, past, past)
+    await sweepGovernedRoots([a, sidecar.file], plan)
+    expect(Math.floor((await stat(a)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
+    expect((await stat(sidecar.file)).mtimeMs).toBeGreaterThan(past.getTime())
+  })
+
   it.skipIf(noModeBits)(
     'a dry run files a file it can’t read as skipped, and sweepCount leaves it out',
     async () => {
@@ -99,13 +110,12 @@ describe('sweepGovernedRoots', () => {
       const page = await readFile(a, 'utf8')
       await chmod(b, 0o000)
       try {
-        const textPlan: SweepPlan = { text: (c) => `${c}x` }
-        expect(await sweepGovernedRoots(root, [b, a], textPlan, true)).toEqual({
+        expect(await sweepGovernedRoots([b, a], plan, true)).toEqual({
           skipped: [b],
           refused: [],
           touched: new Map([[a, { before: page, after: `${page}x` }]]),
         })
-        expect(await sweepCount(root, [b, a], textPlan)).toBe(1)
+        expect(await sweepCount(root, [b, a], plan)).toBe(1)
       } finally {
         await chmod(b, 0o644)
       }
@@ -118,7 +128,7 @@ describe('sweepCount', () => {
     const { root, a } = await seed()
     const sidecar = await seedSidecar(root)
     const page = await readFile(a, 'utf8')
-    expect(await sweepCount(root, [a], plan)).toBe(2)
+    expect(await sweepCount(root, [a, sidecar.file], plan)).toBe(2)
     expect(await readFile(a, 'utf8')).toBe(page)
     expect(await readFile(sidecar.file, 'utf8')).toBe(sidecar.text)
   })
@@ -136,8 +146,7 @@ describe('sweepCount', () => {
     await mkdir(bundle, { recursive: true })
     const archived = join(bundle, 'C.md')
     await writeFile(archived, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\n---\nbody\n')
-    const textPlan: SweepPlan = { text: (c) => `${c}x` }
-    expect(await sweepCount(root, [a, archived], textPlan)).toBe(1)
-    expect((await sweepGovernedRoots(root, [a, archived], textPlan, true)).touched.size).toBe(2)
+    expect(await sweepCount(root, [a, archived], plan)).toBe(1)
+    expect((await sweepGovernedRoots([a, archived], plan, true)).touched.size).toBe(2)
   })
 })

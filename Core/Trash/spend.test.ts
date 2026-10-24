@@ -5,7 +5,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
-import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, noModeBits, readJsonAt, seedSpaceSidecar } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as atomicWrite from '../Files/atomicWrite'
@@ -415,10 +415,12 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     installStores(memoryStores().stores)
     const { chmod } = await import('node:fs/promises')
     try {
+      await seedSpaceSidecar(root, 'Areas', 'Health', {})
       for (const [rel, text] of Object.entries(refusable)) {
         await mkdir(dirname(join(root, rel)), { recursive: true })
         await writeFile(join(root, rel), text)
       }
+      await refreshTree(root)
       await seedContentIndex(root)
       const before = await texts()
       await chmod(join(root, 'Notes', 'Daily'), 0o555)
@@ -542,9 +544,9 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     ['context', '.nexus/contexts/Projects'],
     ['space', '.nexus/contexts/Projects/Pommora'],
   ] as const)('an unreadable Space sidecar in another Context leaves a %s deletable, partial, and the sidecar byte-identical', async (kind, path) => {
-    const broken = join(contextsDir(root), 'Areas', 'Broken', '_space.json')
-    await mkdir(dirname(broken), { recursive: true })
+    const broken = await seedSpaceSidecar(root, 'Areas', 'Broken', {})
     await writeFile(broken, '{ corrupt')
+    await refreshTree(root)
     const r = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
     expect(r.ok).toBe(true)
     const { record } = await onlyBundle()

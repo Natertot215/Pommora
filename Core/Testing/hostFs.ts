@@ -2,7 +2,7 @@ import { mkdtempSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { contextsDir, nexusConfig, sidecarPath } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { CONTEXTS_REGISTRY_REL, NEXUS_CONFIG_FILES, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
 import type { PropertyDefinition } from '../Properties/properties'
 
@@ -25,12 +25,21 @@ export const putJson = async (file: string, value: unknown): Promise<void> => {
   await writeFile(file, JSON.stringify(value, null, 2))
 }
 
+/** A Space the tree holds: its sidecar, and its Context in the Context list when the list doesn't name it. */
 export const seedSpaceSidecar = async (
   root: string,
   contextTitle: string,
   spaceName: string,
   raw: Record<string, unknown>,
 ): Promise<string> => {
+  const registry = join(root, CONTEXTS_REGISTRY_REL)
+  const { contexts } = await readJsonAt<{ contexts: { title: string }[] }>(registry).catch(() => ({
+    contexts: [],
+  }))
+  if (!contexts.some((c) => c.title === contextTitle))
+    await putJson(registry, {
+      contexts: [...contexts, { id: `ctx_${contextTitle}`, title: contextTitle }],
+    })
   const file = join(contextsDir(root), contextTitle, spaceName, SPACE_SIDECAR)
   await putJson(file, raw)
   return file

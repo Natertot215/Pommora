@@ -2945,7 +2945,7 @@ describe('the Contexts lock', () => {
     await chmod(locked, 0o000)
     try {
       const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
-      const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (_, files) =>
+      const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (files) =>
         (files as string[]).includes(alpha),
       )
       const running = handleMutate(root, op, nexusDeps)
@@ -3021,14 +3021,13 @@ describe('the Contexts lock', () => {
       await chmod(locked, 0o000)
       try {
         const sweeps = (files: unknown) => (files as string[]).includes(locked)
-        const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (_, files) =>
+        const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (files) =>
           sweeps(files),
         )
         const running = handleMutate(root, deletes[0][1], nexusDeps)
         await paused.reached
         const files =
-          vi.mocked(governedSweep.sweepGovernedRoots).mock.calls.find(([, f]) => sweeps(f))?.[1] ??
-          []
+          vi.mocked(governedSweep.sweepGovernedRoots).mock.calls.find(([f]) => sweeps(f))?.[0] ?? []
         const [first, last] = [join(root, 'Notes', 'Daily', 'Alpha.md'), second].sort(
           (a, b) => files.indexOf(a) - files.indexOf(b),
         )

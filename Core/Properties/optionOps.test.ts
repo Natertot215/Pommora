@@ -1409,7 +1409,6 @@ async function toned(
   const page = join(col, 'One.md')
   const words = select_options.map((o, i) => (i ? `"${o.key}"` : o.key)).join(', ')
   await writeFile(page, `---\nID: ${PAGE_ID}\nTones: [${words}]\n---\nb\n`)
-  const space = await spaceSidecar('Pommora', { id: 'sp1', Tones: [select_options[0].key] })
   const file = sidecarPath(col, 'collection')
   await writeFile(
     file,
@@ -1419,6 +1418,7 @@ async function toned(
     }),
   )
   const surfaces = await seedConfigSurfaces(root, col, viewOn(id, select_options[0].id))
+  const space = await spaceSidecar('Pommora', { id: 'sp1', Tones: [select_options[0].key] })
   const cache = async () => (await readJsonAt(file)).property_cache
   return { id, page, space, cache, surfaces }
 }
