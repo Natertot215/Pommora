@@ -30,7 +30,6 @@ import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject, removeOwn } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import { withoutOrderId } from '../Contexts/spaceSidecar'
-import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { join, relative } from '../Paths/posix'
 import type { MutateReply } from '../Nexus/mutateRequest'
@@ -145,11 +144,11 @@ export async function stripProperty(
 async function unassignAndPurge(folder: string, propertyId: string): Promise<boolean> {
   const written = await patchSidecar(folder, 'collection', (cur) => {
     const assigned = assignedIds(cur)
-    const stashed = isPlainObject(cur.property_stash) && propertyId in cur.property_stash
-    if (!assigned.includes(propertyId) && !stashed) return null
-    const next = { ...cur, properties: assigned.filter((id) => id !== propertyId) }
-    // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
-    return stashed ? patchStashBlock(next, propertyId) : next
+    if (!assigned.includes(propertyId) && !stashedBlock(cur, propertyId)) return null
+    return patchStashBlock(
+      { ...cur, properties: assigned.filter((id) => id !== propertyId) },
+      propertyId,
+    )
   })
   return written.ok
 }
