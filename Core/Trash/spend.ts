@@ -10,7 +10,8 @@ import { readLiveSetting } from '../Settings/settings'
 import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
 import { rewriteConnections } from '../Connections/rewrite'
-import { linkDefsOf } from '../Properties/propertiesRegistry'
+import { linkDefsOf, serializeSchemaOp } from '../Properties/propertiesRegistry'
+import { asString } from '../Nexus/coerce'
 import {
   contentPages,
   fileInto,
@@ -47,6 +48,7 @@ import {
   owedName,
   owedReport,
   oweWorked,
+  propertyNote,
   readNotes,
   restoreNote,
   type Worked,
@@ -71,8 +73,17 @@ export async function emptyBundle(
     await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
   }
   if (record.entity === 'property') {
+    // Gone for good once its bundle goes, so its delete's finish reaches the Trash too; what it misses stays owed, so Try Again reaches it.
+    const key = asString(record.def.key)
+    const noted = await editNote(root, record.id, (e) => ({
+      ...propertyNote(e),
+      strip: distinct(propertyNote(e).strip, key ? [key] : []),
+    }))
+    if (!noted.ok) return noted
     await dispose(bundleAbs)
-    return ok({})
+    return ok({
+      cascade: owedReport(await serializeSchemaOp(root, () => finishEntry(root, record.id, deps))),
+    })
   }
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
