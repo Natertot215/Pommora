@@ -1,6 +1,6 @@
 // Key holders: which pages and Spaces hold a key, found from the content index and the tree, and what each one holds.
 
-import { queryMembers } from './contentIndex'
+import { queryMembers, readPageRelations } from './contentIndex'
 import { nexusCorpus } from './indexSeed'
 import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -101,9 +101,16 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const heldOut = new Set<string>()
   for (const file of [...pages, ...spaces]) {
     const text = await readTextOrNull(file)
-    const raw =
-      text === null ? null : isMarkdownFile(file) ? splitFrontmatter(text) : parseJsonObject(text)
     const rel = relative(root, file)
+    // An unreadable page answers the index's last read of it, so a delete's Trash entry keeps what its strip can't reach yet; a readable one answers its file, whose parsed values the index's JSON doesn't always carry.
+    const raw =
+      text !== null
+        ? isMarkdownFile(file)
+          ? splitFrontmatter(text)
+          : parseJsonObject(text)
+        : isMarkdownFile(file)
+          ? ((readPageRelations([rel])?.pages[rel]?.values as Json | undefined) ?? null)
+          : null
     const keys = q.keys.filter((k, i) => (raw ? Object.hasOwn(raw, k) : !!listed[i]?.has(rel)))
     if (raw && !keys.length) continue
     const id = raw ? rootId(file, raw) : undefined

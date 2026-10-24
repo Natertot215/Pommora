@@ -537,7 +537,7 @@ describe('unreadable holders keep the entry', () => {
   )
 
   it.skipIf(noModeBits)(
-    'with a warm index, a holder the watcher found unreadable still keeps the entry, and its bundle says it is partial',
+    'with a warm index, a holder the watcher found unreadable still keeps the entry, and its bundle holds its value from the index',
     async () => {
       const root = await seedNexus()
       await openSession(root)
@@ -551,9 +551,9 @@ describe('unreadable holders keep the entry', () => {
       if (!deleted.ok) throw new Error('delete refused')
       expect(deleted.value.cascade).toMatchObject({ owed: true })
       expect(await readNotes(root)).toEqual(DELETED)
-      expect(await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))).toMatchObject({
-        partial: true,
-      })
+      const record = await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))
+      expect(record).toMatchObject({ values: { [PAGE_IDS[1]]: 'Draft' } })
+      expect(record).not.toHaveProperty('partial')
       await indexWrittenPage(root, b)
       await finishOwed(root, DEPS)
       expect(await page(root, 'B')).not.toContain('Stage')

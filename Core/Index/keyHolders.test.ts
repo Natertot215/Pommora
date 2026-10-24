@@ -12,6 +12,7 @@ import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption } from '../Properties/optionOps'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { findHolders, heldValues } from './keyHolders'
+import { readPageRelations } from './contentIndex'
 import { collectionFolders, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
 
@@ -333,17 +334,69 @@ describe('findHolders, reading', () => {
     })
   })
 
+  const typed: [string, string][] = [
+    ['Text', 'Text: hello\n'],
+    ['Count', 'Count: 3\n'],
+    ['Done', 'Done: true\n'],
+    ['When', 'When: 2026-10-24\n'],
+    ['Stage', 'Stage: Draft\n'],
+    ['Tags', 'Tags:\n  - a\n  - b\n'],
+    ['Phase', 'Phase: Doing\n'],
+    ['Site', 'Site: https://example.com\n'],
+    ['Attachment', 'Attachment: notes.pdf\n'],
+    ['<Areas>', '<Areas>:\n  - Home\n'],
+  ]
+  const typedHeld = async (): Promise<string[]> => {
+    for (const [i, [, fm]] of typed.entries()) await page(`V0${i}`, fm)
+    await seedContentIndex(root)
+    dropLiveTree()
+    return typed.map((_, i) => abs('Notes', `V0${i}.md`))
+  }
+  const typedQuery = (): ReturnType<typeof findHolders> =>
+    findHolders(root, { keys: typed.map(([k]) => k), reach: 'anywhere' }, 'values')
+
   it.skipIf(noModeBits)(
-    'a holder it can’t read stays in the strip with no value, holding the keys the index last read it holding',
+    'a holder’s values come from its file, and from the index only when the file can’t be read',
     async () => {
-      const a = abs('Notes', 'HolderA.md')
+      const files = await typedHeld()
+      const shut = files.filter((_, i) => i % 2 === 1)
       try {
-        await chmod(a, 0o000)
-        const { pages, held } = await stageHeld()
-        expect(held).toContainEqual({ file: a, id: null, keys: ['Stage'], values: null })
-        expect(pages).toContain(a)
+        for (const f of shut) await chmod(f, 0o000)
+        const { held } = await typedQuery()
+        for (const [i, [key]] of typed.entries()) {
+          const file = files[i] as string
+          const rel = file.slice(root.length + 1)
+          const want = shut.includes(file)
+            ? readPageRelations([rel])?.pages[rel]?.values[key]
+            : splitFrontmatter(pageText(`V0${i}`, typed[i]?.[1] ?? ''))[key]
+          expect(held.find((h) => h.file === file)).toEqual({
+            file,
+            id: `01ARZ3NDEKPSV4RRFFQ69G5V0${i}`,
+            keys: [key],
+            values: { [key]: want },
+          })
+        }
       } finally {
-        await chmod(a, 0o644)
+        for (const f of shut) await chmod(f, 0o644)
+      }
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'a holder neither its file nor the index answers keeps no values',
+    async () => {
+      const mem = memoryStores()
+      installStores(mem.stores)
+      const [file] = await typedHeld()
+      const rel = (file as string).slice(root.length + 1)
+      mem.index.stats.delete(rel)
+      try {
+        await chmod(file as string, 0o000)
+        const { held, pages } = await typedQuery()
+        expect(held).toContainEqual({ file, id: null, keys: ['Text'], values: null })
+        expect(pages).toContain(file)
+      } finally {
+        await chmod(file as string, 0o644)
       }
     },
   )

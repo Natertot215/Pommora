@@ -26,6 +26,9 @@ import { sidecarPath } from '../Paths/paths'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 import { installMachine, machine } from '../Platform/machine'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 
 vi.mock('./registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./registryProperty')>()
@@ -510,6 +513,25 @@ describe('the delete’s list step and its keys', () => {
       expect(content).not.toContain('Urgency:')
     }
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it.skipIf(noModeBits)('a delete that missed a page still records its value', async () => {
+    installStores(memoryStores().stores)
+    const { id, pages } = await held()
+    const [shut] = pages as [string]
+    const pid = splitFrontmatter(await readFile(shut, 'utf8'))[ID_KEY] as string
+    await seedContentIndex(root)
+    await chmod(shut, 0o000)
+    try {
+      expect((await deleteProperty(root, id)).ok).toBe(true)
+    } finally {
+      await chmod(shut, 0o644)
+      installStores(NO_STORES)
+    }
+    const name = (await readdir(join(root, '.trash'))).find((f) => f.includes(`property-${id}`))
+    const record = await readRecord(join(root, '.trash', name ?? ''))
+    expect((record as { values: Record<string, unknown> }).values[pid]).toBe('hi')
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', strip: ['Priority'] } })
   })
 
   it('a delete reads each holder once per key it holds', async () => {
