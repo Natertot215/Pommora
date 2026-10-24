@@ -10,7 +10,7 @@ import {
 } from '../Nexus/governedSweep'
 import { editStashes } from './propertyStash'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
-import { errText, ok, fail, type Result } from '../Contract/result'
+import { fault, ok, fail, type Result } from '../Contract/result'
 import { claimsWord, optionList } from './propertyValue'
 import { formatKey, type KeyFormat } from './keyFormat'
 import { exactTitle, normalizeTitle } from '../Paths/caseFold'
@@ -83,7 +83,7 @@ const keysOf = (def: PropertyDefinition): unknown[] => optionsOf(def).map((o) =>
 export function editOption(root: string, propertyId: string, e: OptionEdit): Promise<Result<null>> {
   return serializeSchemaOp(root, async () => {
     const notes = await readNotes(root)
-    return mutateRegistry<Result<null>>(root, (registry) => {
+    return mutateRegistry(root, (registry) => {
       const found = optionDef(registry.defs[propertyId])
       if (!found.ok) return { result: found }
       const def = found.value
@@ -121,67 +121,63 @@ export function unregisteredMembers(def: PropertyDefinition, raw: unknown): stri
 
 /** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole: an open's pages from the index its seed just filled, and a settle's from the files it was handed, which a rescope's reseed has yet to index. */
 export async function registerHeldOptions(root: string, rels?: readonly string[]): Promise<void> {
-  try {
-    await serializeSchemaOp(root, async () => {
-      const tree = heldTreeOf(root)
-      if (!tree) return
-      const held = new Map<string, string[]>()
-      const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
-        for (const def of defs) {
-          const members = unregisteredMembers(def, values[def.key])
-          if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
-        }
+  const r = await serializeSchemaOp(root, async (): Promise<Result<null>> => {
+    const tree = heldTreeOf(root)
+    if (!tree) return ok(null)
+    const held = new Map<string, string[]>()
+    const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
+      for (const def of defs) {
+        const members = unregisteredMembers(def, values[def.key])
+        if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
       }
-      const everywhere = [
-        ...tree.collections.map((c) => c.path),
-        ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
-      ]
-      for (const rel of rels ?? everywhere) {
-        const pages = isMarkdownFile(rel) ? [rel] : null
-        const space = pages ? null : spaceAt(tree, rel)
-        const defs = holderSchema(tree, space ?? rel).filter(
-          (d) => PROPERTY_TYPES[d.type].registersMembers,
+    }
+    const everywhere = [
+      ...tree.collections.map((c) => c.path),
+      ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
+    ]
+    for (const rel of rels ?? everywhere) {
+      const pages = isMarkdownFile(rel) ? [rel] : null
+      const space = pages ? null : spaceAt(tree, rel)
+      const defs = holderSchema(tree, space ?? rel).filter(
+        (d) => PROPERTY_TYPES[d.type].registersMembers,
+      )
+      if (!defs.length) continue
+      const files = pages ?? pagePathsIn(containerAt(tree, rel))
+      const indexed = rels || space ? null : readPageRelations(files)
+      if (space) collect(space.values ?? {}, defs)
+      else if (indexed) for (const { values } of Object.values(indexed.pages)) collect(values, defs)
+      else
+        for (const page of files) {
+          const read = await readPageRecord(join(root, page), page).catch(() => null)
+          if (read?.kind === 'read') collect(read.fm, defs)
+        }
+    }
+    if (!held.size) return ok(null)
+    const notes = await readNotes(root)
+    return mutateRegistry(root, (registry) => {
+      let defs = registry.defs
+      for (const [id, members] of held) {
+        const def = defs[id]
+        if (!def) continue
+        // A word an option still owes sits in files its sweep missed; registering it would hand that work to a new option (H-7).
+        const fresh = unregisteredMembers(def, members).filter(
+          (v) => !owedName(notes, { owner: { kind: 'option', propertyId: id }, name: String(v) }),
         )
-        if (!defs.length) continue
-        const files = pages ?? pagePathsIn(containerAt(tree, rel))
-        const indexed = rels || space ? null : readPageRelations(files)
-        if (space) collect(space.values ?? {}, defs)
-        else if (indexed)
-          for (const { values } of Object.values(indexed.pages)) collect(values, defs)
-        else
-          for (const page of files) {
-            const read = await readPageRecord(join(root, page), page).catch(() => null)
-            if (read?.kind === 'read') collect(read.fm, defs)
-          }
+        if (!fresh.length) continue
+        const next = editOptions(def, (groups) =>
+          fresh.reduce(
+            (g, v) => addOption(g, SELECT_GROUP, { id: mintOptionId(), key: v, label: v }),
+            groups,
+          ),
+        )
+        defs = { ...defs, [id]: next }
       }
-      if (!held.size) return
-      const notes = await readNotes(root)
-      await mutateRegistry(root, (registry) => {
-        let defs = registry.defs
-        for (const [id, members] of held) {
-          const def = defs[id]
-          if (!def) continue
-          // A word an option still owes sits in files its sweep missed; registering it would hand that work to a new option (H-7).
-          const fresh = unregisteredMembers(def, members).filter(
-            (v) => !owedName(notes, { owner: { kind: 'option', propertyId: id }, name: String(v) }),
-          )
-          if (!fresh.length) continue
-          const next = editOptions(def, (groups) =>
-            fresh.reduce(
-              (g, v) => addOption(g, SELECT_GROUP, { id: mintOptionId(), key: v, label: v }),
-              groups,
-            ),
-          )
-          defs = { ...defs, [id]: next }
-        }
-        return defs === registry.defs
-          ? { result: null }
-          : { next: { ...registry, defs }, result: null }
-      })
+      return defs === registry.defs
+        ? { result: ok(null) }
+        : { next: { ...registry, defs }, result: ok(null) }
     })
-  } catch (e) {
-    console.error('held options: could not be registered:', errText(e))
-  }
+  }).catch(fault)
+  if (!r.ok) console.error('held options: could not be registered:', r.error.message)
 }
 
 export function dropOptionFromDef(
@@ -189,7 +185,7 @@ export function dropOptionFromDef(
   propertyId: string,
   optionId: string,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
+  return mutateRegistry(root, (registry) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
     const next = editOptions(current, (groups) =>
@@ -270,7 +266,7 @@ async function rekeyOptions(
   const relabel = (o: SelectOption): string =>
     'optionId' in change && o.id === change.optionId ? change.label : o.label
   const commit = () =>
-    mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
+    mutateRegistry(root, (registry) => {
       const found = optionDef(registry.defs[propertyId])
       if (!found.ok) return { result: found }
       const def = found.value

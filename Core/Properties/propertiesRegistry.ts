@@ -1,7 +1,7 @@
 import { nexusConfig, nexusDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
-import { fail, valueOr } from '../Contract/result'
+import { fail, valueOr, type Result } from '../Contract/result'
 import { readJsonStrict, readKept, updateNexusFile } from '../Files/atomicWrite'
 import { cachedParse } from '../Files/walkCache'
 import { mergeKeys } from '../Files/jsonMerge'
@@ -90,11 +90,11 @@ function rebuiltOptions(
   )
 }
 
-export async function mutateRegistry<T>(
+export async function mutateRegistry<V>(
   root: string,
-  fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
-): Promise<T> {
-  let result!: T
+  fn: (registry: RegistryFile) => { next?: RegistryFile; result: Result<V> },
+): Promise<Result<V>> {
+  let result!: Result<V>
   const written = await updateNexusFile(
     registryPath(root),
     (raw) => {
@@ -124,7 +124,7 @@ export async function mutateRegistry<T>(
     },
     false,
   )
-  if (!written.ok) throw new Error(written.error.message)
+  if (!written.ok) return written
   return result
 }
 
