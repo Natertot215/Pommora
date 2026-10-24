@@ -650,6 +650,8 @@ async function group5(cdp) {
   const deletedSaid = await settles(async () => (await notice(cdp)).startsWith('Deleted 2 Pages'))
   const far = await cdp.evaluate(`({ x: 8, y: innerHeight - 8 })`)
   await moveTo(cdp, far)
+  // Two frames, so Chromium doesn't coalesce the leave into the return and the notice sees the pointer go.
+  await cdp.evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))')
   const band = await boxOf(cdp, LABEL)
   await moveTo(cdp, band)
   const stalled = await holds(async () => !(await drained(cdp)), 5000)
