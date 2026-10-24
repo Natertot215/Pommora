@@ -5,6 +5,7 @@ import { machine } from '../Platform/machine'
 import { rootSegs } from '../Paths/exclusion'
 import { relative } from '../Paths/posix'
 import { sweepFileHistory } from '../Pages/fileHistory'
+import { sweepStashes } from '../Properties/propertyStash'
 import { nexusFolderRefusal } from './codec'
 import { personalizationSchema, settingValue } from './personalization'
 import { clearExclusionData } from './exclusionScan'
@@ -44,6 +45,7 @@ export const settingsHandlers = {
     await writePersonalization(root, key, settingValue(key, value))
     if (key === 'webZoomFactor') await ctx.applyZoom()
     if (key === 'historyDays' || key === 'archiveHistoryDays') void sweepFileHistory(root)
+    if (key === 'historyDays') void sweepStashes(root)
     return ok(null)
   }),
 

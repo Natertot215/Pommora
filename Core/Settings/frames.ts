@@ -650,6 +650,7 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'historyDays',
             label: 'History Timeframe',
+            hint: 'How long file history and the recovery stash are kept.',
             unit: DAYS,
           },
           {

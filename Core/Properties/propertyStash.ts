@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { patchSidecar } from '../Files/sidecar'
+import { heldTreeOf } from '../Nexus/liveTree'
+import { readFileHistoryConfig } from '../Settings/settings'
 import type { CollectionNode } from '../Nexus/tree'
 
 /** One property's stashed values by page id, when they were removed, and, per page, the key its line stood above; a malformed `above` reads as none. */
@@ -42,12 +44,16 @@ export function patchStashBlock(
   return next
 }
 
-/** Edits the values each Collection the tree lists as stashing one of `propertyIds` holds, through `edit`, which answers a block's next values or null to leave it; answers how many it couldn't edit. */
+/** Edits the values each Collection the tree lists as stashing one of `propertyIds` holds, through `edit`, which reads a block's values, its property's id, and its stamp, and answers its next values or null to leave it; answers how many it couldn't edit. */
 export async function editStashes(
   root: string,
   collections: readonly CollectionNode[],
   propertyIds: ReadonlySet<string>,
-  edit: (values: Record<string, unknown>, id: string) => Record<string, unknown> | null,
+  edit: (
+    values: Record<string, unknown>,
+    id: string,
+    removedAt: string,
+  ) => Record<string, unknown> | null,
 ): Promise<number> {
   let skipped = 0
   for (const node of collections) {
@@ -58,7 +64,7 @@ export async function editStashes(
       let next: Record<string, unknown> | null = null
       for (const id of ids) {
         const block = stashedBlock(next ?? cur, id)
-        const edited = block && edit(block.values, id)
+        const edited = block && edit(block.values, id, block.removed_at)
         if (edited) next = patchStashBlock(next ?? cur, id, { ...block, values: edited })
       }
       return next
@@ -66,4 +72,15 @@ export async function editStashes(
     if (!written?.ok) skipped++
   }
   return skipped
+}
+
+/** Drops every block a Remove last stamped before the History Timeframe, in the Collections the held tree lists as stashing one; with none listed, it reads nothing. */
+export async function sweepStashes(root: string): Promise<void> {
+  const collections = heldTreeOf(root)?.collections ?? []
+  const ids = new Set(collections.flatMap((c) => c.stashed ?? []))
+  if (!ids.size) return
+  const cutoff = Date.now() - (await readFileHistoryConfig(root)).keepMs
+  await editStashes(root, collections, ids, (_values, _id, removedAt) =>
+    Date.parse(removedAt) < cutoff ? {} : null,
+  )
 }

@@ -32,6 +32,7 @@ import { settleNow, recordHanded } from './settle'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/discard'
 import { settleArchives } from '../Archive/refile'
+import { sweepStashes } from '../Properties/propertyStash'
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
   let nexusId: string | null = null
@@ -103,6 +104,7 @@ export async function openNexusSequence(
     const reread = await seedContentIndex(root)
     oweSeen(root, reread)
     void sweepFileHistory(root)
+    void sweepStashes(root)
     await finishOwed(root, await trashDeps(ctx))
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)
