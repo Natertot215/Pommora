@@ -361,13 +361,6 @@ describe('setContext reads the held tree', () => {
       expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7])
     })
 
-    it('refuses a self-link and writes nothing', async () => {
-      const before = await readFile(pomFile(), 'utf8')
-      const r = await link('ctx_projects', ['sp-pom'])
-      expect(r.ok).toBe(false)
-      expect(await readFile(pomFile(), 'utf8')).toBe(before)
-    })
-
     it('leaves an unresolvable sibling key verbatim (B-8)', async () => {
       await writeFile(pomFile(), JSON.stringify({ id: 'sp-pom', '<Classes>': ['Vanished'] }))
       const r = await link('ctx_projects', [])

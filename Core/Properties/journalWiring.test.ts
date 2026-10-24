@@ -254,7 +254,7 @@ describe('the option-op writers', () => {
   })
 })
 
-describe('a second nexus', () => {
+describe('a second Nexus keeps its own notes file', () => {
   it('sweeps and clears its own entry while the session is open elsewhere', async () => {
     const other = tempRoot('pom-jwire2-')
     await mkdir(join(other, '.nexus'), { recursive: true })

@@ -168,6 +168,36 @@ describe('handleMutate — create', () => {
     expect(group?.spaces.map((s) => s.title)).toEqual(['Home'])
   })
 
+  it('createContextGroup holds the Contexts lock', async () => {
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(join(contextsDir(root), 'contexts.json'), JSON.stringify({ contexts: [] }))
+    const order: string[] = []
+    let release = (): void => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const lock = lockContention(contextsDir(root))
+    // A Context rename's hold of the Contexts lock, which the create queues behind.
+    const renaming = machine().lock(contextsDir(root), async () => {
+      await gate
+      order.push('rename')
+    })
+    const created = settledMutate(
+      root,
+      { op: 'createContextGroup', id: newId(), name: 'Realms' },
+      nexusDeps,
+    ).then((r) => {
+      order.push('create')
+      return r
+    })
+    await lock.contended
+    lock.restore()
+    release()
+    await renaming
+    expect((await created).ok).toBe(true)
+    expect(order).toEqual(['rename', 'create'])
+  })
+
   it('a Context or Space create that stepped past a taken name answers the name it took', async () => {
     await mkdir(contextsDir(root), { recursive: true })
     await writeFile(join(contextsDir(root), 'contexts.json'), JSON.stringify({ contexts: [] }))

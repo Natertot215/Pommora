@@ -1,11 +1,9 @@
 import { mkdir, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
-import * as contextCascadeModule from '../Contexts/contextCascade'
-import { readJournal, writeJournal } from '../Contexts/contextJournal'
 import * as finishModule from './finishOwed'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { spaceDirRel } from '../Paths/nexusPaths'
+import { OWED_REL, spaceDirRel } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
 import { readValue, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -13,7 +11,7 @@ import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { currentSession, startSession, stopSession } from '../Sync/Client/session'
 import { currentStatus } from '../Sync/Client/status'
-import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import * as indexSeedModule from '../Index/indexSeed'
@@ -459,10 +457,8 @@ describe('openNexusSequence', () => {
       join(second, 'Notes', 'A.md'),
       `---\nID: ${THIRD_PAGE}\n<Projects>:\n  - Pommora\n---\nbody`,
     )
-    await writeJournal(second, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
+    await putJson(join(second, OWED_REL), {
+      ctx_projects: { kind: 'context', rename: ['Projects'] },
     })
 
     try {
@@ -478,21 +474,13 @@ describe('openNexusSequence', () => {
     }
   })
 
-  it('a Context replay that throws leaves the open whole, its finishing pass and settle run', async () => {
-    vi.spyOn(contextCascadeModule, 'replayPendingRename').mockRejectedValueOnce(
-      new Error('unmovable'),
-    )
+  it('the open runs the one finishing pass', async () => {
     const finishing = vi.spyOn(finishModule, 'finishOwed')
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, false)
-    expect(logged).toHaveBeenCalledWith('contexts: the rename replay failed:', 'unmovable')
     expect(finishing).toHaveBeenCalledWith(root, expect.anything())
-    expect(heldTreeOf(root)?.collections[0]?.pages[0]?.id).toBe(NOTES)
-    await settledSession()
-    expect(currentSession()).not.toBeNull()
   })
 
-  it('a re-adopt of the open Nexus replays no Context rename', async () => {
+  it('a re-adopt of the open Nexus finishes no Context rename', async () => {
     await openNexusSequence(ctx, root, false)
     await mkdir(contextsDir(root), { recursive: true })
     await writeFile(
@@ -503,11 +491,11 @@ describe('openNexusSequence', () => {
     )
     const tagged = join(root, 'Library', 'Tagged.md')
     await writeFile(tagged, `---\nID: ${THIRD_PAGE}\n<Projects>:\n  - Pommora\n---\nbody`)
-    const owed = { contextId: 'ctx_projects', oldTitle: 'Projects', newTitle: 'Ventures' }
-    await writeJournal(root, owed)
+    const owed = { ctx_projects: { kind: 'context', rename: ['Projects'] } }
+    await putJson(join(root, OWED_REL), owed)
     await openNexusSequence(ctx, root, false)
     expect(await readFile(tagged, 'utf8')).toContain('<Projects>:')
-    expect(await readJournal(root)).toEqual(owed)
+    expect(await readJsonAt(join(root, OWED_REL))).toEqual(owed)
   })
 
   it('an open cascades a heading renamed while it was closed into the page that links it', async () => {

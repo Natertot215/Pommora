@@ -141,11 +141,9 @@ describe('manifestAdmits', () => {
     expect(admits('.nexus/interface/homepage/t1.md')).toBe(true)
   })
 
-  it('refuses thumbnails, journals, databases, and foreign dot-entries', () => {
+  it('refuses thumbnails, databases, and foreign dot-entries', () => {
     expect(admits(thumbsRel(nexusId))).toBe(false)
     expect(admits(`${thumbsRel(nexusId)}/a.jpg`)).toBe(false)
-    expect(admits('.nexus/property-cascade.json')).toBe(false)
-    expect(admits('.nexus/context-rename.json')).toBe(false)
     expect(admits('.nexus/nexus.db-wal')).toBe(false)
     expect(admits('.obsidian/x')).toBe(false)
   })

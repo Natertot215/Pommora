@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { rm, mkdir, readdir, rename, symlink, writeFile, readFile } from 'node:fs/promises'
+import { rm, mkdir, readdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { tempRoot, windows, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, windows, readJsonAt, putJson } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
-  replayPendingRename,
   unlinkContextKey,
   unlinkSpaceValue,
 } from './contextCascade'
@@ -15,7 +14,11 @@ import { unsweptLine } from '../Nexus/entities'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-import { clearJournal, readJournal, writeJournal } from './contextJournal'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { createContextGroup, createSpace } from './contextWrite'
+import { dropLiveTree } from '../Nexus/liveTree'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 import type { ContextsRegistry } from './contexts'
 import { pathExists } from '../Files/atomicWrite'
@@ -175,7 +178,7 @@ describe('renames and casing', () => {
     expect(await fmOf(page())).toEqual({ id: 'p1', '<projects>': ['Pommora'] })
     expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<projects>': ['Pommora'] })
     expect(await readFile(other(), 'utf8')).toBe(otherBefore)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('a case-only Context rename merges the key into the one it already shares a page with, the page then reading both keys’ Spaces', async () => {
@@ -210,63 +213,7 @@ describe('renames and casing', () => {
     expect(await readdir(join(contextsDir(root), 'Projects'))).toContain('pommora')
     expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['pommora'])
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  describe('an owed case-only rename replays on a disk that folds case', () => {
-    const spaceJournal = () => ({
-      contextId: 'ctx_projects',
-      spaceId: 'sp-pom',
-      oldTitle: 'Pommora',
-      newTitle: 'pommora',
-    })
-    const projects = (title: string) => join(contextsDir(root), 'Projects', title)
-
-    it('a Space already moved has its holders retitled, and the journal clears', async () => {
-      await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
-      await rename(projects('Pommora'), projects('pommora'))
-      await writeJournal(root, spaceJournal())
-      await replayPendingRename(root)
-      expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
-      expect(await readJournal(root)).toBeNull()
-    })
-
-    it('a Space that crashed before its move is moved, its holders retitled, and the journal clears', async () => {
-      await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
-      await writeJournal(root, spaceJournal())
-      await replayPendingRename(root)
-      expect(await readdir(join(contextsDir(root), 'Projects'))).toContain('pommora')
-      expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
-      expect(await readJournal(root)).toBeNull()
-    })
-
-    it('a Context committed and moved has its key rewritten, and the journal clears', async () => {
-      await retitle('projects')
-      await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'projects'))
-      await writeJournal(root, {
-        contextId: 'ctx_projects',
-        oldTitle: 'Projects',
-        newTitle: 'projects',
-      })
-      await replayPendingRename(root)
-      expect(await readdir(contextsDir(root))).toContain('projects')
-      expect(Object.keys(await fmOf(page()))).toEqual(['id', '<projects>'])
-      expect(await regTitle('ctx_projects')).toBe('projects')
-      expect(await readJournal(root)).toBeNull()
-    })
-
-    it('a Context that crashed before its move is moved, its key rewritten, its title committed, and the journal clears', async () => {
-      await writeJournal(root, {
-        contextId: 'ctx_projects',
-        oldTitle: 'Projects',
-        newTitle: 'projects',
-      })
-      await replayPendingRename(root)
-      expect(await readdir(contextsDir(root))).toContain('projects')
-      expect(Object.keys(await fmOf(page()))).toEqual(['id', '<projects>'])
-      expect(await regTitle('ctx_projects')).toBe('projects')
-      expect(await readJournal(root)).toBeNull()
-    })
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('a Context rename leaves a page and a Space holding the key in another casing byte-identical', async () => {
@@ -293,15 +240,6 @@ describe('renames and casing', () => {
     const r = await unlinkContextKey(root, 'Projects', 'ctx_projects')
     expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['Sapphire'] })
     expect(await fmOf(other())).toEqual({ id: 'p2', '<projects>': ['Pommora'] })
-  })
-
-  it('a retry whose old title another Context holds in another case answers null and sweeps nothing', async () => {
-    await writeFile(other(), '---\nid: p2\n<Classes>:\n  - CS 161\n---\nbody')
-    const before = await readFile(other(), 'utf8')
-    sweepSpy.mockClear()
-    expect(await renameContextOp(root, 'ctx_projects', 'Projects', 'classes')).toEqual(ok(null))
-    expect(sweepSpy).not.toHaveBeenCalled()
-    expect(await readFile(other(), 'utf8')).toBe(before)
   })
 })
 
@@ -330,13 +268,7 @@ describe('renameContextOp', () => {
     expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<Ventures>': ['X', 'Pommora'] })
   })
 
-  it('a retry whose old title the Context holds again leaves every holder byte-identical', async () => {
-    const before = [await readFile(page(), 'utf8'), await readFile(csSidecar(), 'utf8')]
-    expect((await renameContextOp(root, 'ctx_projects', 'Projects', 'Projects')).ok).toBe(true)
-    expect([await readFile(page(), 'utf8'), await readFile(csSidecar(), 'utf8')]).toEqual(before)
-  })
-
-  it('rewrites the KEY in both scopes, commits the registry, clears the journal', async () => {
+  it('rewrites the KEY in both scopes, commits the registry, clears its note', async () => {
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
     const fm = await fmOf(page())
@@ -347,7 +279,7 @@ describe('renameContextOp', () => {
     expect(sc.id).toBe('sp-cs')
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('merges + dedupes into a pre-existing inert key wearing the new title', async () => {
@@ -375,7 +307,7 @@ describe('renameContextOp', () => {
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Ventures'))).toBe(false)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registryBefore)
   })
 
@@ -392,34 +324,33 @@ describe('renameContextOp', () => {
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     expect(sweepSpy).not.toHaveBeenCalled()
   })
 
-  it('a folder that can’t move under a title that can’t go back leaves the note, and the replay moves the folder and the keys', async () => {
+  it('a folder that can’t move or go back leaves the rename owed with Try Again', async () => {
     await strayAtVentures()
     const real = vi.mocked(mutateRegistryFile).getMockImplementation()
     if (!real) throw new Error('no implementation')
     vi.mocked(mutateRegistryFile)
       .mockImplementationOnce(real)
       .mockResolvedValueOnce(fault('refused'))
-    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(false)
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
     expect(await regTitle('ctx_projects')).toBe('Ventures')
-    expect(await readJournal(root)).toEqual({
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
+    expect(await readNotes(root)).toEqual({
+      ctx_projects: { kind: 'context', rename: ['Projects'] },
     })
     await rm(join(contextsDir(root), 'Ventures'), { recursive: true })
-    await replayPendingRename(root)
+    await finishOwed(root, deps)
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('rejects a taken title without journaling; a sigil glyph is legal', async () => {
+  it('rejects a taken title without a note; a sigil glyph is legal', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
     expect(await regTitle('ctx_projects')).toBe('Projects')
     expect((await renameContextOp(root, 'ctx_projects', 'No[pe')).ok).toBe(true)
     expect(await regTitle('ctx_projects')).toBe('No[pe')
@@ -456,7 +387,7 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
     expect(await readFile(other(), 'utf8')).toBe(unwritable)
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 })
 
@@ -481,7 +412,7 @@ describe('the renames report their folder to sync', () => {
 describe('renameSpaceOp', () => {
   it('reaches the renamed Space’s own sidecar at its new folder', async () => {
     await linkSpaces()
-    expect(await renameSpaceOp(root, 'sp-pom', 'Pommora 2')).toEqual(ok(null))
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pommora 2')).ok).toBe(true)
     expect((await readJsonAt(projectSidecar('Projects', 'Sapphire')))['<Projects>']).toEqual([
       'Pommora 2',
     ])
@@ -497,7 +428,7 @@ describe('renameSpaceOp', () => {
     const sc = await readJsonAt(csSidecar())
     expect(sc['<Projects>']).toEqual(['Pommora 2'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora 2'))).toBe(true)
-    expect(await readJournal(root)).toBeNull()
+    expect(await readNotes(root)).toEqual({})
   })
 
   it('rewrites a tag written as a single value', async () => {
@@ -531,175 +462,121 @@ describe('renameSpaceOp', () => {
   })
 })
 
-describe('a rename the journal refused reports what it skipped, with a retry', () => {
+describe('renames on the notes', () => {
   const broken = (): string => join(root, 'Notes', 'Broken.md')
-  const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
-  const retry = { ...rename, from: 'Pommora' }
   const readable = async (): Promise<void> => {
     await rm(broken())
     await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
     await refreshTree(root)
   }
-  beforeEach(async () => {
-    await writeJournal(root, {
-      contextId: 'ctxC',
-      spaceId: 'sp-cs',
-      oldTitle: 'CS 161',
-      newTitle: 'CS 162',
-    })
-    await refreshTree(root)
-  })
+  const seedNotes = (notes: Record<string, unknown>): Promise<void> =>
+    putJson(join(root, OWED_REL), notes)
+  const owedRefusal = (r: { ok: boolean; error?: { code: string } }): string | undefined =>
+    r.ok ? undefined : r.error?.code
 
-  it('answers neither when every member reads', async () => {
-    expect(await settledMutate(root, rename, deps)).toEqual(ok({}))
+  it('a Space rename runs while another Space owes work, leaving that entry as it stood', async () => {
+    const held = { 'sp-cs': { kind: 'space', contextId: 'ctxC', rename: ['CS 160'] } }
+    await seedNotes(held)
+    await refreshTree(root)
+    const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
+    expect(await settledMutate(root, rename, deps)).toEqual(
+      ok({ cascade: { pages: [], hosts: [] } }),
+    )
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
+    expect(await readNotes(root)).toEqual(held)
   })
 
   it.skipIf(windows)(
-    'answers the line and a retry, which updates the member once it reads',
+    'a Context rename whose sweep missed a page keeps its old title owed, and the finish heals it',
     async () => {
+      // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to read it.
       await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-      expect(await settledMutate(root, rename, deps)).toEqual(
-        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, retry }),
-      )
-      expect((await readJournal(root))?.spaceId).toBe('sp-cs')
-      await readable()
-      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
-    },
-  )
-
-  it.skipIf(windows)(
-    'a retry once the Space is renamed again sweeps the member to the title held now',
-    async () => {
-      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-      expect((await settledMutate(root, rename, deps)).ok).toBe(true)
-      await readable()
-      const again = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' } as const
-      expect((await settledMutate(root, again, deps)).ok).toBe(true)
-      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect((await fmOf(broken()))['<Projects>']).toEqual(['Atlas'])
-    },
-  )
-
-  it.skipIf(windows)('a retry changes nothing once another Space takes the old name', async () => {
-    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-    expect((await settledMutate(root, rename, deps)).ok).toBe(true)
-    const create = { op: 'createSpace', id: newId(), contextId: 'ctx_projects', name: 'Pommora' }
-    expect((await settledMutate(root, create as never, deps)).ok).toBe(true)
-    await readable()
-    expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-    expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it.skipIf(windows)(
-    'a retry changes nothing once another Space takes the old name in another case',
-    async () => {
-      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-      expect((await settledMutate(root, rename, deps)).ok).toBe(true)
-      const create = { op: 'createSpace', id: newId(), contextId: 'ctx_projects', name: 'pommora' }
-      expect((await settledMutate(root, create as never, deps)).ok).toBe(true)
-      await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
-      await readable()
-      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
-      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
-    },
-  )
-})
-
-describe('a rename the journal took reports what it skipped, with a retry', () => {
-  const broken = (): string => join(root, 'Notes', 'Broken.md')
-  const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
-  const retry = { ...rename, from: 'Pommora' }
-  const skippedLine = ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, retry })
-  beforeEach(async () => {
-    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-    await refreshTree(root)
-  })
-
-  it.skipIf(windows)(
-    'answers the line and a retry, and a retry that reaches everything clears the journal',
-    async () => {
-      expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
-      expect(await readJournal(root)).toMatchObject({
-        spaceId: 'sp-pom',
-        oldTitle: 'Pommora',
-        newTitle: 'Pom',
-      })
-      await rm(broken())
-      await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
-      await refreshTree(root)
-      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
-      expect(await readJournal(root)).toBeNull()
-    },
-  )
-
-  it.skipIf(windows)(
-    'a retry that skips again answers the line again and keeps the journal',
-    async () => {
-      expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
-      expect(await settledMutate(root, retry, deps)).toEqual(skippedLine)
-      expect(await readJournal(root)).toMatchObject({
-        spaceId: 'sp-pom',
-        oldTitle: 'Pommora',
-        newTitle: 'Pom',
-      })
-    },
-  )
-
-  it.skipIf(windows).each([
-    [
-      'Space',
-      rename,
-      { ...rename, newName: 'Pomelo' },
-      (fm: Record<string, unknown>) => fm['<Projects>'],
-      ['Pomelo'],
-    ],
-    [
-      'Context',
-      { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const,
-      { op: 'renameContext', contextId: 'ctx_projects', newName: 'Quests' } as const,
-      (fm: Record<string, unknown>) => fm['<Quests>'],
-      ['Pommora'],
-    ],
-  ] as const)(
-    'a %s rename’s retry after a second rename sweeps what the first left to the title held now',
-    async (_, first, second, held, expected) => {
-      const answered = await settledMutate(root, first, deps)
-      const retry = answered.ok && 'retry' in answered.value ? answered.value.retry : null
-      if (!retry) throw new Error('no retry answered')
-      await rm(broken())
-      await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
-      await refreshTree(root)
-      expect((await settledMutate(root, second, deps)).ok).toBe(true)
-      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect(held(await fmOf(broken()))).toEqual(expected)
-      expect(await readJournal(root)).toBeNull()
-    },
-  )
-})
-
-describe('skip-aware journal', () => {
-  it.skipIf(windows)(
-    'an unreadable file is skipped, the registry still commits, the journal survives; the next replay heals it',
-    async () => {
-      // A dangling symlink wearing the `.md` suffix: the sweep enumerates it by name, then fails to read it — the skip path, without needing a permission trick.
-      const broken = join(root, 'Notes', 'Broken.md')
-      await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
       const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
-      expect(r.ok).toBe(true)
+      expect(r.ok && r.value.cascade).toMatchObject({ owed: true, warning: unsweptLine(1) })
       expect(await regTitle('ctx_projects')).toBe('Ventures')
-      expect(await readJournal(root)).toMatchObject({ oldTitle: 'Projects', newTitle: 'Ventures' })
-
-      await rm(broken)
-      await writeFile(broken, '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
-      await replayPendingRename(root)
-      expect((await fmOf(broken))['<Ventures>']).toEqual(['Pommora'])
-      expect(await readJournal(root)).toBeNull()
+      expect(await readNotes(root)).toEqual({
+        ctx_projects: { kind: 'context', rename: ['Projects'] },
+      })
+      await readable()
+      await finishOwed(root, deps)
+      expect((await fmOf(broken()))['<Ventures>']).toEqual(['Pommora'])
+      expect(await readNotes(root)).toEqual({})
     },
   )
+
+  it.skipIf(windows)(
+    'a Space rename whose sweep missed a page owes it until a finish reaches it',
+    async () => {
+      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+      await refreshTree(root)
+      const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
+      const missed = ok({
+        cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true as const },
+      })
+      expect(await settledMutate(root, rename, deps)).toEqual(missed)
+      const owed = {
+        'sp-pom': { kind: 'space', contextId: 'ctx_projects', rename: ['Pommora'] },
+      }
+      expect(await readNotes(root)).toEqual(owed)
+      expect(await settledMutate(root, { op: 'finishOwed' }, deps)).toEqual(missed)
+      expect(await readNotes(root)).toEqual(owed)
+      await readable()
+      expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it.skipIf(windows)(
+    'a second rename of the same Context keeps the first’s old title owed',
+    async () => {
+      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+      expect((await renameContextOp(root, 'ctx_projects', 'Domains')).ok).toBe(true)
+      expect((await renameContextOp(root, 'ctx_projects', 'Fields')).ok).toBe(true)
+      expect(await readNotes(root)).toEqual({
+        ctx_projects: { kind: 'context', rename: ['Projects', 'Domains'] },
+      })
+      await readable()
+      await finishOwed(root, deps)
+      expect((await fmOf(broken()))['<Fields>']).toEqual(['Pommora'])
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it('a rename back after a miss owes nothing once its sweep runs clean', async () => {
+    expect((await renameContextOp(root, 'ctx_projects', 'Work')).ok).toBe(true)
+    await seedNotes({ ctx_projects: { kind: 'context', rename: ['Projects'] } })
+    expect((await renameContextOp(root, 'ctx_projects', 'Projects')).ok).toBe(true)
+    expect(await readNotes(root)).toEqual({})
+    expect(await regTitle('ctx_projects')).toBe('Projects')
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('a Context created or renamed under an owed title is refused', async () => {
+    await seedNotes({ ctx_gone: { kind: 'context', rename: ['Areas'] } })
+    const registry = await readFile(contextsRegistryFile(root), 'utf8')
+    expect(owedRefusal(await createContextGroup(root, 'Areas', newId()))).toBe('owed')
+    expect(owedRefusal(await renameContextOp(root, 'ctxC', 'Areas'))).toBe('owed')
+    expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registry)
+    expect(await pathExists(join(contextsDir(root), 'Areas'))).toBe(false)
+  })
+
+  it('a create that would step onto an owed title is refused too', async () => {
+    await seedNotes({ ctx_gone: { kind: 'context', rename: ['Projects (2)'] } })
+    const registry = await readFile(contextsRegistryFile(root), 'utf8')
+    expect(owedRefusal(await createContextGroup(root, 'Projects', newId()))).toBe('owed')
+    expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registry)
+  })
+
+  it('a Space created or renamed under a title its Context still owes is refused, and one in another Context isn’t', async () => {
+    await seedNotes({ 'sp-old': { kind: 'space', contextId: 'ctx_projects', rename: ['Gym'] } })
+    await refreshTree(root)
+    expect(owedRefusal(await createSpace(root, 'ctx_projects', 'Gym', newId()))).toBe('owed')
+    expect(owedRefusal(await renameSpaceOp(root, 'sp-pom', 'Gym'))).toBe('owed')
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Gym'))).toBe(false)
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
+    expect((await createSpace(root, 'ctxC', 'Gym', newId())).ok).toBe(true)
+  })
 })
 
 describe('unlink cascades', () => {
@@ -851,212 +728,57 @@ describe('a delete sweep never strips a passenger', () => {
   })
 })
 
-describe('replayPendingRename across crash windows', () => {
-  it('finishes a rename crashed after its title commit: the folder moves and every holder takes the new key', async () => {
-    // Crash simulation: note written and the title committed, then death — the folder and every file still on the old title.
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
-    })
-    await retitle('Ventures')
-    await replayPendingRename(root)
-    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
-    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
-    expect(await regTitle('ctx_projects')).toBe('Ventures')
-    expect(await readJournal(root)).toBeNull()
+describe('the finish’s Context and Space arms', () => {
+  const seedNotes = (notes: Record<string, unknown>): Promise<void> =>
+    putJson(join(root, OWED_REL), notes)
+
+  it.skipIf(windows)('a Space entry stays whole while its Context owes a rename', async () => {
+    const broken = join(root, 'Notes', 'Broken.md')
+    await symlink(join(root, 'Notes', 'Nowhere.md'), broken)
+    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Gym\n---\nbody')
+    const owed = {
+      ctx_projects: { kind: 'context', rename: ['Areas'] },
+      'sp-pom': { kind: 'space', contextId: 'ctx_projects', rename: ['Gym'] },
+    }
+    await seedNotes(owed)
+    await refreshTree(root)
+    await finishOwed(root, deps)
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual(owed)
   })
 
-  it('a replay after the list moved and before the folder did rekeys the Context’s own Spaces', async () => {
-    await linkSpaces()
-    await retitle('Ventures')
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
-    })
-    await refreshTree(root)
-    await replayPendingRename(root)
-    expect((await readJsonAt(projectSidecar('Ventures', 'Pommora')))['<Ventures>']).toEqual([
-      'Sapphire',
-    ])
+  it('a Space entry whose Context is gone drops', async () => {
+    await seedNotes({ 'sp-x': { kind: 'space', contextId: 'ctx_gone', rename: ['Gym'] } })
+    await finishOwed(root, deps)
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('a replay after the note and before the title commit rekeys the Context’s own Spaces', async () => {
+  it('a crash between the list step and the folder move relocates and rekeys the Context’s own Spaces at the next finish', async () => {
     await linkSpaces()
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
-    })
-    await refreshTree(root)
-    await replayPendingRename(root)
-    expect(await regTitle('ctx_projects')).toBe('Ventures')
+    await retitle('Ventures')
+    await seedNotes({ ctx_projects: { kind: 'context', rename: ['Projects'] } })
+    closeSession()
+    dropLiveTree()
+    await openSession(root)
+    const opened = await refreshTree(root)
+    expect(opened.contexts.find((g) => g.def.id === 'ctx_projects')?.spaces ?? []).toEqual([])
+    await finishOwed(root, deps)
     expect(await readJsonAt(projectSidecar('Ventures', 'Pommora'))).toEqual({
       id: 'sp-pom',
       '<Ventures>': ['Sapphire'],
     })
+    expect(await readNotes(root)).toEqual({})
   })
 
-  it('is idempotent — replaying twice equals once', async () => {
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Ventures',
-    })
-    await replayPendingRename(root)
-    await replayPendingRename(root)
-    expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
-    expect(await regTitle('ctx_projects')).toBe('Ventures')
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  it('discards a journal whose registry mapping no longer holds', async () => {
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'SomethingElse',
-      newTitle: 'Ventures',
-    })
-    await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
-    expect(await regTitle('ctx_projects')).toBe('Projects')
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  it('discards a space journal whose freed old title was re-minted (never hijacks)', async () => {
-    // sp-pom already renamed to "Pommora 2"; a NEW space claimed "Pommora" since.
-    await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
-    await mkdir(join(contextsDir(root), 'Projects', 'Pommora 2'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Pommora 2', '_space.json'),
-      JSON.stringify({ id: 'sp-pom' }),
-    )
-    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-new' }),
-    )
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      spaceId: 'sp-pom',
-      oldTitle: 'Pommora',
-      newTitle: 'Pommora 2',
-    })
-    await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  it('completes a space rename crashed before the cascade', async () => {
-    await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
-    await mkdir(join(contextsDir(root), 'Projects', 'Pommora 2'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Pommora 2', '_space.json'),
-      JSON.stringify({ id: 'sp-pom' }),
-    )
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      spaceId: 'sp-pom',
-      oldTitle: 'Pommora',
-      newTitle: 'Pommora 2',
-    })
-    await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  const ventures = {
-    contextId: 'ctx_projects',
-    oldTitle: 'Projects',
-    newTitle: 'Ventures',
-  }
-
-  it('an unreadable registry holds the journal and leaves every page as it was', async () => {
-    await writeJournal(root, ventures)
+  it('a Context registry that can’t be read counts one missed file', async () => {
+    const owed = { ctx_projects: { kind: 'context', rename: ['Areas'] } }
+    await seedNotes(owed)
     const before = await readFile(page(), 'utf8')
     await rm(contextsRegistryFile(root))
     await mkdir(contextsRegistryFile(root))
-    await replayPendingRename(root)
+    expect(await finishOwed(root, deps)).toMatchObject({ owed: true, warning: unsweptLine(1) })
     expect(await readFile(page(), 'utf8')).toBe(before)
-    expect(await readJournal(root)).toEqual(ventures)
-  })
-
-  it('an absent registry clears the journal', async () => {
-    await writeJournal(root, ventures)
-    await rm(contextsRegistryFile(root))
-    await replayPendingRename(root)
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  it('a space journal holds while one of its titles cannot be read', async () => {
-    const renamed = join(contextsDir(root), 'Projects', 'Pommora 2', '_space.json')
-    await mkdir(renamed, { recursive: true })
-    const j = {
-      contextId: 'ctx_projects',
-      spaceId: 'sp-pom',
-      oldTitle: 'Pommora',
-      newTitle: 'Pommora 2',
-    }
-    await writeJournal(root, j)
-    await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
-    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
-      true,
-    )
-    expect(await readJournal(root)).toEqual(j)
-  })
-})
-
-afterEach(async () => {
-  const held = await readJournal(root)
-  if (held) await clearJournal(root, held).catch(() => {})
-})
-
-describe('the journal slot law', () => {
-  it('a stranded record survives a later write and a stranger clear; its own clear lands', async () => {
-    const owed = {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Projects 2',
-    }
-    await writeJournal(root, owed)
-    const stranger = { contextId: 'ctxC', oldTitle: 'Classes', newTitle: 'Classes 2' }
-    await writeJournal(root, stranger)
-    expect((await readJournal(root))?.contextId).toBe('ctx_projects')
-    await clearJournal(root, stranger)
-    expect(await readJournal(root)).not.toBeNull()
-    await clearJournal(root, owed)
-    expect(await readJournal(root)).toBeNull()
-  })
-
-  it('a newer rename of the same entity supersedes the stranded record', async () => {
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Work',
-    })
-    // The newer intent must displace the abandoned one, or the next open's replay re-applies "Projects → Work" over the user's choice.
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Work',
-      newTitle: 'Projects',
-    })
-    expect((await readJournal(root))?.newTitle).toBe('Projects')
-  })
-
-  it('a rename-back after a skip leaves nothing for the replay to revert', async () => {
-    // Strand a record by hand (the shape a skipped sweep leaves), then run the counter-rename end to end.
-    await renameContextOp(root, 'ctx_projects', 'Work')
-    await writeJournal(root, {
-      contextId: 'ctx_projects',
-      oldTitle: 'Projects',
-      newTitle: 'Work',
-    })
-    expect((await renameContextOp(root, 'ctx_projects', 'Projects')).ok).toBe(true)
-    expect(await readJournal(root)).toBeNull()
-    await replayPendingRename(root)
-    expect(await regTitle('ctx_projects')).toBe('Projects')
-    expect((await fmOf(page()))['<Projects>']).toBeDefined()
+    expect(await readNotes(root)).toEqual(owed)
   })
 })
 

@@ -1,24 +1,26 @@
 // The crash-window suite: each window is the exact on-disk state a killed op leaves with its note, and the finish must land the same disk an uninterrupted op lands.
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, putJson, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { dropLiveTree } from './liveTree'
+import { dropLiveTree, refreshTree } from './liveTree'
 import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
 import { readRecord } from '../Bundles/record'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { sidecarPath } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { readJsonObject } from '../Files/atomicWrite'
 import * as registryModule from '../Properties/registryProperty'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
+import { mutateRegistryFile } from '../Contexts/contextsRegistry'
+import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { deleteOption, renameOption } from '../Properties/optionOps'
 import { unsweptLine } from './entities'
@@ -645,4 +647,143 @@ describe('Try Again', () => {
       expect(await readNotes(root)).toEqual({})
     },
   )
+})
+
+describe('the Context and Space rename arms', () => {
+  const ventures = { ctx_projects: { kind: 'context', rename: ['Projects'] } }
+  const spaceOwed = (old: string) => ({
+    'sp-pom': { kind: 'space', contextId: 'ctx_projects', rename: [old] },
+  })
+
+  async function seedContexts(): Promise<string> {
+    const root = tempRoot('pom-finish-ctx-')
+    roots.push(root)
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({
+        contexts: [{ id: 'ctx_projects', title: 'Projects', singular: 'Project' }],
+      }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
+      JSON.stringify({ id: 'sp-pom' }),
+    )
+    await mkdir(join(root, 'Notes'), { recursive: true })
+    await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
+    await writeFile(join(root, 'Notes', 'A.md'), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
+    await openSession(root)
+    return root
+  }
+  const tags = async (root: string): Promise<Record<string, unknown>> =>
+    splitFrontmatter(await readFile(join(root, 'Notes', 'A.md'), 'utf8')) as Record<string, unknown>
+  const titleOf = async (root: string): Promise<string | undefined> =>
+    (
+      await readJsonAt<{ contexts: { id: string; title: string }[] }>(contextsRegistryFile(root))
+    ).contexts.find((c) => c.id === 'ctx_projects')?.title
+  const retitle = (root: string, title: string) =>
+    mutateRegistryFile(root, (cur) => ({
+      ...cur,
+      contexts: cur.contexts.map((c) => (c.id === 'ctx_projects' ? { ...c, title } : c)),
+    }))
+  const finishSeeded = async (root: string, notes: Record<string, unknown>) => {
+    await putJson(join(root, OWED_REL), notes)
+    await refreshTree(root)
+    return finishOwed(root, DEPS)
+  }
+
+  it('a crash after a Context rename’s list step moves the folder and every holder takes the new key', async () => {
+    const root = await seedContexts()
+    await retitle(root, 'Ventures')
+    await finishSeeded(root, ventures)
+    expect(await readdir(contextsDir(root))).toContain('Ventures')
+    expect((await tags(root))['<Ventures>']).toEqual(['Pommora'])
+    expect(await titleOf(root)).toBe('Ventures')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('finishing twice equals once', async () => {
+    const root = await seedContexts()
+    await retitle(root, 'Ventures')
+    await finishSeeded(root, ventures)
+    await finishOwed(root, DEPS)
+    expect((await tags(root))['<Ventures>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a crash between a Context rename’s note and its list step owes nothing', async () => {
+    const root = await seedContexts()
+    const before = await readFile(join(root, 'Notes', 'A.md'), 'utf8')
+    await finishSeeded(root, ventures)
+    expect(await readFile(join(root, 'Notes', 'A.md'), 'utf8')).toBe(before)
+    expect(await titleOf(root)).toBe('Projects')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an old title no file holds clears, every page as it was', async () => {
+    const root = await seedContexts()
+    const before = await readFile(join(root, 'Notes', 'A.md'), 'utf8')
+    await finishSeeded(root, { ctx_projects: { kind: 'context', rename: ['SomethingElse'] } })
+    expect(await readFile(join(root, 'Notes', 'A.md'), 'utf8')).toBe(before)
+    expect(await titleOf(root)).toBe('Projects')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('an absent Context registry drops the entry', async () => {
+    const root = await seedContexts()
+    await rm(contextsRegistryFile(root))
+    await finishSeeded(root, ventures)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Space title another Space holds now is skipped and dropped', async () => {
+    const root = await seedContexts()
+    const projects = (title: string) => join(contextsDir(root), 'Projects', title)
+    await rename(projects('Pommora'), projects('Pommora 2'))
+    await mkdir(projects('Pommora'), { recursive: true })
+    await writeFile(join(projects('Pommora'), '_space.json'), JSON.stringify({ id: 'sp-new' }))
+    await finishSeeded(root, spaceOwed('Pommora'))
+    expect((await tags(root))['<Projects>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Space rename crashed before its sweep finishes onto the title the Space holds', async () => {
+    const root = await seedContexts()
+    const projects = (title: string) => join(contextsDir(root), 'Projects', title)
+    await rename(projects('Pommora'), projects('Pommora 2'))
+    await finishSeeded(root, spaceOwed('Pommora'))
+    expect((await tags(root))['<Projects>']).toEqual(['Pommora 2'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Space already moved in another case has its holders retitled', async () => {
+    const root = await seedContexts()
+    const projects = (title: string) => join(contextsDir(root), 'Projects', title)
+    await rename(projects('Pommora'), projects('pommora'))
+    await finishSeeded(root, spaceOwed('Pommora'))
+    expect((await tags(root))['<Projects>']).toEqual(['pommora'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Context committed and moved in another case has its key rewritten', async () => {
+    const root = await seedContexts()
+    await retitle(root, 'projects')
+    await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'projects'))
+    await finishSeeded(root, ventures)
+    expect(await readdir(contextsDir(root))).toContain('projects')
+    expect(Object.keys(await tags(root))).toEqual(['id', '<projects>'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a case-only Space or Context rename crashed before its list step owes nothing', async () => {
+    const root = await seedContexts()
+    await finishSeeded(root, {
+      ...spaceOwed('pommora'),
+      ctx_projects: { kind: 'context', rename: ['projects'] },
+    })
+    expect(Object.keys(await tags(root))).toEqual(['id', '<Projects>'])
+    expect((await tags(root))['<Projects>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual({})
+  })
 })

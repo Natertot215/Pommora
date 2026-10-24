@@ -1160,10 +1160,9 @@ describe('store — the mutate rail', () => {
     expect(currentNotification()?.message).toBe('W')
   })
 
-  it('posts a warning that carries a retry with Try Again, which sends the retry', async () => {
-    const retry = { op: 'renameSpace', spaceId: 'sp', newName: 'Pom', from: 'Pommora' } as const
+  it('posts an owed warning with Try Again, which sends { op: finishOwed }', async () => {
     channels.mutate = vi.fn(async () =>
-      ok({ cascade: { pages: [], hosts: [], warning: 'W' }, retry }),
+      ok({ cascade: { pages: [], hosts: [], warning: 'W', owed: true as const } }),
     )
     clearNotification()
     await useSession.getState().mutate({ op: 'renameSpace', spaceId: 'sp', newName: 'Pom' })
@@ -1172,7 +1171,7 @@ describe('store — the mutate rail', () => {
     expect(note?.action?.label).toBe('Try Again')
     channels.mutate = vi.fn(async () => ok({}))
     await note?.action?.run()
-    await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(retry))
+    await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith({ op: 'finishOwed' }))
   })
 
   const OWED_LINE = 'An earlier change hasn’t reached every file yet.'

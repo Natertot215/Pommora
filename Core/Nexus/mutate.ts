@@ -4,9 +4,7 @@ import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { contextsDir } from '../Paths/paths'
-import { machine } from '../Platform/machine'
-import { fault, ok, type Result } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { addProperty, assignProperty, reorderAssignment } from '../Properties/assignment'
 import { unassignProperty } from '../Properties/unassignProperty'
 import {
@@ -40,7 +38,7 @@ import {
   setSpaceColor,
   setSpaceRowOrder,
 } from '../Contexts/contextWrite'
-import { renameContextOp, renameSpaceOp, type Unswept } from '../Contexts/contextCascade'
+import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
 import {
   DEFAULT_NEW_NAME,
@@ -62,7 +60,7 @@ import { liveTreeOf, mutableTarget } from './liveTree'
 import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { finishOwed } from './finishOwed'
-import { inSettleTurn, payOwedWalk, relink, settledIndex } from './settle'
+import { inSettleTurn, relink, settledIndex, underContexts } from './settle'
 import { pageMoves } from './record'
 import { putBackEntries } from './governedRoot'
 
@@ -83,28 +81,8 @@ export async function handleMutate(
   }
 }
 
-// A rename's Try Again is the request again with the title it left, whether the journal took the rename or its slot refused it, since a refused one has no record to replay and a later rename displaces a taken one's; a property cascade's replays its record through the `finishOwed` op.
-function renamed(
-  req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
-  r: Result<Unswept | null>,
-): MutateReply {
-  if (!r.ok) return r
-  if (!r.value) return ok({})
-  const { skipped, from } = r.value
-  return ok({ cascade: reachReport({ skipped, hosts: [] }), retry: { ...req, from } })
-}
-
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // A write sent here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never blanks a value or drops a list member it can't resolve (`reconcileGovernedRoot` in `governedRoot.ts`), so it lands right whether it comes before or after a sweep reaches the page.
-  const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
-    machine().lock(contextsDir(root), async () => {
-      try {
-        return await fn()
-      } finally {
-        await payOwedWalk(root)
-      }
-    })
   // A write that moves, adds, sweeps, or removes a page runs in the settle's turn, nested inside `underContexts` rather than around it, since that lock's `finally` takes a turn of its own. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
   const addressed = (
     req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
@@ -134,7 +112,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
   switch (req.op) {
     case 'createPage':
       return seedsContext(req)
-        ? underContexts(() => addressed(req, () => createPageOp(ctx, req)))
+        ? underContexts(root, () => addressed(req, () => createPageOp(ctx, req)))
         : addressed(req, () => createPageOp(ctx, req))
 
     case 'createContainer':
@@ -148,7 +126,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'
-        ? underContexts(() => inSettleTurn(root, () => deleteOp(ctx, req)))
+        ? underContexts(root, () => inSettleTurn(root, () => deleteOp(ctx, req)))
         : inSettleTurn(root, () => deleteOp(ctx, req))
 
     case 'archive':
@@ -167,7 +145,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       }
       return storeOf(root, resolved.value)?.kind === 'archive'
         ? inSettleTurn(root, restore)
-        : underContexts(() => inSettleTurn(root, restore))
+        : underContexts(root, () => inSettleTurn(root, restore))
     }
 
     case 'emptyBundle': {
@@ -216,11 +194,11 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'setProperty':
       return isMarkdownFile(req.path)
         ? setPagePropertyOp(ctx, req)
-        : underContexts(() => setSpacePropertyOp(ctx, req))
+        : underContexts(root, () => setSpacePropertyOp(ctx, req))
 
     // A put-back resolves a Context's key as a tag write does, so it holds the Contexts lock whichever files it reaches.
     case 'putBack': {
-      const missed = await underContexts(() => putBackEntries(root, req.entries))
+      const missed = await underContexts(root, () => putBackEntries(root, req.entries))
       return ok(
         missed.length
           ? { cascade: reachReport({ skipped: missed.length, hosts: [] }), missed }
@@ -248,31 +226,26 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'reorderTop':
       return done(await setCollectionOrder(root, req.order))
 
-    case 'createContextGroup': {
-      const r = await createContextGroup(root, req.name, req.id)
-      return r.ok ? ok({ created: r.value, ...landedAs(req.name, r.value.path) }) : r
-    }
+    case 'createContextGroup':
+      return underContexts(root, async () => {
+        const r = await createContextGroup(root, req.name, req.id)
+        return r.ok ? ok({ created: r.value, ...landedAs(req.name, r.value.path) }) : r
+      })
 
     case 'createSpace':
-      return underContexts(() => createSpaceOp(ctx, req))
+      return underContexts(root, () => createSpaceOp(ctx, req))
 
     case 'setContext':
-      return underContexts(() => setContextOp(ctx, req))
+      return underContexts(root, () => setContextOp(ctx, req))
 
     case 'setSpaceColor':
-      return done(await underContexts(() => setSpaceColor(root, req.spaceId, req.color)))
+      return done(await underContexts(root, () => setSpaceColor(root, req.spaceId, req.color)))
 
     case 'renameContext':
-      return renamed(
-        req,
-        await underContexts(() => renameContextOp(root, req.contextId, req.newName, req.from)),
-      )
+      return underContexts(root, () => renameContextOp(root, req.contextId, req.newName))
 
     case 'renameSpace':
-      return renamed(
-        req,
-        await underContexts(() => renameSpaceOp(root, req.spaceId, req.newName, req.from)),
-      )
+      return underContexts(root, () => renameSpaceOp(root, req.spaceId, req.newName))
 
     case 'reorderContexts':
       return reorderContextsOp(ctx, req)
@@ -284,7 +257,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await setSpaceOrder(root, req.contextId, req.ids))
 
     case 'setSpaceRowOrder':
-      return underContexts(async () => {
+      return underContexts(root, async () => {
         const resolved = await mutableTarget(root, req.path, ['space'])
         if (!resolved.ok) return resolved
         return done(await setSpaceRowOrder(resolved.value, req.ids))

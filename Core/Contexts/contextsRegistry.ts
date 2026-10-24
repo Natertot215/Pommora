@@ -32,13 +32,14 @@ export async function readRegistryStrict(root: string): Promise<Result<ContextsR
 /** A read failure fails the mutation without writing — strict, never fallback-to-empty. */
 export async function mutateRegistryFile(
   root: string,
-  fn: (current: ContextsRegistry) => ContextsRegistry,
+  fn: (current: ContextsRegistry) => ContextsRegistry | null,
 ): Promise<Result<ContextsRegistry>> {
   const written = await rmwJsonStrict(contextsRegistryFile(root), (raw) => {
     const parsed = parseRegistry(raw)
     if (!parsed.ok) throw new Error(parsed.error.message)
+    const next = fn(parsed.value)
     // Overlay onto the raw object so registry-level foreign fields survive even a mutator that rebuilds `{ contexts }` from scratch.
-    return { ...raw, ...(fn(parsed.value) as unknown as Record<string, unknown>) }
+    return next && { ...raw, ...(next as unknown as Record<string, unknown>) }
   }).catch(fault)
   if (!written.ok) return written
   return parseRegistry(written.value)
