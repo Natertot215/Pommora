@@ -70,6 +70,7 @@ export function joinCascades(
     pages: [...a.pages, ...b.pages],
     hosts: [...a.hosts, ...b.hosts],
     warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
+    ...(a.owed || b.owed ? { owed: true as const } : {}),
   }
 }
 

@@ -1,25 +1,16 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
 import { contextKey } from './contexts'
-import { ID_KEY } from '../Nexus/identityMark'
-import { asString } from '../Nexus/coerce'
-import { ok, fail, type Result, fault } from '../Contract/result'
+import { ok, fail, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
-import { contextDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { contextDirRel } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { owedRename, owedSwept, runNoted } from '../Nexus/owed'
-import {
-  type Rewrite,
-  type RewriteText,
-  type SweepResult,
-  sweepGovernedRoots,
-  undoSweep,
-} from '../Nexus/governedSweep'
-import { unsweptLine } from '../Nexus/entities'
+import { type Rewrite, type RewriteText, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { withoutOrderId } from './spaceSidecar'
 import {
   editHeldList,
@@ -32,7 +23,6 @@ import {
 } from '../Files/rootValues'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { scalarMembers } from '../Contract/validators'
 import { findHolders, type HolderQuery, type Moved } from '../Index/keyHolders'
 import { nameError } from '../Paths/names'
 
@@ -52,20 +42,6 @@ export const rekeyContext =
 
 const retitleSpace = (raw: Json, contextTitle: string, from: string, to: string): Json | null =>
   editHeldList(raw, contextKey(contextTitle), (held) => editList(held, new Map([[from, to]])))
-
-export interface SweepCapture {
-  id?: string
-  kind: 'page' | 'space'
-  values: string[]
-}
-
-export type UnlinkOutcome = SweepResult & { captured: SweepCapture[] }
-
-function captureRoot(raw: Json, file: string, values: string[]): SweepCapture {
-  const isSpace = basename(file) === SPACE_SIDECAR
-  const id = isSpace ? (typeof raw.id === 'string' ? raw.id : undefined) : asString(raw[ID_KEY])
-  return { ...(id ? { id } : {}), kind: isSpace ? 'space' : 'page', values }
-}
 
 function pageLeg(from: string, to: string): RewriteText {
   const oldKey = contextKey(from)
@@ -109,56 +85,36 @@ export async function unlinkContextKey(
   root: string,
   contextTitle: string,
   contextId: string | undefined,
-  skipUnder?: string,
-): Promise<Result<UnlinkOutcome>> {
+  skipUnder: string,
+): Promise<number> {
   const key = contextKey(contextTitle)
-  const captured: SweepCapture[] = []
-  const strip: Rewrite = (raw, file) => {
-    if (!Object.hasOwn(raw, key)) return null
-    captured.push(captureRoot(raw, file, scalarMembers(raw[key])))
-    return stripKeys(raw, [key])
-  }
+  const strip: Rewrite = (raw) => (Object.hasOwn(raw, key) ? stripKeys(raw, [key]) : null)
   const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
-  const swept = await unlinkMembers(root, { keys: [key], id: contextId }, rewrite, skipUnder)
-  return ok({ ...swept, captured })
+  return unlinkMembers(root, { keys: [key], id: contextId }, rewrite, skipUnder)
 }
 
 export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
   spaceTitle: string,
-): Promise<Result<UnlinkOutcome>> {
+  skipUnder: string,
+): Promise<number> {
   const key = contextKey(contextTitle)
-  const captured: SweepCapture[] = []
   const names = namesValue(spaceTitle)
-  const take: Rewrite = (raw, file) => {
-    const taken: string[] = []
-    const next = editHeldList(raw, key, (held) => {
-      taken.push(...held.filter(names).map(String))
-      return stripList(held, names)
-    })
-    if (next) captured.push(captureRoot(raw, file, taken))
-    return next
-  }
-  return ok({ ...(await unlinkMembers(root, { keys: [key], title: spaceTitle }, take)), captured })
+  const take: Rewrite = (raw) => editHeldList(raw, key, (held) => stripList(held, names))
+  return unlinkMembers(root, { keys: [key], title: spaceTitle }, take, skipUnder)
 }
 
-// A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses, counting each file it missed or couldn’t put back. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
+// What sits under `skipUnder` left with the deleted folder, which the tree may still list at its old path until the walk, so it's neither swept nor owed.
 async function unlinkMembers(
   root: string,
   holding: Pick<HolderQuery, 'keys' | 'title' | 'id'>,
   rewrite: Rewrite,
-  skipUnder?: string,
-): Promise<SweepResult> {
-  const leaves = (file: string): boolean => !!skipUnder && file.startsWith(`${skipUnder}/`)
+  skipUnder: string,
+): Promise<number> {
   const { pages, spaces } = await findHolders(root, { ...holding, reach: 'anywhere' })
-  const swept = await sweepGovernedRoots([...pages, ...spaces], {
-    raw: (raw, file) => (leaves(file) ? null : rewrite(raw, file)),
-  })
-  const missed = swept.skipped.filter((file) => !leaves(file))
-  if (!missed.length) return swept
-  const unrestored = await undoSweep(swept.touched)
-  throw new Error(unsweptLine(missed.length + unrestored.length))
+  const files = [...pages, ...spaces].filter((file) => !isAtOrUnder(file, skipUnder))
+  return (await sweepGovernedRoots(files, { raw: rewrite })).skipped.length
 }
 
 const commitTitle = (root: string, id: string, title: string) =>

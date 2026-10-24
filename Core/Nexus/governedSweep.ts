@@ -16,7 +16,8 @@ import { asString } from './coerce'
 import { addressable, type NexusPages } from './heldPages'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { changedKeys, type Frozen, governedRoot, reencode, rewriteRaw } from './governedRoot'
+import { type Frozen, reencode, rewriteRaw } from './governedRoot'
+import type { Place } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { isBlankRaw, landValue } from '../Files/rootValues'
 
@@ -31,8 +32,12 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
-/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place. */
-export type SweepPlan = { raw: Rewrite; text?: RewriteText }
+/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place; `above`, when given, places each key a page's rewrite adds. */
+export type SweepPlan = {
+  raw: Rewrite
+  text?: RewriteText
+  above?: (raw: Json, file: string) => Place
+}
 
 export const collectionFolders = (root: string, tree: NexusTree): string[] =>
   [
@@ -55,7 +60,8 @@ function rewritten(plan: SweepPlan, file: string, content: string): string | nul
   }
   const page = sweepParse(content)
   if (!page) return undefined
-  return plan.text ? plan.text(content, file) : rewriteRaw((raw) => plan.raw(raw, file))(page)
+  if (plan.text) return plan.text(content, file)
+  return rewriteRaw((raw) => plan.raw(raw, file), plan.above?.(page.raw, file))(page)
 }
 
 /** Files are absolute, pages and Space sidecars alike. */
@@ -102,45 +108,12 @@ export async function sweepCount(root: string, files: string[], plan: SweepPlan)
   return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 
-/** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
-export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> {
-  const missed: string[] = []
-  for (const [file, { before, after }] of touched)
-    await guarded(file, missed, async () => {
-      const now = await readTextOrNull(file)
-      if (now === null) return
-      const back = now === after ? before : keysPutBack(file, now, before, after)
-      if (back !== null) await rewritePreservingTimes(file, back)
-    })
-  return missed
-}
-
-function keysPutBack(file: string, now: string, before: string, after: string): string | null {
-  const was = governedRoot(file, before)
-  const keys = changedKeys(was, governedRoot(file, after))
-  const putBack = (raw: Json): Json => {
-    const next = { ...raw }
-    for (const k of keys) {
-      if (k in was) next[k] = was[k]
-      else delete next[k]
-    }
-    return next
-  }
-  if (isMarkdownFile(file)) {
-    const page = sweepParse(now)
-    if (!page) throw new Error('The page no longer admits a sweep.')
-    return rewriteRaw(putBack)(page)
-  }
-  const raw = parseJsonObject(now)
-  if (!raw) throw new Error('The sidecar no longer parses.')
-  return jsonText(putBack(raw))
-}
-
-/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
+/** Rewrites each page or Space whose ID is in `values` — found where `roots`, the by-id projection, places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
 export async function sweepRootsById<T>(
   root: string,
   roots: NexusPages['byId'],
   values: Record<string, T>,
+  above: Record<string, string | undefined>,
   rewrite: (raw: Json, value: T) => Json | null,
 ): Promise<Set<string>> {
   const asked = new Map<string, string>()
@@ -157,6 +130,7 @@ export async function sweepRootsById<T>(
       if (next !== null) asked.set(file, id)
       return next
     },
+    above: (raw, file) => () => above[rootId(file, raw) ?? ''],
   })
   for (const file of skipped) asked.delete(file)
   return new Set(asked.values())
@@ -178,5 +152,5 @@ export async function refillValues(
   values: Record<string, unknown>,
   frozen: Frozen,
 ): Promise<Set<string>> {
-  return sweepRootsById(root, roots, values, refillOf(def, frozen))
+  return sweepRootsById(root, roots, values, {}, refillOf(def, frozen))
 }

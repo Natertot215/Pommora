@@ -41,6 +41,7 @@ import { containerSchema, schemaOf } from '../Nexus/treePatch'
 import { assignedIds } from '../Nexus/containerFields'
 import { sidecarPath } from '../Paths/paths'
 import { contextWorldOf } from '../Contexts/contextResolve'
+import { OWED, owedName, readNotes, restoreNote } from '../Nexus/owed'
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
 export async function emptyBundle(
@@ -146,6 +147,18 @@ export async function restoreTrashed(
   await parkLinks(root, dropped)
   // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an entry written after the move would destroy the evidence on failure and reply ok.
   const title = finalTitle ?? finalName
+  // A Context's or Space's own owed titles never refuse it; another's do, since the work still due would land on it. Placement lands a Space only under the live Context its record's `parent` names.
+  const landing =
+    record.entity === 'context'
+      ? { owner: { kind: 'context' as const }, name: title, except: record.registry.id }
+      : record.entity === 'space' && record.parent.kind === 'context'
+        ? {
+            owner: { kind: 'space' as const, contextId: record.parent.id },
+            name: title,
+            except: record.id,
+          }
+        : null
+  if (landing && owedName(await readNotes(root), landing)) return OWED
   if (record.entity === 'context') {
     const committed = await mutateRegistryFile(
       root,
@@ -173,6 +186,11 @@ export async function restoreTrashed(
         contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),
       }))
     return fault(e)
+  }
+  // A conversion that can't land leaves the item live with its delete still owed: the next finish moves it back into its bundle, and the restore can be repeated (H-4).
+  if (landing) {
+    const converted = await restoreNote(root, landing.except)
+    if (!converted.ok) return converted
   }
   await writeOrder?.()
   const arrived = await returningCascade(root, tree, back, title, {
@@ -204,24 +222,26 @@ export async function restoreTrashed(
       [...(await spaceIdsIn(targetAbs)).ids].map(([name, id]) => [id, name]),
     )
     const additions: Record<string, string[]> = {}
+    const above: Record<string, string | undefined> = {}
     for (const m of record.membership) {
       if (!m.root.id) continue
       const titles = m.spaces
         .map((s) => (s.id ? titlesById.get(s.id) : undefined))
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
+      above[m.root.id] = m.root.above
     }
-    unspent.push(...(await reapply(root, roots, contextKey(title), additions)))
+    unspent.push(...(await reapply(root, roots, contextKey(title), additions, above)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = contextWorldOf(tree.contexts).groupById.get(parentId)
     if (group) {
-      const additions = Object.fromEntries(
-        record.members
-          .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
-          .map((m) => [m.id, [title]]),
+      const members = record.members.filter(
+        (m): m is typeof m & { id: string } => typeof m.id === 'string',
       )
-      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions)))
+      const additions = Object.fromEntries(members.map((m) => [m.id, [title]]))
+      const above = Object.fromEntries(members.map((m) => [m.id, m.above]))
+      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions, above)))
     }
   } else if (
     record.entity !== 'space' &&
@@ -259,14 +279,15 @@ export async function restoreTrashed(
   })
 }
 
-/** The ids of what's still here and didn't take its tag back, one of two files claiming its id among them; a root gone since has nothing to take it. */
+/** The ids of what's still here and didn't take its tag back, one of two files claiming its id among them; a root gone since has nothing to take it. A root that no longer holds the key takes it back above the key `above` names for it. */
 async function reapply(
   root: string,
   roots: NexusPages['byId'],
   key: string,
   additions: Record<string, string[]>,
+  above: Record<string, string | undefined>,
 ): Promise<string[]> {
-  const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
+  const taken = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
     landValue(raw, key, joinValues(raw[key], titles)),
   )
   return Object.keys(additions).filter((id) => roots.get(id) !== undefined && !taken.has(id))

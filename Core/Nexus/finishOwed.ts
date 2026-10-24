@@ -9,15 +9,23 @@ import { collectionFolders } from './governedSweep'
 import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
-import type { TrashDeps } from '../Trash/discard'
+import { discardFile, type TrashDeps } from '../Trash/discard'
 import type { CascadeReport } from './cascade'
-import type { ConfigReach } from './configReach'
+import { type ConfigReach, reachConfig } from './configReach'
+import { oweWalk } from './fileEvents'
+import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
-import { join } from '../Paths/posix'
-import { readRegistryStrict } from '../Contexts/contextsRegistry'
+import { basename, join } from '../Paths/posix'
+import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { cascadeTitle, rivalTitled, titleHolders } from '../Contexts/contextCascade'
+import {
+  cascadeTitle,
+  rivalTitled,
+  titleHolders,
+  unlinkContextKey,
+  unlinkSpaceValue,
+} from '../Contexts/contextCascade'
 import { underContexts } from './settle'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
@@ -91,9 +99,9 @@ function finishArm(
     case 'property':
       return finishProperty(root, id, e)
     case 'context':
-      return finishContext(root, id, e)
+      return finishContext(root, id, e, deps)
     case 'space':
-      return finishSpace(root, id, e, notes)
+      return finishSpace(root, id, e, notes, deps)
   }
 }
 
@@ -195,14 +203,36 @@ async function finishOptions(
   return Object.keys(left).length ? left : undefined
 }
 
+/** A deleted Context's or Space's folder, where its delete's list step left it, into its bundle or where Trash Mode sends it. */
+const leave = async (
+  root: string,
+  abs: string,
+  bundle: string | undefined,
+  deps: TrashDeps,
+): Promise<void> => {
+  if (bundle) await relocate(abs, join(root, bundle, basename(abs)))
+  else await machine().lock(abs, () => discardFile(root, abs, deps))
+  oweWalk(root)
+}
+
 async function finishContext(
   root: string,
   id: string,
   e: ContextEntry,
+  deps: TrashDeps,
 ): Promise<Finished<ContextEntry>> {
   const reg = await readRegistryStrict(root)
   if (!reg.ok && reg.error.code !== 'not-found') return stuck(e)
-  const contexts = reg.ok ? reg.value.contexts : []
+  let contexts = reg.ok ? reg.value.contexts : []
+  const listed = contexts.find((c) => c.id === id)?.title
+  // The current title sitting in `strip` is a delete whose list step hadn't landed.
+  if (listed !== undefined && e.strip?.includes(listed)) {
+    const removed = await mutateRegistryFile(root, (cur) => ({
+      contexts: cur.contexts.filter((c) => c.id !== id),
+    }))
+    if (!removed.ok) return stuck(e)
+    contexts = removed.value.contexts
+  }
   const title = contexts.find((c) => c.id === id)?.title
   const reach: ConfigReach = { skipped: 0, hosts: [] }
   const rename =
@@ -230,7 +260,21 @@ async function finishContext(
           },
           reach,
         )
-  return { left: { ...e, rename }, reach }
+  const strip = await sweepEach(
+    e.strip,
+    (old) => contexts.some(rivalTitled(old, id)),
+    async (old) => {
+      const dir = join(contextsDir(root), old)
+      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle, deps)
+      return unlinkContextKey(root, old, id, dir)
+    },
+    reach,
+  )
+  // While the views can't be reached, every name stays owed, so the next finish reaches them again.
+  const views =
+    e.strip &&
+    (add(reach, await reachConfig(root, { kind: 'property', propertyId: id })) ? e.strip : strip)
+  return { left: { ...e, rename, strip: views }, reach }
 }
 
 async function finishSpace(
@@ -238,6 +282,7 @@ async function finishSpace(
   id: string,
   e: SpaceEntry,
   notes: Notes,
+  deps: TrashDeps,
 ): Promise<Finished<SpaceEntry>> {
   const parent = notes[e.contextId]
   const { groupById, spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
@@ -246,7 +291,12 @@ async function finishSpace(
   // A Context gone or owed a delete takes its key, and every Space name in it, with it.
   if (!group || parent?.strip?.length)
     return { left: { kind: 'space', contextId: e.contextId }, reach }
-  const title = spaceById.get(id)?.title
+  const space = spaceById.get(id)
+  // A Space's folder is its list entry, so its current title sitting in `strip` is a delete; a folder still standing is the move it owes.
+  const deleted = space !== undefined && !!e.strip?.includes(space.title)
+  if (deleted && (await heldName(join(root, space.path))) === space.title)
+    await leave(root, join(root, space.path), e.bundle, deps)
+  const title = deleted ? undefined : space?.title
   const rename =
     title === undefined
       ? undefined
@@ -263,5 +313,17 @@ async function finishSpace(
             ),
           reach,
         )
-  return { left: owesRename(parent) ? e : { ...e, rename }, reach }
+  const under = (old: string): string => join(contextsDir(root), group.def.title, old)
+  const strip = await sweepEach(
+    e.strip,
+    (old) => group.spaces.some(rivalTitled(old, id)),
+    (old) => unlinkSpaceValue(root, group.def.title, old, under(old)),
+    reach,
+  )
+  const views =
+    e.strip &&
+    (add(reach, await reachConfig(root, { kind: 'gone', propertyId: e.contextId, ids: [id] }))
+      ? e.strip
+      : strip)
+  return { left: owesRename(parent) ? e : { ...e, rename, strip: views }, reach }
 }

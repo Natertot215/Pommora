@@ -3,7 +3,7 @@
 import { queryMembers, readPageRelations } from './contentIndex'
 import { nexusCorpus } from './indexSeed'
 import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
-import { splitFrontmatter } from '../Files/pageFile'
+import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
@@ -29,8 +29,14 @@ export type HolderQuery = {
   moved?: Moved
 }
 
-/** A holder a finder read: the id `byId` addresses it by, the query keys it holds, and their values as written, or null when it couldn't be read. */
-export type Held = { file: string; id: string | null; keys: string[]; values: Json | null }
+/** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, in the page's own key order. */
+export type Held = {
+  file: string
+  id: string | null
+  keys: string[]
+  values: Json | null
+  above: Record<string, string | undefined>
+}
 
 export type Holders = { pages: string[]; spaces: string[]; held: Held[] }
 
@@ -101,12 +107,13 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const heldOut = new Set<string>()
   for (const file of [...pages, ...spaces]) {
     const text = await readTextOrNull(file)
+    const page = text !== null && isMarkdownFile(file) ? sweepParse(text) : null
     const rel = relative(root, file)
     // An unreadable page answers the index's last read of it, so a delete's Trash entry keeps what its strip can't reach yet; a readable one answers its file, whose parsed values the index's JSON doesn't always carry.
     const raw =
       text !== null
         ? isMarkdownFile(file)
-          ? splitFrontmatter(text)
+          ? (page?.raw ?? splitFrontmatter(text))
           : parseJsonObject(text)
         : isMarkdownFile(file)
           ? ((readPageRelations([rel])?.pages[rel]?.values as Json | undefined) ?? null)
@@ -121,6 +128,7 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       id: addressed,
       keys,
       values: raw && Object.fromEntries(keys.map((k) => [k, raw[k]])),
+      above: Object.fromEntries(keys.map((k) => [k, page?.above(k)])),
     })
   }
   const kept = (file: string): boolean => !heldOut.has(file)

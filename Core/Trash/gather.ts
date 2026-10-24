@@ -1,7 +1,10 @@
-import { basename, dirname, isAtOrUnder, join } from '../Paths/posix'
+import { basename, dirname, isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
-import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
+import type { Holders } from '../Index/keyHolders'
+import type { Json } from '../Files/stableJson'
+import { scalarMembers } from '../Contract/validators'
+import { contextKey } from '../Contexts/contexts'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarIdentity } from '../Files/sidecar'
@@ -54,14 +57,23 @@ export async function gatherLinkTargets(
   return Object.fromEntries(out)
 }
 
-const sweepIncomplete = (swept: UnlinkOutcome | null): boolean =>
-  swept === null || swept.skipped.length > 0 || swept.refused.length > 0
+/** Each holder the capture filed by id, as a record names it, a page with the key its line stood above. */
+const rootsOf = (
+  holders: Holders,
+): [{ id: string; kind: 'page' | 'space'; above?: string }, Json][] =>
+  holders.held.flatMap((h) => {
+    const kind = isMarkdownFile(h.file) ? 'page' : 'space'
+    return h.id && h.values ? [[{ id: h.id, kind, above: h.above[h.keys[0]] }, h.values]] : []
+  })
+
+/** A capture missing a holder: one neither its file nor the index could answer, or one no id files. */
+const partly = (holders: Holders): boolean => holders.held.some((h) => !h.id || !h.values)
 
 export async function gatherSpaceRecord(
   tree: NexusTree,
   abs: string,
   registry: Result<ContextsRegistry> | null,
-  swept: UnlinkOutcome | null,
+  held: Holders,
 ): Promise<RecordFile | null> {
   const { id, icon } = await sidecarIdentity(abs, 'space')
   if (!id) return null
@@ -76,11 +88,7 @@ export async function gatherSpaceRecord(
       group.spaces.map((s) => s.id),
       id,
     )
-  const captured = swept?.captured ?? []
-  const members = captured
-    .filter((c): c is SweepCapture & { id: string } => typeof c.id === 'string')
-    .map((c) => ({ id: c.id, kind: c.kind }))
-  const partial = sweepIncomplete(swept) || members.length < captured.length
+  const members = rootsOf(held).map(([member]) => member)
   return {
     entity: 'space',
     id,
@@ -88,7 +96,7 @@ export async function gatherSpaceRecord(
     parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
     ...(place ? { place } : {}),
     members,
-    ...(partial ? { partial: true as const } : {}),
+    ...(partly(held) ? { partial: true as const } : {}),
   }
 }
 
@@ -109,22 +117,20 @@ export async function gatherContextEvidence(
   return { entry: { ...entry }, at, spaceIds, unresolved }
 }
 
-export function buildContextRecord(
-  evidence: ContextEvidence,
-  swept: UnlinkOutcome | null,
-): RecordFile {
-  const membership = (swept?.captured ?? []).map((c) => ({
-    root: { ...(c.id ? { id: c.id } : {}), kind: c.kind },
+export function buildContextRecord(evidence: ContextEvidence, held: Holders): RecordFile {
+  const key = contextKey(evidence.entry.title)
+  const membership = rootsOf(held).map(([member, values]) => ({
+    root: member,
     spaces: [
       ...new Map(
-        c.values.map((title) => {
+        scalarMembers(values[key]).map((title) => {
           const id = evidence.spaceIds.get(exactTitle(title))
           return [id ?? title, id ? { id, title } : { title }]
         }),
       ).values(),
     ],
   }))
-  const partial = evidence.unresolved || sweepIncomplete(swept)
+  const partial = evidence.unresolved || partly(held)
   return {
     entity: 'context',
     registry: evidence.entry,
