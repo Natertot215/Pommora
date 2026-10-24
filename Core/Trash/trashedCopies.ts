@@ -13,7 +13,7 @@ import { stampedIdOf } from '../Files/pageFile'
 import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
 import type { PropertyDefinition } from '../Properties/properties'
 import { contentPages, listBundles, originPagesIn } from '../Bundles/bundle'
-import { patchRecord } from '../Bundles/record'
+import { collectionOf, originOf, patchRecord } from '../Bundles/record'
 
 const appendLinks = (bundleDir: string, links: StrippedLink[]): Promise<void> =>
   patchRecord(bundleDir, (raw) => ({
@@ -45,14 +45,17 @@ export async function parkLinks(root: string, links: StrippedLink[]): Promise<vo
   for (const [bundle, rows] of parked) await appendLinks(bundle, rows)
 }
 
-/** Where the Trash holds each page or Space `ids` names: the file its values live in. */
-async function trashedHolders(
+/** Where the Trash holds each page or Space `ids` names: the file its values live in; with `from`, only the pages trashed from that Collection. */
+export async function trashedHolders(
   root: string,
   ids: ReadonlySet<string>,
+  from?: string,
 ): Promise<Map<string, string>> {
   const found = new Map<string, string>()
   for (const { bundlePath, record, artifactName } of await listBundles(root, { kind: 'trash' })) {
     if (!artifactName) continue
+    const origin = from === undefined ? null : originOf(record)
+    if (from !== undefined && (!origin || collectionOf(origin) !== from)) continue
     const artifact = join(root, bundlePath, artifactName)
     switch (record.entity) {
       case 'page':

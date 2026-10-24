@@ -79,7 +79,7 @@ async function restoreInner(
       return false
     }),
   )
-  const taken = await refillValues(root, def, roots, values, frozen, record.above)
+  const { taken } = await refillValues(root, def, roots, values, frozen, record.above)
   return ok({
     unrestored: Object.keys(values).flatMap((id) =>
       taken.has(id) ? [] : (shownTitle(tree, roots, id) ?? []),

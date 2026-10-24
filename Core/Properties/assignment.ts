@@ -13,55 +13,68 @@ import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { PROPERTY_TYPES, type PropertyDraft } from './properties'
 import { createProperty, removeFromRegistry } from './registryProperty'
 import { gonePageEntry } from '../Nexus/governedRoot'
-import { frozenWorld, parkLinks } from '../Trash/trashedCopies'
-import { refillValues } from '../Nexus/governedSweep'
+import { frozenWorld, parkLinks, trashedHolders } from '../Trash/trashedCopies'
+import { refillValues, type RootsById } from '../Nexus/governedSweep'
+import type { EntityRecord } from '../Nexus/record'
 import { ok, fail, type Result } from '../Contract/result'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { exactTitle } from '../Paths/caseFold'
 
+/** Puts the values the Collection at `folder` stashes for `propertyId` back on its pages, and into the Trash copies of pages trashed from it, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
 async function refillStash(
   root: string,
-  collectionFolder: string,
+  folder: string,
   propertyId: string,
-): Promise<Result<null>> {
-  const stashed = stashedBlock(
-    await readJsonObject(sidecarPath(collectionFolder, 'collection')),
-    propertyId,
-  )?.values
-  if (!stashed) return ok(null)
-
+  collectionId: string,
+): Promise<number> {
+  const tree = await liveTreeOf(root)
+  const stash = stashedBlock(await readJsonObject(sidecarPath(folder, 'collection')), propertyId)
+  if (!stash) return 0
   // No readable definition → the stash stays whole: a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return ok(null)
-  const rel = relative(root, collectionFolder)
-  const tree = await liveTreeOf(root)
+  if (!def) return 0
+  const { values } = stash
   const { byId, archived } = await nexusPages(root, tree)
   const members = new Map(
-    Object.keys(stashed).flatMap((id) => {
+    Object.keys(values).flatMap((id) => {
       const r = byId.get(id)
-      return r?.kind === 'page' && owningCollection(tree, r.path)?.path === rel
+      return r?.kind === 'page' && owningCollection(tree, r.path)?.id === collectionId
         ? [[id, r] as const]
         : []
     }),
   )
+  // The Trash is listed only when a stashed id is missing from the tree, since the listing opens every trashed Set's pages.
+  const unplaced = new Set(Object.keys(values).filter((id) => !byId.has(id)))
+  const trashed = unplaced.size
+    ? await trashedHolders(root, unplaced, collectionId)
+    : new Map<string, string>()
+  const roots: RootsById = new Map<string, Pick<EntityRecord, 'kind' | 'path'>>([
+    ...members,
+    ...[...trashed].map(
+      ([id, file]) => [id, { kind: 'page', path: relative(root, file) }] as const,
+    ),
+  ])
   const frozen = frozenWorld(linkWorld(tree, archived))
   // A stashed Link naming a page gone leaves the stash: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     PROPERTY_TYPES[def.type].connections === 'value'
       ? [...members.keys()].flatMap((id) => {
-          const entry = gonePageEntry(stashed[id], frozen)
-          return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
+          const entry = gonePageEntry(values[id], frozen)
+          return entry === null
+            ? []
+            : [{ page: id, property: propertyId, value: entry, above: stash.above?.[id] }]
         })
       : []
-  const spent = await refillValues(root, def, members, stashed, frozen)
+  const { taken, skipped } = await refillValues(root, def, roots, values, frozen, stash.above)
   await parkLinks(root, gone)
-  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
+  const owed = new Set([...roots.keys()].filter((id) => !taken.has(id)))
+  for (const { page } of gone) owed.delete(page)
+  const written = await patchSidecar(folder, 'collection', (cur) => {
     const block = stashedBlock(cur, propertyId)
-    const left = { ...block?.values }
-    for (const id of [...spent, ...gone.map((g) => g.page)]) delete left[id]
-    return block && patchStashBlock(cur, propertyId, { ...block, values: left })
+    const left = Object.entries(block?.values ?? {}).filter(([id]) => owed.has(id))
+    return block && patchStashBlock(cur, propertyId, { ...block, values: Object.fromEntries(left) })
   })
-  return written.ok ? ok(null) : written
+  return skipped + (written.ok ? 0 : 1)
 }
 
 // The schema lock rejects a re-taken lock, so these are unwrapped internals a wrapped op composes inside its own hold.
@@ -80,7 +93,9 @@ export async function assignInner(
   })
   if (!written.ok) return written
   if (!appended) return ok(null)
-  return refillStash(root, collectionFolder, propertyId)
+  // patchSidecar writes only a sidecar carrying its id, so the sidecar it answers names the Collection.
+  await refillStash(root, collectionFolder, propertyId, String(written.value.id))
+  return ok(null)
 }
 
 async function reorderInner(

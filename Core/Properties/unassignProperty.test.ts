@@ -31,6 +31,8 @@ import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { putJson } from '../Testing/hostFs'
+import { settledMutate } from '../Testing/settledMutate'
+import { listBundles } from '../Bundles/bundle'
 import { deleteProperty } from './deleteProperty'
 import type { TrashDeps } from '../Trash/discard'
 
@@ -103,6 +105,14 @@ const sidecar = (): Promise<Record<string, unknown> | null> =>
   readJsonObject(sidecarPath(folder, 'collection'))
 const stashBlock = async (): Promise<StashBlock | undefined> =>
   ((await sidecar())?.property_stash as Record<string, StashBlock> | undefined)?.[propId]
+
+const idOf = async (path: string): Promise<string> =>
+  splitFrontmatter(await readFile(path, 'utf8'))[ID_KEY] as string
+const tasksCollection = async (): Promise<void> => {
+  const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
+  if (!made.ok) throw new Error('setup failed')
+  await refreshTree(root)
+}
 
 describe('unassignProperty — strip + stash', () => {
   it('strips the value from every member page, stashes {pageId: raw}, and unassigns — one transaction', async () => {
@@ -424,8 +434,6 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
   })
 
   it('a Remove stamps its block with the time it set the values aside, and a second Remove restarts the clock', async () => {
-    const idOf = async (path: string): Promise<string> =>
-      splitFrontmatter(await readFile(path, 'utf8'))[ID_KEY] as string
     vi.setSystemTime(new Date('2026-10-20T08:00:00.000Z'))
     try {
       await unassignProperty(root, folder, propId)
@@ -489,14 +497,65 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     expect(Object.keys(block.values)).toHaveLength(2)
   })
 
-  it('a page deleted while stashed is skipped — its entry stays stashed, no error', async () => {
+  it('a page deleted since its Remove leaves the stash at the re-add', async () => {
     await unassignProperty(root, folder, propId)
+    const gone = await idOf(pageA)
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
     expect(await pageValue(pageB)).toEqual(['done'])
-    const block = (await stashBlock()) as { values: Record<string, unknown> }
-    expect(Object.keys(block.values)).toHaveLength(1)
+    expect((await stashBlock())?.values ?? {}).not.toHaveProperty(gone)
+  })
+
+  it('a page moved to another Collection since its Remove leaves the stash, and the other Collection gains nothing', async () => {
+    await tasksCollection()
+    await unassignProperty(root, folder, propId)
+    const moved = await idOf(pageA)
+    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' }, deps)
+    await assignProperty(root, folder, propId)
+    expect((await stashBlock())?.values ?? {}).not.toHaveProperty(moved)
+    expect(await pageValue(join(root, 'Tasks', 'A.md'))).toBeUndefined()
+  })
+
+  it('a page trashed from this Collection takes its value into its Trash copy where it stood, and restoring it brings the value back', async () => {
+    const placed = `---\nID: ${await idOf(pageA)}\nNote: a\n${liveDef.key}:\n  - active\nZed: z\n---\nb\n`
+    await writeFile(pageA, placed)
+    await unassignProperty(root, folder, propId)
+    await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' }, deps)
+    await assignProperty(root, folder, propId)
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    expect(await readFile(join(root, bundle.bundlePath, 'A.md'), 'utf8')).toBe(placed)
+    expect(await stashBlock()).toBeUndefined()
+    await settledMutate(root, { op: 'restore', bundlePath: bundle.bundlePath }, deps)
+    expect(await pageValue(pageA)).toEqual(['active'])
+  })
+
+  it('a page trashed from another Collection takes nothing', async () => {
+    await tasksCollection()
+    await unassignProperty(root, folder, propId)
+    const moved = await idOf(pageA)
+    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' }, deps)
+    await settledMutate(root, { op: 'delete', path: 'Tasks/A.md', kind: 'page' }, deps)
+    await assignProperty(root, folder, propId)
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    expect(
+      splitFrontmatter(await readFile(join(root, bundle.bundlePath, 'A.md'), 'utf8')),
+    ).not.toHaveProperty(liveDef.key)
+    expect((await stashBlock())?.values ?? {}).not.toHaveProperty(moved)
+  })
+
+  it('a re-added property’s value lands at its old place', async () => {
+    const id = await idOf(pageA)
+    const bytes = (rest: string): string => `---\nID: ${id}\nNote: a\n${rest}---\nb\n`
+    const placed = bytes(`${liveDef.key}:\n  - active\nZed: z\n`)
+    await writeFile(pageA, placed)
+    await unassignProperty(root, folder, propId)
+    await assignProperty(root, folder, propId)
+    expect(await readFile(pageA, 'utf8')).toBe(placed)
+    await unassignProperty(root, folder, propId)
+    await writeFile(pageA, bytes(''))
+    await assignProperty(root, folder, propId)
+    expect(await readFile(pageA, 'utf8')).toBe(bytes(`${liveDef.key}:\n  - active\n`))
   })
 
   it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred', async () => {

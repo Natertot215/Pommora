@@ -283,7 +283,7 @@ export async function restoreTrashed(
         stripped.map((l) => [l.page, rewriteConnections(l.value, own)]),
       )
       const above = Object.fromEntries(stripped.map((l) => [l.page, l.above]))
-      const taken = await refillValues(root, def, roots, all, refilled, above)
+      const { taken } = await refillValues(root, def, roots, all, refilled, above)
       for (const id of Object.keys(all))
         if (roots.get(id) === undefined)
           trashed.push({ page: id, property: def.id, value: all[id], above: above[id] })
@@ -313,7 +313,7 @@ async function reapply(
   additions: Record<string, string[]>,
   above: Record<string, string | undefined>,
 ): Promise<string[]> {
-  const taken = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
+  const { taken } = await sweepRootsById(root, roots, additions, above, (raw, titles) =>
     landValue(raw, key, joinValues(raw[key], titles)),
   )
   return Object.keys(additions).filter((id) => roots.get(id) !== undefined && !taken.has(id))
