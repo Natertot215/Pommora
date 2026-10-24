@@ -352,6 +352,84 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
   })
 
+  it('a page in a stash and in the record takes the value it held at the delete, and isn’t named unrestored', async () => {
+    const id = await seedPriority()
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    const key = (await liveDef(id)).key
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
+    expect((await unassignProperty(root, notes, id)).ok).toBe(true)
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['lo'])),
+    )
+    await assignProperty(root, notes, id)
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r.ok && r.value.unrestored).toBeUndefined()
+    expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
+    const stash = (await readJsonObject(sidecarPath(notes, 'collection')))?.property_stash as
+      | Record<string, { values: Record<string, unknown> }>
+      | undefined
+    expect(stash?.[id]?.values[page.value.id]).toBeUndefined()
+  })
+
+  it('a restored property’s value lands at its old place', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Stage',
+      type: 'multiSelect',
+      select_options: [{ id: 'opt_x', key: 'x', label: 'x' }],
+    })
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    const kept = await createTestPage(notes, 'A', { body: 'b' })
+    const moved = await createTestPage(notes, 'B', { body: 'b' })
+    if (!kept.ok || !moved.ok) throw new Error('pages failed')
+    const bytes = (pageId: string, rest: string): string =>
+      `---\nID: ${pageId}\nNote: a\n${rest}---\nb\n`
+    await writeFile(kept.value.path, bytes(kept.value.id, 'Stage:\n  - x\nZed: z\n'))
+    await writeFile(moved.value.path, bytes(moved.value.id, 'Stage:\n  - x\nZed: z\n'))
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    await writeFile(moved.value.path, bytes(moved.value.id, ''))
+
+    await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(await readFile(kept.value.path, 'utf8')).toBe(
+      bytes(kept.value.id, 'Stage:\n  - x\nZed: z\n'),
+    )
+    expect(await readFile(moved.value.path, 'utf8')).toBe(bytes(moved.value.id, 'Stage:\n  - x\n'))
+  })
+
+  it('a property deleted while its Collection sits in the Trash switches back on there when both return', async () => {
+    const id = await seedPriority()
+    const page = await createTestPage(tasks, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    const key = (await liveDef(id)).key
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+    )
+    await refreshTree(root)
+    expect(
+      (await settledMutate(root, { op: 'delete', path: 'Tasks', kind: 'collection' }, deps)).ok,
+    ).toBe(true)
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    const [collection, property] = await Promise.all(
+      ['collection', 'property'].map(async (entity) =>
+        (await listBundles(root, { kind: 'trash' })).find((b) => b.record.entity === entity),
+      ),
+    )
+    await settledMutate(root, { op: 'restore', bundlePath: collection?.bundlePath ?? '' }, deps)
+    expect(await assigns(tasks, id)).toBe(true)
+    await settledMutate(root, { op: 'restore', bundlePath: property?.bundlePath ?? '' }, deps)
+    expect(await assigns(tasks, id)).toBe(true)
+    expect(await valueOn(page.value.path, 'Priority')).toEqual(['hi'])
+  })
+
   it('a page that held the key blank neither returns a value nor is named', async () => {
     const id = await seedPriority()
     const blank = await createTestPage(notes, 'Blank', { body: 'b' })

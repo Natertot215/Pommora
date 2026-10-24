@@ -46,6 +46,7 @@ import {
   withLost,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
+import { contentPages, listBundles } from '../Bundles/bundle'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
 
@@ -155,10 +156,26 @@ async function finishProperty(
     Object.values(defs).some((d) => d.id !== id && d.key === key)
   if (!def) {
     const strip = (e.strip ?? []).filter((key) => !held(key))
-    const folders = collectionFolders(root, await liveTreeOf(root))
-    const missed =
-      strip.length > 0 &&
-      add(reach, await stripProperty(root, id, folders, await deletePlan(root, id, strip)))
+    // With no Trash entry left for the property it can't come back, so the Collections and pages the Trash holds lose it as the live ones do.
+    const bundles = await listBundles(root, { kind: 'trash' })
+    const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
+    const trashed = kept
+      ? []
+      : bundles.flatMap((b) =>
+          b.artifactName
+            ? [{ entity: b.record.entity, abs: join(root, b.bundlePath, b.artifactName) }]
+            : [],
+        )
+    const folders = [
+      ...collectionFolders(root, await liveTreeOf(root)),
+      ...trashed.flatMap((b) => (b.entity === 'collection' ? [b.abs] : [])),
+    ]
+    const planned = await deletePlan(root, id, strip)
+    const inTrash = strip.length
+      ? (await Promise.all(trashed.map((b) => contentPages(b.entity, b.abs)))).flat()
+      : []
+    const holders = { ...planned.holders, pages: [...planned.holders.pages, ...inTrash] }
+    const missed = add(reach, await stripProperty(root, id, folders, { ...planned, holders }))
     return { left: { kind: 'property', strip: missed ? strip : undefined }, reach }
   }
   const rename = await sweepEach(

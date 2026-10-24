@@ -49,14 +49,20 @@ async function restoreInner(
   const def = created.value
   const tree = await liveTreeOf(root)
   const byId = new Map(tree.collections.map((c) => [c.id, join(root, c.path)]))
+  // The stash comes back first, so the re-assign refills from it, and without the pages the record holds a delete-time value for, which supersedes an older leftover.
+  for (const [collectionId, block] of Object.entries(record.stashes ?? {})) {
+    const folder = byId.get(collectionId)
+    const values = Object.fromEntries(
+      Object.entries(block.values).filter(([id]) => !Object.hasOwn(record.values, id)),
+    )
+    if (folder)
+      await patchSidecar(folder, 'collection', (cur) =>
+        patchStashBlock(cur, record.id, { ...block, values }),
+      )
+  }
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
     if (folder) await assignInner(root, folder, record.id)
-  }
-  for (const [collectionId, block] of Object.entries(record.stashes ?? {})) {
-    const folder = byId.get(collectionId)
-    if (folder)
-      await patchSidecar(folder, 'collection', (cur) => patchStashBlock(cur, record.id, block))
   }
   const { byId: roots, archived } = await nexusPages(root, tree)
   const frozen = frozenWorld(linkWorld(tree, archived))
@@ -69,11 +75,11 @@ async function restoreInner(
       const entry =
         PROPERTY_TYPES[def.type].connections === 'value' ? gonePageEntry(raw, frozen) : null
       if (entry === null) return true
-      dropped.push({ page: id, property: def.id, value: entry })
+      dropped.push({ page: id, property: def.id, value: entry, above: record.above?.[id] })
       return false
     }),
   )
-  const taken = await refillValues(root, def, roots, values, frozen)
+  const taken = await refillValues(root, def, roots, values, frozen, record.above)
   return ok({
     unrestored: Object.keys(values).flatMap((id) =>
       taken.has(id) ? [] : (shownTitle(tree, roots, id) ?? []),
