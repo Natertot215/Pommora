@@ -29,6 +29,7 @@ import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 import { listOf } from '../Contract/validators'
+import { OWED, owedName, readNotes } from '../Nexus/owed'
 
 /** Unknown ids fail — a stale renderer id must never serialize as a guess. */
 export function contextTarget(
@@ -72,7 +73,6 @@ async function setSpaceContext(
   targetSpaceIds: string[],
 ): Promise<Result<{ skipped: number; entries: PutBack[] }>> {
   const world = spaceWorldOf(tree)
-  if (targetSpaceIds.includes(a.id)) return fault('A Space can’t link itself.')
   const applied = contextTarget(world.contexts, contextId, targetSpaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
@@ -137,16 +137,22 @@ export async function createContextGroup(
 ): Promise<Result<{ path: string }>> {
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
+  const notes = await readNotes(root)
+  let owed = false
   let title = name
   const written = await mutateRegistryFile(root, (cur) => {
     title = freeName(
       name,
       cur.contexts.map((c) => c.title),
     )
+    // Refused on the title the create lands on, stepped aside or not.
+    owed = owedName(notes, { owner: { kind: 'context' }, name: title })
+    if (owed) return null
     // No icon: a fresh group resolves to the kind's glyph and follows a nexus default; stamping one would outrank that override forever.
     return withContextAt({ id, title })(cur)
   })
   if (!written.ok) return written
+  if (owed) return OWED
   await machine().mkdir(join(contextsDir(root), title))
   return ok({ path: contextDirRel(title) })
 }
@@ -161,9 +167,14 @@ export async function createSpace(
   if (!group) return fail('not-found', 'Unknown Context.')
   const parent = join(contextsDir(root), group.def.title)
   await machine().mkdir(parent)
+  const notes = await readNotes(root)
   const created = await createDisambiguated(
     name,
-    (n) => createFolderEntity(parent, 'space', n, id),
+    // An owed title refuses rather than stepping on, so the stepping stops on it too.
+    (n) =>
+      owedName(notes, { owner: { kind: 'space', contextId }, name: n })
+        ? Promise.resolve(OWED)
+        : createFolderEntity(parent, 'space', n, id),
     (n) => pathExists(join(parent, n)),
   )
   if (!created.ok) return created

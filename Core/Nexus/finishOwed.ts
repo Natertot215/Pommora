@@ -12,8 +12,16 @@ import { memberKey } from '../Files/rootValues'
 import type { TrashDeps } from '../Trash/discard'
 import type { CascadeReport } from './cascade'
 import type { ConfigReach } from './configReach'
-import { liveTreeOf } from './liveTree'
+import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
+import { contextsDir } from '../Paths/paths'
+import { join } from '../Paths/posix'
+import { readRegistryStrict } from '../Contexts/contextsRegistry'
+import { contextWorldOf } from '../Contexts/contextResolve'
+import { cascadeTitle, rivalTitled, titleHolders } from '../Contexts/contextCascade'
+import { underContexts } from './settle'
+import { liveTreeOf, refreshTree } from './liveTree'
 import {
+  type ContextEntry,
   editNote,
   type Entry,
   type Notes,
@@ -22,6 +30,7 @@ import {
   owesRename,
   type PropertyEntry,
   readNotes,
+  type SpaceEntry,
   withLost,
 } from './owed'
 
@@ -53,6 +62,10 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
       }
     }
   }
+  await underContexts(root, async () => {
+    await each('context')
+    await each('space')
+  })
   await serializeSchemaOp(root, () => each('property'))
   return withLost(root, owedReport(total))
 }
@@ -78,8 +91,9 @@ function finishArm(
     case 'property':
       return finishProperty(root, id, e)
     case 'context':
+      return finishContext(root, id, e)
     case 'space':
-      return Promise.resolve({ left: e, reach: { skipped: 0, hosts: [] } })
+      return finishSpace(root, id, e, notes)
   }
 }
 
@@ -179,4 +193,74 @@ async function finishOptions(
       }
   }
   return Object.keys(left).length ? left : undefined
+}
+
+async function finishContext(
+  root: string,
+  id: string,
+  e: ContextEntry,
+): Promise<Finished<ContextEntry>> {
+  const reg = await readRegistryStrict(root)
+  if (!reg.ok && reg.error.code !== 'not-found') return stuck(e)
+  const contexts = reg.ok ? reg.value.contexts : []
+  const title = contexts.find((c) => c.id === id)?.title
+  const reach: ConfigReach = { skipped: 0, hosts: [] }
+  const rename =
+    title === undefined
+      ? undefined
+      : await sweepEach(
+          e.rename,
+          (old) => old === title || contexts.some(rivalTitled(old, id)),
+          async (old) => {
+            const from = join(contextsDir(root), old)
+            const to = join(contextsDir(root), title)
+            // A crash between the list step and the folder move left the folder under the old title, and the open's tree read none of the Context's Spaces from the folder the list names, so the tree is read again once the folder is there.
+            if ((await heldName(from)) === old && !(await targetTaken(from, to))) {
+              await relocate(from, to)
+              await refreshTree(root)
+            }
+            return cascadeTitle(
+              title,
+              old,
+              title,
+              false,
+              await titleHolders(root, title, old, false),
+            )
+          },
+          reach,
+        )
+  return { left: { ...e, rename }, reach }
+}
+
+async function finishSpace(
+  root: string,
+  id: string,
+  e: SpaceEntry,
+  notes: Notes,
+): Promise<Finished<SpaceEntry>> {
+  const parent = notes[e.contextId]
+  const { groupById, spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
+  const group = groupById.get(e.contextId)
+  const reach: ConfigReach = { skipped: 0, hosts: [] }
+  // A Context gone or owed a delete takes its key, and every Space name in it, with it.
+  if (!group || parent?.strip?.length)
+    return { left: { kind: 'space', contextId: e.contextId }, reach }
+  const title = spaceById.get(id)?.title
+  const rename =
+    title === undefined
+      ? undefined
+      : await sweepEach(
+          e.rename,
+          (old) => old === title || group.spaces.some(rivalTitled(old, id)),
+          async (old) =>
+            cascadeTitle(
+              group.def.title,
+              old,
+              title,
+              true,
+              await titleHolders(root, group.def.title, old, true),
+            ),
+          reach,
+        )
+  return { left: owesRename(parent) ? e : { ...e, rename }, reach }
 }

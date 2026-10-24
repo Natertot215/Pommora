@@ -24,10 +24,6 @@ const CONTEXTS_REGISTRY_FILENAME = 'contexts.json'
 export const CONTEXTS_REGISTRY_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}/${CONTEXTS_REGISTRY_FILENAME}`
 export const CONTEXTS_DIR_REL = `${NEXUS_DIR}/${CONTEXTS_DIRNAME}`
 
-export const PROPERTY_JOURNAL_FILENAME = 'property-cascade.json'
-export const CONTEXT_JOURNAL_FILENAME = 'context-rename.json'
-export const PROPERTY_JOURNAL_REL = `${NEXUS_DIR}/${PROPERTY_JOURNAL_FILENAME}`
-export const CONTEXT_JOURNAL_REL = `${NEXUS_DIR}/${CONTEXT_JOURNAL_FILENAME}`
 /** Device-local: dotted, so neither the watcher nor sync admits it. */
 export const OWED_REL = `${NEXUS_DIR}/.owed.json`
 

@@ -256,7 +256,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!res.ok) {
         if (quiet) return null
         if (res.error.code === 'owed') notifyRetry(res.error.message, get().finishOwed)
-        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
+        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read the next time.
         else if (
           (req.op === 'setProperty' || req.op === 'setContext') &&
           res.error.code === 'operation-failed'
@@ -274,17 +274,15 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       if (!quiet) {
         if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
-        const { cascade, retry, missed } = res.value
+        const { cascade, missed } = res.value
         if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
           warnCascade(
             cascade,
             cascade.owed
               ? get().finishOwed
-              : retry
-                ? () => void get().mutate(retry)
-                : missed
-                  ? () => void get().mutate({ op: 'putBack', entries: missed })
-                  : undefined,
+              : missed
+                ? () => void get().mutate({ op: 'putBack', entries: missed })
+                : undefined,
           )
         if (res.value.created && res.value.landedAs)
           notifyReport(`Created “${res.value.landedAs}”.`, false)

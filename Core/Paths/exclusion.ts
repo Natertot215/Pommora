@@ -1,13 +1,5 @@
 import { foldKey } from './caseFold'
-import {
-  archiveSegs,
-  ASSETS_DIRNAME,
-  CONTEXT_JOURNAL_REL,
-  NEXUS_DIR,
-  PROPERTY_JOURNAL_REL,
-  THUMBNAILS_SEGMENT,
-  TRASH_DIR,
-} from './nexusPaths'
+import { archiveSegs, ASSETS_DIRNAME, NEXUS_DIR, THUMBNAILS_SEGMENT, TRASH_DIR } from './nexusPaths'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** None is content, and a journal's churn must never cost a walk. */
@@ -55,7 +47,6 @@ export function manifestAdmits(
     if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
     if (segs[0] === TRASH_DIR) return !neverWatched(segs.slice(1)) && !isExcluded(segs.slice(1))
     if (thumbnailSegs(segs)) return false
-    if (rel === PROPERTY_JOURNAL_REL || rel === CONTEXT_JOURNAL_REL) return false
     if (isAsset(segs)) return !neverWatched(segs.slice(assetDepth))
     return !neverWatched(segs) && !isExcluded(segs)
   }

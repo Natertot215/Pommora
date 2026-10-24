@@ -23,7 +23,6 @@ export interface MutateOutcome {
   unrestored?: string[]
   /** The title a restore stepped aside to, when it couldn't land under its own. */
   landedAs?: string
-  retry?: MutateRequest
   /** The request that takes this write back, which the window's undo sends. */
   undo?: MutateRequest
   /** The entries an undo couldn't put back, which its Try Again sends again alone, so it never overwrites an edit made since. */
@@ -122,8 +121,8 @@ export const mutateRequest = z.discriminatedUnion('op', [
     name: z.string(),
     order: ids.optional(),
   }),
-  op('renameContext', { contextId: z.string(), newName: z.string(), from: z.string().optional() }),
-  op('renameSpace', { spaceId: z.string(), newName: z.string(), from: z.string().optional() }),
+  op('renameContext', { contextId: z.string(), newName: z.string() }),
+  op('renameSpace', { spaceId: z.string(), newName: z.string() }),
   op('setContext', { path: z.string(), contextId: z.string(), spaceIds: ids }),
   op('setSpaceColor', { spaceId: z.string(), color: z.string().optional() }),
   op('reorderContexts', { ids }),

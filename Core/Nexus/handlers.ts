@@ -1,6 +1,5 @@
 import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
 import { errText, fail, ok, type Result, fault } from '../Contract/result'
-import { replayPendingRename } from '../Contexts/contextCascade'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readHeadings } from '../Index/contentIndex'
@@ -104,9 +103,6 @@ export async function openNexusSequence(
     const reread = await seedContentIndex(root)
     oweSeen(root, reread)
     void sweepFileHistory(root)
-    await replayPendingRename(root).catch((e) =>
-      console.error('contexts: the rename replay failed:', errText(e)),
-    )
     await finishOwed(root, await trashDeps(ctx))
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)

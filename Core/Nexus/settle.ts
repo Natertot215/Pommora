@@ -38,6 +38,8 @@ import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pa
 import { refileMoved } from '../Archive/refile'
 import { repairLanded } from '../Trash/restoreScrub'
 import type { RecordFile } from '../Bundles/record'
+import { contextsDir } from '../Paths/paths'
+import { machine } from '../Platform/machine'
 
 // ── The app's own events ──
 
@@ -236,6 +238,16 @@ export async function settleBatch(
 }
 
 export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
+
+// A write run here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never blanks a value or drops a list member it can't resolve (`reconcileGovernedRoot` in `governedRoot.ts`), so it lands right whether it comes before or after a sweep reaches the page.
+export const underContexts = <T>(root: string, fn: () => Promise<T>): Promise<T> =>
+  machine().lock(contextsDir(root), async () => {
+    try {
+      return await fn()
+    } finally {
+      await payOwedWalk(root)
+    }
+  })
 
 /** Runs an operation in the settle's own turn on a settled tree, so no settle interleaves with it; nothing inside may await another turn (`payOwedWalk`, `settleNow`), since a turn queued behind this one starts only when it ends. */
 export const inSettleTurn = <T>(root: string, op: () => Promise<T>): Promise<T> =>
