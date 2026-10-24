@@ -49,3 +49,13 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | A rename onto a name still owed is refused | as above | rename `Drive Spare` to `Drive Priority` | the notice reads `An earlier change hasn’t reached every file yet.` with Try Again, and `Drive Held` still reads `Drive Spare` | B-4 |
 | The owed name's finish frees it | `Drive Locked.md` back to `644` | rename `Drive Spare` to `Drive Priority` again | `Drive Locked` reads `Drive Urgency` and `Drive Phase`, the notes file owes nothing, and `Drive Held` reads `Drive Priority: spare` | H-17, B-4 |
 | The group leaves things as it found them | everything above | delete the three properties and both pages, and empty the bundles made | the Trash holds no row the group made | — |
+
+#### Group 10 — The Stash and the Trash Records
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| Remove's stamp | `Drive Kept` (Text) on Collection A; `Drive Stays` and `Drive Trashed` holding values | `unassignProperty` | Collection A's `property_stash` holds both values and a `removed_at` from the Remove's moment | C-3, LC-26 |
+| The refill | `Drive Trashed` deleted to the Trash | `assignProperty`, then `restore` | `Drive Stays` holds its value; the Trash copy holds `Drive Trashed`'s; the stash block is gone; the restored page holds its value | C-2 |
+| The open's cleanup | `historyDays: 7`; Collection B holds a block stamped eight days ago and one stamped today, written with the app closed | relaunch | the aged block is gone; today's stays | C-3 |
+| The timeframe's cleanup | today's block backdated eight days by hand | `personalization:set` `historyDays` 7 | Collection B holds no `property_stash` | C-3, LC-26 |
+| The partial mark | a property record with `partial: true`, written by hand | Settings › Trash; `restore` | its row alone holds the mark spoken `Recorded Partly`; the reply's warning names it as recorded partly | N-1, LC-37 |

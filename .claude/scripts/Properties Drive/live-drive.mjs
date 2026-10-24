@@ -1,17 +1,18 @@
-import { chmodSync, existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import {
   mintOptionId, optionId,
-  frontmatter, frontRaw, pageFile, pageIds, pagePath,
+  FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
   openCollection, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
   holds, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
 } from '../drive-harness.mjs'
+import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -556,6 +557,117 @@ async function group9(cdp) {
     if (!kept.has(bundlePath)) await must('empty a bundle', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath }))
 }
 
+// ── Group 10 — the stash and the Trash records (P12) ─────────────────────────
+
+const DAY_MS = 86_400_000
+const collectionSidecar = (rel) => JSON.parse(read(`${rel}/_pagecollection.json`))
+const stashIn = (rel, propertyId) => collectionSidecar(rel).property_stash?.[propertyId]
+/** A trashed copy's front matter, by its Nexus path; `frontmatter` reads a live page by title. */
+const frontAt = (rel) => parse(FM.exec(read(rel))?.[1] ?? '') ?? {}
+const writeRel = (rel, value) => writeFileSync(join(NEXUS, rel), JSON.stringify(value, null, 2))
+
+// Group 10 relaunches, so it drives the run's own `cdp`.
+async function group10() {
+  const op = (what, req) => must(what, ask(cdp, 'mutate', req))
+  const before = {
+    a: collectionSidecar('Collection A'),
+    b: collectionSidecar('Collection B'),
+    settings: read('.nexus/settings.json'),
+    trash: (await trashRows(cdp)).length,
+    permanentDelete: (await ask(cdp, 'nexus:state')).value.tree.config.personalization.permanentDelete === true,
+  }
+
+  const propertyId = await addProperty(cdp, { id: '', label: 'Drive Kept', type: 'text' })
+  for (const title of ['Drive Stays', 'Drive Trashed']) {
+    await createPage(cdp, title)
+    await op(`set ${title}`, { op: 'setProperty', path: pagePath(title), propertyId, value: { kind: 'text', value: `${title} value` } })
+  }
+  const removedFrom = Date.now()
+  await op('remove Drive Kept', { op: 'unassignProperty', containerPath: 'Collection A', propertyId })
+  const block = stashIn('Collection A', propertyId)
+  item(10, 'C-3', 'a Remove stashes the values beside the time it set them aside',
+    same(block?.values, { [pageIds['Drive Stays']]: 'Drive Stays value', [pageIds['Drive Trashed']]: 'Drive Trashed value' }) &&
+      Date.parse(block?.removed_at) >= removedFrom - 1000 && Date.parse(block?.removed_at) <= Date.now(),
+    show(block))
+
+  const trashed = (await op('trash Drive Trashed', { op: 'delete', path: pagePath('Drive Trashed'), kind: 'page' })).bundled.bundlePath
+  await op('re-add Drive Kept', { op: 'assignProperty', containerPath: 'Collection A', propertyId })
+  item(10, 'C-2', 're-adding refills the page still in the Collection and the trashed page’s Trash copy, and spends the stash',
+    frontmatter('Drive Stays')['Drive Kept'] === 'Drive Stays value' &&
+      frontAt(`${trashed}/Drive Trashed.md`)['Drive Kept'] === 'Drive Trashed value' &&
+      stashIn('Collection A', propertyId) === undefined,
+    show({ stays: frontmatter('Drive Stays'), copy: frontAt(`${trashed}/Drive Trashed.md`), stash: stashIn('Collection A', propertyId) }))
+  await op('restore Drive Trashed', { op: 'restore', bundlePath: trashed })
+  item(10, 'C-2', 'restoring the trashed page brings its value back',
+    frontmatter('Drive Trashed')['Drive Kept'] === 'Drive Trashed value', show(frontmatter('Drive Trashed')))
+
+  // The open's trigger: a seven-day History Timeframe, a block removed eight days ago, and one removed today.
+  const aged = new Date(Date.now() - 8 * DAY_MS).toISOString()
+  const settings = JSON.parse(before.settings)
+  cdp = await relaunch(cdp, async () => {
+    writeRel('.nexus/settings.json', { ...settings, personalization: { ...settings.personalization, historyDays: 7 } })
+    writeRel('Collection B/_pagecollection.json', {
+      ...before.b,
+      property_stash: {
+        prop_drive_aged: { removed_at: aged, values: { x: 'aged' } },
+        prop_drive_kept: { removed_at: new Date().toISOString(), values: { y: 'kept' } },
+      },
+    })
+  })
+  await settles(async () => stashIn('Collection B', 'prop_drive_aged') === undefined)
+  item(10, 'C-3', 'opening drops a block older than the History Timeframe and keeps one inside it',
+    stashIn('Collection B', 'prop_drive_aged') === undefined && same(stashIn('Collection B', 'prop_drive_kept')?.values, { y: 'kept' }),
+    show(collectionSidecar('Collection B').property_stash))
+
+  // The timeframe's trigger: the kept block backdated by hand, then the timeframe written.
+  writeRel('Collection B/_pagecollection.json', {
+    ...collectionSidecar('Collection B'),
+    property_stash: { prop_drive_kept: { removed_at: aged, values: { y: 'kept' } } },
+  })
+  await sleep(600)
+  await must('historyDays 7', ask(cdp, 'personalization:set', 'historyDays', 7))
+  item(10, 'C-3', 'writing the History Timeframe drops a block older than it',
+    await settles(async () => collectionSidecar('Collection B').property_stash === undefined), show(collectionSidecar('Collection B')))
+
+  // The partial mark: a property record written partly, by hand.
+  const partialBundle = '.trash/2026-10-20T12-00-00-000Z__property-prop_drive_partial.deleted'
+  mkdirSync(join(NEXUS, partialBundle), { recursive: true })
+  writeRel(`${partialBundle}/_record.json`, {
+    entity: 'property', id: 'prop_drive_partial',
+    def: { id: 'prop_drive_partial', label: 'Drive Partial', key: 'Drive Partial', type: 'text' },
+    values: {}, partial: true,
+  })
+  await until('the Trash lists it', async () => (await trashRows(cdp)).some((r) => r.title === 'Drive Partial'))
+  const listed = (await trashRows(cdp)).find((r) => r.title === 'Drive Partial')
+  await openSettings(cdp, 'Trash')
+  const marked = await cdp.evaluate(`!!(${trashRowEl('Drive Partial')})?.querySelector('[role="img"][aria-label="Recorded Partly"]')`)
+  const plain = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [aria-label="Recorded Partly"]')].length`)
+  item(10, 'N-1', 'a partly recorded Trash entry shows its mark, and no other row does', listed?.partial === true && marked && plain === 1, show({ listed, marked, plain }))
+  const back = await op('restore Drive Partial', { op: 'restore', bundlePath: partialBundle })
+  item(10, 'N-1', 'its restore says it may not hold everything',
+    back.cascade?.warning?.includes('“Drive Partial” was recorded partly, so some of what it held may not come back.') === true, show(back))
+  await closeSettings(cdp)
+
+  // The group leaves as it found them: both properties deleted and emptied, both pages emptied, the settings as they were.
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  for (const id of [propertyId, 'prop_drive_partial'])
+    await op(`empty ${id}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${id}`, { op: 'deleteProperty', propertyId: id })).bundled.bundlePath })
+  for (const title of ['Drive Stays', 'Drive Trashed'])
+    await op(`empty ${title}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${title}`, { op: 'delete', path: pagePath(title), kind: 'page' })).bundled.bundlePath })
+  writeFileSync(join(NEXUS, '.nexus/settings.json'), before.settings)
+  await settles(async () => (await ask(cdp, 'nexus:state')).value.tree.config.personalization.permanentDelete === before.permanentDelete)
+  const after = {
+    a: collectionSidecar('Collection A'),
+    b: collectionSidecar('Collection B'),
+    settings: read('.nexus/settings.json'),
+    trash: (await trashRows(cdp)).length,
+  }
+  item(10, '—', 'the group leaves Collections A and B, the settings, and the Trash as it found them',
+    same(after.a.properties, before.a.properties) && after.a.property_stash === before.a.property_stash && same(after.b, before.b) &&
+      after.settings === before.settings && after.trash === before.trash,
+    show({ before, after }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -570,6 +682,7 @@ try {
   if (GROUPS.has('7')) await group7(cdp)
   if (GROUPS.has('8')) await group8(cdp)
   if (GROUPS.has('9')) await group9(cdp)
+  if (GROUPS.has('10')) await group10()
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
