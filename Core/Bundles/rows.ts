@@ -38,6 +38,8 @@ export interface BundleRow {
   icon?: string
   /** A page or Set as stored, by its record's id and its path inside the bundle: what the reader opens and a restore's Undo finds again. */
   stored?: { id: string; path: string }
+  /** Set when the delete recorded only part of what the item held. */
+  partial?: true
 }
 
 /** The only surviving evidence of where something lived once its recorded parent is gone. A store mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing the internal folders the live breadcrumb never shows — the store's root and the Contexts prefix both come back off. */
@@ -97,6 +99,7 @@ export function bundleRowOf(
       crumbs: [],
       storedAt: storedAtOf(bundlePath),
       homeResolves: true,
+      ...(record.partial ? { partial: true as const } : {}),
     })
   }
   if (!artifactName) return null
@@ -122,6 +125,7 @@ export function bundleRowOf(
       ? { stored: { id: record.id, path } }
       : {}),
     homeResolves: homeResolvesFor(record, artifactName, tree, byId, bundlePath),
+    ...(record.partial ? { partial: true as const } : {}),
   })
 }
 

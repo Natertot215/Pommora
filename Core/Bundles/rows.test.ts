@@ -184,6 +184,34 @@ describe('bundleRows — a bundle as the browser reads it', () => {
     ).toBe('prop_x')
   })
 
+  it('a partly recorded entry’s row carries the mark, a property’s and a page’s alike', async () => {
+    const tree = { collections: [], contexts: [] } as unknown as NexusTree
+    const rowOf = (partial: boolean) =>
+      [
+        {
+          bundlePath: '.trash/s__property-prop_x.deleted',
+          record: {
+            entity: 'property' as const,
+            id: 'prop_x',
+            def: { id: 'prop_x', label: 'Stage' },
+            values: {},
+            ...(partial ? { partial: true as const } : {}),
+          },
+        },
+        {
+          bundlePath: '.trash/Notes/s__Alpha.md.deleted',
+          artifactName: 'Alpha.md',
+          record: {
+            entity: 'page' as const,
+            parent: { kind: 'container' as const, id: 'set-daily' },
+            ...(partial ? { partial: true as const } : {}),
+          },
+        },
+      ].map((b) => bundleRowOf(b, { kind: 'trash' }, tree, new Map()))
+    for (const row of rowOf(true)) expect(row).toMatchObject({ partial: true })
+    for (const row of rowOf(false)) expect(row).not.toHaveProperty('partial')
+  })
+
   it('reads the deletion time out of the bundle stamp, newest first', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
     await new Promise((r) => setTimeout(r, 5))

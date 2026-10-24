@@ -13,7 +13,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, listBundles, mintBundle } from '../Bundles/bundle'
-import { readRecord, writeRecord } from '../Bundles/record'
+import { patchRecord, readRecord, writeRecord } from '../Bundles/record'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -2442,6 +2442,32 @@ describe('a Context or Space restore', () => {
     const r = await restored(bundle)
     expect(r.ok ? 'restored' : r.error.code).toBe('owed')
     expect(await pathExists(join(root, bundle))).toBe(true)
+  })
+})
+
+describe('a partly recorded entry', () => {
+  it('a partly recorded page’s restore says so', async () => {
+    const restore = async (partial: boolean): Promise<string | undefined> => {
+      await settledMutate(
+        root,
+        { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+        nexusDeps,
+      )
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      if (partial)
+        await patchRecord(join(root, listed.bundlePath), (raw) => ({ ...raw, partial: true }))
+      const r = await settledMutate(
+        root,
+        { op: 'restore', bundlePath: listed.bundlePath },
+        nexusDeps,
+      )
+      if (!r.ok) throw new Error('restore refused')
+      return r.value.cascade?.warning
+    }
+    expect(await restore(false)).toBeUndefined()
+    expect(await restore(true)).toContain(
+      '“Alpha” was recorded partly, so some of what it held may not come back.',
+    )
   })
 })
 

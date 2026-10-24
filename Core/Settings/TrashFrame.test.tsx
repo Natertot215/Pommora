@@ -85,6 +85,25 @@ describe('a Trash row', () => {
     await act(async () => root?.render(<TrashFrame />))
     expect(host.querySelector('.lucide-hash')).not.toBeNull()
   })
+
+  it('a partly recorded row shows its mark, spoken as Recorded Partly', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'bundles:list': vi.fn(async () => ({
+        ok: true,
+        value: [
+          row({ title: 'Alpha', partial: true }),
+          row({ title: 'Beta', bundlePath: '.trash/b' }),
+        ],
+      })),
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(<TrashFrame />))
+    const [alpha, beta] = host.querySelectorAll('.trash-row')
+    expect(alpha.querySelector('[role="img"][aria-label="Recorded Partly"]')).not.toBeNull()
+    expect(beta.querySelector('[role="img"]')).toBeNull()
+  })
 })
 
 describe('the Trash pane', () => {

@@ -15,6 +15,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { settledMutate } from '../Testing/settledMutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from '../Bundles/bundle'
+import { patchRecord } from '../Bundles/record'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readJsonObject } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
@@ -463,6 +464,22 @@ describe('restoring a deleted property', () => {
       })
     },
   )
+
+  it('a partly recorded property’s restore says so', async () => {
+    const id = await seedPriority()
+    const restore = async (partial: boolean): Promise<string | undefined> => {
+      expect((await deleteProperty(root, id)).ok).toBe(true)
+      const bundlePath = await onlyBundlePath()
+      if (partial) await patchRecord(join(root, bundlePath), (raw) => ({ ...raw, partial: true }))
+      const r = await handleMutate(root, { op: 'restore', bundlePath }, deps)
+      if (!r.ok) throw new Error('restore refused')
+      return r.value.cascade?.warning
+    }
+    expect(await restore(false)).toBeUndefined()
+    expect(await restore(true)).toContain(
+      '“Priority” was recorded partly, so some of what it held may not come back.',
+    )
+  })
 
   it('a page that held the key blank neither returns a value nor is named', async () => {
     const id = await seedPriority()

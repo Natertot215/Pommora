@@ -151,7 +151,14 @@ function TrashRowView({
           className={cx('trash-trail', row.historical && historical)}
         />
       }
-      trailing={<span className={cx('trash-date', text.caption.standard)}>{when}</span>}
+      trailing={
+        <>
+          {row.partial && (
+            <Icon name="triangle-alert" size="body" role="img" aria-label="Recorded Partly" />
+          )}
+          <span className={cx('trash-date', text.caption.standard)}>{when}</span>
+        </>
+      }
       overlay={
         <Checkbox
           className={overlay}

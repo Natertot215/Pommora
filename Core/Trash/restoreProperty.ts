@@ -3,7 +3,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { ok, type Result, fault } from '../Contract/result'
 import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 import { exactTitle } from '../Paths/caseFold'
-import type { RecordFile } from '../Bundles/record'
+import { type RecordFile, recordedPartly } from '../Bundles/record'
 import { linkWorld, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { join } from '../Paths/posix'
@@ -82,12 +82,13 @@ async function restoreInner(
     }),
   )
   const { taken } = await refillValues(root, def, roots, values, frozen, record.above)
+  const cascade = joinCascades(refilled, recordedPartly(record, def.label))
   return ok({
     unrestored: Object.keys(values).flatMap((id) =>
       taken.has(id) ? [] : (shownTitle(tree, roots, id) ?? []),
     ),
     dropped,
     ...(def.label === exactTitle(parsed.data.label) ? {} : { landedAs: def.label }),
-    ...(refilled ? { cascade: refilled } : {}),
+    ...(cascade ? { cascade } : {}),
   })
 }
