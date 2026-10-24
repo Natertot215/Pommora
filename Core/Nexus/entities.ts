@@ -1,6 +1,7 @@
 // The one list of entity kinds and what each one is; every alias below is derived from this table, with its resolved members beside it, and the words that count them close the file.
 
 import type { AgendaKind } from '../Paths/nexusPaths'
+import { basename, dirname, isMarkdownFile } from '../Paths/posix'
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
 
 type Entity = { held?: true; node?: true; container?: true; mark?: string }
@@ -72,3 +73,7 @@ export function countPhrase(items: readonly Counted[]): string {
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${itemCount(count)}.`
+
+/** Names each file only a fix by hand lets Pommora rewrite: a page by its title, a Space sidecar by its Space. */
+export const refusedLine = (files: readonly string[]): string =>
+  `Couldn’t safely rewrite ${files.map((f) => `“${isMarkdownFile(f) ? basename(f).slice(0, -3) : basename(dirname(f))}”`).join(', ')}.`

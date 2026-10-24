@@ -26,6 +26,12 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import type { PropertyDefinition } from './properties'
+import { readNotes } from '../Nexus/owed'
+import { finishOwed } from '../Nexus/finishOwed'
+import { OWED_REL } from '../Paths/nexusPaths'
+import { putJson } from '../Testing/hostFs'
+import { deleteProperty } from './deleteProperty'
+import type { TrashDeps } from '../Trash/discard'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
@@ -88,6 +94,8 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+const collectionId = async (): Promise<string> => (await sidecar())?.id as string
 const pageValue = async (path: string): Promise<unknown> =>
   splitFrontmatter(await readFile(path, 'utf8'))[liveDef.key]
 const sidecar = (): Promise<Record<string, unknown> | null> =>
@@ -123,7 +131,7 @@ describe('unassignProperty — strip + cache', () => {
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
-  it('an identity-less holder isn’t held, isn’t stamped by the strip, and keeps its bytes', async () => {
+  it('a holder with no id keeps the Collection owed', async () => {
     const raw = await readFile(pageA, 'utf8')
     const bare = raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), '')
     await writeFile(pageA, bare)
@@ -136,8 +144,19 @@ describe('unassignProperty — strip + cache', () => {
     })
 
     const r = await unassignProperty(root, folder, propId)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade).toMatchObject({ warning: unsweptLine(1), owed: true })
     expect(await readFile(pageA, 'utf8')).toBe(bare)
-    expect(r.ok).toBe(true)
+    expect(await readNotes(root)).toEqual({
+      [propId]: { kind: 'property', collections: [await collectionId()] },
+    })
+    const id = newContentId('page')
+    await writeFile(pageA, bare.replace('---\n', `---\n${ID_KEY}: ${id}\n`))
+    await refreshTree(root)
+    await finishOwed(root, deps)
+    expect(await pageValue(pageA)).toBeUndefined()
+    expect((await cacheBlock())?.values[id]).toEqual(['active'])
+    expect(await readNotes(root)).toEqual({})
     closeSession()
   })
 
@@ -198,7 +217,7 @@ describe('unassignProperty — strip + cache', () => {
       await chmod(set.value.path, 0o555)
       try {
         expect(await unassignProperty(root, folder, propId)).toEqual(
-          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) } }),
+          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true } }),
         )
       } finally {
         await chmod(set.value.path, 0o755)
@@ -216,12 +235,96 @@ describe('unassignProperty — strip + cache', () => {
     await chmod(held.value.path, 0o000)
     try {
       expect(await unassignProperty(root, folder, propId)).toEqual(
-        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) } }),
+        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true } }),
       )
     } finally {
       await chmod(held.value.path, 0o644)
     }
   })
+})
+
+describe('a Remove on the notes', () => {
+  const shut = async <T>(file: string, run: () => Promise<T>): Promise<T> => {
+    await chmod(file, 0o000)
+    try {
+      return await run()
+    } finally {
+      await chmod(file, 0o644)
+    }
+  }
+
+  it.skipIf(noModeBits)(
+    'a Remove that missed a page notes the Collection and offers Try Again',
+    async () => {
+      const r = await shut(pageB, () => unassignProperty(root, folder, propId))
+      if (!r.ok) throw new Error(r.error.message)
+      expect(r.value.cascade?.owed).toBe(true)
+      expect(await readNotes(root)).toEqual({
+        [propId]: { kind: 'property', collections: [await collectionId()] },
+      })
+      await finishOwed(root, deps)
+      expect(await pageValue(pageB)).toBeUndefined()
+      expect(Object.values((await cacheBlock())?.values ?? {})).toContainEqual(['done'])
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it('a page the sweep refuses is named once and let go', async () => {
+    const odd = join(folder, 'Odd.md')
+    const text = `---\n${ID_KEY}: ${newContentId('page')}\nStage:\n\t- done\n---\nb\n`
+    await writeFile(odd, text)
+    const r = await unassignProperty(root, folder, propId)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBe('Couldn’t safely rewrite “Odd”.')
+    expect(r.value.cascade).not.toHaveProperty('owed')
+    expect(await readNotes(root)).toEqual({})
+    expect(await readFile(odd, 'utf8')).toBe(text)
+  })
+
+  it.skipIf(noModeBits)('re-adding the property cancels what its Remove owed there', async () => {
+    await shut(pageB, () => unassignProperty(root, folder, propId))
+    expect(await readNotes(root)).not.toEqual({})
+    await assignProperty(root, folder, propId)
+    await finishOwed(root, deps)
+    expect(await pageValue(pageB)).toEqual(['done'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Remove under an owed rename keeps its Collection owed', async () => {
+    await putJson(join(root, OWED_REL), { [propId]: { kind: 'property', rename: ['Priority'] } })
+    const r = await unassignProperty(root, folder, propId)
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect(await readNotes(root)).toEqual({
+      [propId]: { kind: 'property', rename: ['Priority'], collections: [await collectionId()] },
+    })
+  })
+
+  it.skipIf(noModeBits)('a delete subsumes an owed Remove', async () => {
+    await shut(pageB, async () => {
+      await unassignProperty(root, folder, propId)
+      expect((await deleteProperty(root, propId)).ok).toBe(true)
+    })
+    expect(await readNotes(root)).toEqual({ [propId]: { kind: 'property', strip: ['Stage'] } })
+  })
+
+  it.skipIf(noModeBits)(
+    'a note that can’t be written refuses the Remove with nothing changed',
+    async () => {
+      const before = [
+        await readFile(sidecarPath(folder, 'collection'), 'utf8'),
+        await readFile(pageA, 'utf8'),
+      ]
+      const notes = join(root, OWED_REL)
+      await putJson(notes, { prop_other: { kind: 'property', rename: ['Elsewhere'] } })
+      await chmod(notes, 0o000)
+      const r = await unassignProperty(root, folder, propId).finally(() => chmod(notes, 0o644))
+      expect(r.ok).toBe(false)
+      expect([
+        await readFile(sidecarPath(folder, 'collection'), 'utf8'),
+        await readFile(pageA, 'utf8'),
+      ]).toEqual(before)
+    },
+  )
 })
 
 describe('unassignProperty reaches saved views', () => {

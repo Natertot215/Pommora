@@ -6,6 +6,9 @@ import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { shield } from '@pommora/uix/Pickers/picker-base.css'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
+import { FRAMES } from './frames'
+import { fault, ok } from '../Contract/result'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -167,5 +170,41 @@ describe('ExcludedDirectoriesRow', () => {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
     expect(exclusionsSet).toHaveBeenCalledWith(['Renamed', 'Vault A'])
+  })
+})
+
+describe('Clear Exclusion Cache', () => {
+  const clearRow = (): (() => Promise<boolean>) => {
+    for (const frame of FRAMES)
+      for (const section of frame.sections ?? [])
+        for (const row of section.rows)
+          if (row.kind === 'clear' && row.label === 'Clear Exclusion Cache') return row.clear
+    throw new Error('no Clear Exclusion Cache row')
+  }
+
+  it('a clear that skipped a page offers Try Again, which clears again without asking', async () => {
+    const cleared = vi
+      .fn()
+      .mockResolvedValueOnce(fault('Couldn’t update 1 Item.'))
+      .mockResolvedValueOnce(ok({ pages: 1, sidecars: 0 }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'exclusions:clear': cleared })
+    useSession.setState({ tree: { config: { excluded: ['Archive'] } } as never })
+    const running = clearRow()()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    act(() => useSession.getState().pendingConfirm?.settle(true))
+    expect(await running).toBe(false)
+    const notice = currentNotification()
+    expect([notice?.message, notice?.action?.label]).toEqual([
+      'Couldn’t update 1 Item.',
+      'Try Again',
+    ])
+    await act(async () => {
+      await notice?.action?.run()
+    })
+    expect(cleared).toHaveBeenCalledTimes(2)
+    expect(useSession.getState().pendingConfirm).toBeNull()
+    clearNotification()
   })
 })

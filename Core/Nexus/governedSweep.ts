@@ -24,7 +24,9 @@ import { isBlankRaw, landValue } from '../Files/rootValues'
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
   touched: Map<string, { before: string; after: string }>
+  /** Each file left as it was that the sweep should have reached: one it couldn't read, and one whose root can't round-trip. */
   skipped: string[]
+  /** The files among `skipped` whose root can't round-trip, which only a fix by hand lets a sweep reach, so they're named once and let go (B-5). */
   refused: string[]
 }
 
@@ -81,6 +83,7 @@ export async function sweepGovernedRoots(
       }
       const next = rewritten(plan, file, content)
       if (next === undefined) {
+        out.skipped.push(file)
         out.refused.push(file)
         return
       }

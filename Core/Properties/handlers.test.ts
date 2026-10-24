@@ -126,7 +126,9 @@ describe('the property ops', () => {
           containerPath: relative(root, col),
           propertyId: propId,
         })
-        expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) } }))
+        expect(r).toEqual(
+          ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1), owed: true } }),
+        )
       } finally {
         await chmod(locked.value.path, 0o755)
       }

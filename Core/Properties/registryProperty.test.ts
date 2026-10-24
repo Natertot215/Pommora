@@ -16,7 +16,7 @@ import {
 } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
@@ -756,6 +756,20 @@ describe('renames on the notes', () => {
       key: 'tags',
       key_format: 'Match Title',
     })
+  })
+
+  it('a rename names a page it can’t rewrite and lets it go', async () => {
+    const id = await created('Priority')
+    const { dir } = await holding('Open', [id], 'Priority: hi\n')
+    const odd = join(dir, 'Odd.md')
+    const text = `---\nID: ${newContentId('page')}\nPriority:\n\t- hi\n---\nb\n`
+    await writeFile(odd, text)
+    const r = await renameProperty(root, id, 'Urgency')
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBe('Couldn’t safely rewrite “Odd”.')
+    expect(r.value.cascade).not.toHaveProperty('owed')
+    expect(await readNotes(root)).toEqual({})
+    expect(await readFile(odd, 'utf8')).toBe(text)
   })
 
   it.skipIf(noModeBits)(

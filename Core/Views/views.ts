@@ -338,12 +338,6 @@ export const hiddenBuckets = (
   return held.flatMap((k) => (k.startsWith(prefix) ? [k.slice(prefix.length)] : []))
 }
 
-/** `keys` without the hidden and collapsed keys a property's buckets hold, or null when none does. */
-export function clearBandKeys(keys: readonly string[], propertyId: string): string[] | null {
-  const next = keys.filter((k) => !`/${k}`.includes(`/${bandKey(propertyId, '')}`))
-  return next.length === keys.length ? null : next
-}
-
 export const LOCATION_SORT = '__location__'
 
 const VIEW_ID_PREFIX = 'view_'

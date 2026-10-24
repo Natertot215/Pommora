@@ -22,7 +22,6 @@ import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 export interface ClearReport {
   pages: number
   sidecars: number
-  refused: number
 }
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
@@ -84,6 +83,7 @@ export async function clearExclusionData(
   const swept = await sweepGovernedRoots(pages, { raw: clearRewrite(cleared) })
   const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
   await dropPageMetadata(root, ids)
-  if (swept.skipped.length) return fault(unsweptLine(swept.skipped.length))
-  return ok({ pages: swept.touched.size, sidecars: removed, refused: swept.refused.length })
+  const missed = swept.skipped.length - swept.refused.length
+  if (missed) return fault(unsweptLine(missed))
+  return ok({ pages: swept.touched.size, sidecars: removed })
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { noModeBits, putJson, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fail, fault, ok } from '../Contract/result'
 import {
@@ -22,7 +22,7 @@ import { createProperty, configureProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { unassignProperty } from './unassignProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { mutateRegistry, readRegistry, serializeSchemaOp } from './propertiesRegistry'
 
@@ -592,6 +592,20 @@ describe('option ops refuse a property without options', () => {
 })
 
 describe('renameOption', () => {
+  it('an option rename names a page it can’t rewrite and lets it go', async () => {
+    const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
+    const page = await pageHolding(id, 'Urgent')
+    const odd = join(dirname(page), 'Odd.md')
+    const text = `---\nID: ${newContentId('page')}\nTags:\n\t- Urgent\n---\nb\n`
+    await writeFile(odd, text)
+    const r = await renameOption(root, id, 'opt_Urgent', 'Critical')
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBe('Couldn’t safely rewrite “Odd”.')
+    expect(r.value.cascade).not.toHaveProperty('owed')
+    expect(await readNotes(root)).toEqual({})
+    expect(await readFile(odd, 'utf8')).toBe(text)
+  })
+
   it('rewrites the def and cascades the value across pages', async () => {
     const id = await mkSelect([{ id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' }])
     const page = await pageHolding(id, 'Urgent')

@@ -835,8 +835,11 @@ describe('deleteCascade', () => {
       kind: 'page',
       reason: 'unparsed',
     })
-    expect((await sweepSpy.mock.results[0]?.value)?.refused).toEqual([broken])
-    expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
+    expect((await sweepSpy.mock.results[0]?.value)?.skipped).toEqual([broken])
+    expect(r).toEqual({
+      cascade: { pages: [], hosts: [], warning: unsweptLine(1, 'links in ') },
+      links: [],
+    })
     expect(await readFile(broken, 'utf8')).toBe(content)
   })
 })

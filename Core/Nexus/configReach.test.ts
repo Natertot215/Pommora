@@ -212,6 +212,25 @@ describe('a property clear', () => {
       })?.collapsed_groups,
     ).toEqual(['set_1'])
   })
+
+  it('a property’s clear drops its hidden and collapsed band keys, keeping Set ids and another property’s keys', () => {
+    const keys = [
+      'prop_A/opt_x',
+      'sub/prop_A/opt_x',
+      'set_1/prop_A/opt_x',
+      'set_1/prop_A/_ungrouped',
+      'set_1',
+      'prop_B/opt_x',
+      'set_1/prop_B/opt_x',
+    ]
+    const kept = ['set_1', 'prop_B/opt_x', 'set_1/prop_B/opt_x']
+    const cleared = propertyClear('prop_A')({
+      ...elsewhere('v'),
+      hidden_groups: keys,
+      collapsed_groups: keys,
+    })
+    expect([cleared?.hidden_groups, cleared?.collapsed_groups]).toEqual([kept, kept])
+  })
 })
 
 describe('what the pass skips', () => {

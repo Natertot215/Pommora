@@ -173,11 +173,10 @@ describe('clearExclusionData', () => {
     expect(await read('Archive/Tasks/task.md')).toBe(task)
   })
 
-  it('refuses a misplaced identity page rather than scrubbing it', async () => {
+  it('lets a misplaced identity page go rather than scrubbing it, and clears the rest', async () => {
     const stray = await read('Archive/stray.md')
     const res = await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
-    if (!res.ok) throw new Error('expected ok')
-    expect(res.value.refused).toBeGreaterThanOrEqual(1)
+    expect(res.ok).toBe(true)
     expect(await read('Archive/stray.md')).toBe(stray)
   })
 
@@ -268,7 +267,7 @@ describe('clearExclusionData — degenerate cases', () => {
     const before = await read('Archive/note.md')
     const res = await clearExclusionData(root, { excluded: [], assetDir: 'file-assets' })
     if (!res.ok) throw new Error('expected ok')
-    expect(res.value).toEqual({ pages: 0, sidecars: 0, refused: 0 })
+    expect(res.value).toEqual({ pages: 0, sidecars: 0 })
     expect(await read('Archive/note.md')).toBe(before)
   })
 })

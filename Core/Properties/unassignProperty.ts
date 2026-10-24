@@ -1,6 +1,6 @@
 import { assignedIds } from '../Nexus/containerFields'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { findHolders, heldValues } from '../Index/keyHolders'
+import { findHolders, heldValues, unaddressed } from '../Index/keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -9,10 +9,13 @@ import { stripKeys } from '../Files/rootValues'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { ok } from '../Contract/result'
 import { mapViews } from '../Views/views'
-import { propertyClear, reachConfig, reachReport } from '../Nexus/configReach'
+import { type ConfigReach, propertyClear, reachConfig, sweptReach } from '../Nexus/configReach'
 import type { MutateReply } from '../Nexus/mutateRequest'
-
-const NOTHING_TO_REMOVE: MutateReply = ok({})
+import { distinct, propertyNote, runNoted } from '../Nexus/owed'
+import { containerAt } from '../Nexus/treePatch'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { relative } from '../Paths/posix'
+import type { PropertyDefinition } from './properties'
 
 export function unassignProperty(
   root: string,
@@ -27,36 +30,56 @@ async function unassignInner(
   collectionFolder: string,
   propertyId: string,
 ): Promise<MutateReply> {
+  const collection = containerAt(await liveTreeOf(root), relative(root, collectionFolder))
   const sidecar = await readJsonObject(sidecarPath(collectionFolder, 'collection'))
-  if (!assignedIds(sidecar).includes(propertyId)) return NOTHING_TO_REMOVE
+  if (!collection || !assignedIds(sidecar).includes(propertyId)) return ok({})
 
   const def = (await readRegistry(root)).defs[propertyId]
-  if (!def) return NOTHING_TO_REMOVE
-  const key = def.key
-
-  const { pages, held } = await findHolders(
-    root,
-    { keys: [key], reach: { collection: collectionFolder } },
-    'values',
-  )
-  const values = heldValues(held, key)
+  if (!def) return ok({})
   const clear = propertyClear(propertyId)
-  // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.
-  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
-    const cached = { ...cachedValues(cur, propertyId), ...values }
-    return patchCacheBlock(
-      {
+  // The note names the Collection by id, since its folder can move or be renamed before a finish.
+  return runNoted(root, propertyId, {
+    note: (e) => ({
+      ...propertyNote(e),
+      collections: distinct(propertyNote(e).collections, [collection.id]),
+    }),
+    // The views and the assignment change in one write under the sidecar's own lock, so no concurrent icon, banner, or view write is reverted; the stash follows in `stashAndStrip`.
+    list: () =>
+      patchSidecar(collectionFolder, 'collection', (cur) => ({
         ...(mapViews(cur, clear) ?? cur),
         properties: assignedIds(cur).filter((id) => id !== propertyId),
-      },
-      propertyId,
-      Object.keys(cached).length ? { values: cached } : undefined,
+      })),
+    sweep: async () => {
+      const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
+      const stripped = await stashAndStrip(root, collectionFolder, def)
+      return { ...stripped, skipped: reach.skipped + stripped.skipped, hosts: reach.hosts }
+    },
+    settle: (e) => ({
+      ...propertyNote(e),
+      collections: distinct(propertyNote(e).collections?.filter((id) => id !== collection.id)),
+    }),
+    under: propertyId,
+  })
+}
+
+/** Moves the values the Collection's holders hold for `def` into its stash, then strips the key, answering what it couldn't reach: a file it can't read or rewrite, and a holder with no id to stash under, which keeps its value. The stash keeps what it already holds, which a refill cut short left for pages it never reached. */
+export async function stashAndStrip(
+  root: string,
+  folder: string,
+  def: PropertyDefinition,
+): Promise<ConfigReach> {
+  const { pages, held } = await findHolders(
+    root,
+    { keys: [def.key], reach: { collection: folder } },
+    'values',
+  )
+  const values = heldValues(held, def.key)
+  if (Object.keys(values).length) {
+    const stashed = await patchSidecar(folder, 'collection', (cur) =>
+      patchCacheBlock(cur, def.id, { values: { ...cachedValues(cur, def.id), ...values } }),
     )
-  })
-  if (!written.ok) return written
-  const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [key]) })
-  return ok({
-    cascade: reachReport({ skipped: skipped.length + reach.skipped, hosts: reach.hosts }),
-  })
+    if (!stashed.ok) return { skipped: held.length, hosts: [] }
+  }
+  const swept = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [def.key]) })
+  return { ...sweptReach(swept), skipped: swept.skipped.length + unaddressed(held) }
 }

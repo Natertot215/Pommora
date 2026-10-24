@@ -443,6 +443,21 @@ describe('native menus + the inline-rename channel', () => {
     })
   })
 
+  it('a Remove that missed pages returns to the list', async () => {
+    propertyMenuSpy.mockResolvedValueOnce('property:remove')
+    mutate.mockResolvedValueOnce({
+      cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true },
+    })
+    await openEditor()
+    const menu = (): HTMLButtonElement =>
+      host.querySelector<HTMLButtonElement>('[aria-label="Property Menu"]')!
+    expect(menu().closest('[inert]')).toBeNull()
+    await act(async () => {
+      menu().click()
+    })
+    expect(menu().closest('[inert]')).not.toBeNull()
+  })
+
   it('⋮ Delete asks first, then deletes the property everywhere', async () => {
     propertyMenuSpy.mockResolvedValueOnce('property:destroy')
     await openEditor()

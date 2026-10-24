@@ -1,11 +1,4 @@
-import {
-  bandKey,
-  clearBandKeys,
-  mapTiles,
-  mapViews,
-  type SavedView,
-  savedView,
-} from '../Views/views'
+import { bandKey, mapTiles, mapViews, type SavedView, savedView } from '../Views/views'
 import {
   answerable,
   type FilterGroup,
@@ -15,6 +8,7 @@ import {
   OPERANDLESS_OPS,
 } from '../Views/filterRules'
 import { FILEDATA } from '../Properties/properties'
+import type { SweepResult } from './governedSweep'
 import { type Matcher, stripList } from '../Files/rootValues'
 import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
@@ -34,7 +28,7 @@ import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
-import { type ContainerKind, type HeldKind, unsweptLine } from './entities'
+import { type ContainerKind, type HeldKind, refusedLine, unsweptLine } from './entities'
 import { archiveReach, containerAt, damagedFolders } from './treePatch'
 
 // ── Roles ──
@@ -106,12 +100,6 @@ const onProperty = (id: string, holder: unknown): holder is Raw =>
 
 const clearRule = (id: string, rule: Raw): Raw | null => (onProperty(id, rule) ? null : rule)
 
-function overStrings(held: unknown, edit: (keys: string[]) => string[] | null): unknown {
-  if (!Array.isArray(held)) return held
-  const next = edit(held.filter((k): k is string => typeof k === 'string'))
-  return next ? [...next, ...held.filter((k) => typeof k !== 'string')] : held
-}
-
 function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | null): Raw | null {
   const value = typeof rule.value === 'string' ? edit([rule.value]) : null
   const values = Array.isArray(rule.values) ? edit(rule.values) : null
@@ -129,6 +117,12 @@ function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | n
   }
   return answerable(next as FilterRule) ? next : null
 }
+
+// A band key a property scopes: one of its own bands, or a Set's sub-band of it.
+const ownBand =
+  (id: string): Matcher =>
+  (el) =>
+    typeof el === 'string' && `/${el}`.includes(`/${bandKey(id, '')}`)
 
 // A gone id answers whole or as a key's head (a Set's sub-bands), or as the bucket closing a key its property scopes (an option's bands).
 const gone =
@@ -160,7 +154,7 @@ const CLEAR: Record<Role, Handler<string>> = {
   criteria: (id, held) => (Array.isArray(held) ? held.filter((c) => !onProperty(id, c)) : held),
   group: (id, held) => (onProperty(id, held) ? { kind: 'structural' } : held),
   subGroup: (id, held) => (onProperty(id, held) ? undefined : held),
-  bandKeys: (id, held) => overStrings(held, (keys) => clearBandKeys(keys, id)),
+  bandKeys: (id, held) => (Array.isArray(held) ? (stripList(held, ownBand(id)) ?? held) : held),
 }
 
 const stripGone: Handler<Gone> = (e, held) =>
@@ -206,15 +200,36 @@ function editsOf(e: ConfigEdit): { view: ViewEdit; rule: (rule: Raw) => Raw | nu
 // ── Reach ──
 export interface ConfigReach {
   skipped: number
+  /** The files among `skipped` whose front matter Pommora can't rewrite safely, which a report names once and nothing owes (B-5). */
+  refused?: string[]
   hosts: TilesChanged[]
 }
 
 export const NO_REACH: ConfigReach = { skipped: 0, hosts: [] }
 
-export const reachReport = ({ hosts, skipped }: ConfigReach): CascadeReport => ({
+export const sweptReach = ({ skipped, refused }: SweepResult): ConfigReach => ({
+  skipped: skipped.length,
+  refused,
+  hosts: [],
+})
+
+/** The files `reach` missed that a later sweep can reach, which is what an entry owes. */
+export const retries = ({ skipped, refused }: ConfigReach): number =>
+  skipped - (refused?.length ?? 0)
+
+export const reachReport = ({ hosts, skipped, refused = [] }: ConfigReach): CascadeReport => ({
   pages: [],
   hosts,
-  ...(skipped ? { warning: unsweptLine(skipped) } : {}),
+  ...(skipped
+    ? {
+        warning: [
+          skipped > refused.length && unsweptLine(skipped - refused.length),
+          refused.length && refusedLine(refused),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      }
+    : {}),
 })
 
 const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] => [

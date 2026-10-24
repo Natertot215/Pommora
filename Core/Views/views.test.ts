@@ -14,7 +14,6 @@ import {
   mapTiles,
   mapViews,
   bandKey,
-  clearBandKeys,
   type SavedView,
 } from './views'
 import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
@@ -527,25 +526,5 @@ describe('bandKey', () => {
   it('spells a property band <property>/<bucket>, and a sub-band under its Set <set>/<property>/<bucket>', () => {
     expect(bandKey('prop_A', 'opt_x')).toBe('prop_A/opt_x')
     expect(bandKey('prop_A', 'opt_x', 'set_1')).toBe('set_1/prop_A/opt_x')
-  })
-})
-
-describe('clearBandKeys', () => {
-  it('drops every hidden and collapsed key a property’s buckets hold, and keeps Set ids and another property’s keys', () => {
-    expect(
-      clearBandKeys(
-        [
-          'prop_A/opt_x',
-          'sub/prop_A/opt_x',
-          'set_1/prop_A/opt_x',
-          'set_1/prop_A/_ungrouped',
-          'set_1',
-          'prop_B/opt_x',
-          'set_1/prop_B/opt_x',
-        ],
-        'prop_A',
-      ),
-    ).toEqual(['set_1', 'prop_B/opt_x', 'set_1/prop_B/opt_x'])
-    expect(clearBandKeys(['set_1'], 'prop_A')).toBeNull()
   })
 })

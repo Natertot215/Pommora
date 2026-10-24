@@ -796,3 +796,33 @@ describe('the Context and Space rename arms', () => {
     expect(await readNotes(root)).toEqual({})
   })
 })
+
+describe('a page only a fix by hand reaches', () => {
+  it.skipIf(noModeBits)(
+    'a finish that missed only refused pages lets the entry go, and one that missed an unreadable page doesn’t',
+    async () => {
+      const root = await seedNexus()
+      const odd = join(root, 'Col', 'Odd.md')
+      const text = '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\nPhase:\n\t- Draft\n---\nbody\n'
+      await writeFile(odd, text)
+      await openSession(root)
+      await putJson(join(root, OWED_REL), { prop_s: { kind: 'property', rename: ['Phase'] } })
+      const report = await finishOwed(root, DEPS)
+      expect(report.warning).toBe('Couldn’t safely rewrite “Odd”.')
+      expect(report).not.toHaveProperty('owed')
+      expect(await readNotes(root)).toEqual({})
+      expect(await readFile(odd, 'utf8')).toBe(text)
+
+      const shut = join(root, 'Col', 'C.md')
+      await writeFile(shut, '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAD\nPhase: Draft\n---\nbody\n')
+      await putJson(join(root, OWED_REL), { prop_s: { kind: 'property', rename: ['Phase'] } })
+      await chmod(shut, 0o000)
+      try {
+        expect((await finishOwed(root, DEPS)).owed).toBe(true)
+        expect(await readNotes(root)).toEqual({ prop_s: { kind: 'property', rename: ['Phase'] } })
+      } finally {
+        await chmod(shut, 0o644)
+      }
+    },
+  )
+})

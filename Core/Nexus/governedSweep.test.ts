@@ -59,13 +59,17 @@ describe('sweepGovernedRoots', () => {
     },
   )
 
-  it('a sidecar it can’t parse is refused, not skipped, so a retry isn’t owed', async () => {
+  it('a root that can’t round-trip counts as skipped', async () => {
     const { root } = await seed()
+    const unknown = join(root, 'Notes', 'Alien.md')
+    const alien = '---\nID: 01KVGMT8BFT350FZZXAMG1QDTB\n---\nbody\n'
+    await writeFile(unknown, alien)
     const bad = join(root, '.nexus', 'contexts', 'Areas', 'Health', '_space.json')
     await mkdir(join(root, '.nexus', 'contexts', 'Areas', 'Health'), { recursive: true })
     await writeFile(bad, '{ not json')
-    const r = await sweepGovernedRoots([bad], { raw: (raw) => raw })
-    expect(r).toEqual({ skipped: [], refused: [bad], touched: new Map() })
+    const r = await sweepGovernedRoots([unknown, bad], plan)
+    expect(r).toEqual({ skipped: [unknown, bad], refused: [unknown, bad], touched: new Map() })
+    expect(await readFile(unknown, 'utf8')).toBe(alien)
     expect(await readFile(bad, 'utf8')).toBe('{ not json')
   })
 

@@ -40,7 +40,7 @@ import {
   runNoted,
   withOption,
 } from '../Nexus/owed'
-import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
+import { type ConfigReach, NO_REACH, reachConfig, sweptReach } from '../Nexus/configReach'
 import { done, type MutateReply } from '../Nexus/mutateRequest'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
@@ -244,17 +244,17 @@ export async function optionCascade(
   keys: ValueEdit,
   removed?: string,
 ): Promise<ConfigReach> {
-  let skipped = 0
+  let swept = NO_REACH
   if (keys.size) {
     const { files, plan } = await valueEditPlan(root, def, keys)
-    skipped = (await sweepGovernedRoots(files, plan)).skipped.length
-    skipped += await cacheSweep(root, def, keys)
+    swept = sweptReach(await sweepGovernedRoots(files, plan))
+    swept.skipped += await cacheSweep(root, def, keys)
   }
   const reach =
     removed === undefined
       ? NO_REACH
       : await reachConfig(root, { kind: 'gone', propertyId: def.id, ids: [removed] })
-  return { skipped: skipped + reach.skipped, hosts: reach.hosts }
+  return { ...swept, skipped: swept.skipped + reach.skipped, hosts: reach.hosts }
 }
 
 type Rekey = { optionId: string; label: string } | { value_format: KeyFormat }
