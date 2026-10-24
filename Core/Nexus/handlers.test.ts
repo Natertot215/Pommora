@@ -1,8 +1,11 @@
 import { mkdir, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
-import { writeJournal } from '../Contexts/contextJournal'
+import * as contextCascadeModule from '../Contexts/contextCascade'
+import { readJournal, writeJournal } from '../Contexts/contextJournal'
+import * as replayModule from '../Properties/replaySchemaCascade'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { spaceDirRel } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
 import { readValue, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -34,6 +37,7 @@ const OTHER = '01KVGMT8BFP350FZZXAMG1QDRX'
 const THIRD_PAGE = '01KVGMT8BFP350FZZXAMG1QDRY'
 const SHELF = '01KVGMT8BFP350FZZXAMG1QDRZ'
 const HOME = '01KVGMT8BFP350FZZXAMG1QDS0'
+const POMMORA = '01KVGMT8BFP350FZZXAMG1QDS1'
 const ADDRESS = 'http://127.0.0.1:7473'
 
 let root: string
@@ -439,13 +443,15 @@ describe('openNexusSequence', () => {
     }
   })
 
-  it('replays a pending context rename against the Nexus being opened', async () => {
+  it('finishes a Context rename the open finds committed and unmoved, and the held tree follows the folder', async () => {
     const { second } = await secondNexus('pom-open-replay-')
-    await mkdir(contextsDir(second), { recursive: true })
+    const pommora = join(contextsDir(second), 'Projects', 'Pommora')
+    await mkdir(pommora, { recursive: true })
+    await writeFile(join(pommora, '_space.json'), JSON.stringify({ id: POMMORA }))
     await writeFile(
       contextsRegistryFile(second),
       JSON.stringify({
-        contexts: [{ id: 'ctx_projects', title: 'Projects', singular: 'Project' }],
+        contexts: [{ id: 'ctx_projects', title: 'Ventures', singular: 'Project' }],
       }),
     )
     await mkdir(join(second, 'Notes'))
@@ -464,9 +470,44 @@ describe('openNexusSequence', () => {
       await openNexusSequence(ctx, second, false)
 
       expect(await readFile(join(second, 'Notes', 'A.md'), 'utf8')).toContain('<Ventures>:')
+      expect(heldTreeOf(second)?.contexts[0]?.spaces.map((s) => s.path)).toEqual([
+        spaceDirRel('Ventures', 'Pommora'),
+      ])
     } finally {
       await rm(second, { recursive: true, force: true })
     }
+  })
+
+  it('a Context replay that throws leaves the open whole, its property replay and settle run', async () => {
+    vi.spyOn(contextCascadeModule, 'replayPendingRename').mockRejectedValueOnce(
+      new Error('unmovable'),
+    )
+    const propertyReplay = vi.spyOn(replayModule, 'replaySchemaCascade')
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, false)
+    expect(logged).toHaveBeenCalledWith('contexts: the rename replay failed:', 'unmovable')
+    expect(propertyReplay).toHaveBeenCalledWith(root)
+    expect(heldTreeOf(root)?.collections[0]?.pages[0]?.id).toBe(NOTES)
+    await settledSession()
+    expect(currentSession()).not.toBeNull()
+  })
+
+  it('a re-adopt of the open Nexus replays no Context rename', async () => {
+    await openNexusSequence(ctx, root, false)
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({
+        contexts: [{ id: 'ctx_projects', title: 'Ventures', singular: 'Project' }],
+      }),
+    )
+    const tagged = join(root, 'Library', 'Tagged.md')
+    await writeFile(tagged, `---\nID: ${THIRD_PAGE}\n<Projects>:\n  - Pommora\n---\nbody`)
+    const owed = { contextId: 'ctx_projects', oldTitle: 'Projects', newTitle: 'Ventures' }
+    await writeJournal(root, owed)
+    await openNexusSequence(ctx, root, false)
+    expect(await readFile(tagged, 'utf8')).toContain('<Projects>:')
+    expect(await readJournal(root)).toEqual(owed)
   })
 
   it('an open cascades a heading renamed while it was closed into the page that links it', async () => {
