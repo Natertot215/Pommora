@@ -228,7 +228,7 @@ export async function renameCascade(
   root: string,
   change: CascadeChange,
   settled = false,
-): Promise<CascadeReport & { missed: number }> {
+): Promise<CascadeReport & { missed: Pick<ConfigReach, 'skipped' | 'refused'> }> {
   const headingKey = 'names' in change ? undefined : normalizeTitle(change.heading)
   const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
   try {
@@ -277,10 +277,10 @@ export async function renameCascade(
         .map((file) => relative(root, file)),
       hosts: tiles.hosts,
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
-      missed: unmoved,
+      missed: { skipped: unmoved, refused: swept.refused },
     }
   } catch (e) {
-    return { ...linksNotUpdated(named, e), missed: 1 }
+    return { ...linksNotUpdated(named, e), missed: { skipped: 1 } }
   }
 }
 
@@ -319,7 +319,7 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
     return { skipped: missed('skipped').length, refused: missed('refused'), hosts: [] }
   }
   const { missed, hosts, pages } = await renameCascade(root, { names, label: e.label })
-  return { skipped: missed, hosts, pages }
+  return { ...missed, hosts, pages }
 }
 
 /** A move's or a restore's re-spell, on the runner under `id`'s relink entry, so what it misses is owed with Try Again; one whose note can't be written still re-spells, owing nothing. Its list step is the move or the landing, already made. */

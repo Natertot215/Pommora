@@ -1335,6 +1335,17 @@ describe('a re-spell on the notes', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
+  it('a page move names a linker it can’t safely rewrite once and owes nothing', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(linker(), `---\nID: ${ULID_C}\nPhase:\n\t- Draft\n---\n\nSee [[B]].\n`)
+    await refreshTree(root)
+    const r = await renamed('B', 'C')
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBe('Couldn’t safely rewrite “L”.')
+    expect(r.value.cascade).not.toHaveProperty('owed')
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it('a second move carries what the first missed', async () => {
     await seedLinked()
     await renamed('B', 'C')
