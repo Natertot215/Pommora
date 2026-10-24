@@ -23,7 +23,6 @@ import {
   renameOption,
   setValueFormat,
 } from '../Properties/optionOps'
-import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { emptyBundle, restoreTrashed } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
 import { openBundle, storeOf } from '../Bundles/bundle'
@@ -61,7 +60,8 @@ import { type CascadeReport, joinCascades, linksNotUpdated, renameCascade } from
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { oweRetry, oweWalk } from './fileEvents'
-import { NO_REACH, reachReport } from './configReach'
+import { reachReport } from './configReach'
+import { finishOwed } from './finishOwed'
 import { inSettleTurn, payOwedWalk, relink, settledIndex } from './settle'
 import { pageMoves } from './record'
 import { putBackEntries } from './governedRoot'
@@ -336,15 +336,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'deleteProperty':
       return deleteProperty(root, req.propertyId)
 
-    // A property cascade's Try Again until each change keeps its own note: the journal's one record, replayed.
-    case 'finishOwed': {
-      const replayed = (await replaySchemaCascade(root)) ?? ok(NO_REACH)
-      if (!replayed.ok) return replayed
-      return ok({
-        cascade: reachReport(replayed.value),
-        ...(replayed.value.skipped ? { retry: req } : {}),
-      })
-    }
+    // Outside every per-op lock: the pass takes each kind's lock itself.
+    case 'finishOwed':
+      return ok({ cascade: await finishOwed(root, deps) })
 
     case 'editOption':
       return done(await editOption(root, req.propertyId, req.edit))

@@ -67,6 +67,8 @@ export interface NexusSlice {
   openDropped: (file: File) => Promise<void>
   /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows. */
   mutate: (req: MutateRequest, opts?: { quiet?: true }) => Promise<MutateOutcome | null>
+  /** Sends the one Try Again: finishes every entry the notes file holds. */
+  finishOwed: () => void
 }
 
 /** Every save the window still owes, landed ahead of a switch, a quit, or a write that moves, renames, or deletes: a page write after a switch's root flip would overwrite a same-relative-path file in the new Nexus. */
@@ -246,11 +248,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (changesSettled(req.op)) await flushAllSaves()
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== held?.nexus.id) return null
-      const res = await dialer().ask('mutate', req)
+      let res = await dialer().ask('mutate', req)
+      if (!res.ok && res.error.code === 'owed') {
+        await dialer().ask('mutate', { op: 'finishOwed' })
+        res = await dialer().ask('mutate', req)
+      }
       if (!res.ok) {
         if (quiet) return null
-        if (res.error.code === 'owed')
-          notifyRetry(res.error.message, () => void get().mutate({ op: 'finishOwed' }))
+        if (res.error.code === 'owed') notifyRetry(res.error.message, get().finishOwed)
         // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read on a retry.
         else if (
           (req.op === 'setProperty' || req.op === 'setContext') &&
@@ -273,11 +278,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
           warnCascade(
             cascade,
-            retry
-              ? () => void get().mutate(retry)
-              : missed
-                ? () => void get().mutate({ op: 'putBack', entries: missed })
-                : undefined,
+            cascade.owed
+              ? get().finishOwed
+              : retry
+                ? () => void get().mutate(retry)
+                : missed
+                  ? () => void get().mutate({ op: 'putBack', entries: missed })
+                  : undefined,
           )
         if (res.value.created && res.value.landedAs)
           notifyReport(`Created “${res.value.landedAs}”.`, false)
@@ -290,5 +297,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         set((s) => ({ headings: movedHeadings(s.headings, pagesByIdOf(held), pagesByIdOf(tree)) }))
       return res.value
     },
+    finishOwed: () => void get().mutate({ op: 'finishOwed' }),
   }
 }

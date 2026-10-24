@@ -1,7 +1,7 @@
 import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
 import { rootSegs } from '../Paths/exclusion'
 import { readWatchScope } from '../Settings/settings'
-import type { MutateReply } from '../Nexus/mutateRequest'
+import { done, type MutateReply } from '../Nexus/mutateRequest'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { KEY_REFUSAL, validateDefinition, validateName } from './validation'
@@ -31,13 +31,14 @@ import {
 } from '../Nexus/governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
 import {
-  clearSchemaJournal,
   OWED,
-  readSchemaJournal,
-  schemaCascade,
-  writeSchemaJournal,
-  type SchemaJournal,
-} from './propertyJournal'
+  owedName,
+  owedRename,
+  owedSwept,
+  propertyNote,
+  readNotes,
+  runNoted,
+} from '../Nexus/owed'
 
 export function defaultStatusSeed(): StatusGroup[] {
   return [
@@ -92,10 +93,9 @@ function freeLabel(
   label: string,
   format: KeyFormat | undefined,
   defs: PropertyDefinition[],
-  owed: readonly string[],
 ): string {
   const labels = defs.map((d) => d.label)
-  const keys = new Set([...defs.map((d) => d.key), ...owed].map(normalizeTitle))
+  const keys = new Set(defs.map((d) => normalizeTitle(d.key)))
   let free = freeName(label, labels)
   while (keys.has(normalizeTitle(formatKey(free, format)))) {
     labels.push(free)
@@ -110,13 +110,15 @@ export async function createProperty(
   root: string,
   def: PropertyDraft,
 ): Promise<Result<PropertyDefinition>> {
-  const journal = await readSchemaJournal(root)
-  const owed = journal?.op === 'rename' ? [journal.from] : []
-  const created = await mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
+  const notes = await readNotes(root)
+  return mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
     if (def.id && registry.defs[def.id]) return { result: ID_HELD }
     const defs = Object.values(registry.defs)
-    const label = freeLabel(exactTitle(def.label), def.key_format, defs, owed)
+    const label = freeLabel(exactTitle(def.label), def.key_format, defs)
     const key = formatKey(label, def.key_format)
+    // A restore carries its own id, whose own owed names never refuse it.
+    if (owedName(notes, { owner: { kind: 'property' }, name: key, except: def.id || undefined }))
+      return { result: OWED }
     const candidate = seeded({ ...def, label, key, id: def.id || mintPropertyId() })
     const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
@@ -128,14 +130,6 @@ export async function createProperty(
       result: ok(candidate),
     }
   })
-  // A landed create wearing a journaled delete's key or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
-  if (
-    created.ok &&
-    journal?.op === 'delete' &&
-    (journal.key === created.value.key || journal.id === created.value.id)
-  )
-    await clearSchemaJournal(root, journal)
-  return created
 }
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
@@ -206,19 +200,15 @@ export async function rekeyHolders(
   return ok(await sweepCount(root, files, plan))
 }
 
-/** Validated before the journal and again on the registry it commits to, since a writer outside the app, a sync arrival or a hand edit, can land between the two while every schema op of the app's own waits on the schema lock. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old key survives only there. */
+/** Validated before the note and again on the registry it commits to, since an outside writer can land between the two. The note lands before the commit, since after it the old key survives nowhere else; a change that keeps the key notes nothing. */
 function rekeyProperty(root: string, propertyId: string, change: Retitle): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
     const planned = await rekeyPlan(root, propertyId, change)
     if (!planned.ok) return planned
     if (!planned.value) return ok({})
     const { prior, moved } = planned.value
-    const moves = moved.key !== prior.key
-    const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.key, to: moved.key }
-    if (moves && !(await writeSchemaJournal(root, record))) return OWED
-    const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
-      root,
-      (registry) => {
+    const commit = () =>
+      mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(root, (registry) => {
         const current = registry.defs[propertyId]
         if (!current) return { result: NO_PROPERTY }
         const def = retitled(current, change)
@@ -228,16 +218,18 @@ function rekeyProperty(root: string, propertyId: string, change: Retitle): Promi
           next: { ...registry, defs: { ...registry.defs, [propertyId]: def } },
           result: ok({ from: current.key, def }),
         }
-      },
-    )
-    if (!edit.ok) {
-      if (moves) await clearSchemaJournal(root, record)
-      return edit
-    }
-    const { from, def } = edit.value
-    const skipped = from === def.key ? 0 : await renameSweep(root, from, def.key)
-    if (moves && !skipped) await clearSchemaJournal(root, record)
-    return ok(from === def.key ? {} : schemaCascade({ skipped, hosts: [] }, record))
+      })
+    if (moved.key === prior.key) return done(await commit())
+    return runNoted(root, propertyId, {
+      lands: [{ owner: { kind: 'property' }, name: moved.key, except: propertyId }],
+      note: (e) => ({ ...propertyNote(e), ...owedRename(propertyNote(e), prior.key, moved.key) }),
+      list: commit,
+      sweep: async ({ from, def }) => ({
+        skipped: from === def.key ? 0 : await renameSweep(root, from, def.key),
+        hosts: [],
+      }),
+      settle: (e, { from }) => ({ ...e, ...owedSwept(e, [from]) }),
+    })
   })
 }
 

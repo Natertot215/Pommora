@@ -1,5 +1,5 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { uniqueOptionGroups, validateOptionValues } from './validation'
+import { validateOptionValues } from './validation'
 import { readPageRelations } from '../Index/contentIndex'
 import { findHolders } from '../Index/keyHolders'
 import {
@@ -17,7 +17,6 @@ import { exactTitle, normalizeTitle } from '../Paths/caseFold'
 import { addOption, applyOptionEdit, mapOptions, type OptionEdit } from './optionModel'
 import { mintOptionId } from '../Nexus/ids'
 import {
-  identified,
   optionGroupsOf,
   optionsOf,
   PROPERTY_TYPES,
@@ -28,15 +27,21 @@ import {
   withOptionGroups,
 } from './properties'
 import {
-  clearSchemaJournal,
+  type Entry,
+  type Owed,
   OWED,
-  readSchemaJournal,
-  schemaCascade,
-  type SchemaJournal,
-  writeSchemaJournal,
-} from './propertyJournal'
-import { type ConfigReach, NO_REACH, reachConfig, reachReport } from '../Nexus/configReach'
-import type { MutateReply } from '../Nexus/mutateRequest'
+  owedDelete,
+  owedName,
+  owedRename,
+  owedSwept,
+  type PropertyEntry,
+  propertyNote,
+  readNotes,
+  runNoted,
+  withOption,
+} from '../Nexus/owed'
+import { type ConfigReach, NO_REACH, reachConfig } from '../Nexus/configReach'
+import { done, type MutateReply } from '../Nexus/mutateRequest'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, holderSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
@@ -58,15 +63,11 @@ const NO_OPTIONS = fail(
 const optionDef = (def: PropertyDefinition | undefined): Result<PropertyDefinition> =>
   !def ? NO_PROPERTY : PROPERTY_TYPES[def.type].options ? ok(def) : NO_OPTIONS
 
-function editStoredOptions(
+// The decoded definition already holds its options identified and unique, so an edit reads them from it.
+const editOptions = (
   def: PropertyDefinition,
-  stored: unknown,
   edit: (groups: StatusGroup[]) => StatusGroup[],
-): PropertyDefinition {
-  const raw = { ...(stored as PropertyDefinition), type: def.type }
-  const named = mapOptions(optionGroupsOf(raw), identified)
-  return withOptionGroups(def, edit(uniqueOptionGroups(named)))
-}
+): PropertyDefinition => withOptionGroups(def, edit(optionGroupsOf(def)))
 
 function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
   if ('optionId' in e && !findOption(def, e.optionId)) return NO_OPTION
@@ -77,32 +78,25 @@ function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
   return ok(null)
 }
 
-// A rename still owed to the files its sweep skipped leaves its old keys held there, so an option taking one back would end the rename's replay.
-const owedKeys = (journal: SchemaJournal | null, id: string): Set<unknown> =>
-  new Set(
-    journal?.op === 'option-rename' && journal.id === id
-      ? journal.keys.map(([from]) => memberKey(from))
-      : [],
-  )
-
 const keysOf = (def: PropertyDefinition): unknown[] => optionsOf(def).map((o) => memberKey(o.key))
 
 export function editOption(root: string, propertyId: string, e: OptionEdit): Promise<Result<null>> {
   return serializeSchemaOp(root, async () => {
-    const owed = owedKeys(await readSchemaJournal(root), propertyId)
-    return mutateRegistry<Result<null>>(root, (registry, stored) => {
+    const notes = await readNotes(root)
+    return mutateRegistry<Result<null>>(root, (registry) => {
       const found = optionDef(registry.defs[propertyId])
       if (!found.ok) return { result: found }
       const def = found.value
       const admitted = admitOptionEdit(def, e)
       if (!admitted.ok) return { result: admitted }
-      const next = editStoredOptions(def, stored[propertyId], (groups) =>
-        applyOptionEdit(groups, e, def.value_format),
-      )
+      const next = editOptions(def, (groups) => applyOptionEdit(groups, e, def.value_format))
       const check = validateOptionValues(optionsOf(next))
       if (!check.ok) return { result: check }
       const held = new Set(keysOf(def))
-      if (keysOf(next).some((k) => owed.has(k) && !held.has(k))) return { result: OWED }
+      const lands = (o: SelectOption): boolean =>
+        !held.has(memberKey(o.key)) &&
+        owedName(notes, { owner: { kind: 'option', propertyId }, name: o.key, except: o.id })
+      if (optionsOf(next).some(lands)) return { result: OWED }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
         result: ok(null),
@@ -161,16 +155,18 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           }
       }
       if (!held.size) return
-      const journal = await readSchemaJournal(root)
-      await mutateRegistry(root, (registry, stored) => {
+      const notes = await readNotes(root)
+      await mutateRegistry(root, (registry) => {
         let defs = registry.defs
         for (const [id, members] of held) {
           const def = defs[id]
           if (!def) continue
-          const owed = owedKeys(journal, id)
-          const fresh = unregisteredMembers(def, members).filter((v) => !owed.has(memberKey(v)))
+          // A word an option still owes sits in files its sweep missed; registering it would hand that work to a new option (H-7).
+          const fresh = unregisteredMembers(def, members).filter(
+            (v) => !owedName(notes, { owner: { kind: 'option', propertyId: id }, name: String(v) }),
+          )
           if (!fresh.length) continue
-          const next = editStoredOptions(def, stored[id], (groups) =>
+          const next = editOptions(def, (groups) =>
             fresh.reduce(
               (g, v) => addOption(g, SELECT_GROUP, { id: mintOptionId(), key: v, label: v }),
               groups,
@@ -191,13 +187,13 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
 export function dropOptionFromDef(
   root: string,
   propertyId: string,
-  key: string,
+  optionId: string,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry, stored) => {
+  return mutateRegistry<Result<null>>(root, (registry) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
-    const next = editStoredOptions(current, stored[propertyId], (groups) =>
-      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.key !== key) })),
+    const next = editOptions(current, (groups) =>
+      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.id !== optionId) })),
     )
     return {
       next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
@@ -241,7 +237,7 @@ async function cacheSweep(root: string, def: PropertyDefinition, keys: ValueEdit
   )
 }
 
-/** Rewrites the files and caches holding `keys`' old keys. A delete names its option: a skipped file stops it there, so the option stays while its replay is owed, and otherwise every saved view, tile, and filter drops the option's id. */
+/** Rewrites the files and caches holding `keys`' old keys. A delete names its option, and every saved view, tile, and filter drops the option's id. */
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
@@ -252,7 +248,6 @@ export async function optionCascade(
   if (keys.size) {
     const { files, plan } = await valueEditPlan(root, def, keys)
     skipped = (await sweepGovernedRoots(files, plan)).skipped.length
-    if (skipped && removed !== undefined) return { skipped, hosts: [] }
     skipped += await cacheSweep(root, def, keys)
   }
   const reach =
@@ -263,37 +258,50 @@ export async function optionCascade(
 }
 
 type Rekey = { optionId: string; label: string } | { value_format: KeyFormat }
+type WordMove = { optionId: string; from: string; to: string }
 
 async function rekeyOptions(
   root: string,
-  record: Extract<SchemaJournal, { op: 'option-rename' }>,
+  propertyId: string,
+  moved: readonly WordMove[],
   change: Rekey,
 ): Promise<MutateReply> {
-  // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record.
-  if (!(await writeSchemaJournal(root, record))) return OWED
-  const keys = new Map(record.keys)
+  const keys = new Map(moved.map((m) => [m.from, m.to]))
   const relabel = (o: SelectOption): string =>
     'optionId' in change && o.id === change.optionId ? change.label : o.label
-  const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
-    const found = optionDef(registry.defs[record.id])
-    if (!found.ok) return { result: found }
-    const def = found.value
-    if ('optionId' in change && !findOption(def, change.optionId)) return { result: NO_OPTION }
-    const current = 'value_format' in change ? { ...def, value_format: change.value_format } : def
-    const next = editStoredOptions(current, stored[record.id], (groups) =>
-      mapOptions(groups, (o) => ({ ...o, key: keys.get(o.key) ?? o.key, label: relabel(o) })),
-    )
-    const check = validateOptionValues(optionsOf(next))
-    if (!check.ok) return { result: check }
-    return { next: { ...registry, defs: { ...registry.defs, [record.id]: next } }, result: ok(def) }
+  const commit = () =>
+    mutateRegistry<Result<PropertyDefinition>>(root, (registry) => {
+      const found = optionDef(registry.defs[propertyId])
+      if (!found.ok) return { result: found }
+      const def = found.value
+      if ('optionId' in change && !findOption(def, change.optionId)) return { result: NO_OPTION }
+      const current = 'value_format' in change ? { ...def, value_format: change.value_format } : def
+      const next = editOptions(current, (groups) =>
+        mapOptions(groups, (o) => ({ ...o, key: keys.get(o.key) ?? o.key, label: relabel(o) })),
+      )
+      const check = validateOptionValues(optionsOf(next))
+      if (!check.ok) return { result: check }
+      return {
+        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
+        result: ok(def),
+      }
+    })
+  // A relabel that moves no word notes nothing and sweeps nothing.
+  if (!moved.length) return done(await commit())
+  const parts = (e: Entry | undefined, edit: (o: Owed, m: WordMove) => Owed): PropertyEntry =>
+    moved.reduce((n, m) => withOption(n, m.optionId, (o) => edit(o, m)), propertyNote(e))
+  return runNoted(root, propertyId, {
+    lands: moved.flatMap((m) => [
+      { owner: { kind: 'option' as const, propertyId }, name: m.to, except: m.optionId },
+      // A word its own Clear still owes refuses the rename, so the finish clears those pages before the word moves.
+      { owner: { kind: 'option' as const, propertyId }, name: m.from },
+    ]),
+    note: (e) => parts(e, (o, m) => owedRename(o, m.from, m.to)),
+    list: commit,
+    sweep: (def) => optionCascade(root, def, keys),
+    settle: (e) => parts(e, (o, m) => owedSwept(o, [m.from])),
+    under: propertyId,
   })
-  if (!edit.ok) {
-    await clearSchemaJournal(root, record)
-    return edit
-  }
-  const reach = await optionCascade(root, edit.value, keys)
-  if (!reach.skipped) await clearSchemaJournal(root, record)
-  return ok(schemaCascade(reach, record))
 }
 
 export function renameOption(
@@ -307,8 +315,8 @@ export function renameOption(
     if (!r.ok) return r
     const { def, option } = r.value
     const to = formatKey(label, def.value_format)
-    const keys: [string, string][] = option.key === to ? [] : [[option.key, to]]
-    return rekeyOptions(root, { op: 'option-rename', id: propertyId, keys }, { optionId, label })
+    const moved = option.key === to ? [] : [{ optionId, from: option.key, to }]
+    return rekeyOptions(root, propertyId, moved, { optionId, label })
   })
 }
 
@@ -316,7 +324,7 @@ async function valueFormatPlan(
   root: string,
   propertyId: string,
   format: KeyFormat,
-): Promise<Result<{ def: PropertyDefinition; keys: [string, string][] }>> {
+): Promise<Result<{ def: PropertyDefinition; keys: WordMove[] }>> {
   const found = optionDef((await readRegistry(root)).defs[propertyId])
   if (!found.ok) return found
   const def = found.value
@@ -326,11 +334,11 @@ async function valueFormatPlan(
     'This format would give two options the same key, please rename one first.',
   )
   if (!check.ok) return check
-  const keys = moved.flatMap(({ was, key }): [string, string][] =>
-    key === was ? [] : [[was, key]],
+  const keys = moved.flatMap(({ id, was, key }): WordMove[] =>
+    key === was ? [] : [{ optionId: id, from: was, to: key }],
   )
-  const olds = new Set(keys.map(([from]) => memberKey(from)))
-  if (keys.some(([from, to]) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
+  const olds = new Set(keys.map(({ from }) => memberKey(from)))
+  if (keys.some(({ from, to }) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
     return CROSSED
   return ok({ def, keys })
 }
@@ -343,11 +351,7 @@ export function setValueFormat(
   return serializeSchemaOp(root, async () => {
     const planned = await valueFormatPlan(root, propertyId, format)
     if (!planned.ok) return planned
-    return rekeyOptions(
-      root,
-      { op: 'option-rename', id: propertyId, keys: planned.value.keys },
-      { value_format: format },
-    )
+    return rekeyOptions(root, propertyId, planned.value.keys, { value_format: format })
   })
 }
 
@@ -360,7 +364,7 @@ export async function valueFormatHolders(
   if (!planned.ok) return planned
   const { def, keys } = planned.value
   if (!keys.length) return ok(0)
-  const { files, plan } = await valueEditPlan(root, def, new Map(keys))
+  const { files, plan } = await valueEditPlan(root, def, new Map(keys.map((m) => [m.from, m.to])))
   return ok(await sweepCount(root, files, plan))
 }
 
@@ -370,13 +374,8 @@ export function clearOption(
   optionId: string,
 ): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
-    const journal = await readSchemaJournal(root)
-    const option = journal?.op === 'option-rename' || journal?.op === 'option-remove'
-    if (option && journal.id === propertyId) return OWED
     const r = await resolveOption(root, propertyId, optionId)
-    if (!r.ok) return r
-    const reach = await optionCascade(root, r.value.def, new Map([[r.value.option.key, null]]))
-    return ok({ cascade: reachReport(reach) })
+    return r.ok ? stripOption(root, r.value, true) : r
   })
 }
 
@@ -404,15 +403,31 @@ export function deleteOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveOption(root, propertyId, optionId)
     if (!r.ok) return r
-    const { def, option } = r.value
-    const record: SchemaJournal = { op: 'option-remove', id: propertyId, key: option.key }
-    if (!(await writeSchemaJournal(root, record))) return OWED
-    const reach = await optionCascade(root, def, new Map([[option.key, null]]), option.id)
-    if (!reach.skipped) {
-      const dropped = await dropOptionFromDef(root, propertyId, option.key)
-      if (!dropped.ok) return dropped
-      await clearSchemaJournal(root, record)
-    }
-    return ok(schemaCascade(reach, record))
+    return stripOption(root, r.value, false)
+  })
+}
+
+/** An option's delete or Clear on the runner: its word and every old name it still owes leave the pages holding them. A delete drops the option as its list step; a Clear's option stays listed, so its part is marked kept and no finish drops the option (H-2). */
+function stripOption(
+  root: string,
+  { def, option }: { def: PropertyDefinition; option: SelectOption },
+  kept: boolean,
+): Promise<MutateReply> {
+  const part = (e: Entry | undefined): Owed => ({
+    ...owedDelete(propertyNote(e).options?.[option.id] ?? {}, option.key),
+    ...(kept ? { kept: true as const } : {}),
+  })
+  return runNoted(root, def.id, {
+    note: (e) => withOption(propertyNote(e), option.id, () => part(e)),
+    list: () => (kept ? Promise.resolve(ok(null)) : dropOptionFromDef(root, def.id, option.id)),
+    sweep: (_, prior) =>
+      optionCascade(
+        root,
+        def,
+        new Map((part(prior).strip ?? []).map((w) => [w, null])),
+        kept ? undefined : option.id,
+      ),
+    settle: (e) => withOption(propertyNote(e), option.id, () => ({})),
+    under: def.id,
   })
 }

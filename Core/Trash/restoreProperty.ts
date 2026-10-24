@@ -15,6 +15,7 @@ import { gonePageEntry } from '../Nexus/governedRoot'
 import { frozenWorld } from './trashedCopies'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
+import { restoreNote } from '../Nexus/owed'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
@@ -42,6 +43,9 @@ async function restoreInner(
   if (!parsed.success) return fault('That deleted property’s definition no longer reads.')
   const created = await createProperty(root, parsed.data)
   if (!created.ok) return created
+  // A conversion that can't land leaves the bundle unspent: the next finish reads the current name in `strip` and deletes again, and the restore can be repeated (H-4).
+  const converted = await restoreNote(root, record.id)
+  if (!converted.ok) return converted
   const def = created.value
   const tree = await liveTreeOf(root)
   const byId = new Map(tree.collections.map((c) => [c.id, join(root, c.path)]))

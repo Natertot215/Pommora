@@ -17,7 +17,7 @@ import { machine } from '../Platform/machine'
 import { devicePref, readDevicePrefs } from '../Settings/devicePrefs'
 import { registerHeldOptions } from '../Properties/optionOps'
 import { runRepairSweep } from '../Properties/repairSweep'
-import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
+import { finishOwed } from './finishOwed'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted, stampMissing } from './adopt'
 import { oweCascade, oweSeen } from './fileEvents'
@@ -107,7 +107,7 @@ export async function openNexusSequence(
     await replayPendingRename(root).catch((e) =>
       console.error('contexts: the rename replay failed:', errText(e)),
     )
-    await replaySchemaCascade(root)
+    await finishOwed(root, await trashDeps(ctx))
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)
       .then(() => registerHeldOptions(root))

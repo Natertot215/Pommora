@@ -104,7 +104,7 @@ export const labelled = <W extends { key: string; label?: string }>(
 })
 
 /** An option stored without an id, or with an empty one, answers to the one its key derives until a write of its property's options stores it, so a hand edit never hides the property and every device reads the same id. */
-export const identified = <O extends { id?: string; key: string; label?: string }>(
+const identified = <O extends { id?: string; key: string; label?: string }>(
   o: O,
 ): O & { id: string; label: string } => ({ ...labelled(o), id: o.id || keyedOptionId(o.key) })
 

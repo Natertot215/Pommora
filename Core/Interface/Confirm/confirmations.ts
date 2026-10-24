@@ -97,17 +97,17 @@ export const confirmDelete = async (
       ? askDestroyProperty(target.propertyId, target.title)
       : askTrashing([target])
   if (!(await asked)) return false
-  const { mutate } = useSession.getState()
+  const { mutate, finishOwed } = useSession.getState()
   const done = await mutate(
     'propertyId' in target
       ? { op: 'deleteProperty', propertyId: target.propertyId }
       : { op: 'delete', path: target.path, kind: target.kind },
   )
   if (!done) return false
-  const { bundled, cascade, retry } = done
+  const { bundled, cascade } = done
   offerUndo(
     bundled ? [bundled.bundlePath] : [],
-    (undo) => notifyDeleted(target.title, undo, cascade, retry && (() => void mutate(retry))),
+    (undo) => notifyDeleted(target.title, undo, cascade, cascade?.owed ? finishOwed : undefined),
     target.undoTo,
   )
   return true
