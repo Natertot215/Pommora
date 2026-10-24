@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ulid } from 'ulidx'
 import {
@@ -11,7 +11,7 @@ import {
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -489,6 +489,73 @@ async function group8(cdp) {
   await must('trash the Context', ask(cdp, 'mutate', { op: 'delete', path: `.nexus/contexts/${renamed}`, kind: 'context' }))
 }
 
+// ── Group 9 · One Note per Item ──────────────────────────────────────────────
+
+const NOTICE = `document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')`
+/** The notice on screen: its line and its action's label. */
+const noticeOf = (cdp) =>
+  cdp.evaluate(`(() => {
+    const n = ${NOTICE}
+    if (!n) return null
+    const actions = [...n.querySelectorAll('button')].map((b) => b.textContent.trim())
+    return { message: actions.reduce((t, a) => t.replace(a, ''), n.textContent).trim(), action: actions[0] ?? null }
+  })()`)
+/** Renames a property from its editor's title field, as a person does, so the slice's own reply handling runs; a rewrite it asks about is confirmed. */
+async function renameInPane(cdp, id, label) {
+  await openPropertyEditor(cdp, registryFile().defs[id].label)
+  await click(cdp, `[...document.querySelectorAll('[role=button][aria-label="Title"]')].find((e) => !e.closest('[inert]'))`)
+  await until('the title field', () => cdp.evaluate(`document.activeElement?.tagName === 'INPUT'`))
+  await selectField(cdp)
+  await typeText(cdp, label)
+  await pressKey(cdp, 'Enter')
+  if (await settles(() => cdp.evaluate(`!!${DIALOG}`), 2000)) await pressDialog(cdp, 'Rewrite')
+  await sleep(1500)
+  await escapeAll(cdp)
+}
+
+async function group9(cdp) {
+  const owedFile = () => {
+    const file = join(NEXUS, '.nexus/.owed.json')
+    return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {}
+  }
+  await openCollection(cdp)
+  const first = await addProperty(cdp, { label: 'Drive Priority', type: 'text' })
+  const second = await addProperty(cdp, { label: 'Drive Stage', type: 'text' })
+  const third = await addProperty(cdp, { label: 'Drive Spare', type: 'text' })
+  const text = (value) => ({ kind: 'text', value })
+  await createPage(cdp, 'Drive Held', { [first]: text('kept'), [second]: text('kept'), [third]: text('spare') })
+  await createPage(cdp, 'Drive Locked', { [first]: text('locked'), [second]: text('locked') })
+  const locked = join(NEXUS, pagePath('Drive Locked'))
+  chmodSync(locked, 0o000)
+  try {
+    await renameInPane(cdp, first, 'Drive Urgency')
+    const owedNotice = await until('the owed notice', () => noticeOf(cdp))
+    item(9, 'B-4', 'a rename that missed a page offers Try Again', owedNotice.message === 'Couldn’t update 1 Item.' && owedNotice.action === 'Try Again', show(owedNotice))
+    item(9, 'B-1', 'its entry keeps the old key', same(owedFile()[first]?.rename, ['Drive Priority']), show(owedFile()))
+    await renameInPane(cdp, second, 'Drive Phase')
+    item(9, 'B-1', 'a second property renames past the first’s owed work', frontmatter('Drive Held')['Drive Phase'] === 'kept', show(frontmatter('Drive Held')))
+    await renameInPane(cdp, third, 'Drive Priority')
+    const refused = await until('the owed refusal', async () => {
+      const n = await noticeOf(cdp)
+      return n?.message === 'An earlier change hasn’t reached every file yet.' && n
+    }).catch(async () => noticeOf(cdp))
+    item(9, 'B-4', 'a rename onto a name still owed after the finish is refused with Try Again', refused?.action === 'Try Again' && frontmatter('Drive Held')['Drive Spare'] === 'spare', show(refused))
+  } finally {
+    chmodSync(locked, 0o644)
+  }
+  await renameInPane(cdp, third, 'Drive Priority')
+  const finished = await settles(async () => frontmatter('Drive Locked')['Drive Urgency'] === 'locked' && frontmatter('Drive Locked')['Drive Phase'] === 'locked')
+  item(9, 'H-17', 'the rename’s one finish finished both renames', finished && !('Drive Priority' in frontmatter('Drive Locked')) && !('Drive Stage' in frontmatter('Drive Locked')), show(frontmatter('Drive Locked')))
+  item(9, 'H-17', 'the notes file owes nothing', same(owedFile(), {}), show(owedFile()))
+  item(9, 'B-4', 'the rename onto the owed name landed once the work was done', frontmatter('Drive Held')['Drive Priority'] === 'spare', show(frontmatter('Drive Held')))
+  const kept = new Set((await trashRows(cdp)).map((r) => r.bundlePath))
+  for (const id of [first, second, third]) await deleteProperty(cdp, id)
+  for (const title of ['Drive Held', 'Drive Locked'])
+    await must(`delete ${title}`, ask(cdp, 'mutate', { op: 'delete', path: pagePath(title), kind: 'page' }))
+  for (const { bundlePath } of await trashRows(cdp))
+    if (!kept.has(bundlePath)) await must('empty a bundle', ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -502,6 +569,7 @@ try {
   if (GROUPS.has('6')) await group6(cdp)
   if (GROUPS.has('7')) await group7(cdp)
   if (GROUPS.has('8')) await group8(cdp)
+  if (GROUPS.has('9')) await group9(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

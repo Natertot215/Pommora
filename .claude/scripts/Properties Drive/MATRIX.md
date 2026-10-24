@@ -39,3 +39,13 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The pane's + says the numbered name it took | `New Text` (Text) | view settings › Properties › New Property › Text | the notice reads `Created “New Text (2)”.` and the editor opens on `New Text (2)` | O-4 |
 | A property restored after its name was taken says the name it took | `Drive Bare` (Text) added again | Settings › Trash, right-click `Drive Bare` › Restore | the notice reads `Restored “Drive Bare” as “Drive Bare (2)”`; the registry holds both | O-4 |
 | The group leaves things as it found them | everything above | delete each property and `Drive Held`, empty the bundles made | Collection A's `properties`, the registry's `order`, and the Trash's count match the group's start | — |
+
+#### Group 9 — One Note per Item
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| A rename that misses a page offers Try Again | `Drive Priority`, `Drive Stage`, and `Drive Spare` (Text) added to Collection A; `Drive Held` holding all three and `Drive Locked` holding the first two, in Set Alpha; `Drive Locked.md` set to mode `000` | rename `Drive Priority` to `Drive Urgency` from its editor's title field, then Rewrite | the notice reads `Couldn’t update 1 Item.` with Try Again, and `.nexus/.owed.json` holds the property's `rename: ['Drive Priority']` | B-4, B-1 |
+| A second property renames past the first's owed work | as above | rename `Drive Stage` to `Drive Phase` | `Drive Held` reads `Drive Phase: kept` | B-1 |
+| A rename onto a name still owed is refused | as above | rename `Drive Spare` to `Drive Priority` | the notice reads `An earlier change hasn’t reached every file yet.` with Try Again, and `Drive Held` still reads `Drive Spare` | B-4 |
+| The owed name's finish frees it | `Drive Locked.md` back to `644` | rename `Drive Spare` to `Drive Priority` again | `Drive Locked` reads `Drive Urgency` and `Drive Phase`, the notes file owes nothing, and `Drive Held` reads `Drive Priority: spare` | H-17, B-4 |
+| The group leaves things as it found them | everything above | delete the three properties and both pages, and empty the bundles made | the Trash holds no row the group made | — |
