@@ -321,6 +321,47 @@ describe('the Trash pane', () => {
     })
   })
 
+  const OWED = {
+    ok: true,
+    value: { cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true } },
+  }
+  const triesAgain = async (): Promise<void> => {
+    expect(currentNotification()).toMatchObject({
+      message: expect.stringContaining('Couldn’t update 1 Item.'),
+      tone: 'error',
+      action: { label: 'Try Again' },
+    })
+    mutated.mockClear()
+    await act(async () => currentNotification()?.action?.run())
+    expect(mutated).toHaveBeenCalledWith({ op: 'finishOwed' })
+  }
+
+  it('a restore that stepped aside and owes work keeps Try Again on its notice', async () => {
+    mutated.mockResolvedValue({
+      ok: true,
+      value: { ...OWED.value, landedAs: 'Alpha (2)' },
+    })
+    picked = 'restore'
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    await triesAgain()
+  })
+
+  it('a batch restore with one owed reply offers Try Again on its notice', async () => {
+    mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
+    await pickForBoth('restore')
+    await triesAgain()
+  })
+
+  it('a batch empty with one owed reply offers Try Again', async () => {
+    useSession.setState({ askConfirm: async () => true })
+    mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
+    await pickForBoth('delete')
+    await triesAgain()
+  })
+
   it('a Restore All with one renamed names it in the segment', async () => {
     mutated.mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
     await pickForBoth('restore')
