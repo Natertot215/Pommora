@@ -26,6 +26,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import type { PropertyDefinition } from './properties'
+import type { StashBlock } from './propertyStash'
 import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { OWED_REL } from '../Paths/nexusPaths'
@@ -100,15 +101,11 @@ const pageValue = async (path: string): Promise<unknown> =>
   splitFrontmatter(await readFile(path, 'utf8'))[liveDef.key]
 const sidecar = (): Promise<Record<string, unknown> | null> =>
   readJsonObject(sidecarPath(folder, 'collection'))
-const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
-  (
-    (await sidecar())?.property_cache as
-      | Record<string, { values: Record<string, unknown> }>
-      | undefined
-  )?.[propId]
+const stashBlock = async (): Promise<StashBlock | undefined> =>
+  ((await sidecar())?.property_stash as Record<string, StashBlock> | undefined)?.[propId]
 
-describe('unassignProperty — strip + cache', () => {
-  it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
+describe('unassignProperty — strip + stash', () => {
+  it('strips the value from every member page, stashes {pageId: raw}, and unassigns — one transaction', async () => {
     await openSession(root)
     await refreshTree(root)
     const r = await unassignProperty(root, folder, propId)
@@ -124,8 +121,8 @@ describe('unassignProperty — strip + cache', () => {
     const sc = await sidecar()
     expect((sc?.properties as string[] | undefined) ?? []).not.toContain(propId)
     expect('modified_at' in (sc ?? {})).toBe(false)
-    const block = await cacheBlock()
-    expect(Object.keys(block ?? {})).toEqual(['values'])
+    const block = await stashBlock()
+    expect(Object.keys(block ?? {})).toEqual(['removed_at', 'values'])
     const vals = Object.values(block?.values ?? {})
     expect(vals).toHaveLength(2)
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
@@ -155,7 +152,7 @@ describe('unassignProperty — strip + cache', () => {
     await refreshTree(root)
     await finishOwed(root, deps)
     expect(await pageValue(pageA)).toBeUndefined()
-    expect((await cacheBlock())?.values[id]).toEqual(['active'])
+    expect((await stashBlock())?.values[id]).toEqual(['active'])
     expect(await readNotes(root)).toEqual({})
     closeSession()
   })
@@ -168,10 +165,10 @@ describe('unassignProperty — strip + cache', () => {
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
     await assignProperty(root, folder, propId)
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
-    expect(await cacheBlock()).toBeUndefined()
+    expect(await stashBlock()).toBeUndefined()
   })
 
-  it('a Remove strips its own Collection’s archived holder and caches its value, and leaves another Collection’s', async () => {
+  it('a Remove strips its own Collection’s archived holder and stashes its value, and leaves another Collection’s', async () => {
     const other = await createFolderEntity(root, 'collection', 'Other', newId())
     if (!other.ok) throw new Error('setup failed')
     const archivedUnder = async (collection: string): Promise<{ file: string; id: string }> => {
@@ -191,16 +188,16 @@ describe('unassignProperty — strip + cache', () => {
     const theirs = await archivedUnder(other.value.path)
     expect((await unassignProperty(root, folder, propId)).ok).toBe(true)
     expect(await pageValue(own.file)).toBeUndefined()
-    expect((await cacheBlock())?.values[own.id]).toEqual(['done'])
+    expect((await stashBlock())?.values[own.id]).toEqual(['done'])
     expect(await pageValue(theirs.file)).toEqual(['done'])
   })
 
-  it('is a no-op when the property is not assigned — never overwrites a cache with emptiness', async () => {
+  it('is a no-op when the property is not assigned — never overwrites a stash with emptiness', async () => {
     await unassignProperty(root, folder, propId)
-    const before = await cacheBlock()
+    const before = await stashBlock()
     const again = await unassignProperty(root, folder, propId)
     expect(again.ok).toBe(true)
-    expect(await cacheBlock()).toEqual(before)
+    expect(await stashBlock()).toEqual(before)
   })
 
   it.skipIf(noModeBits)(
@@ -264,7 +261,7 @@ describe('a Remove on the notes', () => {
       })
       await finishOwed(root, deps)
       expect(await pageValue(pageB)).toBeUndefined()
-      expect(Object.values((await cacheBlock())?.values ?? {})).toContainEqual(['done'])
+      expect(Object.values((await stashBlock())?.values ?? {})).toContainEqual(['done'])
       expect(await readNotes(root)).toEqual({})
     },
   )
@@ -367,7 +364,7 @@ describe('unassignProperty reaches saved views', () => {
     expect((await readJsonAt<TileDoc>(surfaces.tiles)).tiles[1].views[0].config).toEqual(held)
     expect(views.matrix).toEqual(held.filter)
     expect((await sidecar())?.properties).toEqual([])
-    expect(Object.keys((await cacheBlock())?.values ?? {})).toHaveLength(2)
+    expect(Object.keys((await stashBlock())?.values ?? {})).toHaveLength(2)
   })
 })
 
@@ -397,20 +394,20 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toEqual(['done'])
     expect(await pageValue(pageB)).toEqual(['active'])
-    expect(await cacheBlock()).toBeUndefined()
+    expect(await stashBlock()).toBeUndefined()
   })
 
-  it('restores cached values to pages still present and clears the block', async () => {
+  it('restores stashed values to pages still present and clears the block', async () => {
     await unassignProperty(root, folder, propId)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toEqual(['active'])
     expect(await pageValue(pageB)).toEqual(['done'])
-    expect(await cacheBlock()).toBeUndefined()
+    expect(await stashBlock()).toBeUndefined()
     expect((await sidecar())?.properties).toContain(propId)
   })
 
-  it('a Remove after a refill that didn’t reach every page keeps the cached values, so the next Assign leaves every page its value', async () => {
+  it('a Remove after a refill that didn’t reach every page keeps the stashed values, so the next Assign leaves every page its value', async () => {
     await unassignProperty(root, folder, propId)
     await patchSidecar(folder, 'collection', (cur) => ({
       ...cur,
@@ -426,7 +423,29 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     expect(await pageValue(pageB)).toEqual(['done'])
   })
 
-  it('a page that regained the key itself keeps its own value; a page without it still gets the cached one', async () => {
+  it('a Remove stamps its block with the time it set the values aside, and a second Remove restarts the clock', async () => {
+    const idOf = async (path: string): Promise<string> =>
+      splitFrontmatter(await readFile(path, 'utf8'))[ID_KEY] as string
+    vi.setSystemTime(new Date('2026-10-20T08:00:00.000Z'))
+    try {
+      await unassignProperty(root, folder, propId)
+      expect(await stashBlock()).toEqual({
+        removed_at: '2026-10-20T08:00:00.000Z',
+        values: { [await idOf(pageA)]: ['active'], [await idOf(pageB)]: ['done'] },
+      })
+      const raw = await readFile(pageA, 'utf8')
+      await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.key}:\n  - done\n`))
+      await assignProperty(root, folder, propId)
+      expect(Object.keys((await stashBlock())?.values ?? {})).toEqual([await idOf(pageA)])
+      vi.setSystemTime(new Date('2026-10-21T08:00:00.000Z'))
+      await unassignProperty(root, folder, propId)
+      expect((await stashBlock())?.removed_at).toBe('2026-10-21T08:00:00.000Z')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a page that regained the key itself keeps its own value; a page without it still gets the stashed one', async () => {
     await unassignProperty(root, folder, propId)
     const raw = await readFile(pageA, 'utf8')
     await writeFile(pageA, raw.replace(/^---\n/, `---\n${liveDef.key}:\n  - done\n`))
@@ -435,11 +454,11 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toEqual(['done'])
     expect(await pageValue(pageB)).toEqual(['done'])
-    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    const block = (await stashBlock()) as { values: Record<string, unknown> }
     expect(Object.values(block.values)).toEqual([['active']])
   })
 
-  it('a value whose option no longer exists stays cached; conforming siblings restore', async () => {
+  it('a value whose option no longer exists stays stashed; conforming siblings restore', async () => {
     await unassignProperty(root, folder, propId)
     await redefine({
       status_groups: [
@@ -454,29 +473,29 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toEqual(['done'])
-    // The entry leaves the cache only by restoring — a rejected value waits for its option to come back rather than being spent on a restore that never happened.
-    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    // The entry leaves the stash only by restoring — a rejected value waits for its option to come back rather than being spent on a restore that never happened.
+    const block = (await stashBlock()) as { values: Record<string, unknown> }
     expect(Object.keys(block.values)).toHaveLength(1)
     expect(Object.values(block.values)).toEqual([['active']])
   })
 
-  it('a value whose def type changed stays cached, restoring nothing', async () => {
+  it('a value whose def type changed stays stashed, restoring nothing', async () => {
     await unassignProperty(root, folder, propId)
     await redefine({ type: 'number' })
     await assignProperty(root, folder, propId)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()
-    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    const block = (await stashBlock()) as { values: Record<string, unknown> }
     expect(Object.keys(block.values)).toHaveLength(2)
   })
 
-  it('a page deleted while cached is skipped — its entry stays cached, no error', async () => {
+  it('a page deleted while stashed is skipped — its entry stays stashed, no error', async () => {
     await unassignProperty(root, folder, propId)
     await rm(pageA)
     const r = await assignProperty(root, folder, propId)
     expect(r.ok).toBe(true)
     expect(await pageValue(pageB)).toEqual(['done'])
-    const block = (await cacheBlock()) as { values: Record<string, unknown> }
+    const block = (await stashBlock()) as { values: Record<string, unknown> }
     expect(Object.keys(block.values)).toHaveLength(1)
   })
 

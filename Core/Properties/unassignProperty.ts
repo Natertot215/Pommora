@@ -1,6 +1,6 @@
 import { assignedIds } from '../Nexus/containerFields'
-import { cachedValues, patchCacheBlock } from './propertyCache'
-import { findHolders, heldValues, unaddressed } from '../Index/keyHolders'
+import { stashedBlock, patchStashBlock } from './propertyStash'
+import { findHolders, heldAbove, heldValues, unaddressed } from '../Index/keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -74,9 +74,14 @@ export async function stashAndStrip(
     'values',
   )
   const values = heldValues(held, def.key)
+  const above = heldAbove(held, def.key)
   if (Object.keys(values).length) {
     const stashed = await patchSidecar(folder, 'collection', (cur) =>
-      patchCacheBlock(cur, def.id, { values: { ...cachedValues(cur, def.id), ...values } }),
+      patchStashBlock(cur, def.id, {
+        removed_at: new Date().toISOString(),
+        values: { ...stashedBlock(cur, def.id)?.values, ...values },
+        above: { ...stashedBlock(cur, def.id)?.above, ...above },
+      }),
     )
     if (!stashed.ok) return { skipped: held.length, hosts: [] }
   }

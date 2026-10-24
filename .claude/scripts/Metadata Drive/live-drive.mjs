@@ -19,8 +19,8 @@ if (GROUPS.size === 0 || [...GROUPS].some((g) => !ALL.includes(g))) {
 
 const COLLECTION = 'Collection A'
 const SET = 'Collection A/Set Alpha'
-const CACHE_COLLECTION = 'Collection B'
-const CACHE_SET = 'Collection B/Set Alpha'
+const STASH_COLLECTION = 'Collection B'
+const STASH_SET = 'Collection B/Set Alpha'
 const CONTEXTS = '.nexus/contexts'
 const REGISTRY = '.nexus/properties.json'
 const NOTES = '.nexus/.owed.json'
@@ -192,7 +192,7 @@ const statusGroups = (todo, complete) => [
 const mintViewId = () => `view_${ulid()}`
 const collectionIdOf = (path) => JSON.parse(read(`${path}/_pagecollection.json`)).id
 const viewOf = (id) => JSON.parse(read(`${COLLECTION}/_pagecollection.json`)).views.find((v) => v.id === id)
-const cacheOf = (propertyId) => JSON.parse(read(`${CACHE_COLLECTION}/_pagecollection.json`)).property_cache?.[propertyId]?.values ?? {}
+const stashOf = (propertyId) => JSON.parse(read(`${STASH_COLLECTION}/_pagecollection.json`)).property_stash?.[propertyId]?.values ?? {}
 const rule = (property_id, op, operand) => ({ property_id, op, ...(Array.isArray(operand) ? { values: operand } : { value: operand }) })
 const filterOf = (...rules) => ({ match: 'all', rules })
 async function saveView(cdp, id, name, columns, extra = {}) {
@@ -217,12 +217,12 @@ async function viewTile(cdp, context, title, viewId) {
   return tilesAt(context, title)
 }
 const matrixFilter = (cdp, ...rules) => must('the Matrix filter', ask(cdp, 'matrix:write', { filter: { rules: filterOf(...rules), enabled: true } }))
-/** The Collection B cache of `propertyId`, filled the way the app fills it: assigned over a page holding values, then unassigned. */
-async function cached(cdp, propertyId, rel) {
-  await indexed(cdp, CACHE_COLLECTION, [rel])
-  await must('assign to Collection B', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
-  await must('unassign from Collection B', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: CACHE_COLLECTION, propertyId: propertyId }))
-  await until('the Collection B cache', async () => Object.keys(cacheOf(propertyId)).length > 0)
+/** The Collection B stash of `propertyId`, filled the way the app fills it: assigned over a page holding values, then unassigned. */
+async function stashed(cdp, propertyId, rel) {
+  await indexed(cdp, STASH_COLLECTION, [rel])
+  await must('assign to Collection B', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: STASH_COLLECTION, propertyId: propertyId }))
+  await must('unassign from Collection B', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: STASH_COLLECTION, propertyId: propertyId }))
+  await until('the Collection B stash', async () => Object.keys(stashOf(propertyId)).length > 0)
 }
 
 // ── Reading through the table ───────────────────────────────────────────────
@@ -877,7 +877,7 @@ async function group5(cdp) {
 async function group6(cdp) {
   const G = 6
   const tone = [pageAt('M6 Tone 1'), pageAt('M6 Tone 2')]
-  const cachedPage = pageAt('M6 Cached', CACHE_SET)
+  const stashedPage = pageAt('M6 Stashed', STASH_SET)
   const kind = pageAt('M6 Kind 1')
   const due = [pageAt('M6 Due 1'), pageAt('M6 Due 2')]
   const tint = [pageAt('M6 Tint 1'), pageAt('M6 Tint 2')]
@@ -890,7 +890,7 @@ async function group6(cdp) {
     ...doomed.map((rel) => [rel, 'M6 Doomed: z']), ...strike.map((rel) => [rel, 'M6 Strike: [x, y]']), [free, 'M6 Free: f'],
   ]
   seedAll(seeds)
-  seedPage(cachedPage, 'M6 Tones: [Light Blue, Mid Grey]')
+  seedPage(stashedPage, 'M6 Tones: [Light Blue, Mid Grey]')
   await indexed(cdp, COLLECTION, seeds.map(([rel]) => rel))
   const tones = await define(cdp, { label: 'M6 Tones', type: 'multiSelect', select_options: ['Light Blue', 'Dark Red', 'Mid Grey'].map(word) })
   const kindId = await define(cdp, { label: 'M6 Kind', type: 'select', select_options: [{ key: 'urgent', label: 'Urgent' }] })
@@ -899,7 +899,7 @@ async function group6(cdp) {
   await defineAll(cdp, ['M6 Doomed', 'M6 Free'].map((label) => ({ label, type: 'text' })))
   const dueId = await handWritten(cdp, { id: mintPropertyId(), label: 'M6 Due', key: 'm6_due', type: 'text' })
   editSidecar('Areas', 'Area One', { 'M6 Tones': ['Light Blue'] })
-  await cached(cdp, tones, cachedPage)
+  await stashed(cdp, tones, stashedPage)
   const toneView = mintViewId()
   const kindView = mintViewId()
   const lightBlue = optionId(defOf(tones), 'Light Blue')
@@ -918,10 +918,10 @@ async function group6(cdp) {
   })
   const namedBefore = named()
   await must('rename Light Blue', ask(cdp, 'mutate', { op: 'renameOption', propertyId: tones, optionId: lightBlue, label: 'Sky Blue' }))
-  pin(G, 'F-2', 'an option rename rewrites the page, the Space, and the Collection cache by key',
+  pin(G, 'F-2', 'an option rename rewrites the page, the Space, and the Collection stash by key',
     (await wrote(tone[0], 'M6 Tones: [Sky Blue, Dark Red]')) && same(sidecar('Areas', 'Area One')['M6 Tones'], ['Sky Blue'])
-      && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue', 'Mid Grey']),
-    show([blockOf(tone[0]), sidecar('Areas', 'Area One')['M6 Tones'], cacheOf(tones)]))
+      && same(stashOf(tones)[pageIds[stashedPage]], ['Sky Blue', 'Mid Grey']),
+    show([blockOf(tone[0]), sidecar('Areas', 'Area One')['M6 Tones'], stashOf(tones)]))
   pin(G, 'F-2', "an option rename leaves the saved view, the View Tile, and the Matrix filter naming the option's id",
     same(namedBefore, { view: [lightBlue], tile: [lightBlue], matrix: [lightBlue] }) && same(named(), namedBefore), show([namedBefore, named()]))
   await must('rename Urgent', ask(cdp, 'mutate', { op: 'renameOption', propertyId: kindId, optionId: urgent, label: 'Critical' }))
@@ -932,13 +932,13 @@ async function group6(cdp) {
   pin(G, 'F-2', 'an option delete strips the page and the view naming it',
     (await wrote(kind, '')) && !operandsFor(viewOf(kindView), kindId).includes(urgent), show([blockOf(kind), viewOf(kindView).filter]))
   await must('delete Mid Grey', ask(cdp, 'mutate', { op: 'deleteOption', propertyId: tones, optionId: optionId(defOf(tones), 'Mid Grey') }))
-  pin(G, 'F-2', 'an option delete strips the page and the Collection cache',
-    (await wrote(tone[1], '')) && same(cacheOf(tones)[pageIds[cachedPage]], ['Sky Blue']), show([blockOf(tone[1]), cacheOf(tones)]))
+  pin(G, 'F-2', 'an option delete strips the page and the Collection stash',
+    (await wrote(tone[1], '')) && same(stashOf(tones)[pageIds[stashedPage]], ['Sky Blue']), show([blockOf(tone[1]), stashOf(tones)]))
   await must('clear Sky Blue', ask(cdp, 'mutate', { op: 'clearOption', propertyId: tones, optionId: lightBlue }))
-  pin(G, 'J-1', 'Clear strips the Collection cache too', await settles(async () => !listOf(cacheOf(tones)[pageIds[cachedPage]]).includes('Sky Blue')), show(cacheOf(tones)))
-  await must('assign M6 Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
+  pin(G, 'J-1', 'Clear strips the Collection stash too', await settles(async () => !listOf(stashOf(tones)[pageIds[stashedPage]]).includes('Sky Blue')), show(stashOf(tones)))
+  await must('assign M6 Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: STASH_COLLECTION, propertyId: tones }))
   pin(G, 'J-1', 'a reassign after a Clear brings the cleared value back nowhere',
-    await holds(async () => !listOf(fmOf(cachedPage)['M6 Tones']).includes('Sky Blue'), 2500), show(blockOf(cachedPage)))
+    await holds(async () => !listOf(fmOf(stashedPage)['M6 Tones']).includes('Sky Blue'), 2500), show(blockOf(stashedPage)))
 
   // The notes: each item owes its own entry of stored keys, an option change and Clear run while another owes work, a
   // name another option still owes is refused, and Try Again brings the skipped file current.
@@ -1014,7 +1014,7 @@ async function group7(cdp) {
   const palette = pageAt('M7 Palette')
   const progress = pageAt('M7 Progress')
   const tone = pageAt('M7 Tone')
-  const cachedPage = pageAt('M7 Cached', CACHE_SET)
+  const stashedPage = pageAt('M7 Stashed', STASH_SET)
   const wifi = pageAt('M7 Wifi')
   const hues = pageAt('M7 Hues')
   const { cases: shades, add: row } = caseTable('M7')
@@ -1035,7 +1035,7 @@ async function group7(cdp) {
     ...FORMATS.map((f, i) => [swatch[i], `Swatch ${i + 1}: [Red, BLUE, green${SWATCH_WORDS[f] ?? ''}]`]),
   ]
   seedAll(seeds)
-  seedPage(cachedPage, 'Tones: [Light Blue]')
+  seedPage(stashedPage, 'Tones: [Light Blue]')
   editSidecar('Areas', 'Area One', { 'URL Slug': 'one', Tones: ['Light Blue'] })
   editSidecar('Areas', 'Area Two', { Kinds: ['b'] })
   await indexed(cdp, COLLECTION, seeds.map(([rel]) => rel))
@@ -1056,7 +1056,7 @@ async function group7(cdp) {
   for (const [i, f] of FORMATS.entries()) swatchIds.push(await define(cdp, { label: `Swatch ${i + 1}`, type: 'multiSelect', value_format: f, select_options: [] }))
   const dueSoonId = await handWritten(cdp, { id: mintPropertyId(), label: 'Due Soon', key: 'Due Soon', key_format: 'snake_case', type: 'text' })
   const kindOf = await handWritten(cdp, { id: mintPropertyId(), label: 'Kind Of', key: 'Kind Of', type: 'select', value_format: 'lowercase' })
-  await cached(cdp, tones, cachedPage)
+  await stashed(cdp, tones, stashedPage)
   const slugView = mintViewId()
   const toneView = mintViewId()
   const progressView = mintViewId()
@@ -1169,16 +1169,16 @@ async function group7(cdp) {
   const config = snapshot([`${COLLECTION}/_pagecollection.json`, tiles, MATRIX])
   const toneKept = snapshot([tone, AREA_ONE])
   const toneCount = await ask(cdp, 'property:holders', tones, { of: 'format', change: { value_format: 'kebab-case' } })
-  pin(G, 'F-4', 'a Value Format count covers the page and the Space and leaves out the Collection cache, writing nothing',
+  pin(G, 'F-4', 'a Value Format count covers the page and the Space and leaves out the Collection stash, writing nothing',
     toneCount.ok && toneCount.value === 2 && (await toneKept.holds(800)), show(toneCount))
   const changed = await ask(cdp, 'mutate', { op: 'setFormat', propertyId: tones, change: { value_format: 'kebab-case' } })
   pin(G, 'F-1 C-2', 'a Value Format change re-keys every option and keeps every label',
     changed.ok && !changed.value?.cascade?.owed && defOf(tones).value_format === 'kebab-case' && same(wordsOf(tones), [['light-blue', 'Light Blue'], ['dark-red', 'Dark Red']]) && owedOf(tones) === null,
     show([changed, defOf(tones)]))
-  pin(G, 'F-1 F-2', 'a Value Format change rewrites the page, the Space, and the Collection cache by key',
+  pin(G, 'F-1 F-2', 'a Value Format change rewrites the page, the Space, and the Collection stash by key',
     (await wrote(tone, 'Tones: ["light-blue", "dark-red"]')) && same(sidecar('Areas', 'Area One').Tones, ['light-blue'])
-      && same(cacheOf(tones)[pageIds[cachedPage]], ['light-blue']),
-    show([blockOf(tone), sidecar('Areas', 'Area One').Tones, cacheOf(tones)]))
+      && same(stashOf(tones)[pageIds[stashedPage]], ['light-blue']),
+    show([blockOf(tone), sidecar('Areas', 'Area One').Tones, stashOf(tones)]))
   pin(G, 'F-2', 'a Value Format change leaves the saved view, the View Tile, and the Matrix filter byte-identical', await config.holds(), show(config.changed()))
   const formatted = await readTable(cdp, slugView)
   pin(G, 'F-2', 'after a Value Format change the page still reads its labels', formatted[pageIds[tone]]?.[1] === 'Light Blue|Dark Red', show(formatted[pageIds[tone]]))
@@ -1187,8 +1187,8 @@ async function group7(cdp) {
   pin(G, 'F-2', 'after a Value Format change the View Tile naming Light Blue still shows the page',
     await settles(() => cdp.evaluate(`!!document.querySelector('.data-row[data-rid="${pageIds[tone]}"]')`), 6000))
   await sidebarTo(cdp, 'Collections', COLLECTION)
-  await must('assign Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: CACHE_COLLECTION, propertyId: tones }))
-  pin(G, 'F-2', 'a reassign after a Value Format change refills the current key', await settles(async () => same(listOf(fmOf(cachedPage).Tones), ['light-blue'])), show(blockOf(cachedPage)))
+  await must('assign Tones to Collection B again', ask(cdp, 'mutate', { op: 'assignProperty', containerPath: STASH_COLLECTION, propertyId: tones }))
+  pin(G, 'F-2', 'a reassign after a Value Format change refills the current key', await settles(async () => same(listOf(fmOf(stashedPage).Tones), ['light-blue'])), show(blockOf(stashedPage)))
 
   // A format change over an unreadable file owes it in its own entry of stored keys alone, and Try Again brings it current.
   const keySkip = await unreadable(skipKey[0], () => ask(cdp, 'mutate', { op: 'setFormat', propertyId: skipKeyId, change: { key_format: 'lowercase' } }))

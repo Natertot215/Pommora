@@ -1,7 +1,7 @@
 import { mintBundle } from '../Bundles/bundle'
 import { writeRecord } from '../Bundles/record'
 import { assignedIds } from '../Nexus/containerFields'
-import { cachedValues, patchCacheBlock } from './propertyCache'
+import { stashedBlock, patchStashBlock, type StashBlock } from './propertyStash'
 import {
   readRegistry,
   type PropertyRegistry,
@@ -9,7 +9,14 @@ import {
   serializeSchemaOp,
 } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
-import { findHolders, type Held, heldValues, type Holders, unaddressed } from '../Index/keyHolders'
+import {
+  findHolders,
+  type Held,
+  heldAbove,
+  heldValues,
+  type Holders,
+  unaddressed,
+} from '../Index/keyHolders'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { owedDelete, propertyNote, readNotes, runNoted } from '../Nexus/owed'
 import {
@@ -39,8 +46,9 @@ async function snapshot(
 ): Promise<string> {
   // A holder under several keys files the last one's value, and `keys` ends with the current key.
   const values = Object.fromEntries(keys.flatMap((key) => Object.entries(heldValues(held, key))))
+  const above = Object.fromEntries(keys.flatMap((key) => Object.entries(heldAbove(held, key))))
   const assignments: string[] = []
-  const caches: Record<string, Record<string, unknown>> = {}
+  const stashes: Record<string, StashBlock> = {}
   let partial = held.some((h) => !h.id || !h.values)
   for (const folder of folders) {
     // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
@@ -48,10 +56,10 @@ async function snapshot(
     if (!sidecar) partial = true
     const id = typeof sidecar?.id === 'string' ? sidecar.id : null
     const holds = assignedIds(sidecar).includes(propertyId)
-    const cached = cachedValues(sidecar, propertyId)
-    if ((holds || cached) && !id) partial = true
+    const stashed = stashedBlock(sidecar, propertyId)
+    if ((holds || stashed) && !id) partial = true
     if (holds && id) assignments.push(id)
-    if (cached && id) caches[id] = cached
+    if (stashed && id) stashes[id] = stashed
   }
   const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${propertyId}`))
   await writeRecord(bundle, {
@@ -59,8 +67,9 @@ async function snapshot(
     id: propertyId,
     def,
     values,
+    ...(Object.keys(above).length ? { above } : {}),
     ...(assignments.length ? { assignments } : {}),
-    ...(Object.keys(caches).length ? { caches } : {}),
+    ...(Object.keys(stashes).length ? { stashes } : {}),
     ...(partial ? { partial: true as const } : {}),
   })
   return bundle
@@ -81,7 +90,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
 
-  // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id.
+  // EVERY collection folder, not just current assigners — a Remove's stash block lives on a collection sidecar that no longer assigns the id.
   const folders = collectionFolders(root, await liveTreeOf(root))
   // The delete takes every key the property still owed, so the Trash keeps what each holder holds under any of them, and what Remove or an option change owed goes with it (H-3).
   const { strip = [] } = owedDelete(propertyNote((await readNotes(root))[propertyId]), def.key)
@@ -136,11 +145,11 @@ export async function stripProperty(
 async function unassignAndPurge(folder: string, propertyId: string): Promise<boolean> {
   const written = await patchSidecar(folder, 'collection', (cur) => {
     const assigned = assignedIds(cur)
-    const hadCache = isPlainObject(cur.property_cache) && propertyId in cur.property_cache
-    if (!assigned.includes(propertyId) && !hadCache) return null
+    const stashed = isPlainObject(cur.property_stash) && propertyId in cur.property_stash
+    if (!assigned.includes(propertyId) && !stashed) return null
     const next = { ...cur, properties: assigned.filter((id) => id !== propertyId) }
     // Spread, never Object.assign — dropping the last block is encoded by the key's ABSENCE, and assign only copies keys that are present.
-    return hadCache ? patchCacheBlock(next, propertyId) : next
+    return stashed ? patchStashBlock(next, propertyId) : next
   })
   return written.ok
 }

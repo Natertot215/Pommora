@@ -783,8 +783,8 @@ describe('links come back with the page', () => {
   })
 
   const journal = () => join(root, 'Journal')
-  const cachedIn = async () =>
-    JSON.parse(await readFile(join(journal(), '_pagecollection.json'), 'utf8')).property_cache
+  const stashedIn = async () =>
+    JSON.parse(await readFile(join(journal(), '_pagecollection.json'), 'utf8')).property_stash
       ?.prop_related?.values
 
   it('a Space’s Link value leaves with the page and comes back with it', async () => {
@@ -796,18 +796,18 @@ describe('links come back with the page', () => {
     expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[Alpha]]')
   })
 
-  it('a delete leaves a cached Link value, and re-assigning hands one whose page sits in the Trash to that page', async () => {
+  it('a delete leaves a stashed Link value, and re-assigning hands one whose page sits in the Trash to that page', async () => {
     expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     await del('Journal/Daily/Alpha.md', 'page')
-    expect(await cachedIn()).toEqual({ [BETA_ID]: '[[Alpha]]' })
+    expect(await stashedIn()).toEqual({ [BETA_ID]: '[[Alpha]]' })
     expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     expect(await frontmatter()).not.toHaveProperty('Related')
-    expect(await cachedIn()).toBeUndefined()
+    expect(await stashedIn()).toBeUndefined()
     expect(await restore('Alpha')).toBeUndefined()
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 
-  it('re-assigning brings a cached Link back once its page is restored, and drops one naming nothing', async () => {
+  it('re-assigning brings a stashed Link back once its page is restored, and drops one naming nothing', async () => {
     expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     await del('Journal/Daily/Alpha.md', 'page')
     expect(await restore('Alpha')).toBeUndefined()
@@ -818,7 +818,7 @@ describe('links come back with the page', () => {
     await empty('Alpha')
     expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
     expect(await frontmatter()).not.toHaveProperty('Related')
-    expect(await cachedIn()).toBeUndefined()
+    expect(await stashedIn()).toBeUndefined()
   })
 
   it('a page restored while its linker sits in the Trash writes the value into the linker’s trashed copy', async () => {
@@ -856,7 +856,7 @@ describe('links come back with the page', () => {
       expect(await frontmatter()).not.toHaveProperty('Related')
     })
 
-    it('re-assigning drops a cached link whose page sits in the Trash, as it drops one naming nothing', async () => {
+    it('re-assigning drops a stashed link whose page sits in the Trash, as it drops one naming nothing', async () => {
       await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nParent: "[[Nowhere]]"')
       expect((await unassignProperty(root, journal(), 'prop_related')).ok).toBe(true)
       expect((await unassignProperty(root, journal(), 'prop_parent')).ok).toBe(true)

@@ -65,8 +65,8 @@ export interface CollectionNode extends ContainerNode {
   sets: SetNode[]
   /** The property ids its sidecar assigns, as written; `containerSchema` resolves them against the registry. */
   propertyIds: string[]
-  /** The properties a Remove cached values for, so a Link cascade opens only the sidecars that could hold one. */
-  cached?: string[]
+  /** The properties a Remove stashed values for, so an option edit, a Link re-spell, and the age cleanup open only the sidecars that could hold one. */
+  stashed?: string[]
 }
 
 /** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. A path's entry in `versions` moves when it's re-saved under an unchanged name, so only that file is re-requested. */

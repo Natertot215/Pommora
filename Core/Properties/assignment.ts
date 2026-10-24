@@ -4,7 +4,7 @@ import { relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { cachedValues, patchCacheBlock } from './propertyCache'
+import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { assignedIds } from '../Nexus/containerFields'
 import { linkWorld, nexusPages } from '../Nexus/heldPages'
@@ -19,25 +19,25 @@ import { ok, fail, type Result } from '../Contract/result'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { exactTitle } from '../Paths/caseFold'
 
-async function restoreCachedValues(
+async function refillStash(
   root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  const cached = cachedValues(
+  const stashed = stashedBlock(
     await readJsonObject(sidecarPath(collectionFolder, 'collection')),
     propertyId,
-  )
-  if (!cached) return ok(null)
+  )?.values
+  if (!stashed) return ok(null)
 
-  // No readable definition → the cache stays whole: a def that reappears later still finds everything waiting.
+  // No readable definition → the stash stays whole: a def that reappears later still finds everything waiting.
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
   const rel = relative(root, collectionFolder)
   const tree = await liveTreeOf(root)
   const { byId, archived } = await nexusPages(root, tree)
   const members = new Map(
-    Object.keys(cached).flatMap((id) => {
+    Object.keys(stashed).flatMap((id) => {
       const r = byId.get(id)
       return r?.kind === 'page' && owningCollection(tree, r.path)?.path === rel
         ? [[id, r] as const]
@@ -45,20 +45,21 @@ async function restoreCachedValues(
     }),
   )
   const frozen = frozenWorld(linkWorld(tree, archived))
-  // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
+  // A stashed Link naming a page gone leaves the stash: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     PROPERTY_TYPES[def.type].connections === 'value'
       ? [...members.keys()].flatMap((id) => {
-          const entry = gonePageEntry(cached[id], frozen)
+          const entry = gonePageEntry(stashed[id], frozen)
           return entry === null ? [] : [{ page: id, property: propertyId, value: entry }]
         })
       : []
-  const spent = await refillValues(root, def, members, cached, frozen)
+  const spent = await refillValues(root, def, members, stashed, frozen)
   await parkLinks(root, gone)
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
-    const left = { ...(cachedValues(cur, propertyId) ?? {}) }
+    const block = stashedBlock(cur, propertyId)
+    const left = { ...block?.values }
     for (const id of [...spent, ...gone.map((g) => g.page)]) delete left[id]
-    return patchCacheBlock(cur, propertyId, Object.keys(left).length ? { values: left } : undefined)
+    return block && patchStashBlock(cur, propertyId, { ...block, values: left })
   })
   return written.ok ? ok(null) : written
 }
@@ -69,7 +70,7 @@ export async function assignInner(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  // Restore stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
+  // The refill stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
   let appended = false
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
     const ids = assignedIds(cur)
@@ -79,7 +80,7 @@ export async function assignInner(
   })
   if (!written.ok) return written
   if (!appended) return ok(null)
-  return restoreCachedValues(root, collectionFolder, propertyId)
+  return refillStash(root, collectionFolder, propertyId)
 }
 
 async function reorderInner(

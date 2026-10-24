@@ -19,8 +19,8 @@ function parseViews(raw: unknown): SavedView[] | undefined {
   return out.length > 0 ? out : undefined
 }
 
-function cachedIds(meta: Record<string, unknown>): string[] | undefined {
-  const ids = isPlainObject(meta.property_cache) ? Object.keys(meta.property_cache) : []
+function stashedIds(meta: Record<string, unknown>): string[] | undefined {
+  const ids = isPlainObject(meta.property_stash) ? Object.keys(meta.property_stash) : []
   return ids.length ? ids : undefined
 }
 
@@ -59,6 +59,6 @@ export function containerNodeFrom(
     kind,
     ...shared,
     propertyIds: assignedIds(meta),
-    cached: cachedIds(meta),
+    stashed: stashedIds(meta),
   }
 }

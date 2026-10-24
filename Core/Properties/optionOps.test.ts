@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { STASHED_AT } from '../Testing/definitions'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
@@ -1095,12 +1096,12 @@ describe('option cascades reach a Space sidecar', () => {
   })
 })
 
-describe('the option cascades reach the Collection caches', () => {
-  async function cached(): Promise<{
+describe('the option cascades reach the Collection stashes', () => {
+  async function stashed(): Promise<{
     id: string
     col: string
     pages: { id: string; path: string }[]
-    cache: () => Promise<unknown>
+    stash: () => Promise<unknown>
   }> {
     const id = await mkSelect([
       { id: 'opt_A', key: 'A', label: 'A' },
@@ -1122,41 +1123,45 @@ describe('the option cascades reach the Collection caches', () => {
       file,
       JSON.stringify({
         ...(await readJsonAt(file)),
-        property_cache: { [id]: { values: { [p1]: ['A'], [p2]: ['A', 'B'], [p3]: 'B' } } },
+        property_stash: {
+          [id]: { removed_at: STASHED_AT, values: { [p1]: ['A'], [p2]: ['A', 'B'], [p3]: 'B' } },
+        },
       }),
     )
-    const cache = async () => (await readJsonAt(file)).property_cache
-    return { id, col, pages, cache }
+    const stash = async () => (await readJsonAt(file)).property_stash
+    return { id, col, pages, stash }
   }
 
-  const block = (id: string, values: Record<string, unknown>) => ({ [id]: { values } })
+  const block = (id: string, values: Record<string, unknown>) => ({
+    [id]: { removed_at: STASHED_AT, values },
+  })
 
-  it('a rename rewrites every cached list', async () => {
-    const { id, pages, cache } = await cached()
+  it('a rename rewrites every stashed list', async () => {
+    const { id, pages, stash } = await stashed()
     const [p1, p2, p3] = pages.map((p) => p.id)
     expect((await renameOption(root, id, 'opt_A', 'Z')).ok).toBe(true)
-    expect(await cache()).toEqual(block(id, { [p1]: ['Z'], [p2]: ['Z', 'B'], [p3]: 'B' }))
+    expect(await stash()).toEqual(block(id, { [p1]: ['Z'], [p2]: ['Z', 'B'], [p3]: 'B' }))
   })
 
-  it('a removal strips the option from every cached list', async () => {
-    const { id, pages, cache } = await cached()
+  it('a removal strips the option from every stashed list', async () => {
+    const { id, pages, stash } = await stashed()
     const [, p2, p3] = pages.map((p) => p.id)
     expect((await deleteOption(root, id, 'opt_A')).ok).toBe(true)
-    expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
+    expect(await stash()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
   })
 
-  it('a clear strips the cache, so a reassign refills no page with the option', async () => {
-    const { id, col, pages, cache } = await cached()
+  it('a clear strips the stash, so a reassign refills no page with the option', async () => {
+    const { id, col, pages, stash } = await stashed()
     const [, p2, p3] = pages.map((p) => p.id)
     expect(await clearOption(root, id, 'opt_A')).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
-    expect(await cache()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
+    expect(await stash()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
     expect((await unassignProperty(root, col, id)).ok).toBe(true)
     expect((await assignProperty(root, col, id)).ok).toBe(true)
     for (const p of pages) expect(await readFile(p.path, 'utf8')).not.toMatch(/\bA\b/)
   })
 
   it('a damaged Collection counts once, as the configuration pass skips it, and the entry stays owed', async () => {
-    const { id } = await cached()
+    const { id } = await stashed()
     const other = await createFolderEntity(root, 'collection', 'Other', newId())
     if (!other.ok) throw new Error('folder failed')
     const file = sidecarPath(other.value.path, 'collection')
@@ -1432,7 +1437,7 @@ async function toned(
   id: string
   page: string
   space: string
-  cache: () => Promise<unknown>
+  stash: () => Promise<unknown>
   surfaces: ConfigSurfaces
 }> {
   const id = await mkProperty({
@@ -1454,13 +1459,15 @@ async function toned(
     file,
     JSON.stringify({
       ...(await readJsonAt(file)),
-      property_cache: { [id]: { values: { [PAGE_ID]: [select_options[0].key] } } },
+      property_stash: {
+        [id]: { removed_at: STASHED_AT, values: { [PAGE_ID]: [select_options[0].key] } },
+      },
     }),
   )
   const surfaces = await seedConfigSurfaces(root, col, viewOn(id, select_options[0].id))
   const space = await spaceSidecar('Pommora', { id: 'sp1', Tones: [select_options[0].key] })
-  const cache = async () => (await readJsonAt(file)).property_cache
-  return { id, page, space, cache, surfaces }
+  const stash = async () => (await readJsonAt(file)).property_stash
+  return { id, page, space, stash, surfaces }
 }
 
 const tones = (): Promise<Awaited<ReturnType<typeof toned>>> =>
@@ -1470,8 +1477,8 @@ const tones = (): Promise<Awaited<ReturnType<typeof toned>>> =>
   ])
 
 describe('a Value Format change re-keys every option', () => {
-  it('stores the format and every option’s new key, rewriting the files and caches and leaving configuration', async () => {
-    const { id, page, space, cache, surfaces } = await tones()
+  it('stores the format and every option’s new key, rewriting the files and stashes and leaving configuration', async () => {
+    const { id, page, space, stash, surfaces } = await tones()
     const views = await surfaces.read()
 
     expect(await setValueFormat(root, id, 'kebab-case')).toEqual(
@@ -1485,7 +1492,9 @@ describe('a Value Format change re-keys every option', () => {
     ])
     expect(await readFile(page, 'utf8')).toContain('Tones: ["light-blue", "dark-red"]')
     expect((await readJsonAt(space)).Tones).toEqual(['light-blue'])
-    expect(await cache()).toEqual({ [id]: { values: { [PAGE_ID]: ['light-blue'] } } })
+    expect(await stash()).toEqual({
+      [id]: { removed_at: STASHED_AT, values: { [PAGE_ID]: ['light-blue'] } },
+    })
     expect(await surfaces.read()).toEqual(views)
     expect(await readNotes(root)).toEqual({})
   })

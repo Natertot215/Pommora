@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { STASHED_AT } from '../Testing/definitions'
 import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -1342,7 +1343,9 @@ describe('the walk and the sidecar event agree on a container', () => {
         view_button: 'labeled',
         disclosure_locked: true,
         active_view: 'view_y',
-        property_cache: { prop_related: { values: { [ULID_B]: '[[Alpha]]' } } },
+        property_stash: {
+          prop_related: { removed_at: STASHED_AT, values: { [ULID_B]: '[[Alpha]]' } },
+        },
       }),
     )
   })
@@ -1370,7 +1373,7 @@ describe('the walk and the sidecar event agree on a container', () => {
     expect(owedFor(root).walk).toBe(false)
     const patched = notes()
     expect(patched?.activeView).toBe('view_y')
-    expect(patched).toMatchObject({ cached: ['prop_related'] })
+    expect(patched).toMatchObject({ stashed: ['prop_related'] })
     expect(patched).toEqual(walked)
   })
 })

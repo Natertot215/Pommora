@@ -57,3 +57,5 @@ export const FIXTURE_DEFS: Readonly<Record<string, PropertyDefinition>> = {
   },
   prop_when: { id: 'prop_when', key: 'Timeframe', label: 'Timeframe', type: 'dateTime' },
 }
+
+export const STASHED_AT = '2026-10-01T00:00:00.000Z'

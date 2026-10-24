@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import type { StashBlock } from './propertyStash'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -66,17 +67,15 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
     rewriteRaw((raw) => landValue(raw, 'Gone', 7)),
   )
 
-  // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its cache block intact, pB assigned.
+  // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its stash block intact, pB assigned.
   for (let round = 0; round < 20; round++) {
     await Promise.all([unassignProperty(root, notes, pC), assignProperty(root, notes, pB)])
     const sc = (await readJsonObject(sidecarPath(notes, 'collection'))) as Record<string, unknown>
     const assigned = (sc.properties as string[]) ?? []
-    const cached = (
-      sc.property_cache as Record<string, { values: Record<string, unknown> }> | undefined
-    )?.[pC]
+    const stashed = (sc.property_stash as Record<string, StashBlock> | undefined)?.[pC]
     expect(assigned).toContain(pB)
     expect(assigned).not.toContain(pC)
-    expect(Object.values(cached?.values ?? {})).toEqual([7])
+    expect(Object.values(stashed?.values ?? {})).toEqual([7])
     const fm = splitFrontmatter(await readFile(page.value.path, 'utf8'))
     expect(fm.Gone).toBeUndefined()
     await assignProperty(root, notes, pC)
@@ -84,7 +83,7 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
   }
 })
 
-describe('a re-assign puts a cached value back', () => {
+describe('a re-assign puts a stashed value back', () => {
   const status: Omit<PropertyDefinition, 'id'> = {
     label: 'Status',
     key: 'Status',
@@ -94,14 +93,14 @@ describe('a re-assign puts a cached value back', () => {
   const reassigned = async (
     held = '\nstatus:',
     property: Omit<PropertyDefinition, 'id'> = status,
-    cached = 'Status: hi',
+    stashed = 'Status: hi',
   ): Promise<Record<string, unknown>> => {
     const made = await createProperty(root, { id: '', ...property })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, notes, made.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await writeFile(page.value.path, `---\nID: ${page.value.id}\n${cached}\n---\nb`)
+    await writeFile(page.value.path, `---\nID: ${page.value.id}\n${stashed}\n---\nb`)
     await refreshTree(root)
     expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
     await writeFile(page.value.path, `---\nID: ${page.value.id}${held}\n---\nb`)
@@ -126,7 +125,7 @@ describe('a re-assign puts a cached value back', () => {
     select_options: [{ id: 'opt_Claude', key: 'Claude', label: 'Claude', color: 'red' }],
   }
 
-  it("a cached member naming no option exactly doesn't come back", async () => {
+  it("a stashed member naming no option exactly doesn't come back", async () => {
     expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toBeUndefined()
   })
 
@@ -159,7 +158,7 @@ describe('a re-assign puts a cached value back', () => {
     expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toEqual(['hi'])
   })
 
-  it('keeps a cached Link value naming an archived page', async () => {
+  it('keeps a stashed Link value naming an archived page', async () => {
     await archivedPage('')
     const fm = await reassigned(
       '',

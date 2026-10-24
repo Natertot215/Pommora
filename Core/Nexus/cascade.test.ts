@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { STASHED_AT } from '../Testing/definitions'
 import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
@@ -843,7 +844,7 @@ describe('deleteCascade', () => {
   })
 })
 
-describe('the link cascades reach Spaces and caches', () => {
+describe('the link cascades reach Spaces and stashes', () => {
   let related: string
   const LINKER = '01KVGMT8BFP350FZZXAMG1QDZZ'
   const OTHER = '01KVGMT8BFP350FZZXAMG1QDZY'
@@ -852,12 +853,15 @@ describe('the link cascades reach Spaces and caches', () => {
   const readJson = async (p: string) => JSON.parse(await readFile(p, 'utf8'))
   const space = (values: Record<string, unknown>) =>
     writeFile(sidecar(), JSON.stringify({ id: 'sp-pom', ...values }))
-  const cache = (values: Record<string, unknown>) =>
+  const stash = (values: Record<string, unknown>) =>
     writeFile(
       collection(),
-      JSON.stringify({ id: 'col-notes', property_cache: { [related]: { values } } }),
+      JSON.stringify({
+        id: 'col-notes',
+        property_stash: { [related]: { removed_at: STASHED_AT, values } },
+      }),
     )
-  const cached = async () => (await readJson(collection())).property_cache?.[related]?.values
+  const stashed = async () => (await readJson(collection())).property_stash?.[related]?.values
 
   beforeEach(async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
@@ -885,24 +889,24 @@ describe('the link cascades reach Spaces and caches', () => {
     closeSession()
   })
 
-  it('a delete strips a Space’s Link value naming the page, recording it by the Space’s id, and leaves the cache to its re-assign', async () => {
+  it('a delete strips a Space’s Link value naming the page, recording it by the Space’s id, and leaves the stash to its re-assign', async () => {
     await space({ Related: '[[Target]]' })
-    await cache({ [LINKER]: '[[Target]]' })
+    await stash({ [LINKER]: '[[Target]]' })
     await refreshTree(root)
     const r = await deleteCascade(root, join(dir, 'Target.md'), ['Notes/Target.md'])
     expect(await readJson(sidecar())).toEqual({ id: 'sp-pom' })
-    expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
+    expect(await stashed()).toEqual({ [LINKER]: '[[Target]]' })
     expect(r.links).toEqual([{ page: 'sp-pom', property: related, value: '[[Target]]' }])
     expect(r.reach.pages).toEqual([sidecar().slice(root.length + 1)])
   })
 
-  it('a title rename moves a Space’s and a cache’s Link value onto the new title', async () => {
+  it('a title rename moves a Space’s and a stash’s Link value onto the new title', async () => {
     await space({ Related: '[[Target#Intro|see]]' })
-    await cache({ [LINKER]: '[[Target]]', [OTHER]: '[[Other]]' })
+    await stash({ [LINKER]: '[[Target]]', [OTHER]: '[[Other]]' })
     await refreshTree(root)
     await renameCascade(root, titled('Target', 'Omega'))
     expect((await readJson(sidecar())).Related).toBe('[[Omega#Intro|see]]')
-    expect(await cached()).toEqual({ [LINKER]: '[[Omega]]', [OTHER]: '[[Other]]' })
+    expect(await stashed()).toEqual({ [LINKER]: '[[Omega]]', [OTHER]: '[[Other]]' })
   })
 
   it('a heading rename moves a Space’s Link value naming the heading', async () => {
@@ -918,7 +922,7 @@ describe('the link cascades reach Spaces and caches', () => {
     expect(r.warning).toBeUndefined()
   })
 
-  it('a title rename moves a Space’s Text value and a cached Text value onto the new title', async () => {
+  it('a title rename moves a Space’s Text value and a stashed Text value onto the new title', async () => {
     const notes = await createProperty(root, {
       id: '',
       label: 'Notes',
@@ -930,25 +934,27 @@ describe('the link cascades reach Spaces and caches', () => {
       collection(),
       JSON.stringify({
         id: 'col-notes',
-        property_cache: { [notes.value.id]: { values: { [LINKER]: 'see [[Target]]' } } },
+        property_stash: {
+          [notes.value.id]: { removed_at: STASHED_AT, values: { [LINKER]: 'see [[Target]]' } },
+        },
       }),
     )
     await refreshTree(root)
     await renameCascade(root, titled('Target', 'New Target'))
     expect((await readJson(sidecar())).Notes).toBe('see [[New Target]]')
-    expect((await readJson(collection())).property_cache[notes.value.id].values).toEqual({
+    expect((await readJson(collection())).property_stash[notes.value.id].values).toEqual({
       [LINKER]: 'see [[New Target]]',
     })
   })
 
-  it('opens no Space sidecar, and no Collection the tree lists without a cache, for a title nothing there names', async () => {
+  it('opens no Space sidecar, and no Collection the tree lists without a stash, for a title nothing there names', async () => {
     await space({ Related: '[[Other]]' })
     await refreshTree(root)
-    await cache({ [LINKER]: '[[Target]]' })
+    await stash({ [LINKER]: '[[Target]]' })
     sweepSpy.mockClear()
     await deleteCascade(root, join(dir, 'Target.md'), ['Notes/Target.md'])
     await renameCascade(root, titled('Target', 'Omega'))
     for (const [files] of sweepSpy.mock.calls) expect(files).not.toContain(sidecar())
-    expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
+    expect(await stashed()).toEqual({ [LINKER]: '[[Target]]' })
   })
 })

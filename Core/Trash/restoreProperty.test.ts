@@ -9,7 +9,7 @@ import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { newContentId, newId } from '../Nexus/ids'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
 import { settledMutate } from '../Testing/settledMutate'
@@ -321,7 +321,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
   })
 
-  it('a value a Remove had cached goes back to its cache, and re-assigning brings it home', async () => {
+  it('a value a Remove had stashed goes back to its stash with its removal time, and re-assigning brings it home', async () => {
     const id = await seedPriority()
     const page = await createTestPage(tasks, 'A', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
@@ -330,13 +330,23 @@ describe('restoring a deleted property', () => {
       page.value.path,
       rewriteRaw((raw) => landValue(raw, key, ['lo'])),
     )
-    expect((await unassignProperty(root, tasks, id)).ok).toBe(true)
-    expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
+    vi.setSystemTime(new Date('2026-10-01T08:00:00.000Z'))
+    try {
+      expect((await unassignProperty(root, tasks, id)).ok).toBe(true)
+      expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
 
-    const deleted = await deleteProperty(root, id)
-    expect(deleted.ok && deleted.value.bundled?.bundlePath).toBe(await onlyBundlePath())
-    await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+      vi.setSystemTime(new Date('2026-10-15T08:00:00.000Z'))
+      const deleted = await deleteProperty(root, id)
+      expect(deleted.ok && deleted.value.bundled?.bundlePath).toBe(await onlyBundlePath())
+      await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    } finally {
+      vi.useRealTimers()
+    }
     expect(await assigns(tasks, id)).toBe(false)
+    const stash = (await readJsonObject(sidecarPath(tasks, 'collection')))?.property_stash
+    expect((stash as Record<string, { removed_at: string }>)[id].removed_at).toBe(
+      '2026-10-01T08:00:00.000Z',
+    )
     expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
     await assignProperty(root, tasks, id)
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
@@ -510,7 +520,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Old]]')
   })
 
-  it('a cached Link value naming no page stays out when the property is assigned again', async () => {
+  it('a stashed Link value naming no page stays out when the property is assigned again', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Related',

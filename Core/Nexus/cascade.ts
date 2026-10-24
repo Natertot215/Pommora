@@ -14,7 +14,7 @@ import {
 import { pagesInReach, spaceFiles } from '../Index/keyHolders'
 import { unsweptLine } from './entities'
 import { byKey } from '../Properties/properties'
-import { editCaches } from '../Properties/propertyCache'
+import { editStashes } from '../Properties/propertyStash'
 import { heldTreeOf, liveTreeOf } from './liveTree'
 import { pageIndexOf, pagesOf } from './record'
 import type { NexusTree } from './tree'
@@ -165,7 +165,7 @@ export async function deleteCascade(
   }
 }
 
-/** The per-file arm every cascade shares: a page's body and its link-holding values through `rewrite`, and a Space sidecar's or a cache block's values alone. `settled` says the editor of `ownRel`, a heading rename's page, already rewrote its body; its frontmatter still takes the patch. */
+/** The per-file arm every cascade shares: a page's body and its link-holding values through `rewrite`, and a Space sidecar's or a stash block's values alone. `settled` says the editor of `ownRel`, a heading rename's page, already rewrote its body; its frontmatter still takes the patch. */
 export function fileRewrites(
   root: string,
   tree: NexusTree,
@@ -174,7 +174,7 @@ export function fileRewrites(
 ): {
   text: RewriteText
   spaceMoved: Rewrite
-  cacheMoved: Rewrite
+  stashMoved: Rewrite
   isLinkKey: (key: string) => boolean
 } {
   const isLinkKey = linkKeysOf(tree.config.registry)
@@ -209,7 +209,7 @@ export function fileRewrites(
     },
     spaceMoved: (raw) => withPatch(raw, patchOf(raw, isLinkKey)),
     // A block holds one property's values, so every entry holds links when the property does.
-    cacheMoved: (values) =>
+    stashMoved: (values) =>
       withPatch(
         values,
         patchOf(values, () => true),
@@ -254,7 +254,7 @@ export async function renameCascade(
             own,
             runs && own ? headingOutline(outlineOf).map((h) => h.text) : undefined,
           )
-    const { text, spaceMoved, cacheMoved, isLinkKey } = fileRewrites(root, tree, rewrite, {
+    const { text, spaceMoved, stashMoved, isLinkKey } = fileRewrites(root, tree, rewrite, {
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
@@ -266,11 +266,11 @@ export async function renameCascade(
     const tiles = (await tilesLink(root, keys, headingKey))
       ? await rewriteTileConnections(root, rewrite)
       : { hosts: [], failed: 0 }
-    // A heading edit settles often and a cached Link still reaches its page, so only a re-spell reaches the caches.
-    const cachedIds = new Set(tree.config.registry.filter((d) => isLinkKey(d.key)).map((d) => d.id))
-    const uncached =
-      'names' in change ? await editCaches(root, tree.collections, cachedIds, cacheMoved) : 0
-    const unmoved = swept.skipped.length + tiles.failed + uncached
+    // A heading edit settles often and a stashed Link still reaches its page, so only a re-spell reaches the stashes.
+    const linkIds = new Set(tree.config.registry.filter((d) => isLinkKey(d.key)).map((d) => d.id))
+    const unstashed =
+      'names' in change ? await editStashes(root, tree.collections, linkIds, stashMoved) : 0
+    const unmoved = swept.skipped.length + tiles.failed + unstashed
     return {
       pages: [...swept.touched.keys()]
         .filter((file) => isMarkdownFile(file) && outsideArchive(root, file))

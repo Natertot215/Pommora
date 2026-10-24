@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { STASHED_AT } from '../Testing/definitions'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { patchSidecar } from '../Files/sidecar'
 import { landValue } from '../Files/rootValues'
@@ -131,11 +132,38 @@ describe('deleteProperty', () => {
     }
   })
 
+  it('a delete’s record holds the key each value’s line stood above', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      label: 'Stage',
+      type: 'multiSelect',
+      select_options: [{ id: 'opt_x', key: 'x', label: 'x' }],
+    })
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    const ids: string[] = []
+    for (const [title, rest] of [
+      ['A', 'Stage: [x]\nZed: z'],
+      ['B', 'Zed: z\nStage: [x]'],
+    ]) {
+      const p = await createTestPage(notes, title, { body: 'b' })
+      if (!p.ok) throw new Error('setup failed')
+      ids.push(p.value.id)
+      await writeFile(p.value.path, `---\n${ID_KEY}: ${p.value.id}\n${rest}\n---\nb\n`)
+    }
+
+    const r = await deleteProperty(root, c.value.id)
+    if (!r.ok) throw new Error('delete failed')
+    const record = await readRecord(join(root, r.value.bundled?.bundlePath ?? ''))
+    expect(record).toMatchObject({ entity: 'property', above: { [ids[0]]: 'Zed' } })
+    expect((record as { above: Record<string, string> }).above).not.toHaveProperty(ids[1])
+  })
+
   it('fails for an unknown property id', async () => {
     expect((await deleteProperty(root, 'prop_nope')).ok).toBe(false)
   })
 
-  it('purges the property_cache block in every sidecar — even non-assigners', async () => {
+  it('purges the property_stash block in every sidecar — even non-assigners', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Priority',
@@ -154,13 +182,13 @@ describe('deleteProperty', () => {
     )
     await unassignProperty(root, notes, id)
     const before = await readJsonObject(sidecarPath(notes, 'collection'))
-    expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
+    expect((before?.property_stash as Record<string, unknown>)[id]).toBeDefined()
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     const sc = await readJsonObject(sidecarPath(notes, 'collection'))
-    expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
-    expect(sc?.property_cache).toBeUndefined()
+    expect((sc?.property_stash as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
+    expect(sc?.property_stash).toBeUndefined()
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
   })
 })
@@ -542,7 +570,9 @@ describe('the delete’s list step and its keys', () => {
       const file = sidecarPath(tasks, 'collection')
       await putJson(file, {
         ...(await readJsonObject(file)),
-        property_cache: { [id]: { values: { [newContentId('page')]: 'hi' } } },
+        property_stash: {
+          [id]: { removed_at: STASHED_AT, values: { [newContentId('page')]: 'hi' } },
+        },
       })
       dropLiveTree()
       await chmod(file, 0o000)
@@ -556,7 +586,7 @@ describe('the delete’s list step and its keys', () => {
       await finishOwed(root, deps)
       const sc = await readJsonObject(file)
       expect(sc?.properties ?? []).not.toContain(id)
-      expect(sc).not.toHaveProperty('property_cache')
+      expect(sc).not.toHaveProperty('property_stash')
       expect(await readNotes(root)).toEqual({})
     },
   )

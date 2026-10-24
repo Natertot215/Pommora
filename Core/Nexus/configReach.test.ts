@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { STASHED_AT } from '../Testing/definitions'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -114,7 +115,9 @@ beforeEach(async () => {
     id: 'col_notes',
     properties: ['prop_s'],
     views: [rich('view_c'), elsewhere('view_e'), 'foreign'],
-    property_cache: { prop_s: { values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' } } },
+    property_stash: {
+      prop_s: { removed_at: STASHED_AT, values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' } },
+    },
   })
   await putJson(setFile(), { id: 'set_deep', views: [rich('view_s')] })
   await putJson(join(other(), SIDECAR_FILENAME.collection), { id: 'col_other', views: [] })
@@ -164,7 +167,8 @@ describe('an option removal', () => {
       expect(view.hidden_groups).toEqual(['prop_x/opt_Done'])
       expect(view.collapsed_groups).toEqual(['prop_s/opt_Todo', 'set_1'])
     }
-    expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
+    expect(((await readJsonAt(colFile())).property_stash as Raw).prop_s).toEqual({
+      removed_at: STASHED_AT,
       values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' },
     })
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
