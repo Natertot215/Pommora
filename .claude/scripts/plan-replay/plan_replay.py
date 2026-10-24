@@ -206,7 +206,7 @@ def gone_paths(line, tree):
     for chunk in re.findall(r'git rm ([^`]+)`', line):
         paths += chunk.split()
     if re.match(r'\s*- (\[ \] )?', line):
-        for lst in re.findall(r'(?:[Dd]eletes?|[Rr]emoves?)\b\s+((?:`[^`]+`(?:,\s*and\s+|,\s*|\s+and\s+)?)+)', line):
+        for lst in re.findall(r'(?:[Dd]eletes?|[Rr]emoves?)\b\s+((?:`[^`]+`(?!\s*["“]|\'s\b)(?:,\s*and\s+|,\s*|\s+and\s+)?)+)', line):
             paths += re.findall(r'`([^`]+)`', lst)
         paths += re.findall(r'`([^`\s]+)`\s+(?:leaves|is deleted|are deleted)\b', line)
     out, last_dir = [], None
