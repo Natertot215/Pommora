@@ -68,11 +68,8 @@ export const spaceFiles = (
 ): string[] =>
   tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 
-/**
- * The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree.
- *
- * With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `pages` and `spaces` leave out a holder no id addresses, which a strip passes over since no restore could put its value back.
- */
+// The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree.
+// With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `pages` and `spaces` leave out a holder no id addresses, which a strip passes over since no restore could put its value back.
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)
