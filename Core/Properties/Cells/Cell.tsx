@@ -66,7 +66,7 @@ export function Cell({
       return (
         <OverScroll className="cell-chips">
           <OptionChip
-            type={dt}
+            type={column.type}
             look={style.look}
             option={opt ?? { label: v.value }}
             def={def}
@@ -80,7 +80,7 @@ export function Cell({
         <Chips value={v} label={(val) => optionLabel(def, val)} commit={commit}>
           {(val) => (
             <OptionChip
-              type={dt}
+              type={column.type}
               look={style.look}
               option={findOption(def, val) ?? { label: val }}
               {...(removesOption

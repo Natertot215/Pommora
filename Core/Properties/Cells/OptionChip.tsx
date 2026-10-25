@@ -1,5 +1,5 @@
 import type { ColumnLook } from '../columnStyles'
-import type { OptionAppearance, PropertyDefinition, PropertyType } from '../properties'
+import type { ColumnType, OptionAppearance, PropertyDefinition } from '../properties'
 import { chipOf } from '../typeDisplay'
 import { Label } from '@pommora/uix/Labels/Label'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
@@ -20,7 +20,7 @@ const STATUS_GROUP_GLYPH: Record<string, IconName> = {
 }
 
 export function optionGlyph(
-  type: PropertyType | undefined,
+  type: ColumnType,
   option: OptionChipData | undefined,
   def?: Pick<PropertyDefinition, 'status_groups'>,
 ): string {
@@ -38,7 +38,7 @@ export function OptionChip({
   onRemove,
   className,
 }: {
-  type: PropertyType | undefined
+  type: ColumnType
   look?: ColumnLook
   option: OptionChipData | undefined
   def?: Pick<PropertyDefinition, 'status_groups'>

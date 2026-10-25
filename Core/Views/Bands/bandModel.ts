@@ -1,6 +1,6 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import type { PropertyDefinition, PropertyType } from '../../Properties/properties'
+import type { ColumnType, PropertyDefinition } from '../../Properties/properties'
 import { findOption, optionLabel } from '../../Properties/propertyValue'
 import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
@@ -24,7 +24,7 @@ import type { Grouping } from '../Pipeline/group'
 type BucketFace =
   | {
       kind: 'option'
-      type: PropertyType | undefined
+      type: ColumnType
       option: OptionChipData
       def: PropertyDefinition | undefined
     }
@@ -80,7 +80,7 @@ export function headContextOf(
             label: optionLabel(def, value),
             face: {
               kind: 'option',
-              type: def?.type,
+              type: grouping!.column.type,
               option: findOption(def, value) ?? { label: value },
               def,
             },
