@@ -7,7 +7,7 @@ import {
   type ScrollbarPresence,
   type ScrollbarReveal,
 } from './devicePrefs'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Utilities/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import type { LinkDisplay } from '../Connections/linkValue'
@@ -37,7 +37,6 @@ import type { DateFormat } from '../Properties/columnStyles'
 import {
   DATE_FORMAT_OPTIONS,
   LINK_DISPLAY_OPTIONS,
-  pickerOptions,
   TIME_FORMAT_LABELS,
 } from '../Properties/displayLabels'
 import { TrashFrame } from './TrashFrame'
