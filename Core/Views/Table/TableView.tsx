@@ -10,7 +10,7 @@ import {
 import { type ColumnAlign, viewOption } from '../views'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
-import { columnType, declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
@@ -142,9 +142,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return runValueIntent(intent, {
       commit: ({ value }) => commitValue(row, col, value),
       file: () => {
-        const def = schema.find((d) => d.id === col.id)
         const current = resolveFieldValue(row, col.id, schema)
-        if (def) pickFileInto(def, current, fileChipIndex(target), (n) => commitValue(row, col, n))
+        if (col.def)
+          pickFileInto(col.def, current, fileChipIndex(target), (n) => commitValue(row, col, n))
       },
       picker: editAs('picker'),
       dateTime: editAs('picker'),
@@ -166,10 +166,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     }
     if (col.kind !== 'property' && col.kind !== 'context') return
     const intent = valueClickIntent(
-      columnType(col, schema),
+      col.type,
       resolveFieldValue(row, col.id, schema),
       colStyle(col.id).look,
-      schema.find((d) => d.id === col.id),
+      col.def,
     )
     if (runIntent(row, col, intent, e.target)) e.stopPropagation()
   }
@@ -208,7 +208,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
     if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
       return null
-    const def = schema.find((d) => d.id === col.id)
+    const { def } = col
     if (!def) return null
     return (
       <PropertyValueInput
@@ -246,7 +246,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
   const popoverField = (): React.ReactNode => {
     const c = lastCell('popover')
-    const def = c && schema.find((d) => d.id === c.col.id)
+    const def = c?.col.def
     if (!c || !def) return null
     const { cell, row, col } = c
     return (
@@ -277,8 +277,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const el = e.currentTarget as HTMLElement
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const value = resolveFieldValue(row, col.id, schema)
-    const def = schema.find((d) => d.id === col.id)
-    const dt = columnType(col, schema)
+    const { def, type: dt } = col
     const runMenuIntent = (action: CellMenuAction | LinkAction): boolean => {
       const intent = valueMenuIntent(action)
       if (intent) triggerElRef.current = cellEl
@@ -327,7 +326,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
   })
   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
-    if (pickKindOf(columnType(col, schema)) === null) return false
+    if (pickKindOf(col.type) === null) return false
     if (e.button !== 0 || (e.target as Element).closest('.row-grip')) return false
     cellSweep.begin(row.id, col.id, e)
     return true
@@ -524,7 +523,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               <ColumnHeader
                 key={c.id}
                 id={c.id}
-                label={columnLabel(c.id, schema, ctx.contexts)}
+                label={columnLabel(c, ctx.contexts)}
                 icon={headerIcon(c.id)}
                 align={alignByCol[i]}
                 transform={gapShift(dragShift, i)}

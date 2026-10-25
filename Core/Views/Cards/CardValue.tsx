@@ -8,7 +8,7 @@ import { parseStyleAction } from '../../Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { text } from '@pommora/uix/Theme/typography.css'
-import { columnType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
@@ -67,9 +67,8 @@ export function CardValue({
   }, [editing, holdGhost])
   const commit = (v: PropertyValue | null): void => onCommit(column, v)
 
-  const t = columnType(column, ctx.schema)
+  const { type: t, def } = column
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  const def = ctx.schema.find((d) => d.id === column.id)
 
   const runIntent = (
     intent: ValueIntent | null,

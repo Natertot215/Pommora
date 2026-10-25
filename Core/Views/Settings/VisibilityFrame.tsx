@@ -4,7 +4,7 @@ import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Propert
 import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
-import { resolveColumns } from '../Pipeline/columns'
+import { resolveColumn, resolveColumns } from '../Pipeline/columns'
 import { columnLabel } from '../../Properties/columnLabel'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
@@ -108,7 +108,10 @@ export function VisibilityFrame({
   const hiddenIds = hiddenListIds(view, schema, contextIds)
   // The hidden list's own membership, not hidden_properties: a prop absent from property_order is hidden by absence and reads as such.
   const hiddenSet = new Set(hiddenIds)
-  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree))
+  const nameFor = (id: string): string => {
+    const column = resolveColumn(id, schema, contextIds)
+    return column ? columnLabel(column, contextsByIdOf(tree)) : id
+  }
 
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const handleDrop = (drop: PaneDrop): void => {

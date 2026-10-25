@@ -70,7 +70,3 @@ export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdenti
 export function spacesByIdOf(tree: NexusTree): ReadonlyMap<string, SpaceIdentity> {
   return identityOf(tree).spaces
 }
-
-export function isContextColumnId(tree: NexusTree | null, id: string): boolean {
-  return tree ? identityOf(tree).contexts.has(id) : false
-}

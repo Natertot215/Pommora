@@ -1,11 +1,12 @@
-import { type ColumnType, type PropertyDefinition, specOf } from '../../Properties/properties'
+import { type ColumnType, specOf } from '../../Properties/properties'
 import { isBlankValue } from '../../Properties/propertyValue'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
 import { isCompact, type SavedView } from '../views'
 import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveColumn } from '../Pipeline/columns'
 import { columnLabel } from '../../Properties/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
@@ -27,7 +28,7 @@ export function shownColumnsFor(
       c.kind !== 'title' &&
       (!compactLayout ||
         !isBlankValue(resolveFieldValue(row, c.id, ctx.schema)) ||
-        specOf(ctx.schema.find((d) => d.id === c.id)?.type)?.blankDraws === true),
+        specOf(c.type)?.blankDraws === true),
   )
 }
 
@@ -40,7 +41,6 @@ export function addEntriesFor(
 ): AddEntry[] {
   const contextIds = contextIdsOf(tree)
   const shownIds = new Set(shownColumnsFor(row, columns, ctx, isCompact(view)).map((c) => c.id))
-  const bySchema = new Map(ctx.schema.map((d) => [d.id, d]))
   const ids = [
     ...new Set([
       ...hiddenListIds(view, ctx.schema, contextIds),
@@ -48,31 +48,23 @@ export function addEntriesFor(
       ...columns.filter((c) => c.kind === 'context').map((c) => c.id),
     ]),
   ]
-  return ids
-    .filter((id) => !shownIds.has(id))
-    .map((id) => {
-      const def = bySchema.get(id) ?? null
-      const type = declaredType(id, ctx.schema, contextIds) ?? 'context'
-      return {
-        id,
-        name: columnLabel(id, ctx.schema, contextsByIdOf(tree)),
-        type,
-        def,
-        revealOnly: !fillsBlank(type) || !isBlankValue(resolveFieldValue(row, id, ctx.schema)),
-      }
-    })
+  return ids.flatMap((id) => {
+    const column = shownIds.has(id) ? undefined : resolveColumn(id, ctx.schema, contextIds)
+    if (!column) return []
+    const blank = isBlankValue(resolveFieldValue(row, id, ctx.schema))
+    return [
+      {
+        column,
+        name: columnLabel(column, contextsByIdOf(tree)),
+        revealOnly: !fillsBlank(column.type) || !blank,
+      },
+    ]
+  })
 }
 
-export const addColumn = (id: string, tree: NexusTree | null = null): ResolvedColumn => ({
-  id,
-  kind: contextIdsOf(tree).includes(id) ? 'context' : 'property',
-})
-
 export type AddEntry = {
-  id: string
+  column: ResolvedColumn
   name: string
-  type: ColumnType
-  def: PropertyDefinition | null
   revealOnly: boolean
 }
 

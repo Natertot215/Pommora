@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { type ColumnType, specOf } from '../../Properties/properties'
+import { specOf } from '../../Properties/properties'
 import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
@@ -38,6 +38,7 @@ import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch } from '../views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
+import { resolveColumn } from '../Pipeline/columns'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
@@ -188,13 +189,11 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const commitGroupValue = (
     pageId: string,
     propertyId: string,
-    type: ColumnType | undefined,
     groupKey: string,
   ): Promise<boolean> | undefined => {
     const row = rowById.get(pageId)
-    return (
-      row && commitValue(row, { id: propertyId, kind: 'property' }, groupKeyToValue(groupKey, type))
-    )
+    const column = resolveColumn(propertyId, schema, contextIds)
+    return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
   }
   const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return
@@ -205,7 +204,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     const band = orderIds.filter((id) => rowBand.get(id) === bandKey)
     const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
-    commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
+    commitGroupValue(activeId, sortReassign.propertyId, target)
   }
   const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, view, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
