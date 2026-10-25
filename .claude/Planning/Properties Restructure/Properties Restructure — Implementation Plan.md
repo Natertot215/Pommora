@@ -28892,7 +28892,7 @@ describe('pickOver', () => {
 **CHANGE**
 
 - [ ] Rewrite and watch fail: `Core/Properties/assignValue.test.ts`' `beforeEach` builds `live = { rowOf, apply }` and stubs `useSession.setState({ tree: null, mutate })`; every `mutate` expectation stands as P6 wrote it (red until `ValueWriter` drops the field, since the writer no longer carries the mock). `Core/Interface/Menus/propertyMenuActions.test.ts`' `harness` builds its writer with `oneShotWriter(row)` and stubs the session's `mutate` to collect `sent` (AFTER).
-- [ ] Removal proof: `git grep -nw "valueCommitFor" -- Core` and `git grep -n "useRef<ValueWriter" -- Core` answer nothing; `git grep -nw "ValueWriter" -- Core ':!Core/Properties/assignValue.ts' ':!*.test.*'` answers nothing (Scoreboard: hand-built `ValueWriter` assemblies 3 → 0, assembled by two, `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu).
+- [ ] Removal proof: `git grep -nw "valueCommitFor" -- Core` answers nothing and `git grep -n "useRef<ValueWriter" -- Core` answers `useValueWriter` alone (`Core/Properties/assignValue.ts`); `git grep -nw "ValueWriter" -- Core ':!Core/Properties/assignValue.ts' ':!*.test.*'` answers nothing (Scoreboard: hand-built `ValueWriter` assemblies 3 → 0, assembled by two, `useValueWriter` for a mounted surface and `oneShotWriter` for the native menu).
 - [ ] Commit: `git commit --only -m "The value writer was assembled one way, by a hook for a surface and one call for the native menu, and stopped carrying the session's mutate." -- Core/Properties/assignValue.ts Core/Properties/assignValue.test.ts Core/Views/Host/useViewHost.ts Core/Properties/PropertyPanel.tsx Core/Interface/Menus/entityMenuActions.ts Core/Interface/Menus/propertyMenuActions.test.ts`
 
 **AFTER**
@@ -31224,7 +31224,7 @@ The style action spelling in "runs a Style answer" is `columnMenu.ts`'s at P3's 
                      />
 @@ the floating panes @@
          {bannerEditor}
--        {popover && (
+-        {popover?.column.def && (
 -          <PropertyValueInput
 -  … (HEAD :488-496, the cards' popover)
 -          />
