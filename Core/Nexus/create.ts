@@ -66,7 +66,7 @@ export async function createContainerOp(
       : await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   const extra: Record<string, unknown> = {
-    views: [mintDefaultView([])],
+    views: [mintDefaultView()],
   }
   const r = await createDisambiguated(
     req.name,

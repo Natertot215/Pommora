@@ -26,7 +26,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
   const schema = containerSchema(tree, node)
-  const view = pickView(node, schema)
+  const view = pickView(node)
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()

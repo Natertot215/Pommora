@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { SetNode } from '../../Nexus/tree'
-import type { PropertyDefinition } from '../../Properties/properties'
+import { DEFAULT_VIEW_ID } from '../views'
 import { pickView } from './pickView'
 
 const set = { kind: 'set', id: 's1', sets: [] } as unknown as SetNode
 
 describe('pickView', () => {
-  it('hands a view-less container the same minted default for the same schema', () => {
-    const schema: PropertyDefinition[] = []
-    expect(pickView(set, schema)).toBe(pickView({ ...set }, schema))
-    expect(pickView(set, [])).not.toBe(pickView(set, schema))
+  it('answers the same default view for every container with no saved view', () => {
+    const other = { kind: 'set', id: 's2', sets: [] } as unknown as SetNode
+    expect(pickView(set)).toBe(pickView(other))
+    expect(pickView(set).id).toBe(DEFAULT_VIEW_ID)
   })
 })

@@ -39,7 +39,7 @@ mountEachTest((_h, r) => {
 let seen: ReturnType<typeof useActiveView>
 
 function Probe({ node }: { node: CollectionNode }): null {
-  seen = useActiveView(node, schema)
+  seen = useActiveView(node)
   return null
 }
 

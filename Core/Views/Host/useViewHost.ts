@@ -57,7 +57,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
 
   const schema = useMemo(() => containerSchema(tree, source), [tree, source])
-  const view = useActiveView(source, schema)
+  const view = useActiveView(source)
 
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 

@@ -59,7 +59,7 @@ export function ViewFrame({
   const [colorFor, setColorFor] = useState<SavedView | null>(null)
   const menuAnchorRef = useRef<HTMLElement | null>(null)
   const views = node.views ?? []
-  const active = pickView(node, schema)
+  const active = pickView(node)
   const rows = views.length ? views : [active]
   const editing = editingId
     ? (rows.find((v) => v.id === editingId) ??
@@ -77,7 +77,7 @@ export function ViewFrame({
   }
   const createView = async (): Promise<void> => {
     reportRefusal(
-      await dialer().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema), {}),
+      await dialer().ask('views:save', node.path, node.kind, mintNewView('Untitled'), {}),
     )
   }
 

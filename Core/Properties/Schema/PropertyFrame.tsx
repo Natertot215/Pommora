@@ -183,7 +183,7 @@ export function PropertyFrame({
 }): React.JSX.Element {
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
-  const activeView = useActiveView(source, schema)
+  const activeView = useActiveView(source)
   const registry = useSession((st) => st.tree?.config.registry) ?? []
   const mutate = useSession((st) => st.mutate)
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)

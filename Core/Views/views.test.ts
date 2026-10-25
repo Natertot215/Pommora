@@ -17,7 +17,8 @@ import {
   type SavedView,
 } from './views'
 import { mapRules, type FilterGroup, type FilterRule } from './filterRules'
-import { FILEDATA } from '../Properties/properties'
+import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+import { resolveColumns } from './Pipeline/columns'
 
 describe('SavedView decode', () => {
   it('parses the fixture Table view (type, property_order, group, sort)', () => {
@@ -360,19 +361,22 @@ describe('card_banner codec', () => {
 })
 
 describe('mint seam', () => {
-  const schema = [{ id: 'prop_a' }, { id: 'prop_b' }] as never[]
-  it('mintNewView is title-only: schema ids and all three Contexts hidden', () => {
-    const v = mintNewView('Untitled', schema)
-    expect(v.name).toBe('Untitled')
+  it('a new view stores no hidden list and shows Title alone', () => {
+    const v = mintNewView('V')
+    expect(v.name).toBe('V')
     expect(v.type).toBe('table')
     expect(v.icon).toBe('view-table')
     expect(v.property_order).toEqual([FILEDATA.title.id])
-    // Context columns take no entry — absence from property_order is what hides them.
-    expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
+    expect(v.hidden_properties).toEqual([])
+    const schema: PropertyDefinition[] = [
+      { id: 'prop_a', label: 'A', key: 'A', type: 'number' },
+      { id: 'prop_b', label: 'B', key: 'B', type: 'text' },
+    ]
+    expect(resolveColumns(v, schema, []).map((c) => c.id)).toEqual([FILEDATA.title.id])
   })
-  it('mintDefaultView mints title-only (every prop + Context columns hidden) with the table glyph', () => {
-    const v = mintDefaultView(schema)
-    expect(v.hidden_properties).toEqual(['prop_a', 'prop_b'])
+  it('mintDefaultView mints title-only with the table glyph', () => {
+    const v = mintDefaultView()
+    expect(v.hidden_properties).toEqual([])
     expect(v.property_order).toEqual([FILEDATA.title.id])
     expect(v.icon).toBe('view-table')
   })

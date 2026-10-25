@@ -222,7 +222,7 @@ describe('saveViewIn — the write every settings frame routes through', () => {
   it('a refused write paints nothing on the locked tile', async () => {
     let live: SavedView = view
     function Shown(): null {
-      live = useActiveView(source, [statusDef])
+      live = useActiveView(source)
       return null
     }
     await render(
@@ -246,7 +246,7 @@ describe('saveViewIn — the write every settings frame routes through', () => {
     const shown = { ...source, views: [view] } as CollectionNode
     let save: ReturnType<typeof useSaveView> = async () => ({ ok: true, value: { id: '' } })
     function Shown(): null {
-      useActiveView(shown, [statusDef])
+      useActiveView(shown)
       save = useSaveView(shown)
       return null
     }
