@@ -3908,6 +3908,13 @@ describe('the property ops', () => {
     expect(readFileSync(join(root, 'Notes', 'Page.md'), 'utf8')).toContain('Stage: Todo')
   })
 
+  it('a put-back whose pair names an anchor the page no longer holds counts as missed', async () => {
+    const entries = [{ file: 'Notes/Page.md', fieldId: stage.id, before: 'Stage: *gone' }]
+    const r = await handleMutate(root, { op: 'putBack', entries }, nexusDeps)
+    expect(r.ok && r.value.missed).toEqual(entries)
+    expect(readFileSync(join(root, 'Notes', 'Page.md'), 'utf8')).toContain('Stage: Done')
+  })
+
   it('finishOwed renames the files an owed entry names and clears the notes file', async () => {
     await writeFile(
       join(root, 'Notes', 'Page.md'),
