@@ -518,7 +518,6 @@ describe('readNexus — the walk names what it cannot read', () => {
         {
           path: '.nexus/contexts/contexts.json',
           kind: 'registry',
-          registry: 'contexts',
           reason: 'unparsed',
         },
       ])

@@ -225,7 +225,6 @@ describe('latchBaseline', () => {
         {
           path: '.nexus/contexts/contexts.json',
           kind: 'registry',
-          registry: 'contexts',
           reason: 'unparsed',
         },
       ],
@@ -240,7 +239,6 @@ describe('latchBaseline', () => {
         {
           path: '.nexus/properties.json',
           kind: 'registry',
-          registry: 'properties',
           reason: 'unparsed',
         },
       ],

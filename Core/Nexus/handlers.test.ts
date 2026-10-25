@@ -181,7 +181,6 @@ describe('openNexusSequence', () => {
     expect(tree?.unreadable).toContainEqual({
       path: '.nexus/properties.json',
       kind: 'registry',
-      registry: 'properties',
       reason: 'unparsed',
     })
     expect(tree?.collections.find((c) => c.id === 'col-lib')?.propertyIds).toEqual(['tags'])

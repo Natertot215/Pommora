@@ -830,7 +830,6 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
         set: listing({
           path: '.nexus/properties.json',
           kind: 'registry',
-          registry: 'properties',
           reason: 'unparsed',
         }),
       },

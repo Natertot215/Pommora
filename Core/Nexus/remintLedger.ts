@@ -1,4 +1,5 @@
 import { join } from '../Paths/posix'
+import { CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { type EntityRecord, recordsOf } from './record'
 import { errText } from '../Contract/result'
@@ -53,7 +54,7 @@ export function latchBaseline(
     if (unreadable.has(p.path) || withheld(p.path)) out[id] = p
   }
   // An unusable Contexts registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
-  if (listed.some((u) => u.kind === 'registry' && u.registry === 'contexts')) {
+  if (listed.some((u) => u.kind === 'registry' && u.path === CONTEXTS_REGISTRY_REL)) {
     for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out)) out[id] = p
     }
