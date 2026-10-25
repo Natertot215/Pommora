@@ -241,8 +241,7 @@ export function useValueSeat(host: SeatHost) {
         setStyle && style
           ? { current: style, set: (key, value) => setStyle(column, key, value) }
           : undefined,
-      contextOptions:
-        column.type === 'context' && tree ? contextOptionsFor(column.id, tree, row.id) : undefined,
+      contextOptions: contextOptionsFor(column, tree, row.id),
     }
   }
 

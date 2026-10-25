@@ -364,11 +364,7 @@ export function FilterFrame({
         <ChipsField
           values={operands}
           column={column!}
-          contextOptions={
-            tree && column?.kind === 'context'
-              ? contextOptionsFor(rule.property_id, tree)
-              : undefined
-          }
+          contextOptions={contextOptionsFor(column!, tree)}
           onCommit={(values) => patch({ values })}
         />
       )
