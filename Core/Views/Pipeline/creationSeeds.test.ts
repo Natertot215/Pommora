@@ -6,13 +6,39 @@ import type { FilterGroup } from '../filterRules'
 import type { ViewRow } from '../viewRow'
 import { filterSeeds } from './creationSeeds'
 
+const listed = (...keys: string[]) => keys.map((key) => ({ id: `opt_${key}`, key, label: key }))
+
 const schema: PropertyDefinition[] = [
-  { id: 'p_status', label: 'Status', key: 'Status', type: 'status' },
-  { id: 'p_sel', label: 'Kind', key: 'Kind', type: 'select' },
-  { id: 'p_pri', label: 'Priority', key: 'Priority', type: 'select' },
+  {
+    id: 'p_status',
+    label: 'Status',
+    key: 'Status',
+    type: 'status',
+    status_groups: [{ id: 'g', label: 'All', color: '', options: listed('doing', 'Done') }],
+  },
+  {
+    id: 'p_sel',
+    label: 'Kind',
+    key: 'Kind',
+    type: 'select',
+    select_options: listed('note', 'a', 'b', 'x'),
+  },
+  {
+    id: 'p_pri',
+    label: 'Priority',
+    key: 'Priority',
+    type: 'select',
+    select_options: listed('High'),
+  },
   { id: 'p_check', label: 'Done', key: 'Done', type: 'checkbox' },
   { id: 'p_num', label: 'Count', key: 'Count', type: 'number' },
-  { id: 'p_tags', label: 'Tags', key: 'Tags', type: 'multiSelect' },
+  {
+    id: 'p_tags',
+    label: 'Tags',
+    key: 'Tags',
+    type: 'multiSelect',
+    select_options: listed('draft', 'urgent'),
+  },
   { id: 'p_notes', label: 'Notes', key: 'Notes', type: 'text' },
 ]
 
@@ -253,6 +279,28 @@ describe('filterSeeds', () => {
       ],
     }
     expect(seedsOf(filter)).toEqual({ p_pri: { kind: 'select', value: 'opt_High' } })
+  })
+
+  it("an Any group passes over a rule whose operand doesn't read", () => {
+    const filter: FilterGroup = {
+      match: 'any',
+      rules: [
+        { property_id: 'p_num', op: 'is', value: 'abc' },
+        { property_id: 'p_pri', op: 'is', value: 'opt_High' },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({ p_pri: { kind: 'select', value: 'opt_High' } })
+  })
+
+  it('a rule naming an option no longer listed seeds nothing', () => {
+    const filter: FilterGroup = {
+      match: 'all',
+      rules: [
+        { property_id: 'p_pri', op: 'is', value: 'opt_gone' },
+        { property_id: 'p_tags', op: 'contains_any', values: ['opt_gone'] },
+      ],
+    }
+    expect(seedsOf(filter)).toEqual({})
   })
 
   it('derives a one-option list from a one-chip Multi-Select Is Any or Is All rule', () => {

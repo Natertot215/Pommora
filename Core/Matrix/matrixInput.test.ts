@@ -172,14 +172,14 @@ const all = (...rules: FilterGroup['rules']): FilterGroup => ({ match: 'all', ru
 
 describe('matrixVisible over Spaces', () => {
   it('judges a Space on the rules it can answer and abstains on the rest', () => {
-    expect(spacesVisible(all({ property_id: 'prop_status', op: 'is', value: 'Active' }))).toEqual([
-      'b1',
-    ])
+    expect(
+      spacesVisible(all({ property_id: 'prop_status', op: 'is', value: 'opt_Active' })),
+    ).toEqual(['b1'])
     expect(spacesVisible(all({ property_id: 'prop_status', op: 'is_not_empty' }))).toEqual(['a1'])
   })
 
   it('abstains on a rule for a Space holding another casing of the property’s key', () => {
-    const rule = all({ property_id: 'prop_status', op: 'is', value: 'Active' })
+    const rule = all({ property_id: 'prop_status', op: 'is', value: 'opt_Active' })
     expect(spacesVisible(rule, { status: 'Done' })).toEqual(['a1', 'b1'])
   })
 

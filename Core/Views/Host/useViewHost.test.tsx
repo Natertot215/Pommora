@@ -1026,7 +1026,7 @@ describe('the root seat', () => {
       collection({
         filter: {
           match: 'all',
-          rules: [{ property_id: 'prop_status', op: 'is', value: 'opt_archived' }],
+          rules: [{ property_id: '_title', op: 'is', value: 'nothing' }],
         },
       } as unknown as Partial<SavedView>),
     )

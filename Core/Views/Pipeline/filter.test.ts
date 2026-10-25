@@ -301,16 +301,16 @@ describe('applyFilter — per type', () => {
     ).toEqual(['b'])
   })
 
-  it('select is / is_not compare exactly; title folds', () => {
+  it('select is / is_not name a listed option exactly, and sit out on an unlisted one; title folds', () => {
     const rows = [
       row('Bread', { props: { prop_sel: 'alpha' } }),
       row('Milk', { props: { prop_sel: 'beta' } }),
     ]
     const run = (property_id: string, op: string, value: string): string[] =>
       ids(rows, { match: 'all', rules: [{ property_id, op, value }] })
-    expect(run('prop_sel', 'is', 'opt_ALPHA')).toEqual([])
+    expect(run('prop_sel', 'is', 'opt_ALPHA')).toEqual(['Bread', 'Milk'])
     expect(run('prop_sel', 'is', 'opt_alpha')).toEqual(['Bread'])
-    expect(run('prop_sel', 'is_not', 'opt_ALPHA')).toEqual(['Bread', 'Milk'])
+    expect(run('prop_sel', 'is_not', 'opt_alpha')).toEqual(['Milk'])
     expect(run('_title', 'is', 'bread')).toEqual(['Bread'])
     expect(run('_title', 'is_not', 'bread')).toEqual(['Milk'])
     expect(run('prop_sel', 'contains', 'ALP')).toEqual(['Bread'])
@@ -381,7 +381,7 @@ describe('applyFilter — per type', () => {
     ).toEqual(['c'])
   })
 
-  it('checkbox supports is / is_empty; false on disk is empty; is_not_empty is a no-op pass', () => {
+  it('checkbox supports is, is_empty, and is_not_empty; false on disk is empty; an unreadable word abstains', () => {
     const rows = [
       row('t', { props: { prop_done: true } }),
       row('f', { props: { prop_done: false } }),
@@ -404,7 +404,7 @@ describe('applyFilter — per type', () => {
     ).toEqual(['f', 'n'])
     expect(
       ids(rows, { match: 'all', rules: [{ property_id: 'prop_done', op: 'is_not_empty' }] }),
-    ).toEqual(['t', 'f', 'n'])
+    ).toEqual(['t'])
   })
 
   it('status filters as text — the declared type routes it, not the value kind', () => {
@@ -422,13 +422,12 @@ describe('applyFilter — per type', () => {
         rules: [{ property_id: 'prop_st', op: 'contains', value: 'pe' }],
       }),
     ).toEqual(['open'])
-    // The regression this pins: a dropped case sends every rule to the no-op default, which matches every row rather than none.
     expect(
       ids([done, open], {
         match: 'all',
-        rules: [{ property_id: 'prop_st', op: 'is', value: 'opt_Nothing' }],
+        rules: [{ property_id: 'prop_st', op: 'is_not', value: 'opt_Done' }],
       }),
-    ).toEqual([])
+    ).toEqual(['open'])
   })
 
   it('a Context filters by id-list membership', () => {
@@ -574,17 +573,31 @@ describe('applyFilter — negation + registry', () => {
     ).toEqual(['r2'])
   })
 
-  it('an operator a kind leaves unhandled votes true, and one Location lacks abstains', () => {
+  it("an operator a kind doesn't answer abstains, as one Location doesn't answer does", () => {
     const any = (rule: FilterGroup['rules'][number]) =>
       applyFilter(
         rows,
-        { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_zzz' }] },
+        { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_beta' }] },
         schema,
         [{ id: 'set_a', title: 'A' }],
         [],
       ).map((r) => r.id)
-    expect(any({ property_id: 'prop_done', op: 'is_not_empty' })).toEqual(['r1', 'r2'])
+    expect(any({ property_id: 'prop_done', op: 'greater_than', value: 'true' })).toEqual([])
     expect(any({ property_id: '_location', op: 'contains', value: 'set_a' })).toEqual([])
+  })
+
+  it("a rule whose operand doesn't read abstains, so its Any group answers by the other rule", () => {
+    const any = (rule: FilterGroup['rules'][number]) =>
+      ids(rows, {
+        match: 'any',
+        rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_a' }],
+      })
+    expect(any({ property_id: 'prop_num', op: 'is', value: 'abc' })).toEqual(['r1'])
+    expect(any({ property_id: 'prop_when', op: 'is', value: 'soon' })).toEqual(['r1'])
+    expect(any({ property_id: 'prop_sel', op: 'is', value: 'opt_gone' })).toEqual(['r1'])
+    expect(any({ property_id: 'prop_tags', op: 'contains_any', values: ['opt_gone'] })).toEqual([
+      'r1',
+    ])
   })
 
   it('registers every new op raw string', () => {
@@ -728,7 +741,7 @@ describe('applyFilter — new single-operand ops', () => {
     ).toEqual(['late'])
   })
 
-  it('a single-operand check reads the chip list first, and an unreadable operand passes', () => {
+  it('a single-operand check reads the chip list first, and an unreadable operand abstains', () => {
     const pair = [rows[4], rows[5]]
     const rule = (extra: object) => ({
       match: 'all' as const,

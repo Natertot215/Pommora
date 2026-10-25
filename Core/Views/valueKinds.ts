@@ -1,0 +1,273 @@
+// What each value kind does in a view: the operators the filter pane offers, how a rule tests a value, the key a sort compares, the band a grouping files a value under, and the value a new page takes from a rule, a band, or a sort neighbor.
+
+import { foldKey } from '../Paths/caseFold'
+import {
+  type ColumnType,
+  optionIds,
+  type PropertyDefinition,
+  specOf,
+} from '../Properties/properties'
+import {
+  checkboxWord,
+  isBlankValue,
+  type PropertyValue,
+  readNumber,
+  selectedValues,
+  type ValueKind,
+} from '../Properties/propertyValue'
+import { dayMs, type LocalDate, readDate, shownText } from '../Properties/formatValue'
+import { FILTER_OPS } from './filterRules'
+
+type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
+
+export interface OperatorChoice {
+  op: string
+  label: string
+  slot: ValueSlot
+  impliedValue?: string
+  /** A typed folder name is an operand as well as a picked folder. */
+  names?: true
+}
+
+export type ValueTest = (v: PropertyValue) => boolean
+
+export type ValueKindSpec = Readonly<{
+  /** The operators the filter pane offers, in its menu's order; a hand-written rule may hold others the kind still answers. */
+  ops: readonly OperatorChoice[]
+  /** Is Empty matches a value this reads as unfilled, and Isn't Empty one it reads as filled. */
+  filled: ValueTest
+  /** A rule's test, its operands read once; undefined, so the rule abstains, for an op the kind doesn't answer or an operand that doesn't read. */
+  prepare(op: string, want: readonly string[], def?: PropertyDefinition): ValueTest | undefined
+}>
+
+const EMPTIES: OperatorChoice[] = [
+  { op: FILTER_OPS.isEmpty, label: 'Is Empty', slot: 'none' },
+  { op: FILTER_OPS.isNotEmpty, label: "Isn't Empty", slot: 'none' },
+]
+
+const TEXT_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'text' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'text' },
+  { op: FILTER_OPS.startsWith, label: 'Starts With', slot: 'text' },
+  { op: FILTER_OPS.contains, label: 'Contains', slot: 'text' },
+  { op: FILTER_OPS.doesNotContain, label: "Doesn't Contain", slot: 'text' },
+  ...EMPTIES,
+]
+
+/** The Starts and Ends ops are inclusive — the strict variants stay registered for hand-authored files, but the frame doesn't offer a second near-identical set. */
+const DATE_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'date' },
+  { op: FILTER_OPS.onOrBefore, label: 'Starts Before', slot: 'date' },
+  { op: FILTER_OPS.onOrAfter, label: 'Starts After', slot: 'date' },
+  { op: FILTER_OPS.endsOnOrBefore, label: 'Ends Before', slot: 'date' },
+  { op: FILTER_OPS.endsOnOrAfter, label: 'Ends After', slot: 'date' },
+  ...EMPTIES,
+]
+
+const SET_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips' },
+  { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips' },
+  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips' },
+  ...EMPTIES,
+]
+
+const NUMBER_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'number' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'number' },
+  { op: FILTER_OPS.greaterThan, label: 'Greater Than', slot: 'number' },
+  { op: FILTER_OPS.greaterOrEqual, label: 'At Least', slot: 'number' },
+  { op: FILTER_OPS.lessThan, label: 'Less Than', slot: 'number' },
+  { op: FILTER_OPS.lessOrEqual, label: 'At Most', slot: 'number' },
+  ...EMPTIES,
+]
+
+/** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
+const OPTION_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is', slot: 'chips' },
+  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips' },
+  ...EMPTIES,
+]
+
+const CHECKBOX_OPS: OperatorChoice[] = [
+  { op: FILTER_OPS.is, label: 'Is Checked', slot: 'none', impliedValue: 'true' },
+  { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
+]
+
+const notBlank: ValueTest = (v) => !isBlankValue(v)
+const showsText: ValueTest = (v) => !!shownText(v)
+
+/** Is and Isn't compare a value's whole shown text, and the others search within it, folded on both sides. */
+function prepareText(
+  op: string,
+  want: readonly string[],
+  def?: PropertyDefinition,
+): ValueTest | undefined {
+  const w = want.map(foldKey)
+  const shown = (v: PropertyValue): string | null => {
+    const s = shownText(v, def)
+    return s === null ? null : foldKey(s)
+  }
+  const is: ValueTest = (v) => {
+    const f = shown(v)
+    return f !== null && w.includes(f)
+  }
+  const contains: ValueTest = (v) => shown(v)?.includes(w[0]) ?? false
+  switch (op) {
+    case FILTER_OPS.is:
+      return is
+    case FILTER_OPS.isNot:
+      return (v) => !is(v)
+    case FILTER_OPS.contains:
+      return contains
+    case FILTER_OPS.doesNotContain:
+      return (v) => !contains(v)
+    case FILTER_OPS.startsWith:
+      return (v) => shown(v)?.startsWith(w[0]) ?? false
+    default:
+      return undefined
+  }
+}
+
+/** Is and the containing ops match a value holding any operand, Is All one holding every operand, and the two negations a value holding none. */
+function prepareMembers(op: string, want: readonly string[]): ValueTest | undefined {
+  const any: ValueTest = (v) => selectedValues(v).some((x) => want.includes(x))
+  switch (op) {
+    case FILTER_OPS.containsAll:
+      return (v) => {
+        const xs = selectedValues(v)
+        return want.every((w) => xs.includes(w))
+      }
+    case FILTER_OPS.is:
+    case FILTER_OPS.contains:
+    case FILTER_OPS.containsAny:
+      return any
+    case FILTER_OPS.isNot:
+    case FILTER_OPS.doesNotContain:
+      return (v) => !any(v)
+    default:
+      return undefined
+  }
+}
+
+/** A Select's or Multi-Select's operands, kept only where they name a listed option; a rule naming none sits out, as an unreadable Number or Date operand does. */
+function prepareOptions(
+  op: string,
+  want: readonly string[],
+  def?: PropertyDefinition,
+): ValueTest | undefined {
+  const listed = new Set(def ? optionIds(def) : [])
+  const live = want.filter((id) => listed.has(id))
+  return live.length ? prepareMembers(op, live) : undefined
+}
+
+function prepareNumber(op: string, want: readonly string[]): ValueTest | undefined {
+  const e = readNumber(want[0])
+  if (e === undefined) return undefined
+  const holds =
+    (test: (n: number) => boolean): ValueTest =>
+    (v) =>
+      v.kind === 'number' && test(v.value)
+  const is = holds((n) => n === e)
+  switch (op) {
+    case FILTER_OPS.is:
+      return is
+    case FILTER_OPS.isNot:
+      return (v) => !is(v)
+    case FILTER_OPS.greaterThan:
+      return holds((n) => n > e)
+    case FILTER_OPS.lessThan:
+      return holds((n) => n < e)
+    case FILTER_OPS.greaterOrEqual:
+      return holds((n) => n >= e)
+    case FILTER_OPS.lessOrEqual:
+      return holds((n) => n <= e)
+    default:
+      return undefined
+  }
+}
+
+/** Days are the local days the cells show. `is` matches a day the value spans; a bare-day operand orders by day, and one carrying a time orders by instant. The Starts ops and the strict pair read a span's start, the Ends ops its end. */
+function prepareDate(op: string, want: readonly string[]): ValueTest | undefined {
+  const target = readDate(want[0])
+  if (target === null) return undefined
+  const ms = (x: Date): number => (target.timed ? x.getTime() : dayMs(x))
+  const e = ms(target.at)
+  const day = dayMs(target.at)
+  // A clockless end holds its whole day, so a timed operand meets it at the day's last instant.
+  const endMs = (d: LocalDate): number => {
+    const last = d.end ?? d.at
+    return d.timed || !target.timed
+      ? ms(last)
+      : new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1).getTime() - 1
+  }
+  const dated =
+    (test: (d: LocalDate) => boolean): ValueTest =>
+    (v) => {
+      const d = v.kind === 'dateTime' ? readDate(v.value) : null
+      return d !== null && test(d)
+    }
+  switch (op) {
+    case FILTER_OPS.is:
+      return dated((d) => dayMs(d.at) <= day && day <= dayMs(d.end ?? d.at))
+    case FILTER_OPS.isBefore:
+      return dated((d) => ms(d.at) < e)
+    case FILTER_OPS.isAfter:
+      return dated((d) => ms(d.at) > e)
+    case FILTER_OPS.onOrAfter:
+      return dated((d) => ms(d.at) >= e)
+    case FILTER_OPS.onOrBefore:
+      return dated((d) => ms(d.at) <= e)
+    case FILTER_OPS.endsOnOrAfter:
+      return dated((d) => endMs(d) >= e)
+    case FILTER_OPS.endsOnOrBefore:
+      return dated((d) => endMs(d) <= e)
+    default:
+      return undefined
+  }
+}
+
+function prepareCheckbox(op: string, want: readonly string[]): ValueTest | undefined {
+  const checked = checkboxWord(want[0])
+  if (checked === null) return undefined
+  const is: ValueTest = (v) => (v.kind === 'checkbox') === checked
+  switch (op) {
+    case FILTER_OPS.is:
+      return is
+    case FILTER_OPS.isNot:
+      return (v) => !is(v)
+    default:
+      return undefined
+  }
+}
+
+const PROSE: ValueKindSpec = { ops: TEXT_OPS, filled: showsText, prepare: prepareText }
+
+export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
+  text: PROSE,
+  link: PROSE,
+  number: { ops: NUMBER_OPS, filled: notBlank, prepare: prepareNumber },
+  dateTime: {
+    ops: DATE_OPS,
+    filled: (v) => v.kind === 'dateTime' && readDate(v.value) !== null,
+    prepare: prepareDate,
+  },
+  checkbox: { ops: CHECKBOX_OPS, filled: notBlank, prepare: prepareCheckbox },
+  // Is and Isn't name whole options; the text ops a hand-written rule may hold search the option's label.
+  select: {
+    ops: OPTION_OPS,
+    filled: notBlank,
+    prepare: (op, want, def) =>
+      op === FILTER_OPS.is || op === FILTER_OPS.isNot
+        ? prepareOptions(op, want, def)
+        : prepareText(op, want, def),
+  },
+  multiSelect: { ops: SET_OPS, filled: notBlank, prepare: prepareOptions },
+  context: { ops: SET_OPS, filled: notBlank, prepare: prepareMembers },
+  file: { ops: EMPTIES, filled: notBlank, prepare: () => undefined },
+}
+
+/** A column type's entry in the record; none for a property that's gone. */
+export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefined => {
+  const spec = specOf(type)
+  return spec && VALUE_KINDS[spec.kind]
+}
