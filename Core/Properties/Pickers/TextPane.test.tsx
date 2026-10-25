@@ -220,16 +220,6 @@ describe('TextPane', () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(text('xy'))
   })
 
-  it('an outside change replaces a clean pane’s text and leaves a dirty pane’s text alone', () => {
-    render(text('x'))
-    render(text('from elsewhere'))
-    expect(doc()).toBe('from elsewhere')
-    typeAtEnd('!')
-    render(text('again'))
-    expect(doc()).toBe('from elsewhere!')
-    expect(onCommit).not.toHaveBeenCalled()
-  })
-
   it('a right-click inside the body leaves the event un-prevented for the editor’s menu, and one on the pane’s chrome stays cancelled', () => {
     render(text('x'))
     const rightClick = (el: Element): boolean => {

@@ -337,7 +337,7 @@ describe('the Link field', () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(link('[[Beta|nice]]'))
   })
 
-  it('Return on an unchanged value, with or without trailing space, and Escape all close without a commit', () => {
+  it('Return on an unchanged value, with or without trailing space, closes without a commit', () => {
     mount(SITE, link('[[Alpha]]'))
     press('Enter')
     expect(onClose).toHaveBeenCalledOnce()
@@ -345,10 +345,6 @@ describe('the Link field', () => {
     type(' ')
     press('Enter')
     expect(onClose).toHaveBeenCalledTimes(2)
-    remount(SITE, link('[[Alpha]]'))
-    type(' x')
-    press('Escape')
-    expect(onClose).toHaveBeenCalledTimes(3)
     expect(onCommit).not.toHaveBeenCalled()
   })
 

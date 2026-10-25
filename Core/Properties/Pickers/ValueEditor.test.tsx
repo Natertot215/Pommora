@@ -244,6 +244,7 @@ describe('ValueEditor in its one-line mode', () => {
     type(view, '!')
     mount('c')
     expect(doc(view)).toBe('b!')
+    expect(onCommit).not.toHaveBeenCalled()
   })
 })
 
