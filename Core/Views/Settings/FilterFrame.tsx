@@ -28,11 +28,12 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
-import { useStyleFor } from '../Host/useColumnStyles'
+import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 import { useSetting } from '../../Session/store'
 import { formatDate, readDate } from '../../Properties/formatValue'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
-import { declaredType } from '../../Properties/fieldValue'
+import { resolveColumn } from '../Pipeline/columns'
+import type { ResolvedColumn } from '../viewRow'
 import { checkboxWord } from '../../Properties/propertyValue'
 import {
   PropertyOptionRows,
@@ -231,7 +232,7 @@ export function FilterFrame({
   maxHeight?: number
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
-  const styleFor = useStyleFor()
+  const nexus = useNexusForms()
   const nexusClock = useSetting('timeFormat')
   const [draft, setDraft] = useState<string | null>(null)
   const minted = useRef(0)
@@ -262,7 +263,6 @@ export function FilterFrame({
 
   const contextIds = contextIdsOf(tree)
   const targets = supplied ?? filterTargets(schema, tree, locations.length > 0)
-  const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
   const folderById = useMemo(
     () => new Map(flattenNodes(locations).map((n) => [n.id, n])),
@@ -320,11 +320,12 @@ export function FilterFrame({
     rule: FilterRule,
     index: number,
     op: OperatorChoice | undefined,
+    column: ResolvedColumn | undefined,
   ): React.ReactNode => {
     if (!op || op.slot === 'none') return null
     const operands = ruleOperands(rule)
     const operand = operands[0] ?? ''
-    const def = defById.get(rule.property_id)
+    const def = column?.def
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
       replaceRule(index, {
         property_id: rule.property_id,
@@ -350,7 +351,7 @@ export function FilterFrame({
       )
 
     if (op.slot === 'date') {
-      const fmtRaw = styleFor(rule.property_id, schema, view).date_format
+      const fmtRaw = styleFor(column!, view, nexus).date_format
       const fmt = fmtRaw === 'relative' ? 'short' : fmtRaw
       return (
         <FieldPicker
@@ -377,7 +378,7 @@ export function FilterFrame({
           values={operands}
           def={def ?? syntheticContextDef(rule.property_id)}
           contextOptions={
-            tree && declaredType(rule.property_id, schema, contextIds) === 'context'
+            tree && column?.kind === 'context'
               ? contextOptionsFor(rule.property_id, tree)
               : undefined
           }
@@ -397,6 +398,7 @@ export function FilterFrame({
   }
 
   const ruleRow = (rule: FilterRule, index: number): React.JSX.Element => {
+    const column = resolveColumn(rule.property_id, schema, contextIds)
     const ops = operatorsFor(rule.property_id, schema, contextIds)
     const current = ops.find(
       (o) =>
@@ -405,9 +407,9 @@ export function FilterFrame({
           checkboxWord(o.impliedValue) === checkboxWord(ruleOperands(rule)[0])),
     )
     const target = targetById.get(rule.property_id)
-    const isCheckbox = declaredType(rule.property_id, schema, contextIds) === 'checkbox'
-    const checkboxColor = defById.get(rule.property_id)?.checkbox_color
-    const checkboxLook = styleFor(rule.property_id, schema, view).look
+    const isCheckbox = column?.type === 'checkbox'
+    const checkboxColor = column?.def?.checkbox_color
+    const checkboxLook = column && styleFor(column, view, nexus).look
     const checkboxBox = (o: OperatorChoice): React.JSX.Element => (
       <CheckboxGlyph
         checked={o.impliedValue === 'true'}
@@ -476,7 +478,7 @@ export function FilterFrame({
               })
             }
           </FieldPicker>
-          {valueCell(rule, index, current)}
+          {valueCell(rule, index, current, column)}
           <RowRemove ariaLabel="Remove filter" onClick={() => removeRow(index)} />
         </div>
       </Reveal>

@@ -62,14 +62,15 @@ export function headContextOf(
   sets: SetIndex,
   grouping: Grouping | undefined,
   view: SavedView,
-  styleOf: (columnId: string) => ColumnStyle,
+  dateFormat: ColumnStyle['date_format'] | undefined,
   foldersOpen: boolean,
 ): HeadContext {
   const def = grouping?.column.def
   const date =
     grouping &&
+    dateFormat &&
     def?.type === 'dateTime' &&
-    dateLabeller(view, grouping.config, styleOf(grouping.config.property_id).date_format)
+    dateLabeller(view, grouping.config, dateFormat)
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,

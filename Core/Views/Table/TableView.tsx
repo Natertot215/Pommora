@@ -304,7 +304,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
     if (interactions.runTitleAction(action, row, glyph)) return
     if (runFileMenuAction(action, def, value, chip, (n) => commitValue(row, col, n))) return
-    if (!runMenuIntent(action)) runStyleAction(col.id, action)
+    if (!runMenuIntent(action)) runStyleAction(col, action)
   }
 
   // ── The sweep ─────────────────────────────────────────────────────────────

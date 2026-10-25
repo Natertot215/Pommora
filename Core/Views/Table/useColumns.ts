@@ -16,8 +16,8 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
 import { declaredType } from '../../Properties/fieldValue'
-import { useColumnStyleMap } from '../Host/useColumnStyles'
 import type { ViewHostApi } from '../Host/useViewHost'
+import type { ResolvedColumn } from '../viewRow'
 
 // ── Widths ──────────────────────────────────────────────────────────────────
 
@@ -183,7 +183,7 @@ export function useColumns(host: ViewHostApi) {
   }, [view.id])
 
   const iconsShown = !viewOption(view, 'hide_column_icons')
-  const styleMap = useColumnStyleMap(host)
+  const { styleById } = host
   const storedWidth = (id: string): number =>
     (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ??
     widthFor(id, schema, contextIds).default
@@ -191,7 +191,7 @@ export function useColumns(host: ViewHostApi) {
     () => columns.map((c) => alignFor(c.id, schema, view, contextIds)),
     [columns, schema, view, contextIds],
   )
-  const styleByCol = useMemo(() => columns.map((c) => styleMap.get(c.id)!), [columns, styleMap])
+  const styleByCol = useMemo(() => columns.map((c) => styleById.get(c.id)!), [columns, styleById])
   const widthByCol = useMemo(
     () =>
       columns.map((c, i) =>
@@ -297,9 +297,9 @@ export function useColumns(host: ViewHostApi) {
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
     void persistView({ column_alignments: { [id]: align } })
   }
-  const runStyleAction = (id: string, action: string): void => {
+  const runStyleAction = (column: ResolvedColumn, action: string): void => {
     const parsed = parseStyleAction(action)
-    if (parsed) setStylePatch(id, parsed.key, parsed.value)
+    if (parsed) setStylePatch(column, parsed.key, parsed.value)
   }
   const openHeaderMenu = async (
     id: string,
@@ -326,7 +326,7 @@ export function useColumns(host: ViewHostApi) {
     else if (action === 'column:toggle-icons') void persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
-    else if (action) runStyleAction(id, action)
+    else if (action) runStyleAction(columns[indexOf(id)], action)
   }
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
     if (e.button !== 0) return

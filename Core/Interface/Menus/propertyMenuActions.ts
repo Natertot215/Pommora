@@ -85,7 +85,7 @@ export function runPropertyAction(
   }: PropertyMenuTarget & {
     commit: (column: ResolvedColumn, value: PropertyValue | null) => void
     trigger: HTMLElement
-    styleOf?: (id: string) => ColumnStyle
+    styleOf?: (column: ResolvedColumn) => ColumnStyle
   },
 ): boolean {
   const parsed = parsePropertyAction(action)
@@ -106,7 +106,7 @@ export function runPropertyAction(
         holder: tree ? pagesByIdOf(tree).get(row.id) : undefined,
         trigger,
         commit: commitValue,
-        style: styleOf?.(id),
+        style: styleOf?.(column),
       })
     return true
   }
