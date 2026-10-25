@@ -52,7 +52,7 @@ afterEach(async () => {
 })
 
 const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft['type'] }) =>
-  ({ id: '', ...over }) as PropertyDraft
+  over as PropertyDraft
 
 const registryFilePath = () => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
@@ -136,7 +136,7 @@ describe('createProperty', () => {
   })
 
   it('writes the landed label as both the label and the key', async () => {
-    const r = await createProperty(root, { id: '', label: 'Priority', type: 'number' })
+    const r = await createProperty(root, { label: 'Priority', type: 'number' })
     if (!r.ok) throw new Error('create failed')
     expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
       label: 'Priority',
@@ -146,7 +146,6 @@ describe('createProperty', () => {
 
   it('writes the key from the landed label through the Key Format', async () => {
     const r = await createProperty(root, {
-      id: '',
       label: 'Due Date',
       type: 'dateTime',
       key_format: 'snake_case',

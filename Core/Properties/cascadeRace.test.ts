@@ -41,7 +41,6 @@ afterEach(async () => {
 
 async function setup(root: string, value: string): Promise<{ propertyId: string; rel: string }> {
   const c = await createProperty(root, {
-    id: '',
     label: 'P',
     type: 'select',
     select_options: [{ id: `opt_${value}`, key: value, label: value }],

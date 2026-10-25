@@ -63,7 +63,6 @@ beforeEach(async () => {
   root = tempRoot('pom-prop-handlers-')
   const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   const p = await createProperty(root, {
-    id: '',
     label: 'Stage',
     type: 'select',
     select_options: [

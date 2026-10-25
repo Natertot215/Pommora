@@ -43,13 +43,11 @@ beforeEach(async () => {
   if (!col.ok) throw new Error('setup')
   notes = col.value.path
   const status = await createProperty(root, {
-    id: '',
     label: 'Status',
     type: 'select',
     select_options: [{ id: 'opt_Open', key: 'Open', label: 'Open' }],
   })
   const priority = await createProperty(root, {
-    id: '',
     label: 'Priority',
     type: 'number',
   })

@@ -318,7 +318,6 @@ async function group3() {
   const colA = JSON.parse(readRel('Collection A/_pagecollection.json')).id
   const alpha = JSON.parse(readRel('Collection A/Set Alpha/_pageset.json')).id
   const { created: { propertyId: stage } } = await must('add Drive Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
-    id: '',
     label: 'Drive Stage',
     type: 'select',
     select_options: [{ key: 'Draft', label: 'Draft' }],

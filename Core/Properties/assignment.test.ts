@@ -60,7 +60,7 @@ it('reorder moves within the assignment array', async () => {
 
 it('a Remove racing an Assign on ONE collection never loses either write', async () => {
   const mk = async (name: string): Promise<string> => {
-    const r = await createProperty(root, { id: '', label: name, type: 'number' } as never)
+    const r = await createProperty(root, { label: name, type: 'number' } as never)
     if (!r.ok) throw new Error('setup failed')
     return r.value.id
   }
@@ -102,7 +102,7 @@ describe('a re-assign puts a stashed value back', () => {
     property: Omit<PropertyDefinition, 'id'> = status,
     stashed = 'Status: hi',
   ): Promise<Record<string, unknown>> => {
-    const made = await createProperty(root, { id: '', ...property })
+    const made = await createProperty(root, { ...property })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, notes, made.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
@@ -164,7 +164,7 @@ describe('a re-assign puts a stashed value back', () => {
   }
 
   it('refills an archived member of the Collection where the Archive holds it', async () => {
-    const made = await createProperty(root, { id: '', ...status })
+    const made = await createProperty(root, { ...status })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, notes, made.value.id)
     const old = await archivedPage('Status: hi\n')
@@ -199,7 +199,7 @@ describe('a re-assign that can’t refill a page', () => {
   // The session holds the tree, so a page that can't be written still reads as the Collection's.
   beforeEach(async () => {
     await openSession(root)
-    const c = await createProperty(root, { id: '', label: 'Priority', type: 'number' } as never)
+    const c = await createProperty(root, { label: 'Priority', type: 'number' } as never)
     const p = await createTestPage(notes, 'A', { body: 'b' })
     if (!c.ok || !p.ok) throw new Error('setup failed')
     propertyId = c.value.id

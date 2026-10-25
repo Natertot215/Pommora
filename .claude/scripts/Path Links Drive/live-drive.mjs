@@ -175,7 +175,7 @@ let bodyCases = CASES
 
 async function seed(cdp) {
   for (const [name, type] of [[LINK, 'link'], [TEXT, 'text'], [FILE, 'file']]) {
-    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: name, type } })
     if (!r.ok) throw new Error(`The seed stops: addProperty refused ${name}: ${show(r)}`)
     props[name] = r.value.created.propertyId
   }
@@ -1295,7 +1295,7 @@ async function scale(cdp) {
   await cdp.send('Page.reload')
   await until('the sidebar', () => cdp.evaluate(`[...document.querySelectorAll('.row span')].some((e) => e.textContent.trim() === ${JSON.stringify(seeded.first)})`), 60000)
   await sleep(8000)
-  const added = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: seeded.first, draft: { id: '', label: BENCH_LINK, type: 'link' } })
+  const added = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: seeded.first, draft: { label: BENCH_LINK, type: 'link' } })
   if (!added.ok) throw new Error(`addProperty refused ${BENCH_LINK}: ${show(added)}`)
   for (const [v, order] of [[BENCH_VIEW, ['_title', added.value.created.propertyId]], [BENCH_PLAIN_VIEW, ['_title']]])
     await must(v.name, ask(cdp, 'views:save', seeded.first, 'collection', { id: v.id, name: v.name, type: 'table', property_order: order, hidden_properties: added.value.created.propertyId === order.at(-1) ? [] : [added.value.created.propertyId] }, {}))

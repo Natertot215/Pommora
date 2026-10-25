@@ -2742,7 +2742,7 @@ describe('the Contexts lock', () => {
   })
 
   it('a color queued behind a Space rename lands on the renamed Space, and a value addressed to its old path is refused', async () => {
-    const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
+    const stage = await createProperty(root, { label: 'Stage', type: 'number' })
     if (!stage.ok) throw new Error('setup')
     await refreshTree(root)
     // Unlocked, the rename waits until the color has read the Space's path, and the color writes only once the rename is done; locked, it waits until the color queues on the lock.
@@ -2887,7 +2887,7 @@ describe('the Contexts lock', () => {
     pause: () => { reached: Promise<void>; release: () => void },
     tagged: boolean,
   ): Promise<void> => {
-    const stage = await createProperty(root, { id: '', label: 'Stage', type: 'number' })
+    const stage = await createProperty(root, { label: 'Stage', type: 'number' })
     if (!stage.ok) throw new Error('setup')
     await refreshTree(root)
     const paused = pause()

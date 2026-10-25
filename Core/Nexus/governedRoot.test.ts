@@ -696,12 +696,10 @@ describe('pageWorldOf', () => {
     if (!col.ok) throw new Error('setup')
     notes = col.value.path
     const status = await createProperty(root, {
-      id: '',
       label: 'Status',
       type: 'select',
     })
     const priority = await createProperty(root, {
-      id: '',
       label: 'Priority',
       type: 'number',
     })

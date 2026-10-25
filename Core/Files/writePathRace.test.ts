@@ -75,7 +75,7 @@ describe('concurrent sidecar writers', () => {
 
 describe('a value write racing a body write on one page', () => {
   it('keeps both, since the value write takes the page key', async () => {
-    const made = await createProperty(root, { id: '', label: 'Priority', type: 'text' })
+    const made = await createProperty(root, { label: 'Priority', type: 'text' })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, folder, made.value.id)
     const p = await createTestPage(folder, 'Note', { body: 'first' })

@@ -41,12 +41,10 @@ beforeEach(async () => {
   )
   await settings(true)
   const status = await createProperty(root, {
-    id: '',
     label: 'Status',
     type: 'status',
   })
   const tags = await createProperty(root, {
-    id: '',
     label: 'Tags',
     type: 'multiSelect',
     select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],

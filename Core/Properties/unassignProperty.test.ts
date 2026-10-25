@@ -49,7 +49,6 @@ let pageA: string
 let pageB: string
 
 const stageDef = {
-  id: '',
   label: 'Stage',
   key: 'Stage',
   type: 'status',
@@ -547,7 +546,6 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
 
   it('restores select values whose STRINGS look like dates or URLs — type-directed, never shape-inferred', async () => {
     const sel = await createProperty(root, {
-      id: '',
       label: 'Milestone',
       type: 'select',
       select_options: [
@@ -574,7 +572,6 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
 
   it('a Multi-Select re-add keeps the words no option names beside its options', async () => {
     const tags = await createProperty(root, {
-      id: '',
       label: 'Tags',
       type: 'multiSelect',
       select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],

@@ -72,7 +72,7 @@ afterEach(async () => {
 })
 
 async function mkProperty(def: Omit<PropertyDefinition, 'id'>): Promise<string> {
-  const c = await createProperty(root, { id: '', ...def })
+  const c = await createProperty(root, { ...def })
   if (!c.ok) throw new Error('createProperty failed')
   return c.value.id
 }

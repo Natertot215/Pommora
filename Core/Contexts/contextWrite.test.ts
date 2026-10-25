@@ -246,7 +246,6 @@ describe('setContext reads the held tree', () => {
 
   it('a Space link edit that fails on its own sidecar still lands the far Space’s write, whose held option the settle registers', async () => {
     const tags = await createProperty(root, {
-      id: '',
       label: 'Tags',
       type: 'multiSelect',
       select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],

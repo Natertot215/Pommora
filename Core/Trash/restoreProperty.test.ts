@@ -51,7 +51,6 @@ const valueOn = async (absPage: string, name: string): Promise<unknown> =>
 
 async function seedPriority(): Promise<string> {
   const c = await createProperty(root, {
-    id: '',
     label: 'Priority',
     type: 'select',
     select_options: [
@@ -216,7 +215,6 @@ describe('restoring a deleted property', () => {
 
   it('comes back with the option keys its record holds, refilling the pages that held them', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Phase',
       type: 'select',
       value_format: 'Match Title',
@@ -244,7 +242,6 @@ describe('restoring a deleted property', () => {
 
   it('refills a page whose key holds only spaces, as it fills a blank one', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Phase',
       type: 'select',
       select_options: [{ id: 'opt_wip', key: 'wip', label: 'wip' }],
@@ -273,7 +270,6 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const impostor = await createProperty(root, {
-      id: '',
       label: 'Priority',
       type: 'number',
     })
@@ -388,7 +384,6 @@ describe('restoring a deleted property', () => {
 
   it('a restored property’s value lands at its old place', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Stage',
       type: 'multiSelect',
       select_options: [{ id: 'opt_x', key: 'x', label: 'x' }],
@@ -572,7 +567,6 @@ describe('restoring a deleted property', () => {
 
   it('a Link value naming a page gone since comes back nowhere', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Related',
       type: 'link',
     })
@@ -629,7 +623,6 @@ describe('restoring a deleted property', () => {
 
   it('a Link value naming an archived page comes back', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Related',
       type: 'link',
     })
@@ -651,7 +644,6 @@ describe('restoring a deleted property', () => {
 
   it('a stashed Link value naming no page stays out when the property is assigned again', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Related',
       type: 'link',
     })
@@ -678,7 +670,6 @@ describe('restoring a deleted property', () => {
 
   it('a Multi-Select value comes back keeping the words no option names', async () => {
     const c = await createProperty(root, {
-      id: '',
       label: 'Tags',
       type: 'multiSelect',
       select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],

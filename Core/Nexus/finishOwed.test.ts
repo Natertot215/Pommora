@@ -278,7 +278,7 @@ describe('the delete arm', () => {
     const root = await seededRoot()
     await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\nExample: 1\n---\nbody\n`)
     await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\nexample: 2\n---\nbody\n`)
-    expect((await createProperty(root, { id: '', label: 'example', type: 'number' })).ok).toBe(true)
+    expect((await createProperty(root, { label: 'example', type: 'number' })).ok).toBe(true)
     await seedNotes(root, { prop_gone: { kind: 'property', strip: ['Example'] } })
     const before = await page(root, 'B')
     await openSession(root)

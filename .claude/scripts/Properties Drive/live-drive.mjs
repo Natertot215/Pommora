@@ -125,7 +125,7 @@ async function headerMenu(cdp, label) {
 async function group2(cdp) {
   const ids = {}
   for (const [label, type] of [['Looks Number', 'number'], ['Looks Link', 'link'], ['Looks Select', 'select']])
-    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label, type } }))).created.propertyId
+    ids[label] = (await must(`add ${label}`, ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label, type } }))).created.propertyId
   await must('Looks Number as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids['Looks Number'], patch: { number_family: 'percent' } }))
   await must('Looks Select gains Alpha', ask(cdp, 'mutate', { op: 'editOption', propertyId: ids['Looks Select'], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: 'Alpha' } }))
   const view = {
@@ -156,10 +156,10 @@ async function group3(cdp) {
   const files = [REGISTRY, join(NEXUS, 'Collection A/_pagecollection.json'), join(NEXUS, space, '_space.json')]
   const stored = files.map((f) => readFileSync(f, 'utf8'))
   const status = await must('Status', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: {
-    id: '', label: 'Status', type: 'select',
+    label: 'Status', type: 'select',
     select_options: [{ key: 'Option 1', label: 'Option 1' }, { key: 'Option 2', label: 'Option 2' }],
   } }))
-  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Notes', type: 'text' } }))
+  const notes = await must('Notes', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Notes', type: 'text' } }))
   const view = { id: 'view_01KZPROPDRIVE000000VALUES', name: 'Drive Values', type: 'table', property_order: ['_title', status.created.propertyId, notes.created.propertyId], hidden_properties: [] }
   await must('save Drive Values', ask(cdp, 'views:save', 'Collection A', 'collection', view, {}))
   await must('show Drive Values', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
@@ -257,8 +257,8 @@ const aliasesOf = (title) =>
 const holdsLine = (title, key) => frontRaw(title).split('\n').some((l) => l.startsWith(`${key}:`))
 
 async function group5(cdp) {
-  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Pick', type: 'select' } }))
-  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'Drive Undo Link', type: 'link' } }))
+  const pick = await must('Drive Undo Pick', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Drive Undo Pick', type: 'select' } }))
+  const link = await must('Drive Undo Link', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'Drive Undo Link', type: 'link' } }))
   for (const label of ['Doing', 'Done']) await must(`Drive Undo Pick ${label}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: pick.created.propertyId, edit: { op: 'add', groupId: 'select', id: mintOptionId(), label } }))
   await must('the undo table', ask(cdp, 'views:save', 'Collection A', 'collection', { ...UNDO_VIEW, type: 'table', property_order: ['_title', pick.created.propertyId, link.created.propertyId], hidden_properties: [] }, {}))
   for (const title of ['Drive Undo Page', 'Drive Undo Target']) await createPage(cdp, title)
@@ -417,7 +417,7 @@ const optionRoles = (v) => ({ sort: v.sort, group: v.group, filter: v.filter, co
 
 async function group7(cdp) {
   const G = 7
-  const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'P8 Stage', type: 'select' } }))
+  const added = await must('P8 Stage', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'P8 Stage', type: 'select' } }))
   const propertyId = added.created.propertyId
   const seedId = optionsOf(propertyId)[0]?.id
   const doneId = mintOptionId()
@@ -577,7 +577,7 @@ async function group10() {
     permanentDelete: (await ask(cdp, 'nexus:state')).value.tree.config.personalization.permanentDelete === true,
   }
 
-  const propertyId = await addProperty(cdp, { id: '', label: 'Drive Kept', type: 'text' })
+  const propertyId = await addProperty(cdp, { label: 'Drive Kept', type: 'text' })
   for (const title of ['Drive Stays', 'Drive Trashed']) {
     await createPage(cdp, title)
     await op(`set ${title}`, { op: 'setProperty', path: pagePath(title), propertyId, value: { kind: 'text', value: `${title} value` } })
@@ -849,7 +849,7 @@ async function group12(cdp) {
 // ── Group 13 — The Filter's Clock ───────────────────────────────────────────
 
 async function group13(cdp) {
-  const added = await must('add Drive Due', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { id: '', label: 'Drive Due', type: 'dateTime' } }))
+  const added = await must('add Drive Due', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Due', type: 'dateTime' } }))
   const due = added.created.propertyId
   const view = {
     id: 'view_01KZPROPERTIESDRIVE13CLK', name: 'Drive Clock', type: 'table', property_order: ['_title', due], hidden_properties: [],

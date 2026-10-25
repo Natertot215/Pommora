@@ -25,7 +25,7 @@ const deps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
 const ctx = (): MutateContext => ({ root, deps })
 
 const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft['type'] }) =>
-  ({ id: '', ...over }) as PropertyDraft
+  over as PropertyDraft
 
 beforeEach(async () => {
   root = tempRoot('pom-spaceprop-')

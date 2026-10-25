@@ -31,7 +31,7 @@ const PROPS = { 'Drive Select': 'select', 'Drive Multi': 'multiSelect', 'Drive S
 const ids = {}
 async function seed(cdp) {
   for (const [name, type] of Object.entries(PROPS)) {
-    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: name, type } })
     check(`seed: ${name} added`, r.ok, JSON.stringify(r))
     ids[name] = r.value?.created?.propertyId
   }

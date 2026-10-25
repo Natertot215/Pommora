@@ -64,7 +64,7 @@ const VIEWS = {
 
 async function seed(cdp) {
   for (const [name, type] of [[NOTES, 'text'], [LINK, 'link'], [BAR, 'number']]) {
-    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
+    const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: name, type } })
     check(`seed: ${name} (${type}) is added`, r.ok, JSON.stringify(r))
     if (!r.ok) throw new Error(`The seed stops: addProperty refused ${name} of type ${type}.`)
     ids[name] = r.value.created.propertyId
@@ -440,7 +440,7 @@ async function group3(cdp) {
   check('group 3: a rename rewrites the links inside Drive Prose',
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Renamed#Setup]]')), frontmatter('Drive Prose')[NOTES])
   check("group 3: the rename rewrites the link inside Drive Foreign's undeclared description", await settles(async () => frontmatter('Drive Foreign').description === 'see [[Drive Renamed]] first'), frontRaw('Drive Foreign'))
-  await must('description as Text', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: 'description', type: 'text' } }))
+  await must('description as Text', ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { label: 'description', type: 'text' } }))
   await must('rename back', ask(cdp, 'mutate', { op: 'rename', path: `${SET}/Drive Renamed.md`, kind: 'page', newName: 'Drive Target' }))
   check("group 3: the rename back restores Drive Prose's links",
     await settles(async () => frontmatter('Drive Prose')[NOTES].includes('[[Drive Target]]') && frontmatter('Drive Prose')[NOTES].includes('[[Drive Target#Setup]]')))

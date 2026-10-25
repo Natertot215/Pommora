@@ -2462,7 +2462,6 @@ describe('emptying a property’s Trash entry', () => {
   beforeEach(async () => {
     const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
     const created = await createProperty(root, {
-      id: '',
       label: 'Priority',
       type: 'select',
       select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
@@ -2545,7 +2544,6 @@ describe('emptying a property’s Trash entry', () => {
 
   it('a live property holding the key keeps it', async () => {
     const again = await createProperty(root, {
-      id: '',
       label: 'Priority',
       type: 'select',
       select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
