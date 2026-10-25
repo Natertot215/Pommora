@@ -81,7 +81,6 @@ beforeEach(() => {
   useSession.setState({
     mutate: mutate as never,
     tree: { config: { registry: [] } } as never,
-    renamingProperty: null,
   })
 })
 afterEach(() => {

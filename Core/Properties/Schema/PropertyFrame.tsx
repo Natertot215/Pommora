@@ -187,10 +187,8 @@ export function PropertyFrame({
   const registry = useSession((st) => st.tree?.config.registry) ?? []
   const mutate = useSession((st) => st.mutate)
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
-  const renamingProperty = useSession((st) => st.renamingProperty)
-  const beginPropertyRename = useSession((st) => st.beginPropertyRename)
-  const cancelPropertyRename = useSession((st) => st.cancelPropertyRename)
   const [view, setView] = useState<SubView>({ kind: 'list' })
+  const [renamingId, setRenamingId] = useState<string | null>(null)
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
@@ -294,7 +292,7 @@ export function PropertyFrame({
   }
   const rowMenu = async (d: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'assigned-row' }))
-    if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
+    if (action === 'property:rename') setRenamingId(d.id)
     else if (action === 'property:remove') await remove(d.id)
   }
 
@@ -468,9 +466,7 @@ export function PropertyFrame({
           assigned={schema}
           unassigned={unassigned}
           allOpen={allOpen}
-          renamingId={
-            renamingProperty?.collectionPath === collectionPath ? renamingProperty.propertyId : null
-          }
+          renamingId={renamingId}
           onToggleAll={() => setAllOpen((o) => !o)}
           onOpenEditor={(id) => setView({ kind: 'edit', id })}
           onAssign={(id) =>
@@ -478,10 +474,10 @@ export function PropertyFrame({
           }
           onRowMenu={(d) => void rowMenu(d)}
           onRenameCommit={(id, next) => {
-            cancelPropertyRename()
+            setRenamingId(null)
             void rename(id, next)
           }}
-          onRenameCancel={cancelPropertyRename}
+          onRenameCancel={() => setRenamingId(null)}
         />
       </LineZone>
     </MenuScrollFrame>

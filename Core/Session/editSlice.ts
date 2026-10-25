@@ -39,9 +39,6 @@ export interface EditSlice {
   colorHost: RenameHost | null
   beginColor: (path: string, host: RenameHost) => void
   endColor: () => void
-  renamingProperty: { collectionPath: string; propertyId: string } | null
-  beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
-  cancelPropertyRename: () => void
   resetEdit: () => void
 }
 
@@ -63,7 +60,6 @@ const PER_NEXUS = {
   iconHost: null,
   colorPath: null,
   colorHost: null,
-  renamingProperty: null,
 } satisfies Partial<EditSlice>
 
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
@@ -158,8 +154,5 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
   endIcon: () => set({ iconPath: null, iconHost: null }),
   beginColor: (path, host) => set({ colorPath: path, colorHost: host }),
   endColor: () => set({ colorPath: null, colorHost: null }),
-
-  beginPropertyRename: (target) => set({ renamingProperty: target }),
-  cancelPropertyRename: () => set({ renamingProperty: null }),
   resetEdit: () => set(PER_NEXUS),
 })
