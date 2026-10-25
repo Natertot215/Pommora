@@ -85,7 +85,7 @@ Nathan's, verbatim, folded as above.
 - **Morning Readings:** the seventeen readings under the Walkthrough's *§Still Open › Morning Questions* are planning's defaults; each becomes a Last Call stating the reading taken.
 - **Models:** plan reviewers `opus-xhigh`; scouts and writers `opus-high`; execution agents named in the plan as `opus-medium`; neutral gates `fable-high`.
 - **Commits:** planning documents commit with `git commit --only -- <paths>`; no personal names in commit messages (a hook refuses them); every grep is `git grep`, since `grep -r` reaches `Desktop/out/`.
-- **Leave Alone:** Nathan's drafts in `~/NexusOS/Studio/Athena/II. Drafts/`; `Core/Sync/`; I-076's settings-pane pass; `.claude/Planning/Completed/Archive/Archive — Plan.md`'s uncommitted working-tree edit, which is Nathan's.
+- **Leave Alone:** Nathan's drafts in `~/NexusOS/Studio/Athena/II. Drafts/`; `Core/Sync/`; I-073's settings-pane pass; `.claude/Planning/Completed/Archive/Archive — Plan.md`'s uncommitted working-tree edit, which is Nathan's.
 
 #### INSIGHTS
 
