@@ -125,6 +125,7 @@ export function PropertyPicker({
       value={t.current}
       dateFormat={t.dateFormat}
       timeFormat={t.timeFormat}
+      span
       onCommit={commit}
     />
   ) : (
