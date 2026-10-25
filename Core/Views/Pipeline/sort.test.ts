@@ -60,6 +60,16 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' },
   { id: 'prop_file', label: 'File', key: 'File', type: 'file' },
   { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
+  {
+    id: 'prop_tags',
+    label: 'Tags',
+    key: 'Tags',
+    type: 'multiSelect',
+    select_options: [
+      { id: 'opt_x', key: 'x', label: 'x' },
+      { id: 'opt_y', key: 'y', label: 'y' },
+    ],
+  },
 ]
 
 function makeRow(
@@ -246,7 +256,7 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(ids(sorter(rows))).toEqual(['eve', 'day'])
   })
 
-  it('number sorts numerically, absent first ascending', () => {
+  it('number sorts numerically', () => {
     const rows = [
       makeRow('r1', { props: { prop_num: 5 } }),
       makeRow('r2', { props: { prop_num: 2 } }),
@@ -254,10 +264,10 @@ describe('makeSorter — type-aware single criterion', () => {
     ]
     expect(
       ids(makeSorter([{ property_id: 'prop_num', direction: 'ascending' }], schema, [])!(rows)),
-    ).toEqual(['r3', 'r2', 'r1'])
+    ).toEqual(['r2', 'r1', 'r3'])
   })
 
-  it('checkbox sorts false before true (absent = false)', () => {
+  it('checkbox sorts checked first ascending, unchecked first descending', () => {
     const rows = [
       makeRow('r1', { props: { prop_done: true } }),
       makeRow('r2', { props: { prop_done: false } }),
@@ -265,10 +275,13 @@ describe('makeSorter — type-aware single criterion', () => {
     ]
     expect(
       ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema, [])!(rows)),
+    ).toEqual(['r1', 'r2', 'r3'])
+    expect(
+      ids(makeSorter([{ property_id: 'prop_done', direction: 'descending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r3', 'r1'])
   })
 
-  it('date sorts chronologically, absent earliest', () => {
+  it('date sorts chronologically', () => {
     const rows = [
       makeRow('r1', { props: { prop_when: '2026-06-20T10:00:00Z' } }),
       makeRow('r2', { props: { prop_when: '2026-06-15T10:00:00Z' } }),
@@ -276,7 +289,7 @@ describe('makeSorter — type-aware single criterion', () => {
     ]
     expect(
       ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema, [])!(rows)),
-    ).toEqual(['r3', 'r2', 'r1'])
+    ).toEqual(['r2', 'r1', 'r3'])
   })
 
   it('a Context criterion resolves to nothing, so it neither sorts nor counts', () => {
@@ -315,16 +328,39 @@ describe('makeSorter — reserved presets', () => {
       ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r1', 'r3'])
   })
+})
 
-  it("sorts _modified_at by the row's modifiedAt, absent first ascending like any date", () => {
+describe('makeSorter — empty values', () => {
+  const run = (id: string, direction: 'ascending' | 'descending', rows: ViewRow[]): string[] =>
+    ids(makeSorter([{ property_id: id, direction }], schema, [])!(rows))
+
+  it.each([
+    ['number', 'prop_num', 2, 5],
+    ['date', 'prop_when', '2026-06-15', '2026-06-20'],
+    ['select', 'prop_sel', 'a', 'b'],
+    ['status', 'prop_status', 'not_started', 'done'],
+    ['text', 'prop_notes', 'apple', 'pear'],
+    ['link', 'prop_link', 'https://a.co', 'https://b.co'],
+    ['multi-select', 'prop_tags', ['x'], ['y']],
+    ['file', 'prop_file', ['[[a.pdf]]'], ['[[b.pdf]]']],
+  ])('an empty %s sorts last ascending and descending', (_kind, id, low, high) => {
+    const rows = [
+      makeRow('none'),
+      makeRow('high', { props: { [id]: high } }),
+      makeRow('low', { props: { [id]: low } }),
+    ]
+    expect(run(id, 'ascending', rows)).toEqual(['low', 'high', 'none'])
+    expect(run(id, 'descending', rows)).toEqual(['high', 'low', 'none'])
+  })
+
+  it('a Last Modified stamp with none sorts last ascending and descending', () => {
     const rows = [
       makeRow('r1', { modifiedAt: '2026-06-20T10:00:00Z' }),
       makeRow('r2'),
       makeRow('r3', { modifiedAt: '2026-06-15T10:00:00Z' }),
     ]
-    expect(
-      ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema, [])!(rows)),
-    ).toEqual(['r2', 'r3', 'r1'])
+    expect(run('_modified_at', 'ascending', rows)).toEqual(['r3', 'r1', 'r2'])
+    expect(run('_modified_at', 'descending', rows)).toEqual(['r1', 'r3', 'r2'])
   })
 })
 

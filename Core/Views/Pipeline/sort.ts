@@ -1,76 +1,37 @@
-// `sort[]` is honored in array order (priority = index), each criterion compared until one breaks the tie, then stable input order.
+// `sort[]` is honored in array order (priority = index), each criterion compared until one breaks the tie, then stable input order; a value with no key sorts last in either direction.
 
 import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
-import { optionIds, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
-import type { PropertyValue } from '../../Properties/propertyValue'
 import { resolveColumn } from './columns'
-import { readDate, shownText } from '../../Properties/formatValue'
+import { viewSpecOf } from '../valueKinds'
 
-type SortKey = number | string
-type Less = (a: SortKey, b: SortKey) => boolean
+type SortKey = string | number | null
 
 interface ResolvedCriterion {
-  extract: (row: ViewRow) => SortKey
-  less: Less
+  key: (row: ViewRow) => SortKey
   ascending: boolean
 }
 
-const numericLess: Less = (a, b) => (a as number) < (b as number)
-const ciLess: Less = (a, b) => compareTitles(a as string, b as string) < 0
-
-function rank(v: PropertyValue, order: Record<string, number>): number {
-  const key = v.kind === 'select' ? v.value : undefined
-  return key !== undefined && order[key] !== undefined ? order[key] : Number.MAX_SAFE_INTEGER
-}
-
-const numberOf = (v: PropertyValue): number =>
-  v.kind === 'number' ? v.value : Number.NEGATIVE_INFINITY
-
-function dateOf(v: PropertyValue): number {
-  const t = v.kind === 'dateTime' ? readDate(v.value)?.at.getTime() : undefined
-  return t ?? Number.NEGATIVE_INFINITY
-}
-
-const boolRank = (v: PropertyValue): number => (v.kind === 'checkbox' && v.value ? 1 : 0)
+/** A kind's keys are all numbers or all strings; strings compare as titles do. */
+const compareKeys = (a: string | number, b: string | number): number =>
+  typeof a === 'number' ? a - (b as number) : compareTitles(a, b as string)
 
 function buildCriterion(
   c: SortCriterion,
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): ResolvedCriterion | null {
-  const ascending = c.direction !== 'descending'
   const column = resolveColumn(c.property_id, schema, contextIds)
-  if (!column) return null
-  const value = (r: ViewRow): PropertyValue => resolveFieldValue(r, column)
-  switch (PROPERTY_TYPES[column.type].kind) {
-    case 'select': {
-      // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.
-      const custom = c.order?.length ? c.order : undefined
-      const listed = new Set(custom)
-      const tail = (column.def ? optionIds(column.def) : []).filter((v) => !listed.has(v))
-      const order = Object.fromEntries([...(custom ?? []), ...tail].map((v, i) => [v, i]))
-      return {
-        extract: (r) => rank(value(r), order),
-        less: numericLess,
-        ascending: custom ? true : ascending,
-      }
-    }
-    case 'number':
-      return { extract: (r) => numberOf(value(r)), less: numericLess, ascending }
-    case 'dateTime':
-      return { extract: (r) => dateOf(value(r)), less: numericLess, ascending }
-    case 'checkbox':
-      return { extract: (r) => boolRank(value(r)), less: numericLess, ascending }
-    case 'link':
-    case 'text':
-    case 'multiSelect':
-    case 'file':
-      return { extract: (r) => shownText(value(r), column.def) ?? '', less: ciLess, ascending }
-    case 'context':
-      return null
+  const sortKey = viewSpecOf(column?.type)?.sortKey
+  if (!column || !sortKey) return null
+  const key = sortKey(column.def, c.order)
+  return {
+    key: (row) => key(resolveFieldValue(row, column)),
+    // A Custom order always reads ascending.
+    ascending: c.order?.length ? true : c.direction !== 'descending',
   }
 }
 
@@ -102,21 +63,19 @@ export function makeSorter(
     const decorated = rows.map((row, offset) => ({
       offset,
       row,
-      keys: resolved.map((rc) => rc.extract(row)),
+      keys: resolved.map((rc) => rc.key(row)),
       manual: manualIndex ? (manualIndex.get(row.id) ?? Number.MAX_SAFE_INTEGER) : 0,
     }))
     decorated.sort((a, b) => {
       for (let i = 0; i < resolved.length; i++) {
-        const { less, ascending } = resolved[i]
         const ka = a.keys[i]
         const kb = b.keys[i]
-        if (ascending) {
-          if (less(ka, kb)) return -1
-          if (less(kb, ka)) return 1
-        } else {
-          if (less(kb, ka)) return -1
-          if (less(ka, kb)) return 1
+        if (ka === null || kb === null) {
+          if (ka !== kb) return ka === null ? 1 : -1
+          continue
         }
+        const order = compareKeys(ka, kb)
+        if (order !== 0) return resolved[i].ascending ? order : -order
       }
       if (a.manual !== b.manual) return a.manual - b.manual
       return a.offset - b.offset
