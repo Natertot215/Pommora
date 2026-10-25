@@ -59,12 +59,17 @@ describe('rowsFor', () => {
     ])
   })
 
-  it('the fraction Value row shows only while Fraction is on, refuses text that only partly parses, and a blank clears it', () => {
+  it('the fraction Value row shows only while Fraction is on, takes only a positive number, refuses text that only partly parses, and a blank clears it', () => {
     const c = ctx()
     const rows = rowsFor(def('number', { number_fraction: true, number_denominator: 10 }), c)
     expect(shown(rows)).toEqual(['Format', 'Separators', 'Decimals', 'Fraction', 'Value', 'Style'])
     typed(rows, 'Value', '12abc')
     expect(c.configure).not.toHaveBeenCalled()
+    typed(rows, 'Value', '0')
+    typed(rows, 'Value', '-2')
+    expect(c.configure).not.toHaveBeenCalled()
+    typed(rows, 'Value', '4')
+    expect(c.configure).toHaveBeenCalledWith({ number_denominator: 4 })
     typed(rows, 'Value', '')
     expect(c.configure).toHaveBeenCalledWith({ number_denominator: undefined })
   })

@@ -217,15 +217,10 @@ describe('formatNumber', () => {
       { text: '%', glyph: true },
     ])
   })
-  it('a zero denominator is no fraction', () => {
-    expect(
-      shown(3, { number_family: 'number', number_fraction: true, number_denominator: 0 }),
-    ).toBe('3')
-  })
 })
 
 describe('fractionDenominator', () => {
-  it('is the denominator only with Fraction on, a positive denominator, and a non-Percent format', () => {
+  it('is the denominator only with Fraction on, a denominator set, and a non-Percent format', () => {
     expect(fractionDenominator({ number_fraction: true, number_denominator: 10 })).toBe(10)
     expect(
       fractionDenominator({
@@ -235,8 +230,6 @@ describe('fractionDenominator', () => {
       }),
     ).toBeUndefined()
     expect(fractionDenominator({ number_fraction: false, number_denominator: 10 })).toBeUndefined()
-    expect(fractionDenominator({ number_fraction: true, number_denominator: 0 })).toBeUndefined()
-    expect(fractionDenominator({ number_fraction: true, number_denominator: -4 })).toBeUndefined()
     expect(fractionDenominator(undefined)).toBeUndefined()
   })
 })
@@ -261,10 +254,7 @@ describe('barDivisor', () => {
     ).toBe(10)
     expect(barDivisor('bar', { number_family: 'number', number_fraction: false })).toBeUndefined()
   })
-  it('guards a zero / missing denominator', () => {
-    expect(
-      barDivisor('bar', { number_family: 'number', number_fraction: true, number_denominator: 0 }),
-    ).toBeUndefined()
+  it('is undefined for a fraction with no denominator', () => {
     expect(barDivisor('bar', { number_family: 'number', number_fraction: true })).toBeUndefined()
   })
 })
