@@ -108,6 +108,10 @@ export function checkboxWord(raw: unknown): boolean | null {
   return checked === undefined ? null : checked === word
 }
 
+/** Unchecking removes the key: the app never writes an unchecked word. */
+export const checkboxValue = (checked: boolean): PropertyValue | null =>
+  checked ? { kind: 'checkbox', value: true } : null
+
 /** The symbol a cell shows for `currency`, spelling out the ambiguous ones (`A$`, `CA$`). */
 export const currencySymbol = (currency: string): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency })

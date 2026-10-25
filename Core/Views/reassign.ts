@@ -1,32 +1,20 @@
 import { UNGROUPED } from './viewRow'
-import { checkboxWord, type PropertyValue, type ValueKind } from '../Properties/propertyValue'
-import { type ColumnType, specOf } from '../Properties/properties'
+import type { PropertyValue } from '../Properties/propertyValue'
+import type { ColumnType } from '../Properties/properties'
+import { FILTER_OPS } from './filterRules'
+import { viewSpecOf } from './valueKinds'
 
-/** A date bucket isn't a single date, so date grouping can't be reassigned by drag; a kind without a function here never reassigns. */
-const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) | null> = {
-  select: (key) => ({ kind: 'select', value: key }),
-  checkbox: (key) => (checkboxWord(key) ? { kind: 'checkbox', value: true } : null),
-  dateTime: null,
-  number: null,
-  multiSelect: null,
-  context: null,
-  link: null,
-  text: null,
-  file: null,
+/** A band names one value when an Is rule on its key would seed one, so a drag into it writes that value; a date band names a span, never one date, so date grouping can't be reassigned by drag. */
+export const reassignable = (type: ColumnType | undefined): boolean => {
+  const spec = viewSpecOf(type)
+  return spec?.bucket !== undefined && spec.seed !== undefined
 }
-
-const fromGroupKey = (type: ColumnType | undefined) => {
-  const kind = specOf(type)?.kind
-  return kind ? FROM_GROUP_KEY[kind] : null
-}
-
-export const reassignable = (type: ColumnType | undefined): boolean => fromGroupKey(type) !== null
 
 export function groupKeyToValue(
   groupKey: string,
   type: ColumnType | undefined,
 ): PropertyValue | null {
-  return groupKey === UNGROUPED ? null : (fromGroupKey(type)?.(groupKey) ?? null)
+  return groupKey === UNGROUPED ? null : (viewSpecOf(type)?.seed?.(FILTER_OPS.is, groupKey) ?? null)
 }
 
 /** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */
