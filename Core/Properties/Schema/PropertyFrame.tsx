@@ -9,7 +9,7 @@ import {
   type PropertyType,
 } from '../properties'
 import type { FormatChange } from '../keyFormat'
-import { FormatRows } from './FormatRows'
+import { formatRows } from './formatRows'
 import { type ColumnStyle, LOOKS, lookIn } from '../columnStyles'
 import { lookOptions } from '../displayLabels'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
@@ -339,7 +339,11 @@ export function PropertyFrame({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        <FormatRows def={def} onPick={(change) => void setFormat(def.id, change)} />
+        <div className={s.ruleFrame}>
+          <MenuIndex
+            sections={[{ rows: formatRows(def, (change) => void setFormat(def.id, change)) }]}
+          />
+        </div>
         {settings && <MenuSeparator flush />}
         {settings}
       </MenuScrollFrame>
