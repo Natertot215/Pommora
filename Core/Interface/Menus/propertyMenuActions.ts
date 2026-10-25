@@ -2,15 +2,13 @@ import { parsePropertyAction, type PropertyMenuRow } from '../../Actions/propert
 import type { NexusTree } from '../../Nexus/tree'
 import { pagesByIdOf } from '../../Nexus/record'
 import { pickKindOf, type PropertyDefinition } from '../../Properties/properties'
-import { type PropertyValue, selectedValues } from '../../Properties/propertyValue'
+import { checkboxValue, type PropertyValue, selectedValues } from '../../Properties/propertyValue'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { columnLabel } from '../../Properties/columnLabel'
-import { pickFileInto } from '../../Properties/Pickers/filePick'
 import { pickedValue, pickGroups } from '../../Properties/Pickers/pickModel'
-import { syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { useSession } from '../../Session/store'
 import { contextColumn, propertyColumn, resolveColumn } from '../../Views/Pipeline/columns'
@@ -76,10 +74,12 @@ export function runPropertyAction(
     tree,
     schema,
     row,
+    rowOf,
     commit,
     trigger,
     styleOf,
   }: PropertyMenuTarget & {
+    rowOf: () => ViewRow | undefined
     commit: (column: ResolvedColumn, value: PropertyValue | null) => void
     trigger: HTMLElement
     styleOf?: (column: ResolvedColumn) => ColumnStyle
@@ -91,24 +91,17 @@ export function runPropertyAction(
   const column = resolveColumn(id, schema, contextIdsOf(tree))
   // The property can leave between the menu opening and the pick; the pick then writes nothing.
   if (!column) return true
-  const def = column.def ?? syntheticContextDef(id)
   const current = resolveFieldValue(row, column)
-  const commitValue = (next: PropertyValue | null): void => commit(column, next)
-  if (value === null) {
-    if (def.type === 'file') pickFileInto(def, current, null, commitValue)
-    else
-      useSession.getState().requestPick({
-        def,
-        current,
-        holder: tree ? pagesByIdOf(tree).get(row.id) : undefined,
-        trigger,
-        commit: commitValue,
-        style: styleOf?.(column),
-      })
-    return true
-  }
-  if (def.type === 'checkbox')
-    commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
-  else commitValue(pickedValue(column, current, value))
+  if (value === null)
+    useSession.getState().requestPick({
+      rowOf,
+      column,
+      holder: tree ? pagesByIdOf(tree).get(row.id) : undefined,
+      trigger,
+      commit,
+      style: styleOf?.(column),
+    })
+  else if (column.type === 'checkbox') commit(column, checkboxValue(value === 'true'))
+  else commit(column, pickedValue(column, current, value))
   return true
 }

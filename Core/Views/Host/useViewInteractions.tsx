@@ -1,6 +1,7 @@
 // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, the title menu's page actions, and the icon picker seat. A kind supplies the policy below and its own presentation, nothing else.
 
 import { useRef, useState } from 'react'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { UNGROUPED, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PageMenuContext } from '../../Actions/pageMenu'
@@ -399,6 +400,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ...propertyMenuBranches({ tree, schema, row }),
     }
   }
+  const liveRows = useLatest(rowById)
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
   const runTitleAction = (action: string, row: ViewRow, anchor: HTMLElement): boolean => {
     if (runPageAction(action, row)) return true
@@ -407,6 +409,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         tree,
         schema,
         row,
+        rowOf: () => liveRows.current.get(row.id) ?? row,
         trigger: anchor,
         commit: (column, value) => commitValue(row, column, value),
         styleOf,

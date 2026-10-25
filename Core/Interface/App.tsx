@@ -26,7 +26,7 @@ import { KEYED_COMMANDS, matchesCommand } from '../Actions/commands'
 import { runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
-import { ValuePickPresenter } from './Menus/ValuePickPresenter'
+import { MenuSeat } from '../Properties/Cells/ValueSeat'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
@@ -194,7 +194,7 @@ export function App(): React.JSX.Element {
         {status === 'ready' && <IterationWindow />}
         <ConfirmationWindow />
         <MenuPresenter />
-        <ValuePickPresenter />
+        <MenuSeat />
         <ActionLabel />
         {status === 'ready' && <GlancePane />}
         {status === 'ready' && sidePaneOpen && (

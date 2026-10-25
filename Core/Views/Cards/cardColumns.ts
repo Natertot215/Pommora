@@ -10,10 +10,10 @@ import { resolveColumn } from '../Pipeline/columns'
 import { columnLabel } from '../../Properties/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
-/** A blank value of this type fills in place, unless the type draws its blank (a checkbox's box) or is Filedata, which has no fill path. */
+/** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
 export const fillsBlank = (type: ColumnType | undefined): boolean => {
   const spec = specOf(type)
-  return spec !== undefined && spec.origin !== 'filedata' && !spec.blankDraws
+  return spec !== undefined && spec.origin !== 'filedata'
 }
 
 /** Compact's label-less flow can't render an empty value, so it drops blanks, except a type whose blank draws, such as a checkbox's unchecked box, the on-card toggle. */
