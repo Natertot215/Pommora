@@ -3,6 +3,7 @@ import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+import { propertyColumn } from '../../Views/Pipeline/columns'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { readLinkText, resolveLink } from '../../Connections/linkValue'
@@ -310,12 +311,18 @@ export function ValueSeat({
 export function MenuSeat(): React.JSX.Element {
   const pending = useSession((s) => s.pendingPick)
   const dismiss = useSession((s) => s.dismissPick)
+  const registry = useSession((s) => s.tree?.config.registry)
   const held = useHeld(pending, pending !== null)
   // The request's row lives in its writer, so the seat reads it again after each commit.
   const [, reread] = useReducer((n: number) => n + 1, 0)
   const seat = useValueSeat({
     rowOf: () => held?.rowOf(),
-    columnOf: () => held?.column,
+    // A definition can change under its open picker, so a property's column resolves from the live registry.
+    columnOf: (id) => {
+      if (held?.column.kind !== 'property') return held?.column
+      const def = registry?.find((d) => d.id === id)
+      return def && propertyColumn(def)
+    },
     commit: (_, column, value) => {
       held?.commit(column, value)
       reread()
