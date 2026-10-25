@@ -16,6 +16,7 @@ import { stack } from '../Theme/stack'
 import { fieldRing } from '../Fields/fieldRing'
 import { revealDim } from '../Interactions/hover-reveal.css'
 import { tintAt } from '../Theme/colors'
+import { text } from '../Theme/typography.css'
 import { SIZE as LABEL } from '../Labels/label-base.css'
 const c = colorVars.color
 
@@ -158,6 +159,11 @@ export const optionLead = style({
   gap: `${OPTION.compactTitleGap}px`,
   minWidth: 0,
 })
+
+export const compactTitle = style([
+  text.control.standard,
+  { color: c.label.control, whiteSpace: 'nowrap' },
+])
 
 export const ghostOptionRow = style([
   optionRow,

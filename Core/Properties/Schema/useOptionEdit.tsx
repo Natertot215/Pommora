@@ -1,16 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import type { LaneSlot } from '@pommora/uix/Interactions/reorderModel'
-import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { base } from '@pommora/uix/Fields/fields.css'
-import { Label } from '@pommora/uix/Labels/Label'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
-import type { PropertyDefinition, PropertyType, SelectOption } from '../properties'
-import { chipOf } from '../typeDisplay'
+import type { PropertyDefinition, SelectOption } from '../properties'
 import { OptionChip } from '../Cells/OptionChip'
 import { mintOptionId } from '../../Nexus/ids'
 import { useSession } from '../../Session/store'
@@ -184,30 +178,4 @@ export function useOptionEdit({
     busy: editing !== null || draft !== null,
     popup,
   }
-}
-
-export function OptionDraft({
-  edit,
-  type,
-  color,
-}: {
-  edit: OptionEditApi
-  type: PropertyType
-  color?: string
-}): React.JSX.Element {
-  return (
-    <Reveal open enterOnMount fill>
-      <Label shape={chipOf(type).shape} color={colorNameFor(color)}>
-        <RenamableLabel
-          renames="title"
-          editing
-          value=""
-          className={base}
-          autoSize
-          onCommit={edit.commitDraft}
-          onCancel={edit.cancelDraft}
-        />
-      </Label>
-    </Reveal>
-  )
 }

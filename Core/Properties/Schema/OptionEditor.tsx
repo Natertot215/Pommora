@@ -1,5 +1,11 @@
 import { Fragment, useMemo, useState } from 'react'
-import { groupOptions, PROPERTY_TYPES, type PropertyType, type StatusGroup } from '../properties'
+import {
+  groupOptions,
+  optionGroupsOf,
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+  type StatusGroup,
+} from '../properties'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { FLUSH_GHOST, GhostOptionChip } from './GhostOptionChip'
 import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
@@ -8,30 +14,23 @@ import { LineGroup, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { text } from '@pommora/uix/Theme'
-import { OptionSlot } from './OptionRow'
-import { OptionDraft, type OptionStyleControl, useOptionEdit } from './useOptionEdit'
+import { OptionDraft, OptionSlot } from './OptionSlot'
+import { type OptionStyleControl, useOptionEdit } from './useOptionEdit'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
 
 export function OptionEditor({
-  propertyId,
-  type,
-  groups,
+  def,
   style,
 }: {
-  propertyId: string
-  type: PropertyType
-  groups: StatusGroup[]
+  def: PropertyDefinition
   style: OptionStyleControl
 }): React.JSX.Element {
-  const grouped = PROPERTY_TYPES[type].options === 'status'
+  const grouped = PROPERTY_TYPES[def.type].options === 'status'
   const look = style.current.look
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
+  const groups = useMemo(() => optionGroupsOf(def), [def])
   const options = useMemo(() => groups.flatMap(groupOptions), [groups])
-  const def = useMemo(
-    () => ({ id: propertyId, type, status_groups: groups }),
-    [propertyId, type, groups],
-  )
   const edit = useOptionEdit({ def, options, style, destructive: true })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
@@ -43,13 +42,13 @@ export function OptionEditor({
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     edit.draft?.groupId === g.id && edit.draft.index === index ? (
       <div className={s.optionRow}>
-        <OptionDraft edit={edit} type={type} color={g.color} />
+        <OptionDraft edit={edit} type={def.type} color={g.color} />
       </div>
     ) : (
       <GhostOptionChip
         api={ghostApi}
         anchorId={anchorId}
-        type={type}
+        type={def.type}
         onCreate={() => edit.beginDraft(g.id, index)}
       />
     )
@@ -103,7 +102,6 @@ export function OptionEditor({
                 <Reveal open enterOnMount={edit.entering(o.id)} fill>
                   <OptionSlot
                     option={o}
-                    type={type}
                     look={look}
                     def={def}
                     editing={edit.isOpen(o.id)}
