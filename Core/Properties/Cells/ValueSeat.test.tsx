@@ -292,10 +292,20 @@ describe('the menu seat', () => {
   beforeEach(() => {
     trigger = document.createElement('div')
     document.body.appendChild(trigger)
+    useSession.setState({ tree: makeTree({ registry: [LINK, DATE, TEXT, SELECT] }) })
   })
   afterEach(() => {
     trigger.remove()
     useSession.setState({ pendingPick: null })
+  })
+
+  it('an option created while its picker is open joins its list', () => {
+    act(() => root.render(<MenuSeat />))
+    act(() => useSession.getState().requestPick(request(columnOf(SELECT))))
+    const beta = { id: 'opt_beta', key: 'beta', label: 'Beta' }
+    const grown = { ...SELECT, select_options: [...(SELECT.select_options ?? []), beta] }
+    act(() => useSession.setState({ tree: makeTree({ registry: [LINK, DATE, TEXT, grown] }) }))
+    expect(portalText()).toContain('Beta')
   })
 
   it('a Link value picked from the page menu commits a page link through the index, under the page’s own title', () => {
