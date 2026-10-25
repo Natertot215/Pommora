@@ -1,8 +1,8 @@
 import { Fragment, useMemo, useState } from 'react'
 import { groupOptions, PROPERTY_TYPES, type PropertyType, type StatusGroup } from '../properties'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { GhostOptionChip, useGhostOptionAnchor } from './GhostOptionChip'
-import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
+import { FLUSH_GHOST, GhostOptionChip } from './GhostOptionChip'
+import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { LineGroup, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
@@ -35,7 +35,10 @@ export function OptionEditor({
   const edit = useOptionEdit({ def, options, style, destructive: true })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
-  const ghostApi = useGhostOptionAnchor(renamingGroup !== null || edit.busy)
+  const ghostApi = useGhostAnchor({
+    ...FLUSH_GHOST,
+    suppressed: () => renamingGroup !== null || edit.busy,
+  })
 
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     edit.draft?.groupId === g.id && edit.draft.index === index ? (
