@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import type { SavedView, SubGroupConfig } from '../views'
+import type { SavedView } from '../views'
 import { headContextOf } from '../Bands/bandModel'
+import type { Grouping } from '../Pipeline/group'
 import { setIndexOf } from '../Pipeline/setIndex'
 import { usePainted } from './pendingView'
 import { styleFor, useNexusForms } from './useColumnStyles'
@@ -10,7 +11,7 @@ import { useSetting } from '../../Session/store'
 
 export function useBandHeads(
   source: CollectionNode | SetNode,
-  grouping: SubGroupConfig | undefined,
+  grouping: Grouping | undefined,
   schema: PropertyDefinition[],
   view: SavedView,
 ) {
@@ -24,7 +25,6 @@ export function useBandHeads(
         painted,
         sets,
         grouping,
-        schema,
         view,
         (id) => styleFor(id, schema, view, nexus),
         foldersOpen,

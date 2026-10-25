@@ -184,7 +184,6 @@ export function PropertyPanel({
   const writer = useRef<ValueWriter | null>(null)
   useEffect(() => {
     writer.current = {
-      schema,
       mutate,
       rowOf: (id) => (row?.id === id ? row : undefined),
       apply: (id, picked, write) => patchOverride(setOverride, id, picked, write),
@@ -196,6 +195,10 @@ export function PropertyPanel({
   const commit = (id: string, next: PropertyValue | null): void => {
     const column = resolveColumn(id, schema, contextIds)
     if (row && column) assignValue(writer, row, column, next)
+  }
+  const currentOf = (id: string): PropertyValue => {
+    const column = resolveColumn(id, schema, contextIds)
+    return row && column ? resolveFieldValue(row, column) : NULL_VALUE
   }
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
@@ -311,7 +314,7 @@ export function PropertyPanel({
     from: EventTarget | null = el,
   ): void => {
     triggerRef.current = el
-    const current = row ? resolveFieldValue(row, def.id, schema) : NULL_VALUE
+    const current = currentOf(def.id)
     runIntent(def, current, valueClickIntent(def.type, current), from)
   }
   const emptyRow = (id: string, keep: boolean): void => {
@@ -366,7 +369,7 @@ export function PropertyPanel({
     const def =
       editingDef ?? (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined)
     if (!def) return null
-    const current = resolveFieldValue(row, editing.id, schema)
+    const current = currentOf(editing.id)
     if (def.type === 'dateTime') return { kind: 'dateTime', def, current }
     return {
       kind: 'options',
@@ -383,7 +386,7 @@ export function PropertyPanel({
     if (!ctx || !row || !fm) return null
     const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
       const column = def ? propertyColumn(def) : contextColumn(id)
-      const current = resolveFieldValue(row, id, schema)
+      const current = resolveFieldValue(row, column)
       const rowBody = (
         <MenuItem
           className={s.row}
@@ -544,7 +547,7 @@ export function PropertyPanel({
             def={editingDef}
             holder={holderOf(row, ctx)}
             connections={ctx.connections}
-            current={resolveFieldValue(row, editing.id, schema)}
+            current={currentOf(editing.id)}
             onCommit={(next) => commit(editing.id, next)}
             onClose={() => setEditing(null)}
           />

@@ -20,14 +20,13 @@ export const fillsBlank = (type: ColumnType | undefined): boolean => {
 export function shownColumnsFor(
   row: ViewRow,
   columns: ResolvedColumn[],
-  ctx: ValueContext,
   compactLayout: boolean,
 ): ResolvedColumn[] {
   return columns.filter(
     (c) =>
       c.kind !== 'title' &&
       (!compactLayout ||
-        !isBlankValue(resolveFieldValue(row, c.id, ctx.schema)) ||
+        !isBlankValue(resolveFieldValue(row, c)) ||
         specOf(c.type)?.blankDraws === true),
   )
 }
@@ -40,7 +39,7 @@ export function addEntriesFor(
   tree: NexusTree | null = null,
 ): AddEntry[] {
   const contextIds = contextIdsOf(tree)
-  const shownIds = new Set(shownColumnsFor(row, columns, ctx, isCompact(view)).map((c) => c.id))
+  const shownIds = new Set(shownColumnsFor(row, columns, isCompact(view)).map((c) => c.id))
   const ids = [
     ...new Set([
       ...hiddenListIds(view, ctx.schema, contextIds),
@@ -51,7 +50,7 @@ export function addEntriesFor(
   return ids.flatMap((id) => {
     const column = shownIds.has(id) ? undefined : resolveColumn(id, ctx.schema, contextIds)
     if (!column) return []
-    const blank = isBlankValue(resolveFieldValue(row, id, ctx.schema))
+    const blank = isBlankValue(resolveFieldValue(row, column))
     return [
       {
         column,

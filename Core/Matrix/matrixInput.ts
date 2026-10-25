@@ -3,9 +3,9 @@ import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree
 import { entityMemo } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/record'
 import { spaceRowOf } from '../Views/pageRow'
-import { type PropertyDefinition, specOf } from '../Properties/properties'
+import type { PropertyDefinition } from '../Properties/properties'
 import { linkKeysOf } from '../Properties/validation'
-import { declaredType } from '../Properties/fieldValue'
+import { resolveColumn } from '../Views/Pipeline/columns'
 import { applyFilter } from '../Views/Pipeline/filter'
 import { toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
@@ -83,19 +83,19 @@ function answers(
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): boolean {
-  const t = declaredType(rule.property_id, schema, contextIds)
-  if (t === 'title') return true
-  switch (specOf(t)?.origin) {
-    case undefined:
-    case 'filedata':
-      return false
+  const column = resolveColumn(rule.property_id, schema, contextIds)
+  switch (column?.kind) {
+    case 'title':
     case 'context':
       return true
-    case 'user': {
-      if (OPERANDLESS_OPS.has(rule.op)) return true
-      const key = schema.find((d) => d.id === rule.property_id)?.key
-      return key !== undefined && Object.hasOwn(row.frontmatter, key)
-    }
+    case undefined:
+    case 'stamp':
+      return false
+    case 'property':
+      return (
+        OPERANDLESS_OPS.has(rule.op) ||
+        (column.def !== undefined && Object.hasOwn(row.frontmatter, column.def.key))
+      )
   }
 }
 

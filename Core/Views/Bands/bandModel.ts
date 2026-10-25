@@ -17,6 +17,7 @@ import {
 } from './bandRouter'
 import type { SetIndex } from '../Pipeline/setIndex'
 import { formatBucketLabel } from '../Pipeline/group'
+import type { Grouping } from '../Pipeline/group'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
 
@@ -59,17 +60,16 @@ export function dateLabeller(
 export function headContextOf(
   source: CollectionNode | SetNode,
   sets: SetIndex,
-  grouping: SubGroupConfig | undefined,
-  schema: PropertyDefinition[],
+  grouping: Grouping | undefined,
   view: SavedView,
   styleOf: (columnId: string) => ColumnStyle,
   foldersOpen: boolean,
 ): HeadContext {
-  const def = grouping && schema.find((d) => d.id === grouping.property_id)
+  const def = grouping?.column.def
   const date =
     grouping &&
     def?.type === 'dateTime' &&
-    dateLabeller(view, grouping, styleOf(grouping.property_id).date_format)
+    dateLabeller(view, grouping.config, styleOf(grouping.config.property_id).date_format)
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,

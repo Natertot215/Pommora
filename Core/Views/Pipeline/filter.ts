@@ -19,7 +19,8 @@ import {
   selectedValues,
   type ValueKind,
 } from '../../Properties/propertyValue'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveColumn } from './columns'
 import type { SetTreeNode } from './group'
 import { linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { dayMs, readDate } from '../../Properties/formatValue'
@@ -35,8 +36,8 @@ export function applyFilter(
   rows: ViewRow[],
   filter: FilterGroup | undefined,
   schema: PropertyDefinition[],
-  setTree: SetTreeNode[] = [],
-  contextIds: readonly string[] = [],
+  setTree: SetTreeNode[],
+  contextIds: readonly string[],
 ): ViewRow[] {
   const test = filter && prepareGroup(filter, schema, setTree, contextIds)
   return test ? rows.filter(test) : rows
@@ -75,12 +76,11 @@ export function prepareRule(
   const want = ruleOperands(rule)
   if (!FILTER_OP_SET.has(op) || !answerable(rule)) return undefined
   if (id === FILEDATA.location.id) return prepareLocation(op, want, setTree)
-  const t = declaredType(id, schema, contextIds)
-  if (t === undefined) return undefined
-  const evaluate = evaluatorOf(PROPERTY_TYPES[t].kind, op)
+  const column = resolveColumn(id, schema, contextIds)
+  if (!column) return undefined
+  const evaluate = evaluatorOf(PROPERTY_TYPES[column.type].kind, op)
   const operands = evaluate === evaluateText ? want.map(foldKey) : want
-  const def = schema.find((d) => d.id === id)
-  return (row) => evaluate(resolveFieldValue(row, id, schema), op, operands, def)
+  return (row) => evaluate(resolveFieldValue(row, column), op, operands, column.def)
 }
 
 // Is/Isn't test the immediate parent by id, Contains/Doesn't any depth by id or folder name. Ids naming no folder are dead and abstain; an unmatched name matches nothing.

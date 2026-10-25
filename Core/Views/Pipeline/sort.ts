@@ -3,9 +3,10 @@
 import type { SortCriterion } from '../views'
 import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
-import { optionIds, type PropertyDefinition, specOf } from '../../Properties/properties'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
-import { optionLabel } from '../../Properties/propertyValue'
+import { optionIds, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { optionLabel, type PropertyValue } from '../../Properties/propertyValue'
+import { resolveColumn } from './columns'
 import { fileName, linkDisplayText, shownProse } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
 
@@ -21,40 +22,22 @@ interface ResolvedCriterion {
 const numericLess: Less = (a, b) => (a as number) < (b as number)
 const ciLess: Less = (a, b) => compareTitles(a as string, b as string) < 0
 
-function rank(
-  row: ViewRow,
-  propertyId: string,
-  order: Record<string, number>,
-  schema: PropertyDefinition[],
-): number {
-  const v = resolveFieldValue(row, propertyId, schema)
+function rank(v: PropertyValue, order: Record<string, number>): number {
   const key = v.kind === 'select' ? v.value : undefined
   return key !== undefined && order[key] !== undefined ? order[key] : Number.MAX_SAFE_INTEGER
 }
 
-function numberOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
-  const v = resolveFieldValue(row, propertyId, schema)
-  return v.kind === 'number' ? v.value : Number.NEGATIVE_INFINITY
-}
+const numberOf = (v: PropertyValue): number =>
+  v.kind === 'number' ? v.value : Number.NEGATIVE_INFINITY
 
-function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
-  const v = resolveFieldValue(row, propertyId, schema)
+function dateOf(v: PropertyValue): number {
   const t = v.kind === 'dateTime' ? readDate(v.value)?.at.getTime() : undefined
   return t ?? Number.NEGATIVE_INFINITY
 }
 
-function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
-  const v = resolveFieldValue(row, propertyId, schema)
-  return v.kind === 'checkbox' && v.value ? 1 : 0
-}
+const boolRank = (v: PropertyValue): number => (v.kind === 'checkbox' && v.value ? 1 : 0)
 
-function sortText(
-  row: ViewRow,
-  propertyId: string,
-  schema: PropertyDefinition[],
-  def: PropertyDefinition | undefined,
-): string {
-  const v = resolveFieldValue(row, propertyId, schema)
+function sortText(v: PropertyValue, def: PropertyDefinition | undefined): string {
   switch (v.kind) {
     case 'text':
       return shownProse(v.value)
@@ -75,35 +58,40 @@ function sortText(
   }
 }
 
-function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): ResolvedCriterion | null {
+function buildCriterion(
+  c: SortCriterion,
+  schema: PropertyDefinition[],
+  contextIds: readonly string[],
+): ResolvedCriterion | null {
   const ascending = c.direction !== 'descending'
-  const def = schema.find((d) => d.id === c.property_id)
-  switch (specOf(declaredType(c.property_id, schema))?.kind) {
+  const column = resolveColumn(c.property_id, schema, contextIds)
+  if (!column) return null
+  const value = (r: ViewRow): PropertyValue => resolveFieldValue(r, column)
+  switch (PROPERTY_TYPES[column.type].kind) {
     case 'select': {
       // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.
       const custom = c.order?.length ? c.order : undefined
       const listed = new Set(custom)
-      const tail = (def ? optionIds(def) : []).filter((v) => !listed.has(v))
+      const tail = (column.def ? optionIds(column.def) : []).filter((v) => !listed.has(v))
       const order = Object.fromEntries([...(custom ?? []), ...tail].map((v, i) => [v, i]))
       return {
-        extract: (r) => rank(r, c.property_id, order, schema),
+        extract: (r) => rank(value(r), order),
         less: numericLess,
         ascending: custom ? true : ascending,
       }
     }
     case 'number':
-      return { extract: (r) => numberOf(r, c.property_id, schema), less: numericLess, ascending }
+      return { extract: (r) => numberOf(value(r)), less: numericLess, ascending }
     case 'dateTime':
-      return { extract: (r) => dateOf(r, c.property_id, schema), less: numericLess, ascending }
+      return { extract: (r) => dateOf(value(r)), less: numericLess, ascending }
     case 'checkbox':
-      return { extract: (r) => boolRank(r, c.property_id, schema), less: numericLess, ascending }
+      return { extract: (r) => boolRank(value(r)), less: numericLess, ascending }
     case 'link':
     case 'text':
     case 'multiSelect':
     case 'file':
-      return { extract: (r) => sortText(r, c.property_id, schema, def), less: ciLess, ascending }
+      return { extract: (r) => sortText(value(r), column.def), less: ciLess, ascending }
     case 'context':
-    case undefined:
       return null
   }
 }
@@ -112,17 +100,19 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
 export function resolvedSortCount(
   sort: SortCriterion[] | undefined,
   schema: PropertyDefinition[],
+  contextIds: readonly string[],
 ): number {
-  return (sort ?? []).filter((c) => buildCriterion(c, schema) !== null).length
+  return (sort ?? []).filter((c) => buildCriterion(c, schema, contextIds) !== null).length
 }
 
 export function makeSorter(
   sort: SortCriterion[] | undefined,
   schema: PropertyDefinition[],
+  contextIds: readonly string[],
   manualOrder?: string[],
 ): ((rows: ViewRow[]) => ViewRow[]) | null {
   const resolved = (sort ?? [])
-    .map((c) => buildCriterion(c, schema))
+    .map((c) => buildCriterion(c, schema, contextIds))
     .filter((rc): rc is ResolvedCriterion => rc !== null)
   // The manual order is the LOWEST-priority tiebreaker: it reorders only rows already equal on every real sort key, and is the sole comparator when a view is grouped but unsorted.
   const manualIndex = manualOrder?.length

@@ -68,7 +68,7 @@ export function CardValue({
   const commit = (v: PropertyValue | null): void => onCommit(column, v)
 
   const { type: t, def } = column
-  const v = resolveFieldValue(row, column.id, ctx.schema)
+  const v = resolveFieldValue(row, column)
 
   const runIntent = (
     intent: ValueIntent | null,
