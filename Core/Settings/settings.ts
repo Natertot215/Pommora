@@ -102,12 +102,12 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
   )
 }
 
-/** A Collection or Set moving from `from` to `to` carries every excluded entry and the asset directory at or under it. Each landing entry is written just ahead of its source, and the asset directory's source held as an entry, before the folder moves, so the list keeps its order, a case-only rename keeps the landed spelling, a source stays out of the tree until the folder has left it, and the write's refusal is the move's. `drop` settles the landing and re-keys the asset directory's crops once the folder has landed; `undo` writes back what was read when the move fails. */
+/** A Collection or Set moving from `from` to `to` carries every excluded entry and the asset directory at or under it. Each landing entry is written just ahead of its source, and the asset directory's source held as an entry, before the folder moves, so the list keeps its order, a case-only rename keeps the landed spelling, a source stays out of the tree until the folder has left it, and the write's refusal is the move's. `drop` settles the landing and re-keys the asset directory's crops once the folder has landed; `rollback` writes back what was read when the move fails. */
 export async function carrySetAside(
   root: string,
   from: string,
   to: string,
-): Promise<Result<{ drop: () => Promise<void>; undo: () => Promise<void> }>> {
+): Promise<Result<{ drop: () => Promise<void>; rollback: () => Promise<void> }>> {
   const { excluded, assetDir } = await readWatchScope(root)
   const landing = (entry: string): string[] => {
     const rest = entryWithin(entry, from)
@@ -116,7 +116,7 @@ export async function carrySetAside(
   const ahead = excluded.flatMap((entry) => [...landing(entry), entry])
   const [asset] = landing(assetDir)
   if (ahead.length === excluded.length && !asset)
-    return ok({ drop: async () => {}, undo: async () => {} })
+    return ok({ drop: async () => {}, rollback: async () => {} })
   const write = (folders: string[], dir: string) =>
     updateNexusConfig(root, 'settings', (cur) => ({
       ...setOrDrop(cur, 'excluded_folders', folders.length > 0 && folders),
@@ -131,7 +131,7 @@ export async function carrySetAside(
       if (kept.length < folders.length) await writeExcludedFolders(root, kept)
       if (asset) await rekeyCrops(root, (key) => landing(key)[0])
     },
-    undo: async () => {
+    rollback: async () => {
       await write(excluded, assetDir)
     },
   })

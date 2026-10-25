@@ -95,9 +95,9 @@ export function Cell({
       )
     case 'context':
       return (
-        <Chips value={v} label={(id) => ctx.contextsById.get(id)?.title ?? id} commit={commit}>
+        <Chips value={v} label={(id) => ctx.spaces.get(id)?.title ?? id} commit={commit}>
           {(id) => {
-            const c = ctx.contextsById.get(id)
+            const c = ctx.spaces.get(id)
             return (
               <NeutralChip
                 color={colorNameFor(c?.color)}

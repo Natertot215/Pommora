@@ -11,7 +11,7 @@ import { previewConnections } from '../Session/pageConnections'
 
 export interface ValueContext {
   schema: PropertyDefinition[]
-  contextsById: ReadonlyMap<string, SpaceIdentity>
+  spaces: ReadonlyMap<string, SpaceIdentity>
   contexts: ReadonlyMap<string, ContextIdentity>
   /** Held on the context rather than read per cell, so one subscription serves the whole view instead of one per rendered value. */
   assets: AssetMap
@@ -23,7 +23,7 @@ export interface ValueContext {
 
 /** The page a row's values sit on; a Space's sit on none. */
 export const holderOf = (row: ViewRow, ctx: ValueContext): ConnPage | undefined =>
-  ctx.contextsById.has(row.id) ? undefined : row
+  ctx.spaces.has(row.id) ? undefined : row
 
 /** The one context a view or the panel renders its values through; `hostConnections` is a window's own link routing, preview otherwise. */
 export function useValueContext(
@@ -39,7 +39,7 @@ export function useValueContext(
     () =>
       identity && {
         schema,
-        contextsById: identity.spaces,
+        spaces: identity.spaces,
         contexts: identity.contexts,
         assets,
         connections: hostConnections ? () => hostConnections : previewConnections,

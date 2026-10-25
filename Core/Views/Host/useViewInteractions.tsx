@@ -159,8 +159,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
-  const bandRowIds = (bandKey: string, excludeId: string): string[] =>
-    paintOrder.flatMap((r) => (r.groupKey === bandKey && r.id !== excludeId ? [r.id] : []))
+  const bandRowIds = (groupKey: string, excludeId: string): string[] =>
+    paintOrder.flatMap((r) => (r.groupKey === groupKey && r.id !== excludeId ? [r.id] : []))
   const folderOf = (setId: string | null | undefined): CollectionNode | SetNode | undefined =>
     setId == null ? source : sets.node.get(setId)
   const destOf = (zone: string, row: ViewRow): CollectionNode | SetNode | undefined => {
@@ -216,19 +216,19 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       after,
     )
 
-  const reorderWithin = (bandKey: string, row: ViewRow, beforeId: string | null): void => {
+  const reorderWithin = (groupKey: string, row: ViewRow, beforeId: string | null): void => {
     if (pageOrder === 'location') {
       const folder = folderOf(row.parentSetId)
       if (!folder) return
-      const order = folderOrderAt(folder, bandKey, row.id, beforeId)
+      const order = folderOrderAt(folder, groupKey, row.id, beforeId)
       if (order) void moveTo(row, folder, order)
       return
     }
-    const current = paintOrder.flatMap((r) => (r.groupKey === bandKey ? [r.id] : []))
-    const bandOrder = nextOrder(bandRowIds(bandKey, row.id), row.id, beforeId)
+    const current = paintOrder.flatMap((r) => (r.groupKey === groupKey ? [r.id] : []))
+    const bandOrder = nextOrder(bandRowIds(groupKey, row.id), row.id, beforeId)
     if (sameItems(bandOrder, current)) return
     placeInView(row, beforeId)
-    reassignBySortRun(bandOrder, bandKey, row.id)
+    reassignBySortRun(bandOrder, groupKey, row.id)
   }
 
   const land = (

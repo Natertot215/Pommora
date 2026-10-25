@@ -43,17 +43,17 @@ async function relocateFolder(
       return carried.value.drop()
     })
   } catch (e) {
-    if (!landed) await carried.value.undo()
+    if (!landed) await carried.value.rollback()
     throw e
   }
   return ok({ path: to })
 }
 
-/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. A lift refused or thrown partway moves back what it lifted, as `undo` does when the container's own move fails. */
+/** A Collection or Set leaving the tree leaves every excluded folder and the asset directory inside it in its parent, the outermost of a nesting, under its own name or the next one free there, each one's entry carried ahead of it. A lift refused or thrown partway moves back what it lifted, as `rollback` does when the container's own move fails. */
 export async function liftSetAside(
   root: string,
   containerAbs: string,
-): Promise<Result<{ undo: () => Promise<void> }>> {
+): Promise<Result<{ rollback: () => Promise<void> }>> {
   const { excluded, assetDir } = await readWatchScope(root)
   const inside = [...excluded, assetDir].flatMap((entry) => {
     const rest = entryWithin(entry, relative(root, containerAbs))
@@ -61,7 +61,7 @@ export async function liftSetAside(
   })
   const parent = dirname(containerAbs)
   const lifted: { from: string; to: string }[] = []
-  const undo = async (): Promise<void> => {
+  const rollback = async (): Promise<void> => {
     for (const { from, to } of [...lifted].reverse()) await relocateFolder(root, to, from)
   }
   try {
@@ -75,16 +75,16 @@ export async function liftSetAside(
       const to = join(parent, freeName(name, taken))
       const moved = await relocateFolder(root, abs, to)
       if (!moved.ok) {
-        await undo()
+        await rollback()
         return moved
       }
       lifted.push({ from: abs, to })
     }
   } catch (e) {
-    await undo()
+    await rollback()
     throw e
   }
-  return ok({ undo })
+  return ok({ rollback })
 }
 
 export async function createFolderEntity(

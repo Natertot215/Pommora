@@ -43,7 +43,7 @@ export async function archiveOp(
   const lifted = req.kind === 'set' ? await liftSetAside(root, abs) : null
   if (lifted && !lifted.ok) return lifted
   const bundle = await fileInto(root, store, abs, abs, record, req.leaf).catch(async (e) => {
-    await lifted?.value.undo()
+    await lifted?.value.rollback()
     throw e
   })
   await dropDeparture(root, tree, req.kind, req.path)

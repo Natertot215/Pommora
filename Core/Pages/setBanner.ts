@@ -4,7 +4,7 @@ import { readTextOrNull, setOrDrop, updateNexusConfig } from '../Files/atomicWri
 import { patchSidecar } from '../Files/sidecar'
 import { writeNavigationState } from '../Navigation/navigationFile'
 import { landValue } from '../Files/rootValues'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { adoptImageSource, UNREADABLE } from '../Assets/adoptFile'
 import { ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -30,7 +30,7 @@ export async function setBannerOp(
       const rel = adopted.value
       const written = await rewriteRootAt(
         abs,
-        rewriteRaw((raw) => landValue(raw, 'banner', rel)),
+        rewriteRoot((raw) => landValue(raw, 'banner', rel)),
       )
       return written.ok ? landed(rel) : written
     })
