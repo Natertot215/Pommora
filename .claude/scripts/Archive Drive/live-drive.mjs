@@ -5,7 +5,7 @@ import {
   optionId,
   activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt,
   mouseClick, must, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
-  RAIL, relaunch, restore, results, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, watch, writeBody,
+  item, RAIL, relaunch, restore, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
@@ -19,14 +19,6 @@ if (GROUPS.size === 0 || [...GROUPS].some((g) => !PHASES.includes(g))) {
 
 // ── Items ───────────────────────────────────────────────────────────────────
 
-const ledger = []
-/** One assertion, owned by the group that lands it and the decision it proves, printed as MATRIX.md lists it. */
-function item(group, decision, name, pass, detail) {
-  const mark = pass ? 'PASS' : 'FAIL'
-  console.log(`${mark.padEnd(5)}  [g${group} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
-  results.push({ name, pass: !!pass })
-  ledger.push({ group: String(group), decision, name, mark })
-}
 const show = (v) => JSON.stringify(v)
 const same = (a, b) => show(a) === show(b)
 
@@ -1317,11 +1309,4 @@ try {
 } finally {
   await restore()
 }
-const count = (f) => ledger.filter(f).length
-console.log('\ngroup  pass  fail')
-for (const g of ['0', ...PHASES].filter((g) => g === '0' || GROUPS.has(g))) {
-  const of = (m) => count((r) => r.group === g && r.mark === m)
-  console.log(`${g.padStart(5)} ${String(of('PASS')).padStart(5)} ${String(of('FAIL')).padStart(5)}`)
-}
-console.log(`${results.filter((r) => r.pass).length}/${results.length} held`)
-process.exit(results.every((r) => r.pass) ? 0 : 1)
+tally(['0', ...PHASES].filter((g) => g === '0' || GROUPS.has(g)))

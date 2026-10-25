@@ -4,7 +4,7 @@ import {
   mintOptionId,
   against, ask, boxOf, check, chooseNative, click, closePanel, createPage, doubleClick, drag, escapeAll, field, frontmatter,
   launch, measure, metrics, mouseAt, mouseClick, must, NEXUS, openCollection, openPage, openPane, openPanel,
-  PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
+  closeSettings, openSettings, PAGE_VIEW, pageFile, pageIds, pagePath, PANE, PANE_VIEW, portalOpen, pressKey, printMetrics, read, refusal, restore, results,
   row, sel, selectField, SETTINGS_BUTTON, settles, shot, sleep, sweep, typeText, until, writeBody, writeMetrics,
 } from '../drive-harness.mjs'
 
@@ -618,13 +618,6 @@ async function group3(cdp) {
 
 // ── Group 4 — Excluded Directories and Open In Preview ──────────────────────
 
-const RIBBON_SETTINGS = sel('.sidebar-ribbon [aria-label="Settings"]')
-async function openSettings(cdp, frame) {
-  if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, RIBBON_SETTINGS)
-  await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
-  await click(cdp, `[...document.querySelectorAll('.settings-rail [data-reveal-host]')].find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
-  await sleep(800)
-}
 const EXCLUDED = `document.querySelector('[data-picker-portal] [aria-label="Add exclusion"]')?.closest('[data-picker-portal]')`
 const folders = `[...((${EXCLUDED})?.querySelectorAll('[data-reveal]:not(:has([data-reveal]))') ?? [])]`
 const folderRow = (name) => `${folders}.find((r) => r.textContent.trim() === ${JSON.stringify(name)})`
@@ -688,8 +681,7 @@ async function group4(cdp) {
   check("group 4: Open In Preview's pane opens at the shared 250 minimum", preview && preview.min === '250px' && preview.width >= 250, JSON.stringify(preview))
   await shot(cdp, 'preview-pane')
   await escapeAll(cdp)
-  await mouseClick(cdp, RIBBON_SETTINGS)
-  await sleep(600)
+  await closeSettings(cdp)
 }
 
 // ── Group 5 — the option editor and Filter ──────────────────────────────────

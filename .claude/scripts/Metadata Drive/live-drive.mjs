@@ -5,8 +5,8 @@ import { parse } from 'yaml'
 import {
   mintOptionId, optionId,
   ask, check, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
-  closePanel, must, NEXUS, openField, openPanel, portalOpen, pressKey, read, restore, results, selectField, SETTINGS_BUTTON,
-  settles, shot, sleep, textEl, typeText, until,
+  closePanel, closeSettings, DIALOG, must, NEXUS, openField, openPanel, openSettings, PORTAL_ROWS, portalOpen, pressKey, RAIL, read,
+  restore, results, ribbon, selectField, SETTINGS_BUTTON, settles, shot, sleep, textEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 
 const PORT = 9363
@@ -239,7 +239,6 @@ const ROWS_ON_SCREEN = `(() => {
 })()`
 const SCROLLER = `(() => { let e = document.querySelector('.data-row'); while (e && !(e.scrollHeight > e.clientHeight && /auto|scroll/.test(getComputedStyle(e).overflowY))) e = e.parentElement; return e })()`
 const sidebarRow = (title) => `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === ${JSON.stringify(title)})`
-const ribbon = (label) => `document.querySelector('.sidebar-ribbon [aria-label="${label}"]')`
 
 async function sidebarTo(cdp, mode, title) {
   if (!(await cdp.evaluate(`!!(${sidebarRow(title)})`))) await click(cdp, ribbon(mode))
@@ -1335,35 +1334,20 @@ async function group8(cdp) {
 
 // ── Group 9 — The gesture pass (Phase 9) ───────────────────────────────────
 
-const RAIL = `[...document.querySelectorAll('.settings-rail [data-reveal-host]')]`
-const DIALOG = `document.querySelector('[role="alertdialog"]')`
 const trigger = (label) => `document.querySelector('button[aria-label="${label}"]')`
 const dialogUp = (cdp) => cdp.evaluate(`!!${DIALOG}`)
 const dialogButton = (cancel) => `[...${DIALOG}.querySelectorAll('button')].find((b) => (b.textContent.trim() === 'Cancel') === ${cancel})`
 
-async function openSettings(cdp, frame) {
-  if (!(await cdp.evaluate(`!!document.querySelector('.settings-rail')`))) await mouseClick(cdp, ribbon('Settings'))
-  await until('the Settings window', () => cdp.evaluate(`!!document.querySelector('.settings-rail')`))
-  await click(cdp, `${RAIL}.find((r) => r.textContent.trim() === ${JSON.stringify(frame)})`)
-  await sleep(800)
-}
-async function closeSettings(cdp) {
-  if (await cdp.evaluate(`!!document.querySelector('.settings-rail')`)) await mouseClick(cdp, ribbon('Settings'))
-  await sleep(600)
-}
 async function openEditor(cdp, label) {
   await escapeAll(cdp)
   await sidebarTo(cdp, 'Collections', COLLECTION)
   await sleep(800)
-  await mouseClick(cdp, SETTINGS_BUTTON)
-  await sleep(800)
-  await click(cdp, `[...document.querySelectorAll('button, [role=button]')].find((b) => b.textContent.trim() === 'Properties')`)
-  await sleep(800)
+  await viewFrame(cdp, 'Properties')
   await click(cdp, `${textEl('span', label)}.closest('[role=button],button,[data-line-row]')`)
   await until(`${label}'s settings`, () => cdp.evaluate(`!!${trigger('Label Format')}`))
   await sleep(600)
 }
-const FORMAT_ROWS = `[...document.querySelectorAll('[data-picker-portal] [role=button]')]`
+const FORMAT_ROWS = `[...document.querySelectorAll('${PORTAL_ROWS}')]`
 /** Opens a format row's pane, answering its rows. */
 async function formatPane(cdp, row) {
   await click(cdp, trigger(row))

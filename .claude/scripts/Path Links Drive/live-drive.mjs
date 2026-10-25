@@ -6,7 +6,7 @@ import { parse } from 'yaml'
 import {
   ask, boxOf, chooseNative, click, closePanel, escapeAll, field, fieldValue, FM, launch, META,
   measure, mintPageId, mouseAt, mouseClick, must, NEXUS, openPane, openPanel, PAGE_VIEW, PANE_VIEW, pickNative, popNative,
-  pressKey, refusal, relaunch, restore, results, selectField, settles, SHIFT, shot, sleep, typeText, until,
+  ledger, pressKey, refusal, relaunch, restore, results, selectField, settles, SHIFT, shot, sleep, tally, typeText, until,
 } from '../drive-harness.mjs'
 
 const PORT = 9383
@@ -22,7 +22,6 @@ const LANDED = Number(process.env.POMMORA_PL_LANDED ?? 1)
 
 // ── Items ───────────────────────────────────────────────────────────────────
 
-const ledger = []
 /** One assertion, owned by the plan phase that lands it and the decision it proves. */
 function item(group, phase, decision, name, pass, detail) {
   const awaited = phase > LANDED
@@ -1350,11 +1349,7 @@ try {
 } finally {
   await restore()
 }
-const count = (f) => ledger.filter(f).length
-console.log('\ngroup  pass  fail  ahead  await  skip')
-for (const g of [0, ...ALL].filter((g) => g === 0 || GROUPS.has(g))) {
-  const of = (m) => count((r) => r.group === g && r.mark === m)
-  console.log(`${String(g).padStart(5)} ${String(of('PASS')).padStart(5)} ${String(of('FAIL')).padStart(5)} ${String(of('AHEAD')).padStart(6)} ${String(of('AWAIT')).padStart(6)} ${String(of('SKIP')).padStart(5)}`)
-}
-console.log(`${results.filter((r) => r.pass).length}/${results.length} held (an item awaiting a later phase than ${LANDED} holds by definition)`)
-process.exit(results.every((r) => r.pass) ? 0 : 1)
+tally([0, ...ALL].filter((g) => g === 0 || GROUPS.has(g)), {
+  marks: ['PASS', 'FAIL', 'AHEAD', 'AWAIT', 'SKIP'],
+  note: ` (an item awaiting a later phase than ${LANDED} holds by definition)`,
+})

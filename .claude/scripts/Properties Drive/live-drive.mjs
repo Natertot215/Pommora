@@ -5,8 +5,8 @@ import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
-  openCollection, openPage, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
-  holds, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
+  openCollection, openPage, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, row, sel, selectField, SET,
+  holds, item, PORTAL_ROWS, SETTINGS_BUTTON, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
@@ -21,14 +21,6 @@ if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
 
 // ── Items ───────────────────────────────────────────────────────────────────
 
-const ledger = []
-/** One assertion, owned by the group that lands it and the decision it proves, printed as MATRIX.md lists it. */
-function item(group, decision, name, pass, detail) {
-  const mark = pass ? 'PASS' : 'FAIL'
-  console.log(`${mark.padEnd(5)}  [g${group} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
-  results.push({ name, pass: !!pass })
-  ledger.push({ group: String(group), decision, name, mark })
-}
 const show = (v) => JSON.stringify(v)
 const same = (a, b) => show(a) === show(b)
 
@@ -45,15 +37,6 @@ const rowsOf = (cdp, css) =>
     label: e.textContent.trim(),
     glyph: [...(e.querySelector('svg')?.classList ?? [])].find((c) => c.startsWith('lucide-'))?.slice(7) ?? null,
   }))`)
-const PORTAL_ROWS = '[data-picker-portal] [role=button]'
-/** Opens the view settings at one of its frames. */
-async function viewFrame(cdp, frame) {
-  await escapeAll(cdp)
-  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') !== 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
-  await sleep(800)
-  await click(cdp, `[...document.querySelectorAll('[role=button], button')].find((b) => b.textContent.trim() === ${JSON.stringify(frame)})`)
-  await sleep(800)
-}
 async function pickerRows(cdp, ariaLabel) {
   await click(cdp, sel(`[aria-label="${ariaLabel}"]`))
   await until(`the ${ariaLabel} picker`, () => portalOpen(cdp))
@@ -108,6 +91,7 @@ async function group1(cdp) {
   await shot(cdp, 'g1-properties-pane')
 
   await escapeAll(cdp)
+  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
   writeFileSync(REGISTRY, stored)
   await until('the registry as it was', async () => !(await held(cdp, witness.id)))
 }
@@ -137,8 +121,6 @@ async function group2(cdp) {
   await must('show the Looks Table', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: view.id }))
   await createPage(cdp, 'Looks One', { [ids['Looks Select']]: { kind: 'select', value: optionId(defNamed('Looks Select'), 'Alpha') } })
   await openCollection(cdp)
-  // An earlier group's view settings panel covers the right-hand headers.
-  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') === 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
   await until('the Looks Table headers', () => cdp.evaluate(`!!(${header('Looks Select')})`))
 
   const number = await headerMenu(cdp, 'Looks Number')
@@ -1186,11 +1168,4 @@ try {
 } finally {
   await restore()
 }
-const count = (f) => ledger.filter(f).length
-console.log('\ngroup  pass  fail')
-for (const g of ['0', ...LANDED].filter((g) => g === '0' || GROUPS.has(g))) {
-  const of = (m) => count((r) => r.group === g && r.mark === m)
-  console.log(`${g.padStart(5)} ${String(of('PASS')).padStart(5)} ${String(of('FAIL')).padStart(5)}`)
-}
-console.log(`${results.filter((r) => r.pass).length}/${results.length} held`)
-process.exit(results.every((r) => r.pass) ? 0 : 1)
+tally(['0', ...LANDED].filter((g) => g === '0' || GROUPS.has(g)))

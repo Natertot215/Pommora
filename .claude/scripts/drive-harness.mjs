@@ -78,6 +78,24 @@ export const must = async (what, reply) => {
 
 export const results = []
 export const check = (name, pass, detail) => { results.push({ name, pass: !!pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${!pass && detail ? `\n      ${detail}` : ''}`) }
+export const ledger = []
+/** One assertion, owned by the group that lands it and the decision it proves, printed as MATRIX.md lists it. */
+export function item(group, decision, name, pass, detail) {
+  const mark = pass ? 'PASS' : 'FAIL'
+  console.log(`${mark.padEnd(5)}  [g${group} ${decision}] ${name}${!pass && detail ? `\n       ${detail}` : ''}`)
+  results.push({ name, pass: !!pass })
+  ledger.push({ group: String(group), decision, name, mark })
+}
+/** Each group's count of every mark, then how many results held, exiting failed when any didn't. */
+export function tally(groups, { marks = ['PASS', 'FAIL'], note = '' } = {}) {
+  console.log(`\ngroup${marks.map((m) => ` ${m.toLowerCase().padStart(m.length + 1)}`).join('')}`)
+  for (const g of groups) {
+    const of = (m) => ledger.filter((r) => r.group === g && r.mark === m).length
+    console.log(`${String(g).padStart(5)}${marks.map((m) => ` ${String(of(m)).padStart(m.length + 1)}`).join('')}`)
+  }
+  console.log(`${results.filter((r) => r.pass).length}/${results.length} held${note}`)
+  process.exit(results.every((r) => r.pass) ? 0 : 1)
+}
 
 // ── The main process ────────────────────────────────────────────────────────
 
@@ -247,6 +265,15 @@ export async function createPage(cdp, title, seeds = {}) {
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
 export const SETTINGS_BUTTON = `document.querySelector('.toolbar-trio > :not([inert]) button[title="Settings"]')`
+/** Opens the view settings at one of its frames. */
+export async function viewFrame(cdp, frame) {
+  await escapeAll(cdp)
+  if (await cdp.evaluate(`(${SETTINGS_BUTTON}).getAttribute('aria-pressed') !== 'true'`)) await mouseClick(cdp, SETTINGS_BUTTON)
+  await sleep(800)
+  await click(cdp, `[...document.querySelectorAll('[role=button], button')].find((b) => b.textContent.trim() === ${JSON.stringify(frame)})`)
+  await sleep(800)
+}
+export const PORTAL_ROWS = '[data-picker-portal] [role=button]'
 export async function openCollection(cdp) {
   await click(cdp, `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === 'Collection A')`)
   await sleep(1200)
