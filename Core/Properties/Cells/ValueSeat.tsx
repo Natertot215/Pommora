@@ -23,6 +23,7 @@ import { useSession } from '../../Session/store'
 import type { ColumnStyle } from '../columnStyles'
 import { numberBarCapable } from '../formatValue'
 import { resolveFieldValue } from '../fieldValue'
+import { pickKindOf } from '../properties'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
 import { type PickEntry, PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
@@ -218,7 +219,7 @@ export function useValueSeat(host: SeatHost) {
       : null
 
   /** A row never lists itself among a Context's Spaces; a page row's id names no Space, so it excludes nothing. */
-  const target = (row: ViewRow, column: ResolvedColumn): PickTarget => {
+  const target = (row: ViewRow, column: ResolvedColumn): PickTarget | null => {
     const current = resolveFieldValue(row, column)
     const style = host.style(column)
     if (column.type === 'dateTime')
@@ -228,11 +229,13 @@ export function useValueSeat(host: SeatHost) {
         dateFormat: style?.date_format,
         timeFormat: style?.time_format,
       }
-    if (column.def?.type === 'file') return { kind: 'file', def: column.def, current }
+    const pick = pickKindOf(column.type)
+    if (!pick) return null
     const { setStyle } = host
     return {
       kind: 'options',
       column,
+      pick,
       current,
       style:
         setStyle && style

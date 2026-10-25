@@ -3,12 +3,13 @@ import type { ColumnStyle } from '../columnStyles'
 import {
   groupOptions,
   optionGroupsOf,
+  type OptionPickKind,
   type PickOption,
   PROPERTY_TYPES,
   type PropertyDefinition,
   SELECT_GROUP,
 } from '../properties'
-import { NULL_VALUE, optionLabel, type PropertyValue } from '../propertyValue'
+import { optionLabel, type PropertyValue } from '../propertyValue'
 import type { ResolvedColumn } from '../../Views/viewRow'
 import { OptionDraft } from '../Schema/OptionSlot'
 import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
@@ -34,15 +35,14 @@ import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
 import { type PickGroup, pickGroups, pickOver } from './pickModel'
-import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
 import { chooserTop, emptyPane } from './property-picker.css'
-import { PathField } from '@pommora/uix/Fields/PathField'
 
 export type PickTarget = { current: PropertyValue | null } & (
   | {
       kind: 'options'
       column: ResolvedColumn
+      pick: OptionPickKind
       style?: OptionStyleControl
       contextOptions?: PickOption[]
     }
@@ -51,7 +51,6 @@ export type PickTarget = { current: PropertyValue | null } & (
       dateFormat?: ColumnStyle['date_format']
       timeFormat?: ColumnStyle['time_format']
     }
-  | { kind: 'file'; def: PropertyDefinition }
 )
 
 export type PickEntry = {
@@ -98,7 +97,7 @@ export function PropertyPicker({
   const pane = !t ? null : t.kind === 'options' ? (
     (() => {
       const { selected, pick } = pickOver(
-        t.column,
+        t.pick,
         [t.current],
         ([one]) => commit(one.next),
         onDismiss,
@@ -114,30 +113,13 @@ export function PropertyPicker({
         />
       )
     })()
-  ) : t.kind === 'dateTime' ? (
+  ) : (
     <DateTimeValuePicker
       value={t.current}
       dateFormat={t.dateFormat}
       timeFormat={t.timeFormat}
       span
       onCommit={commit}
-    />
-  ) : (
-    <PathField
-      label={t.def.label}
-      value=""
-      empty="Choose a file"
-      browseLabel="Choose File"
-      onBrowse={() =>
-        pickFileInto(t.def, t.current ?? NULL_VALUE, null, (v) => {
-          commit(v)
-          onDismiss()
-        })
-      }
-      onCommit={(raw) => {
-        if (raw.trim()) adoptPathInto(t.def, t.current ?? NULL_VALUE, raw.trim(), commit)
-        onDismiss()
-      }}
     />
   )
 

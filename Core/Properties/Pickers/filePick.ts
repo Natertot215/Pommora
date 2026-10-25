@@ -58,15 +58,6 @@ async function adoptInto(
   return { kind: 'file', value: next }
 }
 
-export function adoptPathInto(
-  def: PropertyDefinition,
-  current: PropertyValue,
-  path: string,
-  commit: (next: PropertyValue | null) => void,
-): void {
-  commitIfDefined(adoptInto(def, filesOf(current), null, path), commit)
-}
-
 /** `undefined` is "nothing happened", which a bare `!= null` would mistake for a clear. */
 function commitIfDefined(
   result: Promise<PropertyValue | null | undefined>,

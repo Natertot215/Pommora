@@ -92,6 +92,7 @@ export function runPropertyAction(
   // The property can leave between the menu opening and the pick; the pick then writes nothing.
   if (!column) return true
   const current = resolveFieldValue(row, column)
+  const pick = pickKindOf(column.type)
   if (value === null)
     useSession.getState().requestPick({
       rowOf,
@@ -102,6 +103,6 @@ export function runPropertyAction(
       style: styleOf?.(column),
     })
   else if (column.type === 'checkbox') commit(column, checkboxValue(value === 'true'))
-  else commit(column, pickedValue(column, current, value))
+  else if (pick) commit(column, pickedValue(pick, current, value))
   return true
 }

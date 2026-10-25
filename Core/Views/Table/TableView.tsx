@@ -202,17 +202,15 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     })
     if (rows.length < 2) return null
     const target = seat.target(rows[0], col)
-    const opts = target.kind === 'options' ? target : undefined
+    if (target?.kind !== 'options') return null
     const currents = rows.map((r) => resolveFieldValue(r, col))
     return (
       <MassPropertyPicker
         key={`${mass.colId}:${mass.rowIds.join('.')}`}
-        column={col}
+        target={target}
         currents={currents}
         open={massOpen}
         triggerRef={massTriggerRef}
-        style={opts?.style}
-        contextOptions={opts?.contextOptions}
         onPick={(commits) => {
           if (commits.length)
             groupUndo(() => {

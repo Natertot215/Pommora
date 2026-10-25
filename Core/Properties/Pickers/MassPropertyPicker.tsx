@@ -1,38 +1,31 @@
 import type { RefObject } from 'react'
-import type { PickOption } from '../properties'
 import type { PropertyValue } from '../propertyValue'
-import type { ResolvedColumn } from '../../Views/viewRow'
-import type { OptionStyleControl } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { type PickCommit, pickOver } from './pickModel'
-import { PropertyOptionRows } from './PropertyPicker'
+import { PropertyOptionRows, type PickTarget } from './PropertyPicker'
 
 export function MassPropertyPicker({
-  column,
+  target,
   currents,
   open,
   triggerRef,
-  style,
-  contextOptions,
   onPick,
   onDismiss,
 }: {
-  column: ResolvedColumn
+  target: Extract<PickTarget, { kind: 'options' }>
   currents: Array<PropertyValue | null>
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
-  style?: OptionStyleControl
-  contextOptions?: PickOption[]
   onPick: (commits: PickCommit[]) => void
   onDismiss: () => void
 }): React.JSX.Element {
-  const { selected, pick } = pickOver(column, currents, onPick, onDismiss)
+  const { selected, pick } = pickOver(target.pick, currents, onPick, onDismiss)
   return (
     <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} solid>
       <PropertyOptionRows
-        column={column}
-        style={style}
-        contextOptions={contextOptions}
+        column={target.column}
+        style={target.style}
+        contextOptions={target.contextOptions}
         selected={selected}
         onPick={pick}
         editable
