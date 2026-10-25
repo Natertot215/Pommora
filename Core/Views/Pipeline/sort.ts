@@ -5,10 +5,9 @@ import type { ViewRow } from '../viewRow'
 import { compareTitles } from '../../Paths/caseFold'
 import { optionIds, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
-import { optionLabel, type PropertyValue } from '../../Properties/propertyValue'
+import type { PropertyValue } from '../../Properties/propertyValue'
 import { resolveColumn } from './columns'
-import { fileName, linkDisplayText, shownProse } from '../../Connections/linkValue'
-import { readDate } from '../../Properties/formatValue'
+import { readDate, shownText } from '../../Properties/formatValue'
 
 type SortKey = number | string
 type Less = (a: SortKey, b: SortKey) => boolean
@@ -36,27 +35,6 @@ function dateOf(v: PropertyValue): number {
 }
 
 const boolRank = (v: PropertyValue): number => (v.kind === 'checkbox' && v.value ? 1 : 0)
-
-function sortText(v: PropertyValue, def: PropertyDefinition | undefined): string {
-  switch (v.kind) {
-    case 'text':
-      return shownProse(v.value)
-    case 'link':
-      return linkDisplayText(v.value)
-    case 'multiSelect':
-      return v.value.map((id) => optionLabel(def, id)).join(',')
-    case 'file':
-      // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the leading bracket and order by whatever follows it.
-      return v.value.map(fileName).join(',')
-    case 'number':
-    case 'checkbox':
-    case 'dateTime':
-    case 'select':
-    case 'context':
-    case 'null':
-      return ''
-  }
-}
 
 function buildCriterion(
   c: SortCriterion,
@@ -90,7 +68,7 @@ function buildCriterion(
     case 'text':
     case 'multiSelect':
     case 'file':
-      return { extract: (r) => sortText(value(r), column.def), less: ciLess, ascending }
+      return { extract: (r) => shownText(value(r), column.def) ?? '', less: ciLess, ascending }
     case 'context':
       return null
   }

@@ -6,8 +6,10 @@ import {
   barDivisor,
   numberFormatGlyph,
   readDate,
+  shownText,
 } from './formatValue'
-import { CURRENCY_CODES } from './properties'
+import { CURRENCY_CODES, type PropertyDefinition } from './properties'
+import type { PropertyValue } from './propertyValue'
 
 describe('formatDate', () => {
   it('renders the four date formats', () => {
@@ -264,5 +266,35 @@ describe('barDivisor', () => {
       barDivisor('bar', { number_family: 'number', number_fraction: true, number_denominator: 0 }),
     ).toBeUndefined()
     expect(barDivisor('bar', { number_family: 'number', number_fraction: true })).toBeUndefined()
+  })
+})
+
+describe('shownText', () => {
+  it("shows an option's label, a text's connections as they read, a link's display text, and a list's members joined; no text for the rest", () => {
+    const stage: PropertyDefinition = {
+      id: 'p',
+      label: 'Stage',
+      key: 'Stage',
+      type: 'multiSelect',
+      select_options: [
+        { id: 'opt_a', key: 'a', label: 'Alpha' },
+        { id: 'opt_b', key: 'b', label: 'Beta' },
+      ],
+    }
+    expect(shownText({ kind: 'select', value: 'opt_a' }, stage)).toBe('Alpha')
+    expect(shownText({ kind: 'multiSelect', value: ['opt_b', 'opt_a'] }, stage)).toBe('Beta,Alpha')
+    expect(shownText({ kind: 'text', value: '[[Alpha|nice]] notes' })).toBe('nice notes')
+    expect(shownText({ kind: 'link', value: '[Zebra](https://a.co)' })).toBe('Zebra')
+    expect(shownText({ kind: 'file', value: ['[[Zebra.pdf]]', '[[apple.pdf]]'] })).toBe(
+      'Zebra.pdf,apple.pdf',
+    )
+    const textless: PropertyValue[] = [
+      { kind: 'number', value: 3 },
+      { kind: 'checkbox', value: true },
+      { kind: 'dateTime', value: '2026-06-15' },
+      { kind: 'context', value: ['s'] },
+      { kind: 'null' },
+    ]
+    for (const v of textless) expect(shownText(v)).toBeNull()
   })
 })
