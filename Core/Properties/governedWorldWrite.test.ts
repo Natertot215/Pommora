@@ -129,6 +129,7 @@ describe('a property write reconciles the whole file', () => {
 
 describe('a registry definition named for a key Pommora manages', () => {
   it('governs no own key and reads as no property', async () => {
+    // A hand edit of the seeded list is the case under test.
     const registryFile = join(root, '.nexus', 'properties.json')
     const registry = JSON.parse(await readFile(registryFile, 'utf8'))
     registry.defs.prop_id = {

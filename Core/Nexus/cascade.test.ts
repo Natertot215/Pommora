@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
 import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, seedNexus, tempRoot } from '../Testing/hostFs'
 import { deleteCascade, renameCascade } from './cascade'
 import { sweepGovernedRoots } from './governedSweep'
 import { createTestPage } from '../Testing/createTestPage'
@@ -697,10 +697,7 @@ describe('deleteCascade', () => {
 
   it('sweeps nothing when no Link property is defined', async () => {
     await linker('Cites', '[[Target]]')
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({ order: [], defs: {} }),
-    )
+    await seedNexus(root, { defs: [] })
     await refreshTree(root)
     sweepSpy.mockClear()
     expect(await deleteCascade(root, target(), ['Notes/Target.md'])).toEqual({

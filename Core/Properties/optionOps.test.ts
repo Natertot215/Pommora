@@ -246,6 +246,7 @@ describe('editOption', () => {
       { id: 'opt_A', key: 'A', label: 'A' },
       { key: ' ', label: ' ' },
     ]
+    // Raw option shapes the decoder repairs are the case under test.
     await writeFile(file, JSON.stringify(raw))
     expect(
       (await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, id: 'opt_B', label: 'B' }))

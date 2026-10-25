@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, writeFile, mkdir, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, readJsonAt, seedNexus } from '../Testing/hostFs'
 import { mutateRegistry, orderedDefs, readKeptRegistry, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
 import { ok } from '../Contract/result'
@@ -36,6 +36,7 @@ describe('propertiesRegistry', () => {
 
   it('refuses an unreadable file rather than answering "no properties"', async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
+    // Damaged bytes are the case under test.
     await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
     await expect(readRegistry(root)).rejects.toThrow()
     await expect(mutateRegistry(root, () => ({ result: ok(null) }))).resolves.toMatchObject({
@@ -62,11 +63,7 @@ describe('propertiesRegistry', () => {
 
   it('an unchanged registry answers the parse it holds, and a write is read fresh', async () => {
     const file = join(root, '.nexus', 'properties.json')
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(
-      file,
-      JSON.stringify({ order: ['prop_a'], defs: { prop_a: def('prop_a', 'Priority') } }),
-    )
+    await seedNexus(root, { defs: [def('prop_a', 'Priority')] })
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(file, past, past)
     const a = await readRegistry(root)

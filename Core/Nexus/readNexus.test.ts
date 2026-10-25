@@ -3,7 +3,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { mkdirSync, writeFileSync, rmSync, existsSync, renameSync, utimesSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from '../Paths/posix'
-import { posixPath, tempRoot } from '../Testing/hostFs'
+import { posixPath, seedNexus, tempRoot } from '../Testing/hostFs'
 import { readNexus } from './readNexus'
 import { containerSchema } from './treePatch'
 import {
@@ -488,14 +488,9 @@ describe('readNexus — the walk names what it cannot read', () => {
       d(join(r, '.nexus'))
       w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxs' }))
       w(join(r, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Private'] }))
-      w(
-        join(r, '.nexus', 'properties.json'),
-        JSON.stringify({
-          order: ['p'],
-          defs: { p: { id: 'p', label: 'Done', key: 'Done', type: 'checkbox' } },
-        }),
-      )
+      await seedNexus(r, { defs: [{ id: 'p', label: 'Done', key: 'Done', type: 'checkbox' }] })
       const first = await readNexus(r)
+      // Damaged bytes are the case under test.
       w(join(r, '.nexus', file), '{ corrupt')
       const next = await readNexus(r)
       expect(next.config.excluded).toEqual(['Private'])

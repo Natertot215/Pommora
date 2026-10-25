@@ -1569,15 +1569,9 @@ describe('handleMutate — renameHeading', () => {
 
 describe('handleMutate — a page delete’s linkers', () => {
   it('pushes their values but not their bodies, since only frontmatter moved', async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+    })
     await writeFile(
       join(root, 'Notes', 'Daily', 'Alpha.md'),
       `---\nID: ${A_ID}\nRelated: "[[Beta]]"\n---\n`,
@@ -1601,15 +1595,9 @@ describe('handleMutate — a page delete’s linkers', () => {
 describe('handleMutate — a page delete reaches the pages beneath a Set whose sidecar doesn’t parse', () => {
   const sidecar = (): string => join(root, 'Notes', 'Archive', '_pageset.json')
   beforeEach(async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+    })
     await mkdir(join(root, 'Notes', 'Archive'))
     await writeFile(sidecar(), JSON.stringify({ id: 'set-archive' }))
     await writeFile(

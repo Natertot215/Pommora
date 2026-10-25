@@ -841,6 +841,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
   const page = (id: string, fm = ''): string => `---\nID: ${id}\n${fm}---\n\nbody\n`
   const tags = (...members: string[]): string =>
     `Tags:\n${members.map((m) => `  - ${m}\n`).join('')}`
+  // An outside edit of the property list, settled as the file event it raises.
   const registry = (first: string): Promise<void> =>
     writeFile(
       abs('.nexus', 'properties.json'),

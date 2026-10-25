@@ -1,9 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, putJson, readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import {
+  noModeBits,
+  putJson,
+  readJsonAt,
+  seedNexus,
+  seedSpaceSidecar,
+  tempRoot,
+} from '../Testing/hostFs'
 import {
   createProperty,
   defaultStatusSeed,
@@ -22,7 +29,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
 import { readNotes, runNoted } from '../Nexus/owed'
 import { KEY_REFUSAL } from './validation'
-import { nexusConfig, nexusDir } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
 import { fail, ok } from '../Contract/result'
@@ -49,18 +56,11 @@ const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft
 
 const registryFilePath = () => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
-const seedRegistry = async (stored: { id: string } & Record<string, unknown>) => {
-  await mkdir(nexusDir(root), { recursive: true })
-  await writeFile(
-    registryFilePath(),
-    JSON.stringify({ order: [stored.id], defs: { [stored.id]: stored } }),
-  )
-}
-
 describe('the registry file is never replaced by a failed read', () => {
   it('a mutation against an unreadable registry fails and writes nothing', async () => {
     const a = await createProperty(root, def({ label: 'Real', type: 'number' }))
     expect(a.ok).toBe(true)
+    // Damaged bytes are the case under test.
     await writeFile(registryFilePath(), '{ corrupt', 'utf8')
     await expect(
       createProperty(root, def({ label: 'Casualty', type: 'number' })),
@@ -173,7 +173,7 @@ describe('createProperty', () => {
   })
 
   it('steps the label aside while the key its format writes is held', async () => {
-    await seedRegistry({ id: 'prop_d', label: 'Due', key: 'due_date', type: 'text' })
+    await seedNexus(root, { defs: [{ id: 'prop_d', label: 'Due', key: 'due_date', type: 'text' }] })
     const r = await createProperty(
       root,
       def({ label: 'Due Date', type: 'text', key_format: 'snake_case' }),
@@ -186,7 +186,7 @@ describe('createProperty', () => {
   })
 
   it('keeps a label another definition holds only as its key', async () => {
-    await seedRegistry({ id: 'prop_x', label: 'X', key: 'due date', type: 'text' })
+    await seedNexus(root, { defs: [{ id: 'prop_x', label: 'X', key: 'due date', type: 'text' }] })
     const r = await createProperty(
       root,
       def({ label: 'Due Date', type: 'text', key_format: 'kebab-case' }),
@@ -199,7 +199,7 @@ describe('createProperty', () => {
   })
 
   it('steps a label aside whose key folds onto a held key', async () => {
-    await seedRegistry({ id: 'prop_p', label: 'Phase', key: 'stage', type: 'text' })
+    await seedNexus(root, { defs: [{ id: 'prop_p', label: 'Phase', key: 'stage', type: 'text' }] })
     const r = await createProperty(root, def({ label: 'Stage', type: 'text' }))
     if (!r.ok) throw new Error('create failed')
     expect((await readRegistry(root)).defs[r.value.id]).toMatchObject({
@@ -466,12 +466,16 @@ describe('renameProperty and configureProperty', () => {
   })
 
   it('an edit seeding a definition stored without options keys the seed through the Value Format', async () => {
-    await seedRegistry({
-      id: 'prop_k',
-      label: 'Kind',
-      key: 'Kind',
-      type: 'select',
-      value_format: 'lowercase',
+    await seedNexus(root, {
+      defs: [
+        {
+          id: 'prop_k',
+          label: 'Kind',
+          key: 'Kind',
+          type: 'select',
+          value_format: 'lowercase',
+        },
+      ],
     })
     expect(await configureProperty(root, 'prop_k', { icon: 'tag' })).toEqual(ok(null))
     expect((await readRegistry(root)).defs.prop_k.select_options).toEqual([
@@ -505,7 +509,11 @@ const seedHeld = async (draft: PropertyDraft, frontmatter: string) => {
 
 describe('a Key Format change is a rename of the key', () => {
   it('keeps the label a definition stored without one reads, writing it beside the new key', async () => {
-    await seedRegistry({ id: 'prop_m', key: 'Model', type: 'text' })
+    // A definition stored without a label, which the typed seed can't write.
+    await putJson(registryFilePath(), {
+      order: ['prop_m'],
+      defs: { prop_m: { id: 'prop_m', key: 'Model', type: 'text' } },
+    })
     expect((await setKeyFormat(root, 'prop_m', 'lowercase')).ok).toBe(true)
     expect((await readRegistry(root)).defs.prop_m).toMatchObject({ label: 'Model', key: 'model' })
   })
@@ -548,7 +556,9 @@ describe('a Key Format change is a rename of the key', () => {
   })
 
   it('refuses a format writing a key another property writes', async () => {
-    await seedRegistry({ id: 'prop_u', label: 'Due_Date', key: 'Due_Date', type: 'text' })
+    await seedNexus(root, {
+      defs: [{ id: 'prop_u', label: 'Due_Date', key: 'Due_Date', type: 'text' }],
+    })
     const c = await createProperty(root, def({ label: 'Due Date', type: 'text' }))
     if (!c.ok) throw new Error('setup failed')
     const r = await setKeyFormat(root, c.value.id, 'snake_case')
@@ -574,12 +584,16 @@ describe('a Key Format change is a rename of the key', () => {
   })
 
   it('setting the format a definition already stores answers nothing and writes nothing', async () => {
-    await seedRegistry({
-      id: 'prop_t',
-      label: 'Tags',
-      key: 'Tags',
-      type: 'text',
-      key_format: 'Match Title',
+    await seedNexus(root, {
+      defs: [
+        {
+          id: 'prop_t',
+          label: 'Tags',
+          key: 'Tags',
+          type: 'text',
+          key_format: 'Match Title',
+        },
+      ],
     })
     const registry = await readFile(registryFilePath(), 'utf8')
     vi.mocked(runNoted).mockClear()
@@ -635,7 +649,7 @@ describe('rekeyHolders', () => {
   })
 
   it('counts nothing for a format writing the key already stored', async () => {
-    await seedRegistry({ id: 'prop_t', label: 'tags', key: 'tags', type: 'text' })
+    await seedNexus(root, { defs: [{ id: 'prop_t', label: 'tags', key: 'tags', type: 'text' }] })
     expect(await rekeyHolders(root, 'prop_t', { key_format: 'lowercase' })).toEqual(ok(0))
   })
 })

@@ -462,6 +462,7 @@ describe('a delete reaches saved views', () => {
     const before = await surfaces.read()
     const registry = join(root, '.nexus', 'properties.json')
     vi.mocked(removeFromRegistry).mockImplementationOnce(async (...args) => {
+      // Damaged bytes are the case under test.
       await writeFile(registry, '{nope')
       const real = await vi.importActual<typeof import('./registryProperty')>('./registryProperty')
       return real.removeFromRegistry(...args)

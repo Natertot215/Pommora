@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
 import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { seedNexus, tempRoot } from '../Testing/hostFs'
 import { forgetLastReads } from '../Files/atomicWrite'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
@@ -479,6 +479,7 @@ describe('the parity cases', () => {
     expect(walk).not.toHaveBeenCalled()
   })
 
+  // An outside edit of the property list, settled as the file event it raises.
   const registry = (defs: Record<string, object>): Promise<void> =>
     writeFile(abs('.nexus', 'properties.json'), JSON.stringify({ order: Object.keys(defs), defs }))
 
@@ -1132,15 +1133,9 @@ describe('an outside heading rename', () => {
 
 describe('an outside heading rename a Space alone links', () => {
   it('cascades into the Space', async () => {
-    await writeFile(
-      abs('.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+    })
     await writeFile(
       contextsRegistryFile(root),
       JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),

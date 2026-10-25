@@ -325,6 +325,7 @@ describe('an undo on a page', () => {
       deps,
     )
     expect(await page.held('<Projects>')).toBe('<Projects>:\n  - Pommora')
+    // Damaged bytes are the case under test.
     await writeFile(join(nexusDir(root), 'properties.json'), '{')
     expect((await undo(written)).ok).toBe(true)
     expect(await page.held('<Projects>')).toBeUndefined()

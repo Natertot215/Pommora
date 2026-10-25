@@ -323,6 +323,7 @@ describe('what the pass skips', () => {
 
   it('counts no skip for an unreadable property list, whose Spaces still read', async () => {
     forgetLastReads()
+    // A directory at the list's path is the unreadable case under test.
     await rm(join(root, '.nexus', 'properties.json'), { force: true })
     await mkdir(join(root, '.nexus', 'properties.json'))
     expect((await reachConfig(root, removal)).skipped).toBe(0)

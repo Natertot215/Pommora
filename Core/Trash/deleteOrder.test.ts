@@ -3,7 +3,7 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { dirname, join } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, readJsonAt, seedNexus } from '../Testing/hostFs'
 import { lockContention } from '../Testing/machines'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
@@ -104,15 +104,9 @@ beforeEach(async () => {
     join(root, '.nexus', 'nexus.json'),
     JSON.stringify({ id: 'nx', createdAt: '2026' }),
   )
-  await writeFile(
-    join(root, '.nexus', 'properties.json'),
-    JSON.stringify({
-      order: ['prop_related'],
-      defs: {
-        prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-      },
-    }),
-  )
+  await seedNexus(root, {
+    defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+  })
   await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),

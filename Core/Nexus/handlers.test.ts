@@ -170,6 +170,7 @@ describe('openNexusSequence', () => {
       join(contextsDir(root), 'Areas', 'Home', '_space.json'),
       JSON.stringify({ id: HOME }),
     )
+    // Damaged bytes are the case under test.
     await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
     vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, false)

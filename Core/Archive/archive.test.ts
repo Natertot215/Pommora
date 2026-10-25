@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, join } from '../Paths/posix'
-import { readJsonAt, tempRoot } from '../Testing/hostFs'
+import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
 import * as record from '../Bundles/record'
@@ -66,15 +66,9 @@ beforeEach(async () => {
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(at('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: '2026' }))
   await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-  await writeFile(
-    at('.nexus', 'properties.json'),
-    JSON.stringify({
-      order: ['prop_related'],
-      defs: {
-        prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-      },
-    }),
-  )
+  await seedNexus(root, {
+    defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+  })
   await mkdir(at('Notes', 'Daily'), { recursive: true })
   await writeFile(at('Notes', '_pagecollection.json'), JSON.stringify({ id: NOTES }))
   await writeFile(
@@ -612,16 +606,12 @@ describe('a delete from the Archive', () => {
   })
 
   const scoredBeta = async (): Promise<void> => {
-    await writeFile(
-      at('.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related', 'prop_score'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-          prop_score: { id: 'prop_score', label: 'Score', key: 'Score', type: 'number' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [
+        { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        { id: 'prop_score', label: 'Score', key: 'Score', type: 'number' },
+      ],
+    })
     await writeFile(
       at('Notes', '_pagecollection.json'),
       JSON.stringify({ id: NOTES, properties: ['prop_score'] }),

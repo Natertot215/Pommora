@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
 import { join, relative } from '../Paths/posix'
-import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import * as atomicWrite from '../Files/atomicWrite'
 import { pathExists } from '../Files/atomicWrite'
 import * as contextsRegistry from '../Contexts/contextsRegistry'
@@ -72,11 +72,7 @@ const RELATED = {
   type: 'link',
 } as PropertyDefinition
 
-const addRelated = (): Promise<void> =>
-  putJson(nexusConfig(root, NEXUS_CONFIG_FILES.properties), {
-    order: [RELATED.id],
-    defs: { [RELATED.id]: RELATED },
-  })
+const addRelated = (): Promise<void> => seedNexus(root, { defs: [RELATED] })
 
 const page = async (parent: string, name: string, links?: string): Promise<string> => {
   const made = await createTestPage(parent, name, {

@@ -5,7 +5,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
-import { tempRoot, noModeBits, readJsonAt, seedSpaceSidecar } from '../Testing/hostFs'
+import { tempRoot, noModeBits, readJsonAt, seedNexus, seedSpaceSidecar } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as atomicWrite from '../Files/atomicWrite'
@@ -913,15 +913,9 @@ describe('a Link value refilled into a trashed copy', () => {
   }
 
   beforeEach(async () => {
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+    })
     await writeFile(beta(), `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\n---\nlinker`)
     await refreshTree(root)
   })
@@ -1053,15 +1047,9 @@ describe('restore — the returning page’s links follow the pages they named',
 
   beforeEach(async () => {
     installStores(memoryStores().stores)
-    await writeFile(
-      join(root, '.nexus', 'properties.json'),
-      JSON.stringify({
-        order: ['prop_related'],
-        defs: {
-          prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-        },
-      }),
-    )
+    await seedNexus(root, {
+      defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+    })
     await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
     await writeFile(
       join(root, 'Notes', 'Other', '_pageset.json'),
@@ -1795,15 +1783,9 @@ describe('emptyBundle — giving a bundle up for good', () => {
     const ARCHIVED = join('.nexus', 'archive', 'col-notes')
 
     beforeEach(async () => {
-      await writeFile(
-        join(root, '.nexus', 'properties.json'),
-        JSON.stringify({
-          order: ['prop_related'],
-          defs: {
-            prop_related: { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
-          },
-        }),
-      )
+      await seedNexus(root, {
+        defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+      })
       await mkdir(join(root, 'Other'), { recursive: true })
       await writeFile(
         join(root, 'Other', '_pagecollection.json'),
