@@ -6,6 +6,7 @@ export interface ContextIdentity {
   title: string
   singular?: string
   icon: string
+  spaceIds: string[]
 }
 
 export interface SpaceIdentity {
@@ -27,7 +28,10 @@ const mapsByContexts = new WeakMap<
   { icons: Personalization['defaultIcons']; maps: IdentityMaps }
 >()
 
-export function identityOf(tree: NexusTree): IdentityMaps {
+const NO_IDENTITY: IdentityMaps = { contextIds: [], contexts: new Map(), spaces: new Map() }
+
+export function identityOf(tree: NexusTree | null): IdentityMaps {
+  if (!tree) return NO_IDENTITY
   // The user's Space glyph, not the curated seed — personalization rides the tree, so every surface resolving through this seam lands on the same icon the sidebar shows.
   const di = tree.config.personalization.defaultIcons
   const held = mapsByContexts.get(tree.contexts)
@@ -39,6 +43,7 @@ export function identityOf(tree: NexusTree): IdentityMaps {
       title: g.def.title,
       singular: g.def.singular,
       icon: entityIcon('context', g.def.icon, di),
+      spaceIds: g.spaces.map((s) => s.id),
     })
     for (const s of g.spaces) {
       spaces.set(s.id, {
@@ -55,16 +60,16 @@ export function identityOf(tree: NexusTree): IdentityMaps {
 }
 
 export function contextIdsOf(tree: NexusTree | null): string[] {
-  return tree ? identityOf(tree).contextIds : []
+  return identityOf(tree).contextIds
 }
 
 /** Hand this to a surface that must label Context columns but can't hold the tree — a memoized row would re-render on every unrelated tree push. */
 export function contextsByIdOf(tree: NexusTree | null): ReadonlyMap<string, ContextIdentity> {
-  return tree ? identityOf(tree).contexts : new Map()
+  return identityOf(tree).contexts
 }
 
 export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdentity | undefined {
-  return tree ? identityOf(tree).spaces.get(id) : undefined
+  return identityOf(tree).spaces.get(id)
 }
 
 export function spacesByIdOf(tree: NexusTree): ReadonlyMap<string, SpaceIdentity> {

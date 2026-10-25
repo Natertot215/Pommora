@@ -8,6 +8,7 @@ import { viewSpecOf } from '../valueKinds'
 import { prepareGroup, prepareRule } from './filter'
 import type { ViewRow } from '../viewRow'
 import type { SetTreeNode } from './group'
+import type { IdentityMaps } from '../../Contexts/contextIdentity'
 
 function ruleSeed(
   rule: FilterRule,
@@ -39,13 +40,13 @@ export function filterSeeds({
   blank,
   schema,
   setTree,
-  contextIds,
+  identity,
 }: {
   filter: FilterGroup | undefined
   blank: ViewRow
   schema: PropertyDefinition[]
   setTree: SetTreeNode[]
-  contextIds: readonly string[]
+  identity: IdentityMaps
 }): Seeds {
   if (!filter) return {}
   // `passes` is the blank page against the node's compiled test, `undefined` when the node abstains.
@@ -53,15 +54,15 @@ export function filterSeeds({
     node: FilterRule | FilterGroup,
   ): { seeds: Seeds; met: boolean; passes?: boolean } => {
     if (!isGroup(node)) {
-      const passes = prepareRule(node, schema, setTree, contextIds)?.(blank)
-      const seed = passes === undefined ? null : ruleSeed(node, schema, contextIds)
+      const passes = prepareRule(node, schema, setTree, identity)?.(blank)
+      const seed = passes === undefined ? null : ruleSeed(node, schema, identity.contextIds)
       return {
         seeds: seed ? { [node.property_id]: seed } : {},
         met: passes !== false || seed !== null,
         passes,
       }
     }
-    const passes = prepareGroup(node, schema, setTree, contextIds)?.(blank)
+    const passes = prepareGroup(node, schema, setTree, identity)?.(blank)
     const children = node.rules.map(judge)
     switch (node.match) {
       case 'all':

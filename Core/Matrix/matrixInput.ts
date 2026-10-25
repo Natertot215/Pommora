@@ -1,4 +1,4 @@
-import { contextIdsOf } from '../Contexts/contextIdentity'
+import { identityOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { entityMemo } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/record'
@@ -109,12 +109,10 @@ export function matrixVisible(
   const { seats } = matrixTree(tree)
   const rules = filter.rules
   const schema = tree.config.registry
-  const contextIds = contextIdsOf(tree)
+  const identity = identityOf(tree)
   const rows = seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
   // Collections are the roots, so a Location rule can name a Collection as well as a Set.
-  const ids = new Set(
-    applyFilter(rows, rules, schema, tree.collections, contextIds).map((r) => r.id),
-  )
+  const ids = new Set(applyFilter(rows, rules, schema, tree.collections, identity).map((r) => r.id))
   // Self-membership belongs to the filter and stays out of spaceRowOf, which the panel and the menus read.
   for (const g of tree.contexts)
     for (const s of g.spaces) {
@@ -127,9 +125,9 @@ export function matrixVisible(
         },
       }
       const pruned = mapRules(rules, (rule) =>
-        answers(row, rule, schema, contextIds) ? rule : null,
+        answers(row, rule, schema, identity.contextIds) ? rule : null,
       )
-      if (applyFilter([row], pruned, schema, [], contextIds).length > 0) ids.add(row.id)
+      if (applyFilter([row], pruned, schema, [], identity).length > 0) ids.add(row.id)
     }
   return ids
 }

@@ -41,7 +41,12 @@ export type ValueKindSpec = Readonly<{
   /** Is Empty matches a value this reads as unfilled, and Isn't Empty one it reads as filled. */
   filled: ValueTest
   /** A rule's test, its operands read once; undefined, so the rule abstains, for an op the kind doesn't answer or an operand that doesn't read. */
-  prepare(op: string, want: readonly string[], def?: PropertyDefinition): ValueTest | undefined
+  prepare(
+    op: string,
+    want: readonly string[],
+    def?: PropertyDefinition,
+    held?: readonly string[],
+  ): ValueTest | undefined
   /** A criterion's key reader, built once per sort; a null key sorts last in either direction, and a kind with no reader doesn't sort. */
   sortKey?(
     def?: PropertyDefinition,
@@ -170,13 +175,14 @@ function prepareMembers(op: string, want: readonly string[]): ValueTest | undefi
   }
 }
 
-/** A Select's or Multi-Select's operands, kept only where they name a listed option; a rule naming none sits out, as an unreadable Number or Date operand does. */
+/** An option list's operands, kept only where they name an option it holds (a Select's or Multi-Select's listed options, a Context's Spaces); a rule naming none sits out, as an unreadable Number or Date operand does. */
 function prepareOptions(
   op: string,
   want: readonly string[],
   def?: PropertyDefinition,
+  held: readonly string[] = def ? optionIds(def) : [],
 ): ValueTest | undefined {
-  const listed = new Set(def ? optionIds(def) : [])
+  const listed = new Set(held)
   const live = want.filter((id) => listed.has(id))
   return live.length ? prepareMembers(op, live) : undefined
 }
@@ -374,7 +380,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
   context: {
     ops: SET_OPS,
     filled: notBlank,
-    prepare: prepareMembers,
+    prepare: prepareOptions,
     directions: 'value',
     seed: (op, operand) => (LIST_OPS.has(op) ? { kind: 'context', value: [operand] } : null),
   },

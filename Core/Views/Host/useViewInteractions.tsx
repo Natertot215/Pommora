@@ -87,7 +87,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     collapsed,
     toggleCollapse,
     schema,
-    contextIds,
+    identity,
     tree,
     ctx,
     groupPropId,
@@ -120,7 +120,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ...dropIO(name, persistView),
       switched: ({ propertyId, prior }) =>
         notifyUndoable(
-          `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, contextIds)!, ctx.contexts)} order`,
+          `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
           () =>
             void persistView(prior).then((r) => {
               if (r.ok) announceDrag('return', name)

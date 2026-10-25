@@ -17,6 +17,7 @@ import {
 } from './group'
 import { makeSorter } from './sort'
 import { resolveColumns } from './columns'
+import type { IdentityMaps } from '../../Contexts/contextIdentity'
 
 export function resolveView(input: {
   rows: ViewRow[]
@@ -25,20 +26,20 @@ export function resolveView(input: {
   schema: PropertyDefinition[]
   plan: GroupPlan
   manualOrder?: string[]
-  /** Registry Context ids (display order) — context columns + their filter typing. */
-  contextIds: readonly string[]
+  /** The registry's Contexts and their Spaces — context columns + their filter typing. */
+  identity: IdentityMaps
 }): { columns: ResolvedColumn[]; groups: ResolvedGroup[] } {
-  const { rows, setTree, view, schema, plan, manualOrder, contextIds } = input
-  const columns = resolveColumns(view, schema, contextIds)
+  const { rows, setTree, view, schema, plan, manualOrder, identity } = input
+  const columns = resolveColumns(view, schema, identity.contextIds)
   // Parked filters keep their rules and their mode; only application stops.
   const filtered = applyFilter(
     rows,
     viewOption(view, 'filter_enabled') ? view.filter : undefined,
     schema,
     setTree,
-    contextIds,
+    identity,
   )
-  const sorter = makeSorter(view.sort, schema, contextIds, manualOrder)
+  const sorter = makeSorter(view.sort, schema, identity.contextIds, manualOrder)
   const hidden = new Set(view.hidden_groups ?? [])
   let resolved = resolveGroups(
     filtered,
