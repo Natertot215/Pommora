@@ -1,4 +1,4 @@
-import { type ColumnType, specOf } from '../../Properties/properties'
+import { type ColumnType, PROPERTY_TYPES, specOf } from '../../Properties/properties'
 import { isBlankValue } from '../../Properties/propertyValue'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
@@ -11,10 +11,7 @@ import { columnLabel } from '../../Properties/columnLabel'
 import type { ValueContext } from '../../Properties/valueContext'
 
 /** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
-export const fillsBlank = (type: ColumnType | undefined): boolean => {
-  const spec = specOf(type)
-  return spec !== undefined && spec.origin !== 'filedata'
-}
+export const fillsBlank = (type: ColumnType): boolean => PROPERTY_TYPES[type].origin !== 'filedata'
 
 /** Compact's label-less flow can't render an empty value, so it drops blanks, except a type whose blank draws, such as a checkbox's unchecked box, the on-card toggle. */
 export function shownColumnsFor(

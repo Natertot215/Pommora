@@ -4,7 +4,7 @@ import { checkboxValue, type PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
 import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
-import { type ColumnType, type NumberConfig, specOf } from '../properties'
+import { type ColumnType, type NumberConfig, PROPERTY_TYPES } from '../properties'
 import { barDivisor } from '../formatValue'
 
 export type ValueIntent =
@@ -18,13 +18,13 @@ export type ValueIntent =
 
 /** Null = the click does nothing: a stamp or the title. A link's text follows on its own, so a click on the value edits it. */
 export function valueClickIntent(
-  type: ColumnType | undefined,
+  type: ColumnType,
   value: PropertyValue,
   look?: ColumnLook,
   config?: NumberConfig,
 ): ValueIntent | null {
-  const spec = specOf(type)
-  if (spec === undefined || spec.origin === 'filedata') return null
+  const spec = PROPERTY_TYPES[type]
+  if (spec.origin === 'filedata') return null
   switch (spec.kind) {
     case 'checkbox': {
       const checked = value.kind === 'checkbox' && value.value
