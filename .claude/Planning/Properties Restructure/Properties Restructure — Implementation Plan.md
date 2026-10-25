@@ -1322,16 +1322,16 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 17-11 · Drive group 15
   - [x] Review Checkpoint
   - [x] Closeout P16B–P17 (two `opus-high` agents, inward and outward)
-- [ ] **Phase 18** — The Documents Read True
-  - [ ] Task 18-1 · `PropertiesPM.md` reads true
-  - [ ] Task 18-2 · The data-layer documents read true
-  - [ ] Task 18-3 · The surface documents read true
-  - [ ] Task 18-4 · The Issues entries close or narrow in place
-  - [ ] Task 18-5 · Every drive runs on the landed shapes
-  - [ ] Task 18-6 · The scripts README and the drive matrices
-  - [ ] Task 18-7 · One test seed
-  - [ ] Task 18-8 · The final test-title sweep
-  - [ ] Review Checkpoint
+- [x] **Phase 18** — The Documents Read True
+  - [x] Task 18-1 · `PropertiesPM.md` reads true
+  - [x] Task 18-2 · The data-layer documents read true
+  - [x] Task 18-3 · The surface documents read true
+  - [x] Task 18-4 · The Issues entries close or narrow in place
+  - [x] Task 18-5 · Every drive runs on the landed shapes
+  - [x] Task 18-6 · The scripts README and the drive matrices
+  - [x] Task 18-7 · One test seed
+  - [x] Task 18-8 · The final test-title sweep
+  - [x] Review Checkpoint
 - [ ] `[Stop: the final verification's report, per §Final Verification; Neutral Gate 2 inside it]`
 
 ---
@@ -35468,7 +35468,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 16A | −537 | +457 | −80 | −546 / +465 / −81 | −62 |
 | 16B | −322 | +97 | −225 | −361 / +149 / −212 | −274 |
 | 17 | −813 | +609 | −204 | −977 / +721 / −256 | −530 |
-| 18 | 0 | 0 | 0 | | |
+| 18 | 0 | 0 | 0 | 0 / 0 / 0 | −530 |
 | Final Verification | — | — | — | | |
 
 **Written Total:** −7,833 / +7,351, net **−482**, on each measurement's first outcome, as `measure` counts every phase's AFTER blocks. The plan ends net-negative on every outcome. On the first outcomes the written cumulative reaches −423 at Phase 9's head, and the net-positive Phases 10, 11A, 11B, and 12 (+12, +104, +386, +148) carry it above zero at Phase 11B's head (+79) and to its peak at Phase 12's (+227), where the Mid-Plan Neutral Gate's range ends, and through Phase 13's (+101), Phase 14's (+54), and Phase 15's (+27) before Phase 16A's head (−53) brings it back down; Phase 11A's head (−307) is the last net-negative point before it. The projected end is the measured −408 through Phase 9, the *Rulings I-4 and E-4* row included, plus the written Phases 10 through 18 (−59): −467 on the first outcomes, 83 lines short of the Reduction Floor's −550. **F3's Fail Outcome:** Phase 6 reverts Task 6-5 and lands +113 (−136 / +249), Task 7-6's frame keeps the two-argument epoch and Phase 7 lands −146 (−622 / +476), and Task 13-7's `patchedValues` half lands −7 (−39 / +32, its seven hunks counted from their own lines), so the written total becomes **−406**, and the cumulative rises above zero at Phase 11B's head (+160), peaks at +308 at Phase 12's, and stays above zero through Phase 16A's head (+23) before Phase 16B's head (−202) brings it back down. **02-10's Fail Outcome:** Task 15-8's Fail Branch adds +42 (−33 / +75), so Phase 15 lands +15, the cumulative stays above zero through Phase 15's head (+69) before Phase 16A's head (−11) brings it back down, and the total is −440 (−425 projected). **O-5's Fail Outcome:** Task 17-11's remedy adds +16 (−1 / +17), so Phase 17 lands −188 and the total −466 (−451 projected). K and 07-10 change no production line on either outcome, and 07-17's If outcome, which its read at HEAD rules out, has no AFTER. With F3, 02-10, and O-5 all on their Fail outcomes, the total is −344, and the cumulative stays above zero from Phase 11B's head through Phase 16A's (+69).
