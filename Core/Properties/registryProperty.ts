@@ -118,9 +118,9 @@ export async function createProperty(
     const label = freeLabel(exactTitle(def.label), def.key_format, defs)
     const key = formatKey(label, def.key_format)
     // A restore carries its own id, whose own owed names never refuse it.
-    if (owedName(notes, { owner: { kind: 'property' }, name: key, except: def.id || undefined }))
+    if (owedName(notes, { owner: { kind: 'property' }, name: key, except: def.id }))
       return { result: OWED }
-    const candidate = seeded({ ...def, label, key, id: def.id || mintPropertyId() })
+    const candidate = seeded({ ...def, label, key, id: def.id ?? mintPropertyId() })
     const v = validateDefinition(candidate, defs)
     if (!v.ok) return { result: v }
     return {
