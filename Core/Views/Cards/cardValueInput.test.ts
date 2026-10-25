@@ -11,6 +11,9 @@ import {
   shownColumnsFor,
 } from './cardValueInput'
 import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
+import { contextColumn, propertyColumn, resolveColumn } from '../Pipeline/columns'
+
+const TITLE_COLUMN = resolveColumn(FILEDATA.title.id, [], [])!
 
 describe('parseEditorValue', () => {
   it('number: parses a finite value, trims, clears on empty, rejects garbage', () => {
@@ -57,15 +60,23 @@ describe('parseEditorValue', () => {
 })
 
 describe('orderAddableEntries', () => {
+  const def = (id: string, type: 'number' | 'checkbox' | 'status' | 'link'): ResolvedColumn =>
+    propertyColumn({ id, label: id, key: id, type })
   it('sinks reveal-only entries to the bottom; pane entries stay on top in order', () => {
     const entries: AddEntry[] = [
-      { id: 'n', name: 'N', type: 'number', def: null, revealOnly: false },
-      { id: 'chk', name: 'Chk', type: 'checkbox', def: null, revealOnly: true },
-      { id: 's', name: 'S', type: 'status', def: null, revealOnly: false },
-      { id: 'area', name: 'Areas', type: 'context', def: null, revealOnly: true },
-      { id: 'u', name: 'U', type: 'link', def: null, revealOnly: false },
+      { column: def('n', 'number'), name: 'N', revealOnly: false },
+      { column: def('chk', 'checkbox'), name: 'Chk', revealOnly: true },
+      { column: def('s', 'status'), name: 'S', revealOnly: false },
+      { column: contextColumn('area'), name: 'Areas', revealOnly: true },
+      { column: def('u', 'link'), name: 'U', revealOnly: false },
     ]
-    expect(orderAddableEntries(entries).map((e) => e.id)).toEqual(['n', 's', 'u', 'chk', 'area'])
+    expect(orderAddableEntries(entries).map((e) => e.column.id)).toEqual([
+      'n',
+      's',
+      'u',
+      'chk',
+      'area',
+    ])
   })
 })
 
@@ -79,11 +90,7 @@ describe('shownColumnsFor', () => {
   } as PropertyDefinition
   const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
   const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ValueContext
-  const columns: ResolvedColumn[] = [
-    { id: '_title', kind: 'title' },
-    { id: 'sel', kind: 'property' },
-    { id: 'chk', kind: 'property' },
-  ]
+  const columns: ResolvedColumn[] = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
   const row = (fm: Record<string, unknown>): ViewRow =>
     ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
 
@@ -105,8 +112,8 @@ describe('addEntriesFor', () => {
   const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
 
   it('a stamp entry carries its stamp type and only ever reveals, even while blank', () => {
-    const entries = addEntriesFor(row, view, ctx, [{ id: '_title', kind: 'title' }])
-    expect(entries.map((e) => [e.id, e.type, e.revealOnly])).toEqual([
+    const entries = addEntriesFor(row, view, ctx, [TITLE_COLUMN])
+    expect(entries.map((e) => [e.column.id, e.column.type, e.revealOnly])).toEqual([
       [FILEDATA.createdAt.id, 'createdTime', true],
       [FILEDATA.modifiedAt.id, 'lastEditedTime', true],
     ])

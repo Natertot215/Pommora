@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import fixture from '../../Testing/fixtures/collection-with-status.json'
 import { FIXTURE_DEFS } from '../../Testing/definitions'
 import { savedView, type SavedView } from '../views'
-import type { PropertyDefinition } from '../../Properties/properties'
-import { resolveColumns } from './columns'
+import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
+import { resolveColumn, resolveColumns } from './columns'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_a', label: 'A', key: 'A', type: 'select' },
@@ -86,7 +86,7 @@ describe('resolveColumns — rules', () => {
 
   it('front-inserts Title when propertyOrder omits it', () => {
     const cols = resolveColumns(view({ property_order: ['prop_a'] }), schema, CONTEXT_IDS)
-    expect(cols[0]).toEqual({ id: '_title', kind: 'title' })
+    expect(cols[0]).toEqual({ id: '_title', kind: 'title', type: 'title' })
   })
 
   it('skips a stale propertyOrder id absent from schema AND registry', () => {
@@ -99,17 +99,52 @@ describe('resolveColumns — rules', () => {
     expect(cols.some((c) => c.id === 'ctx_gone')).toBe(false)
   })
 
-  it('maps each column id to its kind', () => {
+  it("carries each column's kind, type, and definition", () => {
     const cols = resolveColumns(
       view({ property_order: ['_title', 'ctx_areas', 'ctxC', 'prop_a', '_modified_at'] }),
       schema,
       CONTEXT_IDS,
     )
     const kindOf = (id: string): string | undefined => cols.find((c) => c.id === id)?.kind
+    const typeOf = (id: string): string | undefined => cols.find((c) => c.id === id)?.type
     expect(kindOf('_title')).toBe('title')
     expect(kindOf('ctx_areas')).toBe('context')
     expect(kindOf('ctxC')).toBe('context')
     expect(kindOf('prop_a')).toBe('property')
     expect(kindOf('_modified_at')).toBe('stamp')
+    expect(cols.find((c) => c.id === 'prop_a')?.def).toBe(schema[0])
+    expect(typeOf('_modified_at')).toBe('lastEditedTime')
+  })
+})
+
+describe('resolveColumn', () => {
+  it('classifies an id once: Title and the stamps by their Filedata type, a Context by the registry ids, a property by its definition', () => {
+    expect(resolveColumn(FILEDATA.title.id, schema, CONTEXT_IDS)).toEqual({
+      id: '_title',
+      kind: 'title',
+      type: 'title',
+    })
+    expect(resolveColumn('_modified_at', schema, CONTEXT_IDS)).toEqual({
+      id: '_modified_at',
+      kind: 'stamp',
+      type: 'lastEditedTime',
+    })
+    expect(resolveColumn('ctx_areas', schema, CONTEXT_IDS)).toEqual({
+      id: 'ctx_areas',
+      kind: 'context',
+      type: 'context',
+    })
+    expect(resolveColumn('prop_b', schema, CONTEXT_IDS)).toEqual({
+      id: 'prop_b',
+      kind: 'property',
+      type: 'number',
+      def: schema[1],
+    })
+  })
+
+  it('answers nothing for Location, an id the schema no longer holds, or a Context id outside the registry ids', () => {
+    expect(resolveColumn(FILEDATA.location.id, schema, CONTEXT_IDS)).toBeUndefined()
+    expect(resolveColumn('prop_ghost', schema, CONTEXT_IDS)).toBeUndefined()
+    expect(resolveColumn('ctx_areas', schema, [])).toBeUndefined()
   })
 })

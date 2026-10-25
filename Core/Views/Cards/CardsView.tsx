@@ -54,7 +54,7 @@ import { stabilize } from '../../Nexus/treeStabilize'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { columnType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay'
 import { type CardPickerKind, CardValue } from './CardValue'
@@ -62,7 +62,6 @@ import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import {
   type AddEntry,
-  addColumn,
   addEntriesFor,
   orderAddableEntries,
   shownColumnsFor,
@@ -214,7 +213,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!row) return setValuePicker(null)
     if (valuePicker.revealOnCommit) return
     const cur = resolveFieldValue(row, valuePicker.column.id, ctx.schema)
-    const draws = specOf(ctx.schema.find((d) => d.id === valuePicker.column.id)?.type)?.blankDraws
+    const draws = specOf(valuePicker.column.type)?.blankDraws
     if (isCompact(view) && isBlankValue(cur) && !draws) setValuePicker(null)
   }, [valuePicker, rowById, ctx, view])
   useEffect(() => {
@@ -234,7 +233,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const req = valuePicker ?? addPicker
     const row = req && rowById.get(req.rowId)
     if (!row) return
-    const column = valuePicker ? valuePicker.column : addColumn(entry?.id ?? '', tree)
+    const column = valuePicker ? valuePicker.column : entry && addedColumn(entry.id)
+    if (!column) return
     const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
     if (creating && !isBlankValue(v)) revealProperty(column.id)
     commitValue(row, column, v)
@@ -244,6 +244,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const addEntries = addRow
     ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree))
     : []
+  const addedColumn = (id: string): ResolvedColumn | undefined =>
+    addEntries.find((e) => e.column.id === id)?.column
 
   // ── The root banner seat ──────────────────────────────────────────────────
 
@@ -502,30 +504,38 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             addPicker
               ? addEntries.map(
                   (e): PickEntry => ({
-                    id: e.id,
+                    id: e.column.id,
                     name: e.name,
-                    icon: e.def ? propertyIcon(e.def) : propertyTypeIconName(e.type),
+                    icon: e.column.def
+                      ? propertyIcon(e.column.def)
+                      : propertyTypeIconName(e.column.type),
                     revealOnly: e.revealOnly,
-                    drillable: !e.revealOnly && pickKindOf(e.type) !== null,
-                    group: addColumn(e.id, tree).kind === 'context' ? 'Spaces' : 'Properties',
+                    drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
+                    group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
                   }),
                 )
               : undefined
           }
-          resolveTarget={(e) => (addRow ? pickTarget(addRow, addColumn(e.id, tree)) : null)}
+          resolveTarget={(e) => {
+            const column = addedColumn(e.id)
+            return addRow && column ? pickTarget(addRow, column) : null
+          }}
           open={valuePopup !== null || addPicker !== null}
           triggerRef={pickerAnchorRef}
           anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}
           onCommit={commitPicked}
           onReveal={(entry) => {
-            if (!addPicker) return
+            const src = addEntries.find((e) => e.column.id === entry.id)
+            if (!addPicker || !src) return
             if (entry.revealOnly) return revealProperty(entry.id)
-            const src = addEntries.find((e) => e.id === entry.id)
             setAddPicker(null)
             setValuePicker({
               rowId: addPicker.rowId,
-              column: addColumn(entry.id, tree),
-              kind: src && (src.type === 'dateTime' || src.type === 'file') ? src.type : 'popover',
+              column: src.column,
+              kind:
+                src.column.type === 'dateTime' || src.column.type === 'file'
+                  ? src.column.type
+                  : 'popover',
               anchor: addPicker.anchor,
               revealOnCommit: true,
             })
@@ -590,7 +600,7 @@ function GhostCard({
                   <span
                     className={cx('card-prop-label', text.caption.emphasized, overScrollEllipsis)}
                   >
-                    {columnLabel(c.id, ctx.schema, ctx.contexts)}
+                    {columnLabel(c, ctx.contexts)}
                   </span>
                 </div>
               ))}
@@ -714,9 +724,7 @@ function CardProperties({
       {shown.map((c) => (
         <span
           key={c.id}
-          className={
-            columnType(c, ctx.schema) === 'text' ? cx('card-text-value', borderedField) : undefined
-          }
+          className={c.type === 'text' ? cx('card-text-value', borderedField) : undefined}
         >
           {value(c)}
         </span>
@@ -728,7 +736,7 @@ function CardProperties({
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
           <span className={cx('card-prop-label', text.caption.emphasized, overScrollEllipsis)}>
-            {columnLabel(c.id, ctx.schema, ctx.contexts)}
+            {columnLabel(c, ctx.contexts)}
           </span>
           {value(c)}
         </div>

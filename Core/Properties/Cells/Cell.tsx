@@ -43,8 +43,7 @@ export function Cell({
   onPane?: (anchor: HTMLElement) => void
 }): React.JSX.Element | null {
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  const def = ctx.schema.find((d) => d.id === column.id)
-  // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
+  const { def } = column
   const dt = def?.type
   const holder = holderOf(row, ctx)
 

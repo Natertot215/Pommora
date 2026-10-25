@@ -16,7 +16,7 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyDefinition } from './properties'
 import { isBlankValue, type PropertyValue, NULL_VALUE } from './propertyValue'
 import type { PageFrontmatter } from '../Nexus/schemas'
-import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import type { ViewRow } from '../Views/viewRow'
 import { propertyMenuModel } from '../Actions/propertyMenu'
 import { type CellMenuAction, cellMenuModel } from '../Actions/cellMenu'
 import { Cell } from './Cells/Cell'
@@ -44,7 +44,8 @@ import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/pan
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
 import { contextOptionsFor } from '../Contexts/contextOptions'
-import { identityOf, isContextColumnId } from '../Contexts/contextIdentity'
+import { contextIdsOf, identityOf } from '../Contexts/contextIdentity'
+import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
@@ -177,7 +178,8 @@ export function PropertyPanel({
   const fm = row?.frontmatter ?? null
   const contextValues = row?.contextValues
 
-  const isContextRow = (id: string): boolean => isContextColumnId(tree, id)
+  const contextIds = contextIdsOf(tree)
+  const isContextRow = (id: string): boolean => contextIds.includes(id)
 
   const writer = useRef<ValueWriter | null>(null)
   useEffect(() => {
@@ -192,7 +194,8 @@ export function PropertyPanel({
     }
   })
   const commit = (id: string, next: PropertyValue | null): void => {
-    if (row) assignValue(writer, row, { id, kind: isContextRow(id) ? 'context' : 'property' }, next)
+    const column = resolveColumn(id, schema, contextIds)
+    if (row && column) assignValue(writer, row, column, next)
   }
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
@@ -379,7 +382,7 @@ export function PropertyPanel({
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
     const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
-      const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
+      const column = def ? propertyColumn(def) : contextColumn(id)
       const current = resolveFieldValue(row, id, schema)
       const rowBody = (
         <MenuItem

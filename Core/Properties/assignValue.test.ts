@@ -10,6 +10,7 @@ import { NULL_VALUE } from './propertyValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
+import { contextColumn, propertyColumn } from '../Views/Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
   {
@@ -62,12 +63,7 @@ beforeEach(() => {
 
 describe('assignValue', () => {
   it('patches the frontmatter and mutates the property', () => {
-    assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     expect(apply).toHaveBeenCalledWith(
       'page1',
       { prop_tag: { kind: 'select', value: 'opt_blue' } },
@@ -82,12 +78,7 @@ describe('assignValue', () => {
   })
 
   it('undo sends the record the write’s reply carried, at the row’s current path', async () => {
-    await assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     row = { ...rowOf({ id: 'page1', Tag: ['blue'] }), path: '/nexus/Notes/Moved.md' }
     await settled()
     expect(undoValue(null)).toBe(true)
@@ -103,12 +94,7 @@ describe('assignValue', () => {
   })
 
   it('an undo that misses its file drops the undone value it laid over the row', async () => {
-    await assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     await settled()
     mutate.mockImplementationOnce(async (req) => ({
       missed: req.op === 'putBack' ? req.entries : [],
@@ -122,12 +108,7 @@ describe('assignValue', () => {
     mutate.mockResolvedValueOnce({
       undo: { op: 'putBack', entries: [{ file: row.path, fieldId: 'prop_tag' }] },
     })
-    await assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     row = rowOf({ id: 'page1', Tag: ['blue'] })
     await settled()
     expect(undoValue(null)).toBe(true)
@@ -142,12 +123,7 @@ describe('assignValue', () => {
   it('patches the live row, not the one the caller captured', () => {
     const captured = row
     row = { ...rowOf({ id: 'page1', Tag: ['red'] }), path: '/nexus/Notes/Moved.md' }
-    assignValue(
-      writer,
-      captured,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    assignValue(writer, captured, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ path: '/nexus/Notes/Moved.md' }))
   })
 
@@ -157,15 +133,10 @@ describe('assignValue', () => {
       entries: [{ file: row.path, fieldId: 'ctx_areas' }],
     }
     mutate.mockResolvedValueOnce({ undo: record })
-    await assignValue(
-      writer,
-      row,
-      { id: 'ctx_areas', kind: 'context' },
-      {
-        kind: 'context',
-        value: ['space1'],
-      },
-    )
+    await assignValue(writer, row, contextColumn('ctx_areas'), {
+      kind: 'context',
+      value: ['space1'],
+    })
     expect(apply).toHaveBeenCalledWith(
       'page1',
       { ctx_areas: { kind: 'context', value: ['space1'] } },
@@ -185,21 +156,16 @@ describe('assignValue', () => {
 
   it('writes nothing without a live writer, and nothing for an unknown property', () => {
     writer.current = null
-    assignValue(writer, row, { id: 'prop_tag', kind: 'property' }, null)
+    assignValue(writer, row, propertyColumn(schema[0]), null)
     writer.current = { ...live, schema: [] }
-    assignValue(writer, row, { id: 'prop_tag', kind: 'property' }, null)
+    assignValue(writer, row, propertyColumn(schema[0]), null)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
     expect(undoValue(null)).toBe(false)
   })
 
   it('a revert whose row is gone writes nothing and drains', async () => {
-    await assignValue(
-      writer,
-      row,
-      { id: 'prop_tag', kind: 'property' },
-      { kind: 'select', value: 'opt_blue' },
-    )
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     await settled()
     apply.mockClear()
     mutate.mockClear()
@@ -212,12 +178,10 @@ describe('assignValue', () => {
   it('a refused write records nothing to undo, and a reply carrying no record leaves nothing to undo', async () => {
     for (const reply of [null, {}]) {
       mutate.mockResolvedValueOnce(reply)
-      await assignValue(
-        writer,
-        row,
-        { id: 'prop_tag', kind: 'property' },
-        { kind: 'select', value: 'opt_blue' },
-      )
+      await assignValue(writer, row, propertyColumn(schema[0]), {
+        kind: 'select',
+        value: 'opt_blue',
+      })
       await settled()
       expect(undoValue(null)).toBe(false)
     }
@@ -230,12 +194,10 @@ describe('assignValue', () => {
     groupUndo(() => {
       for (const r of [row, other])
         writes.push(
-          assignValue(
-            writer,
-            r,
-            { id: 'prop_tag', kind: 'property' },
-            { kind: 'select', value: 'opt_blue' },
-          ) as Promise<boolean>,
+          assignValue(writer, r, propertyColumn(schema[0]), {
+            kind: 'select',
+            value: 'opt_blue',
+          }) as Promise<boolean>,
         )
     })
     await Promise.all(writes)
@@ -248,12 +210,13 @@ describe('assignValue', () => {
 })
 
 describe('a landed Link value remembers the alias it shows', () => {
-  const column = { id: 'prop_link', kind: 'property' } as const
+  const linkDef: PropertyDefinition = { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }
+  const column = propertyColumn(linkDef)
   const link = (value: string) => ({ kind: 'link', value }) as const
   const remembered = () => mutate.mock.calls.filter(([req]) => req.op === 'editAliases')
 
   beforeEach(() => {
-    live.schema = [...schema, { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }]
+    live.schema = [...schema, linkDef]
     row = rowOf({ id: 'page1', Link: '[[Alpha|old]]' })
     useSession.setState({ tree: makeTree() })
   })

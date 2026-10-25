@@ -1,14 +1,12 @@
-import { FILEDATA_BY_ID, type PropertyDefinition } from './properties'
+import { FILEDATA_BY_ID } from './properties'
 import type { ContextIdentity } from '../Contexts/contextIdentity'
+import type { ResolvedColumn } from '../Views/viewRow'
 
 export function columnLabel(
-  columnId: string,
-  schema: PropertyDefinition[],
+  { id, def }: ResolvedColumn,
   contexts: ReadonlyMap<string, ContextIdentity>,
 ): string {
-  const title = contexts.get(columnId)?.title
+  const title = contexts.get(id)?.title
   if (title) return title
-  return (
-    FILEDATA_BY_ID.get(columnId)?.label ?? schema.find((d) => d.id === columnId)?.label ?? columnId
-  )
+  return FILEDATA_BY_ID.get(id)?.label ?? def?.label ?? id
 }

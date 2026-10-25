@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  contextsByIdOf,
-  contextIdsOf,
-  isContextColumnId,
-  spaceIdentityOf,
-  spacesByIdOf,
-} from './contextIdentity'
+import { contextsByIdOf, contextIdsOf, spaceIdentityOf, spacesByIdOf } from './contextIdentity'
 import type { NexusTree } from '../Nexus/tree'
 
 const mkTree = (): NexusTree =>
@@ -103,12 +97,9 @@ describe('context accessors', () => {
     expect(contextsByIdOf(tree).get('a1')).toBeUndefined()
   })
 
-  it('resolves a Space id and tells Context columns from Space ids', () => {
+  it('resolves a Space id', () => {
     expect(spaceIdentityOf(tree, 'a1')?.title).toBe('Personal')
     expect(spaceIdentityOf(null, 'a1')).toBeUndefined()
-    expect(isContextColumnId(tree, 'ctx_areas')).toBe(true)
-    expect(isContextColumnId(tree, 'a1')).toBe(false)
-    expect(isContextColumnId(null, 'ctx_areas')).toBe(false)
   })
 })
 

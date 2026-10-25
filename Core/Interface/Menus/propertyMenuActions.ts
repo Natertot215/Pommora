@@ -16,6 +16,7 @@ import {
 } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { useSession } from '../../Session/store'
+import { contextColumn, propertyColumn, resolveColumn } from '../../Views/Pipeline/columns'
 
 const CHECKBOX_OPTIONS = [
   { value: 'true', label: 'Check' },
@@ -40,9 +41,9 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
   properties: PropertyMenuRow[]
 } {
   const contexts = contextsByIdOf(tree)
-  const build = (id: string, def: PropertyDefinition): PropertyMenuRow => {
-    const base = { id, name: columnLabel(id, schema, contexts) }
-    const current = resolveFieldValue(row, id, schema)
+  const build = (column: ResolvedColumn, def: PropertyDefinition): PropertyMenuRow => {
+    const base = { id: column.id, name: columnLabel(column, contexts) }
+    const current = resolveFieldValue(row, column.id, schema)
     if (def.type === 'checkbox') {
       const checked = current.kind === 'checkbox' && current.value
       return {
@@ -65,9 +66,9 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
       ),
     }
   }
-  const built = schema.map((def) => build(def.id, def))
+  const built = schema.map((def) => build(propertyColumn(def), def))
   return {
-    spaces: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
+    spaces: [...contexts.keys()].map((id) => build(contextColumn(id), syntheticContextDef(id))),
     properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],
   }
 }
@@ -90,11 +91,12 @@ export function runPropertyAction(
   const parsed = parsePropertyAction(action)
   if (!parsed) return false
   const { id, value } = parsed
-  const contextIds = contextIdsOf(tree)
-  const def = schema.find((d) => d.id === id) ?? syntheticContextDef(id)
+  const column = resolveColumn(id, schema, contextIdsOf(tree))
+  // The property can leave between the menu opening and the pick; the pick then writes nothing.
+  if (!column) return true
+  const def = column.def ?? syntheticContextDef(id)
   const current = resolveFieldValue(row, id, schema)
-  const commitValue = (next: PropertyValue | null): void =>
-    commit({ id, kind: contextIds.includes(id) ? 'context' : 'property' }, next)
+  const commitValue = (next: PropertyValue | null): void => commit(column, next)
   if (value === null) {
     if (def.type === 'file') pickFileInto(def, current, null, commitValue)
     else

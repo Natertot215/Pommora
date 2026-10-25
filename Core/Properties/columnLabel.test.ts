@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { columnLabel } from './columnLabel'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { FILEDATA, type PropertyDefinition } from './properties'
+import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', label: 'Status', key: 'Status', type: 'status' },
@@ -9,12 +10,13 @@ const schema: PropertyDefinition[] = [
 ]
 
 const NO_CONTEXTS = new Map()
+const filedata = (id: string) => resolveColumn(id, schema, [])!
 
 describe('columnLabel', () => {
   it('names each Filedata column', () => {
-    expect(columnLabel(FILEDATA.title.id, schema, NO_CONTEXTS)).toBe('Title')
-    expect(columnLabel(FILEDATA.createdAt.id, schema, NO_CONTEXTS)).toBe('Creation Time')
-    expect(columnLabel(FILEDATA.modifiedAt.id, schema, NO_CONTEXTS)).toBe('Last Modified')
+    expect(columnLabel(filedata(FILEDATA.title.id), NO_CONTEXTS)).toBe('Title')
+    expect(columnLabel(filedata(FILEDATA.createdAt.id), NO_CONTEXTS)).toBe('Creation Time')
+    expect(columnLabel(filedata(FILEDATA.modifiedAt.id), NO_CONTEXTS)).toBe('Last Modified')
   })
 
   it('resolves a Context column through the registry, and an unregistered one falls to its id', () => {
@@ -23,21 +25,17 @@ describe('columnLabel', () => {
       config: { personalization: {} },
     } as unknown as import('../Nexus/tree').NexusTree
     const contexts = contextsByIdOf(tree)
-    expect(columnLabel('ctx_areas', schema, contexts)).toBe('Areas')
-    expect(columnLabel('ctx_topics', schema, contexts)).toBe('ctx_topics')
+    expect(columnLabel(contextColumn('ctx_areas'), contexts)).toBe('Areas')
+    expect(columnLabel(contextColumn('ctx_topics'), contexts)).toBe('ctx_topics')
   })
 
   // The header bug this guards: a caller that can't resolve Contexts renders their raw ids.
   it('falls back to the raw id when handed no contexts at all', () => {
-    expect(columnLabel('ctx_areas', schema, NO_CONTEXTS)).toBe('ctx_areas')
+    expect(columnLabel(contextColumn('ctx_areas'), NO_CONTEXTS)).toBe('ctx_areas')
   })
 
   it('resolves a user property through its label', () => {
-    expect(columnLabel('prop_status', schema, NO_CONTEXTS)).toBe('Status')
-    expect(columnLabel('prop_due', schema, NO_CONTEXTS)).toBe('Due Date')
-  })
-
-  it('falls back to the id for an unknown column (never throws)', () => {
-    expect(columnLabel('prop_gone', schema, NO_CONTEXTS)).toBe('prop_gone')
+    expect(columnLabel(propertyColumn(schema[0]), NO_CONTEXTS)).toBe('Status')
+    expect(columnLabel(propertyColumn(schema[1]), NO_CONTEXTS)).toBe('Due Date')
   })
 })

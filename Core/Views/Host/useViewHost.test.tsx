@@ -8,6 +8,7 @@ import { LOCATION_SORT, type SavedView } from '../views'
 import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
+import { contextColumn } from '../Pipeline/columns'
 import { mutateAhead } from './pendingView'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { useContainerValues, useValuesEpoch } from './useContainerValues'
@@ -1109,7 +1110,7 @@ describe('the value writer', () => {
     const row = api?.rowById.get('p1')
     if (!row) throw new Error('row p1 missing')
     act(() => {
-      api?.commitValue(row, { id: 'ctx1', kind: 'context' }, { kind: 'context', value: ['s1'] })
+      api?.commitValue(row, contextColumn('ctx1'), { kind: 'context', value: ['s1'] })
     })
     expect(api?.rowById.get('p1')?.picked).toEqual({ ctx1: { kind: 'context', value: ['s1'] } })
     expect(api?.rowById.get('p1')?.frontmatter).toEqual(VALUES.p1?.frontmatter)

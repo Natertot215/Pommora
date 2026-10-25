@@ -18,6 +18,7 @@ import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { columnLabel } from '../../Properties/columnLabel'
+import { resolveColumn } from '../Pipeline/columns'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
@@ -85,10 +86,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     collapsed,
     toggleCollapse,
     schema,
+    contextIds,
     tree,
     ctx,
     groupPropId,
-    groupPropType,
     canReassign,
     canRelocate,
     crossBand,
@@ -118,7 +119,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ...dropIO(name, persistView),
       switched: ({ propertyId, prior }) =>
         notifyUndoable(
-          `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts)} order`,
+          `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, contextIds)!, ctx.contexts)} order`,
           () =>
             void persistView(prior).then((r) => {
               if (r.ok) announceDrag('return', name)
@@ -261,10 +262,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       (to.kind === 'tail' && to.parentKey === null && plan.kind === 'sets')
     const written = keeps
       ? undefined
-      : (
-          commitGroupValue(row.id, groupPropId, groupPropType, value ?? UNGROUPED) ??
-          Promise.resolve(false)
-        ).then((ok) => refusedDrop(ok, row.title))
+      : (commitGroupValue(row.id, groupPropId, value ?? UNGROUPED) ?? Promise.resolve(false)).then(
+          (ok) => refusedDrop(ok, row.title),
+        )
     land(row, dest, toZone, beforeId, written)
   }
 

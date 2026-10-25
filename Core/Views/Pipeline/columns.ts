@@ -1,42 +1,50 @@
 // One allowlist — in propertyOrder AND not hidden — so a property or Context created after a view stays hidden until the user reveals it: creation never visually changes an existing view.
 
-import type { ColumnKind, ResolvedColumn } from '../viewRow'
+import type { ResolvedColumn } from '../viewRow'
 import type { SavedView } from '../views'
 import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
 
-function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
-  if (id === FILEDATA.title.id) return 'title'
-  if (FILEDATA_BY_ID.get(id)?.type) return 'stamp'
-  return contextIds.includes(id) ? 'context' : 'property'
-}
+const TITLE: ResolvedColumn = { id: FILEDATA.title.id, kind: 'title', type: 'title' }
 
-/** Stale ids are dropped — only a 'property' kind can be stale, since every other kind is the classification itself. */
-function visibleColumns(
-  view: SavedView,
+export const propertyColumn = (def: PropertyDefinition): ResolvedColumn => ({
+  id: def.id,
+  kind: 'property',
+  type: def.type,
+  def,
+})
+
+export const contextColumn = (id: string): ResolvedColumn => ({
+  id,
+  kind: 'context',
+  type: 'context',
+})
+
+/** The one classification of a column id, done once per view pass; nothing for Location, which is never a column, or for an id neither the schema nor the registry holds. */
+export function resolveColumn(
+  id: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[],
-): ResolvedColumn[] {
-  const hidden = new Set(view.hidden_properties)
-  const emitted = new Set<string>()
-  const out: ResolvedColumn[] = []
-  for (const id of view.property_order) {
-    if (hidden.has(id) || emitted.has(id)) continue
-    const kind = columnKind(id, contextIds)
-    if (kind === 'property' && !schema.some((d) => d.id === id)) continue
-    emitted.add(id)
-    out.push({ id, kind })
-  }
-  return out
+): ResolvedColumn | undefined {
+  if (id === TITLE.id) return TITLE
+  const stamp = FILEDATA_BY_ID.get(id)?.type
+  if (stamp) return { id, kind: 'stamp', type: stamp }
+  if (contextIds.includes(id)) return contextColumn(id)
+  const def = schema.find((d) => d.id === id)
+  return def && propertyColumn(def)
 }
 
 /** Context columns are default-OFF — they render only when the view's property_order explicitly reveals them. */
 export function resolveColumns(
   view: SavedView,
   schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
+  contextIds: readonly string[],
 ): ResolvedColumn[] {
-  const result = visibleColumns(view, schema, contextIds)
-  if (!result.some((c) => c.id === FILEDATA.title.id))
-    result.unshift({ id: FILEDATA.title.id, kind: 'title' })
-  return result
+  const hidden = new Set(view.hidden_properties)
+  const columns = new Map<string, ResolvedColumn>()
+  for (const id of view.property_order) {
+    if (hidden.has(id) || columns.has(id)) continue
+    const column = resolveColumn(id, schema, contextIds)
+    if (column) columns.set(id, column)
+  }
+  return columns.has(TITLE.id) ? [...columns.values()] : [TITLE, ...columns.values()]
 }

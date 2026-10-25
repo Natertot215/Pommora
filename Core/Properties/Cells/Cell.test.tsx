@@ -8,6 +8,7 @@ import type { PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { EMPTY_ASSET_MAP } from '../../Nexus/tree'
 import { Cell } from './Cell'
+import { resolveColumn } from '../../Views/Pipeline/columns'
 import type { ValueContext } from '../valueContext'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
@@ -66,7 +67,7 @@ const ctx = {
   assets: EMPTY_ASSET_MAP,
 } as unknown as ValueContext
 
-const col = (id: string): ResolvedColumn => ({ id, kind: 'property' })
+const col = (id: string): ResolvedColumn => resolveColumn(id, schema, [])!
 const rowWith = (properties: Record<string, unknown>): ViewRow =>
   ({
     id: 'p1',
