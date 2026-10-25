@@ -2,7 +2,7 @@
 
 import { machine } from '../Platform/machine'
 
-// A write recorded with its bytes is an echo only while the file still holds them, so an outside write landing inside the window still reaches the watcher, and the record outlasts the window, since a large reread's events can arrive after it; a move or rename, recorded without bytes, is an echo for the whole window.
+// A write recorded with its bytes is an echo only while the file still holds them, so an outside write landing inside the window still reaches the watcher; a move or rename, recorded without bytes, is an echo for the whole window.
 type Echo = { at: number; hash?: string }
 const recent = new Map<string, Echo>()
 const WINDOW_MS = 2000
@@ -27,7 +27,7 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
   })
   if (recent.size > 256) {
     const cutoff = Date.now() - WINDOW_MS
-    for (const [p, r] of recent) if (r.hash === undefined && r.at < cutoff) recent.delete(p)
+    for (const [p, r] of recent) if (r.at < cutoff) recent.delete(p)
   }
   tap?.wrote(absPath)
 }
@@ -70,7 +70,7 @@ export function emitWatch(event: ChangeEvent, absPath: string): void {
 
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
-  if (r === undefined || r.hash !== undefined || Date.now() - r.at <= WINDOW_MS) return r
+  if (r === undefined || Date.now() - r.at <= WINDOW_MS) return r
   recent.delete(absPath)
   return undefined
 }
