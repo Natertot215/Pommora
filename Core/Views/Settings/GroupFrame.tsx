@@ -504,6 +504,7 @@ function DateBucketList({
   group: PropertyGroup
   column: ResolvedColumn
 } & HideControls): React.JSX.Element | null {
+  // The Settings frame mounts from the toolbar and beside a tile's view host, never under one, so the list reads the container's values itself.
   const { values } = useContainerValues(source.path)
   const nexus = useNexusForms()
 
