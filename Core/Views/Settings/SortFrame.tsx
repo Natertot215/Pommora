@@ -14,47 +14,17 @@ import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { OptionOrderList } from './OptionOrderList'
-import { SUB_LOOK } from './paneRows'
+import { orderOptions, SUB_LOOK } from './paneRows'
 import { liveBucketOrder } from '../Pipeline/group'
 import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
 import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
-import { type SortDirections, viewSpecOf } from '../valueKinds'
+import { viewSpecOf } from '../valueKinds'
 
-type Direction = SortCriterion['direction']
-
-// Each family's words for the two directions; a criterion whose property is gone reads a value's.
-const DIRECTIONS: Record<SortDirections, PickerOption<Direction>[]> = {
-  option: [
-    { value: 'ascending', label: 'Default' },
-    { value: 'descending', label: 'Reversed' },
-  ],
-  text: [
-    { value: 'ascending', label: 'A → Z' },
-    { value: 'descending', label: 'Z → A' },
-  ],
-  value: [
-    { value: 'ascending', label: 'Ascending' },
-    { value: 'descending', label: 'Descending' },
-  ],
-}
-type OrderChoice = Direction | 'custom'
-const CUSTOM_OPTION_DIRECTIONS: PickerOption<OrderChoice>[] = [
-  ...DIRECTIONS.option,
-  { value: 'custom', label: 'Custom' },
-]
+type OrderChoice = SortCriterion['direction'] | 'custom'
 const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
   { value: 'location', label: 'Location' },
   { value: 'custom', label: 'Custom' },
 ]
-
-function directionOptions(
-  propertyId: string,
-  schema: PropertyDefinition[],
-  contextIds: readonly string[],
-): PickerOption<Direction>[] {
-  const column = resolveColumn(propertyId, schema, contextIds)
-  return DIRECTIONS[viewSpecOf(column?.type)?.directions ?? 'value']
-}
 
 export function SortFrame({
   source,
@@ -104,9 +74,9 @@ export function SortFrame({
     save([primary, { property_id: id, direction: 'ascending' }])
   }
 
-  const primaryDef = primary && schema.find((d) => d.id === primary.property_id)
+  const primaryColumn = primary && resolveColumn(primary.property_id, schema, contextIds)
   const finiteDef =
-    primaryDef && viewSpecOf(primaryDef.type)?.directions === 'option' ? primaryDef : undefined
+    viewSpecOf(primaryColumn?.type)?.directions === 'option' ? primaryColumn?.def : undefined
 
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
   const ordering = primary?.order
@@ -169,9 +139,7 @@ export function SortFrame({
                 'arrow-down-up',
                 'Order',
                 finiteDef && primary.order ? 'custom' : primary.direction,
-                finiteDef
-                  ? CUSTOM_OPTION_DIRECTIONS
-                  : directionOptions(primary.property_id, schema, contextIds),
+                orderOptions(primaryColumn, ['ascending', 'descending', 'custom']),
                 (v: OrderChoice) =>
                   savePrimary(
                     v === 'custom'
@@ -197,7 +165,10 @@ export function SortFrame({
                 'arrow-down-up',
                 'Order',
                 sub.direction,
-                directionOptions(sub.property_id, schema, contextIds),
+                orderOptions(resolveColumn(sub.property_id, schema, contextIds), [
+                  'ascending',
+                  'descending',
+                ]),
                 (d) => save([primary, { ...sub, direction: d }]),
                 SUB_LOOK,
               )}
