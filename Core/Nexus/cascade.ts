@@ -1,6 +1,6 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
-import { isBlankRaw, stripKeys } from '../Files/rootValues'
+import { isBlankRaw, landValue, stripKeys } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { errText, ok } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, sweepParse } from '../Files/pageFile'
@@ -290,8 +290,7 @@ function landWorked(raw: Json, worked: Worked[string] = {}): Json | null {
     isBlankRaw(raw[k]) ? isBlankRaw(worked[k].from) : same(raw[k], worked[k].from),
   )
   if (!keys.length) return null
-  const landed = keys.flatMap((k) => (worked[k].to === undefined ? [] : [[k, worked[k].to]]))
-  return { ...(stripKeys(raw, keys) ?? raw), ...Object.fromEntries(landed) }
+  return keys.reduce((r, k) => landValue(r, k, worked[k].to), raw)
 }
 
 /** A relink entry's sweep: what a restore worked out landed first in the files `values` names, then its names re-spelled in every file naming them, or in those of its `files` still there with its `rekey` applied, counting each file either missed once. */
