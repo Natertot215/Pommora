@@ -392,16 +392,12 @@ describe('keepingForeignWords', () => {
   const tags = multiSelectOf('Work', 'Docs')
 
   it('joins the words no option names after the written ones', () => {
-    expect(keepingForeignWords(tags, ['Work'], ['Docs', 'Ideas'])).toEqual(['Work', 'Ideas'])
-    expect(keepingForeignWords(tags, ['Ideas'], ['Ideas'])).toEqual(['Ideas'])
-  })
-
-  it('drops a held case-variant of an option the pick holds, and keeps one of an option it doesn’t', () => {
-    expect(keepingForeignWords(multiSelectOf('Done'), ['Done'], ['done'])).toEqual(['Done'])
-    expect(keepingForeignWords(multiSelectOf('Done', 'Work'), ['Work'], ['done'])).toEqual([
+    expect(keepingForeignWords(tags, ['Work'], ['Docs', 'work', 'Ideas'])).toEqual([
       'Work',
-      'done',
+      'work',
+      'Ideas',
     ])
+    expect(keepingForeignWords(tags, ['Ideas'], ['Ideas'])).toEqual(['Ideas'])
   })
 
   it('answers an emptied list and a Select value as given', () => {

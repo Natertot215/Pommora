@@ -64,15 +64,15 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | Select and Status words (15 pages) | pages | read, pick | quotes, a bare numeral, stray spaces, and another Unicode composition name the option; `done` and `["todo"]` name none; a pick lands as a list of one in the file's quotes | A-3, A-1, E-2 |
-| Multi-Select words (15 pages) | pages | read, pick | a fold-duplicate word isn't read; a pick drops it; emptying the property removes it | A-3, E-1, E-3 |
-| Adoption under Match Title | page | read, pick | `green` and `PURPLE` adopt, `Red` beside `red` doesn't; a pick of `red` leaves `[red]` | E-1, E-3 |
+| Multi-Select words (15 pages) | pages | read, pick | a fold-duplicate word isn't read; a pick keeps it after the picked options; emptying the property removes it | A-3, E-1, E-3 |
+| Adoption under Match Title | page | read, pick | `green` and `PURPLE` adopt, `Red` beside `red` doesn't; a pick of `red` leaves `[red, Red]` | E-1, E-3 |
 | A Status doesn't adopt | page | settle | `Blocked` stays foreign and the Status's options hold | E-2 |
 | Space titles (8 pages) | pages | read, `setContext` | an exact title reads in any quotes; `area one` reads nothing and the pick lists the picked Spaces | A-3, A-2 **RULING** |
 | Is and Is Not | filter view | nine filters | Select and Status Is and Is Not compare exactly; Contains stays folded; Contains Any is exact | F-2 |
 | Option rename | pages, Area One, two views | `renameOption` | every quote style follows; `[work]`, a Space's `work`, and a view naming `work` stay | A-1, F-2 |
 | Space retitle | pages | `renameSpace` | every quote style follows; `[m3 place]` stays | A-2 |
 | Case-only skip | two pages, one unreadable | rename to `m3 case`, `property:replay` | the owed case-only rename sweeps on Try Again | A-1, F-3 |
-| Undo over a case-variant | page | pick Work in the table's picker, ⌘Z | `[work]` → `[Work]`; the undo puts back `[work]` byte for byte | A-1, E-3, Undo |
+| Undo over a foreign word | page | pick Work in the table's picker, ⌘Z | `[work]` → `[Work, work]`; the undo puts back `[work]` byte for byte | A-1, E-3, Undo |
 | Undo beside an adopted word | page | unpick Work, ⌘Z | `[Work, ideas]` → `[ideas]`; the undo puts back `[Work, ideas]` | E-1, Undo |
 | Undo over another casing | page | pick Doing, ⌘Z | `done` → a list of one, `Doing`; the undo puts back `done` | A-1, E-2, Undo |
 | Undo over an unreadable Number | page | type 5, ⌘Z | `abc` → `5`; the undo puts back `abc` | Undo |
@@ -133,7 +133,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Format skips | two pages each, one unreadable | `setKeyFormat` lowercase, `setValueFormat` kebab-case, `property:replay` | each sweeps the rest and owes a record of stored keys alone, `{ op: 'rename', from, to }` and `{ op: 'option-rename', keys }`; Try Again brings the file current and clears | F-1 |
 | Value Format refusals | registry, pages, journal | collision, crossing, a Text property, an owed record | each refused, nothing changes; a Key Format change waits while owed | D-2, F-1, B-3 |
 | Adoption per format | ten Multi-Selects | settle | `Red`, `BLUE`, `green` adopt as B-6's table says; `AB` and `J.Crew` don't under PascalCase; `in-progress` does and `due_date` doesn't under kebab-case | E-1, B-6 |
-| Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` stays foreign through a pick, and `Red` drops | E-1, E-3 |
+| Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` and `Red` stay foreign through a pick | E-1, E-3 |
 | A Value Format change owes adoption | page | `setValueFormat` lowercase | `green`, refused under UPPERCASE, adopts | E-1 |
 
 #### Group 8 — The Restore Re-Spell
@@ -141,7 +141,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | The eight spellings | eight pages | trash, restore | each returns under `Value One` | G-1 |
-| A Key Format and a Value Format change in the Trash | pages | trash, change, restore | `priority: [hi]`; `Severity: [HI]` | G-1 |
+| A Key Format and a Value Format change in the Trash | pages | trash, change, restore | `priority: hi`; `Severity: [HI]` | G-1 |
 | Exact key beside a variant | page | trash, restore | `Urgency` keeps its value, `urgency` stays foreign | G-1 **RULING** |
 | A shared spelling; a label renamed in the Trash | pages | trash, restore | each returns as written | G-1, G-2 |
 | Option words | pages | trash, restore | `top-tier` and `TOP TIER`, `low_tier` take back their options | G-1 |
@@ -150,7 +150,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | A Link key | page | trash, restore | `source link` returns as `Source Link`, its connection as written | G-1, A-3 |
 | A foreign key a format could have written | pages | trash, restore | `deadline_date` returns as `Deadline Date`; a value the Date can't read keeps its text | G-1, G-2 **RULING** |
 | A Space sidecar | M8 Returning | trash, restore | `<projects>`, its title, and `grade` return current | G-1 |
-| A word no option names | page | trash, restore | `[Top Tier, zzz]` returns as `[Top Tier]` | G-2 |
+| A word no option names | page | trash, restore | `[Top Tier, zzz]` returns as written | G-2 **RULING** |
 | A Context and a Space retitled in the Trash | page | trash, retitle `M8-Kind` and `m8-spot`, restore | `<M8-Kind>: [m8-spot]` returns as `<M8 Kind>: [M8 Spot]` | G-1 |
 
 #### Group 9 — The Gesture Pass
@@ -158,7 +158,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Case | Surface | Gesture | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | The Metadata leaf | Settings window | open the leaf | the rail reads Metadata, not Properties; one section, Maintenance, holding Repair Properties On Open | J-1 |
-| Foreign words | the value picker on a table cell | open, pick Life | `work` draws no chip and no row; the pick writes `[Work, Life]` | E-3 |
+| Foreign words | the value picker on a table cell | open, pick Life | `work` draws no chip and no row; the pick writes `[Work, Life, work]` | E-3 |
 | The rows | the Property Frame | open a Number and a Status | Label Format at Match Title, no Value Format on the Number; both rows above the Status's options, divided from them | H-1 |
 | The pane | the Label Format row | open it | Match Title and the nine conventions in order | B-2 |
 | The counted confirmation | the Label Format and Value Format rows | Label Format at 0, 1, and 2 Items, Value Format at 0 and 2; cancel; confirm | silent at 0 and 1; asks with `2 Items` at 2; a cancel writes nothing; a confirm re-keys | F-4, F-1 |
@@ -175,6 +175,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
 - **A re-spelled Date keeps its text** (group 8, `deadline_date: soon`): G-1 re-spells the key, and the restore's reconcile keeps any text a Date holds, as it does today; *§Open Items* lists it to read once.
 - **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the trashed page's `low_tier` foreign for the restore to re-spell; under `Match Title` adoption registers it as its own option when the property is created.
+- **A restore keeps a word no option names** (group 8, `zzz`): Nathan's ruling B-7 in *Properties Restructure — Decisions & Intention*, where G-2 had the restore's reconcile drop it, until the Trash moves onto the Archive's Reach-In.
 - **A restored Collection's cache** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
 - **"The value picker (foreign words, captions)":** the format rows carry no hints (the plan's *§Deviations*), so the drive asserts foreign words in the value picker alone.
 

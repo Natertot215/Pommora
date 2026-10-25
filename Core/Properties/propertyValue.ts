@@ -207,24 +207,13 @@ export function keepingForeignWords(
 ): unknown {
   if (PROPERTY_TYPES[def.type].kind !== 'multiSelect' || !Array.isArray(written) || !written.length)
     return written
-  // A held word an option names leaves with the pick: exactly, or in another casing of an option the pick holds.
-  const picked = new Set(
-    written.flatMap((w) => {
-      const o = findOption(def, registeredOption(def, exactTitle(w)) ?? '')
-      return o ? [normalizeTitle(o.label), normalizeTitle(o.key)] : []
-    }),
-  )
   return joinValues(
     written,
-    listOf(held ?? []).filter((w) => {
-      if (!isScalar(w)) return w != null
-      const word = exactTitle(w)
-      return (
-        word !== '' &&
-        registeredOption(def, word) === undefined &&
-        !picked.has(normalizeTitle(word))
-      )
-    }),
+    listOf(held ?? []).filter((w) =>
+      isScalar(w)
+        ? exactTitle(w) !== '' && registeredOption(def, exactTitle(w)) === undefined
+        : w != null,
+    ),
   )
 }
 
