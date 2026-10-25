@@ -56,19 +56,15 @@ export async function pageWorldOf(root: string, absFile: string): Promise<Govern
   return governedWorld(tree, containerSchema(tree, relative(root, absFile)))
 }
 
-/** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
+/** The pages a frozen copy may still name: `holds` answers which still exist. */
 export interface Frozen {
-  holds?: (title: string) => boolean
+  holds: (title: string) => boolean
 }
 
 export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
   const entry = linkEntry(raw, 2)
   const link = entry === null ? null : readLinkText(entry)
-  const gone =
-    link?.kind === 'page' &&
-    link.title !== '' &&
-    frozen.holds !== undefined &&
-    !frozen.holds(link.title)
+  const gone = link?.kind === 'page' && link.title !== '' && !frozen.holds(link.title)
   return gone ? entry : null
 }
 
@@ -88,19 +84,15 @@ export function writtenSpelling(next: unknown, raw: unknown): unknown {
   })
 }
 
-// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
-/** `raw` read and written back through `def`, spelled as `raw` spells it, `next` undefined when it reads as nothing or, under `frozen`, names a page gone; a live read keeps a Multi-Select's words no option names after its own. `listed` when the value is a list. */
+/** `raw` read and written back through `def`, spelled as `raw` spells it, `next` undefined when it reads as nothing; a Multi-Select keeps its words no option names after its own. `listed` when the value is a list. */
 export function reencode(
   def: PropertyDefinition,
   raw: unknown,
-  frozen?: Frozen,
 ): { next: unknown; listed: boolean } {
   const value = decodeValue(def, raw)
   const listed = 'value' in value && Array.isArray(value.value)
-  const gone = frozen && value.kind === 'link' && gonePageEntry(value.value, frozen) !== null
-  if (gone || isBlankValue(value)) return { next: undefined, listed }
-  const encoded = encodeValue(def, value)
-  const kept = frozen ? encoded : keepingForeignWords(def, encoded, raw)
+  if (isBlankValue(value)) return { next: undefined, listed }
+  const kept = keepingForeignWords(def, encodeValue(def, value), raw)
   return { next: writtenSpelling(kept, raw), listed }
 }
 
@@ -129,7 +121,6 @@ export const liveLanding = (raw: unknown, { next, listed }: { next: unknown; lis
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
-  frozen?: Frozen,
   skip?: string,
 ): Reconciled {
   const out: Record<string, unknown> = {}
@@ -142,13 +133,13 @@ export function reconcileGovernedRoot(
     }
     let next: unknown
     let listed = true
-    if ('def' in governor) ({ next, listed } = reencode(governor.def, raw, frozen))
+    if ('def' in governor) ({ next, listed } = reencode(governor.def, raw))
     else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
       const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
-    if (!frozen) next = liveLanding(raw, { next, listed })
+    next = liveLanding(raw, { next, listed })
     if (next === undefined) {
       changed.push(key)
       continue
@@ -166,7 +157,7 @@ export function writtenRoot(
   value: unknown,
   world: GovernedWorld,
 ): Json | null {
-  const reconciled = reconcileGovernedRoot(raw, world, undefined, key).root
+  const reconciled = reconcileGovernedRoot(raw, world, key).root
   const def = world.defs.get(key)
   const kept = def ? keepingForeignWords(def, value, raw[key]) : value
   const next = landValue(reconciled, key, writtenSpelling(kept, raw[key]))
