@@ -67,10 +67,7 @@ export function headContextOf(
 ): HeadContext {
   const def = grouping?.column.def
   const date =
-    grouping &&
-    dateFormat &&
-    def?.type === 'dateTime' &&
-    dateLabeller(view, grouping.config, dateFormat)
+    grouping && def?.type === 'dateTime' && dateLabeller(view, grouping.config, dateFormat!)
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,
