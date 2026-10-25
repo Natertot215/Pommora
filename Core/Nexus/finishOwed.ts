@@ -127,18 +127,20 @@ function finishArm(
   }
 }
 
-/** Sweeps each of `names` that `skip` passes over, answering those a sweep missed; `reach` counts the files. */
+/** Sweeps each of `names` that `skip` passes over, answering those a sweep missed; `reach` counts the files. While `views`, reached once after, can't be reached, every name stays owed, so the next finish reaches them again. */
 async function sweepEach(
-  names: readonly string[] | undefined,
+  names: string[] | undefined,
   skip: (name: string) => boolean,
   sweep: (name: string) => Promise<ConfigReach>,
   reach: ConfigReach,
+  views?: () => Promise<ConfigReach>,
 ): Promise<string[] | undefined> {
   const left: string[] = []
   for (const name of names ?? []) {
     if (skip(name)) continue
     if (add(reach, await sweep(name))) left.push(name)
   }
+  if (names && views && add(reach, await views())) return names
   return left.length ? left : undefined
 }
 
@@ -318,12 +320,9 @@ async function finishContext(
       return unlinkContextKey(root, old, id, dir)
     },
     reach,
+    () => reachConfig(root, { kind: 'property', propertyId: id }),
   )
-  // While the views can't be reached, every name stays owed, so the next finish reaches them again.
-  const views =
-    e.strip &&
-    (add(reach, await reachConfig(root, { kind: 'property', propertyId: id })) ? e.strip : strip)
-  return { left: { ...e, rename, strip: views }, reach }
+  return { left: { ...e, rename, strip }, reach }
 }
 
 async function finishSpace(
@@ -368,13 +367,9 @@ async function finishSpace(
     (old) => group.spaces.some(rivalTitled(old, id)),
     (old) => unlinkSpaceValue(root, group.def.title, old, under(old)),
     reach,
+    () => reachConfig(root, { kind: 'gone', propertyId: e.contextId, ids: [id] }),
   )
-  const views =
-    e.strip &&
-    (add(reach, await reachConfig(root, { kind: 'gone', propertyId: e.contextId, ids: [id] }))
-      ? e.strip
-      : strip)
-  return { left: owesRename(parent) ? e : { ...e, rename, strip: views }, reach }
+  return { left: owesRename(parent) ? e : { ...e, rename, strip }, reach }
 }
 
 async function finishContainer(
