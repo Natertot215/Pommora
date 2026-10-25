@@ -112,7 +112,7 @@ Every setting here is a machine-level preference, stored in the device database 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Clear and Remove, which name the Items holding what they reach. | **On** · Off |
+| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Delete, which name the Items holding what they reach. | **On** · Off |
 | Confirm Before Archiving | `confirmArchiving` | Asks before archiving a page or a Set. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
 | Restore Links On Deletion | `restoreLinksOnDeletion` | Restoring a deleted page puts it back into the Link property values that pointed at it. Off, those values stay removed. | **On** · Off |
@@ -140,7 +140,7 @@ Every setting here is a machine-level preference, stored in the device database 
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Repair Properties On Open | `repairOnOpen` | Repairs the shape of property and Context values on the pages changed since the last open. | On · **Off** |
+| Repair Properties On Open | `repairOnOpen` | Repairs the shape of property and Context values on the pages changed since the last open. | **On** · Off |
 
 #### Pages & Writing
 

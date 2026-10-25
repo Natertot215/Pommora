@@ -39,7 +39,7 @@ The interaction layer in `UIX/Interactions/` and `UIX/Animations/`: content-agno
 
 **Entrance:** `UIX/Animations/useEntrance.ts` names which rows in a list arrived since the last render, so the list hands `enterOnMount` to those alone and a new row discloses in on the same unfold. It compares key sets rather than array identity, so a list rebuilt on every render still reports an arrival once, and a surface's first render seeds silently — an opening pane presents rather than cascading. The exclusion pane, filter rules, page-property rows, option chips, and the property frame's lists all disclose new rows on it.
 
-**Drafts:** A list's draft is keyed for the value it writes (`useRenameKeys`' `mint`), closes once that value lands, and stays open on a refusal — aliases, exclusions, and options alike. A × beside a field that commits on blur keeps the focus (`RowRemove`), so it discards an edit in progress.
+**Drafts:** A list's draft is keyed for the value it writes (`useRenameKeys`' `mint`), closes once that value lands, and stays open on a refusal — aliases and exclusions alike. A × beside a field that commits on blur keeps the focus (`RowRemove`), so it discards an edit in progress.
 
 **PaneSlide:** A docked pane's in-out on the base tokens: an overlay pane slides home from its parked edge on its own progress while the body beside it gives up the width, and an in-flow pane reflows its width.
 

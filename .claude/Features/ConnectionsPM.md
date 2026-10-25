@@ -42,13 +42,13 @@ Right-clicking a resolved link, wherever it sits, opens one native menu built fr
 | Action | Connection | External Link |
 | --- | --- | --- |
 | **Open** | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab; each dropped where its own surface is already showing the page, unless the link names a heading) | Preview · Open In Browser (the in-app browser, offered for a web address, and the system one) |
-| **Author** (editable surfaces) | Rename · Edit Title | Rename · Edit Link |
+| **Author** (editable surfaces) | Edit Title · Edit Link | Edit Title · Edit Link |
 | **Copy** | Copy Link · Copy Path | Copy Link |
 | **Format** (editors) | — | Format ▸ Full Link · Short Link · Page Title (for a web address), rewriting the label alone |
 | **Close, in an editor** | Remove Link (keeps the shown text as prose) · Delete | Remove Link (keeps the label as prose) · Delete |
 | **Close, on a property value** | Clear (· Remove on a card and in the Panel, hiding the property there) | Clear (· Remove) |
 
-Rename edits the shown text, adding one where there is none, and Edit Title or Edit Link edits what the link points to. The editors are a page body, a table cell live or at rest, a Text value's pane, and the one-line field a Link value or a single-line Text value is typed in; a Link value's look follows its property's Format instead. Copy Link on a connection naming a heading copies the whole fragment form. An embedded page at rest offers the opens and the copies; a glance pane and a page's history offer no link menu. A phantom, ambiguous, or invalid link offers no link menu, and the right-click falls through to the editor's own menu where there is one. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
+Edit Title edits the shown text, adding one where there is none, and Edit Link edits what the link points to. The editors are a page body, a table cell live or at rest, a Text value's pane, and the one-line field a Link value or a single-line Text value is typed in; a Link value's look follows its property's Format instead. Copy Link on a connection naming a heading copies the whole fragment form. An embedded page at rest offers the opens and the copies; a glance pane and a page's history offer no link menu. A phantom, ambiguous, or invalid link offers no link menu, and the right-click falls through to the editor's own menu where there is one. Inside a link's own syntax the menu stands down, leaving the native editor menu its spelling and substitution items.
 
 ### Autocomplete
 

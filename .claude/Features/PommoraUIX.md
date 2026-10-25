@@ -344,7 +344,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Title      | Export                       | What it is                                                              |
 | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
 | Label      | `Label`                      | The axis-composed primitive every named label is a recipe over.         |
-| Shapes     | `shape.pill/tag` · `optionShapeFor` | Rounded status default · squared value, resolved per type. Compact is either rendered icon-only. |
+| Shapes     | `shape.pill/tag` | Rounded status default · squared value; the app picks one per property type. Compact is either rendered icon-only. |
 | Tint       | `tinted`                     | Fill, outline and text mixed off `--label-base` — a surface wanting a color chip sets that one var. |
 | Treatments | `fill` · `outline`           | Named only where a label differs from its tint.                         |
 | Palette    | `labelColor.*`               | One variant per ramp cell naming its base, plus `default`.              |

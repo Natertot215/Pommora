@@ -15,7 +15,7 @@ The ladder is the design system's icon ladder, named as the type ramp is — `ti
 
 ### Assignments
 
-Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `PropertyTypes.tsx`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
+Which glyph each recurring concept uses. The app decides these — the frames in `Core/Views/Settings/SettingsFrame.tsx` and `LayoutFrame.tsx`, the property types in `Core/Properties/typeDisplay.ts`, the view types in `Core/Views/Settings/LayoutFrame.tsx` — and the registry supplies them.
 
 #### II. Settings Frames
 
@@ -34,7 +34,7 @@ Which glyph each recurring concept uses. The app decides these — the frames in
 | --- | --- |
 | Number | `hash` |
 | Checkbox | `square-check` |
-| Date | `calendar` |
+| Date & Time | `calendar` |
 | Status | `progress-check` |
 | Link | `link` |
 | File | `file-chart-column` |
