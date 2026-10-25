@@ -1,42 +1,13 @@
 import { PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import { findOption, optionLabel } from '../../Properties/propertyValue'
-import { heading, menuDropLine, type PickerRowLook } from '@pommora/uix/Menus'
-import { side } from '@pommora/uix/Menus/menu-row.css'
+import { heading, menuDropLine } from '@pommora/uix/Menus'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
-import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { liveBucketOrder, type PropertyGroup } from '../Pipeline/group'
-import * as oo from './option-order.css'
-
-export const SUB_LOOK: PickerRowLook = {
-  className: oo.subOrderRow,
-  labelClassName: oo.orderLabel,
-}
-
-export interface HideControls {
-  isHidden?: (key: string) => boolean
-  onToggleHidden?: (key: string) => void
-}
-
-export function rowEye(
-  label: string,
-  hideKey: string,
-  { isHidden, onToggleHidden }: HideControls,
-): React.JSX.Element | null {
-  if (!onToggleHidden) return null
-  return (
-    <span className={side}>
-      <EyeToggle
-        hidden={isHidden?.(hideKey) ?? false}
-        name={label}
-        onToggle={() => onToggleHidden(hideKey)}
-      />
-    </span>
-  )
-}
+import { type HideControls, rowEye } from './paneRows'
 
 type Section = { key: string; label: string | null; values: string[] }
 
@@ -70,9 +41,6 @@ export function OptionOrderList({
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
   const order = liveBucketOrder(group, def, [])
-  const chip = (v: string): React.JSX.Element => (
-    <OptionChip type={def.type} option={findOption(def, v)} />
-  )
   return (
     <LineZone
       {...lineList({
@@ -83,23 +51,23 @@ export function OptionOrderList({
         },
         line: menuDropLine,
         label: (v) => optionLabel(def, v),
-        chip,
+        chip: (v) => <OptionChip type={def.type} option={findOption(def, v)} />,
         watch: [def, group.order_mode, group.order],
       })}
     >
       {sectionsOf(group, def, order).map((section) => (
         <div key={section.key}>
           {section.label !== null && <div className={heading}>{section.label}</div>}
-          {section.values.flatMap((v) =>
-            findOption(def, v)
-              ? [
-                  <LineRow key={v} id={v} className={cx(optionRow, isHidden?.(v) && hiddenRow)}>
-                    {chip(v)}
-                    {rowEye(optionLabel(def, v), v, { isHidden, onToggleHidden })}
-                  </LineRow>,
-                ]
-              : [],
-          )}
+          {section.values.flatMap((v) => {
+            const option = findOption(def, v)
+            if (!option) return []
+            return [
+              <LineRow key={v} id={v} className={cx(optionRow, isHidden?.(v) && hiddenRow)}>
+                <OptionChip type={def.type} option={option} />
+                {rowEye(option.label, v, { isHidden, onToggleHidden })}
+              </LineRow>,
+            ]
+          })}
         </div>
       ))}
     </LineZone>
