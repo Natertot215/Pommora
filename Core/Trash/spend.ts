@@ -3,7 +3,7 @@ import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import type { MutateOutcome, MutateReply, RestoreDestination } from '../Nexus/mutateRequest'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
+import { mutateRegistryFile, unlistContext, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { readLiveSetting } from '../Settings/settings'
@@ -205,10 +205,7 @@ export async function restoreTrashed(
     }
   } catch (e) {
     // The move is the irreversible half and a Context's entry the reversible one. Reversing it keeps the failure retryable: a ghost entry would trip the next attempt's own id-live guard.
-    if (record.entity === 'context')
-      await mutateRegistryFile(root, (cur) => ({
-        contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),
-      }))
+    if (record.entity === 'context') await unlistContext(root, record.registry.id)
     return fault(e)
   }
   // A conversion that can't land leaves the item live with its delete still owed: the next finish moves it back into its bundle, and the restore can be repeated (H-4).
