@@ -58,16 +58,16 @@ describe('mutateRequest — what the window sends is held to the shape before an
   })
 
   it('holds a property value to a value shape and a crop to its numbers', () => {
-    expect(read({ op: 'setProperty', path: 'a.md', propertyId: 'p', value: 'raw' })).toBe(false)
+    expect(read({ op: 'setProperty', paths: ['a.md'], propertyId: 'p', value: 'raw' })).toBe(false)
     expect(
       read({
         op: 'setProperty',
-        path: 'a.md',
+        paths: ['a.md'],
         propertyId: 'p',
         value: { kind: 'number', value: 1 },
       }),
     ).toBe(true)
-    expect(read({ op: 'setProperty', path: 'a.md', propertyId: 'p', value: null })).toBe(true)
+    expect(read({ op: 'setProperty', paths: ['a.md'], propertyId: 'p', value: null })).toBe(true)
     expect(read({ op: 'setCrop', image: 'i.png', crop: { x: 'left', y: 0, zoom: 1 } })).toBe(false)
   })
 

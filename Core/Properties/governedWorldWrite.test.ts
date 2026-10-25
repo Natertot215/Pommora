@@ -75,7 +75,7 @@ describe('a property write reconciles the whole file', () => {
       root,
       {
         op: 'setProperty',
-        path: rel(page.value.path),
+        paths: [rel(page.value.path)],
         propertyId: priorityId,
         value: { kind: 'number', value: 3 },
       },
@@ -100,7 +100,7 @@ describe('a property write reconciles the whole file', () => {
       root,
       {
         op: 'setProperty',
-        path: rel(page.value.path),
+        paths: [rel(page.value.path)],
         propertyId: priorityId,
         value: { kind: 'number', value: 2 },
       },
@@ -164,7 +164,12 @@ describe('a registry definition named for a key Pommora manages', () => {
     for (const path of [rel(page.value.path), rel(space)]) {
       const r = await handleMutate(
         root,
-        { op: 'setProperty', path, propertyId: priorityId, value: { kind: 'number', value: 3 } },
+        {
+          op: 'setProperty',
+          paths: [path],
+          propertyId: priorityId,
+          value: { kind: 'number', value: 3 },
+        },
         deps,
       )
       expect(r.ok).toBe(true)

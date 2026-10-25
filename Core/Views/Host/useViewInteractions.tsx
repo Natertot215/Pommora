@@ -408,7 +408,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         schema,
         row,
         trigger: anchor,
-        commit: (column, value) => commitValue(row, column, value),
+        commit: (column, value) => commitValue([row], column, value),
         styleOf,
       })
     )

@@ -231,7 +231,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!column) return
     const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
     if (creating && !isBlankValue(v)) revealProperty(column.id)
-    commitValue(row, column, v)
+    commitValue([row], column, v)
   }
 
   const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
@@ -283,7 +283,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── The card api ──────────────────────────────────────────────────────────
 
   const cardApi = useStableApi<CardApi>({
-    commitValue,
+    commitValue: (row, column, value) => commitValue([row], column, value),
     setStyle: setStylePatch,
     open: interactions.openPage,
     hide: hideProperty,

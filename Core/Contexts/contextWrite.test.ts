@@ -182,7 +182,7 @@ describe('setContext reads the held tree', () => {
     join(contextsDir(root), context, space, '_space.json')
   const rel = (abs: string): string => abs.slice(root.length + 1)
   const setContext = (path: string, contextId: string, spaceIds: string[]) =>
-    handleMutate(root, { op: 'setContext', path, contextId, spaceIds }, deps)
+    handleMutate(root, { op: 'setContext', paths: [path], contextId, spaceIds }, deps)
   const link = (contextId: string, spaceIds: string[]) =>
     setContext('.nexus/contexts/Projects/Pommora', contextId, spaceIds)
 

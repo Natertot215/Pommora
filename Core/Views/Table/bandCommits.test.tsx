@@ -469,7 +469,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     await dragRow(1, 160)
     expect(mutateSpy).toHaveBeenNthCalledWith(1, {
       op: 'setProperty',
-      path: 'Col/A/A Two.md',
+      paths: ['Col/A/A Two.md'],
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'opt_active' },
     })
@@ -486,7 +486,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     await dragRow(1, 105)
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'setProperty',
-      path: 'Col/A/A Two.md',
+      paths: ['Col/A/A Two.md'],
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'opt_active' },
     })

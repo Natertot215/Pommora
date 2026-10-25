@@ -304,7 +304,7 @@ describe('a card dropped across property bands', () => {
     await dragTo(card('p1'), dest.top + 10)
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'setProperty',
-      path: 'Col/One.md',
+      paths: ['Col/One.md'],
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'opt_Complete' },
     })

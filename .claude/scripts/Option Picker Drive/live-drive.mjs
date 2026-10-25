@@ -163,7 +163,7 @@ async function stepEditOption(cdp) {
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
 const DIALOG_OPEN = `!!document.querySelector('[role="alertdialog"]')`
 async function stepClearDelete(cdp) {
-  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Alpha') } })
+  const r = await ask(cdp, 'mutate', { op: 'setProperty', paths: ['Collection A/Set Alpha/Drive Two.md'], propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Alpha') } })
   check('clear: Drive Two holds Alpha', r.ok && lists('Drive Two', 'Drive Select', 'Alpha'), JSON.stringify(r))
   await openEditor(cdp, 'Drive Select')
   const alphaRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Alpha' && r.querySelector('[aria-label="Edit Option"]'))`
@@ -211,7 +211,7 @@ async function stepCardsAndMass(cdp) {
 }
 
 async function stepPanel(cdp) {
-  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive One.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Fresh') } })
+  const r = await ask(cdp, 'mutate', { op: 'setProperty', paths: ['Collection A/Set Alpha/Drive One.md'], propertyId: ids['Drive Select'], value: { kind: 'select', value: optionId(defNamed('Drive Select'), 'Fresh') } })
   check('panel: Drive One holds Fresh, so its row shows', r.ok && lists('Drive One', 'Drive Select', 'Fresh'), JSON.stringify(r))
   await sleep(800)
   await mouseClick(cdp, textEl('.data-row .cell-title-text', 'Drive One'))

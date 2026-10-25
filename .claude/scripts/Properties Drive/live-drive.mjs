@@ -171,7 +171,7 @@ async function group3(cdp) {
   byHand('Spaces', 'Notes: "   "')
   byHand('Filled', 'Notes: x')
 
-  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Tidy'), propertyId: notes.created.propertyId, value: { kind: 'text', value: 'edited' } }))
+  await must('a sibling edit', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Tidy')], propertyId: notes.created.propertyId, value: { kind: 'text', value: 'edited' } }))
   const tidied = await settles(async () => same(frontmatter('Tidy').Status, ['Option 2']))
   item(3, 'P-1', 'editing another property writes a several-word Select as the option it shows', tidied, show(frontmatter('Tidy')))
 
@@ -183,7 +183,7 @@ async function group3(cdp) {
   item(3, 'J-1', 'a Text value of only spaces matches "is empty"', empties)
 
   const sidecar = files[2]
-  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', path: space, propertyId: notes.created.propertyId, value: { kind: 'text', value: 'held' } }))
+  const pick = () => must('a Space value', ask(cdp, 'mutate', { op: 'setProperty', paths: [space], propertyId: notes.created.propertyId, value: { kind: 'text', value: 'held' } }))
   await pick()
   const before = { text: readFileSync(sidecar, 'utf8'), mtime: statSync(sidecar).mtimeMs }
   await sleep(1100)
@@ -471,7 +471,7 @@ async function group8(cdp) {
   await until('both sidecars', async () => existsSync(join(NEXUS, sidecar(title, 'Beta'))))
   await must(
     'link Alpha to Beta',
-    ask(cdp, 'mutate', { op: 'setContext', path: `.nexus/contexts/${title}/Alpha`, contextId, spaceIds: [beta] }),
+    ask(cdp, 'mutate', { op: 'setContext', paths: [`.nexus/contexts/${title}/Alpha`], contextId, spaceIds: [beta] }),
   )
   await must('rename the Context', ask(cdp, 'mutate', { op: 'renameContext', contextId, newName: renamed }))
   const [key, old] = [`<${renamed}>`, `<${title}>`]
@@ -580,7 +580,7 @@ async function group10() {
   const propertyId = await addProperty(cdp, { id: '', label: 'Drive Kept', type: 'text' })
   for (const title of ['Drive Stays', 'Drive Trashed']) {
     await createPage(cdp, title)
-    await op(`set ${title}`, { op: 'setProperty', path: pagePath(title), propertyId, value: { kind: 'text', value: `${title} value` } })
+    await op(`set ${title}`, { op: 'setProperty', paths: [pagePath(title)], propertyId, value: { kind: 'text', value: `${title} value` } })
   }
   const removedFrom = Date.now()
   await op('remove Drive Kept', { op: 'unassignProperty', containerPath: 'Collection A', propertyId })
@@ -747,7 +747,7 @@ async function group11(cdp) {
     ['prop_drive_select', { kind: 'select', value: 'opt_drive_alpha' }],
   ]
   for (const [propertyId, value] of values)
-    await must(`set ${propertyId}`, ask(cdp, 'mutate', { op: 'setProperty', path, propertyId, value }))
+    await must(`set ${propertyId}`, ask(cdp, 'mutate', { op: 'setProperty', paths: [path], propertyId, value }))
   await until('the Drive Columns row', () => cdp.evaluate(`!!${row('Drive Columns')}`))
   // A removable chip draws its label in more than one layer, so a cell reads its distinct leaf texts.
   const cells = await cdp.evaluate(`[...(${row('Drive Columns')}).querySelectorAll('.data-cell')].slice(1).map((c) => [...new Set([...c.querySelectorAll('*')].filter((e) => !e.children.length).map((e) => e.textContent.trim()).filter(Boolean))].join(' '))`)

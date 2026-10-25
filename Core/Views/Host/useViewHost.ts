@@ -176,10 +176,10 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     setOverride: setValueOverride,
   })
   const commitValue = (
-    row: ViewRow,
+    rows: readonly ViewRow[],
     column: ResolvedColumn,
     value: PropertyValue | null,
-  ): Promise<boolean> | undefined => assignValue(writer, row, column, value)
+  ): Promise<boolean> | undefined => assignValue(writer, rows, column, value)
   const commitGroupValue = (
     pageId: string,
     propertyId: string,
@@ -187,7 +187,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   ): Promise<boolean> | undefined => {
     const row = rowById.get(pageId)
     const column = resolveColumn(propertyId, schema, contextIds)
-    return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
+    return row && column && commitValue([row], column, groupKeyToValue(groupKey, column.type))
   }
   const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
     if (!sortReassign) return

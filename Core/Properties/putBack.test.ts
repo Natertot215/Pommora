@@ -112,7 +112,11 @@ const space: Target = {
 }
 
 const set = (target: Target, key: string, value: PropertyValue | null) =>
-  settledMutate(root, { op: 'setProperty', path: target.path(), propertyId: ids[key], value }, deps)
+  settledMutate(
+    root,
+    { op: 'setProperty', paths: [target.path()], propertyId: ids[key], value },
+    deps,
+  )
 /** Sends the record the write's own reply carries, as the window's undo does. */
 const undo = async (written: MutateReply): Promise<MutateReply> => {
   if (!written.ok || !written.value.undo) throw new Error('The write answered no record to undo.')
@@ -298,7 +302,7 @@ describe('an undo on a page', () => {
     await page.seed('<Projects>', ['Pommora', 'Ghost'], '<Projects>: [Pommora, Ghost]')
     const written = await settledMutate(
       root,
-      { op: 'setContext', path: pagePath, contextId: groupId, spaceIds: [] },
+      { op: 'setContext', paths: [pagePath], contextId: groupId, spaceIds: [] },
       deps,
     )
     expect(await page.held('<Projects>')).toBeUndefined()
@@ -321,7 +325,7 @@ describe('an undo on a page', () => {
   it('a Context tag’s undo lands while the property list is damaged', async () => {
     const written = await settledMutate(
       root,
-      { op: 'setContext', path: pagePath, contextId: groupId, spaceIds: [spaceId] },
+      { op: 'setContext', paths: [pagePath], contextId: groupId, spaceIds: [spaceId] },
       deps,
     )
     expect(await page.held('<Projects>')).toBe('<Projects>:\n  - Pommora')
@@ -340,7 +344,7 @@ describe('an undo of a Space link', () => {
     await refreshTree(root)
     const written = await settledMutate(
       root,
-      { op: 'setContext', path: home.value.path, contextId: groupId, spaceIds: [spaceId] },
+      { op: 'setContext', paths: [home.value.path], contextId: groupId, spaceIds: [spaceId] },
       deps,
     )
     expect(

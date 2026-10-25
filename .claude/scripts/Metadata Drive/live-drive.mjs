@@ -137,7 +137,7 @@ async function makeContext(cdp, title, spaces) {
   return id
 }
 const spaceValue = (cdp, context, title, propertyId, value) =>
-  must(`${title}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: spacePath(context, title), propertyId, value: byId(propertyId, value) }))
+  must(`${title}'s value`, ask(cdp, 'mutate', { op: 'setProperty', paths: [spacePath(context, title)], propertyId, value: byId(propertyId, value) }))
 
 // ── The registry, as Phase 5 leaves it ──────────────────────────────────────
 
@@ -181,7 +181,7 @@ function byId(propertyId, value) {
   return value
 }
 const setValue = (cdp, rel, propertyId, value) =>
-  must(`${rel}'s value`, ask(cdp, 'mutate', { op: 'setProperty', path: rel, propertyId, value: byId(propertyId, value) }))
+  must(`${rel}'s value`, ask(cdp, 'mutate', { op: 'setProperty', paths: [rel], propertyId, value: byId(propertyId, value) }))
 const statusGroups = (todo, complete) => [
   { id: 'todo', label: 'To-do', color: 'grey', options: todo.map(word) },
   { id: 'complete', label: 'Complete', color: 'green', options: complete.map(word) },
@@ -308,7 +308,7 @@ function checkReads(group, cases, rows, columns, kinds = {}) {
 async function act(cdp, c, a) {
   if (a.spaces) {
     const spaceIds = a.spaces.map((t) => spaceIdOf(a.context, t))
-    return must(`${c.rel} Spaces`, ask(cdp, 'mutate', { op: 'setContext', path: c.rel, contextId: contextIdOf(a.context), spaceIds }))
+    return must(`${c.rel} Spaces`, ask(cdp, 'mutate', { op: 'setContext', paths: [c.rel], contextId: contextIdOf(a.context), spaceIds }))
   }
   return setValue(cdp, c.rel, ids[c.column], a.set)
 }

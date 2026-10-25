@@ -917,7 +917,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
       root,
       {
         op: 'setProperty',
-        path: 'Notes/A.md',
+        paths: ['Notes/A.md'],
         propertyId: 'tags',
         value: { kind: 'multiSelect', value: ['opt_alpha'] },
       },
@@ -934,7 +934,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
       root,
       {
         op: 'setProperty',
-        path: 'Notes/A.md',
+        paths: ['Notes/A.md'],
         propertyId: 'kind',
         value: { kind: 'select', value: 'opt_Note' },
       },
