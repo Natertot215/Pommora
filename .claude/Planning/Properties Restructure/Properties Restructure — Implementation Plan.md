@@ -1260,17 +1260,17 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Closeout P11B–P12 (two `opus-high` agents, inward and outward)
   - [x] Neutral Gate 1 (`fable-high`, `BASELINE..<Phase 12's head>`)
 - [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 13 opens]`
-- [ ] **Phase 13** — Columns Carry Their Answer
-  - [ ] Task 13-1 · `ResolvedColumn` carries its type and definition through one `resolveColumn`
-  - [ ] Task 13-2 · One `resolveFieldValue(row, column)`
-  - [ ] Task 13-3 · A column's style resolves from the column, with one memoized style map
-  - [ ] Task 13-4 · `declaredType` leaves, and no `contextIds` parameter is optional
-  - [ ] Task 13-5 · The heading-link settings ride `ValueContext`
-  - [ ] Task 13-6 · A new view stores no hidden list
-  - [ ] Task 13-7 · The header's hide writes through `hideShown`
-  - [ ] Task 13-8 · GroupFrame's second read, by rule 07-17
-  - [ ] Task 13-9 · Drive group 11
-  - [ ] Review Checkpoint
+- [x] **Phase 13** — Columns Carry Their Answer
+  - [x] Task 13-1 · `ResolvedColumn` carries its type and definition through one `resolveColumn`
+  - [x] Task 13-2 · One `resolveFieldValue(row, column)`
+  - [x] Task 13-3 · A column's style resolves from the column, with one memoized style map
+  - [x] Task 13-4 · `declaredType` leaves, and no `contextIds` parameter is optional
+  - [x] Task 13-5 · The heading-link settings ride `ValueContext`
+  - [x] Task 13-6 · A new view stores no hidden list
+  - [x] Task 13-7 · The header's hide writes through `hideShown`
+  - [x] Task 13-8 · GroupFrame's second read, by rule 07-17
+  - [x] Task 13-9 · Drive group 11
+  - [x] Review Checkpoint
 - [ ] **Phase 14** — The Per-Kind View Record
   - [ ] Task 14-1 · One `shownText`
   - [ ] Task 14-2 · `valueKinds.ts` opens with the filter half
@@ -35451,7 +35451,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 11A | −634 | +738 | +104 | −642 / +738 / +96 | −301 |
 | 11B | −449 | +835 | +386 | −458 / +852 / +394 | +93 |
 | 12 | −192 | +340 | +148 | −393 / +517 / +124 | +217 |
-| 13 | −678 | +552 | −126 | | |
+| 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
 | 14 | −544 | +497 | −47 | | |
 | 15 | −256 | +229 | −27 | | |
 | 16A | −537 | +457 | −80 | | |
