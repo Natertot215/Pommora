@@ -25,7 +25,7 @@ import {
 } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { popMenu } from '../../Actions/menuActions'
-import { fillsBlank } from './cardValueInput'
+import { fillsBlank } from './cardColumns'
 
 export type CardPickerKind = 'picker' | 'dateTime' | 'popover'
 

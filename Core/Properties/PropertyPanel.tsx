@@ -144,7 +144,6 @@ export function PropertyPanel({
     if (isSpace) setOverride((prev) => retireSettled(prev, null))
   }, [isSpace, spaceNode])
 
-  // KNOB — a row added this session outlives a subject change; key this on `path` to scope it per subject.
   const nexusId = tree?.nexus.id
   useEffect(() => {
     setEditing(null)
