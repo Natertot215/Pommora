@@ -1282,7 +1282,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 14-8 · Drive group 12
   - [x] Review Checkpoint
   - [x] Closeout P13–P14 (two `opus-high` agents, inward and outward)
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 15 opens]`
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 15 opens]`
 - [ ] **Phase 15** — Pick Model and One Writer
   - [ ] Task 15-1 · One pure pick model, `pickModel.ts`
   - [ ] Task 15-2 · The value writer is assembled one way
