@@ -1,4 +1,4 @@
-// A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any or Is All rule on a Multi-Select or a Context, where two such rules on one property take both values. An Any group seeds nothing when a blank page already meets it, else from its first rule or group that seeding meets. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
+// A rule stamps only when it names one value its kind's `seed` can be satisfied by, where two such rules on one property take both values. An Any group seeds nothing when a blank page already meets it, else from its first rule or group that seeding meets. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'

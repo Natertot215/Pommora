@@ -583,6 +583,12 @@ describe('applyFilter — negation + registry', () => {
         [],
       ).map((r) => r.id)
     expect(any({ property_id: 'prop_done', op: 'greater_than', value: 'true' })).toEqual([])
+    expect(
+      ids(rows, {
+        match: 'all',
+        rules: [{ property_id: 'prop_done', op: 'greater_than', value: 'true' }],
+      }),
+    ).toEqual(['r1', 'r2'])
     expect(any({ property_id: '_location', op: 'contains', value: 'set_a' })).toEqual([])
   })
 
@@ -593,6 +599,9 @@ describe('applyFilter — negation + registry', () => {
         rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_a' }],
       })
     expect(any({ property_id: 'prop_num', op: 'is', value: 'abc' })).toEqual(['r1'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_num', op: 'is', value: 'abc' }] }),
+    ).toEqual(['r1', 'r2'])
     expect(any({ property_id: 'prop_when', op: 'is', value: 'soon' })).toEqual(['r1'])
     expect(any({ property_id: 'prop_sel', op: 'is', value: 'opt_gone' })).toEqual(['r1'])
     expect(any({ property_id: 'prop_tags', op: 'contains_any', values: ['opt_gone'] })).toEqual([
