@@ -55,7 +55,7 @@ import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
 import { spaceNodeFrom } from '../Contexts/spaceSidecar'
-import { PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
+import { PROPERTY_TYPES, type PropertyDefinition, specOf } from '../Properties/properties'
 import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesRegistry'
 import { stabilize } from './treeStabilize'
 import {
@@ -523,9 +523,8 @@ export function oweNamedKeys(owed: Owed, was: PropertyDefinition[], tree: NexusT
       .filter((d) => {
         const p = prior[d.id]
         return (
-          PROPERTY_TYPES[d.type].registersMembers === true &&
-          (!p ||
-            !PROPERTY_TYPES[p.type].registersMembers ||
+          PROPERTY_TYPES[d.type].registersMembers &&
+          (!specOf(p?.type)?.registersMembers ||
             p.key !== d.key ||
             p.value_format !== d.value_format)
         )
