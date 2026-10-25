@@ -116,6 +116,8 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 
 - **K-1 [CONFIRMED]:** A filter value Pommora can't read is meant to be ignored rather than matching every page, a Checkbox's "is not empty" filter is meant to work, and deleting the property a view groups by keeps which folders were collapsed.
 - **K-2 [INFERRED]:** Empty values sort last in either direction for every type except Checkbox, whose unchecked box sorts as a value, first ascending and last descending; dragging a row into another value's run in a sorted view keeps reassigning its value.
+- **K-3 [CONFIRMED]:** A Select or Multi-Select filter rule naming an option the property no longer lists sits out, as a value Pommora can't read does (K-1), and New Page in that view takes nothing from it; a rule naming a listed option and a missing one keeps the listed one (Nathan, 10-25-2026: "Ignore the rule").
+- **K-4 [CONFIRMED]:** A hand-written filter rule whose operator its property's type doesn't answer, such as `greater_than` on a Checkbox, sits out rather than matching every page (Nathan, 10-25-2026: "Ignore the rule").
 
 #### L - Property Editors
 

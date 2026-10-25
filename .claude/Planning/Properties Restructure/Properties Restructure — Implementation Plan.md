@@ -1271,16 +1271,16 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 13-8 · GroupFrame's second read, by rule 07-17
   - [x] Task 13-9 · Drive group 11
   - [x] Review Checkpoint
-- [ ] **Phase 14** — The Per-Kind View Record
-  - [ ] Task 14-1 · One `shownText`
-  - [ ] Task 14-2 · `valueKinds.ts` opens with the filter half
-  - [ ] Task 14-3 · Sort keys and direction words join the record
-  - [ ] Task 14-4 · Buckets join the record
-  - [ ] Task 14-5 · Seeds join the record
-  - [ ] Task 14-6 · Measurement K
-  - [ ] Task 14-7 · Measurement 07-10
-  - [ ] Task 14-8 · Drive group 12
-  - [ ] Review Checkpoint
+- [x] **Phase 14** — The Per-Kind View Record
+  - [x] Task 14-1 · One `shownText`
+  - [x] Task 14-2 · `valueKinds.ts` opens with the filter half
+  - [x] Task 14-3 · Sort keys and direction words join the record
+  - [x] Task 14-4 · Buckets join the record
+  - [x] Task 14-5 · Seeds join the record
+  - [x] Task 14-6 · Measurement K
+  - [x] Task 14-7 · Measurement 07-10
+  - [x] Task 14-8 · Drive group 12
+  - [x] Review Checkpoint
   - [ ] Closeout P13–P14 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 15 opens]`
 - [ ] **Phase 15** — Pick Model and One Writer
@@ -28248,13 +28248,16 @@ No repository file changes, on either outcome.
 #### Behavior Changes and Disclosures
 
 - **An Unreadable Filter Value Is Ignored (K-1, Nathan's Intent):** a rule whose value doesn't read (letters in a Number filter, a word that isn't a date, a Checkbox word that isn't one) no longer matches every page: it sits out, so inside an Any group the other rules decide, and a new page created in that view inherits from the rule that does decide.
-- **A Filter Naming a Missing Option Is Ignored (Accident; Take, Recommended to Nathan):** a Select or Multi-Select rule whose options its definition no longer lists sits out, as an unreadable Number, Date, or Checkbox value does, where Is matched nothing and Isn't everything; and New Page in that view takes nothing from the rule, where its seed named the missing option and the create was refused. A rule naming a listed option and a missing one keeps the listed one. Put to Nathan with this reading recommended; no answer was relayed before the plan was amended.
-- **An Operator a Kind Doesn't Answer Is Ignored (an Accident Fixed):** a hand-written rule whose operator its kind doesn't answer (`greater_than` on a Checkbox, `contains_any` on a Select, `is_not` on a Date) sits out where it matched every page. The pane never writes one. K-1 rules on values that don't read, not on operators, so this rides with the accidents fixed along the way. **Recommended:** take it; a rule that can't test a value shouldn't decide an Any group.
+- **A Filter Naming a Missing Option Is Ignored (K-3, Nathan's Ruling, 10-25-2026):** a Select or Multi-Select rule whose options its definition no longer lists sits out, as an unreadable Number, Date, or Checkbox value does, where Is matched nothing and Isn't everything; and New Page in that view takes nothing from the rule, where its seed named the missing option and the create was refused. A rule naming a listed option and a missing one keeps the listed one.
+- **An Operator a Kind Doesn't Answer Is Ignored (K-4, Nathan's Ruling, 10-25-2026):** a hand-written rule whose operator its kind doesn't answer (`greater_than` on a Checkbox, `contains_any` on a Select, `is_not` on a Date) sits out where it matched every page. The pane never writes one.
 - **Checkbox "Is Not Empty" Works (K-1):** it shows checked pages only, which only a hand-written rule holds, since the pane offers a Checkbox only Is Checked and Isn't Checked (`CHECKBOX_OPS`, HEAD `Core/Views/filterModel.ts:94-97`).
 - **Empty Values Sort Last for Every Type, Both Directions (K-2, a Reading Nathan Didn't Object To):** Number, Date, Creation Time, Last Modified, Select, Status, Text, Link, Multi-Select, and File put the pages holding no value at the bottom whichever way the sort runs. Today empty Numbers, Dates, and texts led an ascending sort and empty Selects led a descending one. Dragging a row into another value's run in a single-sorted view keeps reassigning, the empty run included.
 - **A Checkbox Sort Puts Checked First Ascending (LC-53, Nathan's Ruling):** an unchecked box is stored as no value, so ascending now puts checked pages first and unchecked after them, as an empty value sorts last, and descending puts unchecked first; today it ran the other way. The filter keeps today's reading, so Is Empty matches an unchecked box and Isn't Empty a checked one (K-1's fix). The record's one Checkbox entry states both: its sort key ranks a checked box before an unchecked one, which keeps a key so the direction still reorders the two runs.
 - **A Custom Order Reads Ascending for Any Kind:** `buildCriterion` forces ascending whenever a criterion carries an `order`, where only the Select arm did. Only a Select criterion is written with one (the Sort pane's Custom, `SortFrame.tsx:188`), so nothing changes for a criterion any path writes.
 - **Hidden Changes:** the Sort pane offers a Custom order where the record names a kind's directions as an option's, which is the Select and Status it offers one for today. The record is read only by the renderer; nothing on disk changes shape.
+- **The Kind Checks Left Outside the Record:** each states a piece only its surface holds. `group.ts`' `groupingOf` reads a Date grouping's stored manual order as configured, since date bands order by time; `FilterFrame.tsx`'s operator rows draw a Checkbox's own box beside Is Checked and Isn't Checked; and `GroupFrame.tsx` opens the date bucket list for a Date grouping or sub-grouping.
+- **Measurement K, Pass (10-25-2026):** `~/Benchmark-Large`, a date-sorted Table grouped by `Due` month over `Collection 01 Ledger` (1,000 pages), twenty `setProperty` writes of `Due`, each sample the longest `pipeline` entry: 2.1, 2.2, 2.1, 1.6, 2.4, 2.4, 2.4, 1.7, 1.8, 2.2, 2.2, 2.2, 2.1, 2.2, 2.1, 2.3, 2.1, 2.1, 2.1, 2.2 ms; median 2.15, p95 2.4 ≤ 16, so K's incremental pipeline stays excluded.
+- **Measurement 07-10, Pass (10-25-2026):** `~/Benchmark-Large` (800 Spaces), the Matrix open, twenty `matrix:write` filters of one `contains_any` rule on the first Context alternating its first two Spaces, each sample the longest `matrix-spaces` entry: 1.3, 0.8, 1.1, 1, 0.8, 1.2, 1.3, 1.2, 1.2, 1, 1.3, 1.4, 1.3, 1.1, 1.1, 1.5, 1, 1, 1, 1.5 ms; median 1.15, p95 1.5 ≤ 16, so no signature cache lands.
 
 #### Line Total
 
@@ -35452,7 +35455,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 11B | −449 | +835 | +386 | −458 / +852 / +394 | +93 |
 | 12 | −192 | +340 | +148 | −393 / +517 / +124 | +217 |
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
-| 14 | −544 | +497 | −47 | | |
+| 14 | −544 | +497 | −47 | −532 / +486 / −46 | +43 |
 | 15 | −256 | +229 | −27 | | |
 | 16A | −537 | +457 | −80 | | |
 | 16B | −322 | +97 | −225 | | |
