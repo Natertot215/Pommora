@@ -868,6 +868,43 @@ describe('a content delete on the notes', () => {
     },
   )
 
+  // A Set `S` in Notes, a Collection `Other`, and a note for the Set's move from Notes into Other, its relocation not yet made.
+  const setMoveNoted = async (): Promise<{ id: string; views: () => Promise<string> }> => {
+    const set = await entity(notes, 'set', 'S')
+    await entity(root, 'collection', 'Other')
+    const colFile = sidecarPath(notes, 'collection')
+    await putJson(colFile, {
+      ...(await readJsonAt(colFile)),
+      views: [view([{ property_id: '_location', op: 'is', values: [set.id] }])],
+    })
+    await putJson(join(root, OWED_REL), {
+      [set.id]: {
+        kind: 'container',
+        at: 'Notes/S',
+        edit: { kind: 'gone', propertyId: '_location', ids: [set.id] },
+        within: 'Notes',
+      },
+    })
+    return { id: set.id, views: async () => JSON.stringify((await readJsonAt(colFile)).views) }
+  }
+
+  it("a crash between a Set move's note and its relocation keeps the Set in its Collection's views", async () => {
+    const { id, views } = await setMoveNoted()
+    await refreshTree(root)
+    await finishOwed(root, nexusDeps)
+    expect(await views()).toContain(id)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it("a Set moved out before its move's finish leaves the old Collection's views", async () => {
+    const { id, views } = await setMoveNoted()
+    await rename(join(notes, 'S'), join(root, 'Other', 'S'))
+    await refreshTree(root)
+    await finishOwed(root, nexusDeps)
+    expect(await views()).not.toContain(id)
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it.skipIf(noModeBits)(
     "a Collection restored before its delete's Try Again keeps its views",
     async () => {
