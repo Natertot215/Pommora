@@ -1,8 +1,9 @@
 // Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across machines.
 
 import { type DateFormat, showsWeekday, type TimeFormat, type WeekdayFormat } from './columnStyles'
-import { DEFAULT_CURRENCY, type NumberConfig } from './properties'
-import { currencySymbol } from './propertyValue'
+import { DEFAULT_CURRENCY, type NumberConfig, type PropertyDefinition } from './properties'
+import { currencySymbol, optionLabel, type PropertyValue } from './propertyValue'
+import { fileName, linkDisplayText, shownProse } from '../Connections/linkValue'
 import { pad } from '@pommora/uix/Utilities/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.
@@ -72,7 +73,7 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
 }
 
 /** `end` is set when the value is a span; one `timed` covers both ends. */
-type LocalDate = { at: Date; timed: boolean; end?: Date }
+export type LocalDate = { at: Date; timed: boolean; end?: Date }
 
 const ISO_DATE =
   /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/
@@ -148,6 +149,28 @@ export function formatDate(
   if (!read.end) return start
   if (dayMs(read.at) !== dayMs(read.end)) return `${start} → ${point(read.end)}`
   return read.timed && timeFormat !== 'none' ? `${start} → ${clockOf(read.end, timeFormat)}` : start
+}
+/** A value as the text its cell shows, which the filter's text operators search and the sort orders: an option's label, a text with its connections as they read, a link's display text, a list's members joined; null for a value that shows no text of its own. */
+export function shownText(value: PropertyValue, def?: PropertyDefinition): string | null {
+  switch (value.kind) {
+    case 'text':
+      return shownProse(value.value)
+    case 'link':
+      return linkDisplayText(value.value)
+    case 'select':
+      return optionLabel(def, value.value)
+    case 'multiSelect':
+      return value.value.map((id) => optionLabel(def, id)).join(',')
+    case 'file':
+      // The filenames, not the raw `[[…]]` references, which would all share the leading bracket.
+      return value.value.map(fileName).join(',')
+    case 'number':
+    case 'checkbox':
+    case 'dateTime':
+    case 'context':
+    case 'null':
+      return null
+  }
 }
 
 export const NUMERIC_FORMATS = new Set<DateFormat>(['dayMonthYear', 'monthDayYear'])

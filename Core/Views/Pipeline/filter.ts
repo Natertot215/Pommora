@@ -13,7 +13,6 @@ import { FILEDATA, PROPERTY_TYPES, type PropertyDefinition } from '../../Propert
 import {
   checkboxWord,
   isBlankValue,
-  optionLabel,
   type PropertyValue,
   readNumber,
   selectedValues,
@@ -22,8 +21,7 @@ import {
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { resolveColumn } from './columns'
 import type { SetTreeNode } from './group'
-import { linkDisplayText, shownProse } from '../../Connections/linkValue'
-import { dayMs, readDate } from '../../Properties/formatValue'
+import { dayMs, readDate, shownText } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
 import { isUlidShaped } from '../../Nexus/identityMark'
 
@@ -133,25 +131,6 @@ function evaluatorOf(kind: ValueKind, op: string): Evaluator {
   }
 }
 
-function textValue(v: PropertyValue, def?: PropertyDefinition): string | null {
-  switch (v.kind) {
-    case 'select':
-      return optionLabel(def, v.value)
-    case 'text':
-      return shownProse(v.value)
-    case 'link':
-      return linkDisplayText(v.value)
-    case 'number':
-    case 'checkbox':
-    case 'dateTime':
-    case 'multiSelect':
-    case 'context':
-    case 'file':
-    case 'null':
-      return null
-  }
-}
-
 function evaluateNumber(v: PropertyValue, op: string, want: string[]): boolean {
   const n = v.kind === 'number' ? v.value : null
   switch (op) {
@@ -246,7 +225,7 @@ function evaluateText(
   want: string[],
   def?: PropertyDefinition,
 ): boolean {
-  const s = textValue(v, def)
+  const s = shownText(v, def)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return s === null || s === ''
