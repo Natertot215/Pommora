@@ -235,6 +235,7 @@ export function renameFrontmatterKey(
   const rival = held(to)
   if (rival && collision === 'prefer-new') {
     items.splice(items.indexOf(pair), 1)
+    setAbove(doc, to, rival.value)
   } else {
     const values = valuesOf(doc)
     const node = rival
