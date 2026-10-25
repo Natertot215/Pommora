@@ -7,15 +7,14 @@ import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, type ValueWriter } from '../../Properties/assignValue'
 import type { Result } from '../../Contract/result'
 import { useSession } from '../../Session/store'
-import { previewConnections } from '../../Session/pageConnections'
 import { useContentHost } from '../../Interface/contentHost'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
-import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
-import { buildValueContext } from '../../Properties/valueContext'
+import { useValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
 import { containerSchema } from '../../Nexus/treePatch'
@@ -46,7 +45,6 @@ const NO_COLLAPSE = new Set<string>()
 
 export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const tree = useSession((s) => s.tree)
-  const assetMap = useSession((s) => s.assetMap)
   const openTarget = useSession((s) => s.openTarget)
   const mutate = useSession((s) => s.mutate)
   const saveView = useSaveView(source)
@@ -125,11 +123,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     return undefined
   }, [groupPropId, sortKeys, view.sort, columns])
 
-  const identity = tree && identityOf(tree)
-  const ctx = useMemo(
-    () => (identity ? buildValueContext(identity, schema, assetMap, previewConnections) : null),
-    [identity, schema, assetMap],
-  )
+  const ctx = useValueContext(tree, schema)
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
   const { rowById, rowBand, paintOrder } = useMemo(() => {
     const byId = new Map<string, ViewRow>()

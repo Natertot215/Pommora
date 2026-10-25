@@ -5,31 +5,31 @@ import { AccessoryButton } from '@pommora/uix/Menus'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { ConnPage } from '../../Connections/pageIndex'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
-import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { lineOffsetsOf } from '../../MarkdownPM/Engine/markdownCode'
 import { type CellPage, linkGestures, renderCellContent } from '../../MarkdownPM/Tables/cellStatic'
 import { mayNameOwnHeading } from '../../Connections/connections'
-import { useSession, useSetting } from '../../Session/store'
+import { useSession } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
+import type { ValueContext } from '../valueContext'
 
 /** A link inside the value follows, glances, and opens its menu as a body link does; a press on a link that follows stops there, and one that follows nothing is left to the value. */
 export function TextCell({
   text,
-  connections,
+  ctx,
   holder,
   onPane,
   menu = true,
 }: {
   text: string
-  connections?: () => ConnectionsApi | undefined
+  ctx: ValueContext
   holder?: ConnPage
   onPane?: (anchor: HTMLElement) => void
   menu?: boolean
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
-  const headingLinkStyle = useSetting('headingLinkStyle')
-  const automatic = useSetting('inPageHeadingResolution') === 'automatic'
+  const { connections, headingLinkStyle } = ctx
+  const automatic = ctx.inPageHeadingResolution === 'automatic'
   const ownPath = holder && mayNameOwnHeading(text) ? holder.path : null
   const headings = useSession((s) => (ownPath ? s.headings[ownPath] : undefined))
   const around: CellPage | undefined = headings && {

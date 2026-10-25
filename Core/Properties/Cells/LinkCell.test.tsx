@@ -10,6 +10,7 @@ import { glanceHost } from '../../Interface/Glance/glanceAction'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
 import { LinkCell } from './LinkCell'
+import type { ValueContext } from '../valueContext'
 
 vi.mock('../../Web/openWebLink', () => ({ openWebLink: vi.fn() }))
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -59,7 +60,11 @@ const mount = async (
         createElement(LinkCell, {
           raw,
           def,
-          connections: () => conn,
+          ctx: {
+            connections: () => conn,
+            headingLinkStyle: 'page-heading',
+            inPageHeadingResolution: 'automatic',
+          } as unknown as ValueContext,
           ...(withHolder ? { holder } : {}),
           showFullLink,
         }),

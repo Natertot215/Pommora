@@ -7,9 +7,17 @@ import { useSession } from '../../Session/store'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { TextCell } from './TextCell'
+import type { ValueContext } from '../valueContext'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
 import { connectionMenuModel } from '../../Actions/connectionMenu'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+const ctxOf = (connections: () => ConnectionsApi | undefined): ValueContext =>
+  ({
+    connections,
+    headingLinkStyle: 'page-heading',
+    inPageHeadingResolution: 'automatic',
+  }) as unknown as ValueContext
 
 let root: Root | null = null
 let host: HTMLDivElement | null = null
@@ -33,7 +41,7 @@ describe('a Text value draws against the page that holds it', () => {
   })
   const mount = async (): Promise<HTMLDivElement> => {
     useSession.setState({
-      tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
+      tree: makeTree(),
       headings: headings('Setup'),
     })
     host = document.createElement('div')
@@ -41,7 +49,7 @@ describe('a Text value draws against the page that holds it', () => {
     root = createRoot(host)
     await act(async () =>
       root?.render(
-        createElement(TextCell, { text: '[[#Nope]] see §Setup', connections: () => conn, holder }),
+        createElement(TextCell, { text: '[[#Nope]] see §Setup', ctx: ctxOf(() => conn), holder }),
       ),
     )
     return host
@@ -66,7 +74,7 @@ describe('a Text value draws against the page that holds it', () => {
     const menu = vi.fn(async () => null)
     const arm = vi.spyOn(glanceHost, 'arm').mockImplementation(() => {})
     useSession.setState({
-      tree: makeTree({ personalization: { inPageHeadingResolution: 'automatic' } }),
+      tree: makeTree(),
       headings: headings('Setup'),
     })
     host = document.createElement('div')
@@ -76,7 +84,7 @@ describe('a Text value draws against the page that holds it', () => {
       root?.render(
         createElement(TextCell, {
           text: 'see §Setup',
-          connections: () => ({ ...conn, menu }),
+          ctx: ctxOf(() => ({ ...conn, menu })),
           holder,
         }),
       ),
@@ -124,7 +132,7 @@ describe('a Text value draws against the page that holds it', () => {
         createElement(
           'div',
           { onClick: bubbled },
-          createElement(TextCell, { text: '[[Holder]]', connections: () => dup }),
+          createElement(TextCell, { text: '[[Holder]]', ctx: ctxOf(() => dup) }),
         ),
       ),
     )
@@ -149,7 +157,7 @@ describe('a Text value draws against the page that holds it', () => {
             { onContextMenu: parent },
             createElement(TextCell, {
               text: '[[Holder]]',
-              connections: () => ({ ...conn, menu }),
+              ctx: ctxOf(() => ({ ...conn, menu })),
               ...props,
             }),
           ),
