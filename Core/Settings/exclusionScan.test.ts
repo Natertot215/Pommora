@@ -12,6 +12,7 @@ import { openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { readIndexedStats } from '../Index/contentIndex'
+import { unsweptLine } from '../Nexus/entities'
 
 let root: string
 const d = (p: string): Promise<string | undefined> => mkdir(join(root, p), { recursive: true })
@@ -206,7 +207,9 @@ describe('clearExclusionData', () => {
           excluded: ['Archive'],
           assetDir: 'file-assets',
         }).catch(fault)
-        expect(r.ok).toBe(false)
+        expect(!r.ok && r.error.message).toBe(
+          `${unsweptLine(1)} Couldn’t safely rewrite “collide”, “stray”.`,
+        )
       } finally {
         await chmod(join(root, 'Archive/Set'), 0o755)
       }

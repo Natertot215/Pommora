@@ -6,7 +6,7 @@ import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { fault, ok, type Result } from '../Contract/result'
 import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
-import { unsweptLine } from '../Nexus/entities'
+import { reachReport, retries, sweptReach } from '../Nexus/configReach'
 import { stripKeys } from '../Files/rootValues'
 import {
   excludedMatcher,
@@ -83,7 +83,7 @@ export async function clearExclusionData(
   const swept = await sweepGovernedRoots(pages, { raw: clearRewrite(cleared) })
   const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
   await dropPageMetadata(root, ids)
-  const missed = swept.skipped.length - swept.refused.length
-  if (missed) return fault(unsweptLine(missed))
+  const reach = sweptReach(swept)
+  if (retries(reach)) return fault(reachReport(reach).warning)
   return ok({ pages: swept.touched.size, sidecars: removed })
 }
