@@ -35,7 +35,7 @@ import {
 import { styleLabel } from '../typeDisplay'
 
 /** A type's settings write one of two scopes: `configure` the definition, wherever it's held; `setStyle` this view's column alone. */
-export type RowContext = {
+type RowContext = {
   style: ColumnStyle
   setStyle: (patch: Partial<ColumnStyle>) => void
   configure: (patch: PropertyConfig) => void
@@ -74,6 +74,15 @@ const item = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => (
   reveal,
   ...ROW,
 })
+
+const colorItem = (
+  value: string | undefined,
+  fallback: string,
+  onPick: (next: string | undefined) => void,
+): MenuRow => {
+  const { name, css } = resolveColor(value, fallback)
+  return item('Color', { kind: 'color', label: 'Color', selected: name, css, onPick })
+}
 
 function numberRows(
   def: PropertyDefinition,
@@ -168,56 +177,40 @@ const dateRows = (def: PropertyDefinition, { style, setStyle }: RowContext): Men
   }),
 ]
 
-function linkRows(def: PropertyDefinition, { configure }: RowContext): MenuRow[] {
-  const link = resolveColor(def.link_color, 'var(--link)')
-  return [
-    item('Underline', {
-      kind: 'switch',
-      checked: def.link_underline ?? false,
-      onChange: (v) => configure({ link_underline: v }),
-      ariaLabel: 'Underline links',
-    }),
-    item('Color', {
-      kind: 'color',
-      label: 'Color',
-      selected: link.name,
-      css: link.css,
-      onPick: (next) => configure({ link_color: next }),
-    }),
-    pickerRow(
-      undefined,
-      styleLabel(def.type),
-      def.link_display ?? DEFAULT_LINK_DISPLAY,
-      LINK_DISPLAY_OPTIONS,
-      (v: LinkDisplay) => configure({ link_display: v }),
-      { ...ROW, ariaLabel: 'Link format' },
-    ),
-  ]
-}
+const linkRows = (def: PropertyDefinition, { configure }: RowContext): MenuRow[] => [
+  item('Underline', {
+    kind: 'switch',
+    checked: def.link_underline ?? false,
+    onChange: (v) => configure({ link_underline: v }),
+    ariaLabel: 'Underline links',
+  }),
+  colorItem(def.link_color, 'var(--link)', (next) => configure({ link_color: next })),
+  pickerRow(
+    undefined,
+    styleLabel(def.type),
+    def.link_display ?? DEFAULT_LINK_DISPLAY,
+    LINK_DISPLAY_OPTIONS,
+    (v: LinkDisplay) => configure({ link_display: v }),
+    { ...ROW, ariaLabel: 'Link format' },
+  ),
+]
 
-function checkboxRows(
+const checkboxRows = (
   def: PropertyDefinition,
   { style, setStyle, configure }: RowContext,
-): MenuRow[] {
-  const chosen = resolveColor(def.checkbox_color, 'var(--checkbox-base)')
-  return [
-    item('Color', {
-      kind: 'color',
-      label: 'Color',
-      selected: chosen.name,
-      css: chosen.css,
-      onPick: (next) => configure({ checkbox_color: next }),
-    }),
-    pickerRow(
-      undefined,
-      styleLabel(def.type),
-      lookIn(LOOKS.checkbox, style.look),
-      CHECKBOX_STYLE_OPTIONS,
-      (look) => setStyle({ look }),
-      { ...ROW, ariaLabel: 'Checkbox style' },
-    ),
-  ]
-}
+): MenuRow[] => [
+  colorItem(def.checkbox_color, 'var(--checkbox-base)', (next) =>
+    configure({ checkbox_color: next }),
+  ),
+  pickerRow(
+    undefined,
+    styleLabel(def.type),
+    lookIn(LOOKS.checkbox, style.look),
+    CHECKBOX_STYLE_OPTIONS,
+    (look) => setStyle({ look }),
+    { ...ROW, ariaLabel: 'Checkbox style' },
+  ),
+]
 
 /** Relative to the asset root rather than to the nexus, so re-pointing the root carries it along; a refused choice offers the folder picker again. */
 const fileRows = (def: PropertyDefinition, { configure, assetRoot }: RowContext): MenuRow[] => {

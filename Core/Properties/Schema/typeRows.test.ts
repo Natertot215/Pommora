@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import type { MenuRow } from '@pommora/uix/Menus'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyDefinition, PropertyType } from '../properties'
-import { type RowContext, rowsFor } from './typeRows'
+import { rowsFor } from './typeRows'
+
+type RowContext = Parameters<typeof rowsFor>[1]
 
 const ctx = (over: Partial<RowContext> = {}): RowContext => ({
   style: dateDefaults('full'),
