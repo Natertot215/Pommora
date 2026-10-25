@@ -202,7 +202,7 @@ describe('the All Properties section', () => {
     const editor = host.querySelector('[aria-label="Property Menu"]')!.closest('[inert]')
     expect(editor).toBeNull()
     expect(host.querySelector('[inert]')!.textContent).toContain('Count')
-    expect(host.querySelector('[aria-label="Edit icon"]')!.parentElement!.textContent).toBe(
+    expect(host.querySelector('[aria-label="Edit Icon"]')!.parentElement!.textContent).toBe(
       'New Text',
     )
   })

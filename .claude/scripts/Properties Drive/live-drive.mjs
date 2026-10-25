@@ -374,7 +374,7 @@ async function group6(cdp) {
   await sleep(1200)
   const created = await notice(cdp)
   const numbered = defNamed('New Text (2)')
-  const opened = await cdp.evaluate(`[...document.querySelectorAll('[aria-label="Edit icon"]')].some((e) => e.parentElement?.textContent === 'New Text (2)')`)
+  const opened = await cdp.evaluate(`[...document.querySelectorAll('[aria-label="Edit Icon"]')].some((e) => e.parentElement?.textContent === 'New Text (2)')`)
   item(6, 'O-4', "the pane's + says the numbered name it took",
     created === 'Created “New Text (2)”.' && !!numbered && opened, show({ created, opened, numbered }))
   await escapeAll(cdp)

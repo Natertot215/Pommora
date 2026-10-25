@@ -44,7 +44,7 @@ export function InlineEditHeader({
         size="button-medium"
         paddingX="0"
         className={s.iconButton}
-        aria-label="Edit icon"
+        aria-label="Edit Icon"
         pressed={iconOpen}
         disabled={readOnly || !onIconClick}
         onClick={onIconClick}
