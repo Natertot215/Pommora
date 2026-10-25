@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { groupable, type PropertyDefinition, type SelectOption } from '../../Properties/properties'
+import type { PropertyDefinition, SelectOption } from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
 import {
   bandKey,
@@ -73,6 +73,7 @@ import * as oo from './option-order.css'
 import { type HideControls, OptionOrderList, rowEye, SUB_LOOK } from './OptionOrderList'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
+import { groupable } from '../valueKinds'
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },

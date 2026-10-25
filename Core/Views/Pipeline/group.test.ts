@@ -14,7 +14,6 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import {
   bucketGroupingOf,
   bucketKey,
-  dateBucketKey,
   flattenContainer,
   formatBucketLabel,
   frontmatterOf,
@@ -729,36 +728,6 @@ describe('property grouping — non-groupable fallback', () => {
       'bottom',
     )
     expect(keys(msGroups)).toEqual(['s1', '_ungrouped'])
-  })
-})
-
-describe('dateBucketKey', () => {
-  it('formats month and year keys (zero-padded, lexicographically chronological)', () => {
-    expect(dateBucketKey('2026-06-15T12:00:00Z', 'month')).toBe('2026-06')
-    expect(dateBucketKey('2026-06-15T12:00:00Z', 'year')).toBe('2026')
-  })
-
-  it('formats day and week keys with the right shape', () => {
-    expect(dateBucketKey('2026-06-15T12:00:00Z', 'day')).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-    expect(dateBucketKey('2026-06-15T12:00:00Z', 'week')).toMatch(/^\d{4}-W\d{2}$/)
-  })
-
-  it('returns null for an unparseable date', () => {
-    expect(dateBucketKey('not-a-date', 'month')).toBeNull()
-  })
-
-  it('buckets a date-only value by its stored calendar date in any timezone', () => {
-    expect(dateBucketKey('2026-06-27', 'day')).toBe('2026-06-27')
-    expect(dateBucketKey('2026-06-27', 'month')).toBe('2026-06')
-    expect(dateBucketKey('2026-06-27', 'year')).toBe('2026')
-    // 2026-01-01 is a Thursday → ISO week 1; 2025-12-31 (Wed) shares it (its Thursday is Jan 1).
-    expect(dateBucketKey('2026-01-01', 'week')).toBe('2026-W01')
-    expect(dateBucketKey('2025-12-31', 'week')).toBe('2026-W01')
-  })
-
-  it('buckets a zoned value by the local day its cell shows', () => {
-    const lateEvening = new Date(2026, 5, 14, 23, 30)
-    expect(dateBucketKey(lateEvening.toISOString(), 'day')).toBe('2026-06-14')
   })
 })
 

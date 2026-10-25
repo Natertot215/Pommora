@@ -29,7 +29,6 @@ export type ColumnType = PropertyType | FiledataType
 type TypeSpec = Readonly<{
   kind: ValueKind
   origin: 'user' | 'context' | 'filedata'
-  groups?: true
   options?: 'select' | 'status'
   connections?: 'value' | 'prose'
   registersMembers?: true
@@ -40,10 +39,10 @@ export const PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>> = {
   text: { kind: 'text', origin: 'user', connections: 'prose' },
   number: { kind: 'number', origin: 'user' },
   checkbox: { kind: 'checkbox', origin: 'user', blankDraws: true },
-  dateTime: { kind: 'dateTime', origin: 'user', groups: true },
-  select: { kind: 'select', origin: 'user', groups: true, options: 'select' },
+  dateTime: { kind: 'dateTime', origin: 'user' },
+  select: { kind: 'select', origin: 'user', options: 'select' },
   multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select', registersMembers: true },
-  status: { kind: 'select', origin: 'user', groups: true, options: 'status' },
+  status: { kind: 'select', origin: 'user', options: 'status' },
   link: { kind: 'link', origin: 'user', connections: 'value' },
   file: { kind: 'file', origin: 'user' },
   context: { kind: 'context', origin: 'context' },
@@ -62,8 +61,6 @@ export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string,
 
 export const specOf = (t: ColumnType | undefined): TypeSpec | undefined =>
   t === undefined ? undefined : PROPERTY_TYPES[t]
-
-export const groupable = (t: ColumnType | undefined): boolean => specOf(t)?.groups === true
 
 export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
 
@@ -231,15 +228,9 @@ export const FILEDATA_BY_ID: ReadonlyMap<string, Filedata> = new Map(
   Object.values(FILEDATA).map((f) => [f.id, f]),
 )
 
-export const isReservedPropertyId = (id: string): boolean => FILEDATA_BY_ID.has(id)
-
 /** An option without its own color wears its group's. */
 export const groupOptions = (g: StatusGroup): SelectOption[] =>
   g.options.map((o) => (o.color ? o : { ...o, color: g.color }))
-
-function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): SelectOption[] {
-  return (def?.status_groups ?? []).flatMap(groupOptions)
-}
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
 
@@ -248,7 +239,7 @@ export const optionsOf = (
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
 ): SelectOption[] =>
   def && PROPERTY_TYPES[def.type].options === 'status'
-    ? statusOptions(def)
+    ? (def.status_groups ?? []).flatMap(groupOptions)
     : (def?.select_options ?? [])
 
 export const optionIds = (

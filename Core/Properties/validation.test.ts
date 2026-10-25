@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  admissible,
   KEY_REFUSAL,
   linkKeysOf,
   validateName,
@@ -311,5 +312,14 @@ describe('linkKeysOf', () => {
     expect(holds('rank')).toBe(true)
     expect(holds('Rank')).toBe(false)
     expect(holds('Related')).toBe(true)
+  })
+})
+
+describe('admissible', () => {
+  it('refuses every Filedata id under a user type and admits a user id', () => {
+    for (const id of ['_title', '_created_at', '_modified_at', '_location'])
+      expect(admissible({ id, type: 'text' })).toBe(false)
+    expect(admissible({ id: 'prop_01H', type: 'text' })).toBe(true)
+    expect(admissible({ id: 'stage', type: 'text' })).toBe(true)
   })
 })

@@ -6,8 +6,6 @@ import {
   CREATABLE_TYPES,
   propertyDefinition,
   typeIds,
-  isReservedPropertyId,
-  groupable,
   optionsOf,
   pickKindOf,
   PROPERTY_TYPES,
@@ -220,23 +218,7 @@ describe('propertyDefinition', () => {
   })
 })
 
-describe('reserved property ids', () => {
-  it('recognizes every Filedata id and no user id', () => {
-    for (const id of ['_title', '_created_at', '_modified_at', '_location'])
-      expect(isReservedPropertyId(id)).toBe(true)
-    expect(isReservedPropertyId('prop_01H')).toBe(false)
-    expect(isReservedPropertyId('stage')).toBe(false)
-  })
-})
-
 describe('PROPERTY_TYPES', () => {
-  it('groups by Select, Status and Date only', () => {
-    const grouping = (Object.keys(PROPERTY_TYPES) as (keyof typeof PROPERTY_TYPES)[]).filter((t) =>
-      groupable(t),
-    )
-    expect(grouping).toEqual(['dateTime', 'select', 'status'])
-  })
-
   it('creates the user types in the New Property order, and every other type is Context or Filedata', () => {
     expect(CREATABLE_TYPES).toEqual([
       'text',
@@ -269,7 +251,6 @@ describe('PROPERTY_TYPES', () => {
     expect(PROPERTY_TYPES.status).toEqual({
       kind: 'select',
       origin: 'user',
-      groups: true,
       options: 'status',
     })
   })
