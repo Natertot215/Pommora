@@ -169,7 +169,7 @@ export function PropertyPanel({
   const writer = useValueWriter({ rowOf: (id) => (row?.id === id ? row : undefined), setOverride })
   const commit = (id: string, next: PropertyValue | null): void => {
     const column = resolveColumn(id, schema, contextIds)
-    if (row && column) assignValue(writer, [row], column, next)
+    if (row && column) assignValue(writer, row, column, next)
   }
   const currentOf = (id: string): PropertyValue => {
     const column = resolveColumn(id, schema, contextIds)

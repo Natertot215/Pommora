@@ -100,11 +100,7 @@ async function setSpaceContext(
 
 export async function setContextOp(
   { root }: MutateContext,
-  {
-    path,
-    contextId,
-    spaceIds,
-  }: Omit<Extract<MutateRequest, { op: 'setContext' }>, 'paths'> & { path: string },
+  { path, contextId, spaceIds }: Extract<MutateRequest, { op: 'setContext' }>,
 ): Promise<MutateReply> {
   const target = await mutableTarget(root, path, ['page', 'space'])
   if (!target.ok) return target
