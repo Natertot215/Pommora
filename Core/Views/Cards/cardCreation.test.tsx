@@ -7,9 +7,12 @@ import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { useSession } from '../../Session/store'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
-import { valuesReply } from '../../Testing/pageValues'
+import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
 import { makeTree } from '../../Testing/testTree'
+import type { PropertyDefinition } from '../../Properties/properties'
+
+const notesDef: PropertyDefinition = { id: 'prop_t', label: 'Notes', key: 'Notes', type: 'text' }
 
 const source = (): CollectionNode =>
   ({
@@ -22,20 +25,23 @@ const source = (): CollectionNode =>
       { kind: 'page', id: 'p1', title: 'One', path: 'Col/One.md' },
       { kind: 'page', id: 'p2', title: 'Two', path: 'Col/Two.md' },
     ],
-    propertyIds: [],
+    propertyIds: [notesDef.id],
     views: [
       {
         id: 'view_1',
         name: 'Cards',
         type: 'cards',
-        property_order: ['_title'],
+        property_order: ['_title', notesDef.id],
         hidden_properties: [],
         group: { kind: 'structural' },
       },
     ],
   }) as unknown as CollectionNode
 
-const VALUES = valuesReply({ p1: { [ID_KEY]: 'p1' }, p2: { [ID_KEY]: 'p2' } })
+const VALUES = valuesReply({
+  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_t: 'words' }, [notesDef]) },
+  p2: { [ID_KEY]: 'p2' },
+})
 
 let host: HTMLDivElement
 let root: Root
@@ -57,7 +63,7 @@ beforeEach(() => {
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
-    tree: makeTree(),
+    tree: makeTree({ registry: [notesDef] }),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     mutate: mutateSpy as never,
@@ -152,4 +158,21 @@ describe('the cards ghost — dwell, create, and exit', () => {
     })
     expect(ghost()).toBeNull()
   })
+})
+it('a value’s inline field closes the ghost and keeps it down until the field closes', async () => {
+  await dwellOn('p1')
+  expect(ghost()).toBeTruthy()
+  const textValue = [...card('p1').querySelectorAll<HTMLElement>('.card-value')].find((v) =>
+    v.textContent?.includes('words'),
+  )
+  await act(async () => {
+    textValue?.click()
+  })
+  await tick(500)
+  expect(ghost()).toBeNull()
+  await act(async () => {
+    hover(card('p1'), true)
+  })
+  await tick(REVEAL_DWELL_MS)
+  expect(ghost()).toBeNull()
 })

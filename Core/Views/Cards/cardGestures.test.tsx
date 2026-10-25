@@ -229,3 +229,43 @@ describe('a card’s link value', () => {
     ])
   })
 })
+
+describe('the card’s Add chooser', () => {
+  const stageDef: PropertyDefinition = {
+    id: 'prop_stage',
+    label: 'Stage',
+    key: 'Stage',
+    type: 'select',
+    select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
+  }
+  const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
+  const entry = (name: string): HTMLElement | undefined =>
+    portalButtons().find((b) => b.textContent?.includes(name))
+  const choose = async (name: string): Promise<void> => {
+    const defs = [STATUS_DEF, numberDef, stageDef, dueDef]
+    useSession.setState({ tree: makeTree({ registry: defs }) })
+    await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
+    await act(async () => {
+      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
+    })
+    await act(async () => {
+      entry(name)?.click()
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30))
+    })
+  }
+
+  it('a Select entry slides into its options under ‹ Properties, in the same pane', async () => {
+    await choose('Stage')
+    expect(entry('Properties')?.textContent).toContain('Stage')
+    expect(entry('Early')).toBeTruthy()
+    expect(openPanes()).toBe(1)
+  })
+
+  it('a Date entry opens its own calendar', async () => {
+    await choose('Due')
+    const shown = [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent)
+    expect(shown.join('')).toContain('Mon')
+  })
+})
