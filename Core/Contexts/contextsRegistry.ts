@@ -9,7 +9,6 @@ import {
 import { ok, type Result, fault } from '../Contract/result'
 import { readJsonStrict, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { newId } from '../Nexus/ids'
-import { dropContextOrder } from '../Nexus/reorder'
 import { contextsRegistryFile } from '../Paths/paths'
 
 /** zod loose keeps unknown fields at both the registry and entry level, so foreign data round-trips every rewrite. */
@@ -46,18 +45,9 @@ export async function mutateRegistryFile(
   return parseRegistry(written.value)
 }
 
-/** A Context leaves the list by id, never by title, since two entries sharing a title would otherwise both go; one gone for good, with no bundle to restore it from, takes its order with it. */
-export async function unlistContext(
-  root: string,
-  id: string,
-  forGood: boolean,
-): Promise<Result<ContextsRegistry>> {
-  const removed = await mutateRegistryFile(root, (cur) => ({
-    contexts: cur.contexts.filter((c) => c.id !== id),
-  }))
-  if (removed.ok && forGood) await dropContextOrder(root, id)
-  return removed
-}
+/** A Context leaves the list by id, never by title, since two entries sharing a title would otherwise both go. */
+export const unlistContext = (root: string, id: string): Promise<Result<ContextsRegistry>> =>
+  mutateRegistryFile(root, (cur) => ({ contexts: cur.contexts.filter((c) => c.id !== id) }))
 
 export const withContextAt =
   (def: ContextDef, at?: number) =>
