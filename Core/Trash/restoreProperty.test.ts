@@ -305,7 +305,7 @@ describe('restoring a deleted property', () => {
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
   })
 
-  it('a value that no longer validates does not return', async () => {
+  it('a value naming no option comes back as written', async () => {
     const id = await seedPriority()
     const page = await createTestPage(notes, 'A', { body: 'b' })
     const good = await createTestPage(notes, 'B', { body: 'b' })
@@ -324,9 +324,9 @@ describe('restoring a deleted property', () => {
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
-    expect(r).toEqual({ ok: true, value: { unrestored: ['A'] } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
-    expect(await valueOn(page.value.path, 'Priority')).toBeUndefined()
+    expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
   })
 
   it('a value a Remove had stashed goes back to its stash with its removal time, and re-assigning brings it home', async () => {
@@ -676,7 +676,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
   })
 
-  it('a Multi-Select value comes back holding only the options the definition still offers', async () => {
+  it('a Multi-Select value comes back keeping the words no option names', async () => {
     const c = await createProperty(root, {
       id: '',
       label: 'Tags',
@@ -695,7 +695,7 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha'])
+    expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha', 'zeta'])
     expect((await liveDef(c.value.id)).select_options?.map((o) => o.label)).toEqual(['alpha'])
   })
 })

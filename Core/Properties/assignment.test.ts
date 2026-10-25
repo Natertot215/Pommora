@@ -132,8 +132,18 @@ describe('a re-assign puts a stashed value back', () => {
     select_options: [{ id: 'opt_Claude', key: 'Claude', label: 'Claude', color: 'red' }],
   }
 
-  it("a stashed member naming no option exactly doesn't come back", async () => {
-    expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toBeUndefined()
+  it('a stashed member naming no option exactly comes back as written', async () => {
+    expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
+  })
+
+  it('a stashed Status word naming no option comes back as written', async () => {
+    const stage: Omit<PropertyDefinition, 'id'> = {
+      label: 'Stage',
+      key: 'Stage',
+      type: 'status',
+      select_options: [{ id: 'opt_done', key: 'Done', label: 'Done', color: 'red' }],
+    }
+    expect((await reassigned('', stage, 'Stage: Draft')).Stage).toBe('Draft')
   })
 
   it('leaves a root whose key holds only words no option names as it is', async () => {

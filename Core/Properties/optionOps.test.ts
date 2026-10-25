@@ -1152,6 +1152,15 @@ describe('the option cascades reach the Collection stashes', () => {
     expect(await stash()).toEqual(block(id, { [p2]: ['B'], [p3]: 'B' }))
   })
 
+  it('a removal strips the stash, so a reassign refills no page with the option', async () => {
+    const { id, col, pages } = await stashed()
+    expect((await deleteOption(root, id, 'opt_A')).ok).toBe(true)
+    expect((await unassignProperty(root, col, id)).ok).toBe(true)
+    expect((await assignProperty(root, col, id)).ok).toBe(true)
+    for (const p of pages) expect(await readFile(p.path, 'utf8')).not.toMatch(/\bA\b/)
+    expect(await readFile(pages[2].path, 'utf8')).toMatch(/\bB\b/)
+  })
+
   it('a clear strips the stash, so a reassign refills no page with the option', async () => {
     const { id, col, pages, stash } = await stashed()
     const [, p2, p3] = pages.map((p) => p.id)

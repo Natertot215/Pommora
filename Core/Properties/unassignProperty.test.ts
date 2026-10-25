@@ -466,7 +466,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     expect(Object.values(block.values)).toEqual([['active']])
   })
 
-  it('a value whose option no longer exists stays stashed; conforming siblings restore', async () => {
+  it('a value whose option no longer exists comes back as written beside its conforming siblings', async () => {
     await unassignProperty(root, folder, propId)
     await redefine({
       status_groups: [
@@ -479,22 +479,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
       ],
     })
     await assignProperty(root, folder, propId)
-    expect(await pageValue(pageA)).toBeUndefined()
+    expect(await pageValue(pageA)).toEqual(['active'])
     expect(await pageValue(pageB)).toEqual(['done'])
-    // The entry leaves the stash only by restoring — a rejected value waits for its option to come back rather than being spent on a restore that never happened.
-    const block = (await stashBlock()) as { values: Record<string, unknown> }
-    expect(Object.keys(block.values)).toHaveLength(1)
-    expect(Object.values(block.values)).toEqual([['active']])
-  })
-
-  it('a value whose def type changed stays stashed, restoring nothing', async () => {
-    await unassignProperty(root, folder, propId)
-    await redefine({ type: 'number' })
-    await assignProperty(root, folder, propId)
-    expect(await pageValue(pageA)).toBeUndefined()
-    expect(await pageValue(pageB)).toBeUndefined()
-    const block = (await stashBlock()) as { values: Record<string, unknown> }
-    expect(Object.keys(block.values)).toHaveLength(2)
+    expect(await stashBlock()).toBeUndefined()
   })
 
   it('a page deleted since its Remove leaves the stash at the re-add', async () => {
@@ -585,7 +572,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     expect(root2[selDef.key]).toEqual(['2024-01-01'])
   })
 
-  it('a Multi-Select restore keeps only the options the definition still offers — a deleted option never returns', async () => {
+  it('a Multi-Select re-add keeps the words no option names beside its options', async () => {
     const tags = await createProperty(root, {
       id: '',
       label: 'Tags',
@@ -604,7 +591,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await unassignProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)
     const fm = splitFrontmatter(await readFile(p.value.path, 'utf8'))
-    expect(fm.Tags).toEqual(['alpha'])
+    expect(fm.Tags).toEqual(['alpha', 'zeta'])
     const def = (await readRegistry(root)).defs[tags.value.id]
     expect(def.select_options?.map((o) => o.label)).toEqual(['alpha'])
   })
