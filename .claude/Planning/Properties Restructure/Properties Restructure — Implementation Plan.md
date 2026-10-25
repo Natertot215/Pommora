@@ -1299,7 +1299,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 16A-2 · The table runs its value cells through the seat
   - [x] Task 16A-3 · Cards run every value through the seat
   - [x] Review Checkpoint
-  - [ ] Closeout P15–P16A (two `opus-high` agents, inward and outward)
+  - [x] Closeout P15–P16A (two `opus-high` agents, inward and outward)
 - [ ] **Phase 16B** — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
   - [ ] Task 16B-1 · The native menu's router folds into `MenuSeat`
   - [ ] Task 16B-2 · The Properties panel splits along the seat
@@ -31529,6 +31529,7 @@ Each item is visible, classified, and lands as its recommendation reads; the clo
 - [ ] `Core/Interface/Menus/propertyMenuActions.ts`: `runPropertyAction` keeps P13's `resolveColumn` for the leaf.
 - [ ] `git rm Core/Interface/Menus/ValuePickPresenter.tsx Core/Interface/Menus/ValuePickPresenter.test.tsx`; `git grep -nw "ValuePickPresenter\|pickSeq" -- Core` answers nothing, and `git grep -n "pendingPick" -- Core ':!*.test.*'` answers only `chromeSlice.ts`, `MatrixView.tsx:45,82`, and `ValueSeat.tsx`.
 - [ ] `Core/Views/Cards/CardsView.tsx`: the add chooser's `onReveal` runs the added value's intent through the seat as the menu seat does (`seat.run(addRow, column, intent?.kind === 'edit' ? { kind: 'popover' } : intent, anchor)`), so a Checkbox shows on the card checked and a File opens the file dialog (I-6), and the comment naming the Date and File panes leaves; `cardGestures.test.tsx` gains a case adding a Checkbox from the chooser that shows it on the card checked with no pane open, and unchecking it keeps it drawn there, written first and watched fail. The file joins the commit's paths.
+- [ ] `Core/Properties/Cells/ValueSeat.tsx`, from Closeout P15–P16A: the seat reads its host through `useLatest(host)` (`UIX/Utilities/stableApi.ts`) after every await, so a value menu resolving after a view save writes through the current host rather than the render that opened it; the picker's `target` is built only while the picker is open (`open?.mode === 'picker' &&`), so a closed seat runs no Context option filter on each render; `SeatOpen` and `SeatChooser` drop their `export`, which nothing imports; and `SeatChooser` carries the chooser's `row` in place of `resolveTarget` and `onCommit`, the seat resolving `host.columnOf(entry.id)` itself, so Cards' `addedColumn` and its two callbacks leave with the chooser's rewrite above. `ValueSeat.test.tsx` gains a case closing the seat when its column no longer resolves, written first and watched fail.
 - [ ] Run the touched test files green, then the gates.
 - [ ] Commit: `git commit --only -- Core/Properties/Cells/ValueSeat.tsx Core/Properties/Cells/ValueSeat.test.tsx Core/Properties/Pickers/valueClick.ts Core/Session/chromeSlice.ts Core/Interface/Menus/propertyMenuActions.ts Core/Interface/Menus/propertyMenuActions.test.ts Core/Interface/Menus/entityMenuActions.ts Core/Views/Host/useViewInteractions.tsx Core/Interface/App.tsx Core/Interface/Menus/ValuePickPresenter.tsx Core/Interface/Menus/ValuePickPresenter.test.tsx Core/Views/Table/cellGestures.test.tsx -m "A value picked from a menu away from its value opened in one app-level value seat; the menu's own type router was removed."`
 
@@ -31809,6 +31810,7 @@ The Link case's remaining steps (typing `[[Two]]`, pressing Enter, and expecting
 - [ ] `Core/Actions/propertyMenu.ts`: the `page-value` kind, its comment, the three `value:*` actions, and `joinGroups`' import leave (AFTER). `Core/Actions/propertyMenu.test.ts`: the "a page value yields Clear · Remove …" case leaves.
 - [ ] `filePick.test.ts`: `describe('fileValueMenu …')` becomes `describe('runFileMenuAction')`, keeping its Remove-a-chip and Replace-a-chip cases on the function the seat calls; the off-chip-model and dismissed-menu cases leave with the menu they pinned (AFTER).
 - [ ] `git rm Core/Properties/Cells/valueMenuTarget.ts`. Removal proofs, each answering nothing: `git grep -nw "valueMenuTarget\|fileValueMenu\|editRow\|panelTarget\|currentOf" -- Core`; `git grep -nw "rowMenu\|valueMenu" -- Core/Properties/PropertyPanel.tsx`; `git grep -nw "syntheticContextDef" -- Core`; `git grep -n "'page-value'\|value:edit\|value:clear\|value:remove" -- Core UIX`; `git grep -nw "runValueIntent\|ValueIntentHandlers" -- Core`. `git grep -nw "propertyMenuModel" -- Core ':!*.test.*'` answers only `PropertyFrame.tsx`.
+- [ ] The panel's seat host answers `columnOf`, which `SeatHost` requires since Task 16A-1, from the columns the panel resolves (`resolveColumn(id, schema, contextIds)`), and its `commit` writes the column the seat hands it (`assignValue(writer, row, column, next)`) rather than looking it up again by id; the AFTER's `commit: (_, column, next) => commit(column.id, next)` reads that way.
 - [ ] Run `Core/Properties` and `Core/Actions` green, then the gates.
 - [ ] Commit: `git commit --only -- Core/Properties/PropertyPanel.tsx Core/Properties/PropertyPanel.test.tsx Core/Actions/propertyMenu.ts Core/Actions/propertyMenu.test.ts Core/Properties/Pickers/filePick.ts Core/Properties/Pickers/filePick.test.ts Core/Properties/Pickers/valueClick.ts Core/Properties/Pickers/valueClick.test.ts Core/Properties/Cells/valueMenuTarget.ts Core/Properties/Pickers/PropertyPicker.tsx -m "The Properties panel's value interaction moved onto the value seat, its row menu became the one the table and cards build, the intent handler table left, and the fabricated Context definition left."`
 
@@ -35459,7 +35461,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
 | 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
 | 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
-| 16A | −537 | +457 | −80 | −543 / +464 / −79 | −60 |
+| 16A | −537 | +457 | −80 | −546 / +465 / −81 | −62 |
 | 16B | −322 | +97 | −225 | | |
 | 17 | −813 | +609 | −204 | | |
 | 18 | 0 | 0 | 0 | | |

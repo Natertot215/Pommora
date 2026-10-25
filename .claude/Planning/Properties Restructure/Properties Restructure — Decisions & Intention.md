@@ -100,6 +100,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **I-4 [CONFIRMED]:** A column's right-click names Number's Number or Bar choice "Style," as every other type's look reads there, while a Link's display choice and the date and time choices of a Date, Created Time, or Last Edited Time column read "Format," since they set how the value is written (the dates ruled 10-23-2026); I-076's note on the column menu's wording is rewritten to match when this lands.
 - **I-5 [CONFIRMED]:** A Context column shows the Context's own icon wherever a column's icon is drawn: the table header, the Visibility pane, and the Cards property chooser, from one rule beside the column's label (Nathan, 10-25-2026: "Own icon everywhere").
 - **I-6 [CONFIRMED]:** A property added from a card's add chooser acts as a click on its value does: a Checkbox shows on the card checked and a File opens the file dialog, and a type whose click opens a pane opens it at the chooser. A Checkbox the card shows stays drawn when unchecked, its key absent from the file, as today (Nathan, 10-25-2026: "act like a click, it puts the checkbox on the card while clicking it, any non-clicked checkmarks stay visible when their visibility is on").
+- **I-7 [CONFIRMED]:** A filter's empty option list opens the same blank pane the value picker shows, in place of its "No options yet." caption (Nathan, 10-25-2026: "Blank, like the picker").
 
 #### J - Value Surfaces
 
