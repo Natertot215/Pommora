@@ -1,5 +1,5 @@
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS } from '../Connections/linkValue'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
 import {
   type ColumnLook,
   DATE_FORMATS,
@@ -7,12 +7,6 @@ import {
   type TimeFormat,
   type WeekdayFormat,
 } from './columnStyles'
-
-/** The labels never widen the values, so a list drawn from part of a vocabulary keeps its own type. */
-export const pickerOptions = <V extends string>(
-  values: readonly V[],
-  labels: Readonly<Record<NoInfer<V>, string>>,
-): PickerOption<V>[] => values.map((value) => ({ value, label: labels[value] }))
 
 export const LOOK_LABELS: Record<ColumnLook, string> = {
   standard: 'Standard',

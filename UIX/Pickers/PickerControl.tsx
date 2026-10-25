@@ -14,6 +14,12 @@ export type PickerOption<T extends string> = {
   disabled?: boolean
 }
 
+/** The labels never widen the values, so a list drawn from part of a vocabulary keeps its own type. */
+export const pickerOptions = <V extends string>(
+  values: readonly V[],
+  labels: Readonly<Record<NoInfer<V>, string>>,
+): PickerOption<V>[] => values.map((value) => ({ value, label: labels[value] }))
+
 export type MenuDoor = (
   rows: { label: string; action: string; checked: boolean; icon?: string; disabled?: boolean }[],
   trigger: HTMLElement,

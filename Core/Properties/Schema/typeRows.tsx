@@ -1,6 +1,6 @@
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { type MenuRow, pickerRow, type Trailing } from '@pommora/uix/Menus'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { type PickerOption, pickerOptions } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '../../Connections/linkValue'
@@ -18,7 +18,6 @@ import {
   DATE_FORMAT_OPTIONS,
   LINK_DISPLAY_OPTIONS,
   lookOptions,
-  pickerOptions,
   TIME_FORMAT_LABELS,
   WEEKDAY_FORMAT_LABELS,
 } from '../displayLabels'
