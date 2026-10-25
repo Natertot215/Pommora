@@ -184,6 +184,8 @@ export function PropertyFrame({
 
   const assignedIds = new Set(schema.map((d) => d.id))
   const unassigned = registry.filter((d) => !assignedIds.has(d.id))
+  // An editor whose property leaves this Collection, by any route, gives way to the list.
+  const editing = view.kind === 'edit' ? schema.find((d) => d.id === view.id) : undefined
   const backToList = (): void => setView({ kind: 'list' })
 
   const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
@@ -296,16 +298,7 @@ export function PropertyFrame({
     </>
   )
 
-  const editor = (id: string): React.JSX.Element => {
-    const def = schema.find((d) => d.id === id)
-    if (!def) {
-      return (
-        <>
-          {backHeader('Properties', backToList)}
-          <MenuCaption>Property not found.</MenuCaption>
-        </>
-      )
-    }
+  const editor = (def: PropertyDefinition): React.JSX.Element => {
     const columnStyle = styleFor(propertyColumn(def), activeView, nexus)
     const options = PROPERTY_TYPES[def.type].options !== undefined
     const rows = rowsFor(def, {
@@ -418,15 +411,12 @@ export function PropertyFrame({
     </MenuScrollFrame>
   )
 
-  const editingId = view.kind === 'edit' ? view.id : undefined
-  const editingIcon = editingId ? registry.find((d) => d.id === editingId)?.icon : undefined
-
   return (
     <>
       <FrameSlide
-        open={view.kind !== 'list'}
+        open={view.kind === 'type' || editing !== undefined}
         root={list}
-        detail={view.kind === 'list' ? null : view.kind === 'type' ? typePicker : editor(view.id)}
+        detail={view.kind === 'type' ? typePicker : editing && editor(editing)}
         minWidth={PANE_MIN_W}
         minHeight={PANE_MIN_H}
       />
@@ -434,9 +424,9 @@ export function PropertyFrame({
         open={iconOpen}
         onClose={() => setIconOpen(false)}
         triggerRef={iconRef}
-        value={editingIcon}
+        value={editing?.icon}
         onSelect={(icon) => {
-          if (editingId) configure(editingId, { icon })
+          if (editing) configure(editing.id, { icon })
         }}
       />
     </>

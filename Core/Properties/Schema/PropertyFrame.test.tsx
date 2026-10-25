@@ -706,4 +706,17 @@ describe('the type editors', () => {
     // Format, Currency, Separators, Decimals, Fraction, Value, Style.
     expect(shape).toEqual(['row', 'collapsed', 'open', 'row', 'open', 'collapsed', 'collapsed'])
   })
+
+  it('an editor whose property leaves the Collection gives way to the list', async () => {
+    const listLive = (): boolean =>
+      !host.querySelector('[aria-label="New Property"]')!.closest('[inert]')
+    await mountPane()
+    await act(async () => {
+      rowFor('Count').click()
+    })
+    expect(listLive()).toBe(false)
+    await mountPane([defs[0]])
+    expect(listLive()).toBe(true)
+    expect(host.textContent).not.toContain('Property not found.')
+  })
 })
