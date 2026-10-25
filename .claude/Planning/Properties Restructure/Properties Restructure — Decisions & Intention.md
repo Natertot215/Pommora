@@ -98,6 +98,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **I-2 [CONFIRMED]:** Each type's settings keep reaching where they reach today. A Date's display stays per view, following the Settings window's Date Format and Time Format until a view picks its own, with nothing about it on the property. A Link keeps its Format on the property as the default every view shows, a column's menu overriding it for that view, and its Underline and Color on the property, Color falling back to the Settings window's External Link Color. A Number keeps Format, Currency, Separators, Decimals, and Fraction on the property and its Number or Bar look per view. A Checkbox keeps its Color on the property, falling back to the Settings window's Checkbox Color, and its Checkbox or Switch look per view.
 - **I-3 [CONFIRMED]:** A Link property whose Format was never set may follow the existing Default Link Format setting rather than a fixed default, where planning finds that cohesive; that setting is kept per device today and governs the format an external link is pasted with, so planning weighs that difference before tying them together, and otherwise leaves the default as it is.
 - **I-4 [CONFIRMED]:** A column's right-click names Number's Number or Bar choice "Style," as every other type's look reads there, while a Link's display choice and the date and time choices of a Date, Created Time, or Last Edited Time column read "Format," since they set how the value is written (the dates ruled 10-23-2026); I-076's note on the column menu's wording is rewritten to match when this lands.
+- **I-5 [CONFIRMED]:** A Context column shows the Context's own icon wherever a column's icon is drawn: the table header, the Visibility pane, and the Cards property chooser, from one rule beside the column's label (Nathan, 10-25-2026: "Own icon everywhere").
 
 #### J - Value Surfaces
 
@@ -118,6 +119,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **K-2 [INFERRED]:** Empty values sort last in either direction for every type except Checkbox, whose unchecked box sorts as a value, first ascending and last descending; dragging a row into another value's run in a sorted view keeps reassigning its value.
 - **K-3 [CONFIRMED]:** A Select or Multi-Select filter rule naming an option the property no longer lists sits out, as a value Pommora can't read does (K-1), and New Page in that view takes nothing from it; a rule naming a listed option and a missing one keeps the listed one (Nathan, 10-25-2026: "Ignore the rule").
 - **K-4 [CONFIRMED]:** A hand-written filter rule whose operator its property's type doesn't answer, such as `greater_than` on a Checkbox, sits out rather than matching every page (Nathan, 10-25-2026: "Ignore the rule").
+- **K-5 [CONFIRMED]:** A Context filter rule naming a Space the Context no longer holds sits out, as K-3's missing option does (Nathan, 10-25-2026: "Ignore it, like K-3").
 
 #### L - Property Editors
 

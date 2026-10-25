@@ -1281,7 +1281,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 14-7 · Measurement 07-10
   - [x] Task 14-8 · Drive group 12
   - [x] Review Checkpoint
-  - [ ] Closeout P13–P14 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P13–P14 (two `opus-high` agents, inward and outward)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 15 opens]`
 - [ ] **Phase 15** — Pick Model and One Writer
   - [ ] Task 15-1 · One pure pick model, `pickModel.ts`
@@ -28255,7 +28255,7 @@ No repository file changes, on either outcome.
 - **A Checkbox Sort Puts Checked First Ascending (LC-53, Nathan's Ruling):** an unchecked box is stored as no value, so ascending now puts checked pages first and unchecked after them, as an empty value sorts last, and descending puts unchecked first; today it ran the other way. The filter keeps today's reading, so Is Empty matches an unchecked box and Isn't Empty a checked one (K-1's fix). The record's one Checkbox entry states both: its sort key ranks a checked box before an unchecked one, which keeps a key so the direction still reorders the two runs.
 - **A Custom Order Reads Ascending for Any Kind:** `buildCriterion` forces ascending whenever a criterion carries an `order`, where only the Select arm did. Only a Select criterion is written with one (the Sort pane's Custom, `SortFrame.tsx:188`), so nothing changes for a criterion any path writes.
 - **Hidden Changes:** the Sort pane offers a Custom order where the record names a kind's directions as an option's, which is the Select and Status it offers one for today. The record is read only by the renderer; nothing on disk changes shape.
-- **The Kind Checks Left Outside the Record:** each states a piece only its surface holds. `group.ts`' `groupingOf` reads a Date grouping's stored manual order as configured, since date bands order by time; `FilterFrame.tsx`'s operator rows draw a Checkbox's own box beside Is Checked and Isn't Checked; and `GroupFrame.tsx` opens the date bucket list for a Date grouping or sub-grouping.
+- **The Kind Checks Left Outside the Record:** each states a piece only its surface holds. `group.ts`' `groupingOf` reads a Date grouping's stored manual order as configured, since date bands order by time; `FilterFrame.tsx`'s operator rows draw a Checkbox's own box beside Is Checked and Isn't Checked; `GroupFrame.tsx` opens the date bucket list for a Date grouping and for a Date sub-grouping; and `bandModel.ts`' `headContextOf` labels a Date grouping's band heads by date.
 - **Measurement K, Pass (10-25-2026):** `~/Benchmark-Large`, a date-sorted Table grouped by `Due` month over `Collection 01 Ledger` (1,000 pages), twenty `setProperty` writes of `Due`, each sample the longest `pipeline` entry: 2.1, 2.2, 2.1, 1.6, 2.4, 2.4, 2.4, 1.7, 1.8, 2.2, 2.2, 2.2, 2.1, 2.2, 2.1, 2.3, 2.1, 2.1, 2.1, 2.2 ms; median 2.15, p95 2.4 ≤ 16, so K's incremental pipeline stays excluded.
 - **Measurement 07-10, Pass (10-25-2026):** `~/Benchmark-Large` (800 Spaces), the Matrix open, twenty `matrix:write` filters of one `contains_any` rule on the first Context alternating its first two Spaces, each sample the longest `matrix-spaces` entry: 1.3, 0.8, 1.1, 1, 0.8, 1.2, 1.3, 1.2, 1.2, 1, 1.3, 1.4, 1.3, 1.1, 1.1, 1.5, 1, 1, 1, 1.5 ms; median 1.15, p95 1.5 ≤ 16, so no signature cache lands.
 
@@ -35455,7 +35455,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 11B | −449 | +835 | +386 | −458 / +852 / +394 | +93 |
 | 12 | −192 | +340 | +148 | −393 / +517 / +124 | +217 |
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
-| 14 | −544 | +497 | −47 | −532 / +486 / −46 | +43 |
+| 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
 | 15 | −256 | +229 | −27 | | |
 | 16A | −537 | +457 | −80 | | |
 | 16B | −322 | +97 | −225 | | |
