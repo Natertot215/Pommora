@@ -396,8 +396,12 @@ describe('keepingForeignWords', () => {
     expect(keepingForeignWords(tags, ['Ideas'], ['Ideas'])).toEqual(['Ideas'])
   })
 
-  it('drops a held case-variant of an option', () => {
+  it('drops a held case-variant of an option the pick holds, and keeps one of an option it doesn’t', () => {
     expect(keepingForeignWords(multiSelectOf('Done'), ['Done'], ['done'])).toEqual(['Done'])
+    expect(keepingForeignWords(multiSelectOf('Done', 'Work'), ['Work'], ['done'])).toEqual([
+      'Work',
+      'done',
+    ])
   })
 
   it('answers an emptied list and a Select value as given', () => {
