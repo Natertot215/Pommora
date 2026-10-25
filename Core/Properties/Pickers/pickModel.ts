@@ -1,10 +1,4 @@
-import {
-  groupOptions,
-  optionGroupsOf,
-  type OptionPickKind,
-  pickKindOf,
-  type PickOption,
-} from '../properties'
+import { groupOptions, optionGroupsOf, type OptionPickKind, type PickOption } from '../properties'
 import { type PropertyValue, selectedValues } from '../propertyValue'
 import type { ResolvedColumn } from '../../Views/viewRow'
 
@@ -23,8 +17,6 @@ export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
-const pickKind = (column: ResolvedColumn): OptionPickKind => pickKindOf(column.type) ?? 'select'
-
 // A value every row holds leaves them all; otherwise it lands on each row lacking it, a Select replacing what the row held and a list joining it.
 function pickCommits(kind: OptionPickKind, rows: string[][], value: string): PickCommit[] {
   const all = rows.every((own) => own.includes(value))
@@ -37,12 +29,11 @@ function pickCommits(kind: OptionPickKind, rows: string[][], value: string): Pic
 
 /** One pick over one row or many: what every row holds reads as picked, and a Select's picker closes once picked, since a Select holds one value. */
 export function pickOver(
-  column: ResolvedColumn,
+  kind: OptionPickKind,
   currents: readonly (PropertyValue | null)[],
   onCommit: (commits: PickCommit[]) => void,
   onClose: () => void,
 ): { selected: string[]; pick: (value: string) => void } {
-  const kind = pickKind(column)
   const rows = currents.map(selectedValues)
   return {
     selected: rows[0].filter((v) => rows.every((own) => own.includes(v))),
@@ -54,7 +45,7 @@ export function pickOver(
 }
 
 export const pickedValue = (
-  column: ResolvedColumn,
+  kind: OptionPickKind,
   current: PropertyValue | null,
   value: string,
-): PropertyValue | null => pickCommits(pickKind(column), [selectedValues(current)], value)[0].next
+): PropertyValue | null => pickCommits(kind, [selectedValues(current)], value)[0].next

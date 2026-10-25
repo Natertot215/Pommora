@@ -550,7 +550,12 @@ describe('PropertyPicker (direct mount) — seed values', () => {
     await act(async () => {
       root.render(
         <PropertyPicker
-          target={{ kind: 'options', column: propertyColumn(seedDef), current: null }}
+          target={{
+            kind: 'options',
+            column: propertyColumn(seedDef),
+            pick: 'select',
+            current: null,
+          }}
           open
           triggerRef={{ current: host }}
           onCommit={vi.fn()}
@@ -573,6 +578,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
           target={{
             kind: 'options',
             column: propertyColumn(multiDef),
+            pick: 'multiSelect',
             current: { kind: 'multiSelect', value: ['opt_a'] },
           }}
           open

@@ -24,15 +24,14 @@ const selectDef: PropertyDefinition = {
     { id: 'opt_Beta', key: 'Beta', label: 'Beta' },
   ],
 }
-const fileDef: PropertyDefinition = { id: 'prop_f', label: 'Doc', key: 'Doc', type: 'file' }
 
 const optionsTarget = (): PickTarget => ({
   kind: 'options',
   column: propertyColumn(selectDef),
+  pick: 'select',
   current: null,
 })
 const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
-const fileTarget = (): PickTarget => ({ kind: 'file', def: fileDef, current: null })
 
 function Host(props: {
   target?: PickTarget | null
@@ -122,6 +121,7 @@ describe('PropertyPicker panes', () => {
       target: {
         kind: 'options',
         column: propertyColumn(selectDef),
+        pick: 'select',
         current: null,
         style: { current: { ...dateDefaults('full'), look: 'compact' }, set: () => {} },
       },
@@ -136,11 +136,6 @@ describe('PropertyPicker panes', () => {
     expect(portalText()).not.toContain('Alpha')
     expect(portalText()).toContain('Sun')
     expect(portalText()).toContain('Mon')
-  })
-
-  it('a file target renders the file field', async () => {
-    await render({ target: fileTarget() })
-    expect(portalText()).toContain('Choose a file')
   })
 
   it('an options target anchored to a click centres its pane', async () => {
@@ -333,7 +328,9 @@ describe('editing options from the picker', () => {
       type: 'status',
       status_groups: [open, { ...active, options: [] }, done],
     }
-    await render({ target: { kind: 'options', column: propertyColumn(statusDef), current: null } })
+    await render({
+      target: { kind: 'options', column: propertyColumn(statusDef), pick: 'select', current: null },
+    })
     expect(newOption()).toBeNull()
     const order = [
       ...document.querySelectorAll(
@@ -345,6 +342,7 @@ describe('editing options from the picker', () => {
       target: {
         kind: 'options',
         column: contextColumn('ctx_a'),
+        pick: 'context',
         current: null,
         contextOptions: [{ value: 'Home', label: 'Home' }],
       },
