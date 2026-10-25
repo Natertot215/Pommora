@@ -12,7 +12,7 @@ import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -668,6 +668,106 @@ async function group10() {
     show({ before, after }))
 }
 
+// ── Group 11 — Columns Carry Their Answer ───────────────────────────────────
+
+const COLUMNS_DEFS = [
+  { id: 'prop_drive_text', label: 'Drive Text', key: 'Drive Text', type: 'text' },
+  { id: 'prop_drive_link', label: 'Drive Link', key: 'Drive Link', type: 'link' },
+  {
+    id: 'prop_drive_select',
+    label: 'Drive Select',
+    key: 'Drive Select',
+    type: 'select',
+    select_options: [
+      { id: 'opt_drive_alpha', key: 'Alpha', label: 'Alpha' },
+      { id: 'opt_drive_beta', key: 'Beta', label: 'Beta' },
+    ],
+  },
+]
+const views = async (cdp) =>
+  (await ask(cdp, 'nexus:state')).value.tree.collections.find((c) => c.path === COLLECTION)?.views ?? []
+const headTexts = () => `[...document.querySelectorAll('.table-head > *')].map((e) => e.textContent.trim())`
+const activate = (cdp, viewId) =>
+  must('show the view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId }))
+
+async function group11(cdp) {
+  const storedRegistry = readFileSync(REGISTRY, 'utf8')
+  const storedSidecar = read(SIDECAR_A)
+  await openCollection(cdp)
+
+  const file = JSON.parse(storedRegistry)
+  writeFileSync(REGISTRY, JSON.stringify({
+    ...file,
+    order: [...file.order, ...COLUMNS_DEFS.map((d) => d.id)],
+    defs: { ...file.defs, ...Object.fromEntries(COLUMNS_DEFS.map((d) => [d.id, d])) },
+  }, null, 2))
+  await until('the definitions', async () => (await config(cdp)).registry.some((d) => d.id === 'prop_drive_select'))
+  const assign = (d) => must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
+  const [text, link, select] = COLUMNS_DEFS
+  await assign(text)
+  await assign(link)
+
+  const before = new Set((await views(cdp)).map((v) => v.id))
+  await mouseClick(cdp, sel('button[title="Views"]'))
+  await sleep(600)
+  await click(cdp, sel('[aria-label="New View"]'))
+  await until('the new view', async () => (await views(cdp)).some((v) => !before.has(v.id)))
+  const minted = (await views(cdp)).find((v) => !before.has(v.id))
+  await escapeAll(cdp)
+  await activate(cdp, minted.id)
+  await until('the new view’s head', async () => (await cdp.evaluate(headTexts())).length > 0)
+  const fresh = await cdp.evaluate(headTexts())
+  item(11, '—', 'a new view stores no hidden list and shows Title alone',
+    show(minted.hidden_properties) === '[]' && show(minted.property_order) === '["_title"]' && show(fresh) === '["Title"]',
+    show({ hidden: minted.hidden_properties, order: minted.property_order, fresh }))
+
+  await assign(select)
+  await sleep(800)
+  const later = await cdp.evaluate(headTexts())
+  item(11, '—', 'Drive Select, assigned after the view, stays hidden in it', show(later) === '["Title"]', show(later))
+
+  await viewFrame(cdp, 'Visibility')
+  await click(cdp, sel('[aria-label="Show Drive Text"]'))
+  await escapeAll(cdp)
+  const revealed = await settles(async () => show(await cdp.evaluate(headTexts())) === '["Title","Drive Text"]')
+  item(11, '07-08', 'revealing a property shows its column', revealed, show(await cdp.evaluate(headTexts())))
+  await shot(cdp, 'g11-revealed')
+
+  const table = {
+    id: 'view_01KZPROPERTIESDRIVE11COL', name: 'Drive Columns', type: 'table',
+    property_order: ['_title', ...COLUMNS_DEFS.map((d) => d.id)], hidden_properties: [],
+  }
+  await must('save the Drive Columns view', ask(cdp, 'views:save', COLLECTION, 'collection', table, {}))
+  await activate(cdp, table.id)
+  await createPage(cdp, 'Drive Columns')
+  const path = `${SET}/Drive Columns.md`
+  const values = [
+    ['prop_drive_text', { kind: 'text', value: 'Drive words' }],
+    ['prop_drive_link', { kind: 'link', value: 'https://example.com' }],
+    ['prop_drive_select', { kind: 'select', value: 'opt_drive_alpha' }],
+  ]
+  for (const [propertyId, value] of values)
+    await must(`set ${propertyId}`, ask(cdp, 'mutate', { op: 'setProperty', path, propertyId, value }))
+  await until('the Drive Columns row', () => cdp.evaluate(`!!${row('Drive Columns')}`))
+  // A removable chip draws its label in more than one layer, so a cell reads its distinct leaf texts.
+  const cells = await cdp.evaluate(`[...(${row('Drive Columns')}).querySelectorAll('.data-cell')].slice(1).map((c) => [...new Set([...c.querySelectorAll('*')].filter((e) => !e.children.length).map((e) => e.textContent.trim()).filter(Boolean))].join(' '))`)
+  item(11, '07-01 06-08', 'Text, Link, and Select columns render their values',
+    cells[0] === 'Drive words' && cells[1]?.includes('example.com') && cells[2] === 'Alpha', show(cells))
+
+  await mouseClick(cdp, `(${row('Drive Columns')}).querySelectorAll('.data-cell')[3]`)
+  await until('the Select picker', () => portalOpen(cdp))
+  await click(cdp, `[...document.querySelectorAll('[data-picker-portal] [role=button]')].find((b) => b.textContent.trim() === 'Beta')`)
+  const edited = await settles(async () => show(frontmatter('Drive Columns')['Drive Select']) === '["Beta"]')
+  item(11, '07-01', 'a Select cell edits through its picker', edited, show(frontmatter('Drive Columns')['Drive Select']))
+  await shot(cdp, 'g11-columns')
+
+  await escapeAll(cdp)
+  writeFileSync(join(NEXUS, SIDECAR_A), storedSidecar)
+  writeFileSync(REGISTRY, storedRegistry)
+  await until('the registry as it was', async () => !(await config(cdp)).registry.some((d) => d.id === 'prop_drive_select'))
+  delete pageIds['Drive Columns']
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -683,6 +783,7 @@ try {
   if (GROUPS.has('8')) await group8(cdp)
   if (GROUPS.has('9')) await group9(cdp)
   if (GROUPS.has('10')) await group10()
+  if (GROUPS.has('11')) await group11(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

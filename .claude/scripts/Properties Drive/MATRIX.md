@@ -99,3 +99,14 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | The partial mark | a property record with `partial: true`, written by hand | Settings › Trash | `bundles:list` reports it partial; its row alone holds the mark spoken `Recorded Partly` | N-1 |
 | The partial restore | as above | `restore` | the reply's warning names `Drive Partial` as recorded partly | N-1 |
 | The group leaves things as it found them | everything above | delete and empty both properties and both pages; the settings written back | Collections A and B, the settings, and the Trash's count match the group's start | — |
+
+
+#### Group 11 — Columns Carry Their Answer
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| A new view | Drive Text, Drive Link, and Drive Select written to the registry; Drive Text and Drive Link assigned to Collection A | Views › New View, then show it | the saved view holds `hidden_properties: []` and `property_order: ['_title']`; the head reads Title alone | 07-08 |
+| A later property | as above | assign Drive Select to Collection A | the new view's head still reads Title alone | — |
+| Revealing | as above | view settings › Visibility › Show Drive Text | the head reads Title and Drive Text | 07-08 |
+| The columns | a Drive Columns table view of the four columns; the Drive Columns page holding a text, a link, and Alpha | open Collection A | the row's cells read `Drive words`, the address's Full Link text, and `Alpha`, each from its distinct leaf texts | 07-01, 06-08 |
+| A Select edit | as above | click the Select cell, pick Beta | the page's front matter holds `Drive Select` as the one-item list `[Beta]` | 07-01 |
