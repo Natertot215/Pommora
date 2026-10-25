@@ -35,10 +35,10 @@ describe('a link naming a page', () => {
   })
 
   it('a value closes with Clear, and Remove where its surface hides values', () => {
-    expect(rows({ ...page, editable: true, value: { hideable: false } }).slice(-1)).toEqual([
+    expect(rows({ ...page, editable: true, value: {} }).slice(-1)).toEqual([
       ['Clear', 'cell:clear'],
     ])
-    expect(rows({ ...page, editable: true, value: { hideable: true } }).slice(-2)).toEqual([
+    expect(rows({ ...page, editable: true, value: { hideable: 'view' } }).slice(-2)).toEqual([
       ['Clear', 'cell:clear'],
       ['Remove', 'cell:hide'],
     ])
@@ -78,7 +78,7 @@ describe('a link naming an address', () => {
   })
 
   it('a value lists the same opens and authoring, then the copy and its closing rows, with no Format', () => {
-    expect(rows({ ...web, editable: true, value: { hideable: true } })).toEqual([
+    expect(rows({ ...web, editable: true, value: { hideable: 'view' } })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
       ['Edit Title', 'rename'],
@@ -134,8 +134,8 @@ describe('the one builder of a link menu target', () => {
 
   it('a value carries whether its surface can remove it', () => {
     expect(
-      linkMenuTarget({ kind: 'url', url: 'https://a.com' }, false, { hideable: true }),
-    ).toEqual({ kind: 'url', url: 'https://a.com', editable: false, value: { hideable: true } })
+      linkMenuTarget({ kind: 'url', url: 'https://a.com' }, false, { hideable: 'view' }),
+    ).toEqual({ kind: 'url', url: 'https://a.com', editable: false, value: { hideable: 'view' } })
   })
 
   it('a link naming nothing, or a heading no page holds, has no menu of its own', () => {

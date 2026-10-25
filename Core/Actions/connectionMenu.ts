@@ -7,8 +7,9 @@ import {
   pageOpenRows,
 } from './pageMenu'
 import { LINK_DISPLAYS, LINK_DISPLAY_LABELS, type ResolvedLink } from '../Connections/linkValue'
+import type { HideFrom } from './cellMenu'
 
-export type LinkMenuContext = { editable: boolean; value?: { hideable: boolean } } & (
+export type LinkMenuContext = { editable: boolean; value?: { hideable?: HideFrom } } & (
   | { kind: 'page'; open: 'closed' | 'tab' | 'detail'; windowed: boolean }
   | { kind: 'url'; web: boolean }
 )
@@ -96,7 +97,7 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
     ctx.kind === 'page' ? [COPY_LINK_ROW, COPY_PATH_ROW] : [COPY_LINK_ROW]
   const format = ctx.kind === 'url' && ctx.editable && !ctx.value ? [FORMAT_ROW(ctx.web)] : []
   const closing = ctx.value
-    ? cellClosingRows(true, ctx.value.hideable)
+    ? cellClosingRows(true, !!ctx.value.hideable)
     : ctx.editable
       ? UNLINK_ROWS
       : []

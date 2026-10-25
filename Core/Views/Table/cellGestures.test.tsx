@@ -457,6 +457,28 @@ describe('menu-entered editing', () => {
     })
   })
 })
+it('the grip’s right-click opens the title menu', async () => {
+  await mountTable(sourceWith())
+  channels.menu = vi.fn(async () => ok('title:rename'))
+  const grip = host.querySelector<HTMLElement>('.row-grip') as HTMLElement
+  await act(async () => {
+    grip.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+  })
+  const titleCell = host.querySelectorAll<HTMLElement>('.data-cell')[0]
+  expect((titleCell.querySelector('input') as HTMLInputElement).value).toBe('Page One')
+})
+
+it('a value cell’s menu never offers the title rows', async () => {
+  await mountTable(sourceWith())
+  channels.menu = vi.fn(async () => ok(null))
+  await act(async () => {
+    statusCell().dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+  })
+  const items = (channels.menu as ReturnType<typeof vi.fn>).mock.calls[0][0].items as {
+    action?: string
+  }[]
+  expect(items.some((i) => i.action?.startsWith('title:'))).toBe(false)
+})
 
 describe('open actions + row-click narrowing', () => {
   it('title cell click navigates; row background click does not', async () => {

@@ -68,7 +68,7 @@ describe('valueClickIntent', () => {
 describe('valueMenuIntent', () => {
   it('maps the value edits both link menus share, and nothing else', () => {
     expect(valueMenuIntent('editLink')).toEqual({ kind: 'edit', seat: 'editLink' })
-    expect(valueMenuIntent('rename')).toEqual({ kind: 'rename' })
+    expect(valueMenuIntent('rename')).toEqual({ kind: 'popover', seat: 'rename' })
     expect(valueMenuIntent('cell:edit')).toEqual({ kind: 'edit' })
     expect(valueMenuIntent('cell:clear')).toEqual({ kind: 'commit', value: null })
     expect(valueMenuIntent('cell:hide')).toEqual({ kind: 'hide' })
@@ -85,7 +85,6 @@ describe('runValueIntent', () => {
     file: null,
     edit,
     popover: null,
-    rename: null,
     hide: null,
   })
   it('runs the handler and reports it ran', () => {

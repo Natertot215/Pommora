@@ -366,7 +366,6 @@ export function useColumns(host: ViewHostApi) {
     iconsShown,
     alignByCol,
     styleByCol,
-    colStyle,
     dragShift,
     cols,
     reflowWidth,
@@ -380,7 +379,6 @@ export function useColumns(host: ViewHostApi) {
     endResize,
     commitResize,
     openHeaderMenu,
-    runStyleAction,
     startColumnDrag,
     onTrackTransitionEnd,
   }
