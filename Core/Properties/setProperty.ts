@@ -35,7 +35,6 @@ export async function setPagePropertyOp(
     if (!def) return NO_PROPERTY
     const value = valueToWrite(def, req.value)
     if (!value.ok) return value
-    if (!value.ok) return value
     const world = await pageWorldOf(root, resolved.value)
     const was = await writeGovernedKey(resolved.value, def.key, value.value, world)
     return was.ok ? undoOf([{ file: req.path, fieldId: def.id, ...was.value }]) : was
