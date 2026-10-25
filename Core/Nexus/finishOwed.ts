@@ -178,7 +178,7 @@ async function finishProperty(
     const inTrash = strip.length
       ? (await Promise.all(trashed.map((b) => contentPages(b.entity, b.abs)))).flat()
       : []
-    const holders = { ...planned.holders, pages: [...planned.holders.pages, ...inTrash] }
+    const holders = { ...planned.holders, files: [...planned.holders.files, ...inTrash] }
     const missed = add(reach, await stripProperty(root, id, folders, { ...planned, holders }))
     return { left: { kind: 'property', strip: missed ? strip : undefined }, reach }
   }

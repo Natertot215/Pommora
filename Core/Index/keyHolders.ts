@@ -16,7 +16,7 @@ import { exactTitle } from '../Paths/caseFold'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { isAtOrUnder, isMarkdownFile, join, relative } from '../Paths/posix'
 
-export type Reach = 'governed' | { collection: string } | 'anywhere'
+type Reach = 'governed' | { collection: string } | 'anywhere'
 
 /** A folder an op moved ahead of its sweep, root-relative. */
 export type Moved = { from: string; to: string }
@@ -38,7 +38,7 @@ export type Held = {
   above: Record<string, string | undefined>
 }
 
-export type Holders = { pages: string[]; spaces: string[]; held: Held[] }
+export type Holders = { files: string[]; held: Held[] }
 
 /** The pages among `rels`, or among the whole corpus before the index is ready, that `reach` holds, as absolute paths. */
 export async function pagesInReach(
@@ -100,12 +100,13 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
           ),
         ]
       : []
-  if (!read) return { pages, spaces, held: [] }
+  const files = [...pages, ...spaces]
+  if (!read) return { files, held: [] }
   const listed = rels.map((r) => r && new Set(r))
   const { byId } = await nexusPages(root, tree)
   const held: Held[] = []
   const heldOut = new Set<string>()
-  for (const file of [...pages, ...spaces]) {
+  for (const file of files) {
     const text = await readTextOrNull(file)
     const page = text !== null && isMarkdownFile(file) ? sweepParse(text) : null
     const rel = relative(root, file)
@@ -131,8 +132,7 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       above: Object.fromEntries(keys.map((k) => [k, page?.above(k)])),
     })
   }
-  const kept = (file: string): boolean => !heldOut.has(file)
-  return { pages: pages.filter(kept), spaces: spaces.filter(kept), held }
+  return { files: files.filter((file) => !heldOut.has(file)), held }
 }
 
 /** Each addressed holder's value under `key`, by its id, a blank one left out. */

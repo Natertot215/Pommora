@@ -219,8 +219,8 @@ async function valueEditPlan(
   def: PropertyDefinition,
   keys: ValueEdit,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
-  const { pages, spaces } = await findHolders(root, { keys: [def.key], reach: 'governed' })
-  return { files: [...pages, ...spaces], plan: { raw: valueEditRewrite(def, keys) } }
+  const { files } = await findHolders(root, { keys: [def.key], reach: 'governed' })
+  return { files, plan: { raw: valueEditRewrite(def, keys) } }
 }
 
 async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {

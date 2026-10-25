@@ -58,13 +58,10 @@ export async function titleHolders(
   space: boolean,
   moved?: Moved,
 ): Promise<string[]> {
-  const { pages, spaces } = await findHolders(
-    root,
-    space
-      ? { keys: [contextKey(contextTitle)], title: from, reach: 'anywhere', moved }
-      : { keys: [contextKey(from)], reach: 'anywhere', moved },
-  )
-  return [...pages, ...spaces]
+  const query: HolderQuery = space
+    ? { keys: [contextKey(contextTitle)], title: from, reach: 'anywhere', moved }
+    : { keys: [contextKey(from)], reach: 'anywhere', moved }
+  return (await findHolders(root, query)).files
 }
 
 /** Sweeps one title change through `files`: a Context's key from `from` to `to`, or with `space` that Space's name inside `contextTitle`'s key; answers what it missed. */
@@ -114,9 +111,9 @@ async function unlinkMembers(
   rewrite: Rewrite,
   skipUnder: string,
 ): Promise<ConfigReach> {
-  const { pages, spaces } = await findHolders(root, { ...holding, reach: 'anywhere' })
-  const files = [...pages, ...spaces].filter((file) => !isAtOrUnder(file, skipUnder))
-  return sweptReach(await sweepGovernedRoots(files, { raw: rewrite }))
+  const { files } = await findHolders(root, { ...holding, reach: 'anywhere' })
+  const kept = files.filter((file) => !isAtOrUnder(file, skipUnder))
+  return sweptReach(await sweepGovernedRoots(kept, { raw: rewrite }))
 }
 
 const commitTitle = (root: string, id: string, title: string) =>

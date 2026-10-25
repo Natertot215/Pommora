@@ -68,7 +68,7 @@ export async function stashAndStrip(
   folder: string,
   def: PropertyDefinition,
 ): Promise<ConfigReach> {
-  const { pages, held } = await findHolders(
+  const { files, held } = await findHolders(
     root,
     { keys: [def.key], reach: { collection: folder } },
     'values',
@@ -85,6 +85,6 @@ export async function stashAndStrip(
     )
     if (!stashed.ok) return { skipped: held.length, hosts: [] }
   }
-  const swept = await sweepGovernedRoots(pages, { raw: (r) => stripKeys(r, [def.key]) })
+  const swept = await sweepGovernedRoots(files, { raw: (r) => stripKeys(r, [def.key]) })
   return { ...sweptReach(swept), skipped: swept.skipped.length + unaddressed(held) }
 }
