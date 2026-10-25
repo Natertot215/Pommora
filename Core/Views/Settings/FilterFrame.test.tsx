@@ -10,6 +10,7 @@ import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
 import { itemPicked, menuCompact } from '@pommora/uix/Menus/menu-row.css'
 import { FILEDATA_TARGETS } from '../paneTargets'
+import { useSession } from '../../Session/store'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -518,6 +519,38 @@ describe('FilterFrame', () => {
       match: 'all',
       rules: [{ property_id: 'prop_check', op: 'is', value: 'true' }],
     })
+  })
+
+  it('a date operand opens on its column’s clock, not the Nexus’s, and offers no End Date', async () => {
+    const due: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
+    useSession.setState({
+      tree: { config: { registry: [], personalization: { timeFormat: 'twelveHour' } } } as never,
+    })
+    current = view({
+      filter: {
+        match: 'all',
+        rules: [{ property_id: 'prop_due', op: 'is', value: '2026-10-22T15:30' }],
+      },
+      column_styles: { prop_due: { time_format: 'twentyFourHour' } },
+    })
+    await act(async () => {
+      root.render(
+        <FilterFrame
+          locations={[]}
+          view={current}
+          read={() => current}
+          schema={[due]}
+          tree={null}
+          onCommit={() => {}}
+        />,
+      )
+    })
+    await click(byLabel('Filter date'))
+    const pane =
+      document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')?.textContent ?? ''
+    expect(pane).toContain('15:30')
+    expect(pane).not.toMatch(/\b(AM|PM)\b/)
+    expect(pane).not.toContain('End Date')
   })
 })
 

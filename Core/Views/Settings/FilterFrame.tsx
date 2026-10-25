@@ -26,11 +26,10 @@ import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
-import { useSetting } from '../../Session/store'
-import { formatDate, readDate } from '../../Properties/formatValue'
+import { formatDate } from '../../Properties/formatValue'
+import { DateTimeValuePicker, dateFormFor } from '../../Properties/Pickers/DateTimeValuePicker'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { resolveColumn } from '../Pipeline/columns'
 import type { ResolvedColumn } from '../viewRow'
@@ -225,7 +224,6 @@ export function FilterFrame({
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const nexus = useNexusForms()
-  const nexusClock = useSetting('timeFormat')
   const [draft, setDraft] = useState<string | null>(null)
   const minted = useRef(0)
   const mint = (): string => String(++minted.current)
@@ -342,8 +340,8 @@ export function FilterFrame({
       )
 
     if (op.slot === 'date') {
-      const fmtRaw = styleFor(column!, view, nexus).date_format
-      const fmt = fmtRaw === 'relative' ? 'short' : fmtRaw
+      const style = styleFor(column!, view, nexus)
+      const fmt = dateFormFor(style.date_format)
       return (
         <FieldPicker
           ariaLabel="Filter date"
@@ -352,11 +350,11 @@ export function FilterFrame({
           placeholder="Date"
         >
           {() => (
-            <CalendarPicker
-              value={operand ? readDate(operand) : null}
-              timeFormat={nexusClock}
-              formatDateValue={(k) => formatDate(k, fmt, 'none')}
-              onChange={(iso) => patch({ value: iso ?? undefined })}
+            <DateTimeValuePicker
+              value={operand ? { kind: 'dateTime', value: operand } : null}
+              dateFormat={style.date_format}
+              timeFormat={style.time_format}
+              onCommit={(v) => patch({ value: v?.kind === 'dateTime' ? v.value : undefined })}
             />
           )}
         </FieldPicker>
