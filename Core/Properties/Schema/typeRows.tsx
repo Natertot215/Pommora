@@ -131,7 +131,7 @@ function numberRows(
         text: String(def.number_denominator ?? ''),
         onCommit: (typed) => {
           const n = numberFrom(typed)
-          if (n !== undefined || typed === '') configure({ number_denominator: n })
+          if (typed === '' || (n !== undefined && n > 0)) configure({ number_denominator: n })
         },
       },
     }),

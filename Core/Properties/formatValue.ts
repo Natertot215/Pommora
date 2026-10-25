@@ -210,7 +210,7 @@ function formatScalar(n: number, cfg: NumberConfig | undefined): NumberPart[] {
 
 /** Percent already reads out of 100, so it takes no fraction. */
 export const fractionDenominator = (cfg: NumberConfig | undefined): number | undefined =>
-  cfg?.number_fraction && cfg.number_family !== 'percent' && (cfg.number_denominator ?? 0) > 0
+  cfg?.number_fraction && cfg.number_family !== 'percent' && cfg.number_denominator !== undefined
     ? cfg.number_denominator
     : undefined
 
