@@ -242,12 +242,15 @@ describe('status cell gestures', () => {
     await act(async () => {
       option?.click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_status',
-      value: { kind: 'select', value: 'opt_complete' },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_status',
+        value: { kind: 'select', value: 'opt_complete' },
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -258,12 +261,15 @@ describe('checkbox cell gestures', () => {
     await act(async () => {
       cells[2].click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_done',
-      value: { kind: 'checkbox', value: true },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_done',
+        value: { kind: 'checkbox', value: true },
+      },
+      expect.anything(),
+    )
   })
 
   it('unchecking a checked box strips the property — no stored false', async () => {
@@ -276,12 +282,15 @@ describe('checkbox cell gestures', () => {
     await act(async () => {
       host.querySelectorAll<HTMLElement>('.data-cell')[2].click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_done',
-      value: null,
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_done',
+        value: null,
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -314,12 +323,15 @@ describe('Context cells', () => {
     await act(async () => {
       work?.click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setContext',
-      path: 'Col/Page One.md',
-      contextId: 'ctx_areas',
-      spaceIds: ['area_work'],
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setContext',
+        path: 'Col/Page One.md',
+        contextId: 'ctx_areas',
+        spaceIds: ['area_work'],
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -347,12 +359,15 @@ describe('number cell inline editing', () => {
       typeInto(input, '43.5')
       key(input, 'Enter')
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_n',
-      value: { kind: 'number', value: 43.5 },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_n',
+        value: { kind: 'number', value: 43.5 },
+      },
+      expect.anything(),
+    )
   })
 
   it('an empty commit clears the value', async () => {
@@ -361,12 +376,15 @@ describe('number cell inline editing', () => {
       typeInto(input, '')
       key(input, 'Enter')
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_n',
-      value: null,
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_n',
+        value: null,
+      },
+      expect.anything(),
+    )
   })
 
   it('Esc reverts without writing; blur commits', async () => {
@@ -382,12 +400,15 @@ describe('number cell inline editing', () => {
       typeInto(again, '7')
       again.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_n',
-      value: { kind: 'number', value: 7 },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_n',
+        value: { kind: 'number', value: 7 },
+      },
+      expect.anything(),
+    )
   })
 })
 
@@ -410,12 +431,15 @@ describe('menu-entered editing', () => {
       })
       key(view.contentDOM, 'Enter')
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_link',
-      value: { kind: 'link', value: 'https://example.com' },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_link',
+        value: { kind: 'link', value: 'https://example.com' },
+      },
+      expect.anything(),
+    )
   })
 
   it('a link value’s menu is the link menu, closing with Clear and no Remove', async () => {
@@ -656,12 +680,15 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       x.click()
     })
     expect(mutateSpy).toHaveBeenCalledTimes(1)
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_status',
-      value: null,
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_status',
+        value: null,
+      },
+      expect.anything(),
+    )
     expect(host.textContent).not.toContain('not_started')
   })
 
@@ -672,12 +699,15 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     await act(async () => {
       removes[0].click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_tags',
-      value: { kind: 'multiSelect', value: ['opt_b'] },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_tags',
+        value: { kind: 'multiSelect', value: ['opt_b'] },
+      },
+      expect.anything(),
+    )
   })
 
   it('removing the LAST multi option commits the emptied value (whose write deletes the key)', async () => {
@@ -690,12 +720,15 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     await act(async () => {
       x.click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Page One.md',
-      propertyId: 'prop_tags',
-      value: { kind: 'multiSelect', value: [] },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page One.md',
+        propertyId: 'prop_tags',
+        value: { kind: 'multiSelect', value: [] },
+      },
+      expect.anything(),
+    )
   })
 
   it('a context chip × writes setContext with the remaining ids', async () => {
@@ -705,12 +738,15 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     await act(async () => {
       removes[0].click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setContext',
-      path: 'Col/Page One.md',
-      contextId: 'ctx_areas',
-      spaceIds: ['area_life'],
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setContext',
+        path: 'Col/Page One.md',
+        contextId: 'ctx_areas',
+        spaceIds: ['area_life'],
+      },
+      expect.anything(),
+    )
   })
 
   it('a Compact status look carries NO × — Clear lives in its menu', async () => {
@@ -764,6 +800,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
         propertyId: 'prop_files',
         value: { kind: 'file', value: ['[[a.pdf]]', '[[New.pdf]]'] },
       }),
+      expect.anything(),
     )
   })
 
@@ -779,6 +816,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
         propertyId: 'prop_files',
         value: { kind: 'file', value: ['[[a.pdf]]', '[[b.pdf]]', '[[New.pdf]]'] },
       }),
+      expect.anything(),
     )
   })
 
@@ -795,6 +833,7 @@ describe('file cell gestures — the stamp and the hit-test, crossed', () => {
         propertyId: 'prop_files',
         value: { kind: 'file', value: ['[[a.pdf]]'] },
       }),
+      expect.anything(),
     )
   })
 })

@@ -244,6 +244,7 @@ describe('PropertyPanel', () => {
     expect(menu.items.map((i) => i.action)).toContain('cell:hide')
     expect(useSession.getState().mutate).toHaveBeenCalledWith(
       expect.objectContaining({ propertyId: 'prop_site', value: null }),
+      expect.anything(),
     )
     expect(text()).not.toContain('Site')
   })
@@ -298,6 +299,7 @@ describe('PropertyPanel', () => {
     expect(poppedLabels()).toEqual(['Add File', 'Remove'])
     expect(useSession.getState().mutate).toHaveBeenCalledWith(
       expect.objectContaining({ propertyId: 'prop_doc', value: null }),
+      expect.anything(),
     )
     expect(text()).not.toContain('Doc')
   })

@@ -46,7 +46,9 @@ const recorded = (req: MutateRequest): MutateOutcome =>
 const settled = () => new Promise((r) => setTimeout(r))
 
 let apply: Mock<ValueWriter['apply']>
-let mutate: Mock<(req: MutateRequest) => Promise<MutateOutcome | null>>
+let mutate: Mock<
+  (req: MutateRequest, opts?: { again?: () => void }) => Promise<MutateOutcome | null>
+>
 let row: ViewRow
 let live: ValueWriter
 let writer: RefObject<ValueWriter | null>
@@ -69,12 +71,15 @@ describe('assignValue', () => {
       { prop_tag: { kind: 'select', value: 'opt_blue' } },
       expect.anything(),
     )
-    expect(mutate).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: row.path,
-      propertyId: 'prop_tag',
-      value: { kind: 'select', value: 'opt_blue' },
-    })
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: row.path,
+        propertyId: 'prop_tag',
+        value: { kind: 'select', value: 'opt_blue' },
+      },
+      { again: expect.any(Function) },
+    )
   })
 
   it('undo sends the record the write’s reply carried, at the row’s current path', async () => {
@@ -87,7 +92,7 @@ describe('assignValue', () => {
       { prop_tag: { kind: 'select', value: 'opt_red' } },
       expect.anything(),
     )
-    expect(mutate).toHaveBeenLastCalledWith({
+    expect(mutate.mock.lastCall?.[0]).toEqual({
       op: 'putBack',
       entries: [{ file: '/nexus/Notes/Moved.md', fieldId: 'prop_tag', before: BEFORE }],
     })
@@ -113,7 +118,7 @@ describe('assignValue', () => {
     await settled()
     expect(undoValue(null)).toBe(true)
     expect(apply).toHaveBeenLastCalledWith('page1', { prop_tag: NULL_VALUE }, expect.anything())
-    expect(mutate).toHaveBeenLastCalledWith({
+    expect(mutate.mock.lastCall?.[0]).toEqual({
       op: 'putBack',
       entries: [{ file: row.path, fieldId: 'prop_tag' }],
     })
@@ -124,7 +129,7 @@ describe('assignValue', () => {
     const captured = row
     row = { ...rowOf({ id: 'page1', Tag: ['red'] }), path: '/nexus/Notes/Moved.md' }
     assignValue(writer, captured, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
-    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ path: '/nexus/Notes/Moved.md' }))
+    expect(mutate.mock.lastCall?.[0]).toMatchObject({ path: '/nexus/Notes/Moved.md' })
   })
 
   it('lays the Context patch beside the frontmatter and mutates the context', async () => {
@@ -142,16 +147,31 @@ describe('assignValue', () => {
       { ctx_areas: { kind: 'context', value: ['space1'] } },
       expect.anything(),
     )
-    expect(mutate).toHaveBeenCalledWith({
-      op: 'setContext',
-      path: row.path,
-      contextId: 'ctx_areas',
-      spaceIds: ['space1'],
-    })
+    expect(mutate).toHaveBeenCalledWith(
+      { op: 'setContext', path: row.path, contextId: 'ctx_areas', spaceIds: ['space1'] },
+      { again: expect.any(Function) },
+    )
     mutate.mockClear()
     await settled()
     expect(undoValue(null)).toBe(true)
-    expect(mutate.mock.calls).toEqual([[record]])
+    expect(mutate.mock.calls.map(([req]) => req)).toEqual([record])
+  })
+
+  it('a refused write’s Try Again writes it again over the row, at the row’s current path', async () => {
+    mutate.mockResolvedValueOnce(null)
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
+    row = { ...row, path: '/nexus/Notes/Moved.md' }
+    apply.mockClear()
+    mutate.mock.calls[0][1]?.again?.()
+    expect(apply).toHaveBeenCalledWith(
+      'page1',
+      { prop_tag: { kind: 'select', value: 'opt_blue' } },
+      expect.anything(),
+    )
+    expect(mutate.mock.lastCall?.[0]).toMatchObject({
+      op: 'setProperty',
+      path: '/nexus/Notes/Moved.md',
+    })
   })
 
   it('writes nothing without a live writer', () => {
@@ -233,6 +253,14 @@ describe('a landed Link value remembers the alias it shows', () => {
     await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
     await settled()
     expect(remembered()).toEqual([])
+  })
+
+  it('a refused write’s Try Again remembers the alias once it lands', async () => {
+    mutate.mockResolvedValueOnce(null)
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    mutate.mock.calls[0][1]?.again?.()
+    await settled()
+    expect(remembered()).toHaveLength(1)
   })
 
   it('an undo of the commit remembers nothing', async () => {

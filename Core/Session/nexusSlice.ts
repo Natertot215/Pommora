@@ -25,7 +25,7 @@ import { headingKeys, type PageHeadings } from '../Connections/pageIndex'
 import { tileDocsSettled } from '../Tiles/tileDocStore'
 import { cancelAllWriters, flushAllWriters, holdSaves, releaseSaves } from './saveScheduler'
 import type { Slice } from './sessionState'
-import { pushUndo, resetUndo } from './undo'
+import { resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
 import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
@@ -65,8 +65,11 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows. */
-  mutate: (req: MutateRequest, opts?: { quiet?: true }) => Promise<MutateOutcome | null>
+  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `again` is a value write's Try Again. */
+  mutate: (
+    req: MutateRequest,
+    opts?: { quiet?: true; again?: () => void },
+  ) => Promise<MutateOutcome | null>
   /** Sends the one Try Again: finishes every entry the notes file holds. */
   finishOwed: () => void
 }
@@ -242,7 +245,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openPath: (path) => openVia(() => dialer().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
-    mutate: async (req, { quiet } = {}) => {
+    mutate: async (req, { quiet, again } = {}) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
       if (changesSettled(req.op)) await flushAllSaves()
@@ -256,19 +259,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!res.ok) {
         if (quiet) return null
         if (res.error.code === 'owed') notifyRetry(res.error.message, get().finishOwed)
-        // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read the next time.
-        else if (
-          (req.op === 'setProperty' || req.op === 'setContext') &&
-          res.error.code === 'operation-failed'
-        )
-          notifyRetry(res.error.message, async () => {
-            const undo = (await get().mutate(req))?.undo
-            if (undo)
-              pushUndo(() => {
-                void get().mutate(undo)
-                return true
-              })
-          })
+        else if (again && res.error.code === 'operation-failed')
+          notifyRetry(res.error.message, again)
         else reportRefusal(res)
         return null
       }

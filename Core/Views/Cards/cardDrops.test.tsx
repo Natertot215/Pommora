@@ -302,12 +302,15 @@ describe('a card dropped across property bands', () => {
     await mount(byStatus())
     const dest = gridOf('p2').getBoundingClientRect()
     await dragTo(card('p1'), dest.top + 10)
-    expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
-      op: 'setProperty',
-      path: 'Col/One.md',
-      propertyId: 'prop_status',
-      value: { kind: 'select', value: 'opt_Complete' },
-    })
+    expect(mutateSpy).toHaveBeenCalledExactlyOnceWith(
+      {
+        op: 'setProperty',
+        path: 'Col/One.md',
+        propertyId: 'prop_status',
+        value: { kind: 'select', value: 'opt_Complete' },
+      },
+      expect.anything(),
+    )
   })
 })
 

@@ -141,12 +141,15 @@ describe('a card value', () => {
     await act(async () => {
       complete?.click()
     })
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/One.md',
-      propertyId: 'prop_status',
-      value: { kind: 'select', value: 'opt_Complete' },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/One.md',
+        propertyId: 'prop_status',
+        value: { kind: 'select', value: 'opt_Complete' },
+      },
+      expect.anything(),
+    )
   })
 
   it('an option created while the picker is open joins its list', async () => {
@@ -277,12 +280,15 @@ describe('the card’s Add chooser', () => {
 
   it('a Checkbox entry lands checked on the card with no pane open, and unchecking keeps it drawn', async () => {
     await choose('Done')
-    expect(mutateSpy).toHaveBeenCalledWith({
-      op: 'setProperty',
-      path: 'Col/Two.md',
-      propertyId: 'prop_done',
-      value: { kind: 'checkbox', value: true },
-    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Two.md',
+        propertyId: 'prop_done',
+        value: { kind: 'checkbox', value: true },
+      },
+      expect.anything(),
+    )
     await settle(450)
     expect(openPanes()).toBe(0)
     const box = (): HTMLElement | null => card('p2').querySelector('.cell-checkbox')
@@ -290,12 +296,15 @@ describe('the card’s Add chooser', () => {
     await act(async () => {
       box()?.click()
     })
-    expect(mutateSpy).toHaveBeenLastCalledWith({
-      op: 'setProperty',
-      path: 'Col/Two.md',
-      propertyId: 'prop_done',
-      value: null,
-    })
+    expect(mutateSpy).toHaveBeenLastCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Two.md',
+        propertyId: 'prop_done',
+        value: null,
+      },
+      expect.anything(),
+    )
     expect(box()?.classList.contains('checkbox-checked')).toBe(false)
   })
 })
