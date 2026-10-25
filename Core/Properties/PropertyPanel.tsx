@@ -32,7 +32,7 @@ import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './fieldValue'
-import { buildValueContext, holderOf, type ValueContext } from './valueContext'
+import { holderOf, useValueContext } from './valueContext'
 import {
   runValueIntent,
   type ValueIntent,
@@ -44,13 +44,12 @@ import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/pan
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
 import { contextOptionsFor } from '../Contexts/contextOptions'
-import { contextIdsOf, identityOf } from '../Contexts/contextIdentity'
+import { contextIdsOf } from '../Contexts/contextIdentity'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
 import { useSession, useSetting } from '../Session/store'
-import { previewConnections } from '../Session/pageConnections'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { dateDefaults } from './columnStyles'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
@@ -87,7 +86,6 @@ export function PropertyPanel({
   const isSpace = subject.kind === 'space'
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
-  const assetMap = useSession((st) => st.assetMap)
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
@@ -156,19 +154,7 @@ export function PropertyPanel({
 
   const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
   const schema = useMemo(() => holderSchema(tree, spaceNode ?? path), [tree, spaceNode, path])
-  const identity = tree && identityOf(tree)
-  const ctx = useMemo<ValueContext | null>(
-    () =>
-      identity
-        ? buildValueContext(
-            identity,
-            schema,
-            assetMap,
-            hostConnections ? () => hostConnections : previewConnections,
-          )
-        : null,
-    [identity, schema, assetMap, hostConnections],
-  )
+  const ctx = useValueContext(tree, schema, hostConnections)
   const dateFormat = useSetting('dateFormat')
   const pending = override?.[subjectId]
   const row = useMemo<ViewRow | null>(() => {

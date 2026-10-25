@@ -15,7 +15,7 @@ import {
 } from '../../Connections/linkValue'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { glanceHost } from '../../Interface/Glance/glanceAction'
-import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
+import type { ValueContext } from '../valueContext'
 import { dwellTarget, resolveFollow } from '../../MarkdownPM/Links/linkClicks'
 import { openWebLink } from '../../Web/openWebLink'
 import { useLinkTitle } from '../../Web/useLinkTitle'
@@ -29,7 +29,7 @@ export function LinkCell({
   look,
   showFullLink,
   holder,
-  connections,
+  ctx,
 }: {
   raw: string
   def: PropertyDefinition | undefined
@@ -37,9 +37,9 @@ export function LinkCell({
   showFullLink?: boolean
   /** The page the value sits on, which a bare `[[#Heading]]` names; a Space has none to name. */
   holder?: ConnPage
-  connections?: () => ConnectionsApi | undefined
+  ctx: ValueContext
 }): React.JSX.Element | null {
-  const api = connections?.()
+  const api = ctx.connections?.()
   const written = readLinkText(raw)
   const target = resolveLink(written, api?.index, holder)
   const url = target.kind === 'url' ? target.url : raw.trim()
@@ -61,7 +61,7 @@ export function LinkCell({
               )
             : raw
         }
-        connections={connections}
+        ctx={ctx}
         holder={holder}
         menu={false}
       />

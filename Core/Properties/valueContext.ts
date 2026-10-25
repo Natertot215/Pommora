@@ -1,9 +1,13 @@
-import type { AssetMap } from '../Nexus/tree'
+import { useMemo } from 'react'
+import type { AssetMap, NexusTree } from '../Nexus/tree'
 import type { PropertyDefinition } from './properties'
-import type { ContextIdentity, IdentityMaps, SpaceIdentity } from '../Contexts/contextIdentity'
+import { type ContextIdentity, identityOf, type SpaceIdentity } from '../Contexts/contextIdentity'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { ConnPage } from '../Connections/pageIndex'
 import type { ViewRow } from '../Views/viewRow'
+import type { HeadingLinkStyle, InPageHeadingResolution } from '../Settings/personalization'
+import { useSession, useSetting } from '../Session/store'
+import { previewConnections } from '../Session/pageConnections'
 
 export interface ValueContext {
   schema: PropertyDefinition[]
@@ -13,17 +17,35 @@ export interface ValueContext {
   assets: AssetMap
   /** Read when a value colors or follows a link. A getter rather than the api itself, so a view holding no link subscribes to no heading change and builds no page index. */
   connections?: () => ConnectionsApi | undefined
+  headingLinkStyle: HeadingLinkStyle
+  inPageHeadingResolution: InPageHeadingResolution
 }
 
 /** The page a row's values sit on; a Space's sit on none. */
 export const holderOf = (row: ViewRow, ctx: ValueContext): ConnPage | undefined =>
   ctx.contextsById.has(row.id) ? undefined : row
 
-export function buildValueContext(
-  identity: IdentityMaps,
+/** The one context a view or the panel renders its values through; `hostConnections` is a window's own link routing, preview otherwise. */
+export function useValueContext(
+  tree: NexusTree | null,
   schema: PropertyDefinition[],
-  assets: AssetMap,
-  connections?: () => ConnectionsApi | undefined,
-): ValueContext {
-  return { schema, contextsById: identity.spaces, contexts: identity.contexts, assets, connections }
+  hostConnections?: ConnectionsApi,
+): ValueContext | null {
+  const assets = useSession((s) => s.assetMap)
+  const headingLinkStyle = useSetting('headingLinkStyle')
+  const inPageHeadingResolution = useSetting('inPageHeadingResolution')
+  const identity = tree && identityOf(tree)
+  return useMemo(
+    () =>
+      identity && {
+        schema,
+        contextsById: identity.spaces,
+        contexts: identity.contexts,
+        assets,
+        connections: hostConnections ? () => hostConnections : previewConnections,
+        headingLinkStyle,
+        inPageHeadingResolution,
+      },
+    [identity, schema, assets, hostConnections, headingLinkStyle, inPageHeadingResolution],
+  )
 }

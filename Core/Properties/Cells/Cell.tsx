@@ -122,13 +122,11 @@ export function Cell({
           look={style.look}
           showFullLink={showFullLink}
           holder={holder}
-          connections={ctx.connections}
+          ctx={ctx}
         />
       )
     case 'text':
-      return (
-        <TextCell text={v.value} connections={ctx.connections} holder={holder} onPane={onPane} />
-      )
+      return <TextCell text={v.value} ctx={ctx} holder={holder} onPane={onPane} />
     case 'dateTime':
       return (
         <OverScroll className="cell-text-scroll cell-control">
