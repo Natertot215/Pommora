@@ -312,15 +312,14 @@ async function finishContext(
     (old) => contexts.some(rivalTitled(old, id)),
     async (old) => {
       const dir = join(contextsDir(root), old)
-      if ((await heldName(dir)) === old) {
-        await leave(root, dir, e.bundle, deps)
-        if (!e.bundle) await dropContextOrder(root, id)
-      }
+      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle, deps)
       return unlinkContextKey(root, old, id, dir)
     },
     reach,
     () => reachConfig(root, { kind: 'property', propertyId: id }),
   )
+  // A Context gone for good, with no bundle to restore it from, takes its order with it.
+  if (!e.bundle && title === undefined) await dropContextOrder(root, id)
   return { left: { ...e, rename, strip }, reach }
 }
 
