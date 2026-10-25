@@ -1099,14 +1099,15 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 **Post-Plan Reviews**
 
-1. **Wave One:** two `opus-high` read-only reviewers over `BASELINE..HEAD`, briefed with the `closeout-review` perspectives.
-   - **Inward:** correctness first (a defect an ordinary action reaches, data that can be lost, a cost on a frequent path, a broken invariant), then simplification within the diff.
-   - **Outward:** cohesion with the rest of Core, UIX, and Desktop, odd-ones-out, and anything done one way here and another way elsewhere; and, with the code now in its final shape, what else can be folded, removed, or reduced under the Approach and *Unambiguous Reduction*, starting from the execution log's *Deferred Folds* list.
+1. **Wave One:** two `opus-xhigh` read-only reviewers over `BASELINE..HEAD` (Nathan, 10-25-2026), briefed with the `code-simplification` skill and *§Constraints* whole. Both read for simplification and against the constraints first, and each reports any defect it meets beside them.
+   - **Inward:** the diff itself: what folds, shrinks, or leaves, and where it falls short of the Approach, Principles, Perspectives, and Nathan's Constraints.
+   - **Outward:** the diff against the rest of Core, UIX, and Desktop: odd-ones-out, anything done one way here and another way elsewhere, and, with the code now in its final shape, what else folds, leaves, or shrinks under the Approach and *Unambiguous Reduction*, starting from the execution log's *Deferred Folds* list.
 
    Each reports findings ranked by severity with `file:line`, the open questions with the check that settles each, where the code drifted from the plan, and insights. One fix agent folds them as numbered fixes plus a Not Taken list, and the fold is committed.
-2. **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement, with no plan, document, or skill. It gives a yes-or-no verdict, its corrections, and the strengths to keep, and is re-run after each fold until it answers yes on every lens.
-3. **Spotcheck:** any fold made after the gate gets one `opus-high` spotcheck against the principles alone.
-4. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come the history entry, `save-session`, `save-delta`, and the report.
+2. **Wave Two:** two fresh `opus-xhigh` reviewers, one inward and one outward, under Wave One's brief over the folded range, given Wave One's Not Taken list with its reasons, so a fold left out is raised again only on new evidence. Their findings are folded and committed the same way.
+3. **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement, with no plan, document, or skill. It gives a yes-or-no verdict, its corrections, and the strengths to keep, and is re-run after each fold until it answers yes on every lens.
+4. **Spotcheck:** any fold made after the gate gets one `opus-high` spotcheck against the principles alone.
+5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come the history entry, `save-session`, `save-delta`, and the report.
 
 ##### Plan Constraints
 
@@ -1305,20 +1306,20 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 16B-2 · The Properties panel splits along the seat
   - [x] Task 16B-3 · Drive group 14
   - [x] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 17 opens]`
+- [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 17 opens]`
 - [ ] **Phase 17** — The Properties Pane
-  - [ ] Task 17-1 · `useGhostOptionAnchor` leaves
-  - [ ] Task 17-2 · The inline-rename slice becomes the frame's own state
-  - [ ] Task 17-3 · The membership drag model moves to `UIX/Menus/paneDrop.tsx`
-  - [ ] Task 17-4 · The pane-row helpers move to `paneRows.tsx`
-  - [ ] Task 17-5 · `OptionEditor` takes the definition, and `OptionSlot.tsx`
-  - [ ] Task 17-6 · One collapse-safe 8px rhythm in `configEditor`
-  - [ ] Task 17-7 · The five type editors become `typeRows.tsx`
-  - [ ] Task 17-8 · The fraction Value row takes only a positive number
-  - [ ] Task 17-9 · The header's icon button reads "Edit Icon"
-  - [ ] Task 17-10 · An editor whose property leaves returns to the list
-  - [ ] Task 17-11 · Drive group 15
-  - [ ] Review Checkpoint
+  - [x] Task 17-1 · `useGhostOptionAnchor` leaves
+  - [x] Task 17-2 · The inline-rename slice becomes the frame's own state
+  - [x] Task 17-3 · The membership drag model moves to `UIX/Menus/paneDrop.tsx`
+  - [x] Task 17-4 · The pane-row helpers move to `paneRows.tsx`
+  - [x] Task 17-5 · `OptionEditor` takes the definition, and `OptionSlot.tsx`
+  - [x] Task 17-6 · One collapse-safe 8px rhythm in `configEditor`
+  - [x] Task 17-7 · The five type editors become `typeRows.tsx`
+  - [x] Task 17-8 · The fraction Value row takes only a positive number
+  - [x] Task 17-9 · The header's icon button reads "Edit Icon"
+  - [x] Task 17-10 · An editor whose property leaves returns to the list
+  - [x] Task 17-11 · Drive group 15
+  - [x] Review Checkpoint
   - [ ] Closeout P16B–P17 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 18** — The Documents Read True
   - [ ] Task 18-1 · `PropertiesPM.md` reads true
@@ -34330,8 +34331,8 @@ Where a line below names a construct one of those phases landed, the executor ke
 
 **CHANGE**
 
-- [ ] Add group 15 to the drive (AFTER): `'15'` joins the landed list, `if (GROUPS.has('15')) await group15(cdp)` joins the run, and every harness name it calls is already imported (`openCollection` by P2, `pressKey` and `typeText` by P6, `chooseNative` by P7); `readFileSync`, `writeFileSync`, and `join` are P2's.
-- [ ] Read `.claude/Guidelines/Development-Environment.md`, then run `node ".claude/scripts/Properties Drive/live-drive.mjs" 15`. On the phase's base commit (a `POMMORA_DRIVE_REPO` worktree at it) the Number rhythm, the collapsed-Day, the denominator, and the outside-removal checks fail; on the phase's head every check passes. A selector the run proves wrong is corrected in the drive and `MATRIX.md` together, never by loosening a check.
+- [ ] Add group 15 to the drive (AFTER): group 15 reads a definition through group 6's `defNamed`, already in the drive, so the AFTER's own declaration of it doesn't land; `'15'` joins the landed list, `if (GROUPS.has('15')) await group15(cdp)` joins the run, and every harness name it calls is already imported (`openCollection` by P2, `pressKey` and `typeText` by P6, `chooseNative` by P7); `readFileSync`, `writeFileSync`, and `join` are P2's.
+- [ ] Read `.claude/Guidelines/Development-Environment.md`, then run `node ".claude/scripts/Properties Drive/live-drive.mjs" 15`. On the phase's base commit (a `POMMORA_DRIVE_REPO` worktree at it) the Number rhythm, the Fraction and Style reveals, the denominator, the Date rhythm and its collapsed Day, and the outside-removal checks fail, and Create then edit, Link and Checkbox, and Delete from ⋮ pass there as regression guards; on the phase's head every check passes. A selector the run proves wrong is corrected in the drive and `MATRIX.md` together, never by loosening a check.
 - [ ] **Only if O-5's check fails:** apply the remedy to `PropertyFrame.tsx` (AFTER, second block), re-run group 15, and record the frame counts in *§Behavior Changes and Disclosures*.
 - [ ] Run groups 1 through 15; every check passes and `~/Test` is restored.
 - [ ] Commit: `git commit --only -- ".claude/scripts/Properties Drive/live-drive.mjs" ".claude/scripts/Properties Drive/MATRIX.md" -m "The Properties Drive gained group 15: the type editors' rhythm, the refused denominator, and an editor giving way to the list."` (with `Core/Properties/Schema/PropertyFrame.tsx` only when the remedy landed).
@@ -35378,12 +35379,14 @@ Commands the table cites by number, each written outside a table cell so no pipe
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity encountered during execution was taken at its simplest reading and recorded; it didn't stop the run.
 
 - [ ] **Phase Closeouts** (`opus-high` inward and outward pairs, each with its correctness findings fixed and its folds landed or deferred): P1–P2 · P3 · P4A–P5 · P6 · P7 · P8 (the Halfway Review, four agents over `BASELINE..HEAD`) · P9–P10 · P11A · P11B–P12 (with Neutral Gate 1) · P13–P14 · P15–P16A · P16B–P17 · Phase 18's documentation spotcheck (`opus-medium`)
-- [ ] **Wave One** — two `opus-high` read-only reviewers over `BASELINE..HEAD`, briefed with the `closeout-review` perspectives and *§Constraints* whole, the 10-22-2026 directive included, each re-running *§Adherence Scoreboard* on the head:
-  - **Inward:** correctness first (a defect an ordinary action reaches, data that can be lost, a cost on a frequent path, a broken invariant), then simplification within the diff.
-  - **Outward:** cohesion with the rest of Core, UIX, and Desktop, odd-ones-out, and anything done one way here and another way elsewhere.
+- [ ] **Wave One** — two `opus-xhigh` read-only reviewers over `BASELINE..HEAD` (Nathan, 10-25-2026), briefed with the `code-simplification` skill and *§Constraints* whole, the 10-22-2026 directive included, each re-running *§Adherence Scoreboard* on the head. Both read for simplification and against the constraints first, and each reports any defect it meets beside them:
+  - **Inward:** the diff itself: what folds, shrinks, or leaves, and where it falls short of the Approach, Principles, Perspectives, and Nathan's Constraints.
+  - **Outward:** the diff against the rest of Core, UIX, and Desktop: odd-ones-out, anything done one way here and another way elsewhere, and, with the code now in its final shape, what else folds, leaves, or shrinks under the Approach and *Unambiguous Reduction*, starting from the execution log's *Deferred Folds* list.
 
   Each reports findings ranked by severity with `file:line`, the open questions with the check that settles each, where the code drifted from the plan, and insights.
-- [ ] **Fold** — one fix agent folds Wave One's findings as numbered fixes plus a Not Taken list with each reason; the orchestrator verifies each against the tree; the fold is committed and measured into *§Net Ledger*.
+- [ ] **Fold One** — one fix agent folds Wave One's findings as numbered fixes plus a Not Taken list with each reason; the orchestrator verifies each against the tree; the fold is committed and measured into *§Net Ledger*.
+- [ ] **Wave Two** — two fresh `opus-xhigh` reviewers, inward and outward, under Wave One's brief over `BASELINE..HEAD` at Fold One's head, given Fold One's Not Taken list with its reasons, so a fold left out is raised again only on new evidence.
+- [ ] **Fold Two** — Wave Two's findings folded as Fold One's were, committed, and measured into *§Net Ledger*.
 - [ ] **Neutral Gate 2** — one `fable-high` agent given only the BASELINE head, the final head, and the intention under *§Neutral Gate 2* below, with no plan, document, skill, or principle; it answers yes or no on every lens, with its corrections and the strengths to keep, and is re-run after each fold until it answers yes.
 - [ ] **Spotcheck** — any fold made after the gate gets one `opus-high` spotcheck against the Approach and Principles alone.
 - [ ] **Closeout** — the full Properties Drive (groups 1 through 15) and every other drive in `.claude/scripts/` on the final head; the orchestrator's own pass: the gates from a clean state, the baseline counts, *§Net Ledger* summed, *§Adherence Scoreboard* re-run row by row, the diff read once, *§Completion Criteria* ticked, *§Reconciliation* walked, *§Deviations* ruled on, and STATUS and BASELINE's End filled.
@@ -35463,7 +35466,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
 | 16A | −537 | +457 | −80 | −546 / +465 / −81 | −62 |
 | 16B | −322 | +97 | −225 | −361 / +149 / −212 | −274 |
-| 17 | −813 | +609 | −204 | | |
+| 17 | −813 | +609 | −204 | −811 / +607 / −204 | −478 |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 

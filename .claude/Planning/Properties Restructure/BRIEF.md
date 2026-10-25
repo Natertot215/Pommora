@@ -112,9 +112,9 @@ Removal and consolidation come before anything additive, and changes to what exi
 
 **Post-Plan Reviews**
 
-1. **Wave One:** two `opus-xhigh` read-only reviewers over `BASELINE..HEAD`, briefed with the `closeout-review` perspectives.
-   - **Inward:** correctness first (a defect an ordinary action reaches, data that can be lost, a cost on a frequent path, a broken invariant), then simplification within the diff.
-   - **Outward:** cohesion with the rest of Core, UIX, and Desktop, odd-ones-out, and anything done one way here and another way elsewhere.
+1. **Wave One:** two `opus-xhigh` read-only reviewers over `BASELINE..HEAD` (Nathan, 10-25-2026), briefed with the `code-simplification` skill and the constraints whole. Both read for simplification and against the constraints first, and each reports any defect it meets beside them.
+   - **Inward:** the diff itself: what folds, shrinks, or leaves, and where it falls short of the Approach, Principles, Perspectives, and Nathan's Constraints.
+   - **Outward:** the diff against the rest of Core, UIX, and Desktop: odd-ones-out, anything done one way here and another way elsewhere, and, with the code now in its final shape, what else folds, leaves, or shrinks under the Approach and *Unambiguous Reduction*, starting from the execution log's *Deferred Folds* list.
 
    Each reports findings ranked by severity with `file:line`, the open questions with the check that settles each, where the code drifted from the plan, and insights. One fix agent folds them as numbered fixes plus a Not Taken list, and the fold is committed.
 2. **Wave Two:** two fresh `opus-xhigh` reviewers, one inward and one outward, over the folded range. Their findings are folded and committed.
