@@ -95,6 +95,16 @@ describe('an echo recorded with its bytes', () => {
   })
 })
 
+describe('a write recorded with its bytes, arriving late', () => {
+  it('keeps its bytes past the window, through the sweep a large reread runs', () => {
+    const p = '/t9/late.md'
+    recordWrite(p, 'mine')
+    vi.setSystemTime(3000)
+    for (let i = 0; i < 300; i++) recordWrite(`/t9/other-${i}.md`)
+    expect(writtenHash(p)).toBeDefined()
+  })
+})
+
 describe('emitWatch', () => {
   it('reaches an installed sink and builds nothing without one', () => {
     const seen: Changed[] = []
