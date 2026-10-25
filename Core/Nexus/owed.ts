@@ -190,7 +190,7 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
   return editNote(
     root,
     id,
-    (e) => e && { ...e, rename: distinct(e.rename, e.strip), strip: undefined },
+    (e) => e && { ...e, rename: distinct(e.rename, e.strip), strip: undefined, bundle: undefined },
   )
 }
 
