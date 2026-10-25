@@ -29,9 +29,9 @@ on debug port 9353.
 `Metadata Drive/live-drive.mjs` drives MetadataV3's exact metadata identity against the real app as a matrix of
 every behavior the decisions guarantee, in nine groups: groups 1 to 8 follow the plan phase of their number through
 the host channels the interface calls (Space order by id, exact keys and their renames, exact words and filters,
-counts, the label and key registry, the owed-work notes and the cascades, the Key and Value Formats with adoption, and the
+counts, the label and key registry, the journal and its cascades, the Key and Value Formats with adoption, and the
 restore re-spell), asserting page bytes, Space sidecars, `properties.json`, the views, View Tiles, Matrix filter, and
-Collection stashes, the notes file's entries, and what the table draws and filters; group 9 drives each surface by real
+Collection caches, the journal slot, and what the table draws and filters; group 9 drives each surface by real
 gesture (the Metadata leaf, the value picker, the format rows and their counted confirmation, the Trash browser, and
 a Space's Properties panel). `MATRIX.md` beside it holds the dimensions it crosses, what it prunes and why, and the
 decision each case pins. It takes the groups to run as arguments — `node live-drive.mjs 1 2` — seeds each group's
@@ -88,13 +88,11 @@ it holds each group's cases and the decision each proves. It takes the groups to
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 
 **Properties Drive** (`Properties Drive/live-drive.mjs`) drives the Properties Restructure's visible
-surfaces in ten groups that follow the plan's phases: the Filedata columns' labels and glyphs on a
-table and its pickers, with a hand-written Context definition set aside; the type records' looks;
-the value write's one home; a damaged property list at the open; undo from the file; the one door for
-property changes and its worded dialogs; option identity by id; the Context rename's finder; the
-notes file's owed renames; and the stash and the Trash records. `MATRIX.md` beside it holds each
+surfaces in groups that follow the plan's phases: group 1 reads the Filedata columns' labels and
+glyphs on a table, its Sort By picker, and its filter picker, and writes a Context-typed definition
+into `~/Test/.nexus/properties.json` by hand to see it set aside. `MATRIX.md` beside it holds each
 group's cases and the decision each proves. It takes the groups to run as arguments —
-`node live-drive.mjs 1 10` — puts back what each group seeds, on debug port 9403, and exits non-zero
+`node live-drive.mjs 1` — puts back what each group seeds, on debug port 9403, and exits non-zero
 on any failed check.
 
 The drives share `drive-harness.mjs`, which builds the app, backs up `~/Test`, launches the build

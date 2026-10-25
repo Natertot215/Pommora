@@ -8,9 +8,9 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | --- | --- | --- |
 | **Types** | Text, Number, Checkbox, Date, Select, Status, Multi-Select, Link, File; `<Title>:` Context keys and the Space titles under them | Every type in group 2's value-spelling guard; Number, Select, Multi-Select, and Context keys for exact keys; Select, Status, and Multi-Select for exact words; Text and Multi-Select through the Key Format; Select, Status, and Multi-Select through the Value Format; Date and Link at restore |
 | **Formats** | `Match Title` and the nine conventions | All ten through one Key Format cycle and one adoption property each; the B-5 creates; one representative per refusal |
-| **Holders** | A page, a Space sidecar, a Collection stash (`property_stash`), a saved view, a View Tile, the Matrix filter | Pages and sidecars for every key and word operation; the stash and the three configuration holders for every option operation |
+| **Holders** | A page, a Space sidecar, a Collection cache (`property_cache`), a saved view, a View Tile, the Matrix filter | Pages and sidecars for every key and word operation; the cache and the three configuration holders for every option operation |
 | **Operations** | Create, label rename, case-only rename, Key Format change, Value Format change, option add, rename, remove, and clear, property delete and restore, page delete and restore, Space retitle, Context rename, Try Again after a skip and after a rename back | Each in the group whose phase changes it |
-| **Edge States** | A key or word in another casing, two keys differing only by case, an owed entry in the notes file, a collision and a crossing, a format writing no key, reserved keys, an unreadable file | Each beside the operation it constrains |
+| **Edge States** | A key or word in another casing, two keys differing only by case, an owed journal record, a collision and a crossing, a format writing no key, reserved keys, an unreadable file | Each beside the operation it constrains |
 
 #### Pruned
 
@@ -31,10 +31,10 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | Order written | Area One | `setSpaceRowOrder` | `$order` is the id list as sent | F-5 |
-| Property rename | Area One | `renameProperty` | the sidecar holds its bytes | F-5 |
+| Property rename | Area One | `property:rename` | the sidecar holds its bytes | F-5 |
 | Context rename | Area One | `renameContext` | the sidecar holds its bytes | F-5 |
 | Space retitle | M1 Space | `renameSpace` | its `$order` arrives unchanged | F-5 |
-| Property delete | Area One, M1 Space | `deleteProperty` | the id leaves every list, and a list it empties leaves the sidecar | F-5 |
+| Property delete | Area One, M1 Space | `property:delete` | the id leaves every list, and a list it empties leaves the sidecar | F-5 |
 | Context delete | Area One | `delete` (context) | the Context's id leaves the list | F-5 |
 | Empty order | Area One | `setSpaceRowOrder []` | `$order` leaves the sidecar | F-5 |
 
@@ -49,15 +49,15 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | `<areas>: [Area One]` | page | read, pick | reads nothing; the pick writes `<Areas>` beside it | A-2 |
 | `<Areas>` beside `<areas>` | page | read, pick | reads `<Areas>` alone; the pick edits it alone | A-2 |
 | Space write | Area Two | `setProperty` | `M2 Choice` lands beside `m2 choice` | A-1 |
-| Property rename | pages, Area Two | `renameProperty` | the exact key moves in its quotes; the variant stays | A-1 |
-| Case-only rename | pages, Area Two | `renameProperty` to `m2 memo` | the key moves; a page already holding `m2 memo` keeps its bytes | A-1 |
+| Property rename | pages, Area Two | `property:rename` | the exact key moves in its quotes; the variant stays | A-1 |
+| Case-only rename | pages, Area Two | `property:rename` to `m2 memo` | the key moves; a page already holding `m2 memo` keeps its bytes | A-1 |
 | Context rename and its case-only rename | pages | `renameContext` | `<M2 Group>` moves twice; `<m2 group>` stays | A-2 |
 | Case-only Space retitle | pages | `renameSpace` to `m2 space` | the member moves under the Context's key alone | A-2 |
-| Both spellings on one page | page | rename onto the variant | refused; nothing moves, nothing owed | A-1 |
-| Property delete and restore | page, Area Two | `deleteProperty`, `restore` | strips and refills the exact key; the variant stays | A-1 |
-| Try Again after a skip | two pages, one unreadable | `renameProperty`, then Try Again (`finishOwed`) | the rest sweep and the property owes its old key in its own entry of the notes file; Try Again brings the file current and clears the entry | F-1 |
-| A second rename while owed | as above | `renameProperty`, `renameProperty` again, then Try Again | the second rename lands while the first is owed, the entry unchanged; Try Again brings the first's skipped file to the second name and clears the entry | F-1 |
-| Context rename back | two pages, one unreadable | `renameContext`, back, then Try Again | the Context's entry owes its old key until the rename back; Try Again answers, writes nothing, and clears the entry; no holder loses the key | F-1 |
+| Both spellings on one page | page | rename onto the variant | refused; nothing moves, no record | A-1 |
+| Property delete and restore | page, Area Two | `property:delete`, `restore` | strips and refills the exact key; the variant stays | A-1 |
+| Try Again after a skip | two pages, one unreadable | rename, `property:replay` | the rest sweep, the record is owed, the replay brings the file current and clears | F-1 |
+| A second rename while owed | as above | rename, rename again, replay the first, rename again | the second rename waits with the record unchanged; after the replay it lands on every holder | F-1 |
+| Context rename back | two pages, one unreadable | `renameContext`, back, the reply's `retry` | the retry answers, writes nothing, and clears the Context journal | F-1 |
 
 #### Group 3 — Exact Words
 
@@ -69,9 +69,9 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | A Status doesn't adopt | page | settle | `Blocked` stays foreign and the Status's options hold | E-2 |
 | Space titles (8 pages) | pages | read, `setContext` | an exact title reads in any quotes; `area one` reads nothing and the pick lists the picked Spaces | A-3, A-2 **RULING** |
 | Is and Is Not | filter view | nine filters | Select and Status Is and Is Not compare exactly; Contains stays folded; Contains Any is exact | F-2 |
-| Option rename | pages, Area One, two views | `renameOption` | every quote style follows; `[work]` and a Space's `work` stay, and a view names the option by its id | A-1, F-2 |
+| Option rename | pages, Area One, two views | `renameOption` | every quote style follows; `[work]`, a Space's `work`, and a view naming `work` stay | A-1, F-2 |
 | Space retitle | pages | `renameSpace` | every quote style follows; `[m3 place]` stays | A-2 |
-| Case-only skip | two pages, one unreadable | `renameProperty` to `m3 case`, then Try Again | the case-only rename owes its skipped file and sweeps it on Try Again | A-1, F-3 |
+| Case-only skip | two pages, one unreadable | rename to `m3 case`, `property:replay` | the owed case-only rename sweeps on Try Again | A-1, F-3 |
 | Undo over a case-variant | page | pick Work in the table's picker, ⌘Z | `[work]` → `[Work]`; the undo puts back `[work]` byte for byte | A-1, E-3, Undo |
 | Undo beside an adopted word | page | unpick Work, ⌘Z | `[Work, ideas]` → `[ideas]`; the undo puts back `[Work, ideas]` | E-1, Undo |
 | Undo over another casing | page | pick Doing, ⌘Z | `done` → a list of one, `Doing`; the undo puts back `done` | A-1, E-2, Undo |
@@ -82,9 +82,9 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| Delete count | two pages, a variant page, Area One holding the value, Area Two holding only the `$order` id | `property:holders`, then `deleteProperty` | the count is 4, writes nothing, and the delete rewrites exactly those 4 | J-1, F-4 |
-| Clear count | three pages, Area Two | `property:holders(id, { of: 'option' })` for `a`, then `clearOption` | 3, writes nothing, rewrites exactly those | F-4 |
-| Delete count of an option | two pages | `property:holders(id, { of: 'option' })` for `b`, then `deleteOption` | 2, writes nothing, rewrites exactly those | F-4 |
+| Delete count | two pages, a variant page, Area One holding the value, Area Two holding only the `$order` id | `property:holders`, then `property:delete` | the count is 4, writes nothing, and the delete rewrites exactly those 4 | J-1, F-4 |
+| Clear count | three pages, Area Two | `property:holders(id, 'a')`, then Clear | 3, writes nothing, rewrites exactly those | F-4 |
+| Remove count | two pages | `property:holders(id, 'b')`, then Remove | 2, writes nothing, rewrites exactly those | F-4 |
 | Rename refusal | one page, then two | rename onto the variant | `1 Item holds both …` and `2 Items hold both …` | J-1 |
 | Unswept notice | one unreadable page | rename | `Couldn’t update 1 Item.` | J-1 |
 
@@ -92,49 +92,49 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| Create | registry | `addProperty` Select and Status | `label` and `key` on the definition and every option, no `name` or `value` | C-1, C-2 |
+| Create | registry | `schema:add` Select and Status | `label` and `key` on the definition and every option, no `name` or `value` | C-1, C-2 |
 | A key apart from its label | registry, pages | hand-written `{ label: 'M5 Due', key: 'm5_due' }` | `m5_due` reads, `M5 Due` doesn't, a write lands on `m5_due` | C-2 |
 | No label | registry, page | hand-written `{ key: 'M5 Bare' }` | reads its key, and rides an unrelated write without gaining a label | C-3 |
 | Decode and encode | pages | read, pick | `[done]` reads Done; a pick writes `[in-progress, done]`; a Select's label written as a word is foreign | A-1, C-1 |
-| Clear by id | pages | `clearOption` on `Urgent` | strips `urgent`, leaves the label `Urgent` written as a word | C-1 |
+| Clear by label | pages | `clearOption('Urgent')` | strips `urgent`, leaves `Urgent` | C-1 |
 | Uniqueness | registry | creates and renames | a fold-duplicate label steps aside on both words at create, and a fold-duplicate label or key is refused at rename; `Id` and `Banner` are refused; a hand-written `banner` key isn't admitted | D-1 |
 | Option uniqueness | registry | option add, creates | a fold-duplicate label, two keys in two casings, a blank key, and a Status's duplicate or blank option are refused | D-2, J-1 |
 
-#### Group 6 — The Notes and the Cascades
+#### Group 6 — The Journal and the Cascades
 
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| Option rename | page, Area One, Collection B stash, view, View Tile, Matrix filter | `renameOption` | files and stash by key; the three configurations keep naming the option's id | F-2 |
-| Key apart from label | page, view | rename `Urgent`, then delete it | Match Title moves the key with the label and the view keeps naming the option's id; the delete strips both | F-2 |
-| Option delete | page, stash | `deleteOption` | strips the page and the stash | F-2 |
-| Clear | stash, Collection B | Clear, reassign | the stash loses the value and the reassign brings it back nowhere | J-1 |
-| Entries carry keys | notes file | rename, option rename, delete, option delete, each over an unreadable file | the property's entry holds `rename: [key]`; `options: { id: { rename: [key] } }`; `strip: [key]`; `options: { id: { strip: [key] } }` with the option already off the list; each Try Again brings the skipped file current and clears the entry | F-1 |
-| Work beside an owed entry | registry, pages, notes file | an option rename, Clear, and a property rename while a property owes work | another option renames and Clear runs while the property owes; a property rename on another property runs; the entry is unchanged | B-1 |
-| A word still owed | registry, pages, notes file | option rename onto a word another option still owes | refused with `aNameStillOwed`, and nothing is written | F-1 |
-| Adoption shield | a new page holding the old word | settle | the owed entry's old key isn't adopted | F-1 |
+| Option rename | page, Area One, Collection B cache, view, View Tile, Matrix filter | `renameOption` | files and cache by key, the three configurations by label | F-2 |
+| Key apart from label | page, view | rename `Urgent`, then remove it | Match Title moves the key with the label; the view follows; the removal strips both | F-2 |
+| Option removal | page, cache | `removeOption` | strips the page and the cache | F-2 |
+| Clear | cache, Collection B | Clear, reassign | the cache loses the value and the reassign brings it back nowhere | J-1 |
+| Records carry keys | journal | rename, option rename, delete, option removal, each over an unreadable file | `{ op: 'rename', from, to }` in keys; `{ op: 'option-rename', keys, labels }`; `{ op: 'delete', key }`; `{ op: 'option-remove', key }` | F-1 |
+| An owed record | registry, pages, journal | option rename and removal; Clear; property rename | the two option changes and a Clear on the owed property are refused and write nothing; a property rename waits | F-1 |
+| Adoption shield | a new page holding the old word | settle | the owed record's old key isn't adopted | F-1 |
+| Try Again | the skipped files | `property:replay` | each record's replay brings its file current and clears | F-1 |
 
 #### Group 7 — The Formats
 
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| The Key Format cycle | two pages, Area One | `property:holders(id, { of: 'format', change })`, `setFormat` through all ten | the count, written nothing, then `url slug`, `URL SLUG`, `url-slug`, `UrlSlug`, `urlSlug`, `url_slug`, `Url-Slug`, `URL_SLUG`, `URL-SLUG`, and `URL Slug` on every holder; a page already holding the new key isn't counted and reads after | B-2, B-5, B-6, F-1, F-4, B-1 |
-| The format it holds | registry, pages | `setFormat` to the same format | an empty reply, nothing written | F-1 |
-| A list key | page, Area Two | `setFormat` lowercase | the key moves on its line on both holders, nothing owed | B-4, F-1 |
+| The Key Format cycle | two pages, Area One | `property:holders(id, { key_format })`, `property:setKeyFormat` through all ten | the count, written nothing, then `url slug`, `URL SLUG`, `url-slug`, `UrlSlug`, `urlSlug`, `url_slug`, `Url-Slug`, `URL_SLUG`, `URL-SLUG`, and `URL Slug` on every holder; a page already holding the new key isn't counted and reads after | B-2, B-5, B-6, F-1, F-4, B-1 |
+| The format it holds | registry, pages | `setKeyFormat` to the same format | `ok(null)`, nothing written | F-1 |
+| A list key | page, Area Two | `setKeyFormat` lowercase | the key moves on its line on both holders, no record | B-4, F-1 |
 | Label renames | page | rename to `Labels`, then `LABELS` | the key follows through the format, then holds | C-2 |
-| Both spellings on one page | page | `setFormat` lowercase | `1 Item holds both "Sorts" and "sorts".`, nothing moves | D-1, J-1 |
+| Both spellings on one page | page | `setKeyFormat` lowercase | `1 Item holds both "Sorts" and "sorts".`, nothing moves | D-1, J-1 |
 | The B-5 creates | registry | ten creates | `v5.0`, `j.-crew`, `new property`, `due-date`, `i-phone`, `xml-http`, `IPhone17`, `aBTest`, `due_date`, `STRASSE` | B-5 |
 | Create keys | registry | create handed a key; a `snake_case` create of `Ship Date` beside `Ship_Date`, then a `Match Title` one | the key comes from the label; the create whose key alone collides steps aside to `Ship Date (2)` / `ship_date_(2)`, and the next lands as `Ship Date` | C-2, D-1 |
 | Refusals | registry | Key Format onto another's key, a format writing no key at create and at change, onto `heading_icon_hidden`, a create writing `ID` | each refused, the key unchanged | D-1, B-5 |
 | Stored key trusted | page | hand-written key under `snake_case`, then a rename | reads under the stored key, then the rename writes `due_later` | C-2 |
-| Type changed outside | registry | `configureProperty` icon on a hand-written Select | seeds `option 1` through its Value Format | C-2 |
+| Type changed outside | registry | `setIcon` on a hand-written Select | seeds `option 1` through its Value Format | C-2 |
 | Value Format seeds, adds, renames | registry, page | creates, option add, option rename | seeded and added keys through the format; a create keeps its keys; a rename moves the page's key | C-2 |
 | Adopted rename | page, view | rename `in-progress` to `In Progress` under kebab-case | no page rewritten, the view follows the label | E-1, F-2 |
-| Value Format change | page, Area One, stash, view, View Tile, Matrix filter | count, then `setFormat` kebab-case | count 2 with the stash left out; every option re-keyed, labels kept; files and stash by key; the configuration byte-identical; the table, the view, and the View Tile still read labels; a reassign refills the new key | F-1, F-2, F-4, C-2 |
-| Format skips | two pages each, one unreadable | `setFormat` lowercase, `setFormat` kebab-case, each then Try Again | each sweeps the rest and owes an entry of stored keys alone, `rename: [key]` and `options: { id: { rename: [key] } }`; Try Again brings the file current and clears the entry | F-1 |
-| Value Format refusals | registry, pages, notes file | collision, crossing, a Text property's change and count, a count that moves no key, a key another option still owes | each change and count refused, nothing changes; the count that moves no key is zero | D-2, F-1, B-3, F-4 |
+| Value Format change | page, Area One, cache, view, View Tile, Matrix filter | count, then `setValueFormat` kebab-case | count 2 with the cache left out; every option re-keyed, labels kept; files and cache by key; the configuration byte-identical; the table, the view, and the View Tile still read labels; a reassign refills the new key | F-1, F-2, F-4, C-2 |
+| Format skips | two pages each, one unreadable | `setKeyFormat` lowercase, `setValueFormat` kebab-case, `property:replay` | each sweeps the rest and owes a record of stored keys alone, `{ op: 'rename', from, to }` and `{ op: 'option-rename', keys }`; Try Again brings the file current and clears | F-1 |
+| Value Format refusals | registry, pages, journal | collision, crossing, a Text property, an owed record | each refused, nothing changes; a Key Format change waits while owed | D-2, F-1, B-3 |
 | Adoption per format | ten Multi-Selects | settle | `Red`, `BLUE`, `green` adopt as B-6's table says; `AB` and `J.Crew` don't under PascalCase; `in-progress` does and `due_date` doesn't under kebab-case | E-1, B-6 |
 | Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` stays foreign through a pick, and `Red` drops | E-1, E-3 |
-| A Value Format change owes adoption | page | `setFormat` lowercase | `green`, refused under UPPERCASE, adopts | E-1 |
+| A Value Format change owes adoption | page | `setValueFormat` lowercase | `green`, refused under UPPERCASE, adopts | E-1 |
 
 #### Group 8 — The Restore Re-Spell
 
@@ -175,7 +175,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
 - **A re-spelled Date keeps its text** (group 8, `deadline_date: soon`): G-1 re-spells the key, and the restore's reconcile keeps any text a Date holds, as it does today; *§Open Items* lists it to read once.
 - **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the trashed page's `low_tier` foreign for the restore to re-spell; under `Match Title` adoption registers it as its own option when the property is created.
-- **A restored Collection's stash** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
+- **A restored Collection's cache** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
 - **"The value picker (foreign words, captions)":** the format rows carry no hints (the plan's *§Deviations*), so the drive asserts foreign words in the value picker alone.
 
 #### Copy
@@ -191,7 +191,7 @@ The refusals and the confirmation the drives assert by their worded text sit in 
 | `twoOptionsTitledAlike` | group 5's option add of `a` and its Status create holding `Done` and `done`; the Option Picker's duplicate `alpha` |
 | `twoOptionsWritingOneKey` | group 5's create holding `A` and `a` |
 | `aFormatGivingTwoOptionsOneKey` | group 7's collision |
-| `aNameStillOwed` | group 6's option rename onto a word another option still owes; group 7's Value Format change writing a key another option still owes |
+| `anOptionChangeWaitingForTryAgain` | group 6's option rename and removal; group 7's Value Format change |
 | `anEmptyKey` | group 5's creates holding a blank option key and a Status's blank option key; group 7's create and Key Format change on `---` |
 | `aValueFormatChangeCrossingTwoOptionsKeys` | group 7's `Router` crossing |
 | `anOptionEditWithoutOptions` | group 7's Value Format change and count on a Text property |
