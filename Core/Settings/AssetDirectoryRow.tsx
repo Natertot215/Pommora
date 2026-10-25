@@ -1,4 +1,4 @@
-import { reportRefusal } from '../Interface/Notifications/notifications'
+import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useSession } from '../Session/store'
@@ -13,6 +13,13 @@ export function AssetDirectoryRow({
 }): React.JSX.Element {
   const stored = useSession((s) => s.tree?.config.assetDirectory ?? '')
   const setDir = (dir: string): void => void dialer().ask('assets:setDir', dir).then(reportRefusal)
+  const browse = (): void =>
+    void dialer()
+      .ask('assets:chooseDir')
+      .then((picked) => {
+        if (!picked.ok) notifyRetry(picked.error.message, browse)
+        else if (picked.value !== null) setDir(picked.value)
+      })
 
   return (
     <SettingsFieldRow label={label} hint={hint}>
@@ -21,13 +28,7 @@ export function AssetDirectoryRow({
         value={stored}
         empty="No folder"
         onCommit={setDir}
-        onBrowse={() =>
-          void dialer()
-            .ask('assets:chooseDir')
-            .then((picked) => {
-              if (reportRefusal(picked) && picked.value !== null) setDir(picked.value)
-            })
-        }
+        onBrowse={browse}
       />
     </SettingsFieldRow>
   )

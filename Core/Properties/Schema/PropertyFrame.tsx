@@ -1,9 +1,7 @@
-import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
-import { DEFAULT_LINK_DISPLAY } from '../../Connections/linkValue'
 import {
   CREATABLE_TYPES,
   type PropertyConfig,
@@ -13,26 +11,17 @@ import {
 } from '../properties'
 import type { FormatChange } from '../keyFormat'
 import { FormatRows } from './FormatRows'
-import {
-  CHECKBOX_LOOKS,
-  type ColumnStyle,
-  lookIn,
-  NUMBER_LOOKS,
-  OPTION_LOOKS,
-} from '../columnStyles'
+import { type ColumnStyle, LOOKS, lookIn } from '../columnStyles'
 import { lookOptions } from '../displayLabels'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
 import { columnStylePatch, styleFor, useNexusForms } from '../../Views/Host/useColumnStyles'
 import { propertyColumn } from '../../Views/Pipeline/columns'
-import { DateTimeEditor } from './DateTimeEditor'
-import { CheckboxEditor } from './CheckboxEditor'
-import { FileEditor } from './FileEditor'
-import { NumberEditor } from './NumberEditor'
 import {
   MenuItem,
   MenuCaption,
+  MenuIndex,
   MenuTopRow,
   MenuScrollFrame,
   MenuFooting,
@@ -50,7 +39,7 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
-import { LinkEditor } from './LinkEditor'
+import { rowsFor } from './typeRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
@@ -60,12 +49,11 @@ import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDi
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { askRewrite, confirmDelete } from '../../Interface/Confirm/confirmations'
-import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
-const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
+const OPTION_STYLE_OPTIONS = lookOptions(LOOKS.select)
 
 const TITLES = { members: 'Properties', rest: 'All Properties' }
 
@@ -185,6 +173,7 @@ export function PropertyFrame({
   const saveView = useSaveView(source)
   const activeView = useActiveView(source)
   const registry = useSession((st) => st.tree?.config.registry) ?? []
+  const assetRoot = useSession((st) => st.tree?.config.assetDirectory ?? '')
   const mutate = useSession((st) => st.mutate)
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const [view, setView] = useState<SubView>({ kind: 'list' })
@@ -307,73 +296,6 @@ export function PropertyFrame({
     </>
   )
 
-  const NO_SETTINGS = (): null => null
-  const optionSettings = (def: PropertyDefinition, style: ColumnStyle): React.JSX.Element => (
-    <div className={cx(s.middleRegion, s.chipRegion, 'scroll-fade')}>
-      <OptionEditor
-        def={def}
-        style={{
-          current: style,
-          set: (key, value) => void saveColumnStyle(def, { [key]: value }),
-        }}
-      />
-    </div>
-  )
-
-  // One arm per property type, so a type added to the schema is a compile error here rather than a blank panel at runtime.
-  const SETTINGS: Record<
-    PropertyType,
-    (def: PropertyDefinition, style: ColumnStyle) => React.JSX.Element | null
-  > = {
-    select: optionSettings,
-    multiSelect: optionSettings,
-    status: optionSettings,
-    link: (def) => (
-      <LinkEditor
-        underline={def.link_underline ?? false}
-        display={def.link_display ?? DEFAULT_LINK_DISPLAY}
-        color={def.link_color}
-        onSetConfig={(patch) => configure(def.id, patch)}
-      />
-    ),
-    dateTime: (def, style) => (
-      <DateTimeEditor style={style} onChange={(patch) => void saveColumnStyle(def, patch)} />
-    ),
-    checkbox: (def, style) => (
-      <CheckboxEditor
-        color={def.checkbox_color}
-        look={lookIn(CHECKBOX_LOOKS, style.look)}
-        onSetColor={(next) => configure(def.id, { checkbox_color: next })}
-        onSetStyle={(look) => void saveColumnStyle(def, { look })}
-      />
-    ),
-    number: (def, style) => (
-      <NumberEditor
-        config={def}
-        look={lookIn(NUMBER_LOOKS, style.look)}
-        onSetConfig={(patch) => configure(def.id, patch)}
-        onSetStyle={(look) => void saveColumnStyle(def, { look })}
-      />
-    ),
-    file: (def) => (
-      <FileEditor
-        directory={def.file_directory}
-        onSetDirectory={(dir) => configure(def.id, { file_directory: dir })}
-        onBrowse={() => {
-          void dialer()
-            .ask('assets:chooseDir', 'property', def.file_directory)
-            .then((picked) => {
-              if (reportRefusal(picked) && picked.value !== null)
-                configure(def.id, { file_directory: picked.value })
-            })
-        }}
-      />
-    ),
-    // Text and a registry Context carry no settings of their own.
-    text: NO_SETTINGS,
-    context: NO_SETTINGS,
-  }
-
   const editor = (id: string): React.JSX.Element => {
     const def = schema.find((d) => d.id === id)
     if (!def) {
@@ -385,26 +307,46 @@ export function PropertyFrame({
       )
     }
     const columnStyle = styleFor(propertyColumn(def), activeView, nexus)
-    const settings = SETTINGS[def.type](def, columnStyle)
-    const optionLook = lookIn(OPTION_LOOKS, columnStyle.look)
-    const styleFooting =
-      PROPERTY_TYPES[def.type].options !== undefined ? (
-        <MenuFooting>
-          <FootingItem
-            icon="palette"
-            label="Style"
-            trailing={
-              <PickerControl
-                ariaLabel="Chip style"
-                solid
-                value={optionLook}
-                options={OPTION_STYLE_OPTIONS}
-                onPick={(look) => void saveColumnStyle(def, { look })}
-              />
-            }
-          />
-        </MenuFooting>
-      ) : undefined
+    const options = PROPERTY_TYPES[def.type].options !== undefined
+    const rows = rowsFor(def, {
+      style: columnStyle,
+      setStyle: (patch) => void saveColumnStyle(def, patch),
+      configure: (patch) => configure(def.id, patch),
+      assetRoot,
+    })
+    const settings = options ? (
+      <div className={cx(s.middleRegion, s.chipRegion, 'scroll-fade')}>
+        <OptionEditor
+          def={def}
+          style={{
+            current: columnStyle,
+            set: (key, value) => void saveColumnStyle(def, { [key]: value }),
+          }}
+        />
+      </div>
+    ) : rows.length > 0 ? (
+      <div className={s.configEditor}>
+        <MenuIndex sections={[{ rows }]} />
+      </div>
+    ) : null
+    const optionLook = lookIn(LOOKS.select, columnStyle.look)
+    const styleFooting = options ? (
+      <MenuFooting>
+        <FootingItem
+          icon="palette"
+          label="Style"
+          trailing={
+            <PickerControl
+              ariaLabel="Chip style"
+              solid
+              value={optionLook}
+              options={OPTION_STYLE_OPTIONS}
+              onPick={(look) => void saveColumnStyle(def, { look })}
+            />
+          }
+        />
+      </MenuFooting>
+    ) : undefined
     return (
       <MenuScrollFrame
         header={actionHeader('Properties', backToList, {

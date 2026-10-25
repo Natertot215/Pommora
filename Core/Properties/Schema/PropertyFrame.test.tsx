@@ -684,3 +684,26 @@ describe('the Date & Time Format editor writes the active view', () => {
     })
   })
 })
+
+describe('the type editors', () => {
+  const live = (label: string): Element =>
+    [...host.querySelectorAll(`[aria-label="${label}"]`)].find((e) => !e.closest('[inert]'))!
+  const container = (a: Element, b: Element): Element => {
+    let box = a.parentElement!
+    while (!box.contains(b)) box = box.parentElement!
+    return box
+  }
+
+  it("a Number editor's rows share one container: a shown row in an open Reveal, a hidden one collapsed in place", async () => {
+    await mountPane()
+    await act(async () => {
+      rowFor('Count').click()
+    })
+    const box = container(live('Number format'), live('Decimal places'))
+    const shape = [...box.children].map((c) =>
+      c.hasAttribute('data-reveal') ? (c.hasAttribute('data-open') ? 'open' : 'collapsed') : 'row',
+    )
+    // Format, Currency, Separators, Decimals, Fraction, Value, Style.
+    expect(shape).toEqual(['row', 'collapsed', 'open', 'row', 'open', 'collapsed', 'collapsed'])
+  })
+})

@@ -3,9 +3,9 @@ import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import type { ColumnType, PropertyDefinition } from './properties'
 
-export const OPTION_LOOKS = ['standard', 'compact'] as const
-export const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const
-export const NUMBER_LOOKS = ['number', 'bar'] as const
+const OPTION_LOOKS = ['standard', 'compact'] as const
+const CHECKBOX_LOOKS = ['checkbox', 'switch'] as const
+const NUMBER_LOOKS = ['number', 'bar'] as const
 export const COLUMN_LOOKS = [
   ...OPTION_LOOKS,
   ...CHECKBOX_LOOKS,
