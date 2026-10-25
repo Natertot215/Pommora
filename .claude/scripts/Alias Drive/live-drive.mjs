@@ -75,7 +75,7 @@ async function seed(cdp) {
   for (const [name, type] of [[LINK, 'link'], [NOTES, 'text'], [CHOICE, 'select']]) {
     const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
     check(`seed: ${name} (${type}) is added`, r.ok, JSON.stringify(r))
-    if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
+    if (!r.ok) throw new Error(`The seed stops: addProperty refused ${name} of type ${type}.`)
     ids[name] = r.value.created.propertyId
   }
   for (const title of ['Alpha', 'Beta']) await must(`${CHOICE} ${title}`, ask(cdp, 'mutate', { op: 'editOption', propertyId: ids[CHOICE], edit: { op: 'add', groupId: 'select', id: mintOptionId(), label: title } }))

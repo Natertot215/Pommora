@@ -164,7 +164,7 @@ const word = (w) => ({ key: w, label: w })
 const add = (cdp, def, container = COLLECTION) => ask(cdp, 'mutate', { op: 'addProperty', containerPath: container, draft: def })
 async function define(cdp, def, container = COLLECTION) {
   const r = await add(cdp, def, container)
-  if (!r.ok) throw new Error(`The seed stops: schema:add refused ${def.label}: ${show(r)}`)
+  if (!r.ok) throw new Error(`The seed stops: addProperty refused ${def.label}: ${show(r)}`)
   ids[def.label] = r.value.created.propertyId
   return r.value.created.propertyId
 }

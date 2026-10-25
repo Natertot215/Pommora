@@ -66,7 +66,7 @@ async function seed(cdp) {
   for (const [name, type] of [[NOTES, 'text'], [LINK, 'link'], [BAR, 'number']]) {
     const r = await ask(cdp, 'mutate', { op: 'addProperty', containerPath: 'Collection A', draft: { id: '', label: name, type } })
     check(`seed: ${name} (${type}) is added`, r.ok, JSON.stringify(r))
-    if (!r.ok) throw new Error(`The seed stops: schema:add refused ${name} of type ${type}.`)
+    if (!r.ok) throw new Error(`The seed stops: addProperty refused ${name} of type ${type}.`)
     ids[name] = r.value.created.propertyId
   }
   await must('Drive Bar as a percent', ask(cdp, 'mutate', { op: 'configureProperty', propertyId: ids[BAR], patch: { number_family: 'percent' } }))
