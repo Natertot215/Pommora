@@ -10,9 +10,8 @@ import {
   spaceCreator,
 } from '../../Actions/createMenu'
 import { isWindowTarget, selectTargetOf } from '../../Navigation/navRef'
-import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-import type { PropertyValue } from '../../Properties/propertyValue'
-import { assignValue, type ValueWriter } from '../../Properties/assignValue'
+import type { ViewRow } from '../../Views/viewRow'
+import { assignValue, oneShotWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
 import { holderSchema, NO_SCHEMA } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
@@ -65,28 +64,15 @@ export async function showEntityMenu(
   const action = await popMenu(entityMenuItems(shown, creators))
   if (action === null) return
   if (propertyTarget && trigger) {
-    const commit = valueCommitFor(propertyTarget.row)
-    if (runPropertyAction(action, { ...propertyTarget, commit, trigger })) return
+    const writer = oneShotWriter(propertyTarget.row)
+    const done = runPropertyAction(action, {
+      ...propertyTarget,
+      commit: (column, value) => void assignValue(writer, propertyTarget.row, column, value),
+      trigger,
+    })
+    if (done) return
   }
   runEntityAction(shown, creators, action)
-}
-
-function valueCommitFor(
-  opened: ViewRow,
-): (column: ResolvedColumn, value: PropertyValue | null) => void {
-  let row = opened
-  const writer: { current: ValueWriter | null } = {
-    current: {
-      mutate: (req) => useSession.getState().mutate(req),
-      rowOf: (id) => (id === row.id ? row : undefined),
-      apply: (_, picked) => {
-        row = { ...row, picked: { ...row.picked, ...picked } }
-      },
-    },
-  }
-  return (column, value) => {
-    assignValue(writer, row, column, value)
-  }
 }
 
 function runEntityAction(

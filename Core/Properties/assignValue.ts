@@ -1,6 +1,7 @@
-import type { RefObject } from 'react'
+import { type RefObject, useEffect, useRef } from 'react'
 import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import { isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import { patchOverride, type SetOverrides } from './valueOverride'
 import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
@@ -9,9 +10,38 @@ import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 
 export interface ValueWriter {
-  mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
   rowOf: (id: string) => ViewRow | undefined
   apply: (pageId: string, picked: Picked, write: Promise<boolean>) => void
+}
+
+// Rebuilt after every render, so an undo reads the surface's newest rows, and emptied on unmount, so an undo after it reverts nothing.
+export function useValueWriter(
+  host: Pick<ValueWriter, 'rowOf'> & { setOverride: SetOverrides },
+): RefObject<ValueWriter | null> {
+  const writer = useRef<ValueWriter | null>(null)
+  useEffect(() => {
+    writer.current = {
+      rowOf: host.rowOf,
+      apply: (pageId, picked, write) => patchOverride(host.setOverride, pageId, picked, write),
+    }
+    return () => {
+      writer.current = null
+    }
+  })
+  return writer
+}
+
+/** A writer for one row no surface shows, as the native menu's pick writes it; the row it keeps takes each pick, so its undo reads what was written. */
+export function oneShotWriter(opened: ViewRow): RefObject<ValueWriter> {
+  let row = opened
+  return {
+    current: {
+      rowOf: (id) => (id === row.id ? row : undefined),
+      apply: (_, picked) => {
+        row = { ...row, picked: { ...row.picked, ...picked } }
+      },
+    },
+  }
 }
 
 /** Sends `req` with `value` laid over the row while it's in flight. */
@@ -22,7 +52,7 @@ function send(
   value: PropertyValue | null,
   req: MutateRequest,
 ): Promise<MutateOutcome | null> {
-  const sent = w.mutate(req)
+  const sent = useSession.getState().mutate(req)
   w.apply(
     row.id,
     { [column.id]: value ?? NULL_VALUE },
@@ -73,7 +103,7 @@ export function assignValue(
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
   const undone = sent.then(async (done) => {
     const remember = done && rememberedAlias(value, prior)
-    const aliased = remember ? await w.mutate(remember) : null
+    const aliased = remember ? await useSession.getState().mutate(remember) : null
     return [done?.undo, aliased?.undo].filter((r): r is MutateRequest => r !== undefined)
   })
   let reverts: MutateRequest[] | undefined
@@ -92,7 +122,7 @@ export function assignValue(
         )
         void send(live, current, column, prior, { op: 'putBack', entries })
         reverted = true
-      } else if (reverted) void live.mutate(req)
+      } else if (reverted) void useSession.getState().mutate(req)
     return reverted
   }
   pushUndo(() => {
