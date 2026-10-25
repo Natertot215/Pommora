@@ -141,11 +141,11 @@ async function renamePlan(
   to: string,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
-  const { pages, spaces } = await findHolders(root, { keys: [from], reach: 'governed' })
+  const { files } = await findHolders(root, { keys: [from], reach: 'governed' })
   const text = (content: string): string | null =>
     renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
   return {
-    files: [...pages, ...spaces],
+    files,
     plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },
   }
 }

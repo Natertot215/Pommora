@@ -26,9 +26,10 @@ const sweepSpy = vi.mocked(sweepGovernedRoots)
 let root: string
 const abs = (...segs: string[]): string => join(root, ...segs)
 const stage = async (): Promise<string[]> =>
-  (await findHolders(root, { keys: ['Stage'], reach: 'governed' })).pages
+  (await findHolders(root, { keys: ['Stage'], reach: 'governed' })).files
 const sidecar = (context: string, space: string): string =>
   abs('.nexus', 'contexts', context, space, '_space.json')
+const sidecarsOf = (files: string[]): string[] => files.filter((f) => f.endsWith('_space.json'))
 const corpus = async (): Promise<string[]> => (await nexusCorpus(root)).map((rel) => abs(rel))
 const pageText = (n: string, fm: string): string =>
   `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5${n.padStart(3, 'F').slice(-3).toUpperCase()}\n${fm}---\n\nbody\n`
@@ -83,18 +84,17 @@ afterEach(async () => {
 describe('findHolders', () => {
   it('answers the queried holders inside every Collection and the Archive', async () => {
     const old = await archived('Q9C', 'Stage: Draft\n')
-    const { pages, spaces } = await findHolders(root, { keys: ['Stage'], reach: 'governed' })
-    expect(pages.sort()).toEqual(
+    const { files } = await findHolders(root, { keys: ['Stage'], reach: 'governed' })
+    expect(files.sort()).toEqual(
       [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), old].sort(),
     )
-    expect(spaces).toEqual([])
   })
 
   it('a name registered after the seed finds the pages already holding it, with no re-read', async () => {
     await page('Late', 'Notes: x\n')
     await seedContentIndex(root)
     await createProperty(root, { id: 'prop_n', label: 'Notes', type: 'link' })
-    expect((await findHolders(root, { keys: ['Notes'], reach: 'governed' })).pages).toEqual([
+    expect((await findHolders(root, { keys: ['Notes'], reach: 'governed' })).files).toEqual([
       abs('Notes', 'Late.md'),
     ])
   })
@@ -192,14 +192,13 @@ describe('findHolders', () => {
     await archived('Q9E', 'Stage: Draft\n', 'c2')
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
     dropLiveTree()
-    const { pages, spaces } = await findHolders(root, {
+    const { files } = await findHolders(root, {
       keys: ['Stage'],
       reach: { collection: abs('Notes') },
     })
-    expect(pages.sort()).toEqual(
+    expect(files.sort()).toEqual(
       [abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md'), own].sort(),
     )
-    expect(spaces).toEqual([])
   })
 
   it('reaches an Archive whose Collection the tree no longer holds', async () => {
@@ -215,7 +214,7 @@ describe('findHolders', () => {
     await page('HolderA', 'Stage: Draft\n<Areas>: [Home]\n')
     await seedContentIndex(root)
     expect(
-      (await findHolders(root, { keys: ['<Areas>'], reach: 'anywhere' })).pages.sort(),
+      (await findHolders(root, { keys: ['<Areas>'], reach: 'anywhere' })).files.sort(),
     ).toEqual([abs('Loose', 'Note.md'), abs('Notes', 'HolderA.md')].sort())
     expect(await stage()).not.toContain(abs('Loose', 'Note.md'))
   })
@@ -227,7 +226,7 @@ describe('findHolders', () => {
     await writeFile(await seedSpaceSidecar(root, 'Projects', 'Broken', {}), '{ not json')
     dropLiveTree()
     const spaces = async (key: string, reach: 'governed' | 'anywhere'): Promise<string[]> =>
-      (await findHolders(root, { keys: [key], reach })).spaces.sort()
+      sidecarsOf((await findHolders(root, { keys: [key], reach })).files).sort()
     const broken = sidecar('Projects', 'Broken')
     expect(await spaces('Stage', 'governed')).toEqual(
       [sidecar('Projects', 'Pommora'), broken].sort(),
@@ -244,12 +243,18 @@ describe('findHolders', () => {
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
     await seedSpaceSidecar(root, 'Projects', 'Sapphire', { id: 'sp2', Phase: 'x' })
     dropLiveTree()
-    const { pages, spaces } = await findHolders(root, {
+    const { files } = await findHolders(root, {
       keys: ['Stage', 'Phase'],
       reach: 'governed',
     })
-    expect(pages.sort()).toEqual([abs('Notes', 'HolderA.md'), abs('Notes', 'HolderB.md')])
-    expect(spaces.sort()).toEqual([sidecar('Projects', 'Pommora'), sidecar('Projects', 'Sapphire')])
+    expect(files.sort()).toEqual(
+      [
+        abs('Notes', 'HolderA.md'),
+        abs('Notes', 'HolderB.md'),
+        sidecar('Projects', 'Pommora'),
+        sidecar('Projects', 'Sapphire'),
+      ].sort(),
+    )
   })
 
   it('`id` adds a Space whose row order lists it', async () => {
@@ -257,20 +262,22 @@ describe('findHolders', () => {
     dropLiveTree()
     const quiet = sidecar('Projects', 'Quiet')
     expect(
-      (await findHolders(root, { keys: ['Stage'], reach: 'governed', id: 'prop_s' })).spaces,
+      sidecarsOf(
+        (await findHolders(root, { keys: ['Stage'], reach: 'governed', id: 'prop_s' })).files,
+      ),
     ).toEqual([quiet])
-    expect((await findHolders(root, { keys: ['Stage'], reach: 'governed' })).spaces).toEqual([])
+    expect(sidecarsOf(await stage())).toEqual([])
   })
 
   it('`moved` points a Space under the moved folder at where it went', async () => {
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
     dropLiveTree()
-    const { spaces } = await findHolders(root, {
+    const { files } = await findHolders(root, {
       keys: ['Stage'],
       reach: 'governed',
       moved: { from: '.nexus/contexts/Projects', to: '.nexus/contexts/Ventures' },
     })
-    expect(spaces).toEqual([join(root, '.nexus/contexts/Ventures/Pommora/_space.json')])
+    expect(sidecarsOf(files)).toEqual([join(root, '.nexus/contexts/Ventures/Pommora/_space.json')])
   })
 
   it('a rename onto a key an archived page holds beside the old one goes through, the archived page keeping the new key’s value', async () => {
@@ -307,9 +314,9 @@ describe('findHolders, reading', () => {
     await writeFile(copy, await readFile(a, 'utf8'))
     await indexWrittenPage(root, copy)
     dropLiveTree()
-    const { pages, held } = await stageHeld()
-    expect(pages).not.toContain(a)
-    expect(pages).not.toContain(copy)
+    const { files, held } = await stageHeld()
+    expect(files).not.toContain(a)
+    expect(files).not.toContain(copy)
     expect(held.filter((h) => h.file === a || h.file === copy).map((h) => h.id)).toEqual([
       null,
       null,
@@ -318,8 +325,8 @@ describe('findHolders, reading', () => {
 
   it('files and strips an archived holder by its id', async () => {
     const old = await archived('Q9F', 'Stage: Draft\n')
-    const { pages, held } = await stageHeld()
-    expect(pages).toContain(old)
+    const { files, held } = await stageHeld()
+    expect(files).toContain(old)
     expect(heldValues(held, 'Stage')).toMatchObject({ '01ARZ3NDEKPSV4RRFFQ69G5Q9F': 'Draft' })
   })
 
@@ -394,7 +401,7 @@ describe('findHolders, reading', () => {
       mem.index.stats.delete(rel)
       try {
         await chmod(file as string, 0o000)
-        const { held, pages } = await typedQuery()
+        const { held, files } = await typedQuery()
         expect(held).toContainEqual({
           file,
           id: null,
@@ -402,7 +409,7 @@ describe('findHolders, reading', () => {
           values: null,
           above: { Text: undefined },
         })
-        expect(pages).toContain(file)
+        expect(files).toContain(file)
       } finally {
         await chmod(file as string, 0o644)
       }

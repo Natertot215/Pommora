@@ -78,7 +78,7 @@ export async function propertyHolders(root: string, propertyId: string): Promise
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const { holders, plan } = await deletePlan(root, propertyId, [def.key])
-  return ok(await sweepCount(root, [...holders.pages, ...holders.spaces], plan))
+  return ok(await sweepCount(root, holders.files, plan))
 }
 
 export function deleteProperty(root: string, propertyId: string): Promise<MutateReply> {
@@ -130,7 +130,7 @@ export async function stripProperty(
   folders: string[],
   { holders, plan }: DeletePlan,
 ): Promise<ConfigReach> {
-  const swept = await sweepGovernedRoots([...holders.pages, ...holders.spaces], plan)
+  const swept = await sweepGovernedRoots(holders.files, plan)
   let purged = 0
   for (const folder of folders) if (!(await unassignAndPurge(folder, propertyId))) purged++
   const reach = await reachConfig(root, { kind: 'property', propertyId })
