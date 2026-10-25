@@ -183,9 +183,15 @@ export const ghostChip = style({
 
 export const optionEditButton = style([accessoryButton, revealDim])
 
+/** A type editor's rows, 8px apart. A collapsed `Reveal` stays mounted and would hold a flex `gap`, so the margin rides on the row inside each `Reveal` and folds away with it. */
 export const configEditor = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '8px',
   paddingTop: `${OPTION.gapAroundLabel}px`,
 })
+globalStyle(
+  `${configEditor} > * + :not([data-reveal]), ${configEditor} > * + [data-reveal] > * > *`,
+  {
+    marginTop: '8px',
+  },
+)
