@@ -1,7 +1,3 @@
-import { fault } from './result'
-
-export const NEEDS_CONFIG_PATCH = fault('A config patch is required.')
-
 export const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
