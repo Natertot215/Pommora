@@ -96,7 +96,7 @@ export const frameZone = style({
   flex: '1 1 auto',
 })
 
-export const allHighlight = style({
+export const restHighlight = style({
   background: 'var(--drop-slot-fill)',
   borderRadius: `${SIZE.dragHighlightRadius}px`,
 })

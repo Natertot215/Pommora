@@ -8,7 +8,7 @@ import { resolveColumn, resolveColumns } from '../Pipeline/columns'
 import { columnLabel } from '../../Properties/columnLabel'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
-import { PaneAllGroup, type PaneDrop, paneSpec } from '../../Properties/paneDrop'
+import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
@@ -74,8 +74,8 @@ function VisibilityGroups({
   }
   return (
     <>
-      <LineGroup id="assigned">{shownIds.map(row)}</LineGroup>
-      <PaneAllGroup className={s.hiddenZone}>{hiddenIds.map(row)}</PaneAllGroup>
+      <LineGroup id="members">{shownIds.map(row)}</LineGroup>
+      <PaneRestGroup className={s.hiddenZone}>{hiddenIds.map(row)}</PaneRestGroup>
     </>
   )
 }
@@ -114,10 +114,15 @@ export function VisibilityFrame({
   }
 
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
+  // The hidden list holds no order (`ordersRest: false`), so no drop reorders it.
   const handleDrop = (drop: PaneDrop): void => {
-    if (drop.kind === 'unassign') save(hideShown(view, drop.propId))
-    else if (drop.kind === 'reorder-assigned' || drop.kind === 'assign')
-      save(placeInShown(view, shownIds, drop.propId, drop.toIndex))
+    switch (drop.kind) {
+      case 'leave':
+        return void save(hideShown(view, drop.id))
+      case 'reorder-members':
+      case 'join':
+        return void save(placeInShown(view, shownIds, drop.id, drop.toIndex))
+    }
   }
 
   return (
@@ -129,10 +134,10 @@ export function VisibilityFrame({
       <LineZone
         className={s.frameZone}
         {...paneSpec({
-          assigned: shownIds,
-          ordersAll: false,
+          members: shownIds,
+          ordersRest: false,
           pinned: FILEDATA.title.id,
-          titles: { assigned: 'Shown Properties', all: 'Hidden Properties' },
+          titles: { members: 'Shown Properties', rest: 'Hidden Properties' },
           label: nameFor,
           glyph: (id) => <Icon name={rowGlyph(id, schema)} />,
           onDrop: handleDrop,

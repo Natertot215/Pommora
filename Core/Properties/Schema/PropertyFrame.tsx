@@ -55,7 +55,8 @@ import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
-import { nexusReorderIndex, PaneAllGroup, type PaneDrop, paneSpec } from '../paneDrop'
+import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
+import { fullOrderIndex } from '@pommora/uix/Utilities/moveItem'
 import { propertyIcon, propertyTypeIconName, propertyTypeLabel } from '../typeDisplay'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
@@ -67,7 +68,7 @@ import { propertyMenuModel } from '../../Actions/propertyMenu'
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
 const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
 
-const TITLES = { assigned: 'Properties', all: 'All Properties' }
+const TITLES = { members: 'Properties', rest: 'All Properties' }
 
 /** Lives outside PropertyFrame so rows never remount on its re-renders. */
 function ListGroups({
@@ -107,7 +108,7 @@ function ListGroups({
   )
   return (
     <>
-      <LineGroup id="assigned" className={cx(s.assignedFill, allOpen && s.assignedFillNone)}>
+      <LineGroup id="members" className={cx(s.assignedFill, allOpen && s.assignedFillNone)}>
         {assigned.length === 0 ? (
           <MenuCaption>No properties yet.</MenuCaption>
         ) : (
@@ -135,10 +136,10 @@ function ListGroups({
           })
         )}
       </LineGroup>
-      <PaneAllGroup>
+      <PaneRestGroup>
         <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
           <DropOutline open={allOpen} />
-          <span>{TITLES.all}</span>
+          <span>{TITLES.rest}</span>
         </button>
         <Reveal open={allOpen} duration="base">
           <div>
@@ -165,7 +166,7 @@ function ListGroups({
             ))}
           </div>
         </Reveal>
-      </PaneAllGroup>
+      </PaneRestGroup>
     </>
   )
 }
@@ -252,25 +253,20 @@ export function PropertyFrame({
     await saveView(activeView, columnStylePatch(activeView, propertyColumn(def), nexus, patch))
   }
   const handleDrop = (drop: PaneDrop): void => {
-    const at = { containerPath: collectionPath, propertyId: drop.propId }
-    void mutate(
-      drop.kind === 'reorder-assigned'
-        ? { op: 'reorderAssigned', ...at, toIndex: drop.toIndex }
-        : drop.kind === 'reorder-nexus'
-          ? {
-              op: 'reorderProperty',
-              propertyId: drop.propId,
-              toIndex: nexusReorderIndex(
-                registry.map((d) => d.id),
-                unassigned.map((d) => d.id),
-                drop.propId,
-                drop.toIndex,
-              ),
-            }
-          : drop.kind === 'assign'
-            ? { op: 'assignProperty', ...at, toIndex: drop.toIndex }
-            : { op: 'unassignProperty', ...at },
-    )
+    const at = { containerPath: collectionPath, propertyId: drop.id }
+    switch (drop.kind) {
+      case 'reorder-members':
+        return void mutate({ op: 'reorderAssigned', ...at, toIndex: drop.toIndex })
+      case 'reorder-rest': {
+        const ids = (defs: PropertyDefinition[]): string[] => defs.map((d) => d.id)
+        const toIndex = fullOrderIndex(ids(registry), ids(unassigned), drop.id, drop.toIndex)
+        return void mutate({ op: 'reorderProperty', propertyId: drop.id, toIndex })
+      }
+      case 'join':
+        return void mutate({ op: 'assignProperty', ...at, toIndex: drop.toIndex })
+      case 'leave':
+        return void mutate({ op: 'unassignProperty', ...at })
+    }
   }
 
   const defOf = (id: string): PropertyDefinition | undefined =>
@@ -453,8 +449,8 @@ export function PropertyFrame({
       <LineZone
         className={s.frameZone}
         {...paneSpec({
-          assigned: schema.map((d) => d.id),
-          ordersAll: true,
+          members: schema.map((d) => d.id),
+          ordersRest: true,
           titles: TITLES,
           label: labelFor,
           glyph: glyphFor,
