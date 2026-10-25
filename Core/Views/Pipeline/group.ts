@@ -30,7 +30,7 @@ import { optionIds, type PropertyDefinition } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propertyColumn } from './columns'
 import { dateFmt, formatDate, NUMERIC_FORMATS } from '../../Properties/formatValue'
-import { groupable, VALUE_KINDS } from '../valueKinds'
+import { groupable, viewSpecOf } from '../valueKinds'
 import type { DateFormat } from '../../Properties/columnStyles'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { SetIndex } from './setIndex'
@@ -176,8 +176,7 @@ export function bucketKey(
   column: ResolvedColumn,
   granularity: DateGranularity,
 ): string | null {
-  const v = resolveFieldValue(row, column)
-  return v.kind === 'null' ? null : (VALUE_KINDS[v.kind].bucket?.(v, granularity) ?? null)
+  return viewSpecOf(column.type)?.bucket?.(resolveFieldValue(row, column), granularity) ?? null
 }
 
 function schemaOptionOrder(def: PropertyDefinition | undefined): string[] | null {

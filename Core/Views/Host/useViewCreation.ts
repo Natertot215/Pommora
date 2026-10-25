@@ -4,7 +4,6 @@ import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { viewSpecOf } from '../valueKinds'
-import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
 import { relDirname, relJoin } from '../../Paths/posix'
@@ -206,8 +205,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     }
     for (const criterion of c.view.sort ?? []) {
       const column = resolveColumn(criterion.property_id, c.schema, c.contextIds)
-      const spec = specOf(column?.type)
-      if (!column || spec?.origin !== 'user' || !viewSpecOf(column.type)?.sortSeeds) continue
+      if (column?.kind !== 'property' || !viewSpecOf(column.type)?.sortSeeds) continue
       const v = resolveFieldValue(row, column)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }
