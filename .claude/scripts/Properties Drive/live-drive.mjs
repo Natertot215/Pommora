@@ -12,7 +12,7 @@ import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -768,6 +768,84 @@ async function group11(cdp) {
   delete pageIds['Drive Columns']
 }
 
+// ── Group 12 · The Per-Kind View Record ─────────────────────────────────────
+
+const KINDS = {
+  score: { id: 'prop_drive_kinds_score', label: 'Kinds Score', key: 'Kinds Score', type: 'number' },
+  done: { id: 'prop_drive_kinds_done', label: 'Kinds Done', key: 'Kinds Done', type: 'checkbox' },
+  stage: {
+    id: 'prop_drive_kinds_stage', label: 'Kinds Stage', key: 'Kinds Stage', type: 'select',
+    select_options: [{ id: 'opt_drive_alpha', key: 'Alpha', label: 'Alpha' }, { id: 'opt_drive_beta', key: 'Beta', label: 'Beta' }],
+  },
+}
+const KINDS_PAGES = ['Kinds A', 'Kinds B', 'Kinds C']
+/** The group's pages in the order the table draws them. */
+const drawn = async (cdp) => {
+  const rids = await cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid]')].map((e) => e.dataset.rid)`)
+  return rids.flatMap((rid) => KINDS_PAGES.filter((t) => pageIds[t] === rid))
+}
+const drawsAs = (cdp, titles) => settles(async () => JSON.stringify(await drawn(cdp)) === JSON.stringify(titles))
+
+async function group12(cdp) {
+  const sidecarPath = join(NEXUS, 'Collection A/_pagecollection.json')
+  const registry = readFileSync(REGISTRY, 'utf8')
+  const sidecar = readFileSync(sidecarPath, 'utf8')
+  const defs = Object.values(KINDS)
+  const file = JSON.parse(registry)
+  writeFileSync(REGISTRY, JSON.stringify({
+    ...file,
+    order: [...file.order, ...defs.map((d) => d.id)],
+    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
+  }, null, 2))
+  await until('the three definitions', async () => {
+    const held = (await config(cdp)).registry
+    return defs.every((d) => held.some((h) => h.id === d.id))
+  })
+  for (const d of defs)
+    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: 'Collection A', propertyId: d.id }))
+  await createPage(cdp, 'Kinds A', {
+    [KINDS.score.id]: { kind: 'number', value: 5 },
+    [KINDS.done.id]: { kind: 'checkbox', value: true },
+    [KINDS.stage.id]: { kind: 'select', value: 'opt_drive_alpha' },
+  })
+  await createPage(cdp, 'Kinds B', {
+    [KINDS.score.id]: { kind: 'number', value: 9 },
+    [KINDS.stage.id]: { kind: 'select', value: 'opt_drive_beta' },
+  })
+  await createPage(cdp, 'Kinds C')
+
+  const base = {
+    id: 'view_01KZPROPDRIVE00000KINDSTBL', name: 'Drive Kinds', type: 'table',
+    property_order: ['_title', ...defs.map((d) => d.id)], hidden_properties: [], filter_enabled: true,
+  }
+  const save = (patch) => must('save Drive Kinds', ask(cdp, 'views:save', 'Collection A', 'collection', base, patch))
+  await save({})
+  await must('show Drive Kinds', ask(cdp, 'mutate', { op: 'setActiveView', path: 'Collection A', kind: 'collection', viewId: base.id }))
+  await openCollection(cdp)
+  const onlyKinds = { property_id: '_title', op: 'starts_with', value: 'Kinds ' }
+
+  await save({ filter: { match: 'any', rules: [{ property_id: KINDS.score.id, op: 'is', value: 'abc' }, { property_id: '_title', op: 'is', value: 'Kinds A' }] } })
+  item(12, 'K-1', 'a Number filter holding "abc" inside an Any group leaves the other rule deciding', await drawsAs(cdp, ['Kinds A']), show(await drawn(cdp)))
+
+  await save({ filter: { match: 'all', rules: [onlyKinds, { property_id: KINDS.done.id, op: 'is_not_empty' }] } })
+  item(12, 'K-1', 'a Checkbox "is not empty" filter shows only checked pages', await drawsAs(cdp, ['Kinds A']), show(await drawn(cdp)))
+
+  const byStage = (direction) => save({ filter: { match: 'all', rules: [onlyKinds] }, sort: [{ property_id: KINDS.stage.id, direction }] })
+  await byStage('ascending')
+  const up = await drawsAs(cdp, ['Kinds A', 'Kinds B', 'Kinds C'])
+  const ascending = await drawn(cdp)
+  await byStage('descending')
+  const down = await drawsAs(cdp, ['Kinds B', 'Kinds A', 'Kinds C'])
+  item(12, 'K-2', 'a Select sort puts the empty row last in both directions', up && down, show({ ascending, descending: await drawn(cdp) }))
+  await shot(cdp, 'g12-select-sort')
+
+  await escapeAll(cdp)
+  for (const title of KINDS_PAGES) rmSync(join(NEXUS, pagePath(title)))
+  writeFileSync(sidecarPath, sidecar)
+  writeFileSync(REGISTRY, registry)
+  await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === KINDS.score.id))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -784,6 +862,7 @@ try {
   if (GROUPS.has('9')) await group9(cdp)
   if (GROUPS.has('10')) await group10()
   if (GROUPS.has('11')) await group11(cdp)
+  if (GROUPS.has('12')) await group12(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

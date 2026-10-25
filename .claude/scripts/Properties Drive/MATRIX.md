@@ -110,3 +110,12 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | Revealing | as above | view settings › Visibility › Show Drive Text | the head reads Title and Drive Text | 07-08 |
 | The columns | a Drive Columns table view of the four columns; the Drive Columns page holding a text, a link, and Alpha | open Collection A | the row's cells read `Drive words`, the address's Full Link text, and `Alpha`, each from its distinct leaf texts | 07-01, 06-08 |
 | A Select edit | as above | click the Select cell, pick Beta | the page's front matter holds `Drive Select` as the one-item list `[Beta]` | 07-01 |
+
+
+#### Group 12 — The Per-Kind View Record
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| An unreadable Number value | `Kinds Score` (Number), `Kinds Done` (Checkbox), `Kinds Stage` (Select: Alpha, Beta) written into `.nexus/properties.json` and assigned to Collection A; `Kinds A` (5, checked, Alpha), `Kinds B` (9, Beta), `Kinds C` (nothing) | the `Drive Kinds` view filters Any of `Kinds Score is "abc"` and `Title is "Kinds A"` | only `Kinds A` draws | K-1 |
+| Checkbox "is not empty" | as above | the view filters All of `Title starts with "Kinds "` and `Kinds Done is not empty` | only `Kinds A` draws | K-1 |
+| An empty Select in both directions | as above | the view sorts by `Kinds Stage` ascending, then descending | `Kinds A`, `Kinds B`, `Kinds C`, then `Kinds B`, `Kinds A`, `Kinds C` | K-2 |
