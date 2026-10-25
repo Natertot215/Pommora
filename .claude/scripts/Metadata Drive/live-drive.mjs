@@ -603,8 +603,8 @@ async function group3(cdp) {
     [' ["Work", Life]', 'Work|Life', ['Work', 'Life', 'Home'], ' ["Work", Life, "Home"]'], ['\n  - 2024', '2024', ['2024', 'Work'], '\n  - 2024\n  - Work'],
     [" ['2024']", '2024', ['2024', 'Work', '2025'], " ['2024', Work, '2025']"], [' Work', 'Work', ['Work', 'Life'], '\n  - Work\n  - Life'],
     [' [work, "Life"]', 'Life', ['Work'], ' ["Work"]', 'E-1 E-3'], [' ["Work", "Life"]', 'Work|Life', ['Life'], ' ["Life"]'],
-    [' [Work, work]', 'Work', null, '', 'E-3'], [' [Work, LIFE]', 'Work', ['Work', 'Home'], ' [Work, Home]', 'E-3'],
-    [' [life, Work]', 'Work', ['Home'], ' [Home]', 'E-3'],
+    [' [Work, work]', 'Work', null, '', 'E-3'], [' [Work, LIFE]', 'Work', ['Work', 'Home'], ' [Work, Home, LIFE]', 'E-3'],
+    [' [life, Work]', 'Work', ['Home'], ' [Home, life]', 'E-3'],
   ])
     row('Labels', decision, C.labels, `M3 Labels:${held}`, shown, [set('multiSelect', next), want === '' ? '' : `M3 Labels:${want}`])
 
@@ -1019,7 +1019,7 @@ async function group7(cdp) {
   const hues = pageAt('M7 Hues')
   const { cases: shades, add: row } = caseTable('M7')
   row('Shades', 'E-1 E-3', 'Shades', 'Shades: [red, green, PURPLE, Red]', 'red|green', [set('multiSelect', ['red']), 'Shades: [red, PURPLE]'])
-  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [Red]', '', [set('multiSelect', ['blue']), 'Shades: [blue]'])
+  row('Shades', 'E-1 E-3', 'Shades', 'Shades: [Red]', '', [set('multiSelect', ['blue']), 'Shades: [blue, Red]'])
   const owedPage = [pageAt('M7 Owed 1'), pageAt('M7 Owed 2')]
   const skipKey = [pageAt('M7 Skip Key 1'), pageAt('M7 Skip Key 2')]
   const skipValue = [pageAt('M7 Skip Value 1'), pageAt('M7 Skip Value 2')]
@@ -1302,11 +1302,11 @@ async function group8(cdp) {
   pin(G, 'G-1', 'a restored page takes back each of the eight spellings G-1 names under the current key', wrong.length === 0, wrong.join('\n      '))
   const fm = (t) => fmOf(P[t])
   pin(G, 'G-1', 'a Key Format change made while the page sat in the Trash reaches it at restore',
-    await settles(async () => same(fm('Key Format').priority, ['hi']) && !('Priority' in fm('Key Format'))), show(fm('Key Format')))
+    await settles(async () => fm('Key Format').priority === 'hi' && !('Priority' in fm('Key Format'))), show(fm('Key Format')))
   pin(G, 'G-1', 'a Value Format change made while the page sat in the Trash reaches it at restore',
     await settles(async () => same(fm('Value Format').Severity, ['HI'])), show(fm('Value Format')))
   pin(G, 'G-1', 'a held exact key keeps its value, and a variant beside it stays foreign',
-    await settles(async () => same(fm('Both').Urgency, ['hi']) && fm('Both').urgency === 'lo'), show(fm('Both')))
+    await settles(async () => fm('Both').Urgency === 'hi' && fm('Both').urgency === 'lo'), show(fm('Both')))
   pin(G, 'G-1 G-2', 'a spelling two current keys share returns as foreign data', blockOf(P.Shared) === 'arrive-date: x', show(blockOf(P.Shared)))
   pin(G, 'G-1 G-2', 'a key left from before a label rename made in the Trash returns as foreign data', blockOf(P.Renamed) === 'Rank: first', show(blockOf(P.Renamed)))
   pin(G, 'G-1', 'a Select word in another format takes back its option', await settles(async () => same(fm('Grade').Grade, ['Top Tier'])), show(fm('Grade')))
@@ -1323,7 +1323,7 @@ async function group8(cdp) {
     String(fm('Deadline')['Deadline Date'] ?? '').startsWith('2026-01-05') && !('deadline_date' in fm('Deadline')), show(fm('Deadline')))
   pin(G, 'G-1 G-2 RULING', 'a foreign key re-spelled onto a Date keeps a value the Date reads as text',
     fm('Deadline Unread')['Deadline Date'] === 'soon' && !('deadline_date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
-  pin(G, 'G-2', 'a restored Multi-Select drops a word no current option names', await settles(async () => same(fm('Dropped').Marks, ['Top Tier'])), show(fm('Dropped')))
+  pin(G, 'G-2 RULING', 'a restored Multi-Select keeps a word no current option names', await settles(async () => same(fm('Dropped').Marks, ['Top Tier', 'zzz'])), show(fm('Dropped')))
   pin(G, 'G-1', 'a Context and a Space retitled while the page sat in the Trash reach it at restore',
     await settles(async () => same(fm('Retitled')['<M8 Kind>'], ['M8 Spot']) && !('<M8-Kind>' in fm('Retitled'))), show(fm('Retitled')))
   const returning = sidecar('Topics', 'M8 Returning')
