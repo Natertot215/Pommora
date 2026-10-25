@@ -47,7 +47,7 @@ export type ValueKindSpec = Readonly<{
     def?: PropertyDefinition,
     order?: readonly string[],
   ): (v: PropertyValue) => string | number | null
-  /** Which pair of words the Sort pane names a direction with. */
+  /** Which pair of words a Sort or Group pane names an order's directions with; an option kind's order alone takes Custom. */
   directions: SortDirections
   /** A view can group by the kind; Checkbox's band serves the sort-run reassign alone. */
   groups?: true

@@ -71,7 +71,7 @@ import {
 import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
 import { OptionOrderList } from './OptionOrderList'
-import { type HideControls, rowEye, SUB_LOOK } from './paneRows'
+import { type HideControls, orderOptions, rowEye, SUB_LOOK } from './paneRows'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 import { groupable } from '../valueKinds'
@@ -80,15 +80,7 @@ const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },
   { value: 'location', label: 'Location' },
 ]
-const OPTION_ORDER: PickerOption<GroupOrderMode>[] = [
-  { value: 'configured', label: 'Default' },
-  { value: 'reversed', label: 'Reversed' },
-  { value: 'manual', label: 'Custom' },
-]
-const DATE_ORDER: PickerOption<GroupOrderMode>[] = [
-  { value: 'configured', label: 'Ascending' },
-  { value: 'reversed', label: 'Descending' },
-]
+const GROUP_ORDERS = ['configured', 'reversed', 'manual'] as const
 const GRANULARITY: PickerOption<DateGranularity>[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
@@ -104,9 +96,6 @@ const SEPARATION: PickerOption<'dash' | 'slash'>[] = [
   { value: 'dash', label: 'Dash' },
   { value: 'slash', label: 'Slash' },
 ]
-
-const orderOptionsFor = (byDate: boolean): PickerOption<GroupOrderMode>[] =>
-  byDate ? DATE_ORDER : OPTION_ORDER
 
 const pickOrder = <C extends SubGroupConfig>(
   config: C,
@@ -256,7 +245,7 @@ export function GroupFrame({
             'arrow-up-down',
             'Order',
             plan.group.config.order_mode,
-            orderOptionsFor(topByDate),
+            orderOptions(plan.group.column, GROUP_ORDERS),
             (m) => saveGroup(pickOrder(plan.group.config, activeDef, m)),
           )}
         />
@@ -301,7 +290,7 @@ export function GroupFrame({
                 'arrow-up-down',
                 'Order',
                 subGroup.order_mode,
-                orderOptionsFor(subByDate),
+                orderOptions(sub?.column, GROUP_ORDERS),
                 (m) => saveSub(pickOrder(subGroup, subDef, m)),
                 SUB_LOOK,
               )}
