@@ -2,10 +2,10 @@ import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import * as s from '@pommora/uix/Menus/frames.css'
 import type { IconName } from '@pommora/uix/Symbols'
-import { DEFAULT_KEY_FORMAT, type FormatChange, KEY_FORMATS, type KeyFormat } from '../keyFormat'
+import { DEFAULT_KEY_FORMAT, type FormatChange, type KeyFormat, keyFormat } from '../keyFormat'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../properties'
 
-const FORMAT_OPTIONS: PickerOption<KeyFormat>[] = KEY_FORMATS.map((value) => ({
+const FORMAT_OPTIONS: PickerOption<KeyFormat>[] = keyFormat.options.map((value) => ({
   value,
   label: value,
 }))

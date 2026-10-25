@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_KEY_FORMAT, formatKey, KEY_FORMATS, spellingsOf } from './keyFormat'
+import { DEFAULT_KEY_FORMAT, formatKey, keyFormat, spellingsOf } from './keyFormat'
 
-const unchangedBy = (word: string) => KEY_FORMATS.filter((f) => formatKey(word, f) === word)
+const unchangedBy = (word: string) => keyFormat.options.filter((f) => formatKey(word, f) === word)
 
 describe('keyFormat', () => {
   it('lists the ten formats with Match Title first and as the default', () => {
-    expect(KEY_FORMATS).toEqual([
+    expect(keyFormat.options).toEqual([
       'Match Title',
       'lowercase',
       'UPPERCASE',
