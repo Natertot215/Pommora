@@ -12,7 +12,7 @@ import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
-import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
+import type { PickTarget } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { useValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
@@ -211,22 +211,20 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const styleOf = (column: ResolvedColumn): ColumnStyle =>
     styleById.get(column.id) ?? styleFor(column, view, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
-    const def = column.def ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column)
     const style = styleOf(column)
     const spec = specOf(column.type)
     if (spec?.kind === 'dateTime' && spec.origin === 'user')
       return {
         kind: 'dateTime',
-        def,
         current,
         dateFormat: style.date_format,
         timeFormat: style.time_format,
       }
-    if (column.type === 'file') return { kind: 'file', def, current }
+    if (column.def?.type === 'file') return { kind: 'file', def: column.def, current }
     return {
       kind: 'options',
-      def,
+      column,
       current,
       style: { current: style, set: (key, value) => setStylePatch(column, key, value) },
       contextOptions:

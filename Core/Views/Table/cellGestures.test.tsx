@@ -8,6 +8,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import type { CollectionNode } from '../../Nexus/tree'
 import { useSession } from '../../Session/store'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
+import { propertyColumn } from '../Pipeline/columns'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -513,7 +514,7 @@ describe('PropertyPicker (direct mount) — seed values', () => {
     await act(async () => {
       root.render(
         <PropertyPicker
-          target={{ kind: 'options', def: seedDef, current: null }}
+          target={{ kind: 'options', column: propertyColumn(seedDef), current: null }}
           open
           triggerRef={{ current: host }}
           onCommit={vi.fn()}
@@ -535,7 +536,7 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
         <PropertyPicker
           target={{
             kind: 'options',
-            def: multiDef,
+            column: propertyColumn(multiDef),
             current: { kind: 'multiSelect', value: ['opt_a'] },
           }}
           open

@@ -356,7 +356,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return (
       <MassPropertyPicker
         key={`${mass.colId}:${mass.rowIds.join('.')}`}
-        def={target.def}
+        column={col}
         currents={currents}
         open={massOpen}
         triggerRef={massTriggerRef}

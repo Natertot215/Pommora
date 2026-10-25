@@ -35,11 +35,8 @@ import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { resolveColumn } from '../Pipeline/columns'
 import type { ResolvedColumn } from '../viewRow'
 import { checkboxWord } from '../../Properties/propertyValue'
-import {
-  PropertyOptionRows,
-  pickShape,
-  syntheticContextDef,
-} from '../../Properties/Pickers/PropertyPicker'
+import { PropertyOptionRows } from '../../Properties/Pickers/PropertyPicker'
+import { pickGroups } from '../../Properties/Pickers/pickModel'
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -128,19 +125,19 @@ function mintRule(
 
 function ChipsField({
   values,
-  def,
+  column,
   contextOptions,
   onCommit,
 }: {
   values: string[]
-  def: PropertyDefinition
+  column: ResolvedColumn
   contextOptions?: PickOption[]
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
-  const { options } = pickShape(def, contextOptions)
+  const options = pickGroups(column, contextOptions).flatMap((g) => g.options)
   const byValue = new Map(options.map((o) => [o.value, o]))
   return (
     <>
@@ -171,7 +168,7 @@ function ChipsField({
               ) : (
                 <OptionChip
                   key={v}
-                  type={def.type}
+                  type={column.def?.type}
                   option={o ?? { label: v }}
                   onRemove={() => toggle(v)}
                 />
@@ -185,7 +182,7 @@ function ChipsField({
           emptyPicker('No options yet.')
         ) : (
           <PropertyOptionRows
-            def={def}
+            column={column}
             contextOptions={contextOptions}
             selected={shown}
             onPick={toggle}
@@ -320,7 +317,6 @@ export function FilterFrame({
     if (!op || op.slot === 'none') return null
     const operands = ruleOperands(rule)
     const operand = operands[0] ?? ''
-    const def = column?.def
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
       replaceRule(index, {
         property_id: rule.property_id,
@@ -371,7 +367,7 @@ export function FilterFrame({
       return (
         <ChipsField
           values={operands}
-          def={def ?? syntheticContextDef(rule.property_id)}
+          column={column!}
           contextOptions={
             tree && column?.kind === 'context'
               ? contextOptionsFor(rule.property_id, tree)

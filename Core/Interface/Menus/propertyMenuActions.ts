@@ -9,11 +9,8 @@ import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { columnLabel } from '../../Properties/columnLabel'
 import { pickFileInto } from '../../Properties/Pickers/filePick'
-import {
-  pickedValue,
-  pickGroups,
-  syntheticContextDef,
-} from '../../Properties/Pickers/PropertyPicker'
+import { pickedValue, pickGroups } from '../../Properties/Pickers/pickModel'
+import { syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { useSession } from '../../Session/store'
 import { contextColumn, propertyColumn, resolveColumn } from '../../Views/Pipeline/columns'
@@ -31,20 +28,20 @@ export interface PropertyMenuTarget {
 
 const contextOptionsOf = (
   tree: NexusTree | null,
-  def: PropertyDefinition,
+  column: ResolvedColumn,
   excludeId?: string,
 ): ReturnType<typeof contextOptionsFor> | undefined =>
-  def.type === 'context' && tree ? contextOptionsFor(def.id, tree, excludeId) : undefined
+  column.type === 'context' && tree ? contextOptionsFor(column.id, tree, excludeId) : undefined
 
 export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget): {
   spaces: PropertyMenuRow[]
   properties: PropertyMenuRow[]
 } {
   const contexts = contextsByIdOf(tree)
-  const build = (column: ResolvedColumn, def: PropertyDefinition): PropertyMenuRow => {
+  const build = (column: ResolvedColumn): PropertyMenuRow => {
     const base = { id: column.id, name: columnLabel(column, contexts) }
     const current = resolveFieldValue(row, column)
-    if (def.type === 'checkbox') {
+    if (column.type === 'checkbox') {
       const checked = current.kind === 'checkbox' && current.value
       return {
         ...base,
@@ -53,11 +50,11 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
         ],
       }
     }
-    if (pickKindOf(def.type) === null) return base
+    if (pickKindOf(column.type) === null) return base
     const selected = selectedValues(current)
     return {
       ...base,
-      options: pickGroups(def, contextOptionsOf(tree, def, row.id)).map((g) =>
+      options: pickGroups(column, contextOptionsOf(tree, column, row.id)).map((g) =>
         g.options.map((o) => ({
           value: o.value,
           label: o.label,
@@ -66,9 +63,9 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
       ),
     }
   }
-  const built = schema.map((def) => build(propertyColumn(def), def))
+  const built = schema.map((def) => build(propertyColumn(def)))
   return {
-    spaces: [...contexts.keys()].map((id) => build(contextColumn(id), syntheticContextDef(id))),
+    spaces: [...contexts.keys()].map((id) => build(contextColumn(id))),
     properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],
   }
 }
@@ -112,6 +109,6 @@ export function runPropertyAction(
   }
   if (def.type === 'checkbox')
     commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
-  else commitValue(pickedValue(def, current, value))
+  else commitValue(pickedValue(column, current, value))
   return true
 }

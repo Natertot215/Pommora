@@ -1,13 +1,14 @@
 import type { RefObject } from 'react'
-import type { PickOption, PropertyDefinition } from '../properties'
-import { type PropertyValue, selectedValues } from '../propertyValue'
+import type { PickOption } from '../properties'
+import type { PropertyValue } from '../propertyValue'
+import type { ResolvedColumn } from '../../Views/viewRow'
 import type { OptionStyleControl } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { massPickCommits, massSelected } from './massAssign'
-import { pickShape, PropertyOptionRows } from './PropertyPicker'
+import { type PickCommit, pickOver } from './pickModel'
+import { PropertyOptionRows } from './PropertyPicker'
 
 export function MassPropertyPicker({
-  def,
+  column,
   currents,
   open,
   triggerRef,
@@ -16,29 +17,20 @@ export function MassPropertyPicker({
   onPick,
   onDismiss,
 }: {
-  def: PropertyDefinition
+  column: ResolvedColumn
   currents: Array<PropertyValue | null>
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   style?: OptionStyleControl
   contextOptions?: PickOption[]
-  onPick: (commits: Array<{ index: number; next: PropertyValue | null }>) => void
+  onPick: (commits: PickCommit[]) => void
   onDismiss: () => void
 }): React.JSX.Element {
-  const { options, kind } = pickShape(def, contextOptions)
-  const rows = currents.map(selectedValues)
-  const selected = massSelected(
-    options.map((o) => o.value),
-    rows,
-  )
-  const pick = (value: string): void => {
-    onPick(massPickCommits(rows, value, kind))
-    if (kind === 'select') onDismiss()
-  }
+  const { selected, pick } = pickOver(column, currents, onPick, onDismiss)
   return (
     <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} solid>
       <PropertyOptionRows
-        def={def}
+        column={column}
         style={style}
         contextOptions={contextOptions}
         selected={selected}

@@ -9,13 +9,8 @@ import { dateDefaults } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
 import { defaultStatusSeed } from '../registryProperty'
 import { separator } from '@pommora/uix/Menus/menu-row.css'
-import {
-  PropertyPicker,
-  pickShape,
-  syntheticContextDef,
-  type PickEntry,
-  type PickTarget,
-} from './PropertyPicker'
+import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
+import { PropertyPicker, type PickEntry, type PickTarget } from './PropertyPicker'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -29,11 +24,14 @@ const selectDef: PropertyDefinition = {
     { id: 'opt_Beta', key: 'Beta', label: 'Beta' },
   ],
 }
-const dateDef: PropertyDefinition = { id: 'prop_d', label: 'Due', key: 'Due', type: 'dateTime' }
 const fileDef: PropertyDefinition = { id: 'prop_f', label: 'Doc', key: 'Doc', type: 'file' }
 
-const optionsTarget = (): PickTarget => ({ kind: 'options', def: selectDef, current: null })
-const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', def: dateDef, current: null })
+const optionsTarget = (): PickTarget => ({
+  kind: 'options',
+  column: propertyColumn(selectDef),
+  current: null,
+})
+const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
 const fileTarget = (): PickTarget => ({ kind: 'file', def: fileDef, current: null })
 
 function Host(props: {
@@ -123,7 +121,7 @@ describe('PropertyPicker panes', () => {
     await render({
       target: {
         kind: 'options',
-        def: selectDef,
+        column: propertyColumn(selectDef),
         current: null,
         style: { current: { ...dateDefaults('full'), look: 'compact' }, set: () => {} },
       },
@@ -335,7 +333,7 @@ describe('editing options from the picker', () => {
       type: 'status',
       status_groups: [open, { ...active, options: [] }, done],
     }
-    await render({ target: { kind: 'options', def: statusDef, current: null } })
+    await render({ target: { kind: 'options', column: propertyColumn(statusDef), current: null } })
     expect(newOption()).toBeNull()
     const order = [
       ...document.querySelectorAll(
@@ -346,7 +344,7 @@ describe('editing options from the picker', () => {
     await render({
       target: {
         kind: 'options',
-        def: syntheticContextDef('ctx_a'),
+        column: contextColumn('ctx_a'),
         current: null,
         contextOptions: [{ value: 'Home', label: 'Home' }],
       },
@@ -375,12 +373,5 @@ describe('editing options from the picker', () => {
     })
     const req = menu.mock.calls[0]?.[0] as { items: { label: string }[] } | undefined
     expect(req?.items.map((i) => i.label)).toEqual(['Edit Option'])
-  })
-})
-
-describe('pickShape', () => {
-  it('offers an option under its id and labels it by its label, never by its key', () => {
-    const def = { ...selectDef, select_options: [{ id: 'opt_new', key: 'new', label: 'New' }] }
-    expect(pickShape(def).options.map((o) => [o.value, o.label])).toEqual([['opt_new', 'New']])
   })
 })

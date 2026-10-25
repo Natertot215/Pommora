@@ -3,14 +3,13 @@ import type { ColumnStyle } from '../columnStyles'
 import {
   groupOptions,
   optionGroupsOf,
-  type OptionPickKind,
-  pickKindOf,
   type PickOption,
   PROPERTY_TYPES,
   type PropertyDefinition,
   SELECT_GROUP,
 } from '../properties'
-import { NULL_VALUE, optionLabel, type PropertyValue, selectedValues } from '../propertyValue'
+import { NULL_VALUE, optionLabel, type PropertyValue } from '../propertyValue'
+import type { ResolvedColumn } from '../../Views/viewRow'
 import { OptionDraft, type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -33,19 +32,25 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
+import { type PickGroup, pickGroups, pickOver } from './pickModel'
 import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
 import { chooserTop, emptyPane } from './property-picker.css'
 import { PathField } from '@pommora/uix/Fields/PathField'
 
-export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
-  | { kind: 'options'; style?: OptionStyleControl; contextOptions?: PickOption[] }
+export type PickTarget = { current: PropertyValue | null } & (
+  | {
+      kind: 'options'
+      column: ResolvedColumn
+      style?: OptionStyleControl
+      contextOptions?: PickOption[]
+    }
   | {
       kind: 'dateTime'
       dateFormat?: ColumnStyle['date_format']
       timeFormat?: ColumnStyle['time_format']
     }
-  | { kind: 'file' }
+  | { kind: 'file'; def: PropertyDefinition }
 )
 
 export type PickEntry = {
@@ -56,28 +61,6 @@ export type PickEntry = {
   drillable: boolean
   group?: 'Spaces' | 'Properties'
 }
-
-type PickGroup = { id: string; options: PickOption[] }
-
-export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[]): PickGroup[] =>
-  contextOptions
-    ? [{ id: def.id, options: contextOptions }]
-    : optionGroupsOf(def)
-        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, value: o.id })) }))
-        .filter((g) => g.options.length > 0)
-
-const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'
-
-export const pickShape = (
-  def: PropertyDefinition,
-  contextOptions?: PickOption[],
-): { options: PickOption[]; kind: OptionPickKind } => ({
-  options: pickGroups(def, contextOptions).flatMap((g) => g.options),
-  kind: pickKind(def),
-})
-
-export const toggleValue = (selected: string[], value: string): string[] =>
-  selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]
 
 export const syntheticContextDef = (id: string): PropertyDefinition => ({
   id,
@@ -120,10 +103,15 @@ export function PropertyPicker({
 
   const pane = !t ? null : t.kind === 'options' ? (
     (() => {
-      const { selected, pick } = pickSemantics(t.def, t.current, commit, onDismiss)
+      const { selected, pick } = pickOver(
+        t.column,
+        [t.current],
+        ([one]) => commit(one.next),
+        onDismiss,
+      )
       return (
         <PropertyOptionRows
-          def={t.def}
+          column={t.column}
           style={t.style}
           contextOptions={t.contextOptions}
           selected={selected}
@@ -222,26 +210,26 @@ export function PropertyPicker({
 }
 
 export function PropertyOptionRows({
-  def,
+  column,
   style,
   contextOptions,
   selected,
   onPick,
   editable,
 }: {
-  def: PropertyDefinition
+  column: ResolvedColumn
   style?: OptionStyleControl
   contextOptions?: PickOption[]
   selected: string[]
   onPick: (value: string) => void
   editable?: boolean
 }): React.JSX.Element {
-  const groups = pickGroups(def, contextOptions)
-  if (editable && PROPERTY_TYPES[def.type].options)
+  const groups = pickGroups(column, contextOptions)
+  if (editable && column.def && PROPERTY_TYPES[column.type].options)
     return (
       <EditableOptionRows
-        key={def.id}
-        def={def}
+        key={column.id}
+        def={column.def}
         style={style}
         groups={groups}
         selected={selected}
@@ -259,7 +247,7 @@ export function PropertyOptionRows({
             {contextOptions ? (
               <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
             ) : (
-              <OptionChip type={def.type} look={look} option={o} def={def} />
+              <OptionChip type={column.def?.type} look={look} option={o} def={column.def} />
             )}
           </MenuItem>
         )}
@@ -370,33 +358,4 @@ function EditableOptionRows({
       {edit.popup}
     </>
   )
-}
-
-function pickSemantics(
-  def: PropertyDefinition,
-  current: PropertyValue | null,
-  onCommit: (value: PropertyValue | null) => void,
-  onSinglePicked: () => void,
-): {
-  selected: string[]
-  pick: (value: string) => void
-} {
-  const selected = selectedValues(current)
-  const pick = (value: string): void => {
-    onCommit(pickedValue(def, current, value))
-    if (pickKind(def) === 'select') onSinglePicked()
-  }
-  return { selected, pick }
-}
-
-/** The value a pick lands on, independent of the surface that offered it: a repeat select clears, every other kind toggles. */
-export function pickedValue(
-  def: PropertyDefinition,
-  current: PropertyValue | null,
-  value: string,
-): PropertyValue | null {
-  const kind = pickKind(def)
-  const selected = selectedValues(current)
-  if (kind !== 'select') return { kind, value: toggleValue(selected, value) }
-  return selected.includes(value) ? null : { kind: 'select', value }
 }
