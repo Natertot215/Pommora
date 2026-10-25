@@ -573,7 +573,7 @@ async function group3(cdp) {
   check('group 3: TextPane: Enter picks the first alias into the pane', (await docOf(cdp, PANE_VIEW)).includes('[[Drive Target|launch]]'))
   await pressKey(cdp, 'Escape')
   await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
-  await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath(HOST)], propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
+  await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
 
   // TextPane: Enter with the caret in an authored slot rests past the link and remembers the alias; the second Enter closes the pane.
   await openPane(cdp, cell(HOST, NOTES))
@@ -587,10 +587,10 @@ async function group3(cdp) {
   await step(cdp, 'group 3: TextPane: a second Enter past the link', () => pressKey(cdp, 'Enter'), { reflect: `!document.querySelector('${PANE}')`, writes, window: 2000 })
   check('group 3: TextPane: a second Enter closes the pane, the value lands, and the alias is remembered once', (await settles(async () => String(frontmatter(HOST)[NOTES]).includes(AUTHORED))) && same(aliasesOf(TARGET), [...list, 'zzq']), JSON.stringify([frontmatter(HOST)[NOTES], aliasesOf(TARGET)]))
   await must('forget zzq', editAliases(cdp, TARGET, { op: 'forget', alias: 'zzq' }))
-  await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath(HOST)], propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
+  await must('Drive Host restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(HOST), propertyId: ids[NOTES], value: { kind: 'text', value: 'host notes' } }))
 
   // TextPane: a heading of the page holding the value.
-  await must('Drive Target notes', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath(TARGET)], propertyId: ids[NOTES], value: { kind: 'text', value: 'target notes' } }))
+  await must('Drive Target notes', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(TARGET), propertyId: ids[NOTES], value: { kind: 'text', value: 'target notes' } }))
   await until("Drive Target's notes", () => cdp.evaluate(`(${cell(TARGET, NOTES)}).textContent.includes('target notes')`))
   await openPane(cdp, cell(TARGET, NOTES))
   await prime(cdp, PANE_VIEW, '#')
@@ -599,7 +599,7 @@ async function group3(cdp) {
   check('group 3: TextPane: an own-page heading writes [[#Setup]] and opens no alias slot or stage', (await docOf(cdp, PANE_VIEW)) === '[[#Setup]]' && !(await cdp.evaluate(`!!(${PICKER})?.querySelector('[aria-label="Add alias"]')`)), await docOf(cdp, PANE_VIEW))
   await pressKey(cdp, 'Escape')
   await until('the TextPane closed', () => cdp.evaluate(`!document.querySelector('${PANE}')`))
-  await must('Drive Target restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath(TARGET)], propertyId: ids[NOTES], value: null }))
+  await must('Drive Target restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(TARGET), propertyId: ids[NOTES], value: null }))
 
   // A table cell in the body: its own editor, the same stage.
   await openPage(cdp, GRID)

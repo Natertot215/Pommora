@@ -39,10 +39,7 @@ const BEFORE = 'Tag:\n  - red\n'
 const recorded = (req: MutateRequest): MutateOutcome =>
   req.op === 'setProperty' || req.op === 'setContext'
     ? {
-        undo: {
-          op: 'putBack',
-          entries: req.paths.map((file) => ({ file, fieldId: 'prop_tag', before: BEFORE })),
-        },
+        undo: { op: 'putBack', entries: [{ file: req.path, fieldId: 'prop_tag', before: BEFORE }] },
       }
     : {}
 
@@ -66,7 +63,7 @@ beforeEach(() => {
 
 describe('assignValue', () => {
   it('patches the frontmatter and mutates the property', () => {
-    assignValue(writer, [row], propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
+    assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     expect(apply).toHaveBeenCalledWith(
       'page1',
       { prop_tag: { kind: 'select', value: 'opt_blue' } },
@@ -74,17 +71,14 @@ describe('assignValue', () => {
     )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: [row.path],
+      path: row.path,
       propertyId: 'prop_tag',
       value: { kind: 'select', value: 'opt_blue' },
     })
   })
 
   it('undo sends the record the write’s reply carried, at the row’s current path', async () => {
-    await assignValue(writer, [row], propertyColumn(schema[0]), {
-      kind: 'select',
-      value: 'opt_blue',
-    })
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     row = { ...rowOf({ id: 'page1', Tag: ['blue'] }), path: '/nexus/Notes/Moved.md' }
     await settled()
     expect(undoValue(null)).toBe(true)
@@ -99,40 +93,8 @@ describe('assignValue', () => {
     })
   })
 
-  it('a mass assign sends one request carrying every row, and its undo puts back every file', async () => {
-    const other: ViewRow = { ...rowOf({ Tag: ['blue'] }), id: 'page2', path: '/nexus/Notes/Two.md' }
-    live.rowOf = (id) => [row, other].find((r) => r.id === id)
-    await assignValue(writer, [row, other], propertyColumn(schema[0]), null)
-    expect(mutate.mock.calls).toEqual([
-      [{ op: 'setProperty', paths: [row.path, other.path], propertyId: 'prop_tag', value: null }],
-    ])
-    await settled()
-    apply.mockClear()
-    mutate.mockClear()
-    expect(undoValue(null)).toBe(true)
-    expect(mutate.mock.calls).toEqual([
-      [
-        {
-          op: 'putBack',
-          entries: [row.path, other.path].map((file) => ({
-            file,
-            fieldId: 'prop_tag',
-            before: BEFORE,
-          })),
-        },
-      ],
-    ])
-    expect(apply.mock.calls.map(([id, picked]) => [id, picked])).toEqual([
-      ['page1', { prop_tag: { kind: 'select', value: 'opt_red' } }],
-      ['page2', { prop_tag: { kind: 'select', value: 'opt_blue' } }],
-    ])
-  })
-
   it('an undo that misses its file drops the undone value it laid over the row', async () => {
-    await assignValue(writer, [row], propertyColumn(schema[0]), {
-      kind: 'select',
-      value: 'opt_blue',
-    })
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     await settled()
     mutate.mockImplementationOnce(async (req) => ({
       missed: req.op === 'putBack' ? req.entries : [],
@@ -146,10 +108,7 @@ describe('assignValue', () => {
     mutate.mockResolvedValueOnce({
       undo: { op: 'putBack', entries: [{ file: row.path, fieldId: 'prop_tag' }] },
     })
-    await assignValue(writer, [row], propertyColumn(schema[0]), {
-      kind: 'select',
-      value: 'opt_blue',
-    })
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     row = rowOf({ id: 'page1', Tag: ['blue'] })
     await settled()
     expect(undoValue(null)).toBe(true)
@@ -164,13 +123,8 @@ describe('assignValue', () => {
   it('patches the live row, not the one the caller captured', () => {
     const captured = row
     row = { ...rowOf({ id: 'page1', Tag: ['red'] }), path: '/nexus/Notes/Moved.md' }
-    assignValue(writer, [captured], propertyColumn(schema[0]), {
-      kind: 'select',
-      value: 'opt_blue',
-    })
-    expect(mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ paths: ['/nexus/Notes/Moved.md'] }),
-    )
+    assignValue(writer, captured, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
+    expect(mutate).toHaveBeenCalledWith(expect.objectContaining({ path: '/nexus/Notes/Moved.md' }))
   })
 
   it('lays the Context patch beside the frontmatter and mutates the context', async () => {
@@ -179,7 +133,7 @@ describe('assignValue', () => {
       entries: [{ file: row.path, fieldId: 'ctx_areas' }],
     }
     mutate.mockResolvedValueOnce({ undo: record })
-    await assignValue(writer, [row], contextColumn('ctx_areas'), {
+    await assignValue(writer, row, contextColumn('ctx_areas'), {
       kind: 'context',
       value: ['space1'],
     })
@@ -190,7 +144,7 @@ describe('assignValue', () => {
     )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setContext',
-      paths: [row.path],
+      path: row.path,
       contextId: 'ctx_areas',
       spaceIds: ['space1'],
     })
@@ -202,17 +156,14 @@ describe('assignValue', () => {
 
   it('writes nothing without a live writer', () => {
     writer.current = null
-    assignValue(writer, [row], propertyColumn(schema[0]), null)
+    assignValue(writer, row, propertyColumn(schema[0]), null)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
     expect(undoValue(null)).toBe(false)
   })
 
   it('a revert whose row is gone writes nothing and drains', async () => {
-    await assignValue(writer, [row], propertyColumn(schema[0]), {
-      kind: 'select',
-      value: 'opt_blue',
-    })
+    await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     await settled()
     apply.mockClear()
     mutate.mockClear()
@@ -225,7 +176,7 @@ describe('assignValue', () => {
   it('a refused write records nothing to undo, and a reply carrying no record leaves nothing to undo', async () => {
     for (const reply of [null, {}]) {
       mutate.mockResolvedValueOnce(reply)
-      await assignValue(writer, [row], propertyColumn(schema[0]), {
+      await assignValue(writer, row, propertyColumn(schema[0]), {
         kind: 'select',
         value: 'opt_blue',
       })
@@ -241,7 +192,7 @@ describe('assignValue', () => {
     groupUndo(() => {
       for (const r of [row, other])
         writes.push(
-          assignValue(writer, [r], propertyColumn(schema[0]), {
+          assignValue(writer, r, propertyColumn(schema[0]), {
             kind: 'select',
             value: 'opt_blue',
           }) as Promise<boolean>,
@@ -268,7 +219,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   })
 
   it('remembers the alias once the write lands', async () => {
-    await assignValue(writer, [row], column, link('[[Alpha|the notes]]'))
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
     expect(mutate.mock.calls.map(([req]) => req.op)).toEqual(['setProperty', 'editAliases'])
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
@@ -279,13 +230,13 @@ describe('a landed Link value remembers the alias it shows', () => {
 
   it('a refused write remembers nothing', async () => {
     mutate.mockResolvedValueOnce(null)
-    await assignValue(writer, [row], column, link('[[Alpha|the notes]]'))
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
     await settled()
     expect(remembered()).toEqual([])
   })
 
   it('an undo of the commit remembers nothing', async () => {
-    await assignValue(writer, [row], column, link('[[Alpha|the notes]]'))
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
     mutate.mockClear()
     expect(undoValue(null)).toBe(true)
     await settled()
@@ -301,7 +252,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     mutate.mockImplementation(async (req) =>
       req.op === 'editAliases' ? { undo: forget } : recorded(req),
     )
-    await assignValue(writer, [row], column, link('[[Alpha|the notes]]'))
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
     await settled()
     mutate.mockClear()
     expect(undoValue(null)).toBe(true)
@@ -313,7 +264,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   })
 
   it('a new spelling of the alias it showed is remembered', async () => {
-    await assignValue(writer, [row], column, link('[[Alpha|Old]]'))
+    await assignValue(writer, row, column, link('[[Alpha|Old]]'))
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
       path: 'Notes/Alpha.md',
@@ -322,7 +273,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   })
 
   it('the alias it showed, retargeted to another page, is remembered by that page', async () => {
-    await assignValue(writer, [row], column, link('[[Nested Beta|old]]'))
+    await assignValue(writer, row, column, link('[[Nested Beta|old]]'))
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
       path: 'Notes/Ideas/Beta.md',
@@ -331,7 +282,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   })
 
   it('a markdown label is remembered as the alias it shows', async () => {
-    await assignValue(writer, [row], column, link('[my label](Alpha.md)'))
+    await assignValue(writer, row, column, link('[my label](Alpha.md)'))
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'editAliases',
       path: 'Notes/Alpha.md',
@@ -351,7 +302,7 @@ describe('a landed Link value remembers the alias it shows', () => {
     ['a website label', '[my label](https://example.com)'],
     ['a phantom markdown target', '[my label](Missing.md)'],
   ])('%s remembers nothing', async (_, value) => {
-    await assignValue(writer, [row], column, link(value))
+    await assignValue(writer, row, column, link(value))
     await settled()
     expect(mutate).toHaveBeenCalledTimes(1)
     expect(remembered()).toEqual([])

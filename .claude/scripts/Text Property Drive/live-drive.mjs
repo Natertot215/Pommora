@@ -152,7 +152,7 @@ async function group1(cdp) {
   await shot(cdp, 'table-filled-empty')
 
   for (const title of ['Drive Raw', 'Drive List'])
-    await must(`${title}'s Drive Bar`, ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath(title)], propertyId: ids[BAR], value: { kind: 'number', value: 25 } }))
+    await must(`${title}'s Drive Bar`, ask(cdp, 'mutate', { op: 'setProperty', path: pagePath(title), propertyId: ids[BAR], value: { kind: 'number', value: 25 } }))
   await sleep(600)
   check('group 1: an adjacent write keeps the number 42 and the flow list byte for byte',
     keyLines('Drive Raw', NOTES) === `${NOTES}: 42` && keyLines('Drive List', NOTES) === `${NOTES}: [milk, eggs, bread]` &&
@@ -201,9 +201,9 @@ async function group1(cdp) {
   await commitField(cdp, cell('Drive Items'), '   ')
   check('group 1: whitespace alone clears the key', await settles(async () => !has('Drive Items', NOTES)), keyLines('Drive Items', NOTES))
 
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
-  await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Items')], propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
-  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Empty')], propertyId: ids[NOTES], value: null }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Items'), propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
+  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
   await sleep(800)
 
   const table = () => viewNamed('Drive Table')
@@ -222,7 +222,7 @@ async function group1(cdp) {
 
   await chooseNative(cdp, cell('Drive Prose'), 'Clear', { edge: true })
   check("group 1: the cell menu's Clear empties the cell and the key", await settles(async () => !has('Drive Prose', NOTES) && (await cellText(cdp, cell('Drive Prose'))) === null), keyLines('Drive Prose', NOTES))
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await until("Drive Prose's value back", async () => (await cellText(cdp, cell('Drive Prose'))) !== null)
   await menuEdits(cdp, cell('Drive Prose'), ['Edit', 'Clear'], 'a table cell')
   await menuEdits(cdp, cell('Drive Empty'), ['Edit'], 'an empty table cell')
@@ -327,7 +327,7 @@ async function group2(cdp) {
   check("group 2: at rest Drive Prose's text and Drive Items's end in an ellipsis", ellipsis.prose === 'ellipsis' && ellipsis.items === 'ellipsis', JSON.stringify(ellipsis))
 
   // Only the first line is laid out, so a short first line over a long second has nothing to scroll, and a long first line scrolls to its own end.
-  await must('a short first line on Drive Empty', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Empty')], propertyId: ids[NOTES], value: { kind: 'text', value: 'short\na much longer second line that runs well past the width of the cell it sits in' } }))
+  await must('a short first line on Drive Empty', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: { kind: 'text', value: 'short\na much longer second line that runs well past the width of the cell it sits in' } }))
   await until("Drive Empty's value", async () => (await cellText(cdp, cell('Drive Empty'))) !== null)
   const wheel = async (title) => {
     const box = `(${cell(title)}).querySelector('.cell-text')`
@@ -343,7 +343,7 @@ async function group2(cdp) {
   check("group 2: hovering and wheeling Drive Prose's value scrolls it to its first line's end and no further", long.left > 0 && long.width <= long.first + 1, JSON.stringify(long))
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 4, y: 4, button: 'none' })
   await sleep(600)
-  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Empty')], propertyId: ids[NOTES], value: null }))
+  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
   await until('Drive Empty emptied', async () => (await cellText(cdp, cell('Drive Empty'))) === null)
 
   await mouseClick(cdp, connection(cell('Drive Prose'), 'resolved', 'Drive Target'))
@@ -607,9 +607,9 @@ async function group4(cdp) {
   await typeText(cdp, 'z')
   await mouseClick(cdp, cell('Drive Empty'))
   check('group 4: a press on another cell saves, closes, opens nothing, and raises no refusal', await settles(async () => frontmatter('Drive Prose')[NOTES].endsWith(' xyz')) && !(await cdp.evaluate(`!!document.querySelector('${PANE}') || !!(${field})`)) && !(await portalOpen(cdp)) && !(await refusal(cdp)))
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
 
-  const setNotes = (value) => must('an outside write', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value } }))
+  const setNotes = (value) => must('an outside write', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value } }))
   await openPane(cdp, cell('Drive Prose'))
   await setNotes('from elsewhere')
   check('group 4: an outside change reaches an untouched pane', await settles(async () => (await paneDoc(cdp)) === 'from elsewhere'), await paneDoc(cdp))
@@ -618,7 +618,7 @@ async function group4(cdp) {
   check("group 4: an outside change leaves a pane's typing alone", await holds(async () => (await paneDoc(cdp)) === 'from elsewhere!', 2000), await paneDoc(cdp))
   await pressKey(cdp, 'Escape')
   check("group 4: the pane's close writes last", await settles(async () => frontmatter('Drive Prose')[NOTES] === 'from elsewhere!'), frontmatter('Drive Prose')[NOTES])
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await sleep(600)
 
   const rawBytes = pageFile('Drive Raw')
@@ -649,7 +649,7 @@ async function group4(cdp) {
     check(`group 4: ${JSON.stringify(value)} lands as ${JSON.stringify(spelled.slice(NOTES.length + 2))} and reopens as the same literal lines`, landed && back.doc === value && back.lists === 0, JSON.stringify([keyLines('Drive Items', NOTES), back]))
   }
   await pressKey(cdp, 'Escape')
-  await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Items')], propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
+  await must('Drive Items restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Items'), propertyId: ids[NOTES], value: { kind: 'text', value: ITEMS } }))
   await sleep(600)
 
   await chooseNative(cdp, `${row('Drive Prose')}.querySelector('.cell-title-text')`, ['Properties', NOTES])
@@ -663,7 +663,7 @@ async function group4(cdp) {
   await typeText(cdp, 'q')
   check('group 4: a second Properties ▸ open shows the value and types', again === SHOWCASE && (await paneDoc(cdp).catch(() => null)) === `${SHOWCASE}q`, JSON.stringify(again))
   await pressKey(cdp, 'Escape')
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await sleep(600)
   await showView(cdp, 'Drive Cards')
   await openPane(cdp, cardValue('Drive Prose'))
@@ -674,7 +674,7 @@ async function group4(cdp) {
   await typeText(cdp, 'q')
   check('group 4: a Standard card value closed and reopened shows the value and types', reopened === SHOWCASE && (await paneDoc(cdp)) === `${SHOWCASE}q`, JSON.stringify(reopened))
   await pressKey(cdp, 'Escape')
-  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Prose')], propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
+  await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await sleep(600)
   // A Compact card hides a blank value, so the chooser offers Drive Notes on Drive Empty; a press on the card's own text zone opens it.
   await showView(cdp, 'Drive Compact')
@@ -686,7 +686,7 @@ async function group4(cdp) {
   await typeText(cdp, 'chosen')
   await pressKey(cdp, 'Escape')
   check("group 4: a word typed in the chooser's pane lands on Drive Empty", await settles(async () => frontmatter('Drive Empty')[NOTES] === 'chosen'), keyLines('Drive Empty', NOTES))
-  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', paths: [pagePath('Drive Empty')], propertyId: ids[NOTES], value: null }))
+  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
   await sleep(600)
   await showView(cdp, 'Drive Table')
 

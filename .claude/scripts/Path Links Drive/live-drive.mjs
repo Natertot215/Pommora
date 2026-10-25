@@ -453,7 +453,7 @@ async function group1(cdp) {
   item(1, 1, 'B-1', 'aliases: [[Set Beta/Notes|Beta Memo]] records Beta Memo on Set Beta/Notes, and the path link keeps it',
     (await settles(async () => aliasesOf(NOTES_BETA).includes('Beta Memo'), 3000)) && linkValueOf(COMMIT) === '[[Set Beta/Notes|Beta Memo]]', show({ aliases: aliasesOf(NOTES_BETA), value: linkValueOf(COMMIT) }))
   await must('Beta Memo forgotten', ask(cdp, 'mutate', { op: 'editAliases', path: NOTES_BETA, edit: { op: 'forget', alias: 'Beta Memo' } }))
-  await must('PL Commit cleared', ask(cdp, 'mutate', { op: 'setProperty', paths: [COMMIT], propertyId: props[LINK], value: null }))
+  await must('PL Commit cleared', ask(cdp, 'mutate', { op: 'setProperty', path: COMMIT, propertyId: props[LINK], value: null }))
   await escapeAll(cdp)
 
   // Sort and filter on a Link value read its title, not its path.
@@ -887,7 +887,7 @@ async function group6(cdp) {
     ['g15', '[[G6 Lone]]'], ['g16', '[[Untitled]]'], ['g17', '[[G6 Case]]'], ['g18', '[[Set Alpha/G6 Target#Part|Part Alias]]'],
   ]))
   const SPACE = '.nexus/contexts/Topics/Topic One'
-  const spaceSet = await ask(cdp, 'mutate', { op: 'setProperty', paths: [SPACE], propertyId: props[LINK], value: { kind: 'link', value: '[[Set Alpha/G6 Target]]' } })
+  const spaceSet = await ask(cdp, 'mutate', { op: 'setProperty', path: SPACE, propertyId: props[LINK], value: { kind: 'link', value: '[[Set Alpha/G6 Target]]' } })
   const spaceLink = () => JSON.parse(readRel(`${SPACE}/_space.json`))[LINK]
   const tile = await ask(cdp, 'tiles:create', { kind: 'homepage' }, { kind: 'append' })
   let tileId = tile.ok ? tile.value.id : null

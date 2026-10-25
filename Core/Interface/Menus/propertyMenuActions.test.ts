@@ -68,7 +68,7 @@ function harness(frontmatter: Record<string, unknown> = {}) {
       row,
       trigger: {} as HTMLElement,
       commit: (column, value) => {
-        assignValue(writer, [row], column, value)
+        assignValue(writer, row, column, value)
       },
     })
   return { run, sent }
@@ -186,7 +186,7 @@ describe('a property pick from the page menu', () => {
     expect(sent).toEqual([
       {
         op: 'setProperty',
-        paths: ['Notes/Alpha.md'],
+        path: 'Notes/Alpha.md',
         propertyId: 'prop_sel',
         value: { kind: 'select', value: 'opt_b' },
       },
@@ -224,7 +224,7 @@ describe('a property pick from the page menu', () => {
     const { run, sent } = harness()
     expect(run(`prop:${CONTEXT_ID}:t1`)).toBe(true)
     expect(sent).toEqual([
-      { op: 'setContext', paths: ['Notes/Alpha.md'], contextId: CONTEXT_ID, spaceIds: ['t1'] },
+      { op: 'setContext', path: 'Notes/Alpha.md', contextId: CONTEXT_ID, spaceIds: ['t1'] },
     ])
   })
 

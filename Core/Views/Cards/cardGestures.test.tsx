@@ -143,7 +143,7 @@ describe('a card value', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/One.md'],
+      path: 'Col/One.md',
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'opt_Complete' },
     })

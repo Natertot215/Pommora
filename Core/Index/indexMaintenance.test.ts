@@ -139,7 +139,7 @@ describe('the writers maintain the rows', () => {
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Alpha.md'],
+        path: 'Notes/Daily/Alpha.md',
         propertyId: 'prop_s',
         value: { kind: 'select', value: 'opt_open' },
       },
@@ -161,7 +161,7 @@ describe('the writers maintain the rows', () => {
       root,
       {
         op: 'setContext',
-        paths: ['Notes/Daily/Alpha.md'],
+        path: 'Notes/Daily/Alpha.md',
         contextId: 'ctx_projects',
         spaceIds: ['sp-pom'],
       },

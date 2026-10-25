@@ -139,11 +139,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const editAs = (mode: Editing['mode'], seat?: ConnEditAction) => (): void =>
       setEditing({ rowId: row.id, colId: col.id, mode, seat, nonce: ++editNonce.current })
     return runValueIntent(intent, {
-      commit: ({ value }) => commitValue([row], col, value),
+      commit: ({ value }) => commitValue(row, col, value),
       file: () => {
         const current = resolveFieldValue(row, col)
         if (col.def)
-          pickFileInto(col.def, current, fileChipIndex(target), (n) => commitValue([row], col, n))
+          pickFileInto(col.def, current, fileChipIndex(target), (n) => commitValue(row, col, n))
       },
       picker: editAs('picker'),
       dateTime: editAs('picker'),
@@ -216,7 +216,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
         seat={editing.seat}
-        onCommit={(next) => commitValue([row], col, next)}
+        onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}
       />
     )
@@ -237,7 +237,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         open={editing?.mode === 'picker'}
         triggerRef={triggerElRef}
         onCommit={(v) => {
-          if (c) commitValue([c.row], c.col, v)
+          if (c) commitValue(c.row, c.col, v)
         }}
         onDismiss={() => setEditing(null)}
       />
@@ -257,7 +257,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
         seat={def.type === 'link' ? 'rename' : undefined}
-        onCommit={(next) => commitValue([row], col, next)}
+        onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}
       />
     )
@@ -302,7 +302,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (!action) return
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
     if (interactions.runTitleAction(action, row, glyph)) return
-    if (runFileMenuAction(action, def, value, chip, (n) => commitValue([row], col, n))) return
+    if (runFileMenuAction(action, def, value, chip, (n) => commitValue(row, col, n))) return
     if (!runMenuIntent(action)) runStyleAction(col, action)
   }
 
@@ -363,14 +363,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         style={opts?.style}
         contextOptions={opts?.contextOptions}
         onPick={(commits) => {
-          const byValue = new Map<string, { next: PropertyValue | null; rows: ViewRow[] }>()
-          for (const { index, next } of commits) {
-            const key = JSON.stringify(next)
-            byValue.set(key, { next, rows: [...(byValue.get(key)?.rows ?? []), rows[index]] })
-          }
-          if (byValue.size)
+          if (commits.length)
             groupUndo(() => {
-              for (const { next, rows: held } of byValue.values()) commitValue(held, col, next)
+              for (const { index, next } of commits) commitValue(rows[index], col, next)
             })
         }}
         onDismiss={() => {
@@ -392,7 +387,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     title: titleCell,
     overlay: cellEditor,
-    commit: (row, col, next) => commitValue([row], col, next),
+    commit: commitValue,
     grip: (row, e) => {
       if (titleCol) void openCellMenu(row, titleCol, e)
     },

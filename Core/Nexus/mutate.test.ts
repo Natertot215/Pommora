@@ -1146,7 +1146,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     { op: 'setActiveView', path: 'Notes', kind: 'set', viewId: 'v' },
     { op: 'setPageMeta', path: '.trash/Alpha.md', patch: {} },
     { op: 'editAliases', path: '.trash/Alpha.md', edit: { op: 'forget', alias: 'a' } },
-    { op: 'setProperty', paths: [''], propertyId: 'p', value: null },
+    { op: 'setProperty', path: '', propertyId: 'p', value: null },
     { op: 'createPage', id: newContentId('page'), parentPath: '.nexus', name: 'X' },
     { op: 'createContainer', id: newId(), parentPath: '', kind: 'set', name: 'X' },
     { op: 'movePage', path: 'Notes/_pagecollection.json', newParentPath: 'Notes/Daily' },
@@ -2170,7 +2170,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
         value: { kind: 'select', value: 'opt_done' },
       },
@@ -2183,31 +2183,12 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(splitFrontmatter(md).Stage).toEqual(['done'])
   })
 
-  it('writes one value onto every path it names, and one put-back takes back every file', async () => {
-    const paths = ['Notes/Daily/Alpha.md', 'Notes/Daily/Beta.md']
-    const r = await settledMutate(
-      root,
-      {
-        op: 'setProperty',
-        paths,
-        propertyId: 'prop_s',
-        value: { kind: 'select', value: 'opt_done' },
-      },
-      nexusDeps,
-    )
-    for (const p of paths) expect(splitFrontmatter(await read(p)).Stage).toEqual(['done'])
-    const undo = r.ok ? r.value.undo : undefined
-    expect(undo?.op === 'putBack' && undo.entries.map((e) => e.file)).toEqual(paths)
-    expect((await settledMutate(root, undo as MutateRequest, nexusDeps)).ok).toBe(true)
-    for (const p of paths) expect(splitFrontmatter(await read(p)).Stage).toBeUndefined()
-  })
-
   it('writes no modified_at on a property VALUE change — the file mtime is the edit record', async () => {
     await settledMutate(
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
         value: { kind: 'select', value: 'opt_done' },
       },
@@ -2225,7 +2206,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     for (const [propertyId, value] of stale) {
       const r = await settledMutate(
         root,
-        { op: 'setProperty', paths: ['Notes/Daily/Beta.md'], propertyId, value },
+        { op: 'setProperty', path: 'Notes/Daily/Beta.md', propertyId, value },
         nexusDeps,
       )
       expect(r).toEqual(fail('not-found', 'That option no longer exists.'))
@@ -2238,7 +2219,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
         value: { kind: 'select', value: 'opt_done' },
       },
@@ -2246,7 +2227,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     )
     const r = await settledMutate(
       root,
-      { op: 'setProperty', paths: ['Notes/Daily/Beta.md'], propertyId: 'prop_s', value: null },
+      { op: 'setProperty', path: 'Notes/Daily/Beta.md', propertyId: 'prop_s', value: null },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
@@ -2262,7 +2243,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
         root,
         {
           op: 'setProperty',
-          paths: ['Notes/Daily/Beta.md'],
+          path: 'Notes/Daily/Beta.md',
           propertyId: 'prop_s',
           value: { kind: 'select', value: 'opt_done' },
         },
@@ -2279,7 +2260,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_m',
         value: { kind: 'multiSelect', value: ['opt_a'] },
       },
@@ -2289,7 +2270,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_m',
         value: { kind: 'multiSelect', value: [] },
       },
@@ -2304,7 +2285,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   it('never throws on a missing page — returns ok:false', async () => {
     const r = await settledMutate(
       root,
-      { op: 'setProperty', paths: ['Notes/Daily/Ghost.md'], propertyId: 'prop_s', value: null },
+      { op: 'setProperty', path: 'Notes/Daily/Ghost.md', propertyId: 'prop_s', value: null },
       nexusDeps,
     )
     expect(r.ok).toBe(false)
@@ -2542,7 +2523,7 @@ describe('a file value never destroys what it stops naming', () => {
   const setFiles = (path: string, value: string[]) =>
     settledMutate(
       root,
-      { op: 'setProperty', paths: [path], propertyId: 'prop_f', value: { kind: 'file', value } },
+      { op: 'setProperty', path, propertyId: 'prop_f', value: { kind: 'file', value } },
       nexusDeps,
     )
 
@@ -2595,7 +2576,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_f',
         value: { kind: 'file', value },
       },
@@ -2717,12 +2698,7 @@ describe('the Contexts lock', () => {
       ),
       handleMutate(
         root,
-        {
-          op: 'setContext',
-          paths: ['Notes/Daily/Alpha.md'],
-          contextId: 'ctxP',
-          spaceIds: ['sp-pom'],
-        },
+        { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
         nexusDeps,
       ),
     ])
@@ -2766,12 +2742,7 @@ describe('the Contexts lock', () => {
     })
     const tagged = await settledMutate(
       root,
-      {
-        op: 'setContext',
-        paths: ['Notes/Daily/Alpha.md'],
-        contextId: 'ctxP',
-        spaceIds: ['sp-pom'],
-      },
+      { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
       nexusDeps,
     )
     renameWaits.mockRestore()
@@ -2818,7 +2789,7 @@ describe('the Contexts lock', () => {
         root,
         {
           op: 'setProperty',
-          paths: ['.nexus/contexts/Projects/Pommora'],
+          path: '.nexus/contexts/Projects/Pommora',
           propertyId: stage.value.id,
           value: { kind: 'number', value: 3 },
         },
@@ -2867,12 +2838,7 @@ describe('the Contexts lock', () => {
     })
     const tagged = await settledMutate(
       root,
-      {
-        op: 'setContext',
-        paths: ['Notes/Daily/Beta.md'],
-        contextId: 'ctxA',
-        spaceIds: ['sp-work'],
-      },
+      { op: 'setContext', path: 'Notes/Daily/Beta.md', contextId: 'ctxA', spaceIds: ['sp-work'] },
       nexusDeps,
     )
     deleteWaits.mockRestore()
@@ -2943,7 +2909,7 @@ describe('the Contexts lock', () => {
       root,
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Alpha.md'],
+        path: 'Notes/Daily/Alpha.md',
         propertyId: stage.value.id,
         value: { kind: 'number', value: 3 },
       },
@@ -3103,12 +3069,7 @@ describe('setContext on a Space', () => {
   const link = (spaceIds: string[]) =>
     settledMutate(
       root,
-      {
-        op: 'setContext',
-        paths: ['.nexus/contexts/Projects/Pommora'],
-        contextId: 'ctxA',
-        spaceIds,
-      },
+      { op: 'setContext', path: '.nexus/contexts/Projects/Pommora', contextId: 'ctxA', spaceIds },
       nexusDeps,
     )
 
@@ -3864,12 +3825,7 @@ describe('each routine operation lands from its own events, with no walk', () =>
     ['a Space reorder', { op: 'reorderSpaces', contextId: 'ctxP', ids: ['sp-pom'] }],
     [
       'a Context tag',
-      {
-        op: 'setContext',
-        paths: ['Notes/Daily/Alpha.md'],
-        contextId: 'ctxP',
-        spaceIds: ['sp-pom'],
-      },
+      { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
     ],
     [
       'a page meta write',
@@ -3886,7 +3842,7 @@ describe('each routine operation lands from its own events, with no walk', () =>
       'a cell edit',
       {
         op: 'setProperty',
-        paths: ['Notes/Daily/Beta.md'],
+        path: 'Notes/Daily/Beta.md',
         propertyId: 'prop_s',
         value: { kind: 'select', value: 'opt_done' },
       },

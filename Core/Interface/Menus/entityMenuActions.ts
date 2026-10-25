@@ -67,7 +67,7 @@ export async function showEntityMenu(
     const writer = oneShotWriter(propertyTarget.row)
     const done = runPropertyAction(action, {
       ...propertyTarget,
-      commit: (column, value) => void assignValue(writer, [propertyTarget.row], column, value),
+      commit: (column, value) => void assignValue(writer, propertyTarget.row, column, value),
       trigger,
     })
     if (done) return

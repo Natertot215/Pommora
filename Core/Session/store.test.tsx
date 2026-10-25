@@ -1276,7 +1276,7 @@ describe('store — the mutate rail', () => {
   it('a value write refused by its file offers Try Again, which sends it again, and ⌘Z then undoes what it landed', async () => {
     const req = {
       op: 'setProperty',
-      paths: ['Notes/A.md'],
+      path: 'Notes/A.md',
       propertyId: 'p1',
       value: { kind: 'number', value: 5 },
     } as const

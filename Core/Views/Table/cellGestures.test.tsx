@@ -242,7 +242,7 @@ describe('status cell gestures', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'opt_complete' },
     })
@@ -258,7 +258,7 @@ describe('checkbox cell gestures', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_done',
       value: { kind: 'checkbox', value: true },
     })
@@ -276,7 +276,7 @@ describe('checkbox cell gestures', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_done',
       value: null,
     })
@@ -314,7 +314,7 @@ describe('Context cells', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setContext',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       contextId: 'ctx_areas',
       spaceIds: ['area_work'],
     })
@@ -347,7 +347,7 @@ describe('number cell inline editing', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_n',
       value: { kind: 'number', value: 43.5 },
     })
@@ -361,7 +361,7 @@ describe('number cell inline editing', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_n',
       value: null,
     })
@@ -382,7 +382,7 @@ describe('number cell inline editing', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_n',
       value: { kind: 'number', value: 7 },
     })
@@ -410,7 +410,7 @@ describe('menu-entered editing', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_link',
       value: { kind: 'link', value: 'https://example.com' },
     })
@@ -616,7 +616,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     expect(mutateSpy).toHaveBeenCalledTimes(1)
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_status',
       value: null,
     })
@@ -632,7 +632,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_tags',
       value: { kind: 'multiSelect', value: ['opt_b'] },
     })
@@ -650,7 +650,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setProperty',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       propertyId: 'prop_tags',
       value: { kind: 'multiSelect', value: [] },
     })
@@ -665,7 +665,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
     })
     expect(mutateSpy).toHaveBeenCalledWith({
       op: 'setContext',
-      paths: ['Col/Page One.md'],
+      path: 'Col/Page One.md',
       contextId: 'ctx_areas',
       spaceIds: ['area_life'],
     })

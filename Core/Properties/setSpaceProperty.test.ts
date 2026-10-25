@@ -149,7 +149,7 @@ describe('a value write reconciles the Space it lands on', () => {
     await refreshTree(root)
   }
   const set = (propertyId: string, value: PropertyValue | null) =>
-    settledMutate(root, { op: 'setProperty', paths: [spaceRel], propertyId, value }, settled)
+    settledMutate(root, { op: 'setProperty', path: spaceRel, propertyId, value }, settled)
 
   it('leaves a scalar Select spelling its option as written', async () => {
     await seed({ Status: 'Option 1' })

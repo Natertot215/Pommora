@@ -432,7 +432,7 @@ describe('links come back with the page', () => {
   const relink = (propertyId: string) =>
     settledMutate(
       root,
-      { op: 'setProperty', paths: [beta], propertyId, value: { kind: 'link', value: '[[Other]]' } },
+      { op: 'setProperty', path: beta, propertyId, value: { kind: 'link', value: '[[Other]]' } },
       deps,
     )
 
