@@ -5,6 +5,7 @@ import { FILTER_OPS, type FilterGroup } from '../filterRules'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { applyFilter, prepareGroup } from './filter'
 import { propsAtRoot } from '../../Testing/pageValues'
+import { identityFor } from '../../Testing/testTree'
 
 const schema: PropertyDefinition[] = [
   {
@@ -76,7 +77,9 @@ function row(
 const DEAD_ID = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
 
 const ids = (rows: ViewRow[], filter: FilterGroup | undefined): string[] =>
-  applyFilter(rows, filter, schema, [], ['ctx_areas']).map((r) => r.id)
+  applyFilter(rows, filter, schema, [], identityFor({ ctx_areas: ['area1', 'area2'] })).map(
+    (r) => r.id,
+  )
 
 describe('applyFilter — match mode + recursion', () => {
   const rows = [
@@ -336,7 +339,7 @@ describe('applyFilter — per type', () => {
       match: 'all' as const,
       rules: [{ property_id: 'prop_p', op: 'contains', value: 'pro' }],
     }
-    expect(applyFilter([held], rule, [sel], [], []).map((r) => r.id)).toEqual(['held'])
+    expect(applyFilter([held], rule, [sel], [], identityFor({})).map((r) => r.id)).toEqual(['held'])
   })
 
   it('select (text): is / contains / does_not_contain', () => {
@@ -580,7 +583,7 @@ describe('applyFilter — negation + registry', () => {
         { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_beta' }] },
         schema,
         [{ id: 'set_a', title: 'A' }],
-        [],
+        identityFor({}),
       ).map((r) => r.id)
     expect(any({ property_id: 'prop_done', op: 'greater_than', value: 'true' })).toEqual([])
     expect(
@@ -626,7 +629,7 @@ describe('applyFilter — location presence', () => {
   // parentSetId isn't part of the shared row() helper — it's set by the container walk, not frontmatter.
   const rows: ViewRow[] = [row('root'), { ...row('filed'), parentSetId: 'set_a' }]
   const ids2 = (f: FilterGroup): string[] =>
-    applyFilter(rows, f, [], [{ id: 'set_a', title: 'A' }], []).map((r) => r.id)
+    applyFilter(rows, f, [], [{ id: 'set_a', title: 'A' }], identityFor({})).map((r) => r.id)
 
   it('Is over several Sets keeps rows parented by ANY of them', () => {
     const many: ViewRow[] = [
@@ -644,7 +647,7 @@ describe('applyFilter — location presence', () => {
           { id: 'set_b', title: 'B' },
           { id: 'set_c', title: 'C' },
         ],
-        [],
+        identityFor({}),
       ).map((r) => r.id)
     expect(run('is')).toEqual(['a', 'b'])
     expect(run('is_not')).toEqual(['c'])
@@ -660,7 +663,7 @@ describe('applyFilter — location presence', () => {
         { match: 'all', rules: [{ property_id: '_location', op, value: 'set_a' }] },
         [],
         tree,
-        [],
+        identityFor({}),
       ).map((r) => r.id)
     expect(run('is')).toEqual([])
     expect(run('is_inside')).toEqual(['deep'])
@@ -855,12 +858,15 @@ describe('applyFilter — multi-operand values[]', () => {
         rules: [{ property_id: 'ctx_areas', op: 'contains_all', values: ['area1', 'area2'] }],
       }),
     ).toEqual(['t1'])
+  })
+
+  it('a Context rule naming only Spaces the Context no longer holds sits out', () => {
     expect(
       ids([rows[4]], {
         match: 'all',
         rules: [{ property_id: 'ctx_areas', op: 'contains_any', values: ['zzz'] }],
       }),
-    ).toEqual([])
+    ).toEqual(['t1'])
   })
 })
 
@@ -878,7 +884,7 @@ describe('applyFilter — title, context membership, location', () => {
       { match: 'all', rules: [{ property_id: '_location', op, value }] },
       schema,
       tree,
-      [],
+      identityFor({}),
     ).map((r) => r.id)
 
   it('title filters as text (Starts With / Contains, case-insensitive)', () => {
@@ -924,7 +930,7 @@ describe('applyFilter — location by folder name', () => {
       { match: 'all', rules: [{ property_id: '_location', op, values }] },
       schema,
       tree,
-      [],
+      identityFor({}),
     ).map((r) => r.id)
 
   it('Contains matches a folder by whole name, case-insensitive, at any depth', () => {
@@ -951,7 +957,7 @@ describe('applyFilter — location by folder name', () => {
 
 describe('prepareGroup', () => {
   it('returns undefined for a group with no rules', () => {
-    expect(prepareGroup({ match: 'any', rules: [] }, schema, [], [])).toBeUndefined()
+    expect(prepareGroup({ match: 'any', rules: [] }, schema, [], identityFor({}))).toBeUndefined()
   })
 
   it('returns undefined for a group whose every rule abstains', () => {
@@ -962,6 +968,8 @@ describe('prepareGroup', () => {
         { property_id: 'prop_sel', op: 'is' },
       ],
     }
-    expect(prepareGroup(group, schema, [{ id: 'set_a', title: 'A' }], [])).toBeUndefined()
+    expect(
+      prepareGroup(group, schema, [{ id: 'set_a', title: 'A' }], identityFor({})),
+    ).toBeUndefined()
   })
 })

@@ -87,11 +87,12 @@ describe('context accessors', () => {
     expect(contextIdsOf(null)).toEqual([])
   })
 
-  it('resolves a Context to its titles and a renderable icon', () => {
+  it('resolves a Context to its titles, a renderable icon, and its Spaces', () => {
     expect(contextsByIdOf(tree).get('ctx_areas')).toEqual({
       title: 'Areas',
       singular: 'Area',
       icon: 'briefcase',
+      spaceIds: ['a1', 'a2'],
     })
     expect(contextsByIdOf(tree).get('ctx_topics')?.icon).toBe('layout-grid')
     expect(contextsByIdOf(tree).get('a1')).toBeUndefined()

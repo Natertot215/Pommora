@@ -33,7 +33,7 @@ type ViewCreationConfig = Pick<
   | 'source'
   | 'view'
   | 'schema'
-  | 'contextIds'
+  | 'identity'
   | 'setValueOverride'
   | 'effectiveValues'
   | 'sortKeys'
@@ -84,7 +84,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       },
       schema: c.schema,
       setTree: c.source.sets ?? [],
-      contextIds: c.contextIds,
+      identity: c.identity,
     })
   }
   // The created page's seeds reach the pipeline the way a band-drop's reassign does.
@@ -204,7 +204,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       if (v !== null) seeds[c.groupPropId] = v
     }
     for (const criterion of c.view.sort ?? []) {
-      const column = resolveColumn(criterion.property_id, c.schema, c.contextIds)
+      const column = resolveColumn(criterion.property_id, c.schema, c.identity.contextIds)
       if (column?.kind !== 'property' || !viewSpecOf(column.type)?.sortSeeds) continue
       const v = resolveFieldValue(row, column)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v

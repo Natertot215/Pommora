@@ -9,7 +9,7 @@ import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
-import { contextIdsOf } from '../../Contexts/contextIdentity'
+import { identityOf } from '../../Contexts/contextIdentity'
 import { holderOf, useValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
@@ -57,7 +57,8 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
 
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 
-  const contextIds = contextIdsOf(tree)
+  const identity = identityOf(tree)
+  const { contextIds } = identity
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const sortKeys = useMemo(
     () => resolvedSortCount(view.sort, schema, contextIds),
@@ -82,10 +83,10 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   } = useMemo(() => {
     const { rows, setTree } = flattenContainer(painted, effectiveValues, pageMetadata ?? {})
     return {
-      ...resolveView({ rows, setTree, view, schema, plan, manualOrder, contextIds }),
+      ...resolveView({ rows, setTree, view, schema, plan, manualOrder, identity }),
       rows,
     }
-  }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, contextIds])
+  }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, identity])
   // Every shown column's style, resolved once per pass; the table, the cards, and the pickers read it.
   const styleById = useMemo(
     () => new Map(columns.map((c) => [c.id, styleFor(c, view, nexus)])),
@@ -220,7 +221,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     groups,
     rows,
     ctx,
-    contextIds,
+    identity,
     sets,
     bands,
     rowById,

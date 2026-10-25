@@ -6,6 +6,7 @@ import { makeSorter, resolvedSortCount } from './sort'
 import { applyFilter } from './filter'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propsAtRoot } from '../../Testing/pageValues'
+import { identityFor } from '../../Testing/testTree'
 import { resolveColumn } from './columns'
 
 const CONTEXT_IDS = ['ctx_areas']
@@ -389,7 +390,7 @@ describe('the stamp readers agree', () => {
           },
           schema,
           [],
-          [],
+          identityFor({}),
         ),
       ),
     ).toEqual(['new'])

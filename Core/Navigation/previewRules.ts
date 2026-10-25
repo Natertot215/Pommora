@@ -1,6 +1,6 @@
 // The rules judge what the tree already holds, so routing a click costs no read.
 
-import { contextIdsOf } from '../Contexts/contextIdentity'
+import { identityOf } from '../Contexts/contextIdentity'
 import { entityMemo, type NexusTree } from '../Nexus/tree'
 import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget } from '../Views/paneTargets'
 import { containerAt } from '../Nexus/treePatch'
@@ -16,7 +16,7 @@ const previewTestOf = entityMemo(
   (tree) => {
     const rules = settingOf(tree.config.personalization, 'openInPreview')
     return filtering(rules)
-      ? prepareGroup(rules.rules, [], tree.collections, contextIdsOf(tree))
+      ? prepareGroup(rules.rules, [], tree.collections, identityOf(tree))
       : undefined
   },
 )

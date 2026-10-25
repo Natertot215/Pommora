@@ -1,4 +1,5 @@
 import type { NexusConfig, NexusTree } from '../Nexus/tree'
+import type { IdentityMaps } from '../Contexts/contextIdentity'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -108,3 +109,12 @@ export function linkedSpacesTree(options?: {
     ],
   }
 }
+
+/** Each Context's Space ids as the pipeline reads them, for a test with no tree. */
+export const identityFor = (spaces: Record<string, string[]>): IdentityMaps => ({
+  contextIds: Object.keys(spaces),
+  contexts: new Map(
+    Object.entries(spaces).map(([id, spaceIds]) => [id, { title: id, icon: '', spaceIds }]),
+  ),
+  spaces: new Map(),
+})

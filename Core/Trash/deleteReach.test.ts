@@ -16,6 +16,7 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { listBundles, mintBundle } from '../Bundles/bundle'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { identityFor } from '../Testing/testTree'
 import { seedContentIndex } from '../Index/indexSeed'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { settledMutate } from '../Testing/settledMutate'
@@ -207,7 +208,7 @@ describe('a Space delete', () => {
       },
       schema: [],
       setTree: [],
-      contextIds: ['ctx_areas'],
+      identity: identityFor({ ctx_areas: [] }),
     })
     const r = await settledMutate(
       root,

@@ -16,6 +16,7 @@ import type { SetTreeNode } from './group'
 import { viewSpecOf } from '../valueKinds'
 import { foldKey } from '../../Paths/caseFold'
 import { isUlidShaped } from '../../Nexus/identityMark'
+import type { IdentityMaps } from '../../Contexts/contextIdentity'
 
 type RowTest = (row: ViewRow) => boolean
 
@@ -24,9 +25,9 @@ export function applyFilter(
   filter: FilterGroup | undefined,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
-  contextIds: readonly string[],
+  identity: IdentityMaps,
 ): ViewRow[] {
-  const test = filter && prepareGroup(filter, schema, setTree, contextIds)
+  const test = filter && prepareGroup(filter, schema, setTree, identity)
   return test ? rows.filter(test) : rows
 }
 
@@ -35,12 +36,12 @@ export function prepareGroup(
   group: FilterGroup,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
-  contextIds: readonly string[],
+  identity: IdentityMaps,
 ): RowTest | undefined {
   const tests = group.rules.flatMap((node) => {
     const test = isGroup(node)
-      ? prepareGroup(node, schema, setTree, contextIds)
-      : prepareRule(node, schema, setTree, contextIds)
+      ? prepareGroup(node, schema, setTree, identity)
+      : prepareRule(node, schema, setTree, identity)
     return test ? [test] : []
   })
   if (tests.length === 0) return undefined
@@ -57,13 +58,13 @@ export function prepareRule(
   rule: FilterRule,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
-  contextIds: readonly string[],
+  identity: IdentityMaps,
 ): RowTest | undefined {
   const { op, property_id: id } = rule
   const want = ruleOperands(rule)
   if (!answerable(rule)) return undefined
   if (id === FILEDATA.location.id) return prepareLocation(op, want, setTree)
-  const column = resolveColumn(id, schema, contextIds)
+  const column = resolveColumn(id, schema, identity.contextIds)
   const kind = viewSpecOf(column?.type)
   if (!column || !kind) return undefined
   switch (op) {
@@ -72,7 +73,7 @@ export function prepareRule(
     case FILTER_OPS.isNotEmpty:
       return (row) => kind.filled(resolveFieldValue(row, column))
   }
-  const test = kind.prepare(op, want, column.def)
+  const test = kind.prepare(op, want, column.def, identity.contexts.get(id)?.spaceIds)
   return test && ((row) => test(resolveFieldValue(row, column)))
 }
 

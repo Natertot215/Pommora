@@ -8,6 +8,8 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import { flattenContainer, groupPlan } from './group'
 import { resolveView as resolveViewOf } from './resolveView'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
+import { identityFor } from '../../Testing/testTree'
+import type { IdentityMaps } from '../../Contexts/contextIdentity'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const collection = (pages: PageNode[]): CollectionNode => ({
@@ -22,15 +24,15 @@ const collection = (pages: PageNode[]): CollectionNode => ({
 
 const resolve = ({
   flattenStructural,
-  contextIds = [],
+  identity = identityFor({}),
   ...input
-}: Omit<Parameters<typeof resolveViewOf>[0], 'plan' | 'contextIds'> & {
+}: Omit<Parameters<typeof resolveViewOf>[0], 'plan' | 'identity'> & {
   flattenStructural?: boolean
-  contextIds?: readonly string[]
+  identity?: IdentityMaps
 }) =>
   resolveViewOf({
     ...input,
-    contextIds,
+    identity,
     plan: groupPlan(input.view, input.schema, !flattenStructural),
   })
 
@@ -107,7 +109,7 @@ describe('resolveView — full pipeline over the fixture', () => {
       setTree,
       view,
       schema,
-      contextIds: ['ctx_areas', 'ctx_topics', 'ctx_projects'],
+      identity: identityFor({ ctx_areas: [], ctx_topics: [], ctx_projects: [] }),
     })
 
     expect(columns[0].id).toBe('prop_status')

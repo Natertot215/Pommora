@@ -5,6 +5,7 @@ import type { PropertyDefinition } from '../../Properties/properties'
 import type { FilterGroup } from '../filterRules'
 import type { ViewRow } from '../viewRow'
 import { filterSeeds } from './creationSeeds'
+import { identityFor } from '../../Testing/testTree'
 
 const listed = (...keys: string[]) => keys.map((key) => ({ id: `opt_${key}`, key, label: key }))
 
@@ -51,8 +52,8 @@ const blank: ViewRow = {
   modifiedAt: null,
 }
 
-const seedsOf = (filter: FilterGroup | undefined, contextIds: readonly string[] = []) =>
-  filterSeeds({ filter, blank, schema, setTree: [], contextIds })
+const seedsOf = (filter: FilterGroup | undefined, identity = identityFor({})) =>
+  filterSeeds({ filter, blank, schema, setTree: [], identity })
 
 describe('filterSeeds', () => {
   it('derives positive Is rules on status/select/checkbox under All-mode', () => {
@@ -248,7 +249,7 @@ describe('filterSeeds', () => {
         blank: { ...blank, parentSetId: 'S' },
         schema,
         setTree: [],
-        contextIds: [],
+        identity: identityFor({}),
       }),
     ).toEqual({})
     expect(seedsOf(filter)).toEqual({ p_status: { kind: 'select', value: 'opt_Done' } })
@@ -322,10 +323,11 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [{ property_id: 'ctx_areas', op: 'contains_any', values }],
     })
-    expect(seedsOf(rule(['s_work']), ['ctx_areas'])).toEqual({
+    const areas = identityFor({ ctx_areas: ['s_work', 's_home'] })
+    expect(seedsOf(rule(['s_work']), areas)).toEqual({
       ctx_areas: { kind: 'context', value: ['s_work'] },
     })
-    expect(seedsOf(rule(['s_work', 's_home']), ['ctx_areas'])).toEqual({})
+    expect(seedsOf(rule(['s_work', 's_home']), areas)).toEqual({})
   })
 
   it('takes both values when two one-chip rules name the same list property', () => {
