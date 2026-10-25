@@ -54,7 +54,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const needle = matchQuery(query ?? '')
   const searching = needle !== ''
 
-  const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
+  const { effectiveValues, setValueOverride } = useContainerValues(source.path)
 
   const schema = useMemo(() => containerSchema(tree, source), [tree, source])
   const view = useActiveView(source)
@@ -275,7 +275,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     mutate,
     openTarget,
     tree,
-    values,
     effectiveValues,
     setValueOverride,
     viewRootRef,
