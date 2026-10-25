@@ -41,9 +41,8 @@ export const propertyTypeIconName = (type: ColumnType): IconName => TYPE_META[ty
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
 
-/** How an option of this type draws as a chip; an option with no declared type draws as a Select's. */
-export const chipOf = (type: PropertyType | undefined): Chip =>
-  type === undefined ? TAG : (TYPE_META[type].chip ?? TAG)
+/** How an option of this type draws as a chip; a type declaring none draws as a Select's. */
+export const chipOf = (type: ColumnType): Chip => TYPE_META[type].chip ?? TAG
 
 /** A look menu's name: Format where it sets how a value is written (Link and the dates), Style where it sets how it's drawn. */
 export const styleLabel = (type: ColumnType): string => TYPE_META[type].styleLabel ?? 'Style'
