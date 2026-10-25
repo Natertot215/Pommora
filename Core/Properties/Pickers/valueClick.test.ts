@@ -1,10 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import {
-  runValueIntent,
-  type ValueIntentHandlers,
-  valueClickIntent,
-  valueMenuIntent,
-} from './valueClick'
+import { describe, it, expect } from 'vitest'
+import { valueClickIntent, valueMenuIntent } from './valueClick'
 
 describe('valueClickIntent', () => {
   it('a text value edits in place, filled or empty', () => {
@@ -74,26 +69,5 @@ describe('valueMenuIntent', () => {
     expect(valueMenuIntent('cell:hide')).toEqual({ kind: 'hide' })
     expect(valueMenuIntent('style:look:bar')).toBeNull()
     expect(valueMenuIntent('format:link-full')).toBeNull()
-  })
-})
-
-describe('runValueIntent', () => {
-  const on = (edit: ValueIntentHandlers['edit']): ValueIntentHandlers => ({
-    commit: null,
-    picker: null,
-    dateTime: null,
-    file: null,
-    edit,
-    popover: null,
-    hide: null,
-  })
-  it('runs the handler and reports it ran', () => {
-    const edit = vi.fn()
-    expect(runValueIntent({ kind: 'edit' }, on(edit))).toBe(true)
-    expect(edit).toHaveBeenCalledOnce()
-  })
-  it('reports a missing intent or a declined one as not handled', () => {
-    expect(runValueIntent(null, on(vi.fn()))).toBe(false)
-    expect(runValueIntent({ kind: 'edit' }, on(null))).toBe(false)
   })
 })

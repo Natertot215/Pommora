@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { cellMenuModel } from '../../Actions/cellMenu'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { currentNotification } from '../../Interface/Notifications/notifications'
 import { ok } from '../../Contract/result'
@@ -7,9 +6,9 @@ import type { PropertyDefinition } from '../properties'
 import { useSession } from '../../Session/store'
 import {
   fileChipIndex,
-  fileValueMenu,
   fileValueWithout,
   pickFileInto,
+  runFileMenuAction,
   runFilePick,
 } from './filePick'
 import { stubDialer } from '../../vitest.setup'
@@ -26,18 +25,15 @@ const held = (value: string[]) => ({ kind: 'file', value }) as const
 
 let pickFile: ReturnType<typeof vi.fn>
 let adoptFile: ReturnType<typeof vi.fn>
-let cellMenu: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   pickFile = vi.fn(async () => '/outside/New.pdf')
   adoptFile = vi.fn(async () => ({ ok: true, value: '[[New.pdf]]' }))
-  cellMenu = vi.fn(async () => null)
   ;(globalThis as { window?: unknown }).window = {
     nexus: stubDialer({
       'nexus:pickFile': async (req: unknown) =>
         ok(await (pickFile as (r: unknown) => Promise<unknown>)(req)),
       'assets:adopt': adoptFile,
-      menu: async (req: unknown) => ok(await (cellMenu as (r: unknown) => Promise<unknown>)(req)),
     }),
   }
   useSession.setState({
@@ -161,42 +157,22 @@ describe('pickFileInto', () => {
   })
 })
 
-describe('fileValueMenu — the value menu the side panes pop', () => {
-  const chipAt = (i: number): Element => {
-    const host = document.createElement('div')
-    host.innerHTML = `<span data-file-chip-index="${i}"><b class="x">f</b></span>`
-    return host.querySelector('.x') as Element
-  }
-
-  it('the value’s own area offers the off-chip menu — there is no file to act on', async () => {
-    await fileValueMenu(def(), held(['[[Old.pdf]]']), null, vi.fn())
-    expect(cellMenu).toHaveBeenCalledWith({
-      items: cellMenuModel({ kind: 'file', onChip: false }),
-      anchor: undefined,
-    })
-  })
-
-  it('a chip offers the on-chip menu, and Remove drops that chip alone', async () => {
+describe('runFileMenuAction', () => {
+  it('Remove File drops the chip it was opened on, alone', () => {
     const commit = vi.fn()
-    cellMenu.mockResolvedValueOnce('file:remove')
-    await fileValueMenu(def(), held(['[[A.pdf]]', '[[B.pdf]]']), chipAt(1), commit)
-    expect(cellMenu).toHaveBeenCalledWith({
-      items: cellMenuModel({ kind: 'file', onChip: true }),
-      anchor: undefined,
-    })
+    expect(
+      runFileMenuAction('file:remove', def(), held(['[[A.pdf]]', '[[B.pdf]]']), 1, commit),
+    ).toBe(true)
     expect(commit).toHaveBeenCalledWith(held(['[[A.pdf]]']))
   })
 
-  it('Replace picks into the chip it was opened on', async () => {
+  it('Replace File picks into the chip it was opened on', async () => {
     const commit = vi.fn()
-    cellMenu.mockResolvedValueOnce('file:replace')
-    await fileValueMenu(def(), held(['[[A.pdf]]', '[[B.pdf]]']), chipAt(0), commit)
+    runFileMenuAction('file:replace', def(), held(['[[A.pdf]]', '[[B.pdf]]']), 0, commit)
     await vi.waitFor(() => expect(commit).toHaveBeenCalledWith(held(['[[New.pdf]]', '[[B.pdf]]'])))
   })
 
-  it('a dismissed menu writes nothing', async () => {
-    const commit = vi.fn()
-    await fileValueMenu(def(), held(['[[A.pdf]]']), chipAt(0), commit)
-    expect(commit).not.toHaveBeenCalled()
+  it('leaves an action that isn’t a file’s to the caller', () => {
+    expect(runFileMenuAction('cell:hide', def(), held(['[[A.pdf]]']), null, vi.fn())).toBe(false)
   })
 })

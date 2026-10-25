@@ -51,7 +51,7 @@ const setTree = (
   spaceOrder?: string[],
 ): void => {
   useSession.setState({
-    assetMap: {} as never,
+    assetMap: { files: {}, versions: {} },
     mutate: vi.fn(async () => ({})) as never,
     tree: {
       nexus: { id: 'nx' },
@@ -119,6 +119,59 @@ const renderPanel = async (node: React.JSX.Element): Promise<void> => {
   })
   await act(async () => {})
 }
+/** Seeds `def` into the registry and assigns it to the page's Collection. */
+const seedDef = (def: PropertyDefinition): void => {
+  setTree()
+  const tree = useSession.getState().tree as unknown as {
+    config: { registry: PropertyDefinition[] }
+    collections: { propertyIds: string[] }[]
+  }
+  tree.config.registry.push(def)
+  tree.collections[0].propertyIds.push(def.id)
+}
+const menuAnswers = (action: string): void => {
+  ask = vi.fn(async (channel: string) => ({ ok: true, value: channel === 'menu' ? action : null }))
+  ;(window as unknown as { nexus: unknown }).nexus = {
+    ask,
+    tell: vi.fn(),
+    on: vi.fn(() => () => {}),
+  }
+}
+const popped = (n = 0): { label?: string; action?: string }[] =>
+  (
+    ask.mock.calls.filter((c) => c[0] === 'menu')[n]?.[1] as {
+      items: { label?: string; action?: string }[]
+    }
+  ).items
+const poppedLabels = (n = 0): string[] => popped(n).flatMap((i) => (i.label ? [i.label] : []))
+const poppedActions = (n = 0): string[] => popped(n).flatMap((i) => (i.action ? [i.action] : []))
+const rightClick = async (el: Element | null | undefined): Promise<void> => {
+  await act(async () => {
+    el?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+  })
+  await act(async () => {})
+}
+/** Renders the Work Space, which links Personal on its own Areas Context. */
+const renderSpace = async (): Promise<void> => {
+  setTree()
+  const tree = useSession.getState().tree as unknown as {
+    contexts: { spaces: Record<string, unknown>[] }[]
+  }
+  const areas = tree.contexts[0].spaces
+  areas[0].contextValues = { ctx_areas: ['area_life'] }
+  areas.push({
+    kind: 'space',
+    id: 'area_life',
+    title: 'Personal',
+    path: '.nexus/contexts/Areas/Personal',
+    contextId: 'ctx_areas',
+  })
+  await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
+}
+const pickerText = (): string =>
+  [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent ?? '').join('')
+const labelOf = (name: string): Element | undefined =>
+  [...host.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent === name)
 
 describe('PropertyPanel', () => {
   it('an un-held Context row is hidden in the dropdown', async () => {
@@ -150,7 +203,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a row removed through its menu disappears', async () => {
-    ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
+    ask = vi.fn(async () => ({ ok: true, value: 'cell:hide' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
       ask,
       tell: vi.fn(),
@@ -174,22 +227,8 @@ describe('PropertyPanel', () => {
       key: 'Site',
       type: 'link',
     }
-    setTree()
-    const tree = useSession.getState().tree as unknown as {
-      config: { registry: PropertyDefinition[] }
-      collections: { propertyIds: string[] }[]
-    }
-    tree.config.registry.push(siteDef)
-    tree.collections[0].propertyIds.push(siteDef.id)
-    ask = vi.fn(async (channel: string) => ({
-      ok: true,
-      value: channel === 'menu' ? 'cell:hide' : null,
-    }))
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      ask,
-      tell: vi.fn(),
-      on: vi.fn(() => () => {}),
-    }
+    seedDef(siteDef)
+    menuAnswers('cell:hide')
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Site: 'https://a.com' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     expect(text()).toContain('Site')
@@ -216,22 +255,8 @@ describe('PropertyPanel', () => {
       key: 'Site',
       type: 'link',
     }
-    setTree()
-    const tree = useSession.getState().tree as unknown as {
-      config: { registry: PropertyDefinition[] }
-      collections: { propertyIds: string[] }[]
-    }
-    tree.config.registry.push(siteDef)
-    tree.collections[0].propertyIds.push(siteDef.id)
-    ask = vi.fn(async (channel: string) => ({
-      ok: true,
-      value: channel === 'menu' ? 'editLink' : null,
-    }))
-    ;(window as unknown as { nexus: unknown }).nexus = {
-      ask,
-      tell: vi.fn(),
-      on: vi.fn(() => () => {}),
-    }
+    seedDef(siteDef)
+    menuAnswers('editLink')
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Site: '[[Nope]]' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     const row = host.querySelector('[data-property-row="prop_site"]')
@@ -251,6 +276,39 @@ describe('PropertyPanel', () => {
     expect(
       host.querySelector('[data-property-row="prop_site"] .value-field .cm-editor'),
     ).not.toBeNull()
+  })
+
+  it('a Link row’s label offers Edit Title and Edit Link before Clear and Remove, and its value offers the connection menu', async () => {
+    seedDef({ id: 'prop_site', label: 'Site', key: 'Site', type: 'link' })
+    menuAnswers('')
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Site: 'https://a.com' } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await rightClick(labelOf('Site'))
+    expect(poppedLabels(0)).toEqual(['Edit Title', 'Edit Link', 'Clear', 'Remove'])
+    await rightClick(host.querySelector('[data-property-row="prop_site"]'))
+    expect(poppedActions(1)).toContain('title:copylink')
+  })
+
+  it('a File value’s menu offers Add File and Remove and never Clear, and its Remove takes the row away', async () => {
+    seedDef({ id: 'prop_doc', label: 'Doc', key: 'Doc', type: 'file' })
+    menuAnswers('cell:hide')
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Doc: ['[[Spec.pdf]]'] } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await rightClick(host.querySelector('[data-property-row="prop_doc"]'))
+    expect(poppedLabels()).toEqual(['Add File', 'Remove'])
+    expect(useSession.getState().mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ propertyId: 'prop_doc', value: null }),
+    )
+    expect(text()).not.toContain('Doc')
+  })
+
+  it('a Context row’s click opens its Spaces, leaving the Space itself out', async () => {
+    await renderSpace()
+    await act(async () => {
+      ;(host.querySelector('[data-property-row="ctx_areas"]') as HTMLElement).click()
+    })
+    expect(pickerText()).toContain('Personal')
+    expect(pickerText()).not.toContain('Work')
   })
 
   it('a push naming the page or a property rename re-reads it, and a sibling’s push does not', async () => {
@@ -274,7 +332,7 @@ describe('PropertyPanel', () => {
   })
 
   it('an edit made on one page doesn’t cover that page’s values after the panel moves away and back', async () => {
-    ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
+    ask = vi.fn(async () => ({ ok: true, value: 'cell:hide' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
       ask,
       tell: vi.fn(),
@@ -332,7 +390,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a Space keeps its edit until the push, then reads its node', async () => {
-    ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
+    ask = vi.fn(async () => ({ ok: true, value: 'cell:hide' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
       ask,
       tell: vi.fn(),

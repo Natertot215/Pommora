@@ -56,15 +56,3 @@ const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = 
 
 export const valueMenuIntent = (action: CellMenuAction | LinkAction): ValueIntent | null =>
   MENU_INTENTS[action] ?? null
-
-export type ValueIntentHandlers = {
-  [K in ValueIntent['kind']]: ((intent: Extract<ValueIntent, { kind: K }>) => void) | null
-}
-
-/** True when a handler ran; a null handler declines its intent. */
-export function runValueIntent(intent: ValueIntent | null, on: ValueIntentHandlers): boolean {
-  if (!intent) return false
-  const handle = on[intent.kind] as ((intent: ValueIntent) => void) | null
-  handle?.(intent)
-  return handle !== null
-}
