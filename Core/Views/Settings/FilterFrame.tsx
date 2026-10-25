@@ -177,9 +177,7 @@ function ChipsField({
         )}
       </div>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {!open ? null : options.length === 0 ? (
-          <MenuCaption>No options yet.</MenuCaption>
-        ) : (
+        {open && (
           <PropertyOptionRows
             column={column}
             contextOptions={contextOptions}

@@ -904,12 +904,14 @@ describe('FilterFrame value editors', () => {
     expect(row?.querySelector('.lucide-hash')).not.toBeNull()
   })
 
-  it('a Context with no Spaces says so', async () => {
+  it('a Context with no Spaces opens a blank pane, as the value picker does', async () => {
     const tree = linkedSpacesTree()
     tree.contexts[0].spaces = []
     await mount(contextRule, tree)
     await click(host.querySelector('[aria-label="Filter values"]'))
-    expect(document.body.textContent).toContain('No options yet.')
+    const pane = document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')
+    expect(pane).not.toBeNull()
+    expect(pane?.textContent).toBe('')
   })
 
   it('two rapid picks inside the refetch window accumulate — the second never drops the first', async () => {
