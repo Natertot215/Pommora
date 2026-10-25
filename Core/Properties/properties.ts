@@ -1,7 +1,6 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { isKeyOf } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { LINK_DISPLAYS } from '../Connections/linkValue'
 import { keyedOptionId } from '../Nexus/ids'
@@ -51,10 +50,10 @@ export const PROPERTY_TYPES: Readonly<Record<ColumnType, TypeSpec>> = {
   lastEditedTime: { kind: 'dateTime', origin: 'filedata' },
 }
 
-export const isUserType = (t: string): t is PropertyType =>
-  isKeyOf(PROPERTY_TYPES, t) && PROPERTY_TYPES[t].origin === 'user'
+export const isUserType = (t: PropertyType): t is Exclude<PropertyType, 'context'> =>
+  PROPERTY_TYPES[t].origin === 'user'
 
-export const CREATABLE_TYPES = Object.keys(PROPERTY_TYPES).filter(isUserType)
+export const CREATABLE_TYPES = typeIds.options.filter(isUserType)
 
 export const byKey = <D extends { key: string }>(defs: Iterable<D>): Map<string, D> =>
   new Map(Array.from(defs, (d) => [d.key, d]))
