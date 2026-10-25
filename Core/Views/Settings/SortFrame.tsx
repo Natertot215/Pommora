@@ -1,5 +1,5 @@
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import { PROPERTY_TYPES, type PropertyDefinition, specOf } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
 import {
   MenuRowView,
@@ -17,29 +17,33 @@ import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'
 import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
 import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+import { type SortDirections, viewSpecOf } from '../valueKinds'
 
 type Direction = SortCriterion['direction']
 
-const OPTION_DIRECTIONS: PickerOption<Direction>[] = [
-  { value: 'ascending', label: 'Default' },
-  { value: 'descending', label: 'Reversed' },
-]
+// Each family's words for the two directions; a criterion whose property is gone reads a value's.
+const DIRECTIONS: Record<SortDirections, PickerOption<Direction>[]> = {
+  option: [
+    { value: 'ascending', label: 'Default' },
+    { value: 'descending', label: 'Reversed' },
+  ],
+  text: [
+    { value: 'ascending', label: 'A → Z' },
+    { value: 'descending', label: 'Z → A' },
+  ],
+  value: [
+    { value: 'ascending', label: 'Ascending' },
+    { value: 'descending', label: 'Descending' },
+  ],
+}
 type OrderChoice = Direction | 'custom'
 const CUSTOM_OPTION_DIRECTIONS: PickerOption<OrderChoice>[] = [
-  ...OPTION_DIRECTIONS,
+  ...DIRECTIONS.option,
   { value: 'custom', label: 'Custom' },
 ]
 const LOCATION_ORDERS: PickerOption<'location' | 'custom'>[] = [
   { value: 'location', label: 'Location' },
   { value: 'custom', label: 'Custom' },
-]
-const VALUE_DIRECTIONS: PickerOption<Direction>[] = [
-  { value: 'ascending', label: 'Ascending' },
-  { value: 'descending', label: 'Descending' },
-]
-const TEXT_DIRECTIONS: PickerOption<Direction>[] = [
-  { value: 'ascending', label: 'A → Z' },
-  { value: 'descending', label: 'Z → A' },
 ]
 
 function directionOptions(
@@ -47,21 +51,8 @@ function directionOptions(
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): PickerOption<Direction>[] {
-  switch (specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind) {
-    case 'select':
-      return OPTION_DIRECTIONS
-    case 'link':
-    case 'text':
-    case 'multiSelect':
-    case 'file':
-      return TEXT_DIRECTIONS
-    case 'number':
-    case 'dateTime':
-    case 'checkbox':
-    case 'context':
-    case undefined:
-      return VALUE_DIRECTIONS
-  }
+  const column = resolveColumn(propertyId, schema, contextIds)
+  return DIRECTIONS[viewSpecOf(column?.type)?.directions ?? 'value']
 }
 
 export function SortFrame({
@@ -114,7 +105,7 @@ export function SortFrame({
 
   const primaryDef = primary && schema.find((d) => d.id === primary.property_id)
   const finiteDef =
-    primaryDef && PROPERTY_TYPES[primaryDef.type].kind === 'select' ? primaryDef : undefined
+    primaryDef && viewSpecOf(primaryDef.type)?.directions === 'option' ? primaryDef : undefined
 
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
   const ordering = primary?.order

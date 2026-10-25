@@ -30,6 +30,7 @@ export interface OperatorChoice {
 }
 
 export type ValueTest = (v: PropertyValue) => boolean
+export type SortDirections = 'option' | 'text' | 'value'
 
 export type ValueKindSpec = Readonly<{
   /** The operators the filter pane offers, in its menu's order; a hand-written rule may hold others the kind still answers. */
@@ -38,6 +39,13 @@ export type ValueKindSpec = Readonly<{
   filled: ValueTest
   /** A rule's test, its operands read once; undefined, so the rule abstains, for an op the kind doesn't answer or an operand that doesn't read. */
   prepare(op: string, want: readonly string[], def?: PropertyDefinition): ValueTest | undefined
+  /** A criterion's key reader, built once per sort; a null key sorts last in either direction, and a kind with no reader doesn't sort. */
+  sortKey?(
+    def?: PropertyDefinition,
+    order?: readonly string[],
+  ): (v: PropertyValue) => string | number | null
+  /** Which pair of words the Sort pane names a direction with. */
+  directions: SortDirections
 }>
 
 const EMPTIES: OperatorChoice[] = [
@@ -240,18 +248,54 @@ function prepareCheckbox(op: string, want: readonly string[]): ValueTest | undef
   }
 }
 
-const PROSE: ValueKindSpec = { ops: TEXT_OPS, filled: showsText, prepare: prepareText }
+const textKey =
+  (def?: PropertyDefinition) =>
+  (v: PropertyValue): string | null =>
+    shownText(v, def) || null
+
+/** A Custom order leads with its saved options and appends the ones it predates; a value no option holds sorts with the value-less rows. */
+function optionKey(def?: PropertyDefinition, order: readonly string[] = []) {
+  const listed = new Set(order)
+  const ids = [...order, ...(def ? optionIds(def) : []).filter((id) => !listed.has(id))]
+  const rank = new Map(ids.map((id, i) => [id, i]))
+  return (v: PropertyValue): number | null =>
+    v.kind === 'select' ? (rank.get(v.value) ?? null) : null
+}
+
+const PROSE: ValueKindSpec = {
+  ops: TEXT_OPS,
+  filled: showsText,
+  prepare: prepareText,
+  sortKey: textKey,
+  directions: 'text',
+}
 
 export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
   text: PROSE,
   link: PROSE,
-  number: { ops: NUMBER_OPS, filled: notBlank, prepare: prepareNumber },
+  number: {
+    ops: NUMBER_OPS,
+    filled: notBlank,
+    prepare: prepareNumber,
+    sortKey: () => (v) => (v.kind === 'number' ? v.value : null),
+    directions: 'value',
+  },
   dateTime: {
     ops: DATE_OPS,
     filled: (v) => v.kind === 'dateTime' && readDate(v.value) !== null,
     prepare: prepareDate,
+    sortKey: () => (v) =>
+      v.kind === 'dateTime' ? (readDate(v.value)?.at.getTime() ?? null) : null,
+    directions: 'value',
   },
-  checkbox: { ops: CHECKBOX_OPS, filled: notBlank, prepare: prepareCheckbox },
+  // An unchecked box is stored as no value: Is Empty matches it, and it sorts after the checked ones ascending, as an empty value does, while holding a key so descending puts it first.
+  checkbox: {
+    ops: CHECKBOX_OPS,
+    filled: notBlank,
+    prepare: prepareCheckbox,
+    sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
+    directions: 'value',
+  },
   // Is and Isn't name whole options; the text ops a hand-written rule may hold search the option's label.
   select: {
     ops: OPTION_OPS,
@@ -260,10 +304,24 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
       op === FILTER_OPS.is || op === FILTER_OPS.isNot
         ? prepareOptions(op, want, def)
         : prepareText(op, want, def),
+    sortKey: optionKey,
+    directions: 'option',
   },
-  multiSelect: { ops: SET_OPS, filled: notBlank, prepare: prepareOptions },
-  context: { ops: SET_OPS, filled: notBlank, prepare: prepareMembers },
-  file: { ops: EMPTIES, filled: notBlank, prepare: () => undefined },
+  multiSelect: {
+    ops: SET_OPS,
+    filled: notBlank,
+    prepare: prepareOptions,
+    sortKey: textKey,
+    directions: 'text',
+  },
+  context: { ops: SET_OPS, filled: notBlank, prepare: prepareMembers, directions: 'value' },
+  file: {
+    ops: EMPTIES,
+    filled: notBlank,
+    prepare: () => undefined,
+    sortKey: textKey,
+    directions: 'text',
+  },
 }
 
 /** A column type's entry in the record; none for a property that's gone. */
