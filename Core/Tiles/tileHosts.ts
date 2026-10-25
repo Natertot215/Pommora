@@ -2,7 +2,7 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 import { pathExists } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
-import { HOMEPAGE_DIR_REL } from '../Paths/nexusPaths'
+import { CONTEXTS_REGISTRY_REL, HOMEPAGE_DIR_REL } from '../Paths/nexusPaths'
 import { homepageDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { HOMEPAGE_HOST, type TileHostRef } from './tiles'
@@ -49,7 +49,7 @@ export const tileHostsOf = (
     arm.boards(tree).map((b) => ({ host: b.host, dir: join(root, b.rel) })),
   ),
   unreadable: tree.unreadable?.some(
-    (u) => u.kind === 'registry' && u.registry === 'contexts' && u.reason === 'unreadable',
+    (u) => u.kind === 'registry' && u.path === CONTEXTS_REGISTRY_REL && u.reason === 'unreadable',
   )
     ? 1
     : 0,
