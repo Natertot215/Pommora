@@ -30062,6 +30062,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 - [ ] `Core/Properties/Pickers/valueClick.ts`: the `rename` intent folds into `popover`, carrying its seat (AFTER); the three surfaces' `rename` handlers leave, their popovers already seating `'rename'` on a Link, and `valueClick.test.ts` follows.
 - [ ] `Core/Actions/connectionMenu.ts`: `LinkMenuContext`'s `value` reads `{ hideable?: HideFrom }`, P15's union read through a type-only import from `./cellMenu` (the runtime import runs the other way, `cellMenu.ts` reading `cellClosingRows`), and the closing rows pass `!!ctx.value.hideable`; `valueMenuTarget.ts`'s `hideable` parameter takes `HideFrom`, optional, through the same type-only import, and its three callers follow: the table's drops its `false` and Cards' `true` reads `'view'` (lines Tasks 16A-2 and 16A-3 delete with their files' copies), and the panel's `true` reads `'row'` (deleted in Task 16B-2).
 - [ ] Write `Core/Properties/Cells/ValueSeat.tsx` in full (below). Its `run` switches on the intent itself, its `target` hands the options arm the column, as P15's `PickTarget` reads it, and its `click` and `menu` leave a gesture from a portalled pane alone through one `fromPane` check, so the table gains the guard Cards carry.
+- [ ] An open seat names its column by id: `SeatOpen` holds `columnId` in place of `column`, `SeatHost` gains `columnOf: (id: string) => ResolvedColumn | undefined`, which each surface answers from the columns it already resolves (the table and cards through `resolveColumn` over the host's schema and Context ids, so a revealed hidden column still resolves; the panel from its own rows), and every read of the open value's column (`input`, `target`, the commit, the close effect) goes through `host.columnOf(open.columnId)` on each render, closing the seat when it no longer resolves. A picker open over a column then lists an option created while it's open, which a stored column missed (Cards' `07fbbbc9c`). `ValueSeat.test.tsx` gains that case, written first and watched fail against a seat holding the column.
 - [ ] Run the new test file, `Core/Actions/connectionMenu.test.ts`, and `Core/Properties/Pickers/valueClick.test.ts` green, then the gates. The work commits with Task 16A-2.
 
 **AFTER**
@@ -31061,6 +31062,7 @@ The style action spelling in "runs a Style answer" is `columnMenu.ts`'s at P3's 
 
 **CHANGE**
 
+- [ ] Four of the `CardsView.tsx` hunks are finished by hand on the shape `07fbbbc9c` left (the popover, the card host, after `reorderSets`, and `value`): its `valuePicker` request names `columnId` and one memoized `vColumn` resolves it, which the seat's `columnOf` now carries, so `vColumn` and its readers leave with the popover, and `cardGestures.test.tsx`' "an option created while the picker is open joins its list" stays green.
 - [ ] Write the pin in `Core/Views/Cards/cardCreation.test.tsx` › `describe('the cards ghost — dwell, create, and exit')` and watch it pass at the base (preserved behavior): "a value’s inline field closes the ghost and keeps it down until the field closes" (below). The file's `source()` gains a Text property with a value on `p1`, seeded as its other fixtures are.
 - [ ] Write the chooser pins in `Core/Views/Cards/cardGestures.test.tsx` › `describe('the card’s Add chooser')` (below) and watch them pass at the base (preserved behavior): "a Select entry slides into its options under ‹ Properties, in the same pane" and "a Date entry opens its own calendar", over a Select and a Date the view doesn't show, so the blank card's chooser offers both.
 - [ ] `Core/Views/Cards/CardsView.tsx`: the seat, `commitOnCard`, and the inline hold land after `useViewInteractions` (below); `PageCard`, `CardFace`, and `CardProperties` carry `editing`, the column id of the card's open inline field, as the table's rows carry theirs.
@@ -35455,7 +35457,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 12 | −192 | +340 | +148 | −393 / +517 / +124 | +217 |
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
 | 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
-| 15 | −256 | +229 | −27 | −259 / +232 / −27 | +13 |
+| 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
 | 16A | −537 | +457 | −80 | | |
 | 16B | −322 | +97 | −225 | | |
 | 17 | −813 | +609 | −204 | | |
@@ -35592,6 +35594,7 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 
 Filled during execution: each in-flight call that changes an outcome, with its task, its reason, and its measured effect on *§Net Ledger*.
 
+- **The Value Seat Names Its Column by Id (Task 16A-1, from Phase 15's Checkpoint):** Task 13-2's `pickTarget` reads the column a picker opened over, and Cards held that column in its picker state, so a card's picker kept the definition it opened with and missed an option created while it was open; the Option Picker Drive's cards step found it, and `07fbbbc9c` resolves Cards' column from the live schema on each render (+6, in Phase 15's row). The seat 16A-1 writes held the column the same way for every surface, so it names the column by id and resolves it through the host's `columnOf` on each render.
 - **Measurement 02-10 Ran in Dev Mode Beside the Live Instance, and Its Fail Branch Left (Task 15-8; Nathan's Ruling, 10-25-2026):** the rule's procedure stops the live instance and launches `npm run dev` on 9333; each run instead launched its own instance from a worktree on its own port and userData, the built app first and then dev mode, which the rule names. Dev mode failed the longest-task threshold, the Fail Branch landed and measured slower with the longest task unmoved and a partly refused request left without undo, and Nathan ruled it reverted; Phase 15 lands its Pass figure (−27), and no later task takes `--outcome 02-10=Fail`.
 
 - **Rulings I-4 and E-4, Between Phases 7 and 8 (Nathan, 10-23-2026):** two calls execution raised, ruled after Phase 7's closeout, land outside any task, measured in *§Net Ledger*'s own row over `acfd53fa4^..974e60755`.
