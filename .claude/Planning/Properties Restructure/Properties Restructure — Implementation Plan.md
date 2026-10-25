@@ -1300,11 +1300,11 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 16A-3 · Cards run every value through the seat
   - [x] Review Checkpoint
   - [x] Closeout P15–P16A (two `opus-high` agents, inward and outward)
-- [ ] **Phase 16B** — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
-  - [ ] Task 16B-1 · The native menu's router folds into `MenuSeat`
-  - [ ] Task 16B-2 · The Properties panel splits along the seat
-  - [ ] Task 16B-3 · Drive group 14
-  - [ ] Review Checkpoint
+- [x] **Phase 16B** — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
+  - [x] Task 16B-1 · The native menu's router folds into `MenuSeat`
+  - [x] Task 16B-2 · The Properties panel splits along the seat
+  - [x] Task 16B-3 · Drive group 14
+  - [x] Review Checkpoint
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 17 opens]`
 - [ ] **Phase 17** — The Properties Pane
   - [ ] Task 17-1 · `useGhostOptionAnchor` leaves
@@ -35462,7 +35462,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
 | 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
 | 16A | −537 | +457 | −80 | −546 / +465 / −81 | −62 |
-| 16B | −322 | +97 | −225 | | |
+| 16B | −322 | +97 | −225 | −361 / +149 / −212 | −274 |
 | 17 | −813 | +609 | −204 | | |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
