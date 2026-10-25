@@ -63,10 +63,12 @@ export function notifyReport(message: string, failed: boolean): void {
   post({ message, tone: failed ? 'error' : 'normal' })
 }
 
-/** Every refusal of something the user did reaches them here; the answer says whether it went through. */
-export function reportRefusal<T>(r: Result<T>): r is { ok: true; value: T } {
-  if (!r.ok) notifyReport(r.error.message, true)
-  return r.ok
+/** Every refusal of something the user did reaches them here, offering Try Again when a retry is given; the answer says whether it went through. */
+export function reportRefusal<T>(r: Result<T>, retry?: () => void): r is { ok: true; value: T } {
+  if (r.ok) return true
+  if (retry) notifyRetry(r.error.message, retry)
+  else notifyReport(r.error.message, true)
+  return false
 }
 
 const tryAgain = (run: () => void): Notification['action'] => ({ label: 'Try Again', run })

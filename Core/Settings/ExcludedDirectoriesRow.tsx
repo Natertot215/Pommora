@@ -43,7 +43,7 @@ function ExclusionPane(): React.JSX.Element {
     void dialer()
       .ask('exclusions:choose')
       .then((r) => {
-        if (reportRefusal(r) && r.value !== null) apply(r.value)
+        if (reportRefusal(r, () => browse(apply)) && r.value !== null) apply(r.value)
       })
   }
   const list = useListEdit(stored, {

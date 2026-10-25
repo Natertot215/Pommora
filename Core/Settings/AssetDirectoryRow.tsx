@@ -1,4 +1,4 @@
-import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useSession } from '../Session/store'
@@ -17,8 +17,7 @@ export function AssetDirectoryRow({
     void dialer()
       .ask('assets:chooseDir')
       .then((picked) => {
-        if (!picked.ok) notifyRetry(picked.error.message, browse)
-        else if (picked.value !== null) setDir(picked.value)
+        if (reportRefusal(picked, browse) && picked.value !== null) setDir(picked.value)
       })
 
   return (
