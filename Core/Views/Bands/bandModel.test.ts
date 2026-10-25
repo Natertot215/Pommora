@@ -213,14 +213,7 @@ describe('which Set bands open', () => {
   ): [string, boolean][] =>
     bandModelOf(
       groups,
-      headContextOf(
-        source,
-        setIndexOf(source),
-        undefined,
-        {} as SavedView,
-        () => ({}) as never,
-        foldersOpen,
-      ),
+      headContextOf(source, setIndexOf(source), undefined, {} as SavedView, undefined, foldersOpen),
     ).nodes.flatMap((n) => (n.kind === 'set' ? [[n.key, n.opens] as [string, boolean]] : []))
 
   it("a Collection's Sets open and its Sub-Sets don't while folders stay closed", () => {
@@ -260,7 +253,7 @@ describe('a bucket head', () => {
         column: propertyColumn(def),
       } as never,
       {} as SavedView,
-      () => ({}) as never,
+      undefined,
       false,
     ).bucket('opt_a')
     expect(head.label).toBe('Alpha')

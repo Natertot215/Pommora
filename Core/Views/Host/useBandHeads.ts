@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView } from '../views'
 import { headContextOf } from '../Bands/bandModel'
 import type { Grouping } from '../Pipeline/group'
@@ -12,7 +11,6 @@ import { useSetting } from '../../Session/store'
 export function useBandHeads(
   source: CollectionNode | SetNode,
   grouping: Grouping | undefined,
-  schema: PropertyDefinition[],
   view: SavedView,
 ) {
   const painted = usePainted(source)
@@ -26,10 +24,10 @@ export function useBandHeads(
         sets,
         grouping,
         view,
-        (id) => styleFor(id, schema, view, nexus),
+        grouping && styleFor(grouping.column, view, nexus).date_format,
         foldersOpen,
       ),
-    [painted, sets, grouping, schema, view, nexus, foldersOpen],
+    [painted, sets, grouping, view, nexus, foldersOpen],
   )
   return { painted, sets, nexus, heads }
 }

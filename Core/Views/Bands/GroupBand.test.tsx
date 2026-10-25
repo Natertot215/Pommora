@@ -66,14 +66,7 @@ const grouping = (property_id: string, extra: Partial<SubGroupConfig> = {}): Gro
   column: propertyColumn(schema.find((d) => d.id === property_id)!),
 })
 const heads = (sub?: Grouping, date_format: ColumnStyle['date_format'] = 'full') =>
-  headContextOf(
-    source,
-    setIndexOf(source),
-    sub,
-    view,
-    () => ({ date_format }) as ColumnStyle,
-    false,
-  )
+  headContextOf(source, setIndexOf(source), sub, view, date_format, false)
 const group = (kind: 'set' | 'tail' | 'bucket', key: string, value = key): ResolvedGroup =>
   kind === 'bucket' ? { key, kind, value, items: [] } : { key, kind, items: [] }
 const nodeOf = (g: ResolvedGroup, h: ReturnType<typeof heads>) => {

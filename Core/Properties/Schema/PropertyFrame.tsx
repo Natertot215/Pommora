@@ -25,7 +25,8 @@ import { lookOptions } from '../displayLabels'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
-import { columnStylePatch, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
+import { columnStylePatch, styleFor, useNexusForms } from '../../Views/Host/useColumnStyles'
+import { propertyColumn } from '../../Views/Pipeline/columns'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
 import { FileEditor } from './FileEditor'
@@ -180,7 +181,6 @@ export function PropertyFrame({
   onBack: () => void
   source: CollectionNode | SetNode
 }): React.JSX.Element {
-  const styleFor = useStyleFor()
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
   const activeView = useActiveView(source, schema)
@@ -247,8 +247,11 @@ export function PropertyFrame({
   }
   const configure = (propertyId: string, patch: PropertyConfig): void =>
     void mutate({ op: 'configureProperty', propertyId, patch })
-  const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
-    await saveView(activeView, columnStylePatch(activeView, schema, nexus, propId, patch))
+  const saveColumnStyle = async (
+    def: PropertyDefinition,
+    patch: Partial<ColumnStyle>,
+  ): Promise<void> => {
+    await saveView(activeView, columnStylePatch(activeView, propertyColumn(def), nexus, patch))
   }
   const handleDrop = (drop: PaneDrop): void => {
     const at = { containerPath: collectionPath, propertyId: drop.propId }
@@ -320,7 +323,7 @@ export function PropertyFrame({
         groups={optionGroupsOf(def)}
         style={{
           current: style,
-          set: (key, value) => void saveColumnStyle(def.id, { [key]: value }),
+          set: (key, value) => void saveColumnStyle(def, { [key]: value }),
         }}
       />
     </div>
@@ -343,14 +346,14 @@ export function PropertyFrame({
       />
     ),
     dateTime: (def, style) => (
-      <DateTimeEditor style={style} onChange={(patch) => void saveColumnStyle(def.id, patch)} />
+      <DateTimeEditor style={style} onChange={(patch) => void saveColumnStyle(def, patch)} />
     ),
     checkbox: (def, style) => (
       <CheckboxEditor
         color={def.checkbox_color}
         look={lookIn(CHECKBOX_LOOKS, style.look)}
         onSetColor={(next) => configure(def.id, { checkbox_color: next })}
-        onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
+        onSetStyle={(look) => void saveColumnStyle(def, { look })}
       />
     ),
     number: (def, style) => (
@@ -358,7 +361,7 @@ export function PropertyFrame({
         config={def}
         look={lookIn(NUMBER_LOOKS, style.look)}
         onSetConfig={(patch) => configure(def.id, patch)}
-        onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
+        onSetStyle={(look) => void saveColumnStyle(def, { look })}
       />
     ),
     file: (def) => (
@@ -390,7 +393,7 @@ export function PropertyFrame({
         </>
       )
     }
-    const columnStyle = styleFor(def.id, schema, activeView)
+    const columnStyle = styleFor(propertyColumn(def), activeView, nexus)
     const settings = SETTINGS[def.type](def, columnStyle)
     const optionLook = lookIn(OPTION_LOOKS, columnStyle.look)
     const styleFooting =
@@ -405,7 +408,7 @@ export function PropertyFrame({
                 solid
                 value={optionLook}
                 options={OPTION_STYLE_OPTIONS}
-                onPick={(look) => void saveColumnStyle(def.id, { look })}
+                onPick={(look) => void saveColumnStyle(def, { look })}
               />
             }
           />

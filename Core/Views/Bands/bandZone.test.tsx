@@ -39,10 +39,7 @@ const leaf = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
   ...(children ? { children } : {}),
 })
 const modelOf = (groups: ResolvedGroup[]): BandModel =>
-  bandModelOf(
-    groups,
-    headContextOf(source, setIndexOf(source), undefined, view, () => ({}) as never, false),
-  )
+  bandModelOf(groups, headContextOf(source, setIndexOf(source), undefined, view, undefined, false))
 const BANDS = modelOf([leaf('A', [leaf('A1')]), leaf('B')])
 
 let host: HTMLDivElement

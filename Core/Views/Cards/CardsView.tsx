@@ -43,7 +43,6 @@ import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnLabel'
-import { useColumnStyleMap } from '../Host/useColumnStyles'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
@@ -102,7 +101,7 @@ type BannerRequest = {
 /** Every gesture a card hands back, as one identity-stable object. */
 type CardApi = {
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
-  setStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
+  setStyle: (column: ResolvedColumn, key: keyof ColumnStyle & string, value: string) => void
   open: (row: ViewRow, newTab: boolean) => void
   hide: (id: string) => void
   openValuePicker: (req: ValuePickerRequest) => void
@@ -204,7 +203,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Value and add pickers ─────────────────────────────────────────────────
 
-  const styleById = useColumnStyleMap(host)
+  const { styleById } = host
   const pickerAnchorRef = useLatest((valuePicker ?? addPicker)?.anchor ?? null)
 
   useEffect(() => {

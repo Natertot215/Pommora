@@ -72,7 +72,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const pageOrder = pageOrderOf(plan, view, sortKeys)
   const grouping = bucketGroupingOf(plan)
   const groupPropId = grouping?.config.property_id
-  const { painted, sets, nexus, heads } = useBandHeads(source, grouping, schema, view)
+  const { painted, sets, nexus, heads } = useBandHeads(source, grouping, view)
   const groupPropType = grouping?.column.type
   const canReassign = reassignable(groupPropType)
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined
@@ -92,6 +92,11 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
       rows,
     }
   }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, contextIds])
+  // Every shown column's style, resolved once per pass; the table, the cards, and the pickers read it.
+  const styleById = useMemo(
+    () => new Map(columns.map((c) => [c.id, styleFor(c, view, nexus)])),
+    [columns, view, nexus],
+  )
   // A row's place is the Set chain below the source: every row shares the source's own name, which would otherwise keep them all.
   const keys = useMemo(
     () =>
@@ -155,8 +160,11 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     else next.add(key)
     void persistView({ collapsed_groups: next.size ? [...next] : undefined }, { viewState: true })
   }
-  const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void =>
-    void persistView(columnStylePatch(view, schema, nexus, colId, { [key]: value }))
+  const setStylePatch = (
+    column: ResolvedColumn,
+    key: keyof ColumnStyle & string,
+    value: string,
+  ): void => void persistView(columnStylePatch(view, column, nexus, { [key]: value }))
   const viewRootRef = useRef<HTMLElement | null>(null)
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
@@ -206,11 +214,12 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.id, target)
   }
-  const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, view, nexus)
+  const styleOf = (column: ResolvedColumn): ColumnStyle =>
+    styleById.get(column.id) ?? styleFor(column, view, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = column.def ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column)
-    const style = styleOf(column.id)
+    const style = styleOf(column)
     const spec = specOf(column.type)
     if (spec?.kind === 'dateTime' && spec.origin === 'user')
       return {
@@ -225,7 +234,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
       kind: 'options',
       def,
       current,
-      style: { current: style, set: (key, value) => setStylePatch(column.id, key, value) },
+      style: { current: style, set: (key, value) => setStylePatch(column, key, value) },
       contextOptions:
         column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
     }
@@ -261,6 +270,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     dragDisabled,
     searching,
     setStylePatch,
+    styleById,
     hideProperty,
     revealProperty,
     persistView,

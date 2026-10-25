@@ -8,7 +8,7 @@ import { LOCATION_SORT, type SavedView } from '../views'
 import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
-import { contextColumn } from '../Pipeline/columns'
+import { contextColumn, propertyColumn } from '../Pipeline/columns'
 import { mutateAhead } from './pendingView'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { useContainerValues, useValuesEpoch } from './useContainerValues'
@@ -208,7 +208,7 @@ describe('the persist fold', () => {
       }),
     )
     act(() => api?.toggleCollapse('g1'))
-    act(() => api?.setStylePatch('prop_status', 'date_format', 'relative'))
+    act(() => api?.setStylePatch(propertyColumn(statusDef), 'date_format', 'relative'))
     act(() => void api?.persistView({ column_widths: { prop_status: 120 } }))
     act(() => void api?.persistView({ hide_borders: true, column_widths: { prop_status: 90 } }))
     const saved = lastSavedView()
@@ -220,7 +220,7 @@ describe('the persist fold', () => {
 
   it("a pick equal to the column's default stores nothing, so the column follows it again", async () => {
     await mount(collection({ column_styles: { prop_status: { look: 'compact' } } }))
-    act(() => api?.setStylePatch('prop_status', 'look', 'standard'))
+    act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'standard'))
     expect(lastSavedView().column_styles?.prop_status).toEqual({})
   })
 
@@ -279,6 +279,18 @@ describe('the persist fold', () => {
   })
 })
 
+describe('the style map', () => {
+  it('styles every shown column once per pass', async () => {
+    const countDef: PropertyDefinition = { id: 'prop_n', label: 'N', key: 'N', type: 'number' }
+    await mount(
+      collection({ column_styles: { prop_status: { look: 'compact' }, prop_n: { look: 'bar' } } }),
+    )
+    expect([...(api?.styleById.keys() ?? [])]).toEqual(['_title', 'prop_status'])
+    expect(api?.styleById.get('prop_status')?.look).toBe('compact')
+    expect(api?.styleOf(propertyColumn(countDef)).look).toBe('bar')
+  })
+})
+
 describe('the reset keys', () => {
   it('the stored order paints under default Custom and is ignored under Location', async () => {
     await mount(collection({ manual_order: ['p2', 'p1'] }))
@@ -311,7 +323,7 @@ describe('the reset keys', () => {
     const { a, b } = deepSets()
     await mount(a)
     act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
-    act(() => api?.setStylePatch('prop_status', 'look', 'label'))
+    act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'label'))
     act(() => api?.toggleCollapse('gA'))
     expect(api?.view.property_order).toEqual(['prop_status', '_title'])
     await mount(b)
@@ -597,7 +609,7 @@ describe('the cards seam (nests off)', () => {
     act(() => api?.toggleCollapse('sA'))
     await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
-    act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
+    act(() => api?.setStylePatch(propertyColumn(statusDef), 'look', 'compact'))
     expect(api?.view.column_styles?.prop_status).toEqual({ look: 'compact' })
     await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), false)
     await mount(setCollection(), false)

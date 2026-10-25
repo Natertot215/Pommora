@@ -274,7 +274,7 @@ describe('a property pick from the page menu', () => {
       row: row(),
       trigger: {} as HTMLElement,
       commit: () => undefined,
-      styleOf: (id) => (id === 'prop_num' ? style : dateDefaults('full')),
+      styleOf: (column) => (column.id === 'prop_num' ? style : dateDefaults('full')),
     })
     expect(useSession.getState().pendingPick?.style).toEqual(style)
   })

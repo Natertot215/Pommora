@@ -45,7 +45,7 @@ export function CardValue({
   ctx: ValueContext
   style: ColumnStyle
   onCommit: (column: ResolvedColumn, value: PropertyValue | null) => void
-  onStyle: (colId: string, key: keyof ColumnStyle & string, value: string) => void
+  onStyle: (column: ResolvedColumn, key: keyof ColumnStyle & string, value: string) => void
   onHide: (colId: string) => void
   onOpenPicker: (
     column: ResolvedColumn,
@@ -126,7 +126,7 @@ export function CardValue({
     if (!action) return
     if (runFileMenuAction(action, def, v, chip, commit) || runMenuIntent(action)) return
     const parsed = parseStyleAction(action)
-    if (parsed) onStyle(column.id, parsed.key, parsed.value)
+    if (parsed) onStyle(column, parsed.key, parsed.value)
   }
 
   return (

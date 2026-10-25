@@ -160,7 +160,8 @@ export function GroupFrame({
   const subDef = sub?.column.def
   const topByDate = activeDef?.type === 'dateTime'
   const subByDate = subDef?.type === 'dateTime'
-  const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'dateTime')?.id
+  const dateColumn =
+    plan.kind === 'property' && topByDate ? plan.group.column : subByDate ? sub?.column : undefined
 
   const pickGroupBy = (id: string): void => {
     if (id === 'none') {
@@ -214,21 +215,20 @@ export function GroupFrame({
           />
         }
       />
-      {dateHeadingProp &&
-        NUMERIC_FORMATS.has(styleFor(dateHeadingProp, schema, view, nexus).date_format) && (
-          <FootingItem
-            icon="type"
-            label="Separation"
-            trailing={
-              <PickerControl
-                ariaLabel="Separation"
-                value={viewOption(view, 'date_separator')}
-                options={SEPARATION}
-                onPick={(v) => save({ date_separator: v })}
-              />
-            }
-          />
-        )}
+      {dateColumn && NUMERIC_FORMATS.has(styleFor(dateColumn, view, nexus).date_format) && (
+        <FootingItem
+          icon="type"
+          label="Separation"
+          trailing={
+            <PickerControl
+              ariaLabel="Separation"
+              value={viewOption(view, 'date_separator')}
+              options={SEPARATION}
+              onPick={(v) => save({ date_separator: v })}
+            />
+          }
+        />
+      )}
     </MenuFooting>
   )
 
@@ -322,7 +322,6 @@ export function GroupFrame({
               view={view}
               group={plan.group.config}
               column={plan.group.column}
-              schema={schema}
               {...bucketControls('group', plan.group.config.property_id)}
             />
           ) : (
@@ -338,7 +337,6 @@ export function GroupFrame({
             source={source}
             view={view}
             plan={plan}
-            schema={schema}
             sub={sub}
             persist={(patch) => saveView(view, patch)}
             {...setControls}
@@ -354,7 +352,6 @@ function LocationHierarchy({
   source,
   view,
   plan,
-  schema,
   sub,
   persist,
   isHidden,
@@ -364,14 +361,13 @@ function LocationHierarchy({
   source: CollectionNode | SetNode
   view: SavedView
   plan: GroupPlan
-  schema: PropertyDefinition[]
   sub: Grouping | undefined
   persist: (patch: ViewPatch) => Promise<Result<unknown>>
   subControls: HideControls
 } & HideControls): React.JSX.Element {
   const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
-  const { painted, sets, heads } = useBandHeads(source, sub, schema, view)
+  const { painted, sets, heads } = useBandHeads(source, sub, view)
   const subDef = sub?.column.def
 
   const subChips = useMemo(() => {
@@ -500,7 +496,6 @@ function DateBucketList({
   view,
   group,
   column,
-  schema,
   isHidden,
   onToggleHidden,
 }: {
@@ -508,7 +503,6 @@ function DateBucketList({
   view: SavedView
   group: PropertyGroup
   column: ResolvedColumn
-  schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
   const { values } = useContainerValues(source.path)
   const nexus = useNexusForms()
@@ -525,11 +519,7 @@ function DateBucketList({
   }, [source, values, group.property_id, column, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
-  const labelOf = dateLabeller(
-    view,
-    group,
-    styleFor(group.property_id, schema, view, nexus).date_format,
-  )
+  const labelOf = dateLabeller(view, group, styleFor(column, view, nexus).date_format)
   return (
     <>
       {bucketOrder(group, column.def, present).map((key) => {
