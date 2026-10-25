@@ -12,7 +12,7 @@ import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -846,6 +846,28 @@ async function group12(cdp) {
   await until('the definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === KINDS.score.id))
 }
 
+// ── Group 13 — The Filter's Clock ───────────────────────────────────────────
+
+async function group13(cdp) {
+  const added = await must('add Drive Due', ask(cdp, 'mutate', { op: 'addProperty', containerPath: COLLECTION, draft: { id: '', label: 'Drive Due', type: 'dateTime' } }))
+  const due = added.created.propertyId
+  const view = {
+    id: 'view_01KZPROPERTIESDRIVE13CLK', name: 'Drive Clock', type: 'table', property_order: ['_title', due], hidden_properties: [],
+    column_styles: { [due]: { time_format: 'twentyFourHour' } },
+    filter: { match: 'all', rules: [{ property_id: due, op: 'is', value: '2026-10-22T15:30' }] },
+  }
+  await must('save the Drive Clock view', ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+  await must('show the Drive Clock view', ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
+  await openCollection(cdp)
+  await viewFrame(cdp, 'Filter')
+  await click(cdp, sel('[aria-label="Filter date"]'))
+  await until('the filter date picker', () => portalOpen(cdp))
+  const pane = await cdp.evaluate(`document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')?.textContent ?? ''`)
+  item(13, 'J-1', "a filter's date picker opens on its column's 24-hour clock under a 12-hour Nexus, with no End Date", pane.includes('15:30') && !/\b(AM|PM)\b/.test(pane) && !pane.includes('End Date'), JSON.stringify(pane.slice(0, 160)))
+  await shot(cdp, 'g13-filter-clock')
+  await escapeAll(cdp)
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -863,6 +885,7 @@ try {
   if (GROUPS.has('10')) await group10()
   if (GROUPS.has('11')) await group11(cdp)
   if (GROUPS.has('12')) await group12(cdp)
+  if (GROUPS.has('13')) await group13(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

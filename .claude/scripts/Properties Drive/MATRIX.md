@@ -119,3 +119,10 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | An unreadable Number value | `Kinds Score` (Number), `Kinds Done` (Checkbox), `Kinds Stage` (Select: Alpha, Beta) written into `.nexus/properties.json` and assigned to Collection A; `Kinds A` (5, checked, Alpha), `Kinds B` (9, Beta), `Kinds C` (nothing) | the `Drive Kinds` view filters Any of `Kinds Score is "abc"` and `Title is "Kinds A"` | only `Kinds A` draws | K-1 |
 | Checkbox "is not empty" | as above | the view filters All of `Title starts with "Kinds "` and `Kinds Done is not empty` | only `Kinds A` draws | K-1 |
 | An empty Select in both directions | as above | the view sorts by `Kinds Stage` ascending, then descending | `Kinds A`, `Kinds B`, `Kinds C`, then `Kinds B`, `Kinds A`, `Kinds C` | K-2 |
+
+
+#### Group 13 — The Filter's Clock
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| The filter's clock | `Drive Due` (Date & Time) with a 24-hour column style, the `Drive Clock` view filtering it on `2026-10-22T15:30`, `~/Test` on its 12-hour clock | view settings › Filter › the date field | the picker shows `15:30` with no AM or PM, and no End Date | J-1 |
