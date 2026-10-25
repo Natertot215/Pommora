@@ -148,6 +148,23 @@ describe('a card value', () => {
       value: { kind: 'select', value: 'opt_Complete' },
     })
   })
+
+  it('an option created while the picker is open joins its list', async () => {
+    await renderView(root, source())
+    await act(async () => {
+      ;(card('p1').querySelector('.card-value') as HTMLElement).click()
+    })
+    const [first, ...rest] = STATUS_DEF.status_groups ?? []
+    const fresh = { id: 'opt_Fresh', key: 'Fresh', label: 'Fresh' }
+    const grown = {
+      ...STATUS_DEF,
+      status_groups: [{ ...first, options: [...first.options, fresh] }, ...rest],
+    }
+    await act(async () => {
+      useSession.setState({ tree: makeTree({ registry: [grown, numberDef] }) })
+    })
+    expect(portalButtons().some((b) => b.textContent?.trim() === 'Fresh')).toBe(true)
+  })
 })
 
 describe('the card menu', () => {

@@ -45,6 +45,7 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnLabel'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
+import { resolveColumn } from '../Pipeline/columns'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
 import { holderOf, type ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -71,7 +72,7 @@ import './cards-view.css'
 
 type ValuePickerRequest = {
   rowId: string
-  column: ResolvedColumn
+  columnId: string
   kind: CardPickerKind | 'file'
   anchor: HTMLElement
   clickX?: number
@@ -145,6 +146,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commitValue,
     pickTarget,
     tree,
+    contextIds,
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
@@ -201,25 +203,29 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const { styleById } = host
   const pickerAnchorRef = useLatest((valuePicker ?? addPicker)?.anchor ?? null)
 
+  const vColumn = useMemo(
+    () => valuePicker && resolveColumn(valuePicker.columnId, ctx.schema, contextIds),
+    [valuePicker, ctx.schema, contextIds],
+  )
   useEffect(() => {
     if (!valuePicker) return
     const row = rowById.get(valuePicker.rowId)
-    if (!row) return setValuePicker(null)
+    if (!row || !vColumn) return setValuePicker(null)
     if (valuePicker.revealOnCommit) return
-    const cur = resolveFieldValue(row, valuePicker.column)
-    const draws = specOf(valuePicker.column.type)?.blankDraws
+    const cur = resolveFieldValue(row, vColumn)
+    const draws = specOf(vColumn.type)?.blankDraws
     if (isCompact(view) && isBlankValue(cur) && !draws) setValuePicker(null)
-  }, [valuePicker, rowById, ctx, view])
+  }, [valuePicker, vColumn, rowById, view])
   useEffect(() => {
     if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
   }, [addPicker, rowById])
 
   const valuePopup = valuePicker && PROPERTY_PICKER_KINDS.has(valuePicker.kind) ? valuePicker : null
   const vRow = valuePicker && rowById.get(valuePicker.rowId)
-  const vTarget = valuePicker && vRow ? pickTarget(vRow, valuePicker.column) : null
+  const vTarget = valuePicker && vRow && vColumn ? pickTarget(vRow, vColumn) : null
   const popoverOpen = valuePicker?.kind === 'popover'
   const popover = useHeld(
-    popoverOpen && vTarget ? { ...vTarget, ...valuePicker } : null,
+    popoverOpen && vTarget && vColumn ? { ...vTarget, ...valuePicker, column: vColumn } : null,
     popoverOpen,
   )
   const popoverRow = popover && rowById.get(popover.rowId)
@@ -227,7 +233,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const req = valuePicker ?? addPicker
     const row = req && rowById.get(req.rowId)
     if (!row) return
-    const column = valuePicker ? valuePicker.column : entry && addedColumn(entry.id)
+    const column = valuePicker ? vColumn : entry && addedColumn(entry.id)
     if (!column) return
     const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
     if (creating && !isBlankValue(v)) revealProperty(column.id)
@@ -525,7 +531,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             setAddPicker(null)
             setValuePicker({
               rowId: addPicker.rowId,
-              column: src.column,
+              columnId: src.column.id,
               kind:
                 src.column.type === 'dateTime' || src.column.type === 'file'
                   ? src.column.type
@@ -707,7 +713,7 @@ function CardProperties({
       onStyle={api.setStyle}
       onHide={api.hide}
       onOpenPicker={(column, kind, anchor, clickX) =>
-        api.openValuePicker({ rowId: row.id, column, kind, anchor, clickX })
+        api.openValuePicker({ rowId: row.id, columnId: column.id, kind, anchor, clickX })
       }
       allowInlineRemove={allowInlineRemove}
     />
