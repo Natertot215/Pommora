@@ -17,9 +17,9 @@ import { addressable } from './heldPages'
 import type { EntityRecord } from './record'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { type Frozen, reencode, rewriteRaw } from './governedRoot'
+import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRaw } from './governedRoot'
 import type { Place } from '../Files/pageFile'
-import type { PropertyDefinition } from '../Properties/properties'
+import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
 import { isBlankRaw, landValue } from '../Files/rootValues'
 
 export interface SweepResult {
@@ -143,15 +143,19 @@ export async function sweepRootsById<T>(
   return { taken: new Set(asked.values()), skipped: swept.skipped.length }
 }
 
-/** A value `frozen` still admits, landed in its written spelling under `def`'s key where `raw` reads blank; null where it doesn't land. */
+/** `value` landed under `def`'s key as a live reconcile lands it, where `raw` reads blank; null where it doesn't land, or where it's a Link naming a page `frozen` no longer holds. */
 export const refillOf =
   (def: PropertyDefinition, frozen: Frozen) =>
   (raw: Json, value: unknown): Json | null => {
-    const { next } = reencode(def, value, frozen)
-    return next === undefined || !isBlankRaw(raw[def.key]) ? null : landValue(raw, def.key, next)
+    const gone =
+      PROPERTY_TYPES[def.type].connections === 'value' && gonePageEntry(value, frozen) !== null
+    const next = liveLanding(value, reencode(def, value))
+    return gone || next === undefined || !isBlankRaw(raw[def.key])
+      ? null
+      : landValue(raw, def.key, next)
   }
 
-/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */
+/** Puts each value back as `refillOf` lands it, on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */
 export async function refillValues(
   root: string,
   def: PropertyDefinition,

@@ -120,6 +120,12 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
 
 const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
 
+/** What a live reconcile lands for `raw` read as `next`: `raw` as written where `next` would blank it or, `listed`, drop a list member it can't resolve, for the user to settle; else `next`, undefined where `raw` reads blank. */
+export const liveLanding = (raw: unknown, { next, listed }: { next: unknown; listed: boolean }) =>
+  (next === undefined && !isBlankRaw(raw)) || (listed && memberCount(next) < memberCount(raw))
+    ? raw
+    : next
+
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
@@ -142,12 +148,7 @@ export function reconcileGovernedRoot(
       const titles = contextTitles(raw).flatMap((title) => byTitle?.get(title)?.title ?? [])
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
-    // A live reconcile never blanks a value, and never drops a list member it can't resolve: either stays as written for the user to settle. A single value lands as it reads, and a blank one leaves.
-    const blanks = next === undefined && !isBlankRaw(raw)
-    if (!frozen && (blanks || (listed && memberCount(next) < memberCount(raw)))) {
-      out[key] = raw
-      continue
-    }
+    if (!frozen) next = liveLanding(raw, { next, listed })
     if (next === undefined) {
       changed.push(key)
       continue
