@@ -1,15 +1,18 @@
 import type { NexusTree } from '../Nexus/tree'
 import type { PickOption } from '../Properties/properties'
+import type { ResolvedColumn } from '../Views/viewRow'
 import { spacesByIdOf } from './contextIdentity'
 
 // The card grid calls this per context value per render, so a STABLE array is cached per Context, on the Space identities it is built from.
 const optionsCache = new WeakMap<object, Map<string, PickOption[]>>()
 
+/** A Context column's Spaces as options; undefined for any other column, or with no tree. */
 export function contextOptionsFor(
-  contextId: string,
-  tree: NexusTree,
+  { id: contextId, type }: ResolvedColumn,
+  tree: NexusTree | null,
   excludeId?: string,
-): PickOption[] {
+): PickOption[] | undefined {
+  if (type !== 'context' || !tree) return undefined
   const spaces = spacesByIdOf(tree)
   let byContext = optionsCache.get(spaces)
   if (!byContext) {

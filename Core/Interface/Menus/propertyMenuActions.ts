@@ -24,13 +24,6 @@ export interface PropertyMenuTarget {
   row: ViewRow
 }
 
-const contextOptionsOf = (
-  tree: NexusTree | null,
-  column: ResolvedColumn,
-  excludeId?: string,
-): ReturnType<typeof contextOptionsFor> | undefined =>
-  column.type === 'context' && tree ? contextOptionsFor(column.id, tree, excludeId) : undefined
-
 export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget): {
   spaces: PropertyMenuRow[]
   properties: PropertyMenuRow[]
@@ -52,7 +45,7 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
     const selected = selectedValues(current)
     return {
       ...base,
-      options: pickGroups(column, contextOptionsOf(tree, column, row.id)).map((g) =>
+      options: pickGroups(column, contextOptionsFor(column, tree, row.id)).map((g) =>
         g.options.map((o) => ({
           value: o.value,
           label: o.label,
