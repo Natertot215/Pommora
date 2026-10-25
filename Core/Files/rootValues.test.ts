@@ -60,6 +60,14 @@ describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
   })
 })
 
+describe('rekeyHeld', () => {
+  it('prefer-new drops a blank rival with the old key', () => {
+    expect(
+      rekeyHeld({ Status: 'Stale', keep: 1, Stage: '' }, 'Status', 'Stage', 'prefer-new'),
+    ).toEqual({ keep: 1 })
+  })
+})
+
 describe('editList', () => {
   it('edits a list of one', () => {
     expect(editList(['a'], new Map([['a', 'b']]))).toEqual(['b'])

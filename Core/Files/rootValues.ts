@@ -54,7 +54,7 @@ export function rekeyHeld(
   if (from === to || !Object.hasOwn(raw, from)) return null
   const { [from]: moved, ...rest } = raw
   if (!Object.hasOwn(rest, to)) return landValue(rest, to, moved)
-  return collision === 'prefer-new' ? rest : landValue(rest, to, joinValues(rest[to], moved))
+  return landValue(rest, to, collision === 'prefer-new' ? rest[to] : joinValues(rest[to], moved))
 }
 
 /** Each member an edit names, matched by `memberKey`, and the member it becomes, or null to strip it. */

@@ -241,6 +241,16 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
     expect(fmOf(out)).toBe('keep: 1\nStage: Fresh')
   })
 
+  it('prefer-new drops a blank rival with the old key', () => {
+    const out = renameFrontmatterKey(
+      page('Status: Stale\nkeep: 1\nStage:'),
+      'Status',
+      'Stage',
+      'prefer-new',
+    )
+    expect(fmOf(out)).toBe('keep: 1')
+  })
+
   it('merge folds both lists into one at the renamed key’s place, deduped', () => {
     const out = renameFrontmatterKey(
       page(
