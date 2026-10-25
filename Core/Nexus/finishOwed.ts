@@ -15,7 +15,7 @@ import { patchRecord } from '../Bundles/record'
 import { parkLinks } from '../Trash/trashedCopies'
 import { findContainerById } from './treePatch'
 import { pagesByIdOf } from './record'
-import { type ConfigReach, reachConfig, retries } from './configReach'
+import { type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
@@ -96,7 +96,7 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
 export async function finishEntry(root: string, id: string, deps: TrashDeps): Promise<ConfigReach> {
   const notes = await readNotes(root)
   const e = notes[id]
-  if (!e) return { skipped: 0, hosts: [] }
+  if (!e) return NO_REACH
   const done = await finishArm(root, id, e, notes, deps)
   await editNote(root, id, () => done.left)
   return done.reach
