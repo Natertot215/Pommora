@@ -31,6 +31,7 @@ import {
   unlinkSpaceValue,
 } from '../Contexts/contextCascade'
 import { inSettleTurn, underContexts } from './settle'
+import { dropContextOrder } from './reorder'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
   type ContainerEntry,
@@ -274,7 +275,7 @@ async function finishContext(
   const listed = contexts.find((c) => c.id === id)?.title
   // The current title sitting in `strip` is a delete whose list step hadn't landed.
   if (listed !== undefined && e.strip?.includes(listed)) {
-    const removed = await unlistContext(root, id, !e.bundle)
+    const removed = await unlistContext(root, id)
     if (!removed.ok) return stuck(e)
     contexts = removed.value.contexts
   }
@@ -310,7 +311,10 @@ async function finishContext(
     (old) => contexts.some(rivalTitled(old, id)),
     async (old) => {
       const dir = join(contextsDir(root), old)
-      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle, deps)
+      if ((await heldName(dir)) === old) {
+        await leave(root, dir, e.bundle, deps)
+        if (!e.bundle) await dropContextOrder(root, id)
+      }
       return unlinkContextKey(root, old, id, dir)
     },
     reach,

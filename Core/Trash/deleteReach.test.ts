@@ -25,6 +25,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
+import { setPanelContextOrder } from '../Nexus/reorder'
 import { type HeldKind, unsweptLine } from '../Nexus/entities'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, OWED_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
@@ -605,6 +606,20 @@ describe('a Context or Space delete on the notes', () => {
     expect(await pathExists(join(root, AREAS))).toBe(false)
     expect(await tagsOf(a)).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a System Trash Context delete whose move fails keeps its order', async () => {
+    await setPanelContextOrder(root, ['ctx_first', 'ctx_areas', 'ctx_last'])
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: AREAS, kind: 'context' },
+      { trashMode: 'system', trashToSystem: () => Promise.reject(new Error('busy')) },
+    )
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, AREAS))).toBe(true)
+    expect(
+      (await readJsonAt<{ order: Raw }>(nexusConfig(root, NEXUS_CONFIG_FILES.state))).order,
+    ).toEqual({ contexts: ['ctx_first', 'ctx_areas', 'ctx_last'] })
   })
 
   it.skipIf(noModeBits)(

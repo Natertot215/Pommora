@@ -21,7 +21,7 @@ import {
   withContextAt,
 } from '../Contexts/contextsRegistry'
 import type { MutateContext } from '../Nexus/mutate'
-import { dropDeparture } from '../Nexus/reorder'
+import { dropContextOrder, dropDeparture } from '../Nexus/reorder'
 import type { CascadeReport } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
@@ -195,10 +195,12 @@ export async function deleteOp(
       const ran = await deleted(
         entry.id,
         deleteNote(root, { kind: 'context' }, title, bundle),
-        () => unlistContext(root, entry.id, !bundle),
+        () => unlistContext(root, entry.id),
         () => mutateRegistryFile(root, withContextAt(entry, at)),
       )
       if (!ran.ok) return unminted(ran)
+      // A Context gone for good, with no bundle to restore it from, takes its order with it once its folder has left.
+      if (moved && !bundle) await dropContextOrder(root, entry.id)
       stripped = ran.value.cascade
     } else {
       await write(

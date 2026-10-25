@@ -758,13 +758,17 @@ describe('the Context and Space rename arms', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
-  it('a System Trash Context delete cut short before its list step takes its order with it', async () => {
+  it('a System Trash Context delete cut short before its list step takes its order with it once its folder leaves', async () => {
     const root = await seedContexts()
     await setPanelContextOrder(root, ['ctx_projects'])
     await putJson(join(root, OWED_REL), { ctx_projects: { kind: 'context', strip: ['Projects'] } })
     await refreshTree(root)
-    await finishOwed(root, { ...DEPS, trashMode: 'system' })
+    await finishOwed(root, {
+      trashMode: 'system',
+      trashToSystem: (p) => rm(p, { recursive: true, force: true }),
+    })
     expect(await titleOf(root)).toBeUndefined()
+    expect(await readdir(contextsDir(root))).not.toContain('Projects')
     expect(
       JSON.stringify(await readJsonAt(nexusConfig(root, NEXUS_CONFIG_FILES.state))),
     ).not.toContain('ctx_projects')
