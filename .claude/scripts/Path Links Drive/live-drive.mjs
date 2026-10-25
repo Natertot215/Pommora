@@ -474,12 +474,12 @@ async function group1(cdp) {
   await must('filter off', ask(cdp, 'views:save', 'Collection A', 'collection', view(), { filter_enabled: false }))
   await sleep(700)
 
-  // The link menu on a path link in a body: Edit Title, Copy Link, Remove Link; and the Connection format off.
+  // The link menu on a path link in a body: Edit Title, Edit Link, Copy Link, Remove Link; and the Connection format off.
   await openRow(cdp, MENU)
   const target = linkEl(`${PAGE_VIEW}.contentDOM`, 'Notes')
-  const edit = await chooseNative(cdp, target, 'Edit Title')
+  const edit = await chooseNative(cdp, target, 'Edit Link')
   const selected = await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; const s = v.state.selection.main; return v.state.doc.sliceString(s.from, s.to) })()`)
-  item(1, 1, 'B-1', "link menu: Edit Title selects a path link's whole page half", edit.chosen && selected === 'Collection A/Set Alpha/Notes', show({ rows: edit.rows, selected }))
+  item(1, 1, 'B-1', "Edit Link selects a path link's whole page half", edit.chosen && selected === 'Collection A/Set Alpha/Notes', show({ rows: edit.rows, selected }))
   await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)
   await sleep(300)
   const clip = execFileSync('pbpaste', { encoding: 'utf8' })
@@ -717,7 +717,7 @@ async function group3(cdp) {
   clip.restore()
 
   const row2 = page(A_ALPHA, 'PL Row 2')
-  const r = await chooseNative(cdp, linkEl(cellOf(row2, LINK), 'Notes'), 'Rename')
+  const r = await chooseNative(cdp, linkEl(cellOf(row2, LINK), 'Notes'), 'Edit Title')
   await sleep(500)
   const full = await cdp.evaluate(`(() => { const c = ${cellOf(row2, LINK)}; return c ? (${DRAWN})(c, '') : null })()`)
   item(3, 3, 'A-7', 'Show Full Link: a Link value [[Collection A/Set Alpha/Notes|Notes]] shown in full keeps its path and reads resolved', r.chosen && full?.states[0] === 'resolved', show({ rows: r.rows, full }))
@@ -853,10 +853,10 @@ async function group5(cdp) {
   await pressKey(cdp, 'Escape')
   await home(cdp)
   const row3 = page(A_ALPHA, 'PL Row 3')
-  const edit = await chooseNative(cdp, linkEl(cellOf(row3, LINK), 'Notes'), 'Edit Title')
+  const edit = await chooseNative(cdp, linkEl(cellOf(row3, LINK), 'Notes'), 'Edit Link')
   const ef = await settles(() => cdp.evaluate(`!!(${field})`), 3000)
   const picked = ef ? await cdp.evaluate(`(() => { const v = (${field}).cmTile.root.view; const s = v.state.selection.main; return v.state.doc.sliceString(s.from, s.to) })()`) : null
-  item(5, 5, 'C-4', 'Link value: Edit Title opens the field with the target selected', edit.chosen && picked === 'Set Beta/Notes', show({ rows: edit.rows, picked }))
+  item(5, 5, 'C-4', 'Link value: Edit Link opens the field with the target selected', edit.chosen && picked === 'Set Beta/Notes', show({ rows: edit.rows, picked }))
   await escapeAll(cdp)
   await pressKey(cdp, 'Escape')
   pending(5, 5, 'C-1', "a click on a markdown tile's phantom opens the picker", 'markdown tiles are driven in Group 6 through their channels; a tile surface click has no harness path yet')

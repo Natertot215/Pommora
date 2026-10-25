@@ -16,8 +16,8 @@ describe('a link naming a page', () => {
     expect(rows({ ...page, editable: true })).toEqual([
       ['Preview', 'title:window'],
       ['New Tab', 'title:newtab'],
-      ['Rename', 'rename'],
-      ['Edit Title', 'editLink'],
+      ['Edit Title', 'rename'],
+      ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
       ['Remove Link', 'link:remove'],
@@ -68,7 +68,7 @@ describe('a link naming an address', () => {
     expect(rows({ ...web, editable: true })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
-      ['Rename', 'rename'],
+      ['Edit Title', 'rename'],
       ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
       ['Format', undefined],
@@ -81,7 +81,7 @@ describe('a link naming an address', () => {
     expect(rows({ ...web, editable: true, value: { hideable: true } })).toEqual([
       ['Preview', 'link:window'],
       ['Open In Browser', 'link:browser'],
-      ['Rename', 'rename'],
+      ['Edit Title', 'rename'],
       ['Edit Link', 'editLink'],
       ['Copy Link', 'title:copylink'],
       ['Clear', 'cell:clear'],

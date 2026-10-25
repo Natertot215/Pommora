@@ -44,7 +44,7 @@ export function ValueEditor({
   host: EditorHost
   oneLine?: boolean
   remembers?: Remembers
-  /** Once mounted, the link slot to seat the caret in: Rename seats the alias, and Edit Link selects the target, a bare address its whole target; with neither, a one-line value that is one unresolved link seats its title where connections resolve, and otherwise the caret rests at the end. */
+  /** Once mounted, the link slot to seat the caret in: Edit Title seats the alias, and Edit Link selects the target, a bare address its whole target; with neither, a one-line value that is one unresolved link seats its title where connections resolve, and otherwise the caret rests at the end. */
   seat?: ConnEditAction
   invalid?: (text: string) => boolean
   saveRef?: RefObject<() => void>

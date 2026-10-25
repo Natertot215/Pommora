@@ -209,7 +209,7 @@ describe('PropertyPanel', () => {
     expect(text()).not.toContain('Site')
   })
 
-  it('a Link value naming no page pops the fallback menu, whose Edit opens the editor', async () => {
+  it('a Link value naming no page pops the fallback menu, whose Edit Link opens the editor', async () => {
     const siteDef: PropertyDefinition = {
       id: 'prop_site',
       label: 'Site',
@@ -243,8 +243,8 @@ describe('PropertyPanel', () => {
       items: { label?: string }[]
     }
     expect(menu.items.map((i) => i.label).filter(Boolean)).toEqual([
-      'Edit',
-      'Rename',
+      'Edit Title',
+      'Edit Link',
       'Clear',
       'Remove',
     ])
