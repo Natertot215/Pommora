@@ -85,7 +85,6 @@ export function CardValue({
       },
       picker: () => open('picker'),
       dateTime: () => open('dateTime'),
-      rename: () => open('popover'),
       popover: () => open('popover'),
       edit: ({ seat }) => setEditing({ seat }),
       hide: () => onHide(column.id),
@@ -108,7 +107,7 @@ export function CardValue({
     // Portal events bubble the component tree: a right-click inside an open picker arrives here too — swallow it, never pop a mis-targeted menu.
     if (!e.currentTarget.contains(e.target as Node)) return
     if (t === 'link') {
-      const target = valueMenuTarget(ctx, row, v.kind === 'link' ? v.value : '', true)
+      const target = valueMenuTarget(ctx, row, v.kind === 'link' ? v.value : '', 'view')
       if (target) {
         const action = await holdGhost(() => showConnectionMenu(target))
         if (action) runMenuIntent(action)

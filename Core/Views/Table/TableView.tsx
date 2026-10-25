@@ -1,34 +1,21 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import {
-  type CellMenuAction,
-  type CellMenuContext,
-  cellMenuContextFor,
-  cellMenuModel,
-} from '../../Actions/cellMenu'
+import { cellMenuModel } from '../../Actions/cellMenu'
 import { type ColumnAlign, viewOption } from '../views'
-import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
-import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
 import { groupUndo } from '../../Session/undo'
-import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import {
-  runValueIntent,
-  type ValueIntent,
-  valueClickIntent,
-  valueMenuIntent,
-} from '../../Properties/Pickers/valueClick'
+import { useValueSeat, ValueSeat } from '../../Properties/Cells/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
-import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
-import { holderOf, type ValueContext } from '../../Properties/valueContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
@@ -38,7 +25,6 @@ import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
-import { numberBarCapable } from '../../Properties/formatValue'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
@@ -50,9 +36,6 @@ import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import { LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
-import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { valueMenuTarget } from '../../Properties/Cells/valueMenuTarget'
-import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
 import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
@@ -66,7 +49,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     collapsed,
     dragDisabled,
     commitValue,
-    pickTarget,
     mutate,
   } = host
   const selection = useSession((s) => s.selection)
@@ -74,7 +56,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     iconsShown,
     alignByCol,
     styleByCol,
-    colStyle,
     dragShift,
     cols,
     reflowWidth,
@@ -88,106 +69,62 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     endResize,
     commitResize,
     openHeaderMenu,
-    runStyleAction,
     startColumnDrag,
     onTrackTransitionEnd,
   } = useColumns(host)
 
-  // ── Editing ───────────────────────────────────────────────────────────────
+  // ── The title's rename ────────────────────────────────────────────────────
 
-  type Editing = {
-    rowId: string
-    colId: string
-    mode: 'picker' | 'editor' | 'popover'
-    seat?: ConnEditAction
-    nonce?: number
-    fromCreate?: true
-  }
-  const [editing, setEditing] = useState<Editing | null>(null)
-  const triggerElRef = useRef<HTMLElement | null>(null)
-  const editNonce = useRef(0)
-  const lastOpened = useRef<Partial<Record<Editing['mode'], Editing>>>({})
-  if (editing) lastOpened.current[editing.mode] = editing
-  const strandedEditId = editing !== null && !rowById.has(editing.rowId) ? editing.rowId : null
+  const [renaming, setRenaming] = useState<{ rowId: string; fromCreate?: true } | null>(null)
+  const strandedEditId = renaming !== null && !rowById.has(renaming.rowId) ? renaming.rowId : null
   useEffect(() => {
-    if (strandedEditId !== null) setEditing((e) => (e?.rowId === strandedEditId ? null : e))
+    if (strandedEditId !== null) setRenaming((r) => (r?.rowId === strandedEditId ? null : r))
   }, [strandedEditId])
   const titleCol = columns.find((c) => c.kind === 'title')
   const titleColId = titleCol?.id
 
   const interactions = useViewInteractions(host, {
-    ghost: { graceMs: 0, suppressed: () => editing !== null || glanceShown() },
-    rename: (target, fromCreate) => {
-      if (titleColId)
-        setEditing({
-          rowId: target.id,
-          colId: titleColId,
-          mode: 'editor',
-          ...(fromCreate ? { fromCreate: true } : {}),
-        })
+    ghost: {
+      graceMs: 0,
+      suppressed: () => seat.open !== null || renaming !== null || glanceShown(),
     },
+    rename: (target, fromCreate) =>
+      setRenaming({ rowId: target.id, ...(fromCreate ? { fromCreate: true } : {}) }),
+  })
+  const seat = useValueSeat({
+    ...host.seatHost,
+    anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
+    hold: interactions.holdGhost,
   })
 
   // ── Cell click ────────────────────────────────────────────────────────────
 
-  const runIntent = (
-    row: ViewRow,
-    col: ResolvedColumn,
-    intent: ValueIntent | null,
-    target: EventTarget | null,
-  ): boolean => {
-    const editAs = (mode: Editing['mode'], seat?: ConnEditAction) => (): void =>
-      setEditing({ rowId: row.id, colId: col.id, mode, seat, nonce: ++editNonce.current })
-    return runValueIntent(intent, {
-      commit: ({ value }) => commitValue(row, col, value),
-      file: () => {
-        const current = resolveFieldValue(row, col)
-        if (col.def)
-          pickFileInto(col.def, current, fileChipIndex(target), (n) => commitValue(row, col, n))
-      },
-      picker: editAs('picker'),
-      dateTime: editAs('picker'),
-      edit: ({ seat }) => editAs('editor', seat)(),
-      popover: editAs('popover'),
-      rename: editAs('popover'),
-      hide: null,
-    })
-  }
-
   const onCellClick = (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent): void => {
     // A secondary-click fires `click` alongside `contextmenu`, so bail and let the right-click menu win.
     if (isSecondaryClick(e)) return
-    triggerElRef.current = e.currentTarget as HTMLElement
     if (col.kind === 'title') {
       e.stopPropagation()
       interactions.openPage(row, isCmd(e))
       return
     }
-    if (col.kind !== 'property' && col.kind !== 'context') return
-    const intent = valueClickIntent(
-      col.type,
-      resolveFieldValue(row, col),
-      colStyle(col.id).look,
-      col.def,
-    )
-    if (runIntent(row, col, intent, e.target)) e.stopPropagation()
+    seat.click(row, col, e)
   }
 
-  // ── The inline editor and the pickers ─────────────────────────────────────
+  // ── The title cell ────────────────────────────────────────────────────────
 
-  const titleCell = (row: ViewRow, renaming: boolean, hideIcon: boolean): React.ReactNode => {
-    const fromCreate = renaming && editing?.fromCreate
+  const titleCell = (row: ViewRow, opened: boolean, hideIcon: boolean): React.ReactNode => {
+    const fromCreate = opened && renaming?.fromCreate
     return (
-      <span className={renaming ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
+      <span className={opened ? 'cell-rename' : cx(overScrollLabel, 'cell-title')}>
         {hideIcon ? null : <EntityIcon kind="page" icon={row.icon} size="body" />}
         <RenamableLabel
           renames="title"
-          editing={renaming}
+          editing={opened}
           emptyInitial={fromCreate}
           value={row.title}
           className={fillInput}
           onCommit={(newName) => {
-            setEditing(null)
+            setRenaming(null)
             return mutate({
               op: 'rename',
               path: row.path,
@@ -196,7 +133,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               ...(fromCreate ? { fromCreate } : {}),
             })
           }}
-          onCancel={() => setEditing(null)}
+          onCancel={() => setRenaming(null)}
         >
           {(shown) => <span className="cell-title-text">{shown}</span>}
         </RenamableLabel>
@@ -204,106 +141,20 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
 
-  const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
-    if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
-      return null
-    const { def } = col
-    if (!def) return null
-    return (
-      <PropertyValueInput
-        def={def}
-        current={resolveFieldValue(row, col)}
-        holder={holderOf(row, ctx)}
-        connections={ctx.connections}
-        seat={editing.seat}
-        onCommit={(next) => commitValue(row, col, next)}
-        onClose={() => setEditing(null)}
-      />
-    )
-  }
+  // ── The title menu ────────────────────────────────────────────────────────
 
-  const lastCell = (mode: 'picker' | 'popover') => {
-    const cell = lastOpened.current[mode]
-    const row = cell && rowById.get(cell.rowId)
-    const col = cell && columns.find((c) => c.id === cell.colId)
-    return cell && row && col ? { cell, row, col } : null
-  }
-  const cellPicker = (): React.ReactNode => {
-    const c = lastCell('picker')
-    return (
-      <PropertyPicker
-        key={c ? `${c.row.id}:${c.col.id}` : 'none'}
-        target={c ? pickTarget(c.row, c.col) : null}
-        open={editing?.mode === 'picker'}
-        triggerRef={triggerElRef}
-        onCommit={(v) => {
-          if (c) commitValue(c.row, c.col, v)
-        }}
-        onDismiss={() => setEditing(null)}
-      />
-    )
-  }
-  const popoverField = (): React.ReactNode => {
-    const c = lastCell('popover')
-    const def = c?.col.def
-    if (!c || !def) return null
-    const { cell, row, col } = c
-    return (
-      <PropertyValueInput
-        key={`${cell.rowId}:${cell.colId}:${cell.nonce}`}
-        popover={{ open: editing?.mode === 'popover', triggerRef: triggerElRef }}
-        def={def}
-        current={resolveFieldValue(row, col)}
-        holder={holderOf(row, ctx)}
-        connections={ctx.connections}
-        seat={def.type === 'link' ? 'rename' : undefined}
-        onCommit={(next) => commitValue(row, col, next)}
-        onClose={() => setEditing(null)}
-      />
-    )
-  }
-
-  // ── The cell menu ─────────────────────────────────────────────────────────
-
-  const openCellMenu = async (
-    row: ViewRow,
-    col: ResolvedColumn,
-    e: React.MouseEvent,
-  ): Promise<void> => {
+  /** The page's own menu: its answer runs the page half, and its Icon seats the picker on the title's glyph. */
+  const openTitleMenu = async (row: ViewRow, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
-    // Captured before the await — React recycles the synthetic event, so the popover can't read `e.currentTarget` once the menu resolves.
+    // Captured before the await, since React recycles the synthetic event.
     const el = e.currentTarget as HTMLElement
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
-    const value = resolveFieldValue(row, col)
-    const { def, type: dt } = col
-    const runMenuIntent = (action: CellMenuAction | LinkAction): boolean => {
-      const intent = valueMenuIntent(action)
-      if (intent) triggerElRef.current = cellEl
-      return runIntent(row, col, intent, null)
-    }
-    if (dt === 'link') {
-      const target = valueMenuTarget(ctx, row, value.kind === 'link' ? value.value : '', false)
-      if (target) {
-        const action = await interactions.holdGhost(() => showConnectionMenu(target))
-        if (action) runMenuIntent(action)
-        return
-      }
-    }
-    const chip = fileChipIndex(e.target)
-    const base = cellMenuContextFor(dt, colStyle(col.id), !isBlankValue(value), {
-      barCapable: numberBarCapable(def),
-      onChip: chip !== null,
-    })
-    if (!base) return
-    const menuCtx: CellMenuContext =
-      base.kind === 'title' ? { ...base, ...interactions.titleMenuContext(row) } : base
-    const action = await interactions.holdGhost(() => popMenu(cellMenuModel(menuCtx)))
-    if (!action) return
+    const action = await interactions.holdGhost(() =>
+      popMenu(cellMenuModel({ kind: 'title', ...interactions.titleMenuContext(row) })),
+    )
     const glyph = cellEl.querySelector<HTMLElement>('.cell-title > :first-child') ?? cellEl
-    if (interactions.runTitleAction(action, row, glyph)) return
-    if (runFileMenuAction(action, def, value, chip, (n) => commitValue(row, col, n))) return
-    if (!runMenuIntent(action)) runStyleAction(col, action)
+    if (action) interactions.runTitleAction(action, row, glyph)
   }
 
   // ── The sweep ─────────────────────────────────────────────────────────────
@@ -350,7 +201,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return r ? [r] : []
     })
     if (rows.length < 2) return null
-    const target = pickTarget(rows[0], col)
+    const target = seat.target(rows[0], col)
     const opts = target.kind === 'options' ? target : undefined
     const currents = rows.map((r) => resolveFieldValue(r, col))
     return (
@@ -379,25 +230,28 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── The row api ───────────────────────────────────────────────────────────
 
   const cellApi = useStableApi<RowCellApi>({
-    menu: (row, col, e) => void openCellMenu(row, col, e),
+    menu: (row, col, e) =>
+      void (col.kind === 'title' ? openTitleMenu(row, e) : seat.menu(row, col, e)),
     click: onCellClick,
-    pane: (row, col, anchor) => {
-      triggerElRef.current = anchor.closest<HTMLElement>('.data-cell')
-      runIntent(row, col, { kind: 'popover' }, null)
-    },
+    pane: seat.pane,
     title: titleCell,
-    overlay: cellEditor,
+    overlay: seat.editor,
     commit: commitValue,
-    grip: (row, e) => {
-      if (titleCol) void openCellMenu(row, titleCol, e)
-    },
+    grip: (row, e) => void openTitleMenu(row, e),
     sweep: startSweep,
     hover: interactions.ghost.onHover,
     open: (row) => interactions.openPage(row, false),
   })
-  const overlayTarget = editing?.mode === 'editor' ? editing : null
-  const popoverTarget = editing?.mode === 'popover' ? editing : null
-  const activeCell = editing ? { rowId: editing.rowId, colId: editing.colId } : null
+  const open = seat.open
+  const overlayTarget =
+    renaming && titleColId
+      ? { rowId: renaming.rowId, colId: titleColId }
+      : open?.mode === 'editor'
+        ? { rowId: open.rowId, colId: open.columnId }
+        : null
+  const popoverTarget =
+    open?.mode === 'popover' ? { rowId: open.rowId, colId: open.columnId } : null
+  const activeCell = overlayTarget ?? (open && { rowId: open.rowId, colId: open.columnId })
 
   // ── The render ────────────────────────────────────────────────────────────
 
@@ -468,7 +322,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             lead={lead}
           />,
         ]
-        if (itemsVisible && ghost?.anchorId === row.id && !editing)
+        if (itemsVisible && ghost?.anchorId === row.id && !open && !renaming)
           rendered.push(
             <GhostRow
               key={`ghost-${row.id}`}
@@ -540,9 +394,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           )}
         </div>
       </LineZone>
-      {cellPicker()}
+      <ValueSeat seat={seat} />
       {massPicker()}
-      {popoverField()}
     </div>
   )
 }

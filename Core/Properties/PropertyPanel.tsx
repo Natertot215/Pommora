@@ -278,7 +278,6 @@ export function PropertyPanel({
       picker: editAs('picker'),
       dateTime: editAs('picker'),
       edit: ({ seat }) => editAs('editor', seat)(),
-      rename: editAs('popover'),
       popover: editAs('popover'),
       hide: () => emptyRow(def.id, false),
     })
@@ -320,7 +319,7 @@ export function PropertyPanel({
     const run = (action: CellMenuAction | LinkAction | null): void => {
       if (action) runIntent(def, value, valueMenuIntent(action), null)
     }
-    const link = row && ctx && valueMenuTarget(ctx, row, value.value, true)
+    const link = row && ctx && valueMenuTarget(ctx, row, value.value, 'row')
     if (link) void showConnectionMenu(link).then(run)
     else void popMenu(cellMenuModel({ kind: 'link', filled: true, hideable: 'row' })).then(run)
     return true

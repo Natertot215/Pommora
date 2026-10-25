@@ -14,7 +14,7 @@ import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import type { PickTarget } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/fieldValue'
-import { useValueContext } from '../../Properties/valueContext'
+import { holderOf, useValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
 import { containerSchema } from '../../Nexus/treePatch'
@@ -37,6 +37,7 @@ import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch } from '../views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 import { resolveColumn } from '../Pipeline/columns'
+import type { SeatHost } from '../../Properties/Cells/ValueSeat'
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
@@ -225,6 +226,15 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   }
 
   if (!ctx || !tree) return null
+  const seatHost = {
+    rowOf: (id: string) => rowById.get(id),
+    columnOf: (id: string) => resolveColumn(id, schema, contextIds),
+    commit: commitValue,
+    holder: (row: ViewRow) => holderOf(row, ctx),
+    connections: ctx.connections,
+    style: styleOf,
+    setStyle: setStylePatch,
+  } satisfies Omit<SeatHost, 'anchor'>
   return {
     source: painted,
     schema,
@@ -261,6 +271,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     commitValue,
     commitGroupValue,
     pickTarget,
+    seatHost,
     styleOf,
     mutate,
     openTarget,

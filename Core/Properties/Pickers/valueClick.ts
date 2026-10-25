@@ -13,8 +13,7 @@ export type ValueIntent =
   | { kind: 'dateTime' }
   | { kind: 'file' }
   | { kind: 'edit'; seat?: ConnEditAction }
-  | { kind: 'popover' }
-  | { kind: 'rename' }
+  | { kind: 'popover'; seat?: ConnEditAction }
   | { kind: 'hide' }
 
 /** Null = the click does nothing: a stamp or the title. A link's text follows on its own, so a click on the value edits it. */
@@ -50,7 +49,7 @@ export function valueClickIntent(
 const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {
   editLink: { kind: 'edit', seat: 'editLink' },
   'cell:edit': { kind: 'edit' },
-  rename: { kind: 'rename' },
+  rename: { kind: 'popover', seat: 'rename' },
   'cell:clear': { kind: 'commit', value: null },
   'cell:hide': { kind: 'hide' },
 }
