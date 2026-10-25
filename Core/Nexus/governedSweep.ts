@@ -99,7 +99,7 @@ export async function sweepGovernedRoots(
   return out
 }
 
-/** A file outside the Archive: the only kind a confirmation, a what-changed count, or a cascade's `pages` names, since nothing displays an archived path. */
+/** A file outside the Archive: the only kind a confirmation, a what-changed count, a rename's clash refusal, or a cascade's `pages` names, since nothing displays an archived path. */
 export const outsideArchive = (root: string, file: string): boolean =>
   !isArchived(relative(root, file))
 
