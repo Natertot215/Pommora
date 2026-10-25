@@ -44,13 +44,8 @@ import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import {
-  type DecodedFilter,
-  type OperatorChoice,
-  decodeFilter,
-  filterTargets,
-  operatorsFor,
-} from '../filterModel'
+import { type DecodedFilter, decodeFilter, filterTargets, operatorsFor } from '../filterModel'
+import type { OperatorChoice } from '../valueKinds'
 import * as fp from './filter-frame.css'
 import { flattenNodes, LocationField } from './LocationField'
 import { emptyPicker, useMultiValue } from './valueField'

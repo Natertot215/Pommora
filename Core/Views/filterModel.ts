@@ -1,14 +1,15 @@
 // Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
 
-import { FILEDATA, type PropertyDefinition, specOf } from '../Properties/properties'
-import type { ValueKind } from '../Properties/propertyValue'
+import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
 import {
   FILTER_OPS,
   type FilterGroup,
   type FilterRule,
   isGroup,
   type MatchMode,
+  OPERANDLESS_OPS,
 } from './filterRules'
+import { type OperatorChoice, VALUE_KINDS, viewSpecOf } from './valueKinds'
 import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { resolveColumn } from './Pipeline/columns'
@@ -26,69 +27,6 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
     : { kind: 'rows', mode: filter.match, rules: filter.rules as FilterRule[] }
 }
 
-type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
-
-export interface OperatorChoice {
-  op: string
-  label: string
-  slot: ValueSlot
-  impliedValue?: string
-  /** A typed folder name is an operand as well as a picked folder. */
-  names?: true
-}
-
-const EMPTIES: OperatorChoice[] = [
-  { op: FILTER_OPS.isEmpty, label: 'Is Empty', slot: 'none' },
-  { op: FILTER_OPS.isNotEmpty, label: "Isn't Empty", slot: 'none' },
-]
-
-const TEXT_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'text' },
-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'text' },
-  { op: FILTER_OPS.startsWith, label: 'Starts With', slot: 'text' },
-  { op: FILTER_OPS.contains, label: 'Contains', slot: 'text' },
-  { op: FILTER_OPS.doesNotContain, label: "Doesn't Contain", slot: 'text' },
-]
-
-/** The Starts and Ends ops are inclusive — the strict variants stay registered for hand-authored files, but the frame doesn't offer a second near-identical set. */
-const DATE_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'date' },
-  { op: FILTER_OPS.onOrBefore, label: 'Starts Before', slot: 'date' },
-  { op: FILTER_OPS.onOrAfter, label: 'Starts After', slot: 'date' },
-  { op: FILTER_OPS.endsOnOrBefore, label: 'Ends Before', slot: 'date' },
-  { op: FILTER_OPS.endsOnOrAfter, label: 'Ends After', slot: 'date' },
-  ...EMPTIES,
-]
-
-const SET_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.containsAny, label: 'Is Any', slot: 'chips' },
-  { op: FILTER_OPS.containsAll, label: 'Is All', slot: 'chips' },
-  { op: FILTER_OPS.doesNotContain, label: "Isn't", slot: 'chips' },
-  ...EMPTIES,
-]
-
-const NUMBER_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'number' },
-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'number' },
-  { op: FILTER_OPS.greaterThan, label: 'Greater Than', slot: 'number' },
-  { op: FILTER_OPS.greaterOrEqual, label: 'At Least', slot: 'number' },
-  { op: FILTER_OPS.lessThan, label: 'Less Than', slot: 'number' },
-  { op: FILTER_OPS.lessOrEqual, label: 'At Most', slot: 'number' },
-  ...EMPTIES,
-]
-
-/** Is/Isn't are chip pickers whose multi-chips mean any-of/none-of — never Is All, which is unsatisfiable on a one-value property. */
-const OPTION_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is', slot: 'chips' },
-  { op: FILTER_OPS.isNot, label: "Isn't", slot: 'chips' },
-  ...EMPTIES,
-]
-
-const CHECKBOX_OPS: OperatorChoice[] = [
-  { op: FILTER_OPS.is, label: 'Is Checked', slot: 'none', impliedValue: 'true' },
-  { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
-]
-
 /** Location reads from the Set's side — you choose the Set, not the page, hence "Contains" over "Is Inside". */
 const LOCATION_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'set' },
@@ -98,29 +36,16 @@ const LOCATION_OPS: OperatorChoice[] = [
 ]
 
 /** Title never offers empty ops — a title (the filename basename) is never empty. */
-const TITLE_OPS: OperatorChoice[] = TEXT_OPS
-
-const KIND_OPS: Record<ValueKind, OperatorChoice[]> = {
-  select: OPTION_OPS,
-  multiSelect: SET_OPS,
-  context: SET_OPS,
-  number: NUMBER_OPS,
-  dateTime: DATE_OPS,
-  checkbox: CHECKBOX_OPS,
-  link: [...TEXT_OPS, ...EMPTIES],
-  text: [...TEXT_OPS, ...EMPTIES],
-  file: EMPTIES,
-}
+const TITLE_OPS = VALUE_KINDS.text.ops.filter((o) => !OPERANDLESS_OPS.has(o.op))
 
 export function operatorsFor(
   propertyId: string,
   schema: PropertyDefinition[],
   contextIds: readonly string[],
-): OperatorChoice[] {
+): readonly OperatorChoice[] {
   if (propertyId === FILEDATA.title.id) return TITLE_OPS
   if (propertyId === FILEDATA.location.id) return LOCATION_OPS
-  const kind = specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind
-  return kind ? KIND_OPS[kind] : []
+  return viewSpecOf(resolveColumn(propertyId, schema, contextIds)?.type)?.ops ?? []
 }
 
 export function filterTargets(

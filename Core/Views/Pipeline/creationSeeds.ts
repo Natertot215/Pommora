@@ -77,7 +77,7 @@ export function filterSeeds({
   ): { seeds: Seeds; met: boolean; passes?: boolean } => {
     if (!isGroup(node)) {
       const passes = prepareRule(node, schema, setTree, contextIds)?.(blank)
-      const seed = ruleSeed(node, schema, contextIds)
+      const seed = passes === undefined ? null : ruleSeed(node, schema, contextIds)
       return {
         seeds: seed ? { [node.property_id]: seed } : {},
         met: passes !== false || seed !== null,
