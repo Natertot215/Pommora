@@ -81,9 +81,8 @@ export async function emptyBundle(
     }))
     if (!noted.ok) return noted
     await dispose(bundleAbs)
-    return ok({
-      cascade: owedReport(await serializeSchemaOp(root, () => finishEntry(root, record.id, deps))),
-    })
+    const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id, deps))
+    return ok({ cascade: owedReport(root, reach) })
   }
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
@@ -110,7 +109,7 @@ export async function emptyBundle(
   await removeOwn(bundleAbs)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, recorded)
-  return ok({ cascade: owedReport(await finishEntry(root, id, deps)) })
+  return ok({ cascade: owedReport(root, await finishEntry(root, id, deps)) })
 }
 
 type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>

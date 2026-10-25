@@ -45,7 +45,6 @@ import {
   type PropertyEntry,
   readNotes,
   type SpaceEntry,
-  withLost,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
 import { contentPages, listBundles } from '../Bundles/bundle'
@@ -90,7 +89,7 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
     await each('container')
     await each('relink')
   })
-  return withLost(root, owedReport(total))
+  return owedReport(root, total)
 }
 
 /** Finishes one entry inside a caller already holding its kind's lock (the pass, or a Context or Space delete), writing back what it still owes. */
