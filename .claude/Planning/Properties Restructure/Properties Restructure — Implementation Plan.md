@@ -1283,17 +1283,17 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Review Checkpoint
   - [x] Closeout P13–P14 (two `opus-high` agents, inward and outward)
 - [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 15 opens]`
-- [ ] **Phase 15** — Pick Model and One Writer
-  - [ ] Task 15-1 · One pure pick model, `pickModel.ts`
-  - [ ] Task 15-2 · The value writer is assembled one way
-  - [ ] Task 15-3 · Every link menu reads Edit Title, then Edit Link
-  - [ ] Task 15-4 · One row-menu vocabulary: `hideable` names what Remove takes, and a column with no look is a bare value
-  - [ ] Task 15-5 · The filter's date operand opens `DateTimeValuePicker`
-  - [ ] Task 15-6 · The small ones
-  - [ ] Task 15-7 · The duplicate editor-test pairs collapse
-  - [ ] Task 15-8 · Measurement 02-10 and `setProperty`'s shape
-  - [ ] Task 15-9 · Drive group 13 (the filter's clock)
-  - [ ] Review Checkpoint
+- [x] **Phase 15** — Pick Model and One Writer
+  - [x] Task 15-1 · One pure pick model, `pickModel.ts`
+  - [x] Task 15-2 · The value writer is assembled one way
+  - [x] Task 15-3 · Every link menu reads Edit Title, then Edit Link
+  - [x] Task 15-4 · One row-menu vocabulary: `hideable` names what Remove takes, and a column with no look is a bare value
+  - [x] Task 15-5 · The filter's date operand opens `DateTimeValuePicker`
+  - [x] Task 15-6 · The small ones
+  - [x] Task 15-7 · The duplicate editor-test pairs collapse
+  - [x] Task 15-8 · Measurement 02-10 and `setProperty`'s shape
+  - [x] Task 15-9 · Drive group 13 (the filter's clock)
+  - [x] Review Checkpoint
 - [ ] **Phase 16A** — One Value Seat: The Seat, the Table, and Cards
   - [ ] Task 16A-1 · `ValueSeat.tsx`: `useValueSeat` and `<ValueSeat>`, committed with Task 16A-2
   - [ ] Task 16A-2 · The table runs its value cells through the seat
@@ -30011,7 +30011,7 @@ A value write names every file it lands on, so `assignValue` stays the one write
 - **VoiceOver Reads "Open In Editor" (J-4, Nathan's Intent).**
 - **The Panel's Label and File Menus Change With the Seat (J-3, J-10, LC-15):** a Link row's label gaining Edit Title and Edit Link, and the panel's File menu gaining Remove and losing Clear, land in Task 16B-2, where the panel's one row menu is built; at this phase's head the panel's menus read as today.
 - **Unchanged and Checked:** every panel row's menu reads as today apart from the unresolved Link's order above; cards' and the table's menus read as today; the mass assign lands the same commits; the one-row pick, the writer's undo, and J-5's revealed rows behave as P6 and HEAD left them.
-- **Measurement:** filled by Task 15-8 with the base and head lines, `total=<ms> longest=<ms> writes=300`, and the rule's outcome.
+- **Measurement 02-10 (Nathan's Ruling, 10-25-2026):** on the built app, from worktrees beside the live instance, base `total=1414 longest=76 writes=300` and head `total=1329 longest=78 writes=300`; in dev mode, the rule's own, the head read `total=1552 longest=194`, `total=1417 longest=167`, and `total=1451 longest=196`, a Fail on the longest task. The Fail Branch landed (`e771a08aa`) and read `total=2405 longest=192`, `total=2348 longest=161`, and `total=2320 longest=185`: its one request wrote the 300 files in turn where 300 requests ran side by side, the longest task is the table's one redraw of the 300 rows the run keeps in the DOM, which no request shape reaches, and a request refused partway answered no undo for the files it had written. Nathan ruled it reverted (`f6af2c605`), so `setProperty` stays one path per op and every value request answers its own undo.
 
 #### Line Total
 
@@ -35455,7 +35455,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 12 | −192 | +340 | +148 | −393 / +517 / +124 | +217 |
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
 | 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
-| 15 | −256 | +229 | −27 | | |
+| 15 | −256 | +229 | −27 | −259 / +232 / −27 | +13 |
 | 16A | −537 | +457 | −80 | | |
 | 16B | −322 | +97 | −225 | | |
 | 17 | −813 | +609 | −204 | | |
@@ -35591,6 +35591,8 @@ Every claim the plan makes false, with the task that rewrites it. A phase also s
 #### Deviations
 
 Filled during execution: each in-flight call that changes an outcome, with its task, its reason, and its measured effect on *§Net Ledger*.
+
+- **Measurement 02-10 Ran in Dev Mode Beside the Live Instance, and Its Fail Branch Left (Task 15-8; Nathan's Ruling, 10-25-2026):** the rule's procedure stops the live instance and launches `npm run dev` on 9333; each run instead launched its own instance from a worktree on its own port and userData, the built app first and then dev mode, which the rule names. Dev mode failed the longest-task threshold, the Fail Branch landed and measured slower with the longest task unmoved and a partly refused request left without undo, and Nathan ruled it reverted; Phase 15 lands its Pass figure (−27), and no later task takes `--outcome 02-10=Fail`.
 
 - **Rulings I-4 and E-4, Between Phases 7 and 8 (Nathan, 10-23-2026):** two calls execution raised, ruled after Phase 7's closeout, land outside any task, measured in *§Net Ledger*'s own row over `acfd53fa4^..974e60755`.
   - **I-4:** a Date, Created Time, or Last Edited Time column's right-click names its date and time choices "Format", one word in each type's `styleLabel` (`acfd53fa4`, ±0).
