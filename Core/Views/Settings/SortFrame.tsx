@@ -9,7 +9,9 @@ import {
   pickerRow,
 } from '@pommora/uix/Menus'
 import { useSaveView } from '../viewWrite'
-import { declaredType } from '../../Properties/fieldValue'
+import { resolveColumn } from '../Pipeline/columns'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
+import { useSession } from '../../Session/store'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
 import { liveBucketOrder } from '../Pipeline/group'
@@ -43,8 +45,9 @@ const TEXT_DIRECTIONS: PickerOption<Direction>[] = [
 function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
+  contextIds: readonly string[],
 ): PickerOption<Direction>[] {
-  switch (specOf(declaredType(propertyId, schema))?.kind) {
+  switch (specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind) {
     case 'select':
       return OPTION_DIRECTIONS
     case 'link':
@@ -75,6 +78,7 @@ export function SortFrame({
   onBack: () => void
 }): React.JSX.Element {
   const saveView = useSaveView(source)
+  const contextIds = contextIdsOf(useSession((st) => st.tree))
   const save = (sort: SortCriterion[] | undefined): void => void saveView(view, { sort })
 
   const primary = view.sort?.[0]
@@ -175,7 +179,7 @@ export function SortFrame({
                 finiteDef && primary.order ? 'custom' : primary.direction,
                 finiteDef
                   ? CUSTOM_OPTION_DIRECTIONS
-                  : directionOptions(primary.property_id, schema),
+                  : directionOptions(primary.property_id, schema, contextIds),
                 (v: OrderChoice) =>
                   savePrimary(
                     v === 'custom'
@@ -201,7 +205,7 @@ export function SortFrame({
                 'arrow-down-up',
                 'Order',
                 sub.direction,
-                directionOptions(sub.property_id, schema),
+                directionOptions(sub.property_id, schema, contextIds),
                 (d) => save([primary, { ...sub, direction: d }]),
                 SUB_LOOK,
               )}

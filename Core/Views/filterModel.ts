@@ -11,7 +11,7 @@ import {
 } from './filterRules'
 import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
-import { declaredType } from '../Properties/fieldValue'
+import { resolveColumn } from './Pipeline/columns'
 import { contextPaneTargets, FILEDATA_TARGETS, type PaneTarget, schemaTargets } from './paneTargets'
 
 export type DecodedFilter =
@@ -115,11 +115,11 @@ const KIND_OPS: Record<ValueKind, OperatorChoice[]> = {
 export function operatorsFor(
   propertyId: string,
   schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
+  contextIds: readonly string[],
 ): OperatorChoice[] {
   if (propertyId === FILEDATA.title.id) return TITLE_OPS
   if (propertyId === FILEDATA.location.id) return LOCATION_OPS
-  const kind = specOf(declaredType(propertyId, schema, contextIds))?.kind
+  const kind = specOf(resolveColumn(propertyId, schema, contextIds)?.type)?.kind
   return kind ? KIND_OPS[kind] : []
 }
 

@@ -54,26 +54,28 @@ describe('vocabulary', () => {
       { id: 'prop_url', label: 'Link', key: 'Link', type: 'link' },
       { id: 'prop_notes', label: 'Notes', key: 'Notes', type: 'text' },
     ]
-    expect(operatorsFor('prop_notes', linkAndText)).toEqual(operatorsFor('prop_url', linkAndText))
-    expect(operatorsFor('prop_notes', linkAndText)).toHaveLength(7)
+    expect(operatorsFor('prop_notes', linkAndText, [])).toEqual(
+      operatorsFor('prop_url', linkAndText, []),
+    )
+    expect(operatorsFor('prop_notes', linkAndText, [])).toHaveLength(7)
   })
 
   it('checkbox operators carry the whole clause (slot none, implied values)', () => {
-    const ops = operatorsFor('prop_done', schema)
+    const ops = operatorsFor('prop_done', schema, [])
     expect(ops.map((o) => o.label)).toEqual(['Is Checked', "Isn't Checked"])
     expect(ops.every((o) => o.slot === 'none')).toBe(true)
     expect(ops.map((o) => o.impliedValue)).toEqual(['true', 'false'])
   })
 
   it("select reads Is / Isn't / Is Empty / Isn't Empty with chip slots on the membership ops", () => {
-    const ops = operatorsFor('prop_sel', schema)
+    const ops = operatorsFor('prop_sel', schema, [])
     expect(ops.map((o) => o.label)).toEqual(['Is', "Isn't", 'Is Empty', "Isn't Empty"])
     expect(ops[0].slot).toBe('chips')
     expect(ops[2].slot).toBe('none')
   })
 
   it("multi-select reads Is Any / Is All / Isn't + empties", () => {
-    expect(operatorsFor('prop_tags', schema).map((o) => o.op)).toEqual([
+    expect(operatorsFor('prop_tags', schema, []).map((o) => o.op)).toEqual([
       'contains_any',
       'contains_all',
       'does_not_contain',
@@ -137,7 +139,7 @@ describe('vocabulary', () => {
   })
 
   it("Location Contains and Doesn't Contain take folder names; Is and Isn't take ids alone", () => {
-    const ops = operatorsFor('_location', schema)
+    const ops = operatorsFor('_location', schema, [])
     expect(ops.map((o) => [o.label, o.names])).toEqual([
       ['Is', undefined],
       ["Isn't", undefined],

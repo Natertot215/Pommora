@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
-import { declaredType, resolveFieldValue } from './fieldValue'
+import { resolveFieldValue } from './fieldValue'
 import { fileName } from '../Connections/linkValue'
 import { propsAtRoot } from '../Testing/pageValues'
 import { NULL_VALUE } from './propertyValue'
@@ -71,31 +71,6 @@ const row: ViewRow = {
     ),
   },
 }
-
-describe('declaredType', () => {
-  it('maps reserved columns to the type/sentinel sort+group+filter switch on', () => {
-    expect(declaredType('_title', schema)).toBe('title')
-    expect(declaredType('_created_at', schema)).toBe('createdTime')
-    expect(declaredType('_modified_at', schema)).toBe('lastEditedTime')
-    expect(declaredType('_location', schema)).toBeUndefined()
-  })
-
-  it('classifies a Context column only when its id is among the registry ids', () => {
-    expect(declaredType('ctx_areas', schema, ['ctx_areas'])).toBe('context')
-    expect(declaredType('ctx_areas', schema)).toBeUndefined()
-  })
-
-  it('reads user property types from the schema', () => {
-    expect(declaredType('prop_status', schema)).toBe('status')
-    expect(declaredType('prop_sel', schema)).toBe('select')
-    expect(declaredType('prop_num', schema)).toBe('number')
-    expect(declaredType('prop_when', schema)).toBe('dateTime')
-  })
-
-  it('resolves an unknown id to undefined', () => {
-    expect(declaredType('prop_absent', schema)).toBeUndefined()
-  })
-})
 
 describe('resolveFieldValue', () => {
   it('reads reserved columns from the row, not the frontmatter', () => {

@@ -1,20 +1,9 @@
-// Two axes that must not be confused: declaredType is the column's SCHEMA type, whose record entry sort, filter and grouping classify by; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
+// A column's type is its own (`ResolvedColumn.type`); its value is decoded definition-first, never inferred from the value's shape, so a Link column always reads as a link.
 
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
-import { type ColumnType, FILEDATA_BY_ID, type PropertyDefinition } from './properties'
+import type { PropertyDefinition } from './properties'
 import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
-
-export function declaredType(
-  propertyId: string,
-  schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
-): ColumnType | undefined {
-  const filedata = FILEDATA_BY_ID.get(propertyId)
-  if (filedata) return filedata.type
-  if (contextIds.includes(propertyId)) return 'context'
-  return schema.find((d) => d.id === propertyId)?.type
-}
 
 const stampValue = (iso: string | null): PropertyValue =>
   iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }

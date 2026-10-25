@@ -24,7 +24,7 @@ const view = (property_order: string[], hidden_properties: string[]): SavedView 
 describe('hiddenListIds', () => {
   it('orders hidden props by the COLLECTION schema, not the hidden array', () => {
     const schema = [def('a'), def('b'), def('c')]
-    expect(hiddenListIds(view(['b'], ['c', 'a']), schema)).toEqual(['a', 'c', ...stamps])
+    expect(hiddenListIds(view(['b'], ['c', 'a']), schema, [])).toEqual(['a', 'c', ...stamps])
   })
 
   it('lists non-shown contexts first (registry order), then props, then the stamps, drops stale ids', () => {
@@ -35,11 +35,11 @@ describe('hiddenListIds', () => {
   })
 
   it('lists both stamps on a view that shows neither', () => {
-    expect(hiddenListIds(view([title], []), [])).toEqual([createdAt, modifiedAt])
+    expect(hiddenListIds(view([title], []), [], [])).toEqual([createdAt, modifiedAt])
   })
 
   it('omits a stamp the view shows', () => {
-    expect(hiddenListIds(view([title, modifiedAt], []), [])).toEqual([createdAt])
+    expect(hiddenListIds(view([title, modifiedAt], []), [], [])).toEqual([createdAt])
   })
 
   it('a context in neither list sits in the hidden zone (default-OFF reveal path)', () => {
@@ -48,12 +48,12 @@ describe('hiddenListIds', () => {
 
   it('surfaces an unaccounted prop (in schema, in neither list) so it stays revealable', () => {
     const schema = [def('a'), def('b')]
-    expect(hiddenListIds(view(['a'], []), schema)).toEqual(['b', ...stamps])
+    expect(hiddenListIds(view(['a'], []), schema, [])).toEqual(['b', ...stamps])
   })
 
   it('interleaves hidden and unaccounted props in collection order', () => {
     const schema = [def('a'), def('b'), def('c')]
-    expect(hiddenListIds(view(['b'], ['a']), schema)).toEqual(['a', 'c', ...stamps])
+    expect(hiddenListIds(view(['b'], ['a']), schema, [])).toEqual(['a', 'c', ...stamps])
   })
 })
 
