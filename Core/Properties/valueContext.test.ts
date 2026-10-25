@@ -52,12 +52,12 @@ describe('useValueContext', () => {
   it('bundles schema + the identity seam Space map', () => {
     const ctx = contextOf(tree)
     expect(ctx?.schema).toEqual([])
-    expect(ctx?.contextsById.get('a1')?.title).toBe('Personal')
-    expect(ctx?.contextsById.get('t1')?.title).toBe('Reading')
+    expect(ctx?.spaces.get('a1')?.title).toBe('Personal')
+    expect(ctx?.spaces.get('t1')?.title).toBe('Reading')
   })
 
   it('returns undefined for an unknown id', () => {
-    expect(contextOf(tree)?.contextsById.get('nope')).toBeUndefined()
+    expect(contextOf(tree)?.spaces.get('nope')).toBeUndefined()
   })
 
   it("carries the view's heading-link settings", () => {

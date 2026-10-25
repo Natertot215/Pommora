@@ -17,7 +17,7 @@ import { addressable } from './heldPages'
 import type { EntityRecord } from './record'
 import { sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRaw } from './governedRoot'
+import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
 import type { Place } from '../Files/pageFile'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
 import { isBlankRaw, landValue } from '../Files/rootValues'
@@ -31,7 +31,7 @@ export interface SweepResult {
   refused: string[]
 }
 
-export type Rewrite = (raw: Json, file: string) => Json | null
+export type Rewrite = (root: Json, file: string) => Json | null
 
 export type RewriteText = (content: string, file: string) => string | null
 
@@ -39,7 +39,7 @@ export type RewriteText = (content: string, file: string) => string | null
 export type SweepPlan = {
   raw: Rewrite
   text?: RewriteText
-  above?: (raw: Json, file: string) => Place
+  above?: (root: Json, file: string) => Place
 }
 
 export const collectionFolders = (root: string, tree: NexusTree): string[] =>
@@ -64,7 +64,7 @@ function rewritten(plan: SweepPlan, file: string, content: string): string | nul
   const page = sweepParse(content)
   if (!page) return undefined
   if (plan.text) return plan.text(content, file)
-  return rewriteRaw((raw) => plan.raw(raw, file), plan.above?.(page.raw, file))(page)
+  return rewriteRoot((root) => plan.raw(root, file), plan.above?.(page.raw, file))(page)
 }
 
 /** Files are absolute, pages and Space sidecars alike. */
@@ -104,8 +104,8 @@ export const outsideArchive = (root: string, file: string): boolean =>
   !isArchived(relative(root, file))
 
 /** The id a governed root carries: a page's `ID`, a Space sidecar's `id`. */
-export const rootId = (file: string, raw: Json): string | undefined =>
-  asString(raw[isMarkdownFile(file) ? ID_KEY : 'id'])
+export const rootId = (file: string, root: Json): string | undefined =>
+  asString(root[isMarkdownFile(file) ? ID_KEY : 'id'])
 
 export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
   const shown = files.filter((file) => outsideArchive(root, file))
@@ -121,7 +121,7 @@ export async function sweepRootsById<T>(
   roots: RootsById,
   values: Record<string, T>,
   above: Record<string, string | undefined>,
-  rewrite: (raw: Json, value: T) => Json | null,
+  rewrite: (root: Json, value: T) => Json | null,
 ): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
   const asked = new Map<string, string>()
   const files = Object.keys(values).flatMap((id) => {
@@ -143,16 +143,16 @@ export async function sweepRootsById<T>(
   return { taken: new Set(asked.values()), skipped: swept.skipped.length }
 }
 
-/** `value` landed under `def`'s key as a live reconcile lands it, where `raw` reads blank; null where it doesn't land, or where it's a Link naming a page `frozen` no longer holds. */
+/** `value` landed under `def`'s key as a live reconcile lands it, where `root` reads blank; null where it doesn't land, or where it's a Link naming a page `frozen` no longer holds. */
 export const refillOf =
   (def: PropertyDefinition, frozen: Frozen) =>
-  (raw: Json, value: unknown): Json | null => {
+  (root: Json, value: unknown): Json | null => {
     const gone =
       PROPERTY_TYPES[def.type].connections === 'value' && gonePageEntry(value, frozen) !== null
     const next = liveLanding(value, reencode(def, value))
-    return gone || next === undefined || !isBlankRaw(raw[def.key])
+    return gone || next === undefined || !isBlankRaw(root[def.key])
       ? null
-      : landValue(raw, def.key, next)
+      : landValue(root, def.key, next)
   }
 
 /** Puts each value back as `refillOf` lands it, on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */

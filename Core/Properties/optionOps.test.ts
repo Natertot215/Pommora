@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
@@ -92,7 +92,7 @@ async function pageHolding(id: string, value: string): Promise<string> {
   if (!def) throw new Error('definition missing')
   await rewriteRootAt(
     p.value.path,
-    rewriteRaw((raw) => landValue(raw, def.key, [value])),
+    rewriteRoot((raw) => landValue(raw, def.key, [value])),
   )
   return p.value.path
 }
@@ -110,7 +110,7 @@ async function lockedPage(
   const key = (await readRegistry(root)).defs[id].key
   await rewriteRootAt(
     p.value.path,
-    rewriteRaw((raw) => landValue(raw, key, [word])),
+    rewriteRoot((raw) => landValue(raw, key, [word])),
   )
   await chmod(set.value.path, 0o555)
   return { page: p.value.path, set: set.value.path }
@@ -701,7 +701,7 @@ describe('renameOption', () => {
     const key = (await readRegistry(root)).defs[id].key
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, key, ['Stray'])),
+      rewriteRoot((raw) => landValue(raw, key, ['Stray'])),
     )
     const stray = await readFile(page, 'utf8')
     expect(stray).toContain('Stray')
@@ -743,7 +743,7 @@ describe('renameOption', () => {
         if (!p.ok) throw new Error('page failed')
         await rewriteRootAt(
           p.value.path,
-          rewriteRaw((raw) => landValue(raw, def.key, ['A'])),
+          rewriteRoot((raw) => landValue(raw, def.key, ['A'])),
         )
       }
     }
@@ -823,7 +823,7 @@ describe('each option change keeps its own note', () => {
     if (!old.ok) throw new Error('page failed')
     await rewriteRootAt(
       old.value.path,
-      rewriteRaw((raw) => landValue(raw, 'Tags', ['a'])),
+      rewriteRoot((raw) => landValue(raw, 'Tags', ['a'])),
     )
     await seedNotes({ [id]: { kind: 'property', options: { opt_A: { rename: ['a'] } } } })
     expect((await clearOption(root, id, 'opt_A')).ok).toBe(true)
@@ -862,7 +862,7 @@ describe('each option change keeps its own note', () => {
     }
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Tags', ['C'])),
+      rewriteRoot((raw) => landValue(raw, 'Tags', ['C'])),
     )
     await finishOwed(root, deps)
     expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['C'])
@@ -953,7 +953,7 @@ describe('remove and clear on a value the definition lacks', () => {
     const key = (await readRegistry(root)).defs[id].key
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, key, ['Stray'])),
+      rewriteRoot((raw) => landValue(raw, key, ['Stray'])),
     )
     return { id, page, bytes: await readFile(page, 'utf8') }
   }
@@ -1026,7 +1026,7 @@ describe('clearOption', () => {
     if (!def) throw new Error('definition missing')
     await rewriteRootAt(
       p.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, def.key, ['hi'])),
     )
     await chmod(set.value.path, 0o555)
     try {
@@ -1260,7 +1260,7 @@ describe('option cascades reach saved views', () => {
     const key = (await readRegistry(root)).defs[id].key
     await rewriteRootAt(
       p.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+      rewriteRoot((raw) => landValue(raw, key, ['Done'])),
     )
     await chmod(set.value.path, 0o555)
     return set.value.path

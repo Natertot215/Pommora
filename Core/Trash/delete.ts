@@ -117,7 +117,7 @@ export async function deleteOp(
     // A refused note or list step leaves nothing deleted, so its bundle goes and a lifted set-aside comes back.
     const unminted = async <R extends { ok: false }>(r: R): Promise<R> => {
       if (bundle) await removeOwn(bundle)
-      await lifted?.value.undo()
+      await lifted?.value.rollback()
       return r
     }
     // What sits under the deleted folder leaves and comes back with it, so its files are neither members to restore nor holders to strip.
@@ -221,7 +221,7 @@ export async function deleteOp(
       ...(stripped ? { cascade: stripped } : {}),
     })
   } catch (e) {
-    if (!moved) await lifted?.value.undo()
+    if (!moved) await lifted?.value.rollback()
     throw e
   }
 }

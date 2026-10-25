@@ -35,7 +35,7 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createProperty } from '../Properties/registryProperty'
 import { assignProperty } from '../Properties/assignment'
 import { createTestPage } from '../Testing/createTestPage'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
@@ -2477,7 +2477,7 @@ describe('emptying a property’s Trash entry', () => {
     for (const file of [tasksPage, alpha()])
       await rewriteRootAt(
         file,
-        rewriteRaw((raw) => landValue(raw, 'Priority', ['hi'])),
+        rewriteRoot((raw) => landValue(raw, 'Priority', ['hi'])),
       )
     await refreshTree(root)
     for (const path of ['Tasks', 'Notes'])

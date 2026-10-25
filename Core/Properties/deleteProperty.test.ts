@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { patchSidecar } from '../Files/sidecar'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -96,11 +96,11 @@ describe('deleteProperty', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       p1.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await rewriteRootAt(
       p2.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
 
     recordedBeforeScrub = undefined
@@ -175,7 +175,7 @@ describe('deleteProperty', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       p.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await unassignProperty(root, notes, id)
     const before = await readJsonObject(sidecarPath(notes, 'collection'))
@@ -205,7 +205,7 @@ describe('propertyHolders', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Priority: ['hi'] })
 
@@ -226,7 +226,7 @@ describe('propertyHolders', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     const pid = splitFrontmatter(await readFile(page.value.path, 'utf8'))[ID_KEY] as string
     const idless = join(notes, 'Loose.md')
@@ -503,7 +503,7 @@ describe('the delete’s list step and its keys', () => {
       if (!p.ok) throw new Error('setup failed')
       await rewriteRootAt(
         p.value.path,
-        rewriteRaw((raw) => landValue(raw, 'Priority', 'hi')),
+        rewriteRoot((raw) => landValue(raw, 'Priority', 'hi')),
       )
       pages.push(p.value.path)
     }

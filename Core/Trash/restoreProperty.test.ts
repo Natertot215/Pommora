@@ -1,5 +1,5 @@
 import { chmod, readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { patchSidecar } from '../Files/sidecar'
 import { landValue } from '../Files/rootValues'
 import { dirname, join } from '../Paths/posix'
@@ -120,11 +120,11 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       p1.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await rewriteRootAt(
       p2.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['lo'])),
+      rewriteRoot((raw) => landValue(raw, key, ['lo'])),
     )
     expect((await deleteProperty(root, id)).ok).toBe(true)
     await writeFile(
@@ -150,11 +150,11 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       p1.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await rewriteRootAt(
       p2.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['lo'])),
+      rewriteRoot((raw) => landValue(raw, key, ['lo'])),
     )
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
@@ -187,7 +187,7 @@ describe('restoring a deleted property', () => {
     ])
       await rewriteRootAt(
         page,
-        rewriteRaw((raw) => landValue(raw, 'Priority', [word])),
+        rewriteRoot((raw) => landValue(raw, 'Priority', [word])),
       )
     await chmod(set.value.path, 0o555)
     try {
@@ -227,7 +227,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['wip'])),
+      rewriteRoot((raw) => landValue(raw, key, ['wip'])),
     )
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
@@ -253,12 +253,12 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['wip'])),
+      rewriteRoot((raw) => landValue(raw, key, ['wip'])),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, '   ')),
+      rewriteRoot((raw) => landValue(raw, key, '   ')),
     )
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
@@ -309,12 +309,12 @@ describe('restoring a deleted property', () => {
     const def = await liveDef(id)
     await rewriteRootAt(
       good.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, def.key, ['hi'])),
     )
     // A hand-written value naming an option the definition never had.
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, 'nonsense')),
+      rewriteRoot((raw) => landValue(raw, def.key, 'nonsense')),
     )
     expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
 
@@ -332,7 +332,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['lo'])),
+      rewriteRoot((raw) => landValue(raw, key, ['lo'])),
     )
     vi.setSystemTime(new Date('2026-10-01T08:00:00.000Z'))
     try {
@@ -363,12 +363,12 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     expect((await unassignProperty(root, notes, id)).ok).toBe(true)
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['lo'])),
+      rewriteRoot((raw) => landValue(raw, key, ['lo'])),
     )
     await assignProperty(root, notes, id)
     expect((await deleteProperty(root, id)).ok).toBe(true)
@@ -414,7 +414,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     await refreshTree(root)
     expect(
@@ -497,11 +497,11 @@ describe('restoring a deleted property', () => {
     const def = await liveDef(id)
     await rewriteRootAt(
       p1.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, def.key, ['hi'])),
     )
     await rewriteRootAt(
       doomed.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, ['lo'])),
+      rewriteRoot((raw) => landValue(raw, def.key, ['lo'])),
     )
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
@@ -579,11 +579,11 @@ describe('restoring a deleted property', () => {
     const def = await liveDef(c.value.id)
     await rewriteRootAt(
       live.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, '[[Target]]')),
+      rewriteRoot((raw) => landValue(raw, def.key, '[[Target]]')),
     )
     await rewriteRootAt(
       dead.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, '[[Gone]]')),
+      rewriteRoot((raw) => landValue(raw, def.key, '[[Gone]]')),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
@@ -599,7 +599,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['hi'])),
+      rewriteRoot((raw) => landValue(raw, key, ['hi'])),
     )
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const copy = join(notes, 'A copy.md')
@@ -634,7 +634,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       live.value.path,
-      rewriteRaw((raw) => landValue(raw, key, '[[Old]]')),
+      rewriteRoot((raw) => landValue(raw, key, '[[Old]]')),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
@@ -656,11 +656,11 @@ describe('restoring a deleted property', () => {
     const def = await liveDef(c.value.id)
     await rewriteRootAt(
       live.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, '[[Target]]')),
+      rewriteRoot((raw) => landValue(raw, def.key, '[[Target]]')),
     )
     await rewriteRootAt(
       dead.value.path,
-      rewriteRaw((raw) => landValue(raw, def.key, '[[Gone]]')),
+      rewriteRoot((raw) => landValue(raw, def.key, '[[Gone]]')),
     )
     expect((await unassignProperty(root, tasks, c.value.id)).ok).toBe(true)
     expect((await assignProperty(root, tasks, c.value.id)).ok).toBe(true)
@@ -681,7 +681,7 @@ describe('restoring a deleted property', () => {
     const key = (await liveDef(c.value.id)).key
     await rewriteRootAt(
       page.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['alpha', 'zeta'])),
+      rewriteRoot((raw) => landValue(raw, key, ['alpha', 'zeta'])),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
@@ -79,7 +79,7 @@ beforeEach(async () => {
   const key = (await readRegistry(root)).defs[propId].key
   await rewriteRootAt(
     page.value.path,
-    rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+    rewriteRoot((raw) => landValue(raw, key, ['Done'])),
   )
   surfaces = await seedConfigSurfaces(root, col, viewOn(propId, 'opt_Done'))
   await openSession(root)
@@ -117,7 +117,7 @@ describe('the property ops', () => {
       const key = (await readRegistry(root)).defs[propId].key
       await rewriteRootAt(
         held.value.path,
-        rewriteRaw((raw) => landValue(raw, key, ['Done'])),
+        rewriteRoot((raw) => landValue(raw, key, ['Done'])),
       )
       await chmod(locked.value.path, 0o555)
       try {
@@ -229,7 +229,7 @@ describe('the property ops', () => {
     const def = (await readRegistry(root)).defs[propId]
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, def.key, ['Done'])),
+      rewriteRoot((raw) => landValue(raw, def.key, ['Done'])),
     )
     const before = await readFile(page, 'utf8')
     expect((await send(FINISH)).ok).toBe(true)

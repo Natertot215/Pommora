@@ -19,14 +19,14 @@ import { isAtOrUnder, isMarkdownFile, join, relative } from '../Paths/posix'
 type Reach = 'governed' | { collection: string } | 'anywhere'
 
 /** A folder an op moved ahead of its sweep, root-relative. */
-export type Moved = { from: string; to: string }
+export type FolderMove = { from: string; to: string }
 
 export type HolderQuery = {
   keys: readonly string[]
   reach: Reach
   title?: string
   id?: string
-  moved?: Moved
+  moved?: FolderMove
 }
 
 /** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, in the page's own key order. */
@@ -58,7 +58,7 @@ export async function pagesInReach(
   return files.filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
 }
 
-const sidecarAt = (root: string, rel: string, moved?: Moved): string =>
+const sidecarAt = (root: string, rel: string, moved?: FolderMove): string =>
   join(
     root,
     moved && isAtOrUnder(rel, moved.from) ? `${moved.to}${rel.slice(moved.from.length)}` : rel,
@@ -70,7 +70,7 @@ export const spaceFiles = (
   root: string,
   tree: NexusTree,
   holds: (space: SpaceNode) => boolean,
-  moved?: Moved,
+  moved?: FolderMove,
 ): string[] =>
   tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 

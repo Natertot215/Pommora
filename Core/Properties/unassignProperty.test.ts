@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, mkdir, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
@@ -84,11 +84,11 @@ beforeEach(async () => {
   pageB = b.value.path
   await rewriteRootAt(
     pageA,
-    rewriteRaw((raw) => landValue(raw, liveDef.key, ['active'])),
+    rewriteRoot((raw) => landValue(raw, liveDef.key, ['active'])),
   )
   await rewriteRootAt(
     pageB,
-    rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+    rewriteRoot((raw) => landValue(raw, liveDef.key, ['done'])),
   )
 })
 afterEach(async () => {
@@ -218,7 +218,7 @@ describe('unassignProperty — strip + stash', () => {
       if (!held.ok) throw new Error('setup failed')
       await rewriteRootAt(
         held.value.path,
-        rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+        rewriteRoot((raw) => landValue(raw, liveDef.key, ['done'])),
       )
       await chmod(set.value.path, 0o555)
       try {
@@ -236,7 +236,7 @@ describe('unassignProperty — strip + stash', () => {
     if (!held.ok) throw new Error('setup failed')
     await rewriteRootAt(
       held.value.path,
-      rewriteRaw((raw) => landValue(raw, liveDef.key, ['done'])),
+      rewriteRoot((raw) => landValue(raw, liveDef.key, ['done'])),
     )
     await chmod(held.value.path, 0o000)
     try {
@@ -424,7 +424,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     }))
     await rewriteRootAt(
       pageA,
-      rewriteRaw((raw) => landValue(raw, liveDef.key, ['active'])),
+      rewriteRoot((raw) => landValue(raw, liveDef.key, ['active'])),
     )
     await unassignProperty(root, folder, propId)
     await assignProperty(root, folder, propId)
@@ -562,7 +562,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     const selDef = (await readRegistry(root)).defs[id]
     await rewriteRootAt(
       c.value.path,
-      rewriteRaw((raw) => landValue(raw, selDef.key, ['2024-01-01'])),
+      rewriteRoot((raw) => landValue(raw, selDef.key, ['2024-01-01'])),
     )
     await unassignProperty(root, folder, id)
     await assignProperty(root, folder, id)
@@ -583,7 +583,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     const key = (await readRegistry(root)).defs[tags.value.id].key
     await rewriteRootAt(
       p.value.path,
-      rewriteRaw((raw) => landValue(raw, key, ['alpha', 'zeta'])),
+      rewriteRoot((raw) => landValue(raw, key, ['alpha', 'zeta'])),
     )
     await unassignProperty(root, folder, tags.value.id)
     await assignProperty(root, folder, tags.value.id)

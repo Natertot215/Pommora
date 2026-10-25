@@ -9,7 +9,7 @@ import {
   reconcileGovernedRoot,
   gonePageEntry,
   pageWorldOf,
-  rewriteRaw,
+  rewriteRoot,
   rewriteRootAt,
   writtenRoot,
   writtenSpelling,
@@ -339,7 +339,7 @@ describe('rewriteRootAt', () => {
     await writeFile(page, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', 'Done')),
+      rewriteRoot((raw) => landValue(raw, 'Status', 'Done')),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
@@ -354,7 +354,7 @@ describe('rewriteRootAt', () => {
     await utimes(page, past, past)
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', 'Done')),
+      rewriteRoot((raw) => landValue(raw, 'Status', 'Done')),
     )
     expect(Math.floor((await stat(page)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
@@ -366,7 +366,7 @@ describe('rewriteRootAt', () => {
     )
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', 'Live')),
+      rewriteRoot((raw) => landValue(raw, 'Status', 'Live')),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Live')
@@ -379,7 +379,7 @@ describe('rewriteRootAt', () => {
     await writeFile(page, '---\nid: p1\nStatus: Active\n---\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', undefined)),
+      rewriteRoot((raw) => landValue(raw, 'Status', undefined)),
     )
     expect(await readFile(page, 'utf8')).not.toContain('Status')
   })
@@ -388,7 +388,7 @@ describe('rewriteRootAt', () => {
     await writeFile(page, '---\nid: p1\n<Projects>:\n  - Pommora\n---\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, '<Projects>', undefined)),
+      rewriteRoot((raw) => landValue(raw, '<Projects>', undefined)),
     )
     expect(await readFile(page, 'utf8')).not.toContain('<Projects>')
   })
@@ -397,7 +397,7 @@ describe('rewriteRootAt', () => {
     await writeFile(page, '---\nid: p1\nmodified_at: 2020-01-01T00:00:00.000Z\n---\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', 'Done')),
+      rewriteRoot((raw) => landValue(raw, 'Status', 'Done')),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('modified_at: 2020-01-01T00:00:00.000Z')
@@ -408,11 +408,11 @@ describe('rewriteRootAt', () => {
     await writeFile(page, '---\nid: p1\n---\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Status', 'Done')),
+      rewriteRoot((raw) => landValue(raw, 'Status', 'Done')),
     )
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, '<Areas>', ['Work'])),
+      rewriteRoot((raw) => landValue(raw, '<Areas>', ['Work'])),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
@@ -432,7 +432,7 @@ describe('rewriteRootAt', () => {
     expect(
       await rewriteRootAt(
         page,
-        rewriteRaw((raw) => landValue(raw, 'Status', ['Open'])),
+        rewriteRoot((raw) => landValue(raw, 'Status', ['Open'])),
       ),
     ).toEqual(fault(UNPARSED_FRONTMATTER))
     expect(await readFile(page, 'utf8')).toBe(before)
@@ -471,7 +471,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     )
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, '<Areas>', undefined, world)),
+      rewriteRoot((raw) => writtenRoot(raw, '<Areas>', undefined, world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Areas')
@@ -485,7 +485,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     )
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Priority', undefined, world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Priority', undefined, world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Priority')
@@ -496,7 +496,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\n  - Ghost\n---\nbody\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Status', 'Open', world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Status', 'Open', world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('- Health')
@@ -508,7 +508,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Ghost\n---\nbody\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Status', 'Open', world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Status', 'Open', world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).toContain('<Areas>')
@@ -519,7 +519,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     await writeFile(page, '---\nid: p1\nPriority: Bogus\n---\nbody\n')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Status', 'Done', world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Status', 'Done', world)),
     )
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Priority).toBe('Bogus')
@@ -537,7 +537,7 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) =>
+      rewriteRoot((raw) =>
         writtenRoot(raw, 'Status', 'Done', {
           ...world,
           defs: byKey([tags]),
@@ -597,7 +597,7 @@ describe('rewriteRootAt — spellings', () => {
     await seeded('status: Open')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Status', ['Done'], world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Status', ['Done'], world)),
     )
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(Object.keys(fm)).toEqual(['id', 'status', 'foo', 'Status'])
@@ -609,7 +609,7 @@ describe('rewriteRootAt — spellings', () => {
     await seeded('Done: No')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Done', true, world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Done', true, world)),
     )
     expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe('Yes')
   })
@@ -618,13 +618,13 @@ describe('rewriteRootAt — spellings', () => {
     await seeded(`Price: '30'`)
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Price', 31, world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Price', 31, world)),
     )
     expect(await lines()).toContain(`Price: '31'`)
     await seeded('Price: $1,200')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Price', 1300, world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Price', 1300, world)),
     )
     expect(await lines()).toContain('Price: $1,300')
   })
@@ -634,7 +634,7 @@ describe('rewriteRootAt — spellings', () => {
     const before = await readFile(page, 'utf8')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Tags', ['a'], world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Tags', ['a'], world)),
     )
     expect(await readFile(page, 'utf8')).toBe(before)
   })
@@ -644,7 +644,7 @@ describe('rewriteRootAt — spellings', () => {
     const before = await readFile(page, 'utf8')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) =>
+      rewriteRoot((raw) =>
         writtenRoot(raw, 'Stage', encodeValue(stage, { kind: 'select', value: 'opt_done' }), world),
       ),
     )
@@ -657,12 +657,12 @@ describe('rewriteRootAt — spellings', () => {
     await seeded('Tags: [Docs, Ideas]')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Tags', ['Docs', 'Work'], world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Tags', ['Docs', 'Work'], world)),
     )
     expect(await lines()).toContain('Tags: [Docs, Work, Ideas]')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => writtenRoot(raw, 'Tags', undefined, world)),
+      rewriteRoot((raw) => writtenRoot(raw, 'Tags', undefined, world)),
     )
     expect(await readFile(page, 'utf8')).not.toContain('Tags')
   })
@@ -671,7 +671,7 @@ describe('rewriteRootAt — spellings', () => {
     await seeded('Banner: x')
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'banner', '[[b.png]]')),
+      rewriteRoot((raw) => landValue(raw, 'banner', '[[b.png]]')),
     )
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Banner).toBe('x')

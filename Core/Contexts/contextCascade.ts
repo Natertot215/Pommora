@@ -24,7 +24,7 @@ import {
 } from '../Files/rootValues'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { findHolders, type HolderQuery, type Moved } from '../Index/keyHolders'
+import { findHolders, type HolderQuery, type FolderMove } from '../Index/keyHolders'
 import { nameError } from '../Paths/names'
 
 /** Both keys of a collision hold real tags: the app's own tag writes run under the Contexts lock a rename holds, so a key already wearing the new title was written outside the app or by hand, and neither list is fresher, so dropping either would silently lose tags. */
@@ -56,7 +56,7 @@ export async function titleHolders(
   contextTitle: string,
   from: string,
   space: boolean,
-  moved?: Moved,
+  moved?: FolderMove,
 ): Promise<string[]> {
   const query: HolderQuery = space
     ? { keys: [contextKey(contextTitle)], title: from, reach: 'anywhere', moved }

@@ -187,13 +187,13 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     const column = resolveColumn(propertyId, schema, contextIds)
     return row && column && commitValue(row, column, groupKeyToValue(groupKey, column.type))
   }
-  const reassignBySortRun = (orderIds: string[], bandKey: string, activeId: string): void => {
+  const reassignBySortRun = (orderIds: string[], groupKey: string, activeId: string): void => {
     if (!sortReassign) return
     const keyOf = (id: string): string => {
       const row = rowById.get(id)
       return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
     }
-    const band = orderIds.filter((id) => rowBand.get(id) === bandKey)
+    const band = orderIds.filter((id) => rowBand.get(id) === groupKey)
     const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.id, target)

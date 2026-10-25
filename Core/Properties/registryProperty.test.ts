@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { chmod, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
@@ -449,7 +449,7 @@ describe('renameProperty and configureProperty', () => {
       pages.push(p.value.path)
       await rewriteRootAt(
         p.value.path,
-        rewriteRaw((raw) => landValue(raw, live.key, 1)),
+        rewriteRoot((raw) => landValue(raw, live.key, 1)),
       )
     }
     // Hand-edited into unparseable YAML. It sorts between the two healthy pages, so a sweep that throws on it leaves C behind on the old key.

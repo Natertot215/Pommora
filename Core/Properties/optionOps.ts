@@ -320,23 +320,23 @@ async function valueFormatPlan(
   root: string,
   propertyId: string,
   format: KeyFormat,
-): Promise<Result<{ def: PropertyDefinition; keys: WordMove[] }>> {
+): Promise<Result<{ def: PropertyDefinition; moved: WordMove[] }>> {
   const found = optionDef((await readRegistry(root)).defs[propertyId])
   if (!found.ok) return found
   const def = found.value
-  const moved = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
+  const rekeyed = optionsOf(def).map((o) => ({ ...o, was: o.key, key: formatKey(o.label, format) }))
   const check = validateOptionValues(
-    moved,
+    rekeyed,
     'This format would give two options the same key, please rename one first.',
   )
   if (!check.ok) return check
-  const keys = moved.flatMap(({ id, was, key }): WordMove[] =>
+  const moved = rekeyed.flatMap(({ id, was, key }): WordMove[] =>
     key === was ? [] : [{ optionId: id, from: was, to: key }],
   )
-  const olds = new Set(keys.map(({ from }) => memberKey(from)))
-  if (keys.some(({ from, to }) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
+  const olds = new Set(moved.map(({ from }) => memberKey(from)))
+  if (moved.some(({ from, to }) => memberKey(to) !== memberKey(from) && olds.has(memberKey(to))))
     return CROSSED
-  return ok({ def, keys })
+  return ok({ def, moved })
 }
 
 export function setValueFormat(
@@ -347,7 +347,7 @@ export function setValueFormat(
   return serializeSchemaOp(root, async () => {
     const planned = await valueFormatPlan(root, propertyId, format)
     if (!planned.ok) return planned
-    return rekeyOptions(root, propertyId, planned.value.keys, { value_format: format })
+    return rekeyOptions(root, propertyId, planned.value.moved, { value_format: format })
   })
 }
 
@@ -358,9 +358,9 @@ export async function valueFormatHolders(
 ): Promise<Result<number>> {
   const planned = await valueFormatPlan(root, propertyId, format)
   if (!planned.ok) return planned
-  const { def, keys } = planned.value
-  if (!keys.length) return ok(0)
-  const { files, plan } = await valueEditPlan(root, def, new Map(keys.map((m) => [m.from, m.to])))
+  const { def, moved } = planned.value
+  if (!moved.length) return ok(0)
+  const { files, plan } = await valueEditPlan(root, def, new Map(moved.map((m) => [m.from, m.to])))
   return ok(await sweepCount(root, files, plan))
 }
 

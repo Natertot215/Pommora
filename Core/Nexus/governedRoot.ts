@@ -139,32 +139,32 @@ export function reconcileGovernedRoot(
   return out
 }
 
-/** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key; null when that changes nothing, so nothing is written. */
+/** `root` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key; null when that changes nothing, so nothing is written. */
 export function writtenRoot(
-  raw: Json,
+  root: Json,
   key: string,
   value: unknown,
   world: GovernedWorld,
 ): Json | null {
-  const reconciled = reconcileGovernedRoot(raw, world, key)
+  const reconciled = reconcileGovernedRoot(root, world, key)
   const def = world.defs.get(key)
-  const kept = def ? keepingForeignWords(def, value, raw[key]) : value
-  const next = landValue(reconciled, key, writtenSpelling(kept, raw[key]))
-  return changedKeys(raw, next).length ? next : null
+  const kept = def ? keepingForeignWords(def, value, root[key]) : value
+  const next = landValue(reconciled, key, writtenSpelling(kept, root[key]))
+  return changedKeys(root, next).length ? next : null
 }
 
 /** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
 export const governedRoot = (file: string, text: string): Json =>
   isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
 
-export const changedKeys = (raw: Json, next: Json): string[] =>
-  [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
-    (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
+export const changedKeys = (root: Json, next: Json): string[] =>
+  [...new Set([...Object.keys(root), ...Object.keys(next)])].filter(
+    (k) => JSON.stringify(root[k]) !== JSON.stringify(next[k]),
   )
 
 /** A page's next text with the keys `rewrite` changes merged in, a key it adds landing where `above` places it, and last without one; null when it changes none. A changed key the next root holds no value for is deleted. */
-export const rewriteRaw =
-  (rewrite: (raw: Json) => Json | null, above?: Place) =>
+export const rewriteRoot =
+  (rewrite: (root: Json) => Json | null, above?: Place) =>
   (page: SweptPage): string | null => {
     const next = rewrite(page.raw)
     if (next === null) return null
@@ -204,11 +204,11 @@ export async function writeGovernedKey(
     ? await rewriteRootAt(abs, (page) => {
         was.before = page.pair(key)
         was.above = page.above(key)
-        return rewriteRaw((raw) => writtenRoot(raw, key, value, world))(page)
+        return rewriteRoot((root) => writtenRoot(root, key, value, world))(page)
       })
-    : await patchSidecar(abs, 'space', (raw) => {
-        was.before = raw[key]
-        return writtenRoot(raw, key, value, world)
+    : await patchSidecar(abs, 'space', (root) => {
+        was.before = root[key]
+        return writtenRoot(root, key, value, world)
       })
   return written.ok ? ok(was) : written
 }

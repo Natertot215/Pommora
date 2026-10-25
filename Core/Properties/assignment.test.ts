@@ -14,7 +14,7 @@ import type { PropertyDefinition } from './properties'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
 import { unassignProperty } from './unassignProperty'
-import { rewriteRaw, rewriteRootAt } from '../Nexus/governedRoot'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { refreshTree } from '../Nexus/liveTree'
 import { machine } from '../Platform/machine'
@@ -71,7 +71,7 @@ it('a Remove racing an Assign on ONE collection never loses either write', async
   if (!page.ok) throw new Error('setup failed')
   await rewriteRootAt(
     page.value.path,
-    rewriteRaw((raw) => landValue(raw, 'Gone', 7)),
+    rewriteRoot((raw) => landValue(raw, 'Gone', 7)),
   )
 
   // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its stash block intact, pB assigned.
@@ -208,7 +208,7 @@ describe('a re-assign that can’t refill a page', () => {
     await assignProperty(root, notes, propertyId)
     await rewriteRootAt(
       page,
-      rewriteRaw((raw) => landValue(raw, 'Priority', 7)),
+      rewriteRoot((raw) => landValue(raw, 'Priority', 7)),
     )
     await refreshTree(root)
     await unassignProperty(root, notes, propertyId)

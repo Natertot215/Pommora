@@ -63,7 +63,7 @@ const schema: PropertyDefinition[] = [
 ]
 const ctx = {
   schema,
-  contextsById: new Map(),
+  spaces: new Map(),
   assets: EMPTY_ASSET_MAP,
 } as unknown as ValueContext
 
