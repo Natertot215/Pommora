@@ -159,7 +159,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       for (const [id, members] of held) {
         const def = defs[id]
         if (!def) continue
-        // A word an option still owes sits in files its sweep missed; registering it would hand that work to a new option (H-7).
+        // A word an option still owes sits in files its sweep missed; registering it would hand that work to a new option.
         const fresh = unregisteredMembers(def, members).filter(
           (v) => !owedName(notes, { owner: { kind: 'option', propertyId: id }, name: String(v) }),
         )
@@ -403,7 +403,7 @@ export function deleteOption(
   })
 }
 
-/** An option's delete or Clear on the runner: its word and every old name it still owes leave the pages holding them. A delete drops the option as its list step; a Clear's option stays listed, so its part is marked kept and no finish drops the option (H-2). */
+/** An option's delete or Clear on the runner: its word and every old name it still owes leave the pages holding them. A delete drops the option as its list step; a Clear's option stays listed, so its part is marked kept and no finish drops the option. */
 function stripOption(
   root: string,
   { def, option }: { def: PropertyDefinition; option: SelectOption },
