@@ -302,6 +302,15 @@ describe('PropertyPanel', () => {
     expect(text()).not.toContain('Doc')
   })
 
+  it('a File row’s label offers Add File and Remove', async () => {
+    seedDef({ id: 'prop_doc', label: 'Doc', key: 'Doc', type: 'file' })
+    menuAnswers('')
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Doc: ['[[Spec.pdf]]'] } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await rightClick(labelOf('Doc'))
+    expect(poppedLabels()).toEqual(['Add File', 'Remove'])
+  })
+
   it('a Context row’s click opens its Spaces, leaving the Space itself out', async () => {
     await renderSpace()
     await act(async () => {
