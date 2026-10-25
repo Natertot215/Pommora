@@ -17,6 +17,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
 import type { ViewHostApi } from '../Host/useViewHost'
+import { hideShown } from '../visibilityModel'
 
 // ── Widths ──────────────────────────────────────────────────────────────────
 
@@ -231,9 +232,8 @@ export function useColumns(host: ViewHostApi) {
   }
   const commitHide = (): void => {
     if (!collapsing) return
-    const hidden = [...(view.hidden_properties ?? []), collapsing]
     setCollapsing(null)
-    void persistView({ hidden_properties: hidden })
+    void persistView(hideShown(view, collapsing))
   }
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
     void persistView({ column_alignments: { [id]: align } })
