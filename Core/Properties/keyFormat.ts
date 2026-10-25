@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const KEY_FORMATS = [
+export const keyFormat = z.enum([
   'Match Title',
   'lowercase',
   'UPPERCASE',
@@ -11,8 +11,7 @@ export const KEY_FORMATS = [
   'Train-Case',
   'UPPER_SNAKE_CASE',
   'UPPER-KEBAB-CASE',
-] as const
-export const keyFormat = z.enum(KEY_FORMATS)
+])
 export type KeyFormat = z.infer<typeof keyFormat>
 
 export const formatChange = z.union([
@@ -21,7 +20,7 @@ export const formatChange = z.union([
 ])
 export type FormatChange = z.infer<typeof formatChange>
 
-export const DEFAULT_KEY_FORMAT: KeyFormat = KEY_FORMATS[0]
+export const DEFAULT_KEY_FORMAT: KeyFormat = keyFormat.options[0]
 
 const LOWER = /\p{Ll}/u
 const UPPER = /\p{Lu}/u
@@ -77,4 +76,5 @@ const FORMAT: Record<KeyFormat, (label: string) => string> = {
 export const formatKey = (label: string, format: KeyFormat = DEFAULT_KEY_FORMAT): string =>
   FORMAT[format](label.normalize('NFC')).normalize('NFC')
 
-export const spellingsOf = (label: string): string[] => KEY_FORMATS.map((f) => formatKey(label, f))
+export const spellingsOf = (label: string): string[] =>
+  keyFormat.options.map((f) => formatKey(label, f))
