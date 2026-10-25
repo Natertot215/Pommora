@@ -88,13 +88,18 @@ describe('cellMenuModel', () => {
   })
 
   it('a card’s two Removes are told apart by their words, not their position', () => {
-    const card = cellMenuModel({ kind: 'file', onChip: true, hideable: true })
+    const card = cellMenuModel({ kind: 'file', onChip: true, hideable: 'view' })
     const labels = card.map((i) => i.label)
     expect(labels).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove from View'])
     expect(new Set(labels).size).toBe(labels.length)
-    expect(cellMenuModel({ kind: 'bare', clearable: true, hideable: true }).at(-1)?.label).toBe(
+    expect(cellMenuModel({ kind: 'bare', clearable: true, hideable: 'view' }).at(-1)?.label).toBe(
       'Remove',
     )
+  })
+
+  it('a panel File row’s Remove reads Remove, since it clears the value rather than hiding a column', () => {
+    const row = cellMenuModel({ kind: 'file', onChip: true, hideable: 'row' })
+    expect(row.map((i) => i.label)).toEqual(['Add File', 'Replace File', 'Remove File', 'Remove'])
   })
 
   it('a filled Link cell: Edit Title, then Edit Link, then a separated Clear, and no Style', () => {
@@ -109,7 +114,7 @@ describe('cellMenuModel', () => {
   })
 
   it('text: Edit, then Clear and Remove together beneath it', () => {
-    const m = cellMenuModel({ kind: 'text', filled: true, hideable: true })
+    const m = cellMenuModel({ kind: 'text', filled: true, hideable: 'view' })
     expect(m.map((i) => [i.label, i.action, i.separatorBefore])).toEqual([
       ['Edit', 'cell:edit', undefined],
       ['Clear', 'cell:clear', true],
@@ -124,7 +129,7 @@ describe('cellMenuModel', () => {
   })
 
   it('hideable (cards) appends Remove beside Clear', () => {
-    const m = cellMenuModel({ kind: 'bare', clearable: true, hideable: true })
+    const m = cellMenuModel({ kind: 'bare', clearable: true, hideable: 'view' })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Clear', 'cell:clear'],
       ['Remove', 'cell:hide'],
@@ -133,7 +138,7 @@ describe('cellMenuModel', () => {
   })
 
   it('an unclearable bare cell (hideable, no other menu): Remove alone, no separator', () => {
-    const m = cellMenuModel({ kind: 'bare', clearable: false, hideable: true })
+    const m = cellMenuModel({ kind: 'bare', clearable: false, hideable: 'view' })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Remove', 'cell:hide']])
     expect(m[0].separatorBefore).toBeUndefined()
   })
@@ -143,7 +148,7 @@ describe('cellMenuModel', () => {
       kind: 'style-only',
       type: 'checkbox',
       current: DATES,
-      hideable: true,
+      hideable: 'view',
     })
     expect(m.map((i) => [i.label, i.action, i.separatorBefore])).toEqual([
       ['Style', undefined, undefined],
@@ -152,7 +157,7 @@ describe('cellMenuModel', () => {
   })
 
   it('a hideable title never gets Remove — the title can never be dropped', () => {
-    const m = cellMenuModel({ kind: 'title', hideable: true })
+    const m = cellMenuModel({ kind: 'title', hideable: 'view' })
     expect(m.some((i) => i.action === 'cell:hide')).toBe(false)
   })
 })
@@ -255,19 +260,40 @@ describe('cellMenuContextFor', () => {
   })
 
   it('hideable (cards): a styled cell carries hideable; a menu-less cell becomes an unclearable bare cell', () => {
-    expect(cellMenuContextFor('select', DATES, true, { hideable: true })).toEqual({
+    expect(cellMenuContextFor('select', DATES, true, { hideable: 'view' })).toEqual({
       kind: 'style-only',
       type: 'select',
       current: DATES,
       clearable: true,
-      hideable: true,
+      hideable: 'view',
     })
-    const ctx = cellMenuContextFor('select', DATES, false, { hideable: true })
+    const ctx = cellMenuContextFor('select', DATES, false, { hideable: 'view' })
     expect(cellMenuModel(ctx as CellMenuContext).at(-1)?.action).toBe('cell:hide')
-    expect(cellMenuContextFor(undefined, DATES, true, { hideable: true })).toEqual({
+    expect(cellMenuContextFor(undefined, DATES, true, { hideable: 'view' })).toEqual({
       kind: 'bare',
       clearable: false,
-      hideable: true,
+      hideable: 'view',
+    })
+  })
+
+  it('with no column look, every styled type is a bare value: Clear when filled, Remove beside it', () => {
+    for (const type of ['select', 'status', 'dateTime', 'number', 'checkbox'] as const) {
+      expect(cellMenuContextFor(type, null, true, { hideable: 'row' })).toEqual({
+        kind: 'bare',
+        clearable: true,
+        hideable: 'row',
+      })
+      expect(cellMenuContextFor(type, null, false, { hideable: 'row' })).toEqual({
+        kind: 'bare',
+        clearable: false,
+        hideable: 'row',
+      })
+    }
+    expect(cellMenuContextFor('text', null, true)).toEqual({ kind: 'text', filled: true })
+    expect(cellMenuContextFor('context', null, false, { hideable: 'row' })).toEqual({
+      kind: 'bare',
+      clearable: false,
+      hideable: 'row',
     })
   })
 })

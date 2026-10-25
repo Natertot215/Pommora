@@ -24,7 +24,9 @@ type CellMenuKind =
   | { kind: 'text'; filled: boolean }
   | { kind: 'file'; onChip: boolean }
   | { kind: 'bare'; clearable: boolean }
-export type CellMenuContext = CellMenuKind & { hideable?: boolean }
+/** What a value's Remove takes it out of: a view's columns, or the Properties panel's rows. */
+export type HideFrom = 'view' | 'row'
+export type CellMenuContext = CellMenuKind & { hideable?: HideFrom }
 
 export type CellMenuAction =
   | PageMetaAction
@@ -38,22 +40,23 @@ export type CellMenuAction =
   | 'file:remove'
   | StyleAction
 
-type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
+type CellMenuFlags = { hideable?: HideFrom; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
   type: ColumnType | undefined,
-  style: ColumnStyle,
+  style: ColumnStyle | null,
   filled: boolean,
-  { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
+  { hideable, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
   const base = baseCellMenu(type, style, filled, barCapable, onChip)
-  if (base === null) return hideable ? { kind: 'bare', clearable: false, hideable: true } : null
-  return hideable ? { ...base, hideable: true } : base
+  if (base === null) return hideable ? { kind: 'bare', clearable: false, hideable } : null
+  return hideable ? { ...base, hideable } : base
 }
 
+// With no column look in hand there's no Style to offer, so a styled value is bare, its Clear standing alone.
 function baseCellMenu(
   type: ColumnType | undefined,
-  style: ColumnStyle,
+  style: ColumnStyle | null,
   filled: boolean,
   barCapable: boolean,
   onChip: boolean,
@@ -73,15 +76,14 @@ function baseCellMenu(
     case 'select':
     case 'multiSelect':
     case 'dateTime':
-      return { kind: 'style-only', type, current: style, clearable: filled && origin === 'user' }
+      return style
+        ? { kind: 'style-only', type, current: style, clearable: filled && origin === 'user' }
+        : { kind: 'bare', clearable: filled }
     case 'number':
     case 'checkbox':
-      return {
-        kind: 'style-only',
-        type,
-        current: style,
-        ...(barCapable ? { barCapable: true } : {}),
-      }
+      return style
+        ? { kind: 'style-only', type, current: style, ...(barCapable ? { barCapable: true } : {}) }
+        : { kind: 'bare', clearable: filled }
   }
 }
 
@@ -90,8 +92,8 @@ export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[
     ...baseCellMenuModel(ctx),
     cellClosingRows(
       clearable(ctx),
-      ctx.hideable && ctx.kind !== 'title',
-      ctx.kind === 'file' ? 'Remove from View' : 'Remove',
+      !!ctx.hideable && ctx.kind !== 'title',
+      ctx.kind === 'file' && ctx.hideable === 'view' ? 'Remove from View' : 'Remove',
     ),
   ])
 }
