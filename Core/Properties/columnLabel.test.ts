@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnLabel } from './columnLabel'
+import { columnIcon, columnLabel } from './columnLabel'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { FILEDATA, type PropertyDefinition } from './properties'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
@@ -37,5 +37,17 @@ describe('columnLabel', () => {
   it('resolves a user property through its label', () => {
     expect(columnLabel(propertyColumn(schema[0]), NO_CONTEXTS)).toBe('Status')
     expect(columnLabel(propertyColumn(schema[1]), NO_CONTEXTS)).toBe('Due Date')
+  })
+})
+
+describe('columnIcon', () => {
+  it('draws a Context column with its own icon, a property with its icon, and Filedata with its type’s', () => {
+    const tree = {
+      contexts: [{ def: { id: 'ctx_areas', title: 'Areas', icon: 'hash' }, spaces: [] }],
+      config: { personalization: {} },
+    } as unknown as import('../Nexus/tree').NexusTree
+    expect(columnIcon(contextColumn('ctx_areas'), contextsByIdOf(tree))).toBe('hash')
+    expect(columnIcon(propertyColumn({ ...schema[0], icon: 'flag' }), NO_CONTEXTS)).toBe('flag')
+    expect(columnIcon(filedata(FILEDATA.title.id), NO_CONTEXTS)).toBe('text-align-justify')
   })
 })

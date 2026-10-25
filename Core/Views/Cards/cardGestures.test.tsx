@@ -307,4 +307,15 @@ describe('the card’s Add chooser', () => {
     )
     expect(box()?.classList.contains('checkbox-checked')).toBe(false)
   })
+
+  it('a Context entry draws the Context’s own icon', async () => {
+    const tree = makeTree({ registry: [STATUS_DEF] })
+    tree.contexts[0].def.icon = 'hash'
+    useSession.setState({ tree })
+    await renderView(root, { ...source(), propertyIds: [STATUS_DEF.id] })
+    await act(async () => {
+      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
+    })
+    expect(entry('Realms')!.querySelector('.lucide-hash')).not.toBeNull()
+  })
 })

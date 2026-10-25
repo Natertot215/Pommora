@@ -19,11 +19,10 @@ import type { ValueContext } from '../../Properties/valueContext'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnLabel } from '../../Properties/columnLabel'
+import { columnIcon, columnLabel } from '../../Properties/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -253,29 +252,12 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The render ────────────────────────────────────────────────────────────
 
-  const headerIcon = (column: ResolvedColumn): React.ReactNode => {
-    if (!iconsShown) return null
-    const contextIcon = ctx?.contexts.get(column.id)?.icon
-    if (contextIcon) {
-      return (
-        <span className="col-header-icon">
-          <Icon name={contextIcon} size="body" />
-        </span>
-      )
-    }
-    if (column.def) {
-      return (
-        <span className="col-header-icon">
-          <Icon name={propertyIcon(column.def)} size="body" />
-        </span>
-      )
-    }
-    return (
+  const headerIcon = (column: ResolvedColumn): React.ReactNode =>
+    iconsShown && (
       <span className="col-header-icon">
-        <Icon name={propertyTypeIconName(column.type)} size="body" />
+        <Icon name={columnIcon(column, ctx.contexts)} size="body" />
       </span>
     )
-  }
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`

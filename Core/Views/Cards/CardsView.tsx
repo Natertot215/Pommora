@@ -43,7 +43,7 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnLabel } from '../../Properties/columnLabel'
+import { columnIcon, columnLabel } from '../../Properties/columnLabel'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
@@ -57,7 +57,6 @@ import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Cel
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
-import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay'
 import {
   type AddEntry,
   addEntriesFor,
@@ -482,9 +481,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     (e): PickEntry => ({
                       id: e.column.id,
                       name: e.name,
-                      icon: e.column.def
-                        ? propertyIcon(e.column.def)
-                        : propertyTypeIconName(e.column.type),
+                      icon: columnIcon(e.column, ctx.contexts),
                       revealOnly: e.revealOnly,
                       drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
                       group: e.column.kind === 'context' ? 'Spaces' : 'Properties',

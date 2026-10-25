@@ -90,3 +90,26 @@ describe('VisibilityFrame — the pane drag', () => {
     expect(save).not.toHaveBeenCalled()
   })
 })
+
+describe('VisibilityFrame — the rows', () => {
+  it('draws a Context row with the Context’s own icon', async () => {
+    useSession.setState({
+      tree: {
+        contexts: [{ def: { id: 'ctx_areas', title: 'Areas', icon: 'hash' }, spaces: [] }],
+        collections: [],
+        config: { personalization: { defaultIcons: {} } },
+      } as never,
+    })
+    await act(async () => {
+      root.render(
+        <VisibilityFrame
+          source={source as CollectionNode}
+          schema={schema}
+          view={{ ...view, property_order: [...(view.property_order ?? []), 'ctx_areas'] }}
+          onBack={() => {}}
+        />,
+      )
+    })
+    expect(row('Areas').querySelector('.lucide-hash')).not.toBeNull()
+  })
+})
