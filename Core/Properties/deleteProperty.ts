@@ -91,7 +91,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
 
   // EVERY collection folder, not just current assigners — a Remove's stash block lives on a collection sidecar that no longer assigns the id.
   const folders = collectionFolders(root, await liveTreeOf(root))
-  // The delete takes every key the property still owed, so the Trash keeps what each holder holds under any of them, and what Remove or an option change owed goes with it (H-3).
+  // The delete takes every key the property still owed, so the Trash keeps what each holder holds under any of them, and what Remove or an option change owed goes with it.
   const { strip = [] } = owedDelete(propertyNote((await readNotes(root))[propertyId]), def.key)
   const planned = await deletePlan(root, propertyId, strip)
   const bundle = await snapshot(root, propertyId, def, folders, planned.holders.held, strip)
