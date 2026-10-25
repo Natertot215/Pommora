@@ -4,7 +4,7 @@ import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { pickKindOf, specOf } from '../../Properties/properties'
+import { pickKindOf } from '../../Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -29,7 +29,8 @@ import {
 } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
-import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
+import { useStableApi } from '@pommora/uix/Utilities/stableApi'
+import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { useThumb } from '../../Assets/useThumb'
 import { coverOf } from '../../Pages/pageDetail'
 import { useSession } from '../../Session/store'
@@ -45,22 +46,25 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel } from '../../Properties/columnLabel'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
-import { resolveColumn } from '../Pipeline/columns'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
-import { holderOf, type ValueContext } from '../../Properties/valueContext'
+import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
-import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
+import type { PickEntry } from '../../Properties/Pickers/PropertyPicker'
+import { Cell } from '../../Properties/Cells/Cell'
+import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Cells/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { resolveFieldValue } from '../../Properties/fieldValue'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay'
-import { type CardPickerKind, CardValue } from './CardValue'
-import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
-import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { type AddEntry, addEntriesFor, orderAddableEntries, shownColumnsFor } from './cardColumns'
+import {
+  type AddEntry,
+  addEntriesFor,
+  fillsBlank,
+  orderAddableEntries,
+  shownColumnsFor,
+} from './cardColumns'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
 import { popMenu } from '../../Actions/menuActions'
@@ -69,17 +73,6 @@ import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
 
 // ── Types and constants ─────────────────────────────────────────────────────
-
-type ValuePickerRequest = {
-  rowId: string
-  columnId: string
-  kind: CardPickerKind | 'file'
-  anchor: HTMLElement
-  clickX?: number
-  revealOnCommit?: boolean
-}
-
-const PROPERTY_PICKER_KINDS = new Set<ValuePickerRequest['kind']>(['picker', 'dateTime', 'file'])
 
 type AddPickerRequest = {
   rowId: string
@@ -97,10 +90,11 @@ type BannerRequest = {
 /** Every gesture a card hands back, as one identity-stable object. */
 type CardApi = {
   commitValue: (row: ViewRow, column: ResolvedColumn, value: PropertyValue | null) => void
-  setStyle: (column: ResolvedColumn, key: keyof ColumnStyle & string, value: string) => void
+  click: ValueSeatApi['click']
+  menu: ValueSeatApi['menu']
+  pane: ValueSeatApi['pane']
+  editor: ValueSeatApi['editor']
   open: (row: ViewRow, newTab: boolean) => void
-  hide: (id: string) => void
-  openValuePicker: (req: ValuePickerRequest) => void
   openAddPicker: (req: AddPickerRequest) => void
   hover: (id: string, entering: boolean) => void
   titleMenuContext: (row: ViewRow) => TitleMenuContext
@@ -110,7 +104,7 @@ type CardApi = {
   banner: (req: BannerRequest) => void
 }
 
-type ValueApi = Pick<CardApi, 'commitValue' | 'setStyle' | 'hide' | 'openValuePicker' | 'banner'>
+type ValueApi = Pick<CardApi, 'commitValue' | 'click' | 'menu' | 'pane' | 'editor' | 'banner'>
 
 const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
   banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
@@ -122,9 +116,10 @@ const OVERLAY_FILL = { width: '100%', height: '100%' }
 
 const INERT_API: ValueApi = {
   commitValue: NOOP,
-  setStyle: NOOP,
-  hide: NOOP,
-  openValuePicker: NOOP,
+  click: NOOP,
+  menu: () => Promise.resolve(),
+  pane: NOOP,
+  editor: () => null,
   banner: NOOP,
 }
 
@@ -140,13 +135,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     bands,
     crossBand,
     searching,
-    setStylePatch,
     hideProperty,
     revealProperty,
     commitValue,
-    pickTarget,
     tree,
-    contextIds,
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
@@ -168,7 +160,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const hideLocation = viewOption(view, 'hide_location')
 
   const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
-  const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
     const root = host.viewRootRef.current
@@ -183,7 +174,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
       suppressed: () =>
-        valuePicker !== null ||
+        seat.open !== null ||
         addPicker !== null ||
         useSession.getState().renamingPath !== null ||
         glanceShown(),
@@ -198,47 +189,36 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       { kind: 'before', beforeKey: beforeId, parentKey: null },
     )
 
+  // ── The value seat ────────────────────────────────────────────────────────
+
+  // A value landing on a card shows its property; only one picked from the Add chooser isn't shown yet.
+  const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
+    if (!isBlankValue(v)) revealProperty(column.id)
+    commitValue(row, column, v)
+  }
+  const seat = useValueSeat({
+    ...host.seatHost,
+    commit: commitOnCard,
+    anchor: (el) => el.closest<HTMLElement>('.value-seat') ?? el,
+    centered: true,
+    hold: interactions.holdGhost,
+    hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
+  })
+  // The ghost stands down while a value's inline field owns the pointer.
+  const inline = seat.open?.mode === 'editor'
+  useEffect(() => {
+    if (!inline) return
+    let done = (): void => {}
+    void interactions.holdGhost(() => new Promise<void>((settle) => (done = settle)))
+    return () => done()
+  }, [inline])
+
   // ── Value and add pickers ─────────────────────────────────────────────────
 
   const { styleById } = host
-  const pickerAnchorRef = useLatest((valuePicker ?? addPicker)?.anchor ?? null)
-
-  const vColumn = useMemo(
-    () => valuePicker && resolveColumn(valuePicker.columnId, ctx.schema, contextIds),
-    [valuePicker, ctx.schema, contextIds],
-  )
-  useEffect(() => {
-    if (!valuePicker) return
-    const row = rowById.get(valuePicker.rowId)
-    if (!row || !vColumn) return setValuePicker(null)
-    if (valuePicker.revealOnCommit) return
-    const cur = resolveFieldValue(row, vColumn)
-    const draws = specOf(vColumn.type)?.blankDraws
-    if (isCompact(view) && isBlankValue(cur) && !draws) setValuePicker(null)
-  }, [valuePicker, vColumn, rowById, view])
   useEffect(() => {
     if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
   }, [addPicker, rowById])
-
-  const valuePopup = valuePicker && PROPERTY_PICKER_KINDS.has(valuePicker.kind) ? valuePicker : null
-  const vRow = valuePicker && rowById.get(valuePicker.rowId)
-  const vTarget = valuePicker && vRow && vColumn ? pickTarget(vRow, vColumn) : null
-  const popoverOpen = valuePicker?.kind === 'popover'
-  const popover = useHeld(
-    popoverOpen && vTarget && vColumn ? { ...vTarget, ...valuePicker, column: vColumn } : null,
-    popoverOpen,
-  )
-  const popoverRow = popover && rowById.get(popover.rowId)
-  const commitPicked = (v: PropertyValue | null, entry?: PickEntry): void => {
-    const req = valuePicker ?? addPicker
-    const row = req && rowById.get(req.rowId)
-    if (!row) return
-    const column = valuePicker ? vColumn : entry && addedColumn(entry.id)
-    if (!column) return
-    const creating = entry !== undefined || (valuePicker?.revealOnCommit ?? false)
-    if (creating && !isBlankValue(v)) revealProperty(column.id)
-    commitValue(row, column, v)
-  }
 
   const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
   const addEntries = addRow
@@ -289,12 +269,16 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── The card api ──────────────────────────────────────────────────────────
 
   const cardApi = useStableApi<CardApi>({
-    commitValue,
-    setStyle: setStylePatch,
+    commitValue: commitOnCard,
+    click: seat.click,
+    menu: seat.menu,
+    pane: seat.pane,
+    editor: seat.editor,
     open: interactions.openPage,
-    hide: hideProperty,
-    openValuePicker: setValuePicker,
-    openAddPicker: setAddPicker,
+    openAddPicker: (req) => {
+      seat.anchor.current = req.anchor
+      setAddPicker(req)
+    },
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
@@ -330,7 +314,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setPendingSeat({ anchor, id: flight.id })
     void flight.path.finally(() => setPendingSeat(null))
   }
-  const seat = pendingSeat && !rowById.has(pendingSeat.id) ? pendingSeat.anchor : null
+  const ghostSeat = pendingSeat && !rowById.has(pendingSeat.id) ? pendingSeat.anchor : null
   const ghostCard = (
     <GhostCard
       banner={banner}
@@ -460,9 +444,14 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       styleById={styleById}
                       api={cardApi}
                       allowInlineRemove={effectiveZoom >= 0.8}
+                      editing={
+                        seat.open?.mode === 'editor' && seat.open.rowId === row.id
+                          ? seat.open.columnId
+                          : null
+                      }
                     />
                   )
-                  if (ghostShown !== row.id && seat !== row.id) return [card]
+                  if (ghostShown !== row.id && ghostSeat !== row.id) return [card]
                   return [
                     card,
                     // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
@@ -485,65 +474,45 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         {interactions.iconPicker}
         {bannerEditor}
-        {popover?.column.def && (
-          <PropertyValueInput
-            key={`${popover.rowId}:${popover.column.id}:${popover.kind}`}
-            popover={{ open: popoverOpen, triggerRef: pickerAnchorRef }}
-            def={popover.column.def}
-            current={popover.current}
-            holder={popoverRow ? holderOf(popoverRow, ctx) : undefined}
-            connections={ctx.connections}
-            seat={popover.column.def.type === 'link' ? 'rename' : undefined}
-            onCommit={commitPicked}
-            onClose={() => setValuePicker(null)}
-          />
-        )}
-        <PropertyPicker
-          target={valuePopup ? vTarget : null}
+        <ValueSeat
+          seat={seat}
           chooser={
-            addPicker
-              ? addEntries.map(
-                  (e): PickEntry => ({
-                    id: e.column.id,
-                    name: e.name,
-                    icon: e.column.def
-                      ? propertyIcon(e.column.def)
-                      : propertyTypeIconName(e.column.type),
-                    revealOnly: e.revealOnly,
-                    drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
-                    group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
-                  }),
-                )
-              : undefined
+            addPicker && addRow
+              ? {
+                  entries: addEntries.map(
+                    (e): PickEntry => ({
+                      id: e.column.id,
+                      name: e.name,
+                      icon: e.column.def
+                        ? propertyIcon(e.column.def)
+                        : propertyTypeIconName(e.column.type),
+                      revealOnly: e.revealOnly,
+                      drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
+                      group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
+                    }),
+                  ),
+                  resolveTarget: (e) => {
+                    const column = addedColumn(e.id)
+                    return column ? seat.target(addRow, column) : null
+                  },
+                  onCommit: (v, e) => {
+                    const column = addedColumn(e.id)
+                    if (column) commitOnCard(addRow, column, v)
+                  },
+                  onReveal: (entry) => {
+                    const column = addedColumn(entry.id)
+                    if (!column) return
+                    if (entry.revealOnly) return revealProperty(entry.id)
+                    setAddPicker(null)
+                    // The seat's target names the Date and File panes the picker holds; any other added value is typed, in the popover.
+                    const kind =
+                      seat.target(addRow, column).kind === 'options' ? 'popover' : 'picker'
+                    seat.run(addRow, column, { kind }, seat.anchor.current)
+                  },
+                  onDismiss: () => setAddPicker(null),
+                }
+              : null
           }
-          resolveTarget={(e) => {
-            const column = addedColumn(e.id)
-            return addRow && column ? pickTarget(addRow, column) : null
-          }}
-          open={valuePopup !== null || addPicker !== null}
-          triggerRef={pickerAnchorRef}
-          anchorX={valuePicker?.kind === 'picker' ? valuePicker.clickX : undefined}
-          onCommit={commitPicked}
-          onReveal={(entry) => {
-            const src = addEntries.find((e) => e.column.id === entry.id)
-            if (!addPicker || !src) return
-            if (entry.revealOnly) return revealProperty(entry.id)
-            setAddPicker(null)
-            setValuePicker({
-              rowId: addPicker.rowId,
-              columnId: src.column.id,
-              kind:
-                src.column.type === 'dateTime' || src.column.type === 'file'
-                  ? src.column.type
-                  : 'popover',
-              anchor: addPicker.anchor,
-              revealOnCommit: true,
-            })
-          }}
-          onDismiss={() => {
-            setValuePicker(null)
-            setAddPicker(null)
-          }}
         />
       </div>
     </GhostSuppress.Provider>
@@ -683,6 +652,7 @@ interface PageCardProps {
   styleById: Map<string, ColumnStyle>
   api: CardApi
   allowInlineRemove: boolean
+  editing: string | null
 }
 
 function CardProperties({
@@ -694,7 +664,8 @@ function CardProperties({
   onZoneClick,
   api,
   allowInlineRemove,
-}: Pick<PageCardProps, 'row' | 'view' | 'ctx' | 'styleById' | 'allowInlineRemove'> & {
+  editing,
+}: Pick<PageCardProps, 'row' | 'view' | 'ctx' | 'styleById' | 'allowInlineRemove' | 'editing'> & {
   api: ValueApi
   shown: ResolvedColumn[]
   onZoneClick: (e: React.MouseEvent) => void
@@ -704,19 +675,31 @@ function CardProperties({
     if (e.target === e.currentTarget) onZoneClick(e)
   }
   const value = (c: ResolvedColumn): React.JSX.Element => (
-    <CardValue
-      row={row}
-      column={c}
-      ctx={ctx}
-      style={styleById.get(c.id)!}
-      onCommit={(col, v) => api.commitValue(row, col, v)}
-      onStyle={api.setStyle}
-      onHide={api.hide}
-      onOpenPicker={(column, kind, anchor, clickX) =>
-        api.openValuePicker({ rowId: row.id, columnId: column.id, kind, anchor, clickX })
-      }
-      allowInlineRemove={allowInlineRemove}
-    />
+    // data-drag-slop: the whole card is a drag handle, so a press beginning on a value gets a larger activation threshold — a tap-wobble opens the picker instead of lifting the card.
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
+    <span
+      className="card-value value-seat"
+      data-drag-slop=""
+      onClick={(e) => api.click(row, c, e)}
+      onContextMenu={(e) => void api.menu(row, c, e)}
+    >
+      {(editing === c.id && api.editor(row, c)) || (
+        <Cell
+          row={row}
+          column={c}
+          ctx={ctx}
+          style={styleById.get(c.id)!}
+          empty={
+            fillsBlank(c.type) ? (
+              <EmptyValue className={cx('cell-empty', text.caption.emphasized)} />
+            ) : undefined
+          }
+          commit={(v) => api.commitValue(row, c, v)}
+          hideRemove={!allowInlineRemove}
+          onPane={(anchor) => api.pane(row, c, anchor)}
+        />
+      )}
+    </span>
   )
   return compact ? (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
@@ -765,6 +748,7 @@ const CardFace = memo(function CardFace({
   thumbRef,
   onZoneClick,
   api,
+  editing,
 }: {
   row: ViewRow
   naming: boolean
@@ -783,6 +767,8 @@ const CardFace = memo(function CardFace({
   thumbRef?: React.Ref<HTMLDivElement>
   onZoneClick?: (e: React.MouseEvent) => void
   api: ValueApi
+  /** The column whose inline field is open on this card. */
+  editing: string | null
 }): React.JSX.Element {
   const shown = useMemo(() => shownColumnsFor(row, columns, isCompact(view)), [columns, row, view])
   const titleIcon = !viewOption(view, 'hide_page_icons') && (
@@ -852,6 +838,7 @@ const CardFace = memo(function CardFace({
             shown={shown}
             api={api}
             allowInlineRemove={allowInlineRemove}
+            editing={editing}
             onZoneClick={onZoneClick ?? NOOP}
           />
         )}
@@ -902,6 +889,7 @@ function OverlayFace({
       allowInlineRemove={false}
       naming={false}
       api={INERT_API}
+      editing={null}
     />
   )
 }
@@ -920,6 +908,7 @@ const PageCard = memo(function PageCard({
   styleById,
   api,
   allowInlineRemove,
+  editing,
 }: PageCardProps): React.JSX.Element {
   const drag = useDragItem(row.id, { open: () => api.open(row, false) })
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
@@ -994,6 +983,7 @@ const PageCard = memo(function PageCard({
             thumbRef={thumbRef}
             onZoneClick={openAdd}
             api={api}
+            editing={editing}
           />
         </CardBody>
       </div>

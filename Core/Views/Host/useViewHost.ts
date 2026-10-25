@@ -1,5 +1,4 @@
 import { useMemo, useRef } from 'react'
-import { specOf } from '../../Properties/properties'
 import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
@@ -10,10 +9,7 @@ import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
-import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
-import type { PickTarget } from '../../Properties/Pickers/PropertyPicker'
-import { resolveFieldValue } from '../../Properties/fieldValue'
 import { holderOf, useValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
@@ -203,27 +199,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   }
   const styleOf = (column: ResolvedColumn): ColumnStyle =>
     styleById.get(column.id) ?? styleFor(column, view, nexus)
-  const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
-    const current = resolveFieldValue(row, column)
-    const style = styleOf(column)
-    const spec = specOf(column.type)
-    if (spec?.kind === 'dateTime' && spec.origin === 'user')
-      return {
-        kind: 'dateTime',
-        current,
-        dateFormat: style.date_format,
-        timeFormat: style.time_format,
-      }
-    if (column.def?.type === 'file') return { kind: 'file', def: column.def, current }
-    return {
-      kind: 'options',
-      column,
-      current,
-      style: { current: style, set: (key, value) => setStylePatch(column, key, value) },
-      contextOptions:
-        column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
-    }
-  }
 
   if (!ctx || !tree) return null
   const seatHost = {
@@ -270,7 +245,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     persistView,
     commitValue,
     commitGroupValue,
-    pickTarget,
     seatHost,
     styleOf,
     mutate,
