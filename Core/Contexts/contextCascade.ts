@@ -163,7 +163,7 @@ export async function renameContextOp(
       relocated
         ? cascadeTitle(entry.title, entry.title, newName, false, files)
         : { skipped: 1, hosts: [] },
-    settle: (e) => ({ ...e, ...owedSwept(e, [entry.title]) }),
+    settle: (e) => owedSwept(e, [entry.title]),
   })
 }
 
@@ -200,7 +200,7 @@ export async function renameSpaceOp(
     }),
     list: () => relocate(dir, target).then(() => ok(null), fault),
     sweep: () => cascadeTitle(group.def.title, space.title, newName, true, files),
-    settle: (e) => ({ ...e, ...owedSwept(e, [space.title]) }),
+    settle: (e) => owedSwept(e, [space.title]),
     under: space.contextId,
   })
 }
