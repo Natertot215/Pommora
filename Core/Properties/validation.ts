@@ -1,6 +1,6 @@
 import {
   byKey,
-  isReservedPropertyId,
+  FILEDATA_BY_ID,
   isUserType,
   optionGroupsOf,
   optionsOf,
@@ -74,7 +74,7 @@ export function validateName(
 
 /** What the property list holds: a user type under an id Pommora doesn't reserve. A create refuses, and a registry read sets aside, everything else. */
 export const admissible = ({ id, type }: Pick<PropertyDefinition, 'id' | 'type'>): boolean =>
-  isUserType(type) && !isReservedPropertyId(id)
+  isUserType(type) && !FILEDATA_BY_ID.has(id)
 
 export function validateDefinition(
   def: PropertyDefinition,

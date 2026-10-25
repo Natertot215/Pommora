@@ -25,12 +25,12 @@ import {
   viewOption,
 } from '../views'
 import { ID_KEY } from '../../Nexus/identityMark'
-import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
-import { groupable, optionIds, type PropertyDefinition } from '../../Properties/properties'
+import { optionIds, type PropertyDefinition } from '../../Properties/properties'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propertyColumn } from './columns'
-import { dateFmt, formatDate, NUMERIC_FORMATS, readDate } from '../../Properties/formatValue'
+import { dateFmt, formatDate, NUMERIC_FORMATS } from '../../Properties/formatValue'
+import { groupable, VALUE_KINDS } from '../valueKinds'
 import type { DateFormat } from '../../Properties/columnStyles'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { SetIndex } from './setIndex'
@@ -140,36 +140,6 @@ export function flattenContainer(
   return { rows, setTree: node.sets ?? [] }
 }
 
-/** UTC arithmetic, so adding days never crosses a DST boundary. A week belongs to the year of its Thursday; weeks start Monday. */
-function isoWeek(year: number, month: number, day: number): [year: number, week: number] {
-  const d = new Date(Date.UTC(year, month, day))
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1)
-  const week = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7)
-  return [d.getUTCFullYear(), week]
-}
-
-/** Zero-padded so lexicographic order IS chronological. Buckets by the local day the cell shows, so a date-only value keeps the day the user picked. */
-export function dateBucketKey(iso: string, granularity: DateGranularity): string | null {
-  const d = readDate(iso)?.at
-  if (!d) return null
-  const year = d.getFullYear()
-  const month = d.getMonth()
-  const day = d.getDate()
-  switch (granularity) {
-    case 'year':
-      return pad(year, 4)
-    case 'month':
-      return `${pad(year, 4)}-${pad(month + 1, 2)}`
-    case 'day':
-      return localDayKey(d)
-    case 'week': {
-      const [wy, w] = isoWeek(year, month, day)
-      return `${pad(wy, 4)}-W${pad(w, 2)}`
-    }
-  }
-}
-
 export function formatBucketLabel(
   key: string,
   granularity: DateGranularity,
@@ -207,22 +177,7 @@ export function bucketKey(
   granularity: DateGranularity,
 ): string | null {
   const v = resolveFieldValue(row, column)
-  switch (v.kind) {
-    case 'select':
-      return v.value
-    case 'checkbox':
-      return 'true'
-    case 'dateTime':
-      return dateBucketKey(v.value, granularity)
-    case 'number':
-    case 'multiSelect':
-    case 'context':
-    case 'link':
-    case 'text':
-    case 'file':
-    case 'null':
-      return null
-  }
+  return v.kind === 'null' ? null : (VALUE_KINDS[v.kind].bucket?.(v, granularity) ?? null)
 }
 
 function schemaOptionOrder(def: PropertyDefinition | undefined): string[] | null {

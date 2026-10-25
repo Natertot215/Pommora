@@ -1,5 +1,6 @@
 // What each value kind does in a view: the operators the filter pane offers, how a rule tests a value, the key a sort compares, the band a grouping files a value under, and the value a new page takes from a rule, a band, or a sort neighbor.
 
+import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import { foldKey } from '../Paths/caseFold'
 import {
   type ColumnType,
@@ -17,6 +18,7 @@ import {
 } from '../Properties/propertyValue'
 import { dayMs, type LocalDate, readDate, shownText } from '../Properties/formatValue'
 import { FILTER_OPS } from './filterRules'
+import type { DateGranularity } from './views'
 
 type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'
 
@@ -46,6 +48,10 @@ export type ValueKindSpec = Readonly<{
   ): (v: PropertyValue) => string | number | null
   /** Which pair of words the Sort pane names a direction with. */
   directions: SortDirections
+  /** A view can group by the kind; Checkbox's band serves the sort-run reassign alone. */
+  groups?: true
+  /** The band a grouping files a value under; null files it with the value-less rows. */
+  bucket?(v: PropertyValue, granularity: DateGranularity): string | null
 }>
 
 const EMPTIES: OperatorChoice[] = [
@@ -262,6 +268,36 @@ function optionKey(def?: PropertyDefinition, order: readonly string[] = []) {
     v.kind === 'select' ? (rank.get(v.value) ?? null) : null
 }
 
+/** UTC arithmetic, so adding days never crosses a DST boundary. A week belongs to the year of its Thursday; weeks start Monday. */
+function isoWeek(year: number, month: number, day: number): [year: number, week: number] {
+  const d = new Date(Date.UTC(year, month, day))
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1)
+  const week = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7)
+  return [d.getUTCFullYear(), week]
+}
+
+/** Zero-padded so lexicographic order IS chronological. Buckets by the local day the cell shows, so a date-only value keeps the day the user picked. */
+function dateBucketKey(iso: string, granularity: DateGranularity): string | null {
+  const d = readDate(iso)?.at
+  if (!d) return null
+  const year = d.getFullYear()
+  const month = d.getMonth()
+  const day = d.getDate()
+  switch (granularity) {
+    case 'year':
+      return pad(year, 4)
+    case 'month':
+      return `${pad(year, 4)}-${pad(month + 1, 2)}`
+    case 'day':
+      return localDayKey(d)
+    case 'week': {
+      const [wy, w] = isoWeek(year, month, day)
+      return `${pad(wy, 4)}-W${pad(w, 2)}`
+    }
+  }
+}
+
 const PROSE: ValueKindSpec = {
   ops: TEXT_OPS,
   filled: showsText,
@@ -287,6 +323,9 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     sortKey: () => (v) =>
       v.kind === 'dateTime' ? (readDate(v.value)?.at.getTime() ?? null) : null,
     directions: 'value',
+    groups: true,
+    bucket: (v, granularity) =>
+      v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null,
   },
   // An unchecked box is stored as no value: Is Empty matches it, and it sorts after the checked ones ascending, as an empty value does, while holding a key so descending puts it first.
   checkbox: {
@@ -295,6 +334,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     prepare: prepareCheckbox,
     sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
     directions: 'value',
+    bucket: (v) => (v.kind === 'checkbox' ? 'true' : null),
   },
   // Is and Isn't name whole options; the text ops a hand-written rule may hold search the option's label.
   select: {
@@ -306,6 +346,8 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
         : prepareText(op, want, def),
     sortKey: optionKey,
     directions: 'option',
+    groups: true,
+    bucket: (v) => (v.kind === 'select' ? v.value : null),
   },
   multiSelect: {
     ops: SET_OPS,
@@ -329,3 +371,5 @@ export const viewSpecOf = (type: ColumnType | undefined): ValueKindSpec | undefi
   const spec = specOf(type)
   return spec && VALUE_KINDS[spec.kind]
 }
+
+export const groupable = (t: PropertyDefinition['type']): boolean => viewSpecOf(t)?.groups === true
