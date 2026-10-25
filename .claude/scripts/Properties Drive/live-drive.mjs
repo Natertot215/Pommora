@@ -5,14 +5,14 @@ import {
   mintOptionId, optionId,
   FM, frontmatter, frontRaw, pageFile, pageIds, pagePath,
   ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, escapeAll, field, labels, launch, META, mouseAt, mouseClick, must, NEXUS, notice,
-  openCollection, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
+  openCollection, openPage, openSettings, pickNative, popNative, portalOpen, pressDialog, pressKey, read, relaunch, restore, results, row, sel, selectField, SET,
   holds, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until,
 } from '../drive-harness.mjs'
 import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -868,6 +868,169 @@ async function group13(cdp) {
   await escapeAll(cdp)
 }
 
+// ── Group 14 — One Value Seat ───────────────────────────────────────────────
+
+const SEAT = {
+  stage: {
+    id: 'prop_drive_seat_stage', label: 'Seat Stage', key: 'Seat Stage', type: 'select',
+    select_options: [{ id: 'opt_drive_seat', key: 'Seat Open', label: 'Seat Open' }],
+  },
+  notes: { id: 'prop_drive_seat_notes', label: 'Seat Notes', key: 'Seat Notes', type: 'text' },
+  due: { id: 'prop_drive_seat_due', label: 'Seat Due', key: 'Seat Due', type: 'dateTime' },
+  site: { id: 'prop_drive_seat_site', label: 'Seat Site', key: 'Seat Site', type: 'link' },
+  doc: { id: 'prop_drive_seat_doc', label: 'Seat Doc', key: 'Seat Doc', type: 'file' },
+}
+const SEAT_PAGES = ['Seat One', 'Seat Two']
+const SEAT_TABLE = {
+  id: 'view_01KZPROPERTIESDRIVE14TBL', name: 'Seat Table', type: 'table', hidden_properties: [],
+  property_order: ['_title', ...Object.values(SEAT).map((d) => d.id)],
+}
+// The Link and the File stay off the cards, so every card's chooser offers them.
+const SEAT_CARDS = {
+  id: 'view_01KZPROPERTIESDRIVE14CRD', name: 'Seat Cards', type: 'cards',
+  property_order: ['_title', SEAT.stage.id, SEAT.notes.id, SEAT.due.id], hidden_properties: [SEAT.site.id, SEAT.doc.id],
+}
+const sidebarRow = (title) => `[...document.querySelectorAll('.row span')].findLast((e) => e.textContent.trim() === ${JSON.stringify(title)})`
+/** A folded sidebar row's chevron pressed as a pointer presses it, as the Archive Drive's `unfold` does. */
+async function unfold(cdp, title, child) {
+  if (await cdp.evaluate(`!!(${sidebarRow(child)})`)) return
+  await mouseClick(cdp, `${sidebarRow(title)}.closest('.row').querySelector('[data-drop-outline]')`)
+  await until(`${child} in the sidebar`, () => cdp.evaluate(`!!(${sidebarRow(child)})`))
+}
+/** A panel row's label: the leaf naming it in the row its value seat sits in. */
+const rowLabel = (id, name) =>
+  `(() => { let el = document.querySelector('[data-property-row="${id}"]'); while (el && !el.textContent.includes(${JSON.stringify(name)})) el = el.parentElement; return el && [...el.querySelectorAll('span')].find((s) => s.children.length === 0 && s.textContent.trim() === ${JSON.stringify(name)}) })()`
+/** The first element of `scope`, or inside it, showing exactly `text`: a chip draws its label more than once, so a cell's own text repeats it. */
+const valueIn = (scope, text) => `[...document.querySelectorAll(${JSON.stringify(scope)})].flatMap((e) => [e, ...e.querySelectorAll('*')]).find((e) => e.getClientRects().length > 0 && e.textContent.trim() === ${JSON.stringify(text)})`
+const PANE = `document.querySelector('[data-picker-portal]:not([data-dismissal-shield])')`
+const paneOpen = (cdp) => cdp.evaluate(`!!${PANE}`)
+const paneRows = (cdp) => cdp.evaluate(`[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield]) [role="button"]')].map((b) => b.textContent.trim())`)
+// Seat One holds every seat property, so the panel draws no Add Property for the harness's `openPanel` to wait on; its rows say it's open.
+const PANEL_ROWS = `!!document.querySelector('[data-property-row]')`
+async function seatPanel(cdp, open) {
+  if ((await cdp.evaluate(PANEL_ROWS)) !== open) await mouseClick(cdp, SETTINGS_BUTTON)
+  await until(`the panel ${open ? 'open' : 'closed'}`, async () => (await cdp.evaluate(PANEL_ROWS)) === open)
+}
+async function showView(cdp, view) {
+  await must(`show ${view.name}`, ask(cdp, 'mutate', { op: 'setActiveView', path: COLLECTION, kind: 'collection', viewId: view.id }))
+  await openCollection(cdp)
+}
+
+async function group14(cdp) {
+  const sidecarPath = join(NEXUS, 'Collection A/_pagecollection.json')
+  const registry = readFileSync(REGISTRY, 'utf8')
+  const sidecar = readFileSync(sidecarPath, 'utf8')
+  const defs = Object.values(SEAT)
+  const file = JSON.parse(registry)
+  writeFileSync(REGISTRY, JSON.stringify({
+    ...file,
+    order: [...file.order, ...defs.map((d) => d.id)],
+    defs: { ...file.defs, ...Object.fromEntries(defs.map((d) => [d.id, d])) },
+  }, null, 2))
+  await until('the seat definitions', async () => {
+    const held = (await config(cdp)).registry
+    return defs.every((d) => held.some((h) => h.id === d.id))
+  })
+  for (const d of defs)
+    await must(`assign ${d.label}`, ask(cdp, 'mutate', { op: 'assignProperty', containerPath: COLLECTION, propertyId: d.id }))
+  await createPage(cdp, 'Seat One', {
+    [SEAT.stage.id]: { kind: 'select', value: 'opt_drive_seat' },
+    [SEAT.notes.id]: { kind: 'text', value: 'words' },
+    [SEAT.due.id]: { kind: 'dateTime', value: '2026-10-22' },
+    [SEAT.site.id]: { kind: 'link', value: 'https://example.com' },
+    [SEAT.doc.id]: { kind: 'file', value: ['[[Drive.pdf]]'] },
+  })
+  await createPage(cdp, 'Seat Two', { [SEAT.stage.id]: { kind: 'select', value: 'opt_drive_seat' } })
+  for (const view of [SEAT_TABLE, SEAT_CARDS])
+    await must(`save ${view.name}`, ask(cdp, 'views:save', COLLECTION, 'collection', view, {}))
+
+  const one = () => pageIds['Seat One']
+  const surfaces = [
+    ['the Table', () => showView(cdp, SEAT_TABLE), () => `.data-row[data-rid="${one()}"] .data-cell`],
+    ['a Card', () => showView(cdp, SEAT_CARDS), () => `[data-rid="${one()}"] .card-value`],
+    ['the panel', async () => { await showView(cdp, SEAT_TABLE); await openPage(cdp, 'Seat One'); await seatPanel(cdp, true) }, () => '[data-property-row]'],
+  ]
+  const seen = {}
+  for (const [name, open, scope] of surfaces) {
+    await open()
+    await until(`${name}'s value`, () => cdp.evaluate(`!!${valueIn(scope(), 'Seat Open')}`))
+    await mouseClick(cdp, valueIn(scope(), 'Seat Open'))
+    await until(`${name}'s option picker`, () => paneOpen(cdp))
+    const options = await paneRows(cdp)
+    await escapeAll(cdp)
+    const { rows } = await chooseNative(cdp, valueIn(scope(), 'Seat Open'), [])
+    await mouseClick(cdp, valueIn(scope(), 'words'))
+    const editing = await settles(() => cdp.evaluate(`!!document.querySelector('.value-field .cm-editor, .text-pane')`), 3000)
+    await escapeAll(cdp)
+    seen[name] = { options, rows, editing }
+    await shot(cdp, `g14-${name.replace(/\W+/g, '-')}`)
+  }
+  const all = Object.values(seen)
+  item(14, 'X6', 'an option click opens the same option list on every surface',
+    all.every((s) => show(s.options) === show(seen['the Table'].options)) && seen['the Table'].options.includes('Seat Open'), show(seen))
+  item(14, 'X6', 'an option right-click offers Clear on every surface, and Remove on a Card and the panel',
+    all.every((s) => s.rows.includes('Clear')) && !seen['the Table'].rows.includes('Remove') &&
+      seen['a Card'].rows.includes('Remove') && seen['the panel'].rows.includes('Remove'), show(seen))
+  item(14, 'X6', 'an option right-click offers Style in a view and never in the panel',
+    seen['the Table'].rows.includes('Style') && seen['a Card'].rows.includes('Style') && !seen['the panel'].rows.includes('Style'), show(seen))
+  item(14, 'X6', 'a Text click edits the value on every surface', all.every((s) => s.editing), show(seen))
+
+  await seatPanel(cdp, false)
+  await showView(cdp, SEAT_CARDS)
+  const card = (title) => `[data-rid="${pageIds[title]}"]`
+  await mouseClick(cdp, valueIn(`${card('Seat One')} .card-value`, 'Seat Open'))
+  await until('the first card picker', () => paneOpen(cdp))
+  await cdp.evaluate(`void (window.__seatPane = ${PANE})`)
+  // The first picker's dismissal shield takes the first press, so the second card's value is pressed again while that picker is still leaving.
+  await mouseClick(cdp, valueIn(`${card('Seat Two')} .card-value`, 'Seat Open'), { settle: 50 })
+  await mouseClick(cdp, valueIn(`${card('Seat Two')} .card-value`, 'Seat Open'))
+  const fresh = await settles(() => cdp.evaluate(`!!${PANE} && ${PANE} !== window.__seatPane`))
+  item(14, 'LC-54', "moving from one card's picker to another's mounts a fresh picker", fresh, show({ fresh }))
+  await escapeAll(cdp)
+
+  await click(cdp, `document.querySelector('${card('Seat Two')} .card-props')`)
+  await until('the card chooser', () => paneOpen(cdp))
+  // The chooser slides in, so its rows are pressed once they've landed.
+  await sleep(500)
+  await mouseClick(cdp, valueIn('[data-picker-portal] [role="button"]', SEAT.site.label))
+  const empty = await settles(() => cdp.evaluate(`document.querySelector('[data-picker-portal] .cm-content')?.textContent === ''`))
+  item(14, '—', "a Link added from a card's chooser opens an empty field", empty, show({ empty }))
+  await escapeAll(cdp)
+
+  await showView(cdp, SEAT_TABLE)
+  await openPage(cdp, 'Seat One')
+  await seatPanel(cdp, true)
+  const label = await chooseNative(cdp, rowLabel(SEAT.site.id, SEAT.site.label), [])
+  item(14, 'J-3', "a Link row's label offers Edit Title and Edit Link before Clear and Remove",
+    show(label.rows) === show(['Edit Title', 'Edit Link', 'Clear', 'Remove']), show(label.rows))
+  const chip = await chooseNative(cdp, `document.querySelector('[data-property-row="${SEAT.doc.id}"] [data-file-chip-index="0"]')`, 'Remove')
+  item(14, 'J-10 LC-15', "a File chip's menu offers Remove and never Clear",
+    show(chip.rows) === show(['Add File', 'Replace File', 'Remove File', 'Remove']), show(chip.rows))
+  const cleared = await settles(async () => !(SEAT.doc.key in frontmatter('Seat One')) && !(await cdp.evaluate(`!!document.querySelector('[data-property-row="${SEAT.doc.id}"]')`)))
+  item(14, 'J-10 LC-15', "the File's Remove clears the value and takes its row away", chip.chosen && cleared, show({ chosen: chip.chosen, cleared }))
+
+  await mouseClick(cdp, `document.querySelector('[data-property-row="${SEAT.stage.id}"]')`)
+  await until('the panel picker', () => paneOpen(cdp))
+  await must('clear Seat Stage from outside', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Seat One'), propertyId: SEAT.stage.id, value: null }))
+  const closed = await settles(async () => !(await paneOpen(cdp)))
+  item(14, '—', "the panel's picker closes when its row's value is cleared from outside", closed, show({ closed }))
+  await escapeAll(cdp)
+  await seatPanel(cdp, false)
+
+  if (!(await cdp.evaluate(`!!(${sidebarRow(COLLECTION)})`))) await click(cdp, `document.querySelector('.sidebar-ribbon [aria-label="Collections"]')`)
+  await unfold(cdp, COLLECTION, 'Set Alpha')
+  await unfold(cdp, 'Set Alpha', 'Seat One')
+  const { chosen } = await chooseNative(cdp, sidebarRow('Seat One'), ['Properties', SEAT.due.label])
+  const calendar = await settles(() => cdp.evaluate(`!!document.querySelector('[data-picker-portal] [aria-label="Next month"]')`))
+  item(14, 'X6', "a Date picked from the sidebar's Properties menu opens the calendar", chosen && calendar, show({ chosen, calendar }))
+  await escapeAll(cdp)
+
+  for (const title of SEAT_PAGES) rmSync(join(NEXUS, pagePath(title)))
+  writeFileSync(sidecarPath, sidecar)
+  writeFileSync(REGISTRY, registry)
+  await until('the seat definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === SEAT.stage.id))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -886,6 +1049,7 @@ try {
   if (GROUPS.has('11')) await group11(cdp)
   if (GROUPS.has('12')) await group12(cdp)
   if (GROUPS.has('13')) await group13(cdp)
+  if (GROUPS.has('14')) await group14(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

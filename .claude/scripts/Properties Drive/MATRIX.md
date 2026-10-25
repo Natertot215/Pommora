@@ -126,3 +126,19 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
 | The filter's clock | `Drive Due` (Date & Time) with a 24-hour column style, the `Drive Clock` view filtering it on `2026-10-22T15:30`, `~/Test` on its 12-hour clock | view settings › Filter › the date field | the picker shows `15:30` with no AM or PM, and no End Date | J-1 |
+
+
+#### Group 14 — One Value Seat
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| An option's click | `Seat Stage` (Select) holding `Seat Open` on `Seat One` | click the value in the Seat Table, on its card in Seat Cards, and in the page's Properties panel | the same option list on every surface | X6 |
+| An option's right-click | as above | right-click the value on each surface | Clear everywhere; Remove on the card and the panel, not the table; Style in both views, never the panel | X6 |
+| A Text click | `Seat Notes` (Text) holding `words` | click the value on each surface | the inline editor opens | X6 |
+| A Link row's label | `Seat Site` (Link) holding `https://example.com` | right-click the row's label in the panel | Edit Title, Edit Link, Clear, Remove | J-3 |
+| A File chip's menu | `Seat Doc` (File) holding `[[Drive.pdf]]` | right-click the value's chip in the panel | Add File, Replace File, Remove File, Remove; no Clear | J-10, LC-15 |
+| The File's Remove | as above | choose Remove | the page file drops `Seat Doc` and the row leaves the panel | J-10, LC-15 |
+| The panel's picker and its row | `Seat Stage` on `Seat One`, its row not revealed | open its picker, then clear the value from outside | the picker closes with the row | — |
+| A card's picker per value | `Seat Stage` on `Seat One` and `Seat Two` | open Seat One's option picker on its card, then press Seat Two's twice while it leaves, its dismissal taking the first press | a fresh picker element mounts | LC-54 |
+| A Link from a card's chooser | `Seat Site` hidden in Seat Cards | click Seat Two's card off any value, choose Seat Site | the field opens empty | — |
+| The sidebar's Properties menu | `Seat Due` (Date & Time) holding `2026-10-22` | right-click Seat One in the sidebar, choose Properties › Seat Due | the calendar opens | X6 |
