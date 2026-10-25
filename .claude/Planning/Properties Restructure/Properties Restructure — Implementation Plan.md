@@ -1294,11 +1294,11 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 15-8 · Measurement 02-10 and `setProperty`'s shape
   - [x] Task 15-9 · Drive group 13 (the filter's clock)
   - [x] Review Checkpoint
-- [ ] **Phase 16A** — One Value Seat: The Seat, the Table, and Cards
-  - [ ] Task 16A-1 · `ValueSeat.tsx`: `useValueSeat` and `<ValueSeat>`, committed with Task 16A-2
-  - [ ] Task 16A-2 · The table runs its value cells through the seat
-  - [ ] Task 16A-3 · Cards run every value through the seat
-  - [ ] Review Checkpoint
+- [x] **Phase 16A** — One Value Seat: The Seat, the Table, and Cards
+  - [x] Task 16A-1 · `ValueSeat.tsx`: `useValueSeat` and `<ValueSeat>`, committed with Task 16A-2
+  - [x] Task 16A-2 · The table runs its value cells through the seat
+  - [x] Task 16A-3 · Cards run every value through the seat
+  - [x] Review Checkpoint
   - [ ] Closeout P15–P16A (two `opus-high` agents, inward and outward)
 - [ ] **Phase 16B** — One Value Seat: The Native Router, the Panel, and No Fabricated Definition
   - [ ] Task 16B-1 · The native menu's router folds into `MenuSeat`
@@ -31485,7 +31485,7 @@ Each item is visible, classified, and lands as its recommendation reads; the clo
 - **Cards' Picker Remounts per Value (Consistency; Take):** the table's keying applies to Cards: moving from one value's picker to another's mounts a fresh picker rather than reusing the open one.
 - **A Date Picked Into Another Band Closes Its Calendar (Accident; Take):** in a table or Cards view grouped by a Date, a pick that moves the row to another band closes the calendar after that one click, since the row is redrawn under its new band and the cell the calendar opened from leaves the page (`TableView.tsx:446-495` nests each row under its band, and Cards do the same). At HEAD the calendar stays open (`DateTimeValuePicker.tsx:30` commits without closing, and no picker checks its trigger is still on the page), measured against a cell no longer there, so it likely drifts toward the window's corner. **Recommended:** take it; one anchor rule covers every surface, and HEAD's open pane has lost its anchor anyway.
 - **The Card Chooser Still Slides Into a Choice Type's Options (Nathan's Intent):** a Select, Status, Multi-Select, or Space entry is `drillable` and slides inside the same pane to its options under a "‹ Properties" or "‹ Spaces" top row, as today, while a Number, Date, File, Link, Checkbox, or Text entry opens its own picker or field; the seat's picker hosts the chooser whole, `FrameSlide` included.
-- **A Card's Add Chooser Opens a Pane Where a Click Acts (Earlier Agent's Choice; Keep):** a property added from a card's chooser opens the picker for a Date or File and the popover for any other type, as at HEAD (`CardsView.tsx:526-527`), while a click on a value, and the menu seat's pick away from one (Task 16B-1), runs the value's intent, so a Checkbox commits checked and a File opens the file dialog. The chooser adds a value the card doesn't show yet, so it opens a pane at the chooser's anchor rather than acting in place, and the seat's `target` names that pane: its Date and File arms open the picker, and any other added value opens the popover. Folding it onto the intent is a Checkbox and File behavior change, left to Nathan.
+- **A Card's Add Chooser Acts as a Click Does (I-6, Nathan's Ruling, 10-25-2026; Task 16B-1):** a property added from a card's chooser opened the picker for a Date or File and the popover for any other type (`CardsView.tsx:526-527` at HEAD), where a click on a value runs its intent. From Task 16B-1 the chooser runs the added value's intent as the menu seat's pick away from a value does, so a Checkbox lands checked and a File opens the file dialog; a type whose click opens a pane opens it at the chooser's anchor, the card not yet showing the value. Through Phase 16A the chooser keeps HEAD's panes.
 - **A Table Cell Leaves Its Field's Suggestions Alone (Consistency; Take):** a click or right-click inside an inline field's link suggestions no longer reaches the table cell it sits in, so a right-click there pops no cell menu over the open field, as on a card at HEAD (`CardValue.tsx:102`, `:110`); the seat states the rule once for every surface.
 - **A Link Added From a Card's Chooser Opens Empty (Accident; Take):** today the chooser's popover for a Link inherits the alias seat (`rename`), which writes `[]()` into the empty field and seats the caret in its label (`ValueEditor.tsx:158-161`); every other route to a blank Link opens an empty field, which this one now does too.
 
@@ -31528,6 +31528,7 @@ Each item is visible, classified, and lands as its recommendation reads; the clo
 - [ ] `Core/Session/chromeSlice.ts`: `ValuePickRequest` carries `rowOf`, `column`, `holder`, `trigger`, `commit`, and `style`; `pendingPick` drops its `id` and `pickSeq` leaves.
 - [ ] `Core/Interface/Menus/propertyMenuActions.ts`: `runPropertyAction` keeps P13's `resolveColumn` for the leaf.
 - [ ] `git rm Core/Interface/Menus/ValuePickPresenter.tsx Core/Interface/Menus/ValuePickPresenter.test.tsx`; `git grep -nw "ValuePickPresenter\|pickSeq" -- Core` answers nothing, and `git grep -n "pendingPick" -- Core ':!*.test.*'` answers only `chromeSlice.ts`, `MatrixView.tsx:45,82`, and `ValueSeat.tsx`.
+- [ ] `Core/Views/Cards/CardsView.tsx`: the add chooser's `onReveal` runs the added value's intent through the seat as the menu seat does (`seat.run(addRow, column, intent?.kind === 'edit' ? { kind: 'popover' } : intent, anchor)`), so a Checkbox lands checked and a File opens the file dialog (I-6), and the comment naming the Date and File panes leaves; `cardGestures.test.tsx` gains a case adding a Checkbox from the chooser that lands it checked with no pane open, written first and watched fail. The file joins the commit's paths.
 - [ ] Run the touched test files green, then the gates.
 - [ ] Commit: `git commit --only -- Core/Properties/Cells/ValueSeat.tsx Core/Properties/Cells/ValueSeat.test.tsx Core/Properties/Pickers/valueClick.ts Core/Session/chromeSlice.ts Core/Interface/Menus/propertyMenuActions.ts Core/Interface/Menus/propertyMenuActions.test.ts Core/Interface/Menus/entityMenuActions.ts Core/Views/Host/useViewInteractions.tsx Core/Interface/App.tsx Core/Interface/Menus/ValuePickPresenter.tsx Core/Interface/Menus/ValuePickPresenter.test.tsx Core/Views/Table/cellGestures.test.tsx -m "A value picked from a menu away from its value opened in one app-level value seat; the menu's own type router was removed."`
 
@@ -35458,7 +35459,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 13 | −678 | +552 | −126 | −696 / +568 / −128 | +89 |
 | 14 | −544 | +497 | −47 | −535 / +486 / −49 | +40 |
 | 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
-| 16A | −537 | +457 | −80 | | |
+| 16A | −537 | +457 | −80 | −543 / +464 / −79 | −60 |
 | 16B | −322 | +97 | −225 | | |
 | 17 | −813 | +609 | −204 | | |
 | 18 | 0 | 0 | 0 | | |
