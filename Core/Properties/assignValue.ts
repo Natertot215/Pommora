@@ -5,7 +5,7 @@ import { patchOverride, type SetOverrides } from './valueOverride'
 import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
-import { pageIndexOf } from '../Nexus/record'
+import { pageIndexOf, pagesByIdOf } from '../Nexus/record'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 
@@ -80,13 +80,21 @@ const valueRequest = (
 function rememberedAlias(
   value: PropertyValue | null,
   prior: PropertyValue | null,
-): MutateRequest | null {
+): { page: string; req: MutateRequest } | null {
   const tree = useSession.getState().tree
   if (value?.kind !== 'link' || !tree) return null
   const was = prior?.kind === 'link' ? prior.value : undefined
   const shown = shownAlias(value.value, pageIndexOf(tree), was)
   if (!shown) return null
-  return { op: 'editAliases', path: shown.page.path, edit: { op: 'add', alias: shown.alias } }
+  const { id, path } = shown.page
+  return { page: id, req: { op: 'editAliases', path, edit: { op: 'add', alias: shown.alias } } }
+}
+
+/** An alias's undo lands where its page stands now, since a rename may have moved it since the write. */
+function atPageNow(req: MutateRequest, pageId: string | undefined): MutateRequest {
+  const tree = useSession.getState().tree
+  const page = pageId && tree ? pagesByIdOf(tree).get(pageId) : undefined
+  return req.op === 'editAliases' && page ? { ...req, path: page.path } : req
 }
 
 export function assignValue(
@@ -105,9 +113,11 @@ export function assignValue(
     void assignValue(writer.current ? writer : oneShotWriter(target), row, column, value)
   const sent = send(w, target, column, value, valueRequest(target, column, value), again)
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
+  let aliasPage: string | undefined
   const undone = sent.then(async (done) => {
     const remember = done && rememberedAlias(value, prior)
-    const aliased = remember ? await useSession.getState().mutate(remember) : null
+    aliasPage = remember?.page
+    const aliased = remember ? await useSession.getState().mutate(remember.req) : null
     return [done?.undo, aliased?.undo].filter((r): r is MutateRequest => r !== undefined)
   })
   let reverts: MutateRequest[] | undefined
@@ -126,7 +136,7 @@ export function assignValue(
         )
         void send(live, current, column, prior, { op: 'putBack', entries })
         reverted = true
-      } else if (reverted) void useSession.getState().mutate(req)
+      } else if (reverted) void useSession.getState().mutate(atPageNow(req, aliasPage))
     return reverted
   }
   pushUndo(() => {

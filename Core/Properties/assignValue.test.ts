@@ -291,6 +291,25 @@ describe('a landed Link value remembers the alias it shows', () => {
     ])
   })
 
+  it('an undo after the aliased page is renamed takes the alias back at its new path', async () => {
+    const forget: MutateRequest = {
+      op: 'editAliases',
+      path: 'Notes/Alpha.md',
+      edit: { op: 'forget', alias: 'the notes' },
+    }
+    mutate.mockImplementation(async (req) =>
+      req.op === 'editAliases' ? { undo: forget } : recorded(req),
+    )
+    await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
+    await settled()
+    const tree = makeTree()
+    tree.collections[0].pages[0] = { ...tree.collections[0].pages[0], path: 'Notes/Renamed.md' }
+    useSession.setState({ tree })
+    expect(undoValue(null)).toBe(true)
+    await settled()
+    expect(mutate.mock.lastCall?.[0]).toEqual({ ...forget, path: 'Notes/Renamed.md' })
+  })
+
   it('a new spelling of the alias it showed is remembered', async () => {
     await assignValue(writer, row, column, link('[[Alpha|Old]]'))
     expect(mutate).toHaveBeenLastCalledWith({
