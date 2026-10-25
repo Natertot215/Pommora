@@ -7,7 +7,7 @@ type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 export function hiddenListIds(
   view: SavedView,
   schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
+  contextIds: readonly string[],
 ): string[] {
   const set = new Set(view.hidden_properties)
   const shown = new Set(view.property_order)

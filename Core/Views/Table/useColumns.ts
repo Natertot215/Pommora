@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '../../Actions/columnMenu'
 import { defaultStyleFor, type ColumnStyle } from '../../Properties/columnStyles'
-import type { ColumnType, PropertyDefinition } from '../../Properties/properties'
+import type { ColumnType } from '../../Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '../views'
+import type { ResolvedColumn } from '../viewRow'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
@@ -15,9 +16,7 @@ import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { numberBarCapable } from '../../Properties/formatValue'
-import { declaredType } from '../../Properties/fieldValue'
 import type { ViewHostApi } from '../Host/useViewHost'
-import type { ResolvedColumn } from '../viewRow'
 
 // ── Widths ──────────────────────────────────────────────────────────────────
 
@@ -45,8 +44,6 @@ export const WIDTHS: Record<ColumnType, ColumnWidth> = {
   lastEditedTime: { min: 90, default: 120, max: 250 },
 }
 
-const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
-
 // Per-look min overrides replace the type's base min; status, select and multi-select are one option-chip family, so they share OPTION_MIN.
 const OPTION_MIN = { compact: 65, standard: 80 } as const
 const STYLE_MIN: Partial<Record<ColumnType, Partial<Record<string, number>>>> = {
@@ -58,43 +55,21 @@ const STYLE_MIN: Partial<Record<ColumnType, Partial<Record<string, number>>>> = 
 
 const HEADER_ICON_BUMP = ICON_PX.body + 6
 
-/** `contextIds` is what makes a Context column classify as such — omit it and one takes the fallback instead of the Context width. */
-export function widthFor(
-  columnId: string,
-  schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
-): ColumnWidth {
-  const t = declaredType(columnId, schema, contextIds)
-  return t === undefined ? FALLBACK : WIDTHS[t]
-}
-
 /** `look` omitted resolves the type's DEFAULT look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
-export function minWidthFor(
-  columnId: string,
-  schema: PropertyDefinition[],
-  look?: string,
-  contextIds: readonly string[] = [],
-  iconsShown = false,
-): number {
+export function minWidthFor(type: ColumnType, look?: string, iconsShown = false): number {
   const bump = iconsShown ? HEADER_ICON_BUMP : 0
-  const base = widthFor(columnId, schema, contextIds).min
-  const t = declaredType(columnId, schema, contextIds)
-  if (t === undefined) return base + bump
-  const resolved = look ?? defaultStyleFor(t).look
-  const override = resolved !== undefined ? STYLE_MIN[t]?.[resolved] : undefined
-  return (override ?? base) + bump
+  const resolved = look ?? defaultStyleFor(type).look
+  const override = resolved !== undefined ? STYLE_MIN[type]?.[resolved] : undefined
+  return (override ?? WIDTHS[type].min) + bump
 }
 
 export function clampWidth(
   width: number,
-  columnId: string,
-  schema: PropertyDefinition[],
+  type: ColumnType,
   look?: string,
-  contextIds: readonly string[] = [],
   iconsShown = false,
 ): number {
-  const { max } = widthFor(columnId, schema, contextIds)
-  return clamp(width, minWidthFor(columnId, schema, look, contextIds, iconsShown), max)
+  return clamp(width, minWidthFor(type, look, iconsShown), WIDTHS[type].max)
 }
 
 // ── Alignment ───────────────────────────────────────────────────────────────
@@ -116,24 +91,8 @@ const DEFAULT_ALIGN: Record<ColumnType, ColumnAlign> = {
   lastEditedTime: 'left',
 }
 
-/** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */
-export function defaultAlignFor(
-  columnId: string,
-  schema: PropertyDefinition[],
-  contextIds: readonly string[] = [],
-): ColumnAlign {
-  const t = declaredType(columnId, schema, contextIds)
-  return t === undefined ? 'left' : DEFAULT_ALIGN[t]
-}
-
-export function alignFor(
-  columnId: string,
-  schema: PropertyDefinition[],
-  view: SavedView,
-  contextIds: readonly string[] = [],
-): ColumnAlign {
-  return view.column_alignments?.[columnId] ?? defaultAlignFor(columnId, schema, contextIds)
-}
+export const alignFor = (column: ResolvedColumn, view: SavedView): ColumnAlign =>
+  view.column_alignments?.[column.id] ?? DEFAULT_ALIGN[column.type]
 
 // ── Order ───────────────────────────────────────────────────────────────────
 
@@ -167,7 +126,7 @@ const COL_SHIFT_HYSTERESIS = 25
 // ── The hook ────────────────────────────────────────────────────────────────
 
 export function useColumns(host: ViewHostApi) {
-  const { schema, view, columns, contextIds, persistView, setStylePatch } = host
+  const { view, columns, persistView, setStylePatch } = host
   const beginGesture = usePointerGesture()
   // The in-drag width paints outside the pipeline's input, so a resize frame never re-runs it.
   const [dragWidth, setDragWidth] = useState<{ id: string; width: number } | null>(null)
@@ -184,22 +143,16 @@ export function useColumns(host: ViewHostApi) {
 
   const iconsShown = !viewOption(view, 'hide_column_icons')
   const { styleById } = host
-  const storedWidth = (id: string): number =>
-    (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ??
-    widthFor(id, schema, contextIds).default
-  const alignByCol = useMemo(
-    () => columns.map((c) => alignFor(c.id, schema, view, contextIds)),
-    [columns, schema, view, contextIds],
-  )
+  const storedWidth = ({ id, type }: ResolvedColumn): number =>
+    (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ?? WIDTHS[type].default
+  const alignByCol = useMemo(() => columns.map((c) => alignFor(c, view)), [columns, view])
   const styleByCol = useMemo(() => columns.map((c) => styleById.get(c.id)!), [columns, styleById])
   const widthByCol = useMemo(
-    () =>
-      columns.map((c, i) =>
-        clampWidth(storedWidth(c.id), c.id, schema, styleByCol[i].look, contextIds, iconsShown),
-      ),
-    [columns, schema, view, dragWidth, contextIds, styleByCol, iconsShown],
+    () => columns.map((c, i) => clampWidth(storedWidth(c), c.type, styleByCol[i].look, iconsShown)),
+    [columns, view, dragWidth, styleByCol, iconsShown],
   )
   const indexOf = (id: string): number => columns.findIndex((c) => c.id === id)
+  const typeOf = (id: string): ColumnType => columns[indexOf(id)].type
   const colStyle = (id: string): ColumnStyle => styleByCol[indexOf(id)]
   const colWidth = (i: number): number => (collapsing === columns[i].id ? 0 : widthByCol[i])
 
@@ -211,11 +164,8 @@ export function useColumns(host: ViewHostApi) {
       const look = styleByCol[i].look
       const prev = prevStyles[i]?.look
       if (prev === look) return
-      const basis = storedWidth(c.id)
-      if (
-        clampWidth(basis, c.id, schema, look, contextIds, iconsShown) >
-        clampWidth(basis, c.id, schema, prev, contextIds, iconsShown)
-      )
+      const basis = storedWidth(c)
+      if (clampWidth(basis, c.type, look, iconsShown) > clampWidth(basis, c.type, prev, iconsShown))
         widened.push(c.id)
     })
     if (widened.length) setSliding((s) => new Set([...s, ...widened]))
@@ -262,14 +212,7 @@ export function useColumns(host: ViewHostApi) {
     void persistView({ property_order: next })
   }
   const resizeColumn = (id: string, width: number): number => {
-    const clamped = clampWidth(
-      Math.round(width),
-      id,
-      schema,
-      colStyle(id).look,
-      contextIds,
-      iconsShown,
-    )
+    const clamped = clampWidth(Math.round(width), typeOf(id), colStyle(id).look, iconsShown)
     setDragWidth({ id, width: clamped })
     return clamped
   }
@@ -280,9 +223,7 @@ export function useColumns(host: ViewHostApi) {
   const commitResize = (id: string, width: number): void => {
     setDragWidth(null)
     void persistView({
-      column_widths: {
-        [id]: clampWidth(width, id, schema, colStyle(id).look, contextIds, iconsShown),
-      },
+      column_widths: { [id]: clampWidth(width, typeOf(id), colStyle(id).look, iconsShown) },
     })
   }
   const hideColumn = (id: string): void => {
@@ -301,16 +242,13 @@ export function useColumns(host: ViewHostApi) {
     const parsed = parseStyleAction(action)
     if (parsed) setStylePatch(column, parsed.key, parsed.value)
   }
-  const openHeaderMenu = async (
-    id: string,
-    isTitle: boolean,
-    e: React.MouseEvent,
-  ): Promise<void> => {
+  const openHeaderMenu = async (column: ResolvedColumn, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
-    const t = declaredType(id, schema)
-    const barCapable = numberBarCapable(schema.find((d) => d.id === id))
+    const { id, type: t } = column
+    const isTitle = column.kind === 'title'
+    const barCapable = numberBarCapable(column.def)
     const style =
-      t !== undefined && t !== 'title' && t !== 'context'
+      t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }
         : undefined
     const action = await popMenu(
@@ -326,7 +264,7 @@ export function useColumns(host: ViewHostApi) {
     else if (action === 'column:toggle-icons') void persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
-    else if (action) runStyleAction(columns[indexOf(id)], action)
+    else if (action) runStyleAction(column, action)
   }
   const startColumnDrag = (e: React.PointerEvent, from: number): void => {
     if (e.button !== 0) return

@@ -10,7 +10,7 @@ import {
 import { type ColumnAlign, viewOption } from '../views'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
@@ -57,7 +57,6 @@ import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
-    schema,
     view,
     columns,
     groups,
@@ -402,9 +401,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The render ────────────────────────────────────────────────────────────
 
-  const headerIcon = (id: string): React.ReactNode => {
+  const headerIcon = (column: ResolvedColumn): React.ReactNode => {
     if (!iconsShown) return null
-    const contextIcon = ctx?.contexts.get(id)?.icon
+    const contextIcon = ctx?.contexts.get(column.id)?.icon
     if (contextIcon) {
       return (
         <span className="col-header-icon">
@@ -412,19 +411,16 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </span>
       )
     }
-    const def = schema.find((d) => d.id === id)
-    if (def) {
+    if (column.def) {
       return (
         <span className="col-header-icon">
-          <Icon name={propertyIcon(def)} size="body" />
+          <Icon name={propertyIcon(column.def)} size="body" />
         </span>
       )
     }
-    const t = declaredType(id, schema)
-    if (t === undefined) return null
     return (
       <span className="col-header-icon">
-        <Icon name={propertyTypeIconName(t)} size="body" />
+        <Icon name={propertyTypeIconName(column.type)} size="body" />
       </span>
     )
   }
@@ -524,7 +520,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 key={c.id}
                 id={c.id}
                 label={columnLabel(c, ctx.contexts)}
-                icon={headerIcon(c.id)}
+                icon={headerIcon(c)}
                 align={alignByCol[i]}
                 transform={gapShift(dragShift, i)}
                 dragging={dragShift?.from === i}
@@ -534,7 +530,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 onResizeAbort={abortResize}
                 onResizeEnd={endResize}
                 onResizeCommit={commitResize}
-                onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
+                onContextMenu={(e) => void openHeaderMenu(c, e)}
               />
             ))}
           </div>
