@@ -6,7 +6,6 @@ import { useSession } from '../../Session/store'
 import { DEFAULT_LINK_DISPLAY } from '../../Connections/linkValue'
 import {
   CREATABLE_TYPES,
-  optionGroupsOf,
   type PropertyConfig,
   type PropertyDefinition,
   PROPERTY_TYPES,
@@ -312,9 +311,7 @@ export function PropertyFrame({
   const optionSettings = (def: PropertyDefinition, style: ColumnStyle): React.JSX.Element => (
     <div className={cx(s.middleRegion, s.chipRegion, 'scroll-fade')}>
       <OptionEditor
-        propertyId={def.id}
-        type={def.type}
-        groups={optionGroupsOf(def)}
+        def={def}
         style={{
           current: style,
           set: (key, value) => void saveColumnStyle(def, { [key]: value }),

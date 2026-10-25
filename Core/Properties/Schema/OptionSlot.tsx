@@ -1,15 +1,19 @@
+import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { base } from '@pommora/uix/Fields/fields.css'
+import { Label } from '@pommora/uix/Labels/Label'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import type { ColumnLook } from '../columnStyles'
 import type { PropertyDefinition, PropertyType, SelectOption } from '../properties'
 import { OptionChip } from '../Cells/OptionChip'
+import { chipOf } from '../typeDisplay'
 import { ghostAnchorProps, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { compactTitle } from './option-row.css'
 
 export function OptionSlot({
   option,
-  type,
   look,
   def,
   editing,
@@ -18,9 +22,8 @@ export function OptionSlot({
   onOpenMenu,
 }: {
   option: SelectOption
-  type: PropertyType
   look: ColumnLook | undefined
-  def: Pick<PropertyDefinition, 'status_groups'>
+  def: Pick<PropertyDefinition, 'type' | 'status_groups'>
   editing: boolean
   ghost: GhostAnchor
   onToggleEditing: (anchor: HTMLElement | undefined) => void
@@ -39,8 +42,8 @@ export function OptionSlot({
       }}
     >
       <span className={s.optionLead}>
-        <OptionChip type={type} look={look} option={option} def={def} />
-        {look === 'compact' && <span className={compactTitle}>{option.label}</span>}
+        <OptionChip type={def.type} look={look} option={option} def={def} />
+        {look === 'compact' && <span className={s.compactTitle}>{option.label}</span>}
       </span>
       <Button
         size="button-inline"
@@ -53,5 +56,32 @@ export function OptionSlot({
         onClick={() => onToggleEditing(rowEl(option.id))}
       />
     </LineRow>
+  )
+}
+
+/** The chip a new option is named in, in its group's color. */
+export function OptionDraft({
+  edit,
+  type,
+  color,
+}: {
+  edit: { commitDraft: (label: string) => void; cancelDraft: () => void }
+  type: PropertyType
+  color?: string
+}): React.JSX.Element {
+  return (
+    <Reveal open enterOnMount fill>
+      <Label shape={chipOf(type).shape} color={colorNameFor(color)}>
+        <RenamableLabel
+          renames="title"
+          editing
+          value=""
+          className={base}
+          autoSize
+          onCommit={edit.commitDraft}
+          onCancel={edit.cancelDraft}
+        />
+      </Label>
+    </Reveal>
   )
 }

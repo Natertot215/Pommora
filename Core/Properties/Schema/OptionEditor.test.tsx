@@ -6,7 +6,7 @@ import { fail, ok } from '../../Contract/result'
 import type { MutateReply, MutateRequest } from '../../Nexus/mutateRequest'
 import { currentNotification } from '../../Interface/Notifications/notifications'
 import { dateDefaults } from '../columnStyles'
-import type { PropertyType, StatusGroup } from '../properties'
+import { type PropertyType, type StatusGroup, withOptionGroups } from '../properties'
 import { OptionEditor } from './OptionEditor'
 import { useSession } from '../../Session/store'
 import { makeTree } from '../../Testing/testTree'
@@ -93,8 +93,10 @@ afterEach(() => {
   host.remove()
 })
 
-const render = (type: PropertyType, groups: StatusGroup[]): void =>
-  act(() => root.render(<OptionEditor propertyId="p1" type={type} groups={groups} style={style} />))
+const render = (type: PropertyType, groups: StatusGroup[]): void => {
+  const def = withOptionGroups({ id: 'p1', key: 'P1', label: 'P1', type }, groups)
+  act(() => root.render(<OptionEditor def={def} style={style} />))
+}
 
 const span = (label: string): HTMLSpanElement | undefined =>
   Array.from(host.querySelectorAll('span')).find((el) => el.textContent === label)
