@@ -11,7 +11,7 @@ A Page Collection is the operational layer's schema-bearing tier: a folder at th
 
 ### Sidecar + Schema
 
-`_pagecollection.json` decodes through `containerNodeFrom` in `Core/Nexus/containerFields.ts`: the Collection's `id` and `icon`, its `banner`, the `properties` assignment list (registry ids), its saved `views`, `set_order` and `page_order` for the children it parents directly, and the two view-button presentation keys. A `property_cache` block appears while a removed property's values are held for restore. The title is the folder name rather than a field, and foreign keys ride through every write. Creating a Collection mints a ULID and seeds one default view with no properties assigned; the schema is then edited from the Properties pane in the toolbar's Settings dropdown.
+`_pagecollection.json` decodes through `containerNodeFrom` in `Core/Nexus/containerFields.ts`: the Collection's `id` and `icon`, its `banner`, the `properties` assignment list (registry ids), its saved `views`, `set_order` and `page_order` for the children it parents directly, and the two view-button presentation keys. A `property_stash` block holds a removed property's values until it's re-added or the History Timeframe passes. The title is the folder name rather than a field, and foreign keys ride through every write. Creating a Collection mints a ULID and seeds one default view with no properties assigned; the schema is then edited from the Properties pane in the toolbar's Settings dropdown.
 
 ### Page Sets
 

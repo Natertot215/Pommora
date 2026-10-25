@@ -165,7 +165,7 @@ export type OrderRequest = Extract<
 
 export type UnmintedCreate<R = CreateRequest> = R extends unknown ? Omit<R, 'id'> : never
 
-// A `mutate` create carries the ID the window minted, since its ask places the newborn by ID; a create whose ask places nothing, a tile's on its own channel or a property's, learns its ID from the reply.
+// A content create carries the ID the window minted, since its ask places the newborn by ID; `addProperty` and a tile's create on its own channel place nothing in their ask and learn the ID from the reply.
 export const minted = <R extends UnmintedCreate>(req: R): R & { id: string } => ({
   ...req,
   id: req.op === 'createPage' ? newContentId('page') : newId(),
