@@ -96,11 +96,6 @@ export function reencode(
   return { next: writtenSpelling(kept, raw), listed }
 }
 
-interface Reconciled {
-  root: Record<string, unknown>
-  changed: string[]
-}
-
 type Governor = { def: PropertyDefinition } | { group: ContextGroup }
 
 function governorOf(key: string, world: GovernedWorld): Governor | undefined {
@@ -122,9 +117,8 @@ export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
   skip?: string,
-): Reconciled {
+): Record<string, unknown> {
   const out: Record<string, unknown> = {}
-  const changed: string[] = []
   for (const [key, raw] of Object.entries(root)) {
     const governor = key === skip ? undefined : governorOf(key, world)
     if (!governor) {
@@ -140,14 +134,9 @@ export function reconcileGovernedRoot(
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
     next = liveLanding(raw, { next, listed })
-    if (next === undefined) {
-      changed.push(key)
-      continue
-    }
-    out[key] = next
-    if (JSON.stringify(next) !== JSON.stringify(raw)) changed.push(key)
+    if (next !== undefined) out[key] = next
   }
-  return { root: out, changed }
+  return out
 }
 
 /** `raw` with `value` under `key`, its members spelled as the root already spells them, after the reconcile repairs every other governed key; null when that changes nothing, so nothing is written. */
@@ -157,7 +146,7 @@ export function writtenRoot(
   value: unknown,
   world: GovernedWorld,
 ): Json | null {
-  const reconciled = reconcileGovernedRoot(raw, world, key).root
+  const reconciled = reconcileGovernedRoot(raw, world, key)
   const def = world.defs.get(key)
   const kept = def ? keepingForeignWords(def, value, raw[key]) : value
   const next = landValue(reconciled, key, writtenSpelling(kept, raw[key]))
