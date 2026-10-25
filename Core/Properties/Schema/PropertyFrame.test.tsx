@@ -251,7 +251,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
       firePointer(window, 'pointermove', { x: 100, y: 40 })
       firePointer(window, 'pointermove', { x: 100, y: 80 })
     })
-    expect(allGroup().className).toContain('allHighlight')
+    expect(allGroup().className).toContain('restHighlight')
     await act(async () => {
       firePointer(window, 'pointerup', { x: 100, y: 80 })
     })
@@ -273,7 +273,7 @@ describe('the two-region drag — state-level; geometry truth lives in the live 
     await act(async () => {
       firePointer(window, 'pointermove', { x: 100, y: 80 })
     })
-    expect(allGroup().className).toContain('allHighlight')
+    expect(allGroup().className).toContain('restHighlight')
     expect(titleRenders.n).toBe(before)
     pressEscape()
   })

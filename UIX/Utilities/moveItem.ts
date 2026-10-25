@@ -37,6 +37,21 @@ export function nextOrder(
   return [...without.slice(0, at), draggedId, ...without.slice(at)]
 }
 
+/** A slot in a filtered view of the full order, as an index in the full order: it still holds every hidden id, so a raw visible index would land the drop among hidden rows. */
+export function fullOrderIndex(
+  orderedIds: readonly string[],
+  visibleIds: readonly string[],
+  draggedId: string,
+  visibleToIndex: number,
+): number {
+  const full = orderedIds.filter((id) => id !== draggedId)
+  const visible = visibleIds.filter((id) => id !== draggedId)
+  const successor = visible[visibleToIndex]
+  if (successor !== undefined) return full.indexOf(successor)
+  const last = visible[visible.length - 1]
+  return last !== undefined ? full.indexOf(last) + 1 : full.length
+}
+
 export function resolveRowOrder<T>(
   items: readonly T[],
   keyOf: (item: T) => string,

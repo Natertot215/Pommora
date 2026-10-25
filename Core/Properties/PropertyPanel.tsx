@@ -5,8 +5,7 @@ import { AccessoryButton, MenuItem, MenuSeparator, heading, menuDropLine } from 
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
-import { nexusReorderIndex } from './paneDrop'
-import { moveItem, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+import { fullOrderIndex, moveItem, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -216,7 +215,7 @@ export function PropertyPanel({
     }
     if (group === 'contexts') {
       const full = fields.contexts.map((f) => f.id)
-      const ids = moveItem(full, full.indexOf(id), nexusReorderIndex(full, shownIds, id, toIndex))
+      const ids = moveItem(full, full.indexOf(id), fullOrderIndex(full, shownIds, id, toIndex))
       sendWithUndo(
         (o) => void mutate({ op: 'reorderPanelContexts', ids: o }),
         ids,
@@ -235,7 +234,7 @@ export function PropertyPanel({
           propertyId: id,
           toIndex: index,
         }),
-      nexusReorderIndex(full, shownIds, id, toIndex),
+      fullOrderIndex(full, shownIds, id, toIndex),
       full.indexOf(id),
     )
   }

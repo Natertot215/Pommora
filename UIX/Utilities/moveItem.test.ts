@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { moveBefore, nextOrder, resolveRowOrder } from './moveItem'
+import { fullOrderIndex, moveBefore, nextOrder, resolveRowOrder } from './moveItem'
 
 const items = (...ids: string[]) => ids.map((id) => ({ id }))
 const idOf = (item: { id: string }): string => item.id
@@ -54,5 +54,27 @@ describe('resolveRowOrder', () => {
   it('is identity over an empty or absent list', () => {
     expect(resolveRowOrder(rows, keyOf, []).map(keyOf)).toEqual(['a', 'b', 'c'])
     expect(resolveRowOrder(rows, keyOf).map(keyOf)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('fullOrderIndex', () => {
+  // Full order [A,B,C,D,E]; A and B are hidden from the list; the visible rows are [C,D,E].
+  const order = ['A', 'B', 'C', 'D', 'E']
+  const visible = ['C', 'D', 'E']
+
+  it('dropping E at the visible top lands just before C in the full order, never ahead of the hidden ids', () => {
+    expect(fullOrderIndex(order, visible, 'E', 0)).toBe(2)
+  })
+
+  it('dropping E between visible C and D lands between them in the full order', () => {
+    expect(fullOrderIndex(order, visible, 'E', 1)).toBe(3)
+  })
+
+  it('dropping C past the last visible row appends after E', () => {
+    expect(fullOrderIndex(order, visible, 'C', 2)).toBe(4)
+  })
+
+  it('with no visible rows a drop appends to the full order', () => {
+    expect(fullOrderIndex(['A', 'B'], [], 'X', 0)).toBe(2)
   })
 })
