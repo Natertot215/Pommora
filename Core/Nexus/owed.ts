@@ -194,10 +194,15 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
   )
 }
 
-/** A many-file change's report, marked owed while an entry still owes work, which Try Again finishes; a pass's total is owed while it missed a file. */
-export const owedReport = (reach: ConfigReach, owed = retries(reach) > 0): CascadeReport => {
+/** A many-file change's report, marked owed while an entry still owes work, which Try Again finishes; a pass's total is owed while it missed a file. The lost-work line joins it once, after a write set a damaged notes file aside. */
+export function owedReport(root: string, reach: ConfigReach, owed = retries(reach) > 0) {
   const report = reachReport(reach)
-  return owed ? { ...report, warning: report.warning ?? OWED_LINE, owed: true } : report
+  if (owed) {
+    report.warning ??= OWED_LINE
+    report.owed = true
+  }
+  if (lost.delete(root)) report.warning = [report.warning, LOST_LINE].filter(Boolean).join(' ')
+  return report
 }
 
 /** What a restore worked out for the files it couldn't write joins the relink entry its landed path `at` keys, so Try Again lands it where a file still reads what the restore found. A note that can't be written owes nothing. */
@@ -214,14 +219,8 @@ export async function oweWorked(
       e?.kind === 'relink' ? e : { kind: 'relink', names: {}, label, files: [] }
     return { ...held, values: { ...held.values, ...values } }
   })
-  return noted.ok ? owedReport(reach) : reachReport(reach)
+  return noted.ok ? owedReport(root, reach) : reachReport(reach)
 }
-
-/** `report` with the lost-work line joined, once, after a write set a damaged notes file aside. */
-export const withLost = (root: string, report: CascadeReport): CascadeReport =>
-  lost.delete(root)
-    ? { ...report, warning: [report.warning, LOST_LINE].filter(Boolean).join(' ') }
-    : report
 
 /** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename (H-1), and a sweep that is the finish's own arm writes back its entry itself. The report is owed while the entry still stands, whatever left it owing. */
 export async function runNoted<T>(
@@ -250,5 +249,5 @@ export async function runNoted<T>(
   const held = change.under === undefined ? undefined : notes[change.under]
   if (settle && !retries(reach) && !owesRename(held))
     await editNote(root, id, (e) => e && settle(e, listed.value))
-  return ok({ cascade: withLost(root, owedReport(reach, id in (await readNotes(root)))) })
+  return ok({ cascade: owedReport(root, reach, id in (await readNotes(root))) })
 }
