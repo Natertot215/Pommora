@@ -376,9 +376,10 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design.
+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
   const tree = await liveTreeOf(root)
-  const back = !e.within && (pagesByIdOf(tree).has(id) || !!findContainerById(tree, id))
+  const live = findContainerById(tree, id)
+  const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
   const gone = e.strip && !back ? await deleteCascade(root, join(root, e.at), e.strip) : null
   if (gone?.links.length) {
     if (e.bundle)
