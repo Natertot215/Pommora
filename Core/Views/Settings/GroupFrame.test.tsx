@@ -8,6 +8,7 @@ import type { SavedView } from '../views'
 import { firePointer, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { useSession } from '../../Session/store'
 import { GroupFrame } from './GroupFrame'
+import * as group from '../Pipeline/group'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 import { mountEachTest } from '../../Testing/viewHarness'
@@ -33,6 +34,8 @@ const dateDef: PropertyDefinition = {
   key: 'When',
   type: 'dateTime',
 }
+
+const schema = [statusDef, dateDef]
 
 const view = (over?: Partial<SavedView>): SavedView => ({
   id: 'view_1',
@@ -66,13 +69,7 @@ const mount = async (v: SavedView): Promise<void> => {
   await act(async () => {
     root.render(
       <MenuDoorHost>
-        <GroupFrame
-          source={source}
-          view={v}
-          schema={[statusDef, dateDef]}
-          label="Settings"
-          onBack={() => {}}
-        />
+        <GroupFrame source={source} view={v} schema={schema} label="Settings" onBack={() => {}} />
       </MenuDoorHost>,
     )
   })
@@ -347,6 +344,16 @@ describe('GroupFrame rows', () => {
       order_mode: 'manual',
       order: ['opt_Queued'],
     })
+  })
+
+  it('a re-render with the same view plans its grouping once', async () => {
+    const v = view({
+      group: { kind: 'property', property_id: 'prop_when', order_mode: 'configured' },
+    })
+    await mount(v)
+    const plans = vi.spyOn(group, 'groupPlan')
+    await mount(v)
+    expect(plans).not.toHaveBeenCalled()
   })
 })
 

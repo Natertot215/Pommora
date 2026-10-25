@@ -22,9 +22,17 @@ const collection = (pages: PageNode[]): CollectionNode => ({
 
 const resolve = ({
   flattenStructural,
+  contextIds = [],
   ...input
-}: Omit<Parameters<typeof resolveViewOf>[0], 'plan'> & { flattenStructural?: boolean }) =>
-  resolveViewOf({ ...input, plan: groupPlan(input.view, input.schema, !flattenStructural) })
+}: Omit<Parameters<typeof resolveViewOf>[0], 'plan' | 'contextIds'> & {
+  flattenStructural?: boolean
+  contextIds?: readonly string[]
+}) =>
+  resolveViewOf({
+    ...input,
+    contextIds,
+    plan: groupPlan(input.view, input.schema, !flattenStructural),
+  })
 
 describe('resolveView — Sort By: Location (cards)', () => {
   const setNode = (id: string, pages: PageNode[]): SetNode => ({

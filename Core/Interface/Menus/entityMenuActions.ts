@@ -11,7 +11,6 @@ import {
 } from '../../Actions/createMenu'
 import { isWindowTarget, selectTargetOf } from '../../Navigation/navRef'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-import type { PropertyDefinition } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, type ValueWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Views/pageRow'
@@ -66,20 +65,18 @@ export async function showEntityMenu(
   const action = await popMenu(entityMenuItems(shown, creators))
   if (action === null) return
   if (propertyTarget && trigger) {
-    const commit = valueCommitFor(schema, propertyTarget.row)
+    const commit = valueCommitFor(propertyTarget.row)
     if (runPropertyAction(action, { ...propertyTarget, commit, trigger })) return
   }
   runEntityAction(shown, creators, action)
 }
 
 function valueCommitFor(
-  schema: PropertyDefinition[],
   opened: ViewRow,
 ): (column: ResolvedColumn, value: PropertyValue | null) => void {
   let row = opened
   const writer: { current: ValueWriter | null } = {
     current: {
-      schema,
       mutate: (req) => useSession.getState().mutate(req),
       rowOf: (id) => (id === row.id ? row : undefined),
       apply: (_, picked) => {

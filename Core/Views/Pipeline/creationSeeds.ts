@@ -9,7 +9,7 @@ import {
   isGroup,
   ruleOperands,
 } from '../filterRules'
-import { declaredType } from '../../Properties/fieldValue'
+import { resolveColumn } from './columns'
 import { groupKeyToValue } from '../reassign'
 import { prepareGroup, prepareRule } from './filter'
 import type { ViewRow } from '../viewRow'
@@ -24,7 +24,7 @@ function ruleSeed(
 ): PropertyValue | null {
   const operands = ruleOperands(rule)
   if (operands.length !== 1) return null
-  const type = declaredType(rule.property_id, schema, contextIds)
+  const type = resolveColumn(rule.property_id, schema, contextIds)?.type
   const kind = specOf(type)?.kind
   switch (kind) {
     case 'context':

@@ -55,7 +55,7 @@ beforeEach(() => {
   apply = vi.fn()
   mutate = vi.fn(async (req: MutateRequest) => recorded(req))
   row = rowOf({ id: 'page1', Tag: ['red'] })
-  live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
+  live = { mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
   resetUndo()
   useSession.setState({ tree: null })
@@ -154,10 +154,8 @@ describe('assignValue', () => {
     expect(mutate.mock.calls).toEqual([[record]])
   })
 
-  it('writes nothing without a live writer, and nothing for an unknown property', () => {
+  it('writes nothing without a live writer', () => {
     writer.current = null
-    assignValue(writer, row, propertyColumn(schema[0]), null)
-    writer.current = { ...live, schema: [] }
     assignValue(writer, row, propertyColumn(schema[0]), null)
     expect(apply).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
@@ -216,7 +214,6 @@ describe('a landed Link value remembers the alias it shows', () => {
   const remembered = () => mutate.mock.calls.filter(([req]) => req.op === 'editAliases')
 
   beforeEach(() => {
-    live.schema = [...schema, linkDef]
     row = rowOf({ id: 'page1', Link: '[[Alpha|old]]' })
     useSession.setState({ tree: makeTree() })
   })

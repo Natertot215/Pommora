@@ -142,7 +142,7 @@ describe('the created row settles into the live order', () => {
   const rows = (ids: string[]): ViewRow[] =>
     ids.map((id) => ({ id, path: `${id}.md`, title: id }) as unknown as ViewRow)
   const painted = (manual: string[] | undefined): string[] | undefined =>
-    makeSorter(undefined, [], manual)?.(rows(ALL)).map((r) => r.id)
+    makeSorter(undefined, [], [], manual)?.(rows(ALL)).map((r) => r.id)
 
   it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
     const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')

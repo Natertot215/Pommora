@@ -56,7 +56,6 @@ function harness(frontmatter: Record<string, unknown> = {}) {
   const sent: MutateRequest[] = []
   const writer: { current: ValueWriter | null } = {
     current: {
-      schema: SCHEMA,
       mutate: async (req) => {
         sent.push(req)
         return {}

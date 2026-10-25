@@ -43,7 +43,7 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
   const contexts = contextsByIdOf(tree)
   const build = (column: ResolvedColumn, def: PropertyDefinition): PropertyMenuRow => {
     const base = { id: column.id, name: columnLabel(column, contexts) }
-    const current = resolveFieldValue(row, column.id, schema)
+    const current = resolveFieldValue(row, column)
     if (def.type === 'checkbox') {
       const checked = current.kind === 'checkbox' && current.value
       return {
@@ -95,7 +95,7 @@ export function runPropertyAction(
   // The property can leave between the menu opening and the pick; the pick then writes nothing.
   if (!column) return true
   const def = column.def ?? syntheticContextDef(id)
-  const current = resolveFieldValue(row, id, schema)
+  const current = resolveFieldValue(row, column)
   const commitValue = (next: PropertyValue | null): void => commit(column, next)
   if (value === null) {
     if (def.type === 'file') pickFileInto(def, current, null, commitValue)

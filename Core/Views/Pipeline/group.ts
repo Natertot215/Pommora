@@ -3,6 +3,7 @@
 import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
 import {
   type PageValues,
+  type ResolvedColumn,
   type ResolvedGroup,
   type RowValues,
   type ViewRow,
@@ -27,7 +28,8 @@ import { ID_KEY } from '../../Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
 import { groupable, optionIds, type PropertyDefinition } from '../../Properties/properties'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { propertyColumn } from './columns'
 import { dateFmt, formatDate, NUMERIC_FORMATS, readDate } from '../../Properties/formatValue'
 import type { DateFormat } from '../../Properties/columnStyles'
 import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
@@ -85,8 +87,8 @@ export function dropHiddenGroups(
   hidden: ReadonlySet<string>,
   plan: GroupPlan,
 ): ResolvedGroup[] {
-  const top = plan.kind === 'property' ? plan.group.property_id : undefined
-  const sub = plan.kind === 'sets' ? plan.sub?.property_id : undefined
+  const top = plan.kind === 'property' ? plan.group.config.property_id : undefined
+  const sub = plan.kind === 'sets' ? plan.sub?.config.property_id : undefined
   return groups.flatMap((group) => {
     if (group.kind === 'bucket' && top && isBucketHidden(hidden, 'group', top, group.value))
       return []
@@ -201,11 +203,10 @@ export function formatBucketLabel(
 
 export function bucketKey(
   row: ViewRow,
-  propertyId: string,
-  schema: PropertyDefinition[],
+  column: ResolvedColumn,
   granularity: DateGranularity,
 ): string | null {
-  const v = resolveFieldValue(row, propertyId, schema)
+  const v = resolveFieldValue(row, column)
   switch (v.kind) {
     case 'select':
       return v.value
@@ -261,15 +262,14 @@ export function bucketOrder(
 
 function property(
   rows: ViewRow[],
-  group: PropertyGroup,
-  schema: PropertyDefinition[],
+  { config: group, column }: Grouping<PropertyGroup>,
   sorter: Sorter | null,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
-  const def = schema.find((d) => d.id === group.property_id)
+  const { def } = column
   const granularity = granularityOf(group)
 
-  const byBucket = groupRows(rows, (r) => bucketKey(r, group.property_id, schema, granularity))
+  const byBucket = groupRows(rows, (r) => bucketKey(r, column, granularity))
   const noValue = byBucket.get(null) ?? []
   byBucket.delete(null)
   const buckets = byBucket as Map<string, ViewRow[]>
@@ -341,19 +341,18 @@ function locationFlat(
 function structuralSubGrouped(
   rows: ViewRow[],
   setTree: SetTreeNode[],
-  sub: SubGroupConfig,
-  schema: PropertyDefinition[],
+  { config: sub, column }: Grouping,
   sorter: Sorter | null,
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
-  const def = schema.find((d) => d.id === sub.property_id)
+  const { def } = column
   const granularity = granularityOf(sub)
   const byParent = groupRows(rows, (r) => r.parentSetId)
   const rootRows = byParent.get(undefined) ?? []
 
   const groups: ResolvedGroup[] = setTree.map((node) => {
     const pages = subtreeIds(node).flatMap((id) => byParent.get(id) ?? [])
-    const byBucket = groupRows(pages, (r) => bucketKey(r, sub.property_id, schema, granularity))
+    const byBucket = groupRows(pages, (r) => bucketKey(r, column, granularity))
     const noValue = byBucket.get(null) ?? []
     byBucket.delete(null)
     const buckets = byBucket as Map<string, ViewRow[]>
@@ -401,16 +400,32 @@ function flat(rows: ViewRow[], sorter: Sorter | null): ResolvedGroup[] {
   return [{ key: UNGROUPED, kind: 'tail', items: applySort(rows, sorter) }]
 }
 
+/** A grouping and the column it reads, resolved once when the plan is made. */
+export type Grouping<C extends SubGroupConfig = SubGroupConfig> = {
+  config: C
+  column: ResolvedColumn
+}
+
 export type GroupPlan = (
   | { kind: 'none' }
-  | { kind: 'sets'; nests: boolean; sub: SubGroupConfig | undefined }
-  | { kind: 'property'; group: PropertyGroup }
+  | { kind: 'sets'; nests: boolean; sub: Grouping | undefined }
+  | { kind: 'property'; group: Grouping<PropertyGroup> }
 ) & { locationSort: StructuralOrderMode | undefined }
 
-const readable = <C extends SubGroupConfig>(config: C, schema: PropertyDefinition[]): C =>
-  config.order_mode === 'manual' && declaredType(config.property_id, schema) === 'dateTime'
-    ? { ...config, order_mode: 'configured' }
-    : config
+// A Date grouping has no manual order, so one stored manual reads as configured.
+function groupingOf<C extends SubGroupConfig>(
+  config: C | undefined,
+  schema: PropertyDefinition[],
+): Grouping<C> | undefined {
+  const def = config && schema.find((d) => d.id === config.property_id)
+  if (!def || !groupable(def.type)) return undefined
+  const byDate = def.type === 'dateTime'
+  return {
+    config:
+      byDate && config.order_mode === 'manual' ? { ...config, order_mode: 'configured' } : config,
+    column: propertyColumn(def),
+  }
+}
 
 export function groupPlan(
   view: SavedView,
@@ -423,16 +438,17 @@ export function groupPlan(
       ? viewOption(view, 'location_order_mode')
       : undefined
   if (group?.kind === 'flat') return { kind: 'none', locationSort }
-  if (group?.kind === 'property' && groupable(declaredType(group.property_id, schema)))
-    return { kind: 'property', group: readable(group, schema), locationSort }
-  const sub =
-    nests && sub_group && groupable(declaredType(sub_group.property_id, schema))
-      ? readable(sub_group, schema)
-      : undefined
-  return { kind: 'sets', nests, sub, locationSort }
+  const grouped = group?.kind === 'property' ? groupingOf(group, schema) : undefined
+  if (grouped) return { kind: 'property', group: grouped, locationSort }
+  return {
+    kind: 'sets',
+    nests,
+    sub: nests ? groupingOf(sub_group, schema) : undefined,
+    locationSort,
+  }
 }
 
-export const bucketGroupingOf = (plan: GroupPlan): SubGroupConfig | undefined =>
+export const bucketGroupingOf = (plan: GroupPlan): Grouping | undefined =>
   plan.kind === 'property' ? plan.group : plan.kind === 'sets' ? plan.sub : undefined
 
 export function setOrderOf(plan: GroupPlan, view: SavedView): StructuralOrderMode {
@@ -466,7 +482,6 @@ export const orderedChildren = (
 export function resolveGroups(
   rows: ViewRow[],
   plan: GroupPlan,
-  schema: PropertyDefinition[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
   placement: EmptyPlacement,
@@ -477,11 +492,11 @@ export function resolveGroups(
         ? locationFlat(rows, setTree, sorter, placement)
         : flat(rows, sorter)
     case 'property':
-      return property(rows, plan.group, schema, sorter, placement)
+      return property(rows, plan.group, sorter, placement)
     case 'sets':
       if (!plan.nests) return structuralFlat(rows, setTree, sorter, placement)
       return plan.sub
-        ? structuralSubGrouped(rows, setTree, plan.sub, schema, sorter, placement)
+        ? structuralSubGrouped(rows, setTree, plan.sub, sorter, placement)
         : structural(rows, setTree, sorter, placement)
   }
 }

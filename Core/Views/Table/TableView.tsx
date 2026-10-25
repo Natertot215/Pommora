@@ -142,7 +142,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return runValueIntent(intent, {
       commit: ({ value }) => commitValue(row, col, value),
       file: () => {
-        const current = resolveFieldValue(row, col.id, schema)
+        const current = resolveFieldValue(row, col)
         if (col.def)
           pickFileInto(col.def, current, fileChipIndex(target), (n) => commitValue(row, col, n))
       },
@@ -167,7 +167,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (col.kind !== 'property' && col.kind !== 'context') return
     const intent = valueClickIntent(
       col.type,
-      resolveFieldValue(row, col.id, schema),
+      resolveFieldValue(row, col),
       colStyle(col.id).look,
       col.def,
     )
@@ -213,7 +213,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return (
       <PropertyValueInput
         def={def}
-        current={resolveFieldValue(row, col.id, schema)}
+        current={resolveFieldValue(row, col)}
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
         seat={editing.seat}
@@ -254,7 +254,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         key={`${cell.rowId}:${cell.colId}:${cell.nonce}`}
         popover={{ open: editing?.mode === 'popover', triggerRef: triggerElRef }}
         def={def}
-        current={resolveFieldValue(row, col.id, schema)}
+        current={resolveFieldValue(row, col)}
         holder={holderOf(row, ctx)}
         connections={ctx.connections}
         seat={def.type === 'link' ? 'rename' : undefined}
@@ -276,7 +276,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     // Captured before the await — React recycles the synthetic event, so the popover can't read `e.currentTarget` once the menu resolves.
     const el = e.currentTarget as HTMLElement
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
-    const value = resolveFieldValue(row, col.id, schema)
+    const value = resolveFieldValue(row, col)
     const { def, type: dt } = col
     const runMenuIntent = (action: CellMenuAction | LinkAction): boolean => {
       const intent = valueMenuIntent(action)
@@ -353,7 +353,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (rows.length < 2) return null
     const target = pickTarget(rows[0], col)
     const opts = target.kind === 'options' ? target : undefined
-    const currents = rows.map((r) => resolveFieldValue(r, col.id, schema))
+    const currents = rows.map((r) => resolveFieldValue(r, col))
     return (
       <MassPropertyPicker
         key={`${mass.colId}:${mass.rowIds.join('.')}`}

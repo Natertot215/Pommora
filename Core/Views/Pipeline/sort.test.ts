@@ -6,6 +6,9 @@ import { makeSorter, resolvedSortCount } from './sort'
 import { applyFilter } from './filter'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { propsAtRoot } from '../../Testing/pageValues'
+import { resolveColumn } from './columns'
+
+const CONTEXT_IDS = ['ctx_areas']
 
 const schema: PropertyDefinition[] = [
   {
@@ -87,7 +90,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r_apple', { props: { prop_link: '[Apple](https://z.co)' } }),
       makeRow('r_bare', { props: { prop_link: 'https://m.co' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
+    const sorter = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema, [])
     // Apple < https://m.co < Zebra by display — not clumped by the leading `[` of the two aliases.
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_bare', 'r_zebra'])
   })
@@ -98,14 +101,14 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r_apple', { props: { prop_notes: 'apple' } }),
       makeRow('r_zebra', { props: { prop_notes: 'zebra' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema)
+    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema, [])
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_nice', 'r_zebra'])
     const links = [
       makeRow('r_setup', { props: { prop_link: '[[#Setup]]' } }),
       makeRow('r_bare', { props: { prop_link: 'example.com' } }),
       makeRow('r_alpha', { props: { prop_link: '[[Alpha]]' } }),
     ]
-    const byLink = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema)
+    const byLink = makeSorter([{ property_id: 'prop_link', direction: 'ascending' }], schema, [])
     expect(ids(byLink?.(links) ?? links)).toEqual(['r_alpha', 'r_bare', 'r_setup'])
   })
 
@@ -115,7 +118,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r_apple', { props: { prop_notes: 'apple pie' } }),
       makeRow('r_mango', { props: { prop_notes: 'Mango\nsecond line' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema)
+    const sorter = makeSorter([{ property_id: 'prop_notes', direction: 'ascending' }], schema, [])
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_mango', 'r_zebra'])
   })
 
@@ -125,7 +128,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r_apple', { props: { prop_file: ['[[apple.pdf]]'] } }),
       makeRow('r_mango', { props: { prop_file: ['[[Mango.pdf]]'] } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_file', direction: 'ascending' }], schema)
+    const sorter = makeSorter([{ property_id: 'prop_file', direction: 'ascending' }], schema, [])
     expect(ids(sorter?.(rows) ?? rows)).toEqual(['r_apple', 'r_mango', 'r_zebra'])
   })
 
@@ -136,7 +139,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r3', { props: { prop_sel: 'zzz' } }),
       makeRow('r4', { props: { prop_sel: 'b' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema)!
+    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [])!
     expect(ids(sorter(rows))).toEqual(['r2', 'r4', 'r1', 'r3'])
   })
 
@@ -169,7 +172,7 @@ describe('makeSorter — type-aware single criterion', () => {
         frontmatter: { [ID_KEY]: 'r2', ...propsAtRoot({ prop_stale: 'a' }, [stale]) },
       },
     ]
-    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
+    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale], [])!
     expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
   })
 
@@ -202,7 +205,7 @@ describe('makeSorter — type-aware single criterion', () => {
         frontmatter: { [ID_KEY]: 'r2', ...propsAtRoot({ prop_stale: 'todo' }, [stale]) },
       },
     ]
-    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
+    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale], [])!
     expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
   })
 
@@ -215,6 +218,7 @@ describe('makeSorter — type-aware single criterion', () => {
     const sorter = makeSorter(
       [{ property_id: 'prop_sel', direction: 'ascending', order: ['opt_a', 'opt_b'] }],
       schema,
+      [],
     )!
     expect(ids(sorter(rows))).toEqual(['r3', 'r2', 'r1'])
   })
@@ -226,10 +230,10 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r3', { props: { prop_status: 'in_progress' } }),
     ]
     expect(
-      ids(makeSorter([{ property_id: 'prop_status', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_status', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r3', 'r1'])
     expect(
-      ids(makeSorter([{ property_id: 'prop_status', direction: 'descending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_status', direction: 'descending' }], schema, [])!(rows)),
     ).toEqual(['r1', 'r3', 'r2'])
   })
 
@@ -238,7 +242,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('day', { props: { prop_when: '2026-06-15' } }),
       makeRow('eve', { props: { prop_when: '2026-06-14T22:00:00' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!
+    const sorter = makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema, [])!
     expect(ids(sorter(rows))).toEqual(['eve', 'day'])
   })
 
@@ -249,7 +253,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r3', { props: {} }),
     ]
     expect(
-      ids(makeSorter([{ property_id: 'prop_num', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_num', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r3', 'r2', 'r1'])
   })
 
@@ -260,7 +264,7 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r3', { props: {} }),
     ]
     expect(
-      ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_done', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r3', 'r1'])
   })
 
@@ -271,13 +275,17 @@ describe('makeSorter — type-aware single criterion', () => {
       makeRow('r3', { props: {} }),
     ]
     expect(
-      ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r3', 'r2', 'r1'])
   })
 
   it('a Context criterion resolves to nothing, so it neither sorts nor counts', () => {
-    expect(makeSorter([{ property_id: 'prop_rel', direction: 'ascending' }], schema)).toBeNull()
-    expect(resolvedSortCount([{ property_id: 'prop_rel', direction: 'ascending' }], schema)).toBe(0)
+    expect(
+      makeSorter([{ property_id: 'prop_rel', direction: 'ascending' }], schema, CONTEXT_IDS),
+    ).toBeNull()
+    expect(
+      resolvedSortCount([{ property_id: 'prop_rel', direction: 'ascending' }], schema, CONTEXT_IDS),
+    ).toBe(0)
   })
 })
 
@@ -289,12 +297,12 @@ describe('makeSorter — reserved presets', () => {
       makeRow('r3', { title: 'cherry' }),
     ]
     expect(
-      ids(makeSorter([{ property_id: '_title', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: '_title', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r1', 'r3'])
   })
 
   it('_id is not a sortable column', () => {
-    expect(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema)).toBeNull()
+    expect(makeSorter([{ property_id: '_id', direction: 'ascending' }], schema, [])).toBeNull()
   })
 
   it("sorts _created_at by the row's createdAt", () => {
@@ -304,7 +312,7 @@ describe('makeSorter — reserved presets', () => {
       makeRow('r3', { createdAt: '2026-06-25T10:00:00Z' }),
     ]
     expect(
-      ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: '_created_at', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r1', 'r3'])
   })
 
@@ -315,7 +323,7 @@ describe('makeSorter — reserved presets', () => {
       makeRow('r3', { modifiedAt: '2026-06-15T10:00:00Z' }),
     ]
     expect(
-      ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: '_modified_at', direction: 'ascending' }], schema, [])!(rows)),
     ).toEqual(['r2', 'r3', 'r1'])
   })
 })
@@ -326,12 +334,14 @@ describe('the stamp readers agree', () => {
       makeRow('old', { modifiedAt: '2026-06-15T10:00:00Z' }),
       makeRow('new', { modifiedAt: '2026-06-25T10:00:00Z' }),
     ]
-    expect(resolveFieldValue(rows[1], '_modified_at', schema)).toEqual({
+    expect(resolveFieldValue(rows[1], resolveColumn('_modified_at', schema, [])!)).toEqual({
       kind: 'dateTime',
       value: '2026-06-25T10:00:00Z',
     })
     expect(
-      ids(makeSorter([{ property_id: '_modified_at', direction: 'descending' }], schema)!(rows)),
+      ids(
+        makeSorter([{ property_id: '_modified_at', direction: 'descending' }], schema, [])!(rows),
+      ),
     ).toEqual(['new', 'old'])
     expect(
       ids(
@@ -363,6 +373,7 @@ describe('makeSorter — multi-key + null cases', () => {
         { property_id: '_title', direction: 'ascending' },
       ],
       schema,
+      [],
     )!
     expect(ids(sorter(rows))).toEqual(['r2', 'r1', 'r3'])
   })
@@ -374,7 +385,7 @@ describe('makeSorter — multi-key + null cases', () => {
       makeRow('r3', { props: { prop_sel: 'a' } }),
     ]
     expect(
-      ids(makeSorter([{ property_id: 'prop_sel', direction: 'descending' }], schema)!(rows)),
+      ids(makeSorter([{ property_id: 'prop_sel', direction: 'descending' }], schema, [])!(rows)),
     ).toEqual(['r1', 'r2', 'r3'])
   })
 
@@ -389,28 +400,33 @@ describe('makeSorter — multi-key + null cases', () => {
         { property_id: 'prop_num', direction: 'ascending' },
       ],
       schema,
+      [],
     )
     expect(sorter).not.toBeNull()
     expect(ids(sorter!(rows))).toEqual(['r2', 'r1'])
   })
 
   it('returns null when there is no usable criterion', () => {
-    expect(makeSorter(undefined, schema)).toBeNull()
-    expect(makeSorter([], schema)).toBeNull()
-    expect(makeSorter([{ property_id: 'prop_unknown', direction: 'ascending' }], schema)).toBeNull()
-    expect(makeSorter([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBeNull()
+    expect(makeSorter(undefined, schema, [])).toBeNull()
+    expect(makeSorter([], schema, [])).toBeNull()
+    expect(
+      makeSorter([{ property_id: 'prop_unknown', direction: 'ascending' }], schema, []),
+    ).toBeNull()
+    expect(
+      makeSorter([{ property_id: 'ctx_areas', direction: 'ascending' }], schema, CONTEXT_IDS),
+    ).toBeNull()
   })
 })
 
 describe('makeSorter — manual order tiebreaker (manual_order)', () => {
   it('orders by the manual array when there is no sort (grouped-but-unsorted)', () => {
     const rows = [makeRow('a'), makeRow('b'), makeRow('c')]
-    expect(ids(makeSorter(undefined, schema, ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
+    expect(ids(makeSorter(undefined, schema, [], ['c', 'a', 'b'])!(rows))).toEqual(['c', 'a', 'b'])
   })
 
   it('appends rows absent from the manual order, in input order, after the placed ones', () => {
     const rows = [makeRow('a'), makeRow('b'), makeRow('c'), makeRow('d')]
-    expect(ids(makeSorter(undefined, schema, ['c', 'a'])!(rows))).toEqual(['c', 'a', 'b', 'd'])
+    expect(ids(makeSorter(undefined, schema, [], ['c', 'a'])!(rows))).toEqual(['c', 'a', 'b', 'd'])
   })
 
   it('breaks ties only AFTER the sort key — within an equal-key run', () => {
@@ -419,10 +435,12 @@ describe('makeSorter — manual order tiebreaker (manual_order)', () => {
       makeRow('r2', { props: { prop_sel: 'b' } }),
       makeRow('r3', { props: { prop_sel: 'a' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [
-      'r3',
-      'r1',
-    ])!
+    const sorter = makeSorter(
+      [{ property_id: 'prop_sel', direction: 'ascending' }],
+      schema,
+      [],
+      ['r3', 'r1'],
+    )!
     expect(ids(sorter(rows))).toEqual(['r3', 'r1', 'r2'])
   })
 
@@ -431,16 +449,18 @@ describe('makeSorter — manual order tiebreaker (manual_order)', () => {
       makeRow('r1', { props: { prop_sel: 'a' } }),
       makeRow('r2', { props: { prop_sel: 'b' } }),
     ]
-    const sorter = makeSorter([{ property_id: 'prop_sel', direction: 'ascending' }], schema, [
-      'r2',
-      'r1',
-    ])!
+    const sorter = makeSorter(
+      [{ property_id: 'prop_sel', direction: 'ascending' }],
+      schema,
+      [],
+      ['r2', 'r1'],
+    )!
     expect(ids(sorter(rows))).toEqual(['r1', 'r2'])
   })
 
   it('returns null when there is neither a sort nor a manual order', () => {
-    expect(makeSorter(undefined, schema, [])).toBeNull()
-    expect(makeSorter(undefined, schema, undefined)).toBeNull()
+    expect(makeSorter(undefined, schema, [], [])).toBeNull()
+    expect(makeSorter(undefined, schema, [], undefined)).toBeNull()
   })
 })
 
@@ -464,7 +484,7 @@ describe('a Multi-Select sort', () => {
       createdAt: null,
       modifiedAt: null,
     })
-    const sorter = makeSorter([{ property_id: 'prop_tags', direction: 'ascending' }], [tags])!
+    const sorter = makeSorter([{ property_id: 'prop_tags', direction: 'ascending' }], [tags], [])!
     expect(ids(sorter([row('zebra', 'a'), row('apple', 'z')]))).toEqual(['apple', 'zebra'])
   })
 })
@@ -480,6 +500,7 @@ describe('custom option order', () => {
     const sorter = makeSorter(
       [{ property_id: 'prop_sel', direction: 'descending', order: ['opt_c', 'opt_a', 'opt_b'] }],
       schema,
+      [],
     )!
     expect(ids(sorter(rows))).toEqual(['r4', 'r1', 'r2', 'r3'])
   })
@@ -487,13 +508,17 @@ describe('custom option order', () => {
 
 describe('resolvedSortCount', () => {
   it('counts only criteria buildCriterion resolves — dead and Context criteria cost nothing', () => {
-    expect(resolvedSortCount(undefined, schema)).toBe(0)
-    expect(resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema)).toBe(
-      0,
-    )
-    expect(resolvedSortCount([{ property_id: 'ctx_areas', direction: 'ascending' }], schema)).toBe(
-      0,
-    )
+    expect(resolvedSortCount(undefined, schema, [])).toBe(0)
+    expect(
+      resolvedSortCount([{ property_id: 'prop_gone', direction: 'ascending' }], schema, []),
+    ).toBe(0)
+    expect(
+      resolvedSortCount(
+        [{ property_id: 'ctx_areas', direction: 'ascending' }],
+        schema,
+        CONTEXT_IDS,
+      ),
+    ).toBe(0)
     expect(
       resolvedSortCount(
         [
@@ -501,6 +526,7 @@ describe('resolvedSortCount', () => {
           { property_id: 'prop_gone', direction: 'descending' },
         ],
         schema,
+        [],
       ),
     ).toBe(1)
     expect(
@@ -510,6 +536,7 @@ describe('resolvedSortCount', () => {
           { property_id: '_modified_at', direction: 'descending' },
         ],
         schema,
+        [],
       ),
     ).toBe(2)
   })

@@ -111,7 +111,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const bandBase = { view, plan, schema, sets, sourcePath: source.path }
+  const bandBase = { view, plan, sets, sourcePath: source.path }
   const bandRoutes = bandRouting(bands, bandBase, (dragged) => {
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')

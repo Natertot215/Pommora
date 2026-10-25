@@ -5,6 +5,7 @@ import type { ResolvedGroup } from '../viewRow'
 import type { SavedView } from '../views'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { setIndexOf } from '../Pipeline/setIndex'
+import { propertyColumn } from '../Pipeline/columns'
 import {
   type BandModel,
   type BandNode,
@@ -216,7 +217,6 @@ describe('which Set bands open', () => {
         source,
         setIndexOf(source),
         undefined,
-        [],
         {} as SavedView,
         () => ({}) as never,
         foldersOpen,
@@ -255,8 +255,10 @@ describe('a bucket head', () => {
     const head = headContextOf(
       { kind: 'collection' } as CollectionNode,
       new Map() as never,
-      { kind: 'property', property_id: 'prop_sel' } as never,
-      [def],
+      {
+        config: { kind: 'property', property_id: 'prop_sel' },
+        column: propertyColumn(def),
+      } as never,
       {} as SavedView,
       () => ({}) as never,
       false,

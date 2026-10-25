@@ -6,6 +6,7 @@ import { declaredType, resolveFieldValue } from './fieldValue'
 import { fileName } from '../Connections/linkValue'
 import { propsAtRoot } from '../Testing/pageValues'
 import { NULL_VALUE } from './propertyValue'
+import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
   {
@@ -43,7 +44,10 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_num', label: 'Num', key: 'Num', type: 'number' },
 ]
 
-const rfv = (r: ViewRow, p: string) => resolveFieldValue(r, p, schema)
+const CONTEXT_IDS = ['ctx_areas', 'ctx_topics']
+
+const rfv = (r: ViewRow, id: string) =>
+  resolveFieldValue(r, resolveColumn(id, schema, CONTEXT_IDS)!)
 
 const row: ViewRow = {
   id: '01ROW',
@@ -145,15 +149,23 @@ describe('resolveFieldValue', () => {
       ],
     }
     const keyed: ViewRow = { ...row, frontmatter: { [ID_KEY]: '01ROW', S: 'done', s: 'open' } }
-    expect(resolveFieldValue(keyed, 'prop_s', [def])).toEqual({ kind: 'select', value: 'opt_open' })
+    expect(resolveFieldValue(keyed, propertyColumn(def))).toEqual({
+      kind: 'select',
+      value: 'opt_open',
+    })
   })
 
-  it('returns null for an absent property', () => {
-    expect(rfv(row, 'prop_absent')).toEqual({ kind: 'null' })
-  })
-
-  it('degrades a malformed value to null rather than throwing (never poison a view)', () => {
-    expect(rfv(row, 'prop_bad')).toEqual({ kind: 'null' })
+  it("reads a property through the column's definition, never the schema", () => {
+    const held: ViewRow = {
+      ...row,
+      frontmatter: { [ID_KEY]: '01ROW', Sel: 'opt_a', Other: 'opt_b' },
+    }
+    const other = propertyColumn({
+      ...schema[1],
+      key: 'Other',
+      select_options: [{ id: 'opt_opt_b', key: 'opt_b', label: 'opt_b' }],
+    })
+    expect(resolveFieldValue(held, other)).toEqual({ kind: 'select', value: 'opt_opt_b' })
   })
 
   it('returns null for a stamp the row does not carry', () => {
@@ -190,11 +202,11 @@ describe('resolveFieldValue', () => {
       createdAt: null,
       modifiedAt: null,
     }
-    expect(resolveFieldValue(pending, 'prop_tag', [tag])).toEqual({
+    expect(resolveFieldValue(pending, propertyColumn(tag))).toEqual({
       kind: 'select',
       value: 'opt_blue',
     })
-    expect(resolveFieldValue(pending, 'ctx1', [tag])).toEqual(NULL_VALUE)
+    expect(resolveFieldValue(pending, contextColumn('ctx1'))).toEqual(NULL_VALUE)
   })
 })
 
@@ -251,8 +263,11 @@ describe('resolveFieldValue memoization', () => {
         { id: 'opt_Final', key: 'Final', label: 'Final' },
       ],
     }
-    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
-    expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'opt_Final' })
+    expect(resolveFieldValue(r, propertyColumn(def))).toEqual({ kind: 'null' })
+    expect(resolveFieldValue(r, propertyColumn(gained))).toEqual({
+      kind: 'select',
+      value: 'opt_Final',
+    })
   })
 
   it('a rename or a type change re-resolves under the same frontmatter', () => {
@@ -266,12 +281,12 @@ describe('resolveFieldValue memoization', () => {
       modifiedAt: null,
     }
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
-    expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'select', value: 'opt_open' })
-    expect(resolveFieldValue(r, 'prop_s', [{ ...def, label: 'T', key: 'T' }])).toEqual({
+    expect(resolveFieldValue(r, propertyColumn(def))).toEqual({ kind: 'select', value: 'opt_open' })
+    expect(resolveFieldValue(r, propertyColumn({ ...def, label: 'T', key: 'T' }))).toEqual({
       kind: 'select',
       value: 'opt_done',
     })
-    expect(resolveFieldValue(r, 'prop_s', [{ ...def, type: 'multiSelect' }])).toEqual({
+    expect(resolveFieldValue(r, propertyColumn({ ...def, type: 'multiSelect' }))).toEqual({
       kind: 'multiSelect',
       value: ['opt_open'],
     })
@@ -320,8 +335,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
     expect(
       resolveFieldValue(
         rowOf({ prop_link: '[Docs](https://example.com)' }),
-        'prop_link',
-        typedSchema,
+        propertyColumn(typedSchema[0]),
       ),
     ).toEqual({
       kind: 'link',
@@ -331,7 +345,10 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
 
   it('a link column reads a bare URL as link', () => {
     expect(
-      resolveFieldValue(rowOf({ prop_link: 'https://example.com' }), 'prop_link', typedSchema),
+      resolveFieldValue(
+        rowOf({ prop_link: 'https://example.com' }),
+        propertyColumn(typedSchema[0]),
+      ),
     ).toEqual({
       kind: 'link',
       value: 'https://example.com',
@@ -340,7 +357,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
 
   it('a select column keeps a link-shaped value as select — never stolen to link', () => {
     expect(
-      resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), 'prop_tag', typedSchema),
+      resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), propertyColumn(typedSchema[1])),
     ).toEqual({
       kind: 'select',
       value: 'opt_%5BURGENT%5D(tel%3A911)',
@@ -348,10 +365,12 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
   })
 
   it('a plain select option is untouched', () => {
-    expect(resolveFieldValue(rowOf({ prop_tag: 'opt_a' }), 'prop_tag', typedSchema)).toEqual({
-      kind: 'select',
-      value: 'opt_opt_a',
-    })
+    expect(resolveFieldValue(rowOf({ prop_tag: 'opt_a' }), propertyColumn(typedSchema[1]))).toEqual(
+      {
+        kind: 'select',
+        value: 'opt_opt_a',
+      },
+    )
   })
 })
 

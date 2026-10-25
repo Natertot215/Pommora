@@ -1,12 +1,7 @@
 import { useMemo } from 'react'
 import type { Result } from '../../Contract/result'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import {
-  groupable,
-  type PropertyDefinition,
-  type PropertyType,
-  type SelectOption,
-} from '../../Properties/properties'
+import { groupable, type PropertyDefinition, type SelectOption } from '../../Properties/properties'
 import { findOption } from '../../Properties/propertyValue'
 import {
   bandKey,
@@ -25,7 +20,7 @@ import {
   type ViewPatch,
   viewOption,
 } from '../views'
-import type { ResolvedGroup } from '../viewRow'
+import type { ResolvedColumn, ResolvedGroup } from '../viewRow'
 import {
   DisclosureRow,
   FootingItem,
@@ -49,6 +44,7 @@ import {
   bucketOrder,
   flattenContainer,
   type GroupPlan,
+  type Grouping,
   groupPlan,
   liveBucketOrder,
   orderedChildren,
@@ -107,8 +103,8 @@ const SEPARATION: PickerOption<'dash' | 'slash'>[] = [
   { value: 'slash', label: 'Slash' },
 ]
 
-const orderOptionsFor = (type: PropertyType | undefined): PickerOption<GroupOrderMode>[] =>
-  type === 'dateTime' ? DATE_ORDER : OPTION_ORDER
+const orderOptionsFor = (byDate: boolean): PickerOption<GroupOrderMode>[] =>
+  byDate ? DATE_ORDER : OPTION_ORDER
 
 const pickOrder = <C extends SubGroupConfig>(
   config: C,
@@ -156,12 +152,14 @@ export function GroupFrame({
 
   const group = view.group ?? { kind: 'structural' as const }
   const nests = VIEW_KINDS[view.type].nests
-  const plan = groupPlan(view, schema, nests)
+  const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const propertyOptions = schemaTargets(schema, (d) => groupable(d.type)).map(targetOption)
-  const activeDef =
-    plan.kind === 'property' ? schema.find((d) => d.id === plan.group.property_id) : undefined
-  const subGroup = plan.kind === 'sets' ? plan.sub : undefined
-  const subDef = subGroup && schema.find((d) => d.id === subGroup.property_id)
+  const activeDef = plan.kind === 'property' ? plan.group.column.def : undefined
+  const sub = plan.kind === 'sets' ? plan.sub : undefined
+  const subGroup = sub?.config
+  const subDef = sub?.column.def
+  const topByDate = activeDef?.type === 'dateTime'
+  const subByDate = subDef?.type === 'dateTime'
   const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'dateTime')?.id
 
   const pickGroupBy = (id: string): void => {
@@ -178,7 +176,11 @@ export function GroupFrame({
   }
 
   const groupByValue =
-    plan.kind === 'none' ? 'none' : plan.kind === 'property' ? plan.group.property_id : 'location'
+    plan.kind === 'none'
+      ? 'none'
+      : plan.kind === 'property'
+        ? plan.group.config.property_id
+        : 'location'
   const groupByOptions: PickerOption<string>[] = [
     ...(nests ? [] : [{ value: 'none', label: 'None', icon: 'circle-off' as const }]),
     { value: 'location', label: 'Location', icon: 'folder' as const },
@@ -239,7 +241,7 @@ export function GroupFrame({
       <MenuRowView
         row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupBy)}
       />
-      {group.kind === 'property' && activeDef?.type === 'dateTime' && (
+      {group.kind === 'property' && topByDate && (
         <MenuRowView
           row={pickerRow('calendar', 'Date By', granularityOf(group), GRANULARITY, (g) =>
             saveGroup({ ...group, date_granularity: g }),
@@ -251,9 +253,9 @@ export function GroupFrame({
           row={pickerRow(
             'arrow-up-down',
             'Order',
-            plan.group.order_mode,
-            orderOptionsFor(activeDef?.type),
-            (m) => saveGroup(pickOrder(plan.group, activeDef, m)),
+            plan.group.config.order_mode,
+            orderOptionsFor(topByDate),
+            (m) => saveGroup(pickOrder(plan.group.config, activeDef, m)),
           )}
         />
       ) : plan.kind === 'sets' ? (
@@ -284,7 +286,7 @@ export function GroupFrame({
                 ),
             )}
           />
-          {subGroup && subDef?.type === 'dateTime' && (
+          {subGroup && subByDate && (
             <MenuRowView
               row={pickerRow('calendar', 'Date By', granularityOf(subGroup), GRANULARITY, (g) =>
                 saveSub({ ...subGroup, date_granularity: g }),
@@ -297,7 +299,7 @@ export function GroupFrame({
                 'arrow-up-down',
                 'Order',
                 subGroup.order_mode,
-                orderOptionsFor(subDef?.type),
+                orderOptionsFor(subByDate),
                 (m) => saveSub(pickOrder(subGroup, subDef, m)),
                 SUB_LOOK,
               )}
@@ -309,26 +311,26 @@ export function GroupFrame({
       <div
         className={cx(
           middleRegion,
-          plan.kind === 'property' && activeDef?.type !== 'dateTime' && chipRegion,
+          plan.kind === 'property' && !topByDate && chipRegion,
           'scroll-fade',
         )}
       >
         {plan.kind === 'property' ? (
-          activeDef?.type === 'dateTime' ? (
+          topByDate ? (
             <DateBucketList
               source={source}
               view={view}
-              group={plan.group}
-              def={activeDef}
+              group={plan.group.config}
+              column={plan.group.column}
               schema={schema}
-              {...bucketControls('group', plan.group.property_id)}
+              {...bucketControls('group', plan.group.config.property_id)}
             />
           ) : (
             <OptionOrderList
-              group={plan.group}
+              group={plan.group.config}
               def={activeDef}
-              onSave={(order) => saveGroup({ ...plan.group, order_mode: 'manual', order })}
-              {...bucketControls('group', plan.group.property_id)}
+              onSave={(order) => saveGroup({ ...plan.group.config, order_mode: 'manual', order })}
+              {...bucketControls('group', plan.group.config.property_id)}
             />
           )
         ) : (
@@ -337,8 +339,7 @@ export function GroupFrame({
             view={view}
             plan={plan}
             schema={schema}
-            sub={subGroup}
-            subDef={subDef}
+            sub={sub}
             persist={(patch) => saveView(view, patch)}
             {...setControls}
             subControls={subDef ? bucketControls('sub', subDef.id) : {}}
@@ -355,7 +356,6 @@ function LocationHierarchy({
   plan,
   schema,
   sub,
-  subDef,
   persist,
   isHidden,
   onToggleHidden,
@@ -365,18 +365,18 @@ function LocationHierarchy({
   view: SavedView
   plan: GroupPlan
   schema: PropertyDefinition[]
-  sub: SubGroupConfig | undefined
-  subDef: PropertyDefinition | undefined
+  sub: Grouping | undefined
   persist: (patch: ViewPatch) => Promise<Result<unknown>>
   subControls: HideControls
 } & HideControls): React.JSX.Element {
   const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
   const { painted, sets, heads } = useBandHeads(source, sub, schema, view)
+  const subDef = sub?.column.def
 
   const subChips = useMemo(() => {
     if (!sub || !subDef) return []
-    return liveBucketOrder(sub, subDef, []).flatMap((v) => {
+    return liveBucketOrder(sub.config, subDef, []).flatMap((v) => {
       const o = findOption(subDef, v)
       return o ? [o] : []
     })
@@ -408,7 +408,7 @@ function LocationHierarchy({
     [sets, expanded],
   )
 
-  const base = { view, plan, schema, sets, sourcePath: painted.path }
+  const base = { view, plan, sets, sourcePath: painted.path }
   const routing = bandRouting(model, base, (dragged) =>
     dropIO(nodeLabel(model.byKey.get(dragged.key)), persist),
   )
@@ -499,7 +499,7 @@ function DateBucketList({
   source,
   view,
   group,
-  def,
+  column,
   schema,
   isHidden,
   onToggleHidden,
@@ -507,7 +507,7 @@ function DateBucketList({
   source: CollectionNode | SetNode
   view: SavedView
   group: PropertyGroup
-  def: PropertyDefinition | undefined
+  column: ResolvedColumn
   schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
   const { values } = useContainerValues(source.path)
@@ -517,12 +517,12 @@ function DateBucketList({
   const present = useMemo(() => {
     const set = new Set<string>()
     for (const row of flattenContainer(source, values, {}).rows) {
-      const key = bucketKey(row, group.property_id, schema, granularity)
+      const key = bucketKey(row, column, granularity)
       if (key) set.add(key)
     }
     for (const b of hiddenBuckets(view.hidden_groups ?? [], 'group', group.property_id)) set.add(b)
     return set
-  }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
+  }, [source, values, group.property_id, column, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
   const labelOf = dateLabeller(
@@ -532,7 +532,7 @@ function DateBucketList({
   )
   return (
     <>
-      {bucketOrder(group, def, present).map((key) => {
+      {bucketOrder(group, column.def, present).map((key) => {
         const label = labelOf(key)
         return (
           <div key={key} className={cx(optionRow, isHidden?.(key) && hiddenRow)}>

@@ -1,5 +1,4 @@
 import type { Result } from '../../Contract/result'
-import type { PropertyDefinition } from '../../Properties/properties'
 import type { SavedView, ViewPatch } from '../views'
 import { nextOrder, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
@@ -27,7 +26,6 @@ export type BandDrop =
 export interface BandScope {
   view: SavedView
   plan: GroupPlan
-  schema: PropertyDefinition[]
   sets: SetIndex
   sourcePath: string
   valueAt: (key: string | null) => string | null
@@ -108,11 +106,11 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
 }
 
 function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): BandEffect | null {
-  const config = bucketGroupingOf(scope.plan)
-  if (drop.kind === 'into' || !config) return null
+  const grouping = bucketGroupingOf(scope.plan)
+  if (drop.kind === 'into' || !grouping) return null
+  const { config, column } = grouping
   const top = scope.plan.kind === 'property'
-  const def = scope.schema.find((d) => d.id === config.property_id)
-  const current = liveBucketOrder(config, def, scope.shown)
+  const current = liveBucketOrder(config, column.def, scope.shown)
   const before = scope.valueAt(drop.beforeKey)
   const order = nextOrder(current, dragged.value, before)
   if (sameItems(order, current)) return null

@@ -581,6 +581,7 @@ describe('applyFilter — negation + registry', () => {
         { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'opt_zzz' }] },
         schema,
         [{ id: 'set_a', title: 'A' }],
+        [],
       ).map((r) => r.id)
     expect(any({ property_id: 'prop_done', op: 'is_not_empty' })).toEqual(['r1', 'r2'])
     expect(any({ property_id: '_location', op: 'contains', value: 'set_a' })).toEqual([])
@@ -603,7 +604,7 @@ describe('applyFilter — location presence', () => {
   // parentSetId isn't part of the shared row() helper — it's set by the container walk, not frontmatter.
   const rows: ViewRow[] = [row('root'), { ...row('filed'), parentSetId: 'set_a' }]
   const ids2 = (f: FilterGroup): string[] =>
-    applyFilter(rows, f, [], [{ id: 'set_a', title: 'A' }]).map((r) => r.id)
+    applyFilter(rows, f, [], [{ id: 'set_a', title: 'A' }], []).map((r) => r.id)
 
   it('Is over several Sets keeps rows parented by ANY of them', () => {
     const many: ViewRow[] = [
@@ -621,6 +622,7 @@ describe('applyFilter — location presence', () => {
           { id: 'set_b', title: 'B' },
           { id: 'set_c', title: 'C' },
         ],
+        [],
       ).map((r) => r.id)
     expect(run('is')).toEqual(['a', 'b'])
     expect(run('is_not')).toEqual(['c'])
@@ -636,6 +638,7 @@ describe('applyFilter — location presence', () => {
         { match: 'all', rules: [{ property_id: '_location', op, value: 'set_a' }] },
         [],
         tree,
+        [],
       ).map((r) => r.id)
     expect(run('is')).toEqual([])
     expect(run('is_inside')).toEqual(['deep'])
@@ -853,6 +856,7 @@ describe('applyFilter — title, context membership, location', () => {
       { match: 'all', rules: [{ property_id: '_location', op, value }] },
       schema,
       tree,
+      [],
     ).map((r) => r.id)
 
   it('title filters as text (Starts With / Contains, case-insensitive)', () => {
@@ -898,6 +902,7 @@ describe('applyFilter — location by folder name', () => {
       { match: 'all', rules: [{ property_id: '_location', op, values }] },
       schema,
       tree,
+      [],
     ).map((r) => r.id)
 
   it('Contains matches a folder by whole name, case-insensitive, at any depth', () => {

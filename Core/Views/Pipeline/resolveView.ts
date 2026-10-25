@@ -26,9 +26,9 @@ export function resolveView(input: {
   plan: GroupPlan
   manualOrder?: string[]
   /** Registry Context ids (display order) — context columns + their filter typing. */
-  contextIds?: readonly string[]
+  contextIds: readonly string[]
 }): { columns: ResolvedColumn[]; groups: ResolvedGroup[] } {
-  const { rows, setTree, view, schema, plan, manualOrder, contextIds = [] } = input
+  const { rows, setTree, view, schema, plan, manualOrder, contextIds } = input
   const columns = resolveColumns(view, schema, contextIds)
   // Parked filters keep their rules and their mode; only application stops.
   const filtered = applyFilter(
@@ -38,12 +38,11 @@ export function resolveView(input: {
     setTree,
     contextIds,
   )
-  const sorter = makeSorter(view.sort, schema, manualOrder)
+  const sorter = makeSorter(view.sort, schema, contextIds, manualOrder)
   const hidden = new Set(view.hidden_groups ?? [])
   let resolved = resolveGroups(
     filtered,
     plan,
-    schema,
     plan.kind === 'sets' && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
     sorter,
     viewOption(view, 'ungrouped_placement'),

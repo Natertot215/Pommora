@@ -14,6 +14,8 @@ import { mountEachTest } from '../../Testing/viewHarness'
 import { BandGlyph, bandSpec, GroupBand } from './GroupBand'
 import { bandModelOf, headContextOf } from './bandModel'
 import { setIndexOf } from '../Pipeline/setIndex'
+import type { Grouping } from '../Pipeline/group'
+import { propertyColumn } from '../Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
   {
@@ -59,17 +61,15 @@ const view = {
   property_order: [],
   hidden_properties: [],
 } as unknown as SavedView
-const grouping = (property_id: string, extra: Partial<SubGroupConfig> = {}): SubGroupConfig => ({
-  property_id,
-  order_mode: 'configured',
-  ...extra,
+const grouping = (property_id: string, extra: Partial<SubGroupConfig> = {}): Grouping => ({
+  config: { property_id, order_mode: 'configured', ...extra },
+  column: propertyColumn(schema.find((d) => d.id === property_id)!),
 })
-const heads = (sub?: SubGroupConfig, date_format: ColumnStyle['date_format'] = 'full') =>
+const heads = (sub?: Grouping, date_format: ColumnStyle['date_format'] = 'full') =>
   headContextOf(
     source,
     setIndexOf(source),
     sub,
-    schema,
     view,
     () => ({ date_format }) as ColumnStyle,
     false,

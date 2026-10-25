@@ -10,7 +10,8 @@ import { relDirname, relJoin } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveColumn } from '../Pipeline/columns'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer } from '../Pipeline/group'
 import { placeAt, placementSlot, tieOrderWith } from '../creationOrder'
@@ -216,9 +217,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       if (v !== null) seeds[c.groupPropId] = v
     }
     for (const criterion of c.view.sort ?? []) {
-      const spec = specOf(declaredType(criterion.property_id, c.schema))
-      if (spec?.origin !== 'user' || !SEEDS_FROM_SORT[spec.kind]) continue
-      const v = resolveFieldValue(row, criterion.property_id, c.schema)
+      const column = resolveColumn(criterion.property_id, c.schema, c.contextIds)
+      const spec = specOf(column?.type)
+      if (!column || spec?.origin !== 'user' || !SEEDS_FROM_SORT[spec.kind]) continue
+      const v = resolveFieldValue(row, column)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }
     const siblings = pageIdsIn(useSession.getState().tree!, parentPath)

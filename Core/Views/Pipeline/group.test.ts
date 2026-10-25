@@ -26,6 +26,7 @@ import {
   setOrderOf,
 } from './group'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
+import { propertyColumn } from './columns'
 
 const page = (id: string): PageNode => ({ kind: 'page', id, title: id, path: `${id}.md` })
 const set = (id: string, pages: PageNode[] = [], sets: SetNode[] = []): SetNode => ({
@@ -61,14 +62,7 @@ const resolveGroups = (
     sub_group: sub,
     ...(locationFlatten ? { sort: [{ property_id: LOCATION_SORT, direction: 'asc' }] } : {}),
   } as SavedView
-  return resolveGroupsOf(
-    rows,
-    groupPlan(view, schema, !flatten),
-    schema,
-    setTree,
-    sorter,
-    placement,
-  )
+  return resolveGroupsOf(rows, groupPlan(view, schema, !flatten), setTree, sorter, placement)
 }
 const keys = (groups: { key: string }[]): string[] => groups.map((g) => g.key)
 const itemIds = (g: { items: ViewRow[] }): string[] => g.items.map((r) => r.id)
@@ -621,8 +615,8 @@ describe('property grouping — configured / reversed / date', () => {
     const groups = resolveGroups(rows, group, cbSchema, setTree, null, 'bottom')
     expect(groups.map((g) => g.kind)).toEqual(['set', 'tail'])
     const byId = (id: string) => rows.find((r) => r.id === id) as ViewRow
-    expect(bucketKey(byId('p1'), 'prop_done', cbSchema, 'day')).toBe('true')
-    expect(bucketKey(byId('p2'), 'prop_done', cbSchema, 'day')).toBeNull()
+    expect(bucketKey(byId('p1'), propertyColumn(cbSchema[0]), 'day')).toBe('true')
+    expect(bucketKey(byId('p2'), propertyColumn(cbSchema[0]), 'day')).toBeNull()
   })
 
   it('a text value never buckets', () => {
@@ -633,7 +627,7 @@ describe('property grouping — configured / reversed / date', () => {
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_notes: 'a note' }, textSchema) },
     })
     const { rows } = flattenContainer(collection([], [page('p1')]), values, {})
-    expect(bucketKey(rows[0], 'prop_notes', textSchema, 'day')).toBeNull()
+    expect(bucketKey(rows[0], propertyColumn(textSchema[0]), 'day')).toBeNull()
   })
 
   it('buckets dates by granularity (same month together)', () => {
@@ -768,6 +762,26 @@ describe('dateBucketKey', () => {
   })
 })
 
+describe('groupPlan', () => {
+  it("carries the grouping's column", () => {
+    const status = groupPlan(
+      {
+        group: { kind: 'property', property_id: 'prop_status', order_mode: 'configured' },
+      } as SavedView,
+      statusSchema,
+      true,
+    )
+    expect(status.kind === 'property' && status.group.column.def).toBe(statusSchema[0])
+    const numSchema: PropertyDefinition[] = [{ id: 'prop_n', label: 'N', key: 'N', type: 'number' }]
+    const byNumber = groupPlan(
+      { group: { kind: 'property', property_id: 'prop_n', order_mode: 'configured' } } as SavedView,
+      numSchema,
+      true,
+    )
+    expect(byNumber).toMatchObject({ kind: 'sets', sub: undefined })
+  })
+})
+
 describe('bucketGroupingOf', () => {
   const schema: PropertyDefinition[] = [
     { id: 'prop_s', label: 'S', key: 'S', type: 'status' },
@@ -783,9 +797,11 @@ describe('bucketGroupingOf', () => {
       property_id: 'prop_gone',
       order_mode: 'configured',
     } as const
-    expect(bucketGroupingOf(plan({ group: drawn, sub_group: sub }))).toBe(drawn)
-    expect(bucketGroupingOf(plan({ group: degraded, sub_group: sub }))).toBe(sub)
-    expect(bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: sub }))).toBe(sub)
+    expect(bucketGroupingOf(plan({ group: drawn, sub_group: sub }))?.config).toBe(drawn)
+    expect(bucketGroupingOf(plan({ group: degraded, sub_group: sub }))?.config).toBe(sub)
+    expect(bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: sub }))?.config).toBe(
+      sub,
+    )
     expect(bucketGroupingOf(plan({ group: { kind: 'flat' }, sub_group: sub }))).toBeUndefined()
     const gone = { property_id: 'prop_gone', order_mode: 'configured' } as const
     expect(
@@ -795,10 +811,10 @@ describe('bucketGroupingOf', () => {
 
   it('reads a Date grouping and a Date sub-grouping stored manual as configured', () => {
     const group = { kind: 'property', property_id: 'prop_d', order_mode: 'manual' } as const
-    expect(bucketGroupingOf(plan({ group }))).toMatchObject({ order_mode: 'configured' })
+    expect(bucketGroupingOf(plan({ group }))?.config).toMatchObject({ order_mode: 'configured' })
     const dateSub = { property_id: 'prop_d', order_mode: 'manual' } as const
     expect(
-      bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: dateSub })),
+      bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: dateSub }))?.config,
     ).toMatchObject({ order_mode: 'configured' })
   })
 })

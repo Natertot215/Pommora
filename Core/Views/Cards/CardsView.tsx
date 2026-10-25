@@ -212,7 +212,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const row = rowById.get(valuePicker.rowId)
     if (!row) return setValuePicker(null)
     if (valuePicker.revealOnCommit) return
-    const cur = resolveFieldValue(row, valuePicker.column.id, ctx.schema)
+    const cur = resolveFieldValue(row, valuePicker.column)
     const draws = specOf(valuePicker.column.type)?.blankDraws
     if (isCompact(view) && isBlankValue(cur) && !draws) setValuePicker(null)
   }, [valuePicker, rowById, ctx, view])
@@ -784,10 +784,7 @@ const CardFace = memo(function CardFace({
   onZoneClick?: (e: React.MouseEvent) => void
   api: ValueApi
 }): React.JSX.Element {
-  const shown = useMemo(
-    () => shownColumnsFor(row, columns, ctx, isCompact(view)),
-    [ctx, columns, row, view],
-  )
+  const shown = useMemo(() => shownColumnsFor(row, columns, isCompact(view)), [columns, row, view])
   const titleIcon = !viewOption(view, 'hide_page_icons') && (
     <Icon name={iconName} className="card-title-icon" />
   )

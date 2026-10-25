@@ -14,7 +14,7 @@ import { useSaveView } from '../viewWrite'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
-import { declaredType, resolveFieldValue } from '../../Properties/fieldValue'
+import { resolveFieldValue } from '../../Properties/fieldValue'
 import { buildValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf } from '../Bands/bandModel'
@@ -63,20 +63,23 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
 
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 
+  const contextIds = contextIdsOf(tree)
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
-  const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
+  const sortKeys = useMemo(
+    () => resolvedSortCount(view.sort, schema, contextIds),
+    [view.sort, schema, contextIds],
+  )
   const pageOrder = pageOrderOf(plan, view, sortKeys)
-  const bucketGroup = bucketGroupingOf(plan)
-  const groupPropId = bucketGroup?.property_id
-  const { painted, sets, nexus, heads } = useBandHeads(source, bucketGroup, schema, view)
-  const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
+  const grouping = bucketGroupingOf(plan)
+  const groupPropId = grouping?.config.property_id
+  const { painted, sets, nexus, heads } = useBandHeads(source, grouping, schema, view)
+  const groupPropType = grouping?.column.type
   const canReassign = reassignable(groupPropType)
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined
   const manualOrder = pageOrder === 'location' ? undefined : view.manual_order
   const dragDisabled = searching || sortKeys >= 2
   const crossBand = !dragDisabled && (canReassign || canRelocate)
 
-  const contextIds = contextIdsOf(tree)
   const pageMetadata = tree?.config.pageMetadata
   const {
     columns,
@@ -111,13 +114,11 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const sortReassign = useMemo(() => {
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
     for (const c of view.sort ?? []) {
-      const type = declaredType(c.property_id, schema)
-      if (!reassignable(type)) continue
-      if (columns.some((col) => col.id === c.property_id))
-        return { propertyId: c.property_id, type }
+      const column = columns.find((col) => col.id === c.property_id)
+      if (column && reassignable(column.type)) return column
     }
     return undefined
-  }, [groupPropId, sortKeys, view.sort, schema, columns])
+  }, [groupPropId, sortKeys, view.sort, columns])
 
   const identity = tree && identityOf(tree)
   const ctx = useMemo(
@@ -172,7 +173,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const writer = useRef<ValueWriter | null>(null)
   useEffect(() => {
     writer.current = {
-      schema,
       mutate,
       rowOf: (id) => rows.find((r) => r.id === id),
       apply: (id, picked, write) => patchOverride(setValueOverride, id, picked, write),
@@ -199,20 +199,19 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     if (!sortReassign) return
     const keyOf = (id: string): string => {
       const row = rowById.get(id)
-      return (row ? bucketKey(row, sortReassign.propertyId, schema, 'day') : null) ?? UNGROUPED
+      return (row ? bucketKey(row, sortReassign, 'day') : null) ?? UNGROUPED
     }
     const band = orderIds.filter((id) => rowBand.get(id) === bandKey)
     const target = reassignTarget(band, activeId, keyOf)
     if (target === undefined) return
-    commitGroupValue(activeId, sortReassign.propertyId, target)
+    commitGroupValue(activeId, sortReassign.id, target)
   }
   const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, view, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
-    const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
-    const current = resolveFieldValue(row, column.id, schema)
+    const def = column.def ?? syntheticContextDef(column.id)
+    const current = resolveFieldValue(row, column)
     const style = styleOf(column.id)
-    const type = declaredType(column.id, schema, contextIds)
-    const spec = specOf(type)
+    const spec = specOf(column.type)
     if (spec?.kind === 'dateTime' && spec.origin === 'user')
       return {
         kind: 'dateTime',
@@ -221,7 +220,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
         dateFormat: style.date_format,
         timeFormat: style.time_format,
       }
-    if (type === 'file') return { kind: 'file', def, current }
+    if (column.type === 'file') return { kind: 'file', def, current }
     return {
       kind: 'options',
       def,

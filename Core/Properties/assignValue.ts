@@ -1,6 +1,5 @@
 import type { RefObject } from 'react'
 import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
-import type { PropertyDefinition } from './properties'
 import { isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
@@ -10,21 +9,19 @@ import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 
 export interface ValueWriter {
-  schema: PropertyDefinition[]
   mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
   rowOf: (id: string) => ViewRow | undefined
   apply: (pageId: string, picked: Picked, write: Promise<boolean>) => void
 }
 
-/** Sends `req` with `value` laid over the row while it's in flight; undefined for a property the writer's schema lacks. */
+/** Sends `req` with `value` laid over the row while it's in flight. */
 function send(
   w: ValueWriter,
   row: ViewRow,
   column: ResolvedColumn,
   value: PropertyValue | null,
   req: MutateRequest,
-): Promise<MutateOutcome | null> | undefined {
-  if (column.kind !== 'context' && !w.schema.some((d) => d.id === column.id)) return undefined
+): Promise<MutateOutcome | null> {
   const sent = w.mutate(req)
   w.apply(
     row.id,
@@ -70,10 +67,9 @@ export function assignValue(
   const w = writer.current
   if (!w) return undefined
   const target = w.rowOf(row.id) ?? row
-  const resolved = resolveFieldValue(target, column.id, w.schema)
+  const resolved = resolveFieldValue(target, column)
   const prior = isBlankValue(resolved) ? null : resolved
   const sent = send(w, target, column, value, valueRequest(target, column, value))
-  if (!sent) return sent
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
   const undone = sent.then(async (done) => {
     const remember = done && rememberedAlias(value, prior)
@@ -94,8 +90,8 @@ export function assignValue(
         const entries = req.entries.map((e) =>
           e.file === target.path ? { ...e, file: current.path } : e,
         )
-        reverted =
-          send(live, current, column, prior, { op: 'putBack', entries }) !== undefined || reverted
+        void send(live, current, column, prior, { op: 'putBack', entries })
+        reverted = true
       } else if (reverted) void live.mutate(req)
     return reverted
   }

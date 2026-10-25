@@ -89,20 +89,20 @@ describe('shownColumnsFor', () => {
     select_options: [{ id: 'opt_Done', key: 'Done', label: 'Done' }],
   } as PropertyDefinition
   const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
-  const ctx = { schema: [sel, chk], contextsById: new Map() } as unknown as ValueContext
   const columns: ResolvedColumn[] = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
   const row = (fm: Record<string, unknown>): ViewRow =>
     ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
 
   it('Standard keeps blank columns as fillable rows; the title column never shows', () => {
-    expect(shownColumnsFor(row({}), columns, ctx, false).map((c) => c.id)).toEqual(['sel', 'chk'])
+    expect(shownColumnsFor(row({}), columns, false).map((c) => c.id)).toEqual(['sel', 'chk'])
   })
 
   it('Compact drops blank values except checkbox and keeps filled ones', () => {
-    expect(shownColumnsFor(row({}), columns, ctx, true).map((c) => c.id)).toEqual(['chk'])
-    expect(
-      shownColumnsFor(row({ [sel.key]: 'Done' }), columns, ctx, true).map((c) => c.id),
-    ).toEqual(['sel', 'chk'])
+    expect(shownColumnsFor(row({}), columns, true).map((c) => c.id)).toEqual(['chk'])
+    expect(shownColumnsFor(row({ [sel.key]: 'Done' }), columns, true).map((c) => c.id)).toEqual([
+      'sel',
+      'chk',
+    ])
   })
 })
 

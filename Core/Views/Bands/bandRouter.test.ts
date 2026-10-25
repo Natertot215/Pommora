@@ -61,7 +61,6 @@ const LOCATION = view({ structural_order_mode: 'location' })
 const scope = ({ view: v = LOCATION, ...patch }: Partial<BandScope> = {}): BandScope => ({
   view: v,
   plan: groupPlan(v, [statusDef], true),
-  schema: [statusDef],
   sets: setIndexOf(source),
   sourcePath: 'Col',
   valueAt: (key) => key?.split('/').at(-1) ?? null,

@@ -42,7 +42,7 @@ export function Cell({
   /** Opens the value's pane from its pen, anchored at the pen's host; absent, no pen is drawn. */
   onPane?: (anchor: HTMLElement) => void
 }): React.JSX.Element | null {
-  const v = resolveFieldValue(row, column.id, ctx.schema)
+  const v = resolveFieldValue(row, column)
   const { def } = column
   const dt = def?.type
   const holder = holderOf(row, ctx)
