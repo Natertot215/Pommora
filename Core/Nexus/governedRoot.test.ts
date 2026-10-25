@@ -90,15 +90,14 @@ const world: GovernedWorld = {
 describe('reconcileGovernedRoot — the context arm', () => {
   it('a live reconcile leaves a list naming an unknown Space, or holding a wikilink, as written', () => {
     const input = { '<Projects>': ['pommora', 'Pomora', 'CS 161'] }
-    const { root, changed } = reconcileGovernedRoot(input, world)
+    const root = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
-    expect(changed).toEqual([])
     const linked = { '<Projects>': ['pommora', [['Pommora']]] }
-    expect(reconcileGovernedRoot(linked, world).root).toEqual(linked)
+    expect(reconcileGovernedRoot(linked, world)).toEqual(linked)
   })
 
   it('keeps a scalar-typed member as the file spells it', () => {
-    const { root } = reconcileGovernedRoot({ '<Classes>': [2024, true] }, world)
+    const root = reconcileGovernedRoot({ '<Classes>': [2024, true] }, world)
     expect(root['<Classes>']).toEqual([2024, true])
   })
 
@@ -107,20 +106,18 @@ describe('reconcileGovernedRoot — the context arm', () => {
 
   it('a live reconcile removes an empty list and a bare key, and keeps a key naming only an unknown Space as written', () => {
     const r = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas })
-    expect(r.root).toEqual({ '<Projects>': ['Pomora'] })
-    expect(r.changed.sort()).toEqual(['<Areas>', '<Classes>'])
+    expect(r).toEqual({ '<Projects>': ['Pomora'] })
   })
 
   it('writes a Space named twice once', () => {
     expect(
-      reconcileGovernedRoot({ '<Projects>': ['Pommora', 'Pommora'] }, world).root['<Projects>'],
+      reconcileGovernedRoot({ '<Projects>': ['Pommora', 'Pommora'] }, world)['<Projects>'],
     ).toEqual(['Pommora'])
   })
 
   it('keeps a scalar Context value naming a Space as written, and reads it as a list of one, so a hand-typed tag resolves', () => {
-    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'Pommora' }, world)
+    const root = reconcileGovernedRoot({ '<Projects>': 'Pommora' }, world)
     expect(root['<Projects>']).toBe('Pommora')
-    expect(changed).toEqual([])
     expect(resolveContextKeys({ '<Projects>': 'Pommora' }, contexts).get('ctx_projects')).toEqual([
       'sp1',
     ])
@@ -128,98 +125,83 @@ describe('reconcileGovernedRoot — the context arm', () => {
 
   it('leaves unknown wrapped keys and foreign keys verbatim', () => {
     const input = { '<Nonexistent>': ['x'], title_note: 'keep', '<Projects>': ['Pommora'] }
-    const { root, changed } = reconcileGovernedRoot(input, world)
+    const root = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
-    expect(changed).toEqual([])
   })
 
   it('a world holding no Contexts skips the context arm while the property arm still runs', () => {
-    const { root, changed } = reconcileGovernedRoot(
+    const root = reconcileGovernedRoot(
       { '<Projects>': ['pommora'], Status: ['Active', 'Active'] },
       { ...world, contexts: contextWorldOf([]) },
     )
     expect(root['<Projects>']).toEqual(['pommora'])
     expect(root.Status).toEqual(['Active'])
-    expect(changed).toEqual(['Status'])
   })
 })
 
 describe('reconcileGovernedRoot — the property arm', () => {
   it('a free-typed key keeps a foreign shape as written', () => {
     for (const raw of [42, true, ['milk', 'eggs'], [['Page']]]) {
-      const { root, changed } = reconcileGovernedRoot({ Notes: raw }, world)
+      const root = reconcileGovernedRoot({ Notes: raw }, world)
       expect(root).toEqual({ Notes: raw })
-      expect(changed).toEqual([])
     }
   })
 
   it('re-encodes an assigned key as its definition reads it, keeping a scalar that spells its option', () => {
     const collapsed = reconcileGovernedRoot({ Status: ['Active', 'Active'] }, world)
-    expect(collapsed.root.Status).toEqual(['Active'])
-    expect(collapsed.changed).toEqual(['Status'])
+    expect(collapsed.Status).toEqual(['Active'])
     const kept = reconcileGovernedRoot({ Status: 'Active' }, world)
-    expect(kept.root.Status).toBe('Active')
-    expect(kept.changed).toEqual([])
+    expect(kept.Status).toBe('Active')
   })
 
   it('keeps a list that already reads canonically, unchanged', () => {
-    const { changed } = reconcileGovernedRoot({ Status: ['Active'] }, world)
-    expect(changed).toEqual([])
+    expect(reconcileGovernedRoot({ Status: ['Active'] }, world)).toEqual({ Status: ['Active'] })
   })
 
   it('keeps an assigned key whose value reads as nothing as written', () => {
-    const { root, changed } = reconcileGovernedRoot({ Status: ['Wip'] }, world)
+    const root = reconcileGovernedRoot({ Status: ['Wip'] }, world)
     expect(root).toEqual({ Status: ['Wip'] })
-    expect(changed).toEqual([])
   })
 
   it('a Multi-Select keeps an unregistered option', () => {
-    const { root, changed } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta'] }, world)
+    const root = reconcileGovernedRoot({ Tags: ['alpha', 'zeta'] }, world)
     expect(root.Tags).toEqual(['alpha', 'zeta'])
-    expect(changed).toEqual([])
   })
 
   it('a Select holding several words lands as the one option it shows, and one naming no option stays as written', () => {
     const several = reconcileGovernedRoot({ Stage: ['Open', 'Done'] }, world)
-    expect(several.root.Stage).toEqual(['Done'])
-    expect(several.changed).toEqual(['Stage'])
+    expect(several.Stage).toEqual(['Done'])
     const mixed = reconcileGovernedRoot({ Stage: ['Open', 'Zed'] }, world)
-    expect(mixed.root.Stage).toEqual(['Open'])
-    expect(mixed.changed).toEqual(['Stage'])
+    expect(mixed.Stage).toEqual(['Open'])
     const none = reconcileGovernedRoot({ Stage: ['Zed'] }, world)
-    expect(none.root.Stage).toEqual(['Zed'])
-    expect(none.changed).toEqual([])
+    expect(none.Stage).toEqual(['Zed'])
   })
 
   it('a Multi-Select holding a word no option names collapses its duplicates, keeping the word', () => {
-    const { root, changed } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta', 'alpha'] }, world)
+    const root = reconcileGovernedRoot({ Tags: ['alpha', 'zeta', 'alpha'] }, world)
     expect(root.Tags).toEqual(['alpha', 'zeta'])
-    expect(changed).toEqual(['Tags'])
   })
 
   it('a Multi-Select’s options move ahead of the words no option names, as its own pick writes them', () => {
-    const { root, changed } = reconcileGovernedRoot({ Tags: ['zeta', 'alpha'] }, world)
+    const root = reconcileGovernedRoot({ Tags: ['zeta', 'alpha'] }, world)
     expect(root.Tags).toEqual(['alpha', 'zeta'])
-    expect(changed).toEqual(['Tags'])
   })
 
   it('a spaces-only Text value reads as nothing, so a reconcile drops it', () => {
-    const { root, changed } = reconcileGovernedRoot({ Notes: '   ' }, world)
+    const root = reconcileGovernedRoot({ Notes: '   ' }, world)
     expect(root).toEqual({})
-    expect(changed).toEqual(['Notes'])
   })
 
   it('a registered key the Collection does not assign passes verbatim', () => {
-    const { root, changed } = reconcileGovernedRoot({ Priority: 5 }, world)
+    const root = reconcileGovernedRoot({ Priority: 5 }, world)
     expect(root.Priority).toBe(5)
-    expect(changed).toEqual([])
   })
 
   it('agrees with decodeValue on every fixture (the crossing)', () => {
     for (const raw of [['Active'], 'Active', ['Open', 'Active'], ['Active', 'Wip'], ['Wip'], ''])
-      expect(
-        decodeValue(statusDef, reconcileGovernedRoot({ Status: raw }, world).root.Status),
-      ).toEqual(decodeValue(statusDef, raw))
+      expect(decodeValue(statusDef, reconcileGovernedRoot({ Status: raw }, world).Status)).toEqual(
+        decodeValue(statusDef, raw),
+      )
   })
 })
 
@@ -240,7 +222,7 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
   const input = { Stage: ['done'], Done: 'Yes', Price: '$1,200.00' }
 
   it('keeps an option word in another casing as written, naming no option, beside the checkbox and number spellings', () => {
-    const { root } = reconcileGovernedRoot(input, spelled)
+    const root = reconcileGovernedRoot(input, spelled)
     expect(root).toEqual(input)
     expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'null' })
     expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
@@ -251,31 +233,27 @@ describe('reconcileGovernedRoot — option, checkbox, and number spellings (the 
 describe('reconcileGovernedRoot — another casing', () => {
   it('leaves another casing of a list key and of a Context key as written', () => {
     const input = { tags: ['a'], '<projects>': ['pommora'] }
-    const { root, changed } = reconcileGovernedRoot(input, world)
+    const root = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
-    expect(changed).toEqual([])
   })
 
   it("leaves a scalar key in another casing beside the property's own as written, as foreign", () => {
-    const { root, changed } = reconcileGovernedRoot({ Status: ['Open'], status: 'Done' }, world)
+    const root = reconcileGovernedRoot({ Status: ['Open'], status: 'Done' }, world)
     expect(root).toEqual({ Status: ['Open'], status: 'Done' })
-    expect(changed).toEqual([])
   })
 
   it('leaves a Context key naming an unknown Space wholly as written', () => {
     const input = { '<Projects>': ['pommora', 'Ghost'], '<projects>': ['CS 161'] }
-    const { root, changed } = reconcileGovernedRoot(input, world)
+    const root = reconcileGovernedRoot(input, world)
     expect(root).toEqual(input)
-    expect(changed).toEqual([])
   })
 })
 
 describe('reconcileGovernedRoot — skip', () => {
   it('passes the skipped key verbatim, and a key in another casing as foreign', () => {
     const input = { Status: 'Open', status: 'Done' }
-    const { root, changed } = reconcileGovernedRoot(input, world, 'Status')
+    const root = reconcileGovernedRoot(input, world, 'Status')
     expect(root).toEqual(input)
-    expect(changed).toEqual([])
   })
 })
 
@@ -672,7 +650,7 @@ describe('rewriteRootAt — spellings', () => {
     )
     expect(await readFile(page, 'utf8')).toBe(before)
     const held = splitFrontmatter(before)
-    expect(reconcileGovernedRoot(held, world)).toEqual({ root: held, changed: [] })
+    expect(reconcileGovernedRoot(held, world)).toEqual(held)
   })
 
   it('a Multi-Select write keeps the words no option names after the picked ones, and a clear drops the key', async () => {

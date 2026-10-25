@@ -20,7 +20,7 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
       const schema = containerSchema(tree, relative(root, file))
       const world = worlds.get(schema) ?? governedWorld(tree, schema)
       worlds.set(schema, world)
-      return live() ? reconcileGovernedRoot(fm, world).root : null
+      return live() ? reconcileGovernedRoot(fm, world) : null
     }
     await sweepGovernedRoots(
       reread.rels.map((rel) => join(root, rel)),

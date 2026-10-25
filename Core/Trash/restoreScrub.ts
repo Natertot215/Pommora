@@ -11,6 +11,7 @@ import { keyRefusal } from '../Properties/validation'
 import { scalarMembers } from '../Contract/validators'
 import type { Json } from '../Files/stableJson'
 import {
+  changedKeys,
   type Frozen,
   gonePageEntry,
   governedWorld,
@@ -172,21 +173,21 @@ export async function scrubReturning(
     const r = reconcileGovernedRoot(raw, world)
     const gone = unlinked(raw)
     const goneKeys = Object.keys(gone)
-    const keys = [...new Set([...changed, ...r.changed, ...goneKeys])]
+    const keys = [...new Set([...changed, ...changedKeys(raw, r), ...goneKeys])]
     if (!keys.length) return content === held ? null : content
     const above = goneKeys.length ? sweepParse(content)?.above : undefined
     if (raw[ID_KEY] === undefined && goneKeys.length) unstamped.set(file, [gone, above])
     else note(gone, asString(raw[ID_KEY]), above)
-    const kept = stripKeys(r.root, goneKeys) ?? r.root
+    const kept = stripKeys(r, goneKeys) ?? r
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
   const json: Rewrite = (held) => {
     const raw = current.words(current.json(held)).root
     const r = reconcileGovernedRoot(raw, spaceWorld, inTransitKey)
-    const gone = unlinked(r.root)
+    const gone = unlinked(r)
     note(gone, asString(raw.id))
     return (
-      stripKeys(r.root, Object.keys(gone)) ?? (r.changed.length || raw !== held ? r.root : null)
+      stripKeys(r, Object.keys(gone)) ?? (changedKeys(raw, r).length || raw !== held ? r : null)
     )
   }
   const seen = new Map<string, [Json, Json]>()
