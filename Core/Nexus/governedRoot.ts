@@ -230,7 +230,7 @@ export async function putBackEntries(
   return missed
 }
 
-// A page's key is read inside its lock, as the write read it, so a key renamed since lands under its new name.
+// A page's key is read inside its lock, as the write read it, so a key renamed since lands under its new name; a pair that no longer serializes, such as an alias whose anchor an outside edit removed, is missed.
 async function landEntry(
   root: string,
   { file, fieldId, before, above }: PutBack,
@@ -250,6 +250,9 @@ async function landEntry(
   return machine().lock(at.value, async () => {
     const key = await keyNow(root, fieldId)
     if (key === undefined) return false
-    return (await rewriteRootAt(at.value, (page) => page.withPair(key, before, above))).ok
+    return rewriteRootAt(at.value, (page) => page.withPair(key, before, above)).then(
+      (r) => r.ok,
+      () => false,
+    )
   })
 }
