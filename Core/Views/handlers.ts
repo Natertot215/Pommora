@@ -1,6 +1,6 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
-import { isPlainObject, isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
+import { isPlainObject, isStringArray } from '../Contract/validators'
 import { coerceViewButton } from '../Nexus/schemas'
 import { type ContainerKind, isContainerKind } from '../Nexus/entities'
 import { resolveUnderRoot } from '../Paths/pathSafety'
@@ -54,7 +54,9 @@ export const viewsHandlers = {
 
   'container:configure': containerWrite(async (folder, kind, patch: unknown) => {
     const view_button = isPlainObject(patch) ? coerceViewButton(patch.view_button) : undefined
-    return view_button ? setContainerConfig(folder, kind, { view_button }) : NEEDS_CONFIG_PATCH
+    return view_button
+      ? setContainerConfig(folder, kind, { view_button })
+      : fault('A config patch is required.')
   }),
 
   'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {

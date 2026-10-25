@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { readFile, rm } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import type { HostContext } from '../Contract/handlers'
-import { NEEDS_CONFIG_PATCH } from '../Contract/validators'
+import { fault } from '../Contract/result'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -44,7 +44,7 @@ describe('container:configure', () => {
     [{}],
   ])('refuses %j and leaves the sidecar as it was', async (patch) => {
     const before = await readFile(sidecar, 'utf8')
-    expect(await configure(patch)).toEqual(NEEDS_CONFIG_PATCH)
+    expect(await configure(patch)).toEqual(fault('A config patch is required.'))
     expect(await readFile(sidecar, 'utf8')).toBe(before)
   })
 })
