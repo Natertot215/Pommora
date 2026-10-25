@@ -117,7 +117,7 @@ export function CardValue({
     }
     const chip = fileChipIndex(e.target)
     const menuCtx = cellMenuContextFor(t, style, !isBlankValue(v), {
-      hideable: true,
+      hideable: 'view',
       barCapable: numberBarCapable(def),
       onChip: chip !== null,
     })
