@@ -133,7 +133,7 @@ describe('addEntriesFor', () => {
       'checkbox',
     ] as const)
       expect(fillsBlank(t)).toBe(true)
-    for (const t of ['createdTime', 'lastEditedTime', 'title', undefined] as const)
+    for (const t of ['createdTime', 'lastEditedTime', 'title'] as const)
       expect(fillsBlank(t)).toBe(false)
   })
 })

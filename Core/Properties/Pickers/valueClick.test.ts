@@ -35,7 +35,6 @@ describe('valueClickIntent', () => {
     for (const t of ['createdTime', 'lastEditedTime'] as const)
       expect(valueClickIntent(t, { kind: 'dateTime', value: '2026-01-01' })).toBeNull()
     expect(valueClickIntent('title', { kind: 'null' })).toBeNull()
-    expect(valueClickIntent(undefined, { kind: 'null' })).toBeNull()
   })
 
   it('a number edits in place unless it draws as a bar', () => {

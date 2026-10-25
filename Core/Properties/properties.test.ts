@@ -275,7 +275,6 @@ describe('specOf and pickKindOf', () => {
       'file',
       'createdTime',
       'title',
-      undefined,
     ] as const)
       expect(pickKindOf(t)).toBeNull()
   })

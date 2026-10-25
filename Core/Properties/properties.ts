@@ -64,8 +64,8 @@ export const specOf = (t: ColumnType | undefined): TypeSpec | undefined =>
 
 export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
 
-export function pickKindOf(t: ColumnType | undefined): OptionPickKind | null {
-  const kind = specOf(t)?.kind
+export function pickKindOf(t: ColumnType): OptionPickKind | null {
+  const kind = PROPERTY_TYPES[t].kind
   switch (kind) {
     case 'select':
     case 'multiSelect':
@@ -77,7 +77,6 @@ export function pickKindOf(t: ColumnType | undefined): OptionPickKind | null {
     case 'link':
     case 'file':
     case 'text':
-    case undefined:
       return null
   }
 }
@@ -93,9 +92,7 @@ export const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
 /** A word a registry gives no label reads its key as its label. */
-export const labelled = <W extends { key: string; label?: string }>(
-  w: W,
-): W & { label: string } => ({
+const labelled = <W extends { key: string; label?: string }>(w: W): W & { label: string } => ({
   ...w,
   label: w.label ?? w.key,
 })
@@ -202,8 +199,6 @@ export const propertyConfig = propertyDefinitionFields.pick({
   file_directory: true,
 })
 export type PropertyConfig = z.infer<typeof propertyConfig>
-
-export type LinkConfig = Pick<PropertyConfig, 'link_underline' | 'link_display' | 'link_color'>
 
 export type NumberConfig = Pick<
   PropertyDefinition,
