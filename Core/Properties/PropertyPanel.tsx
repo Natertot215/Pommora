@@ -352,17 +352,20 @@ export function PropertyPanel({
   const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
   const panelTarget = ((): PickTarget | null => {
     if (!editing || !row || editing.mode !== 'picker') return null
-    const def =
-      editingDef ?? (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined)
-    if (!def) return null
+    const column = editingDef
+      ? propertyColumn(editingDef)
+      : isContextRow(editing.id)
+        ? contextColumn(editing.id)
+        : undefined
+    if (!column) return null
     const current = currentOf(editing.id)
-    if (def.type === 'dateTime') return { kind: 'dateTime', def, current }
+    if (column.type === 'dateTime') return { kind: 'dateTime', current }
     return {
       kind: 'options',
-      def,
+      column,
       current,
       contextOptions:
-        def.type === 'context' && tree
+        column.kind === 'context' && tree
           ? contextOptionsFor(editing.id, tree, isSpace ? subjectId : undefined)
           : undefined,
     }

@@ -484,15 +484,15 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         {interactions.iconPicker}
         {bannerEditor}
-        {popover && (
+        {popover?.column.def && (
           <PropertyValueInput
             key={`${popover.rowId}:${popover.column.id}:${popover.kind}`}
             popover={{ open: popoverOpen, triggerRef: pickerAnchorRef }}
-            def={popover.def}
+            def={popover.column.def}
             current={popover.current}
             holder={popoverRow ? holderOf(popoverRow, ctx) : undefined}
             connections={ctx.connections}
-            seat={popover.def.type === 'link' ? 'rename' : undefined}
+            seat={popover.column.def.type === 'link' ? 'rename' : undefined}
             onCommit={commitPicked}
             onClose={() => setValuePicker(null)}
           />

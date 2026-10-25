@@ -23,7 +23,6 @@ export function ValuePickPresenter(): React.JSX.Element | null {
         triggerRef={triggerRef}
         target={{
           kind: 'dateTime',
-          def,
           current,
           dateFormat: style?.date_format,
           timeFormat: style?.time_format,

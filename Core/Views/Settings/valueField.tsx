@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MenuCaption } from '@pommora/uix/Menus'
 import { sameItems } from '@pommora/uix/Utilities/same'
-import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
+import { toggleValue } from '../../Properties/Pickers/pickModel'
 
 export const emptyPicker = (label: string): React.JSX.Element => <MenuCaption>{label}</MenuCaption>
 
