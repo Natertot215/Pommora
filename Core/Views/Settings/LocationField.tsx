@@ -4,13 +4,19 @@ import { Icon } from '@pommora/uix/Symbols'
 import { TokenField } from '@pommora/uix/Fields/TokenField'
 import { foldKey, matches, matchKey, matchQuery } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { DisclosureRow, MenuScrollFrame, pickRuns, useDisclosureSet } from '@pommora/uix/Menus'
+import {
+  DisclosureRow,
+  MenuCaption,
+  MenuScrollFrame,
+  pickRuns,
+  useDisclosureSet,
+} from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { useKeepInView, usePaneCtl } from '@pommora/uix/Interactions/paneCtl'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import * as fp from './filter-frame.css'
-import { emptyPicker, useMultiValue } from './valueField'
+import { useMultiValue } from './useMultiValue'
 
 export type Folder = CollectionNode | SetNode
 
@@ -77,7 +83,7 @@ function LocationTree({
   }
   return (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-      {nodes.length === 0 ? emptyPicker('No Sets in this collection.') : renderLevel(nodes)}
+      {nodes.length ? renderLevel(nodes) : <MenuCaption>No Sets in this collection.</MenuCaption>}
     </MenuScrollFrame>
   )
 }

@@ -86,7 +86,7 @@ export function TextCell({
           <AccessoryButton
             icon="square-pen"
             size="body"
-            ariaLabel="Open in TextPane"
+            ariaLabel="Open In Editor"
             reveal
             onClick={() => {
               glanceHost.close()

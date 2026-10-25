@@ -9,7 +9,7 @@ import {
   fillsBlank,
   orderAddableEntries,
   shownColumnsFor,
-} from './cardValueInput'
+} from './cardColumns'
 import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
 import { contextColumn, propertyColumn, resolveColumn } from '../Pipeline/columns'
 

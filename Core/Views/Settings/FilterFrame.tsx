@@ -44,7 +44,7 @@ import { type DecodedFilter, decodeFilter, filterTargets, operatorsFor } from '.
 import type { OperatorChoice } from '../valueKinds'
 import * as fp from './filter-frame.css'
 import { flattenNodes, LocationField } from './LocationField'
-import { emptyPicker, useMultiValue } from './valueField'
+import { useMultiValue } from './useMultiValue'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
@@ -178,7 +178,7 @@ function ChipsField({
       </div>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
         {!open ? null : options.length === 0 ? (
-          emptyPicker('No options yet.')
+          <MenuCaption>No options yet.</MenuCaption>
         ) : (
           <PropertyOptionRows
             column={column}

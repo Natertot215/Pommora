@@ -59,12 +59,7 @@ import { propertyIcon, propertyTypeIconName } from '../../Properties/typeDisplay
 import { type CardPickerKind, CardValue } from './CardValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import {
-  type AddEntry,
-  addEntriesFor,
-  orderAddableEntries,
-  shownColumnsFor,
-} from './cardValueInput'
+import { type AddEntry, addEntriesFor, orderAddableEntries, shownColumnsFor } from './cardColumns'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus'
 import { popMenu } from '../../Actions/menuActions'

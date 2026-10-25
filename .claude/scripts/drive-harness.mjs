@@ -290,7 +290,7 @@ export async function escapeAll(cdp) {
   for (let i = 0; i < 4 && (await portalOpen(cdp)); i++) await pressKey(cdp, 'Escape')
 }
 
-export const PEN = '[aria-label="Open in TextPane"]'
+export const PEN = '[aria-label="Open In Editor"]'
 export const PANE = '.text-pane'
 export const PANE_VIEW = `document.querySelector('${PANE} .cm-content').cmTile.root.view`
 export const PAGE_VIEW = `[...document.querySelectorAll('.cm-content')].find((c) => !c.closest('${PANE}') && !c.closest('[inert]')).cmTile.root.view`
