@@ -30,11 +30,6 @@ const def: PropertyDefinition = {
 }
 
 describe('optionGlyph', () => {
-  it('draws a Multi-Select option as tags and a Select option as a tag when the option has no icon', () => {
-    expect(optionGlyph('multiSelect', { label: 'a' })).toBe('tags')
-    expect(optionGlyph('select', { label: 'a' })).toBe('tag')
-  })
-
   it('draws a Status option by its group when the option has no icon', () => {
     expect(optionGlyph('status', { id: 'opt_not_started', label: 'not_started' }, def)).toBe(
       'circle-dashed',
@@ -47,7 +42,9 @@ describe('optionGlyph', () => {
     expect(optionGlyph('status', { id: 'opt_active', label: 'Doing' }, def)).toBe('minus')
   })
 
-  it('falls back to the upcoming glyph for an unknown value or a missing def', () => {
+  it('draws its type’s chip glyph for an iconless Select or Multi-Select option, a Status value outside every group, or a missing def', () => {
+    expect(optionGlyph('multiSelect', { label: 'a' })).toBe('tags')
+    expect(optionGlyph('select', { label: 'a' })).toBe('tag')
     expect(optionGlyph('status', { label: 'nope' }, def)).toBe('circle-dashed')
     expect(optionGlyph('status', { id: 'opt_active', label: 'active' })).toBe('circle-dashed')
   })
