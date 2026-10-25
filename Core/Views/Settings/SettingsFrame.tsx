@@ -74,7 +74,7 @@ function ContainerSettings({
   const saveView = useSaveView(node)
 
   const schema = containerSchema(tree, schemaCollection)
-  const view = useActiveView(node, schema)
+  const view = useActiveView(node)
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
 

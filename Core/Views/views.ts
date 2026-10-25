@@ -9,7 +9,7 @@ import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
 import { filterGroup } from './filterRules'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
-import { FILEDATA, type PropertyDefinition } from '../Properties/properties'
+import { FILEDATA } from '../Properties/properties'
 
 export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
 export type ViewType = (typeof VIEW_TYPES)[number]
@@ -303,14 +303,12 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
 
 export type GroupLevel = 'group' | 'sub'
 
-const LEVEL_PREFIX: Record<GroupLevel, string> = { group: '', sub: 'sub/' }
-
-/** A property band's key, `<property>/<bucket>`, under its Set's id when it sub-groups one: hidden and collapsed groups share it, so neither names another property's bucket and one Set's collapse never reaches its twin bucket in another. */
-export const bandKey = (propertyId: string, bucket: string, setId?: string): string =>
-  `${setId === undefined ? '' : `${setId}/`}${propertyId}/${bucket}`
+/** A property band's key, `<property>/<bucket>`, so no band names another property's bucket, under its scope when it has one: the Set it sub-groups, so one Set's collapse never reaches its twin bucket in another, or `sub` for a hidden sub-group bucket. */
+export const bandKey = (propertyId: string, bucket: string, scope?: string): string =>
+  `${scope === undefined ? '' : `${scope}/`}${propertyId}/${bucket}`
 
 const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
-  `${LEVEL_PREFIX[level]}${bandKey(propertyId, bucket)}`
+  bandKey(propertyId, bucket, level === 'sub' ? level : undefined)
 
 export const isBucketHidden = (
   hidden: ReadonlySet<string>,
@@ -384,7 +382,7 @@ export const containerViewIds = (views: readonly unknown[]): string[] =>
     (n) => `${VIEW_ID_PREFIX}${n}`,
   )
 
-export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
+export function mintNewView(name: string): SavedView {
   return {
     id: mintViewId(),
     name,
@@ -392,10 +390,10 @@ export function mintNewView(name: string, schema: PropertyDefinition[]): SavedVi
     type: DEFAULT_VIEW_TYPE,
     group: { kind: 'structural' },
     property_order: [FILEDATA.title.id],
-    hidden_properties: schema.map((d) => d.id),
+    hidden_properties: [],
   }
 }
 
-export function mintDefaultView(schema: PropertyDefinition[]): SavedView {
-  return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label, schema)
+export function mintDefaultView(): SavedView {
+  return mintNewView(VIEW_KINDS[DEFAULT_VIEW_TYPE].label)
 }

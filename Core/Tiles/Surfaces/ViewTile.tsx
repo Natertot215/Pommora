@@ -3,7 +3,6 @@ import type { ConnPage } from '../../Connections/pageIndex'
 import type { EntryPatch, ViewTileEntry } from '../tiles'
 import { isPlainObject } from '../../Contract/validators'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
-import type { PropertyDefinition } from '../../Properties/properties'
 import {
   applyViewPatch,
   mergeViewEdit,
@@ -35,7 +34,6 @@ import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
-import { containerSchema, NO_SCHEMA } from '../../Nexus/treePatch'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
@@ -66,9 +64,9 @@ import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus
 import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 
-function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: string): SavedView {
+function coerceEmbeddedView(raw: unknown, id: string): SavedView {
   const r = savedView.safeParse(raw ?? {})
-  return { ...(r.success ? r.data : mintDefaultView(schema)), id }
+  return { ...(r.success ? r.data : mintDefaultView()), id }
 }
 
 const configIdOf = (el: unknown): unknown =>
@@ -255,12 +253,11 @@ export function ViewTile({
       ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
 
-  const schema = useMemo(() => (source ? containerSchema(tree, source) : NO_SCHEMA), [tree, source])
   const views = useMemo(() => {
     if (!source) return []
     const ids = embedViewIds(entry.views, entry.id)
-    return entry.views.map((v, i) => coerceEmbeddedView(v.config, schema, ids[i]))
-  }, [source, schema, entry.views, entry.id])
+    return entry.views.map((v, i) => coerceEmbeddedView(v.config, ids[i]))
+  }, [source, entry.views, entry.id])
   const view = views[index]
   const viewById = (id: string | null | undefined): SavedView | undefined =>
     views.find((v) => v.id === id)
@@ -323,7 +320,7 @@ export function ViewTile({
       if (!isPlainObject(el)) return null
       // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
       const own = ownsViewId(configIdOf(el), id)
-      const stored = coerceEmbeddedView(el.config, schema, own ? id : mintViewId())
+      const stored = coerceEmbeddedView(el.config, own ? id : mintViewId())
       arr[i] = { ...el, config: mergeViewEdit(el.config, applyViewPatch(stored, patch)) }
       return { views: arr }
     })
@@ -356,7 +353,7 @@ export function ViewTile({
       const arr = rawViews(raw)
       arr.push({
         source_id: source.id,
-        config: mintNewView('Untitled', schema),
+        config: mintNewView('Untitled'),
       })
       return { views: arr, active: arr.length - 1 }
     })

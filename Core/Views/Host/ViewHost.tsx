@@ -3,7 +3,6 @@ import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
 import { VIEW_KINDS, type ViewType } from '../views'
 import { useActiveView } from './useActiveView'
-import { NO_SCHEMA } from '../../Nexus/treePatch'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
 import { useViewHost, type ViewHostApi } from './useViewHost'
@@ -15,8 +14,8 @@ const VIEW_RENDERERS: Partial<Record<ViewType, (p: { host: ViewHostApi }) => Rea
 }
 
 export function ViewHost({ source }: { source: CollectionNode | SetNode }): React.JSX.Element {
-  // Only the type and scale are needed to seat a renderer, and a minted default is a table whatever the schema — so the seat skips the schema walk the host performs.
-  const view = useActiveView(source, NO_SCHEMA)
+  // Only the type and scale are needed to seat a renderer.
+  const view = useActiveView(source)
   const Renderer = VIEW_RENDERERS[view.type] ?? TableView
   const tile = useViewTileScope()
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.

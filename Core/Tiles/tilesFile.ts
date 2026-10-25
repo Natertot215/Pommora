@@ -24,7 +24,7 @@ import { newId } from '../Nexus/ids'
 import { mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
 import type { Json } from '../Files/stableJson'
-import { containerSchema, findContainerById } from '../Nexus/treePatch'
+import { findContainerById } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
@@ -81,7 +81,7 @@ const PICK_ENTRIES: Record<PickKind, (root: string, value: unknown) => Promise<R
       const folder = await resolveUnderRoot(root, source.path)
       if (!folder.ok) return folder
       config = await readStoredView(folder.value, source.kind, value.view_id)
-    } else config = mintDefaultView(containerSchema(tree, source))
+    } else config = mintDefaultView()
     if (!config) return fail('not-found', 'View not found.')
     const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
     return ok({ type: 'view', views, active: 0 })
