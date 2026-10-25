@@ -3900,6 +3900,14 @@ describe('the property ops', () => {
     expect(lock.mock.calls.filter(([key]) => key === nexusDir(root))).toHaveLength(1)
   })
 
+  it('a page property’s put-back takes its page lock and never the Contexts lock', async () => {
+    const lock = vi.spyOn(machine(), 'lock')
+    const entries = [{ file: 'Notes/Page.md', fieldId: stage.id, before: 'Stage: Todo' }]
+    expect(await handleMutate(root, { op: 'putBack', entries }, nexusDeps)).toEqual(ok({}))
+    expect(lock.mock.calls.map(([key]) => key)).not.toContain(contextsDir(root))
+    expect(readFileSync(join(root, 'Notes', 'Page.md'), 'utf8')).toContain('Stage: Todo')
+  })
+
   it('finishOwed renames the files an owed entry names and clears the notes file', async () => {
     await writeFile(
       join(root, 'Notes', 'Page.md'),

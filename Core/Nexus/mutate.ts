@@ -199,9 +199,12 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
         ? setPagePropertyOp(ctx, req)
         : underContexts(root, () => setSpacePropertyOp(ctx, req))
 
-    // A put-back resolves a Context's key as a tag write does, so it holds the Contexts lock whichever files it reaches.
+    // A put-back resolves a Context's key as a tag write does, so one reaching a Space or naming a Context holds the Contexts lock; a page property's takes only its page's lock.
     case 'putBack': {
-      const missed = await underContexts(root, () => putBackEntries(root, req.entries))
+      const contextIds = new Set((await liveTreeOf(root)).contexts.map((g) => g.def.id))
+      const put = () => putBackEntries(root, req.entries)
+      const held = req.entries.some((e) => !isMarkdownFile(e.file) || contextIds.has(e.fieldId))
+      const missed = await (held ? underContexts(root, put) : put())
       return ok(
         missed.length
           ? { cascade: reachReport({ skipped: missed.length, hosts: [] }), missed }
