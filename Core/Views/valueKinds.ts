@@ -9,6 +9,7 @@ import {
   specOf,
 } from '../Properties/properties'
 import {
+  checkboxValue,
   checkboxWord,
   isBlankValue,
   type PropertyValue,
@@ -52,6 +53,10 @@ export type ValueKindSpec = Readonly<{
   groups?: true
   /** The band a grouping files a value under; null files it with the value-less rows. */
   bucket?(v: PropertyValue, granularity: DateGranularity): string | null
+  /** The value a new page takes from a rule naming one operand, null when the rule's op names none; a band's key seeds the value an Is rule naming it would. */
+  seed?(op: string, operand: string): PropertyValue | null
+  /** A page created beside another under a sort on this kind takes the other's value. */
+  sortSeeds?: true
 }>
 
 const EMPTIES: OperatorChoice[] = [
@@ -106,6 +111,8 @@ const CHECKBOX_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is Checked', slot: 'none', impliedValue: 'true' },
   { op: FILTER_OPS.is, label: "Isn't Checked", slot: 'none', impliedValue: 'false' },
 ]
+
+const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])
 
 const notBlank: ValueTest = (v) => !isBlankValue(v)
 const showsText: ValueTest = (v) => !!shownText(v)
@@ -315,6 +322,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     prepare: prepareNumber,
     sortKey: () => (v) => (v.kind === 'number' ? v.value : null),
     directions: 'value',
+    sortSeeds: true,
   },
   dateTime: {
     ops: DATE_OPS,
@@ -326,6 +334,7 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     groups: true,
     bucket: (v, granularity) =>
       v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null,
+    sortSeeds: true,
   },
   // An unchecked box is stored as no value: Is Empty matches it, and it sorts after the checked ones ascending, as an empty value does, while holding a key so descending puts it first.
   checkbox: {
@@ -335,6 +344,9 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     sortKey: () => (v) => (v.kind === 'checkbox' ? 0 : 1),
     directions: 'value',
     bucket: (v) => (v.kind === 'checkbox' ? 'true' : null),
+    seed: (op, operand) =>
+      op === FILTER_OPS.is ? checkboxValue(checkboxWord(operand) === true) : null,
+    sortSeeds: true,
   },
   // Is and Isn't name whole options; the text ops a hand-written rule may hold search the option's label.
   select: {
@@ -348,6 +360,8 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     directions: 'option',
     groups: true,
     bucket: (v) => (v.kind === 'select' ? v.value : null),
+    seed: (op, operand) => (op === FILTER_OPS.is ? { kind: 'select', value: operand } : null),
+    sortSeeds: true,
   },
   multiSelect: {
     ops: SET_OPS,
@@ -355,8 +369,15 @@ export const VALUE_KINDS: Readonly<Record<ValueKind, ValueKindSpec>> = {
     prepare: prepareOptions,
     sortKey: textKey,
     directions: 'text',
+    seed: (op, operand) => (LIST_OPS.has(op) ? { kind: 'multiSelect', value: [operand] } : null),
   },
-  context: { ops: SET_OPS, filled: notBlank, prepare: prepareMembers, directions: 'value' },
+  context: {
+    ops: SET_OPS,
+    filled: notBlank,
+    prepare: prepareMembers,
+    directions: 'value',
+    seed: (op, operand) => (LIST_OPS.has(op) ? { kind: 'context', value: [operand] } : null),
+  },
   file: {
     ops: EMPTIES,
     filled: notBlank,

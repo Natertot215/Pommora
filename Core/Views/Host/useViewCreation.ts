@@ -2,7 +2,8 @@
 
 import { pageValuesOf, type ViewRow, UNGROUPED } from '../viewRow'
 import { patchOverride } from '../../Properties/valueOverride'
-import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properties/propertyValue'
+import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+import { viewSpecOf } from '../valueKinds'
 import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
 import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
@@ -22,19 +23,6 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
 import { stageView, unstageView } from './pendingView'
-
-// Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link and a text aside; under anything else the row simply lands where the sort puts it.
-const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
-  select: true,
-  checkbox: true,
-  number: true,
-  dateTime: true,
-  multiSelect: false,
-  context: false,
-  link: false,
-  text: false,
-  file: false,
-}
 
 export interface CreateFlight {
   id: string
@@ -219,7 +207,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     for (const criterion of c.view.sort ?? []) {
       const column = resolveColumn(criterion.property_id, c.schema, c.contextIds)
       const spec = specOf(column?.type)
-      if (!column || spec?.origin !== 'user' || !SEEDS_FROM_SORT[spec.kind]) continue
+      if (!column || spec?.origin !== 'user' || !viewSpecOf(column.type)?.sortSeeds) continue
       const v = resolveFieldValue(row, column)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }

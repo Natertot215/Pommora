@@ -1,21 +1,13 @@
 // A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any or Is All rule on a Multi-Select or a Context, where two such rules on one property take both values. An Any group seeds nothing when a blank page already meets it, else from its first rule or group that seeding meets. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
-import { type PropertyDefinition, specOf } from '../../Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import type { PropertyValue } from '../../Properties/propertyValue'
-import {
-  FILTER_OPS,
-  type FilterGroup,
-  type FilterRule,
-  isGroup,
-  ruleOperands,
-} from '../filterRules'
+import { type FilterGroup, type FilterRule, isGroup, ruleOperands } from '../filterRules'
 import { resolveColumn } from './columns'
-import { groupKeyToValue } from '../reassign'
+import { viewSpecOf } from '../valueKinds'
 import { prepareGroup, prepareRule } from './filter'
 import type { ViewRow } from '../viewRow'
 import type { SetTreeNode } from './group'
-
-const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])
 
 function ruleSeed(
   rule: FilterRule,
@@ -23,23 +15,8 @@ function ruleSeed(
   contextIds: readonly string[],
 ): PropertyValue | null {
   const operands = ruleOperands(rule)
-  if (operands.length !== 1) return null
   const type = resolveColumn(rule.property_id, schema, contextIds)?.type
-  const kind = specOf(type)?.kind
-  switch (kind) {
-    case 'context':
-    case 'multiSelect':
-      return LIST_OPS.has(rule.op) ? { kind, value: operands } : null
-    case 'select':
-    case 'checkbox':
-    case 'number':
-    case 'dateTime':
-    case 'link':
-    case 'text':
-    case 'file':
-    case undefined:
-      return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null
-  }
+  return operands.length === 1 ? (viewSpecOf(type)?.seed?.(rule.op, operands[0]) ?? null) : null
 }
 
 type Seeds = Record<string, PropertyValue>
