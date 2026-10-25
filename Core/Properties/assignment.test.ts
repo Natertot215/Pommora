@@ -50,12 +50,28 @@ it('assign appends + is idempotent', async () => {
   expect(await ids(notes)).toEqual(['prop_x'])
 })
 
+const held = async (...labels: string[]): Promise<string[]> => {
+  const made: string[] = []
+  for (const label of labels) {
+    const r = await createProperty(root, { label, type: 'number' })
+    if (!r.ok) throw new Error('setup failed')
+    made.push(r.value.id)
+  }
+  return made
+}
+
 it('reorder moves within the assignment array', async () => {
-  await assignProperty(root, notes, 'prop_a')
-  await assignProperty(root, notes, 'prop_b')
-  await assignProperty(root, notes, 'prop_c')
-  await reorderAssignment(root, notes, 'prop_c', 0)
-  expect(await ids(notes)).toEqual(['prop_c', 'prop_a', 'prop_b'])
+  const [a, b, c] = await held('A', 'B', 'C')
+  for (const id of [a, b, c]) await assignProperty(root, notes, id)
+  await reorderAssignment(root, notes, c, 0)
+  expect(await ids(notes)).toEqual([c, a, b])
+})
+
+it('reorder places by the ids the registry holds, leaving one it no longer holds where it sits', async () => {
+  const [a, b, c] = await held('A', 'B', 'C')
+  for (const id of ['prop_gone', a, b, c]) await assignProperty(root, notes, id)
+  await reorderAssignment(root, notes, a, 1)
+  expect(await ids(notes)).toEqual(['prop_gone', b, a, c])
 })
 
 it('a Remove racing an Assign on ONE collection never loses either write', async () => {

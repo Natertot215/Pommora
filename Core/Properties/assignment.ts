@@ -1,5 +1,5 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { moveItem } from '@pommora/uix/Utilities/moveItem'
+import { placeAt } from '@pommora/uix/Utilities/moveItem'
 import { isAtOrUnder, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -117,16 +117,22 @@ export async function assignInner(
   return ran.ok ? ok(ran.value.cascade.warning ? ran.value.cascade : undefined) : ran
 }
 
+/** `toIndex` counts the assigned ids the registry holds, as the pane lists them; an id it no longer holds stays where it sits. */
 async function reorderInner(
+  root: string,
   collectionFolder: string,
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
+  const { defs } = await readRegistry(root)
   const written = await patchSidecar(collectionFolder, 'collection', (cur, refuse) => {
     const ids = assignedIds(cur)
     const from = ids.indexOf(propertyId)
     if (from < 0) return refuse(fail('not-found', 'Property not assigned.'))
-    return { ...cur, properties: moveItem(ids, from, clamp(toIndex, 0, ids.length - 1)) }
+    const others = ids.filter((id) => id !== propertyId && id in defs)
+    const next = others[clamp(toIndex, 0, others.length)]
+    const at = next === undefined ? ids.length : ids.indexOf(next)
+    return { ...cur, properties: placeAt(ids, from, at, () => propertyId) }
   })
   return written.ok ? ok(null) : written
 }
@@ -141,7 +147,7 @@ export function assignProperty(
     const a = await assignInner(root, collectionFolder, propertyId)
     if (!a.ok) return a
     if (toIndex !== undefined) {
-      const moved = await reorderInner(collectionFolder, propertyId, toIndex)
+      const moved = await reorderInner(root, collectionFolder, propertyId, toIndex)
       if (!moved.ok) return moved
     }
     return ok(a.value ? { cascade: a.value } : {})
@@ -176,5 +182,5 @@ export function reorderAssignment(
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(root, () => reorderInner(collectionFolder, propertyId, toIndex))
+  return serializeSchemaOp(root, () => reorderInner(root, collectionFolder, propertyId, toIndex))
 }
