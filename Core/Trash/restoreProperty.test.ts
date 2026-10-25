@@ -624,7 +624,7 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(old, 'Priority')).toBeUndefined()
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r).toEqual({ ok: true, value: {} })
-    expect(await valueOn(old, 'Priority')).toEqual(['hi'])
+    expect(await valueOn(old, 'Priority')).toBe('hi')
   })
 
   it('a Link value naming an archived page comes back', async () => {

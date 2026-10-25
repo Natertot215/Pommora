@@ -67,7 +67,7 @@ afterEach(async () => {
 })
 
 describe('a property write reconciles the whole file', () => {
-  it('setting Priority on a page holding a scalar Status rewrites Status to a list', async () => {
+  it('setting Priority on a page holding a scalar Status leaves Status as written', async () => {
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(page.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`)
@@ -82,9 +82,9 @@ describe('a property write reconciles the whole file', () => {
       deps,
     )
     expect(r.ok).toBe(true)
-    const out = await fm(page.value.path)
-    expect(out.Priority).toBe(3)
-    expect(out.Status).toEqual(['Open'])
+    const out = await readFile(page.value.path, 'utf8')
+    expect(out).toContain('Priority: 3\n')
+    expect(out).toContain('Status: Open\n')
   })
 
   it('a Space the tree doesn’t hold leaves a property write’s tags naming it as written', async () => {

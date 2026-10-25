@@ -118,7 +118,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
   it('keeps every governed key that still stands', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
-    expect(f.Priority).toEqual(['hi'])
+    expect(f.Priority).toBe('hi')
     expect(f['<Projects>']).toEqual(['Pommora'])
   })
 
@@ -145,7 +145,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
     const f = await fm('Notes/Alpha.md')
     expect(f['<Projects>']).toEqual(['Pommora'])
-    expect(f.Priority).toEqual(['hi'])
+    expect(f.Priority).toBe('hi')
   })
 
   // Alpha names a Space in another casing, and the scrub can't write its trashed copy.
@@ -320,7 +320,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     await cycle('Notes/Daily', 'set', async () => {})
     const f = await fm('Notes/Daily/Journal.md')
     expect(f['<Projects>']).toEqual(['Pommora'])
-    expect(f.Priority).toEqual(['lo'])
+    expect(f.Priority).toBe('lo')
   })
 
   it('keeps a Select word whose option was deleted while it sat in the Trash, as a word no option names', async () => {
@@ -436,7 +436,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
     expect(raw).toContain('author: Username')
     expect(raw).toContain('<Projects>:\n  - Pommora')
-    expect(raw).toContain('Priority:\n  - hi')
+    expect(raw).toContain('Priority: hi\n')
     expect(raw).toContain('the body')
   })
 })
@@ -451,7 +451,7 @@ describe('a returning page takes the current keys', () => {
     await page('priority: hi')
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
-    expect(f.Priority).toEqual(['hi'])
+    expect(f.Priority).toBe('hi')
     expect(f).not.toHaveProperty('priority')
   })
 
@@ -460,7 +460,7 @@ describe('a returning page takes the current keys', () => {
       await priority({ key: 'priority', key_format: 'lowercase' })
     })
     const f = await fm('Notes/Alpha.md')
-    expect(f.priority).toEqual(['hi'])
+    expect(f.priority).toBe('hi')
     expect(f).not.toHaveProperty('Priority')
   })
 
@@ -502,7 +502,7 @@ describe('a returning page takes the current keys', () => {
     await page('Priority: hi\npriority: lo')
     await cycle('Notes/Alpha.md', 'page', async () => {})
     const f = await fm('Notes/Alpha.md')
-    expect(f.Priority).toEqual(['hi'])
+    expect(f.Priority).toBe('hi')
     expect(f.priority).toBe('lo')
   })
 

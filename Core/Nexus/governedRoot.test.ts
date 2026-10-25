@@ -117,10 +117,10 @@ describe('reconcileGovernedRoot — the context arm', () => {
     ).toEqual(['Pommora'])
   })
 
-  it('reads a scalar Context value as a list of one, so a hand-typed tag resolves', () => {
+  it('keeps a scalar Context value naming a Space as written, and reads it as a list of one, so a hand-typed tag resolves', () => {
     const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'Pommora' }, world)
-    expect(root['<Projects>']).toEqual(['Pommora'])
-    expect(changed).toEqual(['<Projects>'])
+    expect(root['<Projects>']).toBe('Pommora')
+    expect(changed).toEqual([])
     expect(resolveContextKeys({ '<Projects>': 'Pommora' }, contexts).get('ctx_projects')).toEqual([
       'sp1',
     ])
@@ -135,7 +135,7 @@ describe('reconcileGovernedRoot — the context arm', () => {
 
   it('a world holding no Contexts skips the context arm while the property arm still runs', () => {
     const { root, changed } = reconcileGovernedRoot(
-      { '<Projects>': ['pommora'], Status: 'Active' },
+      { '<Projects>': ['pommora'], Status: ['Active', 'Active'] },
       { ...world, contexts: contextWorldOf([]) },
     )
     expect(root['<Projects>']).toEqual(['pommora'])
@@ -153,10 +153,13 @@ describe('reconcileGovernedRoot — the property arm', () => {
     }
   })
 
-  it('re-encodes an assigned key as its definition reads it', () => {
-    const { root, changed } = reconcileGovernedRoot({ Status: 'Active' }, world)
-    expect(root.Status).toEqual(['Active'])
-    expect(changed).toEqual(['Status'])
+  it('re-encodes an assigned key as its definition reads it, keeping a scalar that spells its option', () => {
+    const collapsed = reconcileGovernedRoot({ Status: ['Active', 'Active'] }, world)
+    expect(collapsed.root.Status).toEqual(['Active'])
+    expect(collapsed.changed).toEqual(['Status'])
+    const kept = reconcileGovernedRoot({ Status: 'Active' }, world)
+    expect(kept.root.Status).toBe('Active')
+    expect(kept.changed).toEqual([])
   })
 
   it('keeps a list that already reads canonically, unchanged', () => {
@@ -302,6 +305,14 @@ describe('writtenSpelling', () => {
     expect(writtenSpelling('forty-two', 42)).toBe('forty-two')
     expect(writtenSpelling('note', 'note')).toBe('note')
     expect(writtenSpelling('note', undefined)).toBe('note')
+  })
+
+  it('a one-member list keeps a scalar that spells its member, while another word or a second member writes the list', () => {
+    expect(writtenSpelling(['Done'], 'Done')).toBe('Done')
+    expect(writtenSpelling(['2024'], 2024)).toBe(2024)
+    expect(writtenSpelling(['Done'], 'done')).toEqual(['Done'])
+    expect(writtenSpelling(['Open'], 'Done')).toEqual(['Open'])
+    expect(writtenSpelling(['alpha', 'beta'], 'alpha')).toEqual(['alpha', 'beta'])
   })
 
   it('gives each member the one held member its title names exactly; a member held twice keeps the registered spelling', () => {
@@ -476,25 +487,31 @@ describe('rewriteRootAt with a world — the three precedence rules', () => {
   }
 
   it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
-    await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\nPriority: High\n---\nbody\n')
+    await writeFile(
+      page,
+      '---\nid: p1\n<Areas>:\n  - Health\nPriority:\n  - High\n  - High\n---\nbody\n',
+    )
     await rewriteRootAt(
       page,
       rewriteRaw((raw) => writtenRoot(raw, '<Areas>', undefined, world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Areas')
-    expect(out).toContain('Priority:\n  - High')
+    expect(out).toContain('Priority:\n  - High\n---')
   })
 
   it('a clear deletes its key while a drifted sibling is repaired', async () => {
-    await writeFile(page, '---\nid: p1\nPriority:\n  - High\nStatus: Open\n---\nbody\n')
+    await writeFile(
+      page,
+      '---\nid: p1\nPriority:\n  - High\nStatus:\n  - Open\n  - Open\n---\nbody\n',
+    )
     await rewriteRootAt(
       page,
       rewriteRaw((raw) => writtenRoot(raw, 'Priority', undefined, world)),
     )
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Priority')
-    expect(out).toContain('Status:\n  - Open')
+    expect(out).toContain('Status:\n  - Open\n---')
   })
 
   it('keeps a mixed Context list — an unresolvable Space is never dropped by a sibling write', async () => {

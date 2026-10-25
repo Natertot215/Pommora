@@ -68,14 +68,14 @@ export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
   return gone ? entry : null
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a number keeps `raw`'s spelling as `spelledNumber` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title is its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+/** `next` spelled as `raw` already spells it: a checked `true` takes `raw`'s checkbox word as `checkedSpelling` does, a number keeps `raw`'s spelling as `spelledNumber` does, a string keeps a `raw` of any other shape whose inline yaml reads as that string, a one-member list keeps a scalar or a whole unquoted wikilink `raw` that spells its member, and each member takes the one member of `raw` whose title is its own — a scalar of any shape, or an unquoted wikilink. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
 export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return checkedSpelling(raw)
   if (typeof next === 'number') return spelledNumber(next, raw)
   if (typeof next === 'string')
     return raw != null && typeof raw !== 'string' && asText(raw) === next ? raw : next
   if (!Array.isArray(next)) return next
-  if (next.length === 1 && Array.isArray(raw) && linkEntry(raw, 2) === next[0]) return raw
+  if (next.length === 1 && memberKey(linkEntry(raw, 2) ?? raw) === memberKey(next[0])) return raw
   const held = listOf(raw)
   return next.map((v) => {
     const names = namesValue(v)

@@ -72,10 +72,10 @@ afterEach(async () => {
 
 describe('runRepairSweep', () => {
   it('canonicalizes a drifted page the seed re-read', async () => {
-    await frontmatter('Status: Open\nTags:\n  - alpha\n  - zeta')
+    await frontmatter('Status:\n  - Open\n  - Open\nTags:\n  - alpha\n  - zeta')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
-    expect(out).toContain('Status:\n  - Open')
+    expect(out).toContain('Status:\n  - Open\nTags')
     expect(out).toContain('- zeta')
   })
 
@@ -85,9 +85,12 @@ describe('runRepairSweep', () => {
       `.nexus/archive/${colId}/Col/2026-10-20T12-00-00-000Z__Two.md.archived/Two.md`,
     )
     await mkdir(dirname(archived), { recursive: true })
-    await writeFile(archived, `---\nID: ${newContentId('page')}\nStatus: Open\n---\n\nb\n`)
+    await writeFile(
+      archived,
+      `---\nID: ${newContentId('page')}\nStatus:\n  - Open\n  - Open\n---\n\nb\n`,
+    )
     await runRepairSweep(root, await seedContentIndex(root))
-    expect(await readFile(archived, 'utf8')).toContain('Status:\n  - Open')
+    expect(await readFile(archived, 'utf8')).toContain('Status:\n  - Open\n---')
   })
 
   it('walks the tree once however many re-read pages it checks', async () => {
@@ -134,9 +137,9 @@ describe('runRepairSweep', () => {
   it('with no setting written, the sweep repairs', async () => {
     await rm(join(root, '.nexus', 'settings.json'))
     await refreshTree(root)
-    await frontmatter('Status: Open')
+    await frontmatter('Status:\n  - Open\n  - Open')
     await runRepairSweep(root, await seedContentIndex(root))
-    expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open')
+    expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open\n---')
   })
 
   it('a canonical page is never rewritten', async () => {
@@ -154,12 +157,12 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
-  it('never removes a value — an option outside the definition stays as written', async () => {
+  it('never removes a value — an option outside the definition stays as written, as does a scalar spelling its option', async () => {
     await frontmatter('Status: Blocked\nTags: alpha')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Blocked')
-    expect(out).toContain('Tags:\n  - alpha')
+    expect(out).toContain('Tags: alpha\n')
   })
 
   it('a cold index — the first open of a database — sweeps nothing', async () => {

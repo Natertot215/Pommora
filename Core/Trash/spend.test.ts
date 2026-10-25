@@ -2340,7 +2340,7 @@ describe('restore — into a chosen destination', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect((await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).includes('- live')).toBe(true)
+    expect(await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).toContain('Status: live\n')
   })
 
   it('a Collection comes back reconciled against the definitions its own sidecar assigns', async () => {
@@ -2365,7 +2365,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      `---\nID: ${PAGE_B}\nTags: alpha\n---\nbody`,
+      `---\nID: ${PAGE_B}\nTags: Alpha\n---\nbody`,
     )
     await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
     const r = await settledMutate(

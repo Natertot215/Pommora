@@ -151,14 +151,14 @@ describe('a value write reconciles the Space it lands on', () => {
   const set = (propertyId: string, value: PropertyValue | null) =>
     settledMutate(root, { op: 'setProperty', path: spaceRel, propertyId, value }, settled)
 
-  it('writes a scalar Select back as a list', async () => {
+  it('leaves a scalar Select spelling its option as written', async () => {
     await seed({ Status: 'Option 1' })
     expect((await set(priorityId, { kind: 'number', value: 3 })).ok).toBe(true)
-    expect(await sidecar()).toMatchObject({ Priority: 3, Status: ['Option 1'] })
+    expect(await sidecar()).toMatchObject({ Priority: 3, Status: 'Option 1' })
   })
 
   it('clearing a key the Space never held still tidies its other values', async () => {
-    await seed({ Status: 'Option 1' })
+    await seed({ Status: ['Option 1', 'Option 1'] })
     expect((await set(priorityId, null)).ok).toBe(true)
     expect((await sidecar()).Status).toEqual(['Option 1'])
   })

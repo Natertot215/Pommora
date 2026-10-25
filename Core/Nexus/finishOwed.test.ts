@@ -602,7 +602,7 @@ describe('an owed Collection', () => {
       ).toMatchObject({ prop_s: { values: { [TASK_PAGE]: 'Draft' } } })
       expect(await readNotes(root)).toEqual({ prop_s: { kind: 'property', collections: ['c1'] } })
       await finishOwed(root, DEPS)
-      expect(splitFrontmatter(await page(root, 'A')).Stage).toEqual(['Done'])
+      expect(splitFrontmatter(await page(root, 'A')).Stage).toBe('Done')
       expect(await readNotes(root)).toEqual({})
     },
   )

@@ -116,12 +116,12 @@ describe('a re-assign puts a stashed value back', () => {
   }
 
   it('fills the registered key on a root holding none', async () => {
-    expect((await reassigned('')).Status).toEqual(['hi'])
+    expect((await reassigned('')).Status).toBe('hi')
   })
 
   it('fills the exact key beside a blank key in another casing, which stays', async () => {
     const fm = await reassigned()
-    expect(fm.Status).toEqual(['hi'])
+    expect(fm.Status).toBe('hi')
     expect(fm.status).toBeNull()
   })
 
@@ -172,7 +172,7 @@ describe('a re-assign puts a stashed value back', () => {
     expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
     expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toBeUndefined()
     expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
-    expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toEqual(['hi'])
+    expect(splitFrontmatter(await readFile(old, 'utf8')).Status).toBe('hi')
   })
 
   it('keeps a stashed Link value naming an archived page', async () => {
