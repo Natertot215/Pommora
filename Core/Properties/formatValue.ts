@@ -150,6 +150,7 @@ export function formatDate(
   if (dayMs(read.at) !== dayMs(read.end)) return `${start} → ${point(read.end)}`
   return read.timed && timeFormat !== 'none' ? `${start} → ${clockOf(read.end, timeFormat)}` : start
 }
+
 /** A value as the text its cell shows, which the filter's text operators search and the sort orders: an option's label, a text with its connections as they read, a link's display text, a list's members joined; null for a value that shows no text of its own. */
 export function shownText(value: PropertyValue, def?: PropertyDefinition): string | null {
   switch (value.kind) {
