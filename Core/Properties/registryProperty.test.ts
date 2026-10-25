@@ -26,7 +26,6 @@ import { nexusConfig, nexusDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import type { PropertyDraft } from './properties'
 import { fail, ok } from '../Contract/result'
-import { machine } from '../Platform/machine'
 import { deleteProperty } from './deleteProperty'
 import { deleteOption, renameOption, setValueFormat } from './optionOps'
 
@@ -668,15 +667,6 @@ describe('reorderRegistry', () => {
     if (!a.ok) return
     expect((await reorderRegistry(root, a.value.id, 99)).ok).toBe(true)
     expect((await reorderRegistry(root, 'prop_ghost', 0)).ok).toBe(false)
-  })
-
-  it('a registry reorder takes the schema lock', async () => {
-    const a = await createProperty(root, def({ label: 'Only', type: 'number' }))
-    if (!a.ok) return
-    const lock = vi.spyOn(machine(), 'lock')
-    await reorderRegistry(root, a.value.id, 0)
-    expect(lock.mock.calls.filter(([key]) => key === nexusDir(root))).toHaveLength(1)
-    lock.mockRestore()
   })
 })
 

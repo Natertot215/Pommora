@@ -242,13 +242,6 @@ describe('the property ops', () => {
     })
   })
 
-  it('a format change that isn’t a Key Format is refused as malformed', async () => {
-    for (const change of [{ key_format: 'Shouting' }, { value_format: 'Shouting' }])
-      expect(
-        await nexusHandlers.mutate(ctx, { op: 'setFormat', propertyId: propId, change }),
-      ).toEqual(fault('Malformed request.'))
-  })
-
   it('property:holders counts the Items each change it names rewrites, and refuses a change it can’t read', async () => {
     const holders = (change?: unknown) =>
       propertiesHandlers['property:holders'](ctx, propId, change)

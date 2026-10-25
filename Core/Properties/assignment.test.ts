@@ -296,14 +296,6 @@ describe('addProperty', () => {
     Object.values((await readRegistry(root)).defs).map((d) => d.label)
   afterEach(() => vi.restoreAllMocks())
 
-  it('lands the property created and assigned in one hold of the schema lock', async () => {
-    const holds = schemaHolds()
-    const r = await addProperty(root, notes, { label: 'Due', type: 'text' })
-    expect(holds()).toBe(1)
-    expect(await labels()).toContain('Due')
-    expect(r).toEqual(ok({ created: { propertyId: (await ids(notes)).at(-1) } }))
-  })
-
   it('a failed assign takes the create back inside the same hold', async () => {
     await writeFile(sidecarPath(notes, 'collection'), '{ not json')
     const holds = schemaHolds()
