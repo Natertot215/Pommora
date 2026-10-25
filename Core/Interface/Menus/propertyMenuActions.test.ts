@@ -66,6 +66,7 @@ function harness(frontmatter: Record<string, unknown> = {}) {
       tree,
       schema: SCHEMA,
       row,
+      rowOf: () => writer.current.rowOf(row.id),
       trigger: {} as HTMLElement,
       commit: (column, value) => {
         assignValue(writer, row, column, value)
@@ -265,15 +266,19 @@ describe('a property pick from the page menu', () => {
   it('hands a value picker the style of the view column the menu came from', () => {
     const tree = treeWithSchema()
     const style = { ...dateDefaults('relative'), time_format: 'twentyFourHour' as const }
+    const page = row()
     runPropertyAction('prop:prop_num', {
       tree,
       schema: SCHEMA,
-      row: row(),
+      row: page,
+      rowOf: () => page,
       trigger: {} as HTMLElement,
       commit: () => undefined,
       styleOf: (column) => (column.id === 'prop_num' ? style : dateDefaults('full')),
     })
-    expect(useSession.getState().pendingPick?.style).toEqual(style)
+    const pick = useSession.getState().pendingPick
+    expect(pick?.column.id).toBe('prop_num')
+    expect(pick?.style).toEqual(style)
   })
 
   it('passes on an action that is not a property pick', () => {

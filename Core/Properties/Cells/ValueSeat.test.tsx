@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
+import { EditorView } from '@codemirror/view'
 import { createPortal } from 'react-dom'
 import type { Root } from 'react-dom/client'
 import { ok } from '../../Contract/result'
@@ -12,7 +13,7 @@ import { FILEDATA, type PropertyDefinition } from '../properties'
 import { dateDefaults } from '../columnStyles'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { propertyColumn } from '../../Views/Pipeline/columns'
-import { type SeatHost, useValueSeat, ValueSeat, type ValueSeatApi } from './ValueSeat'
+import { MenuSeat, type SeatHost, useValueSeat, ValueSeat, type ValueSeatApi } from './ValueSeat'
 
 let root: Root
 mountEachTest((_, r) => {
@@ -238,6 +239,14 @@ describe('a value seat’s panes', () => {
     expect(seat.open).toBeNull()
   })
 
+  it('closes once its column no longer resolves', () => {
+    mount(columnOf(SELECT))
+    act(() => el().click())
+    expect(seat.open?.mode).toBe('picker')
+    mount(columnOf(SELECT), { columnOf: () => undefined })
+    expect(seat.open).toBeNull()
+  })
+
   it('keeps the picker on its last value through its exit', async () => {
     mount(columnOf(SELECT))
     act(() => el().click())
@@ -268,5 +277,64 @@ describe('a value seat’s panes', () => {
       pane.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(menu).not.toHaveBeenCalled()
+  })
+})
+
+describe('the menu seat', () => {
+  const LINK = def('prop_l', 'link')
+  let trigger: HTMLElement
+  const request = (column: ResolvedColumn, commit = vi.fn()) => ({
+    rowOf: () => row,
+    column,
+    trigger,
+    commit,
+  })
+  beforeEach(() => {
+    trigger = document.createElement('div')
+    document.body.appendChild(trigger)
+  })
+  afterEach(() => {
+    trigger.remove()
+    useSession.setState({ pendingPick: null })
+  })
+
+  it('a Link value picked from the page menu commits a page link through the index, under the page’s own title', () => {
+    const picked = vi.fn()
+    act(() => root.render(<MenuSeat />))
+    act(() => useSession.getState().requestPick(request(columnOf(LINK), picked)))
+    const dom = document.querySelector(
+      '[data-picker-portal]:not([data-dismissal-shield]) .value-field .cm-editor',
+    ) as HTMLElement
+    const view = EditorView.findFromDOM(dom)!
+    act(() => {
+      view.dispatch({
+        changes: { from: 0, insert: '[[alpha]]' },
+        selection: { anchor: 9 },
+        userEvent: 'input.type',
+      })
+    })
+    expect(view.dom.getAttribute('aria-invalid')).toBe('false')
+    act(() => {
+      view.contentDOM.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+    })
+    expect(picked).toHaveBeenCalledWith(columnOf(LINK), { kind: 'link', value: '[[Alpha]]' })
+  })
+
+  it('a Date opens the calendar and holds the request while it stands', () => {
+    act(() => root.render(<MenuSeat />))
+    act(() => useSession.getState().requestPick(request(columnOf(DATE))))
+    expect(useSession.getState().pendingPick).not.toBeNull()
+    expect(document.querySelector('[data-picker-portal]')).not.toBeNull()
+  })
+
+  it('a dismissed pane lets the request go', () => {
+    act(() => root.render(<MenuSeat />))
+    act(() => useSession.getState().requestPick(request(columnOf(TEXT))))
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    expect(useSession.getState().pendingPick).toBeNull()
   })
 })

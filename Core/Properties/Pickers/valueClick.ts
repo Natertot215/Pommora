@@ -1,6 +1,6 @@
-// One home for what a click or a value menu means on every surface: a checkbox toggles between checked and its key removed, never a stored unchecked word; the option kinds open their picker; a Date opens the calendar; a stamp opens nothing. Each surface only maps the intent to its own widget.
+// What a click or a value menu means on every surface: a checkbox toggles, the option kinds open their picker, a Date opens the calendar, and a stamp opens nothing; the value seat runs it.
 
-import type { PropertyValue } from '../propertyValue'
+import { checkboxValue, type PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
 import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
@@ -28,7 +28,7 @@ export function valueClickIntent(
   switch (spec.kind) {
     case 'checkbox': {
       const checked = value.kind === 'checkbox' && value.value
-      return { kind: 'commit', value: checked ? null : { kind: 'checkbox', value: true } }
+      return { kind: 'commit', value: checkboxValue(!checked) }
     }
     case 'select':
     case 'multiSelect':

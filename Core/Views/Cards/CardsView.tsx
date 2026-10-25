@@ -224,8 +224,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const addEntries = addRow
     ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree))
     : []
-  const addedColumn = (id: string): ResolvedColumn | undefined =>
-    addEntries.find((e) => e.column.id === id)?.column
 
   // ── The root banner seat ──────────────────────────────────────────────────
 
@@ -479,6 +477,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           chooser={
             addPicker && addRow
               ? {
+                  row: addRow,
                   entries: addEntries.map(
                     (e): PickEntry => ({
                       id: e.column.id,
@@ -491,23 +490,18 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
                     }),
                   ),
-                  resolveTarget: (e) => {
-                    const column = addedColumn(e.id)
-                    return column ? seat.target(addRow, column) : null
-                  },
-                  onCommit: (v, e) => {
-                    const column = addedColumn(e.id)
-                    if (column) commitOnCard(addRow, column, v)
-                  },
                   onReveal: (entry) => {
-                    const column = addedColumn(entry.id)
-                    if (!column) return
                     if (entry.revealOnly) return revealProperty(entry.id)
+                    const column = seat.host.columnOf(entry.id)
+                    if (!column) return
                     setAddPicker(null)
-                    // The seat's target names the Date and File panes the picker holds; any other added value is typed, in the popover.
-                    const kind =
-                      seat.target(addRow, column).kind === 'options' ? 'popover' : 'picker'
-                    seat.run(addRow, column, { kind }, seat.anchor.current)
+                    const intent = seat.intentOf(addRow, column)
+                    seat.run(
+                      addRow,
+                      column,
+                      intent?.kind === 'edit' ? { kind: 'popover' } : intent,
+                      seat.anchor.current,
+                    )
                   },
                   onDismiss: () => setAddPicker(null),
                 }

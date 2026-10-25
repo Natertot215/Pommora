@@ -1,8 +1,8 @@
 import type { ActionItem, MenuOptions } from '../Actions/menuModel'
 import type { ConnPage } from '../Connections/pageIndex'
 import type { ColumnStyle } from '../Properties/columnStyles'
-import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
+import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
 import type { PageStats } from '../MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
@@ -15,11 +15,11 @@ interface MenuPending extends MenuOptions {
 }
 
 export interface ValuePickRequest {
-  def: PropertyDefinition
-  current: PropertyValue
+  rowOf: () => ViewRow | undefined
+  column: ResolvedColumn
   holder?: ConnPage
   trigger: HTMLElement
-  commit: (value: PropertyValue | null) => void
+  commit: (column: ResolvedColumn, value: PropertyValue | null) => void
   style?: ColumnStyle
 }
 
@@ -32,7 +32,7 @@ export interface ChromeSlice {
     trigger: HTMLElement,
     options?: MenuOptions,
   ) => Promise<string | null>
-  pendingPick: (ValuePickRequest & { id: number }) | null
+  pendingPick: ValuePickRequest | null
   requestPick: (req: ValuePickRequest) => void
   dismissPick: () => void
   /** The Subfield sits beside the detail rather than inside it, so whatever is mounted there publishes how many rows it resolved. */
@@ -45,7 +45,6 @@ export interface ChromeSlice {
 }
 
 let menuSeq = 0
-let pickSeq = 0
 
 export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   pendingConfirm: null,
@@ -72,7 +71,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
     }),
 
   pendingPick: null,
-  requestPick: (req) => set({ pendingPick: { ...req, id: ++pickSeq } }),
+  requestPick: (req) => set({ pendingPick: req }),
   dismissPick: () => set({ pendingPick: null }),
 
   detailCount: null,

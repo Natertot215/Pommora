@@ -7,7 +7,7 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { useSession } from '../../Session/store'
-import { mountEachTest, renderView } from '../../Testing/viewHarness'
+import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { STATUS_DEF } from '../../Testing/definitions'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
@@ -239,10 +239,16 @@ describe('the card’s Add chooser', () => {
     select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
   }
   const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
+  const doneDef: PropertyDefinition = {
+    id: 'prop_done',
+    label: 'Done',
+    key: 'Done',
+    type: 'checkbox',
+  }
   const entry = (name: string): HTMLElement | undefined =>
     portalButtons().find((b) => b.textContent?.includes(name))
   const choose = async (name: string): Promise<void> => {
-    const defs = [STATUS_DEF, numberDef, stageDef, dueDef]
+    const defs = [STATUS_DEF, numberDef, stageDef, dueDef, doneDef]
     useSession.setState({ tree: makeTree({ registry: defs }) })
     await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
     await act(async () => {
@@ -267,5 +273,29 @@ describe('the card’s Add chooser', () => {
     await choose('Due')
     const shown = [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent)
     expect(shown.join('')).toContain('Mon')
+  })
+
+  it('a Checkbox entry lands checked on the card with no pane open, and unchecking keeps it drawn', async () => {
+    await choose('Done')
+    expect(mutateSpy).toHaveBeenCalledWith({
+      op: 'setProperty',
+      path: 'Col/Two.md',
+      propertyId: 'prop_done',
+      value: { kind: 'checkbox', value: true },
+    })
+    await settle(450)
+    expect(openPanes()).toBe(0)
+    const box = (): HTMLElement | null => card('p2').querySelector('.cell-checkbox')
+    expect(box()?.classList.contains('checkbox-checked')).toBe(true)
+    await act(async () => {
+      box()?.click()
+    })
+    expect(mutateSpy).toHaveBeenLastCalledWith({
+      op: 'setProperty',
+      path: 'Col/Two.md',
+      propertyId: 'prop_done',
+      value: null,
+    })
+    expect(box()?.classList.contains('checkbox-checked')).toBe(false)
   })
 })

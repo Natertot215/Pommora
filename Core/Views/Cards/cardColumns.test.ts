@@ -119,7 +119,7 @@ describe('addEntriesFor', () => {
     ])
   })
 
-  it('fillsBlank: every type but Checkbox and the stamps', () => {
+  it('fillsBlank: every type but the stamps', () => {
     for (const t of [
       'status',
       'select',
@@ -130,9 +130,10 @@ describe('addEntriesFor', () => {
       'link',
       'text',
       'file',
+      'checkbox',
     ] as const)
       expect(fillsBlank(t)).toBe(true)
-    for (const t of ['checkbox', 'createdTime', 'lastEditedTime', 'title', undefined] as const)
+    for (const t of ['createdTime', 'lastEditedTime', 'title', undefined] as const)
       expect(fillsBlank(t)).toBe(false)
   })
 })

@@ -50,6 +50,7 @@ const checkboxDef: PropertyDefinition = {
 const numberDef: PropertyDefinition = { id: 'prop_n', label: 'Count', key: 'Count', type: 'number' }
 const linkDef: PropertyDefinition = { id: 'prop_link', label: 'Link', key: 'Link', type: 'link' }
 const fileDef: PropertyDefinition = { id: 'prop_files', label: 'Files', key: 'Files', type: 'file' }
+const dateDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
 const multiDef: PropertyDefinition = {
   id: 'prop_tags',
   label: 'Tags',
@@ -68,6 +69,7 @@ const allDefs: PropertyDefinition[] = [
   linkDef,
   fileDef,
   multiDef,
+  dateDef,
 ]
 
 const sourceWith = (columnStyles?: Record<string, { look?: string }>): CollectionNode =>
@@ -81,7 +83,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
       { kind: 'page', id: 'p1', title: 'Page One', path: 'Col/Page One.md' },
       { kind: 'page', id: 'p2', title: 'Page Two', path: 'Col/Page Two.md' },
     ],
-    propertyIds: [statusDef.id, checkboxDef.id, numberDef.id, linkDef.id, fileDef.id],
+    propertyIds: [statusDef.id, checkboxDef.id, numberDef.id, linkDef.id, fileDef.id, dateDef.id],
     views: [
       {
         id: 'view_1',
@@ -455,6 +457,18 @@ describe('menu-entered editing', () => {
       kind: 'page',
       newName: 'Renamed Page',
     })
+  })
+
+  it('a title menu’s Date leaf opens the menu seat at the title’s glyph', async () => {
+    await mountTable(sourceWith())
+    channels.menu = vi.fn(async () => ok(`prop:${dateDef.id}`))
+    const titleCell = host.querySelectorAll<HTMLElement>('.data-cell')[0]
+    await act(async () => {
+      titleCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    const pick = useSession.getState().pendingPick
+    expect(pick?.column.id).toBe(dateDef.id)
+    expect(pick?.trigger).toBe(titleCell.querySelector('.cell-title > :first-child'))
   })
 })
 it('the grip’s right-click opens the title menu', async () => {
