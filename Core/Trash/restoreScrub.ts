@@ -1,4 +1,4 @@
-// A bundle froze at its delete while the world moved on; replaying it verbatim would reintroduce governed keys nothing stands behind, so returning content is reconciled before it lands, and its own links repaired once it has.
+// A bundle froze at its delete while the world moved on, so returning content is reconciled before it lands, taking the current keys and spellings and losing a Link naming a page gone, and its own links are repaired once it has.
 
 import type { NexusTree } from '../Nexus/tree'
 import { editHeldList, editList, rekeyHeld, stripKeys } from '../Files/rootValues'
@@ -169,7 +169,7 @@ export async function scrubReturning(
   const text = (held: string, file: string): string | null => {
     const content = current.text(held)
     const { root: raw, changed } = current.words(splitFrontmatter(content))
-    const r = reconcileGovernedRoot(raw, world, frozen)
+    const r = reconcileGovernedRoot(raw, world)
     const gone = unlinked(raw)
     const goneKeys = Object.keys(gone)
     const keys = [...new Set([...changed, ...r.changed, ...goneKeys])]
@@ -182,7 +182,7 @@ export async function scrubReturning(
   }
   const json: Rewrite = (held) => {
     const raw = current.words(current.json(held)).root
-    const r = reconcileGovernedRoot(raw, spaceWorld, {}, inTransitKey)
+    const r = reconcileGovernedRoot(raw, spaceWorld, inTransitKey)
     const gone = unlinked(r.root)
     note(gone, asString(raw.id))
     return (

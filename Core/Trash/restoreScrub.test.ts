@@ -1,4 +1,4 @@
-// A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against, so restore can never reintroduce a governed key nothing stands behind.
+// A bundle is frozen at its delete while the world moves on — every nexus-wide sweep is tree-derived and the tree excludes `.trash`. These pin what a returning artifact is reconciled against: it takes the current keys and spellings, keeps what it can't read as a live write does, and loses a Link naming a page gone.
 
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -21,6 +21,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { noModeBits } from '../Testing/hostFs'
+import { STATUS_DEF } from '../Testing/definitions'
 
 const trashWrites = vi.hoisted(() => ({ fail: false }))
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -147,32 +148,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(f.Priority).toEqual(['hi'])
   })
 
-  it('prunes only the dead Space from a tag whose Context survives', async () => {
-    await writeFile(
-      join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
-    )
-    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap' }),
-    )
-    await cycle('Notes/Alpha.md', 'page', async () => {
-      await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
-    })
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  // Alpha holds a Space that leaves while it sits in the Trash, and the scrub can't write its trashed copy.
+  // Alpha names a Space in another casing, and the scrub can't write its trashed copy.
   const missedScrub = async (): Promise<Awaited<ReturnType<typeof settledMutate>>> => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
-    )
-    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap' }),
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     const d = await settledMutate(
       root,
@@ -180,7 +160,6 @@ describe('a returning artifact is reconciled against the world it comes back to'
       nexusDeps,
     )
     expect(d.ok).toBe(true)
-    await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     await refreshTree(root)
     const [listed] = await listBundles(root, { kind: 'trash' })
     trashWrites.fail = true
@@ -201,7 +180,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await readNotes(root))['Notes/Alpha.md']).toMatchObject({
       kind: 'relink',
       values: {
-        'Notes/Alpha.md': { '<Projects>': { from: ['Pommora', 'Sapphire'], to: ['Pommora'] } },
+        'Notes/Alpha.md': { '<Projects>': { from: ['pommora'], to: ['Pommora'] } },
       },
     })
     await finishOwed(root, nexusDeps)
@@ -328,26 +307,23 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
   }
 
-  it('prunes the dead Space from a tag and rewrites the survivor', async () => {
+  it('keeps a Space that died while it sat in the Trash, as a live write does, and rewrites the survivor', async () => {
     await prunedTag()
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora', 'Sapphire'])
   })
 
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', 'Journal.md'),
-      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\nPriority: lo\n---\nb`,
+      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\n<Projects>:\n  - pommora\nPriority: lo\n---\nb`,
     )
-    await cycle('Notes/Daily', 'set', async () => {
-      await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
-    })
+    await cycle('Notes/Daily', 'set', async () => {})
     const f = await fm('Notes/Daily/Journal.md')
-    expect(f['<Projects>']).toBeUndefined()
+    expect(f['<Projects>']).toEqual(['Pommora'])
     expect(f.Priority).toEqual(['lo'])
   })
 
-  it('drops a Select value whose option was deleted while it sat in the Trash', async () => {
-    // The definition still stands; the value it held no longer can. Both restore routes ask the same standing check, so this cannot survive here and be dropped by a property restore.
+  it('keeps a Select word whose option was deleted while it sat in the Trash, as a word no option names', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
       await seedNexus(root, {
         defs: [
@@ -358,25 +334,38 @@ describe('a returning artifact is reconciled against the world it comes back to'
         ],
       })
     })
-    expect((await fm('Notes/Alpha.md')).Priority).toBeUndefined()
+    expect((await fm('Notes/Alpha.md')).Priority).toBe('hi')
   })
 
-  it('keeps a multi-value tag’s survivors when only some options died', async () => {
+  it('keeps a Status word no option names', async () => {
+    await seedNexus(root, {
+      defs: [PRIORITY, STATUS_DEF],
+      assigned: { Notes: [PROP, STATUS_DEF.id] },
+    })
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\nStatus: Urgent\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect((await fm('Notes/Alpha.md')).Status).toBe('Urgent')
+  })
+
+  it('keeps a Multi-Select’s words no option names, an option deleted while it sat in the Trash included, which register as any held word does', async () => {
     await seedNexus(root, { defs: [tags(['a', 'b'])] })
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\nTags:\n  - a\n  - b\n---\nbody`,
+      `---\nID: ${PAGE_A}\nTags:\n  - a\n  - b\n  - zeta\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {
       await seedNexus(root, { defs: [tags(['a'])] })
     })
-    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
+    expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a', 'b', 'zeta'])
     const def = (
       await readJsonAt<{ defs: Record<string, { select_options: { label: string }[] }> }>(
         join(root, '.nexus', 'properties.json'),
       )
     ).defs[PROP]
-    expect(def.select_options.map((o) => o.label)).toEqual(['a'])
+    expect(def.select_options.map((o) => o.label)).toEqual(['a', 'b', 'zeta'])
   })
 
   it('drops a gone Link held under its key in another casing and parks it', async () => {
@@ -438,19 +427,17 @@ describe('a returning artifact is reconciled against the world it comes back to'
     }
   })
 
-  it('leaves foreign frontmatter and the body untouched while it strips', async () => {
+  it('leaves foreign frontmatter and the body untouched while it rewrites', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - Pommora\nPriority: hi\n---\nthe body\n`,
+      `---\nID: ${PAGE_A}\nauthor: Username\n<Projects>:\n  - pommora\nPriority: hi\n---\nthe body\n`,
     )
-    await cycle('Notes/Alpha.md', 'page', async () => {
-      await rm(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true, force: true })
-    })
+    await cycle('Notes/Alpha.md', 'page', async () => {})
     const raw = await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8')
     expect(raw).toContain('author: Username')
+    expect(raw).toContain('<Projects>:\n  - Pommora')
     expect(raw).toContain('Priority:\n  - hi')
     expect(raw).toContain('the body')
-    expect(raw).not.toContain('Projects')
   })
 })
 
@@ -571,7 +558,7 @@ describe('a Space sidecar is a context root too', () => {
   const sidecar = async (rel: string): Promise<Record<string, unknown>> =>
     await readJsonAt(join(contextsDir(root), rel, '_space.json'))
 
-  it('drops a passenger tag whose Space died while the subtree sat in the trash', async () => {
+  it('keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does', async () => {
     await seedPassenger()
     expect(
       (
@@ -603,8 +590,7 @@ describe('a Space sidecar is a context root too', () => {
     expect(r.ok).toBe(true)
 
     const sap = await sidecar('Projects/Sapphire')
-    expect(sap['<Areas>']).toBeUndefined()
-    // Its identity and its foreign keys ride through — only what nothing stands behind goes.
+    expect(sap['<Areas>']).toEqual(['Work'])
     expect(sap.id).toBe('sp-sap')
     expect(sap.color).toBe('blue')
     expect(sap.Status).toBe('Done')

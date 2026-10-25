@@ -7,7 +7,6 @@ import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
 import {
   type GovernedWorld,
   reconcileGovernedRoot,
-  reencode,
   gonePageEntry,
   pageWorldOf,
   rewriteRaw,
@@ -89,16 +88,6 @@ const world: GovernedWorld = {
 }
 
 describe('reconcileGovernedRoot — the context arm', () => {
-  it('drops unknowns, keeping each known Space as the file spells it', () => {
-    const { root, changed } = reconcileGovernedRoot(
-      { '<Projects>': ['pommora', 'Pomora', 'CS 161'] },
-      world,
-      {},
-    )
-    expect(root['<Projects>']).toEqual(['CS 161'])
-    expect(changed).toEqual(['<Projects>'])
-  })
-
   it('a live reconcile leaves a list naming an unknown Space, or holding a wikilink, as written', () => {
     const input = { '<Projects>': ['pommora', 'Pomora', 'CS 161'] }
     const { root, changed } = reconcileGovernedRoot(input, world)
@@ -115,14 +104,6 @@ describe('reconcileGovernedRoot — the context arm', () => {
 
   const withAreas = contextWorldOf([...groups, { def: { id: 'ctxB', title: 'Areas' }, spaces: [] }])
   const emptied = { '<Projects>': ['Pomora'], '<Classes>': [], '<Areas>': null }
-
-  it('removes a key whose values all drop, a present-but-empty list, and a bare key (no empties)', () => {
-    const { root, changed } = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas }, {})
-    expect('<Projects>' in root).toBe(false)
-    expect('<Classes>' in root).toBe(false)
-    expect('<Areas>' in root).toBe(false)
-    expect(changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
-  })
 
   it('a live reconcile removes an empty list and a bare key, and keeps a key naming only an unknown Space as written', () => {
     const r = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas })
@@ -164,14 +145,11 @@ describe('reconcileGovernedRoot — the context arm', () => {
 })
 
 describe('reconcileGovernedRoot — the property arm', () => {
-  it('a free-typed key keeps a foreign shape as written, live and frozen alike', () => {
+  it('a free-typed key keeps a foreign shape as written', () => {
     for (const raw of [42, true, ['milk', 'eggs'], [['Page']]]) {
-      const live = reconcileGovernedRoot({ Notes: raw }, world)
-      expect(live.root).toEqual({ Notes: raw })
-      expect(live.changed).toEqual([])
-      const frozen = reconcileGovernedRoot({ Notes: raw }, world, {})
-      expect(frozen.root).toEqual({ Notes: raw })
-      expect(frozen.changed).toEqual([])
+      const { root, changed } = reconcileGovernedRoot({ Notes: raw }, world)
+      expect(root).toEqual({ Notes: raw })
+      expect(changed).toEqual([])
     }
   })
 
@@ -186,13 +164,10 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual([])
   })
 
-  it('keeps an assigned key whose value reads as nothing as written, and a restore deletes it', () => {
-    const live = reconcileGovernedRoot({ Status: ['Wip'] }, world)
-    expect(live.root).toEqual({ Status: ['Wip'] })
-    expect(live.changed).toEqual([])
-    const frozen = reconcileGovernedRoot({ Status: ['Wip'] }, world, {})
-    expect('Status' in frozen.root).toBe(false)
-    expect(frozen.changed).toEqual(['Status'])
+  it('keeps an assigned key whose value reads as nothing as written', () => {
+    const { root, changed } = reconcileGovernedRoot({ Status: ['Wip'] }, world)
+    expect(root).toEqual({ Status: ['Wip'] })
+    expect(changed).toEqual([])
   })
 
   it('a Multi-Select keeps an unregistered option', () => {
@@ -225,12 +200,10 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual(['Tags'])
   })
 
-  it('a spaces-only Text value reads as nothing, so a sibling write and a restore both drop it', () => {
-    for (const frozen of [undefined, {}]) {
-      const r = reconcileGovernedRoot({ Notes: '   ' }, world, frozen)
-      expect(r.root).toEqual({})
-      expect(r.changed).toEqual(['Notes'])
-    }
+  it('a spaces-only Text value reads as nothing, so a reconcile drops it', () => {
+    const { root, changed } = reconcileGovernedRoot({ Notes: '   ' }, world)
+    expect(root).toEqual({})
+    expect(changed).toEqual(['Notes'])
   })
 
   it('a registered key the Collection does not assign passes verbatim', () => {
@@ -292,58 +265,14 @@ describe('reconcileGovernedRoot — another casing', () => {
     expect(root).toEqual(input)
     expect(changed).toEqual([])
   })
-
-  it('a restore drops a key reading as nothing and leaves another casing of it as written', () => {
-    const { root, changed } = reconcileGovernedRoot(
-      { Stage: ['Bogus'], stage: ['Done'] },
-      world,
-      {},
-    )
-    expect(root).toEqual({ stage: ['Done'] })
-    expect(changed).toEqual(['Stage'])
-  })
 })
 
 describe('reconcileGovernedRoot — skip', () => {
   it('passes the skipped key verbatim, and a key in another casing as foreign', () => {
     const input = { Status: 'Open', status: 'Done' }
-    const { root, changed } = reconcileGovernedRoot(input, world, undefined, 'Status')
+    const { root, changed } = reconcileGovernedRoot(input, world, 'Status')
     expect(root).toEqual(input)
     expect(changed).toEqual([])
-  })
-})
-
-const def = (over: Partial<PropertyDefinition>): PropertyDefinition =>
-  ({ id: 'p', label: 'P', key: 'P', type: 'select', ...over }) as PropertyDefinition
-
-describe('reencode — a frozen copy names only what still exists', () => {
-  const link = def({ type: 'link' })
-  const holds = (title: string): boolean => title === 'Alpha'
-
-  it('keeps a Link value naming a page the world holds, whatever it carries', () => {
-    const value = '[[Alpha#Intro|see]]'
-    expect(reencode(link, value, { holds }).next).toBe(value)
-  })
-
-  it('drops a Link value naming a page the world doesn’t hold', () => {
-    expect(reencode(link, '[[Gone]]', { holds }).next).toBeUndefined()
-  })
-
-  it('drops a hand-written markdown link naming a page the world doesn’t hold, and keeps an address', () => {
-    expect(reencode(link, '[x](Gone)', { holds }).next).toBeUndefined()
-    expect(reencode(link, '[x](example.com)', { holds }).next).toBe('[x](example.com)')
-  })
-
-  it('keeps a Link value naming only a heading of the page it sits on', () => {
-    const value = '[[#Intro]]'
-    expect(reencode(link, value, { holds }).next).toBe(value)
-  })
-
-  it('keeps an address, and a live read or an options-only freeze keeps any page', () => {
-    const url = 'https://example.com'
-    expect(reencode(link, url, { holds }).next).toBe(url)
-    expect(reencode(link, '[[Gone]]').next).toBe('[[Gone]]')
-    expect(reencode(link, '[[Gone]]', {}).next).toBe('[[Gone]]')
   })
 })
 
