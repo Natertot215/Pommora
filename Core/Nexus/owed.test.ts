@@ -48,11 +48,7 @@ describe('the compose rules', () => {
     expect(owedDelete({ rename: ['a'] }, 'b')).toEqual({ strip: ['a', 'b'] })
   })
 
-  it('a rename and a clean sweep keep a Clear’s mark', () => {
-    expect(owedRename({ strip: ['High'], kept: true }, 'High', 'Urgent')).toEqual({
-      strip: ['High'],
-      kept: true,
-    })
+  it('a clean sweep keeps a Clear’s mark', () => {
     expect(owedSwept({ strip: ['a', 'High'], kept: true }, ['a'])).toEqual({
       strip: ['High'],
       kept: true,

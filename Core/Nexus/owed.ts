@@ -51,13 +51,13 @@ export type Entry = PropertyEntry | ContextEntry | SpaceEntry | ContainerEntry |
 export type Notes = Record<string, Entry>
 
 /** Where a name lives: a property's keys, a Context's titles, a Space's titles inside its Context, or one property's option words. */
-export type Owner =
+type Owner =
   | { kind: 'property' }
   | { kind: 'context' }
   | { kind: 'space'; contextId: string }
   | { kind: 'option'; propertyId: string }
 /** A name a create or rename lands on, and the item landing there, whose own owed names never refuse it. */
-export type Landing = { owner: Owner; name: string; except?: string }
+type Landing = { owner: Owner; name: string; except?: string }
 
 const OWED_LINE = 'An earlier change hasn’t reached every file yet.'
 export const OWED = fail('owed', OWED_LINE)
@@ -136,12 +136,9 @@ export async function editNote(
 export const propertyNote = (e: Entry | undefined): PropertyEntry =>
   e?.kind === 'property' ? e : { kind: 'property' }
 
-/** A kept part's own word stays in `strip` alone, so a rename never carries a Clear's pages to the new word. */
-export const owedRename = (o: Owed, from: string, to: string): Owed => ({
+export const owedRename = <O extends Owed>(o: O, from: string, to: string): O => ({
   ...o,
-  rename: distinct(
-    [...(o.rename ?? []), from].filter((n) => n !== to && !(o.kept && o.strip?.includes(n))),
-  ),
+  rename: distinct([...(o.rename ?? []), from].filter((n) => n !== to)),
 })
 /** Every owed name and the current one move into `strip`, for a delete and a Clear alike (H-2, H-3). */
 export const owedDelete = (o: Owed, current: string): Owed => ({
@@ -149,7 +146,7 @@ export const owedDelete = (o: Owed, current: string): Owed => ({
   strip: distinct(o.strip, o.rename, [current]),
 })
 /** `o` once a sweep that missed nothing has reached `swept`. */
-export const owedSwept = (o: Owed, swept: readonly string[]): Owed => ({
+export const owedSwept = <O extends Owed>(o: O, swept: readonly string[]): O => ({
   ...o,
   rename: distinct(o.rename?.filter((n) => !swept.includes(n))),
   strip: distinct(o.strip?.filter((n) => !swept.includes(n))),

@@ -223,11 +223,11 @@ function rekeyProperty(root: string, propertyId: string, change: Retitle): Promi
     if (moved.key === prior.key) return done(await commit())
     return runNoted(root, propertyId, {
       lands: [{ owner: { kind: 'property' }, name: moved.key, except: propertyId }],
-      note: (e) => ({ ...propertyNote(e), ...owedRename(propertyNote(e), prior.key, moved.key) }),
+      note: (e) => owedRename(propertyNote(e), prior.key, moved.key),
       list: commit,
       sweep: async ({ from, def }) =>
         from === def.key ? NO_REACH : renameSweep(root, from, def.key),
-      settle: (e, { from }) => ({ ...e, ...owedSwept(e, [from]) }),
+      settle: (e, { from }) => owedSwept(e, [from]),
     })
   })
 }
