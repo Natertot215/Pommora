@@ -30822,7 +30822,6 @@ The style action spelling in "runs a Style answer" is `columnMenu.ts`'s at P3's 
  import { popMenu } from '../../Actions/menuActions'
 @@ TableView — host and columns @@
    const {
-     schema,
      view,
      columns,
      groups,
