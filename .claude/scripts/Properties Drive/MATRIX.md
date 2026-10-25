@@ -142,3 +142,16 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 | A card's picker per value | `Seat Stage` on `Seat One` and `Seat Two` | open Seat One's option picker on its card, then press Seat Two's twice while it leaves, its dismissal taking the first press | a fresh picker element mounts | LC-54 |
 | A Link from a card's chooser | `Seat Site` hidden in Seat Cards | click Seat Two's card off any value, choose Seat Site | the field opens empty | — |
 | The sidebar's Properties menu | `Seat Due` (Date & Time) holding `2026-10-22` | right-click Seat One in the sidebar, choose Properties › Seat Due | the calendar opens | X6 |
+
+
+#### Group 15 — The Properties Pane
+
+| Case | Seeds | Operation | Expected | Decisions |
+| --- | --- | --- | --- | --- |
+| Create then edit | none; each property is created through the pane | New Property, then Number, Date, Link, Checkbox, and File in turn | each editor opens with no animation frame showing the list between the pick and the editor | O-5 |
+| The Number rhythm | the new Number | the editor as created, then Fraction on | 8px between every shown row (3 gaps), then 4 gaps of 8px with Value revealed; screenshots `g15-number-collapsed`, `g15-number-revealed` | L-1 |
+| The denominator | as above, Fraction on | type `4` in Value, Enter; then `0` | the definition holds 4 after both; Style then reveals, 5 gaps of 8px; screenshot `g15-number-style` | L-3, L-1 |
+| The Date rhythm | the new Date & Time | Date format Full Date, then MM/DD/YYYY | 8px from the heading through Date, Day, and Time; with Day collapsed, Date to Time is 8px; screenshots `g15-date-revealed`, `g15-date-collapsed` | L-1 |
+| Link and Checkbox | the new Link and Checkbox | open each editor | 8px between rows; screenshots `g15-link`, `g15-checkbox`, `g15-file` | L-1 |
+| Delete from ⋮ | the new File, its editor open | ⋮ › Delete, confirm | the definition is gone and the list is the live slot | O-5 |
+| Removed from outside | the new Number, its editor open | `mutate` `unassignProperty` from outside the pane | the list is the live slot, and no "Property not found." shows | O-5 |

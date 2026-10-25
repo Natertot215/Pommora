@@ -12,7 +12,7 @@ import { parse } from 'yaml'
 
 const PORT = 9403
 // The drive's groups in order, each landed by the plan phase that adds it.
-const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+const LANDED = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !LANDED.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${LANDED.join(', ')})`)
@@ -1031,6 +1031,134 @@ async function group14(cdp) {
   await until('the seat definitions leave', async () => !(await config(cdp)).registry.some((h) => h.id === SEAT.stage.id))
 }
 
+// ── Group 15 — The Properties Pane (P17) ────────────────────────────────────
+
+const G15_FILES = ['.nexus/properties.json', 'Collection A/_pagecollection.json']
+const RHYTHM = 8
+const liveEl = (label) => `[...document.querySelectorAll('[aria-label="${label}"]')].find((e) => !e.closest('[inert]'))`
+const liveRow = (text) => `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.textContent.trim() === ${JSON.stringify(text)})`
+const listLive = (cdp) => cdp.evaluate(`!!${liveEl('New Property')}`)
+const editorLive = (cdp) => cdp.evaluate(`!!${liveEl('Property Menu')}`)
+
+/** The gaps between an editor's shown rows, top to bottom. The container is the element holding two controls on rows that never collapse; a revealed row is read inside its Reveal, and a collapsed one has none. */
+const rowGaps = (cdp, first, last) => cdp.evaluate(`(() => {
+  const a = ${liveEl(first)}, b = ${liveEl(last)}
+  let box = a.parentElement
+  while (!box.contains(b)) box = box.parentElement
+  const rows = [...box.children]
+    .map((c) => (c.hasAttribute('data-reveal') ? c.firstElementChild?.firstElementChild : c))
+    .filter((r) => r && r.getBoundingClientRect().height > 0)
+    .map((r) => r.getBoundingClientRect())
+  return rows.slice(1).map((r, i) => Math.round(r.top - rows[i].bottom))
+})()`)
+const even = (gaps, count) => gaps.length === count && gaps.every((g) => g === RHYTHM)
+
+/** Creates a property of `type` through the pane, sampling each frame from the pick on whether the list shows. */
+async function createThroughPane(cdp, type) {
+  await click(cdp, liveEl('New Property'))
+  await sleep(600)
+  await cdp.evaluate(`(() => {
+    window.__listFrames = 0
+    const end = performance.now() + 1500
+    const tick = () => {
+      if (${liveEl('New Property')}) window.__listFrames += 1
+      if (performance.now() < end) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })()`)
+  await click(cdp, liveRow(type))
+  await sleep(1700)
+  return { listFrames: await cdp.evaluate('window.__listFrames'), editor: await editorLive(cdp) }
+}
+const backToList = async (cdp) => {
+  await click(cdp, liveRow('Properties'))
+  await sleep(700)
+}
+async function pickIn(cdp, ariaLabel, option) {
+  await click(cdp, liveEl(ariaLabel))
+  await until(`the ${ariaLabel} picker`, () => portalOpen(cdp))
+  await click(cdp, `[...document.querySelectorAll('[data-picker-portal]:not([data-dismissal-shield]) [role=button]')].find((e) => e.textContent.trim() === ${JSON.stringify(option)})`)
+  await sleep(600)
+}
+async function typeInto(cdp, ariaLabel, text) {
+  await click(cdp, liveEl(ariaLabel))
+  await sleep(300)
+  await typeText(cdp, text)
+  await pressKey(cdp, 'Enter')
+  await sleep(600)
+}
+
+async function group15(cdp) {
+  const kept = G15_FILES.map((rel) => readFileSync(join(NEXUS, rel), 'utf8'))
+  await openCollection(cdp)
+  await viewFrame(cdp, 'Properties')
+
+  const created = {}
+  for (const type of ['Number', 'Date & Time', 'Link', 'Checkbox', 'File']) {
+    created[type] = await createThroughPane(cdp, type)
+    if (type === 'Number') {
+      const gaps = await rowGaps(cdp, 'Number format', 'Decimal places')
+      item(15, 'L-1', 'a new Number editor keeps 8px between every shown row, its revealed Separators and Fraction among them', even(gaps, 3), show(gaps))
+      await shot(cdp, 'g15-number-collapsed')
+      await click(cdp, liveEl('Fraction'))
+      await sleep(600)
+      const value = await rowGaps(cdp, 'Number format', 'Decimal places')
+      item(15, 'L-1', 'turning Fraction on reveals Value at the same 8px', even(value, 4), show(value))
+      await shot(cdp, 'g15-number-revealed')
+      await typeInto(cdp, 'Fraction value', '4')
+      const four = defNamed('New Number')?.number_denominator
+      await typeInto(cdp, 'Fraction value', '0')
+      const after = defNamed('New Number')?.number_denominator
+      item(15, 'L-3', 'a denominator of 4 lands, and a 0 typed over it reverts to 4', four === 4 && after === 4, show({ four, after }))
+      const style = await rowGaps(cdp, 'Number format', 'Decimal places')
+      item(15, 'L-1', 'a denominator gives the bar its ceiling, and Style reveals at the same 8px', even(style, 5), show(style))
+      await shot(cdp, 'g15-number-style')
+    }
+    if (type === 'Date & Time') {
+      await pickIn(cdp, 'Date format', 'Full Date')
+      const shown = await rowGaps(cdp, 'Date format', 'Time format')
+      item(15, 'L-1', 'a Date editor with its Day row shown keeps 8px between its heading and every row', even(shown, 3), show(shown))
+      await shot(cdp, 'g15-date-revealed')
+      await pickIn(cdp, 'Date format', 'MM/DD/YYYY')
+      const hidden = await rowGaps(cdp, 'Date format', 'Time format')
+      item(15, 'L-1', 'a collapsed Day row leaves no gap: Date to Time is 8px', even(hidden, 2), show(hidden))
+      await shot(cdp, 'g15-date-collapsed')
+    }
+    if (type === 'Link') {
+      const gaps = await rowGaps(cdp, 'Underline links', 'Link format')
+      item(15, 'L-1', 'a Link editor keeps 8px between its rows', even(gaps, 2), show(gaps))
+      await shot(cdp, 'g15-link')
+    }
+    if (type === 'Checkbox') {
+      const gaps = await rowGaps(cdp, 'Color', 'Checkbox style')
+      item(15, 'L-1', 'a Checkbox editor keeps 8px between its rows', even(gaps, 1), show(gaps))
+      await shot(cdp, 'g15-checkbox')
+    }
+    if (type === 'File') await shot(cdp, 'g15-file')
+    if (type !== 'File') await backToList(cdp)
+  }
+  item(15, 'O-5', 'creating each type opens its editor with no frame of the list between', Object.values(created).every((c) => c.editor && c.listFrames === 0), show(created))
+
+  const { chosen } = await chooseNative(cdp, liveEl('Property Menu'), 'Delete', { button: 'left' })
+  if (await settles(() => cdp.evaluate(`!!document.querySelector('[role="alertdialog"]')`), 2500))
+    await click(cdp, `[...document.querySelector('[role="alertdialog"]').querySelectorAll('button')].find((b) => b.textContent.trim() !== 'Cancel')`)
+  const gone = await settles(async () => !defNamed('New File'))
+  item(15, 'O-5', 'deleting a property from its ⋮ menu leaves the list showing', chosen === true && gone && (await listLive(cdp)), show({ chosen, gone }))
+
+  await click(cdp, `[...document.querySelectorAll('[role=button]')].find((e) => !e.closest('[inert]') && e.textContent.trim().startsWith('New Number'))`)
+  await sleep(700)
+  const number = defNamed('New Number')
+  await must('remove New Number from outside', ask(cdp, 'mutate', { op: 'unassignProperty', containerPath: 'Collection A', propertyId: number.id }))
+  const shown = await settles(() => listLive(cdp))
+  const caption = await cdp.evaluate(`document.body.innerText.includes('Property not found.')`)
+  item(15, 'O-5', 'a property removed from outside under its open editor gives way to the list', shown && !caption, show({ shown, caption }))
+  await shot(cdp, 'g15-list-after-removal')
+
+  await escapeAll(cdp)
+  G15_FILES.forEach((rel, i) => writeFileSync(join(NEXUS, rel), kept[i]))
+  await until('the registry as it was', async () => (await config(cdp)).registry.length === JSON.parse(kept[0]).order.length)
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1050,6 +1178,7 @@ try {
   if (GROUPS.has('12')) await group12(cdp)
   if (GROUPS.has('13')) await group13(cdp)
   if (GROUPS.has('14')) await group14(cdp)
+  if (GROUPS.has('15')) await group15(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))
