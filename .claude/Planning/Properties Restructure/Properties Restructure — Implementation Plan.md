@@ -1258,7 +1258,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 12-10 · Drive group 10
   - [x] Review Checkpoint
   - [x] Closeout P11B–P12 (two `opus-high` agents, inward and outward)
-  - [ ] Neutral Gate 1 (`fable-high`, `BASELINE..<Phase 12's head>`)
+  - [x] Neutral Gate 1 (`fable-high`, `BASELINE..<Phase 12's head>`)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 13 opens]`
 - [ ] **Phase 13** — Columns Carry Their Answer
   - [ ] Task 13-1 · `ResolvedColumn` carries its type and definition through one `resolveColumn`
@@ -23012,14 +23012,18 @@ The builder sits beside the `partial` field it reads, so the property restore, w
 
 #### Review Checkpoint
 
-- [ ] **Closeout P11B–P12:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 11B's base>..HEAD` with the asks Phase 11B names, and Phase 12's diff against this phase: the ten tasks' AFTERs landed as written or with each departure disclosed below; the stash has one name, one reader, and one writer, and only Remove's one stash write sets a stamp; no head between the phase's commits writes a block without its stamp (Tasks 12-1 and 12-2 share a commit); nothing temporary, unreachable, or transitional left (Task 12-5's interim `ok(null)` gone with Task 12-6); every comment the phase touched reads true; each agent states, with evidence, whether the phase leaves the Perspectives' flagged practices concretely fewer and whether any fix here traded an existing problem for a new one. Each correctness finding is fixed before Neutral Gate 1 runs, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
+- [x] **Closeout P11B–P12:** *§Review Procedure › Execution Reviews*' two `opus-high` agents, inward and outward, read `<Phase 11B's base>..HEAD` with the asks Phase 11B names, and Phase 12's diff against this phase: the ten tasks' AFTERs landed as written or with each departure disclosed below; the stash has one name, one reader, and one writer, and only Remove's one stash write sets a stamp; no head between the phase's commits writes a block without its stamp (Tasks 12-1 and 12-2 share a commit); nothing temporary, unreachable, or transitional left (Task 12-5's interim `ok(null)` gone with Task 12-6); every comment the phase touched reads true; each agent states, with evidence, whether the phase leaves the Perspectives' flagged practices concretely fewer and whether any fix here traded an existing problem for a new one. Each correctness finding is fixed before Neutral Gate 1 runs, and each fold lands or goes to *Deferred Folds* by the closeout's rule.
 - [ ] The tests named in Tasks 12-2 to 12-9 pass, with `Core/Properties/propertyStash.test.ts` new; `unassignProperty.test.ts`, `assignment.test.ts`, `deleteProperty.test.ts`, `optionOps.test.ts`, `cascade.test.ts`, `configReach.test.ts`, `fileEvents.test.ts`, `restoreProperty.test.ts`, `trashRecovery.test.ts`, `spend.test.ts`, `rows.test.ts`, `TrashFrame.test.tsx`, `ArchiveView.test.tsx`, `owed.test.ts`, `finishOwed.test.ts`, `mutate.test.ts`, and `Core/Settings/handlers.test.ts` green.
 - [ ] Run the gates: `npm run typecheck`, `npm run test`, `npm run lint`, clean.
 - [ ] `npm run test -- engineGraph hostGraph` passes.
 - [ ] Task 12-1's two `git grep` checks still answer as stated on the phase's head.
 - [ ] The Properties Drive passes groups 1–10; the Metadata Drive passes on its re-pointed `stashOf`.
 - [ ] The phase's production delta is measured: `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <Task 12-2's commit>^..<Task 12-10's commit> --exclude .claude --save <scratch>/phase-12-delta.md`, its Actionable column recorded in *§Net Ledger* against *§Line Total* below.
-- [ ] Neutral Gate 1 (below), run once the closeout's correctness findings above are fixed, answers yes: each "no" routed back, its fix landed, and the gate run again over the new head.
+- [x] Neutral Gate 1 (below), run once the closeout's correctness findings above are fixed, answers yes: each "no" routed back, its fix landed, and the gate run again over the new head.
+  - **10-24-2026, run 1, no:** a re-add's and a property restore's refill dropped option words no option names; the refill lands by the live rule (`43bafccf2`).
+  - **10-24-2026, run 2, no:** a Multi-Select pick dropped a case-variant of an option the pick didn't hold; it drops only the pick's own (`75e780235`).
+  - **10-24-2026, run 3, no:** a several-word Select's tidy, which undo leaves, stands as P-1 and B-8 rule it; a write respelled another key's scalar as a list (`a9bd37f1a`); a Trash restore dropped the words it couldn't read, which it keeps under B-7 (`db1ececeb`).
+  - **10-24-2026, run 4, yes** at `bcd778e8c`. Its refinements stand as ruled or disclosed: the several-word Select drops a word no option names (P-1); an empty line is a governed key's, since foreign frontmatter is never touched; a crash between the bundle's mint and the note leaves an orphan Trash entry (the H-5 residual); and a page already holding its own value leaves its stash entry to age out.
 
 #### Neutral Gate 1
 
@@ -35409,7 +35413,7 @@ Run inside *§Final Verification* over `BASELINE..HEAD`; its statement, verbatim
 > - Code that only existed to read file layouts from older builds of the app is gone, and nothing still holding those layouts needed to keep working.
 > - A property definition holds only a type a person can create, or Context; Title, Created Time, Last Modified, and Location are answered from a separate small table, and a hand-written definition that isn't a real type is set aside when the property list is read.
 > - Each type's facts are written once per side of the app, so code asks the type instead of deciding it again.
-> - Writing a value to a page or a Space goes through one module that reads the file once. When a value is written, the page's other properties are tidied by one rule: a value is never blanked, a list never loses an item it can't read, and a Select or Status holding several words becomes the one option it shows; these tidies are the only changes a write makes beyond its own key, and undo, putting back only the edited key, leaves them. Text holding only spaces reads as empty, and no write, tidy, or undo leaves an empty property line. A write that changes nothing leaves the file alone.
+> - Writing a value to a page or a Space goes through one module that reads the file once. When a value is written, the page's other properties are tidied by one rule: a value is never blanked, a list never loses an item it can't read, and a Select or Status holding several words becomes the one option it shows, dropping a word no option names; these tidies are the only changes a write makes beyond its own key, and undo, putting back only the edited key, leaves them. Text holding only spaces reads as empty, and no write, tidy, or undo leaves an empty line under a governed key. A write that changes nothing leaves the file alone.
 > - Collections refer to property definitions by id, so an incoming definition doesn't force re-reading every page; a damaged property list opens the workspace with properties marked unreadable instead of refusing to open.
 > - Undo puts back exactly what the file held for the one property that was edited, on the line where it stood, and undoing a link value also removes the alias it added.
 > - Every property change goes through the app's one change channel with one reply shape, and confirmations count affected items correctly, zero included.
