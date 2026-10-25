@@ -4,7 +4,7 @@ import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { numberFrom } from '@pommora/uix/Utilities/numberUnit'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '../../Connections/linkValue'
-import { notifyRetry } from '../../Interface/Notifications/notifications'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import {
   type ColumnStyle,
@@ -225,8 +225,8 @@ const fileRows = (def: PropertyDefinition, { configure, assetRoot }: RowContext)
     void dialer()
       .ask('assets:chooseDir', 'property', def.file_directory)
       .then((picked) => {
-        if (!picked.ok) notifyRetry(picked.error.message, browse)
-        else if (picked.value !== null) configure({ file_directory: picked.value })
+        if (reportRefusal(picked, browse) && picked.value !== null)
+          configure({ file_directory: picked.value })
       })
   return [
     item('Directory', {

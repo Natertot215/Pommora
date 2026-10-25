@@ -171,6 +171,28 @@ describe('ExcludedDirectoriesRow', () => {
     })
     expect(exclusionsSet).toHaveBeenCalledWith(['Renamed', 'Vault A'])
   })
+
+  it('a refused folder choice offers Try Again, which chooses again and writes the pick', async () => {
+    await render(['Archive'])
+    const choose = vi
+      .fn()
+      .mockResolvedValueOnce(fault('Couldn’t open the folder picker.'))
+      .mockResolvedValueOnce(ok('Picked'))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'exclusions:set': exclusionsSet,
+      'exclusions:choose': choose,
+    })
+    await act(async () => manageButton().click())
+    await act(async () => byLabel('Choose Folder')[0].click())
+    const notice = currentNotification()
+    expect(notice?.action?.label).toBe('Try Again')
+    await act(async () => {
+      await notice?.action?.run()
+    })
+    expect(choose).toHaveBeenCalledTimes(2)
+    expect(exclusionsSet).toHaveBeenCalledWith(['Picked'])
+    clearNotification()
+  })
 })
 
 describe('Clear Exclusion Cache', () => {
