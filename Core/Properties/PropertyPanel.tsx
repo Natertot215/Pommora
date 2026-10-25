@@ -3,7 +3,7 @@ import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator, heading, menuDropLine } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
+import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex } from './paneDrop'
 import { moveItem, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
@@ -26,7 +26,7 @@ import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { holderOf, useValueContext } from './valueContext'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/paneTargets'
-import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
+import { FLUSH_GHOST } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
@@ -246,7 +246,10 @@ export function PropertyPanel({
     const f = fieldOf(id)
     return f && <Icon name={f.icon} />
   }
-  const ghostApi = useGhostOptionAnchor(seat.open !== null || addOpen !== null)
+  const ghostApi = useGhostAnchor({
+    ...FLUSH_GHOST,
+    suppressed: () => seat.open !== null || addOpen !== null,
+  })
   const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))

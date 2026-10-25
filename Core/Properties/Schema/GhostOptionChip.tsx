@@ -1,25 +1,14 @@
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { useGhostAnchor, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
+import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { Label } from '@pommora/uix/Labels/Label'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { PropertyType } from '../properties'
 import { chipOf } from '../typeDisplay'
 
 // The slot sits flush under the list it joins, so a leave closes it immediately and landing in the slot keeps it alive either way.
-const GHOST_GRACE_MS = 0 // KNOB
-
-/** `busy` latches in a ref: the mechanism re-reads it at the dwell's fire time, long after the render that set it. */
-export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
-  const busyRef = useLatest(busy)
-  return useGhostAnchor({
-    dwellMs: REVEAL_DWELL_MS,
-    graceMs: GHOST_GRACE_MS,
-    suppressed: () => busyRef.current,
-  })
-}
+export const FLUSH_GHOST = { dwellMs: REVEAL_DWELL_MS, graceMs: 0 } // KNOB
 
 export function GhostOptionChip({
   api,
