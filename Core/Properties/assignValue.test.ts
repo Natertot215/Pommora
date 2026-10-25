@@ -46,7 +46,7 @@ const recorded = (req: MutateRequest): MutateOutcome =>
 const settled = () => new Promise((r) => setTimeout(r))
 
 let apply: Mock<ValueWriter['apply']>
-let mutate: Mock<ValueWriter['mutate']>
+let mutate: Mock<(req: MutateRequest) => Promise<MutateOutcome | null>>
 let row: ViewRow
 let live: ValueWriter
 let writer: RefObject<ValueWriter | null>
@@ -55,10 +55,10 @@ beforeEach(() => {
   apply = vi.fn()
   mutate = vi.fn(async (req: MutateRequest) => recorded(req))
   row = rowOf({ id: 'page1', Tag: ['red'] })
-  live = { mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
+  live = { rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
   resetUndo()
-  useSession.setState({ tree: null })
+  useSession.setState({ tree: null, mutate })
 })
 
 describe('assignValue', () => {

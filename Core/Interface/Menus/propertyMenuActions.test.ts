@@ -4,7 +4,7 @@ import type { MutateRequest } from '../../Nexus/mutateRequest'
 import type { PageFrontmatter } from '../../Nexus/schemas'
 import type { NexusTree } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
-import { assignValue, type ValueWriter } from '../../Properties/assignValue'
+import { assignValue, oneShotWriter } from '../../Properties/assignValue'
 import { pageRowOf, spaceRowOf } from '../../Views/pageRow'
 import type { ViewRow } from '../../Views/viewRow'
 import { makeTree } from '../../Testing/testTree'
@@ -54,16 +54,13 @@ function harness(frontmatter: Record<string, unknown> = {}) {
     ...frontmatter,
   } as unknown as PageFrontmatter)
   const sent: MutateRequest[] = []
-  const writer: { current: ValueWriter | null } = {
-    current: {
-      mutate: async (req) => {
-        sent.push(req)
-        return {}
-      },
-      rowOf: (id) => (id === row.id ? row : undefined),
-      apply: () => undefined,
+  useSession.setState({
+    mutate: async (req) => {
+      sent.push(req)
+      return {}
     },
-  }
+  })
+  const writer = oneShotWriter(row)
   const run = (action: string): boolean =>
     runPropertyAction(action, {
       tree,

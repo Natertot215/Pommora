@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { specOf } from '../../Properties/properties'
 import { UNGROUPED, type ResolvedColumn, type ResolvedGroup, type ViewRow } from '../viewRow'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import type { PropertyValue } from '../../Properties/propertyValue'
-import { assignValue, type ValueWriter } from '../../Properties/assignValue'
+import { assignValue, useValueWriter } from '../../Properties/assignValue'
 import type { Result } from '../../Contract/result'
 import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
@@ -32,7 +32,6 @@ import { relDirname } from '../../Paths/posix'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { useBandHeads } from './useBandHeads'
-import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
 import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch } from '../views'
@@ -172,16 +171,9 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     void persistView(hideShown(view, id))
   }
 
-  const writer = useRef<ValueWriter | null>(null)
-  useEffect(() => {
-    writer.current = {
-      mutate,
-      rowOf: (id) => rows.find((r) => r.id === id),
-      apply: (id, picked, write) => patchOverride(setValueOverride, id, picked, write),
-    }
-    return () => {
-      writer.current = null
-    }
+  const writer = useValueWriter({
+    rowOf: (id) => rows.find((r) => r.id === id),
+    setOverride: setValueOverride,
   })
   const commitValue = (
     row: ViewRow,

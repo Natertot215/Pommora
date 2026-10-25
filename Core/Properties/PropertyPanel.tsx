@@ -26,7 +26,7 @@ import {
   type PickTarget,
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
-import { assignValue, type ValueWriter } from './assignValue'
+import { assignValue, useValueWriter } from './assignValue'
 import { pageRowOf, spaceRowOf } from '../Views/pageRow'
 import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
@@ -48,7 +48,7 @@ import { contextIdsOf } from '../Contexts/contextIdentity'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
-import { type Overrides, patchOverride, retireSettled } from './valueOverride'
+import { type Overrides, retireSettled } from './valueOverride'
 import { useSession, useSetting } from '../Session/store'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { dateDefaults } from './columnStyles'
@@ -167,17 +167,7 @@ export function PropertyPanel({
   const contextIds = contextIdsOf(tree)
   const isContextRow = (id: string): boolean => contextIds.includes(id)
 
-  const writer = useRef<ValueWriter | null>(null)
-  useEffect(() => {
-    writer.current = {
-      mutate,
-      rowOf: (id) => (row?.id === id ? row : undefined),
-      apply: (id, picked, write) => patchOverride(setOverride, id, picked, write),
-    }
-    return () => {
-      writer.current = null
-    }
-  })
+  const writer = useValueWriter({ rowOf: (id) => (row?.id === id ? row : undefined), setOverride })
   const commit = (id: string, next: PropertyValue | null): void => {
     const column = resolveColumn(id, schema, contextIds)
     if (row && column) assignValue(writer, row, column, next)
