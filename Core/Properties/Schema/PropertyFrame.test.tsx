@@ -719,4 +719,23 @@ describe('the type editors', () => {
     expect(listLive()).toBe(true)
     expect(host.textContent).not.toContain('Property not found.')
   })
+
+  it('an editor giving way to the list closes its icon picker', async () => {
+    const openPickers = (): number => document.querySelectorAll('[data-dismissal-shield]').length
+    await mountPane()
+    await act(async () => {
+      rowFor('Count').click()
+    })
+    expect(openPickers()).toBe(0)
+    await act(async () => {
+      live('Edit Icon').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(openPickers()).toBeGreaterThan(0)
+    await mountPane([defs[0]])
+    expect(openPickers()).toBe(0)
+    await act(async () => {
+      rowFor('Status').click()
+    })
+    expect(openPickers()).toBe(0)
+  })
 })

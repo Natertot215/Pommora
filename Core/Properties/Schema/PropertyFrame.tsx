@@ -1,6 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Icon, type IconName } from '@pommora/uix/Symbols'
-import type { IconSize } from '@pommora/uix/Theme'
+import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import {
   CREATABLE_TYPES,
@@ -178,7 +177,7 @@ export function PropertyFrame({
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const [view, setView] = useState<SubView>({ kind: 'list' })
   const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [iconOpen, setIconOpen] = useState(false)
+  const [iconFor, setIconFor] = useState<string | null>(null)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
 
@@ -187,33 +186,6 @@ export function PropertyFrame({
   // An editor whose property leaves this Collection, by any route, gives way to the list.
   const editing = view.kind === 'edit' ? schema.find((d) => d.id === view.id) : undefined
   const backToList = (): void => setView({ kind: 'list' })
-
-  const backHeader = (label: string, onClick: () => void): React.JSX.Element => (
-    <MenuTopRow label={label} onBack={onClick} />
-  )
-  const actionHeader = (
-    label: string,
-    onBackClick: () => void,
-    action: {
-      icon: IconName
-      size: IconSize
-      ariaLabel: string
-      onClick: () => void
-    },
-  ): React.JSX.Element => (
-    <MenuTopRow
-      label={label}
-      onBack={onBackClick}
-      trailing={
-        <AccessoryButton
-          icon={action.icon}
-          size={action.size}
-          ariaLabel={action.ariaLabel}
-          onClick={action.onClick}
-        />
-      }
-    />
-  )
 
   const create = async (type: PropertyType): Promise<void> => {
     const draft = { label: `New ${propertyTypeLabel(type)}`, type }
@@ -259,8 +231,7 @@ export function PropertyFrame({
     }
   }
 
-  const defOf = (id: string): PropertyDefinition | undefined =>
-    schema.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
+  const defOf = (id: string): PropertyDefinition | undefined => registry.find((d) => d.id === id)
   const labelFor = (id: string): string => defOf(id)?.label ?? ''
   const glyphFor = (id: string): ReactNode => {
     const d = defOf(id)
@@ -284,7 +255,7 @@ export function PropertyFrame({
 
   const typePicker = (
     <>
-      {backHeader('Properties', backToList)}
+      <MenuTopRow label="Properties" onBack={backToList} />
       {CREATABLE_TYPES.map((type) => (
         <MenuItem
           key={type}
@@ -342,12 +313,20 @@ export function PropertyFrame({
     ) : undefined
     return (
       <MenuScrollFrame
-        header={actionHeader('Properties', backToList, {
-          icon: 'ellipsis-vertical',
-          size: s.ICON.editorMenu,
-          ariaLabel: 'Property Menu',
-          onClick: () => void editorMenu(def),
-        })}
+        header={
+          <MenuTopRow
+            label="Properties"
+            onBack={backToList}
+            trailing={
+              <AccessoryButton
+                icon="ellipsis-vertical"
+                size={s.ICON.editorMenu}
+                ariaLabel="Property Menu"
+                onClick={() => void editorMenu(def)}
+              />
+            }
+          />
+        }
         footer={styleFooting}
         maxHeight={s.VIEW_SETTINGS_MAX_HEIGHT}
       >
@@ -355,8 +334,8 @@ export function PropertyFrame({
           value={def.label}
           icon={propertyIcon(def)}
           iconRef={iconRef}
-          iconOpen={iconOpen}
-          onIconClick={() => setIconOpen(true)}
+          iconOpen={iconFor === def.id}
+          onIconClick={() => setIconFor(def.id)}
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
@@ -421,8 +400,8 @@ export function PropertyFrame({
         minHeight={PANE_MIN_H}
       />
       <IconChoice
-        open={iconOpen}
-        onClose={() => setIconOpen(false)}
+        open={iconFor === editing?.id}
+        onClose={() => setIconFor(null)}
         triggerRef={iconRef}
         value={editing?.icon}
         onSelect={(icon) => {
