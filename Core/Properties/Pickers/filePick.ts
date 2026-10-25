@@ -3,13 +3,12 @@
 import { valueOr } from '../../Contract/result'
 import type { PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
-import { type CellMenuAction, cellMenuModel } from '../../Actions/cellMenu'
+import type { CellMenuAction } from '../../Actions/cellMenu'
 import { relDirname } from '../../Paths/posix'
 import { assetSubRoot } from '../../Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { dialer } from '../../Platform/dialer'
-import { popMenu } from '../../Actions/menuActions'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 
 /** Written by the file cell on each chip and read back by the file effect. */
@@ -110,16 +109,4 @@ export function runFileMenuAction(
     if (def) pickFileInto(def, current, action === 'file:replace' ? chip : null, commit)
   } else return false
   return true
-}
-
-/** Callers decide the type before calling — a context-menu handler must answer preventDefault synchronously, so nothing async can route for it. */
-export async function fileValueMenu(
-  def: PropertyDefinition,
-  current: PropertyValue,
-  target: EventTarget | null,
-  commit: (next: PropertyValue | null) => void,
-): Promise<void> {
-  const chip = fileChipIndex(target)
-  const action = await popMenu(cellMenuModel({ kind: 'file', onChip: chip !== null }))
-  if (action) runFileMenuAction(action, def, current, chip, commit)
 }

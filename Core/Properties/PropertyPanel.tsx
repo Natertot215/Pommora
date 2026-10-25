@@ -14,36 +14,20 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyDefinition } from './properties'
-import { isBlankValue, type PropertyValue, NULL_VALUE } from './propertyValue'
+import { isBlankValue, type PropertyValue } from './propertyValue'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import type { ViewRow } from '../Views/viewRow'
-import { propertyMenuModel } from '../Actions/propertyMenu'
-import { type CellMenuAction, cellMenuModel } from '../Actions/cellMenu'
 import { Cell } from './Cells/Cell'
-import {
-  PropertyPicker,
-  type PickEntry,
-  type PickTarget,
-  syntheticContextDef,
-} from './Pickers/PropertyPicker'
+import { useValueSeat, ValueSeat } from './Cells/ValueSeat'
+import type { PickEntry } from './Pickers/PropertyPicker'
 import { assignValue, useValueWriter } from './assignValue'
 import { pageRowOf, spaceRowOf } from '../Views/pageRow'
 import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
-import { PropertyValueInput } from './Pickers/PropertyValueInput'
-import { resolveFieldValue } from './fieldValue'
 import { holderOf, useValueContext } from './valueContext'
-import {
-  runValueIntent,
-  type ValueIntent,
-  valueClickIntent,
-  valueMenuIntent,
-} from './Pickers/valueClick'
-import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/paneTargets'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
-import { contextOptionsFor } from '../Contexts/contextOptions'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
 import { relDirname } from '../Paths/posix'
@@ -53,14 +37,9 @@ import { useSession, useSetting } from '../Session/store'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { dateDefaults } from './columnStyles'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
-import { popMenu } from '../Actions/menuActions'
-import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
-import { valueMenuTarget } from './Cells/valueMenuTarget'
-import type { ConnEditAction, LinkAction } from '../Actions/connectionMenu'
 import * as s from './property-panel.css'
 import { AliasesRow } from '../Pages/AliasesRow'
 
-type Editing = { id: string; mode: 'picker' | 'editor' | 'popover'; seat?: ConnEditAction } | null
 type Field = PaneTarget & { def: PropertyDefinition | null }
 
 const GROUPS = [
@@ -86,9 +65,7 @@ export function PropertyPanel({
   const isSpace = subject.kind === 'space'
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
-  const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
-  const triggerRef = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
     contexts: null,
@@ -98,13 +75,27 @@ export function PropertyPanel({
   const [base, setBase] = useState<PageFrontmatter | null>(null)
   const [override, setOverride] = useState<Overrides | null>(null)
   const [fetchedTitle, setFetchedTitle] = useState('')
+  const rowEl = (id: string): HTMLElement | null | undefined =>
+    rootRef.current?.querySelector<HTMLElement>(`[data-property-row="${id}"]`)
+  const seat = useValueSeat({
+    rowOf: (id) => (row?.id === id ? row : undefined),
+    columnOf: (id) => resolveColumn(id, schema, contextIds),
+    commit: (r, column, next) => assignValue(writer, r, column, next),
+    // The label and the value both open on the value's span.
+    anchor: (el, column) => rowEl(column.id) ?? el,
+    holder: (r) => (ctx ? holderOf(r, ctx) : undefined),
+    connections: () => ctx?.connections?.(),
+    style: () => null,
+    clear: (_, column) => emptyRow(column.id, true),
+    hide: { from: 'row', run: (_, column) => emptyRow(column.id, false) },
+  })
   const subjectId = subject.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
   const path = subject.kind === 'page' ? subject.path : (spaceNode?.path ?? '')
   const [editingFor, setEditingFor] = useState(path)
   if (editingFor !== path) {
     setEditingFor(path)
-    setEditing(null)
+    seat.close()
     setAddOpen(null)
   }
 
@@ -146,7 +137,7 @@ export function PropertyPanel({
 
   const nexusId = tree?.nexus.id
   useEffect(() => {
-    setEditing(null)
+    seat.close()
     setAddOpen(null)
     setRevealed(new Set())
   }, [nexusId])
@@ -164,16 +155,11 @@ export function PropertyPanel({
   const contextValues = row?.contextValues
 
   const contextIds = contextIdsOf(tree)
-  const isContextRow = (id: string): boolean => contextIds.includes(id)
 
   const writer = useValueWriter({ rowOf: (id) => (row?.id === id ? row : undefined), setOverride })
   const commit = (id: string, next: PropertyValue | null): void => {
     const column = resolveColumn(id, schema, contextIds)
     if (row && column) assignValue(writer, row, column, next)
-  }
-  const currentOf = (id: string): PropertyValue => {
-    const column = resolveColumn(id, schema, contextIds)
-    return row && column ? resolveFieldValue(row, column) : NULL_VALUE
   }
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
@@ -201,7 +187,7 @@ export function PropertyPanel({
       .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
   const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
   const openAdd = (key: GroupKey, anchor?: HTMLElement): void => {
-    triggerRef.current = anchor ?? addRefs.current[key]
+    seat.anchor.current = anchor ?? addRefs.current[key]
     setAddOpen({ key, fromRow: anchor !== undefined })
   }
 
@@ -260,142 +246,44 @@ export function PropertyPanel({
     const f = fieldOf(id)
     return f && <Icon name={f.icon} />
   }
-  const ghostApi = useGhostOptionAnchor(editing !== null || addOpen !== null)
+  const ghostApi = useGhostOptionAnchor(seat.open !== null || addOpen !== null)
   const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
-  const runIntent = (
-    def: PropertyDefinition,
-    current: PropertyValue,
-    intent: ValueIntent | null,
-    from: EventTarget | null,
-  ): void => {
-    const editAs = (mode: NonNullable<Editing>['mode'], seat?: ConnEditAction) => () =>
-      setEditing({ id: def.id, mode, seat })
-    runValueIntent(intent, {
-      commit: ({ value }) => (value === null ? emptyRow(def.id, true) : commit(def.id, value)),
-      file: () => pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next)),
-      picker: editAs('picker'),
-      dateTime: editAs('picker'),
-      edit: ({ seat }) => editAs('editor', seat)(),
-      popover: editAs('popover'),
-      hide: () => emptyRow(def.id, false),
-    })
-  }
-  const editRow = (
-    def: PropertyDefinition,
-    el: HTMLElement,
-    from: EventTarget | null = el,
-  ): void => {
-    triggerRef.current = el
-    const current = currentOf(def.id)
-    runIntent(def, current, valueClickIntent(def.type, current), from)
-  }
   const emptyRow = (id: string, keep: boolean): void => {
     commit(id, null)
     if (keep) reveal(id)
     else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
   }
-  const rowMenu = async (id: string, value: PropertyValue): Promise<void> => {
-    const def = schema.find((d) => d.id === id)
-    const action = await popMenu(
-      propertyMenuModel({
-        kind: 'page-value',
-        filled: !isBlankValue(value),
-        editable: def?.type === 'text',
-      }),
-    )
-    if (action === 'value:edit' && def) runIntent(def, value, { kind: 'edit' }, null)
-    else if (action === 'value:clear' || action === 'value:remove')
-      emptyRow(id, action === 'value:clear')
-  }
-  const valueMenu = (id: string, value: PropertyValue, target: EventTarget | null): boolean => {
-    const def = schema.find((d) => d.id === id)
-    if (def?.type === 'file') {
-      void fileValueMenu(def, value, target, (next) => commit(id, next))
-      return true
-    }
-    if (!def || value.kind !== 'link') return false
-    const run = (action: CellMenuAction | LinkAction | null): void => {
-      if (action) runIntent(def, value, valueMenuIntent(action), null)
-    }
-    const link = row && ctx && valueMenuTarget(ctx, row, value.value, 'row')
-    if (link) void showConnectionMenu(link).then(run)
-    else void popMenu(cellMenuModel({ kind: 'link', filled: true, hideable: 'row' })).then(run)
-    return true
-  }
-  const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
+  const revealAndEdit = (id: string): void => {
     setAddOpen(null)
     reveal(id)
     requestAnimationFrame(() => {
+      const column = resolveColumn(id, schema, contextIds)
       const el =
-        rootRef.current?.querySelector<HTMLElement>(`[data-property-row="${id}"]`) ??
-        addRefs.current[isContextRow(id) ? 'contexts' : 'properties']
-      if (def && el) return editRow(def, el)
-      triggerRef.current = el
-      setEditing({ id, mode: 'picker' })
+        rowEl(id) ?? addRefs.current[column?.kind === 'context' ? 'contexts' : 'properties']
+      if (row && column && el) seat.run(row, column, seat.intentOf(row, column), el)
     })
   }
-
-  const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
-  const panelTarget = ((): PickTarget | null => {
-    if (!editing || !row || editing.mode !== 'picker') return null
-    const column = editingDef
-      ? propertyColumn(editingDef)
-      : isContextRow(editing.id)
-        ? contextColumn(editing.id)
-        : undefined
-    if (!column) return null
-    const current = currentOf(editing.id)
-    if (column.type === 'dateTime') return { kind: 'dateTime', current }
-    return {
-      kind: 'options',
-      column,
-      current,
-      contextOptions:
-        column.kind === 'context' && tree
-          ? contextOptionsFor(editing.id, tree, isSpace ? subjectId : undefined)
-          : undefined,
-    }
-  })()
 
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
     const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
       const column = def ? propertyColumn(def) : contextColumn(id)
-      const current = resolveFieldValue(row, column)
       const rowBody = (
         <MenuItem
           className={s.row}
           leading={<Icon name={icon} size="control" />}
-          onContextMenu={(e) => {
-            e.preventDefault()
-            void rowMenu(id, current)
-          }}
+          onContextMenu={(e) => void seat.menu(row, column, e, { label: true })}
           trailing={
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
             <span
               className={cx(s.value, 'value-seat')}
               data-property-row={id}
-              onContextMenu={(e) => {
-                triggerRef.current = e.currentTarget
-                if (!valueMenu(id, current, e.target)) return
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-              onClick={(e) => editRow(def ?? syntheticContextDef(id), e.currentTarget, e.target)}
+              onContextMenu={(e) => void seat.menu(row, column, e)}
+              onClick={(e) => seat.click(row, column, e)}
             >
-              {editing?.id === id && editing.mode === 'editor' && def ? (
-                <PropertyValueInput
-                  def={def}
-                  current={current}
-                  holder={holderOf(row, ctx)}
-                  connections={ctx.connections}
-                  seat={editing.seat}
-                  onCommit={(next) => commit(id, next)}
-                  onClose={() => setEditing(null)}
-                />
-              ) : (
+              {seat.editor(row, column) ?? (
                 <Cell
                   row={row}
                   column={column}
@@ -403,14 +291,7 @@ export function PropertyPanel({
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
                   commit={(next) => commit(id, next)}
                   empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
-                  onPane={
-                    def
-                      ? (anchor) => {
-                          triggerRef.current = anchor.closest<HTMLElement>('[data-property-row]')
-                          runIntent(def, current, { kind: 'popover' }, null)
-                        }
-                      : undefined
-                  }
+                  onPane={(anchor) => seat.pane(row, column, anchor)}
                 />
               )}
             </span>
@@ -517,36 +398,16 @@ export function PropertyPanel({
             </>
           )}
         </div>
-        {editing?.mode === 'popover' && editingDef && row && ctx && (
-          <PropertyValueInput
-            seat={editingDef.type === 'link' ? 'rename' : undefined}
-            popover={{ open: true, triggerRef }}
-            def={editingDef}
-            holder={holderOf(row, ctx)}
-            connections={ctx.connections}
-            current={currentOf(editing.id)}
-            onCommit={(next) => commit(editing.id, next)}
-            onClose={() => setEditing(null)}
-          />
-        )}
-        <PropertyPicker
-          target={panelTarget}
-          chooser={addOpen ? hidden(addOpen.key) : undefined}
-          open={panelTarget !== null || addOpen !== null}
-          triggerRef={triggerRef}
-          onCommit={(v) => {
-            if (editing) commit(editing.id, v)
-          }}
-          onReveal={(entry) =>
-            revealAndEdit(
-              entry.id,
-              schema.find((d) => d.id === entry.id),
-            )
+        <ValueSeat
+          seat={seat}
+          chooser={
+            addOpen && {
+              row,
+              entries: hidden(addOpen.key),
+              onReveal: (entry: PickEntry) => revealAndEdit(entry.id),
+              onDismiss: () => setAddOpen(null),
+            }
           }
-          onDismiss={() => {
-            setEditing(null)
-            setAddOpen(null)
-          }}
         />
       </>
     )

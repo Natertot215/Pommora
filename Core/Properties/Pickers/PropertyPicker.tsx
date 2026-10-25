@@ -62,13 +62,6 @@ export type PickEntry = {
   group?: 'Spaces' | 'Properties'
 }
 
-export const syntheticContextDef = (id: string): PropertyDefinition => ({
-  id,
-  label: '',
-  key: '',
-  type: 'context',
-})
-
 export function PropertyPicker({
   target,
   chooser,
