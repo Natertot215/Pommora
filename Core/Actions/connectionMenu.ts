@@ -88,8 +88,8 @@ export function connectionMenuModel(ctx: LinkMenuContext): ActionItem<LinkMenuAc
       : URL_OPEN_ROWS.filter((r) => r.action !== 'link:window' || ctx.web)
   const authoring: ActionItem<LinkMenuAction>[] = ctx.editable
     ? [
-        { label: 'Rename', action: 'rename' },
-        { label: ctx.kind === 'page' ? 'Edit Title' : 'Edit Link', action: 'editLink' },
+        { label: 'Edit Title', action: 'rename' },
+        { label: 'Edit Link', action: 'editLink' },
       ]
     : []
   const copies: ActionItem<LinkMenuAction>[] =

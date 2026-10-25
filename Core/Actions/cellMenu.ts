@@ -127,8 +127,8 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
     case 'link':
       return [
         [
-          { label: 'Edit', action: 'editLink' },
-          ...(ctx.filled ? [{ label: 'Rename', action: 'rename' as const }] : []),
+          ...(ctx.filled ? [{ label: 'Edit Title', action: 'rename' as const }] : []),
+          { label: 'Edit Link', action: 'editLink' },
         ],
       ]
     case 'text':
