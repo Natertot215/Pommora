@@ -1307,7 +1307,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 16B-3 · Drive group 14
   - [x] Review Checkpoint
 - [x] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 17 opens]`
-- [ ] **Phase 17** — The Properties Pane
+- [x] **Phase 17** — The Properties Pane
   - [x] Task 17-1 · `useGhostOptionAnchor` leaves
   - [x] Task 17-2 · The inline-rename slice becomes the frame's own state
   - [x] Task 17-3 · The membership drag model moves to `UIX/Menus/paneDrop.tsx`
@@ -1320,7 +1320,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 17-10 · An editor whose property leaves returns to the list
   - [x] Task 17-11 · Drive group 15
   - [x] Review Checkpoint
-  - [ ] Closeout P16B–P17 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P16B–P17 (two `opus-high` agents, inward and outward)
 - [ ] **Phase 18** — The Documents Read True
   - [ ] Task 18-1 · `PropertiesPM.md` reads true
   - [ ] Task 18-2 · The data-layer documents read true
@@ -34551,9 +34551,9 @@ Where a line below names a construct one of those phases landed, the executor ke
 - **The Number Editor's Revealed Rows Gain Their 8px (L-1, Nathan's Intent):** Separators, Fraction, and, when shown, Currency, Value, and Style sat flush against the row above; every row now sits 8px from the next.
 - **The Date Editor Takes the Shared Rhythm (L-1, Nathan's Intent; LC-55):** a collapsed Day row leaves no stray 4px. The Date rows also space at 8px where they spaced at 4, under the 6px top padding every other editor already has, which follows from "every editor shares one layout." The drive's `g15-date-*` screenshots show it.
 - **A Denominator of Zero or Less Is Refused (L-3, Nathan's Intent):** typing one leaves the field reading the denominator it held; P7's decode already reads a stored one as unset.
-- **An Editor Whose Property Leaves Returns to the List (O-5, Nathan's Intent):** a delete, a Remove from another surface, an outside edit, or a sync that takes the property out of this Collection shows the list, where the pane read "Property not found."
+- **An Editor Whose Property Leaves Returns to the List (O-5, Nathan's Intent):** a delete, a Remove from another surface, an outside edit, or a sync that takes the property out of this Collection shows the list, where the pane read "Property not found." An icon picker the editor opened closes with it, and the next editor opens without it.
 - **An Editor That Gave Way Reopens If Its Property Returns (Earlier Agent's Choice; Take; LC-60):** the pane keeps naming the editor it gave way from, so if the property comes back before anything else is opened (an undo of an outside Remove, a sync, or re-adding it from All Properties after a Remove made elsewhere), its editor slides open again. O-5 says nothing about a return; the frame's own Remove and Delete reset the view, so a property removed or deleted from this pane doesn't reopen. **Recommended:** take it; the same derived view is what lets a just-created property's editor open the moment the tree holds it, and clearing the view on every departure would need a second rule watching the schema.
-- **A Refused Folder Choice Offers Try Again (Try Again Unclogs, Nathan's Constraint):** when the File editor's Browse picks a folder outside the asset root, or Settings' asset folder Browse picks one the Nexus can't hold, or either picker is refused, the notice carries Try Again, which opens the folder picker again, where it was a notice alone.
+- **A Refused Folder Choice Offers Try Again (Try Again Unclogs, Nathan's Constraint):** when the File editor's Browse picks a folder outside the asset root, Settings' asset folder Browse picks one the Nexus can't hold, Settings' excluded-folder Browse picks one it can't exclude, or any of the three pickers is refused, the notice carries Try Again, which opens the folder picker again, where it was a notice alone.
 - **The Header's Icon Button Is Spoken "Edit Icon" (L-4, Nathan's Intent):** on all five surfaces the kit header serves.
 - **Nothing Else Visible:** no row moves, no wording changes, and only Date's rows carry icons (I-1, L-2, I-076); the ghost slot's dwell and grace, the inline rename, both panes' drags, the order lists, and the option editor behave as at P16's head.
 - **O-5's Rule (17-11):** its outcome is recorded here when the drive runs; if the remedy lands, the editor of a newly created property opens once the tree holds it, so the type list stays on screen for those frames instead of the list, and the frame gains `assigned` (in the line total's conditional row), which gives up after a second if the tree never holds the new id, leaving the list showing.
@@ -35466,7 +35466,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 15 | −256 | +229 | −27 | −269 / +248 / −21 | +19 |
 | 16A | −537 | +457 | −80 | −546 / +465 / −81 | −62 |
 | 16B | −322 | +97 | −225 | −361 / +149 / −212 | −274 |
-| 17 | −813 | +609 | −204 | −811 / +607 / −204 | −478 |
+| 17 | −813 | +609 | −204 | −977 / +721 / −256 | −530 |
 | 18 | 0 | 0 | 0 | | |
 | Final Verification | — | — | — | | |
 
