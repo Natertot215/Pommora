@@ -93,6 +93,62 @@ describe('an echo recorded with its bytes', () => {
     vi.setSystemTime(Date.now() + 10_000)
     expect(await dropOwnEchoes(events)).toEqual([events[1], events[2]])
   })
+
+  it('is still told apart however late its events arrive', async () => {
+    vi.useRealTimers()
+    const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'late.md')
+    recordWrite(p, 'mine')
+    writeFileSync(p, 'mine')
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.now() + 10_000)
+    const late: Changed = {
+      event: 'change',
+      absPath: p,
+      origin: 'watched',
+      written: writtenHash(p),
+    }
+    expect(await dropOwnEchoes([late, late])).toEqual([])
+  })
+
+  it('stops being an echo once an event finds other bytes, so an outside write restoring the app’s bytes still reaches the watcher', async () => {
+    vi.useRealTimers()
+    const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'restored.md')
+    const arrival = (): Changed => ({
+      event: 'change',
+      absPath: p,
+      origin: 'watched',
+      written: writtenHash(p),
+    })
+    recordWrite(p, 'mine')
+    writeFileSync(p, 'an outside edit')
+    const edit = arrival()
+    expect(await dropOwnEchoes([edit])).toEqual([edit])
+    writeFileSync(p, 'mine')
+    const restore = arrival()
+    expect(await dropOwnEchoes([restore])).toEqual([restore])
+  })
+
+  it('keeps a newer write’s record when an older event finds the newer bytes', async () => {
+    vi.useRealTimers()
+    const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'newer.md')
+    recordWrite(p, 'one')
+    const older: Changed = {
+      event: 'change',
+      absPath: p,
+      origin: 'watched',
+      written: writtenHash(p),
+    }
+    recordWrite(p, 'two')
+    writeFileSync(p, 'two')
+    await dropOwnEchoes([older])
+    const newer: Changed = {
+      event: 'change',
+      absPath: p,
+      origin: 'watched',
+      written: writtenHash(p),
+    }
+    expect(await dropOwnEchoes([newer])).toEqual([])
+  })
 })
 
 describe('emitWatch', () => {
