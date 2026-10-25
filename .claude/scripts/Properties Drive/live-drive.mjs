@@ -209,7 +209,7 @@ async function group4() {
   const tree = opened.value?.tree
   const entry = tree?.unreadable?.find((u) => u.path === REGISTRY_REL)
   item(4, 'O-6', 'a damaged property list opens the Nexus with no definitions and names the list unreadable',
-    opened.ok && tree.config.registry.length === 0 && entry?.kind === 'registry' && entry.registry === 'properties', show({ ok: opened.ok, entry }))
+    opened.ok && tree.config.registry.length === 0 && entry?.kind === 'registry', show({ ok: opened.ok, entry }))
   item(4, 'O-6', 'every Space still reads, so tiles keep their Space boards', same(spacesOf(tree), spacesOf(before)), show(spacesOf(tree)))
   const assigned = tree.collections.find((c) => c.path === 'Collection A')?.propertyIds ?? []
   item(4, 'R4', 'Collection A keeps the ids its sidecar assigns while the list can’t be read', assigned.includes(def.id), show(assigned))

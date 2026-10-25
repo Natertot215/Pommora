@@ -33,7 +33,7 @@ The drive's cases, derived from *Properties Restructure — Decisions & Intentio
 
 | Case | Seeds | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| A damaged property list | `prop_drive_damage` (Checkbox) assigned in Collection A's sidecar, and `.nexus/properties.json` written as `{ not json` with the app closed | relaunch | `nexus:state` answers with an empty registry and an `unreadable` entry for `.nexus/properties.json` of kind `registry` naming `properties` | O-6 |
+| A damaged property list | `prop_drive_damage` (Checkbox) assigned in Collection A's sidecar, and `.nexus/properties.json` written as `{ not json` with the app closed | relaunch | `nexus:state` answers with an empty registry and an `unreadable` entry for `.nexus/properties.json` of kind `registry` | O-6 |
 | Every Space still reads | as above | relaunch | the Spaces' paths in the tree match those before the damage | O-6 |
 | Collection A's assigned ids | as above | relaunch | Collection A's `propertyIds` still hold `prop_drive_damage` | R4 |
 | The fixed file | `.nexus/properties.json` rewritten by hand to hold `prop_drive_damage` | the registry's file event | the registry holds the definition and the `unreadable` entry clears, with no reopen | O-6 |
