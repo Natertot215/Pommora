@@ -44,36 +44,37 @@ export function oneShotWriter(opened: ViewRow): RefObject<ValueWriter> {
   }
 }
 
-/** Sends `req` with `value` laid over the row while it's in flight. */
+/** Sends `req` with each row's value laid over it while it's in flight. */
 function send(
   w: ValueWriter,
-  row: ViewRow,
+  rows: readonly ViewRow[],
   column: ResolvedColumn,
-  value: PropertyValue | null,
+  values: readonly (PropertyValue | null)[],
   req: MutateRequest,
 ): Promise<MutateOutcome | null> {
   const sent = useSession.getState().mutate(req)
-  w.apply(
-    row.id,
-    { [column.id]: value ?? NULL_VALUE },
-    sent.then((done) => done !== null && !done.missed),
-  )
+  const landed = sent.then((done) => done !== null && !done.missed)
+  rows.forEach((r, i) => {
+    w.apply(r.id, { [column.id]: values[i] ?? NULL_VALUE }, landed)
+  })
   return sent
 }
 
 const valueRequest = (
-  row: ViewRow,
+  rows: readonly ViewRow[],
   column: ResolvedColumn,
   value: PropertyValue | null,
-): MutateRequest =>
-  column.kind === 'context'
+): MutateRequest => {
+  const paths = rows.map((r) => r.path)
+  return column.kind === 'context'
     ? {
         op: 'setContext',
-        path: row.path,
+        paths,
         contextId: column.id,
         spaceIds: value?.kind === 'context' ? value.value : [],
       }
-    : { op: 'setProperty', path: row.path, propertyId: column.id, value }
+    : { op: 'setProperty', paths, propertyId: column.id, value }
+}
 
 // A landed Link value newly showing an alias for a page gives that page the alias, as authoring one in a body does, and its undo takes the alias back.
 function rememberedAlias(
@@ -90,19 +91,27 @@ function rememberedAlias(
 
 export function assignValue(
   writer: RefObject<ValueWriter | null>,
-  row: ViewRow,
+  rows: readonly ViewRow[],
   column: ResolvedColumn,
   value: PropertyValue | null,
 ): Promise<boolean> | undefined {
   const w = writer.current
   if (!w) return undefined
-  const target = w.rowOf(row.id) ?? row
-  const resolved = resolveFieldValue(target, column)
-  const prior = isBlankValue(resolved) ? null : resolved
-  const sent = send(w, target, column, value, valueRequest(target, column, value))
+  const targets = rows.map((r) => w.rowOf(r.id) ?? r)
+  const priors = targets.map((t) => {
+    const resolved = resolveFieldValue(t, column)
+    return isBlankValue(resolved) ? null : resolved
+  })
+  const sent = send(
+    w,
+    targets,
+    column,
+    targets.map(() => value),
+    valueRequest(targets, column, value),
+  )
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
   const undone = sent.then(async (done) => {
-    const remember = done && rememberedAlias(value, prior)
+    const remember = done && rememberedAlias(value, priors[0])
     const aliased = remember ? await useSession.getState().mutate(remember) : null
     return [done?.undo, aliased?.undo].filter((r): r is MutateRequest => r !== undefined)
   })
@@ -112,15 +121,29 @@ export function assignValue(
   })
   const revert = (requests: MutateRequest[]): boolean => {
     const live = writer.current
-    const current = live?.rowOf(row.id)
-    if (!live || !current) return false
+    if (!live) return false
+    // A row that has left since takes no put-back, as one row's undo finds nothing today.
+    const now = targets.flatMap((t, i) => {
+      const current = live.rowOf(t.id)
+      return current ? [{ from: t.path, current, prior: priors[i] }] : []
+    })
+    if (!now.length) return false
+    const moved = new Map(now.map((n) => [n.from, n.current.path]))
+    const left = new Set(targets.map((t) => t.path).filter((p) => !moved.has(p)))
     let reverted = false
     for (const req of requests)
       if (req.op === 'putBack') {
-        const entries = req.entries.map((e) =>
-          e.file === target.path ? { ...e, file: current.path } : e,
+        const entries = req.entries.flatMap((e) =>
+          left.has(e.file) ? [] : [{ ...e, file: moved.get(e.file) ?? e.file }],
         )
-        void send(live, current, column, prior, { op: 'putBack', entries })
+        const back: MutateRequest = { op: 'putBack', entries }
+        void send(
+          live,
+          now.map((n) => n.current),
+          column,
+          now.map((n) => n.prior),
+          back,
+        )
         reverted = true
       } else if (reverted) void useSession.getState().mutate(req)
     return reverted

@@ -46,6 +46,8 @@ import {
   seedsContext,
   type MutateReply,
   type MutateRequest,
+  type PutBack,
+  undoOf,
 } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
@@ -195,9 +197,14 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProperty':
-      return isMarkdownFile(req.path)
-        ? setPagePropertyOp(ctx, req)
-        : underContexts(root, () => setSpacePropertyOp(ctx, req))
+    case 'setContext':
+      return valuesAt(req, (path) =>
+        req.op === 'setContext'
+          ? underContexts(root, () => setContextOp(ctx, { ...req, path }))
+          : isMarkdownFile(path)
+            ? setPagePropertyOp(ctx, { ...req, path })
+            : underContexts(root, () => setSpacePropertyOp(ctx, { ...req, path })),
+      )
 
     // A put-back resolves a Context's key as a tag write does, so it holds the Contexts lock whichever files it reaches.
     case 'putBack': {
@@ -237,9 +244,6 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'createSpace':
       return underContexts(root, () => createSpaceOp(ctx, req))
-
-    case 'setContext':
-      return underContexts(root, () => setContextOp(ctx, req))
 
     case 'setSpaceColor':
       return done(await underContexts(root, () => setSpaceColor(root, req.spaceId, req.color)))
@@ -334,4 +338,21 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return fault('Unknown operation.')
     }
   }
+}
+
+/** One value onto each path, each file under its own lock, answered once with one put-back and one cascade; the first refusal stops the run and is the answer. */
+async function valuesAt(
+  req: { paths: string[] },
+  one: (path: string) => Promise<MutateReply>,
+): Promise<MutateReply> {
+  const entries: PutBack[] = []
+  let cascade: CascadeReport | undefined
+  for (const path of req.paths) {
+    const reply = await one(path)
+    if (!reply.ok) return reply
+    if (reply.value.undo?.op === 'putBack') entries.push(...reply.value.undo.entries)
+    cascade = joinCascades(cascade, reply.value.cascade)
+  }
+  const outcome = cascade ? { cascade } : {}
+  return entries.length ? undoOf(entries, outcome) : ok(outcome)
 }

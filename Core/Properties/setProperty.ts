@@ -6,7 +6,7 @@ import { type MutateReply, type MutateRequest, undoOf } from '../Nexus/mutateReq
 import { valueToWrite } from './propertyValue'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 
-type ValueRequest = Extract<MutateRequest, { op: 'setProperty' }>
+type ValueRequest = Omit<Extract<MutateRequest, { op: 'setProperty' }>, 'paths'> & { path: string }
 
 export async function setSpacePropertyOp(
   { root }: MutateContext,
