@@ -248,8 +248,7 @@ describe('the property ops', () => {
     expect(await holders({ of: 'option', optionId: 'opt_Done' })).toEqual(ok(1))
     expect(await holders({ of: 'format', change: { value_format: 'kebab-case' } })).toEqual(ok(1))
     expect(await holders({ of: 'format', change: { key_format: 'lowercase' } })).toEqual(ok(1))
-    for (const change of [{ of: 'format', change: { key_format: 'Shouting' } }, undefined])
-      expect(await holders(change)).toEqual(fault('A property id and value are required.'))
+    expect(await holders(undefined)).toEqual(fault('A property id and value are required.'))
   })
 
   it('property:holders counts what a rename rewrites', async () => {

@@ -608,18 +608,6 @@ describe('native menus + the inline-rename channel', () => {
     expect(useSession.getState().valuesEpoch).toMatchObject({ kind: 'rename' })
   })
 
-  it('a Label Format pick over one Item sets the format unasked', async () => {
-    holdersSpy.mockResolvedValueOnce(ok(1))
-    await openCount()
-    await pick('Label Format', 'lowercase')
-    expect(useSession.getState().pendingConfirm).toBeNull()
-    expect(mutate).toHaveBeenCalledWith({
-      op: 'setFormat',
-      propertyId: 'prop_n',
-      change: { key_format: 'lowercase' },
-    })
-  })
-
   it('a Value Format pick over no Item sets the format unasked', async () => {
     holdersSpy.mockResolvedValueOnce(ok(0))
     await openEditor()

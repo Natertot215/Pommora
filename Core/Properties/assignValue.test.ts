@@ -64,7 +64,7 @@ beforeEach(() => {
 })
 
 describe('assignValue', () => {
-  it('patches the frontmatter and mutates the property', () => {
+  it('lays the picked value over the row and sends the property write', () => {
     assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     expect(apply).toHaveBeenCalledWith(
       'page1',
@@ -132,7 +132,7 @@ describe('assignValue', () => {
     expect(mutate.mock.lastCall?.[0]).toMatchObject({ path: '/nexus/Notes/Moved.md' })
   })
 
-  it('lays the Context patch beside the frontmatter and mutates the context', async () => {
+  it('lays the picked Spaces over the row, sends the Context write, and undoes it by its record', async () => {
     const record: MutateRequest = {
       op: 'putBack',
       entries: [{ file: row.path, fieldId: 'ctx_areas' }],
