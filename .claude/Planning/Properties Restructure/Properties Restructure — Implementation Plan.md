@@ -1256,7 +1256,7 @@ Removal and consolidation come before anything additive, and changes to what exi
   - [x] Task 12-9 · A restore's own notice keeps its Try Again
   - [x] Task 12-10 · Drive group 10
   - [x] Review Checkpoint
-  - [ ] Closeout P11B–P12 (two `opus-high` agents, inward and outward)
+  - [x] Closeout P11B–P12 (two `opus-high` agents, inward and outward)
   - [ ] Neutral Gate 1 (`fable-high`, `BASELINE..<Phase 12's head>`)
 - [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, re-read §Constraints and c/plan-execution before Phase 13 opens]`
 - [ ] **Phase 13** — Columns Carry Their Answer
@@ -35443,7 +35443,7 @@ Production lines under *§Plan Constraints › The Number*. *Written* is each ph
 | 10 | −381 | +393 | +12 | −323 / +334 / +11 | −397 |
 | 11A | −634 | +738 | +104 | −642 / +738 / +96 | −301 |
 | 11B | −449 | +835 | +386 | −458 / +852 / +394 | +93 |
-| 12 | −192 | +340 | +148 | −254 / +403 / +149 | +242 |
+| 12 | −192 | +340 | +148 | −311 / +445 / +134 | +227 |
 | 13 | −678 | +552 | −126 | | |
 | 14 | −544 | +497 | −47 | | |
 | 15 | −256 | +229 | −27 | | |
