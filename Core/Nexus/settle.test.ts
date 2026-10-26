@@ -1432,7 +1432,8 @@ describe('a re-spell on the notes', () => {
     expect(await readNotes(root)).toEqual({})
   })
 
-  it('a Context restored under a new title owes the re-key a Space sidecar missed', async () => {
+  // A Context whose Space links its sibling, trashed and restored as “Areas (2)” beside a new Context under its title, its Space’s re-key missed.
+  const rekeyMissed = async (): Promise<void> => {
     const work = abs('.nexus', 'contexts', 'Areas', 'Work', '_space.json')
     await putJson(abs('.nexus', 'contexts', 'contexts.json'), {
       contexts: [{ id: 'ctx_areas', title: 'Areas' }],
@@ -1459,10 +1460,44 @@ describe('a re-spell on the notes', () => {
     expect(Object.values(await readNotes(root))).toContainEqual(
       expect.objectContaining({ kind: 'relink', rekey: ['Areas', 'Areas (2)'] }),
     )
+  }
+
+  it('a Context restored under a new title owes the re-key a Space sidecar missed', async () => {
+    await rekeyMissed()
     failing.length = 0
     await finishOwed(root, deps)
     const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Work', '_space.json')
     expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a restored Context’s owed re-key follows its Space through a rename', async () => {
+    await rekeyMissed()
+    const moved = await settledMutate(
+      root,
+      { op: 'renameSpace', spaceId: 'sp_w', newName: 'Job' },
+      deps,
+    )
+    if (!moved.ok) throw new Error(moved.error.message)
+    failing.length = 0
+    await finishOwed(root, deps)
+    const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Job', '_space.json')
+    expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a restored Context’s owed re-key follows it through a rename', async () => {
+    await rekeyMissed()
+    const moved = await settledMutate(
+      root,
+      { op: 'renameContext', contextId: 'ctx_areas', newName: 'Life' },
+      deps,
+    )
+    if (!moved.ok) throw new Error(moved.error.message)
+    failing.length = 0
+    await finishOwed(root, deps)
+    const rekeyed = abs('.nexus', 'contexts', 'Life', 'Work', '_space.json')
+    expect(await readJsonAt(rekeyed)).toMatchObject({ '<Life>': ['Home'] })
     expect(await readNotes(root)).toEqual({})
   })
 })

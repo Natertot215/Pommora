@@ -5,8 +5,8 @@ import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'
 import { memberKey } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { normalizeTitle } from '../Paths/caseFold'
-import { OWED_REL } from '../Paths/nexusPaths'
-import { join } from '../Paths/posix'
+import { contextDirRel, OWED_REL } from '../Paths/nexusPaths'
+import { basename, join } from '../Paths/posix'
 import type { CascadeReport } from './cascade'
 import { type ConfigEdit, type ConfigReach, reachReport, retries } from './configReach'
 import { pageKey } from '../Connections/pageIndex'
@@ -87,27 +87,42 @@ const owesAnything = (e: Entry): boolean =>
   (e.kind === 'container' && !!e.edit) ||
   (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey || !!e.values))
 
-/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files, and what it worked out for them, follow to where `paths` moves them. */
+/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files, and what it worked out for them, follow to where `paths` moves them, and its re-key to the title its Context's folder moves to. */
 export const relinkNote = (
   e: Entry | undefined,
   names: ReadonlyMap<string, string>,
   label?: string,
-  paths?: ReadonlyMap<string, string>,
+  paths: (file: string) => string = (f) => f,
 ): RelinkEntry => {
   const held = e?.kind === 'relink' ? e : undefined
   const followed = Object.entries(held?.names ?? {}).map(([k, v]) => [
     k,
     names.get(pageKey(v)) ?? v,
   ])
-  const at = (f: string): string => paths?.get(f) ?? f
   const worked =
-    held?.values && Object.fromEntries(Object.entries(held.values).map(([f, v]) => [at(f), v]))
+    held?.values && Object.fromEntries(Object.entries(held.values).map(([f, v]) => [paths(f), v]))
+  const rekey: RelinkEntry['rekey'] = held?.rekey && [
+    held.rekey[0],
+    basename(paths(contextDirRel(held.rekey[1]))),
+  ]
   return {
     kind: 'relink',
     label: label ?? held?.label ?? '',
     names: { ...Object.fromEntries(followed), ...(held?.files ? {} : Object.fromEntries(names)) },
-    ...(held?.files ? { files: held.files.map(at), rekey: held.rekey, values: worked } : {}),
+    ...(held?.files ? { files: held.files.map(paths), rekey, values: worked } : {}),
   }
+}
+
+/** Lays `names` and `paths` over every relink entry but `except`'s, so a file an earlier change missed lands where this one leaves it. */
+export async function followRelinks(
+  root: string,
+  names: ReadonlyMap<string, string>,
+  paths?: (file: string) => string,
+  except?: string,
+): Promise<void> {
+  for (const [id, e] of Object.entries(await readNotes(root)))
+    if (e.kind === 'relink' && id !== except)
+      await editNote(root, id, (x) => x && relinkNote(x, names, undefined, paths))
 }
 
 /** Whether `e` still owes a rename. Pages under its old name weren't candidates for any sweep since, so an option part, a Remove's Collection, or a Space under it settles only once the rename lands (H-1). */
