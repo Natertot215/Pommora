@@ -1,6 +1,6 @@
 // The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
 
-import { dirname, join, relative } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { archiveStoreOf } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
 import { pathExists, relocate } from '../Files/atomicWrite'
@@ -43,12 +43,12 @@ export async function archiveOp(
   const record = await gatherContentRecord(root, tree, req.kind, abs)
   const lifted = req.kind === 'set' ? await liftSetAside(root, abs) : null
   if (lifted && !lifted.ok) return lifted
-  const bundle = await fileInto(root, store, abs, abs, record, req.leaf).catch(async (e) => {
+  const filed = await fileInto(root, store, abs, abs, record, req.at).catch(async (e) => {
     await lifted?.value.rollback()
     throw e
   })
   await dropDeparture(root, tree, req.kind, req.path)
-  return ok({ bundled: { bundlePath: relative(root, bundle) } })
+  return ok({ bundled: { bundlePath: filed.address } })
 }
 
 /** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */

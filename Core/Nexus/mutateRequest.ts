@@ -45,7 +45,7 @@ export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
 const containerKind = z.enum(CONTAINER_KINDS)
 
-/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. `archive` is a delete from the Archive's Undo, returning the item to the bundle its record names. */
+/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. `archive` is a delete from the Archive's Undo, returning the item to the address its record names. */
 const restoreDestination = z.discriminatedUnion('kind', [
   z.object({ kind: z.enum(['container', 'context']), id: z.string() }),
   z.object({ kind: z.literal('archive') }),
@@ -94,7 +94,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   }),
   op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
   op('delete', { path: z.string(), kind: heldKind }),
-  op('archive', { path: z.string(), kind: z.enum(['page', 'set']), leaf: z.string().optional() }),
+  op('archive', { path: z.string(), kind: z.enum(['page', 'set']), at: z.string().optional() }),
   op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
   op('emptyBundle', { bundlePath: z.string() }),
   op('setProfileImage', { source: z.string().nullable() }),

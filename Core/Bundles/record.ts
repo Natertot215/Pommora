@@ -53,7 +53,7 @@ const contentRecord = <E extends string>(entity: E) =>
     place,
     /** The ids of the containers above `parent`, Collection first; read once the tree no longer holds `parent`, and kept current in the Archive by its carry. */
     trail: z.array(z.string()).optional(),
-    /** A Trash record's only: the Archive bundle a delete took the item out of, where its Undo returns it. */
+    /** A Trash record's only: the Archive address a delete took the item from, a bundle or an inner item of one, where its Undo files it back. */
     archive: z.string().optional(),
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),

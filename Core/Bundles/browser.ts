@@ -19,7 +19,6 @@ import {
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
-import { basename } from '../Paths/posix'
 import { formatDate } from '../Properties/formatValue'
 import {
   type DateStyle,
@@ -68,15 +67,14 @@ const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
 
 type BatchOp = 'restore' | 'emptyBundle' | 'delete'
 
-/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, under the bundle name it left, so it keeps its Archived date; one renamed or stepped aside since takes a fresh stamp, since that name no longer fits it. */
+/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, back at the address it left. */
 const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
   for (const row of rows) {
     const { tree, mutate } = useSession.getState()
     const id = row.stored?.id
     if (!id || !tree) continue
     const path = nodesByIdOf(tree).get(id)?.path
-    if (path)
-      await mutate({ op: 'archive', path, kind: archivedKind(row), leaf: basename(row.bundlePath) })
+    if (path) await mutate({ op: 'archive', path, kind: archivedKind(row), at: row.bundlePath })
   }
 }
 
