@@ -68,8 +68,6 @@ export function MenuTopRow({
 
 type MenuItemProps = {
   leading?: ReactNode
-  /** Sits right of the title text on its line, outside the text's ellipsis, as a disclosure's chevron does. */
-  titleAccessory?: ReactNode
   subLabel?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
@@ -80,8 +78,6 @@ type MenuItemProps = {
   centered?: boolean
   disabled?: boolean
   inert?: boolean
-  /** Shows every reveal target in the row, as while any row of its list is checked. */
-  revealed?: boolean
   indent?: number
   tabIndex?: number
   onClick?: (e: MouseEvent<HTMLDivElement>) => void
@@ -97,7 +93,6 @@ type MenuItemProps = {
 
 export function MenuItem({
   leading,
-  titleAccessory,
   subLabel,
   detail,
   trailing,
@@ -108,7 +103,6 @@ export function MenuItem({
   centered = false,
   disabled = false,
   inert = false,
-  revealed = false,
   indent = 0,
   tabIndex,
   onClick,
@@ -127,7 +121,6 @@ export function MenuItem({
   } as CSSProperties
   const hasTrailing = detail != null || trailing != null
   const act = disabled || inert ? undefined : onClick
-  const title = <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
@@ -143,7 +136,7 @@ export function MenuItem({
         className,
       )}
       style={rowStyle}
-      data-reveal-host={inert ? undefined : revealed ? 'on' : ''}
+      data-reveal-host={inert ? undefined : ''}
       role={act ? 'button' : undefined}
       tabIndex={act ? (tabIndex ?? 0) : undefined}
       onClick={act}
@@ -156,14 +149,7 @@ export function MenuItem({
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={cx(s.titleWrap, centered && s.titleCentered)}>
-        {titleAccessory == null ? (
-          title
-        ) : (
-          <span className={s.titleLine}>
-            {title}
-            {titleAccessory}
-          </span>
-        )}
+        <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
         {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
       </span>
       {hasTrailing && (

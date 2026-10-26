@@ -1,4 +1,4 @@
-/* The layer TableView and ArchiveView wear over the Tables chrome: shell width, grid density, hide/slide beat, the rail gutter's grip and check, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
+/* The layer TableView and ArchiveView wear over the Tables chrome: shell width, grid density, hide/slide beat, the rail gutter's grip, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
 
 .table-view {
   /* Width is auto so the negative side margins widen the box to both glass edges while the grid's content box (and so every row) stays exactly where it was. */
@@ -36,10 +36,6 @@
   transition: grid-template-columns var(--duration-fast) var(--ease-base) !important;
 }
 
-.data-cell.cell-lead {
-  position: relative;
-  overflow: visible;
-}
 .data-cell.cell-sweep {
   background: var(--text-selection);
 }
@@ -50,14 +46,6 @@
   color: var(--label-tertiary);
   cursor: grab;
   touch-action: none;
-  transition: opacity var(--reveal-fade) var(--ease-base);
-}
-.row-rail {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(-1 * var(--rail-inset));
-  width: var(--rail-inset);
 }
 .row-grip:active {
   cursor: grabbing;

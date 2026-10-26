@@ -57,8 +57,7 @@ export const crumbSegments = (
   }))
 
 /** What the Archive stores: a page or a Set. */
-export const archivedKind = (row: BundleRow): 'page' | 'set' =>
-  row.kind === 'set' ? 'set' : 'page'
+const archivedKind = (row: BundleRow): 'page' | 'set' => (row.kind === 'set' ? 'set' : 'page')
 
 /** A row as a browser shows it: how deep it sits, and whether it's open, null for a row with nothing to disclose. */
 export interface TreeRow {

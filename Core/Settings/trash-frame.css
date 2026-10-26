@@ -1,6 +1,6 @@
 .trash-frame.table {
-  --trash-date-inset: 8px; /* KNOB — clears the column divider, heading and rows alike */
-  --cell-padding-x: var(--surface-inset);
+  --heading-fill: none;
+  --heading-divider: var(--width-150) solid var(--border-base);
   --heading-padding-y: 6px; /* KNOB */
   flex: 1;
   min-width: 0;
@@ -10,38 +10,40 @@
   padding-top: var(--app-inset);
 }
 
-.trash-frame .trash-head {
+/* Sideways when the window is narrower than the table's columns, the heading riding with the rows; the leading inset is the checkboxes' gutter. */
+.trash-table {
+  flex: 0 1 auto;
+  min-height: 0;
   display: flex;
-  align-items: center;
-  position: relative;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 var(--surface-inset) 0 var(--rail-inset);
+}
+.trash-table > .table-grid {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The heading keeps its own place: reaching back over the gutter to the frame's inset, where its divider and File Name begin, its first track taking up the width so its column line meets the rows'. */
+.trash-frame .trash-head {
   flex-shrink: 0;
+  margin-left: calc(var(--surface-inset) - var(--rail-inset));
 }
-.trash-frame .trash-head::after {
-  content: "";
-  position: absolute;
-  left: var(--surface-inset);
-  right: var(--surface-inset);
-  bottom: 0;
-  border-bottom: var(--width-150) solid var(--border-base);
+.trash-frame .trash-head-name {
+  padding-left: 0;
 }
-/* The leading bar normally marks the gutter↔Title junction; this strip has no gutter column, so it's suppressed here — the divider between columns stays. */
+.trash-frame .trash-head-date {
+  padding-left: 8px; /* KNOB — clears the column line */
+}
+/* The heading keeps its plain lead, without the bar a table's first heading draws at its gutter. */
 .trash-head .col-header:first-child::before {
   content: none;
 }
-.trash-frame .trash-row {
-  --row-pad-trail: 0px;
-  gap: var(--cell-icon-gap);
-}
-.trash-lead {
-  position: relative;
-  display: flex;
-}
-.trash-frame .trash-row::after {
-  right: var(--trash-date-lane);
-}
-.trash-frame .trash-head-name {
-  flex: 1;
-  min-width: 0;
+.trash-frame .trash-head-name,
+.trash-frame .trash-head-date {
   display: flex;
   align-items: center;
 }
@@ -52,44 +54,21 @@
 .trash-frame .trash-head svg {
   color: var(--label-secondary);
 }
-.trash-frame .trash-head-date {
-  flex: 0 0 var(--trash-date-lane);
-  display: flex;
-  align-items: center;
-  padding-left: var(--trash-date-inset);
-  padding-right: 0; /* the lane is the measured date plus its inset, as the rows' cells are */
-}
 .trash-head-label {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+/* Reaching back across the gutter, so the rows' checkboxes sit inside the scroller that clips them. */
 .trash-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
+  margin-left: calc(-1 * var(--rail-inset));
+  padding-left: var(--rail-inset);
   padding-bottom: 6px;
-}
-
-.trash-frame .trash-row + .trash-row::before {
-  content: "";
-  position: absolute;
-  left: var(--surface-inset);
-  right: var(--surface-inset);
-  top: 0;
-  border-top: var(--table-border);
-}
-
-.trash-frame .trash-trail {
-  padding-right: 8px; /* KNOB — with the cluster's 4px gap, mirrors --trash-date-inset across the divider */
-}
-.trash-date {
-  flex: 0 0 var(--trash-date-lane);
-  padding-left: var(--trash-date-inset);
-  white-space: nowrap;
-  color: var(--label-secondary);
 }
 
 .trash-empty {

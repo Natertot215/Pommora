@@ -200,14 +200,6 @@ export const titleCentered = style({ alignItems: 'center' })
 
 export const titleText = style({ vars: { '--scroll-fade': 'var(--fade-base)' } })
 
-export const titleLine = style({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 'var(--cell-icon-gap, 6px)',
-  minWidth: 0,
-})
-
 export const titleInput = style([fillInput, { WebkitAppRegion: 'no-drag' } as StyleRule])
 
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])

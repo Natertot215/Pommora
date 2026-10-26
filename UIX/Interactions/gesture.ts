@@ -158,6 +158,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             ok = false
           }
           if (ok === false) {
+            g.active = false
             g.handlers.cancel()
             return
           }

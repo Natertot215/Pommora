@@ -1,21 +1,9 @@
-import { memo, useMemo, useState } from 'react'
-import { Checkbox } from '@pommora/uix/Controls/Checkbox'
-import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { historical } from '@pommora/uix/Elements/nav-trail.css'
-import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
-import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { onActivateClick } from '@pommora/uix/Interactions/activate'
-import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
-import { DropOutline } from '@pommora/uix/Menus'
-import { titleLine } from '@pommora/uix/Menus/menu-row.css'
-import { rowIndent } from '@pommora/uix/Table/rowIndent'
-import { text } from '@pommora/uix/Theme'
-import { cx } from '@pommora/uix/Utilities/cx'
+import { useMemo, useState } from 'react'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { archivedKind, crumbSegments, useBundleBrowser } from '../Bundles/browser'
-import { DateHeading } from '../Bundles/DateHeading'
+import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { BundleRows, BundleTable, DateHeading } from '../Bundles/BundleTable'
 import { countPhrase } from '../Nexus/entities'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
@@ -27,20 +15,10 @@ import { containerOwner } from '../Nexus/treeIndex'
 import { owningCollection } from '../Nexus/treePatch'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
-import type { Personalization } from '../Settings/personalization'
 import { useSession } from '../Session/store'
-import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
 import '../Views/Table/table-view.css'
 import { ARCHIVE_TITLE } from './archivePlace'
 import './archive-view.css'
-
-const ROW_H = 30
-
-type RowApi = {
-  toggle: (row: BundleRow) => void
-  rowClick: (row: BundleRow, detail: number) => void
-  menu: (row: BundleRow) => void
-}
 
 /** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
 export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): React.JSX.Element {
@@ -67,23 +45,8 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
     { query, shown, within: owner.kind === 'set' ? owner.id : undefined, open },
   )
   const { listing, visible } = browser
-  const dateTrack =
-    browser.date.width === null
-      ? `${COLUMN_LAYOUT.dateTime.width}px`
-      : `calc(${browser.date.width}px + 2 * var(--cell-padding-x))`
-  const cols = `minmax(${COLUMN_LAYOUT.title.width}px, 1fr) ${dateTrack}`
-
-  const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
-  const { rows: slots, height } = useVirtualRows(
-    { count: visible.length, rowHeight: ROW_H, listEl, scrollEl },
-    [],
-  )
-
   const api = useStableApi({
-    toggle: (row: BundleRow) => browser.toggle(row.bundlePath),
-    rowClick: browser.rowClick,
-    menu: (row: BundleRow) => void browser.openMenu(row),
     restore: () => void browser.restore(browser.picked),
     remove: () => void browser.remove(browser.picked),
   })
@@ -122,10 +85,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
       scrollRef={setScrollEl}
     >
       <div className="table table-view">
-        <div
-          className={cx('table-grid', text.body.standard)}
-          style={{ '--cols': cols } as React.CSSProperties}
-        >
+        <BundleTable date={browser.date}>
           <div className="table-head">
             <div className="col-header">
               <span className="col-header-icon">
@@ -136,7 +96,6 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
             <DateHeading
               date={browser.date}
               className="archive-date"
-              sampleClass={text.body.standard}
               label={
                 <span>
                   <span className="col-header-icon">
@@ -147,98 +106,10 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
               }
             />
           </div>
-          <div ref={setListEl} className="archive-rows" style={{ height }}>
-            {slots.map(({ index, start }) => {
-              const { row, depth, open } = visible[index]
-              return (
-                <ArchiveRow
-                  key={row.bundlePath}
-                  row={row}
-                  depth={depth}
-                  open={open}
-                  start={start}
-                  lead={index === 0}
-                  checked={browser.checked.has(row.bundlePath)}
-                  revealed={browser.picked.length > 0}
-                  when={browser.date.when(row.storedAt)}
-                  icons={defaultIcons}
-                  api={api}
-                />
-              )
-            })}
-          </div>
-        </div>
+          {visible.length > 0 && <BundleRows browser={browser} scrollEl={scrollEl} />}
+        </BundleTable>
         {footing()}
       </div>
     </InterfaceScaffold>
   )
 }
-
-const ArchiveRow = memo(function ArchiveRow({
-  row,
-  depth,
-  open,
-  start,
-  lead,
-  checked,
-  revealed,
-  when,
-  icons,
-  api,
-}: {
-  row: BundleRow
-  depth: number
-  open: boolean | null
-  start: number
-  lead: boolean
-  checked: boolean
-  revealed: boolean
-  when: string
-  icons: Personalization['defaultIcons']
-  api: RowApi
-}): React.JSX.Element {
-  const chevron = open === null ? null : <DropOutline open={open} />
-  return (
-    // biome-ignore lint/a11y/useSemanticElements: a real <button> can't host a .data-row, nor the checkbox's own button inside it
-    <div
-      className={cx('data-row', lead && 'row-lead')}
-      data-reveal-host={revealed ? 'on' : ''}
-      style={{ height: ROW_H, transform: `translateY(${start}px)` }}
-      role="button"
-      tabIndex={0}
-      onClick={(e) => api.rowClick(row, e.detail)}
-      onKeyDown={onActivateClick}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        api.menu(row)
-      }}
-    >
-      <div className="data-cell cell-lead">
-        <span className={cx('row-check', revealTarget)}>
-          <Checkbox
-            size="compact"
-            state={checked}
-            onChange={() => api.toggle(row)}
-            ariaLabel={`Select ${row.title}`}
-          />
-        </span>
-        <span className={titleLine} style={{ marginLeft: rowIndent(depth) }}>
-          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
-          <span className={cx(overScrollLabel, 'cell-title')}>
-            <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
-            <span className={cx('cell-title-text', open !== null && text.body.emphasized)}>
-              {row.title}
-            </span>
-          </span>
-          {depth === 0 && chevron}
-        </span>
-        <NavTrail
-          segments={crumbSegments(row.crumbs, icons)}
-          iconSize="control"
-          className={cx('archive-trail', row.historical && historical)}
-        />
-      </div>
-      <div className="data-cell archive-date">{when}</div>
-    </div>
-  )
-})
