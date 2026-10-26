@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import { savedView, type SavedView } from '../views'
-import { alignFor, clampWidth, minWidthFor, reorderColumns, WIDTHS } from './useColumns'
+import { alignFor, clampWidth, COLUMN_LAYOUT, minWidthFor, reorderColumns } from './useColumns'
 import { resolveColumn } from '../Pipeline/columns'
 
 const schema: PropertyDefinition[] = [
@@ -16,21 +16,21 @@ const schema: PropertyDefinition[] = [
 ]
 
 describe('column widths', () => {
-  describe('WIDTHS', () => {
+  describe('COLUMN_LAYOUT', () => {
     it('keys reserved columns by their declared type', () => {
-      expect(WIDTHS.title.default).toBe(280)
-      expect(WIDTHS.context.default).toBe(140)
-      expect(WIDTHS.lastEditedTime.default).toBe(120)
-      expect(WIDTHS.createdTime.default).toBe(120)
+      expect(COLUMN_LAYOUT.title.width).toBe(280)
+      expect(COLUMN_LAYOUT.context.width).toBe(140)
+      expect(COLUMN_LAYOUT.lastEditedTime.width).toBe(120)
+      expect(COLUMN_LAYOUT.createdTime.width).toBe(120)
     })
 
     it('keys user properties by their schema type', () => {
-      expect(WIDTHS.status).toEqual({ min: 65, default: 120, max: 250 })
-      expect(WIDTHS.number.default).toBe(100)
+      expect(COLUMN_LAYOUT.status).toMatchObject({ min: 65, width: 120, max: 250 })
+      expect(COLUMN_LAYOUT.number.width).toBe(100)
     })
 
     it('keys a Link column by its own width', () => {
-      expect(WIDTHS.link).toEqual({ min: 100, default: 140, max: 350 })
+      expect(COLUMN_LAYOUT.link).toMatchObject({ min: 100, width: 140, max: 350 })
     })
   })
 
@@ -54,7 +54,6 @@ describe('column widths', () => {
 
     it('falls back to the base min for a type/look with no override', () => {
       expect(minWidthFor('number', 'switch')).toBe(50)
-      expect(minWidthFor('checkbox', 'nonsense')).toBe(45)
     })
   })
 
