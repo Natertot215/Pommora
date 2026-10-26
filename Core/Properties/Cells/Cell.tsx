@@ -44,11 +44,10 @@ export function Cell({
 }): React.JSX.Element | null {
   const v = resolveFieldValue(row, column)
   const { def } = column
-  const dt = def?.type
   const holder = holderOf(row, ctx)
 
   // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
-  if (dt === 'checkbox')
+  if (column.type === 'checkbox')
     return (
       <CheckboxGlyph
         checked={v.kind === 'checkbox' && v.value}
