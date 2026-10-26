@@ -213,6 +213,26 @@ describe('propertyHolders', () => {
     expect((await propertyHolders(root, 'prop_nope')).ok).toBe(false)
   })
 
+  it('counts a holder still under a key an owed rename left, as the delete strips it', async () => {
+    const c = await createProperty(root, { label: 'Priority', type: 'text' })
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    for (const [title, key] of [
+      ['A', 'Priority'],
+      ['B', 'Old'],
+    ]) {
+      const p = await createTestPage(notes, title, { body: 'b' })
+      if (!p.ok) throw new Error('setup failed')
+      await rewriteRootAt(
+        p.value.path,
+        rewriteRoot((raw) => landValue(raw, key, 'hi')),
+      )
+    }
+    await putJson(join(root, OWED_REL), { [c.value.id]: { kind: 'property', rename: ['Old'] } })
+
+    expect(await propertyHolders(root, c.value.id)).toEqual(ok(2))
+  })
+
   it('counts what the delete strips, holding out an ID-less page and both claimants of one id, and writes nothing', async () => {
     const c = await createProperty(root, {
       label: 'Priority',

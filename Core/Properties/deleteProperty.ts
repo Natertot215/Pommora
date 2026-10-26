@@ -77,9 +77,14 @@ async function snapshot(
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const { holders, plan } = await deletePlan(root, propertyId, [def.key])
+  const keys = await deleteKeys(root, propertyId, def.key)
+  const { holders, plan } = await deletePlan(root, propertyId, keys)
   return ok(await sweepCount(root, holders.files, plan))
 }
+
+// The delete takes every key the property still owed, so the Trash keeps what each holder holds under any of them, and what Remove or an option change owed goes with it.
+const deleteKeys = async (root: string, propertyId: string, key: string): Promise<string[]> =>
+  owedDelete(propertyNote((await readNotes(root))[propertyId]), key).strip ?? []
 
 export function deleteProperty(root: string, propertyId: string): Promise<MutateReply> {
   return serializeSchemaOp(root, () => deleteInner(root, propertyId))
@@ -91,8 +96,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
 
   // EVERY collection folder, not just current assigners — a Remove's stash block lives on a collection sidecar that no longer assigns the id.
   const folders = collectionFolders(root, await liveTreeOf(root))
-  // The delete takes every key the property still owed, so the Trash keeps what each holder holds under any of them, and what Remove or an option change owed goes with it.
-  const { strip = [] } = owedDelete(propertyNote((await readNotes(root))[propertyId]), def.key)
+  const strip = await deleteKeys(root, propertyId, def.key)
   const planned = await deletePlan(root, propertyId, strip)
   const bundle = await snapshot(root, propertyId, def, folders, planned.holders.held, strip)
   // Noted after the bundle mints, so a finish never deletes with no Trash record; the list moves next, so no value write resolves the key once the strip starts; a refusal leaves nothing deleted, so the bundle goes.
