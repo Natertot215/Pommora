@@ -1,16 +1,22 @@
 import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { fault } from '../Contract/result'
 import { dropLiveTree } from '../Nexus/liveTree'
-import { tempRoot } from '../Testing/hostFs'
+import { putJson, tempRoot } from '../Testing/hostFs'
+import { sidecarPath } from '../Paths/paths'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { mintBundle } from './bundle'
 import { writeRecord } from './record'
 
 const { sessionRoot } = vi.hoisted(() => ({ sessionRoot: vi.fn() }))
 vi.mock('../Nexus/session', () => ({ sessionRoot, adopting: () => false }))
+vi.mock('../Nexus/heldPages', async (importOriginal) => {
+  const held = await importOriginal<typeof import('../Nexus/heldPages')>()
+  return { ...held, nexusPages: vi.fn(held.nexusPages) }
+})
+const { nexusPages } = await import('../Nexus/heldPages')
 
 const { bundlesHandlers } = await import('./handlers')
 
@@ -109,6 +115,59 @@ describe('bundles:list', () => {
     for (const store of [null, { kind: 'shelf' }, { kind: 'archive' }])
       expect(await bundlesHandlers['bundles:list'](ctx, store)).toEqual(
         fault('A store is required.'),
+      )
+  })
+})
+
+describe('bundles:children', () => {
+  const BUNDLE = '.trash/2026-10-17T00-00-00-000Z__A.deleted'
+  const P_ID = '01KVGMT8BFP350FZZXAMG1QDVP'
+  const seedTrashedCollection = async (): Promise<void> => {
+    const at = (...segs: string[]): string => join(root, BUNDLE, ...segs)
+    await putJson(sidecarPath(at('A'), 'collection'), { id: 'colA' })
+    await putJson(sidecarPath(at('A', 'S'), 'set'), { id: 'setS' })
+    await writeFile(at('A', 'S', 'P.md'), `---\nID: ${P_ID}\n---\n# P\n`)
+    await writeFile(at('A', 'Q.md'), '# Q\n')
+    await writeRecord(at(), { entity: 'collection', id: 'colA', parent: { kind: 'root' } })
+  }
+  const titles = (reply: Awaited<ReturnType<(typeof bundlesHandlers)['bundles:children']>>) =>
+    reply.ok && reply.value.map((rows) => rows.map((r) => r.title))
+
+  it('answers each address’s inner items in the addresses’ order, reading the pages once for the call', async () => {
+    await seedTrashedCollection()
+    vi.mocked(nexusPages).mockClear()
+    const reply = await bundlesHandlers['bundles:children'](ctx, [`${BUNDLE}/A/S`, BUNDLE])
+    expect(titles(reply)).toEqual([['P'], ['S', 'Q']])
+    expect(reply.ok && reply.value[0][0].stored).toEqual({ id: P_ID, path: `${BUNDLE}/A/S/P.md` })
+    expect(nexusPages).toHaveBeenCalledTimes(1)
+  })
+
+  it('answers no rows for a gone address, one escaping the root, a page’s or property’s bundle, or an inner page, beside the others it answers', async () => {
+    await seedTrashedCollection()
+    const page = await mintBundle(root, { kind: 'trash' }, join(root, 'Notes', 'Alpha.md'))
+    await writeFile(join(page, 'Alpha.md'), '# Alpha\n')
+    await writeRecord(page, { entity: 'page', parent: { kind: 'unaddressable' } })
+    const property = await seedPropertyBundle(root, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    const reply = await bundlesHandlers['bundles:children'](ctx, [
+      `${BUNDLE}/A/Gone`,
+      '../outside',
+      relative(root, page),
+      relative(root, property),
+      `${BUNDLE}/A/S/P.md`,
+      BUNDLE,
+    ])
+    expect(titles(reply)).toEqual([[], [], [], [], [], ['S', 'Q']])
+  })
+
+  it('refuses addresses that aren’t an array of strings', async () => {
+    for (const raw of [undefined, 'x', [7], [BUNDLE, null]])
+      expect(await bundlesHandlers['bundles:children'](ctx, raw as string[])).toEqual(
+        fault('Addresses are required.'),
       )
   })
 })

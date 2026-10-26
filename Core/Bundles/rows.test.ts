@@ -9,11 +9,14 @@ import type { NexusTree } from '../Nexus/tree'
 import type { BundleRow } from './rows'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './bundle'
+import { listBundles, listInner } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
-import { bundleRowOf, bundleRows } from './rows'
+import { bundleRowOf, bundleRows, innerRows } from './rows'
+import { storedAtOf } from './layout'
+import { patchRecord } from './record'
+import { scopeOf } from '../Settings/codec'
 import type { TrashDeps } from '../Trash/discard'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
@@ -350,5 +353,117 @@ describe('bundleRows — `homeResolves` agrees with the resolver', () => {
       nexusDeps,
     )
     expect(restored.ok).toBe(false)
+  })
+})
+
+describe('innerRows — a bundle’s inner items as the browser reads them', () => {
+  const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVC'
+  const trashedNotes = async (): Promise<string> => {
+    await del('Notes', 'collection')
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    return bundle.bundlePath
+  }
+  const innerOf = async (address: string, tree?: NexusTree): Promise<BundleRow[]> => {
+    const live = tree ?? (await readNexus(root))
+    const listed = await listInner(root, join(root, address), scopeOf(live.config))
+    if (!listed.ok) throw new Error(listed.error.message)
+    return innerRows(listed.value, live, (await nexusPages(root, live)).byId)
+  }
+
+  it('a page row is addressed by its own path, dated by its bundle, trailed through the containers inside it, and homeless', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Week'))
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Week', '_pageset.json'),
+      JSON.stringify({ id: 'set-week' }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Week', 'Beta.md'),
+      `---\nID: ${PAGE_B}\n---\nbody`,
+    )
+    const bundlePath = await trashedNotes()
+    const address = `${bundlePath}/Notes/Daily/Week/Beta.md`
+    const tree = await readNexus(root)
+    const [row] = await innerOf(`${bundlePath}/Notes/Daily/Week`, {
+      ...tree,
+      config: { ...tree.config, pageMetadata: { [PAGE_B]: { icon: 'hash' } } },
+    })
+    expect(row).toMatchObject({
+      bundlePath: address,
+      kind: 'page',
+      title: 'Beta',
+      icon: 'hash',
+      stored: { id: PAGE_B, path: address },
+      crumbs: [
+        { kind: 'collection', title: 'Notes' },
+        { kind: 'set', title: 'Daily' },
+        { kind: 'set', title: 'Week' },
+      ],
+      storedAt: storedAtOf(bundlePath),
+      homeResolves: false,
+    })
+    expect(row.storedAt).toEqual(expect.any(Number))
+    expect(row).not.toHaveProperty('historical')
+    expect(row).not.toHaveProperty('partial')
+  })
+
+  it('a Set row carries its sidecar’s icon and its stored id at its own path', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'set-daily', icon: 'folder-heart' }),
+    )
+    const bundlePath = await trashedNotes()
+    const address = `${bundlePath}/Notes/Daily`
+    expect(await innerOf(bundlePath)).toMatchObject([
+      {
+        bundlePath: address,
+        kind: 'set',
+        title: 'Daily',
+        icon: 'folder-heart',
+        stored: { id: 'set-daily', path: address },
+        crumbs: [{ kind: 'collection', title: 'Notes' }],
+        homeResolves: false,
+      },
+    ])
+  })
+
+  it('a row inside a bundle whose home is gone begins with its frozen trail and carries the mark', async () => {
+    await del('Notes/Daily', 'set')
+    await del('Notes', 'collection')
+    const set = (await listBundles(root, { kind: 'trash' })).find((b) => b.artifactName === 'Daily')
+    const [row] = await innerOf(set?.bundlePath ?? '')
+    expect(row).toMatchObject({
+      title: 'Alpha',
+      historical: true,
+      crumbs: [{ title: 'Notes' }, { kind: 'set', title: 'Daily' }],
+      homeResolves: false,
+    })
+    expect(row.crumbs[0]).not.toHaveProperty('kind')
+  })
+
+  it('an archived Set’s inner page row is homeless, addressed by its own path, and trailed from the Archive', async () => {
+    const archived = await settledMutate(
+      root,
+      { op: 'archive', path: 'Notes/Daily', kind: 'set' },
+      nexusDeps,
+    )
+    const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
+    const address = `${bundlePath}/Daily/Alpha.md`
+    expect(await innerOf(bundlePath)).toMatchObject([
+      {
+        bundlePath: address,
+        stored: { id: PAGE_A, path: address },
+        crumbs: [
+          { kind: 'collection', title: 'Notes' },
+          { kind: 'set', title: 'Daily' },
+        ],
+        homeResolves: false,
+      },
+    ])
+  })
+
+  it('a row inside a partly recorded bundle carries the mark', async () => {
+    const bundlePath = await trashedNotes()
+    await patchRecord(join(root, bundlePath), () => ({ partial: true }))
+    expect(await innerOf(`${bundlePath}/Notes/Daily`)).toMatchObject([{ partial: true }])
   })
 })

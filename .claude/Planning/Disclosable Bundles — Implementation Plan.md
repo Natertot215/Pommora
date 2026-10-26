@@ -113,6 +113,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - **Nesting:** nested Sets disclose recursively. Inner items take Restore, Delete, check, and batch, and a checked ancestor covers its checked descendants.
   - **Single Rows:** Contexts, Spaces, and properties stay single rows.
   - **Search:** narrows top rows only.
+  - **Excluded Folders:** a folder the Nexus excludes stays out of an inner listing until it's unexcluded.
   - **Trails:** an inner row shows its trail. It's the bundle's own trail, then each container inside the bundle down to the row's folder, and it carries the bundle's `historical` mark.
   - **Collapsing:** checks are remembered. Collapsing a container never unchecks what it hides, and reopening shows the same checks. A hidden check stays out of the batch and the menu's targets while its container is closed, as a search's hidden checked rows do today.
   - **Batch Destination:** the batch's destination ask applies only to its homeless rows. Every row whose home resolves restores to that home, whatever the picker chose.
@@ -150,7 +151,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - [x] Task 2-1
   - [x] Task 2-2
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Listing Inner Items
+- [x] **Phase 3** — Listing Inner Items
   - [x] Task 3-1
   - [x] Task 3-2
   - [x] Compaction Checkpoint
@@ -820,7 +821,7 @@ A whole bundle still re-mints under its own name, as it does today.
   - **`bundle.test.ts`:** `listInner` lists one level of the folder:
     - Sets come first, then pages.
     - Each kind follows the folder sidecar's `set_order` and `page_order` through `resolveOrder` (`Core/Nexus/order.ts`).
-    - Hidden entries are skipped.
+    - Hidden, asset, and excluded entries are skipped.
   - **`rows.test.ts`:** an inner row's fields:
     - `bundlePath` is its address, and `stored` is `{ id, path: address }`.
     - Its icon is the page metadata's, or the Set sidecar's.
@@ -854,7 +855,11 @@ A whole bundle still re-mints under its own name, as it does today.
 +}
 +
 +/** One level of a container address's inner items, its Sets and then its pages, each in the order the folder's sidecar keeps, with the record it carries; the trail above them is read once for the level. */
-+export async function listInner(root: string, abs: string): Promise<Result<InnerListing>> {
++export async function listInner(
++  root: string,
++  abs: string,
++  scope: WatchScope,
++): Promise<Result<InnerListing>> {
 +  const read = await readBundleAt(root, abs)
 +  if (!read.ok) return read
 +  const { bundle, store, record, artifact, inner } = read.value
@@ -862,8 +867,10 @@ A whole bundle still re-mints under its own name, as it does today.
 +    return fail('not-found', 'That holds no inner items.')
 +  const folder = inner?.item ?? artifact
 +  const trail = await trailWithin(record, artifact, folder)
-+  const entries = (await listEntries(folder)).filter((e) =>
-+    e.kind === 'dir' ? !hiddenFolder(e.name) : isContentFile(e),
++  const entries = (await listEntries(folder)).filter(
++    (e) =>
++      (e.kind === 'dir' || isContentFile(e)) &&
++      !outsideContent(originPathOf(root, store, join(folder, e.name)), scope),
 +  )
 +  const items = await Promise.all(
 +    entries.map(async ({ name }) => {
@@ -980,7 +987,7 @@ A whole bundle still re-mints under its own name, as it does today.
 +}
 ```
 
-`homeResolvesFor` folds into `artifactRow`, its one caller. `asStringArray` comes from `Core/Nexus/coerce`, as `containerFields.ts` takes it; `sidecarPath` comes from `Core/Paths/paths`; and the entry rule is the live walk's, `hiddenFolder` for folders and `isContentFile` for files, as `readNexus` reads a folder.
+`homeResolvesFor` folds into `artifactRow`, its one caller. `asStringArray` comes from `Core/Nexus/coerce`, as `containerFields.ts` takes it; `sidecarPath` comes from `Core/Paths/paths`; and an entry lists when it's a folder or `isContentFile` admits it, and `outsideContent` passes its origin path under the scope the handler reads from the tree, as `nexusPages` reads the Archive.
 
 **VERIFY**
 
@@ -1016,11 +1023,12 @@ A whole bundle still re-mints under its own name, as it does today.
 +    if (!Array.isArray(raw) || !raw.every(isString)) return fault('Addresses are required.')
 +    const tree = await liveTreeOf(root)
 +    const { byId } = await nexusPages(root, tree)
++    const scope = scopeOf(tree.config)
 +    return ok(
 +      await Promise.all(
 +        raw.map(async (address) => {
 +          const resolved = await resolveUnderRoot(root, address)
-+          const listed = resolved.ok ? await listInner(root, resolved.value) : resolved
++          const listed = resolved.ok ? await listInner(root, resolved.value, scope) : resolved
 +          return listed.ok ? innerRows(listed.value, tree, byId) : []
 +        }),
 +      ),
@@ -1035,7 +1043,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 #### Compaction Checkpoint
 
-- [ ] Tick the host phases in *§Process Overview*, record any *§Deviations*, and prepare the handoff before the renderer phases.
+- [x] Tick the host phases in *§Process Overview*, record any *§Deviations*, and prepare the handoff before the renderer phases.
 
 ---
 

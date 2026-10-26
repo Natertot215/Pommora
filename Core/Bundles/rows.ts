@@ -1,4 +1,4 @@
-import { dirname, relative, relJoin, titleFromPath } from '../Paths/posix'
+import { basename, dirname, relative, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
@@ -7,7 +7,7 @@ import type { NexusPages } from '../Nexus/heldPages'
 import { containerTrailById } from '../Nexus/treePatch'
 import { type PropertyType, typeIds } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import type { ListedBundle } from './bundle'
+import type { InnerListing, ListedBundle } from './bundle'
 import { type BundleStore, layoutOf, storedAtOf } from './layout'
 import { resolveRecord } from './placement'
 import type { ArtifactRecord } from './record'
@@ -20,6 +20,7 @@ export interface BundleCrumb {
 
 /** Main owns the parse: the renderer never sees a bundle suffix, a folder stamp, or the record union. */
 export interface BundleRow {
+  /** Its address: a bundle's folder, or the inner item's own path. */
   bundlePath: string
   kind: HeldKind | 'property'
   title: string
@@ -37,7 +38,7 @@ export interface BundleRow {
   match: MatchKey
   /** The item's own icon: a page's from the metadata the tree holds, a container's or a Space's from its record, which keeps the sidecar's. */
   icon?: string
-  /** A page or Set as stored, by its record's id and its path inside the bundle: what the reader opens and a restore's Undo finds again. */
+  /** A page or Set as stored, by its record's id and its path in its store: what the reader opens and a restore's Undo finds again. */
   stored?: { id: string; path: string }
   /** Set when the delete recorded only part of what the item held. */
   partial?: true
@@ -64,17 +65,6 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): BundleCrumb[] | nu
   // Walked structurally rather than split from a path, since a crumb chain built from names is what the record model refuses.
   const chain = containerTrailById(tree, record.parent.id)
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
-}
-
-function homeResolvesFor(
-  record: ArtifactRecord,
-  artifactName: string,
-  tree: NexusTree,
-  byId: NexusPages['byId'],
-  restoring: string,
-): boolean {
-  const resolution = resolveRecord(record, artifactName, tree, byId, restoring)
-  return !('refuse' in resolution) || resolution.refuse === 'id-live'
 }
 
 export const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({
@@ -104,8 +94,35 @@ export function bundleRowOf(
     })
   }
   if (!artifactName) return null
+  return artifactRow(
+    record,
+    { bundlePath, path: relJoin(bundlePath, artifactName), storedAt: storedAtOf(bundlePath) },
+    bundleCrumbs(record, store, bundlePath, tree),
+    tree,
+    byId,
+  )
+}
+
+/** A bundle's trail: live from its recorded parent, else frozen from the chain it was filed under. */
+function bundleCrumbs(
+  record: ArtifactRecord,
+  store: BundleStore,
+  bundlePath: string,
+  tree: NexusTree,
+): { crumbs: BundleCrumb[]; historical: boolean } {
   const live = liveCrumbs(record, tree)
-  const path = relJoin(bundlePath, artifactName)
+  return { crumbs: live ?? frozenCrumbs(store, bundlePath), historical: !live }
+}
+
+/** The one row an artifact reads as, a bundle's own or an inner item's: the place it shows, the date it entered, and whether its home still answers. */
+function artifactRow(
+  record: ArtifactRecord,
+  at: { bundlePath: string; path: string; storedAt: number | null },
+  place: { crumbs: BundleCrumb[]; historical: boolean },
+  tree: NexusTree,
+  byId: NexusPages['byId'],
+): BundleRow {
+  const name = basename(at.path)
   const icon =
     record.entity === 'page'
       ? record.id
@@ -114,20 +131,44 @@ export function bundleRowOf(
       : record.entity === 'context'
         ? undefined
         : record.icon
+  const home = resolveRecord(record, name, tree, byId, at.bundlePath)
   return matched({
-    bundlePath,
+    bundlePath: at.bundlePath,
     kind: record.entity,
-    title: record.entity === 'page' ? titleFromPath(artifactName) : artifactName,
-    crumbs: live ?? frozenCrumbs(store, bundlePath),
-    ...(live ? {} : { historical: true }),
-    storedAt: storedAtOf(bundlePath),
+    title: record.entity === 'page' ? titleFromPath(name) : name,
+    crumbs: place.crumbs,
+    ...(place.historical ? { historical: true } : {}),
+    storedAt: at.storedAt,
     ...(icon ? { icon } : {}),
     ...((record.entity === 'page' || record.entity === 'set') && record.id
-      ? { stored: { id: record.id, path } }
+      ? { stored: { id: record.id, path: at.path } }
       : {}),
-    homeResolves: homeResolvesFor(record, artifactName, tree, byId, bundlePath),
+    homeResolves: !('refuse' in home) || home.refuse === 'id-live',
     ...(record.partial ? { partial: true as const } : {}),
   })
+}
+
+/** A bundle's inner items as rows: each addressed by its own path, dated by its bundle's stamp, its trail the bundle's own followed by the containers inside it down to the row's folder. */
+export function innerRows(
+  listed: InnerListing,
+  tree: NexusTree,
+  byId: NexusPages['byId'],
+): BundleRow[] {
+  const { bundle, store, record, folder, items } = listed
+  const { crumbs, historical } = bundleCrumbs(record, store, bundle, tree)
+  const [held, ...sets] = relative(bundle, folder).split('/')
+  const place = {
+    crumbs: [
+      ...crumbs,
+      { kind: record.entity, title: held },
+      ...sets.map((title) => ({ kind: 'set' as const, title })),
+    ],
+    historical,
+  }
+  const storedAt = storedAtOf(bundle)
+  return items.map(({ address, record }) =>
+    artifactRow(record, { bundlePath: address, path: address, storedAt }, place, tree, byId),
+  )
 }
 
 export function bundleRows(

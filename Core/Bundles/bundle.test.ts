@@ -2,12 +2,15 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { seedPropertyBundle } from '../Testing/fixtures'
 import { newContentId } from '../Nexus/ids'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
+import type { WatchScope } from '../Paths/exclusion'
 import {
   fileInto,
   listBundles,
+  listInner,
   mintBundle,
   type OpenBundle,
   openBundle,
@@ -199,6 +202,131 @@ describe('openBundle', () => {
     expect((await opened(inBundle('A', 'S', 'T', 'P.md'))).record.partial).toBe(true)
     await seedTrashedCollection()
     expect((await opened(inBundle('A', 'S', 'T', 'P.md'))).record.partial).toBeUndefined()
+  })
+})
+
+describe('listInner', () => {
+  const R = 'setR'
+  const Y_ID = newContentId('page')
+  const Z_ID = newContentId('page')
+  const OPEN: WatchScope = { excluded: [], assetDir: '' }
+  const listed = async (abs: string, scope = OPEN) => {
+    const read = await listInner(root, abs, scope)
+    if (!read.ok) throw new Error(read.error.message)
+    return read.value
+  }
+  const inBundleRel = (...segs: string[]): string => [BUNDLE_REL, ...segs].join('/')
+
+  it('lists one level of a bundled Collection: its Sets, then its pages, each in its sidecar’s order, skipping what the walk skips', async () => {
+    await seedTrashedCollection()
+    await putJson(sidecarPath(inBundle('A', 'R'), 'set'), { id: R })
+    await writeFile(inBundle('A', 'Y.md'), `---\nID: ${Y_ID}\n---\nbody\n`)
+    await writeFile(inBundle('A', 'Z.md'), `---\nID: ${Z_ID}\n---\nbody\n`)
+    await putJson(sidecarPath(inBundle('A'), 'collection'), {
+      id: A,
+      set_order: [S, R],
+      page_order: [Z_ID, Y_ID],
+    })
+    await mkdir(inBundle('A', '_raw'))
+    await mkdir(inBundle('A', 'node_modules'))
+    await writeFile(inBundle('A', '.x.md'), 'x')
+    await writeFile(inBundle('A', 'notes.txt'), 'x')
+    const { bundle, folder, items } = await listed(inBundle())
+    expect({ bundle, folder }).toEqual({ bundle: BUNDLE_REL, folder: inBundleRel('A') })
+    expect(items.map((i) => i.address)).toEqual(
+      ['S', 'R', 'Z.md', 'Y.md', 'Q.md'].map((name) => inBundleRel('A', name)),
+    )
+  })
+
+  it('lists an inner Set’s own level, each item with the record it carries', async () => {
+    await seedTrashedCollection()
+    expect((await listed(inBundle('A', 'S'))).items).toMatchObject([
+      {
+        address: inBundleRel('A', 'S', 'T'),
+        record: { entity: 'set', id: T, parent: { kind: 'container', id: S }, trail: [A] },
+      },
+    ])
+  })
+
+  it('keeps a folder the Nexus excludes out until it’s unexcluded, and the asset folder out', async () => {
+    await seedTrashedCollection()
+    await mkdir(inBundle('A', 'Files'))
+    const names = async (scope: WatchScope): Promise<string[]> =>
+      (await listed(inBundle(), scope)).items.map((i) => basename(i.address))
+    expect(await names({ excluded: ['A/S'], assetDir: '' })).toEqual(['Files', 'Q.md'])
+    expect(await names({ excluded: [], assetDir: 'A/Files' })).toEqual(['S', 'Q.md'])
+    expect(await names(OPEN)).toEqual(['Files', 'S', 'Q.md'])
+  })
+
+  it('orders an inner Set’s Sets by its own sidecar', async () => {
+    await seedTrashedCollection()
+    await putJson(sidecarPath(inBundle('A', 'S', 'R'), 'set'), { id: R })
+    await putJson(sidecarPath(inBundle('A', 'S'), 'set'), { id: S, set_order: [T, R] })
+    expect((await listed(inBundle('A', 'S'))).items.map((i) => i.address)).toEqual([
+      inBundleRel('A', 'S', 'T'),
+      inBundleRel('A', 'S', 'R'),
+    ])
+  })
+
+  describe('a whole Set’s bundle', () => {
+    const SET_BUNDLE_REL = `.trash/A/${STAMPED}__S.deleted`
+    const inSet = (...segs: string[]): string => join(root, SET_BUNDLE_REL, ...segs)
+    const ID_1 = '01J9Z8X7W6V5T4S3R2Q1P0N9A1'
+    const ID_2 = '01J9Z8X7W6V5T4S3R2Q1P0N9A2'
+    const seedTrashedSet = async (order: Record<string, unknown>): Promise<void> => {
+      await putJson(sidecarPath(inSet('S'), 'set'), { id: S, ...order })
+      await putJson(sidecarPath(inSet('S', 'Alpha'), 'set'), { id: 'set2' })
+      await putJson(sidecarPath(inSet('S', 'Beta'), 'set'), { id: 'set1' })
+      await writeFile(inSet('S', 'Alpha.md'), `---\nID: ${ID_2}\n---\nbody\n`)
+      await writeFile(inSet('S', 'Beta.md'), `---\nID: ${ID_1}\n---\nbody\n`)
+      await writeRecord(inSet(), { entity: 'set', id: S, parent: { kind: 'container', id: A } })
+    }
+    const names = async (): Promise<string[]> =>
+      (await listed(inSet())).items.map((i) => basename(i.address))
+
+    it('orders its pages by the Set’s own sidecar', async () => {
+      await seedTrashedSet({ page_order: [ID_2, ID_1] })
+      expect(await names()).toEqual(['Beta', 'Alpha', 'Alpha.md', 'Beta.md'])
+    })
+
+    it('orders each kind by id when the sidecar keeps no order', async () => {
+      await seedTrashedSet({})
+      expect(await names()).toEqual(['Beta', 'Alpha', 'Beta.md', 'Alpha.md'])
+    })
+  })
+
+  it('refuses an address whose bundle holds no container', async () => {
+    const page = join(root, '.trash', `${STAMPED}__P.md.deleted`)
+    await mkdir(page, { recursive: true })
+    await writeFile(join(page, 'P.md'), 'body')
+    await writeRecord(page, { entity: 'page', parent: { kind: 'root' } })
+    const property = await seedPropertyBundle(root, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    for (const abs of [page, property]) {
+      const read = await listInner(root, abs, OPEN)
+      expect(!read.ok && read.error.code).toBe('not-found')
+    }
+  })
+
+  it('lists a folder without a Set sidecar as an id-less Set, its own items unaddressable', async () => {
+    await seedTrashedCollection()
+    await mkdir(inBundle('A', 'Plain'))
+    await writeFile(inBundle('A', 'Plain', 'N.md'), 'body')
+    const plain = (await listed(inBundle())).items.find(
+      (i) => i.address === inBundleRel('A', 'Plain'),
+    )
+    expect(plain?.record).toMatchObject({ entity: 'set', parent: { kind: 'container', id: A } })
+    expect(plain?.record).not.toHaveProperty('id')
+    expect((await listed(inBundle('A', 'Plain'))).items).toMatchObject([
+      {
+        address: inBundleRel('A', 'Plain', 'N.md'),
+        record: { entity: 'page', parent: { kind: 'unaddressable' } },
+      },
+    ])
   })
 })
 
