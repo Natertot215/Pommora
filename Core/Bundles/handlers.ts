@@ -4,9 +4,11 @@ import { isPlainObject, isString } from '../Contract/validators'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
 import { archiveStoreOf } from '../Paths/names'
-import { archivedWithin, listBundles } from './bundle'
+import { scopeOf } from '../Settings/codec'
+import { resolveUnderRoot } from '../Paths/pathSafety'
+import { archivedWithin, listBundles, listInner } from './bundle'
 import type { BundleStore } from './layout'
-import { bundleRows } from './rows'
+import { bundleRows, innerRows } from './rows'
 
 function storeFrom(raw: unknown): BundleStore | null {
   if (!isPlainObject(raw)) return null
@@ -28,5 +30,20 @@ export const bundlesHandlers = {
         ? await archivedWithin(root, within, store.id, tree)
         : await listBundles(root, store)
     return ok(bundleRows(listed, store, tree, byId))
+  }),
+  'bundles:children': withRoot(async (root, _ctx, raw: unknown) => {
+    if (!Array.isArray(raw) || !raw.every(isString)) return fault('Addresses are required.')
+    const tree = await liveTreeOf(root)
+    const { byId } = await nexusPages(root, tree)
+    const scope = scopeOf(tree.config)
+    return ok(
+      await Promise.all(
+        raw.map(async (address) => {
+          const resolved = await resolveUnderRoot(root, address)
+          const listed = resolved.ok ? await listInner(root, resolved.value, scope) : resolved
+          return listed.ok ? innerRows(listed.value, tree, byId) : []
+        }),
+      ),
+    )
   }),
 } satisfies Partial<Handlers>

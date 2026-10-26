@@ -197,6 +197,8 @@ export interface Asks {
   // No push carries what a store holds, so a browser asks again after every action and on `storesChanged`.
   // `within` narrows a Collection's Archive to what left from within one of its top-level Sets.
   'bundles:list': { args: [store: BundleStore, within?: string]; reply: Result<BundleRow[]> }
+  // One level of inner items per row a browser holds open, asked on opening and again on each refresh, since `bundles:list` walks no artifact.
+  'bundles:children': { args: [addresses: string[]]; reply: Result<BundleRow[][]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
   'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
 

@@ -1,6 +1,15 @@
-import { basename, dirname, isAtOrUnder, isMarkdownFile, join, relative } from '../Paths/posix'
+import {
+  basename,
+  dirname,
+  isAtOrUnder,
+  isMarkdownFile,
+  join,
+  relative,
+  titleFromPath,
+} from '../Paths/posix'
+import { sidecarPath } from '../Paths/paths'
 import { escapes } from '../Paths/pathSafety'
-import { hiddenName } from '../Paths/exclusion'
+import { hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
 import { archiveStoreOf, holdsName } from '../Paths/names'
 import { NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
@@ -10,8 +19,10 @@ import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageInde
 import { linkedPage } from '../Connections/linkValue'
 import { stampedIdOf } from '../Files/pageFile'
 import { sidecarId } from '../Files/sidecar'
-import { listEntries, listMarkdownFiles } from '../Files/walk'
-import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
+import { isContentFile, listEntries, listMarkdownFiles } from '../Files/walk'
+import { pathExists, readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
+import { asStringArray } from '../Nexus/coerce'
+import { resolveOrder } from '../Nexus/order'
 import { isContainerKind } from '../Nexus/entities'
 import { distinct, editNote, readNotes } from '../Nexus/owed'
 import type { NexusTree } from '../Nexus/tree'
@@ -202,6 +213,8 @@ type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
 const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
   isContainerKind(record.entity)
 
+type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
+
 /** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more. */
 async function readBundleAt(root: string, abs: string) {
   const at = bundleAddressOf(root, abs)
@@ -245,7 +258,7 @@ async function innerRecord(
   held: ContainerRecord,
   trail: readonly string[] | null,
   item: string,
-): Promise<Extract<RecordFile, { entity: 'page' | 'set' }>> {
+): Promise<InnerRecord> {
   const entity = isMarkdownFile(item) ? 'page' : 'set'
   const { id, icon } = await identityOf(entity, item)
   return {
@@ -290,6 +303,66 @@ export async function openBundle(root: string, abs: string): Promise<Result<Open
     record: links.length ? { ...own, links } : own,
     artifact: item,
     inner: true,
+  })
+}
+
+/** One level of a container address's inner items under the bundle they sit in, its record and store, and the folder they share. */
+export interface InnerListing {
+  bundle: string
+  store: BundleStore
+  record: ContainerRecord
+  folder: string
+  items: { address: string; record: InnerRecord }[]
+}
+
+/** One level of a container address's inner items, its Sets and then its pages, each in the order the folder's sidecar keeps, with the record it carries; the trail above them is read once for the level. */
+export async function listInner(
+  root: string,
+  abs: string,
+  scope: WatchScope,
+): Promise<Result<InnerListing>> {
+  const read = await readBundleAt(root, abs)
+  if (!read.ok) return read
+  const { bundle, store, record, artifact, inner } = read.value
+  if (!isContainerRecord(record) || !artifact)
+    return fail('not-found', 'That holds no inner items.')
+  const folder = inner?.item ?? artifact
+  const trail = await trailWithin(record, artifact, folder)
+  const entries = (await listEntries(folder)).filter(
+    (e) =>
+      (e.kind === 'dir' || isContentFile(e)) &&
+      !outsideContent(originPathOf(root, store, join(folder, e.name)), scope),
+  )
+  const items = await Promise.all(
+    entries.map(async ({ name }) => {
+      const at = join(folder, name)
+      const own = await innerRecord(record, trail, at)
+      return {
+        address: relative(root, at),
+        record: own,
+        id: own.id ?? at,
+        title: titleFromPath(name),
+      }
+    }),
+  )
+  const meta =
+    (await readJsonObject(sidecarPath(folder, folder === artifact ? record.entity : 'set'))) ?? {}
+  const ordered = [
+    ...resolveOrder(
+      items.filter((i) => i.record.entity === 'set'),
+      asStringArray(meta.set_order),
+    ),
+    ...resolveOrder(
+      items.filter((i) => i.record.entity === 'page'),
+      asStringArray(meta.page_order),
+    ),
+  ]
+  return ok({
+    bundle: relative(root, bundle),
+    store,
+    record,
+    folder: relative(root, folder),
+    items: ordered.map(({ address, record }) => ({ address, record })),
   })
 }
 
