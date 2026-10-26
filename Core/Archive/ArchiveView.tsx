@@ -25,7 +25,7 @@ import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import type { Personalization } from '../Settings/personalization'
 import { useSession } from '../Session/store'
-import { WIDTHS } from '../Views/Table/useColumns'
+import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
 import '../Views/Table/table-view.css'
 import { ARCHIVE_TITLE } from './archivePlace'
 import './archive-view.css'
@@ -53,9 +53,9 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   const { listing, visible } = browser
   const dateTrack =
     browser.date.width === null
-      ? `${WIDTHS.dateTime.default}px`
+      ? `${COLUMN_LAYOUT.dateTime.width}px`
       : `calc(${browser.date.width}px + 2 * var(--cell-padding-x))`
-  const cols = `minmax(${WIDTHS.title.default}px, 1fr) ${dateTrack}`
+  const cols = `minmax(${COLUMN_LAYOUT.title.width}px, 1fr) ${dateTrack}`
 
   const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)

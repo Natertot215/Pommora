@@ -1,8 +1,8 @@
-// Everything a table column is: the width table and its clamp, the default alignment, the reorder helper, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
+// Everything a table column is: the layout table and its clamp, the reorder helper, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
 
 import { useEffect, useMemo, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '../../Actions/columnMenu'
-import { defaultStyleFor, type ColumnStyle } from '../../Properties/columnStyles'
+import { type ColumnLook, defaultStyleFor, type ColumnStyle } from '../../Properties/columnStyles'
 import type { ColumnType } from '../../Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '../views'
 import type { ResolvedColumn } from '../viewRow'
@@ -19,81 +19,58 @@ import { numberBarCapable } from '../../Properties/formatValue'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { hideShown } from '../visibilityModel'
 
-// ── Widths ──────────────────────────────────────────────────────────────────
+// ── Widths and Alignment ────────────────────────────────────────────────────
 
-interface ColumnWidth {
-  min: number
-  default: number
-  max: number
-}
-
-// Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility.
+// Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility, and a look's min in `lookMin` replaces the type's own; status, select and multi-select are one option-chip family, so they share OPTION_MIN. The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. Both stamps keep Title's left metadata treatment.
 const UNCAPPED = Number.POSITIVE_INFINITY
-export const WIDTHS: Record<ColumnType, ColumnWidth> = {
-  title: { min: 120, default: 280, max: UNCAPPED },
-  context: { min: 80, default: 140, max: 350 },
-  status: { min: 65, default: 120, max: 250 },
-  select: { min: 65, default: 120, max: 350 },
-  multiSelect: { min: 65, default: 180, max: 350 },
-  checkbox: { min: 45, default: 60, max: 80 },
-  link: { min: 100, default: 140, max: 350 },
-  text: { min: 100, default: 140, max: 350 },
-  file: { min: 100, default: 140, max: 250 },
-  number: { min: 50, default: 100, max: 350 },
-  dateTime: { min: 90, default: 140, max: 250 },
-  createdTime: { min: 90, default: 120, max: 250 },
-  lastEditedTime: { min: 90, default: 120, max: 250 },
+const OPTION_MIN = { compact: 65, standard: 80 } as const
+
+interface ColumnLayout {
+  min: number
+  width: number
+  max: number
+  align: ColumnAlign
+  lookMin?: Partial<Record<ColumnLook, number>>
 }
 
-// Per-look min overrides replace the type's base min; status, select and multi-select are one option-chip family, so they share OPTION_MIN.
-const OPTION_MIN = { compact: 65, standard: 80 } as const
-const STYLE_MIN: Partial<Record<ColumnType, Partial<Record<string, number>>>> = {
-  checkbox: { switch: 70 },
-  status: OPTION_MIN,
-  select: OPTION_MIN,
-  multiSelect: OPTION_MIN,
+export const COLUMN_LAYOUT: Record<ColumnType, ColumnLayout> = {
+  title: { min: 120, width: 280, max: UNCAPPED, align: 'left' },
+  context: { min: 80, width: 140, max: 350, align: 'center' },
+  status: { min: 65, width: 120, max: 250, align: 'center', lookMin: OPTION_MIN },
+  select: { min: 65, width: 120, max: 350, align: 'center', lookMin: OPTION_MIN },
+  multiSelect: { min: 65, width: 180, max: 350, align: 'center', lookMin: OPTION_MIN },
+  checkbox: { min: 45, width: 60, max: 80, align: 'center', lookMin: { switch: 70 } },
+  link: { min: 100, width: 140, max: 350, align: 'left' },
+  text: { min: 100, width: 140, max: 350, align: 'left' },
+  file: { min: 100, width: 140, max: 250, align: 'left' },
+  number: { min: 50, width: 100, max: 350, align: 'left' },
+  dateTime: { min: 90, width: 140, max: 250, align: 'center' },
+  createdTime: { min: 90, width: 120, max: 250, align: 'left' },
+  lastEditedTime: { min: 90, width: 120, max: 250, align: 'left' },
 }
 
 const HEADER_ICON_BUMP = ICON_PX.body + 6
 
 /** `look` omitted resolves the type's DEFAULT look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
-export function minWidthFor(type: ColumnType, look?: string, iconsShown = false): number {
+export function minWidthFor(type: ColumnType, look?: ColumnLook, iconsShown = false): number {
   const bump = iconsShown ? HEADER_ICON_BUMP : 0
+  const { min, lookMin } = COLUMN_LAYOUT[type]
   const resolved = look ?? defaultStyleFor(type).look
-  const override = resolved !== undefined ? STYLE_MIN[type]?.[resolved] : undefined
-  return (override ?? WIDTHS[type].min) + bump
+  const override = resolved !== undefined ? lookMin?.[resolved] : undefined
+  return (override ?? min) + bump
 }
 
 export function clampWidth(
   width: number,
   type: ColumnType,
-  look?: string,
+  look?: ColumnLook,
   iconsShown = false,
 ): number {
-  return clamp(width, minWidthFor(type, look, iconsShown), WIDTHS[type].max)
-}
-
-// ── Alignment ───────────────────────────────────────────────────────────────
-
-// The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. Both stamps keep Title's left metadata treatment.
-const DEFAULT_ALIGN: Record<ColumnType, ColumnAlign> = {
-  title: 'left',
-  checkbox: 'center',
-  status: 'center',
-  select: 'center',
-  multiSelect: 'center',
-  context: 'center',
-  dateTime: 'center',
-  number: 'left',
-  link: 'left',
-  text: 'left',
-  file: 'left',
-  createdTime: 'left',
-  lastEditedTime: 'left',
+  return clamp(width, minWidthFor(type, look, iconsShown), COLUMN_LAYOUT[type].max)
 }
 
 export const alignFor = (column: ResolvedColumn, view: SavedView): ColumnAlign =>
-  view.column_alignments?.[column.id] ?? DEFAULT_ALIGN[column.type]
+  view.column_alignments?.[column.id] ?? COLUMN_LAYOUT[column.type].align
 
 // ── Order ───────────────────────────────────────────────────────────────────
 
@@ -145,7 +122,7 @@ export function useColumns(host: ViewHostApi) {
   const iconsShown = !viewOption(view, 'hide_column_icons')
   const { styleById } = host
   const storedWidth = ({ id, type }: ResolvedColumn): number =>
-    (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ?? WIDTHS[type].default
+    (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ?? COLUMN_LAYOUT[type].width
   const alignByCol = useMemo(() => columns.map((c) => alignFor(c, view)), [columns, view])
   const styleByCol = useMemo(() => columns.map((c) => styleById.get(c.id)!), [columns, styleById])
   const widthByCol = useMemo(
