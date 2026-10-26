@@ -3,7 +3,7 @@
 **DATE:** 10-22-2026
 **HEAD:** `3c6afcabb` (branch `active`). Every citation below is `path:line` at HEAD.
 
-This document holds the technical evidence behind *Properties Restructure — Implementation Plan* and behind the calls *Properties Restructure — Morning Report* puts to Nathan: the settled Planner's Calls, the edge rules that stay, the measurement rules, the ledger, and the Sync rebuild inputs. *Properties Restructure — Decisions & Intention* governs intent, and the plan's phases are the design.
+This document holds the technical evidence behind *Properties Restructure — Plan* and behind the calls *Properties Restructure — Morning Report* puts to Nathan: the settled Planner's Calls, the edge rules that stay, the measurement rules, the ledger, and the Sync rebuild inputs. *Properties Restructure — Decisions & Intention* governs intent, and the plan's phases are the design.
 
 ---
 

@@ -9,7 +9,7 @@ The standing approach, principles, perspectives, constraints, and process for th
 
 - ***Properties Restructure — Decisions & Intention***: the intent, authoritative once ratified, with each decision tagged CONFIRMED, INFERRED, or ASSUMED and the session's questions and answers closing it.
 - ***Properties Restructure — Planning Findings***: the technical evidence behind the plan and the Morning Report's calls: every planner's call settled, the edge rules that stay, the measurement rules, the ledger, and the Sync rebuild inputs.
-- ***Properties Restructure — Implementation Plan***: the phases and tasks, written as diff blocks `.claude/scripts/plan-replay/plan_replay.py` applies.
+- ***Properties Restructure — Plan***: the phases and tasks, written as diff blocks `.claude/scripts/plan-replay/plan_replay.py` applies.
 - ***Properties Restructure — Morning Report***: what the plan is, the calls left to Nathan, where planning closed, and the plain-English walkthrough of everything the work changes against what's true now, which every overview in planning follows.
 - ***BRIEF.md***: this document.
 

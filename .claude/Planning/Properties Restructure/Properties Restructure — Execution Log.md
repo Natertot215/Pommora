@@ -1,6 +1,6 @@
 ### Properties Restructure — Execution Log
 
-**SOURCE:** *Properties Restructure — Implementation Plan*
+**SOURCE:** *Properties Restructure — Plan*
 
 What the plan's rules record while it runs, so the plan file stays as `plan_replay.py apply` reads it. The closing report draws on each section.
 

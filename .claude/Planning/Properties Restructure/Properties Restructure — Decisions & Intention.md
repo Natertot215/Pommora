@@ -11,7 +11,7 @@ The restructure began with a full-sweep inventory at `d0595b22d`, verified at `a
 
 ### Overview
 
-This log is the authority on intent for the restructure. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, *Properties Restructure — Implementation Plan* builds each decision into its phases, and Nathan ratifies this log with the plan.
+This log is the authority on intent for the restructure. It records which of today's behaviors are kept as intentional, which change and how, and what planning investigates against the code before designing each change. *BRIEF.md* holds the principles every planning document answers to, *Properties Restructure — Plan* builds each decision into its phases, and Nathan ratifies this log with the plan.
 
 Most decisions fix accidents or fold duplicated machinery into one shape; a few change visible behavior on purpose, such as giving every option a permanent id, giving every property, Context, and Space its own crash-recovery note, and making undo put back what the file held. Sync's merge rules stay as they are while Sync awaits its rebuild, so the merge losses found here are recorded as inputs for that rebuild, as *§Prospects* notes.
 
