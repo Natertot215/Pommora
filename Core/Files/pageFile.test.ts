@@ -19,7 +19,7 @@ describe('splitEnvelope / assembleEnvelope', () => {
     expect(assembleEnvelope('id: X\n', 'Body text')).toBe(content)
   })
 
-  it('reads a legacy envelope (separator blank line) to the same body', () => {
+  it('reads an envelope with a separator blank line to the same body', () => {
     expect(splitEnvelope('---\nid: X\n---\n\nBody text')).toEqual({
       frontmatter: 'id: X',
       fenced: true,
