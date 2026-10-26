@@ -68,6 +68,8 @@ export function MenuTopRow({
 
 type MenuItemProps = {
   leading?: ReactNode
+  /** Sits right of the title text on its line, outside the text's ellipsis, as a disclosure's chevron does. */
+  titleAccessory?: ReactNode
   subLabel?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
@@ -95,6 +97,7 @@ type MenuItemProps = {
 
 export function MenuItem({
   leading,
+  titleAccessory,
   subLabel,
   detail,
   trailing,
@@ -124,6 +127,7 @@ export function MenuItem({
   } as CSSProperties
   const hasTrailing = detail != null || trailing != null
   const act = disabled || inert ? undefined : onClick
+  const title = <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
@@ -152,7 +156,14 @@ export function MenuItem({
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={cx(s.titleWrap, centered && s.titleCentered)}>
-        <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
+        {titleAccessory == null ? (
+          title
+        ) : (
+          <span className={s.titleLine}>
+            {title}
+            {titleAccessory}
+          </span>
+        )}
         {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
       </span>
       {hasTrailing && (

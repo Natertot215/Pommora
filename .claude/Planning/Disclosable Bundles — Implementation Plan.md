@@ -53,11 +53,11 @@ The renderer keeps each open container's inner rows in one map:
 - **Clicks:** `rowClick` is the one click intent.
   - A container discloses.
   - A page checks.
-  - A double-click leaves a page checked, and ArchiveView opens it in the reader.
+  - A double-click leaves a page checked and opens it through the skin's `open`, which ArchiveView gives as the reader.
 - **Checks Outlive Collapsing:** collapsing a container keeps its inner rows' checks. They're hidden from a batch until it opens again, as a search's hidden rows are.
 - **Batch Restore:** a batch Restore holding homeless rows (every inner item is one) asks once per kind of destination. Only the homeless rows go where the picker says; every row with a home of its own still returns there.
 
-The chevron sits right of the label in both skins. An inner row carries its trail like any other row: the bundle's own trail, then the containers inside the bundle above it.
+Both skins draw TableView's row look. The chevron sits right of the label on a top-level row and left of the icon on a nested row, as TableView's bands do. An inner row carries its trail like any other row: the bundle's own trail, then the containers inside the bundle above it.
 
 #### Concepts
 
@@ -85,10 +85,12 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 | `TreeRow` • Type | A row as a browser shows it: its depth and whether it's open. | `Core/Bundles/browser.ts` |
 | `treeRows` • Function | Top rows, with each open container's inner rows beneath them. | `Core/Bundles/browser.ts` |
 | `outermostOf` • Function | Drops each row whose ancestor the same batch holds. | `Core/Bundles/browser.ts` |
-| `rowClick` • Function | The browser's one click intent. | `Core/Bundles/browser.ts` |
+| `rowClick` • Function | The browser's one click intent, opening a page through the skin's `open`. | `Core/Bundles/browser.ts` |
+| `rowIndent` • Function | A row's step in from its lead at a depth, by the table's `--row-indent`, shared by TableView and both skins. | `UIX/Table/rowIndent.ts` |
 | `DestinationKind` / `destinationKind` / `destinationTargets` / `askDestination` • Type, Functions | A kind of destination, a row's kind, that kind's targets, and the one destination ask that `restoreOne`, the batch, and the menu share. | `Core/Bundles/browser.ts` |
 | `titleAccessory` • Prop | Content set inline right of a MenuItem's title text, outside its ellipsis. | `UIX/Menus/MenuRows.tsx` |
-| `titleLine` • Style | The line that sets the title text and `titleAccessory` side by side. | `UIX/Menus/menu-row.css.ts` |
+| `.row-chevron` • Class | A nested container's chevron in the rail slot left of its icon, as a TableView band's is. | `UIX/Table/table.css` |
+| `titleLine` • Style | The line that sets the title text and its accessory side by side, a table's icon gap apart; ArchiveView's titles sit in it too. | `UIX/Menus/menu-row.css.ts` |
 
 **REMOVED**
 
@@ -97,17 +99,21 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 | `storeOf` • Function | Replaced by `bundleAddressOf`. | `Core/Bundles/bundle.ts` |
 | `leaf` • Parameter | `fileInto` and the `archive` op take `at`, the address the item held. `moveIntoStore` always asks for its own bundle's name back. | `Core/Bundles/bundle.ts`, `Core/Nexus/mutateRequest.ts` |
 | `placesFor` • Function | Split into `destinationKind`, `destinationTargets`, and `askDestination`. | `Core/Bundles/browser.ts` |
-| Single title-click reader open | Replaced by a page row's double-click. | `Core/Archive/ArchiveView.tsx` |
+| Single title-click reader open | Replaced by a page row's double-click, through `rowClick`. | `Core/Archive/ArchiveView.tsx` |
+| `groupIndent` • Function | Hoisted as `rowIndent`. | `Core/Views/Table/TableView.tsx` |
+| The rail-slot rule in `table-view.css` | Moved to `UIX/Table/table.css`, where the Trash reaches it too. | `Core/Views/Table/table-view.css` |
 | The batch's "had nowhere to go" refusal | Replaced by one destination ask per kind. | `Core/Bundles/browser.ts` |
 
 #### Constraints
 
 - **Rulings (settled, don't re-raise):**
-  - **Chevron:** it sits right of the label in both skins.
+  - **Chevron:** right of the label on a top-level row, left of the icon on a nested row, as TableView's bands do.
+  - **Row Look:** container and page rows take TableView's Set-band and page-row weight and colors, and Trash rows take TableView's row metrics: its body-size icon and its icon-to-title gap.
   - **Clicks:**
     - A container row's click discloses it, and its checkbox checks it.
     - A page row's click checks it.
-    - An Archive page's double-click opens the reader and leaves the row checked.
+    - An Archive page's double-click opens the reader and leaves the row checked. A double-click on its checkbox opens nothing.
+    - An Archive row takes the keyboard as a Trash row does: it's a focusable button, and Enter or Space clicks it.
   - **Homeless Items:** an inner item whose folder is gone takes the existing homeless path (`homeResolves: false` → Restore ▸). There's no chain-up placement rule.
   - **Batch Restore:** a batch Restore holding homeless rows asks once per kind of destination. Whole homeless bundles follow the same rule.
   - **Nesting:** nested Sets disclose recursively. Inner items take Restore, Delete, check, and batch, and a checked ancestor covers its checked descendants.
@@ -159,11 +165,11 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - [x] Task 4-1
   - [x] Task 4-2
   - [x] Review Checkpoint
-- [ ] **Phase 5** — Both Skins
-  - [ ] Task 5-1
-  - [ ] Task 5-2
-  - [ ] Task 5-3
-  - [ ] Review Checkpoint
+- [x] **Phase 5** — Both Skins
+  - [x] Task 5-1
+  - [x] Task 5-2
+  - [x] Task 5-3
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — Documents, Drive, and the Live Pass
   - [ ] Task 6-1
   - [ ] Task 6-2
@@ -1092,7 +1098,7 @@ A whole bundle still re-mints under its own name, as it does today.
 - [x] Add `rowClick(row, detail)`, under `CalendarPicker.tsx`'s rule, so a keyboard's `el.click()` (`detail === 0`) reads as a single click:
   - A container discloses on `detail < 2`.
   - A page toggles its check on `detail < 2`.
-  - A page on `detail === 2` makes sure it's checked.
+  - A page on `detail === 2` makes sure it's checked and calls the hook's optional `open`, which ArchiveView passes as its reader open.
 - [x] Keep `toggle` for the checkbox.
 - [x] Update the hook's docstring (`:189`) to name the tree, its open map, and `rowClick`.
 
@@ -1140,6 +1146,14 @@ A whole bundle still re-mints under its own name, as it does today.
 +  }
 +}
 @@ useBundleBrowser @@
+-  { query, shown, within }: { query: string; shown: boolean; within?: string },
++  {
++    query,
++    shown,
++    within,
++    open: openPage,
++  }: { query: string; shown: boolean; within?: string; open?: (row: BundleRow) => void },
+ …
 -  visible: BundleRow[]
 +  visible: TreeRow[]
 +  found: number
@@ -1239,11 +1253,12 @@ A whole bundle still re-mints under its own name, as it does today.
 
 ### Phase 5 — Both Skins
 
-**GOAL:** The Trash frame and ArchiveView draw the tree.
-- **Indent:** inner rows step in from each skin's own lead.
-- **Chevron:** it sits right of the label.
-- **Clicks:** every click goes through `rowClick`.
-- **Reader:** an Archive page's double-click opens it.
+**GOAL:** The Trash frame and ArchiveView draw the tree in TableView's row look.
+- **Indent:** each depth steps a row's icon right by `rowIndent`, TableView's own step.
+- **Chevron:** right of the label on a top-level row, left of the icon on a nested row, muted from one table rule.
+- **Row Look:** container rows take the Set band's emphasized title; page rows take TableView's page row.
+- **Clicks:** every click goes through `rowClick`, and Archive rows take the keyboard.
+- **Reader:** an Archive page's double-click opens it through `rowClick`.
 
 #### Task 5-1
 
@@ -1253,8 +1268,8 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Add `UIX/Menus/MenuRows.test.tsx` and watch its case fail: `titleAccessory` renders after the title text on one line, and is absent from the DOM when not given.
-- [ ] Add the prop and `titleLine`, building the title span once.
+- [x] Add `UIX/Menus/MenuRows.test.tsx` and watch its case fail: `titleAccessory` renders after the title text on one line, and is absent from the DOM when not given.
+- [x] Add the prop and `titleLine`, building the title span once. `titleLine` sets its parts a table's icon gap apart, and is the positioned box a nested chevron's rail slot sits against.
 
 **AFTER**
 
@@ -1281,87 +1296,109 @@ A whole bundle still re-mints under its own name, as it does today.
 
 ```UIX/Menus/menu-row.css.ts diff
 +export const titleLine = style({
++  position: 'relative',
 +  display: 'flex',
 +  alignItems: 'center',
-+  gap: '4px', // KNOB
++  gap: 'var(--cell-icon-gap, 6px)',
++  minWidth: 0,
 +})
 ```
 
 **VERIFY**
 
-- [ ] `npx vitest run UIX/Menus` is green.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run UIX/Menus` is green.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-2
 
 **TASK:** ArchiveView draws the tree:
-- each row is indented by its depth;
-- the chevron follows the title;
-- every click goes through `rowClick`;
-- a page's double-click opens the reader, with a trail through each row above it.
+- each row's title line steps in by `rowIndent(depth)`;
+- a top-level Set's chevron follows its title, and a nested Set's sits in the rail slot left of its icon;
+- a Set's title is emphasized, as a TableView Set band's is;
+- every click goes through `rowClick`, and a row takes the keyboard as a button;
+- a page's double-click opens the reader through `rowClick`, with a trail through each row above it.
 
-**NOW:** The title span's single click opens a page (`ArchiveView.tsx:210-224`), and a row's click checks it (`:190-195`).
+**NOW:** The title span's single click opens a page (`ArchiveView.tsx:210-224`), and a row's click checks it (`:190-195`). TableView indents through a local `groupIndent` (`TableView.tsx:263`).
 
 **CHANGE**
 
-- [ ] Rewrite these cases and watch them fail:
+- [x] Rewrite these cases and watch them fail:
   - **`:359`:** the mixed batch's homeless row is a disclosed inner page.
   - **`:159`:** a page row's click checks it, and its double-click opens the reader with the row checked, whether or not it started checked. The test sends the real click sequence (`detail` 1, then 2, then `dblclick`). For an inner page, the reader's trail is its row's trail, then the page.
   - **`:174`:** a Set row's click discloses its inner rows beneath it, indented, with the chevron open. A second click folds them, and a double-click leaves them open.
-- [ ] Add these cases:
+  - **`:470`:** a batch restore closes a reader opened by a page's double-click.
+- [x] Add these cases:
+  - an Enter on a focused Set row discloses it, and its box checks it without disclosing;
+  - a double-click on a page's box opens nothing;
+  - a top-level Set's chevron follows its title, a nested Set's comes before its icon, and a Set's title carries `text.body.emphasized` where a page's doesn't;
+  - a click on a Set's chevron discloses it, as a click on its row does;
   - a checked Set and its checked page restore once, as the Set;
   - an inner row shows its trail: its bundle's trail, then the containers inside the bundle;
-  - the published count stays the count of top rows.
-- [ ] Edit `ArchiveRow` and `archive-view.css` as below.
+  - the published count stays the count of top rows;
+  - a batch restore closes a reader open on an inner page.
+- [x] Give `useBundleBrowser` an optional `open`, which `rowClick` calls on a page's `detail === 2` (Task 4-1). ArchiveView passes its reader open there.
+- [x] Hoist TableView's `groupIndent` to `UIX/Table/rowIndent.ts` as `rowIndent`, and import it in TableView and both skins.
+- [x] Add to `UIX/Table/table.css`, beside `.cell-title`, the one muted color for a table's chevron. GroupBand's own `.group-band-drop-outline` color stays, since CardsView's bands sit outside `.table`.
+- [x] Move TableView's rail-slot rule from `table-view.css` into `UIX/Table/table.css`, joined by `.row-chevron`, so a nested container's chevron takes the slot a band's chevron, a grip, and a check take.
+- [x] Edit `ArchiveRow` and `archive-view.css` as below.
   - **`ArchiveRow`:** it keeps `memo` by taking `depth` and `open` as primitives.
-  - **`api.open(row)`:** stays as it is at HEAD. An inner row's `crumbs` already hold the bundle's trail and the containers inside it, so `crumbSegments(row.crumbs)` plus the page itself is the reader's trail for every row.
+  - **The Reader:** `open` keeps HEAD's body. An inner row's `crumbs` already hold the bundle's trail and the containers inside it, so `crumbSegments(row.crumbs)` plus the page itself is the reader's trail for every row.
   - **The Chevron:** it is `DropOutline` without `onToggle`, since the row's click is the toggle, as GroupBand's is.
+  - **The Title Line:** `titleLine` holds the title and its chevron a table's icon gap apart, and is the box a nested chevron's rail slot sits against.
 
 **AFTER**
 
 ```Core/Archive/ArchiveView.tsx diff
+@@ ArchiveView @@
++  const open = (row: BundleRow): void => {
++    const stored = row.stored
++    if (!stored) return
++    openReader({ … })
++  }
+   const browser = useBundleBrowser(
+     { kind: 'archive', id: archiveId },
+-    { query, shown, within: owner.kind === 'set' ? owner.id : undefined },
++    { query, shown, within: owner.kind === 'set' ? owner.id : undefined, open },
+   )
 @@ ArchiveRow @@
++  const chevron = open === null ? null : <DropOutline open={open} />
+   return (
 -    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click anywhere on a row checks it, as a Trash row does; the box in its gutter is the keyboard's door
-+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a Set's click discloses it and a page's checks it, as a Trash row's do, and a page's double-click opens it; the box in its gutter is the keyboard's door
++    // biome-ignore lint/a11y/useSemanticElements: a real <button> can't host a .data-row, nor the checkbox's own button inside it
      <div
        className={cx('data-row', lead && 'row-lead')}
        data-reveal-host={revealed ? 'on' : ''}
--      style={{ height: ROW_H, transform: `translateY(${start}px)` }}
+       style={{ height: ROW_H, transform: `translateY(${start}px)` }}
 -      onClick={() => api.toggle(row)}
-+      style={{ height: ROW_H, transform: `translateY(${start}px)`, '--depth': depth } as React.CSSProperties}
++      role="button"
++      tabIndex={0}
 +      onClick={(e) => api.rowClick(row, e.detail)}
-+      onDoubleClick={row.kind === 'page' ? () => api.open(row) : undefined}
++      onKeyDown={onActivateClick}
  …
 -        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a page's title is the pointer's door to the reader; a Set's opens nothing and its click checks the row */}
 -        <span
 -          className={cx(overScrollLabel, 'cell-title')}
--          onClick={
--            row.kind === 'page'
--              ? (e) => {
--                  e.stopPropagation()
--                  api.open(row)
--                }
--              : undefined
--          }
+-          onClick={…}
 -        >
-+        <span className={cx(overScrollLabel, 'cell-title')}>
-           <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
-           <span className="cell-title-text">{row.title}</span>
+-          <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
+-          <span className="cell-title-text">{row.title}</span>
++        <span className={titleLine} style={{ marginLeft: rowIndent(depth) }}>
++          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
++          <span className={cx(overScrollLabel, 'cell-title')}>
++            <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
++            <span className={cx('cell-title-text', open !== null && text.body.emphasized)}>
++              {row.title}
++            </span>
++          </span>
++          {depth === 0 && chevron}
          </span>
-+        {open !== null && <DropOutline open={open} />}
 ```
 
 ```Core/Archive/archive-view.css diff
--/* ArchiveView on TableView's sheet: the virtual list, each title with the trail it left at its right, as the Trash's rows carry theirs, and the Archived column. */
-+/* ArchiveView on TableView's sheet: the virtual list, each title indented by its depth with its chevron after it and the trail it left at its right, as the Trash's rows carry theirs, and the Archived column. */
- .archive-rows .cell-title {
+-.archive-rows .cell-title {
 -  flex: 1 1 auto;
 -  min-width: 0;
-+  margin-left: calc(var(--row-indent) * var(--depth, 0));
- }
-+.archive-rows [data-drop-outline] {
-+  color: var(--label-tertiary);
-+}
+-}
  .archive-rows .archive-trail {
    flex: 0 1 auto;
    min-width: 0;
@@ -1370,52 +1407,105 @@ A whole bundle still re-mints under its own name, as it does today.
  }
 ```
 
+```UIX/Table/rowIndent.ts
+/** How far a row at `depth` steps in from its lead, by the table's `--row-indent`. */
+export const rowIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
+```
+
+```UIX/Table/table.css diff
++/* A disclosure chevron in a table is muted. */
++.table [data-drop-outline] {
++  color: var(--label-tertiary);
++}
++/* The rail slot directly left of a row's icon, centering its grip, its check, or a band's or nested row's chevron. */
++.row-grip,
++.row-check,
++.table-view .group-band-drop-outline,
++.row-chevron {
++  position: absolute;
++  left: calc(-1 * var(--rail-inset));
++  width: var(--rail-inset);
++  top: 50%;
++  transform: translateY(-50%);
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++}
+```
+
+```Core/Views/Table/table-view.css diff
+-.row-grip,
+-.row-check,
+-.table-view .group-band-drop-outline {
+-  position: absolute;
+-  left: calc(-1 * var(--rail-inset));
+-  width: var(--rail-inset);
+-  top: 50%;
+-  transform: translateY(-50%);
+-  justify-content: center;
+-}
+-.row-grip,
+-.row-check {
+-  display: inline-flex;
+-  align-items: center;
+-}
+```
+
 The header docstring at `:41` reads: "A Set discloses what it holds, and a page opens in the reader on a double-click."
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Archive/ArchiveView.test.tsx` is green, with each new or rewritten case red before its change.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Archive/ArchiveView.test.tsx` is green, with each new or rewritten case red before its change.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-3
 
 **TASK:** The Trash frame draws the tree:
-- each inner row is indented from the row's own lead;
-- the chevron sits in `titleAccessory`;
+- each row's lead steps in by `rowIndent(depth)`;
+- a top-level container's chevron sits in `titleAccessory`, and a nested one's sits in the rail slot left of its icon;
+- a container's title is emphasized, as a TableView Set band's is;
 - every click goes through `rowClick`.
 
 **NOW:**
 - **Clicks:** every Trash row's click checks it (`TrashFrame.tsx:171`).
 - **Indent:** MenuItem's `indent` measures from an 8px base, while Trash rows lead by `--row-pad-lead` (24px). Using it would step a depth-1 row left of its parent.
+- **Row Look:** MenuItem's title already draws in `--label-primary` and its leading icon in `--label-secondary`, at the standard weight, as TableView's page row does. Its icon is `headline`-sized where TableView's is `body`, and MenuItem's 8px row gap sets it off its title where TableView uses `--cell-icon-gap`.
 - **Partial Mark:** `trailing` draws the `triangle-alert` "Recorded Partly" icon ahead of the date for a `partial` row (`:154-161`).
 
 **CHANGE**
 
-- [ ] Write these `TrashFrame.test.tsx` cases and watch them fail:
+- [x] Write these `TrashFrame.test.tsx` cases and watch them fail:
   - A Collection row's click discloses its Sets and then its pages, indented, and its checkbox still checks it.
+  - An Enter on a Collection row discloses it.
+  - A top-level Collection's chevron follows its title, a nested Set's comes before its icon, and a container's title carries `text.body.emphasized` where a page's doesn't.
+  - A click on a Collection's chevron discloses it, as a click on its row does.
+  - A page row's double-click leaves it checked and opens nothing.
+  - A row draws its icon at TableView's body size.
   - An inner row's right-click Restore ▸ lists destinations, and its Delete empties only that item.
   - A checked inner row stays checked across a refresh, and across its container collapsing and reopening.
   - An inner row's trail reads its bundle's trail, then the containers inside the bundle.
-- [ ] Have `TrashRowView` take its `TreeRow` whole, and wire it as follows:
-  - `onClick={(e) => rowClick(row, e.detail)}`;
-  - `titleAccessory={open !== null ? <DropOutline open={open} /> : undefined}`;
+- [x] Have `TrashRowView` take its `TreeRow` whole, and wire it as follows:
+  - `onClick={(e) => onClick(e.detail)}`, which calls `rowClick(tree.row, detail)`;
+  - `titleAccessory={depth === 0 ? chevron : null}`;
+  - the title is wrapped in `text.body.emphasized` for a container;
   - `trailing` keeps the partial icon and the date as they stand;
-  - wrap the leading icon in `<span className="trash-lead" style={{ '--depth': depth }}>`.
-- [ ] Add to `trash-frame.css`:
-  - `.trash-lead { display: flex; margin-left: calc(var(--disclosure-indent) * var(--depth, 0)); }`
-  - `.trash-row [data-drop-outline] { color: var(--label-tertiary); }`
-- [ ] The overlay checkbox stays in the row's gutter, as ArchiveView's `.row-check` does in its own.
+  - the leading icon sits in `<span className="trash-lead" style={{ marginLeft: rowIndent(depth) }}>`, with a nested container's chevron before it in a `.row-chevron` slot;
+  - the icon is computed in the row, from the `row` and `defaultIcons` it already takes, and drawn at `size="body"`, as TableView's is.
+- [x] Add to `trash-frame.css`:
+  - `.trash-lead { position: relative; display: flex; }`, the box a nested chevron's rail slot sits against;
+  - `gap: var(--cell-icon-gap)` on `.trash-frame .trash-row`, TableView's icon-to-title gap.
+- [x] The overlay checkbox stays in the row's gutter, as ArchiveView's `.row-check` does in its own.
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Settings/TrashFrame.test.tsx` is green, and gates are clean.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Settings/TrashFrame.test.tsx` is green, and gates are clean.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates are clean.
-- [ ] Both skins take every behavior from `browser.ts`, and neither re-implements disclosure, coverage, or click intent.
-- [ ] In both skins, the chevron sits right of the label, an inner row's checkbox stays in its skin's gutter column, and each depth steps right by `--disclosure-indent`.
+- [x] Gates are clean.
+- [x] Both skins take every behavior from `browser.ts`, and neither re-implements disclosure, coverage, click intent, or the reader's open.
+- [x] In both skins, the chevron sits right of the label on a top-level row and left of the icon on a nested row, in the table's one muted color; an inner row's checkbox stays in its skin's gutter column; each depth steps right by `rowIndent`; and container and page rows take TableView's weight and colors.
 
 ---
 

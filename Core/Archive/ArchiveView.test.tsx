@@ -16,6 +16,8 @@ import { resetUndo } from '../Session/undo'
 import { storesChanged } from '../Session/nexusSlice'
 import { captureWarm, clearWarm } from '../Session/warmCache'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
+import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
+import { text } from '@pommora/uix/Theme'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => ({
   useVirtualRows: ({ count, rowHeight }: { count: number; rowHeight: number }) => ({
@@ -43,6 +45,25 @@ const archived = (title: string, over: Partial<BundleRow> = {}): BundleRow => {
   })
 }
 
+const SET_BUNDLE = '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__Ideas.archived'
+
+const archivedSet = (): BundleRow =>
+  bundleRow({ title: 'Ideas', kind: 'set', bundlePath: SET_BUNDLE })
+
+const inner = (title: string, over: Partial<BundleRow> = {}): BundleRow => {
+  const bundlePath = `${SET_BUNDLE}/Ideas/${title}.md`
+  return bundleRow({
+    title,
+    bundlePath,
+    stored: { id: `id-${title}`, path: bundlePath },
+    crumbs: [
+      { kind: 'collection', title: 'Notes' },
+      { kind: 'set', title: 'Ideas' },
+    ],
+    ...over,
+  })
+}
+
 describe('ArchiveView', () => {
   let host: HTMLDivElement
   let root: Root
@@ -52,6 +73,7 @@ describe('ArchiveView', () => {
   let picked: string | null
   let menu: ReturnType<typeof vi.fn>
   let readable: boolean
+  let children: Record<string, BundleRow[]>
   const tree = makeTree()
   const collection = tree.collections[0] as CollectionNode
   const set = collection.sets[0] as SetNode
@@ -90,6 +112,22 @@ describe('ArchiveView', () => {
   const check = async (...rows: string[]): Promise<void> => {
     for (const title of rows) await act(async () => rowOf(title).click())
   }
+  const press = async (title: string, detail: number): Promise<void> =>
+    act(async () => {
+      rowOf(title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+    })
+  const doubleClick = async (title: string): Promise<void> => {
+    await press(title, 1)
+    await press(title, 2)
+    await act(async () => {
+      rowOf(title).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    })
+  }
+  const indentOf = (title: string): string =>
+    (rowOf(title).querySelector('.cell-title')?.parentElement as HTMLElement).style.marginLeft
+  const step = (depth: number): string => `calc(var(--row-indent) * ${depth})`
+  const chevronOf = (title: string): Element | null =>
+    rowOf(title).querySelector('[data-drop-outline]')
   const undo = async (): Promise<void> => {
     mutated.mockClear()
     await act(async () => {
@@ -102,11 +140,16 @@ describe('ArchiveView', () => {
     listed = [archived('A', { stored: { id: 'p1', path: 'x/A.md' } })]
     picked = null
     readable = true
+    children = {}
     mutated = vi.fn(async () => ({ ok: true, value: {} }))
     list = vi.fn(async () => ({ ok: true, value: listed }))
     menu = vi.fn(async () => ({ ok: true, value: picked }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': list,
+      'bundles:children': vi.fn(async (addresses: string[]) => ({
+        ok: true,
+        value: addresses.map((address) => children[address] ?? []),
+      })),
       menu,
       mutate: mutated,
       'delete:facts': vi.fn(async () => ({
@@ -158,12 +201,14 @@ describe('ArchiveView', () => {
     expect(heads.map((h) => h.querySelectorAll('.col-header-icon svg').length)).toEqual([1, 1])
   })
 
-  it('a click on a row checks it, and a page row’s title opens the reader titled by its trail under the filled lock', async () => {
+  it('a page row’s click checks it, and its double-click opens the reader titled by its trail under the filled lock, leaving it checked whether or not it started checked', async () => {
     await render()
-    await check('A')
+    await press('A', 1)
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
-    const title = rowOf('A').querySelector('.cell-title') as HTMLElement
-    await act(async () => title.click())
+    expect(useSession.getState().reader).toBeNull()
+    await press('A', 1)
+    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('false')
+    await doubleClick('A')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader).toEqual({
       kind: 'archive',
@@ -171,15 +216,125 @@ describe('ArchiveView', () => {
       trail: [expect.objectContaining({ title: 'Notes' }), expect.objectContaining({ title: 'A' })],
     })
     expect(host.querySelector('.reader-lock svg rect[fill="currentColor"]')).not.toBeNull()
+    await act(async () => useSession.setState({ reader: null }))
+    await doubleClick('A')
+    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
   })
 
-  it('a Set row’s title opens nothing and checks its row', async () => {
-    listed = [archived('Ideas', { kind: 'set' })]
+  it('an inner page’s double-click opens the reader titled by its row’s trail, then the page', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
     await render()
-    const title = rowOf('Ideas').querySelector('.cell-title') as HTMLElement
-    await act(async () => title.click())
+    await press('Ideas', 1)
+    await doubleClick('P')
+    expect(useSession.getState().reader).toEqual(
+      expect.objectContaining({
+        trail: ['Notes', 'Ideas', 'P'].map((title) => expect.objectContaining({ title })),
+      }),
+    )
+  })
+
+  it('a Set row’s click discloses its inner rows beneath it, indented, with its chevron open; a second click folds them, and a double-click leaves them open', async () => {
+    listed = [archivedSet(), archived('A')]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    await render()
+    expect(chevronOf('Ideas')?.classList.contains(dropOutlineOpen)).toBe(false)
+    expect(chevronOf('A')).toBeNull()
+    await press('Ideas', 1)
+    expect(titles()).toEqual(['Ideas', 'P', 'A'])
+    expect([indentOf('Ideas'), indentOf('P'), indentOf('A')]).toEqual([step(0), step(1), step(0)])
+    expect(chevronOf('Ideas')?.classList.contains(dropOutlineOpen)).toBe(true)
+    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('false')
+    await press('Ideas', 1)
+    expect(titles()).toEqual(['Ideas', 'A'])
+    await doubleClick('Ideas')
+    expect(titles()).toEqual(['Ideas', 'P', 'A'])
     expect(useSession.getState().reader).toBeNull()
+  })
+
+  it('an Enter on a focused Set row discloses it, and its box checks it without disclosing', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    await render()
+    await act(async () => (boxOf('Ideas') as HTMLElement).click())
     expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
+    expect(titles()).toEqual(['Ideas'])
+    rowOf('Ideas').focus()
+    expect(document.activeElement).toBe(rowOf('Ideas'))
+    await act(async () => {
+      rowOf('Ideas').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(titles()).toEqual(['Ideas', 'P'])
+    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('a double-click on a page’s box opens nothing', async () => {
+    await render()
+    const box = boxOf('A') as HTMLElement
+    for (const detail of [1, 2])
+      await act(async () => {
+        box.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+      })
+    await act(async () => {
+      box.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    })
+    expect(useSession.getState().reader).toBeNull()
+  })
+
+  it('a top-level Set’s chevron follows its title, a nested Set’s comes before its icon, and a Set’s title is emphasized where a page’s is not', async () => {
+    const sub = inner('Sub', { kind: 'set', stored: undefined })
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [sub, inner('P')] }
+    await render()
+    await press('Ideas', 1)
+    expect(chevronOf('Ideas')?.previousElementSibling?.classList.contains('cell-title')).toBe(true)
+    const slot = chevronOf('Sub')?.parentElement
+    expect(slot?.classList.contains('row-chevron')).toBe(true)
+    expect(slot?.nextElementSibling?.classList.contains('cell-title')).toBe(true)
+    const emphasized = (title: string): boolean | undefined =>
+      rowOf(title).querySelector('.cell-title-text')?.classList.contains(text.body.emphasized)
+    expect([emphasized('Ideas'), emphasized('Sub'), emphasized('P')]).toEqual([true, true, false])
+  })
+
+  it('a click on a Set’s chevron discloses it, as a click on its row does', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    await render()
+    await act(async () => {
+      chevronOf('Ideas')?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+    })
+    expect(titles()).toEqual(['Ideas', 'P'])
+  })
+
+  it('an inner row shows its trail: its bundle’s trail, then the containers inside the bundle', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    await render()
+    await press('Ideas', 1)
+    expect(rowOf('P').querySelector('.cell-lead')?.lastElementChild?.textContent).toBe(
+      'Notes›Ideas',
+    )
+  })
+
+  it('publishes the count of top rows, whatever an open Set discloses', async () => {
+    listed = [archivedSet(), archived('A')]
+    children = { [SET_BUNDLE]: [inner('P'), inner('Q')] }
+    await render()
+    await press('Ideas', 1)
+    expect(titles()).toEqual(['Ideas', 'P', 'Q', 'A'])
+    expect(useSession.getState().detailCount).toBe(2)
+  })
+
+  it('a checked Set and its checked page restore once, as the Set', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    await render()
+    await press('Ideas', 1)
+    await act(async () => (boxOf('Ideas') as HTMLElement).click())
+    await press('P', 1)
+    await pressBar('Restore')
+    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: SET_BUNDLE }]])
   })
 
   it('the header names its owner with Archive in its trailing slot after the search’s clear button', async () => {
@@ -358,17 +513,20 @@ describe('ArchiveView', () => {
     expect(currentNotification()).toBeNull()
   })
 
-  it('the bar’s Restore of a row whose place is gone asks where and restores there, and a mixed batch asks once, sending only that row there', async () => {
-    listed = [archived('Gone', { homeResolves: false }), archived('Kept')]
+  it('the bar’s Restore of a disclosed inner page whose place is gone asks where and restores there, and a mixed batch asks once, sending only that row there', async () => {
+    const gone = inner('Gone', { homeResolves: false })
+    listed = [archivedSet(), archived('Kept')]
+    children = { [SET_BUNDLE]: [gone] }
     picked = collection.id
     await render()
+    await press('Ideas', 1)
     await check('Gone')
     await pressBar('Restore')
     expect(mutated.mock.calls).toEqual([
       [
         {
           op: 'restore',
-          bundlePath: listed[0].bundlePath,
+          bundlePath: gone.bundlePath,
           destination: { kind: 'container', id: collection.id },
         },
       ],
@@ -384,7 +542,7 @@ describe('ArchiveView', () => {
       [
         {
           op: 'restore',
-          bundlePath: listed[0].bundlePath,
+          bundlePath: gone.bundlePath,
           destination: { kind: 'container', id: collection.id },
         },
       ],
@@ -475,9 +633,25 @@ describe('ArchiveView', () => {
     })
     await render()
     await check('A', 'B')
-    await act(async () => (rowOf('A').querySelector('.cell-title') as HTMLElement).click())
+    await doubleClick('A')
     expect(host.querySelector('[aria-label="Archived Page"]')).not.toBeNull()
     await pressBar('Restore')
+    expect(useSession.getState().reader).toBeNull()
+  })
+
+  it('a batch restore closes an open reader of an inner page', async () => {
+    listed = [archivedSet()]
+    children = { [SET_BUNDLE]: [inner('P')] }
+    mutated.mockImplementation(async () => {
+      readable = false
+      return { ok: true, value: {} }
+    })
+    await render()
+    await press('Ideas', 1)
+    await doubleClick('P')
+    expect(host.querySelector('[aria-label="Archived Page"]')).not.toBeNull()
+    await pressBar('Restore')
+    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: inner('P').bundlePath }]])
     expect(useSession.getState().reader).toBeNull()
   })
 })

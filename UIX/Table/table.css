@@ -196,6 +196,24 @@
 .cell-title-text {
   color: var(--label-primary);
 }
+/* A disclosure chevron in a table is muted. */
+.table [data-drop-outline] {
+  color: var(--label-tertiary);
+}
+/* The rail slot directly left of a row's icon, centering its grip, its check, or a band's or nested row's chevron. */
+.row-grip,
+.row-check,
+.table-view .group-band-drop-outline,
+.row-chevron {
+  position: absolute;
+  left: calc(-1 * var(--rail-inset));
+  width: var(--rail-inset);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .cell-text-scroll {
   display: inline-block;
   max-width: 100%;

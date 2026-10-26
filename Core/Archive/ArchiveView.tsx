@@ -4,7 +4,11 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { onActivateClick } from '@pommora/uix/Interactions/activate'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
+import { DropOutline } from '@pommora/uix/Menus'
+import { titleLine } from '@pommora/uix/Menus/menu-row.css'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
@@ -34,11 +38,11 @@ const ROW_H = 30
 
 type RowApi = {
   toggle: (row: BundleRow) => void
+  rowClick: (row: BundleRow, detail: number) => void
   menu: (row: BundleRow) => void
-  open: (row: BundleRow) => void
 }
 
-/** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete, a page opened in the reader. */
+/** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
 export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): React.JSX.Element {
   const host = useContentHost()
   const shown = useHostShown()
@@ -46,9 +50,21 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const openReader = useSession((s) => s.openReader)
   const archiveId = useSession((s) => owningCollection(s.tree, owner)?.id) ?? owner.id
+  const open = (row: BundleRow): void => {
+    const stored = row.stored
+    if (!stored) return
+    openReader({
+      kind: 'archive',
+      page: { kind: 'page', ...stored },
+      trail: [
+        ...crumbSegments(row.crumbs, defaultIcons),
+        { title: row.title, icon: entityIcon('page', row.icon, defaultIcons) },
+      ],
+    })
+  }
   const browser = useBundleBrowser(
     { kind: 'archive', id: archiveId },
-    { query, shown, within: owner.kind === 'set' ? owner.id : undefined },
+    { query, shown, within: owner.kind === 'set' ? owner.id : undefined, open },
   )
   const { listing, visible } = browser
   const dateTrack =
@@ -66,19 +82,8 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
 
   const api = useStableApi({
     toggle: (row: BundleRow) => browser.toggle(row.bundlePath),
+    rowClick: browser.rowClick,
     menu: (row: BundleRow) => void browser.openMenu(row),
-    open: (row: BundleRow) => {
-      const stored = row.stored
-      if (!stored) return
-      openReader({
-        kind: 'archive',
-        page: { kind: 'page', ...stored },
-        trail: [
-          ...crumbSegments(row.crumbs, defaultIcons),
-          { title: row.title, icon: entityIcon('page', row.icon, defaultIcons) },
-        ],
-      })
-    },
     restore: () => void browser.restore(browser.picked),
     remove: () => void browser.remove(browser.picked),
   })
@@ -144,11 +149,13 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
           </div>
           <div ref={setListEl} className="archive-rows" style={{ height }}>
             {slots.map(({ index, start }) => {
-              const { row } = visible[index]
+              const { row, depth, open } = visible[index]
               return (
                 <ArchiveRow
                   key={row.bundlePath}
                   row={row}
+                  depth={depth}
+                  open={open}
                   start={start}
                   lead={index === 0}
                   checked={browser.checked.has(row.bundlePath)}
@@ -169,6 +176,8 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
 
 const ArchiveRow = memo(function ArchiveRow({
   row,
+  depth,
+  open,
   start,
   lead,
   checked,
@@ -178,6 +187,8 @@ const ArchiveRow = memo(function ArchiveRow({
   api,
 }: {
   row: BundleRow
+  depth: number
+  open: boolean | null
   start: number
   lead: boolean
   checked: boolean
@@ -186,13 +197,17 @@ const ArchiveRow = memo(function ArchiveRow({
   icons: Personalization['defaultIcons']
   api: RowApi
 }): React.JSX.Element {
+  const chevron = open === null ? null : <DropOutline open={open} />
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a click anywhere on a row checks it, as a Trash row does; the box in its gutter is the keyboard's door
+    // biome-ignore lint/a11y/useSemanticElements: a real <button> can't host a .data-row, nor the checkbox's own button inside it
     <div
       className={cx('data-row', lead && 'row-lead')}
       data-reveal-host={revealed ? 'on' : ''}
       style={{ height: ROW_H, transform: `translateY(${start}px)` }}
-      onClick={() => api.toggle(row)}
+      role="button"
+      tabIndex={0}
+      onClick={(e) => api.rowClick(row, e.detail)}
+      onKeyDown={onActivateClick}
       onContextMenu={(e) => {
         e.preventDefault()
         api.menu(row)
@@ -207,20 +222,15 @@ const ArchiveRow = memo(function ArchiveRow({
             ariaLabel={`Select ${row.title}`}
           />
         </span>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a page's title is the pointer's door to the reader; a Set's opens nothing and its click checks the row */}
-        <span
-          className={cx(overScrollLabel, 'cell-title')}
-          onClick={
-            row.kind === 'page'
-              ? (e) => {
-                  e.stopPropagation()
-                  api.open(row)
-                }
-              : undefined
-          }
-        >
-          <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
-          <span className="cell-title-text">{row.title}</span>
+        <span className={titleLine} style={{ marginLeft: rowIndent(depth) }}>
+          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
+          <span className={cx(overScrollLabel, 'cell-title')}>
+            <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
+            <span className={cx('cell-title-text', open !== null && text.body.emphasized)}>
+              {row.title}
+            </span>
+          </span>
+          {depth === 0 && chevron}
         </span>
         <NavTrail
           segments={crumbSegments(row.crumbs, icons)}

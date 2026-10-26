@@ -18,6 +18,9 @@ import {
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
+import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
+import { size } from '@pommora/uix/Theme/theme-vars.css'
+import { text } from '@pommora/uix/Theme'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -75,6 +78,15 @@ describe('a Trash row', () => {
     expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
   })
 
+  it('draws its icon at TableView’s body size', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root?.render(<TrashFrame />))
+    const icon = host.querySelector('.trash-lead > svg') as SVGElement
+    expect(icon.style.fontSize).toBe(size.icon.body)
+  })
+
   it('draws its item’s own icon ahead of its kind’s', async () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': vi.fn(async () => ({ ok: true, value: [row({ icon: 'hash' })] })),
@@ -106,6 +118,30 @@ describe('a Trash row', () => {
   })
 })
 
+const COLLECTION = '.trash/2026-10-20T12-00-00-000Z__Notes.deleted'
+const SET = `${COLLECTION}/Notes/Ideas`
+const PAGE = `${SET}/P.md`
+
+const trashedCollection = (): BundleRow =>
+  row({ title: 'Notes', kind: 'collection', bundlePath: COLLECTION, crumbs: [] })
+const innerSet = (): BundleRow =>
+  row({
+    title: 'Ideas',
+    kind: 'set',
+    bundlePath: SET,
+    crumbs: [{ kind: 'collection', title: 'Notes' }],
+  })
+const innerPage = (over: Partial<BundleRow> = {}): BundleRow =>
+  row({
+    title: 'P',
+    bundlePath: PAGE,
+    crumbs: [
+      { kind: 'collection', title: 'Notes' },
+      { kind: 'set', title: 'Ideas' },
+    ],
+    ...over,
+  })
+
 describe('the Trash pane', () => {
   let host: HTMLDivElement | null = null
   let root: Root | null = null
@@ -114,11 +150,28 @@ describe('the Trash pane', () => {
   let picked: string | null
   let menu: ReturnType<typeof vi.fn>
   let mutated: ReturnType<typeof vi.fn>
+  let children: Record<string, BundleRow[]>
 
   const titles = (): string[] =>
     [...(host?.querySelectorAll('[role="checkbox"]') ?? [])].map((n) =>
       (n.getAttribute('aria-label') ?? '').replace('Select ', ''),
     )
+  const rowOf = (title: string): HTMLElement =>
+    host?.querySelector(`[aria-label="Select ${title}"]`)?.closest('.trash-row') as HTMLElement
+  const boxOf = (title: string): HTMLElement =>
+    host?.querySelector(`[aria-label="Select ${title}"]`) as HTMLElement
+  const press = async (title: string, detail: number): Promise<void> =>
+    act(async () => {
+      rowOf(title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+    })
+  const indentOf = (title: string): string =>
+    (rowOf(title).querySelector('.trash-lead') as HTMLElement).style.marginLeft
+  const step = (depth: number): string => `calc(var(--row-indent) * ${depth})`
+  const showTree = async (): Promise<void> => {
+    listed = [trashedCollection()]
+    children = { [COLLECTION]: [innerSet()], [SET]: [innerPage()] }
+    await act(async () => storesChanged.emit())
+  }
   const nexus = (id: string): void => {
     const tree = makeTree()
     useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
@@ -127,11 +180,16 @@ describe('the Trash pane', () => {
   beforeEach(async () => {
     listed = [row({ title: 'Alpha' })]
     picked = null
+    children = {}
     mutated = vi.fn(async () => ({ ok: true, value: {} }))
     list = vi.fn(async () => ({ ok: true, value: listed }))
     menu = vi.fn(async () => ({ ok: true, value: picked }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': list,
+      'bundles:children': vi.fn(async (addresses: string[]) => ({
+        ok: true,
+        value: addresses.map((address) => children[address] ?? []),
+      })),
       menu,
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: mutated,
@@ -419,6 +477,120 @@ describe('the Trash pane', () => {
     expect(mutated).toHaveBeenCalledTimes(1)
     expect(currentNotification()).toBeNull()
     expect(heard).toHaveBeenCalledTimes(1)
+  })
+
+  it('a Collection row’s click discloses its Sets and then its pages, indented, with the chevron after its title, and its checkbox still checks it', async () => {
+    await showTree()
+    const chevron = rowOf('Notes').querySelector('[data-drop-outline]')
+    expect(chevron?.previousElementSibling?.textContent).toBe('Notes')
+    expect(chevron?.classList.contains(dropOutlineOpen)).toBe(false)
+    await press('Notes', 1)
+    expect(titles()).toEqual(['Notes', 'Ideas'])
+    expect(
+      rowOf('Notes').querySelector('[data-drop-outline]')?.classList.contains(dropOutlineOpen),
+    ).toBe(true)
+    await press('Ideas', 1)
+    expect(titles()).toEqual(['Notes', 'Ideas', 'P'])
+    expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual([
+      step(0),
+      step(1),
+      step(2),
+    ])
+    expect(rowOf('P').querySelector('[data-drop-outline]')).toBeNull()
+    expect(boxOf('Notes').getAttribute('aria-checked')).toBe('false')
+    await act(async () => boxOf('Notes').click())
+    expect(boxOf('Notes').getAttribute('aria-checked')).toBe('true')
+    expect(titles()).toEqual(['Notes', 'Ideas', 'P'])
+  })
+
+  it('a top-level Collection’s chevron follows its title, a nested Set’s comes before its icon, and a container’s title is emphasized where a page’s is not', async () => {
+    await showTree()
+    await press('Notes', 1)
+    await press('Ideas', 1)
+    const chevronOf = (title: string): Element | null =>
+      rowOf(title).querySelector('[data-drop-outline]')
+    expect(chevronOf('Notes')?.previousElementSibling?.textContent).toBe('Notes')
+    const slot = chevronOf('Ideas')?.parentElement
+    expect(slot?.classList.contains('row-chevron')).toBe(true)
+    expect(slot?.nextElementSibling?.tagName).toBe('svg')
+    expect(slot?.parentElement?.classList.contains('trash-lead')).toBe(true)
+    const emphasized = (title: string): boolean =>
+      rowOf(title).querySelector(`.${text.body.emphasized}`)?.textContent === title
+    expect([emphasized('Notes'), emphasized('Ideas'), emphasized('P')]).toEqual([true, true, false])
+  })
+
+  it('a click on a Collection’s chevron discloses it, as a click on its row does', async () => {
+    await showTree()
+    await act(async () => {
+      rowOf('Notes')
+        .querySelector('[data-drop-outline]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+    })
+    expect(titles()).toEqual(['Notes', 'Ideas'])
+  })
+
+  it('a page row’s double-click leaves it checked and opens nothing', async () => {
+    for (const detail of [1, 2])
+      await act(async () => {
+        rowOf('Alpha').dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+      })
+    await act(async () => {
+      rowOf('Alpha').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    })
+    expect(boxOf('Alpha').getAttribute('aria-checked')).toBe('true')
+    expect(useSession.getState().reader).toBeNull()
+  })
+
+  it('an Enter on a Collection row discloses it', async () => {
+    await showTree()
+    await act(async () => {
+      rowOf('Notes').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(titles()).toEqual(['Notes', 'Ideas'])
+    expect(boxOf('Notes').getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('an inner row’s right-click Restore lists destinations, and its Delete empties only that item', async () => {
+    await showTree()
+    children[SET] = [innerPage({ homeResolves: false })]
+    await press('Notes', 1)
+    await press('Ideas', 1)
+    picked = 'restoreTo:c1'
+    await act(async () => {
+      rowOf('P').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(JSON.stringify(menu.mock.lastCall)).toContain('restoreTo:c1')
+    expect(mutated.mock.calls).toEqual([
+      [{ op: 'restore', bundlePath: PAGE, destination: { kind: 'container', id: 'c1' } }],
+    ])
+    mutated.mockClear()
+    useSession.setState({ askConfirm: async () => true })
+    picked = 'delete'
+    await act(async () => {
+      rowOf('P').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(mutated.mock.calls).toEqual([[{ op: 'emptyBundle', bundlePath: PAGE }]])
+  })
+
+  it('a checked inner row stays checked across a refresh, and across its container collapsing and reopening', async () => {
+    await showTree()
+    await press('Notes', 1)
+    await press('Ideas', 1)
+    await press('P', 1)
+    expect(boxOf('P').getAttribute('aria-checked')).toBe('true')
+    await act(async () => storesChanged.emit())
+    expect(boxOf('P').getAttribute('aria-checked')).toBe('true')
+    await press('Ideas', 1)
+    expect(titles()).toEqual(['Notes', 'Ideas'])
+    await press('Ideas', 1)
+    expect(boxOf('P').getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('an inner row’s trail reads its bundle’s trail, then the containers inside the bundle', async () => {
+    await showTree()
+    await press('Notes', 1)
+    await press('Ideas', 1)
+    expect(rowOf('P').querySelector('.trash-trail')?.textContent).toBe('Notes›Ideas')
   })
 
   it('lists a delete made elsewhere while it is open', async () => {
