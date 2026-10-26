@@ -39,7 +39,7 @@ import {
   noteRelink,
   renameCascade,
 } from './cascade'
-import { editNote, readNotes, relinkNote } from './owed'
+import { followRelinks, relinkNote } from './owed'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
@@ -281,24 +281,24 @@ export async function relink(
 ): Promise<CascadeReport | undefined> {
   const names = respellings(before, after, moved, arriving)
   if (!names.size) return undefined
-  const paths = moved.flatMap((id) => {
-    const [from, to] = [before.byId.get(id)?.path, after.byId.get(id)?.path]
-    return from && to ? [[from, to] as const] : []
-  })
-  return respell(root, [...moved, ...arriving], names, label, new Map(paths))
+  const paths = new Map(
+    moved.flatMap((id) => {
+      const [from, to] = [before.byId.get(id)?.path, after.byId.get(id)?.path]
+      return from && to ? [[from, to] as const] : []
+    }),
+  )
+  return respell(root, [...moved, ...arriving], names, label, (f) => paths.get(f) ?? f)
 }
 
-/** Re-spells `names` under the relink entry of the first page it re-spells for, which every caller passes since only a page re-spells; every other relink entry follows the pages `names` moves and the files `paths` moves, so a file an earlier move missed lands where this one leaves them. */
+/** Re-spells `names` under the relink entry of the first page it re-spells for, which every caller passes since only a page re-spells; every other relink entry follows the pages `names` moves and the files `paths` moves. */
 async function respell(
   root: string,
   ids: readonly string[],
   names: Map<string, string>,
   label: string,
-  paths?: ReadonlyMap<string, string>,
+  paths?: (file: string) => string,
 ): Promise<CascadeReport> {
-  for (const [other, e] of Object.entries(await readNotes(root)))
-    if (e.kind === 'relink' && other !== ids[0])
-      await editNote(root, other, (x) => x && relinkNote(x, names, undefined, paths))
+  await followRelinks(root, names, paths, ids[0])
   return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
 }
 

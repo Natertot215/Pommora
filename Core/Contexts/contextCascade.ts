@@ -6,10 +6,9 @@ import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { contextsDir } from '../Paths/paths'
 import { contextDirRel } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
-import { owedRename, owedSwept, runNoted } from '../Nexus/owed'
+import { followRelinks, owedRename, owedSwept, runNoted } from '../Nexus/owed'
 import { type Rewrite, type RewriteText, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { type ConfigReach, sweptReach } from '../Nexus/configReach'
 import { withoutOrderId } from './spaceSidecar'
@@ -24,7 +23,7 @@ import {
 } from '../Files/rootValues'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { findHolders, type HolderQuery, type FolderMove } from '../Index/keyHolders'
+import { findHolders, type HolderQuery, type FolderMove, movedTo } from '../Index/keyHolders'
 import { nameError } from '../Paths/names'
 
 /** Both keys of a collision hold real tags: the app's own tag writes run under the Contexts lock a rename holds, so a key already wearing the new title was written outside the app or by hand, and neither list is fresher, so dropping either would silently lose tags. */
@@ -116,6 +115,12 @@ async function unlinkMembers(
   return sweptReach(await sweepGovernedRoots(kept, { raw: rewrite }))
 }
 
+/** A Context's or Space's folder to where `moved` sends it, each owed relink entry's files under it following. */
+export async function moveTitled(root: string, moved: FolderMove): Promise<void> {
+  await relocate(join(root, moved.from), join(root, moved.to))
+  await followRelinks(root, new Map(), (f) => movedTo(f, moved))
+}
+
 const commitTitle = (root: string, id: string, title: string) =>
   mutateRegistryFile(root, (cur) => ({
     contexts: cur.contexts.map((c) => (c.id === id ? { ...c, title } : c)),
@@ -137,12 +142,8 @@ export async function renameContextOp(
   if (reg.value.contexts.some(rivalTitled(newName, contextId)))
     return fail('exists', `"${newName}" already exists.`)
 
-  const files = await titleHolders(root, entry.title, entry.title, false, {
-    from: contextDirRel(entry.title),
-    to: contextDirRel(newName),
-  })
-  const oldDir = join(contextsDir(root), entry.title)
-  const newDir = join(contextsDir(root), newName)
+  const moved = { from: contextDirRel(entry.title), to: contextDirRel(newName) }
+  const files = await titleHolders(root, entry.title, entry.title, false, moved)
   return runNoted(root, contextId, {
     lands: [{ owner: { kind: 'context' }, name: newName, except: contextId }],
     note: (e) => ({ ...e, kind: 'context', ...owedRename(e ?? {}, entry.title, newName) }),
@@ -150,7 +151,7 @@ export async function renameContextOp(
       const committed = await commitTitle(root, contextId, newName)
       if (!committed.ok) return committed
       try {
-        if (await pathExists(oldDir)) await relocate(oldDir, newDir)
+        if (await pathExists(join(root, moved.from))) await moveTitled(root, moved)
         return ok(true)
       } catch (e) {
         return (await commitTitle(root, contextId, entry.title)).ok ? fault(e) : ok(false)
@@ -180,10 +181,8 @@ export async function renameSpaceOp(
   const target = join(dirname(dir), newName)
   if (await targetTaken(dir, target)) return fail('exists', `"${newName}" already exists.`)
 
-  const files = await titleHolders(root, group.def.title, space.title, true, {
-    from: space.path,
-    to: relative(root, target),
-  })
+  const moved = { from: space.path, to: relative(root, target) }
+  const files = await titleHolders(root, group.def.title, space.title, true, moved)
   // A Space's folder is its list entry, so the move is its list step.
   return runNoted(root, spaceId, {
     lands: [
@@ -195,7 +194,7 @@ export async function renameSpaceOp(
       contextId: space.contextId,
       ...owedRename(e ?? {}, space.title, newName),
     }),
-    list: () => relocate(dir, target).then(() => ok(null), fault),
+    list: () => moveTitled(root, moved).then(() => ok(null), fault),
     sweep: () => cascadeTitle(group.def.title, space.title, newName, true, files),
     settle: (e) => owedSwept(e, [space.title]),
     under: space.contextId,

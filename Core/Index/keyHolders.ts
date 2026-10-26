@@ -58,12 +58,12 @@ export async function pagesInReach(
   return files.filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
 }
 
+/** Where `rel` sits once `moved` has moved the folder holding it. */
+export const movedTo = (rel: string, moved?: FolderMove): string =>
+  moved && isAtOrUnder(rel, moved.from) ? `${moved.to}${rel.slice(moved.from.length)}` : rel
+
 const sidecarAt = (root: string, rel: string, moved?: FolderMove): string =>
-  join(
-    root,
-    moved && isAtOrUnder(rel, moved.from) ? `${moved.to}${rel.slice(moved.from.length)}` : rel,
-    SPACE_SIDECAR,
-  )
+  join(root, movedTo(rel, moved), SPACE_SIDECAR)
 
 /** The sidecar of each Space the tree holds that `holds` answers for, at the folder `moved` sent it to when the tree still lists the one it left. */
 export const spaceFiles = (

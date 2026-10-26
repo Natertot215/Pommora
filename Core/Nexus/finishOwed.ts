@@ -20,11 +20,13 @@ import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
+import { contextDirRel } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
 import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
   cascadeTitle,
+  moveTitled,
   rivalTitled,
   titleHolders,
   unlinkContextKey,
@@ -289,12 +291,12 @@ async function finishContext(
           e.rename,
           (old) => old === title || contexts.some(rivalTitled(old, id)),
           async (old) => {
-            const from = join(contextsDir(root), old)
-            const to = join(contextsDir(root), title)
+            const moved = { from: contextDirRel(old), to: contextDirRel(title) }
+            const [from, to] = [join(root, moved.from), join(root, moved.to)]
             // A crash between the list step and the folder move left the folder under the old title, and the open's tree read none of the Context's Spaces from the folder the list names, so the tree is read again once the folder is there; a folder already under the new title keeps the rename owed.
             if ((await heldName(from)) === old) {
               if (await targetTaken(from, to)) return { skipped: 1, hosts: [] }
-              await relocate(from, to)
+              await moveTitled(root, moved)
               await refreshTree(root)
             }
             return cascadeTitle(
