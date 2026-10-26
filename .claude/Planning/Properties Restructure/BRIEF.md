@@ -120,7 +120,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 2. **Wave Two:** two fresh `opus-xhigh` reviewers, one inward and one outward, over the folded range. Their findings are folded and committed.
 3. **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement, with no plan, document, or skill. It gives a yes-or-no verdict, its corrections, and the strengths to keep, and is re-run after each fold until it answers yes on every lens.
 4. **Spotcheck:** any fold made after the gate gets one `opus-xhigh` spotcheck against the principles alone.
-5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come the history entry, `save-session`, `save-delta`, and the report.
+5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come `save-session`, `save-delta`, and the report; the work takes no history entry (Nathan, 10-25-2026).
 
 ---
 

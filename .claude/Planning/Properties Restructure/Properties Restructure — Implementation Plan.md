@@ -1108,7 +1108,7 @@ Removal and consolidation come before anything additive, and changes to what exi
 2. **Wave Two:** two fresh `opus-xhigh` reviewers, one inward and one outward, under Wave One's brief over the folded range, given Wave One's Not Taken list with its reasons, so a fold left out is raised again only on new evidence. Their findings are folded and committed the same way.
 3. **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement, with no plan, document, or skill. It gives a yes-or-no verdict, its corrections, and the strengths to keep, and is re-run after each fold until it answers yes on every lens.
 4. **Spotcheck:** any fold made after the gate gets one `opus-high` spotcheck against the principles alone.
-5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come the history entry, `save-session`, `save-delta`, and the report.
+5. **Closeout:** the full drive on the final head and the orchestrator's own pass. Only then come `save-session`, `save-delta`, and the report; the work takes no history entry (Nathan, 10-25-2026).
 
 ##### Plan Constraints
 
@@ -35392,7 +35392,7 @@ Commands the table cites by number, each written outside a table cell so no pipe
 - [x] **Spotcheck** — any fold made after the gate gets one `opus-high` spotcheck against the Approach and Principles alone.
 - [ ] **Closeout** — the full Properties Drive (groups 1 through 15) and every other drive in `.claude/scripts/` on the final head; the orchestrator's own pass: the gates from a clean state, the baseline counts, *§Net Ledger* summed, *§Adherence Scoreboard* re-run row by row, the diff read once, *§Completion Criteria* ticked, *§Reconciliation* walked, *§Deviations* ruled on, and STATUS and BASELINE's End filled.
 - [ ] **Backup Removed** — Phase 8's NexusOS backup, `~/NexusOS-Backup-<MM-DD-YYYY>/`, removed by its path once the closeout's drive is green.
-- [ ] **Record** — the history entry in `.claude/HistoryPM.md`, then `save-session`, then `save-delta` over `BASELINE..HEAD`.
+- [ ] **Record** — `save-session`, then `save-delta` over `BASELINE..HEAD`; no history entry (Nathan, 10-25-2026).
 - [ ] **Report** — in `closeout-review`'s closeout format, written in plain terms: the per-phase and total delta from *§Net Ledger*, every deviation, the Issues renumbering (each moved entry's new number as the index script assigns it, I-076's and I-077's among them), both neutral gates' answers verbatim, and every Last Call or measurement outcome the run produced.
 
 ##### Neutral Gate 1
