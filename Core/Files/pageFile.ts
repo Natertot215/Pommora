@@ -128,7 +128,7 @@ const writable = (doc: Document): boolean => mergeable(doc) && serialized(doc) !
 export const frontmatterWritable = (content: string): boolean =>
   writable(parseDocument(splitEnvelope(content).frontmatter))
 
-/** `---\n<fm>---\n<body>`. No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips one legacy separator. */
+/** `---\n<fm>---\n<body>`. No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips the one other tools and hand edits write. */
 export function assembleEnvelope(frontmatterYaml: string, body: string): string {
   const lf = (s: string): string => s.replaceAll('\r\n', '\n')
   const fm =
