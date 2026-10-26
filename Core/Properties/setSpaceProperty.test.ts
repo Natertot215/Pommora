@@ -5,7 +5,9 @@ import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { newId } from '../Nexus/ids'
-import { createProperty } from './registryProperty'
+import { createProperty, renameProperty } from './registryProperty'
+import { lockContention } from '../Testing/machines'
+import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { setSpacePropertyOp } from './setProperty'
 import type { MutateContext } from '../Nexus/mutate'
@@ -109,6 +111,25 @@ describe('setProperty on a Space path', () => {
     const r = await write({ kind: 'select', value: 'opt_Shipped' })
     expect(r.ok).toBe(true)
     expect((await sidecar()).Status).toEqual(['Shipped'])
+  })
+
+  it('lands under the key a rename commits while the write waits on the sidecar', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((r) => {
+      release = r
+    })
+    const lock = lockContention(sidecarFile())
+    const held = machine().lock(sidecarFile(), () => gate)
+    const written = write({ kind: 'select', value: 'opt_Doing' })
+    await lock.contended
+    lock.restore()
+    expect((await renameProperty(root, statusId, 'Stage')).ok).toBe(true)
+    release()
+    await held
+    expect((await written).ok).toBe(true)
+    const after = await sidecar()
+    expect(after.Stage).toEqual(['Doing'])
+    expect('Status' in after).toBe(false)
   })
 })
 

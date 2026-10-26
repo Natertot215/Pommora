@@ -146,7 +146,7 @@ export function rmwJsonStrict(
   return machine().lock(absPath, () => rmwLocked(absPath, mutate, seedOnAbsent))
 }
 
-async function rmwLocked(
+export async function rmwLocked(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
   seedOnAbsent?: () => Record<string, unknown>,
