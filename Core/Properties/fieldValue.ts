@@ -23,7 +23,6 @@ export function resolveFieldValue(row: ViewRow, column: ResolvedColumn): Propert
     }
     case 'property': {
       const { def } = column
-      if (!def) return NULL_VALUE
       let m = resolvedByFm.get(row.frontmatter)
       if (!m) {
         m = new WeakMap()

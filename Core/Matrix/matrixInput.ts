@@ -92,10 +92,7 @@ function answers(
     case 'stamp':
       return false
     case 'property':
-      return (
-        OPERANDLESS_OPS.has(rule.op) ||
-        (column.def !== undefined && Object.hasOwn(row.frontmatter, column.def.key))
-      )
+      return OPERANDLESS_OPS.has(rule.op) || Object.hasOwn(row.frontmatter, column.def.key)
   }
 }
 

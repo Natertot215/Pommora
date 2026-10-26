@@ -2,7 +2,7 @@ import { localIso } from '@pommora/uix/Utilities/pad'
 import { ID_KEY } from '../Nexus/identityMark'
 import { idTime } from '../Nexus/ids'
 import { type PageFrontmatter, pageFrontmatter } from '../Nexus/schemas'
-import type { ColumnType, PropertyDefinition } from '../Properties/properties'
+import type { ColumnType, PropertyDefinition, PropertyType } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 
 export interface PageValues {
@@ -42,15 +42,10 @@ export interface ViewRow {
   picked?: Picked
 }
 
-export type ColumnKind = 'title' | 'property' | 'context' | 'stamp'
-
 /** `type` answers what a column's values are; `kind` answers where they're read from (the row, a definition, or the registry), so the two stamps share a kind and differ by type. */
-export interface ResolvedColumn {
-  id: string
-  kind: ColumnKind
-  type: ColumnType
-  def?: PropertyDefinition
-}
+export type ResolvedColumn =
+  | { id: string; kind: 'property'; type: PropertyType; def: PropertyDefinition }
+  | { id: string; kind: 'title' | 'context' | 'stamp'; type: ColumnType; def?: undefined }
 
 interface GroupBase {
   key: string
