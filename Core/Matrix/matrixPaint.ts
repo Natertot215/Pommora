@@ -205,11 +205,11 @@ export function createPainter(
     const { nodes, links } = graph
     const { tree, matrixConfig } = useSession.getState()
     const records = tree ? nodesByIdOf(tree) : null
-    const spaces = tree ? spacesByIdOf(tree) : null
+    const spaces = spacesByIdOf(tree)
     // A Space with no color of its own takes no tint: it paints as a Location does, rather than reading as a grey blob with a glyph lost inside it.
     const spacePaintOf = (n: GraphNode): SpacePaint | null => {
       if (n.kind !== 'space') return null
-      const color = spaces?.get(n.id)?.color
+      const color = spaces.get(n.id)?.color
       if (!color) return null
       const held = spacePaints.get(color)
       if (held) return held
