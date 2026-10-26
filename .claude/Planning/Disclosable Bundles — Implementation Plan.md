@@ -70,9 +70,10 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 | `ContainerRecord` / `isContainerRecord` • Type, Function | A Set's or Collection's record, the kind that holds inner items. | `Core/Bundles/bundle.ts` |
 | `trailWithin` • Function | The container ids above a folder inside a container's bundle, outermost first. | `Core/Bundles/bundle.ts` |
 | `innerRecord` • Function | The record an inner item carries as its own. | `Core/Bundles/bundle.ts` |
-| `keptLinksUnder` • Function | The bundle's kept Link values whose page lies at or under an inner item. | `Core/Bundles/bundle.ts` |
+| `keptLinksUnder` • Function | The bundle's kept Link values, as its record stands at the op, whose page lies at or under an inner item. | `Core/Bundles/bundle.ts` |
 | `spendBundle` • Function | Spends what an op took: the whole bundle, or an inner item's carried Link values off its bundle's record. | `Core/Bundles/bundle.ts` |
 | `listInner` • Function | One level of a container address's inner items, in the order the folder's sidecar keeps. | `Core/Bundles/bundle.ts` |
+| `InnerListing` • Type | What `listInner` answers: the bundle, its store and record, the folder, and each inner item with its record. | `Core/Bundles/bundle.ts` |
 | `OpenBundle.inner` • Field | Marks an open of an inner item. | `Core/Bundles/bundle.ts` |
 | `identityOf` • Function | A page's stamped id, or a container's sidecar id and icon. Shared by `gatherContentRecord` and `innerRecord`. | `Core/Bundles/record.ts` |
 | `artifactRow` • Function | The one builder of an artifact's row, shared by bundle rows and inner rows. | `Core/Bundles/rows.ts` |
@@ -83,7 +84,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 | `treeRows` • Function | Top rows, with each open container's inner rows beneath them. | `Core/Bundles/browser.ts` |
 | `outermostOf` • Function | Drops each row whose ancestor the same batch holds. | `Core/Bundles/browser.ts` |
 | `rowClick` • Function | The browser's one click intent. | `Core/Bundles/browser.ts` |
-| `destinationKind` / `destinationTargets` / `askDestination` • Functions | A row's kind of destination, that kind's targets, and the one destination ask that `restoreOne`, the batch, and the menu share. | `Core/Bundles/browser.ts` |
+| `DestinationKind` / `destinationKind` / `destinationTargets` / `askDestination` • Type, Functions | A kind of destination, a row's kind, that kind's targets, and the one destination ask that `restoreOne`, the batch, and the menu share. | `Core/Bundles/browser.ts` |
 | `titleAccessory` • Prop | Content set inline right of a MenuItem's title text, outside its ellipsis. | `UIX/Menus/MenuRows.tsx` |
 | `titleLine` • Style | The line that sets the title text and `titleAccessory` side by side. | `UIX/Menus/menu-row.css.ts` |
 
@@ -131,9 +132,10 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - They're asked for on opening, and once per refresh for every open address in one call.
   - A closed row's loaded subtree is forgotten, while its checks are kept.
 - **Addresses Are Canonical:** a whole bundle's address is its folder, and an inner item's is its own path. `checked`, `spendUndo`'s arming, `outermostOf`, and the open map all key on the address.
-- **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Reuse `Core/Testing/fixtures.ts`, `testTree.ts`, `hostFs.ts`, and `settledMutate.ts`, along with each suite's local seeders.
+- **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Host suites seed through `seedNexus` (`Core/Testing/hostFs.ts`) and the shared definitions (`Core/Testing/definitions.ts`) and run ops through `settledMutate.ts`; renderer suites build rows with `fixtures.ts`'s `bundleRow` and trees with `testTree.ts`; property bundles come from `fixtures.ts`'s `seedPropertyBundle`; each suite's local seeders carry the rest.
 - **Comments:** docstrings in the house register where a neighbor has one; no other comments.
 - **Imports:** an import that loses its last use leaves in the same task.
+- **Docs:** feature docs only fix what's false, in place, plainly, at its length or shorter. They explain to the user, not the coder: they name no functions, files, channels, or shared vocabularies, and state no cohesion or fixes a reader can infer.
 
 #### Process Overview
 
@@ -175,7 +177,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 **TASK:** Add `bundleAddressOf` as the one reader of a store path, share its stamped-segment search with `originPathOf`, and remove `storeOf`.
 
 **NOW:** Two functions find a bundle, each its own way:
-- **`storeOf`** (`bundle.ts:42-48`) accepts only a bundle folder, matched by its suffix alone. Its callers are `moveIntoStore` (`:137`), `openBundle` (`:225`), `placement.ts:207`, `mutate.ts:168`, and `bundle.test.ts:28-41`.
+- **`storeOf`** (`bundle.ts:42-48`) accepts only a bundle folder, matched by its suffix alone. Its callers are `moveIntoStore` (`:137`), `openBundle` (`:225`), `placement.ts:207`, `mutate.ts:150`, and `bundle.test.ts:28-41`.
 - **`originPathOf`** (`:97-102`) finds the stamped segment with its own search.
 
 **CHANGE**
@@ -264,8 +266,8 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **NOW:**
 - **`openBundle`** (`bundle.ts:224-230`) opens a bundle folder only.
-- **Identity:** `gatherContentRecord` (`record.ts:158-161`) reads a page's or container's identity inline.
-- **Spends:** these are bare `removeOwn` calls at `spend.ts:84`, `spend.ts:108`, `spend.ts:252`, `archive.ts:81`, and `delete.ts:149`.
+- **Identity:** `gatherContentRecord` (`record.ts:175-178`) reads a page's or container's identity inline.
+- **Spends:** these are bare `removeOwn` calls at `spend.ts:109`, `spend.ts:132`, `spend.ts:297`, `archive.ts:80`, and `delete.ts:134`.
 
 **CHANGE**
 
@@ -277,7 +279,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - it holds only the kept values whose title resolves to `P`.
   - **Missing Sidecar ID:** a folder without one leaves its inner item `unaddressable`.
   - **Page Bundle:** an address inside a page bundle opens as `not-found`.
-  - **Partial Bundle:** an inner item of a bundle recorded `partial` opens `partial`, and one of a whole record opens without it.
+  - **Partial Bundle:** an inner item of a bundle whose record is hand-seeded `partial: true` opens `partial`, and one of a whole record opens without it. A delete writes `partial` on a property's record alone, so only a content record an earlier build wrote carries it.
   - **`spendBundle`:**
     - on an inner item, it strips exactly that item's carried values from the bundle's record, matched by `page`, `property`, and `value`;
     - on a whole bundle, it removes the bundle.
@@ -375,7 +377,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  }
 +}
 +
-+/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
++/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`, read from the record as it stands at the op, so a value its delete's finish appends later stays with the bundle; a title two of its pages share stays with the bundle. */
 +async function keptLinksUnder(
 +  root: string,
 +  store: BundleStore,
@@ -432,7 +434,24 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **TASK:** Route every spend through `spendBundle`, so an inner item restores, empties, and leaves the Archive through the ops as they stand.
 
-**NOW:** Each op removes its bundle outright.
+**NOW:**
+- **Spends:** each op removes its bundle outright:
+  - `emptyBundle` at `spend.ts:109`;
+  - `restoreTrashed`'s property branch at `spend.ts:132`, and its end at `spend.ts:297`;
+  - `restoreArchived` at `archive.ts:80`;
+  - the Archive delete at `delete.ts:134`, inside `deleteOp`'s `leave()` closure, which runs as the list step of `runNoted`.
+- **Bare Removals That Stay:** these `removeOwn` calls take back or clear a bundle no op spent, and stay as they are:
+  - `delete.ts:119`, a refused delete's bundle going back beside `:120`'s lifted rollback;
+  - `bundle.ts:123`, `fileInto`'s failed move;
+  - `bundle.ts:143`, `moveIntoStore` removing its emptied source;
+  - `deleteProperty.ts:110`, a refused property delete's bundle;
+  - `refile.ts:134`, an emptied Archive.
+- **`emptyBundle`'s Note:** it keys its owed note on `relative(root, bundleAbs)` (`spend.ts:93`), the request's address. For an inner item that address is the item's own path, so each inner item emptied gets its own note. `openBundle` answers `abs` as the bundle folder for an inner item, so the key stays on the request's address rather than `opened.value.abs`.
+- **Kept Links:** a delete's kept Link values reach its record after the move. `finishContainer` (`Core/Nexus/finishOwed.ts:373-400`) appends what its strip takes to `e.bundle`'s record through `patchRecord`, at the delete's own finish or later at Try Again or the next open. `keptLinksUnder` reads the record as it stands at the op.
+  - `finishContainer` decides `back` by the container's id, and hands the noted paths to `deleteCascade` (`Core/Nexus/cascade.ts:94`), which strips only the keys that resolve to nothing in the settled index.
+  - An inner page restored alone leaves its container not back, so a finish still owed runs the container's strip over the old paths and appends what it takes to the container's record after the item has left.
+  - The pulled page's path keys under the container resolve to nothing once it lands elsewhere. Its title key keeps resolving while it lands under its own title, or while a namesake answers it beside a stepped-aside landing ("Pasta (2)").
+  - No guard is added. The tests below pin what that finish strips and appends.
 
 **CHANGE**
 
@@ -443,30 +462,39 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - The Set's own later restore names nothing unrestored and writes nothing twice.
     - An inner item restored with no destination is refused as homeless (`parent-gone`), and its bundle is left byte-identical.
     - A nested Set pulled out lands with its pages, and `refileLanded` carries what was archived from within it into the landing Collection's Archive.
-  - **`spend.test.ts`:** emptying an inner item disposes only that item, drops its pages' metadata, and takes its carried values off the bundle's record.
+    - **Owed Strip:** a page pulled from a trashed Set while the Set's delete still owes its strip, made owed by a linker whose write is refused once, as `archive.test.ts:545-559` does, then finished. The case pins what the finish strips and appends to the Set's record for a title-keyed and a path-keyed Link value naming that page, once with the page landed under its own title and once stepped aside ("Pasta (2)").
+  - **`spend.test.ts`:** emptying an inner item disposes only that item, drops its pages' metadata, takes its carried values off the bundle's record, and leaves its owed note keyed by the item's own address.
   - **`archive.test.ts`:**
     - A page pulled from an archived Set restores by a plain move to a given container.
     - An inner item's Archive delete moves it into the Trash, and its Trash record's `archive` names the item's address.
-- [ ] Edit the spends and `fromArchive` as below. Remove `spend.ts`'s `removeOwn` import if it loses its last use.
-- [ ] Update `spendUndo`'s doc (`confirmations.ts:47`) to read "A bundle, or an inner item of one, restored or deleted from anywhere spends…".
+- [ ] Edit the spends and `fromArchive` as below.
+  - `spend.ts` and `archive.ts` lose their `removeOwn` import, and `delete.ts` keeps its own for `:119`.
+  - `fromArchive` returns on a refused path before opening, so `resolved.value` names the address the item held.
+- [ ] Update `spendUndo`'s doc (`confirmations.ts:46`) to read "A bundle, or an inner item of one, restored or deleted from anywhere spends…".
 
 **AFTER**
 
 ```Core/Trash/spend.ts diff
 @@ emptyBundle @@
+   const id = relative(root, bundleAbs)
+ …
+   if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
 -  await removeOwn(bundleAbs)
 +  await spendBundle(opened.value)
    const recorded = 'links' in record ? (record.links ?? []) : []
 @@ restoreTrashed (property branch) @@
+     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
 -    await removeOwn(bundleAbs)
 +    await spendBundle(bundle)
 @@ restoreTrashed @@
+   // The record outlives a partial re-tag, so what didn't come back stays written down.
 -  if (!unspent.length) await removeOwn(bundleAbs)
 +  if (!unspent.length) await spendBundle(bundle)
 ```
 
 ```Core/Archive/archive.ts diff
 @@ restoreArchived @@
+   await writeOrder?.()
 -  await removeOwn(bundle.abs)
 +  await spendBundle(bundle)
 ```
@@ -475,8 +503,15 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 @@ fromArchive @@
 -/** A delete naming an Archive bundle takes the item inside it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the bundle it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
 +/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
- …
+ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
+   if (!isArchived(req.path)) return null
+   const resolved = await resolveUnderRoot(root, req.path)
+-  const opened = resolved.ok ? await openBundle(root, resolved.value) : null
+-  if (!opened?.ok) return NOT_HELD
 -  const { abs: bundle, store, record: held, artifact: abs } = opened.value
++  if (!resolved.ok) return NOT_HELD
++  const opened = await openBundle(root, resolved.value)
++  if (!opened.ok) return NOT_HELD
 +  const { store, record: held, artifact: abs } = opened.value
  …
    return ok({
@@ -487,9 +522,11 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 -    record: { ...held, archive: relative(root, bundle) },
 +    record: { ...held, archive: relative(root, resolved.value) },
    })
-@@ deleteOp @@
--    if (from) await removeOwn(from.bundle)
-+    if (from) await spendBundle(from.opened)
+@@ deleteOp (leave) @@
+       if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
+-      if (from) await removeOwn(from.bundle)
++      if (from) await spendBundle(from.opened)
+       else await dropDeparture(root, before, req.kind, req.path)
 ```
 
 **VERIFY**
@@ -520,10 +557,10 @@ A whole bundle still re-mints under its own name, as it does today.
 **TASK:** Replace `fileInto`'s `leaf` with `at`, the address the item held. `fileInto` re-nests an inner item's address into its standing folder and answers the address the item now holds and where it landed. The `archive` op takes `at`, and `moveIntoStore` always asks for its own bundle's name back.
 
 **NOW:**
-- **`fileInto`** (`bundle.ts:110-127`) mints a bundle, asking for `leaf` back.
-- **Its callers:** `archive.ts:46`, `spend.ts:162`, and `moveIntoStore`.
+- **`fileInto`** (`bundle.ts:109-127`) mints a bundle, asking for `leaf` back.
+- **Its callers:** `archive.ts:45`, `spend.ts:198`, and `moveIntoStore` (`bundle.ts:142`).
 - **`moveIntoStore`'s callers:** `refile.ts:38`, which passes `basename(bundle)`, and `refile.ts:131`, which passes nothing.
-- **`rearchive`** (`browser.ts:72-81`) sends `leaf: basename(row.bundlePath)`.
+- **`rearchive`** (`browser.ts:71-81`) sends `leaf: basename(row.bundlePath)`.
 
 **CHANGE**
 
@@ -534,12 +571,13 @@ A whole bundle still re-mints under its own name, as it does today.
     - A whole bundle's address re-mints under its leaf.
   - **`archive.test.ts`:** a page pulled from an archived Set and restored is put back by its Undo inside the Set's bundle, at its folder.
 - [ ] Rewrite the existing tests that pass a `leaf`:
-  - **`archive.test.ts:225-251`:** the `rearchive` helper passes the full bundle address, and the `../name` case stays.
+  - **`archive.test.ts:219-247`:** the `rearchive` helper passes the full bundle address, and the `../name` case stays.
   - **`ArchiveView.test.tsx:290,298`:** expect `at:` with the full bundle path.
   - **`mutateRequest.test.ts:19`:** use `at: 7`.
 - [ ] Edit the code as below:
-  - `archiveOp` answers `bundled: { bundlePath: filed.address }`.
-  - `refile.ts:38` drops its last argument, and with it the `basename` import if that goes unused.
+  - `archiveOp` answers `bundled: { bundlePath: filed.address }`, and `archive.ts` loses its `relative` import.
+  - `refile.ts:38` drops its last argument, and with it `refile.ts`'s `basename` import.
+  - `rearchive` sends `at`, and `browser.ts` loses its `basename` import.
   - At `refile.ts:131`, the Archive-to-Trash move still mints a fresh stamp, because `mintBundle` refuses an `.archived` leaf for a `.deleted` base.
 
 **AFTER**
@@ -602,7 +640,7 @@ A whole bundle still re-mints under its own name, as it does today.
 @@ archiveOp @@
 -  const bundle = await fileInto(root, store, abs, abs, record, req.leaf).catch(async (e) => {
 +  const filed = await fileInto(root, store, abs, abs, record, req.at).catch(async (e) => {
-     await lifted?.value.undo()
+     await lifted?.value.rollback()
      throw e
    })
    await dropDeparture(root, tree, req.kind, req.path)
@@ -627,20 +665,20 @@ A whole bundle still re-mints under its own name, as it does today.
 
 #### Task 2-2
 
-**TASK:** Make the Archive delete's Undo, a Trash restore to `{ kind: 'archive' }`, file back through `fileInto` at the address the Trash record's `archive` now names.
+**TASK:** Make the Archive delete's Undo, a Trash restore to `{ kind: 'archive' }`, file back through `fileInto` at the address the Trash record's `archive` names.
 
 **NOW:**
-- **`placeRecord`** (`placement.ts:203-219`) reads `stored.archive` through `bundleAddressOf`, as of Task 1-1, which already admits an inner item's address.
-- **`restoreTrashed`** (`spend.ts:157-164`) files with `basename(dir)`.
+- **`placeRecord`'s archive branch** (`placement.ts:203-223`) reads `stored.archive` through `bundleAddressOf`, as of Task 1-1, which already admits an inner item's address.
+- **`restoreTrashed`** (`spend.ts:193-200`) files with `basename(dir)`.
 
 **CHANGE**
 
 - [ ] Write these `archive.test.ts` cases and watch them fail:
-  - An inner item Archive-deleted, then Undone, returns inside its Set's bundle, with its Link values refilled as in today's whole-bundle case at `:487`.
+  - An inner item Archive-deleted, then Undone, returns inside its Set's bundle, with its Link values refilled as in the whole-bundle case at `:481`.
   - The same case with the Set restored in between returns as its own Archive row.
 - [ ] Edit as below.
-  - Remove `spend.ts`'s `basename` import if it loses its last use.
-  - Update the `record.ts` `archive` doc and the `restoreDestination` doc at `mutateRequest.ts:49`.
+  - `spend.ts` loses its `basename` import, whose only use was `:198`.
+  - Update the `record.ts` `archive` doc (`:56`) and the `restoreDestination` doc at `mutateRequest.ts:48`.
 
 **AFTER**
 
@@ -672,7 +710,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 - [ ] Gates are clean.
 - [ ] Both Undo paths re-nest an inner item while its folder stands, and fall back to a bundle of its own otherwise.
-- [ ] A whole bundle's Undo keeps its leaf (`archive.test.ts:225-251`, `:487-523`), and refile's moves keep their bundle names.
+- [ ] A whole bundle's Undo keeps its leaf (`archive.test.ts:219-247`, `:481-527`), and refile's moves keep their bundle names.
 
 ---
 
@@ -684,7 +722,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **TASK:** Add `listInner`, which reads one level of a container address's inner items in the order the folder's sidecar keeps, and route bundle rows and inner rows through one `artifactRow`.
 
-**NOW:** `bundleRowOf` (`rows.ts:83-126`) builds the artifact row inline.
+**NOW:** `bundleRowOf` (`rows.ts:85-130`) builds the artifact row inline, carrying `record.partial` as the row's `partial` (`:128`).
 
 **CHANGE**
 
@@ -700,13 +738,15 @@ A whole bundle still re-mints under its own name, as it does today.
     - Its `historical` follows its bundle's.
     - `storedAt` is the bundle's stamp.
     - `homeResolves` is false.
-- [ ] Add `listInner`, `artifactRow`, and `innerRows`.
-  - `bundleRowOf`'s artifact branch becomes one `artifactRow` call, and the existing `rows.test.ts` cases pass unchanged.
+    - `partial` follows its bundle record's, hand-seeded as in Task 1-2.
+- [ ] Add `listInner` with its `InnerListing`, `artifactRow`, and `innerRows`.
+  - `bundleRowOf`'s artifact branch becomes one `artifactRow` call, and the existing `rows.test.ts` cases pass unchanged, the partial case at `:189-212` among them.
+  - `artifactRow` carries `partial` from the record it's given, so an inner row reads the mark `innerRecord` passes down.
   - Lift `bundleRowOf`'s `liveCrumbs(record, tree) ?? frozenCrumbs(store, bundlePath)` into `bundleCrumbs`. `innerRows` reads it once per listing, then appends one crumb per segment of the path from the bundle folder to `folder`. The first crumb takes the bundled record's kind, and the rest are `'set'`.
   - Inside `artifactRow`, `name` is `basename(at.path)` and `restoring` is `at.bundlePath`. For an inner row, that is its own address, which answers `heldElsewhere` as the bundle would: `byId` holds no Set ids and no Trash pages.
 - [ ] Update the `BundleRow` docs:
-  - **`bundlePath`:** "Its address: a bundle's folder, or the inner item's own path."
-  - **`stored`:** "…by its record's id and its path in its store…"
+  - **`bundlePath`:** add "Its address: a bundle's folder, or the inner item's own path."
+  - **`stored`** (`rows.ts:39`): "…by its record's id and its path in its store…"
 
 **AFTER**
 
@@ -779,7 +819,7 @@ A whole bundle still re-mints under its own name, as it does today.
 +): BundleRow[]
 ```
 
-`asStringArray` is the helper `containerFields.ts` already uses, and `sidecarPath` comes from `Core/Paths/paths`.
+`asStringArray` comes from `Core/Nexus/coerce`, as `containerFields.ts` takes it, and `sidecarPath` comes from `Core/Paths/paths`.
 
 **VERIFY**
 
@@ -845,8 +885,8 @@ A whole bundle still re-mints under its own name, as it does today.
 **TASK:** Add `TreeRow`, `treeRows`, `outermostOf`, and `rowClick`, and hold the open rows' inner rows in one ref-backed map.
 
 **NOW:**
-- **`visible`** is the filtered top rows (`browser.ts:233`).
-- **`retained`** keeps checks over top rows only (`:222-223`).
+- **`visible`** is the filtered top rows (`browser.ts:234-237`).
+- **`retained`** keeps checks over top rows only (`:223-224`).
 - **`picked` and `actedOn`** act on what's checked, unfiltered.
 
 **CHANGE**
@@ -928,20 +968,20 @@ A whole bundle still re-mints under its own name, as it does today.
 **TASK:** A batch Restore holding homeless rows asks once per kind of destination and sends each row its destination. `restoreOne`, the batch, and the menu share one destination ask, and the "had nowhere to go" refusal goes.
 
 **NOW:**
-- **`restoreBatch`** (`browser.ts:326-345`) restores only the rows whose home resolves, and reports the rest as having nowhere to go.
-- **`placesFor`** (`:252-257`) feeds both `restoreOne`'s picker and `openMenu`'s submenu.
-- **`many`** sends no destination.
+- **`restoreBatch`** (`browser.ts:331-351`) restores only the rows whose home resolves, and reports the rest as having nowhere to go.
+- **`placesFor`** (`:253-258`) feeds both `restoreOne`'s picker and `openMenu`'s submenu.
+- **`many`** (`:288-329`) sends no destination, and answers `owed` when any reply owes work. `restoreOne`, `restoreBatch`, and `deleteBatch` pass `finishOwed` into `notifyOutcome` as its Try Again when owed.
 
 **CHANGE**
 
 - [ ] Rewrite two existing cases to the new rule and watch them fail:
-  - **`TrashFrame.test.tsx:322`:** a Restore All of two homeless rows and one homed row opens one picker. The two homeless rows restore to the picked place, and the homed row restores to its own home, its request sent with no destination. A dismissed picker restores nothing.
+  - **`TrashFrame.test.tsx:382`:** a Restore All of two homeless rows and one homed row opens one picker. The two homeless rows restore to the picked place, and the homed row restores to its own home, its request sent with no destination. A dismissed picker restores nothing.
   - **`ArchiveView.test.tsx:359`:** make its homeless row a disclosed inner item, and run its batch half as a mixed batch that asks once.
-- [ ] Replace `placesFor` with three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
+- [ ] Replace `placesFor` with `DestinationKind` and three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
   - **`destinationKind(row)`:** `'context'` for a Space, otherwise `'container'`.
   - **`destinationTargets(kind)`:** that kind's targets, built once.
   - **`askDestination(kind)`:** pops `destinationRows` and answers a `RestoreDestination` or null.
-- [ ] Extend `many` with `destinationOf`. Remove `notifyReport`'s import from `browser.ts`, since its only use was `:330`.
+- [ ] Extend `many` with `destinationOf`, keeping its `owed`, and keep `restoreBatch`'s `owed` and its `finishOwed` argument as they stand. Remove `notifyReport`'s import from `browser.ts`, since its only use was `:335`.
 
 **AFTER**
 
@@ -964,8 +1004,19 @@ A whole bundle still re-mints under its own name, as it does today.
 +      row.homeResolves ? undefined : to.get(destinationKind(row)),
 +    )
      if (!ran) return
- …
+     const { done, refused, unrestored, warnings, renamed, owed } = ran
+     notifyOutcome(
+       `Restored ${countPhrase(done)}`,
+       renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
+       [
 -        homeless.length > 0 && nowhere,
+         refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
+         unrestored.length > 0 && unrestoredLine(unrestored),
+         ...warnings,
+       ],
+       done.length > 0 ? rules.restoreUndo?.(done) : undefined,
+       owed ? finishOwed : undefined,
+     )
 ```
 
 **VERIFY**
@@ -994,11 +1045,11 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **TASK:** Give `MenuItem` a `titleAccessory` slot, set inline right of the title text and outside its ellipsis.
 
-**NOW:** `MenuItem` (`MenuRows.tsx:155`) has `subLabel`, a line below the title, and nothing beside the title.
+**NOW:** `MenuItem` (`MenuRows.tsx:96`) sets its title text at `:155` and `subLabel`, a line below it, at `:156`, with nothing beside the title. No UIX suite renders `MenuItem`.
 
 **CHANGE**
 
-- [ ] Write the `MenuRows` test and watch it fail: `titleAccessory` renders after the title text on one line, and is absent from the DOM when not given.
+- [ ] Add `UIX/Menus/MenuRows.test.tsx` and watch its case fail: `titleAccessory` renders after the title text on one line, and is absent from the DOM when not given.
 - [ ] Add the prop and `titleLine`, building the title span once.
 
 **AFTER**
@@ -1076,8 +1127,18 @@ A whole bundle still re-mints under its own name, as it does today.
 +      onClick={(e) => api.rowClick(row, e.detail)}
 +      onDoubleClick={row.kind === 'page' ? () => api.open(row) : undefined}
  …
--        {/* biome-ignore … a page's title is the pointer's door to the reader … */}
--        <span className={cx(overScrollLabel, 'cell-title')} onClick={…}>
+-        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a page's title is the pointer's door to the reader; a Set's opens nothing and its click checks the row */}
+-        <span
+-          className={cx(overScrollLabel, 'cell-title')}
+-          onClick={
+-            row.kind === 'page'
+-              ? (e) => {
+-                  e.stopPropagation()
+-                  api.open(row)
+-                }
+-              : undefined
+-          }
+-        >
 +        <span className={cx(overScrollLabel, 'cell-title')}>
            <Icon name={entityIcon(archivedKind(row), row.icon, icons)} size="body" />
            <span className="cell-title-text">{row.title}</span>
@@ -1118,7 +1179,10 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 - the chevron sits in `titleAccessory`;
 - every click goes through `rowClick`.
 
-**NOW:** Every Trash row's click checks it (`TrashFrame.tsx:164`). MenuItem's `indent` measures from an 8px base, while Trash rows lead by `--row-pad-lead` (24px). Using it would step a depth-1 row left of its parent.
+**NOW:**
+- **Clicks:** every Trash row's click checks it (`TrashFrame.tsx:171`).
+- **Indent:** MenuItem's `indent` measures from an 8px base, while Trash rows lead by `--row-pad-lead` (24px). Using it would step a depth-1 row left of its parent.
+- **Partial Mark:** `trailing` draws the `triangle-alert` "Recorded Partly" icon ahead of the date for a `partial` row (`:154-161`).
 
 **CHANGE**
 
@@ -1130,6 +1194,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 - [ ] Have `TrashRowView` take its `TreeRow` whole, and wire it as follows:
   - `onClick={(e) => rowClick(row, e.detail)}`;
   - `titleAccessory={open !== null ? <DropOutline open={open} /> : undefined}`;
+  - `trailing` keeps the partial icon and the date as they stand;
   - wrap the leading icon in `<span className="trash-lead" style={{ '--depth': depth }}>`.
 - [ ] Add to `trash-frame.css`:
   - `.trash-lead { display: flex; margin-left: calc(var(--disclosure-indent) * var(--depth, 0)); }`
@@ -1155,16 +1220,20 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Task 6-1
 
-**TASK:** Rewrite each *§Reconciliation* entry in place.
+**TASK:** Rewrite each *§Reconciliation* entry in place, under *§Constraints › Docs*.
 
 **CHANGE**
 
-- [ ] Walk *§Reconciliation* and rewrite each claim to current behavior, overview-level, with no correction language.
-- [ ] Add an `IssuesPM.md` entry: a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited.
+- [ ] Walk *§Reconciliation*. Each feature-doc entry fixes only the sentence it names, in place and plainly, at its length or shorter, as the user reads it, with no correction language.
+- [ ] Rewrite `IssuesPM.md` I-075 to the shipped `rowClick`:
+  - `browser.ts` reads `detail`, so its row joins the surface table as a `detail` guard, and the paragraph naming this plan leaves;
+  - the Solution counts eleven surfaces with the plan's Task 4-1 dropped, and the footnote's two plan cites give way to `browser.ts`'s `rowClick`.
+- [ ] Add an `IssuesPM.md` entry: a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited. Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md` afterward, which gives the entry its number and recomputes the totals.
 
 **VERIFY**
 
-- [ ] `rg -n "one row per|is one row|title opens the reader|nowhere to go" .claude/Features Core` finds nothing stale.
+- [ ] `rg -n "one row per deleted|is one row|title opens the reader|nowhere to go" .claude/Features Core` finds nothing stale.
+- [ ] The index script reports no dangling citation.
 
 #### Task 6-2
 
@@ -1226,26 +1295,18 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Reconciliation
 
-- `.claude/Features/NexusRecordPM.md:16` — "one row per deleted entity…"; "Checked rows act together…" — Task 6-1
-- `.claude/Features/NexusRecordPM.md:14` — Restore is written per bundle; the homeless batch rule — Task 6-1
-- `.claude/Features/NexusRecordPM.md:10` — `archive` "names the Archive bundle it left" — Task 6-1
-- `.claude/Features/CollectionsPM.md:49,51` — an archived Set's contents, opening pages in the reader, restoring — Task 6-1
-- `.claude/Features/CorePM.md:92` — "the Archive bundle a delete from the Archive names" — Task 6-1
-- `.claude/Features/InterfacePM.md:80` — "a bundle restored or deleted … spends both" — Task 6-1
-- `.claude/Features/PommoraUIX.md` — MenuItem's slots gain `titleAccessory` — Task 6-1
-- `.claude/IssuesPM.md` I-033 — the batch's per-row requests now include inner items — Task 6-1
+- `.claude/Features/NexusRecordPM.md:10` — "a Trash record of a page or Set deleted from the Archive names the Archive bundle it left" reads false for an item taken out of an archived Set, whose record names where inside the bundle it sat — Task 6-1
+- `.claude/Features/NexusRecordPM.md:16` — "one row per deleted entity" reads false once a Set's or Collection's row opens onto a row per item inside it; "removes the spent bundle" reads false for an item deleted out of one, which leaves the rest behind; "a batch names what it couldn't resolve" reads false once a batch asks where its homeless rows go — Task 6-1
+- `.claude/Features/CollectionsPM.md:51` — "Restoring an archived page or set places it back into its remembered placement" reads false for an item restored out of an archived Set, which asks where it goes — Task 6-1
+- `.claude/Features/CorePM.md:92` — "save the Archive bundle a delete from the Archive names" and "an Archive bundle" in the cascade rule read false once a delete from the Archive can name an item inside one — Task 6-1
+- `.claude/Features/PommoraUIX.md:361` — "`MenuItem` carries `leading` · title · `subLabel` · `detail` · `trailing` · `overlay`" omits `titleAccessory` from the kit's slot ledger — Task 6-1
+- `.claude/IssuesPM.md` I-075 — "`Core/Bundles/browser.ts` doesn't read `detail` yet", the Solution's surface count, and the footnote's plan cites read false once `rowClick` ships — Task 6-1
 - `.claude/IssuesPM.md` — new entry: an emptied container bundle stays behind — Task 6-1
 - `Core/Bundles/browser.ts:189` — the hook's doc gains the tree and `rowClick` — Task 4-1
-- `Core/Interface/Confirm/confirmations.ts:47` — the `spendUndo` doc reads "A bundle, or an inner item of one, …" — Task 1-3
+- `Core/Interface/Confirm/confirmations.ts:46` — the `spendUndo` doc reads "A bundle, or an inner item of one, …" — Task 1-3
 
 #### Open Items
 
-- **Sequencing:** this plan runs after the Properties Restructure lands, at least its Phase 12 and Closeout P11B–P12, with Task 6-1 and Task 6-2 after its Phase 18. That plan rewrites the same regions of `spend.ts` (`emptyBundle` and the property arm), `delete.ts` (`fromArchive`'s spend), `rows.ts` (`bundleRowOf`, adding `partial`), `browser.ts` (`many`, `restoreOne`, `restoreBatch`, adding `owed`/`finishOwed`), `TrashFrame.tsx`'s `TrashRowView`, `NexusRecordPM.md:14`, `CorePM.md:92`, and `Archive Drive/MATRIX.md`. Both plans share the one `active` checkout.
-- **Re-Grounding Before Execution:** every diff anchor above is re-read against the landed Restructure, and four items are taken into the tasks they touch:
-  - **Kept Links:** the delete's kept Link values are appended through `finishEntry`'s owed note rather than written with the record. `keptLinksUnder` and `spendBundle` (Tasks 1-2 and 1-3) are written against that note model, so a whole-bundle spend never removes a bundle an owed note still names.
-  - **`emptyBundle`:** its note key (`relative(root, bundleAbs)`) stays one key per inner item (Task 1-3).
-  - **`BundleRow.partial`:** this field enters `artifactRow` (Task 3-1).
-  - **Batch Restore:** `many`'s `owed` and `finishOwed` merge with the batch's `destinationOf` (Task 4-2).
 - **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 6-1 records it in `IssuesPM.md` for a later decision.
 
 
