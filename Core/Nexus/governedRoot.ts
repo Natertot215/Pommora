@@ -1,7 +1,8 @@
 // Everything that lands a value in one governed file, a page or a Space sidecar: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, the one-parse writers, and the put-back that undoes a write.
 
 import { isMarkdownFile, relative } from '../Paths/posix'
-import { patchHeldSidecar, patchSidecar } from '../Files/sidecar'
+import { patchHeldSidecar } from '../Files/sidecar'
+import { sidecarPath } from '../Paths/paths'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
@@ -237,20 +238,23 @@ export async function putBackEntries(
   return missed
 }
 
-// A page's key is read inside its lock, as the write read it, so a key renamed since lands under its new name; a pair that no longer serializes, such as an alias whose anchor an outside edit removed, is missed.
+// Each key is read inside its file's lock, as the write read it, so a key renamed since lands under its new name; a pair that no longer serializes, such as an alias whose anchor an outside edit removed, is missed.
 async function landEntry(
   root: string,
   { file, fieldId, before, above }: PutBack,
 ): Promise<boolean> {
   if (!isMarkdownFile(file)) {
     const at = await mutableTarget(root, file, ['space'])
-    const key = at.ok ? await keyNow(root, fieldId) : undefined
-    if (!at.ok || key === undefined) return false
-    const back = await patchSidecar(at.value, 'space', (raw) => {
-      const next = landValue(raw, key, before)
-      return changedKeys(raw, next).length ? next : null
+    if (!at.ok) return false
+    return machine().lock(sidecarPath(at.value, 'space'), async () => {
+      const key = await keyNow(root, fieldId)
+      if (key === undefined) return false
+      const back = await patchHeldSidecar(at.value, 'space', (raw) => {
+        const next = landValue(raw, key, before)
+        return changedKeys(raw, next).length ? next : null
+      })
+      return back.ok
     })
-    return back.ok
   }
   const at = await mutableTarget(root, file, ['page'])
   if (!at.ok || !(before === undefined || typeof before === 'string')) return false
