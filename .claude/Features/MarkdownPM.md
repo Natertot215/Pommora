@@ -41,45 +41,45 @@ A codeblock is a fenced block set in the mono family over a neutral fill, which 
 - **Path Icons:** With **Show Path Icons** on, a path with folders is marked by a folder, and a lone filename by its file's icon — the language's own mark, its family's for data, config, and shell files, a diff file's, or a plain code file.
 - **Diffs:** An info word reading `diff` or `patch`, alone or joined to a language by `-`, `/`, `\`, `|`, or a space (`diff-ts`, `ts|diff`, `diff/app.ts`), draws the block as a diff, while a dashed filename such as `patch-notes.md` reads by its extension. These display their deltas through a margin typed with `+`, `-`, or `~`, which highlights the line in green, red, or light blue respectively over the language's existing syntax colors, and their tag becomes a tally of the green and red lines.
 
-| Language | Formatting | Icons |
-| --- | --- | --- |
+| Language   | Formatting                                  | Icons              |
+| ---------- | ------------------------------------------- | ------------------ |
 | JavaScript | `js` • `javascript` • `jsx` • `mjs` • `cjs` | `brand-javascript` |
 | TypeScript | `ts` • `typescript` • `tsx` • `mts` • `cts` | `brand-typescript` |
-| JSON | `json` • `jsonc` | `file-braces` |
-| YAML | `yaml` • `yml` | `file-cog` |
-| CSS | `css` | `brand-css3` |
-| HTML | `html` • `htm` | `brand-html5` |
-| Markdown | `markdown` • `md` | `file-text` |
-| Swift | `swift` | `brand-swift` |
-| Python | `python` • `py` | `brand-python` |
-| Go | `go` • `golang` | `brand-golang` |
-| Rust | `rust` • `rs` | `brand-rust` |
-| Ruby | `ruby` • `rb` | `file-code-corner` |
-| Java | `java` | `file-code-corner` |
-| Kotlin | `kotlin` • `kt` • `kts` | `file-code-corner` |
-| Scala | `scala` | `file-code-corner` |
-| C | `c` • `h` | `file-code-corner` |
-| C++ | `cpp` • `c++` • `cc` • `cxx` • `hpp` • `hh` | `file-code-corner` |
-| C# | `csharp` • `cs` • `c#` | `file-code-corner` |
-| Shell | `shell` • `sh` • `bash` • `zsh` | `terminal` |
-| PowerShell | `powershell` • `ps1` | `terminal` |
-| SQL | `sql` | `database` |
-| XML | `xml` • `svg` | `file-code` |
-| TOML | `toml` | `file-cog` |
-| Dockerfile | `dockerfile` • `docker` | `brand-docker` |
-| Lua | `lua` | `file-code-corner` |
-| Perl | `perl` • `pl` • `pm` | `file-code-corner` |
-| Haskell | `haskell` • `hs` | `file-code-corner` |
-| Clojure | `clojure` • `clj` • `cljs` • `cljc` • `edn` | `file-code-corner` |
-| Erlang | `erlang` • `erl` | `file-code-corner` |
-| Julia | `julia` • `jl` | `file-code-corner` |
-| R | `r` | `file-code-corner` |
-| Groovy | `groovy` • `gradle` | `file-code-corner` |
-| Sass | `sass` • `scss` | `file-code-corner` |
-| Nginx | `nginx` | `file-cog` |
-| Protobuf | `protobuf` • `proto` | `file-braces` |
-| CMake | `cmake` | `file-cog` |
-| Properties | `properties` • `ini` | `file-cog` |
+| JSON       | `json` • `jsonc`                            | `file-braces`      |
+| YAML       | `yaml` • `yml`                              | `file-cog`         |
+| CSS        | `css`                                       | `brand-css3`       |
+| HTML       | `html` • `htm`                              | `brand-html5`      |
+| Markdown   | `markdown` • `md`                           | `file-text`        |
+| Swift      | `swift`                                     | `brand-swift`      |
+| Python     | `python` • `py`                             | `brand-python`     |
+| Go         | `go` • `golang`                             | `brand-golang`     |
+| Rust       | `rust` • `rs`                               | `brand-rust`       |
+| Ruby       | `ruby` • `rb`                               | `file-code-corner` |
+| Java       | `java`                                      | `file-code-corner` |
+| Kotlin     | `kotlin` • `kt` • `kts`                     | `file-code-corner` |
+| Scala      | `scala`                                     | `file-code-corner` |
+| C          | `c` • `h`                                   | `file-code-corner` |
+| C++        | `cpp` • `c++` • `cc` • `cxx` • `hpp` • `hh` | `file-code-corner` |
+| C#         | `csharp` • `cs` • `c#`                      | `file-code-corner` |
+| Shell      | `shell` • `sh` • `bash` • `zsh`             | `terminal`         |
+| PowerShell | `powershell` • `ps1`                        | `terminal`         |
+| SQL        | `sql`                                       | `database`         |
+| XML        | `xml` • `svg`                               | `file-code`        |
+| TOML       | `toml`                                      | `file-cog`         |
+| Dockerfile | `dockerfile` • `docker`                     | `brand-docker`     |
+| Lua        | `lua`                                       | `file-code-corner` |
+| Perl       | `perl` • `pl` • `pm`                        | `file-code-corner` |
+| Haskell    | `haskell` • `hs`                            | `file-code-corner` |
+| Clojure    | `clojure` • `clj` • `cljs` • `cljc` • `edn` | `file-code-corner` |
+| Erlang     | `erlang` • `erl`                            | `file-code-corner` |
+| Julia      | `julia` • `jl`                              | `file-code-corner` |
+| R          | `r`                                         | `file-code-corner` |
+| Groovy     | `groovy` • `gradle`                         | `file-code-corner` |
+| Sass       | `sass` • `scss`                             | `file-code-corner` |
+| Nginx      | `nginx`                                     | `file-cog`         |
+| Protobuf   | `protobuf` • `proto`                        | `file-braces`      |
+| CMake      | `cmake`                                     | `file-cog`         |
+| Properties | `properties` • `ini`                        | `file-cog`         |
 
 #### Typing Transforms
 

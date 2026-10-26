@@ -151,9 +151,9 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - [x] Task 2-2
   - [x] Review Checkpoint
 - [ ] **Phase 3** — Listing Inner Items
-  - [ ] Task 3-1
-  - [ ] Task 3-2
-  - [ ] Compaction Checkpoint
+  - [x] Task 3-1
+  - [x] Task 3-2
+  - [x] Compaction Checkpoint
 - [ ] **Phase 4** — The Browser's Tree
   - [ ] Task 4-1
   - [ ] Task 4-2
@@ -816,7 +816,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Write these tests and watch them fail.
+- [x] Write these tests and watch them fail.
   - **`bundle.test.ts`:** `listInner` lists one level of the folder:
     - Sets come first, then pages.
     - Each kind follows the folder sidecar's `set_order` and `page_order` through `resolveOrder` (`Core/Nexus/order.ts`).
@@ -829,62 +829,99 @@ A whole bundle still re-mints under its own name, as it does today.
     - `storedAt` is the bundle's stamp.
     - `homeResolves` is false.
     - `partial` follows its bundle record's, hand-seeded as in Task 1-2.
-- [ ] Add `listInner` with its `InnerListing`, `artifactRow`, and `innerRows`.
+- [x] Add `listInner` with its `InnerListing`, `artifactRow`, and `innerRows`.
   - `bundleRowOf`'s artifact branch becomes one `artifactRow` call, and the existing `rows.test.ts` cases pass unchanged, the partial case at `:189-212` among them.
   - `artifactRow` carries `partial` from the record it's given, so an inner row reads the mark `innerRecord` passes down.
   - Lift `bundleRowOf`'s `liveCrumbs(record, tree) ?? frozenCrumbs(store, bundlePath)` into `bundleCrumbs`. `innerRows` reads it once per listing, then appends one crumb per segment of the path from the bundle folder to `folder`. The first crumb takes the bundled record's kind, and the rest are `'set'`.
   - Inside `artifactRow`, `name` is `basename(at.path)` and `restoring` is `at.bundlePath`. For an inner row, that is its own address, which answers `heldElsewhere` as the bundle would: `byId` holds no Set ids and no Trash pages.
-- [ ] Update the `BundleRow` docs:
+- [x] Update the `BundleRow` docs:
   - **`bundlePath`:** add "Its address: a bundle's folder, or the inner item's own path."
   - **`stored`** (`rows.ts:39`): "…by its record's id and its path in its store…"
 
 **AFTER**
 
 ```Core/Bundles/bundle.ts diff
+@@ isContainerRecord @@
++type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
+ …
 +/** One level of a container address's inner items under the bundle they sit in, its record and store, and the folder they share. */
 +export interface InnerListing {
 +  bundle: string
 +  store: BundleStore
-+  record: RecordFile
-+  folder: string | null
-+  items: { address: string; record: RecordFile }[]
++  record: ContainerRecord
++  folder: string
++  items: { address: string; record: InnerRecord }[]
 +}
 +
 +/** One level of a container address's inner items, its Sets and then its pages, each in the order the folder's sidecar keeps, with the record it carries; the trail above them is read once for the level. */
-+export async function listInner(
-+  root: string,
-+  abs: string,
-+): Promise<Result<InnerListing>> {
++export async function listInner(root: string, abs: string): Promise<Result<InnerListing>> {
 +  const read = await readBundleAt(root, abs)
 +  if (!read.ok) return read
 +  const { bundle, store, record, artifact, inner } = read.value
++  if (!isContainerRecord(record) || !artifact)
++    return fail('not-found', 'That holds no inner items.')
 +  const folder = inner?.item ?? artifact
-+  const listed = { bundle: relative(root, bundle), store, record, folder: folder && relative(root, folder), items: [] }
-+  const held = inner?.held ?? (isContainerRecord(record) ? record : null)
-+  if (!artifact || !folder || !held) return ok(listed)
-+  const trail = await trailWithin(held, artifact, folder)
-+  const entries = (await listEntries(folder)).filter(
-+    ({ name, kind }) => !hiddenName(name) && (kind === 'dir' || isMarkdownFile(name)),
++  const trail = await trailWithin(record, artifact, folder)
++  const entries = (await listEntries(folder)).filter((e) =>
++    e.kind === 'dir' ? !hiddenFolder(e.name) : isContentFile(e),
 +  )
 +  const items = await Promise.all(
 +    entries.map(async ({ name }) => {
 +      const at = join(folder, name)
-+      const own = await innerRecord(held, trail, at)
-+      return { address: relative(root, at), record: own, id: ('id' in own && own.id) || at, title: name }
++      const own = await innerRecord(record, trail, at)
++      return {
++        address: relative(root, at),
++        record: own,
++        id: own.id ?? at,
++        title: titleFromPath(name),
++      }
 +    }),
 +  )
-+  const meta = (await readJsonObject(sidecarPath(folder, folder === artifact ? held.entity : 'set'))) ?? {}
++  const meta =
++    (await readJsonObject(sidecarPath(folder, folder === artifact ? record.entity : 'set'))) ?? {}
++  const ordered = [
++    ...resolveOrder(
++      items.filter((i) => i.record.entity === 'set'),
++      asStringArray(meta.set_order),
++    ),
++    ...resolveOrder(
++      items.filter((i) => i.record.entity === 'page'),
++      asStringArray(meta.page_order),
++    ),
++  ]
 +  return ok({
-+    ...listed,
-+    items: [
-+      ...resolveOrder(items.filter((i) => i.record.entity === 'set'), asStringArray(meta.set_order)),
-+      ...resolveOrder(items.filter((i) => i.record.entity === 'page'), asStringArray(meta.page_order)),
-+    ],
++    bundle: relative(root, bundle),
++    store,
++    record,
++    folder: relative(root, folder),
++    items: ordered.map(({ address, record }) => ({ address, record })),
 +  })
 +}
 ```
 
 ```Core/Bundles/rows.ts diff
+@@ bundleRowOf @@
+   if (!artifactName) return null
++  return artifactRow(
++    record,
++    { bundlePath, path: relJoin(bundlePath, artifactName), storedAt: storedAtOf(bundlePath) },
++    bundleCrumbs(record, store, bundlePath, tree),
++    tree,
++    byId,
++  )
++}
++
++/** A bundle's trail: live from its recorded parent, else frozen from the chain it was filed under. */
++function bundleCrumbs(
++  record: ArtifactRecord,
++  store: BundleStore,
++  bundlePath: string,
++  tree: NexusTree,
++): { crumbs: BundleCrumb[]; historical: boolean } {
++  const live = liveCrumbs(record, tree)
++  return { crumbs: live ?? frozenCrumbs(store, bundlePath), historical: !live }
++}
++
 +/** The one row an artifact reads as, a bundle's own or an inner item's: the place it shows, the date it entered, and whether its home still answers. */
 +function artifactRow(
 +  record: ArtifactRecord,
@@ -892,30 +929,63 @@ A whole bundle still re-mints under its own name, as it does today.
 +  place: { crumbs: BundleCrumb[]; historical: boolean },
 +  tree: NexusTree,
 +  byId: NexusPages['byId'],
-+): BundleRow
- …
-+/** A bundle's trail: live from its recorded parent, else frozen from the chain it was filed under. */
-+function bundleCrumbs(
-+  record: ArtifactRecord,
-+  store: BundleStore,
-+  bundlePath: string,
-+  tree: NexusTree,
-+): { crumbs: BundleCrumb[]; historical: boolean }
- …
++): BundleRow {
++  const name = basename(at.path)
++  const icon =
++    record.entity === 'page'
++      ? record.id
++        ? tree.config.pageMetadata[record.id]?.icon
++        : undefined
++      : record.entity === 'context'
++        ? undefined
++        : record.icon
++  const home = resolveRecord(record, name, tree, byId, at.bundlePath)
++  return matched({
++    bundlePath: at.bundlePath,
++    kind: record.entity,
++    title: record.entity === 'page' ? titleFromPath(name) : name,
++    crumbs: place.crumbs,
++    ...(place.historical ? { historical: true } : {}),
++    storedAt: at.storedAt,
++    ...(icon ? { icon } : {}),
++    ...((record.entity === 'page' || record.entity === 'set') && record.id
++      ? { stored: { id: record.id, path: at.path } }
++      : {}),
++    homeResolves: !('refuse' in home) || home.refuse === 'id-live',
++    ...(record.partial ? { partial: true as const } : {}),
++  })
++}
++
 +/** A bundle's inner items as rows: each addressed by its own path, dated by its bundle's stamp, its trail the bundle's own followed by the containers inside it down to the row's folder. */
 +export function innerRows(
 +  listed: InnerListing,
 +  tree: NexusTree,
 +  byId: NexusPages['byId'],
-+): BundleRow[]
++): BundleRow[] {
++  const { bundle, store, record, folder, items } = listed
++  const { crumbs, historical } = bundleCrumbs(record, store, bundle, tree)
++  const [held, ...sets] = relative(bundle, folder).split('/')
++  const place = {
++    crumbs: [
++      ...crumbs,
++      { kind: record.entity, title: held },
++      ...sets.map((title) => ({ kind: 'set' as const, title })),
++    ],
++    historical,
++  }
++  const storedAt = storedAtOf(bundle)
++  return items.map(({ address, record }) =>
++    artifactRow(record, { bundlePath: address, path: address, storedAt }, place, tree, byId),
++  )
++}
 ```
 
-`asStringArray` comes from `Core/Nexus/coerce`, as `containerFields.ts` takes it, and `sidecarPath` comes from `Core/Paths/paths`.
+`homeResolvesFor` folds into `artifactRow`, its one caller. `asStringArray` comes from `Core/Nexus/coerce`, as `containerFields.ts` takes it; `sidecarPath` comes from `Core/Paths/paths`; and the entry rule is the live walk's, `hiddenFolder` for folders and `isContentFile` for files, as `readNexus` reads a folder.
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles` is green, with each new case red before its change.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles` is green, with each new case red before its change.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
@@ -925,11 +995,11 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Write these `handlers.test.ts` cases and watch them fail:
+- [x] Write these `handlers.test.ts` cases and watch them fail:
   - Each address's inner items answer in the addresses' order.
   - A gone address, or a path escaping the root, answers an empty list, so one refused address never blanks the other open rows.
   - A non-array or non-string argument faults.
-- [ ] Add the channel and its handler.
+- [x] Add the channel and its handler.
   - The handler reads the tree and pages once per call.
   - Only a malformed argument faults; each address answers on its own.
 
@@ -937,7 +1007,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 ```Core/Contract/bridge.ts diff
    'bundles:list': { args: [store: BundleStore, within?: string]; reply: Result<BundleRow[]> }
-+  // The inner items of each row a browser holds open, asked on opening and again with every open row on each refresh, so no listing walks a container's artifact.
++  // One level of inner items per row a browser holds open, asked on opening and again on each refresh, since `bundles:list` walks no artifact.
 +  'bundles:children': { args: [addresses: string[]]; reply: Result<BundleRow[][]> }
 ```
 
@@ -946,20 +1016,22 @@ A whole bundle still re-mints under its own name, as it does today.
 +    if (!Array.isArray(raw) || !raw.every(isString)) return fault('Addresses are required.')
 +    const tree = await liveTreeOf(root)
 +    const { byId } = await nexusPages(root, tree)
-+    const out: BundleRow[][] = []
-+    for (const address of raw) {
-+      const resolved = await resolveUnderRoot(root, address)
-+      const listed = resolved.ok ? await listInner(root, resolved.value) : resolved
-+      out.push(listed.ok ? innerRows(listed.value, tree, byId) : [])
-+    }
-+    return ok(out)
++    return ok(
++      await Promise.all(
++        raw.map(async (address) => {
++          const resolved = await resolveUnderRoot(root, address)
++          const listed = resolved.ok ? await listInner(root, resolved.value) : resolved
++          return listed.ok ? innerRows(listed.value, tree, byId) : []
++        }),
++      ),
++    )
 +  }),
 ```
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles Core/Contract` is green, including `Core/Contract/engineGraph.test.ts`.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles Core/Contract` is green, including `Core/Contract/engineGraph.test.ts`.
+- [x] Check for unnecessary code or mistakes.
 
 #### Compaction Checkpoint
 
