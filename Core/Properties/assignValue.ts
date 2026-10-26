@@ -45,16 +45,16 @@ export function oneShotWriter(opened: ViewRow): RefObject<ValueWriter> {
   }
 }
 
-/** Sends `req` with `value` laid over the row while it's in flight; `again` is its Try Again. */
+/** Sends `req` with `value` laid over the row while it's in flight; `retry` is its Try Again. */
 function send(
   w: ValueWriter,
   row: ViewRow,
   column: ResolvedColumn,
   value: PropertyValue | null,
   req: MutateRequest,
-  again?: () => void,
+  retry?: () => void,
 ): Promise<MutateOutcome | null> {
-  const sent = useSession.getState().mutate(req, { again })
+  const sent = useSession.getState().mutate(req, { retry })
   w.apply(
     row.id,
     { [column.id]: value ?? NULL_VALUE },
@@ -109,9 +109,9 @@ export function assignValue(
   const resolved = resolveFieldValue(target, column)
   const prior = isBlankValue(resolved) ? null : resolved
   // A value write sets the whole value, so sending it again is safe, and a file it couldn't reach may read the next time.
-  const again = (): void =>
+  const retry = (): void =>
     void assignValue(writer.current ? writer : oneShotWriter(target), row, column, value)
-  const sent = send(w, target, column, value, valueRequest(target, column, value), again)
+  const sent = send(w, target, column, value, valueRequest(target, column, value), retry)
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
   let aliasPage: ConnPage | undefined
   const undone = sent.then(async (done) => {

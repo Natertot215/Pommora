@@ -65,10 +65,10 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `again` is a value write's Try Again. */
+  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `retry` is a value write's Try Again. */
   mutate: (
     req: MutateRequest,
-    opts?: { quiet?: true; again?: () => void },
+    opts?: { quiet?: true; retry?: () => void },
   ) => Promise<MutateOutcome | null>
   /** Sends the one Try Again: finishes every entry the notes file holds. */
   finishOwed: () => void
@@ -245,7 +245,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openPath: (path) => openVia(() => dialer().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
-    mutate: async (req, { quiet, again } = {}) => {
+    mutate: async (req, { quiet, retry } = {}) => {
       const held = get().tree
       const moves = req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet'
       if (changesSettled(req.op)) await flushAllSaves()
@@ -259,8 +259,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!res.ok) {
         if (quiet) return null
         if (res.error.code === 'owed') notifyRetry(res.error.message, get().finishOwed)
-        else if (again && res.error.code === 'operation-failed')
-          notifyRetry(res.error.message, again)
+        else if (retry && res.error.code === 'operation-failed')
+          notifyRetry(res.error.message, retry)
         else reportRefusal(res)
         return null
       }

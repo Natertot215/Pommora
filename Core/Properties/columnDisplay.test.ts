@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnIcon, columnLabel } from './columnLabel'
+import { columnIcon, columnLabel } from './columnDisplay'
 import { contextsByIdOf } from '../Contexts/contextIdentity'
 import { FILEDATA, type PropertyDefinition } from './properties'
 import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'

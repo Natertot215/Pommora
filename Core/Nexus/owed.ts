@@ -1,4 +1,4 @@
-// The notes file: one entry per item that still owes work, a property, Context, or Space keyed by its id, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
+// The notes file: one entry per item or many-file change that still owes work, keyed by its id or path, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
 
 import { fail, ok, type Result } from '../Contract/result'
 import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'

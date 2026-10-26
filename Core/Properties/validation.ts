@@ -94,7 +94,7 @@ export function validateDefinition(
 }
 
 /** `groups` holding each option id once, and each label and key once by its fold, the first of any repeat, and none blank. An option repeating an earlier id under its own label and key takes the id its key derives. */
-export function uniqueOptionGroups(groups: StatusGroup[]): StatusGroup[] {
+function uniqueOptionGroups(groups: StatusGroup[]): StatusGroup[] {
   const ids = new Set<string>()
   const labels = new Set<string>()
   const keys = new Set<string>()

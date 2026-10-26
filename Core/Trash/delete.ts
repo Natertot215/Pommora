@@ -204,7 +204,7 @@ export async function deleteOp(
       await write(
         bundle ? (from?.record ?? (await gatherContentRecord(root, before, req.kind, abs))) : null,
       )
-      // Keyed by the item's id, or by its path where an Archive record names none; noted before the move, so a delete cut short finishes its strip and views at the next open.
+      // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
       const id = (req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel))?.id ?? rel
       const ran = await deleted(id, () => ({
         kind: 'container',

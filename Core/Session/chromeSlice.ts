@@ -14,7 +14,7 @@ interface MenuPending extends MenuOptions {
   settle: (action: string | null) => void
 }
 
-export interface ValuePickRequest {
+interface ValuePickRequest {
   rowOf: () => ViewRow | undefined
   column: ResolvedColumn
   holder?: ConnPage

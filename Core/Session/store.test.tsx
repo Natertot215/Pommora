@@ -1282,14 +1282,14 @@ describe('store — the mutate rail', () => {
       ok: false as const,
       error: { code: 'operation-failed' as const, message: 'Couldn’t write “A”.' },
     }))
-    const again = vi.fn()
+    const retry = vi.fn()
     clearNotification()
-    await useSession.getState().mutate(req, { again })
+    await useSession.getState().mutate(req, { retry })
     const note = currentNotification()
     expect(note?.message).toBe('Couldn’t write “A”.')
     expect(note?.action?.label).toBe('Try Again')
     await note?.action?.run()
-    expect(again).toHaveBeenCalledTimes(1)
+    expect(retry).toHaveBeenCalledTimes(1)
     clearNotification()
     await useSession.getState().mutate(req)
     expect(currentNotification()?.action).toBeUndefined()

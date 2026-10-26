@@ -47,7 +47,7 @@ const settled = () => new Promise((r) => setTimeout(r))
 
 let apply: Mock<ValueWriter['apply']>
 let mutate: Mock<
-  (req: MutateRequest, opts?: { again?: () => void }) => Promise<MutateOutcome | null>
+  (req: MutateRequest, opts?: { retry?: () => void }) => Promise<MutateOutcome | null>
 >
 let row: ViewRow
 let live: ValueWriter
@@ -78,7 +78,7 @@ describe('assignValue', () => {
         propertyId: 'prop_tag',
         value: { kind: 'select', value: 'opt_blue' },
       },
-      { again: expect.any(Function) },
+      { retry: expect.any(Function) },
     )
   })
 
@@ -149,7 +149,7 @@ describe('assignValue', () => {
     )
     expect(mutate).toHaveBeenCalledWith(
       { op: 'setContext', path: row.path, contextId: 'ctx_areas', spaceIds: ['space1'] },
-      { again: expect.any(Function) },
+      { retry: expect.any(Function) },
     )
     mutate.mockClear()
     await settled()
@@ -162,7 +162,7 @@ describe('assignValue', () => {
     await assignValue(writer, row, propertyColumn(schema[0]), { kind: 'select', value: 'opt_blue' })
     row = { ...row, path: '/nexus/Notes/Moved.md' }
     apply.mockClear()
-    mutate.mock.calls[0][1]?.again?.()
+    mutate.mock.calls[0][1]?.retry?.()
     expect(apply).toHaveBeenCalledWith(
       'page1',
       { prop_tag: { kind: 'select', value: 'opt_blue' } },
@@ -258,7 +258,7 @@ describe('a landed Link value remembers the alias it shows', () => {
   it('a refused write’s Try Again remembers the alias once it lands', async () => {
     mutate.mockResolvedValueOnce(null)
     await assignValue(writer, row, column, link('[[Alpha|the notes]]'))
-    mutate.mock.calls[0][1]?.again?.()
+    mutate.mock.calls[0][1]?.retry?.()
     await settled()
     expect(remembered()).toHaveLength(1)
   })

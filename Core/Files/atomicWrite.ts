@@ -104,7 +104,7 @@ type StrictRead =
   | { kind: 'unreadable' }
   | { kind: 'corrupt'; why: string }
 
-export type StrictMiss = Exclude<StrictRead['kind'], 'ok'>
+type StrictMiss = Exclude<StrictRead['kind'], 'ok'>
 
 export async function readJsonStrictly(absPath: string): Promise<StrictRead> {
   let raw: string | null

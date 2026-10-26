@@ -7,7 +7,7 @@ import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { resolveFieldValue } from '../../Properties/fieldValue'
 import { resolveColumn } from '../Pipeline/columns'
-import { columnLabel } from '../../Properties/columnLabel'
+import { columnLabel } from '../../Properties/columnDisplay'
 import type { ValueContext } from '../../Properties/valueContext'
 
 /** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
