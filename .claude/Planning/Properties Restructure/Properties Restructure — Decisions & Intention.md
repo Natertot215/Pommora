@@ -158,6 +158,7 @@ Most decisions fix accidents or fold duplicated machinery into one shape; a few 
 - **P-5 [CONFIRMED]:** Pommora never leaves an empty property line: a property's or Context's key whose value is blank (bare, null, empty, only spaces, or an empty list) comes off the page on every write, tidy, and undo, reads as empty, and is filled by a restore or re-add; keys Pommora doesn't govern are left alone (Nathan, 10-23-2026: "spaces-only are empty and should be removed"; "Option B. That's what I've over-and-over again told you").
 - **P-6 [CONFIRMED]:** The refusal of a Space linking itself leaves, since no path produces that request (Nathan, 10-23-2026).
 - **P-7 [CONFIRMED]:** A banner that can't be assigned because its file can't be read says "That file could not be read." (Nathan, 10-23-2026), and the History Timeframe row keeps its planned description, "How long file history and the recovery stash are kept."
+- **P-8 [CONFIRMED]:** A list Pommora would only reorder lands as written: a write tidying another key and a Trash refill keep a Multi-Select's order, where a reconcile had moved its options ahead of the words no option names; a pick or a drag still writes its own order, and duplicates still collapse (Nathan, 10-25-2026: "Keep its order").
 
 ---
 
