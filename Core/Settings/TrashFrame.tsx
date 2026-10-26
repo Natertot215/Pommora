@@ -53,7 +53,7 @@ function TrashBody(): React.JSX.Element {
           <>
             <div className="trash-scroll scroll-fade">
               <div className="nav-list">
-                {visible.map((row) => (
+                {visible.map(({ row }) => (
                   <TrashRowView
                     key={row.bundlePath}
                     row={row}

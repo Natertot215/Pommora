@@ -155,10 +155,10 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - [x] Task 3-1
   - [x] Task 3-2
   - [x] Compaction Checkpoint
-- [ ] **Phase 4** — The Browser's Tree
-  - [ ] Task 4-1
-  - [ ] Task 4-2
-  - [ ] Review Checkpoint
+- [x] **Phase 4** — The Browser's Tree
+  - [x] Task 4-1
+  - [x] Task 4-2
+  - [x] Review Checkpoint
 - [ ] **Phase 5** — Both Skins
   - [ ] Task 5-1
   - [ ] Task 5-2
@@ -1062,7 +1062,7 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Write these `browser.test.ts` cases and watch them fail:
+- [x] Write these `browser.test.ts` cases and watch them fail:
   - **`treeRows`:**
     - It sets each row's `depth`.
     - `open` is null for a page.
@@ -1070,27 +1070,31 @@ A whole bundle still re-mints under its own name, as it does today.
   - **`outermostOf`:** a checked Set and its checked page act once, while siblings and look-alike prefixes (`A/B` vs `A/Bc`) both stay.
   - **Remembered Checks:**
     - A checked inner row stays checked when its container collapses, shows checked again when it reopens, and is left out of `picked` while hidden.
-    - A check whose row its reopened container no longer lists is dropped once that container's reply lands, and is kept while the reply is still pending.
-- [ ] Hold `open: ReadonlyMap<string, readonly BundleRow[]>` in state, mirrored in a ref for `refresh`. This map is the only record of what's open.
-  - **Opening:** `rowClick` on a closed container sets its entry to `[]` at once, so it reads open with its chevron turned. It then asks `bundles:children([address])` and replaces the entry with the reply, but only while the address is still open.
+    - A check whose row its reopened container no longer lists is kept when that container's reply lands, and dropped at the next listing.
+  - **Listing:** a listing asks once for every open address and keeps the checks its reply still lists; a reply that no longer lists a checked inner row drops its check; a container closed while the reply is in flight stays closed.
+  - **Closing:** a container's close forgets its open descendants two levels deep, and a late reply doesn't reopen it.
+  - **Clicks:** a `detail` of 0, a keyboard's click, discloses a container and toggles a page; a page's `detail === 2` leaves it checked whether or not it started checked.
+  - **Coverage:** a checked Set and its checked page reach `picked` once, as the Set.
+- [x] Hold `open: ReadonlyMap<string, readonly BundleRow[] | null>` in state, mirrored in a ref that holds the open map alone. `null` marks an entry whose reply is pending. This map is the only record of what's open.
+  - **Opening:** `rowClick` on a closed container sets its entry to `null` at once, so it reads open with its chevron turned. It then asks `bundles:children([address])` and sets the entry from the reply only while that entry is still `null`, so a late reply changes nothing, and a failed one leaves it pending for the next listing to ask again.
   - **Closing:** `rowClick` on an open container drops the address and every key `isAtOrUnder` it from `open`. Its rows' checks stay, under the rule below.
-  - **Refreshing:** after the listing lands, `refresh` keeps the open addresses that `treeRows` still reaches over the new top rows. It asks for all of them in one `bundles:children` call and sets the map from the reply, under `refresh`'s own `asks` rule.
-- [ ] Derive the rest:
+  - **Refreshing:** after the listing lands, `refresh` asks for every open address in one `bundles:children` call, under `refresh`'s own `asks` rule. It lays the reply over the open map as it stands then, keeps the entries `treeRows` still reaches over the new top rows, and sets the listing, the map, and the prune together.
+- [x] Derive the rest:
   - **Kept Checks:** `checkSet.ts`'s `retained` takes a predicate in place of a live set, and `PageReaderWindow.tsx:148` passes `(k) => live.has(k)`. The browser's predicate keeps a check in one of two cases:
     - its row is listed (a top row, or one in `open`);
-    - the nearest listed row above its address is a closed container, whose contents aren't loaded to say otherwise.
-  - **When Checks Are Pruned:** `retained` runs only when a listing lands: after `refresh` sets the top rows and its one `bundles:children` reply, and when a single opening's reply lands. A container that's just been opened holds `[]` until its reply arrives, and pruning then would drop the checks the reply is about to show. Collapsing changes no listing, so it prunes nothing.
+    - the nearest listed row above its address is closed or pending, its contents not loaded to say otherwise.
+  - **When Checks Are Pruned:** `retained` runs only where `refresh` lands, over its top rows and its one `bundles:children` reply. Opening and collapsing prune nothing. A stale hidden check is inert until then, since both skins read `checked` only for rows they show and every count comes from `picked`, and every op emits `storesChanged`.
   - **`visible`:** `treeRows(filterRows(rows, query), open)`.
   - **`found`:** the top-level match count, which ArchiveView publishes.
   - **`rowsInView`:** the `BundleRow`s of `visible`, memoized beside it.
   - **`picked`:** `outermostOf(checkedIn(checked, rowsInView, key))`.
   - **The menu's targets:** `outermostOf(actedOn(checked, rowsInView, row, key))`, so the right-click rule stays in `actedOn`, which `PageReaderWindow.tsx` also uses.
-- [ ] Add `rowClick(row, detail)`:
-  - A container discloses on `detail === 1`.
-  - A page toggles its check on `detail === 1`.
+- [x] Add `rowClick(row, detail)`, under `CalendarPicker.tsx`'s rule, so a keyboard's `el.click()` (`detail === 0`) reads as a single click:
+  - A container discloses on `detail < 2`.
+  - A page toggles its check on `detail < 2`.
   - A page on `detail === 2` makes sure it's checked.
-- [ ] Keep `toggle` for the checkbox.
-- [ ] Update the hook's docstring (`:189`) to name the tree, its open map, and `rowClick`.
+- [x] Keep `toggle` for the checkbox.
+- [x] Update the hook's docstring (`:189`) to name the tree, its open map, and `rowClick`.
 
 **AFTER**
 
@@ -1102,13 +1106,13 @@ A whole bundle still re-mints under its own name, as it does today.
 +  open: boolean | null
 +}
 +
++/** Each open container's inner rows, null while its reply is pending. */
++type OpenRows = ReadonlyMap<string, readonly BundleRow[] | null>
++
 +const discloses = (row: BundleRow): boolean => row.kind === 'set' || row.kind === 'collection'
 +
 +/** The rows in view: each top row, and beneath each open one the inner rows it lists, in order. */
-+export function treeRows(
-+  rows: readonly BundleRow[],
-+  open: ReadonlyMap<string, readonly BundleRow[]>,
-+): TreeRow[] {
++export function treeRows(rows: readonly BundleRow[], open: OpenRows): TreeRow[] {
 +  const out: TreeRow[] = []
 +  const walk = (row: BundleRow, depth: number): void => {
 +    const inner = discloses(row) ? open.get(row.bundlePath) : undefined
@@ -1122,17 +1126,40 @@ A whole bundle still re-mints under its own name, as it does today.
 +/** A batch acts on each item once: a row inside another the batch holds goes with it. */
 +export const outermostOf = (rows: readonly BundleRow[]): BundleRow[] =>
 +  rows.filter((r) => !rows.some((o) => o !== r && isAtOrUnder(r.bundlePath, o.bundlePath)))
++
++/** The checks a listing keeps: a listed row's, and one inside a closed or pending container, whose contents aren't loaded to say otherwise. */
++function keepsCheck(rows: readonly BundleRow[], open: OpenRows): (address: string) => boolean {
++  const listed = new Set(
++    [...rows, ...[...open.values()].flatMap((v) => v ?? [])].map((r) => r.bundlePath),
++  )
++  return (address) => {
++    if (listed.has(address)) return true
++    for (let at = relDirname(address); at; at = relDirname(at))
++      if (listed.has(at)) return !open.get(at)
++    return false
++  }
++}
 @@ useBundleBrowser @@
 -  visible: BundleRow[]
 +  visible: TreeRow[]
 +  found: number
 +  rowClick: (row: BundleRow, detail: number) => void
+ …
++  const disclose = async (address: string): Promise<void> => {
++    const was = held.current
++    if (was.has(address))
++      return openTo(new Map([...was].filter(([at]) => !isAtOrUnder(at, address))))
++    openTo(new Map(was).set(address, null))
++    const res = await dialer().ask('bundles:children', [address])
++    if (res.ok && held.current.get(address) === null)
++      openTo(new Map(held.current).set(address, res.value[0]))
++  }
 ```
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles/browser.test.ts` is green, with each new case red before its change.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles/browser.test.ts` is green, with each new case red before its change.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-2
 
@@ -1145,14 +1172,20 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Rewrite two existing cases to the new rule and watch them fail:
+- [x] Rewrite two existing cases to the new rule and watch them fail:
   - **`TrashFrame.test.tsx:382`:** a Restore All of two homeless rows and one homed row opens one picker. The two homeless rows restore to the picked place, and the homed row restores to its own home, its request sent with no destination. A dismissed picker restores nothing.
-  - **`ArchiveView.test.tsx:359`:** make its homeless row a disclosed inner item, and run its batch half as a mixed batch that asks once.
-- [ ] Replace `placesFor` with `DestinationKind` and three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
+  - **`ArchiveView.test.tsx:359`:** run its batch half as a mixed batch that asks once.
+- [x] Add `browser.test.ts` cases:
+  - a batch of a homeless Space and a homeless page asks once per kind and sends each its own kind's destination, and a dismissed second ask restores nothing;
+  - a right-click on a checked inner page under its checked, in-view parent Set offers the Set's destinations and restores the Set;
+  - an inner row's restore spends the Undo armed at its own address.
+- [x] Replace `placesFor` with `DestinationKind` and three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
+  - **`DestinationKind`:** `Extract<RestoreDestination, { id: string }>['kind']`, the request schema's own.
   - **`destinationKind(row)`:** `'context'` for a Space, otherwise `'container'`.
   - **`destinationTargets(kind)`:** that kind's targets, built once.
   - **`askDestination(kind)`:** pops `destinationRows` and answers a `RestoreDestination` or null.
-- [ ] Extend `many` with `destinationOf`, keeping its `owed`, and keep `restoreBatch`'s `owed` and its `finishOwed` argument as they stand. Remove `notifyReport`'s import from `browser.ts`, since its only use was `:335`.
+  - **`openMenu`:** its single-target logic reads `targets[0]`, after `outermostOf`, so the destination submenu and plain Restore act on the same item.
+- [x] Extend `many` with `destinationOf`, keeping its `owed`, and keep `restoreBatch`'s `owed` and its `finishOwed` argument as they stand. Remove `notifyReport`'s import from `browser.ts`, since its only use was `:335`.
 
 **AFTER**
 
@@ -1192,15 +1225,15 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles Core/Settings Core/Archive` is green, with each rewritten case red before its change.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles Core/Settings Core/Archive` is green, with each rewritten case red before its change.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates are clean.
-- [ ] A checked inner row survives a refresh while its parent stays open.
-- [ ] Closing a parent forgets its open descendants but keeps their checks, and a late reply doesn't reopen a closed row.
-- [ ] A covered batch acts once per item, and `spendUndo` keys on each row's own address.
+- [x] Gates are clean.
+- [x] A checked inner row survives a refresh while its parent stays open.
+- [x] Closing a parent forgets its open descendants but keeps their checks, and a late reply doesn't reopen a closed row.
+- [x] A covered batch acts once per item, and `spendUndo` keys on each row's own address.
 
 ---
 
@@ -1272,6 +1305,7 @@ A whole bundle still re-mints under its own name, as it does today.
 **CHANGE**
 
 - [ ] Rewrite these cases and watch them fail:
+  - **`:359`:** the mixed batch's homeless row is a disclosed inner page.
   - **`:159`:** a page row's click checks it, and its double-click opens the reader with the row checked, whether or not it started checked. The test sends the real click sequence (`detail` 1, then 2, then `dblclick`). For an inner page, the reader's trail is its row's trail, then the page.
   - **`:174`:** a Set row's click discloses its inner rows beneath it, indented, with the chevron open. A second click folds them, and a double-click leaves them open.
 - [ ] Add these cases:

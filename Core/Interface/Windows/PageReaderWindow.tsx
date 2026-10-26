@@ -145,7 +145,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
     if (!reportRefusal(list)) return
     setRows(list.value)
     const live = new Set(list.value)
-    setChecked((prev) => retained(prev, live))
+    setChecked((prev) => retained(prev, (k) => live.has(k)))
     setShown((prev) => (prev !== null && live.has(prev) ? prev : null))
   }, [target.id])
   useEffect(() => {

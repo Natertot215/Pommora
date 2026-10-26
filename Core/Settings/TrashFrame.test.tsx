@@ -112,6 +112,7 @@ describe('the Trash pane', () => {
   let listed: BundleRow[]
   let list: ReturnType<typeof vi.fn>
   let picked: string | null
+  let menu: ReturnType<typeof vi.fn>
   let mutated: ReturnType<typeof vi.fn>
 
   const titles = (): string[] =>
@@ -128,9 +129,10 @@ describe('the Trash pane', () => {
     picked = null
     mutated = vi.fn(async () => ({ ok: true, value: {} }))
     list = vi.fn(async () => ({ ok: true, value: listed }))
+    menu = vi.fn(async () => ({ ok: true, value: picked }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': list,
-      menu: vi.fn(async () => ({ ok: true, value: picked })),
+      menu,
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: mutated,
       'delete:facts': vi.fn(async () => ({
@@ -379,16 +381,29 @@ describe('the Trash pane', () => {
     expect(currentNotification()).toMatchObject({ segment: '2 Renamed' })
   })
 
-  it('a Restore All of rows with nowhere to go restores nothing and says only that', async () => {
-    await pickForBoth('restore', [
+  it('a Restore All asks once where its homeless rows go, sending only them there, and a dismissed ask restores nothing', async () => {
+    const rows = [
       row({ title: 'Alpha', homeResolves: false }),
       row({ title: 'Beta', homeResolves: false }),
-    ])
+      row({ title: 'Gamma' }),
+    ]
+    const answer = (value: string | null) => ({ ok: true, value })
+    menu.mockResolvedValueOnce(answer('restore')).mockResolvedValueOnce(answer(null))
+    await pickForBoth('restore', rows)
+    expect(menu).toHaveBeenCalledTimes(2)
     expect(mutated).not.toHaveBeenCalled()
-    expect(currentNotification()).toMatchObject({
-      message: '2 Pages had nowhere to go — restore those one at a time to choose where.',
-      tone: 'error',
+    menu.mockResolvedValueOnce(answer('restore')).mockResolvedValueOnce(answer('c1'))
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
+    expect(menu).toHaveBeenCalledTimes(4)
+    const to = { kind: 'container', id: 'c1' }
+    expect(mutated.mock.calls.map(([req]) => req)).toEqual([
+      { op: 'restore', bundlePath: rows[0].bundlePath, destination: to },
+      { op: 'restore', bundlePath: rows[1].bundlePath, destination: to },
+      { op: 'restore', bundlePath: rows[2].bundlePath },
+    ])
   })
 
   it('a Nexus switch during a batch stops it, posting no notice and telling the stores once', async () => {

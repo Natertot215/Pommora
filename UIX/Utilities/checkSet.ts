@@ -4,8 +4,8 @@ export function toggled<T>(prev: ReadonlySet<T>, key: T): ReadonlySet<T> {
   return next
 }
 
-export function retained<T>(prev: ReadonlySet<T>, live: ReadonlySet<T>): ReadonlySet<T> {
-  const next = new Set([...prev].filter((k) => live.has(k)))
+export function retained<T>(prev: ReadonlySet<T>, keep: (key: T) => boolean): ReadonlySet<T> {
+  const next = new Set([...prev].filter(keep))
   return next.size === prev.size ? prev : next
 }
 

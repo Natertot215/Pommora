@@ -50,6 +50,7 @@ describe('ArchiveView', () => {
   let list: ReturnType<typeof vi.fn>
   let mutated: ReturnType<typeof vi.fn>
   let picked: string | null
+  let menu: ReturnType<typeof vi.fn>
   let readable: boolean
   const tree = makeTree()
   const collection = tree.collections[0] as CollectionNode
@@ -103,9 +104,10 @@ describe('ArchiveView', () => {
     readable = true
     mutated = vi.fn(async () => ({ ok: true, value: {} }))
     list = vi.fn(async () => ({ ok: true, value: listed }))
+    menu = vi.fn(async () => ({ ok: true, value: picked }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'bundles:list': list,
-      menu: vi.fn(async () => ({ ok: true, value: picked })),
+      menu,
       mutate: mutated,
       'delete:facts': vi.fn(async () => ({
         ok: true,
@@ -356,7 +358,7 @@ describe('ArchiveView', () => {
     expect(currentNotification()).toBeNull()
   })
 
-  it('the bar’s Restore of a row whose place is gone asks where and restores there, and a batch restores the rest and says what had nowhere to go', async () => {
+  it('the bar’s Restore of a row whose place is gone asks where and restores there, and a mixed batch asks once, sending only that row there', async () => {
     listed = [archived('Gone', { homeResolves: false }), archived('Kept')]
     picked = collection.id
     await render()
@@ -375,13 +377,20 @@ describe('ArchiveView', () => {
     act(() => clearNotification())
     await check('Kept')
     mutated.mockClear()
+    menu.mockClear()
     await pressBar('Restore')
-    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: listed[1].bundlePath }]])
-    expect(currentNotification()).toMatchObject({
-      message:
-        'Restored 1 Page. 1 Page had nowhere to go — restore those one at a time to choose where.',
-      tone: 'error',
-    })
+    expect(menu).toHaveBeenCalledTimes(1)
+    expect(mutated.mock.calls).toEqual([
+      [
+        {
+          op: 'restore',
+          bundlePath: listed[0].bundlePath,
+          destination: { kind: 'container', id: collection.id },
+        },
+      ],
+      [{ op: 'restore', bundlePath: listed[1].bundlePath }],
+    ])
+    expect(currentNotification()?.message).toBe('Restored 2 Pages')
   })
 
   it('a search that hides the checked row withdraws the bar and shows no box', async () => {
