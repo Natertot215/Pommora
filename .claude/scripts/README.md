@@ -88,7 +88,7 @@ it holds each group's cases and the decision each proves. It takes the groups to
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 
 `Properties Drive/live-drive.mjs` drives the Properties Restructure's visible surfaces against the
-real app, in fifteen groups that follow the plan's phases. `MATRIX.md` beside it holds each group's
+real app, in fifteen groups. `MATRIX.md` beside it holds each group's
 cases and the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 15` — puts back what each group seeds, on debug port 9403, and exits
 non-zero on any failed check.
