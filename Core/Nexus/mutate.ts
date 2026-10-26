@@ -31,7 +31,7 @@ import { setCropOp } from '../Assets/setCrop'
 import { setBannerOp } from '../Pages/setBanner'
 import { setIconOp } from '../Pages/setIcon'
 import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
-import { setPagePropertyOp, setSpacePropertyOp } from '../Properties/setProperty'
+import { setPropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
   setContextOp,
@@ -197,8 +197,8 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setProperty':
       return isMarkdownFile(req.path)
-        ? setPagePropertyOp(ctx, req)
-        : underContexts(root, () => setSpacePropertyOp(ctx, req))
+        ? setPropertyOp(ctx, req)
+        : underContexts(root, () => setPropertyOp(ctx, req))
 
     // A put-back resolves a Context's key as a tag write does, so one reaching a Space or naming a Context holds the Contexts lock; a page property's takes only its page's lock.
     case 'putBack': {
