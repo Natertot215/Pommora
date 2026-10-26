@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 75 | 0 | 3 | 13 | 34 | 25 |
+| 76 | 0 | 3 | 13 | 35 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -64,6 +64,7 @@
 | [I-033](#I-033 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
 | [I-060](#I-060 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-25-2026 |
 | [I-074](#I-074 • A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own.) | A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own. | Low | Medium (TBD) | Shortcut | `57da5c1db` | **Created:** 10-22-2026<br>**Updated:** 10-25-2026 |
+| [I-076](#I-076 • An action refused for earlier work still owed runs that cleanup unseen, so files it lets go are never named and Try Again leaves the action undone.) | An action refused for earlier work still owed runs that cleanup unseen, so files it lets go are never named and Try Again leaves the action undone. | Low | Medium (TBD) | Shortcut | `0b6857ddb` | **Created:** 10-25-2026<br>**Updated:** 10-25-2026 |
 | [I-035](#I-035 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.) | An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again. | Low | Small (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-25-2026 |
 | [I-038](#I-038 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
 | [I-062](#I-062 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
@@ -800,6 +801,26 @@ Two of the three hand-authored files, `nexus.json` and `settings.json`, read thr
 
 Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatrixFile`, and the file-event arms for `state.json`, `homepage.json`, and `crops.json`) through `readAppFileKnown`. When a file answers `undefined`, the open posts one notice, as the board does: its section shows defaults, and its changes won't save until it reads. `collectRefs` pushes a `skipped` entry for a store that answers `undefined`, so the sweep holds. Leave `persist`'s quiet flag alone, since the notice at open already tells the user. **Your call:** `state.json` alone. Either it holds the open, because it seeds the order every surface reads, or it opens with defaults and the notice. Matrix, Homepage and crops follow the board.
 
+#### I-076 • An action refused for earlier work still owed runs that cleanup unseen, so files it lets go are never named and Try Again leaves the action undone.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Medium (TBD) | Shortcut | `0b6857ddb` | **Created:** 10-25-2026<br>**Updated:** 10-25-2026 |
+
+**Description**
+
+An action that lands on a name an earlier change still owes work for is refused with the "owed" answer (`OWED`). The shared action runner (`mutate`) then runs the cleanup once (`finishOwed`) and sends the action again. Two gaps follow.
+
+The cleanup's report is discarded. A file the cleanup can't safely rewrite is named once and let go rather than kept owed (B-5 of the Properties Restructure decisions), and that naming lives in the cleanup's reply. When the cleanup runs on an action's behalf, the runner ignores the reply, so those files are never named. They are named only when the person runs the cleanup directly, through the notice's Try Again on an earlier action.
+
+Try Again also does half the job. When the action is still refused after the cleanup, the notice's Try Again runs the cleanup alone. Once it succeeds, the person performs the original action again by hand.
+
+These places refuse with `OWED` and so reach this path: Context and Space create and rename, Context and Space restore from the Trash, the general check on a name a many-file change lands on, property create and rename, and option changes. The batch runner (`many`), the only caller that passes `quiet`, counts an owed refusal as a plain refusal: the batch reports "couldn't be restored" or "couldn't be deleted" for it and offers no Try Again.[^76]
+
+**Solution** [Proposed]
+
+The runner joins the cleanup's report into the action's own reply, so a let-go file is named in the action's notice without Try Again, and a still-owed refusal's Try Again re-runs the whole action, cleanup first and then the action. A batch learns which of its refusals were owed, runs the cleanup once, and offers Try Again for just those items. Whether the runner or each caller owns this is decided in that task; the change is app-wide, so it's tested across every caller above. Found while planning `.claude/Planning/Disclosable Bundles — Implementation Plan.md`, which avoided depending on it.
+
 #### I-035 • An in-app create or rename of a Space, or rename of a Context, leaves the pages already tagged with its new name unlinked until each is read again.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1371,3 +1392,4 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^73]: **I-073:** `Core/Properties/Schema/typeRows.tsx:256` (`rowsFor`), `Core/Properties/Schema/typeRows.tsx:68,159-178` (`DATE_ROW`, `dateRows`, the icon-led rows), `Core/Properties/Schema/typeRows.tsx:87-155` (`numberRows`, the icon-less rows), `Core/Properties/Schema/typeRows.tsx:180-196` (`linkRows`), `Core/Properties/Schema/typeRows.tsx:198-213` (`checkboxRows`), `Core/Properties/Schema/typeRows.tsx:216-237` (`fileRows`), `Core/Properties/Schema/formatRows.ts:12-39` and `Core/Properties/Schema/PropertyFrame.tsx:298-312` (the icon-led rows elsewhere), `Core/Properties/Schema/PropertyFrame.tsx:209-211,275-287` (`configure` writes the property and `saveColumnStyle` the view), `Core/Properties/typeDisplay.ts:12,30` (`styleLabel`, the column menu's "Format")
 [^74]: **I-074:** `Core/Properties/unassignProperty.ts:66-90` (`stashAndStrip`, the stash written on Remove), `Core/Properties/propertyStash.ts:19-45,78-86` (`stashedBlock`, `patchStashBlock`, `sweepStashes`), `Core/Properties/assignment.ts:26-83` (`refillStash`, the stash read and spent on re-adding), `Core/Settings/personalization.ts:42,189-190,261-263` (`HISTORY_DAYS`, `historyDays`, `archiveHistoryDays`, `SETTING_BOUNDS`), `Core/Settings/settings.ts:82-92` (`readFileHistoryConfig`), `Core/Pages/fileHistory.ts:195-206` (`sweepFileHistory`), `Core/Settings/frames.ts:649-663` (the History section's rows)
 [^75]: **I-075:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:~25-26,~60-65,~84,~145-155` (`PICK_DELAY_MS`, `pick`, `unpick`, the row's `onClick`), `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx:~29-30` (`PICK_WAIT`), `UIX/Pickers/CalendarPicker.tsx:~488-501`, `Core/MarkdownPM/Embeds/embedWidget.tsx:~652-654` (`embedClickSeat`), `Core/MarkdownPM/Gestures/pointerPath.ts:~50,~82-85`, `Core/MarkdownPM/decorations.ts:~717-721` (`pressMargin`), `Core/MarkdownPM/Tables/cellStatic.tsx:~558-565`, `Core/Navigation/TabItem.tsx:~63,~89-91,~110` (`pressedActive`), `Core/Interface/Header/DetailTitleHeader.tsx:~94-106,~132-136` (`openSearch`), `Core/Views/Bands/GroupBand.tsx:~141-142,~178-199,~249` (`outsideRename`, the glyph's handlers), `Core/Interface/RenamableTitle.tsx:~17,~26-27,~55` (`doubleClick`), `UIX/Fields/RenamableLabel.tsx:~52-58`, `Core/Navigation/TabBar.tsx:~137-149` (`onBarDoubleClick`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md:~116` (§Constraints › Rulings › Double-Click) and `:~876-879` (Task 4-1's `rowClick`).
+[^76]: **I-076:** `Core/Session/nexusSlice.ts:248-265` (`mutate`, the cleanup's discarded reply at `:256` and the notice's Try Again at `:261`), `Core/Session/nexusSlice.ts:290` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:255` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:153,174` (`createContextGroup`, `createSpace`), `Core/Trash/spend.ts:184` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Bundles/browser.ts:288-330` (`many`, its `quiet: true` call at `:314`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md`
