@@ -23,7 +23,8 @@ import {
 } from '../Properties/optionOps'
 import { emptyBundle, restoreTrashed } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
-import { openBundle, storeOf } from '../Bundles/bundle'
+import { openBundle } from '../Bundles/bundle'
+import { bundleAddressOf } from '../Bundles/layout'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
@@ -147,7 +148,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
           ? restoreArchived(root, opened.value, req.destination)
           : restoreTrashed(root, opened.value, req.destination)
       }
-      return storeOf(root, resolved.value)?.kind === 'archive'
+      return bundleAddressOf(root, resolved.value)?.store.kind === 'archive'
         ? inSettleTurn(root, restore)
         : underContexts(root, () => inSettleTurn(root, restore))
     }

@@ -8,13 +8,14 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `$BASE` | {count} | {MM-DD-YYYY hh:mm AM/PM} | {MM-DD-YYYY hh:mm AM/PM} |
+| `8148302cf` | 8,814 passed · 2 skipped | 10-26-2026 11:29 AM | {MM-DD-YYYY hh:mm AM/PM} |
 
 ### Context
 
 The Trash and each Collection's Archive keep every departed item as a bundle: a stamped folder holding the item, called its artifact, beside a `_record.json`. A trashed Set or Collection, or an archived Set, therefore reads as one row, and nothing inside it can be reached until the whole thing returns.
 
 The shared parts live in `Core/Bundles/`:
+- `layout.ts`, the stores' layout, the stamp, and the readers of a store path;
 - `bundle.ts`, the bundle;
 - `record.ts`, its record;
 - `placement.ts`, where a restore lands;
@@ -64,13 +65,14 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 | Concept | Description | Location |
 | ------- | ----------- | -------- |
-| `bundleAddressOf` • Function | The one reader of a store path: its bundle, its store, and the inner item it names. | `Core/Bundles/bundle.ts` |
-| `stampedSegment` • Function | The index of a path's stamped bundle segment, shared by `bundleAddressOf` and `originPathOf`. | `Core/Bundles/bundle.ts` |
+| `bundleAddressOf` • Function | The one reader of a store path: its bundle, its store, and the inner item it names. | `Core/Bundles/layout.ts` |
+| `stampedSegment` • Function | The index of a path's stamped bundle segment, shared by `bundleAddressOf` and `originPathOf`. | `Core/Bundles/layout.ts` |
 | `readBundleAt` • Function | An address's bundle, record, artifact, and inner item, read once, for `openBundle` and `listInner`. | `Core/Bundles/bundle.ts` |
 | `ContainerRecord` / `isContainerRecord` • Type, Function | A Set's or Collection's record, the kind that holds inner items. | `Core/Bundles/bundle.ts` |
 | `trailWithin` • Function | The container ids above a folder inside a container's bundle, outermost first. | `Core/Bundles/bundle.ts` |
 | `innerRecord` • Function | The record an inner item carries as its own. | `Core/Bundles/bundle.ts` |
 | `keptLinksUnder` • Function | The bundle's kept Link values, as its record stands at the op, whose page lies at or under an inner item. | `Core/Bundles/bundle.ts` |
+| `linkedPage` • Function | The page a Link value's page link resolves to in a page index, shared by `keptLinksUnder` and `parkLinks`. | `Core/Connections/linkValue.ts` |
 | `spendBundle` • Function | Spends what an op took: the whole bundle, or an inner item's share of it, its carried Link values off the bundle's record and its pages off the strip the bundle's delete still owes. | `Core/Bundles/bundle.ts` |
 | `listInner` • Function | One level of a container address's inner items, in the order the folder's sidecar keeps. | `Core/Bundles/bundle.ts` |
 | `InnerListing` • Type | What `listInner` answers: the bundle, its store and record, the folder, and each inner item with its record. | `Core/Bundles/bundle.ts` |
@@ -139,11 +141,11 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 #### Process Overview
 
-- [ ] **Phase 1** — Addressing Inside a Bundle
-  - [ ] Task 1-1
-  - [ ] Task 1-2
-  - [ ] Task 1-3
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — Addressing Inside a Bundle
+  - [x] Task 1-1
+  - [x] Task 1-2
+  - [x] Task 1-3
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — Filing Back
   - [ ] Task 2-1
   - [ ] Task 2-2
@@ -182,7 +184,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **CHANGE**
 
-- [ ] Rewrite `bundle.test.ts`'s `storeOf` cases as `bundleAddressOf` cases and add the new ones. Watch them fail.
+- [x] Rewrite `bundle.test.ts`'s `storeOf` cases as `bundleAddressOf` cases and add the new ones. Watch them fail.
   - **Answers a Bundle:** a bundle folder answers `{ bundle, store }`.
   - **Answers an Item:** a page or folder inside the artifact answers `item`.
   - **Answers Null:**
@@ -191,7 +193,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - a path outside both stores;
     - a suffixed folder without a stamp.
   - **Archive Paths:** an Archive path answers its Collection's store.
-- [ ] Add `stampedSegment` and `bundleAddressOf`, point `originPathOf` at `stampedSegment`, and move every `storeOf` caller below to `bundleAddressOf`. `openBundle`'s becomes `bundleAddressOf(root, abs)?.store` here, and Task 1-2 rewrites the function.
+- [x] Add `stampedSegment` and `bundleAddressOf`, point `originPathOf` at `stampedSegment`, and move every `storeOf` caller below to `bundleAddressOf`. `openBundle`'s becomes `bundleAddressOf(root, abs)?.store` here, and Task 1-2 rewrites the function.
 
 **AFTER**
 
@@ -218,8 +220,8 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  if (at === -1) return null
 +  const bundle = join(root, ...segs.slice(0, at + 1))
 +  if (segs.length === at + 1) return { bundle, store }
-+  const inner = segs.slice(at + 2)
-+  return inner.length && !inner.some(hiddenName) ? { bundle, store, item: abs } : null
++  const inner = segs.slice(at + 1)
++  return inner.length > 1 && !inner.some(hiddenName) ? { bundle, store, item: abs } : null
 +}
 +
 +/** The bundle is the folder wearing its mint's stamp, so a chain or artifact folder that only wears the suffix is never taken for it. */
@@ -256,9 +258,9 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles/bundle.test.ts` is green, with each new case red before its change.
-- [ ] `rg "storeOf" Core` finds nothing, and `npm run typecheck` is clean.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles/bundle.test.ts` is green, with each new case red before its change.
+- [x] `rg "storeOf" Core` finds nothing, and `npm run typecheck` is clean.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -271,7 +273,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **CHANGE**
 
-- [ ] Write these `bundle.test.ts` cases over a seeded trashed Collection `A ⟩ S ⟩ T ⟩ P.md`, and watch them fail:
+- [x] Write these `bundle.test.ts` cases over a seeded trashed Collection `A ⟩ S ⟩ T ⟩ P.md`, and watch them fail:
   - **Opening `S`:** its parent is `A.id`, and it has no trail.
   - **Opening `P.md`:**
     - its parent is `T.id` and its trail `[A.id, S.id]`;
@@ -284,8 +286,8 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - on an inner item, it strips exactly that item's carried values from the bundle's record, matched by `page`, `property`, and `value`;
     - on an inner item whose bundle's delete still owes, it takes the item's page paths off the note's `strip`, leaves the rest of the note as it was, and a note left owing nothing clears (`editNote` drops it through `owesAnything`);
     - on a whole bundle, it removes the bundle.
-- [ ] Add `identityOf` to `record.ts` and route `gatherContentRecord` through it.
-- [ ] Add `readBundleAt`, `ContainerRecord`, `isContainerRecord`, `trailWithin`, `innerRecord`, `keptLinksUnder`, `spendBundle`, and `OpenBundle.inner`, and rewrite `openBundle` over `readBundleAt`.
+- [x] Add `identityOf` to `record.ts` and route `gatherContentRecord` through it.
+- [x] Add `readBundleAt`, `ContainerRecord`, `isContainerRecord`, `trailWithin`, `innerRecord`, `keptLinksUnder`, `spendBundle`, and `OpenBundle.inner`, and rewrite `openBundle` over `readBundleAt`. Add `linkedPage` beside `readLinkText`, and route `keptLinksUnder` and `parkLinks` through it.
   - Only `openBundle`, `spendBundle`, and `listInner` (Task 3-1) are exported.
   - Every existing caller destructures `OpenBundle` unchanged.
 
@@ -307,72 +309,94 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  const { id, icon } = await identityOf(kind, abs)
 ```
 
+```Core/Connections/linkValue.ts diff
+@@ readLinkText @@
++/** The page a Link value's page link resolves to in `index`; an address, or a title `index` can't settle, names none. */
++export const linkedPage = (value: string, index: PageIndex): ConnPage | undefined => {
++  const link = readLinkText(value)
++  return link?.kind === 'page' ? index.resolve(link.title).page : undefined
++}
+```
+
+```Core/Trash/trashedCopies.ts diff
+@@ parkLinks @@
+-    const page = readLinkText(link.value)
+-    const bundle = page?.kind === 'page' ? index.resolve(page.title).page?.id : undefined
++    const bundle = linkedPage(link.value, index)?.id
+```
+
 ```Core/Bundles/bundle.ts diff
 @@ OpenBundle @@
 -/** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. */
+-export interface OpenBundle {
+-  abs: string
+-  store: BundleStore
+-  record: RecordFile
+-  artifact: string | null
+-}
 +/** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. An inner item opens as `inner`: the record the bundle's own derives for it, and the item as the artifact. */
- export interface OpenBundle {
-   abs: string
-   store: BundleStore
-   record: RecordFile
-   artifact: string | null
-+  inner: boolean
- }
++export type OpenBundle = { abs: string; store: BundleStore; record: RecordFile } & (
++  | { inner: true; artifact: string }
++  | { inner: false; artifact: string | null }
++)
 
 +type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
 +
 +const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
 +  isContainerKind(record.entity)
 +
-+/** An address read once: its bundle, store, record, and artifact, and the inner item it names, refused when nothing holds that item any more. */
++/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more. */
 +async function readBundleAt(root: string, abs: string) {
 +  const at = bundleAddressOf(root, abs)
 +  if (!at) return fault('Only a trash or archive record can be spent.')
 +  const record = await readRecord(at.bundle)
 +  if (!record) return fault('That record is unreadable.')
 +  const artifact = await bundleArtifact(at.bundle)
++  const { bundle, store, item } = at
++  if (!item) return ok({ bundle, store, record, artifact, inner: null })
 +  if (
-+    at.item &&
-+    (!isContainerRecord(record) || !artifact || !isAtOrUnder(at.item, artifact) || !(await pathExists(at.item)))
++    !isContainerRecord(record) ||
++    !artifact ||
++    !isAtOrUnder(item, artifact) ||
++    !(await pathExists(item))
 +  )
 +    return fail('not-found', 'That item is no longer there.')
-+  return ok({ ...at, record, artifact })
++  return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
 +}
 +
-+/** The container ids above `folder` inside a container's bundle, outermost first: the bundle's own trail and parent, the bundled container, and each folder down to `folder`; a folder without an id reads `undefined`. */
++/** The container ids above `folder` inside a container's bundle, outermost first: the bundle's own trail and parent, the bundled container, and each folder down to `folder`; null when one of them has no id. */
 +async function trailWithin(
 +  held: ContainerRecord,
 +  artifact: string,
 +  folder: string,
-+): Promise<(string | undefined)[]> {
++): Promise<string[] | null> {
 +  const steps = relative(artifact, folder).split('/').filter(Boolean)
 +  const inner = await Promise.all(
 +    steps.map((_, i) => sidecarId(join(artifact, ...steps.slice(0, i + 1)), 'set')),
 +  )
-+  return [
++  const ids = [
 +    ...(held.trail ?? []),
 +    ...(held.parent.kind === 'container' ? [held.parent.id] : []),
 +    held.id,
 +    ...inner,
 +  ]
++  return ids.every((id): id is string => id !== undefined) ? ids : null
 +}
 +
-+/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable where an id is missing, the bundle's targets, and its partial mark, since what the bundle recorded partly it recorded partly for each item it holds; no place, since the siblings it left are gone with it. */
++/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one, the bundle's targets, and its partial mark, since what the bundle recorded partly it recorded partly for each item it holds; no place, since the siblings it left are gone with it. */
 +async function innerRecord(
 +  held: ContainerRecord,
-+  trail: readonly (string | undefined)[],
++  trail: readonly string[] | null,
 +  item: string,
 +): Promise<Extract<RecordFile, { entity: 'page' | 'set' }>> {
 +  const entity = isMarkdownFile(item) ? 'page' : 'set'
 +  const { id, icon } = await identityOf(entity, item)
-+  const ids = trail as string[]
-+  const addressed = !trail.includes(undefined)
 +  return {
 +    entity,
 +    ...(id ? { id } : {}),
 +    ...(icon ? { icon } : {}),
-+    parent: addressed ? { kind: 'container', id: ids[ids.length - 1] } : { kind: 'unaddressable' },
-+    ...(addressed && ids.length > 1 ? { trail: ids.slice(0, -1) } : {}),
++    parent: trail ? { kind: 'container', id: trail[trail.length - 1] } : { kind: 'unaddressable' },
++    ...(trail && trail.length > 1 ? { trail: trail.slice(0, -1) } : {}),
 +    ...(held.targets ? { targets: held.targets } : {}),
 +    ...(held.partial ? { partial: true as const } : {}),
 +  }
@@ -390,8 +414,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  const files = await listMarkdownFiles(artifact)
 +  const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, store, f))))
 +  return held.links.filter((link) => {
-+    const target = readLinkText(link.value)
-+    const page = target?.kind === 'page' ? index.resolve(target.title).page : undefined
++    const page = linkedPage(link.value, index)
 +    return page !== undefined && isAtOrUnder(page.id, item)
 +  })
 +}
@@ -404,25 +427,26 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 -  return ok({ abs, store, record, artifact: await bundleArtifact(abs) })
 +  const read = await readBundleAt(root, abs)
 +  if (!read.ok) return read
-+  const { bundle, store, record, artifact, item } = read.value
-+  if (!item || !artifact || !isContainerRecord(record))
-+    return ok({ abs: bundle, store, record, artifact, inner: false })
-+  const own = await innerRecord(record, await trailWithin(record, artifact, dirname(item)), item)
-+  const links = await keptLinksUnder(root, store, record, artifact, item)
++  const { bundle, store, record, artifact, inner } = read.value
++  if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
++  const { item, held } = inner
++  const own = await innerRecord(held, await trailWithin(held, inner.artifact, dirname(item)), item)
++  const links = await keptLinksUnder(root, store, held, inner.artifact, item)
 +  return ok({ abs: bundle, store, record: links.length ? { ...own, links } : own, artifact: item, inner: true })
  }
 +
 +/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
 +export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
 +  const { abs, store, record, artifact, inner } = opened
-+  if (!inner || !artifact) return void (await removeOwn(abs))
++  if (!inner) return void (await removeOwn(abs))
 +  const gone = 'links' in record ? (record.links ?? []) : []
 +  const same = (l: unknown): boolean =>
 +    isPlainObject(l) && gone.some((g) => g.page === l.page && g.property === l.property && g.value === l.value)
 +  if (gone.length)
-+    await patchRecord(abs, (raw) => ({
-+      links: (Array.isArray(raw.links) ? raw.links : []).filter((l) => !same(l)),
-+    }))
++    await patchRecord(abs, (raw) => {
++      const links = (Array.isArray(raw.links) ? raw.links : []).filter((l) => !same(l))
++      return { links: links.length ? links : undefined }
++    })
 +  const bundle = relative(root, abs)
 +  const owing = Object.entries(await readNotes(root)).find(
 +    ([, e]) => e.kind === 'container' && e.bundle === bundle,
@@ -439,9 +463,9 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles` is green, with each new case red before its change.
-- [ ] `npm run typecheck` is clean.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles` is green, with each new case red before its change.
+- [x] `npm run typecheck` is clean.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -465,11 +489,11 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - An inner page restored alone leaves its container not back, so a finish still owed runs the container's strip over the old paths and appends what it takes to the container's record after the item has left.
   - The pulled page's path keys under the container resolve to nothing once it lands elsewhere. Its title key keeps resolving while it lands under its own title, or while a namesake answers it beside a stepped-aside landing ("Pasta (2)").
   - **Links:** an inner item that left would otherwise stay on that strip, and a later finish would strip a link to an item that's back. `spendBundle` takes the item's page paths off `strip` by its origin path when the item leaves (Task 1-2). The pull's own restore then re-spells live linkers to its landing through `returningCascade`, owing that re-spell through its own `relink` entry where a linker can't be written. This half belongs at spend time: `finishOwed` runs every `container` entry before any `relink` entry (`finishOwed.ts:91-92`), so a linker refused at the pull still reads the old key when the container finish runs.
-  - **Views:** the delete's owed `gone` edit names every Set under the container (`goneEdit`'s `within`, `configReach.ts:258-264`). `finishContainer` decides `back` for the container alone, so a Set pulled back out would lose its saved views at a later finish. `finishContainer` drops from a `gone` edit every id the tree holds again, the rule its own header states for the container, applied per Set. A restored Set, nested or not, is live and keeps its views. A Set emptied out of the bundle, or still in it, isn't, and its views are dropped. A move's entry (`within`) keeps its edit whole, since a moved Set is live by design.
+  - **Views:** the delete's owed `gone` edit names every Set under the container (`goneEdit`'s `within`, `configReach.ts:258-264`). `finishContainer` decides `back` for the container alone, so a Set pulled back out would lose its saved views at a later finish. `finishContainer` drops from a `gone` edit every id the tree holds again, the rule its own header states for the container, applied per Set whether or not the container is back. A restored Set, nested or not, is live and keeps its views. A Set emptied out of the bundle, or still in it, isn't, and the views' filters by it drop, even once the rest of the bundle is restored whole. A move's entry (`within`) keeps its edit whole, since a moved Set is live by design.
 
 **CHANGE**
 
-- [ ] Write these tests and watch them fail.
+- [x] Write these tests and watch them fail.
   - **`trashRecovery.test.ts`:**
     - A page pulled from a trashed Set restores to a given container, and the bundle still holds its sibling.
     - A kept Link value naming that page refills on its restore and leaves the bundle's record.
@@ -477,17 +501,17 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - An inner item restored with no destination is refused as homeless (`parent-gone`), and its bundle is left byte-identical.
     - A nested Set pulled out lands with its pages, and `refileLanded` carries what was archived from within it into the landing Collection's Archive.
     - **Owed Strip:** a page pulled from a trashed Set while the Set's delete still owes its strip, made owed by a linker whose write is refused, as `archive.test.ts:545-559` does. The note no longer lists the page's path. When the linker is writable again and Try Again runs, its `[[S/Pasta]]` link reads the page's landing and nothing is appended to the Set's record, both with the page landed under its own title and stepped aside ("Pasta (2)"), and with the linker still refused at the pull (its re-spell owed) and writable at the pull.
-    - **Owed View Reach:** Set `S`, holding Set `T`, pulled from a trashed Collection while the Collection's delete still owes its `gone` view edit. Once the finish runs, saved views filtering by `S` and by `T` are kept, and a view filtering by a Set still in the bundle is dropped.
+    - **Owed View Reach:** Set `S`, holding Set `T`, pulled from a trashed Collection while the Collection's delete still owes its `gone` view edit. Once the finish runs, saved views' filters by `S` and by `T` are kept, and a filter by a Set still in the bundle drops.
   - **`spend.test.ts`:**
     - Emptying an inner item disposes only that item, drops its pages' metadata, takes its carried values off the bundle's record, and leaves its owed note keyed by the item's own address.
-    - Emptying an inner Set while its bundle's delete still owes its `gone` view edit drops the views filtering by that Set once the finish runs.
+    - Emptying an inner Set while its bundle's delete still owes its `gone` view edit drops the views' filters by that Set once the finish runs.
   - **`archive.test.ts`:**
     - A page pulled from an archived Set restores by a plain move to a given container.
     - An inner item's Archive delete moves it into the Trash, and its Trash record's `archive` names the item's address.
-- [ ] Edit the spends, `fromArchive`, and `finishContainer`'s view drop as below.
+- [x] Edit the spends, `fromArchive`, and `finishContainer`'s view drop as below.
   - `spend.ts` and `archive.ts` lose their `removeOwn` import, and `delete.ts` keeps its own for `:119`.
   - `fromArchive` returns on a refused path before opening, so `resolved.value` names the address the item held.
-- [ ] Update `spendUndo`'s doc (`confirmations.ts:46`) to read "A bundle, or an inner item of one, restored or deleted from anywhere spends…".
+- [x] Update `spendUndo`'s doc (`confirmations.ts:46`) to read "A bundle, or an inner item of one, restored or deleted from anywhere spends…".
 
 **AFTER**
 
@@ -549,35 +573,38 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 ```Core/Nexus/finishOwed.ts diff
 @@ finishContainer @@
 -  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
-+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and a Set pulled back out of it keeps its own views; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
++  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets the tree doesn't hold again, whatever became of their container; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
    const tree = await liveTreeOf(root)
    const live = findContainerById(tree, id)
    const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
-+  const edit =
-+    e.edit?.kind === 'gone' && !e.within
-+      ? { ...e.edit, ids: e.edit.ids.filter((x) => !findContainerById(tree, x)) }
++  const perSet = e.edit?.kind === 'gone' && !e.within ? e.edit : null
++  const unlive = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
++  const edit = perSet
++    ? unlive.length
++      ? { ...perSet, ids: unlive }
++      : undefined
++    : back
++      ? undefined
 +      : e.edit
  …
    const viewed =
 -    !!e.edit &&
-+    !!edit &&
-+    (edit.kind !== 'gone' || edit.ids.length > 0) &&
-     !back &&
+-    !back &&
 -    add(reach, await reachConfig(root, e.edit, e.within && join(root, e.within)))
-+    add(reach, await reachConfig(root, edit, e.within && join(root, e.within)))
++    !!edit && add(reach, await reachConfig(root, edit, e.within && join(root, e.within)))
 ```
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Trash Core/Archive Core/Bundles` is green, with each new case red before its change.
-- [ ] Every existing whole-bundle case passes untouched.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Trash Core/Archive Core/Bundles` is green, with each new case red before its change.
+- [x] Every existing whole-bundle case passes untouched.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates are clean.
-- [ ] An inner item restored, emptied, or Archive-deleted leaves its bundle holding exactly its siblings, and the bundle record's `links` minus the item's.
-- [ ] A refused inner-item op leaves its bundle byte-identical.
+- [x] Gates are clean.
+- [x] An inner item restored, emptied, or Archive-deleted leaves its bundle holding exactly its siblings, and the bundle record's `links` minus the item's.
+- [x] A refused inner-item op leaves its bundle byte-identical.
 
 ---
 
@@ -805,22 +832,23 @@ A whole bundle still re-mints under its own name, as it does today.
 +): Promise<Result<InnerListing>> {
 +  const read = await readBundleAt(root, abs)
 +  if (!read.ok) return read
-+  const { bundle, store, record, artifact, item } = read.value
-+  const folder = item ?? artifact
++  const { bundle, store, record, artifact, inner } = read.value
++  const folder = inner?.item ?? artifact
 +  const listed = { bundle: relative(root, bundle), store, record, folder: folder && relative(root, folder), items: [] }
-+  if (!artifact || !folder || !isContainerRecord(record)) return ok(listed)
-+  const trail = await trailWithin(record, artifact, folder)
++  const held = inner?.held ?? (isContainerRecord(record) ? record : null)
++  if (!artifact || !folder || !held) return ok(listed)
++  const trail = await trailWithin(held, artifact, folder)
 +  const entries = (await listEntries(folder)).filter(
 +    ({ name, kind }) => !hiddenName(name) && (kind === 'dir' || isMarkdownFile(name)),
 +  )
 +  const items = await Promise.all(
 +    entries.map(async ({ name }) => {
 +      const at = join(folder, name)
-+      const own = await innerRecord(record, trail, at)
++      const own = await innerRecord(held, trail, at)
 +      return { address: relative(root, at), record: own, id: ('id' in own && own.id) || at, title: name }
 +    }),
 +  )
-+  const meta = (await readJsonObject(sidecarPath(folder, folder === artifact ? record.entity : 'set'))) ?? {}
++  const meta = (await readJsonObject(sidecarPath(folder, folder === artifact ? held.entity : 'set'))) ?? {}
 +  return ok({
 +    ...listed,
 +    items: [
@@ -1350,4 +1378,4 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Deviations
 
-- None yet.
+- **The Layout Leaf (Task 1-2):** `spendBundle`'s owed-note edit put `owed.ts` and `configReach.ts` on the live tree's load path, because `heldPages.ts` reached `bundle.ts` for `originPathOf` alone. The cycle left `configReach.test.ts`'s `liveTree` mock depending on import order. The stores' layout, the stamp, `stampedSegment`, `bundleAddressOf`, and `originPathOf` moved into a pure `Core/Bundles/layout.ts`, so loading the tree reaches nothing else in `Core/Bundles/`, and the baseline cycle through `record.ts` closed with it.

@@ -5,7 +5,15 @@ import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
-import { tempRoot, noModeBits, readJsonAt, seedNexus, seedSpaceSidecar } from '../Testing/hostFs'
+import {
+  noModeBits,
+  putJson,
+  readJsonAt,
+  refuseWrites,
+  seedNexus,
+  seedSpaceSidecar,
+  tempRoot,
+} from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as atomicWrite from '../Files/atomicWrite'
@@ -1759,6 +1767,110 @@ describe('emptyBundle — giving a bundle up for good', () => {
     )
     expect(r.ok).toBe(true)
     expect(await pages()).toEqual({})
+  })
+
+  describe('an inner item emptied out of its bundle', () => {
+    const PAGE_D = '01KVGMT8BFP350FZZXAMG1QDVD'
+    const sidecar = (): string => join(root, 'Other', '_pagecollection.json')
+    const located = (values: string[]) => [
+      {
+        id: 'view_1',
+        name: 'V',
+        type: 'table',
+        filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values }] },
+      },
+    ]
+    const owingViews = async (values: string[]): Promise<string> => {
+      await putJson(join(root, 'Notes', 'Daily', 'Sub', '_pageset.json'), { id: 'set-sub' })
+      await putJson(join(root, 'Notes', 'Daily', 'Sub', 'Deeper', '_pageset.json'), {
+        id: 'set-deeper',
+      })
+      await putJson(sidecar(), { id: 'col-other', views: located(values) })
+      await refreshTree(root)
+      const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar())
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+      refusal.mockRestore()
+      expect((await readJsonAt(sidecar())).views).toEqual(located(values))
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      return listed.bundlePath
+    }
+    beforeEach(async () => {
+      await seedNexus(root, {
+        defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+      })
+      await putJson(join(root, 'Other', '_pagecollection.json'), { id: 'col-other' })
+    })
+
+    it('disposes only that item, drops its pages’ metadata, takes its carried values off the bundle’s record, and leaves its owed note keyed by its own address', async () => {
+      await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+      await writeFile(
+        join(root, 'Other', 'Linker.md'),
+        `---\nID: ${PAGE_C}\nRelated: "[[Alpha]]"\n---\nlinker`,
+      )
+      await updatePageMetadata(root, PAGE_A, { icon: 'star' })
+      await updatePageMetadata(root, PAGE_B, { locked: true })
+      await refreshTree(root)
+      await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      const bundle = join(root, listed.bundlePath)
+      expect(await readRecord(bundle)).toMatchObject({
+        links: [{ page: PAGE_C, property: 'prop_related', value: '[[Alpha]]' }],
+      })
+      const taker = join(root, 'Other', 'Taker.md')
+      await writeFile(taker, `---\nID: ${PAGE_D}\nRelated: "[[Alpha]]"\n---\ntaker`)
+      await refreshTree(root)
+      refuseWrites('rewritePreservingTimes', (file) => file === taker)
+      const handed: string[] = []
+      const item = join(bundle, 'Daily', 'Alpha.md')
+      const r = await settledMutate(
+        root,
+        { op: 'emptyBundle', bundlePath: relative(root, item) },
+        {
+          ...nexusDeps,
+          trashToSystem: async (p) => {
+            handed.push(p)
+            await rm(p, { recursive: true })
+          },
+        },
+      )
+      vi.restoreAllMocks()
+      expect(r.ok).toBe(true)
+      expect(handed).toEqual([item])
+      expect((await readdir(join(bundle, 'Daily'))).sort()).toEqual(['Beta.md', '_pageset.json'])
+      const month = await readShard(root, shardOf(PAGE_A)!)
+      expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_B]: { locked: true } })
+      expect(await readRecord(bundle)).not.toHaveProperty('links')
+      expect((await readNotes(root))[relative(root, item)]).toMatchObject({
+        kind: 'container',
+        at: relative(root, item),
+        strip: ['Notes/Daily/Alpha.md'],
+      })
+    })
+
+    it('an inner Set emptied while its bundle’s delete still owes its view edit takes the views naming it once the finish runs', async () => {
+      const bundle = await owingViews(['set-sub', 'col-other'])
+      const sub = join(bundle, 'Notes', 'Daily', 'Sub')
+      expect(
+        (await settledMutate(root, { op: 'emptyBundle', bundlePath: sub }, nexusDeps)).ok,
+      ).toBe(true)
+      await finishOwed(root, nexusDeps)
+      expect((await readJsonAt(sidecar())).views).toEqual(located(['col-other']))
+    })
+
+    it('an inner Set emptied before its bundle comes back whole still takes the views naming it and its sub-Set, and keeps those naming what came back', async () => {
+      const bundle = await owingViews(['set-sub', 'set-deeper', 'set-daily', 'col-other'])
+      const sub = join(bundle, 'Notes', 'Daily', 'Sub')
+      const disposing = { ...nexusDeps, trashToSystem: (p: string) => rm(p, { recursive: true }) }
+      expect(
+        (await settledMutate(root, { op: 'emptyBundle', bundlePath: sub }, disposing)).ok,
+      ).toBe(true)
+      expect(await pathExists(join(root, sub))).toBe(false)
+      expect((await settledMutate(root, { op: 'restore', bundlePath: bundle }, nexusDeps)).ok).toBe(
+        true,
+      )
+      await finishOwed(root, nexusDeps)
+      expect((await readJsonAt(sidecar())).views).toEqual(located(['set-daily', 'col-other']))
+    })
   })
 
   it('a Set deleted to the system trash drops its pages’ entries with the delete, and keeps another page’s', async () => {

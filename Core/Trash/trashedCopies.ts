@@ -2,7 +2,7 @@
 
 import { join, relative } from '../Paths/posix'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { readLinkText } from '../Connections/linkValue'
+import { linkedPage } from '../Connections/linkValue'
 import { buildPageIndex, type PageIndex, pageKey } from '../Connections/pageIndex'
 import type { StrippedLink } from '../Nexus/cascade'
 import type { Frozen } from '../Nexus/governedRoot'
@@ -38,8 +38,7 @@ export async function parkLinks(root: string, links: StrippedLink[]): Promise<vo
   const index = buildPageIndex(await originPagesIn(root, { kind: 'trash' }))
   const parked = new Map<string, StrippedLink[]>()
   for (const link of links) {
-    const page = readLinkText(link.value)
-    const bundle = page?.kind === 'page' ? index.resolve(page.title).page?.id : undefined
+    const bundle = linkedPage(link.value, index)?.id
     if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
   }
   for (const [bundle, rows] of parked) await appendLinks(bundle, rows)

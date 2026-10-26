@@ -1,7 +1,7 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { bytesUnder, putJson, readJsonAt, refuseWrites, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import * as atomicWrite from '../Files/atomicWrite'
@@ -27,6 +27,8 @@ import type { Pushes } from '../Contract/bridge'
 import { renameProperty } from '../Properties/registryProperty'
 import { setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import type { TrashDeps } from './discard'
+import type { RestoreDestination } from '../Nexus/mutateRequest'
+import { readNotes } from '../Nexus/owed'
 
 let root: string
 const handed: string[] = []
@@ -877,5 +879,139 @@ describe('links come back with the page', () => {
     expect(await restore('Alpha')).toBeUndefined()
     expect((await frontmatter()).Related).toBeUndefined()
     expect(await rows()).toHaveLength(0)
+  })
+})
+
+describe('an item pulled out of a trashed bundle', () => {
+  const gamma = join('Plain', 'Gamma.md')
+  const GAMMA_ID = '01KVGMT8BFP350FZZXAMG1QDVD'
+  const INTO_JOURNAL: RestoreDestination = { kind: 'container', id: 'col-journal' }
+  const INTO_PLAIN: RestoreDestination = { kind: 'container', id: 'col-plain' }
+  const pull = (bundlePath: string, destination?: RestoreDestination) =>
+    settledMutate(
+      root,
+      { op: 'restore', bundlePath, ...(destination ? { destination } : {}) },
+      deps,
+    )
+  const bundleOf = async (title: string) => (await find(title)).bundlePath
+  const listed = async (...segs: string[]) => (await readdir(join(root, ...segs))).sort()
+  const owed = async () =>
+    Object.values(await readNotes(root)).find((e) => e.kind === 'container')?.strip ?? []
+
+  it('a page pulled from a trashed Set restores to a given container, and the bundle still holds its sibling', async () => {
+    await del('Journal/Daily', 'set')
+    const bundle = await bundleOf('Daily')
+    expect((await pull(join(bundle, 'Daily', 'Alpha.md'), INTO_JOURNAL)).ok).toBe(true)
+    expect((await frontmatter(join('Journal', 'Alpha.md'))).ID).toBe(ALPHA_ID)
+    expect(await listed(bundle, 'Daily')).toEqual(['Beta.md', '_pageset.json'])
+  })
+
+  it('a kept Link value naming that page refills on its restore and leaves the bundle’s record', async () => {
+    await linker(gamma, GAMMA_ID, 'Related: "[[Alpha]]"')
+    await del('Journal/Daily', 'set')
+    const bundle = await bundleOf('Daily')
+    const kept = { page: GAMMA_ID, property: 'prop_related', value: '[[Alpha]]' }
+    expect(await readRecord(join(root, bundle))).toMatchObject({ links: [kept] })
+    expect((await pull(join(bundle, 'Daily', 'Alpha.md'), INTO_JOURNAL)).ok).toBe(true)
+    expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
+    expect(await readRecord(join(root, bundle))).not.toHaveProperty('links')
+  })
+
+  it('the Set’s own later restore names nothing unrestored and writes nothing twice', async () => {
+    await linker(gamma, GAMMA_ID, 'Related: "[[Alpha]]"')
+    await del('Journal/Daily', 'set')
+    const bundle = await bundleOf('Daily')
+    expect((await pull(join(bundle, 'Daily', 'Alpha.md'), INTO_JOURNAL)).ok).toBe(true)
+    const r = await pull(bundle)
+    expect(r.ok).toBe(true)
+    expect(r.ok && r.value).not.toHaveProperty('unrestored')
+    expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
+    expect(await listed('Journal', 'Daily')).toEqual(['Beta.md', '_pageset.json'])
+    expect(await rows()).toHaveLength(0)
+  })
+
+  it('an inner item restored with no destination is refused as homeless, and its bundle is left byte-identical', async () => {
+    await del('Journal/Daily', 'set')
+    const bundle = await bundleOf('Daily')
+    const before = await bytesUnder(join(root, bundle))
+    const r = await pull(join(bundle, 'Daily', 'Alpha.md'))
+    expect(r.ok ? '' : r.error.message).toBe('The place this belonged to no longer exists.')
+    expect(await bytesUnder(join(root, bundle))).toEqual(before)
+  })
+
+  it('a nested Set pulled out lands with its pages, and carries what was archived from within it into the landing Collection’s Archive', async () => {
+    await putJson(join(root, 'Journal', 'Daily', 'Sub', '_pageset.json'), { id: 'set-sub' })
+    await page(join('Journal', 'Daily', 'Sub', 'Deep.md'), GAMMA_ID)
+    await page(join('Journal', 'Daily', 'Sub', 'Kept.md'), ALEPH_ID)
+    await refreshTree(root)
+    const archived = await settledMutate(
+      root,
+      { op: 'archive', path: 'Journal/Daily/Sub/Kept.md', kind: 'page' },
+      deps,
+    )
+    expect(archived.ok).toBe(true)
+    await del('Journal/Daily', 'set')
+    const bundle = await bundleOf('Daily')
+    expect((await pull(join(bundle, 'Daily', 'Sub'), INTO_PLAIN)).ok).toBe(true)
+    expect(await listed('Plain', 'Sub')).toEqual(['Deep.md', '_pageset.json'])
+    expect(await listed(bundle, 'Daily')).toEqual(['Alpha.md', 'Beta.md', '_pageset.json'])
+    expect(await listBundles(root, { kind: 'archive', id: 'col-journal' })).toEqual([])
+    const [refiled, ...rest] = await listBundles(root, { kind: 'archive', id: 'col-plain' })
+    expect(rest).toEqual([])
+    expect(refiled).toMatchObject({
+      artifactName: 'Kept.md',
+      record: { id: ALEPH_ID, parent: { kind: 'container', id: 'set-sub' }, trail: ['col-plain'] },
+    })
+  })
+
+  it.each([
+    [false, true],
+    [false, false],
+    [true, true],
+    [true, false],
+  ])('a page pulled while its Set’s delete still owes its strip comes off the strip, and Try Again keeps the linker on its landing (stepped aside %s, linker refused at the pull %s)', async (aside, refusedAtPull) => {
+    await linker(gamma, GAMMA_ID, 'Related: "[[Daily/Alpha]]"')
+    const refusal = refuseWrites('rewritePreservingTimes', (file) => file === join(root, gamma))
+    await del('Journal/Daily', 'set')
+    expect(await owed()).toContain('Journal/Daily/Alpha.md')
+    if (aside) await page(join('Journal', 'Alpha.md'), ALEPH_ID)
+    await refreshTree(root)
+    if (!refusedAtPull) refusal.mockRestore()
+    const bundle = await bundleOf('Daily')
+    const r = await pull(join(bundle, 'Daily', 'Alpha.md'), INTO_JOURNAL)
+    expect(r.ok && r.value.landedAs).toBe(aside ? 'Alpha (2)' : undefined)
+    expect(await owed()).not.toContain('Journal/Daily/Alpha.md')
+    refusal.mockRestore()
+    expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+    expect((await frontmatter(gamma)).Related).toBe(
+      aside ? '[[Journal/Alpha (2)|Alpha (2)]]' : '[[Journal/Alpha|Alpha]]',
+    )
+    expect(await readRecord(join(root, bundle))).not.toHaveProperty('links')
+  })
+
+  it('a Set pulled from a trashed Collection keeps its own and its sub-Set’s views once the Collection’s owed view edit runs, and a filter naming a Set still in the bundle drops', async () => {
+    await putJson(join(root, 'Journal', 'Daily', 'Sub', '_pageset.json'), { id: 'set-sub' })
+    await putJson(join(root, 'Journal', 'Weekly', '_pageset.json'), { id: 'set-weekly' })
+    const sidecar = join(root, 'Plain', '_pagecollection.json')
+    const located = (id: string) => ({
+      id: `view_${id}`,
+      name: id,
+      type: 'table',
+      filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: [id] }] },
+    })
+    const views = ['set-daily', 'set-sub', 'set-weekly'].map(located)
+    await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
+    const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar)
+    await del('Journal', 'collection')
+    refusal.mockRestore()
+    const entry = Object.values(await readNotes(root)).find((e) => e.kind === 'container')
+    expect(entry?.edit).toMatchObject({
+      ids: expect.arrayContaining(['set-daily', 'set-sub', 'set-weekly']),
+    })
+    const bundle = await bundleOf('Journal')
+    expect((await pull(join(bundle, 'Journal', 'Daily'), INTO_PLAIN)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+    const { filter, ...unfiltered } = views[2]
+    expect((await readJsonAt(sidecar)).views).toEqual([views[0], views[1], unfiltered])
   })
 })

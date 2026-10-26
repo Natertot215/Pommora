@@ -18,11 +18,12 @@ import {
   openBundle,
   type OpenBundle,
   originPagesOf,
-  originPathOf,
   pageIdsOf,
+  spendBundle,
 } from '../Bundles/bundle'
+import { originPathOf } from '../Bundles/layout'
 import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
-import { readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
+import { readJsonObject, relocate } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -106,7 +107,7 @@ export async function emptyBundle(
   if (archive) await dispose(archive.abs)
   await dropPageMetadata(root, pageIds)
   if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
-  await removeOwn(bundleAbs)
+  await spendBundle(root, opened.value)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, recorded)
   return ok({ cascade: owedReport(root, await finishEntry(root, id, deps)) })
@@ -129,7 +130,7 @@ export async function restoreTrashed(
     const { unrestored, dropped, ...said } = rebuilt.value
     await parkLinks(root, dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
-    await removeOwn(bundleAbs)
+    await spendBundle(root, bundle)
     return ok({ ...restored(unrestored), ...said })
   }
   if (!artifactAbs)
@@ -294,7 +295,7 @@ export async function restoreTrashed(
     recordedPartly(stored, title),
   )
   // The record outlives a partial re-tag, so what didn't come back stays written down.
-  if (!unspent.length) await removeOwn(bundleAbs)
+  if (!unspent.length) await spendBundle(root, bundle)
   const left = originOf(stored)
   if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
   return ok({

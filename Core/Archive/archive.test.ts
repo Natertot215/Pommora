@@ -1,7 +1,14 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, join } from '../Paths/posix'
-import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
+import {
+  bytesUnder,
+  putJson,
+  readJsonAt,
+  refuseWrites,
+  seedNexus,
+  tempRoot,
+} from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
 import * as record from '../Bundles/record'
@@ -23,7 +30,9 @@ import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
 import { minted, type MutateReply, type RestoreDestination } from '../Nexus/mutateRequest'
 import { writeExcludedFolders } from '../Settings/settings'
-import { type BundleStore, listBundles, mintBundle } from '../Bundles/bundle'
+import { readNotes } from '../Nexus/owed'
+import { listBundles, mintBundle } from '../Bundles/bundle'
+import type { BundleStore } from '../Bundles/layout'
 import { readRecord, writeRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { NO_DESTINATION } from '../Bundles/placement'
@@ -290,6 +299,56 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(await text('Notes', 'Linker.md')).toBe(`---\nID: ${PAGE_K}\n---\n[[Notes/Beta|Beta]]`)
   })
 
+  it('a page pulled from an archived Set restores by a plain move to a given container', async () => {
+    const bundlePath = await archive('Notes/Daily', 'set')
+    expect((await restore(join(bundlePath, 'Daily', 'Beta.md'), INTO_NOTES)).ok).toBe(true)
+    expect(await text('Notes', 'Beta.md')).toBe(BETA)
+    expect((await readdir(at(bundlePath, 'Daily'))).sort()).toEqual([
+      'Alpha.md',
+      'Gamma.md',
+      '_pageset.json',
+    ])
+  })
+
+  it('a nested Set pulled from an archived Set lands with its pages, and carries what was archived from within it into the landing Collection’s Archive', async () => {
+    const OTHER = '01KVGMT8BFP350FZZXAMG1QDO0'
+    const SUB = '01KVGMT8BFP350FZZXAMG1QDS0'
+    const PAGE_D = '01KVGMT8BFP350FZZXAMG1QDVD'
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
+    const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
+    await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), `---\nID: ${PAGE_D}\n---\ndeep\n`)
+    await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
+    await reseed()
+    await archive('Notes/Daily/Sub/Kept.md')
+    const bundlePath = await archive('Notes/Daily', 'set')
+    const r = await restore(join(bundlePath, 'Daily', 'Sub'), { kind: 'container', id: OTHER })
+    expect(r.ok).toBe(true)
+    expect((await readdir(at('Other', 'Sub'))).sort()).toEqual(['Deep.md', '_pageset.json'])
+    expect((await readdir(at(bundlePath, 'Daily'))).sort()).toEqual([
+      'Alpha.md',
+      'Beta.md',
+      'Gamma.md',
+      '_pageset.json',
+    ])
+    expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)).toEqual([bundlePath])
+    const [refiled, ...rest] = await listBundles(root, { kind: 'archive', id: OTHER })
+    expect(rest).toEqual([])
+    expect(refiled).toMatchObject({
+      artifactName: 'Kept.md',
+      record: { id: KEPT, parent: { kind: 'container', id: SUB }, trail: [OTHER] },
+    })
+  })
+
+  it('an inner item refused as homeless leaves its bundle byte-identical', async () => {
+    const bundlePath = await archive('Notes/Daily', 'set')
+    const before = await bytesUnder(at(bundlePath))
+    expect(message(await restore(join(bundlePath, 'Daily', 'Beta.md')))).toBe(
+      'The place this belonged to no longer exists.',
+    )
+    expect(await bytesUnder(at(bundlePath))).toEqual(before)
+  })
+
   it('a restore landing on a taken name steps aside and says so', async () => {
     const bundlePath = await archive('Notes/Daily/Beta.md')
     const created = await mutate(
@@ -452,6 +511,50 @@ describe('a delete from the Archive', () => {
     )
   })
 
+  it('an inner item’s delete takes it to the Trash, its record naming the address it held', async () => {
+    const archived = await archive('Notes/Daily', 'set')
+    const inner = join(archived, 'Daily', 'Beta.md')
+    const trashed = await trash(inner)
+    expect(trashed).toMatch(/^\.trash\/Notes\/Daily\/[^/]+__Beta\.md\.deleted$/)
+    expect(await text(trashed, 'Beta.md')).toBe(BETA)
+    expect(await readRecord(at(trashed))).toMatchObject({
+      entity: 'page',
+      id: PAGE_B,
+      archive: inner,
+    })
+    expect((await readdir(at(archived, 'Daily'))).sort()).toEqual([
+      'Alpha.md',
+      'Gamma.md',
+      '_pageset.json',
+    ])
+  })
+
+  it('an inner Set’s delete owes the view edit naming it and its sub-Sets', async () => {
+    const SUB = '01KVGMT8BFP350FZZXAMG1QDS0'
+    const DEEPER = '01KVGMT8BFP350FZZXAMG1QDS1'
+    await putJson(at('Notes', 'Daily', 'Sub', 'Deeper', '_pageset.json'), { id: DEEPER })
+    await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
+    const sidecar = at('Notes', '_pagecollection.json')
+    await putJson(sidecar, {
+      id: NOTES,
+      views: [
+        {
+          id: 'view_1',
+          name: 'V',
+          type: 'table',
+          filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: [SUB] }] },
+        },
+      ],
+    })
+    await reseed()
+    const archived = await archive('Notes/Daily', 'set')
+    refuseWrites('editJsonStrict', (file) => file === sidecar)
+    await trash(join(archived, 'Daily', 'Sub'), 'set')
+    const [owed] = Object.values(await readNotes(root))
+    const edit = owed?.kind === 'container' ? owed.edit : undefined
+    expect(edit?.kind === 'gone' && [...edit.ids].sort()).toEqual([SUB, DEEPER])
+  })
+
   it('refuses a kind its record doesn’t carry', async () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const r = await mutate({ op: 'delete', path: archived, kind: 'set' })
@@ -544,10 +647,7 @@ describe('a delete from the Archive', () => {
 
   it('a live page’s delete owes an archived linker whose strip failed, and its record stays whole', async () => {
     const linker = await archive('Notes/Linker.md')
-    const real = atomicWrite.rewritePreservingTimes
-    vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation((file, data) =>
-      file.startsWith(at(linker)) ? Promise.reject(new Error('refused')) : real(file, data),
-    )
+    refuseWrites('rewritePreservingTimes', (file) => file.startsWith(at(linker)))
     const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
     expect(r.ok && r.value.cascade).toMatchObject({
       warning: 'Couldn’t update 1 Item.',

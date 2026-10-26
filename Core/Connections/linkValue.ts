@@ -94,6 +94,12 @@ export function readLinkText(text: string): LinkTarget | null {
   return isValidLink(s) ? { kind: 'url', syntax: 'bare', url: s } : null
 }
 
+/** The page a Link value's page link resolves to in `index`; an address, or a title `index` can't settle, names none. */
+export const linkedPage = (value: string, index: PageIndex): ConnPage | undefined => {
+  const link = readLinkText(value)
+  return link?.kind === 'page' ? index.resolve(link.title).page : undefined
+}
+
 /** A bare heading names `own`, the page holding a value, and otherwise the document it's written in. */
 export const bareHeading = (heading: string, own?: ConnPage): ResolvedLink =>
   own ? { kind: 'page', page: own, heading } : { kind: 'self', heading }

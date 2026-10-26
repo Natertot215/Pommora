@@ -3,7 +3,7 @@
 import { dirname, join, relative } from '../Paths/posix'
 import { archiveStoreOf } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
-import { pathExists, relocate, removeOwn } from '../Files/atomicWrite'
+import { pathExists, relocate } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { archiveDirRel } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
@@ -20,9 +20,10 @@ import {
   contentPages,
   fileInto,
   originPagesOf,
-  originPathOf,
   type OpenBundle,
+  spendBundle,
 } from '../Bundles/bundle'
+import { originPathOf } from '../Bundles/layout'
 import { gatherContentRecord } from '../Bundles/record'
 import { placeRecord } from '../Bundles/placement'
 import { refileLanded } from './refile'
@@ -77,7 +78,7 @@ export async function restoreArchived(
   await machine().mkdir(dirname(targetAbs))
   await relocate(artifact, targetAbs)
   await writeOrder?.()
-  await removeOwn(bundle.abs)
+  await spendBundle(root, bundle)
   const title = finalTitle ?? finalName
   const { cascade } = await returningCascade(root, tree, back, title, {
     entity: record.entity,

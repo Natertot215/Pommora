@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, refuseWrites, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
 import { assignProperty } from '../Properties/assignment'
@@ -20,7 +20,6 @@ import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
-import * as atomicWrite from '../Files/atomicWrite'
 import { atomicWriteFile } from '../Files/atomicWrite'
 import { readNotes } from './owed'
 import { updatePageBody } from './page'
@@ -1301,15 +1300,9 @@ describe('a re-spell on the notes', () => {
   }
 
   beforeEach(() => {
-    const refusing =
-      (real: (file: string, data: string) => Promise<void>) =>
-      (file: string, data: string): Promise<void> =>
-        failing.some((f) => file.endsWith(f))
-          ? Promise.reject(new Error('refused'))
-          : real(file, data)
-    const { atomicWriteFile: wrote, rewritePreservingTimes: rewrote } = atomicWrite
-    vi.spyOn(atomicWrite, 'atomicWriteFile').mockImplementation(refusing(wrote))
-    vi.spyOn(atomicWrite, 'rewritePreservingTimes').mockImplementation(refusing(rewrote))
+    const refusing = (file: string): boolean => failing.some((f) => file.endsWith(f))
+    refuseWrites('atomicWriteFile', refusing)
+    refuseWrites('rewritePreservingTimes', refusing)
   })
   afterEach(() => {
     failing.length = 0

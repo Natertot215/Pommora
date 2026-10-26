@@ -3,7 +3,8 @@ import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
 import type { HostContext } from '../Contract/handlers'
-import { chainDir, fileStamp, stampedLeaf } from '../Bundles/bundle'
+import { chainDir } from '../Bundles/bundle'
+import { fileStamp, stampedLeaf } from '../Bundles/layout'
 import type { TrashMode } from './trashMode'
 
 export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {

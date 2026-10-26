@@ -39,7 +39,7 @@ import { personalizationOf } from '../Session/configSlice'
 import { storesChanged } from '../Session/nexusSlice'
 import { dialer } from '../Platform/dialer'
 import type { Personalization } from '../Settings/personalization'
-import type { BundleStore } from './bundle'
+import type { BundleStore } from './layout'
 import type { BundleCrumb, BundleRow } from './rows'
 
 const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`

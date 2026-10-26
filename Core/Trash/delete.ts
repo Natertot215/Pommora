@@ -26,7 +26,8 @@ import type { CascadeReport } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile } from './discard'
-import { contentPages, mintBundle, openBundle, originPathOf, pageIdsOf } from '../Bundles/bundle'
+import { contentPages, mintBundle, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
+import { originPathOf } from '../Bundles/layout'
 import {
   buildContextRecord,
   gatherContextEvidence,
@@ -36,25 +37,26 @@ import {
 import { gatherContentRecord, type RecordFile, writeRecord } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
-/** A delete naming an Archive bundle takes the item inside it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the bundle it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
+/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
 async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
   if (!isArchived(req.path)) return null
   const resolved = await resolveUnderRoot(root, req.path)
-  const opened = resolved.ok ? await openBundle(root, resolved.value) : null
-  if (!opened?.ok) return NOT_HELD
-  const { abs: bundle, store, record: held, artifact: abs } = opened.value
+  if (!resolved.ok) return NOT_HELD
+  const opened = await openBundle(root, resolved.value)
+  if (!opened.ok) return NOT_HELD
+  const { store, record: held, artifact: abs } = opened.value
   if (store.kind !== 'archive' || !abs) return NOT_HELD
   if ((held.entity !== 'page' && held.entity !== 'set') || held.entity !== req.kind) return NOT_HELD
   const pages = await contentPages(held.entity, abs)
   const sets = held.entity === 'set' ? await archivedSetIds(root, abs) : []
   return ok({
-    bundle,
+    opened: opened.value,
     abs,
     origin: join(root, originPathOf(root, store, abs)),
     under: pages.map((file) => relative(root, file)),
     keys: pages.map((file) => originPathOf(root, store, file)),
     edit: sets.length ? goneContainers(sets) : null,
-    record: { ...held, archive: relative(root, bundle) },
+    record: { ...held, archive: relative(root, resolved.value) },
   })
 }
 /** A Context's or Space's delete note: every title it still owed and the current one leave, with the bundle a finish moves the folder into. */
@@ -131,7 +133,7 @@ export async function deleteOp(
       else await machine().lock(abs, () => discardFile(root, abs, deps))
       moved = true
       if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
-      if (from) await removeOwn(from.bundle)
+      if (from) await spendBundle(root, from.opened)
       else await dropDeparture(root, before, req.kind, req.path)
       await dropPageMetadata(root, pageIds)
     }

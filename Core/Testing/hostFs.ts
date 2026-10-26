@@ -1,6 +1,9 @@
 import { mkdtempSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { vi } from 'vitest'
+import * as atomicWrite from '../Files/atomicWrite'
+import { listFilesRecursive } from '../Files/walk'
 import { contextsDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { CONTEXTS_REGISTRY_REL, NEXUS_CONFIG_FILES, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
@@ -23,6 +26,29 @@ export const readJsonAt = async <T = Record<string, unknown>>(file: string): Pro
 export const putJson = async (file: string, value: unknown): Promise<void> => {
   await mkdir(dirname(file), { recursive: true })
   await writeFile(file, JSON.stringify(value, null, 2))
+}
+
+/** Each file under `dir` with its text, so a refused op shows the folder left byte-identical. */
+export const bytesUnder = async (dir: string): Promise<Record<string, string>> =>
+  Object.fromEntries(
+    await Promise.all(
+      (await listFilesRecursive(dir)).map(async (f) => [f, await readFile(f, 'utf8')]),
+    ),
+  )
+
+const writers = {
+  atomicWriteFile: atomicWrite.atomicWriteFile,
+  rewritePreservingTimes: atomicWrite.rewritePreservingTimes,
+  editJsonStrict: atomicWrite.editJsonStrict,
+}
+
+/** Refuses `name`'s write to each file `refuses` picks, and hands every other file to the real write. */
+export const refuseWrites = (name: keyof typeof writers, refuses: (file: string) => boolean) => {
+  const real = writers[name] as (file: string, ...rest: never[]) => Promise<unknown>
+  return vi
+    .spyOn(atomicWrite, name)
+    .mockImplementation(((file: string, ...rest: never[]) =>
+      refuses(file) ? Promise.reject(new Error('refused')) : real(file, ...rest)) as never)
 }
 
 /** A Space the tree holds: its sidecar, and its Context in the Context list when the list doesn't name it. */
