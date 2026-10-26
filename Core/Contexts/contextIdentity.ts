@@ -72,6 +72,6 @@ export function spaceIdentityOf(tree: NexusTree | null, id: string): SpaceIdenti
   return identityOf(tree).spaces.get(id)
 }
 
-export function spacesByIdOf(tree: NexusTree): ReadonlyMap<string, SpaceIdentity> {
+export function spacesByIdOf(tree: NexusTree | null): ReadonlyMap<string, SpaceIdentity> {
   return identityOf(tree).spaces
 }
