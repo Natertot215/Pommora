@@ -34,7 +34,6 @@ import {
   layoutOf,
   originPathOf,
   stampedLeaf,
-  storedAtOf,
 } from './layout'
 
 /** A store reads as a shadow of the nexus, so a stored item shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
@@ -50,7 +49,7 @@ export async function chainDir(
   return dir
 }
 
-/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name, stamped, ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
+/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
 export async function mintBundle(
   root: string,
   store: BundleStore,
@@ -59,8 +58,7 @@ export async function mintBundle(
 ): Promise<string> {
   const dir = await chainDir(root, store, absSource)
   const base = `${basename(absSource)}${layoutOf(store).suffix}`
-  const own =
-    leaf !== undefined && holdsName(leaf) && storedAtOf(leaf) !== null && leaf.endsWith(`__${base}`)
+  const own = leaf !== undefined && holdsName(leaf) && leaf.endsWith(`__${base}`)
   if (own && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
   const stamp = fileStamp()
   for (let n = 0; ; n++) {
@@ -74,16 +72,29 @@ export async function bundleArtifact(bundleDir: string): Promise<string | null> 
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
 
-/** Files `artifact` into a bundle minted in `to` for `origin`, `leaf` asked back, its record written ahead; a failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. */
+/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
 export async function fileInto(
   root: string,
   to: BundleStore,
   origin: string,
   artifact: string,
   record: RecordFile | RawRecord,
-  leaf?: string,
-): Promise<string> {
-  const bundle = await mintBundle(root, to, origin, leaf)
+  at?: string,
+): Promise<{ address: string; landed: string }> {
+  const held = at === undefined ? null : bundleAddressOf(root, join(root, at))
+  if (held?.item) {
+    const landed = join(dirname(held.item), basename(artifact))
+    if ((await pathExists(dirname(held.item))) && !(await pathExists(landed))) {
+      await relocate(artifact, landed)
+      return { address: relative(root, landed), landed }
+    }
+  }
+  const bundle = await mintBundle(
+    root,
+    to,
+    origin,
+    held && !held.item ? basename(held.bundle) : undefined,
+  )
   try {
     await writeRecord(bundle, record)
     await relocate(artifact, join(bundle, basename(artifact)))
@@ -91,23 +102,22 @@ export async function fileInto(
     await removeOwn(bundle)
     throw e
   }
-  return bundle
+  return { address: relative(root, bundle), landed: join(bundle, basename(artifact)) }
 }
 
-/** Moves a bundle's artifact into `to`, under the chain it left from, with its raw record spread with `extra`, and removes the emptied bundle; `leaf` asks for that bundle name back. */
+/** Moves a bundle's artifact into `to`, under the chain it left from, with its raw record spread with `extra`, and removes the emptied bundle, asking its name back where the store takes it. */
 export async function moveIntoStore(
   root: string,
   fromBundle: string,
   to: BundleStore,
   extra: RawRecord,
-  leaf?: string,
 ): Promise<void> {
   const from = bundleAddressOf(root, fromBundle)?.store
   const artifact = await bundleArtifact(fromBundle)
   const raw = await readRawRecord(fromBundle)
   if (!from || !artifact || !raw) return
   const origin = join(root, originPathOf(root, from, artifact))
-  await fileInto(root, to, origin, artifact, { ...raw, ...extra }, leaf)
+  await fileInto(root, to, origin, artifact, { ...raw, ...extra }, relative(root, fromBundle))
   await removeOwn(fromBundle)
 }
 

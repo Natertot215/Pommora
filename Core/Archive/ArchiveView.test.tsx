@@ -287,7 +287,7 @@ describe('ArchiveView', () => {
           op: 'archive',
           path: 'Notes/Alpha.md',
           kind: 'page',
-          leaf: '2026-10-20T12-00-00-000Z__A.md.archived',
+          at: '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__A.md.archived',
         },
       ],
       [
@@ -295,7 +295,7 @@ describe('ArchiveView', () => {
           op: 'archive',
           path: 'Notes/Ideas/Beta.md',
           kind: 'page',
-          leaf: '2026-10-20T12-00-00-000Z__B.md.archived',
+          at: '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__B.md.archived',
         },
       ],
     ])

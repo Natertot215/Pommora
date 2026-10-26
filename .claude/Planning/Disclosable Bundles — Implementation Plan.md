@@ -146,10 +146,10 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - [x] Task 1-2
   - [x] Task 1-3
   - [x] Review Checkpoint
-- [ ] **Phase 2** — Filing Back
-  - [ ] Task 2-1
-  - [ ] Task 2-2
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — Filing Back
+  - [x] Task 2-1
+  - [x] Task 2-2
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Listing Inner Items
   - [ ] Task 3-1
   - [ ] Task 3-2
@@ -629,17 +629,17 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Write these tests and watch them fail.
+- [x] Write these tests and watch them fail.
   - **`bundle.test.ts`:** `fileInto` by address:
     - An inner item's address re-nests into its standing folder.
-    - A taken name, a gone folder, or another store's address mints a fresh bundle.
+    - A taken name or a gone folder mints a fresh bundle, and a standing folder takes the item whichever store `to` names.
     - A whole bundle's address re-mints under its leaf.
   - **`archive.test.ts`:** a page pulled from an archived Set and restored is put back by its Undo inside the Set's bundle, at its folder.
-- [ ] Rewrite the existing tests that pass a `leaf`:
+- [x] Rewrite the existing tests that pass a `leaf`:
   - **`archive.test.ts:219-247`:** the `rearchive` helper passes the full bundle address, and the `../name` case stays.
   - **`ArchiveView.test.tsx:290,298`:** expect `at:` with the full bundle path.
   - **`mutateRequest.test.ts:19`:** use `at: 7`.
-- [ ] Edit the code as below:
+- [x] Edit the code as below:
   - `archiveOp` answers `bundled: { bundlePath: filed.address }`, and `archive.ts` loses its `relative` import.
   - `refile.ts:38` drops its last argument, and with it `refile.ts`'s `basename` import.
   - `rearchive` sends `at`, and `browser.ts` loses its `basename` import.
@@ -650,7 +650,7 @@ A whole bundle still re-mints under its own name, as it does today.
 ```Core/Bundles/bundle.ts diff
 @@ fileInto @@
 -/** Files `artifact` into a bundle minted in `to` for `origin`, `leaf` asked back, its record written ahead; a failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. */
-+/** Files `artifact` into `to` back at `at`, the address it held: into the folder it sat in while that folder still stands inside a bundle of `to` and holds nothing of its name, else into a bundle minted for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle; a failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
++/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
  export async function fileInto(
    root: string,
    to: BundleStore,
@@ -663,7 +663,7 @@ A whole bundle still re-mints under its own name, as it does today.
 +  at?: string,
 +): Promise<{ address: string; landed: string }> {
 +  const held = at === undefined ? null : bundleAddressOf(root, join(root, at))
-+  if (held?.item && layoutOf(held.store).dir === layoutOf(to).dir) {
++  if (held?.item) {
 +    const landed = join(dirname(held.item), basename(artifact))
 +    if ((await pathExists(dirname(held.item))) && !(await pathExists(landed))) {
 +      await relocate(artifact, landed)
@@ -716,7 +716,7 @@ A whole bundle still re-mints under its own name, as it does today.
 ```Core/Bundles/browser.ts diff
 @@ rearchive @@
 -/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, under the bundle name it left, so it keeps its Archived date; one renamed or stepped aside since takes a fresh stamp, since that name no longer fits it. */
-+/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, back at the address it left: inside the Set it was pulled from while that Set's bundle stands, else under the bundle name it left, so it keeps its Archived date; one renamed or stepped aside since takes a fresh stamp, since that name no longer fits it. */
++/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, back at the address it left. */
  …
 -      await mutate({ op: 'archive', path, kind: archivedKind(row), leaf: basename(row.bundlePath) })
 +      await mutate({ op: 'archive', path, kind: archivedKind(row), at: row.bundlePath })
@@ -724,13 +724,13 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Bundles Core/Archive Core/Nexus/mutateRequest.test.ts` is green.
-- [ ] `rg -w "leaf" Core/Bundles Core/Archive Core/Nexus/mutateRequest.ts` finds only `mintBundle`'s own parameter, `placement.ts`'s local `leaf` helper (`:166-180`), and `refile.test.ts`'s local variable (`:446-450`).
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Bundles Core/Archive Core/Nexus/mutateRequest.test.ts` is green.
+- [x] `rg -w "leaf" Core/Bundles Core/Archive Core/Nexus/mutateRequest.ts` finds only `mintBundle`'s own parameter, `placement.ts`'s local `leaf` helper (`:166-180`), and `refile.test.ts`'s local variable (`:446-450`).
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
-**TASK:** Make the Archive delete's Undo, a Trash restore to `{ kind: 'archive' }`, file back through `fileInto` at the address the Trash record's `archive` names.
+**TASK:** Make the Archive delete's Undo, a Trash restore to `{ kind: 'archive' }`, file back through `fileInto` at the address the Trash record's `archive` names, rebased onto the Archive its innermost live ancestor's Collection keeps now. Placement's `dir` is the one source of where the Undo files.
 
 **NOW:**
 - **`placeRecord`'s archive branch** (`placement.ts:203-223`) reads `stored.archive` through `bundleAddressOf`, as of Task 1-1, which already admits an inner item's address.
@@ -738,10 +738,11 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **CHANGE**
 
-- [ ] Write these `archive.test.ts` cases and watch them fail:
+- [x] Write these `archive.test.ts` cases and watch them fail:
   - An inner item Archive-deleted, then Undone, returns inside its Set's bundle, with its Link values refilled as in the whole-bundle case at `:481`.
   - The same case with the Set restored in between returns as its own Archive row.
-- [ ] Edit as below.
+  - With a live Set above the archived one moved into another Collection, the Undo returns it inside its Set's bundle carried into that Collection's Archive, and with that Set restored in between, as its own row there.
+- [x] Edit as below.
   - `spend.ts` loses its `basename` import, whose only use was `:198`.
   - Update the `record.ts` `archive` doc (`:56`) and the `restoreDestination` doc at `mutateRequest.ts:48`.
 
@@ -750,7 +751,7 @@ A whole bundle still re-mints under its own name, as it does today.
 ```Core/Trash/spend.ts diff
 @@ restoreTrashed @@
 -    // The Undo of a delete from the Archive lands in a bundle minted under the name its record keeps, reconciled as any Trash restore, and nothing lands in the tree.
-+    // The Undo of a delete from the Archive files back at the address its record keeps, reconciled as any Trash restore, and nothing lands in the tree.
++    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
      if (into && (record.entity === 'page' || record.entity === 'set')) {
        const origin = join(root, originPathOf(root, store, artifactAbs))
        const { archive, links, targets, partial, ...filed } = record
@@ -758,7 +759,31 @@ A whole bundle still re-mints under its own name, as it does today.
 -        await fileInto(root, into, origin, artifactAbs, filed, basename(dir)),
 -        finalName,
 -      )
-+      targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, archive)).landed
++      targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
+```
+
+```Core/Bundles/placement.ts diff
+@@ placeRecord @@
+     // The address it names may be gone, so no realpath answers for it; `join` collapses any `..` before the store's prefix test.
+-    const into = bundleAddressOf(root, join(root, stored.archive))?.store
+-    if (into?.kind !== 'archive') return fault(NO_DESTINATION)
++    const named = bundleAddressOf(root, join(root, stored.archive))?.store
++    if (named?.kind !== 'archive') return fault(NO_DESTINATION)
++    const origin = originOf(stored)
++    const live = origin
++      ? [...origin.trail, origin.parent]
++          .reverse()
++          .map((id) => containerTrailById(tree, id))
++          .find((held) => held !== null)
++      : undefined
++    const into = archiveStoreOf(live?.[0].id) ?? named
+ …
+       placement: {
+-        dir: stored.archive,
++        dir: join(
++          layoutOf(into).dir,
++          relative(join(root, layoutOf(named).dir), join(root, stored.archive)),
++        ),
 ```
 
 ```Core/Bundles/record.ts diff
@@ -768,14 +793,14 @@ A whole bundle still re-mints under its own name, as it does today.
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Archive Core/Trash Core/Bundles Core/Interface/Confirm` is green, with each new case red before its change.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npx vitest run Core/Archive Core/Trash Core/Bundles Core/Interface/Confirm` is green, with each new case red before its change.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Gates are clean.
-- [ ] Both Undo paths re-nest an inner item while its folder stands, and fall back to a bundle of its own otherwise.
-- [ ] A whole bundle's Undo keeps its leaf (`archive.test.ts:219-247`, `:481-527`), and refile's moves keep their bundle names.
+- [x] Gates are clean.
+- [x] Both Undo paths re-nest an inner item while its folder stands, and fall back to a bundle of its own otherwise.
+- [x] A whole bundle's Undo keeps its leaf (`archive.test.ts:219-247`, `:481-527`), and refile's moves keep their bundle names.
 
 ---
 

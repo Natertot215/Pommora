@@ -1,7 +1,7 @@
 // Every archived record stays filed in the Archive of the Collection its origin sits in now, its trail current. One carry, `refileArchived`, serves each landing that moves a Set: the settle's comparison of trees and a restore.
 // The open pass, `settleArchives`, re-files each record a Set moved while Pommora was closed left misfiled, and moves an Archive whose Collection exists nowhere into the Trash, recoverable.
 
-import { basename, join } from '../Paths/posix'
+import { join } from '../Paths/posix'
 import { isPlainObject } from '../Contract/validators'
 import { errText } from '../Contract/result'
 import { isContainerKind } from '../Nexus/entities'
@@ -35,7 +35,7 @@ async function refile(
   const into = archiveStoreOf(to)
   if (!into) return
   const bundle = join(root, bundlePath)
-  if (from !== to) await moveIntoStore(root, bundle, into, { trail }, basename(bundle))
+  if (from !== to) await moveIntoStore(root, bundle, into, { trail })
   else if (!sameItems(stored, trail)) await patchRecord(bundle, () => ({ trail }))
 }
 

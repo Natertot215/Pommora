@@ -1,11 +1,18 @@
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { newContentId } from '../Nexus/ids'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
-import { listBundles, mintBundle, type OpenBundle, openBundle, spendBundle } from './bundle'
+import {
+  fileInto,
+  listBundles,
+  mintBundle,
+  type OpenBundle,
+  openBundle,
+  spendBundle,
+} from './bundle'
 import { patchRecord, readRawRecord, writeRecord } from './record'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
@@ -233,5 +240,70 @@ describe('spendBundle', () => {
   it('removes a whole bundle', async () => {
     await spendBundle(root, await opened(inBundle()))
     expect(await stat(inBundle()).catch(() => null)).toBeNull()
+  })
+})
+
+describe('fileInto', () => {
+  const HELD = `${BUNDLE_REL}/A/S/T/P.md`
+  const live = (): string => join(root, 'Live', 'P.md')
+  const file = async (at: string, to: typeof TRASH | typeof ARCHIVE = TRASH) => {
+    await mkdir(join(root, 'Live'), { recursive: true })
+    await writeFile(live(), 'back')
+    return fileInto(root, to, live(), live(), { entity: 'page', parent: { kind: 'root' } }, at)
+  }
+  const minted = async (
+    filed: { address: string; landed: string },
+    dir: string,
+    suffix: string,
+  ): Promise<void> => {
+    expect(filed.address).toMatch(new RegExp(`^${dir}/[^/]+__P\\.md\\${suffix}$`))
+    expect(filed.landed).toBe(join(root, filed.address, 'P.md'))
+    expect(await readFile(filed.landed, 'utf8')).toBe('back')
+    expect(await readRawRecord(join(root, filed.address))).toEqual({
+      entity: 'page',
+      parent: { kind: 'root' },
+    })
+  }
+
+  beforeEach(() => seedTrashedCollection())
+
+  it('re-nests an inner item’s address into its standing folder, leaving its bundle’s record as it was', async () => {
+    await rm(inBundle('A', 'S', 'T', 'P.md'))
+    const record = await readFile(inBundle('_record.json'), 'utf8')
+    expect(await file(HELD)).toEqual({ address: HELD, landed: inBundle('A', 'S', 'T', 'P.md') })
+    expect(await readFile(inBundle('A', 'S', 'T', 'P.md'), 'utf8')).toBe('back')
+    expect((await readdir(inBundle('A', 'S', 'T'))).sort()).toEqual(['P.md', '_pageset.json'])
+    expect(await stat(live()).catch(() => null)).toBeNull()
+    expect(await readFile(inBundle('_record.json'), 'utf8')).toBe(record)
+  })
+
+  it('mints a fresh bundle for a taken name, leaving the taken one as it was', async () => {
+    await minted(await file(HELD), '\\.trash/Live', '.deleted')
+    expect(await readFile(inBundle('A', 'S', 'T', 'P.md'), 'utf8')).toBe(
+      `---\nID: ${P_ID}\n---\nbody\n`,
+    )
+  })
+
+  it('mints a fresh bundle for a gone folder', async () => {
+    await rm(inBundle('A', 'S', 'T'), { recursive: true })
+    await minted(await file(HELD), '\\.trash/Live', '.deleted')
+    expect(await stat(inBundle('A', 'S', 'T')).catch(() => null)).toBeNull()
+  })
+
+  it('re-nests into another store’s standing folder, whichever store it mints in', async () => {
+    await rm(inBundle('A', 'S', 'T', 'P.md'))
+    expect(await file(HELD, ARCHIVE)).toEqual({
+      address: HELD,
+      landed: inBundle('A', 'S', 'T', 'P.md'),
+    })
+  })
+
+  it('re-mints a whole bundle’s address under its own name', async () => {
+    const whole = `.trash/Live/${STAMPED}__P.md.deleted`
+    expect(await file(whole)).toEqual({ address: whole, landed: join(root, whole, 'P.md') })
+    expect(await readRawRecord(join(root, whole))).toEqual({
+      entity: 'page',
+      parent: { kind: 'root' },
+    })
   })
 })

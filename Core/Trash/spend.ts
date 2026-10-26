@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { dirname, join, relative } from '../Paths/posix'
 import { contextKey } from '../Contexts/contexts'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import type { MutateOutcome, MutateReply, RestoreDestination } from '../Nexus/mutateRequest'
@@ -191,14 +191,11 @@ export async function restoreTrashed(
     if (!committed.ok) return committed
   }
   try {
-    // The Undo of a delete from the Archive lands in a bundle minted under the name its record keeps, reconciled as any Trash restore, and nothing lands in the tree.
+    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
     if (into && (record.entity === 'page' || record.entity === 'set')) {
       const origin = join(root, originPathOf(root, store, artifactAbs))
       const { archive, links, targets, partial, ...filed } = record
-      targetAbs = join(
-        await fileInto(root, into, origin, artifactAbs, filed, basename(dir)),
-        finalName,
-      )
+      targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
     } else {
       await machine().mkdir(dirname(targetAbs))
       await relocate(artifactAbs, targetAbs)
