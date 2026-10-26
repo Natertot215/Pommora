@@ -20,7 +20,7 @@ import { newId } from '../Nexus/ids'
 import { createDisambiguated, freeName, nameError } from '../Paths/names'
 import { atomicWriteFile, pathExists, setOrDrop, withIds } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { contextsDir, tileFilePath } from '../Paths/paths'
+import { contextsDir, sidecarPath, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 import { listOf } from '../Contract/validators'
@@ -89,7 +89,10 @@ async function setSpaceContext(
     })
     if (!half.ok) skipped++
   }
-  const was = await writeGovernedKey(join(root, a.path), key, value, world)
+  const abs = join(root, a.path)
+  const was = await machine().lock(sidecarPath(abs, 'space'), () =>
+    writeGovernedKey(abs, key, value, world),
+  )
   return was.ok
     ? ok({
         skipped,

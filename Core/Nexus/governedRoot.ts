@@ -1,7 +1,7 @@
 // Everything that lands a value in one governed file, a page or a Space sidecar: the world it's read against, the reconcile that repairs every governed key, the spelling a write keeps, the one-parse writers, and the put-back that undoes a write.
 
 import { isMarkdownFile, relative } from '../Paths/posix'
-import { patchSidecar } from '../Files/sidecar'
+import { patchHeldSidecar, patchSidecar } from '../Files/sidecar'
 import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
@@ -199,7 +199,7 @@ export async function rewriteRootAt(
   return ok(null)
 }
 
-/** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before and, on a page, the key its line stood above, as `PutBack` spells them. Takes no lock, as `rewriteRootAt` takes none. */
+/** Writes `value` under `key` in the page or Space sidecar at `abs`, answering what the key held before and, on a page, the key its line stood above, as `PutBack` spells them. Takes no lock: its caller holds the file's, as `rewriteRootAt`'s does. */
 export async function writeGovernedKey(
   abs: string,
   key: string,
@@ -213,7 +213,7 @@ export async function writeGovernedKey(
         was.above = page.above(key)
         return rewriteRoot((root) => writtenRoot(root, key, value, world))(page)
       })
-    : await patchSidecar(abs, 'space', (root) => {
+    : await patchHeldSidecar(abs, 'space', (root) => {
         was.before = root[key]
         return writtenRoot(root, key, value, world)
       })
