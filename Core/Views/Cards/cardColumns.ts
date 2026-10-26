@@ -1,4 +1,4 @@
-import { type ColumnType, PROPERTY_TYPES, specOf } from '../../Properties/properties'
+import { type ColumnType, PROPERTY_TYPES } from '../../Properties/properties'
 import { isBlankValue } from '../../Properties/propertyValue'
 import type { NexusTree } from '../../Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
@@ -24,7 +24,7 @@ export function shownColumnsFor(
       c.kind !== 'title' &&
       (!compactLayout ||
         !isBlankValue(resolveFieldValue(row, c)) ||
-        specOf(c.type)?.blankDraws === true),
+        PROPERTY_TYPES[c.type].blankDraws === true),
   )
 }
 
