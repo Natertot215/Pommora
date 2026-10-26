@@ -5,7 +5,8 @@ import { patchOverride, type SetOverrides } from './valueOverride'
 import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
-import { pageIndexOf, pagesByIdOf } from '../Nexus/record'
+import { livePagePath, pageIndexOf } from '../Nexus/record'
+import type { ConnPage } from '../Connections/pageIndex'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 
@@ -80,22 +81,21 @@ const valueRequest = (
 function rememberedAlias(
   value: PropertyValue | null,
   prior: PropertyValue | null,
-): { page: string; req: MutateRequest } | null {
+): { page: ConnPage; req: MutateRequest } | null {
   const tree = useSession.getState().tree
   if (value?.kind !== 'link' || !tree) return null
   const was = prior?.kind === 'link' ? prior.value : undefined
   const shown = shownAlias(value.value, pageIndexOf(tree), was)
   if (!shown) return null
-  const { id, path } = shown.page
-  return { page: id, req: { op: 'editAliases', path, edit: { op: 'add', alias: shown.alias } } }
+  const { page, alias } = shown
+  return { page, req: { op: 'editAliases', path: page.path, edit: { op: 'add', alias } } }
 }
 
 /** An alias's undo lands where its page stands now, since a rename may have moved it since the write. */
-function atPageNow(req: MutateRequest, pageId: string | undefined): MutateRequest {
-  const tree = useSession.getState().tree
-  const page = pageId && tree ? pagesByIdOf(tree).get(pageId) : undefined
-  return req.op === 'editAliases' && page ? { ...req, path: page.path } : req
-}
+const atPageNow = (req: MutateRequest, page: ConnPage | undefined): MutateRequest =>
+  req.op === 'editAliases' && page
+    ? { ...req, path: livePagePath(useSession.getState().tree, page) }
+    : req
 
 export function assignValue(
   writer: RefObject<ValueWriter | null>,
@@ -113,7 +113,7 @@ export function assignValue(
     void assignValue(writer.current ? writer : oneShotWriter(target), row, column, value)
   const sent = send(w, target, column, value, valueRequest(target, column, value), again)
   // Pushed now, so a sweep's group collects it; a refused write answers no record, which leaves nothing to revert.
-  let aliasPage: string | undefined
+  let aliasPage: ConnPage | undefined
   const undone = sent.then(async (done) => {
     const remember = done && rememberedAlias(value, prior)
     aliasPage = remember?.page
