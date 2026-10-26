@@ -57,6 +57,7 @@ import { renameOp } from './rename'
 import { type CascadeReport, joinCascades, linksNotUpdated, renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
+import { contextWorldOf } from '../Contexts/contextResolve'
 import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { finishOwed } from './finishOwed'
@@ -201,9 +202,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     // A put-back resolves a Context's key as a tag write does, so one reaching a Space or naming a Context holds the Contexts lock; a page property's takes only its page's lock.
     case 'putBack': {
-      const contextIds = new Set((await liveTreeOf(root)).contexts.map((g) => g.def.id))
+      const { groupById } = contextWorldOf((await liveTreeOf(root)).contexts)
       const put = () => putBackEntries(root, req.entries)
-      const held = req.entries.some((e) => !isMarkdownFile(e.file) || contextIds.has(e.fieldId))
+      const held = req.entries.some((e) => !isMarkdownFile(e.file) || groupById.has(e.fieldId))
       const missed = await (held ? underContexts(root, put) : put())
       return ok(
         missed.length
