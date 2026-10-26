@@ -71,10 +71,10 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 | `trailWithin` • Function | The container ids above a folder inside a container's bundle, outermost first. | `Core/Bundles/bundle.ts` |
 | `innerRecord` • Function | The record an inner item carries as its own. | `Core/Bundles/bundle.ts` |
 | `keptLinksUnder` • Function | The bundle's kept Link values, as its record stands at the op, whose page lies at or under an inner item. | `Core/Bundles/bundle.ts` |
-| `spendBundle` • Function | Spends what an op took: the whole bundle, or an inner item's carried Link values off its bundle's record. | `Core/Bundles/bundle.ts` |
+| `spendBundle` • Function | Spends what an op took: the whole bundle, or an inner item's share of it, its carried Link values off the bundle's record and its pages and Sets off what the bundle's delete still owes. | `Core/Bundles/bundle.ts` |
 | `listInner` • Function | One level of a container address's inner items, in the order the folder's sidecar keeps. | `Core/Bundles/bundle.ts` |
 | `InnerListing` • Type | What `listInner` answers: the bundle, its store and record, the folder, and each inner item with its record. | `Core/Bundles/bundle.ts` |
-| `OpenBundle.inner` • Field | Marks an open of an inner item. | `Core/Bundles/bundle.ts` |
+| `OpenBundle.inner` • Field | Marks an open of an inner item, holding the Set ids at or under it, which its spend takes off what its bundle's delete still owes. | `Core/Bundles/bundle.ts` |
 | `identityOf` • Function | A page's stamped id, or a container's sidecar id and icon. Shared by `gatherContentRecord` and `innerRecord`. | `Core/Bundles/record.ts` |
 | `artifactRow` • Function | The one builder of an artifact's row, shared by bundle rows and inner rows. | `Core/Bundles/rows.ts` |
 | `bundleCrumbs` • Function | A bundle's trail, live or frozen, which its own row shows and each inner row's trail begins with. | `Core/Bundles/rows.ts` |
@@ -127,7 +127,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - an artifact's row: `artifactRow`;
   - a click's intent: `rowClick`.
 - **No Physical Split:** an inner item is never moved into a bundle of its own before its op. A refused op leaves its bundle untouched.
-- **Inner-Item Writes:** listing inner items only reads. Among the inner-item paths, only `spendBundle` and `fileInto` write bundle structure.
+- **Inner-Item Writes:** listing inner items only reads. Among the inner-item paths, only `spendBundle` and `fileInto` write bundle structure, and only `spendBundle` writes a bundle's owed note.
 - **Never Every-X:** inner items list lazily, never inside `bundles:list`.
   - They're asked for on opening, and once per refresh for every open address in one call.
   - A closed row's loaded subtree is forgotten, while its checks are kept.
@@ -282,6 +282,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - **Partial Bundle:** an inner item of a bundle whose record is hand-seeded `partial: true` opens `partial`, and one of a whole record opens without it. A delete writes `partial` on a property's record alone, so only a content record an earlier build wrote carries it.
   - **`spendBundle`:**
     - on an inner item, it strips exactly that item's carried values from the bundle's record, matched by `page`, `property`, and `value`;
+    - on an inner item whose bundle's delete still owes, it takes the item's page paths off the note's `strip` and its Set ids off its `gone` edit, leaves the rest of the note as it was, and a note left owing nothing clears (`editNote` drops it through `owesAnything`);
     - on a whole bundle, it removes the bundle.
 - [ ] Add `identityOf` to `record.ts` and route `gatherContentRecord` through it.
 - [ ] Add `readBundleAt`, `ContainerRecord`, `isContainerRecord`, `trailWithin`, `innerRecord`, `keptLinksUnder`, `spendBundle`, and `OpenBundle.inner`, and rewrite `openBundle` over `readBundleAt`.
@@ -315,7 +316,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
    store: BundleStore
    record: RecordFile
    artifact: string | null
-+  inner: boolean
++  inner: false | { sets: readonly string[] }
  }
 
 +type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
@@ -406,21 +407,38 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  const { bundle, store, record, artifact, item } = read.value
 +  if (!item || !artifact || !isContainerRecord(record))
 +    return ok({ abs: bundle, store, record, artifact, inner: false })
++  const sets = isMarkdownFile(item) ? [] : await archivedSetIds(root, item)
 +  const own = await innerRecord(record, await trailWithin(record, artifact, dirname(item)), item)
 +  const links = await keptLinksUnder(root, store, record, artifact, item)
-+  return ok({ abs: bundle, store, record: links.length ? { ...own, links } : own, artifact: item, inner: true })
++  return ok({ abs: bundle, store, record: links.length ? { ...own, links } : own, artifact: item, inner: { sets } })
  }
 +
-+/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the Link values the item carried away, so the bundle's own restore never writes them twice or names them unrestored. */
-+export async function spendBundle(opened: OpenBundle): Promise<void> {
-+  if (!opened.inner) return void (await removeOwn(opened.abs))
-+  const gone = 'links' in opened.record ? (opened.record.links ?? []) : []
-+  if (!gone.length) return
++/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share — the Link values it carried away, and the pages and Sets the bundle's delete still owes for it — so the bundle's own restore never writes them twice and a later finish never strips a link to, or a view of, what came back. */
++export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
++  const { abs, store, record, artifact, inner } = opened
++  if (!inner || !artifact) return void (await removeOwn(abs))
++  const gone = 'links' in record ? (record.links ?? []) : []
 +  const same = (l: unknown): boolean =>
 +    isPlainObject(l) && gone.some((g) => g.page === l.page && g.property === l.property && g.value === l.value)
-+  await patchRecord(opened.abs, (raw) => ({
-+    links: (Array.isArray(raw.links) ? raw.links : []).filter((l) => !same(l)),
-+  }))
++  if (gone.length)
++    await patchRecord(abs, (raw) => ({
++      links: (Array.isArray(raw.links) ? raw.links : []).filter((l) => !same(l)),
++    }))
++  const bundle = relative(root, abs)
++  const owing = Object.entries(await readNotes(root)).find(
++    ([, e]) => e.kind === 'container' && e.bundle === bundle,
++  )
++  if (!owing) return
++  const from = originPathOf(root, store, artifact)
++  await editNote(root, owing[0], (e) => {
++    if (e?.kind !== 'container') return e
++    const ids = e.edit?.kind === 'gone' ? e.edit.ids.filter((id) => !inner.sets.includes(id)) : []
++    return {
++      ...e,
++      strip: distinct(e.strip?.filter((path) => !isAtOrUnder(path, from))),
++      edit: e.edit?.kind === 'gone' ? (ids.length ? { ...e.edit, ids } : undefined) : e.edit,
++    }
++  })
 +}
 ```
 
@@ -451,7 +469,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - `finishContainer` decides `back` by the container's id, and hands the noted paths to `deleteCascade` (`Core/Nexus/cascade.ts:94`), which strips only the keys that resolve to nothing in the settled index.
   - An inner page restored alone leaves its container not back, so a finish still owed runs the container's strip over the old paths and appends what it takes to the container's record after the item has left.
   - The pulled page's path keys under the container resolve to nothing once it lands elsewhere. Its title key keeps resolving while it lands under its own title, or while a namesake answers it beside a stepped-aside landing ("Pasta (2)").
-  - How an inner item's op meets a strip its bundle still owes is Nathan's call in *§Open Items*.
+  - An inner item that left would otherwise stay on that strip, and on the `gone` view edit naming its Sets, so a later finish would strip a link to, or a view of, an item that's back. `spendBundle` takes the item's share off the note when the item leaves (Task 1-2): its page paths off `strip` by its origin path, and its Set ids, read when it opens, off the `gone` edit. The pull's own restore then re-spells live linkers to its landing through `returningCascade`, owing that re-spell through its own `relink` entry where a linker can't be written.
 
 **CHANGE**
 
@@ -462,7 +480,8 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - The Set's own later restore names nothing unrestored and writes nothing twice.
     - An inner item restored with no destination is refused as homeless (`parent-gone`), and its bundle is left byte-identical.
     - A nested Set pulled out lands with its pages, and `refileLanded` carries what was archived from within it into the landing Collection's Archive.
-    - **Owed Strip:** pending Nathan's call in *§Open Items*.
+    - **Owed Strip:** a page pulled from a trashed Set while the Set's delete still owes its strip, made owed by a linker whose write is refused, as `archive.test.ts:545-559` does. The note no longer lists the page's path. When the linker is writable again and Try Again runs, its `[[S/Pasta]]` link reads the page's landing and nothing is appended to the Set's record, both with the page landed under its own title and stepped aside ("Pasta (2)"), and with the linker still refused at the pull (its re-spell owed) and writable at the pull.
+    - **Owed View Reach:** a Set pulled from a trashed Collection while the Collection's delete still owes its `gone` view edit keeps the saved views that filter by it, once the finish runs.
   - **`spend.test.ts`:** emptying an inner item disposes only that item, drops its pages' metadata, takes its carried values off the bundle's record, and leaves its owed note keyed by the item's own address.
   - **`archive.test.ts`:**
     - A page pulled from an archived Set restores by a plain move to a given container.
@@ -480,23 +499,23 @@ The chevron sits right of the label in both skins. An inner row carries its trai
  …
    if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
 -  await removeOwn(bundleAbs)
-+  await spendBundle(opened.value)
++  await spendBundle(root, opened.value)
    const recorded = 'links' in record ? (record.links ?? []) : []
 @@ restoreTrashed (property branch) @@
      // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
 -    await removeOwn(bundleAbs)
-+    await spendBundle(bundle)
++    await spendBundle(root, bundle)
 @@ restoreTrashed @@
    // The record outlives a partial re-tag, so what didn't come back stays written down.
 -  if (!unspent.length) await removeOwn(bundleAbs)
-+  if (!unspent.length) await spendBundle(bundle)
++  if (!unspent.length) await spendBundle(root, bundle)
 ```
 
 ```Core/Archive/archive.ts diff
 @@ restoreArchived @@
    await writeOrder?.()
 -  await removeOwn(bundle.abs)
-+  await spendBundle(bundle)
++  await spendBundle(root, bundle)
 ```
 
 ```Core/Trash/delete.ts diff
@@ -525,7 +544,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 @@ deleteOp (leave) @@
        if (archive) await machine().lock(archive.abs, () => discardFile(root, archive.abs, deps))
 -      if (from) await removeOwn(from.bundle)
-+      if (from) await spendBundle(from.opened)
++      if (from) await spendBundle(root, from.opened)
        else await dropDeparture(root, before, req.kind, req.path)
 ```
 
@@ -1307,7 +1326,6 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Open Items
 
-- **Owed Strip (Nathan's Call, pending):** an inner item pulled while its bundle's own delete still owes its strip. A linker the delete couldn't write keeps a path-keyed link (`[[S/Pasta]]`) the strip still owes. The pull's restore re-spells that linker to the landing, and when that write is refused too, the re-spell is owed beside the strip. `finishOwed` runs every `container` entry before any `relink` entry (`finishOwed.ts:91-92`), so the next Try Again strips the link to the now-live page and appends it to the Set's record, and the re-spell finds nothing left to fix. The Owed Strip test in Task 1-3 is written once the call is made.
 - **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 6-1 records it in `IssuesPM.md` for a later decision.
 
 
