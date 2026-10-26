@@ -13,7 +13,7 @@ import type { ResolvedColumn } from '../viewRow'
 import { useSetting } from '../../Session/store'
 
 /** The Nexus's own date form and clock, which a column follows until it picks its own. */
-export interface NexusForms {
+interface NexusForms {
   dateFormat: DateFormat
   clock: TimeFormat
 }

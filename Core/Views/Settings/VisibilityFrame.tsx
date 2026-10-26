@@ -11,7 +11,7 @@ import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneD
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import { columnIcon, columnLabel } from '../../Properties/columnLabel'
+import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
 import { Icon } from '@pommora/uix/Symbols'
 import * as s from '@pommora/uix/Menus/frames.css'
 

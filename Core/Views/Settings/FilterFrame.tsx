@@ -191,7 +191,7 @@ function ChipsField({
 }
 
 export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
-export type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
+type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
 
 export const filterViewOf = (f: StandaloneFilter): FilterView => ({
   filter: f.rules ?? undefined,

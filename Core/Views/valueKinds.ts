@@ -32,10 +32,10 @@ export interface OperatorChoice {
   names?: true
 }
 
-export type ValueTest = (v: PropertyValue) => boolean
+type ValueTest = (v: PropertyValue) => boolean
 export type SortDirections = 'option' | 'text' | 'value'
 
-export type ValueKindSpec = Readonly<{
+type ValueKindSpec = Readonly<{
   /** The operators the filter pane offers, in its menu's order; a hand-written rule may hold others the kind still answers. */
   ops: readonly OperatorChoice[]
   /** Is Empty matches a value this reads as unfilled, and Isn't Empty one it reads as filled. */
