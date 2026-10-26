@@ -1389,6 +1389,7 @@ describe('a re-spell on the notes', () => {
     )
     await mkdir(abs('Notes', 'Deep'))
     await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_new' }))
+    await writeFile(abs('Notes', 'Deep', 'Q.md'), `---\nID: ${ULID_D}\n---\n\nq\n`)
     await refreshTree(root)
     failing.push('/P.md')
     const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
@@ -1406,6 +1407,20 @@ describe('a re-spell on the notes', () => {
     failing.length = 0
     await finishOwed(root, deps)
     expect(await readFile(p, 'utf8')).not.toContain('[[Deep/Q]]')
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a restore’s owed repair follows its files through a rename', async () => {
+    const { landed } = await repairMissed()
+    const moved = await settledMutate(
+      root,
+      { op: 'rename', path: landed, kind: 'set', newName: 'Moved' },
+      deps,
+    )
+    if (!moved.ok) throw new Error(moved.error.message)
+    failing.length = 0
+    await finishOwed(root, deps)
+    expect(await readFile(abs('Notes', 'Moved', 'P.md'), 'utf8')).toContain('See [[Moved/Q|Q]].')
     expect(await readNotes(root)).toEqual({})
   })
 
