@@ -87,22 +87,26 @@ const owesAnything = (e: Entry): boolean =>
   (e.kind === 'container' && !!e.edit) ||
   (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey || !!e.values))
 
-/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets. */
+/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files, and what it worked out for them, follow to where `paths` moves them. */
 export const relinkNote = (
   e: Entry | undefined,
   names: ReadonlyMap<string, string>,
   label?: string,
+  paths?: ReadonlyMap<string, string>,
 ): RelinkEntry => {
   const held = e?.kind === 'relink' ? e : undefined
   const followed = Object.entries(held?.names ?? {}).map(([k, v]) => [
     k,
     names.get(pageKey(v)) ?? v,
   ])
+  const at = (f: string): string => paths?.get(f) ?? f
+  const worked =
+    held?.values && Object.fromEntries(Object.entries(held.values).map(([f, v]) => [at(f), v]))
   return {
     kind: 'relink',
     label: label ?? held?.label ?? '',
     names: { ...Object.fromEntries(followed), ...(held?.files ? {} : Object.fromEntries(names)) },
-    ...(held?.files ? { files: held.files, rekey: held.rekey, values: held.values } : {}),
+    ...(held?.files ? { files: held.files.map(at), rekey: held.rekey, values: worked } : {}),
   }
 }
 
