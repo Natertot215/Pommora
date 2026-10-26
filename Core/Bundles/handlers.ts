@@ -4,7 +4,8 @@ import { isPlainObject, isString } from '../Contract/validators'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
 import { archiveStoreOf } from '../Paths/names'
-import { archivedWithin, type BundleStore, listBundles } from './bundle'
+import { archivedWithin, listBundles } from './bundle'
+import type { BundleStore } from './layout'
 import { bundleRows } from './rows'
 
 function storeFrom(raw: unknown): BundleStore | null {

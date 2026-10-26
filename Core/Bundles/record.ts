@@ -166,16 +166,23 @@ export const collectionOf = ({ parent, trail }: Origin): string => trail[0] ?? p
 export const originWithin = (origin: Origin, setId: string, held: string[] | null): boolean =>
   origin.parent === setId || (held ?? origin.trail).includes(setId)
 
+/** A page's stamped id, or a container's sidecar id and icon. */
+export async function identityOf(
+  kind: 'page' | ContainerKind,
+  abs: string,
+): Promise<{ id?: string; icon?: string }> {
+  return kind === 'page'
+    ? { id: (await stampedIdOf(abs)) ?? undefined }
+    : sidecarIdentity(abs, kind)
+}
+
 export async function gatherContentRecord(
   root: string,
   tree: NexusTree,
   kind: 'page' | ContainerKind,
   abs: string,
 ): Promise<RecordFile> {
-  const { id, icon } =
-    kind === 'page'
-      ? { id: await stampedIdOf(abs), icon: undefined }
-      : await sidecarIdentity(abs, kind)
+  const { id, icon } = await identityOf(kind, abs)
   const atRoot = dirname(abs) === root
   const container = atRoot ? null : containerAt(tree, relative(root, dirname(abs)))
   const siblings: readonly { id: string }[] | undefined = atRoot

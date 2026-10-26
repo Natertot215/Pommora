@@ -10,7 +10,7 @@ import { ARCHIVE_DIR_REL, archivedCollectionIdOf } from '../Paths/nexusPaths'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
 import { scopeOf } from '../Settings/codec'
-import { originPathOf } from '../Bundles/bundle'
+import { originPathOf } from '../Bundles/layout'
 import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 
 type ById = Map<string, EntityRecord | null>
