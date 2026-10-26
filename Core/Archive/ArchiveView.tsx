@@ -88,7 +88,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
     [count, api],
   )
   useDeclareActions(bar)
-  usePublishCount(listing.status === 'ready' ? visible.length : null)
+  usePublishCount(listing.status === 'ready' ? browser.found : null)
 
   const footing = (): React.JSX.Element | null => {
     switch (listing.status) {
@@ -144,7 +144,7 @@ export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): Rea
           </div>
           <div ref={setListEl} className="archive-rows" style={{ height }}>
             {slots.map(({ index, start }) => {
-              const row = visible[index]
+              const { row } = visible[index]
               return (
                 <ArchiveRow
                   key={row.bundlePath}
