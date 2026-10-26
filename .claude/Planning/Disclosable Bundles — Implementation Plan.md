@@ -296,7 +296,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  kind: 'page' | ContainerKind,
 +  abs: string,
 +): Promise<{ id?: string; icon?: string }> {
-+  return kind === 'page' ? { id: await stampedIdOf(abs) } : sidecarIdentity(abs, kind)
++  return kind === 'page' ? { id: (await stampedIdOf(abs)) ?? undefined } : sidecarIdentity(abs, kind)
 +}
 @@ gatherContentRecord @@
 -  const { id, icon } =
@@ -361,7 +361,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
 +  held: ContainerRecord,
 +  trail: readonly (string | undefined)[],
 +  item: string,
-+): Promise<RecordFile> {
++): Promise<Extract<RecordFile, { entity: 'page' | 'set' }>> {
 +  const entity = isMarkdownFile(item) ? 'page' : 'set'
 +  const { id, icon } = await identityOf(entity, item)
 +  const ids = trail as string[]
@@ -447,11 +447,11 @@ The chevron sits right of the label in both skins. An inner row carries its trai
   - `deleteProperty.ts:110`, a refused property delete's bundle;
   - `refile.ts:134`, an emptied Archive.
 - **`emptyBundle`'s Note:** it keys its owed note on `relative(root, bundleAbs)` (`spend.ts:93`), the request's address. For an inner item that address is the item's own path, so each inner item emptied gets its own note. `openBundle` answers `abs` as the bundle folder for an inner item, so the key stays on the request's address rather than `opened.value.abs`.
-- **Kept Links:** a delete's kept Link values reach its record after the move. `finishContainer` (`Core/Nexus/finishOwed.ts:373-400`) appends what its strip takes to `e.bundle`'s record through `patchRecord`, at the delete's own finish or later at Try Again or the next open. `keptLinksUnder` reads the record as it stands at the op.
+- **Kept Links:** a delete's kept Link values reach its record after the move. `finishContainer` (`Core/Nexus/finishOwed.ts:375-402`) appends what its strip takes to `e.bundle`'s record through `patchRecord`, at the delete's own finish or later at Try Again or the next open. `keptLinksUnder` reads the record as it stands at the op.
   - `finishContainer` decides `back` by the container's id, and hands the noted paths to `deleteCascade` (`Core/Nexus/cascade.ts:94`), which strips only the keys that resolve to nothing in the settled index.
   - An inner page restored alone leaves its container not back, so a finish still owed runs the container's strip over the old paths and appends what it takes to the container's record after the item has left.
   - The pulled page's path keys under the container resolve to nothing once it lands elsewhere. Its title key keeps resolving while it lands under its own title, or while a namesake answers it beside a stepped-aside landing ("Pasta (2)").
-  - No guard is added. The tests below pin what that finish strips and appends.
+  - How an inner item's op meets a strip its bundle still owes is Nathan's call in *§Open Items*.
 
 **CHANGE**
 
@@ -462,7 +462,7 @@ The chevron sits right of the label in both skins. An inner row carries its trai
     - The Set's own later restore names nothing unrestored and writes nothing twice.
     - An inner item restored with no destination is refused as homeless (`parent-gone`), and its bundle is left byte-identical.
     - A nested Set pulled out lands with its pages, and `refileLanded` carries what was archived from within it into the landing Collection's Archive.
-    - **Owed Strip:** a page pulled from a trashed Set while the Set's delete still owes its strip, made owed by a linker whose write is refused once, as `archive.test.ts:545-559` does, then finished. The case pins what the finish strips and appends to the Set's record for a title-keyed and a path-keyed Link value naming that page, once with the page landed under its own title and once stepped aside ("Pasta (2)").
+    - **Owed Strip:** pending Nathan's call in *§Open Items*.
   - **`spend.test.ts`:** emptying an inner item disposes only that item, drops its pages' metadata, takes its carried values off the bundle's record, and leaves its owed note keyed by the item's own address.
   - **`archive.test.ts`:**
     - A page pulled from an archived Set restores by a plain move to a given container.
@@ -660,7 +660,7 @@ A whole bundle still re-mints under its own name, as it does today.
 **VERIFY**
 
 - [ ] `npx vitest run Core/Bundles Core/Archive Core/Nexus/mutateRequest.test.ts` is green.
-- [ ] `rg -w "leaf" Core/Bundles Core/Archive Core/Nexus/mutateRequest.ts` finds only `mintBundle`'s own parameter.
+- [ ] `rg -w "leaf" Core/Bundles Core/Archive Core/Nexus/mutateRequest.ts` finds only `mintBundle`'s own parameter, `placement.ts`'s local `leaf` helper (`:166-180`), and `refile.test.ts`'s local variable (`:446-450`).
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 2-2
@@ -1307,6 +1307,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Open Items
 
+- **Owed Strip (Nathan's Call, pending):** an inner item pulled while its bundle's own delete still owes its strip. A linker the delete couldn't write keeps a path-keyed link (`[[S/Pasta]]`) the strip still owes. The pull's restore re-spells that linker to the landing, and when that write is refused too, the re-spell is owed beside the strip. `finishOwed` runs every `container` entry before any `relink` entry (`finishOwed.ts:91-92`), so the next Try Again strips the link to the now-live page and appends it to the Set's record, and the re-spell finds nothing left to fix. The Owed Strip test in Task 1-3 is written once the call is made.
 - **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 6-1 records it in `IssuesPM.md` for a later decision.
 
 
