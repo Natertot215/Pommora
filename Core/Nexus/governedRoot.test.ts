@@ -182,9 +182,9 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(root.Tags).toEqual(['alpha', 'zeta'])
   })
 
-  it('a Multi-Select’s options move ahead of the words no option names, as its own pick writes them', () => {
+  it('a Multi-Select keeps the order it holds its options and the words no option names in', () => {
     const root = reconcileGovernedRoot({ Tags: ['zeta', 'alpha'] }, world)
-    expect(root.Tags).toEqual(['alpha', 'zeta'])
+    expect(root.Tags).toEqual(['zeta', 'alpha'])
   })
 
   it('a spaces-only Text value reads as nothing, so a reconcile drops it', () => {
@@ -665,6 +665,21 @@ describe('rewriteRootAt — spellings', () => {
       rewriteRoot((raw) => writtenRoot(raw, 'Tags', undefined, world)),
     )
     expect(await readFile(page, 'utf8')).not.toContain('Tags')
+  })
+
+  it('a Multi-Select write lands its own order, while another key keeps the order it holds', async () => {
+    await seeded('Tags: [Ideas, Docs]\nDone: No')
+    await rewriteRootAt(
+      page,
+      rewriteRoot((raw) => writtenRoot(raw, 'Done', true, world)),
+    )
+    expect(await lines()).toContain('Tags: [Ideas, Docs]')
+    await seeded('Tags: [Docs, Work]')
+    await rewriteRootAt(
+      page,
+      rewriteRoot((raw) => writtenRoot(raw, 'Tags', ['Work', 'Docs'], world)),
+    )
+    expect(await lines()).toContain('Tags: [Work, Docs]')
   })
 
   it('a banner write, which passes no world, writes its exact key beside another casing of it', async () => {
