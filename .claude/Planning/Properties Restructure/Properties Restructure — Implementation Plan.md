@@ -1,14 +1,14 @@
 ## Properties Restructure — Implementation Plan
 
 **DATE:** 10-22-2026
-**STATUS:** Ratified (10-22-2026)
+**STATUS:** Complete (10-25-2026)
 **SOURCE:** *Properties Restructure — Decisions & Intention* (ACTIVE; Nathan ratifies it with this plan), *Properties Restructure — Planning Findings* (the settled Planner's Calls, the edge rules, the measurement rules, the ledger, and the Sync rebuild inputs), *Properties Restructure — Morning Report* (the Last Calls, Nathan's Calls, and what the work does, in plain English), and `BRIEF.md`.
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `807baac3b` | 8,626 passed, 2 skipped (544 files) | 10-22-2026, 10:51 PM | |
+| `807baac3b` | 8,626 passed, 2 skipped (544 files) | 10-22-2026, 10:51 PM | `97c4b5fcc`, 8,814 passed, 2 skipped (541 files), 10-25-2026, 10:41 PM |
 
 ### Context
 
@@ -35390,8 +35390,8 @@ Commands the table cites by number, each written outside a table cell so no pipe
 - [x] **Fold Two** — Wave Two's findings folded as Fold One's were, committed, and measured into *§Net Ledger*.
 - [x] **Neutral Gate 2** — one `fable-high` agent given only the BASELINE head, the final head, and the intention under *§Neutral Gate 2* below, with no plan, document, skill, or principle; it answers yes or no on every lens, with its corrections and the strengths to keep, and is re-run after each fold until it answers yes.
 - [x] **Spotcheck** — any fold made after the gate gets one `opus-high` spotcheck against the Approach and Principles alone.
-- [ ] **Closeout** — the full Properties Drive (groups 1 through 15) and every other drive in `.claude/scripts/` on the final head; the orchestrator's own pass: the gates from a clean state, the baseline counts, *§Net Ledger* summed, *§Adherence Scoreboard* re-run row by row, the diff read once, *§Completion Criteria* ticked, *§Reconciliation* walked, *§Deviations* ruled on, and STATUS and BASELINE's End filled.
-- [ ] **Backup Removed** — Phase 8's NexusOS backup, `~/NexusOS-Backup-<MM-DD-YYYY>/`, removed by its path once the closeout's drive is green.
+- [x] **Closeout** — the full Properties Drive (groups 1 through 15) and every other drive in `.claude/scripts/` on the final head; the orchestrator's own pass: the gates from a clean state, the baseline counts, *§Net Ledger* summed, *§Adherence Scoreboard* re-run row by row, the diff read once, *§Completion Criteria* ticked, *§Reconciliation* walked, *§Deviations* ruled on, and STATUS and BASELINE's End filled.
+- [x] **Backup Removed** — Phase 8's NexusOS backup, `~/NexusOS-Backup-<MM-DD-YYYY>/`, removed by its path once the closeout's drive is green.
 - [ ] **Record** — `save-session`, then `save-delta` over `BASELINE..HEAD`; no history entry (Nathan, 10-25-2026).
 - [ ] **Report** — in `closeout-review`'s closeout format, written in plain terms: the per-phase and total delta from *§Net Ledger*, every deviation, the Issues renumbering (each moved entry's new number as the index script assigns it, I-076's and I-077's among them), both neutral gates' answers verbatim, and every Last Call or measurement outcome the run produced.
 
@@ -35603,7 +35603,6 @@ Filled during execution: each in-flight call that changes an outcome, with its t
 
 - **The Value Seat Names Its Column by Id (Task 16A-1, from Phase 15's Checkpoint):** Task 13-2's `pickTarget` reads the column a picker opened over, and Cards held that column in its picker state, so a card's picker kept the definition it opened with and missed an option created while it was open; the Option Picker Drive's cards step found it, and `07fbbbc9c` resolves Cards' column from the live schema on each render (+6, in Phase 15's row). The seat 16A-1 writes held the column the same way for every surface, so it names the column by id and resolves it through the host's `columnOf` on each render.
 - **Measurement 02-10 Ran in Dev Mode Beside the Live Instance, and Its Fail Branch Left (Task 15-8; Nathan's Ruling, 10-25-2026):** the rule's procedure stops the live instance and launches `npm run dev` on 9333; each run instead launched its own instance from a worktree on its own port and userData, the built app first and then dev mode, which the rule names. Dev mode failed the longest-task threshold, the Fail Branch landed and measured slower with the longest task unmoved and a partly refused request left without undo, and Nathan ruled it reverted; Phase 15 lands its Pass figure (−27), and no later task takes `--outcome 02-10=Fail`.
-
 - **Rulings I-4 and E-4, Between Phases 7 and 8 (Nathan, 10-23-2026):** two calls execution raised, ruled after Phase 7's closeout, land outside any task, measured in *§Net Ledger*'s own row over `acfd53fa4^..974e60755`.
   - **I-4:** a Date, Created Time, or Last Edited Time column's right-click names its date and time choices "Format", one word in each type's `styleLabel` (`acfd53fa4`, ±0).
   - **E-4's undo half:** a write records the key its line stood above (`aboveOf`), the put-back carries it (`PutBack.above`), and one doc-level setter, `setAbove`, lands a key the page no longer holds above that key, or last when it's gone; `mergeInto` places by the next root's order, so `rewriteRaw` passes its root whole (`974e60755`, +26). E-4's restore half (a property's Trash restore, a removed property's re-add, a Context or Space restore's tags, and a Link key a page delete took) rides the same setter through the sweep's merge, written into Tasks 11B-2 and 11B-5 and 12-2, 12-4, and 12-5; `findHolders` reads each page holder's place through `SweptPage.above` in the one parse its values already take, and only the delete captures, Remove, and a rename's clash check read values.
