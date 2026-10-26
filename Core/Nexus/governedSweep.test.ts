@@ -3,7 +3,8 @@ import { chmod, mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/pro
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { jsonText } from '../Files/atomicWrite'
-import { sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
+import { refillOf, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
+import type { PropertyDefinition } from '../Properties/properties'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -152,5 +153,20 @@ describe('sweepCount', () => {
     await writeFile(archived, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\n---\nbody\n')
     expect(await sweepCount(root, [a, archived], plan)).toBe(1)
     expect((await sweepGovernedRoots([a, archived], plan, true)).touched.size).toBe(2)
+  })
+})
+
+describe('refillOf', () => {
+  const tags: PropertyDefinition = {
+    id: 'prop_tags',
+    label: 'Tags',
+    key: 'Tags',
+    type: 'multiSelect',
+    select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
+  }
+  const refill = refillOf(tags, { holds: () => true })
+
+  it('lands a Multi-Select in the order it was set aside in, its options and the words no option names alike', () => {
+    expect(refill({ ID: 'x' }, ['zeta', 'alpha'])).toEqual({ ID: 'x', Tags: ['zeta', 'alpha'] })
   })
 })
