@@ -5,7 +5,7 @@ import { rm, readdir, readFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import type { SavedView } from '../Views/views'
 import { relative } from '../Paths/posix'
-import { setPagePropertyOp } from '../Properties/setProperty'
+import { setPropertyOp } from '../Properties/setProperty'
 import { createProperty } from '../Properties/registryProperty'
 import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -84,7 +84,7 @@ describe('a value write racing a body write on one page', () => {
 
     await Promise.all([
       updatePageBody(p.value.path, 'second'),
-      setPagePropertyOp(ctx, {
+      setPropertyOp(ctx, {
         op: 'setProperty',
         path: relative(root, p.value.path),
         propertyId: made.value.id,

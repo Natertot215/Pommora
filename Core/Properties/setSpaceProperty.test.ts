@@ -9,7 +9,7 @@ import { createProperty, renameProperty } from './registryProperty'
 import { lockContention } from '../Testing/machines'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
-import { setSpacePropertyOp } from './setProperty'
+import { setPropertyOp } from './setProperty'
 import type { MutateContext } from '../Nexus/mutate'
 import type { TrashDeps } from '../Trash/discard'
 import type { PropertyDraft } from './properties'
@@ -64,7 +64,7 @@ const sidecarFile = (): string => join(root, spaceRel, '_space.json')
 const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile())
 
 const write = (value: PropertyValue | null) =>
-  setSpacePropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
+  setPropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
 
 describe('setProperty on a Space path', () => {
   it('lands a bare root key and moves nothing else', async () => {
