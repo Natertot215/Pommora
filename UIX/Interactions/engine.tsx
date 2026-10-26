@@ -195,7 +195,7 @@ type Api = {
   focusRow: (zoneId: string, from: Element, step: number) => void
   invalidate: (zoneId: string) => void
   begin: (zoneId: string, id: string, e: ReactPointerEvent) => void
-  liftKeyboard: (zoneId: string, id: string) => void
+  liftKeyboard: (zoneId: string, id: string) => boolean
   busy: () => boolean
   holdChrome: (el: HTMLDivElement | null) => void
   dispose: () => void
@@ -1006,11 +1006,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     else if (!dir) cancel()
   }
 
-  const liftKeyboard = (zoneId: string, id: string): void => {
-    if (session?.phase === 'live') return
+  const liftKeyboard = (zoneId: string, id: string): boolean => {
+    if (session?.phase === 'live') return false
     pending?.()
     const s = lift(zoneId, id, 'keyboard')
-    if (!s) return
+    if (!s) return false
     const onKey = (e: KeyboardEvent): void => keyboard(s, e)
     const onOut = (e: FocusEvent): void => {
       if (!(e.relatedTarget instanceof Node && s.el.contains(e.relatedTarget))) cancel()
@@ -1023,6 +1023,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       s.el.removeEventListener('focusout', onOut)
       outside.release()
     }
+    return true
   }
 
   // ── Pointer ──
@@ -1297,13 +1298,9 @@ export function useDragItem(id: string, { open, tabStop = true }: DragItemOption
       onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
         if (e.target !== e.currentTarget || e.repeat || heldWhileBusy(api, e)) return
-        if (e.key === 'Enter' && opens) {
-          e.preventDefault()
-          run.current?.()
-        } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
-          e.preventDefault()
-          api.liftKeyboard(zoneId, id)
-        }
+        if (e.key !== ' ' && e.key !== 'Enter') return
+        e.preventDefault()
+        if ((e.key === 'Enter' && opens) || !api.liftKeyboard(zoneId, id)) run.current?.()
       },
       role: 'button',
       tabIndex: tabStop && (opens || !disabled) ? 0 : -1,
@@ -1364,7 +1361,7 @@ export function useLineRow(
         e.preventDefault()
         if (opening) run.current?.()
         else if (step !== 0) api.focusRow(zoneId, row, step)
-        else if (!e.repeat) api.liftKeyboard(zoneId, id)
+        else if (!e.repeat && !api.liftKeyboard(zoneId, id)) run.current?.()
       },
       tabIndex: -1,
       'aria-describedby': INSTRUCTIONS_ID,

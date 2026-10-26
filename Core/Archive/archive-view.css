@@ -1,29 +1,6 @@
-/* ArchiveView on TableView's sheet: the virtual list, each title with the trail it left at its right, as the Trash's rows carry theirs, and the Archived column. */
-.archive-rows {
-  position: relative;
-}
-.archive-rows > .data-row {
-  position: absolute;
-  inset-inline: 0;
-}
-.archive-rows .data-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px; /* KNOB — the title from its trail */
-}
-.archive-rows .archive-trail {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 55%;
-  margin-left: auto;
-}
-.col-header.archive-date,
-.data-cell.archive-date {
-  align-items: center;
+/* ArchiveView's own heading over the bundle table, its Archived label centered over its column, and its empty line. */
+.col-header.archive-date {
   text-align: center;
-}
-.data-cell.archive-date {
-  justify-content: center;
 }
 .archive-empty {
   padding: var(--cell-padding-y) var(--cell-padding-x);

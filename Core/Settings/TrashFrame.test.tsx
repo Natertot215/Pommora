@@ -19,8 +19,8 @@ import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
 import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
-import { size } from '@pommora/uix/Theme/theme-vars.css'
-import { text } from '@pommora/uix/Theme'
+
+vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -40,7 +40,7 @@ describe('a Trash row', () => {
     host = null
   })
 
-  it('checks itself through the checkbox in its lead inset', async () => {
+  it('checks itself through the checkbox in its gutter', async () => {
     host = document.createElement('div')
     document.body.appendChild(host)
     root = createRoot(host)
@@ -74,47 +74,8 @@ describe('a Trash row', () => {
       )
       search.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    expect(host.querySelectorAll('.trash-row')).toHaveLength(1)
+    expect(host.querySelectorAll('.data-row')).toHaveLength(1)
     expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
-  })
-
-  it('draws its icon at TableView’s body size', async () => {
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    await act(async () => root?.render(<TrashFrame />))
-    const icon = host.querySelector('.trash-lead > svg') as SVGElement
-    expect(icon.style.fontSize).toBe(size.icon.body)
-  })
-
-  it('draws its item’s own icon ahead of its kind’s', async () => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'bundles:list': vi.fn(async () => ({ ok: true, value: [row({ icon: 'hash' })] })),
-    })
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    await act(async () => root?.render(<TrashFrame />))
-    expect(host.querySelector('.lucide-hash')).not.toBeNull()
-  })
-
-  it('a partly recorded row shows its mark, spoken as Recorded Partly', async () => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'bundles:list': vi.fn(async () => ({
-        ok: true,
-        value: [
-          row({ title: 'Alpha', partial: true }),
-          row({ title: 'Beta', bundlePath: '.trash/b' }),
-        ],
-      })),
-    })
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    await act(async () => root?.render(<TrashFrame />))
-    const [alpha, beta] = host.querySelectorAll('.trash-row')
-    expect(alpha.querySelector('[role="img"][aria-label="Recorded Partly"]')).not.toBeNull()
-    expect(beta.querySelector('[role="img"]')).toBeNull()
   })
 })
 
@@ -157,7 +118,7 @@ describe('the Trash pane', () => {
       (n.getAttribute('aria-label') ?? '').replace('Select ', ''),
     )
   const rowOf = (title: string): HTMLElement =>
-    host?.querySelector(`[aria-label="Select ${title}"]`)?.closest('.trash-row') as HTMLElement
+    host?.querySelector(`[aria-label="Select ${title}"]`)?.closest('.data-row') as HTMLElement
   const boxOf = (title: string): HTMLElement =>
     host?.querySelector(`[aria-label="Select ${title}"]`) as HTMLElement
   const press = async (title: string, detail: number): Promise<void> =>
@@ -165,7 +126,7 @@ describe('the Trash pane', () => {
       rowOf(title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
     })
   const indentOf = (title: string): string =>
-    (rowOf(title).querySelector('.trash-lead') as HTMLElement).style.marginLeft
+    (rowOf(title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
   const step = (depth: number): string => `calc(var(--row-indent) * ${depth})`
   const showTree = async (): Promise<void> => {
     listed = [trashedCollection()]
@@ -210,6 +171,28 @@ describe('the Trash pane', () => {
     root = null
     host = null
     useSession.setState({ tree: null })
+  })
+
+  it('an empty, unreadable, or unmatched Trash reads its line in the frame, after the table', async () => {
+    const line = (): string | null => {
+      const el = host?.querySelector('.trash-empty')
+      if (el?.parentElement?.classList.contains('trash-frame') !== true) return null
+      return el.previousElementSibling?.classList.contains('trash-table') ? el.textContent : null
+    }
+    listed = []
+    await act(async () => storesChanged.emit())
+    expect(line()).toBe('Trash is empty.')
+    list.mockResolvedValueOnce({ ok: false, error: { code: 'io', message: 'No.' } })
+    await act(async () => storesChanged.emit())
+    expect(line()).toBe("The trash couldn't be read.")
+    listed = [row({ title: 'Alpha' })]
+    await act(async () => storesChanged.emit())
+    const search = host?.querySelector('input') as HTMLInputElement
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(search, 'zzz')
+      search.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(line()).toBe('Nothing matches.')
   })
 
   it("lists the opened Nexus's trash after a switch", async () => {
@@ -269,7 +252,7 @@ describe('the Trash pane', () => {
     useSession.setState({ askConfirm: async () => true })
     mutated.mockClear()
     picked = action
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -284,7 +267,7 @@ describe('the Trash pane', () => {
     offerUndo([bundlePath], (undo) => notifyDeleted('Alpha', undo))
     mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     picked = 'restore'
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -304,7 +287,7 @@ describe('the Trash pane', () => {
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
     picked = 'restore'
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -322,7 +305,7 @@ describe('the Trash pane', () => {
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
     picked = action
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -371,7 +354,7 @@ describe('the Trash pane', () => {
   it('names the title a restore here stepped to', async () => {
     mutated.mockResolvedValue({ ok: true, value: { landedAs: 'Alpha (2)' } })
     picked = 'restore'
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -402,7 +385,7 @@ describe('the Trash pane', () => {
       value: { ...OWED.value, landedAs: 'Alpha (2)' },
     })
     picked = 'restore'
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -451,7 +434,7 @@ describe('the Trash pane', () => {
     expect(menu).toHaveBeenCalledTimes(2)
     expect(mutated).not.toHaveBeenCalled()
     menu.mockResolvedValueOnce(answer('restore')).mockResolvedValueOnce(answer('c1'))
-    const item = host?.querySelector('.trash-row') as HTMLElement
+    const item = host?.querySelector('.data-row') as HTMLElement
     await act(async () => {
       item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -479,10 +462,9 @@ describe('the Trash pane', () => {
     expect(heard).toHaveBeenCalledTimes(1)
   })
 
-  it('a Collection row’s click discloses its Sets and then its pages, indented, with the chevron after its title, and its checkbox still checks it', async () => {
+  it('a Collection row’s click discloses its Sets and then its pages, indented, and its checkbox still checks it', async () => {
     await showTree()
     const chevron = rowOf('Notes').querySelector('[data-drop-outline]')
-    expect(chevron?.previousElementSibling?.textContent).toBe('Notes')
     expect(chevron?.classList.contains(dropOutlineOpen)).toBe(false)
     await press('Notes', 1)
     expect(titles()).toEqual(['Notes', 'Ideas'])
@@ -503,32 +485,6 @@ describe('the Trash pane', () => {
     expect(titles()).toEqual(['Notes', 'Ideas', 'P'])
   })
 
-  it('a top-level Collection’s chevron follows its title, a nested Set’s comes before its icon, and a container’s title is emphasized where a page’s is not', async () => {
-    await showTree()
-    await press('Notes', 1)
-    await press('Ideas', 1)
-    const chevronOf = (title: string): Element | null =>
-      rowOf(title).querySelector('[data-drop-outline]')
-    expect(chevronOf('Notes')?.previousElementSibling?.textContent).toBe('Notes')
-    const slot = chevronOf('Ideas')?.parentElement
-    expect(slot?.classList.contains('row-chevron')).toBe(true)
-    expect(slot?.nextElementSibling?.tagName).toBe('svg')
-    expect(slot?.parentElement?.classList.contains('trash-lead')).toBe(true)
-    const emphasized = (title: string): boolean =>
-      rowOf(title).querySelector(`.${text.body.emphasized}`)?.textContent === title
-    expect([emphasized('Notes'), emphasized('Ideas'), emphasized('P')]).toEqual([true, true, false])
-  })
-
-  it('a click on a Collection’s chevron discloses it, as a click on its row does', async () => {
-    await showTree()
-    await act(async () => {
-      rowOf('Notes')
-        .querySelector('[data-drop-outline]')
-        ?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
-    })
-    expect(titles()).toEqual(['Notes', 'Ideas'])
-  })
-
   it('a page row’s double-click leaves it checked and opens nothing', async () => {
     for (const detail of [1, 2])
       await act(async () => {
@@ -539,15 +495,6 @@ describe('the Trash pane', () => {
     })
     expect(boxOf('Alpha').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader).toBeNull()
-  })
-
-  it('an Enter on a Collection row discloses it', async () => {
-    await showTree()
-    await act(async () => {
-      rowOf('Notes').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-    })
-    expect(titles()).toEqual(['Notes', 'Ideas'])
-    expect(boxOf('Notes').getAttribute('aria-checked')).toBe('false')
   })
 
   it('an inner row’s right-click Restore lists destinations, and its Delete empties only that item', async () => {
@@ -590,7 +537,7 @@ describe('the Trash pane', () => {
     await showTree()
     await press('Notes', 1)
     await press('Ideas', 1)
-    expect(rowOf('P').querySelector('.trash-trail')?.textContent).toBe('Notes›Ideas')
+    expect(rowOf('P').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

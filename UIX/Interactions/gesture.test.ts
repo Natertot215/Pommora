@@ -255,6 +255,15 @@ describe('a release before activation is a tap, and only a release', () => {
     expect(click.defaultPrevented).toBe(true)
   })
 
+  it('a refused activation ends as a tap, so a drifted release still clicks', () => {
+    gesture.beginPointerGesture(spec({ onActivate: () => false }))
+    move(20, 20)
+    firePointer(el, 'pointerup')
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    el.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(false)
+  })
+
   it('an activated release drops rather than taps', () => {
     const calls: string[] = []
     gesture.beginPointerGesture(

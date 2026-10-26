@@ -57,7 +57,7 @@ The renderer keeps each open container's inner rows in one map:
 - **Checks Outlive Collapsing:** collapsing a container keeps its inner rows' checks. They're hidden from a batch until it opens again, as a search's hidden rows are.
 - **Batch Restore:** a batch Restore holding homeless rows (every inner item is one) asks once per kind of destination. Only the homeless rows go where the picker says; every row with a home of its own still returns there.
 
-Both skins draw TableView's row look. The chevron sits right of the label on a top-level row and left of the icon on a nested row, as TableView's bands do. An inner row carries its trail like any other row: the bundle's own trail, then the containers inside the bundle above it.
+Both skins draw one bundle table's rows, each under its own heading, in TableView's row look and on TableView's list keyboard. The chevron sits right of the label on a top-level row and left of the icon on a nested row, as TableView's bands do. An inner row carries its trail like any other row: the bundle's own trail, then the containers inside the bundle above it.
 
 #### Concepts
 
@@ -86,11 +86,18 @@ Both skins draw TableView's row look. The chevron sits right of the label on a t
 | `treeRows` • Function | Top rows, with each open container's inner rows beneath them. | `Core/Bundles/browser.ts` |
 | `outermostOf` • Function | Drops each row whose ancestor the same batch holds. | `Core/Bundles/browser.ts` |
 | `rowClick` • Function | The browser's one click intent, opening a page through the skin's `open`. | `Core/Bundles/browser.ts` |
-| `rowIndent` • Function | A row's step in from its lead at a depth, by the table's `--row-indent`, shared by TableView and both skins. | `UIX/Table/rowIndent.ts` |
+| `rowIndent` • Function | A row's step in from its lead at a depth, by the table's `--row-indent`, shared by TableView and the bundle table. | `UIX/Table/rowIndent.ts` |
 | `DestinationKind` / `destinationKind` / `destinationTargets` / `askDestination` • Type, Functions | A kind of destination, a row's kind, that kind's targets, and the one destination ask that `restoreOne`, the batch, and the menu share. | `Core/Bundles/browser.ts` |
-| `titleAccessory` • Prop | Content set inline right of a MenuItem's title text, outside its ellipsis. | `UIX/Menus/MenuRows.tsx` |
 | `.row-chevron` • Class | A nested container's chevron in the rail slot left of its icon, as a TableView band's is. | `UIX/Table/table.css` |
-| `titleLine` • Style | The line that sets the title text and its accessory side by side, a table's icon gap apart; ArchiveView's titles sit in it too. | `UIX/Menus/menu-row.css.ts` |
+| `BundleTable.tsx` • File | The table both skins draw under their own headings: its grid, its date heading, and its rows. It takes in `DateHeading.tsx`. | `Core/Bundles/BundleTable.tsx` |
+| `BundleTable` • Component | The table's grid: its title and date tracks, its body type, and the width under which it scrolls sideways. | `Core/Bundles/BundleTable.tsx` |
+| `BundleRows` • Component | A store's rows, virtualized under its skin's heading: one Tab stop, each row a tree item in TableView's row look. | `Core/Bundles/BundleTable.tsx` |
+| `keep` • Option | An index a virtual list draws wherever it sits, with its neighbours: the row focus last stood on, which outlives scrolling out of view. | `UIX/Interactions/virtualRows.ts` |
+| `RowRail` • Component | The gutter beside a row's lead cell, carrying the row's hover into its rail slot and keeping presses there off the row; TableView's and the bundle table's rows share it. | `UIX/Table/RowRail.tsx` |
+| `bundle-table.css` • File | The bundle table's own layout: its virtual rows, title line, trail, partial mark, and date cell. | `Core/Bundles/bundle-table.css` |
+| `.trash-table` • Class | The Trash's sideways scroller, holding its heading and rows over the checkboxes' gutter. | `Core/Settings/trash-frame.css` |
+| `tabIndex` • Prop | Takes a checkbox out of the Tab order where its row carries the keyboard. | `UIX/Controls/Checkbox.tsx` |
+| `virtualRows.ts` • File | The virtualizer's stand-in for renderer suites, drawing every row. | `Core/Testing/virtualRows.ts` |
 
 **REMOVED**
 
@@ -101,19 +108,30 @@ Both skins draw TableView's row look. The chevron sits right of the label on a t
 | `placesFor` • Function | Split into `destinationKind`, `destinationTargets`, and `askDestination`. | `Core/Bundles/browser.ts` |
 | Single title-click reader open | Replaced by a page row's double-click, through `rowClick`. | `Core/Archive/ArchiveView.tsx` |
 | `groupIndent` • Function | Hoisted as `rowIndent`. | `Core/Views/Table/TableView.tsx` |
-| The rail-slot rule in `table-view.css` | Moved to `UIX/Table/table.css`, where the Trash reaches it too. | `Core/Views/Table/table-view.css` |
+| The rail-slot rule, the rail, its reveal fade, and the lead cell's seat in `table-view.css` | Moved to `UIX/Table/table.css`, the vocabulary every table's rows share. | `Core/Views/Table/table-view.css` |
 | The batch's "had nowhere to go" refusal | Replaced by one destination ask per kind. | `Core/Bundles/browser.ts` |
+| `TrashRowView` / `ArchiveRow` • Components | Replaced by the bundle table's row. | `Core/Settings/TrashFrame.tsx`, `Core/Archive/ArchiveView.tsx` |
+| `DateHeading.tsx` • File | Folded into `BundleTable.tsx`. | `Core/Bundles/DateHeading.tsx` |
+| `sampleClass` • Prop | `DateHeading`'s sample takes the table's one body type. | `Core/Bundles/DateHeading.tsx` |
+| `revealed` • Prop | MenuItem's; its only caller, the Trash, left MenuItem. | `UIX/Menus/MenuRows.tsx` |
+| `.table-divider` • Class | Its only wearer, the Trash's row, left. | `UIX/Table/table.css` |
+| `.table.is-clear` • Class | The Trash's heading, its only wearer, takes the table's heading tokens. | `UIX/Table/table.css` |
+| `--trash-date-lane` / `--trash-date-inset` • Tokens | The Trash's date lane, replaced by the table's date track. | `Core/Settings/trash-frame.css` |
+| `.trash-row` / `.trash-lead` / `.trash-trail` / `.trash-date` • Classes | Replaced by the table row's. | `Core/Settings/trash-frame.css` |
+| `.archive-rows` / `.archive-trail` • Classes | Replaced by `.bundle-rows` and `.bundle-trail`. | `Core/Archive/archive-view.css` |
 
 #### Constraints
 
 - **Rulings (settled, don't re-raise):**
   - **Chevron:** right of the label on a top-level row, left of the icon on a nested row, as TableView's bands do.
-  - **Row Look:** container and page rows take TableView's Set-band and page-row weight and colors, and Trash rows take TableView's row metrics: its body-size icon and its icon-to-title gap.
+  - **Row Look:** both skins draw one table row in TableView's look. Container rows take the Set band's weight and colors and page rows the page row's, with TableView's body-size icon, icon-to-title gap, and row height.
+  - **The Trash's Look:** "Trash gets the full archive look; its heading stays the same." Its rows take the Archive's table look: full-width lines, square hover, the 20px checkbox gutter, and the Archive's date cell. Its heading keeps its names ("File Name", "Time Deleted"), glyphs, type, clear fill, and inset hairline. **Heading Labels:** "Labels stay where they are." File Name keeps its place at the frame's inset, above the checkbox column, and Time Deleted keeps its 8px past the column line; only the column line moves, to meet the rows'.
+  - **Width:** "Trashes window gets the fixed date width like it has now, just enables the sideways scroll." The date column keeps its measured width and the title column TableView's 280px minimum, and a Trash narrower than both scrolls sideways.
+  - **Keyboard:** the rows take TableView's list keyboard. The table is one Tab stop, the arrows step between rows, and Enter acts as a click. In every kit list, line and sortable alike, Space lifts what can move and otherwise acts as Enter, so it acts in any list that can't be dragged, a locked NavList's included. Row checkboxes are out of the Tab order.
   - **Clicks:**
     - A container row's click discloses it, and its checkbox checks it.
     - A page row's click checks it.
     - An Archive page's double-click opens the reader and leaves the row checked. A double-click on its checkbox opens nothing.
-    - An Archive row takes the keyboard as a Trash row does: it's a focusable button, and Enter or Space clicks it.
   - **Homeless Items:** an inner item whose folder is gone takes the existing homeless path (`homeResolves: false` → Restore ▸). There's no chain-up placement rule.
   - **Batch Restore:** a batch Restore holding homeless rows asks once per kind of destination. Whole homeless bundles follow the same rule.
   - **Nesting:** nested Sets disclose recursively. Inner items take Restore, Delete, check, and batch, and a checked ancestor covers its checked descendants.
@@ -126,7 +144,7 @@ Both skins draw TableView's row look. The chevron sits right of the label on a t
   - **Double-Click:** the click intent uses the codebase's `e.detail` pattern (CalendarPicker, MarkdownPM's pointer gestures), and a single click is never delayed.
   - **Undo:** re-nests an inner item through one shared primitive in `Core/Bundles/`.
   - **Names:** as written in *§Concepts*.
-  - **Partial Mark:** an inner item of a partly recorded container is itself partly recorded. `innerRecord` carries the container's `partial`, so its row shows the Trash's partial mark, and the restore's `recordedPartly` warning names that item under its own landed title, never its container's (Task 1-2, folded into the Restructure's `recordedPartly` at re-grounding).
+  - **Partial Mark:** an inner item of a partly recorded container is itself partly recorded. `innerRecord` carries the container's `partial`, so its row shows the partial mark, and the restore's `recordedPartly` warning names that item under its own landed title, never its container's (Task 1-2, folded into the Restructure's `recordedPartly` at re-grounding).
 - **Gates:** `npm run typecheck`, `npm run test`, and `npm run lint` from the repo root, clean at every Review Checkpoint.
 - **One Derivation:** each of these has exactly one reader:
   - a store path: `bundleAddressOf`;
@@ -134,14 +152,16 @@ Both skins draw TableView's row look. The chevron sits right of the label on a t
   - an inner item's record: `trailWithin` + `innerRecord`;
   - an entity's identity: `identityOf`;
   - an artifact's row: `artifactRow`;
-  - a click's intent: `rowClick`.
+  - a click's intent: `rowClick`;
+  - a row's drawing: `BundleRows`;
+  - the table's grid: `BundleTable`.
 - **No Physical Split:** an inner item is never moved into a bundle of its own before its op. A refused op leaves its bundle untouched.
 - **Inner-Item Writes:** listing inner items only reads. Among the inner-item paths, only `spendBundle` and `fileInto` write bundle structure, and only `spendBundle` writes a bundle's owed note.
 - **Never Every-X:** inner items list lazily, never inside `bundles:list`.
   - They're asked for on opening, and once per refresh for every open address in one call.
   - A closed row's loaded subtree is forgotten, while its checks are kept.
 - **Addresses Are Canonical:** a whole bundle's address is its folder, and an inner item's is its own path. `checked`, `spendUndo`'s arming, `outermostOf`, and the open map all key on the address.
-- **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Host suites seed through `seedNexus` (`Core/Testing/hostFs.ts`) and the shared definitions (`Core/Testing/definitions.ts`) and run ops through `settledMutate.ts`; renderer suites build rows with `fixtures.ts`'s `bundleRow` and trees with `testTree.ts`; property bundles come from `fixtures.ts`'s `seedPropertyBundle`; each suite's local seeders carry the rest.
+- **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Host suites seed through `seedNexus` (`Core/Testing/hostFs.ts`) and the shared definitions (`Core/Testing/definitions.ts`) and run ops through `settledMutate.ts`; renderer suites build rows with `fixtures.ts`'s `bundleRow` and trees with `testTree.ts`, and stand in for the virtualizer with `virtualRows.ts`; property bundles come from `fixtures.ts`'s `seedPropertyBundle`; each suite's local seeders carry the rest.
 - **Comments:** docstrings in the house register where a neighbor has one; no other comments.
 - **Imports:** an import that loses its last use leaves in the same task.
 - **Docs:** feature docs only fix what's false, in place, plainly, at its length or shorter. They explain to the user, not the coder: they name no functions, files, channels, or shared vocabularies, and state no cohesion or fixes a reader can infer.
@@ -170,10 +190,18 @@ Both skins draw TableView's row look. The chevron sits right of the label on a t
   - [x] Task 5-2
   - [x] Task 5-3
   - [x] Review Checkpoint
-- [ ] **Phase 6** — Documents, Drive, and the Live Pass
-  - [ ] Task 6-1
-  - [ ] Task 6-2
-  - [ ] Task 6-3
+- [ ] **Phase 6** — One Table Row
+  - [x] Task 6-1
+  - [x] Task 6-2
+  - [x] Task 6-3
+  - [x] Task 6-4
+  - [x] Review Checkpoint
+  - [ ] Compaction Checkpoint
+- [ ] `[Stop: Nathan sees both skins' screenshots before Phase 7]`
+- [ ] **Phase 7** — Documents, Drive, and the Live Pass
+  - [ ] Task 7-1
+  - [ ] Task 7-2
+  - [ ] Task 7-3
 
 ---
 
@@ -1509,11 +1537,879 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 ---
 
-### Phase 6 — Documents, Drive, and the Live Pass
+### Phase 6 — One Table Row
+
+**GOAL:** Both skins draw one bundle table, under each skin's own heading.
+- **Rows:** in TableView's look, on TableView's list keyboard.
+- **The Trash:** its rows leave MenuItem for the Archive's table row, with its checkbox gutter, full-width lines, square hover, and date cell. Its heading keeps its look, and a narrow window scrolls it sideways.
+- **The Kit:** Space acts as Enter in every list that can't be dragged, and what only the Trash's MenuItem rows needed leaves it.
+
+It's a phase of its own because it reshapes the kit's list keyboard and both skins' shells, apart from the tree the earlier phases built.
+
+#### Task 6-1
+
+**TASK:** In every kit list, Space lifts what can move and otherwise acts as Enter, and a press that can't become a drag stays a click; a virtual list keeps the row focus last stood on drawn, with its neighbours; and a checkbox can leave the Tab order.
+
+**NOW:**
+- **Space in a Line List:** `useLineRow`'s Space always calls `api.liftKeyboard` (`UIX/Interactions/engine.tsx:1367`), which answers nothing. `lift` refuses a keyboard lift where the list's snap is null (`:684`), so Space does nothing there. These lists' Space now opens instead:
+  - a NavList that can't reorder;
+  - TableView's rows under a sort (`Core/Views/Host/useViewInteractions.tsx:342`, `locked: dragDisabled`);
+  - GroupBand heads in a locked band zone;
+  - `MatrixLabel`, whose zone only carries;
+  - ViewFrame's and PropertyFrame's rows while locked;
+  - the bundle table.
+- **Space in a Sortable List:** `useDragItem`'s Space lifts unless its zone is `disabled` (`:1300-1306`), where it does nothing, as on a frozen NavGallery (`Core/Navigation/NavGallery.tsx:45`).
+- **Callers:** both reach `liftKeyboard` only while no session holds (`heldWhileBusy`), and `lift` reads before it refuses, setting nothing.
+- **Focus in a Virtual List:** `useVirtualRows` (`UIX/Interactions/virtualRows.ts`) draws only the window in view and its overscan. A removed element takes its focus with it and fires no blur, as Chromium does (checked live). So a line list whose focused row scrolls out of the window drops focus to the page and keeps its host out of the Tab order: a row's focus sets the host aside (`engine.tsx:1244`), and only a blur gives it back (`:1258-1261`). No line list virtualizes yet; the bundle table is the first.
+- **A Refused Drag:** `beginPointerGesture` marks a press active before asking `onActivate` (`UIX/Interactions/gesture.ts:152`), so a refusal cancels it as a drag and swallows the release's click. A press that drifts 5px in a locked list loses its click, as on a sorted TableView title today; the bundle rows carry the same gesture.
+- **Checkbox:** `Checkbox` (`UIX/Controls/Checkbox.tsx`) draws a `<button>`, always a Tab stop.
+
+**CHANGE**
+
+- [x] In `engine.test.tsx`, make these case changes and watch each fail:
+  - Extend "refuses a lift with no snapshot and nothing to carry" (`:1056`) with `rowOpts = { r1: { open } }`: Space on `r1` runs `open` once and lifts nothing.
+  - Rewrite "never lifts in a disabled zone, and leaves the tab order only with nothing to open" (`:648`): the openable item's Space runs `onOpen` once and lifts nothing, and its Enter runs it again.
+- [x] Add `UIX/Interactions/virtualRows.test.tsx` and watch it fail: with `keep` at an index past the drawn window, that index is among `rows`, in order, and without `keep` it isn't.
+- [x] `liftKeyboard` answers whether it lifted. In `useLineRow` and `useDragItem`, Space acts as Enter where it didn't.
+- [x] `useVirtualRows` takes `keep`, an index drawn wherever it sits with its neighbours, so the arrows step from it after scrolling away. `virtualRows.test.tsx` asserts the neighbours, and the order with a kept row above the window.
+- [x] A refused activation ends the gesture as a tap: a `gesture.test.ts` case, red first, has a refused, drifting press still click.
+- [x] `Checkbox` takes `tabIndex` onto its button.
+
+**AFTER**
+
+```UIX/Interactions/engine.tsx diff
+@@ Api @@
+-  liftKeyboard: (zoneId: string, id: string) => void
++  liftKeyboard: (zoneId: string, id: string) => boolean
+@@ liftKeyboard @@
+-  const liftKeyboard = (zoneId: string, id: string): void => {
+-    if (session?.phase === 'live') return
++  const liftKeyboard = (zoneId: string, id: string): boolean => {
++    if (session?.phase === 'live') return false
+     pending?.()
+     const s = lift(zoneId, id, 'keyboard')
+-    if (!s) return
++    if (!s) return false
+ …
+       outside.release()
+     }
++    return true
+   }
+@@ useDragItem @@
+       onKeyDown: (e: ReactKeyboardEvent) => {
+         if (e.target !== e.currentTarget || e.repeat || heldWhileBusy(api, e)) return
+-        if (e.key === 'Enter' && opens) {
+-          e.preventDefault()
+-          run.current?.()
+-        } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+-          e.preventDefault()
+-          api.liftKeyboard(zoneId, id)
+-        }
++        if (e.key !== ' ' && e.key !== 'Enter') return
++        e.preventDefault()
++        if ((e.key === 'Enter' && opens) || !api.liftKeyboard(zoneId, id)) run.current?.()
+       },
+@@ useLineRow @@
+         if (opening) run.current?.()
+         else if (step !== 0) api.focusRow(zoneId, row, step)
+-        else if (!e.repeat) api.liftKeyboard(zoneId, id)
++        else if (!e.repeat && !api.liftKeyboard(zoneId, id)) run.current?.()
+```
+
+```UIX/Interactions/virtualRows.ts diff
+-import { useVirtualizer } from '@tanstack/react-virtual'
++import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
+
+-/** The one seam over the virtualizer: fixed-height rows of a list inside a scroll root, each `start` measured from the list's own top. `deps` re-measure where the list sits whenever what lies above it changes. */
++/** The one seam over the virtualizer: fixed-height rows of a list inside a scroll root, each `start` measured from the list's own top, and the row at `keep` drawn wherever it sits, with its neighbours, so the row focus last stood on outlives scrolling out of view and the arrows still step from it, since a removed element takes its focus with it. `deps` re-measure where the list sits whenever what lies above it changes. */
+ export function useVirtualRows(
+   {
+     count,
+     rowHeight,
+     listEl,
+     scrollEl,
+-  }: { count: number; rowHeight: number; listEl: HTMLElement | null; scrollEl: HTMLElement | null },
++    keep = null,
++  }: {
++    count: number
++    rowHeight: number
++    listEl: HTMLElement | null
++    scrollEl: HTMLElement | null
++    keep?: number | null
++  },
+ …
+     overscan: 6,
+     scrollMargin: margin,
++    rangeExtractor: (range) => {
++      const drawn = defaultRangeExtractor(range)
++      if (keep === null) return drawn
++      const kept = [keep - 1, keep, keep + 1].filter((i) => i >= 0 && i < count)
++      if (kept.every((i) => drawn.includes(i))) return drawn
++      return [...new Set([...drawn, ...kept])].sort((a, b) => a - b)
++    },
+   })
+```
+
+```UIX/Interactions/gesture.ts diff
+@@ move @@
+           if (ok === false) {
++            g.active = false
+             g.handlers.cancel()
+             return
+           }
+```
+
+```UIX/Controls/Checkbox.tsx diff
+   readOnly,
++  tabIndex,
+ }: {
+ …
+   readOnly?: boolean
++  tabIndex?: number
+ }): React.JSX.Element {
+ …
+       className={cls}
+       style={style}
++      tabIndex={tabIndex}
+```
+
+**VERIFY**
+
+- [x] `npx vitest run UIX/Interactions UIX/Controls` is green, with each changed case red before its change.
+- [x] Check for unnecessary code or mistakes.
+
+#### Task 6-2
+
+**TASK:** `DateHeading.tsx` becomes `BundleTable.tsx`, the table both skins draw: its grid, its date heading, and its rows. ArchiveView draws on it.
+
+**NOW:**
+- **ArchiveView:** draws its own memoized `ArchiveRow` (`ArchiveView.tsx:177-244`).
+  - It's a `role="button"` row under a `useSemanticElements` suppression, and Enter or Space clicks it through `onActivateClick`.
+  - A ctrl-click both opens its menu and runs its click, where TableView's cells bail on `isSecondaryClick` (`TableView.tsx:104`).
+  - It virtualizes with `useVirtualRows` and a 30px `ROW_H` (`:37`), where TableView's row measures about 29.75px live.
+  - Its grid is written inline (`:70-74`, `:125-128`) with no minimum width, so in a pane narrower than its tracks the rows' lines and hover stop short of the date cell.
+- **The Trash:** `TrashRowView` derives its own icon, and it alone covers property rows (`TrashFrame.tsx:136-141`). Its partial mark is the Trash's alone, though an archived item's record can be partial too (`Core/Bundles/record.ts:61-96`).
+- **DateHeading:** takes the rows' type as `sampleClass`.
+- **The Lead Cell:** its seat for the rail slot, `.data-cell.cell-lead`, lives in TableView's own layer (`table-view.css:39-42`). Every table row with a rail slot needs it, while the rail slot itself already sits in `table.css`.
+- **Tests:** `ArchiveView.test.tsx:22-31` stands in for the virtualizer inline.
+
+**CHANGE**
+
+- [x] Move `Core/Bundles/DateHeading.tsx` to `Core/Bundles/BundleTable.tsx` with `git mv`.
+- [x] Move ArchiveView.test's stand-in into `Core/Testing/virtualRows.ts`, mocked with `vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))`. Prove it on `ArchiveView.test.tsx` first.
+- [x] Write `Core/Bundles/BundleTable.test.tsx` and watch it fail. It renders `BundleRows` over a browser of `vi.fn()`s and `bundleRow` rows, and wraps the stand-in in `vi.fn` to read what the virtualizer is asked. Its cases:
+  - a top-level container's chevron follows its title, a nested one's sits in the `.row-chevron` slot before its icon, and a container's title carries `text.body.emphasized` where a page's doesn't;
+  - each row's icon draws at TableView's body size: an item's own ahead of its kind's, and a property's by its type;
+  - a partly recorded row shows its mark, spoken as Recorded Partly, and a whole one shows none;
+  - a click anywhere on a row, its chevron included, hands `rowClick` its row and `detail`; a ctrl-click hands it nothing; a right-click opens the row's menu;
+  - a container row is a `treeitem` whose `aria-expanded` follows its disclosure, and a page row is one without it;
+  - the rows are one Tab stop: focusing the zone focuses the first row, ArrowDown the next, and Enter, then Space, each hand `rowClick` the focused row with `detail` 1;
+  - a focused row is the one the virtualizer keeps drawn;
+  - a row's box checks it without the row's click, and takes `tabIndex` -1;
+  - every row's box shows while any row is checked (`data-reveal-host="on"`).
+- [x] Write `BundleTable.tsx` and `bundle-table.css` as below.
+- [x] Move `.data-cell.cell-lead`, `.row-rail`, and the grip's reveal fade from `table-view.css` into `table.css`, the fade now the check's too. TableView's inline rail becomes `RowRail`, which the bundle row draws too, so a hidden box reveals as the pointer reaches it from outside the row.
+- [x] ArchiveView draws on the table, its rows only while it has some, as the Trash's do, so an empty Archive keeps no empty Tab stop. `ArchiveRow`, `RowApi`, `ROW_H`, its grid's derivation, its virtual list, and the imports only they used leave; `archivedKind` keeps no outside caller and loses its export. TrashFrame takes `DateHeading` from `BundleTable` and drops `sampleClass`.
+- [x] In `ArchiveView.test.tsx`:
+  - Mock through `virtualRows.ts`.
+  - Drop the cases `BundleTable.test.tsx` now holds: `:256` (an Enter on a Set row, and its box), `:285` (the chevrons and the emphasized title), and `:300` (a click on the chevron).
+  - Rewrite `.archive-rows` to `.bundle-rows` and `.data-cell.archive-date` (`:193`) to `.bundle-date`.
+
+**AFTER**
+
+```Core/Bundles/BundleTable.tsx
+import { memo, type ReactNode, useMemo, useState } from 'react'
+import { Checkbox } from '@pommora/uix/Controls/Checkbox'
+import { NavTrail } from '@pommora/uix/Elements/NavTrail'
+import { historical } from '@pommora/uix/Elements/nav-trail.css'
+import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
+import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
+import { DropOutline } from '@pommora/uix/Menus'
+import { Icon } from '@pommora/uix/Symbols'
+import { RowRail } from '@pommora/uix/Table/RowRail'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
+import { text } from '@pommora/uix/Theme'
+import { cx } from '@pommora/uix/Utilities/cx'
+import { useStableApi } from '@pommora/uix/Utilities/stableApi'
+import { entityIcon } from '../Assets/entityIconPolicy'
+import { propertyTypeIconName } from '../Properties/typeDisplay'
+import { personalizationOf } from '../Session/configSlice'
+import { useSession } from '../Session/store'
+import type { Personalization } from '../Settings/personalization'
+import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
+import { crumbSegments, type useBundleBrowser } from './browser'
+import type { BundleRow } from './rows'
+import './bundle-table.css'
+
+type Browser = ReturnType<typeof useBundleBrowser>
+
+/** TableView's row as it draws, measured live: the cell's padding around a body line its inline title stands a little taller than, and the hairline between rows. */
+const ROW_H = 29.75
+
+/** The table's grid in its body type, each skin setting its own heading and rows in it: the title track, at least TableView's title width, and the date track, the date column's measured width inside the cell's padding; narrower than both, it scrolls sideways. */
+export function BundleTable({
+  date: { width },
+  children,
+}: {
+  date: Browser['date']
+  children: ReactNode
+}): React.JSX.Element {
+  const track =
+    width === null
+      ? `${COLUMN_LAYOUT.dateTime.width}px`
+      : `calc(${width}px + 2 * var(--cell-padding-x))`
+  const style = {
+    '--cols': `minmax(${COLUMN_LAYOUT.title.width}px, 1fr) ${track}`,
+    minWidth: `calc(${COLUMN_LAYOUT.title.width}px + ${track})`,
+  } as React.CSSProperties
+  return (
+    <div className={cx('table-grid', text.body.standard)} style={style}>
+      {children}
+    </div>
+  )
+}
+
+/** A store's date heading: `label` over the column's widest date, drawn unseen in the rows' type, so the column measures whichever is wider; a right-click picks the date's style. */
+export function DateHeading({
+  date,
+  label,
+  className,
+}: {
+  date: Browser['date']
+  label: ReactNode
+  className: string
+}): React.JSX.Element {
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a column label, as TableView's headings are
+    <div className={cx('col-header', className)} onContextMenu={date.onContextMenu}>
+      <span ref={date.measureRef} className="col-measure">
+        {label}
+        <span className={text.body.standard} aria-hidden>
+          {date.sample}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+type RowApi = Pick<Browser, 'toggle' | 'rowClick' | 'openMenu'> & {
+  focus: (address: string) => void
+}
+
+/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows and whose Enter or Space acts as a click, each row a tree item that discloses, checks, and opens through the browser. */
+export function BundleRows({
+  browser: { visible, checked, picked, date, toggle, rowClick, openMenu },
+  scrollEl,
+}: {
+  browser: Pick<
+    Browser,
+    'visible' | 'checked' | 'picked' | 'date' | 'toggle' | 'rowClick' | 'openMenu'
+  >
+  scrollEl: HTMLElement | null
+}): React.JSX.Element {
+  const icons = useSession((s) => personalizationOf(s).defaultIcons)
+  const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
+  const [focused, setFocused] = useState<string | null>(null)
+  const keep = useMemo(() => {
+    const at = visible.findIndex((t) => t.row.bundlePath === focused)
+    return at < 0 ? null : at
+  }, [visible, focused])
+  const { rows: slots, height } = useVirtualRows(
+    { count: visible.length, rowHeight: ROW_H, listEl, scrollEl, keep },
+    [],
+  )
+  const api = useStableApi({ toggle, rowClick, openMenu, focus: setFocused })
+  return (
+    <LineZone {...lineList({ locked: true, commit: () => {}, label: () => '', watch: [] })}>
+      <div ref={setListEl} className="bundle-rows" style={{ height }}>
+        {slots.map(({ index, start }) => {
+          const { row, depth, open } = visible[index]
+          return (
+            <BundleRowView
+              key={row.bundlePath}
+              row={row}
+              depth={depth}
+              open={open}
+              start={start}
+              lead={index === 0}
+              checked={checked.has(row.bundlePath)}
+              revealed={picked.length > 0}
+              when={date.when(row.storedAt)}
+              icons={icons}
+              api={api}
+            />
+          )
+        })}
+      </div>
+    </LineZone>
+  )
+}
+
+/** A row's glyph: a property's by its type, any other item's own ahead of its kind's. */
+const rowIcon = (row: BundleRow, icons: Personalization['defaultIcons']): string =>
+  row.kind === 'property'
+    ? row.propertyType
+      ? propertyTypeIconName(row.propertyType)
+      : 'tag'
+    : entityIcon(row.kind, row.icon, icons)
+
+const BundleRowView = memo(function BundleRowView({
+  row,
+  depth,
+  open,
+  start,
+  lead,
+  checked,
+  revealed,
+  when,
+  icons,
+  api,
+}: {
+  row: BundleRow
+  depth: number
+  open: boolean | null
+  start: number
+  lead: boolean
+  checked: boolean
+  revealed: boolean
+  when: string
+  icons: Personalization['defaultIcons']
+  api: RowApi
+}): React.JSX.Element {
+  const chevron = open === null ? null : <DropOutline open={open} />
+  return (
+    <LineRow
+      id={row.bundlePath}
+      open={() => api.rowClick(row, 1)}
+      className={cx('data-row', lead && 'row-lead')}
+      data-reveal-host={revealed ? 'on' : ''}
+      style={{ height: ROW_H, transform: `translateY(${start}px)` }}
+      role="treeitem"
+      aria-expanded={open ?? undefined}
+      onFocus={() => api.focus(row.bundlePath)}
+      onClick={(e) => {
+        if (!isSecondaryClick(e)) api.rowClick(row, e.detail)
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        void api.openMenu(row)
+      }}
+    >
+      <div className="data-cell cell-lead">
+        <RowRail />
+        <span className={cx('row-check', revealTarget)}>
+          <Checkbox
+            size="compact"
+            state={checked}
+            tabIndex={-1}
+            onChange={() => api.toggle(row.bundlePath)}
+            ariaLabel={`Select ${row.title}`}
+          />
+        </span>
+        <span className="bundle-title" style={{ marginLeft: rowIndent(depth) }}>
+          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
+          <span className={cx(overScrollLabel, 'cell-title')}>
+            <Icon name={rowIcon(row, icons)} size="body" />
+            <span className={cx('cell-title-text', open !== null && text.body.emphasized)}>
+              {row.title}
+            </span>
+          </span>
+          {depth === 0 && chevron}
+        </span>
+        <NavTrail
+          segments={crumbSegments(row.crumbs, icons)}
+          iconSize="control"
+          className={cx('bundle-trail', row.historical && historical)}
+        />
+        {row.partial && (
+          <Icon
+            name="triangle-alert"
+            size="body"
+            role="img"
+            aria-label="Recorded Partly"
+            className="bundle-partial"
+          />
+        )}
+      </div>
+      <div className="data-cell bundle-date">{when}</div>
+    </LineRow>
+  )
+})
+```
+
+```Core/Bundles/bundle-table.css
+/* The bundle table's own layout over the table vocabulary: its rows in a virtual window, each title line with its chevron, the trail it left at its right, its partial mark, and its date centered in its column. */
+.bundle-rows {
+  position: relative;
+}
+.bundle-rows > .data-row {
+  position: absolute;
+  inset-inline: 0;
+}
+.bundle-rows .data-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* KNOB — the title from its trail */
+}
+/* The box a nested row's chevron takes its rail slot against; it pushes the trail and the partial mark to the cell's end. */
+.bundle-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--cell-icon-gap);
+  min-width: 0;
+  margin-right: auto;
+}
+.bundle-trail {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 55%;
+}
+.bundle-partial {
+  flex: none;
+  color: var(--label-secondary);
+}
+.bundle-date {
+  justify-content: center;
+}
+```
+
+```UIX/Table/table.css diff
+ .data-cell {
+   …
+ }
++/* The lead cell seats its row's rail slot in the gutter beside it. */
++.data-cell.cell-lead {
++  position: relative;
++  overflow: visible;
++}
+ …
++.row-rail {
++  position: absolute;
++  top: 0;
++  bottom: 0;
++  left: calc(-1 * var(--rail-inset));
++  width: var(--rail-inset);
++}
++.row-grip,
++.row-check {
++  transition: opacity var(--reveal-fade) var(--ease-base);
++}
+```
+
+```UIX/Table/RowRail.tsx
+/** The gutter beside a row's lead cell, drawn as part of the row so a hover arriving straight at its rail slot reveals what sits there; a press, click, or right-click on it reaches nothing. */
+export function RowRail(): React.JSX.Element {
+  return (
+    <span
+      className="row-rail"
+      aria-hidden="true"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
+    />
+  )
+}
+```
+
+TableView's `DataRow` renders `<RowRail />` in place of its inline span.
+
+```Core/Views/Table/table-view.css diff
+-/* The layer TableView and ArchiveView wear over the Tables chrome: shell width, grid density, hide/slide beat, the rail gutter's grip and check, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
++/* The layer TableView and ArchiveView wear over the Tables chrome: shell width, grid density, hide/slide beat, the rail gutter's grip, and group-band rhythm. Values live in UIX/Table/table-tokens.css. */
+ …
+-.data-cell.cell-lead {
+-  position: relative;
+-  overflow: visible;
+-}
+ …
+-  transition: opacity var(--reveal-fade) var(--ease-base);
+ …
+-.row-rail {
+-  position: absolute;
+-  top: 0;
+-  bottom: 0;
+-  left: calc(-1 * var(--rail-inset));
+-  width: var(--rail-inset);
+-}
+```
+
+```Core/Archive/ArchiveView.tsx diff
+@@ ArchiveView @@
+   const { listing, visible } = browser
+-  const dateTrack = …
+-  const cols = `minmax(${COLUMN_LAYOUT.title.width}px, 1fr) ${dateTrack}`
+-
+-  const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
+   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+-  const { rows: slots, height } = useVirtualRows(…)
+-
+   const api = useStableApi({
+-    toggle: (row: BundleRow) => browser.toggle(row.bundlePath),
+-    rowClick: browser.rowClick,
+-    menu: (row: BundleRow) => void browser.openMenu(row),
+     restore: () => void browser.restore(browser.picked),
+     remove: () => void browser.remove(browser.picked),
+   })
+ …
+       <div className="table table-view">
+-        <div
+-          className={cx('table-grid', text.body.standard)}
+-          style={{ '--cols': cols } as React.CSSProperties}
+-        >
++        <BundleTable date={browser.date}>
+           <div className="table-head">
+ …
+             <DateHeading
+               date={browser.date}
+               className="archive-date"
+-              sampleClass={text.body.standard}
+               label={…}
+             />
+           </div>
+-          <div ref={setListEl} className="archive-rows" style={{ height }}>
+-            {slots.map(…)}
+-          </div>
+-        </div>
++          {visible.length > 0 && <BundleRows browser={browser} scrollEl={scrollEl} />}
++        </BundleTable>
+         {footing()}
+       </div>
+@@ ArchiveRow @@
+-const ArchiveRow = memo(function ArchiveRow(…) { … })
+```
+
+```Core/Archive/archive-view.css
+/* ArchiveView's own heading over the bundle table, its Archived label centered over its column, and its empty line. */
+.col-header.archive-date {
+  text-align: center;
+}
+.archive-empty {
+  padding: var(--cell-padding-y) var(--cell-padding-x);
+  color: var(--label-tertiary);
+}
+```
+
+**VERIFY**
+
+- [x] `npx vitest run Core/Bundles Core/Archive Core/Settings` is green, with each new case red before its change.
+- [x] `npm run typecheck` and `npm run lint` are clean, with no new suppression.
+- [x] Check for unnecessary code or mistakes.
+
+#### Task 6-3
+
+**TASK:** The Trash draws `BundleRows` under its own heading, in a sideways scroller over the checkboxes' gutter, and what only its MenuItem rows used leaves the kit.
+
+**NOW:**
+- **Rows:** `TrashRowView` (`TrashFrame.tsx:117-187`) draws each row as a `MenuItem` with `titleAccessory`, `revealed`, an `overlay` checkbox, and a `.table-divider` bar. Rows don't virtualize.
+- **The Date Lane:** each row's date is caption-sized, in a lane `trash-frame.css` sizes with `--trash-date-lane` and `--trash-date-inset`. The flex heading is sized by the same lane.
+- **The Frame's Tokens:** the frame sets `--cell-padding-x` to `--surface-inset`. It wears `.table.is-clear` (`UIX/Table/table.css:11-15`), the class's only wearer, and draws its own hairline as the heading's `::after`.
+- **Measured Live** at the default 850px window:
+  - the frame is 661px wide;
+  - the heading's File Name glyph sits at 10px, and its hairline runs from 10px to 651px;
+  - row icons sit at 24px, and rows are 28px tall with an 8px radius;
+  - dates are 11px in `--label-secondary`, left-aligned 8px inside a 178px lane.
+
+  At the 620px minimum, the frame is 431px.
+- **The Kit:** `titleAccessory`, MenuItem's title line, `titleLine`, and `revealed` have no caller but the Trash, nor has `.table-divider` (`UIX/Table/table.css:110-124`).
+
+**CHANGE**
+
+- [x] In `TrashFrame.test.tsx`, make these changes and watch the rewritten cases fail:
+  - Mock through `virtualRows.ts`.
+  - Rename `:43` "checks itself through the checkbox in its gutter".
+  - Drop the cases `BundleTable.test.tsx` now holds:
+    - `:81` (body-size icon), `:90` (its own icon), and `:101` (the partial mark);
+    - `:506` (the chevrons and the emphasized title), `:522` (a click on the chevron), and `:544` (an Enter on a Collection row).
+  - Rewrite `.trash-row` to `.data-row`, `.trash-lead` (`indentOf`, `:168`) to `.bundle-title`, and `.trash-trail` (`:593`) to `.bundle-trail`.
+- [x] TrashFrame and `trash-frame.css` as below.
+  - **The Heading:** it takes the table's own heading tokens, an inset divider, and no fill, in place of `is-clear` and its hand-drawn hairline. Its box reaches back over half the gutter to the frame's inset, where the divider and File Name begin as they do today; its first track takes up the extra width, so its column line still meets the rows'. Time Deleted keeps its 8px past that line.
+  - **The Gutter:** the rows' vertical scroller reaches back across the gutter, so the checkboxes aren't clipped.
+  - **The Empty Lines:** they sit below the table, outside its sideways scroller, as ArchiveView's footing does, so they center in the frame.
+  - **What Leaves:** `TrashRowView`, the `.nav-list` wrapper, and the imports only they used. `nav-list.css` stays for `.nav-search-row`.
+- [x] Remove from the kit:
+  - MenuItem's `titleAccessory`, its title line, and `revealed`;
+  - `menu-row.css.ts`'s `titleLine`;
+  - `UIX/Menus/MenuRows.test.tsx`;
+  - `table.css`'s `.table-divider` and `.table.is-clear`.
+
+**AFTER**
+
+```Core/Settings/TrashFrame.tsx
+function TrashBody(): React.JSX.Element {
+  const [query, setQuery] = useState('')
+  const browser = useBundleBrowser({ kind: 'trash' }, { query, shown: true })
+  const { listing, visible, date } = browser
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+
+  const footing = (): React.JSX.Element | null => {
+    switch (listing.status) {
+      case 'loading':
+        return null
+      case 'failed':
+        return (
+          <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
+        )
+      case 'ready':
+        if (visible.length > 0) return null
+        return (
+          <div className={cx('trash-empty', text.body.standard)}>
+            {listing.rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
+          </div>
+        )
+    }
+  }
+
+  return (
+    <div className="trash-frame table">
+      <div className="nav-search-row">
+        <SearchField className={text.body.standard} value={query} onValueChange={setQuery} />
+      </div>
+      <div className="trash-table">
+        <BundleTable date={date}>
+          <div className="trash-head table-head">
+            <span className="trash-head-name col-header">
+              <span className="trash-head-glyph">
+                <Icon name={propertyTypeIconName('title')} size="body" />
+              </span>
+              File Name
+            </span>
+            <DateHeading
+              date={date}
+              className="trash-head-date"
+              label={
+                <span className="trash-head-label">
+                  <Icon name="clock-fading" size="body" />
+                  Time Deleted
+                </span>
+              }
+            />
+          </div>
+          {visible.length > 0 && (
+            <div ref={setScrollEl} className="trash-scroll scroll-fade">
+              <BundleRows browser={browser} scrollEl={scrollEl} />
+            </div>
+          )}
+        </BundleTable>
+      </div>
+      {footing()}
+      <Scrollbar of={scrollEl} />
+    </div>
+  )
+}
+```
+
+```Core/Settings/trash-frame.css
+.trash-frame.table {
+  --heading-fill: none;
+  --heading-divider: var(--width-150) solid var(--border-base);
+  --heading-padding-y: 6px; /* KNOB */
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--app-inset);
+}
+
+/* Sideways when the window is narrower than the table's columns, the heading riding with the rows; the leading inset is the checkboxes' gutter. */
+.trash-table {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 var(--surface-inset) 0 var(--rail-inset);
+}
+.trash-table > .table-grid {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The heading keeps its own place: reaching back over the gutter to the frame's inset, where its divider and File Name begin, its first track taking up the width so its column line meets the rows'. */
+.trash-frame .trash-head {
+  flex-shrink: 0;
+  margin-left: calc(var(--surface-inset) - var(--rail-inset));
+}
+.trash-frame .trash-head-name {
+  padding-left: 0;
+}
+.trash-frame .trash-head-date {
+  padding-left: 8px; /* KNOB — clears the column line */
+}
+/* The heading keeps its plain lead, without the bar a table's first heading draws at its gutter. */
+.trash-head .col-header:first-child::before {
+  content: none;
+}
+.trash-frame .trash-head-name,
+.trash-frame .trash-head-date {
+  display: flex;
+  align-items: center;
+}
+.trash-head-glyph {
+  display: flex;
+  margin-right: 8px;
+}
+.trash-frame .trash-head svg {
+  color: var(--label-secondary);
+}
+.trash-head-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Reaching back across the gutter, so the rows' checkboxes sit inside the scroller that clips them. */
+.trash-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  margin-left: calc(-1 * var(--rail-inset));
+  padding-left: var(--rail-inset);
+  padding-bottom: 6px;
+}
+
+.trash-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-tertiary);
+}
+```
+
+```UIX/Menus/MenuRows.tsx diff
+ type MenuItemProps = {
+   leading?: ReactNode
+-  /** Sits right of the title text on its line, outside the text's ellipsis, as a disclosure's chevron does. */
+-  titleAccessory?: ReactNode
+   subLabel?: ReactNode
+ …
+-  /** Shows every reveal target in the row, as while any row of its list is checked. */
+-  revealed?: boolean
+   indent?: number
+ …
+-  const title = <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
+ …
+-      data-reveal-host={inert ? undefined : revealed ? 'on' : ''}
++      data-reveal-host={inert ? undefined : ''}
+ …
+       <span className={cx(s.titleWrap, centered && s.titleCentered)}>
+-        {titleAccessory == null ? (
+-          title
+-        ) : (
+-          <span className={s.titleLine}>
+-            {title}
+-            {titleAccessory}
+-          </span>
+-        )}
++        <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
+```
+
+```UIX/Menus/menu-row.css.ts diff
+-export const titleLine = style({
+-  position: 'relative',
+-  display: 'flex',
+-  alignItems: 'center',
+-  gap: 'var(--cell-icon-gap, 6px)',
+-  minWidth: 0,
+-})
+```
+
+```UIX/Table/table.css diff
+-/* For a heading that already sits under chrome of its own, such as the Trash's inset hairline. */
+-.table.is-clear {
+-  --heading-fill: none;
+-  --heading-divider: none;
+-}
+ …
+ .col-header:not(:last-child)::after,
+-.col-header:first-child::before,
+-.table-divider::after {
++.col-header:first-child::before {
+ …
+-.table-divider {
+-  position: relative;
+-}
+```
+
+**VERIFY**
+
+- [x] `npx vitest run Core/Settings UIX/Menus` is green, with each rewritten case red before its change, and gates are clean.
+- [x] `rg -n "titleAccessory|titleLine|table-divider|is-clear|trash-row|trash-lead|trash-date|trash-trail" Core UIX` finds nothing, and `UIX/Menus/MenuRows.tsx` holds no `revealed`.
+- [x] Check for unnecessary code or mistakes.
+
+#### Task 6-4
+
+**TASK:** The drives, and the Archive Drive's matrix, select the table rows.
+
+**NOW:** These select the rows the phase replaces:
+- `drive-harness.mjs:619` (`trashRowEl`);
+- `reveal-parity/run.mjs:347-356`;
+- `Archive Drive/live-drive.mjs`:
+  - `:291`, `:561`, `:563`, `:597`, and `:645`;
+  - `:1005-1006` and `:1009` (`checkArc`'s `.data-cell.archive-date`);
+  - `:1100`, `:1221`, `:1232`, and `:1271`;
+  - `:1275`, whose virtual-row check counts 30px rows;
+- `Metadata Drive/live-drive.mjs:1499`;
+- `Properties Drive/live-drive.mjs:626`.
+
+`Archive Drive/MATRIX.md:72`, `:79`, `:124`, `:135`, and `:140` describe them. The Trash now draws only the rows in its window, so a lookup by title finds a row only while it's drawn.
+
+**CHANGE**
+
+- [x] `.trash-row` becomes `.trash-frame .data-row`; `.archive-rows` becomes `.bundle-rows`; a row's `.trash-date` or `.data-cell.archive-date` becomes `.bundle-date`; `:1275` counts `29.75 * bulkCount`, rounded.
+- [x] `:597`'s look check reads the new frame:
+  - `.nav-search-row`, then `.trash-table`;
+  - its `.table-grid` holds `.trash-head.table-head` (with `.trash-head-name` and `.trash-head-date`), then `.trash-scroll`'s `.data-row`s.
+- [x] Rewrite the five MATRIX rows to match, in place.
+- [x] If a group's lookup misses a row only because it sits outside the drawn window, that step first steps `.trash-scroll`'s `scrollTop` by its own height until the title is drawn, then looks it up. No other step changes.
+
+**VERIFY**
+
+- [x] `rg -n "trash-row|trash-date\b|archive-rows|archive-trail|data-cell\.archive-date|table-divider" .claude/scripts` finds nothing.
+- [x] The Metadata Drive's group `9` and the Properties Drive's groups `6` and `10` run green against `~/Test`, rebuilt before and after. The Archive Drive runs whole in Task 7-2.
+- [x] Reveal Parity's `trashChecks` records against the new rows:
+  - after `npm run build`, launch from `reveal-parity/` as `record.sh` does: `../editor-parity/launch.sh phase6 <repo> 9446 $PWD/fixtures.mjs`;
+  - its fixtures seed no Trash, so trash one page over CDP first (`window.nexus.ask('mutate', { op: 'delete', path, kind: 'page' })`);
+  - run `node run.mjs phase6 9446 trashChecks`, then stop it with `../editor-parity/stop.sh 9446`.
+
+  Then `reveal-parity/results/phase6.json` and `editor-parity/run/phase6` are deleted.
+
+#### Review Checkpoint
+
+- [x] Gates are clean.
+- [x] Neither skin keeps a row, a grid, or a virtual list of its own; both draw through `BundleTable` and `BundleRows`.
+- [x] **Live, Against TableView:** measured with `tableview.mjs` beside `geom.mjs`, which a fresh session rebuilds in its own scratchpad from this session's `/private/tmp/claude-501/-Users-nathantaichman-The-Studio-Projects-Project-Pommora/ead81f97-58c6-423f-8ef7-94ae95dab7f2/scratchpad/`.
+  - In both skins, rows measure TableView's height, 13px icon, 6px icon-to-title gap, 14px step per depth, chevron in the 20px rail slot, and its weights and colors. The lead row stands about a pixel taller than TableView's, which has no line above it.
+  - The Trash's rows draw the Archive's full-width lines, square hover, 20px gutter, and centered body-size date.
+  - The Trash's heading keeps its names, glyphs, type, and clear fill, and its divider still runs from 10px to the frame's inset. Its File Name glyph still sits at 10px, and Time Deleted 8px past the column line, which meets the rows' column line.
+- [x] **Live, the Keyboard,** in both skins:
+  - one Tab lands in the rows with the focus wash;
+  - the arrows step between rows;
+  - Enter and Space disclose a container and check a page;
+  - Tab leaves without stopping on a checkbox;
+  - a focused row scrolled far out of view keeps focus, and Tab from the search field returns to it.
+- [x] **Live, the Pointer:** with the rows now carrying the engine's pointer gesture, a real double-click on an Archive page opens the reader and leaves the row checked, a press-and-drag on a row moves nothing and still clicks it, and a click on a box, the pointer arriving straight at it, checks without disclosing.
+- [x] **Live, the Width:** at the Settings window's 620px minimum, the Trash scrolls sideways, its heading riding with its rows, its checkboxes whole, and its scrollbar at the frame's edge. An empty Trash centers its line in the window.
+- [x] Screenshots of both skins, at the default and the minimum width, are sent to Nathan.
+
+#### Compaction Checkpoint
+
+---
+
+### Phase 7 — Documents, Drive, and the Live Pass
 
 **GOAL:** The living documents describe what now exists, the Archive Drive covers disclosure and re-nesting, and the feature is driven end to end over CDP.
 
-#### Task 6-1
+#### Task 7-1
 
 **TASK:** Rewrite each *§Reconciliation* entry in place, under *§Constraints › Docs*.
 
@@ -1523,19 +2419,25 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 - [ ] Rewrite `IssuesPM.md` I-075 to the shipped `rowClick`:
   - `browser.ts` reads `detail`, so its row joins the surface table as a `detail` guard, and the paragraph naming this plan leaves;
   - the Solution counts eleven surfaces with the plan's Task 4-1 dropped, and the footnote's two plan cites give way to `browser.ts`'s `rowClick`.
-- [ ] Add an `IssuesPM.md` entry: a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited. Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md` afterward, which gives the entry its number and recomputes the totals.
+- [ ] Add these `IssuesPM.md` entries:
+  - **Emptied Containers:** a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited.
+  - **Drag Instructions on Rows That Can't Move:** every line row points screen readers at the drag instructions ("press space to pick it up"), though in a list that can't be dragged Space now opens the row. Describing only rows that can lift needs the zone's lock to reach the row.
+  - **Archived Views After Try Again:** a Set archived after its pages were pulled out of a delete that still owes its finish loses its view filters when that delete's Try Again runs, since the finish counts a Set live only if the tree holds it. A whole Set deleted, restored, then archived before its Try Again loses them the same way.
+- [ ] Run `Core/Nexus/mutate.test.ts`'s "a color queued behind a Space rename…" under full-suite load at the baseline `8148302cf`, in a worktree on a quiet machine. If it fails there, add its `IssuesPM.md` entry; if it passes there, fix it here.
+- [ ] Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md`, which numbers the entries and recomputes the totals.
 
 **VERIFY**
 
-- [ ] `rg -n "one row per deleted|is one row|title opens the reader|nowhere to go" .claude/Features Core` finds nothing stale.
+- [ ] `rg -n "one row per deleted|is one row|title opens the reader|nowhere to go|table-divider|is-clear" .claude/Features Core` finds nothing stale.
 - [ ] The index script reports no dangling citation.
 
-#### Task 6-2
+#### Task 7-2
 
 **TASK:** Add a disclosure group to the Archive Drive.
 
 **CHANGE**
 
+- [ ] Rewrite group 6B's steps that still open the reader with a single title click (`live-drive.mjs:1188`, `:1201-1205`) to a double-click that leaves the row checked, and its Set step (`:1213-1217`) to a click that discloses the Set and opens nothing, with their MATRIX rows rewritten in place.
 - [ ] Add MATRIX rows to `.claude/scripts/Archive Drive/MATRIX.md`, with matching steps in `live-drive.mjs`, for:
   - a trashed Collection disclosing a Set and pages;
   - an inner page restored through Restore ▸;
@@ -1547,7 +2449,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 - [ ] The drive runs green against `~/Test`, rebuilt with `node .claude/scripts/make-benchmark-nexus.mjs test` before and after.
 
-#### Task 6-3
+#### Task 7-3
 
 **TASK:** A live CDP pass with screenshots of both skins. Every fixture is removed afterward.
 
@@ -1566,13 +2468,13 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 ### Completion Criteria
 
-- **Conformance:** The work follows *§Constraints*, `.claude/CLAUDE.md`, and the Studio conventions. No second reader exists for a store path, an inner record, an identity, an artifact row, or a click.
+- **Conformance:** The work follows *§Constraints*, `.claude/CLAUDE.md`, and the Studio conventions. No second reader exists for a store path, an inner record, an identity, an artifact row, or a click, and no second drawing of a store's row.
 - **Correctness:**
   - Each kind of inner item (page, nested Set) restores, deletes, and Undoes in both stores.
   - A refused inner-item op leaves its bundle untouched.
   - A homeless batch Restore asks once per kind of destination.
-  - The gestures match the rulings in both skins, live.
-- **Completeness:** Every task is ticked. No `storeOf`, `leaf` request, title-click open, or "nowhere to go" path remains.
+  - The gestures and the keyboard match the rulings in both skins, live, and both skins' rows measure TableView's.
+- **Completeness:** Every task is ticked. No `storeOf`, `leaf` request, title-click open, "nowhere to go" path, MenuItem Trash row, or `titleAccessory` remains.
 - **Confirmation:** Every new or rewritten test goes red without its change, and the live pass's screenshots are delivered.
 - **Continuity:** *§Reconciliation* is walked, and the Archive Drive matrix is current.
 - **Confidence:** Gates are green from a clean state over `$BASE..HEAD`, and the delta is reported.
@@ -1581,7 +2483,7 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5
+- [ ] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
 - [ ] Simplification lens → adversarial lens (opus-high) over `$BASE..HEAD`
 - [ ] Neutral verification (opus-high) over `$BASE..HEAD`
 - [ ] Own pass: gates · diff · deviations · criteria
@@ -1590,21 +2492,29 @@ The header docstring at `:41` reads: "A Set discloses what it holds, and a page 
 
 #### Reconciliation
 
-- `.claude/Features/NexusRecordPM.md:10` — "a Trash record of a page or Set deleted from the Archive names the Archive bundle it left" reads false for an item taken out of an archived Set, whose record names where inside the bundle it sat — Task 6-1
-- `.claude/Features/NexusRecordPM.md:16` — "one row per deleted entity" reads false once a Set's or Collection's row opens onto a row per item inside it; "removes the spent bundle" reads false for an item deleted out of one, which leaves the rest behind; "a batch names what it couldn't resolve" reads false once a batch asks where its homeless rows go — Task 6-1
-- `.claude/Features/CollectionsPM.md:51` — "Restoring an archived page or set places it back into its remembered placement" reads false for an item restored out of an archived Set, which asks where it goes — Task 6-1
-- `.claude/Features/CorePM.md:92` — "save the Archive bundle a delete from the Archive names" and "an Archive bundle" in the cascade rule read false once a delete from the Archive can name an item inside one — Task 6-1
-- `.claude/Features/PommoraUIX.md:361` — "`MenuItem` carries `leading` · title · `subLabel` · `detail` · `trailing` · `overlay`" omits `titleAccessory` from the kit's slot ledger — Task 6-1
-- `.claude/IssuesPM.md` I-075 — "`Core/Bundles/browser.ts` doesn't read `detail` yet", the Solution's surface count, and the footnote's plan cites read false once `rowClick` ships — Task 6-1
-- `.claude/IssuesPM.md` — new entry: an emptied container bundle stays behind — Task 6-1
+- `.claude/Features/NexusRecordPM.md:10` — "a Trash record of a page or Set deleted from the Archive names the Archive bundle it left" reads false for an item taken out of an archived Set, whose record names where inside the bundle it sat — Task 7-1
+- `.claude/Features/NexusRecordPM.md:16` — "one row per deleted entity" reads false once a Set's or Collection's row opens onto a row per item inside it; "removes the spent bundle" reads false for an item deleted out of one, which leaves the rest behind; "a batch names what it couldn't resolve" reads false once a batch asks where its homeless rows go — Task 7-1
+- `.claude/Features/CollectionsPM.md:51` — "Restoring an archived page or set places it back into its remembered placement" reads false for an item restored out of an archived Set, which asks where it goes — Task 7-1
+- `.claude/Features/CorePM.md:92` — "save the Archive bundle a delete from the Archive names" and "an Archive bundle" in the cascade rule read false once a delete from the Archive can name an item inside one — Task 7-1
+- `.claude/Features/PommoraUIX.md:393` — "(`.table-divider` puts the bar on any element)" reads false once the class leaves — Task 7-1
+- `.claude/Features/PommoraDND.md:60` — "Space lifts a row" and a displace item's "Space lifts it" read false where nothing can be lifted, which Space opens — Task 7-1
+- `.claude/Features/ViewTypesPM.md:95` — "and states `is-clear` for a heading with no fill and no seam" reads false once the class leaves — Task 7-1
+- `.claude/scripts/Archive Drive/MATRIX.md:72`, `:79`, `:124`, `:135`, `:140` — the Trash's `.trash-row.table-divider` rows and `.trash-date`, `.archive-rows`, and "30 px" rows — Task 6-4
+- `Core/Views/Table/table-view.css:1` — "the rail gutter's grip and check" reads false; the check and the lead cell's seat live in `table.css` — Task 6-2
+- `Core/Archive/archive-view.css:1` — the virtual list, the trail, and the Archived column move to the bundle table — Task 6-2
+- `Core/Settings/trash-frame.css:2`, `:27`, `:86` — the date lane, "this strip has no gutter column", and the trail's mirrored inset — Task 6-3
+- `.claude/IssuesPM.md` I-075 — "`Core/Bundles/browser.ts` doesn't read `detail` yet", the Solution's surface count, and the footnote's plan cites read false once `rowClick` ships — Task 7-1
+- `.claude/IssuesPM.md` — new entry: an emptied container bundle stays behind — Task 7-1
 - `Core/Bundles/browser.ts:189` — the hook's doc gains the tree and `rowClick` — Task 4-1
 - `Core/Interface/Confirm/confirmations.ts:46` — the `spendUndo` doc reads "A bundle, or an inner item of one, …" — Task 1-3
 
 #### Open Items
 
-- **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 6-1 records it in `IssuesPM.md` for a later decision.
+- **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 7-1 records it in `IssuesPM.md` for a later decision.
+- **Archived Views After Try Again:** a delete's owed finish counts a Set live only if the tree holds it, so an archived one loses its view filters. The whole-bundle path predates this plan. Task 7-1 records it in `IssuesPM.md`.
 
 
 #### Deviations
 
 - **The Layout Leaf (Task 1-2):** `spendBundle`'s owed-note edit put `owed.ts` and `configReach.ts` on the live tree's load path, because `heldPages.ts` reached `bundle.ts` for `originPathOf` alone. The cycle left `configReach.test.ts`'s `liveTree` mock depending on import order. The stores' layout, the stamp, `stampedSegment`, `bundleAddressOf`, and `originPathOf` moved into a pure `Core/Bundles/layout.ts`, so loading the tree reaches nothing else in `Core/Bundles/`, and the baseline cycle through `record.ts` closed with it.
+- **One Table Row (Phase 6, Nathan's Ruling):** Phase 5 drew the Trash on MenuItem rows and gave MenuItem `titleAccessory` and `titleLine` for its chevron. Seeing both skins live, Nathan ruled the Trash onto the Archive's table row, planned as a phase of its own. Phase 6 draws both skins from one bundle table, and `titleAccessory`, `titleLine`, MenuItem's `revealed`, `.table-divider`, and `.table.is-clear` leave with the Trash's MenuItem rows.

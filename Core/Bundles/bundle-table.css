@@ -1,0 +1,34 @@
+/* The bundle table's own layout over the table vocabulary: its rows in a virtual window, each title line with its chevron, the trail it left at its right, its partial mark, and its date centered in its column. */
+.bundle-rows {
+  position: relative;
+}
+.bundle-rows > .data-row {
+  position: absolute;
+  inset-inline: 0;
+}
+.bundle-rows .data-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* KNOB — the title from its trail */
+}
+/* The box a nested row's chevron takes its rail slot against. */
+.bundle-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--cell-icon-gap);
+  min-width: 0;
+  margin-right: auto;
+}
+.bundle-trail {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 55%;
+}
+.bundle-partial {
+  flex: none;
+  color: var(--label-secondary);
+}
+.bundle-date {
+  justify-content: center;
+}

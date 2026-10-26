@@ -8,12 +8,6 @@
   align-items: stretch;
 }
 
-/* For a heading that already sits under chrome of its own, such as the Trash's inset hairline. */
-.table.is-clear {
-  --heading-fill: none;
-  --heading-divider: none;
-}
-
 .table-head {
   /* The one place a heading's type is set — TableView's and ArchiveView's .col-header and the Trash's head inherit it. */
   font-size: var(--text-callout-size);
@@ -88,6 +82,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The lead cell seats its row's rail slot in the gutter beside it. */
+.data-cell.cell-lead {
+  position: relative;
+  overflow: visible;
+}
 .cell-rename {
   display: flex;
   align-items: center;
@@ -106,8 +105,7 @@
 }
 /* Absolutely placed so they add no track width; the radius reuses the bar width so the thin caps fully round. */
 .col-header:not(:last-child)::after,
-.col-header:first-child::before,
-.table-divider::after {
+.col-header:first-child::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -118,9 +116,6 @@
   border-radius: var(--heading-segment-width);
   background: var(--heading-segment);
   pointer-events: none;
-}
-.table-divider {
-  position: relative;
 }
 .col-header:first-child::before {
   left: 0;
@@ -213,6 +208,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.row-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--rail-inset));
+  width: var(--rail-inset);
+}
+.row-grip,
+.row-check {
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .cell-text-scroll {
   display: inline-block;

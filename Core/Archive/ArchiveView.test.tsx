@@ -17,18 +17,8 @@ import { storesChanged } from '../Session/nexusSlice'
 import { captureWarm, clearWarm } from '../Session/warmCache'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
-import { text } from '@pommora/uix/Theme'
 
-vi.mock('@pommora/uix/Interactions/virtualRows', () => ({
-  useVirtualRows: ({ count, rowHeight }: { count: number; rowHeight: number }) => ({
-    height: count * rowHeight,
-    rows: Array.from({ length: count }, (_, index) => ({
-      key: index,
-      index,
-      start: index * rowHeight,
-    })),
-  }),
-}))
+vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 vi.mock('../MarkdownPM/MarkdownEditor', () => ({
   MarkdownEditor: (p: { initialBody: string }) =>
     createElement('div', { className: 'stub-editor' }, p.initialBody),
@@ -91,7 +81,7 @@ describe('ArchiveView', () => {
       ),
     )
   const rowEls = (): HTMLElement[] => [
-    ...host.querySelectorAll<HTMLElement>('.archive-rows .data-row'),
+    ...host.querySelectorAll<HTMLElement>('.bundle-rows .data-row'),
   ]
   const titles = (): string[] =>
     rowEls().map((r) => r.querySelector('.cell-title-text')?.textContent ?? '')
@@ -188,9 +178,8 @@ describe('ArchiveView', () => {
     await render()
     expect(list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, undefined)
     expect(titles()).toEqual(['Newer', 'Older'])
-    const cell = rowOf('Newer').querySelector('.cell-lead')
-    expect(cell?.lastElementChild?.textContent).toBe('Notes›Ideas')
-    const dates = rowEls().map((r) => r.querySelector('.data-cell.archive-date')?.textContent ?? '')
+    expect(rowOf('Newer').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
+    const dates = rowEls().map((r) => r.querySelector('.bundle-date')?.textContent ?? '')
     expect(dates.every((d) => d !== '')).toBe(true)
     expect(dates[0]).not.toBe(dates[1])
   })
@@ -253,22 +242,6 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader).toBeNull()
   })
 
-  it('an Enter on a focused Set row discloses it, and its box checks it without disclosing', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    await render()
-    await act(async () => (boxOf('Ideas') as HTMLElement).click())
-    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
-    expect(titles()).toEqual(['Ideas'])
-    rowOf('Ideas').focus()
-    expect(document.activeElement).toBe(rowOf('Ideas'))
-    await act(async () => {
-      rowOf('Ideas').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-    })
-    expect(titles()).toEqual(['Ideas', 'P'])
-    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
-  })
-
   it('a double-click on a page’s box opens nothing', async () => {
     await render()
     const box = boxOf('A') as HTMLElement
@@ -282,39 +255,12 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader).toBeNull()
   })
 
-  it('a top-level Set’s chevron follows its title, a nested Set’s comes before its icon, and a Set’s title is emphasized where a page’s is not', async () => {
-    const sub = inner('Sub', { kind: 'set', stored: undefined })
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [sub, inner('P')] }
-    await render()
-    await press('Ideas', 1)
-    expect(chevronOf('Ideas')?.previousElementSibling?.classList.contains('cell-title')).toBe(true)
-    const slot = chevronOf('Sub')?.parentElement
-    expect(slot?.classList.contains('row-chevron')).toBe(true)
-    expect(slot?.nextElementSibling?.classList.contains('cell-title')).toBe(true)
-    const emphasized = (title: string): boolean | undefined =>
-      rowOf(title).querySelector('.cell-title-text')?.classList.contains(text.body.emphasized)
-    expect([emphasized('Ideas'), emphasized('Sub'), emphasized('P')]).toEqual([true, true, false])
-  })
-
-  it('a click on a Set’s chevron discloses it, as a click on its row does', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    await render()
-    await act(async () => {
-      chevronOf('Ideas')?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
-    })
-    expect(titles()).toEqual(['Ideas', 'P'])
-  })
-
   it('an inner row shows its trail: its bundle’s trail, then the containers inside the bundle', async () => {
     listed = [archivedSet()]
     children = { [SET_BUNDLE]: [inner('P')] }
     await render()
     await press('Ideas', 1)
-    expect(rowOf('P').querySelector('.cell-lead')?.lastElementChild?.textContent).toBe(
-      'Notes›Ideas',
-    )
+    expect(rowOf('P').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
   })
 
   it('publishes the count of top rows, whatever an open Set discloses', async () => {
@@ -355,10 +301,11 @@ describe('ArchiveView', () => {
     expect(host.querySelector('.banner-empty .detail-title-text')?.textContent).toBe('Notes')
   })
 
-  it('an empty archive reads its one line', async () => {
+  it('an empty archive reads its one line and leaves no Tab stop', async () => {
     listed = []
     await render()
     expect(empty()).toBe("This Collection's archive is empty.")
+    expect(host.querySelector('.line-zone')).toBeNull()
   })
 
   it('a top-level Set’s empty archive reads the Set’s line', async () => {
@@ -368,13 +315,14 @@ describe('ArchiveView', () => {
     expect(empty()).toBe("This Set's archive is empty.")
   })
 
-  it('a listing that fails reads its one line and draws no rows', async () => {
+  it('a listing that fails reads its one line and draws no rows or Tab stop', async () => {
     await render()
     expect(titles()).toEqual(['A'])
     list.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     await act(async () => storesChanged.emit())
     expect(titles()).toEqual([])
     expect(empty()).toBe("The archive couldn't be read.")
+    expect(host.querySelector('.line-zone')).toBeNull()
   })
 
   it('narrows in place by the tab’s search, keeping archived order', async () => {
@@ -386,7 +334,7 @@ describe('ArchiveView', () => {
     expect(titles()).toEqual(['Beta Two', 'Beta One'])
   })
 
-  it('a search that hides every row reads Nothing matches.', async () => {
+  it('a search that hides every row reads Nothing matches. and leaves no Tab stop', async () => {
     await render()
     expect(empty()).toBeNull()
     await act(async () =>
@@ -394,6 +342,7 @@ describe('ArchiveView', () => {
     )
     expect(titles()).toEqual([])
     expect(empty()).toBe('Nothing matches.')
+    expect(host.querySelector('.line-zone')).toBeNull()
   })
 
   it('declares its bar while rows are checked, reading their count, and withdraws it when parked', async () => {
@@ -588,7 +537,7 @@ describe('ArchiveView', () => {
         return held.get(this) ?? 0
       },
       set(this: Element, top: number) {
-        const rows = this.querySelector<HTMLElement>('.archive-rows')
+        const rows = this.querySelector<HTMLElement>('.bundle-rows')
         held.set(this, Math.min(top, Number.parseFloat(rows?.style.height ?? '') || 0))
       },
     })

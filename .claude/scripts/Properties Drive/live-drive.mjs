@@ -623,7 +623,7 @@ async function group10() {
   const listed = (await trashRows(cdp)).find((r) => r.title === 'Drive Partial')
   await openSettings(cdp, 'Trash')
   const marked = await cdp.evaluate(`!!(${trashRowEl('Drive Partial')})?.querySelector('[role="img"][aria-label="Recorded Partly"]')`)
-  const plain = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [aria-label="Recorded Partly"]')].length`)
+  const plain = await cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [aria-label="Recorded Partly"]')].length`)
   item(10, 'N-1', 'a partly recorded Trash entry shows its mark, and no other row does', listed?.partial === true && marked && plain === 1, show({ listed, marked, plain }))
   const back = await op('restore Drive Partial', { op: 'restore', bundlePath: partialBundle })
   item(10, 'N-1', 'its restore says it may not hold everything',

@@ -1,22 +1,13 @@
 import { useState } from 'react'
-import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
-import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { historical } from '@pommora/uix/Elements/nav-trail.css'
-import { DropOutline, MenuItem } from '@pommora/uix/Menus'
-import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { Icon } from '@pommora/uix/Symbols'
-import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
-import type { Personalization } from './personalization'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { useSession } from '../Session/store'
-import { personalizationOf } from '../Session/configSlice'
-import { crumbSegments, type TreeRow, useBundleBrowser } from '../Bundles/browser'
-import { DateHeading } from '../Bundles/DateHeading'
+import { useBundleBrowser } from '../Bundles/browser'
+import { BundleRows, BundleTable, DateHeading } from '../Bundles/BundleTable'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
 
@@ -28,160 +19,62 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const { listing, visible, checked, picked, toggle, rowClick, openMenu, date } = useBundleBrowser(
-    { kind: 'trash' },
-    { query, shown: true },
-  )
-  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
+  const browser = useBundleBrowser({ kind: 'trash' }, { query, shown: true })
+  const { listing, visible, date } = browser
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
 
-  const body = (): React.JSX.Element => {
+  const footing = (): React.JSX.Element | null => {
     switch (listing.status) {
       case 'loading':
-        return <div className="trash-empty" />
+        return null
       case 'failed':
         return (
           <div className={cx('trash-empty', text.body.standard)}>The trash couldn't be read.</div>
         )
       case 'ready':
-        if (visible.length === 0)
-          return (
-            <div className={cx('trash-empty', text.body.standard)}>
-              {listing.rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
-            </div>
-          )
+        if (visible.length > 0) return null
         return (
-          <>
-            <div className="trash-scroll scroll-fade">
-              <div className="nav-list">
-                {visible.map((tree) => (
-                  <TrashRowView
-                    key={tree.row.bundlePath}
-                    tree={tree}
-                    checked={checked.has(tree.row.bundlePath)}
-                    revealed={picked.length > 0}
-                    onToggle={() => toggle(tree.row.bundlePath)}
-                    onClick={(detail) => rowClick(tree.row, detail)}
-                    onMenu={() => void openMenu(tree.row)}
-                    defaultIcons={defaultIcons}
-                    when={date.when(tree.row.storedAt)}
-                  />
-                ))}
-              </div>
-            </div>
-            <Scrollbar />
-          </>
+          <div className={cx('trash-empty', text.body.standard)}>
+            {listing.rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
+          </div>
         )
     }
   }
 
   return (
-    <div
-      className="trash-frame table is-clear"
-      style={
-        date.width === null
-          ? undefined
-          : ({
-              '--trash-date-lane': `calc(${date.width}px + var(--trash-date-inset))`,
-            } as React.CSSProperties)
-      }
-    >
+    <div className="trash-frame table">
       <div className="nav-search-row">
         <SearchField className={text.body.standard} value={query} onValueChange={setQuery} />
       </div>
-
-      <div className={cx('trash-head', 'table-head')}>
-        <span className="trash-head-name col-header">
-          <span className="trash-head-glyph">
-            <Icon name={propertyTypeIconName('title')} size="body" />
-          </span>
-          File Name
-        </span>
-        <DateHeading
-          date={date}
-          className="trash-head-date"
-          sampleClass={text.caption.standard}
-          label={
-            <span className="trash-head-label">
-              <Icon name="clock-fading" size="body" />
-              Time Deleted
+      <div className="trash-table">
+        <BundleTable date={date}>
+          <div className="trash-head table-head">
+            <span className="trash-head-name col-header">
+              <span className="trash-head-glyph">
+                <Icon name={propertyTypeIconName('title')} size="body" />
+              </span>
+              File Name
             </span>
-          }
-        />
-      </div>
-
-      {body()}
-    </div>
-  )
-}
-
-function TrashRowView({
-  tree: { row, depth, open },
-  checked,
-  revealed,
-  onToggle,
-  onClick,
-  onMenu,
-  when,
-  defaultIcons,
-}: {
-  tree: TreeRow
-  checked: boolean
-  revealed: boolean
-  onToggle: () => void
-  onClick: (detail: number) => void
-  onMenu: () => void
-  when: string
-  defaultIcons: Personalization['defaultIcons']
-}): React.JSX.Element {
-  const icon =
-    row.kind === 'property'
-      ? row.propertyType
-        ? propertyTypeIconName(row.propertyType)
-        : 'tag'
-      : entityIcon(row.kind, row.icon, defaultIcons)
-  const chevron = open === null ? null : <DropOutline open={open} />
-  return (
-    <MenuItem
-      className="trash-row table-divider"
-      revealed={revealed}
-      leading={
-        <span className="trash-lead" style={{ marginLeft: rowIndent(depth) }}>
-          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
-          <Icon name={icon} size="body" />
-        </span>
-      }
-      titleAccessory={depth === 0 ? chevron : null}
-      detail={
-        <NavTrail
-          segments={crumbSegments(row.crumbs, defaultIcons)}
-          iconSize="control"
-          className={cx('trash-trail', row.historical && historical)}
-        />
-      }
-      trailing={
-        <>
-          {row.partial && (
-            <Icon name="triangle-alert" size="body" role="img" aria-label="Recorded Partly" />
+            <DateHeading
+              date={date}
+              className="trash-head-date"
+              label={
+                <span className="trash-head-label">
+                  <Icon name="clock-fading" size="body" />
+                  Time Deleted
+                </span>
+              }
+            />
+          </div>
+          {visible.length > 0 && (
+            <div ref={setScrollEl} className="trash-scroll scroll-fade">
+              <BundleRows browser={browser} scrollEl={scrollEl} />
+            </div>
           )}
-          <span className={cx('trash-date', text.caption.standard)}>{when}</span>
-        </>
-      }
-      overlay={
-        <Checkbox
-          className={overlay}
-          size="compact"
-          state={checked}
-          onChange={onToggle}
-          ariaLabel={`Select ${row.title}`}
-        />
-      }
-      onClick={(e) => onClick(e.detail)}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        onMenu()
-      }}
-    >
-      {open === null ? row.title : <span className={text.body.emphasized}>{row.title}</span>}
-    </MenuItem>
+        </BundleTable>
+      </div>
+      {footing()}
+      <Scrollbar of={scrollEl} />
+    </div>
   )
 }

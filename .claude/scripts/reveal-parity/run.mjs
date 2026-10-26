@@ -53,7 +53,7 @@ const reset = async () => {
 // ── Navigation ──
 const VIEW_EL = `__rv.q('.content-view .cm-content')?.cmTile?.root?.view`
 const VIEW = `__rv.q('.content-view .cm-content').cmTile.root.view`
-const ribbon = (name) => press(q(`button[aria-label="${name}" i]`), `ribbon ${name}`)
+const ribbon = (name) => press(q(`.sidebar-ribbon button[aria-label="${name}" i]`), `ribbon ${name}`)
 const collection = async (name) => {
   await ribbon('collections')
   await press(byText('.row', name), `row ${name}`)
@@ -344,16 +344,16 @@ surface('navPins', async () => {
 surface('trashChecks', async () => {
   await ribbon('settings')
   await press(byText('[role=dialog] *', 'Trash'), 'Trash rail row')
-  await need(q('.trash-frame .trash-row'), 'trash row')
+  await need(q('.trash-frame .data-row'), 'trash row')
   await sleep(SETTLE)
-  const rows = await ev(`__rv.all('.trash-frame .trash-row').length`)
-  const check = (i) => ({ id: `check${i}`, el: `__rv.all('.trash-frame .trash-row')[${i}]?.querySelector('[role=checkbox]')`, host: `__rv.all('.trash-frame .trash-row')[${i}]` })
+  const rows = await ev(`__rv.all('.trash-frame .data-row').length`)
+  const check = (i) => ({ id: `check${i}`, el: `__rv.all('.trash-frame .data-row')[${i}]?.querySelector('[role=checkbox]')`, host: `__rv.all('.trash-frame .data-row')[${i}]` })
   const res = { first: await settled(check(0)) }
   // Checking one row shows every check.
-  await press(`__rv.all('.trash-frame .trash-row')[0]`)
+  await press(`__rv.all('.trash-frame .data-row')[0]`)
   res.checkedOther = rows > 1 ? await settled(check(1)) : null
   res.checkedSelf = await settled(check(0))
-  await press(`__rv.all('.trash-frame .trash-row')[0]`)
+  await press(`__rv.all('.trash-frame .data-row')[0]`)
   await escape()
   await sleep(SETTLE)
   return res

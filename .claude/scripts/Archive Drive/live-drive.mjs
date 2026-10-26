@@ -288,7 +288,7 @@ async function group2(cdp) {
     await deleteAt(cdp, page(A_ALPHA, t), 'page')
   }
   await openSettings(cdp, 'Trash')
-  const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
+  const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
   const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).map((r) => r.title)
   item(2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
   for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
@@ -558,9 +558,9 @@ async function group4() {
 const LABEL = `document.querySelector('[role=status], [role=alert]')`
 const drained = (cdp) => cdp.evaluate(`${LABEL}.hasAttribute('inert')`)
 const moveTo = (cdp, { x, y }) => cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-const g5Row = (title) => `[...document.querySelectorAll('.trash-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
+const g5Row = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
 const checkRow = (cdp, title) => click(cdp, `${g5Row(title)}.querySelector('[role=checkbox]')`)
-const listedTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.trash-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
+const listedTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
 /** Each face of the one swap inside `expr`, in its order: shown or hidden, and whether it's inert and unnamed. */
 const facesOf = (cdp, expr) =>
   cdp.evaluate(`[...(${expr}).querySelectorAll('[data-face]')].map((f) => ({ face: f.dataset.face, text: f.textContent.trim(), inert: f.hasAttribute('inert'), hidden: f.getAttribute('aria-hidden') === 'true' }))`)
@@ -594,7 +594,7 @@ async function group5(cdp) {
 
   await openSettings(cdp, 'Trash')
   await until('the Trash rows', async () => (await listedTitles(cdp)).includes('G5 One'))
-  const look = await cdp.evaluate(`(() => { const f = document.querySelector('.trash-frame.table'); const [search, head] = f?.children ?? []; const rows = [...(f?.querySelectorAll('.trash-row.table-divider') ?? [])]; return !!f && !!search?.matches('.nav-search-row') && !!head?.matches('.trash-head.table-head') && !!head.querySelector('.trash-head-name') && !!head.querySelector('.trash-head-date') && rows.length > 0 && rows.every((r) => head.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING) })()`)
+  const look = await cdp.evaluate(`(() => { const f = document.querySelector('.trash-frame.table'); const [search, table] = f?.children ?? []; const [head, scroll] = table?.querySelector(':scope > .table-grid')?.children ?? []; return !!f && !!search?.matches('.nav-search-row') && !!table?.matches('.trash-table') && !!head?.matches('.trash-head.table-head') && !!head.querySelector('.trash-head-name') && !!head.querySelector('.trash-head-date') && !!scroll?.matches('.trash-scroll') && !!scroll.querySelector('.data-row') })()`)
   const listed = await listedTitles(cdp)
   item(5, 'G-1', 'the Trash keeps its look and lists newest first',
     look && same(listed.slice(0, 4), [...titles].reverse()), show({ look, listed }))
@@ -642,7 +642,7 @@ async function group5(cdp) {
     short && picked && full && returned, show({ short, full, style: trashStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, sel('.trash-head-date'), 'Full')
-  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.trash-frame .trash-date')]; const head = document.querySelector('.trash-frame .trash-head-date'); return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
+  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.trash-frame .bundle-date')]; const head = document.querySelector('.trash-frame .trash-head-date'); return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, sel('.trash-head-date'), 'Hidden')
   const settled = await settles(async () => !('trashColumnStyle' in (settingsOnDisk().personalization ?? {})))
   item(5, 'G-1', 'under its widest style no Trash date and not its heading is cut',
@@ -1002,11 +1002,11 @@ const live = (css) => `[...document.querySelectorAll(${JSON.stringify(css)})].fi
 const SHOWN = `document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')`
 const barButton = (label) =>
   label === 'Delete' ? `${SHOWN}.querySelector('button[title="Delete"]')` : `[...${SHOWN}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`
-const arcRow = (title) => `[...document.querySelectorAll('.archive-rows .data-row')].find((r) => !r.closest('[inert]') && r.querySelector('.cell-title-text')?.textContent === ${JSON.stringify(title)})`
-const arcTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.archive-rows .data-row')].filter((r) => !r.closest('[inert]')).map((r) => r.querySelector('.cell-title-text')?.textContent)`)
+const arcRow = (title) => `[...document.querySelectorAll('.bundle-rows .data-row')].find((r) => !r.closest('[inert]') && r.querySelector('.cell-title-text')?.textContent === ${JSON.stringify(title)})`
+const arcTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.bundle-rows .data-row')].filter((r) => !r.closest('[inert]')).map((r) => r.querySelector('.cell-title-text')?.textContent)`)
 const arcChecked = (cdp, title) => cdp.evaluate(`(${arcRow(title)})?.querySelector('[role=checkbox]')?.getAttribute('aria-checked') === 'true'`)
 /** A press on the row's Archived cell, outside its title, as a user checks a row. */
-const checkArc = (cdp, title) => mouseClick(cdp, `(${arcRow(title)}).querySelector('.data-cell.archive-date')`)
+const checkArc = (cdp, title) => mouseClick(cdp, `(${arcRow(title)}).querySelector('.bundle-date')`)
 const trailOf = (cdp, expr) => cdp.evaluate(`(${expr})?.textContent.split('›') ?? null`)
 const READER = `document.querySelector('[aria-label="Archived Page"]')`
 const tabCount = (cdp) => cdp.evaluate(`document.querySelectorAll('[role=tab]').length`)
@@ -1096,8 +1096,8 @@ async function group6B() {
 
   await until('the archived rows', async () => (await arcTitles(cdp)).length === 4).catch(() => {})
   const listed = await arcTitles(cdp)
-  const arc1Trail = await trailOf(cdp, `(${arcRow('Drive Arc 1')})?.querySelector('.cell-lead')?.lastElementChild`)
-  const dates = await cdp.evaluate(`[...document.querySelectorAll('.archive-rows .data-cell.archive-date')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
+  const arc1Trail = await trailOf(cdp, `(${arcRow('Drive Arc 1')})?.querySelector('.bundle-trail')`)
+  const dates = await cdp.evaluate(`[...document.querySelectorAll('.bundle-rows .bundle-date')].filter((c) => !c.closest('[inert]')).map((c) => c.textContent)`)
   const counted = await cdp.evaluate(`(${live('[title="Results"]')})?.textContent.trim() ?? null`)
   item('6B', 'G-1, G-2', 'rows list each archived item with its trail and time, newest first',
     same(listed, ['Drive Arc Set', 'Drive Arc Root', 'Drive Arc 2', 'Drive Arc 1']) && same(arc1Trail, [COLLECTION, 'Set Alpha']) && dates.length === 4 && dates.every((d) => d !== '') && counted === '4',
@@ -1218,7 +1218,7 @@ async function group6B() {
 
   const archiveStyle = () => personal().archiveColumnStyle
   const HEADING = live('.col-header.archive-date')
-  const firstDate = () => cdp.evaluate(`(${live('.archive-rows .data-cell.archive-date')})?.textContent ?? null`)
+  const firstDate = () => cdp.evaluate(`(${live('.bundle-rows .bundle-date')})?.textContent ?? null`)
   const dateBefore = await firstDate()
   const { chosen: short } = await chooseNative(cdp, HEADING, 'Short Date')
   const styled = await settles(async () => same(archiveStyle(), { date_format: 'short' }))
@@ -1229,7 +1229,7 @@ async function group6B() {
     short && styled && changed && full && unstyled, show({ short, full, dateBefore, style: archiveStyle() }))
 
   const { chosen: widest } = await chooseNative(cdp, HEADING, 'Full')
-  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.archive-rows .data-cell.archive-date')].filter((c) => !c.closest('[inert]')); const head = ${HEADING}; return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
+  const fit = await settles(() => cdp.evaluate(`(() => { const cells = [...document.querySelectorAll('.bundle-rows .bundle-date')].filter((c) => !c.closest('[inert]')); const head = ${HEADING}; return cells.length > 0 && cells.every((c) => /day, /.test(c.textContent) && c.scrollWidth <= c.clientWidth) && !!head && head.scrollWidth <= head.clientWidth })()`))
   const { chosen: unweekdayed } = await chooseNative(cdp, HEADING, 'Hidden')
   const restyled = await settles(async () => !('archiveColumnStyle' in personal()))
   item('6B', 'G-1', 'under its widest style no Archived date and not its heading is cut',
@@ -1268,11 +1268,11 @@ async function group6B() {
   await toArchive(cdp)
   const bulkCount = (await rows(ARCHIVE_B)).length
   await until('the bulk rows', async () => (await arcTitles(cdp)).length > 0).catch(() => {})
-  const sized = await cdp.evaluate(`(() => { const l = ${live('.archive-rows')}; return { height: l?.getBoundingClientRect().height ?? null, drawn: l?.querySelectorAll('.data-row').length ?? 0 } })()`)
+  const sized = await cdp.evaluate(`(() => { const l = ${live('.bundle-rows')}; return { height: l?.getBoundingClientRect().height ?? null, drawn: l?.querySelectorAll('.data-row').length ?? 0 } })()`)
   await cdp.evaluate(`(() => { const s = ${live('.detail-scroll')}; s.scrollTop = s.scrollHeight })()`)
   const bottomed = await settles(async () => (await arcTitles(cdp)).includes('Drive Bulk 01'))
   item('6B', '4.7', 'virtual rows render a window of a long archive',
-    bulkCount === 60 && Math.round(sized.height) === 30 * bulkCount && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
+    bulkCount === 60 && Math.round(sized.height) === Math.round(29.75 * bulkCount) && sized.drawn < bulkCount && bottomed, show({ bulkCount, sized, bottomed }))
 
   await checkArc(cdp, 'Drive Bulk 01')
   const archiveTab = await cdp.evaluate(`[...document.querySelectorAll('[role=tab]')].findIndex((t) => t.getAttribute('aria-selected') === 'true')`)

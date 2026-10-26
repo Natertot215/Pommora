@@ -1496,7 +1496,7 @@ async function group9(cdp) {
 
   // The Trash: a page restored through the Trash browser returns in the current spelling.
   await openSettings(cdp, 'Trash')
-  const trashRow = `[...document.querySelectorAll('.trash-row')].find((r) => r.textContent.includes('M9 Trashed'))`
+  const trashRow = `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.textContent.includes('M9 Trashed'))`
   const { rows: menu } = await chooseNative(cdp, trashRow, 'Restore')
   pin(G, 'G-1', "a page restored from the Trash browser returns under the Label Format set while it was away",
     menu.includes('Restore') && (await wrote(trashed, 'm9 words: back')), show([menu, blockOf(trashed)]))

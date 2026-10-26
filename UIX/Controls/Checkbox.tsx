@@ -17,6 +17,7 @@ export function Checkbox({
   filled,
   color,
   readOnly,
+  tabIndex,
 }: {
   state: boolean
   onChange?: (next: boolean) => void
@@ -26,6 +27,7 @@ export function Checkbox({
   filled?: boolean
   color?: string
   readOnly?: boolean
+  tabIndex?: number
 }): React.JSX.Element {
   const compact = size === 'compact'
   const cls = cx(
@@ -53,6 +55,7 @@ export function Checkbox({
       aria-label={ariaLabel}
       className={cls}
       style={style}
+      tabIndex={tabIndex}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation()

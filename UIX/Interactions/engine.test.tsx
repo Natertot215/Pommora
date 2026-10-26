@@ -660,9 +660,10 @@ describe('the drag handle keyboard', () => {
     const onOpen = vi.fn()
     const openable = await renderZone(onOpen, { disabled: true })
     await press(openable.handle, ' ')
+    expect(onOpen).toHaveBeenCalledOnce()
     expect(lifted(openable.handle)).toBe(false)
     await press(openable.handle, 'Enter')
-    expect(onOpen).toHaveBeenCalledOnce()
+    expect(onOpen).toHaveBeenCalledTimes(2)
     expect(openable.handle.getAttribute('tabindex')).toBe('0')
     expect(openable.handle.hasAttribute('aria-disabled')).toBe(false)
     openable.done()
@@ -1054,12 +1055,15 @@ describe('the line zone', () => {
   })
 
   it('refuses a lift with no snapshot and nothing to carry', async () => {
+    const open = vi.fn()
     lineSpec = { snap: () => null }
+    rowOpts = { r1: { open } }
     await mount()
     await dragHold('r1', 100, 70)
     await release(100, 70)
     await act(async () => item('r1').focus())
     await press(item('r1'), ' ')
+    expect(open).toHaveBeenCalledOnce()
     expect(spoken()).toEqual([])
     expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
     lineSpec = { snap: () => null, carry: [carries(BOARD, (id) => id)] }

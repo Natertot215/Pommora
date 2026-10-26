@@ -21,6 +21,7 @@ import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { GroupBand } from '../Bands/GroupBand'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
+import { RowRail } from '@pommora/uix/Table/RowRail'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
@@ -529,15 +530,7 @@ const DataRow = memo(function DataRow({
             }}
             onClick={(e) => api.click(row, c, e)}
           >
-            {i === 0 && (
-              <span
-                className="row-rail"
-                aria-hidden="true"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-                onContextMenu={(e) => e.stopPropagation()}
-              />
-            )}
+            {i === 0 && <RowRail />}
             {i === 0 && (
               // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span
