@@ -108,16 +108,18 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
 
 const memberCount = (v: unknown): number => new Set(listOf(v).map(memberKey)).size
 
-/** Whether `next` holds `raw`'s members exactly, each once, in whatever order: the reconcile keeps `raw`'s order for any key it isn't writing. */
+/** Whether `next` holds `raw`'s members exactly, each once, in whatever order. */
 const sameMembers = (next: unknown, raw: unknown): boolean =>
   Array.isArray(next) &&
   Array.isArray(raw) &&
   next.length === raw.length &&
   [next, raw, [...next, ...raw]].every((v) => memberCount(v) === raw.length)
 
-/** What a live reconcile lands for `raw` read as `next`: `raw` as written where `next` would blank it or, `listed`, drop a list member it can't resolve, for the user to settle; else `next`, undefined where `raw` reads blank. */
+/** What a live reconcile lands for `raw` read as `next`: `raw` as written where `next` would blank it, would only reorder it, or, `listed`, would drop a list member it can't resolve, for the user to settle; else `next`, undefined where `raw` reads blank. */
 export const liveLanding = (raw: unknown, { next, listed }: { next: unknown; listed: boolean }) =>
-  (next === undefined && !isBlankRaw(raw)) || (listed && memberCount(next) < memberCount(raw))
+  (next === undefined && !isBlankRaw(raw)) ||
+  (listed && memberCount(next) < memberCount(raw)) ||
+  sameMembers(next, raw)
     ? raw
     : next
 
@@ -142,7 +144,7 @@ export function reconcileGovernedRoot(
       if (titles.length) next = writtenSpelling([...new Set(titles)], raw)
     }
     next = liveLanding(raw, { next, listed })
-    if (next !== undefined) out[key] = sameMembers(next, raw) ? raw : next
+    if (next !== undefined) out[key] = next
   }
   return out
 }
