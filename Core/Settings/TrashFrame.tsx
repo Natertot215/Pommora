@@ -4,18 +4,18 @@ import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
-import { MenuItem } from '@pommora/uix/Menus'
+import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import type { Personalization } from './personalization'
-import type { BundleRow } from '../Bundles/rows'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
-import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
+import { crumbSegments, type TreeRow, useBundleBrowser } from '../Bundles/browser'
 import { DateHeading } from '../Bundles/DateHeading'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
@@ -28,7 +28,7 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const { listing, visible, checked, picked, toggle, openMenu, date } = useBundleBrowser(
+  const { listing, visible, checked, picked, toggle, rowClick, openMenu, date } = useBundleBrowser(
     { kind: 'trash' },
     { query, shown: true },
   )
@@ -53,23 +53,17 @@ function TrashBody(): React.JSX.Element {
           <>
             <div className="trash-scroll scroll-fade">
               <div className="nav-list">
-                {visible.map(({ row }) => (
+                {visible.map((tree) => (
                   <TrashRowView
-                    key={row.bundlePath}
-                    row={row}
-                    checked={checked.has(row.bundlePath)}
+                    key={tree.row.bundlePath}
+                    tree={tree}
+                    checked={checked.has(tree.row.bundlePath)}
                     revealed={picked.length > 0}
-                    onToggle={() => toggle(row.bundlePath)}
-                    onMenu={() => void openMenu(row)}
-                    icon={
-                      row.kind === 'property'
-                        ? row.propertyType
-                          ? propertyTypeIconName(row.propertyType)
-                          : 'tag'
-                        : entityIcon(row.kind, row.icon, defaultIcons)
-                    }
+                    onToggle={() => toggle(tree.row.bundlePath)}
+                    onClick={(detail) => rowClick(tree.row, detail)}
+                    onMenu={() => void openMenu(tree.row)}
                     defaultIcons={defaultIcons}
-                    when={date.when(row.storedAt)}
+                    when={date.when(tree.row.storedAt)}
                   />
                 ))}
               </div>
@@ -121,29 +115,42 @@ function TrashBody(): React.JSX.Element {
 }
 
 function TrashRowView({
-  row,
+  tree: { row, depth, open },
   checked,
   revealed,
   onToggle,
+  onClick,
   onMenu,
-  icon,
   when,
   defaultIcons,
 }: {
-  row: BundleRow
+  tree: TreeRow
   checked: boolean
   revealed: boolean
   onToggle: () => void
+  onClick: (detail: number) => void
   onMenu: () => void
-  icon: string
   when: string
   defaultIcons: Personalization['defaultIcons']
 }): React.JSX.Element {
+  const icon =
+    row.kind === 'property'
+      ? row.propertyType
+        ? propertyTypeIconName(row.propertyType)
+        : 'tag'
+      : entityIcon(row.kind, row.icon, defaultIcons)
+  const chevron = open === null ? null : <DropOutline open={open} />
   return (
     <MenuItem
       className="trash-row table-divider"
       revealed={revealed}
-      leading={<Icon name={icon} size="headline" />}
+      leading={
+        <span className="trash-lead" style={{ marginLeft: rowIndent(depth) }}>
+          {depth > 0 && chevron && <span className="row-chevron">{chevron}</span>}
+          <Icon name={icon} size="body" />
+        </span>
+      }
+      titleAccessory={depth === 0 ? chevron : null}
       detail={
         <NavTrail
           segments={crumbSegments(row.crumbs, defaultIcons)}
@@ -168,13 +175,13 @@ function TrashRowView({
           ariaLabel={`Select ${row.title}`}
         />
       }
-      onClick={onToggle}
+      onClick={(e) => onClick(e.detail)}
       onContextMenu={(e) => {
         e.preventDefault()
         onMenu()
       }}
     >
-      {row.title}
+      {open === null ? row.title : <span className={text.body.emphasized}>{row.title}</span>}
     </MenuItem>
   )
 }

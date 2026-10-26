@@ -30,6 +30,11 @@
 }
 .trash-frame .trash-row {
   --row-pad-trail: 0px;
+  gap: var(--cell-icon-gap);
+}
+.trash-lead {
+  position: relative;
+  display: flex;
 }
 .trash-frame .trash-row::after {
   right: var(--trash-date-lane);

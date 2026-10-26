@@ -11,14 +11,11 @@
   align-items: center;
   gap: 8px; /* KNOB — the title from its trail */
 }
-.archive-rows .cell-title {
-  flex: 1 1 auto;
-  min-width: 0;
-}
 .archive-rows .archive-trail {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 55%;
+  margin-left: auto;
 }
 .col-header.archive-date,
 .data-cell.archive-date {

@@ -250,10 +250,15 @@ function rulesOf(kind: BundleStore['kind']): {
 
 type Listing = { status: 'loading' } | { status: 'failed' } | { status: 'ready'; rows: BundleRow[] }
 
-/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent; Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows; and its date column. */
+/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows; and its date column. */
 export function useBundleBrowser(
   store: BundleStore,
-  { query, shown, within }: { query: string; shown: boolean; within?: string },
+  {
+    query,
+    shown,
+    within,
+    open: openPage,
+  }: { query: string; shown: boolean; within?: string; open?: (row: BundleRow) => void },
 ): {
   listing: Listing
   visible: TreeRow[]
@@ -339,7 +344,7 @@ export function useBundleBrowser(
       openTo(new Map(held.current).set(address, res.value[0]))
   }
 
-  /** A container's click discloses it; a page's checks it, and its double-click leaves it checked. */
+  /** A container's click discloses it; a page's checks it, and its double-click leaves it checked and opens it. */
   const rowClick = (row: BundleRow, detail: number): void => {
     const address = row.bundlePath
     if (discloses(row)) {
@@ -347,7 +352,10 @@ export function useBundleBrowser(
       return
     }
     if (detail < 2) toggle(address)
-    else if (detail === 2) setChecked((prev) => (prev.has(address) ? prev : toggled(prev, address)))
+    else if (detail === 2) {
+      setChecked((prev) => (prev.has(address) ? prev : toggled(prev, address)))
+      openPage?.(row)
+    }
   }
 
   // One action in flight: a press before it settles is dropped, rather than acting on a row the first already moved.

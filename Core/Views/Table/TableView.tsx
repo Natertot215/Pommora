@@ -20,6 +20,7 @@ import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { GroupBand } from '../Bands/GroupBand'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
@@ -260,7 +261,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
-  const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
 
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {
@@ -276,7 +276,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const isCollapsed = collapsed.has(g.key)
     const itemsVisible = visible && !isCollapsed
     const itemDepth = memberDepth(g.kind, depth)
-    const memberIndent = g.kind === 'tail' ? indent : groupIndent
+    const memberIndent = g.kind === 'tail' ? indent : rowIndent
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {
         const lead = i === 0 && (g.kind !== 'tail' || !renderedAnyRow)
@@ -320,7 +320,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         key={`gb-${g.key}`}
         node={bands.byKey.get(g.key)}
         bands={interactions.bandView}
-        indent={groupIndent(depth)}
+        indent={rowIndent(depth)}
       >
         {members}
       </GroupBand>,
@@ -334,7 +334,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       className={cx('table table-view', overflowing && 'overflowing')}
     >
       {interactions.iconPicker}
-      <LineZone {...interactions.listZone(groupIndent)}>
+      <LineZone {...interactions.listZone(rowIndent)}>
         <div
           className={cx(
             'table-grid',

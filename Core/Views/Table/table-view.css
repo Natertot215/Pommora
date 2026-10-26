@@ -46,21 +46,6 @@
 :root.native-highlight .data-cell.cell-sweep {
   background: var(--col-highlight);
 }
-.row-grip,
-.row-check,
-.table-view .group-band-drop-outline {
-  position: absolute;
-  left: calc(-1 * var(--rail-inset));
-  width: var(--rail-inset);
-  top: 50%;
-  transform: translateY(-50%);
-  justify-content: center;
-}
-.row-grip,
-.row-check {
-  display: inline-flex;
-  align-items: center;
-}
 .row-grip {
   color: var(--label-tertiary);
   cursor: grab;
