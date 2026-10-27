@@ -352,6 +352,21 @@ export async function returningCascade(
   }
 }
 
+/** An archive's re-spell when it files the item under another name than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there. */
+export async function departingCascade(
+  root: string,
+  tree: NexusTree,
+  back: readonly ConnPage[],
+  title: string,
+): Promise<CascadeReport | undefined> {
+  const after = await settledIndex(root)
+  if (!after) return linksNotUpdated(title)
+  const ids = back.map((p) => p.id)
+  const names = respellings(pageIndexOf(tree), buildPageIndex(back), ids, [])
+  for (const [key, name] of names) if (after.resolve(name).status !== 'phantom') names.delete(key)
+  return names.size ? respell(root, ids, names, title) : undefined
+}
+
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.
 function paid(root: string, c: CascadeReport | undefined, what: string): void {
   if (!c) return

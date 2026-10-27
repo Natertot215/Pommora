@@ -1,7 +1,7 @@
 // Where a recorded artifact re-enters: the placement resolved against the CURRENT tree and stepped past what the disk holds, the order it lands in, or the refusal that says why it cannot be placed.
 
-import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
-import { basename, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
+import { type ArchiveStore, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { basename, dirname, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
 import { archiveStoreOf, createDisambiguated, freeName } from '../Paths/names'
 import { pathExists } from '../Files/atomicWrite'
 import { landingRefusal } from '../Nexus/folderEntity'
@@ -14,9 +14,9 @@ import { containerTrailById, findContainerById } from '../Nexus/treePatch'
 import { type Slot, spliceBeside } from '../Nexus/order'
 import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { type ArtifactRecord, originOf, type Place } from './record'
+import { type ArtifactRecord, originOf, type Place, retrailed } from './record'
 import { archiveOwned, collectionsElsewhere } from './bundle'
-import { type BundleStore, bundleAddressOf, layoutOf } from './layout'
+import { type BundleStore, bundleAddressOf, layoutOf, originPathOf } from './layout'
 
 interface Placement {
   /** The folder it lands in; for an Archive destination, the address it files back at. */
@@ -184,6 +184,48 @@ async function freeOnDisk(
   })
 }
 
+/** Where a page or Set files back into the Archive at `address`, an Archive address it held: the Archive of the Collection its origin sits in now, else the one `address` names, while that Collection still answers for it; `address` re-rooted into it, the origin folder it files back into, and its record on the trail its origin stands on now. */
+export async function archiveFiling<R extends Extract<ArtifactRecord, { entity: 'page' | 'set' }>>(
+  root: string,
+  tree: NexusTree,
+  record: R,
+  address: string,
+): Promise<Result<{ into: ArchiveStore; at: string; folder: string; record: R }>> {
+  // The address it names may be gone, so no realpath answers for it; `join` collapses any `..` before the store's prefix test.
+  const named = bundleAddressOf(root, join(root, address))
+  if (named?.store.kind !== 'archive') return fault(NO_DESTINATION)
+  const origin = originOf(record)
+  const live = origin
+    ? [...origin.trail, origin.parent]
+        .reverse()
+        .map((id) => containerTrailById(tree, id))
+        .find((held) => held !== null)
+    : undefined
+  const into = archiveStoreOf(live?.[0].id) ?? named.store
+  // A Collection in the Trash keeps its Archive; one gone for good would leave the item filed where no view reaches it.
+  if (!(await archiveOwned(tree, into.id, () => collectionsElsewhere(root, tree))))
+    return fault(REFUSAL_TEXT['parent-gone'])
+  const left = originPathOf(root, named.store, named.item ?? named.bundle)
+  return ok({
+    into,
+    at: join(
+      layoutOf(into).dir,
+      relative(join(root, layoutOf(named.store).dir), join(root, address)),
+    ),
+    folder: named.item ? dirname(left) : left,
+    record:
+      origin && live
+        ? {
+            ...record,
+            trail: retrailed(
+              origin,
+              live.map((n) => n.id),
+            ),
+          }
+        : record,
+  })
+}
+
 export async function placeRecord(
   root: string,
   stored: ArtifactRecord,
@@ -205,29 +247,15 @@ export async function placeRecord(
   if (destination?.kind === 'archive') {
     if ((stored.entity !== 'page' && stored.entity !== 'set') || !stored.archive)
       return fault(NO_DESTINATION)
-    // The address it names may be gone, so no realpath answers for it; `join` collapses any `..` before the store's prefix test.
-    const named = bundleAddressOf(root, join(root, stored.archive))?.store
-    if (named?.kind !== 'archive') return fault(NO_DESTINATION)
-    const origin = originOf(stored)
-    const live = origin
-      ? [...origin.trail, origin.parent]
-          .reverse()
-          .map((id) => containerTrailById(tree, id))
-          .find((held) => held !== null)
-      : undefined
-    const into = archiveStoreOf(live?.[0].id) ?? named
-    // A Collection in the Trash keeps its Archive; one gone for good would leave the item filed where no view reaches it.
-    if (!(await archiveOwned(tree, into.id, () => collectionsElsewhere(root, tree))))
-      return fault(REFUSAL_TEXT['parent-gone'])
+    const filing = await archiveFiling(root, tree, stored, stored.archive)
+    if (!filing.ok) return filing
     if (stored.id && heldElsewhere(byId.get(stored.id), restoring))
       return fault(REFUSAL_TEXT['id-live'])
+    const { into, at, record } = filing.value
     return ok({
-      record: stored,
+      record,
       placement: {
-        dir: join(
-          layoutOf(into).dir,
-          relative(join(root, layoutOf(named).dir), join(root, stored.archive)),
-        ),
+        dir: at,
         finalName: baseName,
         ...(stored.entity === 'page' ? { finalTitle: titleFromPath(baseName) } : {}),
       },

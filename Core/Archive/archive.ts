@@ -1,7 +1,7 @@
 // The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
 
-import { basename, dirname, isMarkdownFile, join, relative } from '../Paths/posix'
-import { archiveStoreOf, holdsName } from '../Paths/names'
+import { basename, dirname, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
+import { archiveStoreOf, nameError } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
 import { pathExists, relocate } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
@@ -12,14 +12,12 @@ import { owningCollection } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
 import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
-import { returningCascade } from '../Nexus/settle'
+import { departingCascade, returningCascade } from '../Nexus/settle'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { NexusTree } from '../Nexus/tree'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import {
-  archiveOwned,
-  collectionsElsewhere,
   contentPages,
   fileInto,
   originPagesOf,
@@ -27,11 +25,16 @@ import {
   spendBundle,
 } from '../Bundles/bundle'
 import { type BundleStore, bundleAddressOf, originPathOf } from '../Bundles/layout'
-import { decodeRecord, gatherContentRecord, identityOf, type RecordFile } from '../Bundles/record'
-import { placeRecord } from '../Bundles/placement'
-import { refileLanded } from './refile'
+import {
+  archivedRecord,
+  decodeRecord,
+  gatherContentRecord,
+  type RecordFile,
+} from '../Bundles/record'
+import { archiveFiling, placeRecord } from '../Bundles/placement'
+import { refileFiled, refileLanded } from './refile'
 
-/** Link values and saved views naming what leaves stay where they are and resolve again on its restore, so nothing is stripped and no configuration pass runs. */
+/** Link values and saved views naming what leaves stay where they are and resolve again on its restore, so nothing is stripped and no configuration pass runs; filed under another name than it stood under, what names it re-spells to that name. */
 export async function archiveOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'archive' }>,
@@ -43,47 +46,62 @@ export async function archiveOp(
   const store = archiveStoreOf(owningCollection(tree, req.path)?.id)
   if (!store)
     return fail('invalid-path', 'Only pages and Sets inside a Collection can be archived.')
-  const { to, origin, record } = await filingOf(root, tree, req, abs, store)
+  const { to, origin, record, at } = await filingOf(root, tree, req, abs, store)
   const lifted = req.kind === 'set' ? await liftSetAside(root, abs) : null
   if (lifted && !lifted.ok) return lifted
-  const filed = await fileInto(root, to, origin, abs, record, req.at).catch(async (e) => {
+  const filed = await fileInto(root, to, origin, abs, record, at).catch(async (e) => {
     await lifted?.value.rollback()
     throw e
   })
   await dropDeparture(root, tree, req.kind, req.path)
-  return ok({ bundled: { bundlePath: filed.address } })
+  if (req.kind === 'set') await refileFiled(root, filed.address, store.id)
+  const into =
+    basename(origin) !== basename(abs) && bundleAddressOf(root, join(root, filed.address))?.store
+  const cascade = into
+    ? await departingCascade(
+        root,
+        tree,
+        await originPagesOf(root, into, await contentPages(req.kind, filed.landed)),
+        titleFromPath(origin),
+      )
+    : undefined
+  return ok({ ...(cascade ? { cascade } : {}), bundled: { bundlePath: filed.address } })
 }
 
-/** Where an archive files the item: the Archive and chain the whole bundle `at` names, with the record the request carries, when they agree and that Archive's Collection still answers for it; else its own Collection's Archive from where it stands, recorded afresh. Under `name` when it's one of its kind's form. */
+/** Where an archive files the item: back at the Archive address `at` names, as `archiveFiling` re-roots it, with the record the request carries, when it's of the item's kind; else its own Collection's Archive from where it stands, recorded afresh. Under `name` when it's one its kind may take. */
 async function filingOf(
   root: string,
   tree: NexusTree,
   req: Extract<MutateRequest, { op: 'archive' }>,
   abs: string,
   store: BundleStore,
-): Promise<{ to: BundleStore; origin: string; record: RecordFile }> {
+): Promise<{ to: BundleStore; origin: string; record: RecordFile; at?: string }> {
   const name =
     req.name !== undefined &&
-    holdsName(req.name) &&
-    isMarkdownFile(req.name) === (req.kind === 'page')
+    (req.kind === 'page'
+      ? isMarkdownFile(req.name) && nameError(titleFromPath(req.name), 'page') === null
+      : nameError(req.name, 'directory') === null)
       ? req.name
       : basename(abs)
-  const held = req.at === undefined ? null : bundleAddressOf(root, join(root, req.at))
   const carried = req.record === undefined ? null : decodeRecord(req.record)
-  if (
-    held &&
-    !held.item &&
-    held.store.kind === 'archive' &&
-    carried?.entity === req.kind &&
-    (await archiveOwned(tree, held.store.id, () => collectionsElsewhere(root, tree)))
-  )
+  const filing =
+    req.at !== undefined &&
+    (carried?.entity === 'page' || carried?.entity === 'set') &&
+    carried.entity === req.kind
+      ? await archiveFiling(root, tree, carried, req.at)
+      : null
+  if (filing?.ok) {
+    const { into, at, folder, record } = filing.value
     return {
-      to: held.store,
-      origin: join(root, originPathOf(root, held.store, held.bundle), name),
-      record: { ...carried, ...(await identityOf(req.kind, abs)) },
+      to: into,
+      at,
+      origin: join(root, folder, name),
+      record: await archivedRecord(record, abs),
     }
+  }
   return {
     to: store,
+    at: req.at,
     origin: join(dirname(abs), name),
     record: await gatherContentRecord(root, tree, req.kind, abs),
   }

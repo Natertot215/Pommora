@@ -12,7 +12,7 @@ import {
 } from '../Interface/Confirm/confirmations'
 import { countPhrase, isContainerKind } from '../Nexus/entities'
 import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
-import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
+import type { MutateOutcome, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { basename, isAtOrUnder, relDirname } from '../Paths/posix'
@@ -141,15 +141,19 @@ async function askDestination(kind: DestinationKind): Promise<RestoreDestination
   return id ? { kind, id } : null
 }
 
-/** A restored row and the request its reply says takes the restore back. */
-type Undone = { row: BundleRow; undo: MutateRequest }
+/** A restored row and the archive request its reply says takes the restore back. */
+type Undone = { row: BundleRow; undo: Extract<MutateRequest, { op: 'archive' }> }
+
+/** The row with the archive request its reply carries, when it carries one. */
+const undoneOf = (row: BundleRow, { undo }: MutateOutcome): Undone[] =>
+  undo?.op === 'archive' ? [{ row, undo }] : []
 
 /** A restore from the Archive undoes by sending each reply's own request, the item found by id so it follows a rename made since, under that new name once it has one. */
 const rearchive = (undone: Undone[]) => async (): Promise<void> => {
   for (const { row, undo } of undone) {
     const { tree, mutate } = useSession.getState()
     const id = row.stored?.id
-    if (!id || !tree || undo.op !== 'archive') continue
+    if (!id || !tree) continue
     const path = nodesByIdOf(tree).get(id)?.path
     if (path)
       await mutate({
@@ -380,12 +384,13 @@ export function useBundleBrowser(
     const done = await mutate(requestOf(row, 'restore', to))
     if (!done) return
     spendUndo(row.bundlePath)
+    const undone = undoneOf(row, done)
     // The notice replaces the slice's, so it carries the reply's lines and its Try Again.
     notifyOutcome(
       `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
       undefined,
       [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
-      done.undo ? rules.restoreUndo?.([{ row, undo: done.undo }]) : undefined,
+      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
       done.cascade?.owed ? finishOwed : undefined,
     )
   }
@@ -434,7 +439,7 @@ export function useBundleBrowser(
       owed ||= !!res.cascade?.owed
       if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
       if (res.bundled) bundled.push(res.bundled.bundlePath)
-      if (res.undo) undone.push({ row, undo: res.undo })
+      undone.push(...undoneOf(row, res))
     }
     storesChanged.emit()
     return switched()
