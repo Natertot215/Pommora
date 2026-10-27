@@ -110,8 +110,8 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 | `archivedRecord` • Function | The record an Archive files a page or Set under from a decoded one: where it left from, with its identity read from the file. Shared by `filingOf` and the Undo of a delete from the Archive. | `Core/Bundles/record.ts` |
 | `archiveFiling` • Function | The one choice of the Archive a page or Set files back into at an address it held: the Archive of the Collection its origin sits in now, else the one the address names, while that Collection answers for it, with the address re-rooted and the record on its trail now. Shared by `placeRecord` and `filingOf`. | `Core/Bundles/placement.ts` |
 | `retrailed` • Function | The trail an origin stands on once a container on its chain stands elsewhere, shared by `archiveFiling` and `refileArchived`. | `Core/Bundles/record.ts` |
-| `refileFiled` • Function | The archive's carry: a Set filed into another Collection's Archive carries what was archived from within it there, along the trail it was filed on. | `Core/Archive/refile.ts` |
-| `departingCascade` • Function | An archive's re-spell when it files the item under another name than it stood under, its restore's in reverse. | `Core/Nexus/settle.ts` |
+| `refileFiled` • Function | The Undo's carry: a Set filed back into the Archive carries what was archived from within it there, along the trail it was filed on, whether that Archive is the one it stood in or another. | `Core/Archive/refile.ts` |
+| `departingCascade` • Function | An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse. | `Core/Nexus/settle.ts` |
 
 **REMOVED**
 

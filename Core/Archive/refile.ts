@@ -1,4 +1,4 @@
-// Every archived record stays filed in the Archive of the Collection its origin sits in now, its trail current. One carry, `refileArchived`, serves each landing that moves a Set: the settle's comparison of trees and a restore.
+// Every archived record stays filed in the Archive of the Collection its origin sits in now, its trail current. One carry, `refileArchived`, serves each landing that moves a Set: the settle's comparison of trees, a restore, and an Undo filing a Set back into the Archive.
 // The open pass, `settleArchives`, re-files each record a Set moved while Pommora was closed left misfiled, and moves an Archive whose Collection exists nowhere into the Trash, recoverable.
 
 import { join } from '../Paths/posix'
@@ -86,14 +86,14 @@ export const refileLanded = (
     if (to) await refileArchived(root, record.id, from, to, tree)
   })
 
-/** The archive's trigger: a Set filed at `address` carries what was archived from within it out of `from`, the Archive of the Collection it stood in, into the Archive it was filed in, along the trail it was filed on. */
+/** The Undo's trigger: a Set filed back at `address` carries what was archived from within it out of `from`, the Archive of the Collection it stood in, into the Archive it was filed in, along the trail it was filed on, that Archive the same one or another. */
 export const refileFiled = (root: string, address: string, from: string): Promise<void> =>
   carried(async () => {
     const opened = await openBundle(root, join(root, address))
     if (!opened.ok || opened.value.store.kind !== 'archive') return
     const { record, store } = opened.value
     const origin = originOf(record)
-    if (record.entity !== 'set' || !record.id || !origin || store.id === from) return
+    if (record.entity !== 'set' || !record.id || !origin) return
     const above = [...origin.trail, origin.parent]
     await refileArchived(root, record.id, from, store.id, await liveTreeOf(root), above)
   })
