@@ -124,11 +124,13 @@ export async function writeRecord(
 export const readRawRecord = (bundleDir: string): Promise<RawRecord | null> =>
   readJsonObject(join(bundleDir, RECORD_FILENAME))
 
-export async function readRecord(bundleDir: string): Promise<RecordFile | null> {
-  const raw = await readRawRecord(bundleDir)
-  if (raw === null) return null
+export const decodeRecord = (raw: unknown): RecordFile | null => {
   const parsed = recordFile.safeParse(raw)
   return parsed.success ? parsed.data : null
+}
+
+export async function readRecord(bundleDir: string): Promise<RecordFile | null> {
+  return decodeRecord(await readRawRecord(bundleDir))
 }
 
 /** Merges what `patch` answers into the record in place, raw. */
