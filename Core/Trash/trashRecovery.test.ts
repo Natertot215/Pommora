@@ -1046,4 +1046,27 @@ describe('an item pulled out of a trashed bundle', () => {
     const { filter, ...unfiltered } = views[0]
     expect((await readJsonAt(sidecar)).views).toEqual([unfiltered, views[1]])
   })
+
+  it('a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive’s Sets at its Try Again', async () => {
+    const archived = { op: 'archive', path: 'Journal/Daily', kind: 'set' } as const
+    expect((await settledMutate(root, archived, deps)).ok).toBe(true)
+    await del('Journal', 'collection')
+    const sidecar = join(root, 'Plain', '_pagecollection.json')
+    const views = [located('set-daily')]
+    await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
+    await refreshTree(root)
+    const archive = join(root, '.nexus', 'archive', 'col-journal')
+    const refusing: TrashDeps = {
+      ...deps,
+      trashToSystem: async (p) => {
+        if (p === archive) throw new Error('refused')
+        await rm(p, { recursive: true })
+      },
+    }
+    const emptied = { op: 'emptyBundle', bundlePath: await bundleOf('Journal') } as const
+    expect((await settledMutate(root, emptied, refusing)).ok).toBe(false)
+    await finish()
+    const { filter, ...unfiltered } = views[0]
+    expect((await readJsonAt(sidecar)).views).toEqual([unfiltered])
+  })
 })

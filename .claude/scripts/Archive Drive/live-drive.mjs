@@ -288,10 +288,10 @@ async function group2(cdp) {
     await deleteAt(cdp, page(A_ALPHA, t), 'page')
   }
   await openSettings(cdp, 'Trash')
-  const drawnRows = await cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
+  const drawnRows = await listedTitles(cdp)
   const answered = ((await ask(cdp, 'bundles:list', { kind: 'trash' })).value ?? []).map((r) => r.title)
   item(2, 'A-3', 'the Trash browser draws the titles bundles:list answers, in its order', same(drawnRows, answered), show({ drawnRows, answered }))
-  for (const t of ['AR Look One', 'AR Look Two']) await click(cdp, `${trashRowEl(t)}.querySelector('[role=checkbox]')`)
+  for (const t of ['AR Look One', 'AR Look Two']) await checkRow(cdp, t)
   const { chosen: all } = await chooseNative(cdp, trashRowEl('AR Look One'), 'Restore All')
   const batch = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
   item(2, 'A-3', 'a Restore All of two reads Restored 2 Pages', all && batch, show(await notice(cdp)))

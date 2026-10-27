@@ -20,7 +20,7 @@ import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
-import { ARCHIVE_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, archiveDirRel, contextDirRel } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
 import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -49,7 +49,8 @@ import {
   type SpaceEntry,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
-import { contentPages, listBundles } from '../Bundles/bundle'
+import { archiveOwned, collectionsElsewhere, contentPages, listBundles } from '../Bundles/bundle'
+import { listEntries } from '../Files/walk'
 import { refillStash } from '../Properties/assignment'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
@@ -378,21 +379,26 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
   const tree = await liveTreeOf(root)
   const live = findContainerById(tree, id)
   const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
-  const perSet = e.edit?.kind === 'gone' && !e.within ? e.edit : null
-  const unheld = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
-  const archived = unheld.length ? await archivedSetIds(root, join(root, ARCHIVE_DIR_REL)) : []
-  const unlive = unheld.filter((x) => !archived.includes(x))
-  const edit = perSet
-    ? unlive.length
-      ? { ...perSet, ids: unlive }
-      : undefined
-    : back
-      ? undefined
-      : e.edit
+  const owedEdit = async (): Promise<ContainerEntry['edit']> => {
+    if (e.edit?.kind !== 'gone' || e.within) return back ? undefined : e.edit
+    const unheld = e.edit.ids.filter((x) => !findContainerById(tree, x))
+    if (!unheld.length) return undefined
+    let elsewhere: Promise<Set<string>> | undefined
+    const archived: string[] = []
+    for (const { name, kind } of await listEntries(join(root, ARCHIVE_DIR_REL)))
+      if (
+        kind === 'dir' &&
+        (await archiveOwned(tree, name, () => (elsewhere ??= collectionsElsewhere(root, tree))))
+      )
+        archived.push(...(await archivedSetIds(root, join(root, archiveDirRel(name)))))
+    const ids = unheld.filter((x) => !archived.includes(x))
+    return ids.length ? { ...e.edit, ids } : undefined
+  }
+  const edit = await owedEdit()
   const gone = e.strip && !back ? await deleteCascade(root, join(root, e.at), e.strip) : null
   if (gone?.links.length) {
     if (e.bundle)

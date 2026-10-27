@@ -88,7 +88,7 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 | `rowClick` • Function | The browser's one click intent, opening a page through the skin's `open`. | `Core/Bundles/browser.ts` |
 | `rowIndent` • Function | A row's step in from its lead at a depth, by the table's `--row-indent`, shared by TableView and the bundle table. | `UIX/Table/rowIndent.ts` |
 | `DestinationKind` / `destinationKind` / `destinationTargets` / `askDestination` • Type, Functions | A kind of destination, a row's kind, that kind's targets, and the one destination ask that `restoreOne`, the batch, and the menu share. | `Core/Bundles/browser.ts` |
-| `.row-chevron` • Class | A nested container's chevron in the rail slot left of its icon, as a TableView band's is. | `UIX/Table/table.css` |
+| `.row-chevron` • Class | A TableView band's or a nested container's chevron, in the rail slot left of its icon. | `UIX/Table/table.css` |
 | `BundleTable.tsx` • File | The table both skins draw under their own headings: its grid, its date heading, and its rows. It takes in `DateHeading.tsx`. | `Core/Bundles/BundleTable.tsx` |
 | `BundleTable` • Component | The table's grid: its title and date tracks, its body type, and the width under which it scrolls sideways. | `Core/Bundles/BundleTable.tsx` |
 | `BundleRows` • Component | A store's rows, virtualized under its skin's heading: one Tab stop, each row a tree item in TableView's row look. | `Core/Bundles/BundleTable.tsx` |
@@ -526,7 +526,7 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
   - An inner page restored alone leaves its container not back, so a finish still owed runs the container's strip over the old paths and appends what it takes to the container's record after the item has left.
   - The pulled page's path keys under the container resolve to nothing once it lands elsewhere. Its title key keeps resolving while it lands under its own title, or while a namesake answers it beside a stepped-aside landing ("Pasta (2)").
   - **Links:** an inner item that left would otherwise stay on that strip, and a later finish would strip a link to an item that's back. `spendBundle` takes the item's page paths off `strip` by its origin path when the item leaves (Task 1-2). The pull's own restore then re-spells live linkers to its landing through `returningCascade`, owing that re-spell through its own `relink` entry where a linker can't be written. This half belongs at spend time: `finishOwed` runs every `container` entry before any `relink` entry (`finishOwed.ts:91-92`), so a linker refused at the pull still reads the old key when the container finish runs.
-  - **Views:** the delete's owed `gone` edit names every Set under the container (`goneEdit`'s `within`, `configReach.ts:258-264`). `finishContainer` decides `back` for the container alone, so a Set pulled back out would lose its saved views at a later finish. `finishContainer` drops from a `gone` edit every id the tree holds again, the rule its own header states for the container, applied per Set whether or not the container is back. A restored Set, nested or not, is live and keeps its views. A Set emptied out of the bundle, or still in it, isn't, and the views' filters by it drop, even once the rest of the bundle is restored whole. A move's entry (`within`) keeps its edit whole, since a moved Set is live by design.
+  - **Views:** the delete's owed `gone` edit names every Set under the container (`goneEdit`'s `within`, `configReach.ts:258-264`). `finishContainer` decides `back` for the container alone, so a Set pulled back out would lose its saved views at a later finish. `finishContainer` drops from a `gone` edit every id the tree holds again or an Archive its Collection still owns holds, applied per Set whether or not the container is back. A restored Set, nested or not, and an archived one keep their views. A Set emptied out of the bundle, or still in it, is held by neither, and the views' filters by it drop, even once the rest of the bundle is restored whole. A move's entry (`within`) keeps its edit whole, since a moved Set is live by design.
 
 **CHANGE**
 
@@ -609,21 +609,26 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 ```Core/Nexus/finishOwed.ts diff
 @@ finishContainer @@
 -  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
-+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
++  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
    const tree = await liveTreeOf(root)
    const live = findContainerById(tree, id)
    const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
-+  const perSet = e.edit?.kind === 'gone' && !e.within ? e.edit : null
-+  const unheld = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
-+  const archived = unheld.length ? await archivedSetIds(root, join(root, ARCHIVE_DIR_REL)) : []
-+  const unlive = unheld.filter((x) => !archived.includes(x))
-+  const edit = perSet
-+    ? unlive.length
-+      ? { ...perSet, ids: unlive }
-+      : undefined
-+    : back
-+      ? undefined
-+      : e.edit
++  const owedEdit = async (): Promise<ContainerEntry['edit']> => {
++    if (e.edit?.kind !== 'gone' || e.within) return back ? undefined : e.edit
++    const unheld = e.edit.ids.filter((x) => !findContainerById(tree, x))
++    if (!unheld.length) return undefined
++    let elsewhere: Promise<Set<string>> | undefined
++    const archived: string[] = []
++    for (const { name, kind } of await listEntries(join(root, ARCHIVE_DIR_REL)))
++      if (
++        kind === 'dir' &&
++        (await archiveOwned(tree, name, () => (elsewhere ??= collectionsElsewhere(root, tree))))
++      )
++        archived.push(...(await archivedSetIds(root, join(root, archiveDirRel(name)))))
++    const ids = unheld.filter((x) => !archived.includes(x))
++    return ids.length ? { ...e.edit, ids } : undefined
++  }
++  const edit = await owedEdit()
  …
    const viewed =
 -    !!e.edit &&
@@ -1146,14 +1151,13 @@ A whole bundle still re-mints under its own name, as it does today.
 +/** Each open container's inner rows, null while its reply is pending. */
 +type OpenRows = ReadonlyMap<string, readonly BundleRow[] | null>
 +
-+const discloses = (row: BundleRow): boolean => row.kind === 'set' || row.kind === 'collection'
-+
 +/** The rows in view: each top row, and beneath each open one the inner rows it lists, in order. */
 +export function treeRows(rows: readonly BundleRow[], open: OpenRows): TreeRow[] {
 +  const out: TreeRow[] = []
 +  const walk = (row: BundleRow, depth: number): void => {
-+    const inner = discloses(row) ? open.get(row.bundlePath) : undefined
-+    out.push({ row, depth, open: discloses(row) ? inner !== undefined : null })
++    const opens = isContainerKind(row.kind)
++    const inner = opens ? open.get(row.bundlePath) : undefined
++    out.push({ row, depth, open: opens ? inner !== undefined : null })
 +    for (const child of inner ?? []) walk(child, depth + 1)
 +  }
 +  for (const row of rows) walk(row, 0)
@@ -1369,7 +1373,7 @@ A whole bundle still re-mints under its own name, as it does today.
 - [x] Give `useBundleBrowser` an optional `open`, which `rowClick` calls on a page's `detail === 2` (Task 4-1). ArchiveView passes its reader open there.
 - [x] Hoist TableView's `groupIndent` to `UIX/Table/rowIndent.ts` as `rowIndent`, and import it in TableView and both skins.
 - [x] Add to `UIX/Table/table.css`, beside `.cell-title`, the one muted color for a table's chevron. GroupBand's own `.group-band-drop-outline` color stays, since CardsView's bands sit outside `.table`.
-- [x] Move TableView's rail-slot rule from `table-view.css` into `UIX/Table/table.css`, joined by `.row-chevron`, so a nested container's chevron takes the slot a band's chevron, a grip, and a check take.
+- [x] Move TableView's rail-slot rule from `table-view.css` into `UIX/Table/table.css` as `.row-grip, .row-check, .table .row-chevron`, with GroupBand's chevron wearing `row-chevron`, so a nested container's chevron takes the slot a band's chevron, a grip, and a check take.
 - [x] Edit `ArchiveRow` and `archive-view.css` as below.
   - **`ArchiveRow`:** it keeps `memo` by taking `depth` and `open` as primitives.
   - **The Reader:** `open` keeps HEAD's body. An inner row's `crumbs` already hold the bundle's trail and the containers inside it, so `crumbSegments(row.crumbs)` plus the page itself is the reader's trail for every row.
@@ -1450,8 +1454,7 @@ export const rowIndent = (depth: number): string => `calc(var(--row-indent) * ${
 +/* The rail slot directly left of a row's icon, centering its grip, its check, or a band's or nested row's chevron. */
 +.row-grip,
 +.row-check,
-+.table-view .group-band-drop-outline,
-+.row-chevron {
++.table .row-chevron {
 +  position: absolute;
 +  left: calc(-1 * var(--rail-inset));
 +  width: var(--rail-inset);
@@ -1479,6 +1482,11 @@ export const rowIndent = (depth: number): string => `calc(var(--row-indent) * ${
 -  display: inline-flex;
 -  align-items: center;
 -}
+```
+
+```Core/Views/Bands/GroupBand.tsx diff
+-            className="group-band-drop-outline"
++            className="group-band-drop-outline row-chevron"
 ```
 
 The header docstring at `:41` reads: "A Set discloses what it holds, and a page opens in the reader on a double-click."
@@ -2424,7 +2432,6 @@ function TrashBody(): React.JSX.Element {
 - [x] Add these `IssuesPM.md` entries:
   - **Emptied Containers:** a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited.
   - **Drag Instructions on Rows That Can't Move:** every line row points screen readers at the drag instructions ("press space to pick it up"), though in a list that can't be dragged Space now opens the row. Describing only rows that can lift needs the zone's lock to reach the row.
-  - **Archived Views After Try Again:** a Set archived after its pages were pulled out of a delete that still owes its finish loses its view filters when that delete's Try Again runs, since the finish counts a Set live only if the tree holds it. A whole Set deleted, restored, then archived before its Try Again loses them the same way.
 - [x] Find why `Core/Nexus/mutate.test.ts`'s "a color queued behind a Space rename…" fails under load, reproducing it at the baseline `8148302cf` in a worktree and at HEAD, and fix it at its origin where the cause is clear; otherwise add its `IssuesPM.md` entry with the evidence.
 - [x] Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md`, which numbers the entries and recomputes the totals.
 
@@ -2514,7 +2521,7 @@ The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-20
 #### Open Items
 
 - **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 7-1 records it in `IssuesPM.md` for a later decision.
-- **Archived Views After Try Again:** a delete's owed finish counts a Set live only if the tree holds it, so an archived one loses its view filters. The whole-bundle path predates this plan. Task 7-1 records it in `IssuesPM.md`.
+- **Cross-Collection Undo:** a Set restored on its own out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind. `IssuesPM.md` records it.
 
 
 #### Deviations

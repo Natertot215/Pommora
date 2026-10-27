@@ -92,7 +92,7 @@ A cell's content is type-aware — a page icon and title, chips, a checkbox or s
 
 #### II. The Table Sheet
 
-The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[PommoraUIX]] · Tables). A host rebinds what it needs in its own scope — the heading fill and divider, the cell padding; the body hairline stays one width. TableView adds its own layer over it, `table-view.css`, which ArchiveView wears too. Atlas convention per [[PommoraUIX]].
+The table's design vocabulary is a whole-file token sheet scoped to `.table`, the class every tabular surface wears ([[PommoraUIX]] · Tables). A host rebinds what it needs in its own scope — the heading fill, divider, and padding; the body hairline stays one width. TableView adds its own layer over it, `table-view.css`, which ArchiveView wears too. Atlas convention per [[PommoraUIX]].
 
 **SOURCE:** `UIX/Table/table-tokens.css` · `UIX/Table/table.css` · `Core/Views/Table/table-view.css`
 
