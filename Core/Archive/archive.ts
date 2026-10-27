@@ -1,12 +1,11 @@
 // The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
 
-import { basename, dirname, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { archiveStoreOf, holdsName } from '../Paths/names'
-import { hiddenFolder } from '../Paths/exclusion'
 import { fail, ok } from '../Contract/result'
 import { pathExists, relocate } from '../Files/atomicWrite'
-import { isContentName, listMarkdownFiles } from '../Files/walk'
-import { archiveDirRel } from '../Paths/nexusPaths'
+import { listMarkdownFiles } from '../Files/walk'
+import { type ArchiveStore, archiveDirRel } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
@@ -25,13 +24,8 @@ import {
   type OpenBundle,
   spendBundle,
 } from '../Bundles/bundle'
-import { type BundleStore, bundleAddressOf, originPathOf } from '../Bundles/layout'
-import {
-  archivedRecord,
-  decodeRecord,
-  gatherContentRecord,
-  type RecordFile,
-} from '../Bundles/record'
+import { originPathOf } from '../Bundles/layout'
+import { decodeRecord, gatherContentRecord, originOf, type RecordFile } from '../Bundles/record'
 import { archiveFiling, placeRecord } from '../Bundles/placement'
 import { refileFiled, refileLanded } from './refile'
 
@@ -55,58 +49,40 @@ export async function archiveOp(
     throw e
   })
   await dropDeparture(root, tree, req.kind, req.path)
-  if (req.kind === 'set' && req.at !== undefined) await refileFiled(root, filed.address, store.id)
-  const into = bundleAddressOf(root, join(root, filed.address))?.store
+  const left = at === undefined ? null : originOf(record)
+  if (record.entity === 'set' && record.id && left)
+    await refileFiled(root, record.id, [...left.trail, left.parent], store.id, to.id)
   const cascade =
-    into && originPathOf(root, into, filed.landed) !== relative(root, abs)
+    originPathOf(root, to, filed.landed) !== relative(root, abs)
       ? await departingCascade(
           root,
           tree,
-          await originPagesOf(root, into, await contentPages(req.kind, filed.landed)),
+          await originPagesOf(root, to, await contentPages(req.kind, filed.landed)),
           titleFromPath(origin),
         )
       : undefined
   return ok({ ...(cascade ? { cascade } : {}), bundled: { bundlePath: filed.address } })
 }
 
-/** Where an archive files the item: back at the Archive address `at` names, as `archiveFiling` re-roots it, with the record the request carries, when it's of the item's kind; else its own Collection's Archive from where it stands, recorded afresh. Under `name` when it's one its kind may take, by the walk's rule rather than `nameError`'s, since it's a name the item already held on disk. */
+/** Where an archive files the item: back at the address `back` carries, as `archiveFiling` re-roots it, under the name and with the record it carries; else its own Collection's Archive from where it stands, recorded afresh. */
 async function filingOf(
   root: string,
   tree: NexusTree,
-  req: Extract<MutateRequest, { op: 'archive' }>,
+  { kind, back }: Extract<MutateRequest, { op: 'archive' }>,
   abs: string,
-  store: BundleStore,
-): Promise<{ to: BundleStore; origin: string; record: RecordFile; at?: string }> {
-  const name =
-    req.name !== undefined &&
-    holdsName(req.name) &&
-    (req.kind === 'page'
-      ? isContentName(req.name)
-      : !hiddenFolder(req.name) && !isMarkdownFile(req.name))
-      ? req.name
-      : basename(abs)
-  const carried = req.record === undefined ? null : decodeRecord(req.record)
+  store: ArchiveStore,
+): Promise<{ to: ArchiveStore; origin: string; record: RecordFile; at?: string }> {
+  const carried = back && decodeRecord(back.record)
   const filing =
-    req.at !== undefined &&
-    (carried?.entity === 'page' || carried?.entity === 'set') &&
-    carried.entity === req.kind
-      ? await archiveFiling(root, tree, carried, req.at)
+    back && (carried?.entity === 'page' || carried?.entity === 'set')
+      ? await archiveFiling(root, tree, carried, back.at)
       : null
-  if (filing?.ok) {
+  if (back && filing?.ok) {
     const { into, at, folder, record } = filing.value
-    return {
-      to: into,
-      at,
-      origin: join(root, folder, name),
-      record: await archivedRecord(record, abs),
-    }
+    const name = holdsName(back.name) ? back.name : basename(abs)
+    return { to: into, at, origin: join(root, folder, name), record }
   }
-  return {
-    to: store,
-    at: req.at,
-    origin: join(dirname(abs), name),
-    record: await gatherContentRecord(root, tree, req.kind, abs),
-  }
+  return { to: store, origin: abs, record: await gatherContentRecord(root, tree, kind, abs) }
 }
 
 /** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */
@@ -150,9 +126,11 @@ export async function restoreArchived(
       op: 'archive',
       path: relative(root, targetAbs),
       kind: held.entity,
-      at: relative(root, bundle.inner ? artifact : bundle.abs),
-      name: basename(artifact),
-      ...(bundle.inner ? {} : { record: held }),
+      back: {
+        at: relative(root, bundle.inner ? artifact : bundle.abs),
+        name: basename(artifact),
+        record: held,
+      },
     },
   })
 }

@@ -18,7 +18,6 @@ import {
   collectionsElsewhere,
   listBundles,
   moveIntoStore,
-  openBundle,
 } from '../Bundles/bundle'
 import {
   collectionOf,
@@ -86,17 +85,15 @@ export const refileLanded = (
     if (to) await refileArchived(root, record.id, from, to, tree)
   })
 
-/** The Undo's trigger: a Set filed back at `address` carries what was archived from within it out of `from`, the Archive of the Collection it stood in, into the Archive it was filed in, along the trail it was filed on, that Archive the same one or another. */
-export const refileFiled = (root: string, address: string, from: string): Promise<void> =>
-  carried(async () => {
-    const opened = await openBundle(root, join(root, address))
-    if (!opened.ok || opened.value.store.kind !== 'archive') return
-    const { record, store } = opened.value
-    const origin = originOf(record)
-    if (record.entity !== 'set' || !record.id || !origin) return
-    const above = [...origin.trail, origin.parent]
-    await refileArchived(root, record.id, from, store.id, await liveTreeOf(root), above)
-  })
+/** The Undo's trigger: the Set `setId` filed back on `above`, the trail it was filed on, carries what was archived from within it out of `from`, the Archive of the Collection it stood in, into `to`'s Archive, that Archive the same one or another. */
+export const refileFiled = (
+  root: string,
+  setId: string,
+  above: string[],
+  from: string,
+  to: string,
+): Promise<void> =>
+  carried(async () => refileArchived(root, setId, from, to, await liveTreeOf(root), above))
 
 const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>
   isPlainObject(v) && isContainerKind(v.kind)

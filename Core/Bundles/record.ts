@@ -184,22 +184,6 @@ export async function identityOf(
     : sidecarIdentity(abs, kind)
 }
 
-/** The record an Archive files a page or Set under from a decoded one: where it left from, and its identity read from the file at `abs` alone, since what a delete records belongs to the Trash. */
-export async function archivedRecord(
-  { entity, parent, place, trail }: Extract<RecordFile, { entity: 'page' | 'set' }>,
-  abs: string,
-): Promise<RecordFile> {
-  const { id, icon } = await identityOf(entity, abs)
-  return {
-    entity,
-    ...(id ? { id } : {}),
-    ...(icon ? { icon } : {}),
-    parent,
-    ...(place ? { place } : {}),
-    ...(trail ? { trail } : {}),
-  }
-}
-
 export async function gatherContentRecord(
   root: string,
   tree: NexusTree,
