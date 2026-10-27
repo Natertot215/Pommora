@@ -1007,8 +1007,6 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   }
 
   const liftKeyboard = (zoneId: string, id: string): boolean => {
-    if (session?.phase === 'live') return false
-    pending?.()
     const s = lift(zoneId, id, 'keyboard')
     if (!s) return false
     const onKey = (e: KeyboardEvent): void => keyboard(s, e)

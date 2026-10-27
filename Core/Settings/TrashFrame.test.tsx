@@ -19,6 +19,7 @@ import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
 import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 
@@ -127,7 +128,6 @@ describe('the Trash pane', () => {
     })
   const indentOf = (title: string): string =>
     (rowOf(title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
-  const step = (depth: number): string => `calc(var(--row-indent) * ${depth})`
   const showTree = async (): Promise<void> => {
     listed = [trashedCollection()]
     children = { [COLLECTION]: [innerSet()], [SET]: [innerPage()] }
@@ -474,9 +474,9 @@ describe('the Trash pane', () => {
     await press('Ideas', 1)
     expect(titles()).toEqual(['Notes', 'Ideas', 'P'])
     expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual([
-      step(0),
-      step(1),
-      step(2),
+      rowIndent(0),
+      rowIndent(1),
+      rowIndent(2),
     ])
     expect(rowOf('P').querySelector('[data-drop-outline]')).toBeNull()
     expect(boxOf('Notes').getAttribute('aria-checked')).toBe('false')

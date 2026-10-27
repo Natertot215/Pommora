@@ -9,7 +9,6 @@ import { stubDialer } from '../vitest.setup'
 import { storesChanged } from '../Session/nexusSlice'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
-import { offerUndo } from '../Interface/Confirm/confirmations'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -271,15 +270,6 @@ describe('a browser’s remembered checks', () => {
       { op: 'restore', bundlePath: space.bundlePath, destination: { kind: 'context', id: 'g1' } },
       { op: 'restore', bundlePath: page.bundlePath, destination: { kind: 'container', id: 'c1' } },
     ])
-  })
-
-  it('an inner row’s restore spends the Undo armed at its own address', async () => {
-    useSession.setState({ tree: makeTree() })
-    const spent = vi.fn()
-    offerUndo([page.bundlePath], () => spent)
-    menu.mockResolvedValueOnce({ ok: true, value: 'c1' })
-    await act(async () => browser.restore([page]))
-    expect(spent).toHaveBeenCalledTimes(1)
   })
 
   it('a right-click on a checked inner page under its checked parent offers the parent’s destinations and restores the parent', async () => {

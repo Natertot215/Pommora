@@ -15,12 +15,12 @@ import { patchRecord } from '../Bundles/record'
 import { parkLinks } from '../Trash/trashedCopies'
 import { findContainerById } from './treePatch'
 import { pagesByIdOf } from './record'
-import { type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
+import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
 import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
-import { contextDirRel } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
 import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -378,12 +378,14 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets the tree doesn't hold again, whatever became of their container; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
   const tree = await liveTreeOf(root)
   const live = findContainerById(tree, id)
   const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
   const perSet = e.edit?.kind === 'gone' && !e.within ? e.edit : null
-  const unlive = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
+  const unheld = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
+  const archived = unheld.length ? await archivedSetIds(root, join(root, ARCHIVE_DIR_REL)) : []
+  const unlive = unheld.filter((x) => !archived.includes(x))
   const edit = perSet
     ? unlive.length
       ? { ...perSet, ids: unlive }

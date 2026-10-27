@@ -76,14 +76,15 @@ Collection, and times the Link column's open, the decoration build on caret move
 native caret move. It seeds `Collection A/Set Alpha` and its neighbors with real duplicates and
 `PL …` pages on debug port 9383, and exits non-zero on any failed check a landed phase owns.
 
-`Archive Drive/live-drive.mjs` drives the Archive end to end against the real app, in seven groups
-that follow the plan's phases, 1 to 6B: the lift and the carry of excluded folders and the asset
+`Archive Drive/live-drive.mjs` drives the Archive end to end against the real app, in eight groups
+that follow the plans' phases, 1 to 7: the lift and the carry of excluded folders and the asset
 directory; the bundle format both stores share, the exact place a restore returns to, and its
 step-aside past the disk; the Archive's reach into the content index and every cascade while the
 tree, search, and the Matrix leave it out; the archive, restore, and delete ops, the open pass, and a
 Set's carry across Collections; the chrome the Trash and the Archive share; archiving from the menus
-and its settings; and ArchiveView, the reader window, and the action label's bar. `MATRIX.md` beside
-it holds each group's cases and the decision each proves. It takes the groups to run as arguments —
+and its settings; ArchiveView, the reader window, and the action label's bar; and a Set's or
+Collection's bundle disclosing in both stores. `MATRIX.md` beside it holds each group's cases and
+the decision each proves. It takes the groups to run as arguments —
 `node live-drive.mjs 1 6B` — seeds each group's own Sets, pages, and settings in `~/Test`'s
 `Collection A` and puts the settings back, on debug port 9393, and exits non-zero on any failed check.
 

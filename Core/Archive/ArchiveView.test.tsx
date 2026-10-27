@@ -17,6 +17,7 @@ import { storesChanged } from '../Session/nexusSlice'
 import { captureWarm, clearWarm } from '../Session/warmCache'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 vi.mock('../MarkdownPM/MarkdownEditor', () => ({
@@ -115,7 +116,6 @@ describe('ArchiveView', () => {
   }
   const indentOf = (title: string): string =>
     (rowOf(title).querySelector('.cell-title')?.parentElement as HTMLElement).style.marginLeft
-  const step = (depth: number): string => `calc(var(--row-indent) * ${depth})`
   const chevronOf = (title: string): Element | null =>
     rowOf(title).querySelector('[data-drop-outline]')
   const undo = async (): Promise<void> => {
@@ -232,7 +232,11 @@ describe('ArchiveView', () => {
     expect(chevronOf('A')).toBeNull()
     await press('Ideas', 1)
     expect(titles()).toEqual(['Ideas', 'P', 'A'])
-    expect([indentOf('Ideas'), indentOf('P'), indentOf('A')]).toEqual([step(0), step(1), step(0)])
+    expect([indentOf('Ideas'), indentOf('P'), indentOf('A')]).toEqual([
+      rowIndent(0),
+      rowIndent(1),
+      rowIndent(0),
+    ])
     expect(chevronOf('Ideas')?.classList.contains(dropOutlineOpen)).toBe(true)
     expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('false')
     await press('Ideas', 1)

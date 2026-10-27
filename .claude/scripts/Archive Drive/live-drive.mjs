@@ -9,11 +9,11 @@ import {
 } from '../drive-harness.mjs'
 
 const PORT = 9393
-// The plan's phases in order, named as the plan names them.
+// The plans' phases in order, named as the plans name them: the Archive's, then Disclosable Bundles' 7.
 const PHASES = ['1', '2', '3', '4', '5', '6A', '6B', '7']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !PHASES.includes(g))) {
-  console.error(`usage: node live-drive.mjs <group…>   (groups ${PHASES.join(', ')}, each the plan phase of its name)`)
+  console.error(`usage: node live-drive.mjs <group…>   (groups ${PHASES.join(', ')}, each a plan phase of its name)`)
   process.exit(2)
 }
 
@@ -558,8 +558,7 @@ async function group4() {
 const LABEL = `document.querySelector('[role=status], [role=alert]')`
 const drained = (cdp) => cdp.evaluate(`${LABEL}.hasAttribute('inert')`)
 const moveTo = (cdp, { x, y }) => cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-const trashRow = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
-const checkRow = (cdp, title) => click(cdp, `${trashRow(title)}.querySelector('[role=checkbox]')`)
+const checkRow = (cdp, title) => click(cdp, `${trashRowEl(title)}.querySelector('[role=checkbox]')`)
 const listedTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
 /** Each face of the one swap inside `expr`, in its order: shown or hidden, and whether it's inert and unnamed. */
 const facesOf = (cdp, expr) =>
@@ -610,16 +609,16 @@ async function group5(cdp) {
   const cleared = await settles(async () => same(await listedTitles(cdp), listed))
   item(5, 'G-1', 'typed search narrows in place, keeping newest first', narrowed && cleared, show({ found, after: await listedTitles(cdp) }))
 
-  const single = await chooseNative(cdp, trashRow('G5 One'), [])
+  const single = await chooseNative(cdp, trashRowEl('G5 One'), [])
   item(5, 'K-4', "one row's menu reads Restore and Delete", same(single.rows, ['Restore', 'Delete']), show(single.rows))
 
   for (const t of ['G5 One', 'G5 Two']) await checkRow(cdp, t)
-  const onChecked = await chooseNative(cdp, trashRow('G5 Two'), [])
-  const onUnchecked = await chooseNative(cdp, trashRow('G5 Note'), [])
+  const onChecked = await chooseNative(cdp, trashRowEl('G5 Two'), [])
+  const onUnchecked = await chooseNative(cdp, trashRowEl('G5 Note'), [])
   item(5, 'K-4', "a checked row's menu names the batch; an unchecked one acts alone",
     same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']), show({ onChecked, onUnchecked }))
 
-  const { chosen: restoredAll } = await chooseNative(cdp, trashRow('G5 Two'), 'Restore All')
+  const { chosen: restoredAll } = await chooseNative(cdp, trashRowEl('G5 Two'), 'Restore All')
   const restoredSaid = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
   const near = await boxOf(cdp, LABEL)
   await moveTo(cdp, near)
@@ -650,7 +649,7 @@ async function group5(cdp) {
 
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
-  const { chosen: deletedAll } = await chooseNative(cdp, trashRow('G5 Note'), 'Delete All')
+  const { chosen: deletedAll } = await chooseNative(cdp, trashRowEl('G5 Note'), 'Delete All')
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
   const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
   await pressDialog(cdp, 'Delete')
@@ -1302,7 +1301,7 @@ const intoPath = (rows, title) => ((rows ?? []).find((r) => r.label === title)?.
 const restoreInto = (menu, title) => ['Restore', ...intoPath((menu ?? []).find((r) => r.label === 'Restore')?.submenu, title)]
 /** The titles drawn right after `title`'s row. */
 const titlesAfter = (titles, title, n) => titles.slice(titles.indexOf(title) + 1, titles.indexOf(title) + 1 + n)
-const trashTrailOf = (cdp, title) => trailOf(cdp, `(${trashRow(title)})?.querySelector('.bundle-trail')`)
+const trashTrailOf = (cdp, title) => trailOf(cdp, `(${trashRowEl(title)})?.querySelector('.bundle-trail')`)
 const checkedIn = (cdp, scope) => cdp.evaluate(`document.querySelectorAll('${scope} .data-row [role=checkbox][aria-checked="true"]').length`)
 
 async function group7(cdp) {
@@ -1340,12 +1339,12 @@ async function group7(cdp) {
   }
 
   await openSettings(cdp, 'Trash')
-  await until('the Nest Coll row', () => cdp.evaluate(`!!(${trashRow('Nest Coll')})`))
-  await mouseClick(cdp, `(${trashRow('Nest Coll')}).querySelector('.cell-title-text')`)
+  await until('the Nest Coll row', () => cdp.evaluate(`!!(${trashRowEl('Nest Coll')})`))
+  await mouseClick(cdp, `(${trashRowEl('Nest Coll')}).querySelector('.cell-title-text')`)
   const collOpened = await settles(async () => same(titlesAfter(await listedTitles(cdp), 'Nest Coll', 3), ['Nest Set', 'Nest One', 'Nest Two']))
-  await mouseClick(cdp, `(${trashRow('Nest Set')}).querySelector('.cell-title-text')`)
+  await mouseClick(cdp, `(${trashRowEl('Nest Set')}).querySelector('.cell-title-text')`)
   const setOpened = await settles(async () => same(titlesAfter(await listedTitles(cdp), 'Nest Coll', 4), ['Nest Set', 'Nest Deep', 'Nest One', 'Nest Two']))
-  const rowState = (title) => cdp.evaluate(`(() => { const r = ${trashRow(title)}; return r && { expanded: r.getAttribute('aria-expanded'), nested: !!r.querySelector('.row-chevron') } })()`)
+  const rowState = (title) => cdp.evaluate(`(() => { const r = ${trashRowEl(title)}; return r && { expanded: r.getAttribute('aria-expanded'), nested: !!r.querySelector('.row-chevron') } })()`)
   const tree = { coll: await rowState('Nest Coll'), set: await rowState('Nest Set'), page: await rowState('Nest Deep') }
   const deepTrail = await trashTrailOf(cdp, 'Nest Deep')
   const unchecked = (await checkedIn(cdp, '.trash-frame')) === 0
@@ -1354,7 +1353,7 @@ async function group7(cdp) {
     collOpened && setOpened && same(tree, { coll: { expanded: 'true', nested: false }, set: { expanded: 'true', nested: true }, page: { expanded: null, nested: false } }) && same(deepTrail, ['Nest Coll', 'Nest Set']) && unchecked,
     show({ shown: await listedTitles(cdp), tree, deepTrail, unchecked }))
 
-  const oneMenu = await popAt(cdp, trashRow('Nest One'))
+  const oneMenu = await popAt(cdp, trashRowEl('Nest One'))
   const onePath = restoreInto(oneMenu, 'Collection B')
   const oneChosen = await pickNative(onePath)
   const oneLanded = await settles(async () => exists('Collection B/Nest One.md') && !exists(inner.one))
@@ -1363,9 +1362,9 @@ async function group7(cdp) {
     same(labels(oneMenu), ['Restore', 'Delete']) && oneChosen && oneLanded && frontOf('Collection B/Nest One.md').ID === ids[page('Nest Coll', 'Nest One')] && oneLeft,
     show({ menu: labels(oneMenu), onePath, oneChosen, oneLanded, oneLeft }))
 
-  for (const t of ['Nest Two', 'Nest Deep']) await mouseClick(cdp, `(${trashRow(t)}).querySelector('.bundle-date')`)
+  for (const t of ['Nest Two', 'Nest Deep']) await mouseClick(cdp, `(${trashRowEl(t)}).querySelector('.bundle-date')`)
   const twoChecked = (await checkedIn(cdp, '.trash-frame')) === 2
-  const { chosen: allChosen } = await chooseNative(cdp, trashRow('Nest Two'), 'Restore All')
+  const { chosen: allChosen } = await chooseNative(cdp, trashRowEl('Nest Two'), 'Restore All')
   const asked = await until('the destination ask', nativeRows, 3000).catch(() => null)
   const askChosen = await pickNative(intoPath(asked, 'Collection B'))
   const once = await holds(async () => (await nativeRows()) === null, 1500)

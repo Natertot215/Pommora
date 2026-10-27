@@ -1963,7 +1963,9 @@ describe('emptyBundle — giving a bundle up for good', () => {
       )
       await refreshTree(root)
       await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
-      expect((await emptyNotes(nexusDeps)).ok).toBe(true)
+      expect(
+        (await emptyNotes({ ...nexusDeps, trashToSystem: (p) => rm(p, { recursive: true }) })).ok,
+      ).toBe(true)
       expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
     })
   })

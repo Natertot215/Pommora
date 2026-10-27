@@ -261,7 +261,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       </span>
     )
   const indent = (depth: number): string =>
-    depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
+    depth > 0 ? `calc(var(--loose-inset) + ${rowIndent(depth)})` : 'var(--loose-inset)'
 
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {

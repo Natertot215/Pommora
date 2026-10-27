@@ -6,7 +6,7 @@ import {
   mintOptionId, optionId,
   ask, check, chooseNative, click, COPY, drag, FM, holds, itemCount, launch, META, mintPageId, mouseAt, boxOf, mouseClick,
   closePanel, closeSettings, DIALOG, must, NEXUS, openField, openPanel, openSettings, PORTAL_ROWS, portalOpen, pressKey, RAIL, read,
-  restore, results, ribbon, selectField, SETTINGS_BUTTON, settles, shot, sleep, textEl, typeText, until, viewFrame,
+  restore, results, ribbon, selectField, SETTINGS_BUTTON, settles, shot, sleep, textEl, trashRowEl, typeText, until, viewFrame,
 } from '../drive-harness.mjs'
 
 const PORT = 9363
@@ -1496,8 +1496,7 @@ async function group9(cdp) {
 
   // The Trash: a page restored through the Trash browser returns in the current spelling.
   await openSettings(cdp, 'Trash')
-  const trashRow = `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.textContent.includes('M9 Trashed'))`
-  const { rows: menu } = await chooseNative(cdp, trashRow, 'Restore')
+  const { rows: menu } = await chooseNative(cdp, trashRowEl('M9 Trashed'), 'Restore')
   pin(G, 'G-1', "a page restored from the Trash browser returns under the Label Format set while it was away",
     menu.includes('Restore') && (await wrote(trashed, 'm9 words: back')), show([menu, blockOf(trashed)]))
   await closeSettings(cdp)

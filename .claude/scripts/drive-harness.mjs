@@ -618,4 +618,4 @@ export async function closeSettings(cdp) {
 export const DIALOG = `document.querySelector('[role="alertdialog"]')`
 export const pressDialog = (cdp, label) => click(cdp, `[...${DIALOG}.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(label)})`)
 export const notice = (cdp) => cdp.evaluate(`document.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')?.textContent ?? ''`)
-export const trashRowEl = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)}))`
+export const trashRowEl = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`

@@ -897,6 +897,25 @@ describe('an item pulled out of a trashed bundle', () => {
   const listed = async (...segs: string[]) => (await readdir(join(root, ...segs))).sort()
   const owed = async () =>
     Object.values(await readNotes(root)).find((e) => e.kind === 'container')?.strip ?? []
+  const located = (id: string) => ({
+    id: `view_${id}`,
+    name: id,
+    type: 'table',
+    filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: [id] }] },
+  })
+  // Daily holding Sub, deleted while Plain's views naming both refuse their edit, so the delete owes it.
+  const owingSetViews = async () => {
+    await putJson(join(root, 'Journal', 'Daily', 'Sub', '_pageset.json'), { id: 'set-sub' })
+    const sidecar = join(root, 'Plain', '_pagecollection.json')
+    const views = ['set-daily', 'set-sub'].map(located)
+    await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
+    const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar)
+    await del('Journal/Daily', 'set')
+    refusal.mockRestore()
+    return { sidecar, views, bundle: await bundleOf('Daily') }
+  }
+  const finish = async () =>
+    expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
 
   it('a page pulled from a trashed Set restores to a given container, and the bundle still holds its sibling', async () => {
     await del('Journal/Daily', 'set')
@@ -993,12 +1012,6 @@ describe('an item pulled out of a trashed bundle', () => {
     await putJson(join(root, 'Journal', 'Daily', 'Sub', '_pageset.json'), { id: 'set-sub' })
     await putJson(join(root, 'Journal', 'Weekly', '_pageset.json'), { id: 'set-weekly' })
     const sidecar = join(root, 'Plain', '_pagecollection.json')
-    const located = (id: string) => ({
-      id: `view_${id}`,
-      name: id,
-      type: 'table',
-      filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: [id] }] },
-    })
     const views = ['set-daily', 'set-sub', 'set-weekly'].map(located)
     await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
     const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar)
@@ -1013,5 +1026,24 @@ describe('an item pulled out of a trashed bundle', () => {
     expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
     const { filter, ...unfiltered } = views[2]
     expect((await readJsonAt(sidecar)).views).toEqual([views[0], views[1], unfiltered])
+  })
+
+  it('a Set restored whole keeps the views naming a Set inside it archived since, once its delete’s owed view edit runs', async () => {
+    const { sidecar, views, bundle } = await owingSetViews()
+    expect((await pull(bundle)).ok).toBe(true)
+    const archived = { op: 'archive', path: 'Journal/Daily/Sub', kind: 'set' } as const
+    expect((await settledMutate(root, archived, deps)).ok).toBe(true)
+    await finish()
+    expect((await readJsonAt(sidecar)).views).toEqual(views)
+  })
+
+  it('a Set pulled from a trashed Set and archived since keeps its views once the delete’s owed view edit runs, and the Set still in the bundle drops', async () => {
+    const { sidecar, views, bundle } = await owingSetViews()
+    expect((await pull(join(bundle, 'Daily', 'Sub'), INTO_PLAIN)).ok).toBe(true)
+    const archived = { op: 'archive', path: 'Plain/Sub', kind: 'set' } as const
+    expect((await settledMutate(root, archived, deps)).ok).toBe(true)
+    await finish()
+    const { filter, ...unfiltered } = views[0]
+    expect((await readJsonAt(sidecar)).views).toEqual([unfiltered, views[1]])
   })
 })

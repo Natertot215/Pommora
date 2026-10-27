@@ -198,8 +198,7 @@
 /* The rail slot directly left of a row's icon, centering its grip, its check, or a band's or nested row's chevron. */
 .row-grip,
 .row-check,
-.table-view .group-band-drop-outline,
-.row-chevron {
+.table .row-chevron {
   position: absolute;
   left: calc(-1 * var(--rail-inset));
   width: var(--rail-inset);

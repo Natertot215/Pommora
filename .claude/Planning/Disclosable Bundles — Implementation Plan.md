@@ -98,6 +98,8 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 | `.trash-table` • Class | The Trash's sideways scroller, holding its heading and rows over the checkboxes' gutter. | `Core/Settings/trash-frame.css` |
 | `tabIndex` • Prop | Takes a checkbox out of the Tab order where its row carries the keyboard. | `UIX/Controls/Checkbox.tsx` |
 | `virtualRows.ts` • File | The virtualizer's stand-in for renderer suites, drawing every row. | `Core/Testing/virtualRows.ts` |
+| `refuseWrites` • Function | Refuses one writer's write to the files a host suite picks, handing every other file to the real write. | `Core/Testing/hostFs.ts` |
+| `bytesUnder` • Function | Each file under a folder with its text, so a refused op shows the folder left byte-identical. | `Core/Testing/hostFs.ts` |
 
 **REMOVED**
 
@@ -546,7 +548,6 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 - [x] Edit the spends, `fromArchive`, and `finishContainer`'s view drop as below.
   - `spend.ts` and `archive.ts` lose their `removeOwn` import, and `delete.ts` keeps its own for `:119`.
   - `fromArchive` returns on a refused path before opening, so `resolved.value` names the address the item held.
-- [x] Update `spendUndo`'s doc (`confirmations.ts:46`) to read "A bundle, or an inner item of one, restored or deleted from anywhere spends…".
 
 **AFTER**
 
@@ -608,12 +609,14 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 ```Core/Nexus/finishOwed.ts diff
 @@ finishContainer @@
 -  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
-+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets the tree doesn't hold again, whatever became of their container; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
++  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
    const tree = await liveTreeOf(root)
    const live = findContainerById(tree, id)
    const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
 +  const perSet = e.edit?.kind === 'gone' && !e.within ? e.edit : null
-+  const unlive = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
++  const unheld = perSet?.ids.filter((x) => !findContainerById(tree, x)) ?? []
++  const archived = unheld.length ? await archivedSetIds(root, join(root, ARCHIVE_DIR_REL)) : []
++  const unlive = unheld.filter((x) => !archived.includes(x))
 +  const edit = perSet
 +    ? unlive.length
 +      ? { ...perSet, ids: unlive }
@@ -1219,8 +1222,7 @@ A whole bundle still re-mints under its own name, as it does today.
   - **`ArchiveView.test.tsx:359`:** run its batch half as a mixed batch that asks once.
 - [x] Add `browser.test.ts` cases:
   - a batch of a homeless Space and a homeless page asks once per kind and sends each its own kind's destination, and a dismissed second ask restores nothing;
-  - a right-click on a checked inner page under its checked, in-view parent Set offers the Set's destinations and restores the Set;
-  - an inner row's restore spends the Undo armed at its own address.
+  - a right-click on a checked inner page under its checked, in-view parent Set offers the Set's destinations and restores the Set.
 - [x] Replace `placesFor` with `DestinationKind` and three functions, then rewrite `restoreOne`, `openMenu`, and `restoreBatch` over them:
   - **`DestinationKind`:** `Extract<RestoreDestination, { id: string }>['kind']`, the request schema's own.
   - **`destinationKind(row)`:** `'context'` for a Space, otherwise `'container'`.
@@ -2483,12 +2485,16 @@ function TrashBody(): React.JSX.Element {
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run.
 
-- [ ] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
-- [ ] Simplification lens → adversarial lens (opus-high) over `$BASE..HEAD`
-- [ ] Neutral verification (opus-high) over `$BASE..HEAD`
-- [ ] Own pass: gates · diff · deviations · criteria
+The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-2026), each wave closed before the next opens. Every reviewer brief carries the Approach, Principles, and Docs Constraint verbatim and *§Constraints* whole, except the neutral gate's, which carries none of them.
+
+- [x] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
+- [ ] **Wave One:** two read-only `opus-xhigh` reviewers over `$BASE..HEAD`, briefed with `code-simplification`. One reads inward, at the diff itself; one reads outward, at the diff against the rest of Core, UIX, and Desktop. One fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
+- [ ] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, under Wave One's brief over the folded range, given the Not Taken list so a fold left out returns only on new evidence; folded and committed the same way.
+- [ ] **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
+- [ ] **Spotcheck:** any fold after the gate gets one `opus-high` spotcheck against the principles alone.
+- [ ] **Closeout:** the Archive Drive whole on the final head, and the own pass: gates · diff · deviations · criteria
 - [ ] Reconciliation walked
-- [ ] Report delivered
+- [ ] `save-session`, `save-delta`, and the report; no history entry
 
 #### Reconciliation
 
@@ -2504,7 +2510,6 @@ function TrashBody(): React.JSX.Element {
 - `.claude/IssuesPM.md` I-075 — "`Core/Bundles/browser.ts` doesn't read `detail` yet", the Solution's surface count, and the footnote's plan cites read false once `rowClick` ships — Task 7-1
 - `.claude/IssuesPM.md` — new entry: an emptied container bundle stays behind — Task 7-1
 - `Core/Bundles/browser.ts:189` — the hook's doc gains the tree and `rowClick` — Task 4-1
-- `Core/Interface/Confirm/confirmations.ts:46` — the `spendUndo` doc reads "A bundle, or an inner item of one, …" — Task 1-3
 
 #### Open Items
 

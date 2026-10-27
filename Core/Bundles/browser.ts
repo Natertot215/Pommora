@@ -10,7 +10,7 @@ import {
   offerUndo,
   spendUndo,
 } from '../Interface/Confirm/confirmations'
-import { countPhrase } from '../Nexus/entities'
+import { countPhrase, isContainerKind } from '../Nexus/entities'
 import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
@@ -69,14 +69,13 @@ export interface TreeRow {
 /** Each open container's inner rows, null while its reply is pending. */
 type OpenRows = ReadonlyMap<string, readonly BundleRow[] | null>
 
-const discloses = (row: BundleRow): boolean => row.kind === 'set' || row.kind === 'collection'
-
 /** The rows in view: each top row, and beneath each open one the inner rows it lists, in order. */
 export function treeRows(rows: readonly BundleRow[], open: OpenRows): TreeRow[] {
   const out: TreeRow[] = []
   const walk = (row: BundleRow, depth: number): void => {
-    const inner = discloses(row) ? open.get(row.bundlePath) : undefined
-    out.push({ row, depth, open: discloses(row) ? inner !== undefined : null })
+    const opens = isContainerKind(row.kind)
+    const inner = opens ? open.get(row.bundlePath) : undefined
+    out.push({ row, depth, open: opens ? inner !== undefined : null })
     for (const child of inner ?? []) walk(child, depth + 1)
   }
   for (const row of rows) walk(row, 0)
@@ -346,7 +345,7 @@ export function useBundleBrowser(
   /** A container's click discloses it; a page's checks it, and its double-click leaves it checked and opens it. */
   const rowClick = (row: BundleRow, detail: number): void => {
     const address = row.bundlePath
-    if (discloses(row)) {
+    if (isContainerKind(row.kind)) {
       if (detail < 2) void disclose(address)
       return
     }
