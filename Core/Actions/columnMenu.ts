@@ -66,9 +66,17 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
     return [
       ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
       ...(showsWeekday(current.date_format)
-        ? WEEKDAY_FORMATS.map((w, i) => weekday(WEEKDAY_FORMAT_LABELS[w], w, i === 0))
+        ? [
+            ...WEEKDAY_FORMATS.filter((w) => w !== 'none').map((w, i) =>
+              weekday(WEEKDAY_FORMAT_LABELS[w], w, i === 0),
+            ),
+            current.weekday === 'none' ? weekday('Show Day', 'long') : weekday('Hide Day', 'none'),
+          ]
         : []),
-      ...TIME_FORMATS.map((t, i) => time(TIME_FORMAT_LABELS[t], t, i === 0)),
+      ...TIME_FORMATS.filter((t) => t !== 'none').map((t, i) =>
+        time(TIME_FORMAT_LABELS[t], t, i === 0),
+      ),
+      current.time_format === 'none' ? time('Show Time', 'twelveHour') : time('Hide Time', 'none'),
     ]
   }
   const look = row('look', current.look)

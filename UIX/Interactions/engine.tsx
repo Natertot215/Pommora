@@ -176,7 +176,11 @@ type LineHandle = {
   'aria-describedby': string
   'data-line-row': string
 }
-type LineRowOptions = { spring?: (dragged: string) => void; open?: () => void }
+type LineRowOptions = {
+  spring?: (dragged: string) => void
+  open?: () => void
+  space?: () => void
+}
 type DragItemOptions = { open?: () => void; tabStop?: boolean }
 type Active = { zone: string; id: string }
 type SlotBox = { zone: string; own: boolean; box: Box; clip: Rect | null }
@@ -1334,11 +1338,12 @@ export function useLineSpring(
 
 export function useLineRow(
   id: string,
-  { spring, open }: LineRowOptions = {},
+  { spring, open, space }: LineRowOptions = {},
 ): { ref: (el: HTMLElement | null) => void; handle: LineHandle } {
   const { api, zoneId } = useZone('useLineRow')
   const springRef = useLineSpring(spring)
   const run = useLatest(open)
+  const runSpace = useLatest(space)
   const opens = open !== undefined
   const ref = useCallback(
     (el: HTMLElement | null) => {
@@ -1359,7 +1364,7 @@ export function useLineRow(
         e.preventDefault()
         if (opening) run.current?.()
         else if (step !== 0) api.focusRow(zoneId, row, step)
-        else if (!e.repeat && !api.liftKeyboard(zoneId, id)) run.current?.()
+        else if (!e.repeat && !api.liftKeyboard(zoneId, id)) (runSpace.current ?? run.current)?.()
       },
       tabIndex: -1,
       'aria-describedby': INSTRUCTIONS_ID,
@@ -1379,9 +1384,10 @@ export function LineRow({
   id,
   spring,
   open,
+  space,
   ...div
 }: { id: string } & LineRowOptions & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
-  const { ref, handle } = useLineRow(id, { spring, open })
+  const { ref, handle } = useLineRow(id, { spring, open, space })
   return <div ref={ref} {...div} {...handle} />
 }
 

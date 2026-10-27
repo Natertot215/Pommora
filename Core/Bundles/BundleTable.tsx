@@ -3,7 +3,7 @@ import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
-import { LineZone, lineList, useLineRow } from '@pommora/uix/Interactions/drag'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
@@ -79,7 +79,7 @@ type RowApi = Pick<Browser, 'toggle' | 'rowClick' | 'openMenu'> & {
   focus: (address: string) => void
 }
 
-/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space acts as a click and whose Enter as a keyboard's, each row a tree item that discloses, checks, and opens through the browser. */
+/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space toggles a row's check and whose Enter acts as a keyboard's click, each row a tree item that discloses, checks, and opens through the browser. */
 export function BundleRows({
   browser: { visible, checked, picked, date, toggle, rowClick, openMenu },
   scrollEl,
@@ -160,18 +160,11 @@ const BundleRowView = memo(function BundleRowView({
   api: RowApi
 }): React.JSX.Element {
   const chevron = open === null ? null : <DropOutline open={open} />
-  const { ref, handle } = useLineRow(row.bundlePath, { open: () => api.rowClick(row, 0) })
   return (
-    <div
-      ref={ref}
-      {...handle}
-      tabIndex={handle.tabIndex}
-      // Space checks a row as a click does, where Enter opens an Archive page as a double-click does.
-      onKeyDown={(e) => {
-        if (e.key !== ' ' || e.target !== e.currentTarget) return handle.onKeyDown(e)
-        e.preventDefault()
-        if (!e.repeat) api.rowClick(row, 1)
-      }}
+    <LineRow
+      id={row.bundlePath}
+      open={() => api.rowClick(row, 0)}
+      space={() => api.toggle(row.bundlePath)}
       className={cx('data-row', lead && 'row-lead')}
       data-reveal-host={revealed ? 'on' : ''}
       style={{ height: ROW_H, transform: `translateY(${start}px)` }}
@@ -223,6 +216,6 @@ const BundleRowView = memo(function BundleRowView({
         )}
       </div>
       <div className="data-cell bundle-date">{when}</div>
-    </div>
+    </LineRow>
   )
 })

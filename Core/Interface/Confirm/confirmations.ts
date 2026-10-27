@@ -1,4 +1,4 @@
-import type { RestoreDestination } from '../../Nexus/mutateRequest'
+import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
 import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
@@ -97,20 +97,30 @@ export const confirmDelete = async (
       ? askDestroyProperty(target.propertyId, target.title)
       : askTrashing([target])
   if (!(await asked)) return false
-  const { mutate, finishOwed } = useSession.getState()
-  const done = await mutate(
-    'propertyId' in target
-      ? { op: 'deleteProperty', propertyId: target.propertyId }
-      : { op: 'delete', path: target.path, kind: target.kind },
-  )
+  const done = await useSession
+    .getState()
+    .mutate(
+      'propertyId' in target
+        ? { op: 'deleteProperty', propertyId: target.propertyId }
+        : { op: 'delete', path: target.path, kind: target.kind },
+    )
   if (!done) return false
-  const { bundled, cascade } = done
+  offerDeleted(target.title, done, target.undoTo)
+  return true
+}
+
+/** A delete's one notice, by `title`: the Undo for the bundle it minted, to `undoTo` when given, and the cascade's links, warning, and Try Again. */
+export function offerDeleted(
+  title: string,
+  { bundled, cascade }: MutateOutcome,
+  undoTo?: RestoreDestination,
+): void {
+  const { finishOwed } = useSession.getState()
   offerUndo(
     bundled ? [bundled.bundlePath] : [],
-    (undo) => notifyDeleted(target.title, undo, cascade, cascade?.owed ? finishOwed : undefined),
-    target.undoTo,
+    (undo) => notifyDeleted(title, undo, cascade, cascade?.owed ? finishOwed : undefined),
+    undoTo,
   )
-  return true
 }
 
 export const confirmArchive = async (target: {
