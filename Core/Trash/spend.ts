@@ -90,7 +90,7 @@ export async function emptyBundle(
   const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
   const pages = await contentPages(record.entity, artifactAbs)
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
-  // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by the bundle, so what the strip misses is owed and parked as a finish strips it.
+  // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked as a finish strips it.
   const id = relative(root, bundleAbs)
   const noted = await editNote(root, id, () => ({
     kind: 'container',

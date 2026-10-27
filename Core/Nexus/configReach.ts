@@ -284,7 +284,7 @@ const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(
 const setSidecarsUnder = async (root: string, scope: WatchScope, abs: string): Promise<string[]> =>
   (await sidecarsUnder(root, scope, abs)).filter((file) => basename(file) === SIDECAR_FILENAME.set)
 
-/** The ids of the Sets an archived folder holds, read from their sidecars, so every saved view drops them once the folder leaves for good. */
+/** The ids of the Sets an archived folder holds, read from their sidecars. */
 export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
   const ids = await Promise.all(
     (await setSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
