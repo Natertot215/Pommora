@@ -94,12 +94,13 @@ export const mutateRequest = z.discriminatedUnion('op', [
   }),
   op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
   op('delete', { path: z.string(), kind: heldKind }),
+  // `back` is an Archive restore's Undo: the address the item left, and the name and record it held there.
   op('archive', {
     path: z.string(),
     kind: z.enum(['page', 'set']),
-    at: z.string().optional(),
-    name: z.string().optional(),
-    record: z.record(z.string(), z.unknown()).optional(),
+    back: z
+      .object({ at: z.string(), name: z.string(), record: z.record(z.string(), z.unknown()) })
+      .optional(),
   }),
   op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
   op('emptyBundle', { bundlePath: z.string() }),

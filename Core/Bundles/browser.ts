@@ -155,11 +155,14 @@ const rearchive = (undone: Undone[]) => async (): Promise<void> => {
     const id = row.stored?.id
     if (!id || !tree) continue
     const path = nodesByIdOf(tree).get(id)?.path
+    const { back } = undo
     if (path)
       await mutate({
         ...undo,
         path,
-        ...(basename(path) !== basename(undo.path) ? { name: basename(path) } : {}),
+        ...(back && basename(path) !== basename(undo.path)
+          ? { back: { ...back, name: basename(path) } }
+          : {}),
       })
   }
 }

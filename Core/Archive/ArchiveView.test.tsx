@@ -408,8 +408,7 @@ describe('ArchiveView', () => {
       op: 'archive',
       path,
       kind: 'page',
-      at: bundlePath,
-      name: path.split('/').at(-1),
+      back: { at: bundlePath, name: path.split('/').at(-1), record: {} },
     })
     const landed = ['Notes/Alpha.md', 'Notes/Ideas/Beta.md']
     mutated.mockImplementation(async ({ op, bundlePath }: { op: string; bundlePath: string }) => {

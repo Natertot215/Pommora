@@ -314,9 +314,7 @@ describe('an Archive restore’s Undo', () => {
     op: 'archive',
     path: target.stored?.path ?? '',
     kind: 'page',
-    at: target.bundlePath,
-    name: `${target.title}.md`,
-    record,
+    back: { at: target.bundlePath, name: `${target.title}.md`, record },
   })
   let host: HTMLDivElement
   let root: Root
@@ -363,7 +361,11 @@ describe('an Archive restore’s Undo', () => {
     mutated.mockClear()
     await act(async () => currentNotification()?.action?.run())
     expect(mutated.mock.calls.map(([req]) => req)).toEqual([
-      { ...undoOf(alpha), path: 'Notes/Alpha 2.md', name: 'Alpha 2.md' },
+      {
+        ...undoOf(alpha),
+        path: 'Notes/Alpha 2.md',
+        back: { at: alpha.bundlePath, name: 'Alpha 2.md', record },
+      },
       undoOf(beta),
     ])
     await act(async () => browser.restore([beta]))

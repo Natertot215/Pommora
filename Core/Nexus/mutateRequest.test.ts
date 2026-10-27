@@ -16,9 +16,13 @@ describe('mutateRequest — what the window sends is held to the shape before an
     expect(read({ op: 'reorderChildren', parentPath: 'A', key: 'id', order: [] })).toBe(false)
     expect(read({ op: 'rename', path: 'A', kind: 'context', newName: 'B' })).toBe(false)
     expect(read({ op: 'archive', path: 'A', kind: 'collection' })).toBe(false)
-    expect(read({ op: 'archive', path: 'A', kind: 'page', at: 7 })).toBe(false)
-    expect(read({ op: 'archive', path: 'A', kind: 'page', name: 7 })).toBe(false)
-    expect(read({ op: 'archive', path: 'A', kind: 'page', record: 'x' })).toBe(false)
+    const filedBack = (back: unknown): boolean =>
+      read({ op: 'archive', path: 'A', kind: 'page', back })
+    const back = { at: 'B', name: 'A.md', record: {} }
+    expect(filedBack({ ...back, at: 7 })).toBe(false)
+    expect(filedBack({ ...back, name: 7 })).toBe(false)
+    expect(filedBack({ ...back, record: 'x' })).toBe(false)
+    expect(filedBack({ at: 'B' })).toBe(false)
   })
 
   it('an archive changes what the settle holds and what the stores list', () => {

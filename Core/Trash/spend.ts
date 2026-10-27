@@ -22,7 +22,7 @@ import {
   spendBundle,
 } from '../Bundles/bundle'
 import { originPathOf } from '../Bundles/layout'
-import { archivedRecord, collectionOf, originOf, recordedPartly } from '../Bundles/record'
+import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
 import { readJsonObject, relocate } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropContextOrder } from '../Nexus/reorder'
@@ -194,7 +194,7 @@ export async function restoreTrashed(
     // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
     if (into && (record.entity === 'page' || record.entity === 'set')) {
       const origin = join(root, originPathOf(root, store, artifactAbs))
-      const filed = await archivedRecord(record, artifactAbs)
+      const { archive, links, targets, partial, ...filed } = record
       targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
     } else {
       await machine().mkdir(dirname(targetAbs))
