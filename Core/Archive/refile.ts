@@ -18,8 +18,16 @@ import {
   collectionsElsewhere,
   listBundles,
   moveIntoStore,
+  openBundle,
 } from '../Bundles/bundle'
-import { collectionOf, originOf, patchRecord, type RecordFile, trailAbove } from '../Bundles/record'
+import {
+  collectionOf,
+  originOf,
+  patchRecord,
+  type RecordFile,
+  retrailed,
+  trailAbove,
+} from '../Bundles/record'
 import { ARCHIVE_DIR_REL, archiveDirRel } from '../Paths/nexusPaths'
 import { listEntries, listFilesRecursive } from '../Files/walk'
 
@@ -39,19 +47,19 @@ async function refile(
   else if (!sameItems(stored, trail)) await patchRecord(bundle, () => ({ trail }))
 }
 
-/** Each record archived from within the Set `setId` takes the trail the Set gives it now, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored. */
+/** Each record archived from within the Set `setId` takes the trail the Set gives it now, `above` it, and `to`'s Archive when the Set now sits in another Collection. An origin the tree holds is placed by its current trail, and one it no longer holds by the ids its record stored below the Set. */
 async function refileArchived(
   root: string,
   setId: string,
   from: string,
   to: string,
   tree: NexusTree,
+  above = trailAbove(tree, setId),
 ): Promise<void> {
-  const above = trailAbove(tree, setId)
   if (!above) return
   for (const { bundlePath, origin, held } of await archivedWithin(root, setId, from, tree)) {
-    const below = origin.trail.slice(origin.trail.indexOf(setId) + 1)
-    await refile(root, bundlePath, origin.trail, held ?? [...above, setId, ...below], from, to)
+    const trail = held ?? retrailed(origin, [...above, setId])
+    await refile(root, bundlePath, origin.trail, trail, from, to)
   }
 }
 
@@ -76,6 +84,18 @@ export const refileLanded = (
     const tree = await liveTreeOf(root)
     const to = owningCollection(tree, dir)?.id
     if (to) await refileArchived(root, record.id, from, to, tree)
+  })
+
+/** The archive's trigger: a Set filed at `address` carries what was archived from within it out of `from`, the Archive of the Collection it stood in, into the Archive it was filed in, along the trail it was filed on. */
+export const refileFiled = (root: string, address: string, from: string): Promise<void> =>
+  carried(async () => {
+    const opened = await openBundle(root, join(root, address))
+    if (!opened.ok || opened.value.store.kind !== 'archive') return
+    const { record, store } = opened.value
+    const origin = originOf(record)
+    if (record.entity !== 'set' || !record.id || !origin || store.id === from) return
+    const above = [...origin.trail, origin.parent]
+    await refileArchived(root, record.id, from, store.id, await liveTreeOf(root), above)
   })
 
 const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>

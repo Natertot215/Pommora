@@ -104,8 +104,14 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 | `refuseWrites` • Function | Refuses one writer's write to the files a host suite picks, handing every other file to the real write. | `Core/Testing/hostFs.ts` |
 | `bytesUnder` • Function | Each file under a folder with its text, so a refused op shows the folder left byte-identical. | `Core/Testing/hostFs.ts` |
 | `decodeRecord` • Function | A record's one decode, shared by `readRecord` and the record an archive request carries. | `Core/Bundles/record.ts` |
-| `filingOf` • Function | Where an archive files the item: the Archive, chain, and record its Undo request carries, else its own Collection's Archive recorded afresh, under the name it asks for. | `Core/Archive/archive.ts` |
-| `Undone` • Type | A restored row and the request its reply says takes the restore back, which an Archive restore's Undo sends. | `Core/Bundles/browser.ts` |
+| `filingOf` • Function | Where an archive files the item: back at the Archive address its Undo request carries, through `archiveFiling`, with that record, else its own Collection's Archive recorded afresh, under the name it asks for when its kind may take it. | `Core/Archive/archive.ts` |
+| `Undone` • Type | A restored row and the archive request its reply says takes the restore back, which an Archive restore's Undo sends. | `Core/Bundles/browser.ts` |
+| `undoneOf` • Function | A reply's archive request with its row, the one narrowing `restoreOne` and the batch share. | `Core/Bundles/browser.ts` |
+| `archivedRecord` • Function | The record an Archive files a page or Set under from a decoded one: where it left from, with its identity read from the file. Shared by `filingOf` and the Undo of a delete from the Archive. | `Core/Bundles/record.ts` |
+| `archiveFiling` • Function | The one choice of the Archive a page or Set files back into at an address it held: the Archive of the Collection its origin sits in now, else the one the address names, while that Collection answers for it, with the address re-rooted and the record on its trail now. Shared by `placeRecord` and `filingOf`. | `Core/Bundles/placement.ts` |
+| `retrailed` • Function | The trail an origin stands on once a container on its chain stands elsewhere, shared by `archiveFiling` and `refileArchived`. | `Core/Bundles/record.ts` |
+| `refileFiled` • Function | The archive's carry: a Set filed into another Collection's Archive carries what was archived from within it there, along the trail it was filed on. | `Core/Archive/refile.ts` |
+| `departingCascade` • Function | An archive's re-spell when it files the item under another name than it stood under, its restore's in reverse. | `Core/Nexus/settle.ts` |
 
 **REMOVED**
 
@@ -2545,7 +2551,7 @@ The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-20
 #### Open Items
 
 - **Emptied Containers (Nathan's Note):** pulling every inner item out of a container bundle leaves the container in its store as an empty row. That holds for now, and Nathan isn't happy with it. Task 7-1 records it in `IssuesPM.md` for a later decision.
-- **Cross-Collection Undo:** a Set restored on its own out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind. `IssuesPM.md` records it.
+- **Logged Along the Way:** `IssuesPM.md` holds the drag instructions every line row names, rows that can't be dragged included (I-078), Confirm Before Deletion's hint, which doesn't say the Trash always asks (I-079), and the Trash's keyboard path to Restore and Delete (I-080).
 
 
 #### Deviations

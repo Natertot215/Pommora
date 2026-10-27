@@ -168,6 +168,12 @@ export const collectionOf = ({ parent, trail }: Origin): string => trail[0] ?? p
 export const originWithin = (origin: Origin, setId: string, held: string[] | null): boolean =>
   origin.parent === setId || (held ?? origin.trail).includes(setId)
 
+/** The trail an origin stands on once a container on its chain stands at `held`, its ids Collection first: those down to it, then those the origin's record stored below it. */
+export function retrailed(origin: Origin, held: readonly string[]): string[] {
+  const chain = [...origin.trail, origin.parent]
+  return [...held, ...chain.slice(chain.indexOf(held[held.length - 1]) + 1)].slice(0, -1)
+}
+
 /** A page's stamped id, or a container's sidecar id and icon. */
 export async function identityOf(
   kind: 'page' | ContainerKind,
@@ -176,6 +182,22 @@ export async function identityOf(
   return kind === 'page'
     ? { id: (await stampedIdOf(abs)) ?? undefined }
     : sidecarIdentity(abs, kind)
+}
+
+/** The record an Archive files a page or Set under from a decoded one: where it left from, and its identity read from the file at `abs` alone, since what a delete records belongs to the Trash. */
+export async function archivedRecord(
+  { entity, parent, place, trail }: Extract<RecordFile, { entity: 'page' | 'set' }>,
+  abs: string,
+): Promise<RecordFile> {
+  const { id, icon } = await identityOf(entity, abs)
+  return {
+    entity,
+    ...(id ? { id } : {}),
+    ...(icon ? { icon } : {}),
+    parent,
+    ...(place ? { place } : {}),
+    ...(trail ? { trail } : {}),
+  }
 }
 
 export async function gatherContentRecord(

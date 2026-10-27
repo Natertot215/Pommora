@@ -345,6 +345,42 @@ describe('restore — an archived item comes back by a plain move', () => {
     })
   })
 
+  it('a Set restored into another Collection is put back by its Undo with what was archived from within it, each on the trail it was archived on', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await reseed()
+    const beta = await archive('Notes/Daily/Beta.md')
+    const record = await readFile(at(beta, '_record.json'), 'utf8')
+    const daily = await archive('Notes/Daily', 'set')
+    const restored = await restore(daily, { kind: 'container', id: OTHER })
+    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toHaveLength(1)
+    expect((await undo(restored)).ok).toBe(true)
+    expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath).sort()).toEqual(
+      [beta, daily].sort(),
+    )
+    expect(await readFile(at(beta, '_record.json'), 'utf8')).toBe(record)
+    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
+  })
+
+  it('a Set pulled from an archived Set into another Collection is put back by its Undo with what was archived from within it', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
+    const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
+    await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
+    await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
+    await reseed()
+    const kept = await archive('Notes/Daily/Sub/Kept.md')
+    const record = await readFile(at(kept, '_record.json'), 'utf8')
+    const daily = await archive('Notes/Daily', 'set')
+    const restored = await restore(join(daily, 'Daily', 'Sub'), { kind: 'container', id: OTHER })
+    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toHaveLength(1)
+    expect((await undo(restored)).ok).toBe(true)
+    expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath).sort()).toEqual(
+      [daily, kept].sort(),
+    )
+    expect(await readFile(at(kept, '_record.json'), 'utf8')).toBe(record)
+    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
+  })
+
   it('a page pulled from an archived Set and restored is put back by its Undo inside the Set’s bundle, at its folder', async () => {
     const bundlePath = await archive('Notes/Daily', 'set')
     const inner = join(bundlePath, 'Daily', 'Beta.md')
@@ -452,6 +488,17 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
   })
 
+  it('a step-aside restore’s Undo leaves a link naming the stepped-aside name where its own name names another', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))
+    const restored = await restore(bundlePath)
+    expect(restored.ok && restored.value.landedAs).toBe('Beta (2)')
+    await writeFile(at('Notes', 'Linker.md'), `---\nID: ${PAGE_K}\n---\n[[Beta (2)]]`)
+    await reseed()
+    expect((await undo(restored)).ok).toBe(true)
+    expect(await text('Notes', 'Linker.md')).toBe(`---\nID: ${PAGE_K}\n---\n[[Beta (2)]]`)
+  })
+
   it('a restore into another Collection is put back by its Undo into the Archive it left', async () => {
     await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
     await reseed()
@@ -460,6 +507,29 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(r.ok && r.value.bundled).toEqual({ bundlePath })
     expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
     expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
+  })
+
+  it('a step-aside restore’s Undo re-spells the links its restore moved to the stepped-aside name back to the name it files the item under', async () => {
+    await writeFile(
+      at('Notes', 'Daily', 'Gamma.md'),
+      `---\nID: ${PAGE_G}\n---\nsee [[Notes/Daily/Alpha]]\n`,
+    )
+    await reseed()
+    const bundlePath = await archive('Notes/Daily', 'set')
+    await putJson(at('Notes', 'Daily', '_pageset.json'), { id: SUB })
+    await reseed()
+    const restored = await restore(bundlePath)
+    expect(restored.ok && restored.value.landedAs).toBe('Daily (2)')
+    expect(await text('Notes', 'Linker.md')).toBe(
+      `---\nID: ${PAGE_K}\n---\n[[Notes/Daily (2)/Beta|Beta]]`,
+    )
+    expect((await undo(restored)).ok).toBe(true)
+    expect(await text('Notes', 'Linker.md')).toBe(
+      `---\nID: ${PAGE_K}\n---\n[[Notes/Daily/Beta|Beta]]`,
+    )
+    expect(await text(bundlePath, 'Daily', 'Gamma.md')).toBe(
+      `---\nID: ${PAGE_G}\n---\nsee [[Notes/Daily/Alpha|Alpha]]\n`,
+    )
   })
 
   it('an inner item restored under a stepped-aside name is put back by its Undo under the name it held', async () => {
@@ -488,6 +558,45 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(await readFile(at(filed, '_record.json'), 'utf8')).toBe(record)
   })
 
+  it('an Undo files the item into the Archive of the Collection its origin sits in now, at its address there, on its trail now', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await reseed()
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const raw = await readRawRecord(at(bundlePath))
+    const restored = await restore(bundlePath)
+    if (!restored.ok || restored.value.undo?.op !== 'archive') throw new Error('No Undo.')
+    const moved = await mutate({
+      op: 'moveSet',
+      path: 'Notes/Daily',
+      newParentPath: 'Other',
+      order: [DAILY],
+    })
+    expect(moved.ok).toBe(true)
+    const r = await mutate({ ...restored.value.undo, path: 'Other/Daily/Beta.md' })
+    const carried = bundlePath.replace(`/${NOTES}/`, `/${OTHER}/`)
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath: carried })
+    expect(await text(carried, 'Beta.md')).toBe(BETA)
+    expect(await readRawRecord(at(carried))).toEqual({ ...raw, trail: [OTHER] })
+    expect(await listBundles(root, ARCHIVE)).toEqual([])
+  })
+
+  it('an Undo whose origin and Archive are both gone for good records the item afresh in its own Collection’s Archive', async () => {
+    const GONE = '01KVGMT8BFP350FZZXAMG1QDZ0'
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const raw = await readRawRecord(at(bundlePath))
+    const restored = await restore(bundlePath)
+    if (!restored.ok || restored.value.undo?.op !== 'archive') throw new Error('No Undo.')
+    const r = await mutate({
+      ...restored.value.undo,
+      at: bundlePath.replace(`/${NOTES}/`, `/${GONE}/`),
+      record: { ...raw, parent: { kind: 'container', id: SUB }, trail: [GONE] },
+    })
+    const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    expect(filed).toBe(bundlePath)
+    expect(await readRawRecord(at(filed))).toEqual(raw)
+    expect(await pathExists(at('.nexus', 'archive', GONE))).toBe(false)
+  })
+
   it('an archive carrying a record of the other kind, or an address outside an Archive, records the item afresh from where it stands', async () => {
     const bundlePath = await archive('Notes/Daily/Beta.md')
     const raw = await readRawRecord(at(bundlePath))
@@ -512,7 +621,38 @@ describe('restore — an archived item comes back by a plain move', () => {
       expect((await restore(filed)).ok).toBe(true)
     }
     await afresh(bundlePath, { ...raw, entity: 'set' })
-    await afresh(`.trash/Notes/Daily/${basename(bundlePath)}`, raw)
+    await afresh(
+      `.trash/Notes/Daily/${basename(bundlePath).replace(/\.archived$/, '.deleted')}`,
+      raw,
+    )
+  })
+
+  it('an archive’s carried record keeps only where the item left from, its identity read from the file', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const raw = await readRawRecord(at(bundlePath))
+    const restored = await restore(bundlePath)
+    if (!restored.ok || restored.value.undo?.op !== 'archive') throw new Error('No Undo.')
+    const forged = {
+      ...raw,
+      id: PAGE_A,
+      icon: 'moon',
+      archive: '.nexus/archive/elsewhere',
+      links: [{ page: PAGE_K, property: 'prop_related', value: '[[Beta]]' }],
+      targets: { beta: { id: PAGE_A, path: 'Notes/Daily/Alpha.md' } },
+      partial: true,
+    }
+    const r = await mutate({ ...restored.value.undo, record: forged })
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(await readRawRecord(at(bundlePath))).toEqual(raw)
+  })
+
+  it('an archive asking for a name no page may take, a hidden one among them, files it under its own', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const restored = await restore(bundlePath)
+    if (!restored.ok || restored.value.undo?.op !== 'archive') throw new Error('No Undo.')
+    const r = await mutate({ ...restored.value.undo, name: '_Beta.md' })
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(await readdir(at(bundlePath))).toEqual(['Beta.md', '_record.json'])
   })
 
   it('an inner item refused as homeless leaves its bundle byte-identical', async () => {
@@ -857,6 +997,30 @@ describe('a delete from the Archive', () => {
       })
       expect(await text(own.bundlePath, 'Deep.md')).toBe(DEEP)
     })
+  })
+
+  it('its Undo files it into the Archive of the Collection its origin sits in now, on its trail now', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await reseed()
+    const archived = await archive('Notes/Daily/Beta.md')
+    const trashed = await trash(archived)
+    const moved = await mutate({
+      op: 'moveSet',
+      path: 'Notes/Daily',
+      newParentPath: 'Other',
+      order: [DAILY],
+    })
+    expect(moved.ok).toBe(true)
+    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    const carried = archived.replace(`/${NOTES}/`, `/${OTHER}/`)
+    expect(await readRecord(at(carried))).toEqual({
+      entity: 'page',
+      id: PAGE_B,
+      parent: { kind: 'container', id: DAILY },
+      place: { above: PAGE_G, below: PAGE_A },
+      trail: [OTHER],
+    })
+    expect(await listBundles(root, ARCHIVE)).toEqual([])
   })
 
   it('its Undo mints a fresh bundle in the same Archive once the name is taken', async () => {

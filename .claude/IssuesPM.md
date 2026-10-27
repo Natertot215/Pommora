@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 82 | 0 | 3 | 13 | 37 | 29 |
+| 80 | 0 | 3 | 13 | 37 | 27 |
 
 #### A1 • Sync & Devices
 
@@ -76,9 +76,7 @@
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
-| [I-079](#I-079 • A Set restored whole or out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind as homeless rows.) | A Set restored whole or out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind as homeless rows. | Minimal | Small (TBD) | Shortcut | `e6d460f09` | **Created:** 10-26-2026<br>**Updated:** 10-27-2026 |
-| [I-080](#I-080 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-| [I-082](#I-082 • A restore that steps aside re-spells the links naming the item to its stepped-aside name, and its Undo files the item back under its own name without re-spelling them back.) | A restore that steps aside re-spells the links naming the item to its stepped-aside name, and its Undo files the item back under its own name without re-spelling them back. | Minimal | Small (TBD) | Shortcut | `392e3411b` | **Created:** 10-27-2026<br>**Updated:** 10-27-2026 |
+| [I-079](#I-079 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A4 • Architecture
 
@@ -94,7 +92,7 @@
 | [I-030](#I-030 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-031](#I-031 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
 | [I-075](#I-075 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
-| [I-081](#I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-080](#I-080 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-051](#I-051 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-050](#I-050 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-061](#I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
@@ -995,21 +993,7 @@ Chokidar's `awaitWriteFinish` holds a path until it has been quiet for about 200
 
 Drop `awaitWriteFinish`, since the event batch already debounces 200 ms, at the cost of one unreadable read of a half-written outside page; or re-stat a held path once its hold ends.
 
-#### I-079 • A Set restored whole or out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind as homeless rows.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Shortcut | `e6d460f09` | **Created:** 10-26-2026<br>**Updated:** 10-27-2026 |
-
-**Description**
-
-A Set restored into another Collection, whole or on its own out of an archived Set, carries what was archived from within it into that Collection's Archive, so those records follow the Set as every landing does. Its Undo files the Set back where it was archived in the first Collection's Archive, a whole Set at its own bundle and an inner Set into its old bundle, and leaves those records where the restore put them. With the Set archived again, nothing live answers their parent, so they list as homeless rows in the second Collection's Archive. They stay there until the Set is live again and the next open re-files them.[^79]
-
-**Solution** [Proposed]
-
-The Undo carries the records the restore moved back with the Set, along the bundle's trail, into the Archive it files the Set back into, as the restore carried them out.
-
-#### I-080 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.
+#### I-079 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1017,25 +1001,11 @@ The Undo carries the records the restore moved back with the Set, along the bund
 
 **Description**
 
-Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its hint lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the hint says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^80]
+Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its hint lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the hint says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^79]
 
 **Solution** [Proposed]
 
 The hint names the Trash among what always asks, which keeps an empty for good behind its question.
-
-#### I-082 • A restore that steps aside re-spells the links naming the item to its stepped-aside name, and its Undo files the item back under its own name without re-spelling them back.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (TBD) | Shortcut | `392e3411b` | **Created:** 10-27-2026<br>**Updated:** 10-27-2026 |
-
-**Description**
-
-A restore that lands on a taken name steps aside to `Name (2)`, and its landing re-spells the links naming the item to that name; for a Set, that includes live path links into it. An Archive restore's Undo files the item back as it was archived, under its original name, and sends nothing back through those links, so they keep naming the stepped-aside name, which nothing answers once the item is archived again.[^82]
-
-**Solution** [Proposed]
-
-The Undo re-spells the links the restore moved to the name it files the item back under, as a rename back would.
 
 ### A4 • Architecture
 
@@ -1127,7 +1097,7 @@ The surfaces differ in observable ways. Only the alias picker delays its single 
 
 One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interactions/` owns the decision. It holds the double-click window as one value and offers the strategies a surface may choose between: acting at once and ignoring the second press, or waiting out the window. The alias picker's timer and constant, the calendar's guard, the editor's guards, the tab's ref, the header's listener, the group band's toggle, and the Bundles browser's `rowClick` move onto it, and `PICK_DELAY_MS` and the test's `PICK_WAIT` leave. A task would touch the primitive and its test and the eleven surfaces above. **Your call:** which strategy is the default, with acting at once keeping every click immediate and waiting making a toggle's double-click quiet at the cost of a delay on every single click, and whether a group band's toggle should wait so the double-click stops flickering. Whether the editor's `mousedown` guards, which pass a second press to word selection rather than choose between two actions, belong on the primitive or beside it is the other open point.
 
-#### I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.
+#### I-080 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1135,7 +1105,7 @@ One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interact
 
 **Description**
 
-The Trash's and the Archive's table rows take the line list's keyboard, Tab, the arrows, Enter, and Space, and reach Restore and Delete only through a row's context menu or, in the Archive, the bar over its checked rows. No key raises a row's menu: a line row answers no menu key, and the Trash has no bar, so a keyboard user can check rows in the Trash but can't restore or delete them.[^81]
+The Trash's and the Archive's table rows take the line list's keyboard, Tab, the arrows, Enter, and Space, and reach Restore and Delete only through a row's context menu or, in the Archive, the bar over its checked rows. No key raises a row's menu: a line row answers no menu key, and the Trash has no bar, so a keyboard user can check rows in the Trash but can't restore or delete them.[^80]
 
 **Solution** [Proposed]
 
@@ -1484,7 +1454,5 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^76]: **I-076:** `Core/Session/nexusSlice.ts:248-265` (`mutate`, the cleanup's discarded reply at `:256` and the notice's Try Again at `:261`), `Core/Session/nexusSlice.ts:290` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:255` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:153,174` (`createContextGroup`, `createSpace`), `Core/Trash/spend.ts:185` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Bundles/browser.ts:402-443` (`many`, its `quiet: true` call at `:428`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md`
 [^77]: **I-077:** `Core/Bundles/bundle.ts:~369-393` (`spendBundle`), `Core/Bundles/bundle.ts:~81-84` (`bundleArtifact`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Trash/spend.ts:~110` (`emptyBundle`), `Core/Trash/spend.ts:~133,~295` (`restoreTrashed`), `Core/Archive/archive.ts:~119` (`restoreArchived`), `Core/Trash/delete.ts:~136` (`deleteOp`)
 [^78]: **I-078:** `UIX/Interactions/engine.tsx:~1287-1318` (`useDragItem`), `UIX/Interactions/engine.tsx:~1337-1372` (`useLineRow`), `UIX/Interactions/engine.tsx:~1120,~1174-1180,~1234` (`ZoneValue`, `useZoneSeat`, the zone's Tab stop), `UIX/Interactions/engine.tsx:~682-685` (the line lift refused on a null `snap`), `UIX/Interactions/a11y.ts:~1,~57-60` (`INSTRUCTIONS_ID`), `UIX/Interactions/lineList.ts:~20-35` (`locked`), `Core/Bundles/BundleTable.tsx:~106`, `Core/Navigation/NavList.tsx:~161`
-[^79]: **I-079:** `Core/Bundles/bundle.ts:~87-117` (`fileInto`), `Core/Archive/archive.ts:~58-90` (`filingOf`), `Core/Archive/archive.ts:~93-138` (`restoreArchived`, its `refileLanded` at `:~125`), `Core/Archive/refile.ts:~43-56` (`refileArchived`), `Core/Archive/refile.ts:~67-79` (`refileLanded`), `Core/Archive/refile.ts:~108-136` (`settleArchives`)
-[^80]: **I-080:** `Core/Settings/frames.ts:~617` (the hint), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
-[^81]: **I-081:** `Core/Bundles/BundleTable.tsx:~177` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Settings/TrashFrame.tsx` (no bar)
-[^82]: **I-082:** `Core/Archive/archive.ts:~93-138` (`restoreArchived`, its `returningCascade` at `:~121` and its reply's `undo`), `Core/Archive/archive.ts:~58-90` (`filingOf`), `Core/Bundles/placement.ts:~187` (`placeRecord`), `Core/Bundles/browser.ts:~148-161` (`rearchive`)
+[^79]: **I-079:** `Core/Settings/frames.ts:~617` (the hint), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
+[^80]: **I-080:** `Core/Bundles/BundleTable.tsx:~177` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Settings/TrashFrame.tsx` (no bar)
