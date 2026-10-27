@@ -179,6 +179,7 @@ type LineHandle = {
 type LineRowOptions = {
   spring?: (dragged: string) => void
   open?: () => void
+  /** Space where the row can't lift, in place of `open`. */
   space?: () => void
 }
 type DragItemOptions = { open?: () => void; tabStop?: boolean }

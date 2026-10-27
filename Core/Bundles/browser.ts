@@ -107,10 +107,14 @@ function keepsCheck(rows: readonly BundleRow[], open: OpenRows): (address: strin
 
 const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
 
-type BatchOp = 'restore' | 'emptyBundle' | 'delete'
+type BundleOp = 'restore' | 'emptyBundle' | 'delete'
 
 /** What an op sends for a row: an Archive delete its path and kind, a restore or an empty its bundle. */
-const requestOf = (row: BundleRow, op: BatchOp, destination?: RestoreDestination): MutateRequest =>
+const requestOf = (
+  row: BundleRow,
+  op: BundleOp,
+  destination?: RestoreDestination,
+): MutateRequest =>
   op === 'delete'
     ? { op, path: row.bundlePath, kind: archivedKind(row) }
     : { op, bundlePath: row.bundlePath, ...(destination ? { destination } : {}) }
@@ -389,7 +393,7 @@ export function useBundleBrowser(
   /** Answers null when a Nexus switch stopped it, as the slice's `mutate` drops a held op: the paths left belong to the Nexus it left, so the batch reports nothing. */
   const many = async (
     targets: BundleRow[],
-    op: BatchOp,
+    op: BundleOp,
     destinationOf?: (row: BundleRow) => RestoreDestination | undefined,
   ): Promise<{
     done: BundleRow[]

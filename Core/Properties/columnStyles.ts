@@ -95,15 +95,16 @@ export function resolveStyle(
   }
 }
 
-/** What a pick stores: nothing when it matches the default, so the date or clock goes on following the Nexus. */
+/** What a pick stores: nothing when it matches the default, so the date or clock goes on following the Nexus; a time shown (`shown`) reads as the clock. */
 export function storedPick(
   key: keyof ColumnStyle & string,
   value: string,
   defaults: ColumnStyle,
   clock: TimeFormat,
 ): string | undefined {
-  if (value === defaults[key]) return undefined
-  return key === 'time_format' && value === clock ? 'shown' : value
+  const picked = key === 'time_format' && value === 'shown' ? clock : value
+  if (picked === defaults[key]) return undefined
+  return key === 'time_format' && picked === clock ? 'shown' : picked
 }
 
 export function defaultStyleFor(
