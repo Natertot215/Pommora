@@ -76,7 +76,7 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
       ...TIME_FORMATS.filter((t) => t !== 'none').map((t, i) =>
         time(TIME_FORMAT_LABELS[t], t, i === 0),
       ),
-      current.time_format === 'none' ? time('Show Time', 'twelveHour') : time('Hide Time', 'none'),
+      current.time_format === 'none' ? time('Show Time', 'shown') : time('Hide Time', 'none'),
     ]
   }
   const look = row('look', current.look)
@@ -104,7 +104,7 @@ export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAc
 const STYLE_VALUES: Record<string, readonly string[]> = {
   look: COLUMN_LOOKS,
   date_format: DATE_FORMATS,
-  time_format: TIME_FORMATS,
+  time_format: [...TIME_FORMATS, 'shown'],
   weekday: WEEKDAY_FORMATS,
 }
 

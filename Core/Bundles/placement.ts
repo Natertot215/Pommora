@@ -19,6 +19,7 @@ import { archiveOwned, collectionsElsewhere } from './bundle'
 import { type BundleStore, bundleAddressOf, layoutOf } from './layout'
 
 interface Placement {
+  /** The folder it lands in; for an Archive destination, the address it files back at. */
   dir: string
   finalName: string
   /** For a page, Space, or Context: the final title restore writes everywhere (folder, registry, re-applied membership keys, the links its arrival re-spells).*/

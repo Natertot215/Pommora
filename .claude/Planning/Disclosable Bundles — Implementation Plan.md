@@ -1622,11 +1622,28 @@ It's a phase of its own because it reshapes the kit's list keyboard and both ski
 +        e.preventDefault()
 +        if ((e.key === 'Enter' && opens) || !api.liftKeyboard(zoneId, id)) run.current?.()
        },
+@@ LineRowOptions @@
+-type LineRowOptions = { spring?: (dragged: string) => void; open?: () => void }
++type LineRowOptions = {
++  spring?: (dragged: string) => void
++  open?: () => void
++  /** Space where the row can't lift, in place of `open`. */
++  space?: () => void
++}
 @@ useLineRow @@
+~  { spring, open, space }: LineRowOptions = {},
+ …
+   const run = useLatest(open)
++  const runSpace = useLatest(space)
+ …
          if (opening) run.current?.()
          else if (step !== 0) api.focusRow(zoneId, row, step)
 -        else if (!e.repeat) api.liftKeyboard(zoneId, id)
 +        else if (!e.repeat && !api.liftKeyboard(zoneId, id)) (runSpace.current ?? run.current)?.()
+@@ LineRow @@
+~  space,
+ …
+~  const { ref, handle } = useLineRow(id, { spring, open, space })
 ```
 
 ```UIX/Interactions/virtualRows.ts diff
@@ -2534,4 +2551,4 @@ The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-20
 - **The Flake (Task 7-1):** "a color queued behind a Space rename…" failed 32 of 60 loaded runs at the baseline and at HEAD alike: its hold spied `rmwJsonStrict`, which the color's write stopped calling when `patchSidecar` moved onto the machine lock (`e739189d7`, before this plan), so the hold never engaged. Its cause was clear, so the test now holds on `patchSidecar` and asserts the hold engaged, 0 of 60 failing, where the plan first logged a pre-existing flake in `IssuesPM.md` instead.
 - **One Table Row (Phase 6, Nathan's Ruling):** Phase 5 drew the Trash on MenuItem rows and gave MenuItem `titleAccessory` and `titleLine` for its chevron. Seeing both skins live, Nathan ruled the Trash onto the Archive's table row, planned as a phase of its own. Phase 6 draws both skins from one bundle table, and `titleAccessory`, `titleLine`, MenuItem's `revealed`, `.table-divider`, and `.table.is-clear` leave with the Trash's MenuItem rows.
 - **Enter Opens (Final Verification, Nathan's Ruling):** the neutral gate found an Archive page's reader reachable only by a pointer's double-click, since Enter acted as a click and checked the row. Nathan ruled Enter opens and Space checks, every row's Space included: a line row takes a `space` beside its `open`, `BundleRowView`'s toggling its row's check, and `rowClick` reads a click with no count as a double-click where pages open.
-- **The Inventory's Rulings (Final Verification, Nathan's Rulings):** the drive's coverage inventory found three behaviors Nathan ruled on: a single Trash Restore or Delete now posts `Restored “Title”` / `Deleted “Title”` as every other notice does, through one `deleteOne` both stores share; the date menu's two `Hidden` rows became `Show/Hide Day` and `Show/Hide Time`, in every date column; and every title-bar search keeps its text on the first Escape, which the tree already did. Two more went to `IssuesPM.md`: Confirm Before Deletion's hint and the Trash's keyboard path to Restore and Delete.
+- **The Inventory's Rulings (Final Verification, Nathan's Rulings):** the drive's coverage inventory found three behaviors Nathan ruled on: a single Trash Restore or Delete now posts `Restored “Title”` / `Deleted “Title”` as every other notice does, through one `deleteOne` both stores share; the date menu's two `Hidden` rows became `Show/Hide Day` and `Show/Hide Time`, in every date column, Show Time following the Nexus clock; and every title-bar search keeps its text on the first Escape, which the tree already did. Two more went to `IssuesPM.md`: Confirm Before Deletion's hint and the Trash's keyboard path to Restore and Delete.

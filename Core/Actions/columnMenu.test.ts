@@ -71,7 +71,7 @@ describe('styleMenuItems', () => {
       ['Show Day', 'style:weekday:long'],
       ['12 Hours', 'style:time_format:twelveHour'],
       ['24 Hours', 'style:time_format:twentyFourHour'],
-      ['Show Time', 'style:time_format:twelveHour'],
+      ['Show Time', 'style:time_format:shown'],
     ])
     expect(rows.find((r) => r.action === 'style:weekday:long')?.separatorBefore).toBe(true)
     expect(rows.find((r) => r.action === 'style:time_format:twelveHour')?.separatorBefore).toBe(
@@ -156,6 +156,13 @@ describe('parseStyleAction', () => {
 
   it('accepts a weekday action', () => {
     expect(parseStyleAction('style:weekday:long')).toEqual({ key: 'weekday', value: 'long' })
+  })
+
+  it('accepts a time shown on the Nexus clock', () => {
+    expect(parseStyleAction('style:time_format:shown')).toEqual({
+      key: 'time_format',
+      value: 'shown',
+    })
   })
 
   it('rejects non-style or malformed actions', () => {

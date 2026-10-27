@@ -1088,6 +1088,17 @@ describe('the line zone', () => {
     expect(space).toHaveBeenCalledOnce()
   })
 
+  it('lifts on Space a row that can, its own Space left alone', async () => {
+    const space = vi.fn()
+    rowOpts = { r1: { space } }
+    await mount()
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(true)
+    expect(space).not.toHaveBeenCalled()
+    pressEscape()
+  })
+
   it('steps by keyboard naming the neighbour and commits', async () => {
     await act(async () => item('r1').focus())
     await press(item('r1'), ' ')

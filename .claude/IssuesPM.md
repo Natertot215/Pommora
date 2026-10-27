@@ -93,12 +93,12 @@
 | [I-030](#I-030 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-031](#I-031 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
 | [I-075](#I-075 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
+| [I-081](#I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-051](#I-051 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-050](#I-050 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-061](#I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-073](#I-073 • Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.) | Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-25-2026 |
 | [I-078](#I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead. | Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-| [I-081](#I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1112,6 +1112,20 @@ The surfaces differ in observable ways. Only the alias picker delays its single 
 
 One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interactions/` owns the decision. It holds the double-click window as one value and offers the strategies a surface may choose between: acting at once and ignoring the second press, or waiting out the window. The alias picker's timer and constant, the calendar's guard, the editor's guards, the tab's ref, the header's listener, the group band's toggle, and the Bundles browser's `rowClick` move onto it, and `PICK_DELAY_MS` and the test's `PICK_WAIT` leave. A task would touch the primitive and its test and the eleven surfaces above. **Your call:** which strategy is the default, with acting at once keeping every click immediate and waiting making a toggle's double-click quiet at the cost of a delay on every single click, and whether a group band's toggle should wait so the double-click stops flickering. Whether the editor's `mousedown` guards, which pass a second press to word selection rather than choose between two actions, belong on the primitive or beside it is the other open point.
 
+#### I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+The Trash's and the Archive's table rows take the line list's keyboard, Tab, the arrows, Enter, and Space, and reach Restore and Delete only through a row's context menu or, in the Archive, the bar over its checked rows. No key raises a row's menu: a line row answers no menu key, and the Trash has no bar, so a keyboard user can check rows in the Trash but can't restore or delete them.[^81]
+
+**Solution** [Proposed]
+
+A line row answers the platform's menu key by raising its own context menu at the row, in the kit, so every line list gains it at once and the Trash needs no bar.
+
 #### I-051 • Four waits that let a transition finish each state their own slack.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1181,20 +1195,6 @@ Every row of a line list points screen readers at the drag instructions through 
 **Solution** [Proposed]
 
 The zone value carries whether its rows can lift, with `lineList`'s `locked` set on the spec where the zone can read it, and both hooks describe the instructions only when a row can lift.
-
-#### I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-
-**Description**
-
-The Trash's and the Archive's table rows take the line list's keyboard, Tab, the arrows, Enter, and Space, and reach Restore and Delete only through a row's context menu or, in the Archive, the bar over its checked rows. No key raises a row's menu: a line row answers no menu key, and the Trash has no bar, so a keyboard user can check rows in the Trash but can't restore or delete them.[^81]
-
-**Solution** [Proposed]
-
-A line row answers the platform's menu key by raising its own context menu at the row, in the kit, so every line list gains it at once and the Trash needs no bar.
 
 ### A6 • Tiles & Embeds
 

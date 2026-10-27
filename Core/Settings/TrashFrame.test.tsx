@@ -257,6 +257,8 @@ describe('the Trash pane', () => {
     )
     expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
     expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()
+    expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
+    expect(await pickFromDateMenu('style:time_format:shown')).toBeUndefined()
   })
 
   it.each([

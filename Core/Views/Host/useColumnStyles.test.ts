@@ -103,5 +103,6 @@ describe('a column follows the Nexus until it picks its own', () => {
     expect(pick('time_format', 'twentyFourHour')).toBe('shown')
     expect(pick('time_format', 'twelveHour')).toBe('twelveHour')
     expect(pick('time_format', 'none')).toBeUndefined()
+    expect(pick('time_format', 'shown')).toBe('shown')
   })
 })
