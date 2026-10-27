@@ -64,6 +64,7 @@ import * as indexSeed from '../Index/indexSeed'
 import * as governedRoot from './governedRoot'
 import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
+import * as sidecar from '../Files/sidecar'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
@@ -2763,13 +2764,13 @@ describe('the Contexts lock', () => {
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
       nexusDeps,
     )
-    const rmw = atomicWrite.rmwJsonStrict
+    const patch = sidecar.patchSidecar
     const writeWaits = vi
-      .spyOn(atomicWrite, 'rmwJsonStrict')
-      .mockImplementation(async (path, mutate, seed) => {
+      .spyOn(sidecar, 'patchSidecar')
+      .mockImplementation(async (folder, kind, fn) => {
         pathRead()
         await renaming
-        return rmw(path, mutate, seed)
+        return patch(folder, kind, fn)
       })
     const [colored, valued] = await Promise.all([
       settledMutate(root, { op: 'setSpaceColor', spaceId: 'sp-pom', color: 'cyan' }, nexusDeps),
@@ -2784,6 +2785,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
+    expect(writeWaits).toHaveBeenCalledOnce()
     renameWaits.mockRestore()
     writeWaits.mockRestore()
     lock.restore()

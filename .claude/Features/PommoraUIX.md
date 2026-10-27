@@ -390,7 +390,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Table
 
-`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, ArchiveView, the Trash): the column-header band with `.col-header` segment bars (`.table-divider` puts the bar on any element), row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
+`UIX/Table/` — `table.css` · `table-tokens.css`. The tabular chrome every table surface uses (TableView, ArchiveView, the Trash): the column-header band with `.col-header` segment bars, row and column hairlines, the column drag and resize strips, `no-borders`, and the cell content types.
 
 ### Utilities
 

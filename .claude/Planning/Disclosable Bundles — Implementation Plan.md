@@ -164,7 +164,7 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
 - **Tests:** each new behavior gets a test that fails without its change, and a rewritten case counts as that test. Host suites seed through `seedNexus` (`Core/Testing/hostFs.ts`) and the shared definitions (`Core/Testing/definitions.ts`) and run ops through `settledMutate.ts`; renderer suites build rows with `fixtures.ts`'s `bundleRow` and trees with `testTree.ts`, and stand in for the virtualizer with `virtualRows.ts`; property bundles come from `fixtures.ts`'s `seedPropertyBundle`; each suite's local seeders carry the rest.
 - **Comments:** docstrings in the house register where a neighbor has one; no other comments.
 - **Imports:** an import that loses its last use leaves in the same task.
-- **Docs:** feature docs only fix what's false, in place, plainly, at its length or shorter. They explain to the user, not the coder: they name no functions, files, channels, or shared vocabularies, and state no cohesion or fixes a reader can infer.
+- **Docs:** feature docs only fix what's false, in place, plainly, at its length or shorter. They explain to the user, not the coder: they name no functions, files, channels, or shared vocabularies, and state no cohesion or fixes a reader can infer. Nathan approves each feature-doc change by what it changes and why; *§Reconciliation* lists the ones he approved, and nothing else in `.claude/Features` changes.
 
 #### Process Overview
 
@@ -190,18 +190,18 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
   - [x] Task 5-2
   - [x] Task 5-3
   - [x] Review Checkpoint
-- [ ] **Phase 6** — One Table Row
+- [x] **Phase 6** — One Table Row
   - [x] Task 6-1
   - [x] Task 6-2
   - [x] Task 6-3
   - [x] Task 6-4
   - [x] Review Checkpoint
-  - [ ] Compaction Checkpoint
-- [ ] `[Stop: Nathan sees both skins' screenshots before Phase 7]`
-- [ ] **Phase 7** — Documents, Drive, and the Live Pass
-  - [ ] Task 7-1
-  - [ ] Task 7-2
-  - [ ] Task 7-3
+  - [x] Compaction Checkpoint
+- [x] `[Stop: Nathan sees both skins' screenshots before Phase 7]`
+- [x] **Phase 7** — Documents, Drive, and the Live Pass
+  - [x] Task 7-1
+  - [x] Task 7-2
+  - [x] Task 7-3
 
 ---
 
@@ -2415,21 +2415,21 @@ function TrashBody(): React.JSX.Element {
 
 **CHANGE**
 
-- [ ] Walk *§Reconciliation*. Each feature-doc entry fixes only the sentence it names, in place and plainly, at its length or shorter, as the user reads it, with no correction language.
-- [ ] Rewrite `IssuesPM.md` I-075 to the shipped `rowClick`:
+- [x] Walk *§Reconciliation*. Each feature-doc entry fixes only the sentence it names, in place and plainly, at its length or shorter, as the user reads it, with no correction language.
+- [x] Rewrite `IssuesPM.md` I-075 to the shipped `rowClick`:
   - `browser.ts` reads `detail`, so its row joins the surface table as a `detail` guard, and the paragraph naming this plan leaves;
   - the Solution counts eleven surfaces with the plan's Task 4-1 dropped, and the footnote's two plan cites give way to `browser.ts`'s `rowClick`.
-- [ ] Add these `IssuesPM.md` entries:
+- [x] Add these `IssuesPM.md` entries:
   - **Emptied Containers:** a container bundle emptied by pulling out every inner item stays in its store as an empty row. Nathan has said he's unhappy with this and wants it revisited.
   - **Drag Instructions on Rows That Can't Move:** every line row points screen readers at the drag instructions ("press space to pick it up"), though in a list that can't be dragged Space now opens the row. Describing only rows that can lift needs the zone's lock to reach the row.
   - **Archived Views After Try Again:** a Set archived after its pages were pulled out of a delete that still owes its finish loses its view filters when that delete's Try Again runs, since the finish counts a Set live only if the tree holds it. A whole Set deleted, restored, then archived before its Try Again loses them the same way.
-- [ ] Run `Core/Nexus/mutate.test.ts`'s "a color queued behind a Space rename…" under full-suite load at the baseline `8148302cf`, in a worktree on a quiet machine. If it fails there, add its `IssuesPM.md` entry; if it passes there, fix it here.
-- [ ] Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md`, which numbers the entries and recomputes the totals.
+- [x] Find why `Core/Nexus/mutate.test.ts`'s "a color queued behind a Space rename…" fails under load, reproducing it at the baseline `8148302cf` in a worktree and at HEAD, and fix it at its origin where the cause is clear; otherwise add its `IssuesPM.md` entry with the evidence.
+- [x] Run `~/The Studio/.claude/scripts/index-issues/index-issues.py .claude/IssuesPM.md`, which numbers the entries and recomputes the totals.
 
 **VERIFY**
 
-- [ ] `rg -n "one row per deleted|is one row|title opens the reader|nowhere to go|table-divider|is-clear" .claude/Features Core` finds nothing stale.
-- [ ] The index script reports no dangling citation.
+- [x] `rg -n "table-divider|is-clear" .claude/Features` finds nothing, and `git diff --stat .claude/Features` touches only the five files *§Reconciliation* names.
+- [x] The index script reports no dangling citation.
 
 #### Task 7-2
 
@@ -2437,8 +2437,8 @@ function TrashBody(): React.JSX.Element {
 
 **CHANGE**
 
-- [ ] Rewrite group 6B's steps that still open the reader with a single title click (`live-drive.mjs:1188`, `:1201-1205`) to a double-click that leaves the row checked, and its Set step (`:1213-1217`) to a click that discloses the Set and opens nothing, with their MATRIX rows rewritten in place.
-- [ ] Add MATRIX rows to `.claude/scripts/Archive Drive/MATRIX.md`, with matching steps in `live-drive.mjs`, for:
+- [x] Rewrite group 6B's steps that still open the reader with a single title click (`live-drive.mjs:1188`, `:1201-1205`) to a double-click that leaves the row checked, and its Set step (`:1213-1217`) to a click that discloses the Set and opens nothing, with their MATRIX rows rewritten in place.
+- [x] Add MATRIX rows to `.claude/scripts/Archive Drive/MATRIX.md`, with matching steps in `live-drive.mjs`, for:
   - a trashed Collection disclosing a Set and pages;
   - an inner page restored through Restore ▸;
   - a Restore All of two inner items asking once;
@@ -2447,7 +2447,7 @@ function TrashBody(): React.JSX.Element {
 
 **VERIFY**
 
-- [ ] The drive runs green against `~/Test`, rebuilt with `node .claude/scripts/make-benchmark-nexus.mjs test` before and after.
+- [x] The drive runs green against `~/Test`, rebuilt with `node .claude/scripts/make-benchmark-nexus.mjs test` before and after.
 
 #### Task 7-3
 
@@ -2455,14 +2455,14 @@ function TrashBody(): React.JSX.Element {
 
 **CHANGE**
 
-- [ ] Launch per `.claude/Guidelines/Development-Environment.md`.
-- [ ] In both skins, screenshot a container disclosed to depth 2 with a long title and a checked inner row.
-- [ ] Double-click an Archive page, and screenshot the reader's trail.
+- [x] Launch per `.claude/Guidelines/Development-Environment.md`.
+- [x] In both skins, screenshot a container disclosed to depth 2 with a long title and a checked inner row.
+- [x] Double-click an Archive page, and screenshot the reader's trail.
 
 **VERIFY**
 
-- [ ] The screenshots are read and sent to Nathan.
-- [ ] The app process is stopped and `~/Test` is rebuilt.
+- [x] The screenshots are read and sent to Nathan.
+- [x] The app process is stopped and `~/Test` is rebuilt.
 
 ---
 
@@ -2492,10 +2492,8 @@ function TrashBody(): React.JSX.Element {
 
 #### Reconciliation
 
-- `.claude/Features/NexusRecordPM.md:10` — "a Trash record of a page or Set deleted from the Archive names the Archive bundle it left" reads false for an item taken out of an archived Set, whose record names where inside the bundle it sat — Task 7-1
-- `.claude/Features/NexusRecordPM.md:16` — "one row per deleted entity" reads false once a Set's or Collection's row opens onto a row per item inside it; "removes the spent bundle" reads false for an item deleted out of one, which leaves the rest behind; "a batch names what it couldn't resolve" reads false once a batch asks where its homeless rows go — Task 7-1
-- `.claude/Features/CollectionsPM.md:51` — "Restoring an archived page or set places it back into its remembered placement" reads false for an item restored out of an archived Set, which asks where it goes — Task 7-1
-- `.claude/Features/CorePM.md:92` — "save the Archive bundle a delete from the Archive names" and "an Archive bundle" in the cascade rule read false once a delete from the Archive can name an item inside one — Task 7-1
+- `.claude/Features/NexusRecordPM.md:16` — the Trash frame's paragraph gains one sentence, at Nathan's word: a Set's or Collection's row opens onto the pages and Sets inside it, each restored or given up on its own, which leaves the rest of its bundle in place — Task 7-1
+- `.claude/Features/CollectionsPM.md:51` — "Restoring an archived page or set places it back into its remembered placement" reads false for an item restored out of an archived Set; Nathan's wording follows it: "an item restored from an archived set is given an option for its placement" — Task 7-1
 - `.claude/Features/PommoraUIX.md:393` — "(`.table-divider` puts the bar on any element)" reads false once the class leaves — Task 7-1
 - `.claude/Features/PommoraDND.md:60` — "Space lifts a row" and a displace item's "Space lifts it" read false where nothing can be lifted, which Space opens — Task 7-1
 - `.claude/Features/ViewTypesPM.md:95` — "and states `is-clear` for a heading with no fill and no seam" reads false once the class leaves — Task 7-1
@@ -2517,4 +2515,5 @@ function TrashBody(): React.JSX.Element {
 #### Deviations
 
 - **The Layout Leaf (Task 1-2):** `spendBundle`'s owed-note edit put `owed.ts` and `configReach.ts` on the live tree's load path, because `heldPages.ts` reached `bundle.ts` for `originPathOf` alone. The cycle left `configReach.test.ts`'s `liveTree` mock depending on import order. The stores' layout, the stamp, `stampedSegment`, `bundleAddressOf`, and `originPathOf` moved into a pure `Core/Bundles/layout.ts`, so loading the tree reaches nothing else in `Core/Bundles/`, and the baseline cycle through `record.ts` closed with it.
+- **The Flake (Task 7-1):** "a color queued behind a Space rename…" failed 32 of 60 loaded runs at the baseline and at HEAD alike: its hold spied `rmwJsonStrict`, which the color's write stopped calling when `patchSidecar` moved onto the machine lock (`e739189d7`, before this plan), so the hold never engaged. Its cause was clear, so the test now holds on `patchSidecar` and asserts the hold engaged, 0 of 60 failing, where the plan first logged a pre-existing flake in `IssuesPM.md` instead.
 - **One Table Row (Phase 6, Nathan's Ruling):** Phase 5 drew the Trash on MenuItem rows and gave MenuItem `titleAccessory` and `titleLine` for its chevron. Seeing both skins live, Nathan ruled the Trash onto the Archive's table row, planned as a phase of its own. Phase 6 draws both skins from one bundle table, and `titleAccessory`, `titleLine`, MenuItem's `revealed`, `.table-divider`, and `.table.is-clear` leave with the Trash's MenuItem rows.

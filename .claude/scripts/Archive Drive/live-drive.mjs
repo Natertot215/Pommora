@@ -3,14 +3,14 @@ import { join } from 'node:path'
 import { parse } from 'yaml'
 import {
   optionId,
-  activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, launch, mintPageId, mouseAt,
-  mouseClick, must, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
+  activeTab, ask, boxOf, chooseNative, click, closeSettings, createPage, DIALOG, doubleClick, escapeAll, FM, holds, hover, labels, launch, mintPageId, mouseAt,
+  mouseClick, must, nativeRows, NEXUS, notice, openCollection, openPage, openSettings, PAGE_VIEW, pageIds, pickNative, popNative, portalOpen, pressDialog, pressKey,
   item, RAIL, relaunch, restore, ribbon, row, sel, SETTINGS_BUTTON, settles, shot, sleep, tally, textEl, trashRowEl, typeText, until, watch, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9393
 // The plan's phases in order, named as the plan names them.
-const PHASES = ['1', '2', '3', '4', '5', '6A', '6B']
+const PHASES = ['1', '2', '3', '4', '5', '6A', '6B', '7']
 const GROUPS = new Set(process.argv.slice(2))
 if (GROUPS.size === 0 || [...GROUPS].some((g) => !PHASES.includes(g))) {
   console.error(`usage: node live-drive.mjs <group…>   (groups ${PHASES.join(', ')}, each the plan phase of its name)`)
@@ -558,8 +558,8 @@ async function group4() {
 const LABEL = `document.querySelector('[role=status], [role=alert]')`
 const drained = (cdp) => cdp.evaluate(`${LABEL}.hasAttribute('inert')`)
 const moveTo = (cdp, { x, y }) => cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' })
-const g5Row = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
-const checkRow = (cdp, title) => click(cdp, `${g5Row(title)}.querySelector('[role=checkbox]')`)
+const trashRow = (title) => `[...document.querySelectorAll('.trash-frame .data-row')].find((r) => r.querySelector('[role=checkbox]')?.getAttribute('aria-label') === ${JSON.stringify(`Select ${title}`)})`
+const checkRow = (cdp, title) => click(cdp, `${trashRow(title)}.querySelector('[role=checkbox]')`)
 const listedTitles = (cdp) => cdp.evaluate(`[...document.querySelectorAll('.trash-frame .data-row [role=checkbox]')].map((c) => c.getAttribute('aria-label').replace(/^Select /, ''))`)
 /** Each face of the one swap inside `expr`, in its order: shown or hidden, and whether it's inert and unnamed. */
 const facesOf = (cdp, expr) =>
@@ -610,16 +610,16 @@ async function group5(cdp) {
   const cleared = await settles(async () => same(await listedTitles(cdp), listed))
   item(5, 'G-1', 'typed search narrows in place, keeping newest first', narrowed && cleared, show({ found, after: await listedTitles(cdp) }))
 
-  const single = await chooseNative(cdp, g5Row('G5 One'), [])
+  const single = await chooseNative(cdp, trashRow('G5 One'), [])
   item(5, 'K-4', "one row's menu reads Restore and Delete", same(single.rows, ['Restore', 'Delete']), show(single.rows))
 
   for (const t of ['G5 One', 'G5 Two']) await checkRow(cdp, t)
-  const onChecked = await chooseNative(cdp, g5Row('G5 Two'), [])
-  const onUnchecked = await chooseNative(cdp, g5Row('G5 Note'), [])
+  const onChecked = await chooseNative(cdp, trashRow('G5 Two'), [])
+  const onUnchecked = await chooseNative(cdp, trashRow('G5 Note'), [])
   item(5, 'K-4', "a checked row's menu names the batch; an unchecked one acts alone",
     same(onChecked.rows, ['Restore All', 'Delete All']) && same(onUnchecked.rows, ['Restore', 'Delete']), show({ onChecked, onUnchecked }))
 
-  const { chosen: restoredAll } = await chooseNative(cdp, g5Row('G5 Two'), 'Restore All')
+  const { chosen: restoredAll } = await chooseNative(cdp, trashRow('G5 Two'), 'Restore All')
   const restoredSaid = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
   const near = await boxOf(cdp, LABEL)
   await moveTo(cdp, near)
@@ -650,7 +650,7 @@ async function group5(cdp) {
 
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   for (const t of ['G5 Note', 'G5 Note Long']) await checkRow(cdp, t)
-  const { chosen: deletedAll } = await chooseNative(cdp, g5Row('G5 Note'), 'Delete All')
+  const { chosen: deletedAll } = await chooseNative(cdp, trashRow('G5 Note'), 'Delete All')
   await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`))
   const asked = await cdp.evaluate(`${DIALOG}.getAttribute('aria-label')`)
   await pressDialog(cdp, 'Delete')
@@ -1181,7 +1181,8 @@ async function group6B() {
   item('6B', 'G-1 ruling 15', 'search narrows in place, keeping archived order',
     narrowed && alone && unsearched, show({ order, shown: await arcTitles(cdp) }))
 
-  await mouseClick(cdp, `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`)
+  const ROOT_TITLE = `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`
+  await doubleClick(cdp, ROOT_TITLE)
   await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
   await until('the reader’s body', () => cdp.evaluate(`(${READER})?.querySelector('.cm-content')?.textContent.includes('Root body.') ?? false`)).catch(() => {})
   const crumbs = `(${READER})?.querySelector('.page-window-crumbs')`
@@ -1191,15 +1192,16 @@ async function group6B() {
   await shot(cdp, 'g6b-reader')
   if (reader) await click(cdp, `(${READER}).querySelector('button[title="Close"]')`)
   const closed = await settles(async () => !(await cdp.evaluate(`!!${READER}`)))
-  item('6B', 'H-1', "a page row's title opens the read-only reader",
-    reader?.lock && !reader.input && !reader.restore && reader.doc?.includes('Root body.') && same(crumbTrail, [COLLECTION, 'Drive Arc Root']) && closed,
-    show({ reader, crumbTrail, closed }))
-
-  await checkArc(cdp, 'Drive Arc Root')
-  await mouseClick(cdp, `(${arcRow('Drive Arc Root')}).querySelector('.cell-title-text')`)
-  await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
-  const stillChecked = await arcChecked(cdp, 'Drive Arc Root')
+  const leftChecked = await arcChecked(cdp, 'Drive Arc Root')
   const oneBar = await settles(async () => (await notice(cdp)) === 'Restore1 Page')
+  item('6B', 'H-1', "a page row's double-click opens the read-only reader and leaves the row checked",
+    reader?.lock && !reader.input && !reader.restore && reader.doc?.includes('Root body.') && same(crumbTrail, [COLLECTION, 'Drive Arc Root']) && closed && leftChecked && oneBar,
+    show({ reader, crumbTrail, closed, leftChecked, oneBar }))
+
+  // A double-click's first press toggles the checked row off and its second checks it again, so the row stays checked.
+  await doubleClick(cdp, ROOT_TITLE)
+  await until('the reader', () => cdp.evaluate(`!!${READER}`)).catch(() => {})
+  const stillBar = await settles(async () => (await notice(cdp)) === 'Restore1 Page')
   await mouseClick(cdp, barButton('Restore'))
   await pointerAway(cdp)
   const readerGone = await settles(async () => !(await cdp.evaluate(`!!${READER}`)))
@@ -1207,14 +1209,20 @@ async function group6B() {
   await sleep(400)
   await op('archive Drive Arc Root again', { op: 'archive', path: arcRoot, kind: 'page' })
   item('6B', 'H-1 Cautionary 32', 'the reader closes once its item leaves the Archive',
-    stillChecked && oneBar && readerGone, show({ stillChecked, oneBar, readerGone }))
+    stillBar && readerGone, show({ stillBar, readerGone }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
-  await mouseClick(cdp, `(${arcRow('Drive Arc Set')}).querySelector('.cell-title-text')`)
-  const setOpened = await cdp.evaluate(`!!${READER}`)
-  const setChecked = await arcChecked(cdp, 'Drive Arc Set')
-  await checkArc(cdp, 'Drive Arc Set')
-  item('6B', 'G-2 ruling 11', "a Set row's title opens nothing and checks its row", !setOpened && setChecked && !(await arcChecked(cdp, 'Drive Arc Set')), show({ setOpened, setChecked }))
+  const SET_TITLE = `(${arcRow('Drive Arc Set')}).querySelector('.cell-title-text')`
+  const setExpanded = () => cdp.evaluate(`(${arcRow('Drive Arc Set')})?.getAttribute('aria-expanded') ?? null`)
+  await mouseClick(cdp, SET_TITLE)
+  const disclosed = await settles(async () => { const t = await arcTitles(cdp); return t[t.indexOf('Drive Arc Set') + 1] === 'Drive Arc Inside' })
+  const insideTrail = await trailOf(cdp, `(${arcRow('Drive Arc Inside')})?.querySelector('.bundle-trail')`)
+  const setDisclosure = { expanded: await setExpanded(), opened: await cdp.evaluate(`!!${READER}`), checked: await arcChecked(cdp, 'Drive Arc Set') }
+  await mouseClick(cdp, SET_TITLE)
+  const collapsed = await settles(async () => !(await arcTitles(cdp)).includes('Drive Arc Inside') && (await setExpanded()) === 'false')
+  item('6B', 'Clicks', "a Set row's click discloses its rows and opens nothing",
+    disclosed && same(insideTrail, [COLLECTION, 'Drive Arc Set']) && setDisclosure.expanded === 'true' && !setDisclosure.opened && !setDisclosure.checked && collapsed,
+    show({ disclosed, insideTrail, setDisclosure, collapsed }))
 
   const archiveStyle = () => personal().archiveColumnStyle
   const HEADING = live('.col-header.archive-date')
@@ -1286,6 +1294,138 @@ async function group6B() {
   for (const key of ['confirmDeletion', 'archiveColumnStyle']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
 }
 
+// ── Group 7 — Disclosure (Disclosable Bundles, Phase 7) ─────────────────────
+
+/** The path into `title` among a destination ask's rows: a container holding others names itself first inside its own submenu. */
+const intoPath = (rows, title) => ((rows ?? []).find((r) => r.label === title)?.submenu ? [title, title] : [title])
+/** The Restore ▸ path into `title` from a row menu's rows. */
+const restoreInto = (menu, title) => ['Restore', ...intoPath((menu ?? []).find((r) => r.label === 'Restore')?.submenu, title)]
+/** The titles drawn right after `title`'s row. */
+const titlesAfter = (titles, title, n) => titles.slice(titles.indexOf(title) + 1, titles.indexOf(title) + 1 + n)
+const trashTrailOf = (cdp, title) => trailOf(cdp, `(${trashRow(title)})?.querySelector('.bundle-trail')`)
+const checkedIn = (cdp, scope) => cdp.evaluate(`document.querySelectorAll('${scope} .data-row [role=checkbox][aria-checked="true"]').length`)
+
+async function group7(cdp) {
+  const kept = personal()
+  const colA = sidecarIdOf(`${COLLECTION}/_pagecollection.json`)
+  const ARCHIVE_A = `.nexus/archive/${colA}`
+  const CHAINS = ['.trash/Collection A/Shelf Set', '.trash/Collection A', '.trash/Collection B']
+  const standing = async () => ({
+    collections: stateOrder().collections ?? [],
+    aSets: orderIn(`${COLLECTION}/_pagecollection.json`, 'set_order'),
+    bPages: orderIn('Collection B/_pagecollection.json', 'page_order'),
+    trash: (await rows({ kind: 'trash' })).length,
+    archive: exists(ARCHIVE_A) && readdirSync(abs(ARCHIVE_A), { recursive: true }),
+    permanentDelete: (await config(cdp)).personalization.permanentDelete === true,
+    chains: CHAINS.filter(exists),
+  })
+  const start = await standing()
+  await must('confirmDeletion on', ask(cdp, 'personalization:set', 'confirmDeletion', true))
+
+  await op('create Nest Coll', { op: 'createContainer', id: containerId(), parentPath: '', kind: 'collection', name: 'Nest Coll' })
+  await op('create Nest Set', { op: 'createContainer', id: containerId(), parentPath: 'Nest Coll', kind: 'set', name: 'Nest Set' })
+  for (const t of ['Nest One', 'Nest Two']) await createAt(cdp, 'Nest Coll', t)
+  await createAt(cdp, 'Nest Coll/Nest Set', 'Nest Deep')
+  await makeSet(cdp, 'Shelf Set')
+  for (const t of ['Shelf Kept', 'Shelf Gone']) await createAt(cdp, `${COLLECTION}/Shelf Set`, t)
+  await sleep(400)
+  const coll = await bundledBy('delete Nest Coll', { op: 'delete', path: 'Nest Coll', kind: 'collection' })
+  const shelf = await bundledBy('archive Shelf Set', { op: 'archive', path: `${COLLECTION}/Shelf Set`, kind: 'set' })
+  const inner = {
+    one: `${coll}/Nest Coll/Nest One.md`,
+    two: `${coll}/Nest Coll/Nest Two.md`,
+    deep: `${coll}/Nest Coll/Nest Set/Nest Deep.md`,
+    kept: `${shelf}/Shelf Set/Shelf Kept.md`,
+    gone: `${shelf}/Shelf Set/Shelf Gone.md`,
+  }
+
+  await openSettings(cdp, 'Trash')
+  await until('the Nest Coll row', () => cdp.evaluate(`!!(${trashRow('Nest Coll')})`))
+  await mouseClick(cdp, `(${trashRow('Nest Coll')}).querySelector('.cell-title-text')`)
+  const collOpened = await settles(async () => same(titlesAfter(await listedTitles(cdp), 'Nest Coll', 3), ['Nest Set', 'Nest One', 'Nest Two']))
+  await mouseClick(cdp, `(${trashRow('Nest Set')}).querySelector('.cell-title-text')`)
+  const setOpened = await settles(async () => same(titlesAfter(await listedTitles(cdp), 'Nest Coll', 4), ['Nest Set', 'Nest Deep', 'Nest One', 'Nest Two']))
+  const rowState = (title) => cdp.evaluate(`(() => { const r = ${trashRow(title)}; return r && { expanded: r.getAttribute('aria-expanded'), nested: !!r.querySelector('.row-chevron') } })()`)
+  const tree = { coll: await rowState('Nest Coll'), set: await rowState('Nest Set'), page: await rowState('Nest Deep') }
+  const deepTrail = await trashTrailOf(cdp, 'Nest Deep')
+  const unchecked = (await checkedIn(cdp, '.trash-frame')) === 0
+  await shot(cdp, 'g7-disclosed')
+  item(7, 'Clicks, Nesting, Trails', 'a trashed Collection discloses its Set and pages, and the Set its own',
+    collOpened && setOpened && same(tree, { coll: { expanded: 'true', nested: false }, set: { expanded: 'true', nested: true }, page: { expanded: null, nested: false } }) && same(deepTrail, ['Nest Coll', 'Nest Set']) && unchecked,
+    show({ shown: await listedTitles(cdp), tree, deepTrail, unchecked }))
+
+  const oneMenu = await popAt(cdp, trashRow('Nest One'))
+  const onePath = restoreInto(oneMenu, 'Collection B')
+  const oneChosen = await pickNative(onePath)
+  const oneLanded = await settles(async () => exists('Collection B/Nest One.md') && !exists(inner.one))
+  const oneLeft = await settles(async () => { const t = await listedTitles(cdp); return !t.includes('Nest One') && same(titlesAfter(t, 'Nest Coll', 3), ['Nest Set', 'Nest Deep', 'Nest Two']) })
+  item(7, 'Homeless Items', 'an inner page restores through Restore ▸ into the container picked',
+    same(labels(oneMenu), ['Restore', 'Delete']) && oneChosen && oneLanded && frontOf('Collection B/Nest One.md').ID === ids[page('Nest Coll', 'Nest One')] && oneLeft,
+    show({ menu: labels(oneMenu), onePath, oneChosen, oneLanded, oneLeft }))
+
+  for (const t of ['Nest Two', 'Nest Deep']) await mouseClick(cdp, `(${trashRow(t)}).querySelector('.bundle-date')`)
+  const twoChecked = (await checkedIn(cdp, '.trash-frame')) === 2
+  const { chosen: allChosen } = await chooseNative(cdp, trashRow('Nest Two'), 'Restore All')
+  const asked = await until('the destination ask', nativeRows, 3000).catch(() => null)
+  const askChosen = await pickNative(intoPath(asked, 'Collection B'))
+  const once = await holds(async () => (await nativeRows()) === null, 1500)
+  const allSaid = await settles(async () => (await notice(cdp)).startsWith('Restored 2 Pages'))
+  const allLanded = await settles(async () => ['Nest Two', 'Nest Deep'].every((t) => exists(`Collection B/${t}.md`)) && !exists(inner.two) && !exists(inner.deep))
+  item(7, 'Batch Restore', 'a Restore All of two inner pages asks once where they go',
+    twoChecked && allChosen && askChosen && once && allSaid && allLanded, show({ twoChecked, allChosen, asked: labels(asked), askChosen, once, allSaid, allLanded }))
+  await closeSettings(cdp)
+
+  await sidebarTo(cdp, 'Collections', COLLECTION)
+  await sleep(1200)
+  await toArchive(cdp)
+  await until('the Shelf Set row', async () => (await arcTitles(cdp)).includes('Shelf Set'))
+  await mouseClick(cdp, `(${arcRow('Shelf Set')}).querySelector('.cell-title-text')`)
+  await until('the Shelf Set rows', async () => same(titlesAfter(await arcTitles(cdp), 'Shelf Set', 2), ['Shelf Kept', 'Shelf Gone'])).catch(() => {})
+  const keptMenu = await popAt(cdp, arcRow('Shelf Kept'))
+  const keptChosen = await pickNative(restoreInto(keptMenu, COLLECTION))
+  const keptSaid = await noticeUp(cdp, 'Restored “Shelf Kept”Undo')
+  const keptLanded = exists(`${COLLECTION}/Shelf Kept.md`) && !exists(inner.kept)
+  if (keptSaid) await pressUndo(cdp)
+  await pointerAway(cdp)
+  const keptBack = await settles(async () => exists(inner.kept) && !exists(`${COLLECTION}/Shelf Kept.md`) && !archivedBundle('Shelf Kept'))
+  const keptRow = await settles(async () => same(titlesAfter(await arcTitles(cdp), 'Shelf Set', 2), ['Shelf Kept', 'Shelf Gone']))
+  item(7, 'Homeless Items, Undo', "an archived Set's inner page restores, and its Undo files it back inside the Set",
+    keptChosen && keptSaid && keptLanded && keptBack && keptRow, show({ keptChosen, keptSaid, keptLanded, keptBack, keptRow, notice: await notice(cdp) }))
+
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+  const { chosen: goneChosen } = await chooseNative(cdp, arcRow('Shelf Gone'), 'Delete')
+  await until('the confirmation', () => cdp.evaluate(`!!${DIALOG}`)).catch(() => {})
+  const goneAsked = await dialogRead(cdp)
+  if (goneAsked) await pressDialog(cdp, 'Delete')
+  const goneSaid = await noticeUp(cdp, 'Deleted “Shelf Gone”Undo')
+  const goneBundle = (await trashed(cdp, 'Shelf Gone'))?.bundlePath
+  const intoTrash = !!goneBundle && exists(`${goneBundle}/Shelf Gone.md`) && !!recordAt(goneBundle).archive && !exists(inner.gone)
+  if (goneSaid) await pressUndo(cdp)
+  await pointerAway(cdp)
+  const goneBack = await settles(async () => exists(inner.gone) && !exists(goneBundle) && !archivedBundle('Shelf Gone'))
+  const goneRow = await settles(async () => same(titlesAfter(await arcTitles(cdp), 'Shelf Set', 2), ['Shelf Kept', 'Shelf Gone']))
+  item(7, 'Undo', 'an inner page deleted from the Archive goes to the Trash, and its Undo files it back inside the Set',
+    goneChosen && goneAsked?.message === 'Delete “Shelf Gone”?' && goneSaid && intoTrash && goneBack && goneRow,
+    show({ goneChosen, goneAsked, goneSaid, goneBundle, intoTrash, goneBack, goneRow }))
+  await until('the notice drained', () => drained(cdp)).catch(() => {})
+
+  await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
+  await emptyAt(coll)
+  for (const t of ['Nest One', 'Nest Two', 'Nest Deep']) {
+    await deleteAt(cdp, `Collection B/${t}.md`, 'page')
+    await emptyAt((await trashed(cdp, t))?.bundlePath)
+  }
+  await emptyAt(await bundledBy('delete Shelf Set', { op: 'delete', path: shelf, kind: 'set' }))
+  for (const key of ['confirmDeletion', 'permanentDelete']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
+  // The watcher holds a folder the app just wrote until it's still for 200 ms, so the empty chain folders leave once those writes are still.
+  await sleep(400)
+  if (!start.archive) rmSync(abs(ARCHIVE_A), { recursive: true, force: true })
+  for (const rel of CHAINS) if (!start.chains.includes(rel) && exists(rel) && readdirSync(abs(rel)).length === 0) rmSync(abs(rel), { recursive: true })
+  const ended = await standing()
+  item(7, '—', 'the group leaves Collections A and B, the Archive, and the Trash as it found them',
+    same(ended, start) && !exists('Nest Coll'), show({ start, ended }))
+}
+
 // ── The run ─────────────────────────────────────────────────────────────────
 
 let cdp
@@ -1302,6 +1442,7 @@ try {
   if (GROUPS.has('5')) await group5(cdp)
   if (GROUPS.has('6A')) await group6A(cdp)
   if (GROUPS.has('6B')) await group6B()
+  if (GROUPS.has('7')) await group7(cdp)
   cdp.close()
 } catch (e) {
   item(0, '—', 'the run reached its end', false, String(e?.stack ?? e))

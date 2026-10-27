@@ -157,6 +157,8 @@ export async function popNative(cdp, at, button = 'right') {
 }
 /** Chooses the row a path of labels names in the menu now up, or closes it when the path is empty or names no enabled row, answering whether one was chosen. */
 export const pickNative = (path) => main.evaluate(`__drive.choose(${JSON.stringify(path)})`)
+/** The rows of the menu now up, one the app popped on its own after a choice, or null while none is. */
+export const nativeRows = () => main.evaluate('__drive.rows()')
 export const labels = (rows) => (rows ?? []).filter((r) => !r.separator).map((r) => r.label)
 
 /** Pops `expr`'s native menu and chooses `path`, answering the menu's top-level labels, disabled rows among them. `edge` presses the element's leading padding, so a link inside it is never the target. */

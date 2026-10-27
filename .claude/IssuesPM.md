@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 76 | 0 | 3 | 13 | 35 | 25 |
+| 79 | 0 | 3 | 13 | 37 | 26 |
 
 #### A1 • Sync & Devices
 
@@ -69,6 +69,8 @@
 | [I-038](#I-038 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
 | [I-062](#I-062 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-063](#I-063 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [I-077](#I-077 • A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row.) | A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row. | Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-078](#I-078 • A Set archived while a delete it once belonged to still owes its finish loses its view filters when that delete's Try Again runs.) | A Set archived while a delete it once belonged to still owes its finish loses its view filters when that delete's Try Again runs. | Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-065](#I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-069](#I-069 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.) | A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash. | Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
@@ -89,11 +91,12 @@
 | ----- | ----------------------------------------------- | -------- | -------- | ---------- | --------- | ------------- |
 | [I-030](#I-030 • Buttons never show keyboard focus.) | Buttons never show keyboard focus. | Moderate | Mini (=🟢+4=) | Drift | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-031](#I-031 • Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown.) | Inside a pop-up pane, pressing a second dropdown while one list is open cuts the list's close short and reopens it at the new dropdown. | Low | Small (=🟢+8=) | Shortcut | `e3d5c1a10` | **Created:** 09-24-2026<br>**Updated:** 10-03-2026 |
-| [I-075](#I-075 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-23-2026 |
+| [I-075](#I-075 • Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only.) | Telling a single click from a double-click on one element is done separately on each surface, in five different ways, with the double-click window written as a number in one place only. | Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
 | [I-051](#I-051 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-050](#I-050 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-061](#I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-073](#I-073 • Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.) | Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-25-2026 |
+| [I-079](#I-079 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead. | Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -877,6 +880,34 @@ A page whose heading is renamed and which is moved in one outside batch, such as
 
 The heading arm resolves `seen.path` to the page's live path through `livePathOf` by the page's id, or runs after the move arm so the held tree and the recorded path agree.
 
+#### I-077 • A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+A Set's or Collection's row in the Trash or the Archive opens onto the pages and Sets inside it, and each of those can be restored or deleted on its own. Once every item inside has left that way, the container's row stays in its store with nothing beneath it, and restoring it brings back an empty Set or Collection carrying its own views and settings. Pulling out an inner item spends only that item's share of the bundle: `spendBundle` removes the whole bundle only when the op names the whole bundle, and for an inner item it strips the Link values the item carried away and its pages from the strip the bundle's delete still owes, without asking whether the container holds anything else. The container's folder and sidecar stay in the bundle, so `bundleArtifact` still finds the bundle's one artifact and `listBundles` keeps listing it. A Trash restore (`restoreTrashed`), an Archive restore (`restoreArchived`), emptying from the Trash (`emptyBundle`), and an Archive delete (`deleteOp`) all spend an inner item through this one path. Nathan isn't happy with the empty row and wants it revisited.[^77]
+
+**Solution** [TBD]
+
+`spendBundle`'s inner arm is the one place that knows an item just left its container, so whatever the answer is, it lands there and reaches all four ops at once. **Your call:** whether a container emptied of its items leaves its store with the last one, or stays as a restorable empty Set or Collection that still carries its views and settings, and whether a Trash container emptied that way is deleted for good or offered for deletion.
+
+#### I-078 • A Set archived while a delete it once belonged to still owes its finish loses its view filters when that delete's Try Again runs.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+Deleting a Collection or Set writes an owed note whose finish removes every saved view, View Tile, and filter rule that names the containers it took, and that finish runs again at Try Again or the next open when it couldn't finish the first time. To spare a container that came back, the finish keeps a container's rules when it's live again, but it counts a container as live only when the tree holds it: `finishContainer` narrows the note's `gone` edit to the ids `findContainerById` can't find in the live tree, and an archived Set is never in the tree. Two paths reach that. A Set restored out of a deleted Collection's or Set's bundle, then archived before that delete's Try Again, loses its view filters when the Try Again runs, though restoring it from the Archive would bring it back expecting them. A whole Set deleted, restored, and archived before its Try Again loses them the same way, which predates disclosable bundles. The delete's `gone` edit also carries, through `goneEdit`'s `archived`, the Sets of a deleted Collection's own Archive, which are meant to drop even though the Archive still holds them.[^78]
+
+**Solution** [Proposed]
+
+The finish counts a Set as live when the Archive holds it, except for the archived Sets the delete itself took, which still drop. That needs the note's edit to keep the Sets taken from the tree apart from the ones taken from the Collection's Archive, since both share one `ids` list today.
+
 #### I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1039,7 +1070,7 @@ Either every outside-press dismissal calls `suppressReleaseClick()`, so the tile
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
-| Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-23-2026 |
+| Low | Medium (=🟢≈ +25=) | Parallel Build | `cbacb7ecb` | **Created:** 10-23-2026<br>**Updated:** 10-26-2026 |
 
 **Description**
 
@@ -1052,19 +1083,18 @@ Where one element answers both a click and a double-click, the code that tells t
 | Embedded page tile | Seats the caret at the nearer edge | Falls to the editor's word selection | `detail` guard |
 | Link in the editor | Follows the link, on `click` only at `detail === 1` | Falls to the editor's word selection | `detail` guard, at `mousedown` and again at `click` |
 | Table cell | Enters the cell at the point, unless a drag just selected text | Enters the cell, selecting the word | `detail` guard, for the selection case only |
+| Trash or Archive row | Discloses a Set or Collection, or checks a page | Leaves a page checked and opens it, in the Archive | `detail` guard |
 | Tab | Activates the tab | Renames it only if the tab was already active at the first press | First-press-acts, through a ref set at `mousedown` |
 | Page title in the detail header | Opens the search at once | Reverses into a rename | Act-then-take-over, through a `mousedown` listener on `window` |
 | Group band glyph | Toggles the group, on a band that doesn't open | Toggles it twice, or opens the Set on a band that does | None |
 | Tab bar | Nothing | Zooms the window | None |
 | Rename labels | Whatever the surrounding row's click does | Begins the rename | None |
 
-The surfaces differ in observable ways. Only the alias picker delays its single click, and its test restates the 300 ms as `PICK_WAIT`, so the window is a number in two files and no other surface reads it. A Set band that doesn't open lets the glyph's click toggle its group on each press of a double-click, so the group folds and unfolds again under the pointer, where the same double-click opens the Set on a band that does. A double-click on an inactive tab activates it and doesn't rename it, so renaming takes a second one, and the detail header's title shows its search for the length of a double-click before the rename replaces it. `RenamableTitle`'s `doubleClick` flag exists so a band can switch the rename door off, which says each surface that disagrees with it has to opt out. The `detail` thresholds also differ: the editor's link and embed guards pass on `detail > 1`, its link click on `detail !== 1`, and the margin press on `detail > 2`.
-
-`Core/Bundles/browser.ts` doesn't read `detail` yet. The ratified Disclosable Bundles plan adds `rowClick(row, detail)` there, where a container discloses and a page checks on `detail === 1` and a page on `detail === 2` makes sure it is checked, and a single click is never delayed. It is the next surface to write the same decision by hand.[^75]
+The surfaces differ in observable ways. Only the alias picker delays its single click, and its test restates the 300 ms as `PICK_WAIT`, so the window is a number in two files and no other surface reads it. A Set band that doesn't open lets the glyph's click toggle its group on each press of a double-click, so the group folds and unfolds again under the pointer, where the same double-click opens the Set on a band that does. A double-click on an inactive tab activates it and doesn't rename it, so renaming takes a second one, and the detail header's title shows its search for the length of a double-click before the rename replaces it. `RenamableTitle`'s `doubleClick` flag exists so a band can switch the rename door off, which says each surface that disagrees with it has to opt out. The `detail` thresholds also differ: the editor's link and embed guards pass on `detail > 1`, its link click on `detail !== 1`, and the margin press on `detail > 2`, while a Trash or Archive row acts on `detail < 2` and opens on `detail === 2`.[^75]
 
 **Solution** [TBD]
 
-One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interactions/` owns the decision. It holds the double-click window as one value and offers the strategies a surface may choose between: acting at once and ignoring the second press, or waiting out the window. The alias picker's timer and constant, the calendar's guard, the editor's guards, the tab's ref, the header's listener, the group band's toggle, and the Bundles browser's `rowClick` move onto it, and `PICK_DELAY_MS` and the test's `PICK_WAIT` leave. A task would touch the primitive and its test, the ten surfaces above, and the plan's Task 4-1. **Your call:** which strategy is the default, with acting at once keeping every click immediate and waiting making a toggle's double-click quiet at the cost of a delay on every single click, and whether a group band's toggle should wait so the double-click stops flickering. Whether the editor's `mousedown` guards, which pass a second press to word selection rather than choose between two actions, belong on the primitive or beside it is the other open point.
+One interaction primitive beside `activate.ts` and `gesture.ts` in `UIX/Interactions/` owns the decision. It holds the double-click window as one value and offers the strategies a surface may choose between: acting at once and ignoring the second press, or waiting out the window. The alias picker's timer and constant, the calendar's guard, the editor's guards, the tab's ref, the header's listener, the group band's toggle, and the Bundles browser's `rowClick` move onto it, and `PICK_DELAY_MS` and the test's `PICK_WAIT` leave. A task would touch the primitive and its test and the eleven surfaces above. **Your call:** which strategy is the default, with acting at once keeping every click immediate and waiting making a toggle's double-click quiet at the cost of a delay on every single click, and whether a group band's toggle should wait so the double-click stops flickering. Whether the editor's `mousedown` guards, which pass a second press to word selection rather than choose between two actions, belong on the primitive or beside it is the other open point.
 
 #### I-051 • Four waits that let a transition finish each state their own slack.
 
@@ -1121,6 +1151,20 @@ The Date & Time editor gives each of its three rows (Date, Day, and Time) an ico
 **Solution** [Deferred]
 
 Every settings row in the Number, Link, Checkbox, and File editors carries an icon as the Date & Time editor's do. How a row says which layer it sets, and how each type's settings are laid out, wait for a design pass by the owner. Until then, work on Properties moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording as it reads.
+
+#### I-079 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+Every row of a line list points screen readers at the drag instructions through `aria-describedby`, whose text says to "press space to pick it up". In a list that can't be dragged, such as the Trash and Archive table and a navigation list with nothing to reorder, Space acts as Enter and opens the row, so the description names a gesture the row doesn't have. `useLineRow` sets the description on every row, and `useDragItem` does the same for a displace item, including one in a disabled zone that still opens. The two locks don't reach the hooks the same way. A displace zone's `disabled` sits on the zone value both hooks read, but a line list's lock is `lineList`'s `locked`, which only makes its `snap` answer nothing, so the keyboard's lift is refused and nothing the row hook reads says why. Turning `locked` into the zone's `disabled` would also take the list out of the Tab order, which the Trash and Archive table needs.[^79]
+
+**Solution** [Proposed]
+
+The zone value carries whether its rows can lift, with `lineList`'s `locked` set on the spec where the zone can read it, and both hooks describe the instructions only when a row can lift.
 
 ### A6 • Tiles & Embeds
 
@@ -1391,5 +1435,8 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^72]: **I-072:** `Desktop/FileWatch/watcher.ts:38` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:106` (`awaitWriteFinish`)
 [^73]: **I-073:** `Core/Properties/Schema/typeRows.tsx:256` (`rowsFor`), `Core/Properties/Schema/typeRows.tsx:68,159-178` (`DATE_ROW`, `dateRows`, the icon-led rows), `Core/Properties/Schema/typeRows.tsx:87-155` (`numberRows`, the icon-less rows), `Core/Properties/Schema/typeRows.tsx:180-196` (`linkRows`), `Core/Properties/Schema/typeRows.tsx:198-213` (`checkboxRows`), `Core/Properties/Schema/typeRows.tsx:216-237` (`fileRows`), `Core/Properties/Schema/formatRows.ts:12-39` and `Core/Properties/Schema/PropertyFrame.tsx:298-312` (the icon-led rows elsewhere), `Core/Properties/Schema/PropertyFrame.tsx:209-211,275-287` (`configure` writes the property and `saveColumnStyle` the view), `Core/Properties/typeDisplay.ts:12,30` (`styleLabel`, the column menu's "Format")
 [^74]: **I-074:** `Core/Properties/unassignProperty.ts:66-90` (`stashAndStrip`, the stash written on Remove), `Core/Properties/propertyStash.ts:19-45,78-86` (`stashedBlock`, `patchStashBlock`, `sweepStashes`), `Core/Properties/assignment.ts:26-83` (`refillStash`, the stash read and spent on re-adding), `Core/Settings/personalization.ts:42,189-190,261-263` (`HISTORY_DAYS`, `historyDays`, `archiveHistoryDays`, `SETTING_BOUNDS`), `Core/Settings/settings.ts:82-92` (`readFileHistoryConfig`), `Core/Pages/fileHistory.ts:195-206` (`sweepFileHistory`), `Core/Settings/frames.ts:649-663` (the History section's rows)
-[^75]: **I-075:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:~25-26,~60-65,~84,~145-155` (`PICK_DELAY_MS`, `pick`, `unpick`, the row's `onClick`), `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx:~29-30` (`PICK_WAIT`), `UIX/Pickers/CalendarPicker.tsx:~488-501`, `Core/MarkdownPM/Embeds/embedWidget.tsx:~652-654` (`embedClickSeat`), `Core/MarkdownPM/Gestures/pointerPath.ts:~50,~82-85`, `Core/MarkdownPM/decorations.ts:~717-721` (`pressMargin`), `Core/MarkdownPM/Tables/cellStatic.tsx:~558-565`, `Core/Navigation/TabItem.tsx:~63,~89-91,~110` (`pressedActive`), `Core/Interface/Header/DetailTitleHeader.tsx:~94-106,~132-136` (`openSearch`), `Core/Views/Bands/GroupBand.tsx:~141-142,~178-199,~249` (`outsideRename`, the glyph's handlers), `Core/Interface/RenamableTitle.tsx:~17,~26-27,~55` (`doubleClick`), `UIX/Fields/RenamableLabel.tsx:~52-58`, `Core/Navigation/TabBar.tsx:~137-149` (`onBarDoubleClick`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md:~116` (§Constraints › Rulings › Double-Click) and `:~876-879` (Task 4-1's `rowClick`).
+[^75]: **I-075:** `Core/MarkdownPM/Autocomplete/AliasList.tsx:~25-26,~60-65,~84,~145-155` (`PICK_DELAY_MS`, `pick`, `unpick`, the row's `onClick`), `Core/MarkdownPM/Autocomplete/aliasPicker.test.tsx:~29-30` (`PICK_WAIT`), `UIX/Pickers/CalendarPicker.tsx:~488-501`, `Core/MarkdownPM/Embeds/embedWidget.tsx:~652-654` (`embedClickSeat`), `Core/MarkdownPM/Gestures/pointerPath.ts:~50,~82-85`, `Core/MarkdownPM/decorations.ts:~717-721` (`pressMargin`), `Core/MarkdownPM/Tables/cellStatic.tsx:~558-565`, `Core/Navigation/TabItem.tsx:~63,~89-91,~110` (`pressedActive`), `Core/Interface/Header/DetailTitleHeader.tsx:~94-106,~132-136` (`openSearch`), `Core/Views/Bands/GroupBand.tsx:~141-142,~178-199,~249` (`outsideRename`, the glyph's handlers), `Core/Interface/RenamableTitle.tsx:~17,~26-27,~55` (`doubleClick`), `UIX/Fields/RenamableLabel.tsx:~52-58`, `Core/Navigation/TabBar.tsx:~137-149` (`onBarDoubleClick`), `Core/Bundles/browser.ts:~346-358` (`rowClick`).
 [^76]: **I-076:** `Core/Session/nexusSlice.ts:248-265` (`mutate`, the cleanup's discarded reply at `:256` and the notice's Try Again at `:261`), `Core/Session/nexusSlice.ts:290` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:255` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:153,174` (`createContextGroup`, `createSpace`), `Core/Trash/spend.ts:184` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Bundles/browser.ts:288-330` (`many`, its `quiet: true` call at `:314`), `.claude/Planning/Disclosable Bundles — Implementation Plan.md`
+[^77]: **I-077:** `Core/Bundles/bundle.ts:~369-393` (`spendBundle`), `Core/Bundles/bundle.ts:~81-84` (`bundleArtifact`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Trash/spend.ts:~110` (`emptyBundle`), `Core/Trash/spend.ts:~133,~295` (`restoreTrashed`), `Core/Archive/archive.ts:~81` (`restoreArchived`), `Core/Trash/delete.ts:~136` (`deleteOp`)
+[^78]: **I-078:** `Core/Nexus/finishOwed.ts:~375-402` (`finishContainer`, `unlive` at `:~386`), `Core/Nexus/configReach.ts:~247-271` (`goneContainers`, `goneEdit`), `Core/Nexus/configReach.ts:~288-296` (`archivedSetIds`), `Core/Trash/delete.ts:~58,~104`
+[^79]: **I-079:** `UIX/Interactions/engine.tsx:~1287-1318` (`useDragItem`), `UIX/Interactions/engine.tsx:~1337-1372` (`useLineRow`), `UIX/Interactions/engine.tsx:~1120,~1174-1180,~1234` (`ZoneValue`, `useZoneSeat`, the zone's Tab stop), `UIX/Interactions/engine.tsx:~682-685` (the line lift refused on a null `snap`), `UIX/Interactions/a11y.ts:~1,~57-60` (`INSTRUCTIONS_ID`), `UIX/Interactions/lineList.ts:~20-35` (`locked`), `Core/Bundles/BundleTable.tsx:~106`, `Core/Navigation/NavList.tsx:~161`
