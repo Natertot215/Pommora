@@ -48,6 +48,9 @@ const OTHER = '01KVGMT8BFP350FZZXAMG1QDO0'
 const SUB = '01KVGMT8BFP350FZZXAMG1QDS0'
 const SHELF = '01KVGMT8BFP350FZZXAMG1QDH0'
 const PAGE_D = '01KVGMT8BFP350FZZXAMG1QDVD'
+const THIRD = '01KVGMT8BFP350FZZXAMG1QDT0'
+const THIRD_DAILY = '01KVGMT8BFP350FZZXAMG1QDY0'
+const PAGE_X = '01KVGMT8BFP350FZZXAMG1QDVX'
 const DEEP = `---\nID: ${PAGE_D}\n---\ndeep\n`
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 const ARCHIVE: BundleStore = { kind: 'archive', id: NOTES }
@@ -588,6 +591,21 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(await text('Notes', 'Linker.md')).toBe(`---\nID: ${PAGE_K}\n---\n[[Other/Beta|Beta]]`)
     expect((await undo(restored)).ok).toBe(true)
     expect(await text('Notes', 'Linker.md')).toBe(`---\nID: ${PAGE_K}\n---\n[[Daily/Beta|Beta]]`)
+  })
+
+  it('a restore into another Collection whose shorter spelling a live page holds has its Undo re-spell the links to the whole path', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await reseed()
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const restored = await restore(bundlePath, { kind: 'container', id: OTHER })
+    await putJson(at('Third', '_pagecollection.json'), { id: THIRD })
+    await putJson(at('Third', 'Daily', '_pageset.json'), { id: THIRD_DAILY })
+    await writeFile(at('Third', 'Daily', 'Beta.md'), `---\nID: ${PAGE_X}\n---\nthird`)
+    await reseed()
+    expect((await undo(restored)).ok).toBe(true)
+    expect(await text('Notes', 'Linker.md')).toBe(
+      `---\nID: ${PAGE_K}\n---\n[[Notes/Daily/Beta|Beta]]`,
+    )
   })
 
   it('an inner Set restored into another Collection has its Undo re-spell the links it moved back to where it files the Set', async () => {

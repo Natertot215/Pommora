@@ -1,6 +1,6 @@
 // The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the outside moves and arrivals the index saw re-spelled, the options the owed files hold registered, and one push of what moved.
 
-import { join, relDirname, relative, titleFromPath } from '../Paths/posix'
+import { join, relDirname, relative, stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
@@ -352,7 +352,7 @@ export async function returningCascade(
   }
 }
 
-/** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there. */
+/** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there, and to a page's whole path where a live page holds the shorter name. */
 export async function departingCascade(
   root: string,
   tree: NexusTree,
@@ -362,8 +362,15 @@ export async function departingCascade(
   const after = await settledIndex(root)
   if (!after) return linksNotUpdated(title)
   const ids = back.map((p) => p.id)
-  const names = respellings(pageIndexOf(tree), buildPageIndex(back), ids, [])
-  for (const [key, name] of names) if (after.resolve(name).status !== 'phantom') names.delete(key)
+  const departing = buildPageIndex(back)
+  const names = respellings(pageIndexOf(tree), departing, ids, [])
+  for (const [key, name] of names) {
+    if (after.resolve(name).status === 'phantom') continue
+    const path = departing.resolve(name).page?.path
+    const whole = path && stripMarkdownExt(path)
+    if (whole && after.resolve(whole).status === 'phantom') names.set(key, whole)
+    else names.delete(key)
+  }
   return names.size ? respell(root, ids, names, title) : undefined
 }
 
