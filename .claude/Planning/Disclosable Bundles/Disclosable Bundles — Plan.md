@@ -1,14 +1,14 @@
 ## Disclosable Bundles — Implementation Plan
 
 **DATE:** 10-23-2026
-**STATUS:** Ratified 10-23-2026
+**STATUS:** Complete 10-27-2026 — `8148302cf..bafb5538b`
 **SOURCE:** This session's conversation. Nathan's request: archived or trashed Sets and Collections disclose like any other disclosable table row, so a single page or Set can be recovered out of one. His rulings are listed under *§Constraints*.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `8148302cf` | 8,814 passed · 2 skipped | 10-26-2026 11:29 AM | {MM-DD-YYYY hh:mm AM/PM} |
+| `8148302cf` | 8,814 passed · 2 skipped | 10-26-2026 11:29 AM | 10-27-2026 03:16 AM |
 
 ### Context
 
@@ -2525,13 +2525,13 @@ function TrashBody(): React.JSX.Element {
 The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-2026), each wave closed before the next opens. Every reviewer brief carries the Approach, Principles, and Docs Constraint verbatim and *§Constraints* whole, except the neutral gate's, which carries none of them.
 
 - [x] Phase review (opus-high): Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
-- [ ] **Wave One:** two read-only `opus-xhigh` reviewers over `$BASE..HEAD`, briefed with `code-simplification`. One reads inward, at the diff itself; one reads outward, at the diff against the rest of Core, UIX, and Desktop. One fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
-- [ ] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, under Wave One's brief over the folded range, given the Not Taken list so a fold left out returns only on new evidence; folded and committed the same way.
-- [ ] **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
-- [ ] **Spotcheck:** any fold after the gate gets one `opus-high` spotcheck against the principles alone.
-- [ ] **Closeout:** the Archive Drive whole on the final head, and the own pass: gates · diff · deviations · criteria
-- [ ] Reconciliation walked
-- [ ] `save-session`, `save-delta`, and the report; no history entry
+- [x] **Wave One:** two read-only `opus-xhigh` reviewers over `$BASE..HEAD`, briefed with `code-simplification`. One reads inward, at the diff itself; one reads outward, at the diff against the rest of Core, UIX, and Desktop. One fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
+- [x] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, under Wave One's brief over the folded range, given the Not Taken list so a fold left out returns only on new evidence; folded and committed the same way.
+- [x] **Neutral Gate:** one `fable-high` agent given only the baseline head, the final head, and the intention statement; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
+- [x] **Spotcheck:** any fold after the gate gets one `opus-high` spotcheck against the principles alone.
+- [x] **Closeout:** the Archive Drive whole on the final head, and the own pass: gates · diff · deviations · criteria
+- [x] Reconciliation walked
+- [x] `save-delta` and the report; no `save-session` and no history entry (Nathan, 10-27-2026)
 
 #### Reconciliation
 
