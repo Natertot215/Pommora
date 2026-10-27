@@ -17,6 +17,8 @@ describe('mutateRequest — what the window sends is held to the shape before an
     expect(read({ op: 'rename', path: 'A', kind: 'context', newName: 'B' })).toBe(false)
     expect(read({ op: 'archive', path: 'A', kind: 'collection' })).toBe(false)
     expect(read({ op: 'archive', path: 'A', kind: 'page', at: 7 })).toBe(false)
+    expect(read({ op: 'archive', path: 'A', kind: 'page', name: 7 })).toBe(false)
+    expect(read({ op: 'archive', path: 'A', kind: 'page', record: 'x' })).toBe(false)
   })
 
   it('an archive changes what the settle holds and what the stores list', () => {

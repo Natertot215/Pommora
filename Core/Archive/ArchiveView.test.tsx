@@ -399,11 +399,23 @@ describe('ArchiveView', () => {
     ])
   })
 
-  it('the bar’s Restore of one row posts Restored “A”, and of two Restored 2 Pages, whose Undo archives each item again where the tree now holds it, under the bundle name it left', async () => {
+  it('the bar’s Restore of one row posts Restored “A”, and of two Restored 2 Pages, whose Undo sends each reply’s own request where the tree now holds the item', async () => {
     listed = [
       archived('A', { stored: { id: 'p1', path: 'x/A.md' } }),
       archived('B', { stored: { id: 'p2', path: 'x/B.md' } }),
     ]
+    const undoOf = (bundlePath: string, path: string) => ({
+      op: 'archive',
+      path,
+      kind: 'page',
+      at: bundlePath,
+      name: path.split('/').at(-1),
+    })
+    const landed = ['Notes/Alpha.md', 'Notes/Ideas/Beta.md']
+    mutated.mockImplementation(async ({ op, bundlePath }: { op: string; bundlePath: string }) => {
+      const at = listed.findIndex((r) => r.bundlePath === bundlePath)
+      return { ok: true, value: op === 'restore' ? { undo: undoOf(bundlePath, landed[at]) } : {} }
+    })
     await render()
     await check('A')
     await pressBar('Restore')
@@ -415,22 +427,8 @@ describe('ArchiveView', () => {
     expect(currentNotification()?.message).toBe('Restored 2 Pages')
     await undo()
     expect(mutated.mock.calls).toEqual([
-      [
-        {
-          op: 'archive',
-          path: 'Notes/Alpha.md',
-          kind: 'page',
-          at: '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__A.md.archived',
-        },
-      ],
-      [
-        {
-          op: 'archive',
-          path: 'Notes/Ideas/Beta.md',
-          kind: 'page',
-          at: '.nexus/archive/c1/Notes/2026-10-20T12-00-00-000Z__B.md.archived',
-        },
-      ],
+      [undoOf(listed[0].bundlePath, 'Notes/Alpha.md')],
+      [undoOf(listed[1].bundlePath, 'Notes/Ideas/Beta.md')],
     ])
   })
 

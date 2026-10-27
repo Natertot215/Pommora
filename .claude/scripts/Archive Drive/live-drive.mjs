@@ -2174,7 +2174,7 @@ async function group7D(cdp) {
   const colA = sidecarIdOf(`${COLLECTION}/_pagecollection.json`)
   const ARCHIVE_A = `.nexus/archive/${colA}`
   const ALPHA_SIDECAR = `${A_ALPHA}/_pageset.json`
-  const CHAINS = [`${ARCHIVE_A}/Collection A/Arc Gone Set`, '.trash/Collection A/Set Alpha', '.trash/Collection A/Stray Set', '.trash/Collection A', '.trash/Collection B', '.trash/.nexus/contexts/Drive Ctx', '.trash/.nexus/contexts/Areas', '.trash/.nexus/contexts', '.trash/.nexus']
+  const CHAINS = [`${ARCHIVE_A}/Collection A/Arc Gone Set`, '.trash/Collection A/Set Alpha', '.trash/Collection A/Stray Set', '.trash/Collection A/Arc Gone Set', '.trash/Collection A', '.trash/Collection B', '.trash/.nexus/contexts/Drive Ctx', '.trash/.nexus/contexts/Areas', '.trash/.nexus/contexts', '.trash/.nexus']
   const standing = async () => ({
     collections: stateOrder().collections ?? [],
     aSets: orderIn(`${COLLECTION}/_pagecollection.json`, 'set_order'),
@@ -2368,27 +2368,37 @@ async function group7D(cdp) {
   await until('the Arc Lost row', async () => (await arcTitles(cdp)).includes('Arc Lost'))
   const ARCHIVE = { kind: 'archive', id: colA }
   const archivedAs = async (rel) => (await rows(ARCHIVE)).find((r) => r.stored?.id === ids[rel])?.bundlePath
-  const lostTrail = { trail: await trailOf(cdp, `(${arcRow('Arc Lost')})?.querySelector('.bundle-trail')`), style: await fontStyleOf(cdp, arcRow('Arc Lost')) }
+  const lostTrailOf = async () => ({ trail: await trailOf(cdp, `(${arcRow('Arc Lost')})?.querySelector('.bundle-trail')`), style: await fontStyleOf(cdp, arcRow('Arc Lost')) })
+  const LOST_TRAIL = { trail: [COLLECTION, 'Arc Gone Set'], style: 'italic' }
+  const lostTrail = await lostTrailOf()
+  const lostAt = await archivedAs(arcLost)
+  const lostRecord = lostAt && readRel(`${lostAt}/_record.json`)
   const lostMenu = await popAt(cdp, arcRow('Arc Lost'))
   const lostChosen = await pickNative(restoreInto(lostMenu, COLLECTION))
   const lostSaid = await noticeUp(cdp, 'Restored “Arc Lost”Undo')
   const lostLanded = exists(`${COLLECTION}/Arc Lost.md`)
   if (lostSaid) await pressUndo(cdp)
   await pointerAway(cdp)
-  const lostBack = await settles(async () => !!(await archivedAs(arcLost)) && !exists(`${COLLECTION}/Arc Lost.md`))
-  item('7D', 'Homeless Items, Trails, Undo', 'an archived page whose Set is gone restores through Restore ▸, and its Undo archives it again',
-    same(lostTrail, { trail: [COLLECTION, 'Arc Gone Set'], style: 'italic' }) && lostChosen && lostSaid && lostLanded && lostBack,
-    show({ lostTrail, lostChosen, lostSaid, lostLanded, lostBack, now: await archivedAs(arcLost) }))
+  const lostBack = await settles(async () => !!lostAt && (await archivedAs(arcLost)) === lostAt && exists(`${lostAt}/Arc Lost.md`) && !exists(`${COLLECTION}/Arc Lost.md`))
+  const lostExact = lostBack && readRel(`${lostAt}/_record.json`) === lostRecord
+  const lostHomeless = await settles(async () => same(await lostTrailOf(), LOST_TRAIL))
+  item('7D', 'Homeless Items, Trails, Undo', 'an archived page whose Set is gone restores through Restore ▸, and its Undo puts it back exactly as it was archived',
+    same(lostTrail, LOST_TRAIL) && lostChosen && lostSaid && lostLanded && lostBack && lostExact && lostHomeless,
+    show({ lostTrail, lostChosen, lostSaid, lostLanded, lostBack, lostExact, lostHomeless, lostAt, now: await archivedAs(arcLost) }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
+  const squatAt = await archivedAs(squats[2])
+  const squatRecord = squatAt && readRel(`${squatAt}/_record.json`)
   const { chosen: squatChosen } = await chooseNative(cdp, arcRow('Squat Arc'), 'Restore')
   const squatSaid = await noticeUp(cdp, 'Restored “Squat Arc” as “Squat Arc (2)”Undo')
   const squatLanded = exists(page(A_ALPHA, 'Squat Arc (2)')) && readRel(squats[2]).endsWith('squatter')
   if (squatSaid) await pressUndo(cdp)
   await pointerAway(cdp)
-  const squatBack = await settles(async () => !!(await archivedAs(squats[2])) && !exists(page(A_ALPHA, 'Squat Arc (2)')))
-  item('7D', 'E-4', "a restore onto an outside file steps aside, the Archive's with its Undo and a Trash batch's counted",
-    squatChosen && squatSaid && squatLanded && squatBack && renamedSaid && renamedLanded, show({ squatChosen, squatSaid, squatLanded, squatBack, renamedSaid, renamedLanded, now: await archivedAs(squats[2]) }))
+  const squatBack = await settles(async () => !!squatAt && (await archivedAs(squats[2])) === squatAt && exists(`${squatAt}/Squat Arc.md`))
+  const steppedLeft = readdirSync(NEXUS, { recursive: true }).filter((n) => n.endsWith('Squat Arc (2).md'))
+  const squatExact = squatBack && readRel(`${squatAt}/_record.json`) === squatRecord && steppedLeft.length === 0
+  item('7D', 'E-4', "a restore onto an outside file steps aside, the Archive's with an Undo that puts it back exactly as it was archived, and a Trash batch's counted",
+    squatChosen && squatSaid && squatLanded && squatExact && renamedSaid && renamedLanded, show({ squatChosen, squatSaid, squatLanded, squatBack, squatExact, steppedLeft, renamedSaid, renamedLanded, squatAt, now: await archivedAs(squats[2]) }))
   await until('the notice drained', () => drained(cdp)).catch(() => {})
 
   const trashOf = async (title) => (await trashed(cdp, title))?.bundlePath

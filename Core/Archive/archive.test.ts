@@ -33,7 +33,7 @@ import { writeExcludedFolders } from '../Settings/settings'
 import { readNotes } from '../Nexus/owed'
 import { listBundles, mintBundle } from '../Bundles/bundle'
 import type { BundleStore } from '../Bundles/layout'
-import { readRecord, writeRecord } from '../Bundles/record'
+import { readRawRecord, readRecord, writeRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { NO_DESTINATION } from '../Bundles/placement'
 import type { TrashDeps } from '../Trash/discard'
@@ -72,6 +72,10 @@ const archive = async (path: string, kind: 'page' | 'set' = 'page'): Promise<str
 const restore = (bundlePath: string, destination?: RestoreDestination): Promise<MutateReply> =>
   mutate({ op: 'restore', bundlePath, ...(destination ? { destination } : {}) })
 const INTO_NOTES: RestoreDestination = { kind: 'container', id: NOTES }
+const undo = (r: MutateReply): Promise<MutateReply> => {
+  if (!r.ok || !r.value.undo) throw new Error('The reply carries no Undo.')
+  return mutate(r.value.undo)
+}
 
 beforeEach(async () => {
   root = tempRoot('pom-archive-')
@@ -400,6 +404,115 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(r.ok && r.value.bundled).toEqual({ bundlePath: join(bundlePath, 'Daily', 'Beta 2.md') })
     expect(await text(bundlePath, 'Daily', 'Beta 2.md')).toBe(BETA)
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
+  })
+
+  it('a restore’s reply carries the archive request that puts the item back as it was archived', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const raw = await readRawRecord(at(bundlePath))
+    const r = await restore(bundlePath)
+    expect(r.ok && r.value.undo).toEqual({
+      op: 'archive',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+      at: bundlePath,
+      name: 'Beta.md',
+      record: raw,
+    })
+    const set = await archive('Notes/Daily', 'set')
+    const inner = join(set, 'Daily', 'Alpha.md')
+    const pulled = await restore(inner, INTO_NOTES)
+    expect(pulled.ok && pulled.value.undo).toEqual({
+      op: 'archive',
+      path: 'Notes/Alpha.md',
+      kind: 'page',
+      at: inner,
+      name: 'Alpha.md',
+    })
+  })
+
+  it('a homeless restore’s Undo files the item back at its address with the record it was archived with', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
+    expect((await mutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(true)
+    const r = await undo(await restore(bundlePath, INTO_NOTES))
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
+    expect(message(await restore(bundlePath))).toBe('The place this belonged to no longer exists.')
+  })
+
+  it('a step-aside restore’s Undo files the item back under its own name at its address', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
+    await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))
+    const restored = await restore(bundlePath)
+    expect(restored.ok && restored.value.landedAs).toBe('Beta (2)')
+    const r = await undo(restored)
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
+    expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
+  })
+
+  it('a restore into another Collection is put back by its Undo into the Archive it left', async () => {
+    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
+    await reseed()
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const r = await undo(await restore(bundlePath, { kind: 'container', id: OTHER }))
+    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
+    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
+  })
+
+  it('an inner item restored under a stepped-aside name is put back by its Undo under the name it held', async () => {
+    const bundlePath = await archive('Notes/Daily', 'set')
+    const before = await bytesUnder(at(bundlePath))
+    await mutate(minted({ op: 'createPage', parentPath: 'Notes', name: 'Beta' }))
+    const restored = await restore(join(bundlePath, 'Daily', 'Beta.md'), INTO_NOTES)
+    expect(restored.ok && restored.value.landedAs).toBe('Beta (2)')
+    expect((await undo(restored)).ok).toBe(true)
+    expect(await bytesUnder(at(bundlePath))).toEqual(before)
+  })
+
+  it('an Undo whose address is taken mints a fresh stamp in that chain, with its record and its own name', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
+    await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))
+    const restored = await restore(bundlePath)
+    await mkdir(at(bundlePath))
+    const r = await undo(restored)
+    const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    expect(filed).not.toBe(bundlePath)
+    expect(filed).toMatch(
+      new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta\\.md\\.archived$`),
+    )
+    expect(await text(filed, 'Beta.md')).toBe(BETA)
+    expect(await readFile(at(filed, '_record.json'), 'utf8')).toBe(record)
+  })
+
+  it('an archive carrying a record of the other kind, or an address outside an Archive, records the item afresh from where it stands', async () => {
+    const bundlePath = await archive('Notes/Daily/Beta.md')
+    const raw = await readRawRecord(at(bundlePath))
+    expect((await restore(bundlePath, INTO_NOTES)).ok).toBe(true)
+    const afresh = async (at: string, carried: unknown): Promise<void> => {
+      const r = await mutate({
+        op: 'archive',
+        path: 'Notes/Beta.md',
+        kind: 'page',
+        at,
+        name: 'Beta.md',
+        record: carried as Record<string, unknown>,
+      })
+      const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+      expect(filed).toMatch(
+        new RegExp(`^\\.nexus/archive/${NOTES}/Notes/[^/]+__Beta\\.md\\.archived$`),
+      )
+      expect(await readRecord(join(root, filed))).toMatchObject({
+        id: PAGE_B,
+        parent: { kind: 'container', id: NOTES },
+      })
+      expect((await restore(filed)).ok).toBe(true)
+    }
+    await afresh(bundlePath, { ...raw, entity: 'set' })
+    await afresh(`.trash/Notes/Daily/${basename(bundlePath)}`, raw)
   })
 
   it('an inner item refused as homeless leaves its bundle byte-identical', async () => {

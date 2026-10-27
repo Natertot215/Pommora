@@ -15,7 +15,7 @@ import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifi
 import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
-import { isAtOrUnder, relDirname } from '../Paths/posix'
+import { basename, isAtOrUnder, relDirname } from '../Paths/posix'
 import { formatDate } from '../Properties/formatValue'
 import {
   type DateStyle,
@@ -141,14 +141,22 @@ async function askDestination(kind: DestinationKind): Promise<RestoreDestination
   return id ? { kind, id } : null
 }
 
-/** A restore from the Archive undoes by archiving each item again, found by id so it follows a rename made since, back at the address it left. */
-const rearchive = (rows: BundleRow[]) => async (): Promise<void> => {
-  for (const row of rows) {
+/** A restored row and the request its reply says takes the restore back. */
+type Undone = { row: BundleRow; undo: MutateRequest }
+
+/** A restore from the Archive undoes by sending each reply's own request, the item found by id so it follows a rename made since, under that new name once it has one. */
+const rearchive = (undone: Undone[]) => async (): Promise<void> => {
+  for (const { row, undo } of undone) {
     const { tree, mutate } = useSession.getState()
     const id = row.stored?.id
-    if (!id || !tree) continue
+    if (!id || !tree || undo.op !== 'archive') continue
     const path = nodesByIdOf(tree).get(id)?.path
-    if (path) await mutate({ op: 'archive', path, kind: archivedKind(row), at: row.bundlePath })
+    if (path)
+      await mutate({
+        ...undo,
+        path,
+        ...(basename(path) !== basename(undo.path) ? { name: basename(path) } : {}),
+      })
   }
 }
 
@@ -222,7 +230,7 @@ function rulesOf(kind: BundleStore['kind']): {
   dateKey: DateKey
   deleteOp: 'emptyBundle' | 'delete'
   askDelete: (targets: BundleRow[]) => Promise<boolean>
-  restoreUndo?: (rows: BundleRow[]) => () => Promise<void>
+  restoreUndo?: (undone: Undone[]) => () => Promise<void>
   deleteUndo?: RestoreDestination
 } {
   switch (kind) {
@@ -328,7 +336,7 @@ export function useBundleBrowser(
   )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
-  /** Opens a closed container at once, its rows filled in when the host answers while it's still pending, or closes an open one with every open row inside it. A failed ask leaves it pending for the next listing to ask again, and an address the host can't list opens empty until the next listing drops it. */
+  /** Opens a closed container at once, its rows filled in when the host answers while it's still pending, or closes an open one with every open row inside it. A failed ask leaves it pending for the next listing to ask again, and an address the host can't list opens empty while its row lists. */
   const disclose = async (address: string): Promise<void> => {
     const was = held.current
     if (was.has(address))
@@ -377,7 +385,7 @@ export function useBundleBrowser(
       `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
       undefined,
       [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
-      rules.restoreUndo?.([row]),
+      done.undo ? rules.restoreUndo?.([{ row, undo: done.undo }]) : undefined,
       done.cascade?.owed ? finishOwed : undefined,
     )
   }
@@ -402,6 +410,7 @@ export function useBundleBrowser(
     warnings: string[]
     renamed: string[]
     bundled: string[]
+    undone: Undone[]
     owed: boolean
   } | null> => {
     const done: BundleRow[] = []
@@ -410,6 +419,7 @@ export function useBundleBrowser(
     const warnings = new Set<string>()
     const renamed: string[] = []
     const bundled: string[] = []
+    const undone: Undone[] = []
     let owed = false
     const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
     for (const row of targets) {
@@ -424,11 +434,12 @@ export function useBundleBrowser(
       owed ||= !!res.cascade?.owed
       if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
       if (res.bundled) bundled.push(res.bundled.bundlePath)
+      if (res.undo) undone.push({ row, undo: res.undo })
     }
     storesChanged.emit()
     return switched()
       ? null
-      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled, owed }
+      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled, undone, owed }
   }
 
   const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
@@ -443,7 +454,7 @@ export function useBundleBrowser(
       row.homeResolves ? undefined : to.get(destinationKind(row)),
     )
     if (!ran) return
-    const { done, refused, unrestored, warnings, renamed, owed } = ran
+    const { done, refused, unrestored, warnings, renamed, undone, owed } = ran
     notifyOutcome(
       `Restored ${countPhrase(done)}`,
       renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
@@ -452,7 +463,7 @@ export function useBundleBrowser(
         unrestored.length > 0 && unrestoredLine(unrestored),
         ...warnings,
       ],
-      done.length > 0 ? rules.restoreUndo?.(done) : undefined,
+      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
       owed ? finishOwed : undefined,
     )
   }

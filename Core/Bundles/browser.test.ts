@@ -7,6 +7,8 @@ import type { BundleRow } from './rows'
 import { bundleRow as row } from '../Testing/fixtures'
 import { stubDialer } from '../vitest.setup'
 import { storesChanged } from '../Session/nexusSlice'
+import { currentNotification } from '../Interface/Notifications/notifications'
+import type { MutateRequest } from '../Nexus/mutateRequest'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 
@@ -292,5 +294,81 @@ describe('a browser’s remembered checks', () => {
     await click(set)
     await reply([page])
     expect(browser.visible).toEqual([{ row: set, depth: 0, open: false }])
+  })
+})
+
+describe('an Archive restore’s Undo', () => {
+  const ARCHIVED = '.nexus/archive/c1/Notes'
+  const alpha = row({
+    title: 'Alpha',
+    bundlePath: `${ARCHIVED}/2026-10-17T00-00-00-000Z__Alpha.md.archived`,
+    stored: { id: 'p1', path: 'Notes/Alpha.md' },
+  })
+  const beta = row({
+    title: 'Beta',
+    bundlePath: `${ARCHIVED}/Ideas/2026-10-17T00-00-00-000Z__Beta.md.archived`,
+    stored: { id: 'p2', path: 'Notes/Ideas/Beta.md' },
+  })
+  const record = { entity: 'page', parent: { kind: 'container', id: 's1' } }
+  const undoOf = (target: BundleRow): MutateRequest => ({
+    op: 'archive',
+    path: target.stored?.path ?? '',
+    kind: 'page',
+    at: target.bundlePath,
+    name: `${target.title}.md`,
+    record,
+  })
+  let host: HTMLDivElement
+  let root: Root
+  let browser: ReturnType<typeof useBundleBrowser>
+  let mutated: ReturnType<typeof vi.fn>
+
+  const Harness = (): null => {
+    browser = useBundleBrowser({ kind: 'archive', id: 'c1' }, { query: '', shown: true })
+    return null
+  }
+
+  beforeEach(async () => {
+    mutated = vi.fn(async (req: MutateRequest) => {
+      const target =
+        req.op === 'restore' && [alpha, beta].find((r) => r.bundlePath === req.bundlePath)
+      return { ok: true, value: target ? { undo: undoOf(target) } : {} }
+    })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      mutate: mutated,
+      'bundles:list': vi.fn(async () => ({ ok: true, value: [alpha, beta] })),
+    })
+    useSession.setState({ tree: makeTree() })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    root = createRoot(host)
+    await act(async () => root.render(createElement(Harness)))
+  })
+  afterEach(async () => {
+    await act(async () => root.unmount())
+    host.remove()
+    useSession.setState({ tree: null })
+  })
+
+  it('sends each reply’s own request at the item’s path now, under its new name once it’s been renamed since', async () => {
+    await act(async () => browser.restore([alpha, beta]))
+    const renamed = makeTree()
+    renamed.collections[0].pages[0] = {
+      kind: 'page',
+      id: 'p1',
+      title: 'Alpha 2',
+      path: 'Notes/Alpha 2.md',
+    }
+    useSession.setState({ tree: renamed })
+    mutated.mockClear()
+    await act(async () => currentNotification()?.action?.run())
+    expect(mutated.mock.calls.map(([req]) => req)).toEqual([
+      { ...undoOf(alpha), path: 'Notes/Alpha 2.md', name: 'Alpha 2.md' },
+      undoOf(beta),
+    ])
+    await act(async () => browser.restore([beta]))
+    mutated.mockClear()
+    await act(async () => currentNotification()?.action?.run())
+    expect(mutated.mock.calls.map(([req]) => req)).toEqual([undoOf(beta)])
   })
 })

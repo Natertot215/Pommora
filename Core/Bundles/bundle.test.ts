@@ -432,4 +432,23 @@ describe('fileInto', () => {
       parent: { kind: 'root' },
     })
   })
+
+  const fileAs = async (at: string) => {
+    const q = join(root, 'Live', 'Q.md')
+    await mkdir(join(root, 'Live'), { recursive: true })
+    await writeFile(q, 'back')
+    return fileInto(root, TRASH, live(), q, { entity: 'page', parent: { kind: 'root' } }, at)
+  }
+
+  it('files an inner item’s address under its origin’s name', async () => {
+    await rm(inBundle('A', 'S', 'T', 'P.md'))
+    expect(await fileAs(HELD)).toEqual({ address: HELD, landed: inBundle('A', 'S', 'T', 'P.md') })
+    expect(await readFile(inBundle('A', 'S', 'T', 'P.md'), 'utf8')).toBe('back')
+  })
+
+  it('files a whole bundle’s artifact under its origin’s name at the address it names', async () => {
+    const whole = `.trash/Live/${STAMPED}__P.md.deleted`
+    expect(await fileAs(whole)).toEqual({ address: whole, landed: join(root, whole, 'P.md') })
+    expect(await readFile(join(root, whole, 'P.md'), 'utf8')).toBe('back')
+  })
 })
