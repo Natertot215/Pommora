@@ -2,10 +2,10 @@
 
 import { basename, dirname, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { archiveStoreOf, holdsName } from '../Paths/names'
-import { hiddenName } from '../Paths/exclusion'
+import { hiddenFolder } from '../Paths/exclusion'
 import { fail, ok } from '../Contract/result'
 import { pathExists, relocate } from '../Files/atomicWrite'
-import { listMarkdownFiles } from '../Files/walk'
+import { isContentName, listMarkdownFiles } from '../Files/walk'
 import { archiveDirRel } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
@@ -80,8 +80,9 @@ async function filingOf(
   const name =
     req.name !== undefined &&
     holdsName(req.name) &&
-    !hiddenName(req.name) &&
-    isMarkdownFile(req.name) === (req.kind === 'page')
+    (req.kind === 'page'
+      ? isContentName(req.name)
+      : !hiddenFolder(req.name) && !isMarkdownFile(req.name))
       ? req.name
       : basename(abs)
   const carried = req.record === undefined ? null : decodeRecord(req.record)
