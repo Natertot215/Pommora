@@ -40,6 +40,8 @@ export type DateFormat = (typeof DATE_FORMATS)[number]
 
 export const TIME_FORMATS = ['twelveHour', 'twentyFourHour', 'none'] as const
 export type TimeFormat = (typeof TIME_FORMATS)[number]
+/** What a column stores for its time: a form, or `shown` for the Nexus clock. */
+export const STORED_TIME_FORMATS = [...TIME_FORMATS, 'shown'] as const
 
 export const WEEKDAY_FORMATS = ['long', 'short', 'none'] as const
 export type WeekdayFormat = (typeof WEEKDAY_FORMATS)[number]
@@ -53,10 +55,7 @@ export const columnStyle = looseDecoder(
   z.object({
     look: z.enum(COLUMN_LOOKS).optional().catch(undefined),
     date_format: z.enum(DATE_FORMATS).optional().catch(undefined),
-    time_format: z
-      .enum([...TIME_FORMATS, 'shown'])
-      .optional()
-      .catch(undefined),
+    time_format: z.enum(STORED_TIME_FORMATS).optional().catch(undefined),
     weekday: z.enum(WEEKDAY_FORMATS).optional().catch(undefined),
   }),
 )
