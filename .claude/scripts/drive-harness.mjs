@@ -150,9 +150,15 @@ async function attachMain(inspectPort) {
 }
 
 // A freshly popped menu's rows: each visible item as { label, enabled, submenu? } or { separator }, answering null when no menu pops. A menu a button pops takes a left press.
-export async function popNative(cdp, at, button = 'right') {
+export async function popNative(cdp, at, button = 'right', modifiers = 0) {
   const seq = await main.evaluate('__drive.seq')
-  await mouseAt(cdp, at, { button, settle: 0 })
+  await mouseAt(cdp, at, { button, modifiers, settle: 0 })
+  return until('the native menu', () => main.evaluate(`__drive.seq > ${seq} && __drive.rows()`), 3000).catch(() => null)
+}
+/** The rows of the native menu a `contextmenu` event dispatched on `expr` pops, the pointer left where it is. */
+export async function menuByEvent(cdp, expr) {
+  const seq = await main.evaluate('__drive.seq')
+  await cdp.evaluate(`(${expr}).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))`)
   return until('the native menu', () => main.evaluate(`__drive.seq > ${seq} && __drive.rows()`), 3000).catch(() => null)
 }
 /** Chooses the row a path of labels names in the menu now up, or closes it when the path is empty or names no enabled row, answering whether one was chosen. */
@@ -203,6 +209,16 @@ export async function sweep(cdp, a, b, { steps, held }) {
   await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', buttons: 0, clickCount: 1 })
   await sleep(800)
 }
+/** A press on `expr`'s box carried `dx` and `dy` across in steps, then released, as a pointer resizes by an edge. */
+export async function resizeBy(cdp, expr, { dx = 0, dy = 0 }) {
+  const a = await boxOf(cdp, expr)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y, button: 'none' })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
+  for (let i = 1; i <= 8; i++)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x + (dx * i) / 8, y: a.y + (dy * i) / 8, button: 'left', buttons: 1 })
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: a.x + dx, y: a.y + dy, button: 'left', buttons: 0, clickCount: 1 })
+  await sleep(800)
+}
 export async function drag(cdp, from, to, held) {
   const a = await boxOf(cdp, from)
   const b = await boxOf(cdp, to)
@@ -218,7 +234,7 @@ export const hover = async (cdp, expr, dwell = 600) => {
 
 export const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
 
-const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, z: 90, ArrowDown: 40, ArrowUp: 38, ' ': 32 }
+const VK = { Enter: 13, Escape: 27, Tab: 9, Backspace: 8, b: 66, f: 70, z: 90, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39, ' ': 32 }
 export async function pressKey(cdp, name, modifiers = 0) {
   for (const type of ['rawKeyDown', 'keyUp'])
     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name === ' ' ? 'Space' : name.length === 1 ? `Key${name.toUpperCase()}` : name, windowsVirtualKeyCode: VK[name], modifiers })
