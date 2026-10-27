@@ -143,7 +143,7 @@ const ROWS = ['r1', 'r2', 'r3']
 let lineRows = ROWS
 let commit: Mock<(id: string, slot: string) => void>
 let lineSpec: Partial<LineSpec<string, Row[]>>
-let rowOpts: Record<string, { open?: () => void }>
+let rowOpts: Record<string, { open?: () => void; space?: () => void }>
 let watch: number
 
 function slotAt(id: string, p: { y: number }, rows: Row[]): string | null {
@@ -1071,6 +1071,21 @@ describe('the line zone', () => {
     await dragHold('r1', 100, 70)
     expect(spoken()).toEqual(['Picked up r1.'])
     pressEscape()
+  })
+
+  it('runs a row’s own Space where it can’t lift, and its opener on Enter', async () => {
+    const open = vi.fn()
+    const space = vi.fn()
+    lineSpec = { snap: () => null }
+    rowOpts = { r1: { open, space } }
+    await mount()
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    expect(space).toHaveBeenCalledOnce()
+    expect(open).not.toHaveBeenCalled()
+    await press(item('r1'), 'Enter')
+    expect(open).toHaveBeenCalledOnce()
+    expect(space).toHaveBeenCalledOnce()
   })
 
   it('steps by keyboard naming the neighbour and commits', async () => {

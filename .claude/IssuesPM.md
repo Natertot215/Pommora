@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 79 | 0 | 3 | 13 | 36 | 27 |
+| 81 | 0 | 3 | 13 | 37 | 28 |
 
 #### A1 • Sync & Devices
 
@@ -77,6 +77,7 @@
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
 | [I-079](#I-079 • A Set restored on its own out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind as homeless rows.) | A Set restored on its own out of an archived Set into another Collection, then put back by its Undo, leaves what was archived from within it behind as homeless rows. | Minimal | Small (TBD) | Shortcut | `e6d460f09` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-080](#I-080 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A4 • Architecture
 
@@ -96,7 +97,8 @@
 | [I-050](#I-050 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
 | [I-061](#I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-073](#I-073 • Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.) | Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-25-2026 |
-| [I-078](#I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead. | Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-078](#I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead. | Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-081](#I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A6 • Tiles & Embeds
 
@@ -1006,6 +1008,20 @@ A Set restored on its own out of an archived Set into another Collection carries
 
 The Undo carries the records the restore moved back with the Set, along the bundle's trail, into the Archive it re-nests into, as the restore carried them out.
 
+#### I-080 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its hint lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the hint says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^80]
+
+**Solution** [Proposed]
+
+The hint names the Trash among what always asks, which keeps an empty for good behind its question.
+
 ### A4 • Architecture
 
 #### I-042 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
@@ -1152,7 +1168,7 @@ The Date & Time editor gives each of its three rows (Date, Day, and Time) an ico
 
 Every settings row in the Number, Link, Checkbox, and File editors carries an icon as the Date & Time editor's do. How a row says which layer it sets, and how each type's settings are laid out, wait for a design pass by the owner. Until then, work on Properties moves only a setting that's genuinely misplaced or genuinely confusing, and leaves the rows' wording as it reads.
 
-#### I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space opens the row instead.
+#### I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1160,11 +1176,25 @@ Every settings row in the Number, Link, Checkbox, and File editors carries an ic
 
 **Description**
 
-Every row of a line list points screen readers at the drag instructions through `aria-describedby`, whose text says to "press space to pick it up". In a list that can't be dragged, such as the Trash and Archive table and a navigation list with nothing to reorder, Space acts as Enter and opens the row, so the description names a gesture the row doesn't have. `useLineRow` sets the description on every row, and `useDragItem` does the same for a displace item, including one in a disabled zone that still opens. The two locks don't reach the hooks the same way. A displace zone's `disabled` sits on the zone value both hooks read, but a line list's lock is `lineList`'s `locked`, which only makes its `snap` answer nothing, so the keyboard's lift is refused and nothing the row hook reads says why. Turning `locked` into the zone's `disabled` would also take the list out of the Tab order, which the Trash and Archive table needs.[^78]
+Every row of a line list points screen readers at the drag instructions through `aria-describedby`, whose text says to "press space to pick it up". In a list that can't be dragged, such as the Trash and Archive table, where Space checks the row, and a navigation list with nothing to reorder, where Space opens it, the description names a gesture the row doesn't have. `useLineRow` sets the description on every row, and `useDragItem` does the same for a displace item, including one in a disabled zone that still opens. The two locks don't reach the hooks the same way. A displace zone's `disabled` sits on the zone value both hooks read, but a line list's lock is `lineList`'s `locked`, which only makes its `snap` answer nothing, so the keyboard's lift is refused and nothing the row hook reads says why. Turning `locked` into the zone's `disabled` would also take the list out of the Tab order, which the Trash and Archive table needs.[^78]
 
 **Solution** [Proposed]
 
 The zone value carries whether its rows can lift, with `lineList`'s `locked` set on the spec where the zone can read it, and both hooks describe the instructions only when a row can lift.
+
+#### I-081 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+
+**Description**
+
+The Trash's and the Archive's table rows take the line list's keyboard, Tab, the arrows, Enter, and Space, and reach Restore and Delete only through a row's context menu or, in the Archive, the bar over its checked rows. No key raises a row's menu: a line row answers no menu key, and the Trash has no bar, so a keyboard user can check rows in the Trash but can't restore or delete them.[^81]
+
+**Solution** [Proposed]
+
+A line row answers the platform's menu key by raising its own context menu at the row, in the kit, so every line list gains it at once and the Trash needs no bar.
 
 ### A6 • Tiles & Embeds
 
@@ -1440,3 +1470,5 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^77]: **I-077:** `Core/Bundles/bundle.ts:~369-393` (`spendBundle`), `Core/Bundles/bundle.ts:~81-84` (`bundleArtifact`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Trash/spend.ts:~110` (`emptyBundle`), `Core/Trash/spend.ts:~133,~295` (`restoreTrashed`), `Core/Archive/archive.ts:~81` (`restoreArchived`), `Core/Trash/delete.ts:~136` (`deleteOp`)
 [^78]: **I-078:** `UIX/Interactions/engine.tsx:~1287-1318` (`useDragItem`), `UIX/Interactions/engine.tsx:~1337-1372` (`useLineRow`), `UIX/Interactions/engine.tsx:~1120,~1174-1180,~1234` (`ZoneValue`, `useZoneSeat`, the zone's Tab stop), `UIX/Interactions/engine.tsx:~682-685` (the line lift refused on a null `snap`), `UIX/Interactions/a11y.ts:~1,~57-60` (`INSTRUCTIONS_ID`), `UIX/Interactions/lineList.ts:~20-35` (`locked`), `Core/Bundles/BundleTable.tsx:~106`, `Core/Navigation/NavList.tsx:~161`
 [^79]: **I-079:** `Core/Bundles/bundle.ts:~87-117` (`fileInto`), `Core/Archive/archive.ts:~55-92` (`restoreArchived`, its `refileLanded` at `:~87`), `Core/Archive/refile.ts:~43-56` (`refileArchived`), `Core/Archive/refile.ts:~67-79` (`refileLanded`), `Core/Archive/refile.ts:~108-136` (`settleArchives`)
+[^80]: **I-080:** `Core/Settings/frames.ts:~617` (the hint), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
+[^81]: **I-081:** `Core/Bundles/BundleTable.tsx:~177` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Settings/TrashFrame.tsx` (no bar)

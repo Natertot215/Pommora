@@ -68,20 +68,16 @@ describe('styleMenuItems', () => {
       ['Relative', 'style:date_format:relative'],
       ['Full', 'style:weekday:long'],
       ['Short', 'style:weekday:short'],
-      ['Hidden', 'style:weekday:none'],
+      ['Show Day', 'style:weekday:long'],
       ['12 Hours', 'style:time_format:twelveHour'],
       ['24 Hours', 'style:time_format:twentyFourHour'],
-      ['Hidden', 'style:time_format:none'],
+      ['Show Time', 'style:time_format:twelveHour'],
     ])
     expect(rows.find((r) => r.action === 'style:weekday:long')?.separatorBefore).toBe(true)
     expect(rows.find((r) => r.action === 'style:time_format:twelveHour')?.separatorBefore).toBe(
       true,
     )
-    expect(rows.filter((r) => r.checked).map((r) => r.action)).toEqual([
-      'style:date_format:full',
-      'style:weekday:none',
-      'style:time_format:none',
-    ])
+    expect(rows.filter((r) => r.checked).map((r) => r.action)).toEqual(['style:date_format:full'])
   })
 
   it('offers no weekday under a numeric or Relative form, as the Date editor hides its Day row', () => {
@@ -91,15 +87,19 @@ describe('styleMenuItems', () => {
     }
   })
 
-  it('offers the Relative date radio and Full/Short/Hidden weekday radios', () => {
-    const rows = items('dateTime', { date_format: 'full', time_format: 'none', weekday: 'none' })
-    expect(rows.find((r) => r.action === 'style:date_format:relative')?.label).toBe('Relative')
-    expect(
-      rows.filter((r) => r.action?.startsWith('style:weekday:')).map((r) => [r.label, r.action]),
-    ).toEqual([
-      ['Full', 'style:weekday:long'],
-      ['Short', 'style:weekday:short'],
-      ['Hidden', 'style:weekday:none'],
+  it('a shown weekday and time check their form and close each group with an unchecked Hide row', () => {
+    const rows = items('dateTime', {
+      date_format: 'full',
+      time_format: 'twentyFourHour',
+      weekday: 'short',
+    })
+    expect(rows.slice(5).map((r) => [r.label, r.action, r.checked])).toEqual([
+      ['Full', 'style:weekday:long', false],
+      ['Short', 'style:weekday:short', true],
+      ['Hide Day', 'style:weekday:none', false],
+      ['12 Hours', 'style:time_format:twelveHour', false],
+      ['24 Hours', 'style:time_format:twentyFourHour', true],
+      ['Hide Time', 'style:time_format:none', false],
     ])
   })
 

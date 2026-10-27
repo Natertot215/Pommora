@@ -6,13 +6,13 @@ import { entityIcon } from '../Assets/entityIconPolicy'
 import {
   askEmptyTrash,
   askTrashing,
-  confirmDelete,
+  offerDeleted,
   offerUndo,
   spendUndo,
 } from '../Interface/Confirm/confirmations'
 import { countPhrase, isContainerKind } from '../Nexus/entities'
 import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
-import type { RestoreDestination } from '../Nexus/mutateRequest'
+import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { nodesByIdOf } from '../Nexus/treeIndex'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { isAtOrUnder, relDirname } from '../Paths/posix'
@@ -108,6 +108,12 @@ function keepsCheck(rows: readonly BundleRow[], open: OpenRows): (address: strin
 const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
 
 type BatchOp = 'restore' | 'emptyBundle' | 'delete'
+
+/** What an op sends for a row: an Archive delete its path and kind, a restore or an empty its bundle. */
+const requestOf = (row: BundleRow, op: BatchOp, destination?: RestoreDestination): MutateRequest =>
+  op === 'delete'
+    ? { op, path: row.bundlePath, kind: archivedKind(row) }
+    : { op, bundlePath: row.bundlePath, ...(destination ? { destination } : {}) }
 
 /** Where a homeless row can be sent: a Space to a Context, anything else into a container. */
 type DestinationKind = Extract<RestoreDestination, { id: string }>['kind']
@@ -207,12 +213,11 @@ function useDateColumn(key: DateKey): {
   }
 }
 
-/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, for one row and for a batch, and what a restore's and a delete's Undo do. */
+/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, and what a restore's and a delete's Undo do. */
 function rulesOf(kind: BundleStore['kind']): {
   dateKey: DateKey
   deleteOp: 'emptyBundle' | 'delete'
-  askBatch: (targets: BundleRow[]) => Promise<boolean>
-  deleteOne: (row: BundleRow) => Promise<boolean>
+  askDelete: (targets: BundleRow[]) => Promise<boolean>
   restoreUndo?: (rows: BundleRow[]) => () => Promise<void>
   deleteUndo?: RestoreDestination
 } {
@@ -221,25 +226,13 @@ function rulesOf(kind: BundleStore['kind']): {
       return {
         dateKey: 'trashColumnStyle',
         deleteOp: 'emptyBundle',
-        askBatch: askEmptyTrash,
-        deleteOne: async (row) =>
-          (await askEmptyTrash([row])) &&
-          (await useSession
-            .getState()
-            .mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })) !== null,
+        askDelete: askEmptyTrash,
       }
     case 'archive':
       return {
         dateKey: 'archiveColumnStyle',
         deleteOp: 'delete',
-        askBatch: askTrashing,
-        deleteOne: (row) =>
-          confirmDelete({
-            path: row.bundlePath,
-            kind: archivedKind(row),
-            title: row.title,
-            undoTo: ARCHIVE_UNDO,
-          }),
+        askDelete: askTrashing,
         restoreUndo: rearchive,
         deleteUndo: ARCHIVE_UNDO,
       }
@@ -331,7 +324,7 @@ export function useBundleBrowser(
   )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
-  /** Opens a closed container at once, its rows filled in when the host answers while it's still pending, or closes an open one with every open row inside it. A failed answer leaves it pending for the next listing to ask again. */
+  /** Opens a closed container at once, its rows filled in when the host answers while it's still pending, or closes an open one with every open row inside it. A failed ask leaves it pending for the next listing to ask again, and an address the host can't list opens empty until the next listing drops it. */
   const disclose = async (address: string): Promise<void> => {
     const was = held.current
     if (was.has(address))
@@ -342,7 +335,7 @@ export function useBundleBrowser(
       openTo(new Map(held.current).set(address, res.value[0]))
   }
 
-  /** A container's click discloses it; a page's checks it, and its double-click, or a keyboard's click (no count) where pages open, leaves it checked and opens it. */
+  /** A container's click discloses it; a page's checks it, and its double-click, or a click with no count where pages open, leaves it checked and opens it. */
   const rowClick = (row: BundleRow, detail: number): void => {
     const address = row.bundlePath
     if (isContainerKind(row.kind)) {
@@ -372,22 +365,25 @@ export function useBundleBrowser(
     const to =
       destination ?? (row.homeResolves ? undefined : await askDestination(destinationKind(row)))
     if (to === null) return
-    const done = await mutate({
-      op: 'restore',
-      bundlePath: row.bundlePath,
-      ...(to ? { destination: to } : {}),
-    })
+    const done = await mutate(requestOf(row, 'restore', to))
     if (!done) return
     spendUndo(row.bundlePath)
-    // A restore the store can undo always reports, since its notice carries the Undo; the Trash's reports a step aside alone. The notice replaces the slice's, so it carries the reply's lines and its Try Again.
-    if (done.landedAs || rules.restoreUndo)
-      notifyOutcome(
-        `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
-        undefined,
-        [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
-        rules.restoreUndo?.([row]),
-        done.cascade?.owed ? finishOwed : undefined,
-      )
+    // The notice replaces the slice's, so it carries the reply's lines and its Try Again.
+    notifyOutcome(
+      `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
+      undefined,
+      [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
+      rules.restoreUndo?.([row]),
+      done.cascade?.owed ? finishOwed : undefined,
+    )
+  }
+
+  const deleteOne = async (row: BundleRow): Promise<void> => {
+    if (!(await rules.askDelete([row]))) return
+    const done = await mutate(requestOf(row, rules.deleteOp))
+    if (!done) return
+    spendUndo(row.bundlePath)
+    offerDeleted(row.title, done, rules.deleteUndo)
   }
 
   /** Answers null when a Nexus switch stopped it, as the slice's `mutate` drops a held op: the paths left belong to the Nexus it left, so the batch reports nothing. */
@@ -415,12 +411,7 @@ export function useBundleBrowser(
     for (const row of targets) {
       if (switched()) break
       const to = destinationOf?.(row)
-      const res = await mutate(
-        op === 'delete'
-          ? { op, path: row.bundlePath, kind: archivedKind(row) }
-          : { op, bundlePath: row.bundlePath, ...(to ? { destination: to } : {}) },
-        { quiet: true },
-      )
+      const res = await mutate(requestOf(row, op, to), { quiet: true })
       ;(res ? done : refused).push(row)
       if (!res) continue
       spendUndo(row.bundlePath)
@@ -463,7 +454,7 @@ export function useBundleBrowser(
   }
 
   const deleteBatch = async (targets: BundleRow[]): Promise<void> => {
-    if (!(await rules.askBatch(targets))) return
+    if (!(await rules.askDelete(targets))) return
     const ran = await many(targets, rules.deleteOp)
     if (!ran) return
     const { done, refused, warnings, bundled, owed } = ran
@@ -492,7 +483,7 @@ export function useBundleBrowser(
   const remove = (targets: BundleRow[]): Promise<void> =>
     flight(async () => {
       if (targets.length > 1) return deleteBatch(targets)
-      if (targets.length && (await rules.deleteOne(targets[0]))) spendUndo(targets[0].bundlePath)
+      if (targets.length) return deleteOne(targets[0])
     })
 
   const openMenu = async (row: BundleRow): Promise<void> => {

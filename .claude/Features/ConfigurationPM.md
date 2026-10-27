@@ -220,8 +220,8 @@ The one frame that is a surface of its own, anchored below the rail's separator.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Date Column | `trashColumnStyle` | How the browser writes a deletion's date and time. Unset, it follows the Nexus's Date Format and shows the time on its clock, and picking the Nexus's own form or clock returns it to following. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
-| Archive Date Column | `archiveColumnStyle` | How ArchiveView writes an item's archived date and time, picked from its own column heading's menu, following the Nexus's form and clock as the Trash's does. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
+| Date Column | `trashColumnStyle` | How the browser writes a deletion's date and time. Unset, it follows the Nexus's Date Format and shows the time on its clock, and picking the Nexus's own form or clock returns it to following. | Every date form · Day · 12 or 24 Hours · Show/Hide |
+| Archive Date Column | `archiveColumnStyle` | How ArchiveView writes an item's archived date and time, picked from its own column heading's menu, following the Nexus's form and clock as the Trash's does. | Every date form · Day · 12 or 24 Hours · Show/Hide |
 
 ### Collections
 

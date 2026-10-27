@@ -211,20 +211,27 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
   })
 
-  it('a page row’s Space checks and unchecks it, and its Enter opens the reader, leaving it checked', async () => {
+  it('Space checks and unchecks any row, and Enter discloses a Set and opens a page’s reader, leaving it checked', async () => {
+    listed = [archivedSet(), archived('A')]
+    children = { [SET_BUNDLE]: [inner('P')] }
     await render()
-    const key = async (k: string): Promise<void> =>
+    const key = async (title: string, k: string): Promise<void> =>
       act(async () => {
-        rowOf('A').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
+        rowOf(title).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
       })
-    await key(' ')
+    await key('Ideas', ' ')
+    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
+    expect(titles()).toEqual(['Ideas', 'A'])
+    await key('Ideas', 'Enter')
+    expect(titles()).toEqual(['Ideas', 'P', 'A'])
+    await key('A', ' ')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
-    await key(' ')
+    await key('A', ' ')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('false')
     expect(useSession.getState().reader).toBeNull()
-    await key('Enter')
+    await key('A', 'Enter')
     expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
-    expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
+    expect(useSession.getState().reader?.page).toMatchObject({ kind: 'page', id: 'id-A' })
   })
 
   it('an inner page’s double-click opens the reader titled by its row’s trail, then the page', async () => {

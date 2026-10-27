@@ -173,6 +173,25 @@ describe('the Trash pane', () => {
     useSession.setState({ tree: null })
   })
 
+  it('Space checks any row, and Enter discloses a container and checks a page', async () => {
+    await showTree()
+    const key = async (title: string, k: string): Promise<void> =>
+      act(async () => {
+        rowOf(title).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
+      })
+    await key('Notes', ' ')
+    expect(boxOf('Notes').getAttribute('aria-checked')).toBe('true')
+    expect(titles()).toEqual(['Notes'])
+    await key('Notes', 'Enter')
+    await key('Ideas', 'Enter')
+    expect(titles()).toEqual(['Notes', 'Ideas', 'P'])
+    expect(boxOf('Ideas').getAttribute('aria-checked')).toBe('false')
+    await key('P', 'Enter')
+    expect(boxOf('P').getAttribute('aria-checked')).toBe('true')
+    await key('P', ' ')
+    expect(boxOf('P').getAttribute('aria-checked')).toBe('false')
+  })
+
   it('an empty, unreadable, or unmatched Trash reads its line in the frame, after the table', async () => {
     const line = (): string | null => {
       const el = host?.querySelector('.trash-empty')
@@ -351,6 +370,18 @@ describe('the Trash pane', () => {
     })
   })
 
+  it('counts the rows a Delete All couldn’t empty in its notice', async () => {
+    useSession.setState({ askConfirm: async () => true })
+    mutated
+      .mockResolvedValueOnce({ ok: true, value: {} })
+      .mockResolvedValueOnce({ ok: false, error: { code: 'io', message: 'No.' } })
+    await pickForBoth('delete')
+    expect(currentNotification()).toMatchObject({
+      message: 'Deleted 1 Page. 1 Page couldn’t be deleted.',
+      tone: 'error',
+    })
+  })
+
   it('names the title a restore here stepped to', async () => {
     mutated.mockResolvedValue({ ok: true, value: { landedAs: 'Alpha (2)' } })
     picked = 'restore'
@@ -362,6 +393,21 @@ describe('the Trash pane', () => {
       message: 'Restored “Alpha” as “Alpha (2)”',
       tone: 'normal',
     })
+  })
+
+  it.each([
+    ['restore', 'Restored “Alpha”'],
+    ['delete', 'Deleted “Alpha”'],
+  ])('a single %s here posts its title', async (action, message) => {
+    clearNotification()
+    useSession.setState({ askConfirm: async () => true })
+    picked = action
+    const item = host?.querySelector('.data-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(currentNotification()).toMatchObject({ message, tone: 'normal' })
+    expect(currentNotification()?.action).toBeUndefined()
   })
 
   const OWED = {
