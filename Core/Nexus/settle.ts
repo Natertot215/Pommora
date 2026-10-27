@@ -352,7 +352,7 @@ export async function returningCascade(
   }
 }
 
-/** An archive's re-spell when it files the item under another name than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there. */
+/** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there. */
 export async function departingCascade(
   root: string,
   tree: NexusTree,
