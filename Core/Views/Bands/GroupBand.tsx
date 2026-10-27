@@ -177,7 +177,7 @@ function HeadedBand({
         >
           <button
             type="button"
-            className="group-band-drop-outline"
+            className="group-band-drop-outline row-chevron"
             onClick={toggle}
             aria-label={collapsed ? 'Expand group' : 'Collapse group'}
           >

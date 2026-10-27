@@ -22,7 +22,7 @@
 }
 
 /* Each band is itself a grid reading --cols; inline min-width forces scroll, width:100% lets the Title track eat slack. */
-.table-grid {
+.table-view .table-grid {
   width: 100%;
   zoom: calc(var(--zoom) * var(--tile-zoom, 1));
 }

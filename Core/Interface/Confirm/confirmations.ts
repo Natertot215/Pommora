@@ -44,7 +44,7 @@ const waived = (key: 'confirmDeletion' | 'confirmArchiving', kind?: Counted['kin
 
 const armed = new Map<string, () => void>()
 
-/** A bundle, or an inner item of one, restored or deleted from anywhere spends the Undo its notice offered, a delete's or an archive's, so neither the label nor the chord retries it. */
+/** A bundle restored or deleted from anywhere spends the Undo its notice offered, a delete's or an archive's, so neither the label nor the chord retries it. */
 export function spendUndo(bundlePath: string): void {
   armed.get(bundlePath)?.()
   armed.delete(bundlePath)
