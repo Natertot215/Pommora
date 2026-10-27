@@ -342,18 +342,17 @@ export function useBundleBrowser(
       openTo(new Map(held.current).set(address, res.value[0]))
   }
 
-  /** A container's click discloses it; a page's checks it, and its double-click leaves it checked and opens it. */
+  /** A container's click discloses it; a page's checks it, and its double-click, or a keyboard's click (no count) where pages open, leaves it checked and opens it. */
   const rowClick = (row: BundleRow, detail: number): void => {
     const address = row.bundlePath
     if (isContainerKind(row.kind)) {
       if (detail < 2) void disclose(address)
       return
     }
-    if (detail < 2) toggle(address)
-    else if (detail === 2) {
+    if (detail === 2 || (detail === 0 && openPage)) {
       setChecked((prev) => (prev.has(address) ? prev : toggled(prev, address)))
       openPage?.(row)
-    }
+    } else if (detail < 2) toggle(address)
   }
 
   // One action in flight: a press before it settles is dropped, rather than acting on a row the first already moved.

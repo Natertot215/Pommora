@@ -83,7 +83,7 @@ export async function bundleArtifact(bundleDir: string): Promise<string | null> 
   return found.length === 1 ? join(bundleDir, found[0].name) : null
 }
 
-/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
+/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands, in a store of `to`'s kind, and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
 export async function fileInto(
   root: string,
   to: BundleStore,
@@ -93,7 +93,7 @@ export async function fileInto(
   at?: string,
 ): Promise<{ address: string; landed: string }> {
   const held = at === undefined ? null : bundleAddressOf(root, join(root, at))
-  if (held?.item) {
+  if (held?.item && held.store.kind === to.kind) {
     const landed = join(dirname(held.item), basename(artifact))
     if ((await pathExists(dirname(held.item))) && !(await pathExists(landed))) {
       await relocate(artifact, landed)
