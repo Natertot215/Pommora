@@ -4,6 +4,7 @@ import {
   DATE_FORMATS,
   LOOKS,
   showsWeekday,
+  STORED_TIME_FORMATS,
   TIME_FORMATS,
   WEEKDAY_FORMATS,
   type ColumnLook,
@@ -104,7 +105,7 @@ export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAc
 const STYLE_VALUES: Record<string, readonly string[]> = {
   look: COLUMN_LOOKS,
   date_format: DATE_FORMATS,
-  time_format: [...TIME_FORMATS, 'shown'],
+  time_format: STORED_TIME_FORMATS,
   weekday: WEEKDAY_FORMATS,
 }
 
