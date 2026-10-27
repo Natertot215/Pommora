@@ -418,12 +418,10 @@ describe('fileInto', () => {
     expect(await stat(inBundle('A', 'S', 'T')).catch(() => null)).toBeNull()
   })
 
-  it('re-nests into another store’s standing folder, whichever store it mints in', async () => {
+  it('mints in its own store when the standing folder sits in a store of another kind', async () => {
     await rm(inBundle('A', 'S', 'T', 'P.md'))
-    expect(await file(HELD, ARCHIVE)).toEqual({
-      address: HELD,
-      landed: inBundle('A', 'S', 'T', 'P.md'),
-    })
+    await minted(await file(HELD, ARCHIVE), `\\.nexus/archive/${ID}/Live`, '.archived')
+    expect(await stat(inBundle('A', 'S', 'T', 'P.md')).catch(() => null)).toBeNull()
   })
 
   it('re-mints a whole bundle’s address under its own name', async () => {

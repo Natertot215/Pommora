@@ -129,7 +129,7 @@ Both skins draw one bundle table's rows, each under its own heading, in TableVie
   - **Row Look:** both skins draw one table row in TableView's look. Container rows take the Set band's weight and colors and page rows the page row's, with TableView's body-size icon, icon-to-title gap, and row height.
   - **The Trash's Look:** "Trash gets the full archive look; its heading stays the same." Its rows take the Archive's table look: full-width lines, square hover, the 20px checkbox gutter, and the Archive's date cell. Its heading keeps its names ("File Name", "Time Deleted"), glyphs, type, clear fill, and inset hairline. **Heading Labels:** "Labels stay where they are." File Name keeps its place at the frame's inset, above the checkbox column, and Time Deleted keeps its 8px past the column line; only the column line moves, to meet the rows'.
   - **Width:** "Trashes window gets the fixed date width like it has now, just enables the sideways scroll." The date column keeps its measured width and the title column TableView's 280px minimum, and a Trash narrower than both scrolls sideways.
-  - **Keyboard:** the rows take TableView's list keyboard. The table is one Tab stop, the arrows step between rows, and Enter acts as a click. In every kit list, line and sortable alike, Space lifts what can move and otherwise acts as Enter, so it acts in any list that can't be dragged, a locked NavList's included. Row checkboxes are out of the Tab order.
+  - **Keyboard:** the rows take TableView's list keyboard. The table is one Tab stop and the arrows step between rows. Space acts as a click, and Enter as a keyboard's click, which opens an Archive page's reader and leaves its row checked, as a double-click does. In every other kit list, line and sortable alike, Space lifts what can move and otherwise acts as Enter, so it acts in any list that can't be dragged, a locked NavList's included. Row checkboxes are out of the Tab order.
   - **Clicks:**
     - A container row's click discloses it, and its checkbox checks it.
     - A page row's click checks it.
@@ -675,7 +675,7 @@ A whole bundle still re-mints under its own name, as it does today.
 - [x] Write these tests and watch them fail.
   - **`bundle.test.ts`:** `fileInto` by address:
     - An inner item's address re-nests into its standing folder.
-    - A taken name or a gone folder mints a fresh bundle, and a standing folder takes the item whichever store `to` names.
+    - A taken name or a gone folder mints a fresh bundle, and a standing folder takes the item when its store is of `to`'s kind.
     - A whole bundle's address re-mints under its leaf.
   - **`archive.test.ts`:** a page pulled from an archived Set and restored is put back by its Undo inside the Set's bundle, at its folder.
 - [x] Rewrite the existing tests that pass a `leaf`:
@@ -693,7 +693,7 @@ A whole bundle still re-mints under its own name, as it does today.
 ```Core/Bundles/bundle.ts diff
 @@ fileInto @@
 -/** Files `artifact` into a bundle minted in `to` for `origin`, `leaf` asked back, its record written ahead; a failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. */
-+/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
++/** Files `artifact` back at `at`, the address it held: into the folder it sat in while that folder still stands, in a store of `to`'s kind, and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
  export async function fileInto(
    root: string,
    to: BundleStore,
@@ -706,7 +706,7 @@ A whole bundle still re-mints under its own name, as it does today.
 +  at?: string,
 +): Promise<{ address: string; landed: string }> {
 +  const held = at === undefined ? null : bundleAddressOf(root, join(root, at))
-+  if (held?.item) {
++  if (held?.item && held.store.kind === to.kind) {
 +    const landed = join(dirname(held.item), basename(artifact))
 +    if ((await pathExists(dirname(held.item))) && !(await pathExists(landed))) {
 +      await relocate(artifact, landed)
@@ -1733,7 +1733,7 @@ import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
-import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+import { LineZone, lineList, useLineRow } from '@pommora/uix/Interactions/drag'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
@@ -1809,7 +1809,7 @@ type RowApi = Pick<Browser, 'toggle' | 'rowClick' | 'openMenu'> & {
   focus: (address: string) => void
 }
 
-/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows and whose Enter or Space acts as a click, each row a tree item that discloses, checks, and opens through the browser. */
+/** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space acts as a click and whose Enter as a keyboard's, each row a tree item that discloses, checks, and opens through the browser. */
 export function BundleRows({
   browser: { visible, checked, picked, date, toggle, rowClick, openMenu },
   scrollEl,
@@ -1890,10 +1890,18 @@ const BundleRowView = memo(function BundleRowView({
   api: RowApi
 }): React.JSX.Element {
   const chevron = open === null ? null : <DropOutline open={open} />
+  const { ref, handle } = useLineRow(row.bundlePath, { open: () => api.rowClick(row, 0) })
   return (
-    <LineRow
-      id={row.bundlePath}
-      open={() => api.rowClick(row, 1)}
+    <div
+      ref={ref}
+      {...handle}
+      tabIndex={handle.tabIndex}
+      // Space checks a row as a click does, where Enter opens an Archive page as a double-click does.
+      onKeyDown={(e) => {
+        if (e.key !== ' ' || e.target !== e.currentTarget) return handle.onKeyDown(e)
+        e.preventDefault()
+        if (!e.repeat) api.rowClick(row, 1)
+      }}
       className={cx('data-row', lead && 'row-lead')}
       data-reveal-host={revealed ? 'on' : ''}
       style={{ height: ROW_H, transform: `translateY(${start}px)` }}
@@ -1945,7 +1953,7 @@ const BundleRowView = memo(function BundleRowView({
         )}
       </div>
       <div className="data-cell bundle-date">{when}</div>
-    </LineRow>
+    </div>
   )
 })
 ```
@@ -2529,3 +2537,4 @@ The post-plan reviews follow the standard multi-wave procedure (Nathan, 10-26-20
 - **The Layout Leaf (Task 1-2):** `spendBundle`'s owed-note edit put `owed.ts` and `configReach.ts` on the live tree's load path, because `heldPages.ts` reached `bundle.ts` for `originPathOf` alone. The cycle left `configReach.test.ts`'s `liveTree` mock depending on import order. The stores' layout, the stamp, `stampedSegment`, `bundleAddressOf`, and `originPathOf` moved into a pure `Core/Bundles/layout.ts`, so loading the tree reaches nothing else in `Core/Bundles/`, and the baseline cycle through `record.ts` closed with it.
 - **The Flake (Task 7-1):** "a color queued behind a Space rename…" failed 32 of 60 loaded runs at the baseline and at HEAD alike: its hold spied `rmwJsonStrict`, which the color's write stopped calling when `patchSidecar` moved onto the machine lock (`e739189d7`, before this plan), so the hold never engaged. Its cause was clear, so the test now holds on `patchSidecar` and asserts the hold engaged, 0 of 60 failing, where the plan first logged a pre-existing flake in `IssuesPM.md` instead.
 - **One Table Row (Phase 6, Nathan's Ruling):** Phase 5 drew the Trash on MenuItem rows and gave MenuItem `titleAccessory` and `titleLine` for its chevron. Seeing both skins live, Nathan ruled the Trash onto the Archive's table row, planned as a phase of its own. Phase 6 draws both skins from one bundle table, and `titleAccessory`, `titleLine`, MenuItem's `revealed`, `.table-divider`, and `.table.is-clear` leave with the Trash's MenuItem rows.
+- **Enter Opens (Final Verification, Nathan's Ruling):** the neutral gate found an Archive page's reader reachable only by a pointer's double-click, since Enter acted as a click and checked the row. Nathan ruled Enter opens and Space checks: `BundleRowView` takes `useLineRow` directly so Space can act as a click, and `rowClick` reads a keyboard's click (no count) as a double-click where pages open.

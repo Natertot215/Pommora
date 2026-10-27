@@ -171,7 +171,7 @@ describe('BundleRows', () => {
     expect(rowEls().map((r) => r.getAttribute('aria-expanded'))).toEqual(['true', 'false', null])
   })
 
-  it('the rows are one Tab stop whose arrows step between rows, and whose Enter, then Space, hand rowClick the focused row', async () => {
+  it('the rows are one Tab stop whose arrows step between rows, and whose Enter hands rowClick the focused row as a keyboard’s click and Space as a pointer’s', async () => {
     const rows = nested()
     await render(rows)
     const zone = host.querySelector('.line-zone') as HTMLElement
@@ -184,7 +184,7 @@ describe('BundleRows', () => {
     await key(rowOf('Ideas'), 'Enter')
     await key(rowOf('Ideas'), ' ')
     expect(rowClick.mock.calls).toEqual([
-      [rows[1].row, 1],
+      [rows[1].row, 0],
       [rows[1].row, 1],
     ])
   })

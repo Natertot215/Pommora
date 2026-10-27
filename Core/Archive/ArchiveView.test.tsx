@@ -211,6 +211,22 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
   })
 
+  it('a page row’s Space checks and unchecks it, and its Enter opens the reader, leaving it checked', async () => {
+    await render()
+    const key = async (k: string): Promise<void> =>
+      act(async () => {
+        rowOf('A').dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
+      })
+    await key(' ')
+    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    await key(' ')
+    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('false')
+    expect(useSession.getState().reader).toBeNull()
+    await key('Enter')
+    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
+  })
+
   it('an inner page’s double-click opens the reader titled by its row’s trail, then the page', async () => {
     listed = [archivedSet()]
     children = { [SET_BUNDLE]: [inner('P')] }
