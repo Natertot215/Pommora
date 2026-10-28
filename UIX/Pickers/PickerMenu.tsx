@@ -62,6 +62,15 @@ const snapped = (p: Pos): Pos => ({
   ...(p.right !== undefined && { right: Math.round(p.right) }),
 })
 
+// Reads `el`'s size into `box`, answering whether it moved.
+const resized = (el: HTMLElement, box: RefObject<{ w: number; h: number }>): boolean => {
+  const w = el.offsetWidth
+  const h = el.offsetHeight
+  if (box.current.w === w && box.current.h === h) return false
+  box.current = { w, h }
+  return true
+}
+
 export function PickerMenu({
   children,
   open,
@@ -164,11 +173,7 @@ export function PickerMenu({
     const el = glassRef.current
     if (!el) return
     const measure = (): void => {
-      const w = el.offsetWidth
-      const h = el.offsetHeight
-      if (paneBox.current.w === w && paneBox.current.h === h) return
-      paneBox.current = { w, h }
-      place.current?.()
+      if (resized(el, paneBox)) place.current?.()
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -274,10 +279,7 @@ export function PickerMenu({
   // A child that builds its content in an effect, as an editor does, leaves the pane empty at the first measure, so a pane grown once its children's effects have run decides again.
   useEffect(() => {
     const el = glassRef.current
-    if (!open || !el) return
-    const box = { w: el.offsetWidth, h: el.offsetHeight }
-    if (paneBox.current.w === box.w && paneBox.current.h === box.h) return
-    paneBox.current = box
+    if (!open || !el || !resized(el, paneBox)) return
     decidedDir.current = null
     decidedCenter.current = null
     place.current?.()
