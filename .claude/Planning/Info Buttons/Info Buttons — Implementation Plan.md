@@ -33,7 +33,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | 1 | +75 / −125 | +284 / −254 (+30) | +30 |
 | 2 | +135 / −18 | +147 / −32 (+115) | +145 |
 | 3 | +115 / −13 | +128 / −11 (+117) | +262 |
-| 4 | 0 | | |
+| 4 | 0 | +16 / −3 (+13) | +275 |
 | 5 | 0 / −55 | | |
 
 #### Concepts
@@ -131,11 +131,11 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Task 3-3 · The examples
   - [x] Review Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
-- [ ] **Phase 4** — Verification and the Documents
-  - [ ] Task 4-1 · The Info Buttons Drive
-  - [ ] Task 4-2 · The citation test
-  - [ ] Task 4-3 · The documents
-  - [ ] Review Checkpoint
+- [x] **Phase 4** — Verification and the Documents
+  - [x] Task 4-1 · The Info Buttons Drive
+  - [x] Task 4-2 · The citation test
+  - [x] Task 4-3 · The documents
+  - [x] Review Checkpoint
 - [ ] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
 - [ ] **Phase 5** — Removal and Wiring
   - [ ] Task 5-1 · The examples leave
@@ -1173,16 +1173,18 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
      const extensions = [
        readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
 +      EditorView.editable.of(selectable),
-+      selectable
-+        ? []
-+        : Prec.lowest(
-+            EditorView.domEventHandlers({
-+              mousedown: (event) => {
-+                event.preventDefault()
-+                return true
-+              },
-+            }),
-+          ),
++      selectable ? [] : claimPresses,
+
+@@ beside WARM_FIELDS @@
+
++const claimPresses = Prec.lowest(
++  EditorView.domEventHandlers({
++    mousedown: (event) => {
++      event.preventDefault()
++      return true
++    },
++  }),
++)
 ```
 
 ```Core/MarkdownPM/readOnlySelection.test.tsx diff
@@ -1287,7 +1289,6 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 +}
 +.info-pane .mdpm-editor [data-reveal-host] {
 +  --reveal: 0;
-+  --reveal-hits: none;
 +}
 ```
 
@@ -1679,7 +1680,8 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 1. Copy the drive's `MATRIX.md` and its last run's results into `.claude/Planning/Info Buttons/Info Buttons — Results.md`.
 2. Restore `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` from the commit before Task 3-3's, drop the Date Format row's `info` and `frames.ts`'s `infoFor` import, empty `InfoIndex.md`, and delete `.claude/scripts/Info Buttons Drive/`.
-3. Run the gates; launch the build and confirm no `[aria-label$=" - Info"]` exists in a Select's settings or the Iteration window.
+3. Re-point IssuesPM's `[^61]`, `[^74]`, and `[^79]` to their `formatRows.ts` and `frames.ts` lines at the new head.
+4. Run the gates; launch the build and confirm no `[aria-label$=" - Info"]` exists in a Select's settings or the Iteration window.
 
 **AFTER**
 
@@ -1764,11 +1766,12 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 
 - `.claude/Features/InterfacePM.md` — *§InfoPanes*, after *§Confirmation & Notifications*, as Task 4-3's AFTER writes it — Task 4-3
 - `.claude/Features/InterfacePM.md` *§InfoPanes* — one sentence: the InfoIndex mirrors to NexusOS as `PM-Info-Index.md`, where its wording is edited — Task 5-2
-- `.claude/Features/PommoraUIX.md:361` — "`MenuCaption`" and "`subLabel`" read `MenuDesc` and `caption`, in place — Task 4-3
+- `.claude/Features/PommoraUIX.md:361` — "`MenuCaption`" and "`subLabel`" read `MenuDesc` and `caption`, and `MenuItem`'s slots name `info`, in place — Task 4-3
 
 **Issues**
 
-- `.claude/IssuesPM.md:79`, `:98`, `:996`, `:1004`, `:1008`, `:1142`, `:1150`, `:1154`, `:1439`, `:1457` — a renamed identifier (`hint`, `subLabel`, `SettingsFieldRow`) reads its new name, in place — Task 4-3
+- `.claude/IssuesPM.md:79`, `:98`, `:996`, `:1004`, `:1008`, `:1142`, `:1150`, `:1154`, `:1439`, `:1457` — a renamed identifier (`hint`, `subLabel`, `SettingsFieldRow`) reads its new name, in place, and `[^16]`–`[^18]`'s `MarkdownEditor.tsx` range reads true — Task 4-3
+- `.claude/IssuesPM.md` `[^61]`, `[^74]`, `[^79]` — their `formatRows.ts` and `frames.ts` line references read true once the examples leave — Task 5-1
 
 **Structure and History**
 

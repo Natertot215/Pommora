@@ -39,6 +39,15 @@ export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 
 const WARM_FIELDS = { history: historyField, codeScroll: codeScrolls }
 
+const claimPresses = Prec.lowest(
+  EditorView.domEventHandlers({
+    mousedown: (event) => {
+      event.preventDefault()
+      return true
+    },
+  }),
+)
+
 interface Props {
   initialBody: string
   onChange: (body: string) => void
@@ -136,16 +145,7 @@ export function MarkdownEditor({
     const extensions = [
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
       EditorView.editable.of(selectable),
-      selectable
-        ? []
-        : Prec.lowest(
-            EditorView.domEventHandlers({
-              mousedown: (event) => {
-                event.preventDefault()
-                return true
-              },
-            }),
-          ),
+      selectable ? [] : claimPresses,
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),

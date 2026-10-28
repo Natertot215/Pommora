@@ -30,5 +30,4 @@
 }
 .info-pane .mdpm-editor [data-reveal-host] {
   --reveal: 0;
-  --reveal-hits: none;
 }
