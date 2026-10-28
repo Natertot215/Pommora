@@ -102,7 +102,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 - **Briefs:** every agent brief — executors and reviewers — and every handoff or compaction continuation carries the Mandate above (the Approach and the Principles) in full and *§Constraints* whole, except the neutral gate's, which carries the Mandate alone.
 - **Rulings (Not Re-Raised):** every entry in *Info Buttons — Decisions & Intention*, its *§Planning Rulings*, and its *§Rejected* list. The ones a task leans on: rows cite by ID (D-2); no real row carries an InfoButton, and the examples leave after verification (F-1, G-2); captions stay (F-2); `MenuCaption` becomes `MenuDesc` (F-4); the look's three props are independent, defaulting to `info`, `filled`, and no border (A-2); the dwell is the InfoButton's own 0.5 seconds (B-2); no missing-entry guard; the Resources link lands last.
 - **Placements:** as *§Concepts* names them, every one approved by Nathan (H-1); no other new file.
-- **Gates:** `npm run typecheck && npm run test && npm run lint` from the repo root; each prints its own failures, and lint runs clean. `npm run build`, confirming `✓ built in`, runs at Task 3-2 (the InfoIndex's `?raw` emit) and from a clean state at the final head. Pommora's typecheck compiles The Studio's dashboard (`package.json:20`). Biome formats every TS and CSS write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means those three.
+- **Gates:** `npm run typecheck && npm run test && npm run lint` from the repo root; each prints its own failures, and lint runs clean. `npm run build`, confirming `✓ built in`, runs at Task 3-3 (the InfoIndex's `?raw` emit, once rows cite it) and from a clean state at the final head. Pommora's typecheck compiles The Studio's dashboard (`package.json:20`). Biome formats every TS and CSS write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means those three.
 - **Commits:** each task commits once its VERIFY passes, through `git commit --only -m "…" -- <paths>` after `git add` for new files (*Development-Environment · §Gates & Commits*); messages are past tense and one to three sentences, ending with the session's attribution lines. A Bash command carrying `git` or `gh` can't contain a personal name anywhere, paths included (`no-name-mentions.mjs`). Pommora's post-commit hook pushes `active` and refreshes the dashboard. The Studio's `MenuLeaf.tsx` edit commits in The Studio's repo (Task 1-2).
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land.
 - **Tests:** each new behavior gets a test that fails without its change; a rewritten case counts as that test. The InfoPane's pointer rule (Task 3-2), a CSS hit rule jsdom can't apply, is held by the drive's Group 3 instead. The InfoIndex's citation test is written last (D-3), in Task 4-2, while the examples still cite their entries.
@@ -1316,7 +1316,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 **VERIFY**
 
 - [ ] `git grep -n "?raw" -- Core UIX Desktop` prints only `infoIndex.ts`; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
-- [ ] Run the gates and `npm run build`; the build emits the InfoIndex's text.
+- [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 3-3
@@ -1466,6 +1466,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 
 **VERIFY**
 
+- [ ] Run `npm run build`; the renderer bundle carries the InfoIndex's text.
 - [ ] In `~/Test`, a Select's settings show the glyph right after "Label Format" and "Value Format," Settings › General shows it after "Date Format," a page's settings show it after "Aliases," and the Iteration window (⌘⇧T) shows the disabled row and thirteen variants: three glyphs, and five types each with and without a border.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
