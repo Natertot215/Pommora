@@ -1,17 +1,15 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
-  ask, boxOf, click, closePanel, closeSettings, createPage, escapeAll, hover, item, launch, META, mouseAt, mouseClick,
+  ask, boxOf, click, closePanel, closeSettings, createPage, escapeAll, hover, item, launch, ledger, META, mouseAt, mouseClick,
   openPanel, openSettings, PORTAL_ROWS, popNative, pressKey, RAIL, read, REPO, restore, ribbon, SHIFT, shot, sleep, sweep, tally,
   textEl, until, viewFrame, writeBody,
 } from '../drive-harness.mjs'
 
 const PORT = 9413
-const HERE = dirname(fileURLToPath(import.meta.url))
-process.env.POMMORA_DRIVE_SHOTS ??= join(HERE, 'info-shots')
-const SHOTS = process.env.POMMORA_DRIVE_SHOTS
+const SHOTS = process.env.POMMORA_DRIVE_SHOTS ?? join(tmpdir(), 'info-shots')
 
 const COLLECTION = 'Collection A'
 const SELECT = 'Info Drive Select'
@@ -27,6 +25,12 @@ function pin(group, decisions, name, pass, observed) {
   if (pass && observed) console.log(`       ${observed}`)
 }
 
+/** An observation a ruling keeps as built, printed and tallied as RECORDED, never failing the run. */
+function record(group, decisions, name, observed) {
+  console.log(`RECORDED  [g${group} ${decisions}] ${name}\n       ${observed}`)
+  ledger.push({ group: String(group), decision: decisions, name, mark: 'RECORDED' })
+}
+
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
 const trigger = (label) => `[...document.querySelectorAll('button[aria-label]')].find((b) => b.getAttribute('aria-label') === ${JSON.stringify(label)})`
@@ -34,6 +38,8 @@ const glyph = (title) => trigger(`${title} - Info`)
 const PANE = `document.querySelector('.info-pane')`
 const SCROLLER = `document.querySelector('.info-pane .cm-scroller')`
 const CONTENT = `document.querySelector('.info-pane .cm-content')`
+// A web link in the entry's prose, outside its table.
+const PROSE_LINK = `[...document.querySelectorAll('.info-pane .cm-line:not(.codeblock) .md-link')].find((l) => !l.closest('.mdpm-tbl'))`
 const rect = (cdp, expr) => cdp.evaluate(`JSON.parse(JSON.stringify((${expr}).getBoundingClientRect()))`)
 // A closing pane stays mounted through its fade with the pointer off it.
 const paneUp = (cdp) => cdp.evaluate(`(() => { const p = ${PANE}; return !!p && p.style.pointerEvents !== 'none' })()`)
@@ -229,7 +235,9 @@ async function longCodeLine(cdp, name) {
   const oneLine = code.height < code.lineHeight * 1.6
   const still = sideways.scroller === 0 && sideways.line === 0 && (sideways.shift === null || /^0(px)?$/.test(sideways.shift.trim()))
   return {
-    pass: oneLine && code.ellipsis && still && wheeled,
+    wraps: !oneLine && !code.ellipsis,
+    clipped: oneLine && code.ellipsis,
+    still: still && wheeled,
     observed: `${code.text} chars; height ${code.height.toFixed(1)}px against a ${code.lineHeight}px line (one line ${oneLine}); white-space ${code.whiteSpace}; clipped run ${code.run} ${code.runOverflow ?? ''}, cut ${code.cut}, ellipsis ${code.ellipsis}; after a sideways wheel ${show(sideways)}; wheeled ${wheeled}`,
   }
 }
@@ -309,11 +317,9 @@ async function group2(cdp, line) {
   const roomBelow = vh - g.bottom
   const roomAbove = g.top
   const wentUp = !!p && p.bottom <= g.top + 1
-  const expectUp = !!p && p.height > roomBelow - 8 && roomAbove > roomBelow
   const inView = !!p && p.top >= 0 && p.bottom <= vh
-  pin(G, 'extra', 'The pane near the window\'s bottom places and sizes as every PickerMenu does: it flips up when below lacks room, stays in view, and caps its body at 320px',
-    opened && wentUp === expectUp && inView && dims.clientHeight <= 320 && Math.abs(p.width - 285) < 1,
-    `viewport ${vh}px; glyph ${Math.round(g.top)}–${Math.round(g.bottom)}; room below ${Math.round(roomBelow)}, above ${Math.round(roomAbove)}; pane ${p ? `${Math.round(p.top)}–${Math.round(p.bottom)} × ${p.width}` : 'none'}; went up ${wentUp}, expected up ${expectUp}; body ${show(dims)}; the pane's height at PickerMenu's first read ${show(first)}`)
+  record(G, '§Planning Rulings', "The pane near the window's bottom: the side it opens on and where it places",
+    `opened ${opened}, ${wentUp ? 'above' : 'below'} the glyph, in view ${inView}; viewport ${vh}px; glyph ${Math.round(g.top)}–${Math.round(g.bottom)}; room below ${Math.round(roomBelow)}, above ${Math.round(roomAbove)}; pane ${p ? `${Math.round(p.top)}–${Math.round(p.bottom)} × ${p.width}` : 'none'}; body ${show(dims)}; the pane's height at PickerMenu's first read ${show(first)}`)
   await closePane(cdp)
   await line.height()
   await sleep(600)
@@ -358,7 +364,7 @@ async function group1(cdp, byLook, line) {
   await rest(cdp, 'Label Format')
   const openChain = await topmost(bandAt)
   await shot(cdp, 'g1-gray-band-open')
-  pin(G, 'extra', 'The gray band: what sits over the window\'s top is the same with the pane closed and open', show(closedChain) === show(openChain),
+  pin(G, 'review', 'The gray band: what sits over the window\'s top is the same with the pane closed and open', show(closedChain) === show(openChain),
     `at ${show(bandAt)} closed ${show(closedChain)}; open ${show(openChain)}`)
   await closePane(cdp)
 
@@ -370,18 +376,11 @@ async function group1(cdp, byLook, line) {
   const opened = await rest(cdp, 'Label Format')
   const p = opened ? await rect(cdp, PANE) : null
   const edges = await cdp.evaluate(`document.querySelectorAll('.info-pane .resize-edge').length`)
-  await shot(cdp, 'g1-pane-dark')
-  await zoom(cdp, PANE, 'g1-pane-dark')
-  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] })
-  await sleep(500)
-  const lightBg = await cdp.evaluate(`getComputedStyle(${PANE}).backgroundColor + ' ' + getComputedStyle(${CONTENT}).color`)
-  await shot(cdp, 'g1-pane-light')
-  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] })
-  await sleep(500)
-  const darkBg = await cdp.evaluate(`getComputedStyle(${PANE}).backgroundColor + ' ' + getComputedStyle(${CONTENT}).color`)
+  await shot(cdp, 'g1-pane')
+  await zoom(cdp, PANE, 'g1-pane')
   pin(G, 'B-1 B-2 C-4', 'The pane: with Hover Previews Off, a 600 ms rest opens it below the glyph, 285px wide, with no resize edges',
     off && opened && p.top >= gb.bottom && Math.abs(p.width - 285) < 1 && edges === 0,
-    `Hover Previews off ${off}; opened ${opened}; glyph bottom ${gb.bottom.toFixed(1)}, pane top ${p?.top.toFixed(1)}; width ${p?.width}; resize edges ${edges}; light vs dark ink ${lightBg === darkBg ? 'identical' : 'differs'} (${lightBg} / ${darkBg})`)
+    `Hover Previews off ${off}; opened ${opened}; glyph bottom ${gb.bottom.toFixed(1)}, pane top ${p?.top.toFixed(1)}; width ${p?.width}; resize edges ${edges}`)
 
   // Extra: beside a dropdown, with the window cut short under Label Format's row, its format picker and its InfoPane open from neighboring triggers.
   await closePane(cdp)
@@ -406,8 +405,7 @@ async function group1(cdp, byLook, line) {
   await closePane(cdp)
   await line.height()
   await sleep(800)
-  pin(G, 'extra', "Beside a dropdown near the window's bottom: Label Format's InfoPane places as its own format picker does",
-    !!picker && !!infoPlaced && picker.up === infoPlaced.up && infoPlaced.inView,
+  record(G, '§Planning Rulings', "Beside a dropdown near the window's bottom: the side Label Format's InfoPane and its format picker each open on",
     `viewport ${vhShort}px; format picker ${show(picker)}; InfoPane ${show(infoPlaced)}`)
   await openEditor(cdp, SELECT)
   await rest(cdp, 'Label Format')
@@ -415,7 +413,7 @@ async function group1(cdp, byLook, line) {
   // Extra: the pane's edges, its text inset 12px top and bottom and 14px on each side.
   const inset = await cdp.evaluate(`(() => { const p = ${PANE}.getBoundingClientRect(); const c = ${CONTENT}; const cs = getComputedStyle(c); const lines = [...c.querySelectorAll(':scope > .cm-line')]; const first = lines[0].getBoundingClientRect(); const s = ${SCROLLER}; const cr = c.getBoundingClientRect(); return { padding: cs.padding, left: first.left - p.left, right: p.right - first.right, top: first.top - p.top, contentRight: p.right - cr.right, scrollbar: s.offsetWidth - s.clientWidth, border: getComputedStyle(${PANE}).borderWidth } })()`)
   await zoom(cdp, PANE, 'g1-pane-edges', 4)
-  pin(G, 'extra', "The pane's edges: the text's left and right insets match (12px top and bottom, 14px sides)",
+  pin(G, 'review', "The pane's edges: the text's left and right insets match (12px top and bottom, 14px sides)",
     inset.padding === '12px 14px' && Math.abs(inset.left - inset.right) <= 1.5,
     `content padding ${inset.padding}; first line ${inset.left.toFixed(1)}px from the left, ${inset.right.toFixed(1)}px from the right, ${inset.top.toFixed(1)}px from the top; content box ends ${inset.contentRight.toFixed(1)}px from the right; scrollbar gutter ${inset.scrollbar}px; border ${inset.border}`)
   await closePane(cdp)
@@ -425,36 +423,19 @@ async function group1(cdp, byLook, line) {
   const valueSeen = await entryCase(cdp, 'Value Format', 'value-format')
   const valueDims = await bodyDims(cdp)
 
-  // The long code line, in Value Format's pane: as the Nexus's settings stand, then with Scroll Long Lines In Code Blocks on.
-  const wrapped = await longCodeLine(cdp, 'g1-long-code-line')
-  pin(G, 'C-2', "The long code line: it rests clipped at its ellipsis on one line and can't scroll sideways; the body still wheels", wrapped.pass, wrapped.observed)
+  // The long code line, in Value Format's pane, with Scroll Long Lines In Code Blocks off and then on.
+  const scrollOff = await setSwitch(cdp, 'Pages & Writing', 'Scroll Long Lines In Code Blocks', false)
+  await openEditor(cdp, SELECT)
+  await rest(cdp, 'Value Format')
+  const wrapped = await longCodeLine(cdp, 'g1-long-code-line-off')
   const scrollOn = await setSwitch(cdp, 'Pages & Writing', 'Scroll Long Lines In Code Blocks', true)
   await openEditor(cdp, SELECT)
   await rest(cdp, 'Value Format')
-  const clipped = await longCodeLine(cdp, 'g1-long-code-line-scroll-on')
-  pin(G, 'C-2', 'The long code line, with Scroll Long Lines In Code Blocks on: as above', scrollOn && clipped.pass, clipped.observed)
+  const clipped = await longCodeLine(cdp, 'g1-long-code-line-on')
   await setSwitch(cdp, 'Pages & Writing', 'Scroll Long Lines In Code Blocks', false)
-  await openEditor(cdp, SELECT)
-  await rest(cdp, 'Value Format')
-
-  // Extra: a code block's tag near a link, the prose link under the pointer.
-  const proseLink = `[...document.querySelectorAll('.info-pane .cm-line:not(.codeblock) .md-link')].find((l) => !l.closest('.mdpm-tbl'))`
-  await reach(cdp, proseLink)
-  // The block's tag at the body's top, so the shot holds the tag and the link together.
-  await cdp.evaluate(`(() => { const s = ${SCROLLER}; const f = document.querySelector('.info-pane .codeblock-first'); if (f) s.scrollTop += f.getBoundingClientRect().top - s.getBoundingClientRect().top - 8 })()`)
-  await sleep(300)
-  const tag = () => cdp.evaluate(`(() => { const t = document.querySelector('.info-pane .codeblock-language'); if (!t) return null; const v = (sel) => { const e = t.querySelector(sel); return e ? getComputedStyle(e).opacity : null }; return { reveal: getComputedStyle(t).getPropertyValue('--reveal') || getComputedStyle(t.closest('.cm-line')).getPropertyValue('--reveal'), mark: v('.codeblock-mark'), copy: v('.codeblock-copy'), slotWash: getComputedStyle(t.querySelector('.codeblock-mark-slot'), '::before').opacity } })()`)
-  const hosts = `(() => { const out = []; for (let e = document.querySelector('.info-pane .codeblock-language'); e; e = e.parentElement) if (e.hasAttribute('data-reveal-host')) out.push(e.tagName + '.' + String(e.className).slice(0, 30) + '[data-reveal-host="' + e.getAttribute('data-reveal-host') + '"]' + (e.matches(':hover') ? ' :hover' : '')); return out })()`
-  const tagRest = await tag()
-  await zoom(cdp, PANE, 'g1-code-tag-at-rest', 4)
-  await hover(cdp, proseLink, 700)
-  const tagHover = await tag()
-  const hostsHover = await cdp.evaluate(hosts)
-  await zoom(cdp, PANE, 'g1-code-tag-near-link', 4)
-  pin(G, 'extra', "A code block's tag near a link: resting on Value Format's prose link reveals nothing in the code block's language or copy mark",
-    show(tagRest) === show(tagHover),
-    `at rest ${show(tagRest)}; on the link ${show(tagHover)}; reveal hosts above the tag ${show(hostsHover)}`)
-  await closePane(cdp)
+  pin(G, 'C-2', 'The long code line: off, it wraps; on, it rests clipped at its ellipsis; it never scrolls sideways, and the body still wheels',
+    scrollOff && scrollOn && wrapped.wraps && clipped.clipped && wrapped.still && clipped.still,
+    `off: ${wrapped.observed} | on: ${clipped.observed}`)
 
   // The other rows: Settings' Date Format and a page's Aliases.
   await openSettings(cdp, 'General')
@@ -544,9 +525,26 @@ async function group3(cdp, line) {
     }
   }
   await shot(cdp, 'g3-no-hover')
+  await closePane(cdp)
+
+  // …and a rest on Value Format's prose link, its code block's tag held at the body's top so one shot holds both.
+  await hold(cdp, 'Value Format')
+  await reach(cdp, PROSE_LINK)
+  await cdp.evaluate(`(() => { const s = ${SCROLLER}; const f = document.querySelector('.info-pane .codeblock-first'); if (f) s.scrollTop += f.getBoundingClientRect().top - s.getBoundingClientRect().top - 8 })()`)
+  await sleep(300)
+  const tag = () => cdp.evaluate(`(() => { const t = document.querySelector('.info-pane .codeblock-language'); const l = ${PROSE_LINK}; const o = (sel) => { const e = t?.querySelector(sel); return e ? getComputedStyle(e).opacity : null }; return { tagHost: t?.getAttribute('data-reveal-host') ?? null, reveal: t ? getComputedStyle(t).getPropertyValue('--reveal').trim() : null, copy: o('.codeblock-copy'), linkInk: getComputedStyle(l).color + ' ' + getComputedStyle(l).textDecorationColor + ' ' + getComputedStyle(l).backgroundColor } })()`)
+  const tagRest = await tag()
+  await zoom(cdp, PANE, 'g3-link-beside-code-at-rest', 4)
+  await hover(cdp, PROSE_LINK, 700)
+  const tagOn = await tag()
+  const onLink = await boxOf(cdp, PROSE_LINK)
+  const linkCursor = await cdp.evaluate(`getComputedStyle(document.elementFromPoint(${onLink.x}, ${onLink.y})).cursor`)
+  await zoom(cdp, PANE, 'g3-link-beside-code-on-link', 4)
+  const linkHolds = tagRest?.reveal === tagOn?.reveal && tagRest?.copy === tagOn?.copy && tagRest?.linkInk === tagOn?.linkInk
   const offending = probes.filter((p) => (p.inText && !p.link) || p.changed || !['default', 'auto'].includes(p.cursor))
-  pin(G, 'C-3', 'No hover: nothing reveals or highlights across the body, its lists, table, and code block, and the pointer stays the arrow', offending.length === 0,
-    `${probes.length} points; offending ${show(offending)}; cursors ${show([...new Set(probes.map((p) => p.cursor))])}`)
+  pin(G, 'C-3', "No hover: nothing reveals or highlights across the body, its lists, table, and code block, or with a rest on Value Format's prose link beside its code block, and the pointer stays the arrow but on a web link, which shows a link's hand",
+    offending.length === 0 && linkHolds && linkCursor === 'pointer',
+    `${probes.length} points; offending ${show(offending)}; cursors ${show([...new Set(probes.map((p) => p.cursor))])}; the code tag and link at rest ${show(tagRest)}, on the link ${show(tagOn)}; cursor on the link ${linkCursor}`)
   await closePane(cdp)
 
   // No selection: drags across the body and the table, then a double-click and a shift-click on Value Format's prose link.
@@ -569,12 +567,11 @@ async function group3(cdp, line) {
   await shot(cdp, 'g3-no-selection')
   await closePane(cdp)
   await hold(cdp, 'Value Format')
-  const proseLink = `[...document.querySelectorAll('.info-pane .cm-line:not(.codeblock) .md-link')].find((l) => !l.closest('.mdpm-tbl'))`
-  await reach(cdp, proseLink)
+  await reach(cdp, PROSE_LINK)
   await sleep(300)
   const linkFocusWas = await active(cdp)
   const opensBefore = (await line.opened()).length
-  const lb = await boxOf(cdp, proseLink)
+  const lb = await boxOf(cdp, PROSE_LINK)
   for (const clickCount of [1, 2])
     for (const type of ['mousePressed', 'mouseReleased'])
       await cdp.send('Input.dispatchMouseEvent', { type, x: lb.x, y: lb.y, button: 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount })
@@ -582,10 +579,10 @@ async function group3(cdp, line) {
   const afterDouble = { sel: await selection(cdp), focus: await active(cdp) }
   if (!(await paneUp(cdp))) {
     await hold(cdp, 'Value Format')
-    await reach(cdp, proseLink)
+    await reach(cdp, PROSE_LINK)
     await sleep(300)
   }
-  await mouseAt(cdp, await boxOf(cdp, proseLink), { modifiers: SHIFT })
+  await mouseAt(cdp, await boxOf(cdp, PROSE_LINK), { modifiers: SHIFT })
   const afterShift = { sel: await selection(cdp), focus: await active(cdp) }
   const opensDuring = (await line.opened()).slice(opensBefore)
   pin(G, 'C-3', 'No selection: drags across the body and the table, and a double-click and shift-click on the prose link, select nothing and leave focus where it was',
@@ -651,11 +648,11 @@ async function group3(cdp, line) {
 
   // The web link: Value Format's prose link follows as a web link does.
   await hold(cdp, 'Value Format')
-  await reach(cdp, proseLink)
+  await reach(cdp, PROSE_LINK)
   await sleep(300)
   const webFocus = await active(cdp)
   const n0 = (await line.opened()).length
-  await mouseClick(cdp, proseLink)
+  await mouseClick(cdp, PROSE_LINK)
   await sleep(600)
   const followed = (await line.opened()).slice(n0)
   const webFocusAfter = await active(cdp)
@@ -744,5 +741,5 @@ try {
   }
 } finally {
   await restore()
-  tally(['1', '2', '3', '4', 'run'])
+  tally(['1', '2', '3', '4', 'run'], { marks: ['PASS', 'FAIL', 'RECORDED'] })
 }

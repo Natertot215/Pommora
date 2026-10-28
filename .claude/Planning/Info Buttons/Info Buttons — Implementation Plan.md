@@ -1548,7 +1548,7 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 +| Case | Operation | Expected | Decisions |
 +| --- | --- | --- | --- |
 +| The crossing | rest on Label Format's glyph until the pane opens, move into the pane's body, and rest there past the grace | the pane stays open; leaving it closes it after the grace | B-1 |
-+| No hover | move across the body, its lists, its table, and its code block, and rest on Value Format's prose link beside its code block | nothing reveals or highlights, and the pointer stays the arrow | C-3 |
++| No hover | move across the body, its lists, its table, and its code block, and rest on Value Format's prose link beside its code block | nothing reveals or highlights, and the pointer stays the arrow but on a web link, which shows a link's hand | C-3 |
 +| No selection | drag across the body and across the table's cells; double-click and shift-click Value Format's prose link | nothing highlights, no selection draws, focus stays where it was, and `getSelection().toString()` is empty | C-3 |
 +| No copy | press in the body, ⌘A, ⌘C; click the code block's language tag | the clipboard holds what it held | C-3 |
 +| No focus | press the body, a bullet, a checkbox, and the left inset beside a line | nothing moves or toggles, and `document.activeElement` is where it was | C-3 |
