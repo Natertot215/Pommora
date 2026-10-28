@@ -9,17 +9,12 @@ import { useListEdit } from '@pommora/uix/Menus/useListEdit'
 import * as s from './excluded-directories.css'
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'
+import type { RowOf } from './frames'
 
-export function ExcludedDirectoriesRow({
-  label,
-  hint,
-}: {
-  label: string
-  hint?: string
-}): React.JSX.Element {
+export function ExcludedDirectoriesRow({ row }: { row: RowOf<'exclusions'> }): React.JSX.Element {
   const count = useSession((s) => s.tree?.config.excluded.length ?? 0)
   return (
-    <ManageRow label={label} hint={hint} count={count}>
+    <ManageRow label={row.label} caption={row.caption} count={count}>
       <ExclusionPane />
     </ManageRow>
   )

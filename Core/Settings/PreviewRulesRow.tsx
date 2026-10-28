@@ -4,22 +4,17 @@ import { previewTargets } from '../Navigation/previewRules'
 import { FilterFrame, filterViewOf, standalonePatch } from '../Views/Settings/FilterFrame'
 import { ManageRow } from '@pommora/uix/Menus/ManageRow'
 import { settingOf } from './personalization'
+import type { RowOf } from './frames'
 
 const live = () => settingOf(personalizationOf(useSession.getState()), 'openInPreview')
 
-export function PreviewRulesRow({
-  label,
-  hint,
-}: {
-  label: string
-  hint?: string
-}): React.JSX.Element | null {
+export function PreviewRulesRow({ row }: { row: RowOf<'previewRules'> }): React.JSX.Element | null {
   const value = useSetting('openInPreview')
   const tree = useSession((s) => s.tree)
   const setPersonalization = useSession((s) => s.setPersonalization)
   if (!tree) return null
   return (
-    <ManageRow label={label} hint={hint} count={value.rules?.rules.length ?? 0}>
+    <ManageRow label={row.label} caption={row.caption} count={value.rules?.rules.length ?? 0}>
       <FilterFrame
         locations={tree.collections}
         view={filterViewOf(value)}

@@ -8,7 +8,7 @@ import type { Result } from '../Contract/result'
 import type { SyncBinding, SyncState, SyncStatus } from '../Sync/Contract/wire'
 import type { TimeFormat } from '../Properties/columnStyles'
 import { clockOf } from '../Properties/formatValue'
-import { SettingsFieldRow } from './SettingsFieldRow'
+import { settingsRow } from './frames'
 import { useTimedLabel } from '@pommora/uix/Animations/useTimedLabel'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
@@ -122,40 +122,60 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   return (
     <>
       {state && (
-        <SettingsFieldRow label="This Device">
-          <InputField
-            label="Device name"
-            edit={
-              busy
-                ? undefined
-                : {
-                    value: state.device.name,
-                    onCommit: (next) => void run(() => dialer().ask('sync:renameDevice', next)),
+        <MenuRowView
+          row={settingsRow(
+            { label: 'This Device' },
+            {
+              kind: 'field',
+              children: (
+                <InputField
+                  label="Device name"
+                  edit={
+                    busy
+                      ? undefined
+                      : {
+                          value: state.device.name,
+                          onCommit: (next) =>
+                            void run(() => dialer().ask('sync:renameDevice', next)),
+                        }
                   }
-            }
-          >
-            {state.device.name}
-          </InputField>
-        </SettingsFieldRow>
+                >
+                  {state.device.name}
+                </InputField>
+              ),
+            },
+          )}
+        />
       )}
-      <SettingsFieldRow label="Nexus ID">
-        <span className={trailingFigure}>{nexusId}</span>
-      </SettingsFieldRow>
+      <MenuRowView
+        row={settingsRow(
+          { label: 'Nexus ID' },
+          { kind: 'field', children: <span className={trailingFigure}>{nexusId}</span> },
+        )}
+      />
       {needsPassword ? (
-        <SettingsFieldRow label="Nexus Password">
-          <InputField
-            label="Nexus password"
-            edit={{
-              value: password,
-              type: 'password',
-              renames: 'row',
-              emptyCommits: true,
-              onCommit: setPassword,
-            }}
-          >
-            {password === '' ? <span className={placeholder}>Not set</span> : '••••••••'}
-          </InputField>
-        </SettingsFieldRow>
+        <MenuRowView
+          row={settingsRow(
+            { label: 'Nexus Password' },
+            {
+              kind: 'field',
+              children: (
+                <InputField
+                  label="Nexus password"
+                  edit={{
+                    value: password,
+                    type: 'password',
+                    renames: 'row',
+                    emptyCommits: true,
+                    onCommit: setPassword,
+                  }}
+                >
+                  {password === '' ? <span className={placeholder}>Not set</span> : '••••••••'}
+                </InputField>
+              ),
+            },
+          )}
+        />
       ) : (
         <MenuRowView
           row={{
@@ -168,57 +188,83 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
       )}
       {experimental && state && (
         <>
-          <SettingsFieldRow label="Server" hint={binding ? captionFor(binding) : undefined}>
-            <span className={trailingCluster}>
-              <InputField
-                label="Server address"
-                edit={{ value: address, onCommit: setDraft, renames: 'row', emptyCommits: true }}
-              >
-                {address === '' ? <span className={placeholder}>No server</span> : address}
-              </InputField>
-              {secure && (
-                <InputField
-                  label="Pin"
-                  edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
-                >
-                  {pin === '' ? <span className={placeholder}>No pin</span> : pin}
-                </InputField>
-              )}
-              {(binding?.state !== 'approved' || state.status.reason === 'password') && (
-                <Button
-                  type="filled"
-                  label="Connect"
-                  disabled={busy}
-                  onClick={() => void onConnect()}
-                />
-              )}
-              {binding !== null && (
-                <>
-                  <Button type="base" label="Refresh" disabled={busy} onClick={() => refresh()} />
+          <MenuRowView
+            row={settingsRow(
+              { label: 'Server', caption: binding ? captionFor(binding) : undefined },
+              {
+                kind: 'field',
+                children: (
+                  <span className={trailingCluster}>
+                    <InputField
+                      label="Server address"
+                      edit={{
+                        value: address,
+                        onCommit: setDraft,
+                        renames: 'row',
+                        emptyCommits: true,
+                      }}
+                    >
+                      {address === '' ? <span className={placeholder}>No server</span> : address}
+                    </InputField>
+                    {secure && (
+                      <InputField
+                        label="Pin"
+                        edit={{ value: pin, onCommit: setPin, renames: 'row', emptyCommits: true }}
+                      >
+                        {pin === '' ? <span className={placeholder}>No pin</span> : pin}
+                      </InputField>
+                    )}
+                    {(binding?.state !== 'approved' || state.status.reason === 'password') && (
+                      <Button
+                        type="filled"
+                        label="Connect"
+                        disabled={busy}
+                        onClick={() => void onConnect()}
+                      />
+                    )}
+                    {binding !== null && (
+                      <>
+                        <Button
+                          type="base"
+                          label="Refresh"
+                          disabled={busy}
+                          onClick={() => refresh()}
+                        />
+                        <Button
+                          type="base"
+                          label="Disconnect"
+                          disabled={busy}
+                          onClick={() => void run(() => dialer().ask('sync:disconnect'))}
+                        />
+                      </>
+                    )}
+                  </span>
+                ),
+              },
+            )}
+          />
+          <MenuRowView
+            row={settingsRow(
+              { label: 'Sync', caption: syncCaption(state.status, clock) },
+              {
+                kind: 'field',
+                children: (
                   <Button
-                    type="base"
-                    label="Disconnect"
-                    disabled={busy}
-                    onClick={() => void run(() => dialer().ask('sync:disconnect'))}
+                    type="filled"
+                    label={syncLabel}
+                    disabled={busy || binding?.state !== 'approved'}
+                    onClick={() =>
+                      void run(async () => {
+                        const r = await dialer().ask('sync:now')
+                        if (r.ok && r.value.status.state !== 'off') markSynced()
+                        return r
+                      })
+                    }
                   />
-                </>
-              )}
-            </span>
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Sync" hint={syncCaption(state.status, clock)}>
-            <Button
-              type="filled"
-              label={syncLabel}
-              disabled={busy || binding?.state !== 'approved'}
-              onClick={() =>
-                void run(async () => {
-                  const r = await dialer().ask('sync:now')
-                  if (r.ok && r.value.status.state !== 'off') markSynced()
-                  return r
-                })
-              }
-            />
-          </SettingsFieldRow>
+                ),
+              },
+            )}
+          />
           {devices.map((device) => {
             const own = device.id === state.device.id
             return (
