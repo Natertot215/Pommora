@@ -144,8 +144,7 @@ export function MarkdownEditor({
     const prefs = hostRef.current.prefs
     const extensions = [
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      EditorView.editable.of(selectable),
-      selectable ? [] : claimPresses,
+      selectable ? [] : [EditorView.editable.of(false), claimPresses],
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
