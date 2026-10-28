@@ -138,7 +138,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Review Checkpoint
 - [x] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
 - [ ] **Phase 5** — Removal and Wiring
-  - [ ] Task 5-1 · The examples leave
+  - [x] Task 5-1 · The examples leave
   - [ ] Task 5-2 · The Resources link
   - [ ] Spotcheck
 - [ ] `[Stop: the final report, per §Final Verification]`
@@ -1785,8 +1785,6 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 - `.claude/HistoryPM.md` — one entry titled *App Information Index*, in the file's own entry format, written with the final report
 
 #### Open Items
-
-- **A Settings Frame Switch:** once a Settings row cites an entry (Date Format's example is the first, and the drive records it), a frame switch or the window's 210 ms exit unmounts an open InfoPane inside its 255 ms exit, which `PickerMenu`'s dev guard logs, as `ManageRow`'s pane does today; it arrives with the first Settings citation.
 
 - **A Picker Row Citing an Entry:** `pickerRow` returns the whole `MenuRow` union (`UIX/Menus/MenuIndex.tsx`), so the format rows' temporary citation narrows it to attach `info`; the first real picker-row citation gives `PickerRowLook` an `info` it passes through, the one obvious place for it.
 - **`PickerMenu` and Clicks:** `PickerMenu` stops a press's and a context menu's bubbling but not a click's, so the InfoButton's host and `ValueEditor` each stop it; once `PickerMenu` unfreezes, it takes the click too and the pane half of each stop leaves.

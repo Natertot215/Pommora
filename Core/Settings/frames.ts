@@ -40,7 +40,6 @@ import {
   TIME_FORMAT_LABELS,
 } from '../Properties/displayLabels'
 import { TrashFrame } from './TrashFrame'
-import { infoFor } from '../Info/InfoButton'
 import type { MenuRow, Trailing } from '@pommora/uix/Menus'
 import type { ReactNode } from 'react'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
@@ -207,7 +206,6 @@ export const FRAMES = roster([
             key: 'dateFormat',
             label: 'Date Format',
             caption: 'How a date reads wherever a column has not chosen its own form.',
-            info: infoFor('date-format', 'Date Format'),
             options: DATE_FORMAT_OPTIONS,
           },
           {
