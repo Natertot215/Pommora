@@ -8,7 +8,7 @@ import { titleActionFade, titleActionFadeHidden } from '@pommora/uix/Animations/
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
-import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
+import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { useContentHost } from '../contentHost'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
@@ -61,7 +61,7 @@ export function DetailTitleHeader({
   const searching = search?.query != null
   const hint = useHoverReveal({
     active: search !== undefined && !searching && !editing,
-    dwell: true,
+    dwellMs: REVEAL_DWELL_MS,
   })
   const hintOpen = hint.on || searching
   const field = useRef<HTMLInputElement>(null)

@@ -15,7 +15,7 @@ export const REVEAL_GRACE_MS = 150 // KNOB
 /** How long a reveal holds after its toggle flips: a duration from the press, or until the pointer leaves the host. */
 export type Linger = number | 'leave'
 
-const coarse = (): boolean => window.matchMedia?.('(hover: none)').matches === true
+export const coarse = (): boolean => window.matchMedia?.('(hover: none)').matches === true
 
 /** Handlers are identity-stable for the hook's lifetime. */
 interface HoverReveal {
@@ -23,18 +23,20 @@ interface HoverReveal {
   hover: (inside: boolean) => void
   /** Called by a toggle's own press, before it flips `engaged`. */
   press: () => void
+  /** Closes the reveal now and forgets the pointer, as a dismissal does. */
+  reset: () => void
 }
 
-// A dwell opens on REVEAL_DWELL_MS and closes on the grace. `held` sustains an open reveal but never opens one, and a press holds off a pending open until release, so a gesture never has content pushed under it. A toggle's press flip starts the linger its new side names.
+// A dwell opens on the caller's `dwellMs` and closes on the grace. `held` sustains an open reveal but never opens one, and a press holds off a pending open until release, so a gesture never has content pushed under it. A toggle's press flip starts the linger its new side names.
 export function useHoverReveal({
   active = true,
-  dwell = false,
+  dwellMs,
   held = false,
   engaged = false,
   linger,
 }: {
   active?: boolean
-  dwell?: boolean
+  dwellMs?: number
   held?: boolean
   engaged?: boolean
   linger?: { on?: Linger; off?: Linger }
@@ -43,14 +45,14 @@ export function useHoverReveal({
   const live = useRef({
     on,
     held,
-    dwell,
+    dwellMs,
     engaged,
     inside: false,
     holding: false,
     marked: 0,
     hold: null as number | 'leave' | null,
   })
-  Object.assign(live.current, { on, held, dwell })
+  Object.assign(live.current, { on, held, dwellMs })
 
   const [api] = useState(() => {
     let pending: { id: number; open: boolean } | null = null
@@ -65,7 +67,9 @@ export function useHoverReveal({
     }
     const settle = (): void => {
       const s = live.current
-      const open = s.on ? s.inside || s.held || s.hold !== null : s.dwell && s.inside && !s.holding
+      const open = s.on
+        ? s.inside || s.held || s.hold !== null
+        : s.dwellMs !== undefined && s.inside && !s.holding
       if (pending?.open === open) return
       cancel()
       if (open === s.on) return
@@ -74,7 +78,8 @@ export function useHoverReveal({
           pending = null
           setOn(open)
         },
-        open ? REVEAL_DWELL_MS : REVEAL_GRACE_MS,
+        // Only the closed branch opens, and only with a dwell.
+        open ? s.dwellMs : REVEAL_GRACE_MS,
       )
       pending = { id, open }
     }
@@ -117,18 +122,19 @@ export function useHoverReveal({
           },
           Math.max(0, side - since),
         )
-      setOn(s.dwell || side !== undefined)
+      setOn(s.dwellMs !== undefined || side !== undefined)
     }
     return { settle, reset, hover, press, holdOff, flip }
   })
 
+  const dwells = dwellMs !== undefined
   // A release waits for the pointer's next move, whose boundary events report where it is — a native menu withholds them while open.
   useEffect(() => {
-    if (!dwell) return
+    if (!dwells) return
     if (held) return api.settle()
     window.addEventListener('pointermove', api.settle, { once: true })
     return () => window.removeEventListener('pointermove', api.settle)
-  }, [held, dwell])
+  }, [held, dwells])
   useEffect(() => api.reset, [active])
   useEffect(() => {
     const s = live.current
@@ -138,7 +144,7 @@ export function useHoverReveal({
     else api.reset()
   }, [engaged])
   useEffect(() => {
-    if (!dwell) return
+    if (!dwells) return
     // Only a primary press holds; a context menu swallows its own release, so its opening ends the press.
     const down = (e: PointerEvent): void => {
       if (e.button === 0) api.holdOff(true)
@@ -151,9 +157,14 @@ export function useHoverReveal({
       window.removeEventListener('pointerdown', down, { capture: true })
       for (const t of ends) window.removeEventListener(t, up, { capture: true })
     }
-  }, [api, dwell])
+  }, [api, dwells])
 
-  return { on: dwell && coarse() ? active : active && on, hover: api.hover, press: api.press }
+  return {
+    on: dwells && coarse() ? active : active && on,
+    hover: api.hover,
+    press: api.press,
+    reset: api.reset,
+  }
 }
 
 /** How near the pointer must come: inline controls in content, edge-docked toggles, corner handles. */
