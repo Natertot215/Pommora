@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   DisclosureRow,
-  MenuCaption,
+  MenuDesc,
   MenuDropdown,
   MenuScrollFrame,
   itemEmphasized,
@@ -89,7 +89,7 @@ function OutlinePane(): React.JSX.Element {
           {rows(tree)}
         </LineZone>
       ) : (
-        <MenuCaption>No headings</MenuCaption>
+        <MenuDesc>No headings</MenuDesc>
       )}
     </MenuScrollFrame>
   )

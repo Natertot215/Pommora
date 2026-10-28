@@ -19,7 +19,7 @@ import { columnStylePatch, styleFor, useNexusForms } from '../../Views/Host/useC
 import { propertyColumn } from '../../Views/Pipeline/columns'
 import {
   MenuItem,
-  MenuCaption,
+  MenuDesc,
   MenuIndex,
   MenuTopRow,
   MenuScrollFrame,
@@ -96,7 +96,7 @@ function ListGroups({
     <>
       <LineGroup id="members" className={cx(s.assignedFill, allOpen && s.assignedFillNone)}>
         {assigned.length === 0 ? (
-          <MenuCaption>No properties yet.</MenuCaption>
+          <MenuDesc>No properties yet.</MenuDesc>
         ) : (
           assigned.map((d) => {
             const open = (): void => onOpenEditor(d.id)

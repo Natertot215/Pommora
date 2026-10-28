@@ -14,7 +14,7 @@ import { leading } from '@pommora/uix/Fields/fields.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
   MenuFooting,
-  MenuCaption,
+  MenuDesc,
   MenuItem,
   FootingCreate,
   FootingItem,
@@ -517,7 +517,7 @@ export function FilterFrame({
     >
       {decoded.kind === 'locked' ? (
         <>
-          <MenuCaption>Hand-authored filter — edited outside the pane.</MenuCaption>
+          <MenuDesc>Hand-authored filter — edited outside the pane.</MenuDesc>
           <FootingItem icon="rotate-ccw" label="Reset Filter" onClick={() => save(mode, [])} />
         </>
       ) : (
