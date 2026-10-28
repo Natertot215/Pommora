@@ -69,6 +69,7 @@ export function MenuTopRow({
 type MenuItemProps = {
   leading?: ReactNode
   caption?: ReactNode
+  info?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
   overlay?: ReactNode
@@ -94,6 +95,7 @@ type MenuItemProps = {
 export function MenuItem({
   leading,
   caption,
+  info,
   detail,
   trailing,
   overlay,
@@ -121,6 +123,7 @@ export function MenuItem({
   } as CSSProperties
   const hasTrailing = detail != null || trailing != null
   const act = disabled || inert ? undefined : onClick
+  const title = <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the button role is applied conditionally on the click handler, which a static parse cannot see
     <div
@@ -149,7 +152,14 @@ export function MenuItem({
     >
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={cx(s.titleWrap, centered && s.titleCentered)}>
-        <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
+        {info == null ? (
+          title
+        ) : (
+          <span className={s.titleLine}>
+            {title}
+            {info}
+          </span>
+        )}
         {caption != null && <span className={s.caption}>{caption}</span>}
       </span>
       {hasTrailing && (
