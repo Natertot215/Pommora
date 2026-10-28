@@ -136,7 +136,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Task 4-2 · The citation test
   - [x] Task 4-3 · The documents
   - [x] Review Checkpoint
-- [ ] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
+- [x] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
 - [ ] **Phase 5** — Removal and Wiring
   - [ ] Task 5-1 · The examples leave
   - [ ] Task 5-2 · The Resources link
@@ -1751,10 +1751,10 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live (G-2), each wave closed before the next opens. Every reviewer brief carries the Mandate verbatim and *§Constraints* whole, except the neutral gate's, which carries the Mandate alone.
 
-- [ ] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] **Wave One:** two read-only `opus-xhigh` reviewers, briefed with `code-simplification`, one reading inward at the diff and one outward against the rest of Core, UIX, and Desktop; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
-- [ ] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, briefed with `adversarial-review` over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
-- [ ] **Neutral Gate:** one `fable-high` agent given only the BASELINE head, the head before Phase 5, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
+- [x] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [x] **Wave One:** two read-only `opus-xhigh` reviewers, briefed with `code-simplification`, one reading inward at the diff and one outward against the rest of Core, UIX, and Desktop; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
+- [x] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, briefed with `adversarial-review` over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
+- [x] **Neutral Gate:** one `fable-high` agent given only the BASELINE head, the head before Phase 5, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
 - [ ] **Phase 5 and Its Spotcheck:** the examples leave and the wiring lands; any fold after the gate gets the spotcheck against the Mandate alone.
 - [ ] **Own Pass:** gates from clean, baseline counts, the diff read once, *§Completion Criteria* ticked.
 - [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
@@ -1792,6 +1792,8 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 - **`PickerMenu` and Clicks:** `PickerMenu` stops a press's and a context menu's bubbling but not a click's, so the InfoButton's host and `ValueEditor` each stop it; once `PickerMenu` unfreezes, it takes the click too and the pane half of each stop leaves.
 
 #### Deviations
+
+- **The Neutral Gate (Final Verification, for Nathan's ruling):** it answered no twice, run on the Mandate and the intention alone. Each fold it named that held landed (the press claim's reason, the touch opt-out's reason); its standing blockers rest on rulings it can't see: the look's dials (A-2, its own entry above) and the citation call over one `InfoButton({ id, title })` (D-2, G-2). Its answer is in the final report verbatim.
 
 - **The Look's Dials After the Preview (Final Verification, for Nathan's ruling):** A-2 rules the look's three independent props (`icon`, `type`, `outline`) and its three glyphs, so `InfoLook`, `infoFor`'s `look` argument, and the `circle-question-mark` and `circle-alert` registry entries ship; once the Iteration preview leaves, no row overrides the default look and those two glyphs are uncited. They stand as ruled until a look is chosen, when the dials no row uses can go.
 
