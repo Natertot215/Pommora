@@ -20,11 +20,15 @@
 .info-pane .mdpm-editor .cm-content {
   padding: 12px 14px;
 }
-/* The pane's text takes no pointer, so nothing in it hovers, reveals, selects, focuses, copies, or starts a gesture, with a pointer or on touch; its prose's web links keep theirs. */
+/* The pane's text takes no pointer, so nothing in it hovers, reveals, selects, focuses, copies, or starts a gesture, with a pointer or on touch; its prose's web links keep theirs, and nothing they pass near reveals. */
 .info-pane .mdpm-editor .cm-content,
 .info-pane .mdpm-editor .cm-content * {
   pointer-events: none;
 }
 .info-pane .mdpm-editor .cm-line :is(.md-link, .md-link *) {
   pointer-events: auto;
+}
+.info-pane .mdpm-editor [data-reveal-host] {
+  --reveal: 0;
+  --reveal-hits: none;
 }
