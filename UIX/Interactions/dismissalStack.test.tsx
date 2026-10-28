@@ -252,6 +252,18 @@ describe('the stack', () => {
     expect(handles[0].shields()).toBe(true)
   })
 
+  it('holds presses while a surface opened over an exiting popup stands, until that exit ends', () => {
+    const log: string[] = []
+    const layers = { a: layer(), b: layer(), c: layer() }
+    stack(['a', 'b', 'c'], log, layers)
+    handles[1].setClosing(true)
+    press(document.body)
+    expect(log).toEqual([])
+    handles[1].release()
+    press(document.body)
+    expect(log).toEqual(['c', 'a'])
+  })
+
   it('reads through the shield to the layer beneath the press', () => {
     const log: string[] = []
     const layers = { host: layer(), picker: layer() }

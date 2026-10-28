@@ -47,6 +47,11 @@ const holds = (e: Live, target: Node): 'layer' | 'trigger' | null =>
         : 'trigger'
       : null
 const closes = (e: Live): boolean => dismissable(e) && e.entry.outsidePress !== false
+// A pick that opens a surface as its menu closes, such as a confirmation, stands it over the exiting menu; until that exit ends, a press is the pick's double-click tail and dismisses nothing.
+const openedOverExit = (): boolean => {
+  const exiting = entries.findIndex((e) => e.closing)
+  return exiting >= 0 && entries.slice(exiting + 1).some((e) => !e.closing)
+}
 
 export const SHIELD_ATTR = 'data-dismissal-shield'
 
@@ -61,7 +66,7 @@ const beneathShield = (e: PointerEvent): Node => {
 }
 
 const onPointerDown = (e: PointerEvent): void => {
-  if (e.button !== 0) return
+  if (e.button !== 0 || openedOverExit()) return
   const target = beneathShield(e)
   let keep = -1
   let onTrigger = false
