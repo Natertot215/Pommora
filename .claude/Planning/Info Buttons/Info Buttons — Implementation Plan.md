@@ -64,7 +64,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | `RowText.caption` · `ManageRow`'s `caption` • Field · Prop | A Settings row's secondary line, in place of `hint`. | `Core/Settings/frames.ts`, `UIX/Menus/ManageRow.tsx` |
 | `dwellMs` • Option | A reveal's dwell, given by its caller, in place of `dwell`. | `UIX/Interactions/hoverReveal.ts` |
 | `HoverReveal.reset` • Field | Closes a reveal now and forgets the pointer. | `UIX/Interactions/hoverReveal.ts` |
-| `MarkdownEditor.selectable` • Prop | False takes the content out of the keyboard's reach and out of selection. | `Core/MarkdownPM/MarkdownEditor.tsx` |
+| `MarkdownEditor.selectable` • Prop | False takes the content out of the keyboard's reach and out of selection, a press on it moving no focus. | `Core/MarkdownPM/MarkdownEditor.tsx` |
 | `Resources` • Folder | `PM-Info-Index.md`, a symlink to the InfoIndex, which the folder's doc-tree row mirrors to NexusOS. | `.claude/Resources/` |
 
 **REMOVED**
@@ -1145,7 +1145,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-1
 
-`MarkdownEditor` takes `selectable` (default true), stated as one `EditorView.editable.of(selectable)` line every editor carries, since true is the facet's own default and nothing else in the tree provides it. False makes `.cm-content` `contenteditable="false"`, which takes it out of tab order and lets `body`'s `user-select: none` apply (`Core/Interface/styles.css:30-38`), so Tab and ⌘A can't reach it. The pointer half belongs to the surface, as each surface keeps its own overrides of the editor: the InfoPane's stylesheet takes it (Task 3-2). Every other editor keeps its selectable read-only content.
+`MarkdownEditor` takes `selectable` (default true), stated as one `EditorView.editable.of(selectable)` line every editor carries, since true is the facet's own default and nothing else in the tree provides it. False makes `.cm-content` `contenteditable="false"`, which takes it out of tab order and lets `body`'s `user-select: none` apply (`Core/Interface/styles.css:30-38`), so Tab and ⌘A can't reach it, and a lowest-precedence `mousedown` claim keeps a press that reaches the text (a double or shifted press on a link, which the link handlers hand back) from starting CodeMirror's mouse selection, which would blur whatever held focus. The pointer half belongs to the surface, as each surface keeps its own overrides of the editor: the InfoPane's stylesheet takes it (Task 3-2). Every other editor keeps its selectable read-only content.
 
 **PROCEDURE**
 
@@ -1158,7 +1158,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 @@ Props @@
 
    readOnly?: boolean
-+  /** False takes the content out of the keyboard's reach and out of selection. Read once, at mount. */
++  /** False takes the content out of the keyboard's reach and out of selection: a press on it selects nothing and moves no focus, after the link handlers have read it. Read once, at mount. */
 +  selectable?: boolean
    edgeFade?: boolean
 
@@ -1173,6 +1173,16 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
      const extensions = [
        readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
 +      EditorView.editable.of(selectable),
++      selectable
++        ? []
++        : Prec.lowest(
++            EditorView.domEventHandlers({
++              mousedown: (event) => {
++                event.preventDefault()
++                return true
++              },
++            }),
++          ),
 ```
 
 ```Core/MarkdownPM/readOnlySelection.test.tsx diff
@@ -1189,18 +1199,27 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 +    const view = await mountEditor({ initialBody: 'hello world', readOnly: true, selectable: false })
 +    expect(view.contentDOM.getAttribute('contenteditable')).toBe('false')
 +  })
++
++  it('claims a press on it, so a double press moves no focus', async () => {
++    const view = await mountEditor({ initialBody: 'hello world', readOnly: true, selectable: false })
++    const held = document.body.appendChild(document.createElement('button'))
++    held.focus()
++    view.contentDOM.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, detail: 2 }))
++    expect(document.activeElement).toBe(held)
++    held.remove()
++  })
 +})
 ```
 
 **VERIFY**
 
-- [ ] The new case fails before the edit and passes after; the existing describes pass unchanged, every editor now carrying `editable` true.
+- [ ] The two new cases fail before the edit and pass after; the existing describes pass unchanged, every editor now carrying `editable` true.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
-`Core/Info/infoIndex.ts` owns the InfoIndex's format: it reads the file through `?raw` and parses it once into `ENTRIES`, its entries by ID (a tag line naming a kebab-case ID, the Markdown, and its closing tag line, either tag line tolerating trailing spaces an editor leaves; headings and anything between entries are the file's own), with no React and no editor in its imports, so the format's test loads text alone. `InfoButton.tsx` gains `infoFor(id, title, look?)` and the pane's contents, a private `Entry` that runs `MarkdownEditor` as the history reader does (`Core/Interface/Windows/PageReaderWindow.tsx:113-120`): read-only, unselectable, under an inert host with no connections, so `[[links]]` carry no meaning and embeds don't build. `PickerMenu` renders nothing closed (`UIX/Pickers/PickerMenu.tsx:305`), so a frame of citing rows builds no host and no editor until a pane opens. `info-button.css` gains the pane's overrides of the editor's chrome, as each surface's own stylesheet holds them (`glance-pane.css`, `page-window.css`, `text-pane.css`): no rail, the scroller capped and scrolling, the content's inset, and the pointer rule. The pane's text and everything inside it take no pointer, so the pane has no hover behavior at all, with a pointer or on touch: a press lands on the scroller, nothing reveals, no reveal can hand a control the pointer back, and nothing selects, focuses, copies, or starts a gesture. A web link in the prose takes the pointer back and follows on `click` (`Core/MarkdownPM/Gestures/pointerPath.ts:82`), its `mousedown` claimed before CodeMirror's own, so focus stays where it was; a link in a table cell stays out, since in the pane it has nothing to follow (`Core/MarkdownPM/Tables/cellStatic.tsx:648`). The scroller keeps the pointer, so the wheel still scrolls, and a code line wider than the pane rests clipped at its ellipsis. A cited entry that's missing or empty opens an empty pane, which D-3's test keeps from landing, and the placeholder host list hides "Click to type" there. The InfoIndex holds the examples, in Claude's wording: `label-format` and `value-format` below, and `date-format` and `aliases` in the same shape. Every one of the four exercises every construct the editor draws but a heading, which an entry never carries since the row's title already names what the pane explains: bold, italic, strikethrough, `==highlights==`, inline code, a bulleted list with a nested level, a numbered list, a checklist, a quote, a callout, a table (one with a link in a cell), a code block with a long line, a web link in the prose, a divider, and a body long enough to scroll; the two below are the minimum shape, and the executor fills each entry out to that list.
+`Core/Info/infoIndex.ts` owns the InfoIndex's format: it reads the file through `?raw` and parses it once into `ENTRIES`, its entries by ID (a tag line naming a kebab-case ID, the Markdown, and its closing tag line, either tag line tolerating trailing spaces an editor leaves; headings and anything between entries are the file's own), with no React and no editor in its imports, so the format's test loads text alone. `InfoButton.tsx` gains `infoFor(id, title, look?)` and the pane's contents, a private `Entry` that runs `MarkdownEditor` as the history reader does (`Core/Interface/Windows/PageReaderWindow.tsx:113-120`): read-only, unselectable, under an inert host with no connections, so `[[links]]` carry no meaning and embeds don't build. `PickerMenu` renders nothing closed (`UIX/Pickers/PickerMenu.tsx:305`), so a frame of citing rows builds no host and no editor until a pane opens. `info-button.css` gains the pane's overrides of the editor's chrome, as each surface's own stylesheet holds them (`glance-pane.css`, `page-window.css`, `text-pane.css`): no rail, the scroller capped and scrolling, the content's inset, and the pointer rule. The pane's text and everything inside it take no pointer, so the pane has no hover behavior at all, with a pointer or on touch: a press lands on the scroller, nothing reveals, no reveal can hand a control the pointer back, and nothing selects, focuses, copies, or starts a gesture. A web link in the prose takes the pointer back and follows on `click` (`Core/MarkdownPM/Gestures/pointerPath.ts:82`), its `mousedown` claimed before CodeMirror's own, so focus stays where it was; a link in a table cell stays out, since in the pane it has nothing to follow (`Core/MarkdownPM/Tables/cellStatic.tsx:648`). The scroller keeps the pointer, so the wheel still scrolls, and a code line wider than the pane follows the reader's Scroll Long Lines In Code Blocks setting, as in every editor: it wraps by default, and with the setting on it rests clipped at its ellipsis. A link's pointer still reaches the editor's own reveal tracking, so the pane holds every reveal host inside it shut. A cited entry that's missing or empty opens an empty pane, which D-3's test keeps from landing, and the placeholder host list hides "Click to type" there. The InfoIndex holds the examples, in Claude's wording: `label-format` and `value-format` below, and `date-format` and `aliases` in the same shape. Every one of the four exercises every construct the editor draws but a heading, which an entry never carries since the row's title already names what the pane explains: bold, italic, strikethrough, `==highlights==`, inline code, a bulleted list with a nested level, a numbered list, a checklist, a quote, a callout, a table (one with a link in a cell), a code block with a long line, a web link in the prose, a divider, and a body long enough to scroll; the two below are the minimum shape, and the executor fills each entry out to that list.
 
 **AFTER**
 
@@ -1258,13 +1277,17 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 +.info-pane .mdpm-editor .cm-content {
 +  padding: 12px 14px;
 +}
-+/* The pane's text takes no pointer, so nothing in it hovers, reveals, selects, focuses, copies, or starts a gesture, with a pointer or on touch; its prose's web links keep theirs. */
++/* The pane's text takes no pointer, so nothing in it hovers, reveals, selects, focuses, copies, or starts a gesture, with a pointer or on touch; its prose's web links keep theirs, and nothing they pass near reveals. */
 +.info-pane .mdpm-editor .cm-content,
 +.info-pane .mdpm-editor .cm-content * {
 +  pointer-events: none;
 +}
 +.info-pane .mdpm-editor .cm-line :is(.md-link, .md-link *) {
 +  pointer-events: auto;
++}
++.info-pane .mdpm-editor [data-reveal-host] {
++  --reveal: 0;
++  --reveal-hits: none;
 +}
 ```
 
@@ -1506,12 +1529,12 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 +| --- | --- | --- | --- |
 +| Placement | open the Select's settings | `button[aria-label="Label Format - Info"]` sits right after the title text, inside the title line; the row stands as tall as it did at the baseline; a shot | A-1, F-1 |
 +| The look | as above | the glyph wears `filled`, no outline, the `info` icon | A-2 |
-+| The pane | with Hover Previews set to Off, rest on the glyph 600 ms | the pane opens below the glyph, 285px wide, with no resize edges; a shot in light and dark | B-1, B-2, C-4 |
++| The pane | with Hover Previews set to Off, rest on the glyph 600 ms | the pane opens below the glyph, 285px wide, with no resize edges; a shot | B-1, B-2, C-4 |
 +| The other rows | open Settings and rest on Date Format's glyph; open a page's settings and rest on Aliases' glyph | each glyph sits right after its title and opens its pane; a shot of each | A-1, F-1 |
 +| The entries | open each of the four panes and scroll each through | every construct in each entry draws (emphasis, strikethrough, highlights, lists, checklist, quote, callout, tables, code, links, divider); a shot of each pane, top and scrolled | C-2 |
 +| A frame switch | hold Date Format's pane open and switch Settings frames | record what the console logs | — |
 +| The entry | as above | bold, the list, and inline code draw, with no heading above them; Value Format's table, quote, code block, and link draw, and its body scrolls past 320px | C-2 |
-+| The long code line | open Value Format's pane | the code block's long line rests clipped at its ellipsis and can't scroll sideways, the trade Task 3-2 records; the body still wheels | C-2 |
++| The long code line | open Value Format's pane, with Scroll Long Lines In Code Blocks off and then on | off, the long line wraps; on, it rests clipped at its ellipsis; it never scrolls sideways, and the body still wheels | C-2 |
 +
 +#### Group 2 — The Disabled Row and the Variants
 +
@@ -1525,7 +1548,7 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 +| Case | Operation | Expected | Decisions |
 +| --- | --- | --- | --- |
 +| The crossing | rest on Label Format's glyph until the pane opens, move into the pane's body, and rest there past the grace | the pane stays open; leaving it closes it after the grace | B-1 |
-+| No hover | move across the body, its lists, its table, and its code block | nothing reveals or highlights, and the pointer stays the arrow | C-3 |
++| No hover | move across the body, its lists, its table, and its code block, and rest on Value Format's prose link beside its code block | nothing reveals or highlights, and the pointer stays the arrow | C-3 |
 +| No selection | drag across the body and across the table's cells; double-click and shift-click Value Format's prose link | nothing highlights, no selection draws, focus stays where it was, and `getSelection().toString()` is empty | C-3 |
 +| No copy | press in the body, ⌘A, ⌘C; click the code block's language tag | the clipboard holds what it held | C-3 |
 +| No focus | press the body, a bullet, a checkbox, and the left inset beside a line | nothing moves or toggles, and `document.activeElement` is where it was | C-3 |
@@ -1757,3 +1780,5 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 - **A Settings Frame Switch:** once a Settings row cites an entry (Date Format's example is the first, and the drive records it), a frame switch or the window's 210 ms exit unmounts an open InfoPane inside its 255 ms exit, which `PickerMenu`'s dev guard logs, as `ManageRow`'s pane does today; it arrives with the first Settings citation.
 
 #### Deviations
+
+- **The InfoPane Near the Window's Bottom (Task 4-1, for Nathan's ruling):** a pane whose glyph sits low in the window opens downward and runs past the window's edge, where Label Format's own picker flips up. `PickerMenu` decides its side once, at its first measure (`UIX/Pickers/PickerMenu.tsx:201-211`), and the InfoPane is empty then, since `MarkdownEditor` builds its view in an effect after that measure (`Core/MarkdownPM/MarkdownEditor.tsx:132`); the pane then grows to its 320px cap with its side locked. `PickerMenu` is frozen, so the pane stands as built. The fix that keeps every dropdown on one rule is `PickerMenu` deciding its side once its pane first has content.

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
 import { scrollerOf, travelToHeading } from './travel'
 import { EditorView, keymap, placeholder } from '@codemirror/view'
-import { Compartment, EditorState } from '@codemirror/state'
+import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownInput } from './Input/markdownInput'
@@ -47,7 +47,7 @@ interface Props {
   embedAncestors?: readonly string[]
   autoFocus?: boolean
   readOnly?: boolean
-  /** False takes the content out of the keyboard's reach and out of selection. Read once, at mount. */
+  /** False takes the content out of the keyboard's reach and out of selection: a press on it selects nothing and moves no focus, after the link handlers have read it. Read once, at mount. */
   selectable?: boolean
   edgeFade?: boolean
   warm?: WarmSeam
@@ -136,6 +136,16 @@ export function MarkdownEditor({
     const extensions = [
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
       EditorView.editable.of(selectable),
+      selectable
+        ? []
+        : Prec.lowest(
+            EditorView.domEventHandlers({
+              mousedown: (event) => {
+                event.preventDefault()
+                return true
+              },
+            }),
+          ),
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),

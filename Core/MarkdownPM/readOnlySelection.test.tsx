@@ -26,6 +26,20 @@ describe('an unselectable editor keeps its content out of reach', () => {
     })
     expect(view.contentDOM.getAttribute('contenteditable')).toBe('false')
   })
+
+  it('claims a press on it, so a double press moves no focus', async () => {
+    const view = await mountEditor({
+      initialBody: 'hello world',
+      readOnly: true,
+      selectable: false,
+    })
+    const held = document.body.appendChild(document.createElement('button'))
+    held.focus()
+    const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, detail: 2 })
+    view.contentDOM.dispatchEvent(press)
+    expect(document.activeElement).toBe(held)
+    held.remove()
+  })
 })
 
 // EditorState.readOnly is ADVISORY — it doesn't block a programmatic view.dispatch({changes}), and with editable=true the DOM no longer blocks them either, so a changeFilter must drop doc changes while read-only or Cmd+B would edit + autosave a read-only surface.
