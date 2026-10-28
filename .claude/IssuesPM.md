@@ -76,7 +76,7 @@
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
-| [I-079](#I-079 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
+| [I-079](#I-079 • Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A4 • Architecture
 
@@ -95,7 +95,7 @@
 | [I-080](#I-080 • A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path.) | A bundle row's menu opens only by pointer, so the Trash's Restore and Delete have no keyboard path. | Low | Small (TBD) | Shortcut | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-051](#I-051 • Four waits that let a transition finish each state their own slack.) | Four waits that let a transition finish each state their own slack. | Minimal | Small (=🔴−2=) | Drift | `7933c518d` | **Created:** 10-03-2026<br>**Updated:** 10-03-2026 |
 | [I-050](#I-050 • Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates.) | Where a pop-up appears is worked out inside a 50-line block tangled with its screen updates. | Minimal | Small (=🟢+2=) | Patch-Over | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
-| [I-061](#I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
+| [I-061](#I-061 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.) | A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none. | Minimal | Mini (TBD) | Drift | `54e93e491` | **Created:** 10-18-2026<br>**Updated:** 10-25-2026 |
 | [I-073](#I-073 • Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.) | Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view. | Minimal | Small (TBD) | Drift | `4f63cba01` | **Created:** 10-21-2026<br>**Updated:** 10-25-2026 |
 | [I-078](#I-078 • Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead.) | Every line row points screen readers at the drag instructions, including rows in a list that can't be dragged, where Space acts on the row instead. | Minimal | Mini (TBD) | Drift | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
@@ -993,7 +993,7 @@ Chokidar's `awaitWriteFinish` holds a path until it has been quiet for about 200
 
 Drop `awaitWriteFinish`, since the event batch already debounces 200 ms, at the cost of one unreadable read of a half-written outside page; or re-stat a held path once its hold ends.
 
-#### I-079 • Confirm Before Deletion never spares a delete from the Trash, and its hint doesn't say so.
+#### I-079 • Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1001,11 +1001,11 @@ Drop `awaitWriteFinish`, since the event batch already debounces 200 ms, at the 
 
 **Description**
 
-Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its hint lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the hint says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^79]
+Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its caption lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the caption says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^79]
 
 **Solution** [Proposed]
 
-The hint names the Trash among what always asks, which keeps an empty for good behind its question.
+The caption names the Trash among what always asks, which keeps an empty for good behind its question.
 
 ### A4 • Architecture
 
@@ -1139,7 +1139,7 @@ Every pop-up picker decides where to sit (flip up or down, center or pin to an e
 
 Extract a pure `placePane({ trigger, pane, viewport, bounds, direction, origin, decided }) → { pos, dir, decided }` beside the component; the effect keeps measuring, latching the returned decisions, and `setPos`/`setEffDir`. `setPos` is already change-guarded (`samePos`), so the extraction is purely structural, and the centering tests become plain function tests.
 
-#### I-061 • A row's hint in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
+#### I-061 • A row's caption in a pane that sizes to its content stays on one line and widens the pane, so the format rows carry none.
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
@@ -1147,11 +1147,11 @@ Extract a pure `placePane({ trigger, pane, viewport, bounds, direction, origin, 
 
 **Description**
 
-A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's hint has no measure of its own, so a long hint runs on one line and pushes the pane wide; the Settings window's hints wrap only because that window has a fixed width. The Label Format and Value Format rows were drawn with their hints ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two hints alone was weighed and left out as a one-off rule, and the rows carry no hints.[^61]
+A property's settings pane sizes to its widest row, with no width ceiling, and a menu row's caption has no measure of its own, so a long caption runs on one line and pushes the pane wide; the Settings window's captions wrap only because that window has a fixed width. The Label Format and Value Format rows were drawn with their captions ("How this property’s name is written into each file’s metadata key." and "How each value is written in the file’s metadata."), which widened every property's settings pane. A cap on those two captions alone was weighed and left out as a one-off rule, and the rows carry no captions.[^61]
 
 **Solution** [Deferred]
 
-One rule for where a hint wraps in a pane that sizes to its content, set once for every such pane: a measure on the row's hint, or a width ceiling on the pane. The format rows then take their hints back.
+One rule for where a caption wraps in a pane that sizes to its content, set once for every such pane: a measure on the row's caption, or a width ceiling on the pane. The format rows then take their captions back.
 
 #### I-073 • Only the Date & Time editor's settings rows carry icons, and no row says whether it sets a property everywhere or only the current view.
 
@@ -1436,7 +1436,7 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^58]: **I-058:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
 [^59]: **I-059:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/identity.ts:57-61` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`
 [^60]: **I-060:** `Core/Files/atomicWrite.ts:208-209` (`readAppFile`), `Core/Files/atomicWrite.ts:183-198` (`readLast`), `Core/Files/atomicWrite.ts:212-217` (`readAppFileKnown`), `Core/Files/atomicWrite.ts:149-166` (`rmwLocked`), `Core/Files/atomicWrite.ts:237-251` (`updateNexusFile`), `Core/Files/atomicWrite.ts:280-286` (`updateNexusConfig`), `Core/Nexus/readNexus.ts:65` (`readOrder`), `Core/Nexus/readNexus.ts:109` (`readConfig`), `Core/Nexus/readNexus.ts:282` (`readNexusConfig`), `Core/Properties/propertiesRegistry.ts:65` (`readKeptRegistry`), `Core/Navigation/navigationFile.ts:33-41` (`readNavigationFile`), `Core/Matrix/matrixFile.ts:11` (`readMatrixFile`), `Core/Nexus/fileEvents.ts:549-568,641-642` (`applyOrder`), `Core/Session/navigationSlice.ts:277-278` (`writeNav`), `Core/Session/matrixSlice.ts:172-175` (`patchMatrix`), `Core/Interface/Notifications/notifications.ts` (`persist`, `reportRefusal`), `Core/Assets/assetMigrate.ts:85-114,166,175` (`collectRefs`, `migrateAssets`), `Core/Tiles/tileDoc.ts:20` (`readTileDocAt`)
-[^61]: **I-061:** `UIX/Menus/MenuRows.tsx:153` (`MenuItem`'s hint), `UIX/Menus/menu-row.css.ts:205` (`subLabel`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:399-405` (the editor's `FrameSlide`), `Core/Properties/Schema/formatRows.ts:12-39` (`formatRows`), `Core/Settings/SettingsWindow.tsx:47-52` (`settingsRow`)
+[^61]: **I-061:** `UIX/Menus/MenuRows.tsx:163` (`MenuItem`'s caption), `UIX/Menus/menu-row.css.ts:210` (`caption`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:399-405` (the editor's `FrameSlide`), `Core/Properties/Schema/formatRows.ts:14-54` (`formatRows`), `Core/Settings/frames.ts:85-91` (`settingsRow`)
 [^62]: **I-062:** `Core/Nexus/settle.ts:~187-197` (`missedEvents`), `Core/Nexus/settle.ts:~212-230` (`settleBatch`), `Core/Nexus/settle.ts:~263-267` (`paid`), `Core/Nexus/settle.ts:~269-304` (`payOutsideMoves`), `Core/Index/indexSeed.ts:~202-259` (`seedContentIndex`, `landed` at `:221`), `Core/Contract/handlers.ts:73` (the restart's catch-up)
 [^63]: **I-063:** `Core/Nexus/settle.ts:~132-142` (the renames loop before `walkWhileOwed`), `Core/Nexus/settle.ts:~269-304` (`payOutsideMoves`), `Core/Nexus/cascade.ts:~207-225` (`renameCascade`), `Core/Connections/pageIndex.ts:111` (`namesOf`), `Core/Nexus/heldPages.ts:~25-28` (`livePathOf`), `Core/Index/indexSeed.ts:~95-99,146` (`HeadingRenameSeen`, `reindex`)
 [^64]: **I-064:** `Core/Nexus/settle.ts:~363-397` (`payOutsideMoves`), `Core/Trash/spend.ts:~120-303` (`restoreTrashed`, `parkLinks` at `:~171`), `Core/Nexus/settle.ts:~319-353` (`returningCascade`, `repairLanded` at `:~338`)
@@ -1454,5 +1454,5 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^76]: **I-076:** `Core/Session/nexusSlice.ts:248-265` (`mutate`, the cleanup's discarded reply at `:256` and the notice's Try Again at `:261`), `Core/Session/nexusSlice.ts:290` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:255` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:153,174` (`createContextGroup`, `createSpace`), `Core/Trash/spend.ts:185` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Bundles/browser.ts:402-443` (`many`, its `quiet: true` call at `:428`), `.claude/Planning/Disclosable Bundles/Disclosable Bundles — Plan.md`
 [^77]: **I-077:** `Core/Bundles/bundle.ts:~369-393` (`spendBundle`), `Core/Bundles/bundle.ts:~81-84` (`bundleArtifact`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Trash/spend.ts:~110` (`emptyBundle`), `Core/Trash/spend.ts:~133,~295` (`restoreTrashed`), `Core/Archive/archive.ts:~119` (`restoreArchived`), `Core/Trash/delete.ts:~136` (`deleteOp`)
 [^78]: **I-078:** `UIX/Interactions/engine.tsx:~1287-1318` (`useDragItem`), `UIX/Interactions/engine.tsx:~1337-1372` (`useLineRow`), `UIX/Interactions/engine.tsx:~1120,~1174-1180,~1234` (`ZoneValue`, `useZoneSeat`, the zone's Tab stop), `UIX/Interactions/engine.tsx:~682-685` (the line lift refused on a null `snap`), `UIX/Interactions/a11y.ts:~1,~57-60` (`INSTRUCTIONS_ID`), `UIX/Interactions/lineList.ts:~20-35` (`locked`), `Core/Bundles/BundleTable.tsx:~106`, `Core/Navigation/NavList.tsx:~161`
-[^79]: **I-079:** `Core/Settings/frames.ts:~617` (the hint), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
+[^79]: **I-079:** `Core/Settings/frames.ts:~645` (the caption), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
 [^80]: **I-080:** `Core/Bundles/BundleTable.tsx:~177` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Settings/TrashFrame.tsx` (no bar)

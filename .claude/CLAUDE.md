@@ -76,6 +76,7 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Contract      | • The interface ↔ host channel declaration
 ├── // Files         | • Atomic writes, page files, and sidecars
 ├── // Index         | • The content index and its seeding
+├── // Info          | • In-app information: the InfoButton, its pane, and the InfoIndex
 ├── // Interface     | • The application shell and its windows
 ├── // MarkdownPM    | • The CodeMirror Markdown editor
 ├── // Matrix        | • The graph view: its engine, surface, and window
@@ -114,6 +115,5 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 
 // Desktop           | • The Electron host — the app's only caller of Node
 // Mobile            | • The mobile companion
-// Dashboard         | • The line ledger and design-system showcase pages
 // Sync              | • The cross-device sync layer
 ```
