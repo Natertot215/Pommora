@@ -271,6 +271,18 @@ export function PickerMenu({
     placeResize,
   ])
 
+  // A child that builds its content in an effect, as an editor does, leaves the pane empty at the first measure, so a pane grown once its children's effects have run decides again.
+  useEffect(() => {
+    const el = glassRef.current
+    if (!open || !el) return
+    const box = { w: el.offsetWidth, h: el.offsetHeight }
+    if (paneBox.current.w === box.w && paneBox.current.h === box.h) return
+    paneBox.current = box
+    decidedDir.current = null
+    decidedCenter.current = null
+    place.current?.()
+  }, [mounted, open])
+
   const placed = pos !== null
   const trap = focus === 'trap'
   const trapTab = useFocusScope(paneRef, trap && open, {
