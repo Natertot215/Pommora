@@ -22,9 +22,9 @@ A row's secondary line takes one name, `caption`, from Settings through `MenuIte
 
 **InfoButton** (`Core/Info/InfoButton.tsx`) is a small UIX `Button` that sits right after a row's title through `MenuItem`'s new `info` slot: a 0.5-second rest opens its pane below it, a click holds the pane open and a second click closes it, Escape or an outside press closes it, a tap opens it on touch, it works on a disabled row, and one pane shows at a time. Its look is three independent props (glyph, type, border), defaulting to the `info` glyph, the `filled` type, and no border, its three glyphs curated in the icon registry; its accessible name is "Title - Info." The same file holds `infoFor(id, title, look?)`, the one call a row cites an entry through, which hands a row an InfoButton whose **InfoPane** shows the entry as read-only, unselectable Markdown with no hover behavior. **InfoIndex** (`Core/Info/InfoIndex.md`) holds each entry once, wrapped in a tag naming its ID, and `Core/Info/infoIndex.ts` reads its format once into its entries by ID.
 
-Two example entries, cited by the Label Format and Value Format rows, and an Iteration window preview of a disabled row and the look's variants, carry the build and its verification through a live drive; they leave after verification, so the InfoIndex ships empty and rows cite their first real entries later. Last, `.claude/Resources/` returns holding a symlink to the InfoIndex, so the folder's existing mirror row carries it to NexusOS, and the daily commit line lands; the three outdated notes the folder once held aren't restored.
+Four example entries, cited by the Label Format and Value Format rows, Settings' Date Format row, and a page's Aliases row, and an Iteration window preview of a disabled row and the look's variants, carry the build and its verification through a live drive; they leave after verification, so the InfoIndex ships empty and rows cite their first real entries later. Last, `.claude/Resources/` returns holding a symlink to the InfoIndex, so the folder's existing mirror row carries it to NexusOS, and the daily commit line lands; the three outdated notes the folder once held aren't restored.
 
-**The Number:** about +305 / −150 across Phases 1–3, roughly +155 net counting code alone (tests, documents, and `.claude/` excluded), of which about +40 is the examples and the Iteration window's preview that Phase 5 removes, so about +110 ships. Phase 1 removes more than it adds (`SettingsFieldRow`, four split props, two translation seams); the InfoButton, its pane, and its stylesheet (about +110) are the behavior the decisions require that nothing in the tree did, built from the kit's button, hover reveal, dropdown, and read-only editor. Each phase's measured delta is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
+**The Number:** about +325 / −155 across Phases 1–3, roughly +170 net counting code alone (tests, documents, and `.claude/` excluded), of which about +55 is the examples and the Iteration window's preview that Phase 5 removes, so about +115 ships. Phase 1 removes more than it adds (`SettingsFieldRow`, four split props, two translation seams); the InfoButton, its pane, and its stylesheet (about +110) are the behavior the decisions require that nothing in the tree did, built from the kit's button, hover reveal, dropdown, and read-only editor. Each phase's measured delta is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
 
 **Net Ledger** (the Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head):
 
@@ -32,9 +32,9 @@ Two example entries, cited by the Label Format and Value Format rows, and an Ite
 | ----- | -------- | -------- | ---------- |
 | 1 | +75 / −125 | | |
 | 2 | +135 / −18 | | |
-| 3 | +95 / −8 | | |
+| 3 | +115 / −13 | | |
 | 4 | 0 | | |
-| 5 | 0 / −40 | | |
+| 5 | 0 / −55 | | |
 
 #### Concepts
 
@@ -54,6 +54,8 @@ Two example entries, cited by the Label Format and Value Format rows, and an Ite
 | `infoFor` • Function | The InfoButton a row carries for the entry its ID names. | `Core/Info/InfoButton.tsx` |
 | `Entry` • Component | The pane's contents: an entry as read-only, unselectable Markdown under an inert host with no connections, built only while the pane is open. | `Core/Info/InfoButton.tsx` |
 | `infoIndex.test.ts` • File | The InfoIndex's format and its citations. | `Core/Info/infoIndex.test.ts` |
+| `RowText.info` • Field | A Settings row's InfoIndex ID, which `settingsRow` turns into the row's InfoButton. | `Core/Settings/frames.ts` |
+| `ManageRow.info` • Prop | What a managed list's row shows right after its title. | `UIX/Menus/ManageRow.tsx` |
 | `MenuItem.info` · `MenuRow.info` • Fields | What a row shows right after its title, an InfoButton for one. | `UIX/Menus/MenuRows.tsx`, `UIX/Menus/MenuIndex.tsx` |
 | `titleLine` • Class | The title laid out as a line, for a row carrying something after it. | `UIX/Menus/menu-row.css.ts` |
 | `rowAccessory` • Class | A row-borne button's width and overhang, composed by `accessoryButton` and worn alone by the InfoButton. | `UIX/Menus/menu-row.css.ts` |
@@ -105,9 +107,9 @@ Two example entries, cited by the Label Format and Value Format rows, and an Ite
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land.
 - **Tests:** each new behavior gets a test that fails without its change; a rewritten case counts as that test. The InfoPane's pointer rule (Task 3-2), a CSS hit rule jsdom can't apply, is held by the drive's Group 3 instead. The InfoIndex's citation test is written last (D-3), in Phase 6, while the examples still cite their entries.
 - **Docs:** feature docs fix only what's false, in place, at its length or shorter, and the InfoButton gains its description where *§Reconciliation* names; nothing else in `.claude/Features` changes.
-- **Temporary:** the two example entries, their citations in `formatRows.ts`, the Iteration window's preview, and the drive with its README paragraph exist only from Phase 3 or 4 through Phase 5's first task. Nothing else in the plan is temporary.
+- **Temporary:** the four example entries, their citations (`formatRows.ts`, the Date Format roster row's `info` key, `AliasesRow.tsx`), the Iteration window's preview, and the drive exist only from Phase 3 or 4 through Phase 5's first task. Nothing else in the plan is temporary.
 - **Frozen:** `PickerMenu`'s API and behavior, the InfoPane opening as every dropdown does; the glance, its stylesheet, and its dismissal entry, since each surface holds its own overrides of the editor's chrome (`glance-pane.css`, `page-window.css`, `text-pane.css`, and now `info-pane.css`); captions' content; `Core/Sync/`; Project Sapphire.
-- **Execution:** the plan runs end to end through `c/plan-execution`, Nathan reachable at Stops. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every review checkpoint dispatches one read-only `opus-high` agent, which loads `code-simplification` and then `adversarial-review` and weighs the phase against these constraints and its place in the plan, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator reconciles its findings before the next phase opens. An in-flight call is disclosed in chat and recorded under *§Deviations* only where it changes an outcome. Each compaction checkpoint runs `c/pre-compaction` and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files before the next phase opens.
+- **Execution:** the plan runs end to end through `c/plan-execution`, headlessly and overnight: no step waits on Nathan; an ambiguity is taken at its simplest reading and recorded under *§Deviations*, and anything that needs his ruling is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every review checkpoint dispatches one read-only `opus-high` agent, which loads `code-simplification` and then `adversarial-review` and weighs the phase against these constraints and its place in the plan, reading outward rather than in isolation, with no implementation running meanwhile; the orchestrator reconciles its findings before the next phase opens. An in-flight call is disclosed in chat and recorded under *§Deviations* only where it changes an outcome. Each compaction checkpoint runs `c/pre-compaction` and stops until Nathan re-prompts; on the re-prompt the orchestrator rereads *§Constraints* and `c/plan-execution` from the files before the next phase opens.
 - **Neutral Gate:** the post-implementation neutral reviewer (`fable-high`) gets only the BASELINE head, the head before Phase 5, the Mandate, and this intention: *"Pommora explained its rows only through a one-line caption, which the code named three ways. This work gives the line one name, removes a duplicate Settings row helper, and adds an in-app information mechanism: a small button right after a row's title that opens, on a short rest, a click, or a tap, a dropdown reading one entry of a single Markdown file in which each explanation lives once under an ID that rows cite. The button reuses the kit's button, hover reveal, and dropdown, and the pane renders through the app's read-only Markdown editor, its text taking no pointer but its web links. Two example entries cited by the property format rows carry the work's verification and leave after it; real rows cite their first entries later, so the mechanism ships with no caller."* It answers, without hedging, whether the result holds to every principle under **Mandate**, and what it would correct. Every phase is written so that review passes.
 
 #### Process Overview
@@ -128,7 +130,7 @@ Two example entries, cited by the Label Format and Value Format rows, and an Ite
   - [ ] Task 3-2 · The InfoIndex, its format, and the pane
   - [ ] Task 3-3 · The examples
   - [ ] Review Checkpoint
-- [ ] `[Compaction checkpoint: c/pre-compaction; on the re-prompt, reread §Constraints and c/plan-execution before Phase 4 opens]`
+- [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [ ] **Phase 4** — Verification and the Documents
   - [ ] Task 4-1 · The Info Buttons Drive
   - [ ] Task 4-2 · The citation test
@@ -284,7 +286,7 @@ The same two-line change lands in `Core/Properties/Schema/PropertyFrame.tsx` (`:
 
 #### Task 1-3
 
-Settings' row text names its secondary line `caption`, `settingsRow` moves beside `RowText` as the one map from a Settings row to a menu row, and `SettingsFieldRow` leaves: the path and clear rows build through `settingsRow`, the exclusions and preview-rules rows hand their label and caption to `ManageRow`, and `NexusRows`' five field rows build through it too. `RowText` gains no `info` field, since no Settings row cites an entry.
+Settings' row text names its secondary line `caption`, `settingsRow` moves beside `RowText` as the one map from a Settings row to a menu row, and `SettingsFieldRow` leaves: the path and clear rows build through `settingsRow`, the exclusions and preview-rules rows hand their label and caption to `ManageRow`, and `NexusRows`' five field rows build through it too. `RowText` gains its `info` field in Task 3-3, with the first Settings citation.
 
 **PROCEDURE**
 
@@ -1139,7 +1141,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 ### Phase 3 — The InfoIndex and Its Pane
 
-**GOAL:** Rows can cite entries: the editor gains its opt-out of the keyboard's reach, the InfoIndex holds the entries and is read once when its module loads, `infoFor` hands a row an InfoButton whose pane shows the entry's read-only Markdown with no hover behavior, and the two examples make it visible on the Label Format and Value Format rows and in the Iteration window.
+**GOAL:** Rows can cite entries: the editor gains its opt-out of the keyboard's reach, the InfoIndex holds the entries and is read once when its module loads, `infoFor` hands a row an InfoButton whose pane shows the entry's read-only Markdown with no hover behavior, and the four examples make it visible on the Label Format, Value Format, Date Format, and Aliases rows and in the Iteration window.
 
 #### Task 3-1
 
@@ -1198,7 +1200,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-2
 
-`Core/Info/infoIndex.ts` owns the InfoIndex's format: it reads the file through `?raw` and parses it once into `ENTRIES`, its entries by ID (a tag line naming a kebab-case ID, the Markdown, and its closing tag line, either tag line tolerating trailing spaces an editor leaves; headings and anything between entries are the file's own), with no React and no editor in its imports, so the format's test loads text alone. `InfoButton.tsx` gains `infoFor(id, title, look?)` and the pane's contents, a private `Entry` that runs `MarkdownEditor` as the history reader does (`Core/Interface/Windows/PageReaderWindow.tsx:113-120`): read-only, unselectable, under an inert host with no connections, so `[[links]]` carry no meaning and embeds don't build. `PickerMenu` renders nothing closed (`UIX/Pickers/PickerMenu.tsx:305`), so a frame of citing rows builds no host and no editor until a pane opens. `info-button.css` gains the pane's overrides of the editor's chrome, as each surface's own stylesheet holds them (`glance-pane.css`, `page-window.css`, `text-pane.css`): no rail, the scroller capped and scrolling, the content's inset, no fold chevron, and the pointer rule. The pane's text and everything inside it take no pointer, so the pane has no hover behavior at all, with a pointer or on touch: a press lands on the scroller, nothing reveals, no reveal can hand a control the pointer back, and nothing selects, focuses, copies, or starts a gesture. A web link in the prose takes the pointer back and follows on `click` (`Core/MarkdownPM/Gestures/pointerPath.ts:82`), its `mousedown` claimed before CodeMirror's own, so focus stays where it was; a link in a table cell stays out, since in the pane it has nothing to follow (`Core/MarkdownPM/Tables/cellStatic.tsx:648`). The scroller keeps the pointer, so the wheel still scrolls, and a code line wider than the pane rests clipped at its ellipsis. A cited entry that's missing or empty opens an empty pane, which D-3's test keeps from landing, and the placeholder host list hides "Click to type" there. The InfoIndex holds the two examples, in Claude's wording, built to exercise headings, emphasis, lists, inline code, a code block with a long line, a quote, a table with a link in it, a web link, and a body long enough to scroll.
+`Core/Info/infoIndex.ts` owns the InfoIndex's format: it reads the file through `?raw` and parses it once into `ENTRIES`, its entries by ID (a tag line naming a kebab-case ID, the Markdown, and its closing tag line, either tag line tolerating trailing spaces an editor leaves; headings and anything between entries are the file's own), with no React and no editor in its imports, so the format's test loads text alone. `InfoButton.tsx` gains `infoFor(id, title, look?)` and the pane's contents, a private `Entry` that runs `MarkdownEditor` as the history reader does (`Core/Interface/Windows/PageReaderWindow.tsx:113-120`): read-only, unselectable, under an inert host with no connections, so `[[links]]` carry no meaning and embeds don't build. `PickerMenu` renders nothing closed (`UIX/Pickers/PickerMenu.tsx:305`), so a frame of citing rows builds no host and no editor until a pane opens. `info-button.css` gains the pane's overrides of the editor's chrome, as each surface's own stylesheet holds them (`glance-pane.css`, `page-window.css`, `text-pane.css`): no rail, the scroller capped and scrolling, the content's inset, no fold chevron, and the pointer rule. The pane's text and everything inside it take no pointer, so the pane has no hover behavior at all, with a pointer or on touch: a press lands on the scroller, nothing reveals, no reveal can hand a control the pointer back, and nothing selects, focuses, copies, or starts a gesture. A web link in the prose takes the pointer back and follows on `click` (`Core/MarkdownPM/Gestures/pointerPath.ts:82`), its `mousedown` claimed before CodeMirror's own, so focus stays where it was; a link in a table cell stays out, since in the pane it has nothing to follow (`Core/MarkdownPM/Tables/cellStatic.tsx:648`). The scroller keeps the pointer, so the wheel still scrolls, and a code line wider than the pane rests clipped at its ellipsis. A cited entry that's missing or empty opens an empty pane, which D-3's test keeps from landing, and the placeholder host list hides "Click to type" there. The InfoIndex holds the examples, in Claude's wording: `label-format` and `value-format` below, and `date-format` and `aliases` in the same shape. Every one of the four exercises every construct the editor draws: headings, bold, italic, strikethrough, `==highlights==`, inline code, a bulleted list with a nested level, a numbered list, a checklist, a quote, a callout, a table (one with a link in a cell), a code block with a long line, a web link in the prose, a divider, and a body long enough to scroll; the two below are the minimum shape, and the executor fills each entry out to that list.
 
 **AFTER**
 
@@ -1326,7 +1328,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-3
 
-The Label Format and Value Format rows cite the two examples, adding `info` to the item row `pickerRow` builds, and the Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
+The Label Format and Value Format rows cite their examples, adding `info` to the item row `pickerRow` builds; Settings' Date Format row cites `date-format` through `RowText.info`, which `settingsRow` turns into the row's InfoButton; and a page's Aliases row cites `aliases` through `ManageRow`'s new `info`. `RowText.info`, `settingsRow`'s one line, and `ManageRow.info` are the slots Settings rows and managed lists cite through, and stay; the citations themselves are temporary. With a Settings row citing, a frame switch or the window's exit can unmount an open pane mid-exit, which `PickerMenu`'s dev guard logs as `ManageRow`'s pane already does; the drive records it. and the Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
 
 **AFTER**
 
@@ -1378,6 +1380,65 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 +        ),
 ```
 
+```Core/Settings/frames.ts diff
+@@ imports @@
+
++import { infoFor } from '../Info/InfoButton'
+
+@@ RowText @@
+
+   caption?: string
++  /** The InfoIndex entry the row's InfoButton shows. */
++  info?: string
+   when?: (s: SessionState) => boolean
+
+@@ settingsRow @@
+
+   caption: row.caption,
++  info: row.info === undefined ? undefined : infoFor(row.info, row.label),
+   trailing,
+
+@@ the Date Format row (temporary) @@
+
+             label: 'Date Format',
+             caption: 'How a date reads wherever a column has not chosen its own form.',
++            info: 'date-format',
+```
+
+```UIX/Menus/ManageRow.tsx diff
+@@ ManageRow @@
+
+   caption,
++  info,
+   icon,
+ …
+   caption?: string
++  info?: ReactNode
+   icon?: IconName
+ …
+         caption,
++        info,
+         trailing: {
+```
+
+```Core/Pages/AliasesRow.tsx diff
+@@ imports @@
+
++import { infoFor } from '../Info/InfoButton'
+
+@@ AliasesRow (temporary) @@
+
+-    <ManageRow label="Aliases" icon={ALIAS_ICON} count={aliases.length} solid menu>
++    <ManageRow
++      label="Aliases"
++      icon={ALIAS_ICON}
++      count={aliases.length}
++      info={infoFor('aliases', 'Aliases')}
++      solid
++      menu
++    >
+```
+
 ```Core/Interface/Windows/IterationWindow.tsx diff
 @@ imports @@
 
@@ -1412,7 +1473,7 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 
 **VERIFY**
 
-- [ ] In `~/Test`, a Select's settings show the glyph right after "Label Format" and "Value Format," and the Iteration window (⌘⇧T) shows the disabled row and thirteen variants: three glyphs, and five types each with and without a border.
+- [ ] In `~/Test`, a Select's settings show the glyph right after "Label Format" and "Value Format," Settings › General shows it after "Date Format," a page's settings show it after "Aliases," and the Iteration window (⌘⇧T) shows the disabled row and thirteen variants: three glyphs, and five types each with and without a border.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -1420,7 +1481,7 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 
 - [ ] No read-only surface changed but the InfoPane: the history reader and the glance select and behave as before.
 - [ ] The InfoIndex is read once; nothing parses or reads it per open or per render, and the pane's host passes no connections.
-- [ ] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, and the InfoIndex's two entries; nothing else needs undoing in Task 5-1.
+- [ ] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, `AliasesRow.tsx`, the Date Format row's `info` key, and the InfoIndex's four entries; nothing else needs undoing in Task 5-1.
 
 ### Phase 4 — Verification and the Documents
 
@@ -1428,7 +1489,7 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 
 #### Task 4-1
 
-`.claude/scripts/Info Buttons Drive/` holds `live-drive.mjs` and `MATRIX.md`, on port 9413 with shots under `info-shots`, built on `drive-harness.mjs` (`launch`, `restore`, `hover`, `mouseAt`, `mouseClick`, `sweep`, `pressKey`, `shot`, `item`, `tally`) and the Metadata Drive's `openEditor` and `trigger`, copied in, since drives share only the harness. `.claude/scripts/README.md` gains its paragraph. Each check prints as `[g<group> <decisions>] <name>`.
+`.claude/scripts/Info Buttons Drive/` holds `live-drive.mjs` and `MATRIX.md`, with no README paragraph,, on port 9413 with shots under `info-shots`, built on `drive-harness.mjs` (`launch`, `restore`, `hover`, `mouseAt`, `mouseClick`, `sweep`, `pressKey`, `shot`, `item`, `tally`) and the Metadata Drive's `openEditor` and `trigger`, copied in, since drives share only the harness. `.claude/scripts/README.md` gains its paragraph. Each check prints as `[g<group> <decisions>] <name>`.
 
 **AFTER**
 
@@ -1444,6 +1505,9 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 +| Placement | open the Select's settings | `button[aria-label="Label Format - Info"]` sits right after the title text, inside the title line; the row stands as tall as it did at the baseline; a shot | A-1, F-1 |
 +| The look | as above | the glyph wears `filled`, no outline, the `info` icon | A-2 |
 +| The pane | with Hover Previews set to Off, rest on the glyph 600 ms | the pane opens below the glyph, 285px wide, with no resize edges; a shot in light and dark | B-1, B-2, C-4 |
++| The other rows | open Settings and rest on Date Format's glyph; open a page's settings and rest on Aliases' glyph | each glyph sits right after its title and opens its pane; a shot of each | A-1, F-1 |
++| The entries | open each of the four panes and scroll each through | every construct in each entry draws (headings, emphasis, strikethrough, highlights, lists, checklist, quote, callout, tables, code, links, divider); a shot of each pane, top and scrolled | C-2 |
++| A frame switch | hold Date Format's pane open and switch Settings frames | record what the console logs | — |
 +| The entry | as above | the heading, bold, the list, and inline code draw; Value Format's table, quote, code block, and link draw, and its body scrolls past 320px | C-2 |
 +| The long code line | open Value Format's pane | the code block's long line rests clipped at its ellipsis and can't scroll sideways, the trade Task 3-1 records; the body still wheels | C-2 |
 +
@@ -1479,11 +1543,11 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 
 1. Write `live-drive.mjs` to the matrix, run it from a clean build, and read every result.
 2. A failing case is fixed in the task it belongs to, or in the drive where the case misreads a decision, never bent to pass; record each fix's commit.
-3. Deliver the shots in chat.
+3. Read every shot with the Read tool as it's taken, show it in chat, and state in one line what it shows against its case's Expected; a shot that doesn't match is a failing case.
 
 **VERIFY**
 
-- [ ] Every group runs from a clean build, and every case passes or is recorded under *§Deviations* with Nathan's ruling.
+- [ ] Every group runs from a clean build, and every case passes or is recorded under *§Deviations* for Nathan's ruling.
 - [ ] The run left `~/Test` as it found it.
 
 #### Task 4-2
@@ -1546,7 +1610,7 @@ The Label Format and Value Format rows cite the two examples, adding `info` to t
 
 #### Task 4-3
 
-Every line *§Reconciliation* assigns this task is rewritten in place, plainly, at its length or shorter, and the InfoButton gains its description in `InterfacePM.md`, in its own register. The feature docs describe the state at this head: InfoButtons are a mechanism rows cite entries through, and no row carries one yet; the mirror and the daily commit are Task 5-2's to describe, once they exist.
+Every line *§Reconciliation* assigns this task is rewritten in place, plainly, at its length or shorter, and the InfoButton gains its description in `InterfacePM.md`, in its own register; the docs gain about four lines in all, and nothing else in `.claude/Features` changes. The feature docs describe the state at this head: InfoButtons are a mechanism rows cite entries through, and no row carries one yet; the mirror and the daily commit are Task 5-2's to describe, once they exist.
 
 **PROCEDURE**
 
@@ -1560,13 +1624,13 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 +### InfoPanes
 +
-+A row can explain itself past its caption through an **InfoButton**, a small glyph right after its title (`Core/Info/InfoButton.tsx`, built from the kit's button, hover reveal, and dropdown). Resting on it for half a second opens its **InfoPane** as any dropdown opens; a click holds the pane open until a second click, Escape, or a press outside it; a tap opens it on touch; and it works on a disabled row. One pane shows at a time, and Hover Previews doesn't govern it. The pane reads one entry of the **InfoIndex** (`Core/Info/InfoIndex.md`), a Markdown file in which each explanation lives once, wrapped in a tag naming its ID; a row cites an entry by that ID through `infoFor` (`Core/Info/InfoButton.tsx`), so one entry can serve several rows. An entry draws as read-only Markdown with no hover behavior that can't be pressed, selected, or copied, where `[[connections]]` carry no meaning and only the web links in its prose act, and a code line wider than the pane rests clipped. No row cites an entry yet.
++A row can carry an **InfoButton** right after its title (`Core/Info/InfoButton.tsx`): resting on it, clicking it, or tapping it opens a read-only **InfoPane** of Markdown from the **InfoIndex** (`Core/Info/InfoIndex.md`), where each explanation lives once under the ID rows cite through `infoFor`.
 ```
 
 **VERIFY**
 
 - [ ] Every *§Reconciliation* line assigned Task 4-3 is ticked and reads true against the code at this head; none describes the mirror or the daily commit.
-- [ ] `git grep -n "subLabel\|MenuCaption\|SettingsFieldRow" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md` prints nothing; `.claude/CLAUDE.md`'s structure lists `// Info` under Core, none under UIX, and no `// Dashboard`.
+- [ ] `git grep -n "subLabel\|MenuCaption\|SettingsFieldRow" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md` prints nothing; `.claude/CLAUDE.md`'s structure lists `// Info` under Core and none under UIX; the docs gained about four lines in all.
 - [ ] Check for unnecessary changes or mistakes.
 
 #### Review Checkpoint
@@ -1583,12 +1647,12 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 #### Task 5-1
 
-The examples leave in one commit: both InfoIndex entries (the file stays, empty), both citations, the Iteration window's preview, and the drive with its README paragraph, its matrix and results kept in *Info Buttons — Results*. `formatRows.ts` and `IterationWindow.tsx` return byte-for-byte to their state before Task 3-3; nothing in UIX served only the examples.
+The examples leave in one commit: the four InfoIndex entries (the file stays, empty), every citation (`formatRows.ts`, the Date Format roster row's `info` key, `AliasesRow.tsx`), the Iteration window's preview, and the drive, its matrix and results kept in *Info Buttons — Results*. `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` return byte-for-byte to their state before Task 3-3; `RowText.info`, `settingsRow`'s line, and `ManageRow.info` stay as the slots real rows cite through.
 
 **PROCEDURE**
 
 1. Copy the drive's `MATRIX.md` and its last run's results into `.claude/Planning/Info Buttons/Info Buttons — Results.md`.
-2. Restore `formatRows.ts` and `IterationWindow.tsx` from the commit before Task 3-3's, empty `InfoIndex.md`, delete `.claude/scripts/Info Buttons Drive/` and its README paragraph.
+2. Restore `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` from the commit before Task 3-3's, drop the Date Format row's `info: 'date-format'`, empty `InfoIndex.md`, and delete `.claude/scripts/Info Buttons Drive/`.
 3. Run the gates; launch the build and confirm no `[aria-label$=" - Info"]` exists in a Select's settings or the Iteration window.
 
 **AFTER**
@@ -1601,7 +1665,7 @@ The examples leave in one commit: both InfoIndex entries (the file stays, empty)
 
 **VERIFY**
 
-- [ ] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx` prints nothing.
+- [ ] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx Core/Pages/AliasesRow.tsx` prints nothing, and `git grep -n "info: '" -- Core/Settings/frames.ts` prints nothing.
 - [ ] `git grep -n "infoFor(" -- Core UIX` prints nothing, `InfoButton.tsx` defining it as `infoFor = (`; `Core/Info/InfoIndex.md` is tracked and empty.
 - [ ] Run the gates; `infoIndex.test.ts` passes with no citation.
 - [ ] Check for unnecessary code or mistakes.
@@ -1681,36 +1745,22 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 
 **Feature Docs**
 
-- `.claude/Features/PommoraUIX.md:361` — "`MenuCaption`", the stacking order's "caption", and "`MenuItem` carries `leading` · title · `subLabel` · `detail` · `trailing` · `overlay`" (becomes `MenuDesc`, "desc", and `caption`, and gains the info slot) — Task 4-3
-- `.claude/Features/PommoraUIX.md:362` — the Row classes and `AccessoryButton`'s description (the shared `rowAccessory`) — Task 4-3
-- `.claude/Features/PommoraUIX.md:199` — "row sub-label → Caption" — Task 4-3
-- `.claude/Features/PommoraUIX.md:237`, `:238`, `:409` — Inline's "radius `4px`" (`6px`), Small's "padX `4px`" (`8px`), and "the button ladder's `4/6/10/12`" (`6/6/10/12`), already false — Task 4-3
-- `.claude/Features/SymbolsPM.md` *§Assignments* — the InfoButton's three glyphs, `info`, `circle-question-mark`, and `circle-alert`, in a table of their own — Task 4-3
-- `.claude/Features/InteractionPM.md:38` — "`useHoverReveal` carries the timed cases — a dwell before opening …" (the dwell is the caller's; the InfoButton's touch exception and its reason) — Task 4-3
-- `.claude/Features/MarkdownPM.md:10` — the surfaces the editor runs inside gain the InfoPane, and its `selectable` opt-out, which takes the text out of the keyboard's reach — Task 4-3
-- `.claude/Features/ConfigurationPM.md:20` — "whose hint is the first twelve characters of the device fingerprint" (already false: the fingerprint is each device row's caption) and "a Sync row whose hint reports" — Task 4-3
-- `.claude/Features/ConfigurationPM.md:22` — "The Sync row's hint follows the client's own four states" — Task 4-3
-- `.claude/Features/ConfigurationPM.md:63` — Hover Previews gains the clause that it doesn't govern InfoPanes — Task 4-3
 - `.claude/Features/InterfacePM.md` — *§InfoPanes*, after *§Confirmation & Notifications*, as Task 4-3's AFTER writes it — Task 4-3
 - `.claude/Features/InterfacePM.md` *§InfoPanes* — one sentence: the InfoIndex mirrors to NexusOS as `PM-Info-Index.md`, where its wording is edited, and the day's edits commit on their own — Task 5-2
+- `.claude/Features/PommoraUIX.md:361` — "`MenuCaption`" and "`subLabel`" read `MenuDesc` and `caption`, in place — Task 4-3
 
 **Issues**
 
-- `.claude/IssuesPM.md:79`, `:996`, `:1004`, `:1008`, `:1457` (I-079) — a Settings row's "hint" — Task 4-3
-- `.claude/IssuesPM.md:98`, `:1142`, `:1150`, `:1154` (I-061) — "a row's hint" — Task 4-3
-- `.claude/IssuesPM.md:1439` (`[^61]`) — "`MenuItem`'s hint" at `MenuRows.tsx:153`, "`subLabel`" at `menu-row.css.ts:205`, and `settingsRow` at `SettingsWindow.tsx:47-52` — Task 4-3
+- `.claude/IssuesPM.md:79`, `:98`, `:996`, `:1004`, `:1008`, `:1142`, `:1150`, `:1154`, `:1439`, `:1457` — a renamed identifier (`hint`, `subLabel`, `SettingsFieldRow`) reads its new name, in place — Task 4-3
 
-**Structure and Tooling**
+**Structure and History**
 
-- `.claude/CLAUDE.md:117` — "`// Dashboard | • The line ledger and design-system showcase pages`" leaves — Task 4-3
-- `.claude/CLAUDE.md:99` — "`Button.tsx + button-base.css`" (`button-base.css.ts`) — Task 4-3
 - `.claude/CLAUDE.md` *§Codebase Structure* — `// Info` under Core ("In-app information: the InfoButton, its pane, and the InfoIndex") — Task 4-3
-- `.claude/Guidelines/Development-Environment.md` *§Gates & Commits* — the InfoIndex's daily commit beside the `--only` rule — Task 5-2
-- `.claude/scripts/README.md` — the drive's paragraph, added in Task 4-1 and removed in Task 5-1
+- `.claude/HistoryPM.md` — one entry titled *App Information Index*, in the file's own entry format, written with the final report
 - `~/.claude/scripts/auto-push.sh:4` — the InfoIndex's commit line — Task 5-2
 
 #### Open Items
 
-- **A Settings Frame Switch:** once a Settings row cites an entry, a frame switch or the window's 210 ms exit unmounts an open InfoPane inside its 255 ms exit, which `PickerMenu`'s dev guard logs, as `ManageRow`'s pane does today; it arrives with the first Settings citation.
+- **A Settings Frame Switch:** once a Settings row cites an entry (Date Format's example is the first, and the drive records it), a frame switch or the window's 210 ms exit unmounts an open InfoPane inside its 255 ms exit, which `PickerMenu`'s dev guard logs, as `ManageRow`'s pane does today; it arrives with the first Settings citation.
 
 #### Deviations
