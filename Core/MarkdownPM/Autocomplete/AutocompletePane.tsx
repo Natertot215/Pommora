@@ -96,7 +96,7 @@ export function AutocompletePane({
           ref={active && i === v.index ? keepInView : undefined}
           className={overScrollHost}
           active={active && i === v.index}
-          subLabel={
+          caption={
             <NavTrail
               segments={row.kind === 'page' ? row.location : []}
               overScroll={false}

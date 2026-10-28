@@ -142,7 +142,7 @@ function rowNode(row: MenuRow): React.JSX.Element {
         <MenuItem
           className={row.className}
           leading={row.icon}
-          subLabel={row.caption}
+          caption={row.caption}
           trailing={t && trailingNode(t)}
           disabled={row.disabled}
           inert={row.inert}

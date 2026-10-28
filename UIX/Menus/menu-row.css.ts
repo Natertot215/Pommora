@@ -202,7 +202,7 @@ export const titleText = style({ vars: { '--scroll-fade': 'var(--fade-base)' } }
 
 export const titleInput = style([fillInput, { WebkitAppRegion: 'no-drag' } as StyleRule])
 
-export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
+export const caption = style([text.caption.standard, { color: c.label.secondary }])
 
 export const actionRow = style([
   rowBox,
