@@ -26,6 +26,7 @@ export function InfoButton({
 }: { title: string; children: ReactNode } & InfoLook): React.JSX.Element {
   const [held, setHeld] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  // A dwelling reveal rests open on a touch screen, so there the pane takes no dwell and opens on a tap alone.
   const { on, hover, reset } = useHoverReveal({ dwellMs: coarse() ? undefined : INFO_DWELL_MS })
   const open = held || on
   const close = useCallback((): void => {
