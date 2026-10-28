@@ -8,6 +8,8 @@ afterEach(cleanupEditor)
 
 const mount = (readOnly: boolean): Promise<EditorView> =>
   mountEditor({ initialBody: 'hello world', readOnly })
+const unselectable = (): Promise<EditorView> =>
+  mountEditor({ initialBody: 'hello world', readOnly: true, selectable: false })
 
 // A read-only portal stays SELECTABLE unless it opts out: its .cm-content stays a focusable contenteditable, editable true. Opting out makes it contenteditable="false".
 describe('read-only portal keeps its content selectable', () => {
@@ -19,20 +21,12 @@ describe('read-only portal keeps its content selectable', () => {
 
 describe('an unselectable editor keeps its content out of reach', () => {
   it("leaves .cm-content out of the keyboard's reach", async () => {
-    const view = await mountEditor({
-      initialBody: 'hello world',
-      readOnly: true,
-      selectable: false,
-    })
+    const view = await unselectable()
     expect(view.contentDOM.getAttribute('contenteditable')).toBe('false')
   })
 
   it('claims a press on it, so a double press moves no focus', async () => {
-    const view = await mountEditor({
-      initialBody: 'hello world',
-      readOnly: true,
-      selectable: false,
-    })
+    const view = await unselectable()
     const held = document.body.appendChild(document.createElement('button'))
     held.focus()
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, detail: 2 })

@@ -1145,7 +1145,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-1
 
-`MarkdownEditor` takes `selectable` (default true), stated as one `EditorView.editable.of(selectable)` line every editor carries, since true is the facet's own default and nothing else in the tree provides it. False makes `.cm-content` `contenteditable="false"`, which takes it out of tab order and lets `body`'s `user-select: none` apply (`Core/Interface/styles.css:30-38`), so Tab and ⌘A can't reach it, and a lowest-precedence `mousedown` claim keeps a press that reaches the text (a double or shifted press on a link, which the link handlers hand back) from starting CodeMirror's mouse selection, which would blur whatever held focus. The pointer half belongs to the surface, as each surface keeps its own overrides of the editor: the InfoPane's stylesheet takes it (Task 3-2). Every other editor keeps its selectable read-only content.
+`MarkdownEditor` takes `selectable` (default true); false adds `EditorView.editable.of(false)` and the press claim below, and every other editor carries neither, since true is the facet's own default and nothing else in the tree provides it. False makes `.cm-content` `contenteditable="false"`, which takes it out of tab order and lets `body`'s `user-select: none` apply (`Core/Interface/styles.css:30-38`), so Tab and ⌘A can't reach it, and a lowest-precedence `mousedown` claim keeps a press that reaches the text (a double or shifted press on a link, which the link handlers hand back) from starting CodeMirror's mouse selection, which would blur whatever held focus. The pointer half belongs to the surface, as each surface keeps its own overrides of the editor: the InfoPane's stylesheet takes it (Task 3-2). Every other editor keeps its selectable read-only content.
 
 **PROCEDURE**
 
@@ -1172,8 +1172,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
      const extensions = [
        readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-+      EditorView.editable.of(selectable),
-+      selectable ? [] : claimPresses,
++      selectable ? [] : [EditorView.editable.of(false), claimPresses],
 
 @@ beside WARM_FIELDS @@
 
@@ -1215,7 +1214,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 **VERIFY**
 
-- [ ] The two new cases fail before the edit and pass after; the existing describes pass unchanged, every editor now carrying `editable` true.
+- [ ] The two new cases fail before the edit and pass after; the existing describes pass unchanged, every selectable editor carrying nothing new.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -1406,7 +1405,6 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 @@ RowText @@
 
    caption?: string
-+  /** What the row shows right after its title: its InfoButton, through `infoFor`. */
 +  info?: ReactNode
    when?: (s: SessionState) => boolean
 
@@ -1781,6 +1779,9 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 #### Open Items
 
 - **A Settings Frame Switch:** once a Settings row cites an entry (Date Format's example is the first, and the drive records it), a frame switch or the window's 210 ms exit unmounts an open InfoPane inside its 255 ms exit, which `PickerMenu`'s dev guard logs, as `ManageRow`'s pane does today; it arrives with the first Settings citation.
+
+- **A Picker Row Citing an Entry:** `pickerRow` returns the whole `MenuRow` union (`UIX/Menus/MenuIndex.tsx`), so the format rows' temporary citation narrows it to attach `info`; the first real picker-row citation gives `PickerRowLook` an `info` it passes through, the one obvious place for it.
+- **`PickerMenu` and Clicks:** `PickerMenu` stops a press's and a context menu's bubbling but not a click's, so the InfoButton's host and `ValueEditor` each stop it; once `PickerMenu` unfreezes, it takes the click too and the pane half of each stop leaves.
 
 #### Deviations
 

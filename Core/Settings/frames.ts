@@ -77,7 +77,6 @@ type Scoped<Nexus, Device> = { key: Nexus; device?: never } | { key: Device; dev
 export interface RowText {
   label: string
   caption?: string
-  /** What the row shows right after its title: its InfoButton, through `infoFor`. */
   info?: ReactNode
   when?: (s: SessionState) => boolean
 }
