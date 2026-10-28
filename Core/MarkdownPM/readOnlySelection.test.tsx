@@ -9,7 +9,7 @@ afterEach(cleanupEditor)
 const mount = (readOnly: boolean): Promise<EditorView> =>
   mountEditor({ initialBody: 'hello world', readOnly })
 
-// A read-only portal stays SELECTABLE unless it opts out: MarkdownPM renders selection natively (no drawSelection layer), so the content has to be a focusable contenteditable — editable stays true. Flipping editable to false makes .cm-content contenteditable="false", which native selection can't drive.
+// A read-only portal stays SELECTABLE unless it opts out: its .cm-content stays a focusable contenteditable, editable true. Opting out makes it contenteditable="false".
 describe('read-only portal keeps its content selectable', () => {
   it('a read-only embed leaves .cm-content contenteditable', async () => {
     const view = await mount(true)

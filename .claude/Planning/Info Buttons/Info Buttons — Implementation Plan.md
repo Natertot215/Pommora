@@ -32,7 +32,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | ----- | -------- | -------- | ---------- |
 | 1 | +75 / −125 | +284 / −254 (+30) | +30 |
 | 2 | +135 / −18 | +147 / −32 (+115) | +145 |
-| 3 | +115 / −13 | | |
+| 3 | +115 / −13 | +126 / −13 (+113) | +258 |
 | 4 | 0 | | |
 | 5 | 0 / −55 | | |
 
@@ -54,7 +54,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | `infoFor` • Function | The InfoButton a row carries for the entry its ID names. | `Core/Info/InfoButton.tsx` |
 | `Entry` • Component | The pane's contents: an entry as read-only, unselectable Markdown under an inert host with no connections, built only while the pane is open. | `Core/Info/InfoButton.tsx` |
 | `infoIndex.test.ts` • File | The InfoIndex's format and its citations. | `Core/Info/infoIndex.test.ts` |
-| `RowText.info` • Field | A Settings row's InfoIndex ID, which `settingsRow` turns into the row's InfoButton. | `Core/Settings/frames.ts` |
+| `RowText.info` • Field | What a Settings row shows right after its title, its InfoButton through `infoFor`, which `settingsRow` and the two managed Settings rows pass on. | `Core/Settings/frames.ts` |
 | `ManageRow.info` • Prop | What a managed list's row shows right after its title. | `UIX/Menus/ManageRow.tsx` |
 | `MenuItem.info` · `MenuRow.info` • Fields | What a row shows right after its title, an InfoButton for one. | `UIX/Menus/MenuRows.tsx`, `UIX/Menus/MenuIndex.tsx` |
 | `titleLine` • Class | The title laid out as a line, for a row carrying something after it. | `UIX/Menus/menu-row.css.ts` |
@@ -107,7 +107,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land.
 - **Tests:** each new behavior gets a test that fails without its change; a rewritten case counts as that test. The InfoPane's pointer rule (Task 3-2), a CSS hit rule jsdom can't apply, is held by the drive's Group 3 instead. The InfoIndex's citation test is written last (D-3), in Task 4-2, while the examples still cite their entries.
 - **Docs:** feature docs fix only what's false, in place, at its length or shorter, and the InfoButton gains its description where *§Reconciliation* names; nothing else in `.claude/Features` changes.
-- **Temporary:** the four example entries, their citations (`formatRows.ts`, the Date Format roster row's `info` key, `AliasesRow.tsx`), the Iteration window's preview, and the drive exist only from Phase 3 or 4 through Phase 5's first task. Nothing else in the plan is temporary.
+- **Temporary:** the four example entries, their citations (`formatRows.ts`, the Date Format roster row's `info` key and `frames.ts`'s `infoFor` import, `AliasesRow.tsx`), the Iteration window's preview, and the drive exist only from Phase 3 or 4 through Phase 5's first task. Nothing else in the plan is temporary.
 - **Frozen:** `PickerMenu`'s API and behavior, the InfoPane opening as every dropdown does; the glance, its stylesheet, and its dismissal entry, since each surface holds its own overrides of the editor's chrome (`glance-pane.css`, `page-window.css`, `text-pane.css`, and now `info-button.css`); captions' content; `Core/Sync/`; Project Sapphire.
 - **Execution:** the plan runs end to end through `c/plan-execution`, headlessly and overnight: no step waits on Nathan; an ambiguity is taken at its simplest reading and recorded under *§Deviations*, and anything that needs his ruling is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint, which dispatches one read-only `opus-high` agent: it loads `code-simplification` and then `adversarial-review`, and it weighs the phase against the Approach, the Principles, and these constraints, reading outward across Core, UIX, and Desktop for twins, duplication, hand-rolling, and odd-ones-out rather than at the diff in isolation, with no implementation running meanwhile; the orchestrator reconciles its findings before the next phase opens. An in-flight call is disclosed in chat and recorded under *§Deviations* only where it changes an outcome. After any compaction, the orchestrator rereads *§Constraints* and `c/plan-execution` from the files before the next task opens, with no stop.
 - **Neutral Gate:** the post-implementation neutral reviewer (`fable-high`) gets only the BASELINE head, the head before Phase 5, the Mandate, and this intention: *"Pommora explained its rows only through a one-line caption, which the code named three ways. This work gives the line one name, removes a duplicate Settings row helper, and adds an in-app information mechanism: a small button right after a row's title that opens, on a short rest, a click, or a tap, a dropdown reading one entry of a single Markdown file in which each explanation lives once under an ID that rows cite. The button reuses the kit's button, hover reveal, and dropdown, and the pane renders through the app's read-only Markdown editor, its text taking no pointer but its web links. Four example entries, cited by the property format rows, a Settings row, and a page's Aliases row, carry the work's verification and leave after it; real rows cite their first entries later, so the mechanism ships with no caller."* It answers, without hedging, whether the result holds to every principle under **Mandate**, and what it would correct. Every phase is written so that review passes.
@@ -125,11 +125,11 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Task 2-3 · The InfoButton
   - [x] Task 2-4 · A row's info slot
   - [x] Review Checkpoint
-- [ ] **Phase 3** — The InfoIndex and Its Pane
-  - [ ] Task 3-1 · An editor out of the keyboard's reach
-  - [ ] Task 3-2 · The InfoIndex, its format, and the pane
-  - [ ] Task 3-3 · The examples
-  - [ ] Review Checkpoint
+- [x] **Phase 3** — The InfoIndex and Its Pane
+  - [x] Task 3-1 · An editor out of the keyboard's reach
+  - [x] Task 3-2 · The InfoIndex, its format, and the pane
+  - [x] Task 3-3 · The examples
+  - [x] Review Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [ ] **Phase 4** — Verification and the Documents
   - [ ] Task 4-1 · The Info Buttons Drive
@@ -1321,7 +1321,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-3
 
-The Label Format and Value Format rows cite their examples, adding `info` to the item row `pickerRow` builds; Settings' Date Format row cites `date-format` through `RowText.info`, which `settingsRow` turns into the row's InfoButton; and a page's Aliases row cites `aliases` through `ManageRow`'s new `info`. `RowText.info`, `settingsRow`'s one line, and `ManageRow.info` are the slots Settings rows and managed lists cite through, and stay; the citations themselves are temporary. With a Settings row citing, a frame switch or the window's exit can unmount an open pane mid-exit, which `PickerMenu`'s dev guard logs as `ManageRow`'s pane already does; the drive records it. The Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
+The Label Format and Value Format rows cite their examples, adding `info` to the item row `pickerRow` builds; Settings' Date Format row cites `date-format` through `RowText.info`, which `settingsRow` passes to its row and the exclusions and preview-rules rows pass to `ManageRow`; and a page's Aliases row cites `aliases` through `ManageRow`'s new `info`. `RowText.info` with its three pass-throughs and `ManageRow.info` are the slots Settings rows and managed lists cite through, and stay, so every citation is one `infoFor('id', 'Title')` call; the citations themselves are temporary. With a Settings row citing, a frame switch or the window's exit can unmount an open pane mid-exit, which `PickerMenu`'s dev guard logs as `ManageRow`'s pane already does; the drive records it. The Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
 
 **AFTER**
 
@@ -1377,26 +1377,34 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 @@ imports @@
 
 +import { infoFor } from '../Info/InfoButton'
++import type { ReactNode } from 'react'
 
 @@ RowText @@
 
    caption?: string
-+  /** The InfoIndex entry the row's InfoButton shows. */
-+  info?: string
++  /** What the row shows right after its title: its InfoButton, through `infoFor`. */
++  info?: ReactNode
    when?: (s: SessionState) => boolean
 
 @@ settingsRow @@
 
    caption: row.caption,
-+  info: row.info === undefined ? undefined : infoFor(row.info, row.label),
++  info: row.info,
    trailing,
 
 @@ the Date Format row (temporary) @@
 
              label: 'Date Format',
              caption: 'How a date reads wherever a column has not chosen its own form.',
-+            info: 'date-format',
++            info: infoFor('date-format', 'Date Format'),
 ```
+
+```Core/Settings/ExcludedDirectoriesRow.tsx diff
+-    <ManageRow label={row.label} caption={row.caption} count={count}>
++    <ManageRow label={row.label} caption={row.caption} info={row.info} count={count}>
+```
+
+The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row that takes its `RowText` carries its `info`.
 
 ```UIX/Menus/ManageRow.tsx diff
 @@ ManageRow @@
@@ -1475,7 +1483,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 
 - [ ] No read-only surface changed but the InfoPane: the history reader and the glance select and behave as before.
 - [ ] The InfoIndex is read once; nothing parses or reads it per open or per render, and the pane's host passes no connections.
-- [ ] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, `AliasesRow.tsx`, the Date Format row's `info` key, and the InfoIndex's four entries; nothing else needs undoing in Task 5-1.
+- [ ] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, `AliasesRow.tsx`, the Date Format row's `info` key and `frames.ts`'s `infoFor` import, and the InfoIndex's four entries; nothing else needs undoing in Task 5-1.
 
 ### Phase 4 — Verification and the Documents
 
@@ -1518,7 +1526,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 +| --- | --- | --- | --- |
 +| The crossing | rest on Label Format's glyph until the pane opens, move into the pane's body, and rest there past the grace | the pane stays open; leaving it closes it after the grace | B-1 |
 +| No hover | move across the body, its lists, its table, and its code block | nothing reveals or highlights, and the pointer stays the arrow | C-3 |
-+| No selection | drag across the body, and across the table's cells | nothing highlights, and `getSelection().toString()` is empty | C-3 |
++| No selection | drag across the body and across the table's cells; double-click and shift-click Value Format's prose link | nothing highlights, no selection draws, focus stays where it was, and `getSelection().toString()` is empty | C-3 |
 +| No copy | press in the body, ⌘A, ⌘C; click the code block's language tag | the clipboard holds what it held | C-3 |
 +| No focus | press the body, a bullet, a checkbox, and the left inset beside a line | nothing moves or toggles, and `document.activeElement` is where it was | C-3 |
 +| No menu | right-click the body and a table cell | nothing opens | C-3 |
@@ -1642,12 +1650,12 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 #### Task 5-1
 
-The examples leave in one commit: the four InfoIndex entries (the file stays, empty), every citation (`formatRows.ts`, the Date Format roster row's `info` key, `AliasesRow.tsx`), the Iteration window's preview, and the drive, its matrix and results kept in *Info Buttons — Results*. `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` return byte-for-byte to their state before Task 3-3; `RowText.info`, `settingsRow`'s line, and `ManageRow.info` stay as the slots real rows cite through.
+The examples leave in one commit: the four InfoIndex entries (the file stays, empty), every citation (`formatRows.ts`, the Date Format roster row's `info` key and `frames.ts`'s `infoFor` import, `AliasesRow.tsx`), the Iteration window's preview, and the drive, its matrix and results kept in *Info Buttons — Results*. `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` return byte-for-byte to their state before Task 3-3; `RowText.info` with its pass-throughs and `ManageRow.info` stay as the slots real rows cite through.
 
 **PROCEDURE**
 
 1. Copy the drive's `MATRIX.md` and its last run's results into `.claude/Planning/Info Buttons/Info Buttons — Results.md`.
-2. Restore `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` from the commit before Task 3-3's, drop the Date Format row's `info: 'date-format'`, empty `InfoIndex.md`, and delete `.claude/scripts/Info Buttons Drive/`.
+2. Restore `formatRows.ts`, `IterationWindow.tsx`, and `AliasesRow.tsx` from the commit before Task 3-3's, drop the Date Format row's `info` and `frames.ts`'s `infoFor` import, empty `InfoIndex.md`, and delete `.claude/scripts/Info Buttons Drive/`.
 3. Run the gates; launch the build and confirm no `[aria-label$=" - Info"]` exists in a Select's settings or the Iteration window.
 
 **AFTER**
@@ -1660,7 +1668,7 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 **VERIFY**
 
-- [ ] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx Core/Pages/AliasesRow.tsx` prints nothing, and `git grep -n "info: '" -- Core/Settings/frames.ts` prints nothing.
+- [ ] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx Core/Pages/AliasesRow.tsx` prints nothing, and `git grep -n "Info/InfoButton" -- Core/Settings/frames.ts` prints nothing.
 - [ ] `git grep -n "infoFor(" -- Core UIX` prints nothing, `InfoButton.tsx` defining it as `infoFor = (`; `Core/Info/InfoIndex.md` is tracked and empty.
 - [ ] Run the gates; `infoIndex.test.ts` passes with no citation.
 - [ ] Check for unnecessary code or mistakes.

@@ -42,6 +42,7 @@ import {
 import { TrashFrame } from './TrashFrame'
 import { infoFor } from '../Info/InfoButton'
 import type { MenuRow, Trailing } from '@pommora/uix/Menus'
+import type { ReactNode } from 'react'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'
 import type { SessionState } from '../Session/sessionState'
@@ -76,8 +77,8 @@ type Scoped<Nexus, Device> = { key: Nexus; device?: never } | { key: Device; dev
 export interface RowText {
   label: string
   caption?: string
-  /** The InfoIndex entry the row's InfoButton shows. */
-  info?: string
+  /** What the row shows right after its title: its InfoButton, through `infoFor`. */
+  info?: ReactNode
   when?: (s: SessionState) => boolean
 }
 
@@ -85,7 +86,7 @@ export const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',
   label: row.label,
   caption: row.caption,
-  info: row.info === undefined ? undefined : infoFor(row.info, row.label),
+  info: row.info,
   trailing,
 })
 
@@ -207,7 +208,7 @@ export const FRAMES = roster([
             key: 'dateFormat',
             label: 'Date Format',
             caption: 'How a date reads wherever a column has not chosen its own form.',
-            info: 'date-format',
+            info: infoFor('date-format', 'Date Format'),
             options: DATE_FORMAT_OPTIONS,
           },
           {
