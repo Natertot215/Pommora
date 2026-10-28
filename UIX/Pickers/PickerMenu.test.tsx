@@ -516,6 +516,7 @@ describe('PickerMenu auto-centering', () => {
 
 describe('PickerMenu close render', () => {
   const PANE_H = 300
+  let paneH = PANE_H
   const realRect = Element.prototype.getBoundingClientRect
   const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
   const realHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
@@ -529,10 +530,11 @@ describe('PickerMenu close render', () => {
     })
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
       configurable: true,
-      get: () => PANE_H,
+      get: () => paneH,
     })
   })
   afterEach(() => {
+    paneH = PANE_H
     Element.prototype.getBoundingClientRect = realRect
     if (realWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', realWidth)
     if (realHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', realHeight)
@@ -576,6 +578,23 @@ describe('PickerMenu close render', () => {
     await render(<Anchored open={false} at={null} />)
     expect(layer().style.left).toBe(left)
     expect(layer().style.top).toBe(top)
+  })
+
+  it('decides its side against content a child builds in an effect', async () => {
+    paneH = 0
+    function Builds(): React.JSX.Element {
+      useEffect(() => {
+        paneH = PANE_H
+      }, [])
+      return <span data-id="body">BODY</span>
+    }
+    await render(
+      <PickerMenu open onDismiss={() => {}} anchorX={400} anchorY={500} anchorHeight={20}>
+        <Builds />
+      </PickerMenu>,
+    )
+    expect(layer().style.bottom).not.toBe('')
+    expect(layer().style.top).toBe('')
   })
 
   it('still decides the flip against a measured pane', async () => {
