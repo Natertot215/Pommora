@@ -7,4 +7,24 @@
 .info-pane {
   width: 285px; /* KNOB */
   padding: 0;
+  --rail-inset: 0px;
+}
+.info-pane .cm-scroller {
+  max-height: 320px; /* KNOB */
+  /* biome-ignore lint/complexity/noImportantStyles: must beat CM6's runtime overflow rule. */
+  overflow-x: hidden !important;
+  /* biome-ignore lint/complexity/noImportantStyles: as above. */
+  overflow-y: auto !important;
+}
+/* KNOB — the pane's interior inset. */
+.info-pane .mdpm-editor .cm-content {
+  padding: 12px 14px;
+}
+/* The pane's text takes no pointer, so nothing in it hovers, reveals, selects, focuses, copies, or starts a gesture, with a pointer or on touch; its prose's web links keep theirs. */
+.info-pane .mdpm-editor .cm-content,
+.info-pane .mdpm-editor .cm-content * {
+  pointer-events: none;
+}
+.info-pane .mdpm-editor .cm-line :is(.md-link, .md-link *) {
+  pointer-events: auto;
 }

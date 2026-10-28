@@ -4,6 +4,9 @@ import { coarse, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { rowAccessory } from '@pommora/uix/Menus/menu-row.css'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { IconName } from '@pommora/uix/Symbols'
+import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
+import { useEditorHost } from '../Pages/editorHost'
+import { ENTRIES } from './infoIndex'
 import './info-button.css'
 
 const INFO_DWELL_MS = 500 // KNOB
@@ -67,5 +70,25 @@ export function InfoButton({
         {children}
       </PickerMenu>
     </span>
+  )
+}
+
+/** The InfoButton a row carries for the InfoIndex entry its ID names. */
+export const infoFor = (id: string, title: string, look?: InfoLook): React.JSX.Element => (
+  <InfoButton title={title} {...look}>
+    <Entry body={ENTRIES.get(id) ?? ''} />
+  </InfoButton>
+)
+
+function Entry({ body }: { body: string }): React.JSX.Element {
+  const host = useEditorHost({ inert: true })
+  return (
+    <MarkdownEditor
+      initialBody={body}
+      onChange={() => {}}
+      host={host}
+      readOnly
+      selectable={false}
+    />
   )
 }

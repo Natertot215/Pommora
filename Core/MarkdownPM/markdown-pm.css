@@ -76,7 +76,8 @@
     opacity: 0;
   }
 }
-:is(.tile.is-locked, .tile-base.is-inert, .page-reader-page, .glance-body) .cm-placeholder {
+:is(.tile.is-locked, .tile-base.is-inert, .page-reader-page, .glance-body, .info-pane)
+  .cm-placeholder {
   display: none;
 }
 
