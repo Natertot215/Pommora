@@ -164,10 +164,10 @@
 
 Rows gained an in-app explanation: an **InfoButton** sits right after a menu row's title, and resting on it for half a second, clicking it, or tapping it opens a read-only **InfoPane**, the dropdown every picker uses, showing one entry of the **InfoIndex** (`Core/Info/InfoIndex.md`). Each explanation lives once in that file under an ID tag, rows cite it through `infoFor('id', 'Title')`, and a test holds every citation to an entry with wording. The pane renders through MarkdownPM's read-only editor with no hover behavior, so nothing in it selects, focuses, copies, or reveals while its web links still open; one pane shows at a time, and a disabled row's button still works. The InfoIndex mirrors to NexusOS as `PM-Info-Index.md` through a link in `.claude/Resources/`, where its wording is written. It ships empty with no row citing it; four example entries carried the build and a live drive, then left.
 
-The groundwork consolidated what the button reuses. A row's secondary line took one name, `caption`, from Settings' row text through `MenuItem`; the centered empty-pane note became `MenuDesc`; and `SettingsFieldRow` left, so `settingsRow` is the one map from a Settings row to a menu row. The hover reveal takes its dwell from its caller and hands back `reset`, a row accessory's fit became one class, `rowAccessory`, and an unselectable `MarkdownEditor` keeps its content out of the keyboard's reach and its presses from moving focus.
+The groundwork consolidated what the button reuses. A row's secondary line took one name, `caption`, from Settings' row text through `MenuItem`; the centered empty-pane note became `MenuDesc`; and `SettingsFieldRow` left, so `settingsRow` is the one map from a Settings row to a menu row. The hover reveal takes its dwell from its caller and hands back `reset`, a row accessory's fit became one class, `rowAccessory`, and an unselectable `MarkdownEditor` keeps its content out of the keyboard's reach and its presses from moving focus. Two dropdown rules changed for every picker: a pane whose content builds after it opens, as the InfoPane's editor does, decides whether to open up or down once that content is there, and a press during a dropdown's closing animation reaches what's beneath it.
 
-- **Commits:** `a0331f94a^..d098fcf4d`
-- **Delta:** +232 (+521 / -289)
+- **Commits:** `a0331f94a^..186726aed`
+- **Delta:** +243 (+534 / -291)
 
 #### PM-154 || Collection Archives
 **DATE:** 10-20-2026

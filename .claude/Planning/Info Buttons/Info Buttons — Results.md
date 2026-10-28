@@ -3,7 +3,7 @@
 **DATE:** 10-28-2026
 **SOURCE:** the Info Buttons Drive (`.claude/scripts/Info Buttons Drive/`, removed with the examples), its last run from a clean build at `6bce43f82`.
 
-The drive watched, in the built app, what the unit tests cannot hold. Its last run held 25 of 26 checks and recorded 2; the one failure was the No Hover case reading a web link's hand cursor as a failure, and its Expected now names it. The near-bottom placement it recorded stands for a ruling under the plan's *§Deviations*.
+The drive watched, in the built app, what the unit tests cannot hold. Its last run held 25 of 26 checks and recorded 2; the one failure was the No Hover case reading a web link's hand cursor as a failure, and its Expected now names it. The near-bottom placement it recorded was ruled under the plan's *§Deviations* and fixed in `PickerMenu`: with 150px below its glyph, the 321px pane now opens upward inside the window, where the build before the fix opened it downward past the window's edge.
 
 The drive's cases, from *Info Buttons — Decisions & Intention*, against the build at the head of Phase 3. A Select in Collection A seeds the format rows; the harness restores `~/Test` when the run ends. A recorded case prints its observation as RECORDED and never fails the run; a review case answers a question the Phase 3 review raised.
 
