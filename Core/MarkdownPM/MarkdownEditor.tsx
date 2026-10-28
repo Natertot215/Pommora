@@ -39,6 +39,7 @@ export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 
 const WARM_FIELDS = { history: historyField, codeScroll: codeScrolls }
 
+// CodeMirror's own press handler blurs whatever holds focus before a surface's `keepFocus` sees the press, so an unselectable editor claims it here.
 const claimPresses = Prec.lowest(
   EditorView.domEventHandlers({
     mousedown: (event) => {
