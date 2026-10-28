@@ -14,7 +14,7 @@ import type { RowOf } from './frames'
 export function ExcludedDirectoriesRow({ row }: { row: RowOf<'exclusions'> }): React.JSX.Element {
   const count = useSession((s) => s.tree?.config.excluded.length ?? 0)
   return (
-    <ManageRow label={row.label} caption={row.caption} count={count}>
+    <ManageRow label={row.label} caption={row.caption} info={row.info} count={count}>
       <ExclusionPane />
     </ManageRow>
   )

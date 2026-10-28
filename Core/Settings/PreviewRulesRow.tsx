@@ -14,7 +14,12 @@ export function PreviewRulesRow({ row }: { row: RowOf<'previewRules'> }): React.
   const setPersonalization = useSession((s) => s.setPersonalization)
   if (!tree) return null
   return (
-    <ManageRow label={row.label} caption={row.caption} count={value.rules?.rules.length ?? 0}>
+    <ManageRow
+      label={row.label}
+      caption={row.caption}
+      info={row.info}
+      count={value.rules?.rules.length ?? 0}
+    >
       <FilterFrame
         locations={tree.collections}
         view={filterViewOf(value)}
