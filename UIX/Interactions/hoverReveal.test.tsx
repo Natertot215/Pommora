@@ -42,7 +42,7 @@ const run = async (fn: () => void): Promise<void> => {
 }
 const pointer = (type: string, button = 0): Promise<void> =>
   run(() => window.dispatchEvent(Object.assign(new Event(type), { button })))
-const coarse = (matches: boolean): void => {
+const stubCoarse = (matches: boolean): void => {
   window.matchMedia = ((query: string) => ({
     matches: matches && query === '(hover: none)',
   })) as never
@@ -50,8 +50,8 @@ const coarse = (matches: boolean): void => {
 
 beforeEach(async () => {
   vi.useFakeTimers()
-  coarse(false)
-  props = { active: true, dwell: true, held: false }
+  stubCoarse(false)
+  props = { active: true, dwellMs: REVEAL_DWELL_MS, held: false }
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -189,17 +189,36 @@ describe('useHoverReveal with a dwell', () => {
   })
 
   it('under (hover: none) it is on whenever it is active', async () => {
-    coarse(true)
+    stubCoarse(true)
     await render()
     expect(api.on).toBe(true)
     await render({ active: false })
+    expect(api.on).toBe(false)
+  })
+
+  it("opens on the caller's own dwell", async () => {
+    await render({ dwellMs: 500 })
+    await run(() => api.hover(true))
+    await tick(499)
+    expect(api.on).toBe(false)
+    await tick(1)
+    expect(api.on).toBe(true)
+  })
+
+  it('reset closes an open reveal at once and forgets the pointer', async () => {
+    await run(() => api.hover(true))
+    await tick(REVEAL_DWELL_MS)
+    expect(api.on).toBe(true)
+    await run(() => api.reset())
+    expect(api.on).toBe(false)
+    await tick(REVEAL_DWELL_MS)
     expect(api.on).toBe(false)
   })
 })
 
 describe('useHoverReveal without a dwell', () => {
   beforeEach(async () => {
-    await render({ dwell: false, engaged: false })
+    await render({ dwellMs: undefined, engaged: false })
   })
 
   it('never opens on hover', async () => {
@@ -267,7 +286,7 @@ describe('useHoverReveal without a dwell', () => {
   })
 
   it('stays off under (hover: none)', async () => {
-    coarse(true)
+    stubCoarse(true)
     await render()
     expect(api.on).toBe(false)
   })

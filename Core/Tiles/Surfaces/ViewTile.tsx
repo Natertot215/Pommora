@@ -24,7 +24,7 @@ import { FootingCreate, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
-import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
+import { REVEAL_DWELL_MS, useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -273,7 +273,7 @@ export function ViewTile({
     iconFor !== null ||
     colorFor !== null
   const reveal = useHoverReveal({
-    dwell: true,
+    dwellMs: REVEAL_DWELL_MS,
     held: !viewsShown && anchoredOpen,
     engaged: viewsShown,
     linger: { on: STRIP_LOCK_LINGER_MS },
