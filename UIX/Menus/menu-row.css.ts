@@ -153,10 +153,14 @@ export const chipPicked = styleVariants(RUN_EDGES, ([top, bottom]) => ({
 
 export const itemEmphasized = style([text.body.emphasized])
 
-/** A disabled row takes no pointer and no wash, even when a control inside it takes the pointer back, as a row's information button does. */
+/** A disabled row takes no pointer, no wash, and no reveal, even when a control inside it takes the pointer back, as a row's information button does. */
 export const rowDisabled = style({
   selectors: {
-    '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },
+    '&&': {
+      opacity: STATE_OPACITY.inactive,
+      pointerEvents: 'none',
+      vars: { '--reveal': '0', '--reveal-hits': 'none' },
+    },
     '&&:hover': { backgroundColor: 'transparent' },
   },
 })

@@ -737,6 +737,8 @@ Each imports `REVEAL_DWELL_MS` from `@pommora/uix/Interactions/hoverReveal` besi
 +    expect(api.on).toBe(true)
 +    await run(() => api.reset())
 +    expect(api.on).toBe(false)
++    await pointer('pointerdown')
++    await pointer('pointerup')
 +    await tick(REVEAL_DWELL_MS)
 +    expect(api.on).toBe(false)
 +  })
@@ -1036,7 +1038,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 2-4
 
-`MenuItem` takes `info`, what a row shows right after its title (Core's InfoButton, for one), and `MenuRow`'s item branch carries it through `rowNode`; the slot is generic, and nothing in UIX names the InfoButton. A row carrying one lays its title out as a line, so the glyph sits right after the text and pins to the line's end once a long title ellipsizes (the title's cap carries `min-width: 0`, `UIX/Interactions/over-scroll.css:3`); every other title keeps filling its row, as a rename's field (`titleInput`, `width: 100%`) needs, so their markup doesn't change. A disabled row stays unwashed when the pointer rests on a control inside it that takes the pointer back, as the InfoButton does.
+`MenuItem` takes `info`, what a row shows right after its title (Core's InfoButton, for one), and `MenuRow`'s item branch carries it through `rowNode`; the slot is generic, and nothing in UIX names the InfoButton. A row carrying one lays its title out as a line, so the glyph sits right after the text and pins to the line's end once a long title ellipsizes (the title's cap carries `min-width: 0`, `UIX/Interactions/over-scroll.css:3`); every other title keeps filling its row, as a rename's field (`titleInput`, `width: 100%`) needs, so their markup doesn't change. A disabled row stays unwashed, and reveals none of its controls, when the pointer rests on a control inside it that takes the pointer back, as the InfoButton does.
 
 **PROCEDURE**
 
@@ -1055,10 +1057,15 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 @@ rowDisabled @@
 
-+/** A disabled row takes no pointer and no wash, even when a control inside it takes the pointer back, as a row's information button does. */
++/** A disabled row takes no pointer, no wash, and no reveal, even when a control inside it takes the pointer back, as a row's information button does. */
  export const rowDisabled = style({
    selectors: {
-     '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },
+-    '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },
++    '&&': {
++      opacity: STATE_OPACITY.inactive,
++      pointerEvents: 'none',
++      vars: { '--reveal': '0', '--reveal-hits': 'none' },
++    },
 +    '&&:hover': { backgroundColor: 'transparent' },
    },
  })
@@ -1784,5 +1791,7 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 - **`PickerMenu` and Clicks:** `PickerMenu` stops a press's and a context menu's bubbling but not a click's, so the InfoButton's host and `ValueEditor` each stop it; once `PickerMenu` unfreezes, it takes the click too and the pane half of each stop leaves.
 
 #### Deviations
+
+- **A Hover-Closed InfoPane and the Next Press (Final Verification, for Nathan's ruling):** when the pointer leaves a hover-opened pane, its grace closes it, and a press outside in the 255ms exit that follows dismisses nothing beneath it, so closing the settings pane behind takes a second press. The dismissal stack holds every press while any modal layer is exiting (`UIX/Interactions/dismissalStack.ts:50,65`), a gate every other modal `PickerMenu` only meets after a press of its own, and the InfoPane is the first modal pane that closes without one; the glance, also dwell-opened, passes `modal={false}`. Two fixes, each outside the rulings: the stack's gate holds presses only while a layer it dismissed is exiting (about +3 / −1 in `dismissalStack.ts`, its purpose otherwise unwritten), or the pane is modal only while held (`modal={held}`), which gives up Escape closing a hover-opened pane. It stands as built.
 
 - **The InfoPane Near the Window's Bottom (Task 4-1, for Nathan's ruling):** a pane whose glyph sits low in the window opens downward and runs past the window's edge, where Label Format's own picker flips up. `PickerMenu` decides its side once, at its first measure (`UIX/Pickers/PickerMenu.tsx:201-211`), and the InfoPane is empty then, since `MarkdownEditor` builds its view in an effect after that measure (`Core/MarkdownPM/MarkdownEditor.tsx:132`); the pane then grows to its 320px cap with its side locked. `PickerMenu` is frozen, so the pane stands as built. The fix that keeps every dropdown on one rule is `PickerMenu` deciding its side once its pane first has content.

@@ -211,6 +211,8 @@ describe('useHoverReveal with a dwell', () => {
     expect(api.on).toBe(true)
     await run(() => api.reset())
     expect(api.on).toBe(false)
+    await pointer('pointerdown')
+    await pointer('pointerup')
     await tick(REVEAL_DWELL_MS)
     expect(api.on).toBe(false)
   })
