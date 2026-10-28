@@ -47,6 +47,8 @@ interface Props {
   embedAncestors?: readonly string[]
   autoFocus?: boolean
   readOnly?: boolean
+  /** False takes the content out of the keyboard's reach and out of selection. Read once, at mount. */
+  selectable?: boolean
   edgeFade?: boolean
   warm?: WarmSeam
   active?: boolean
@@ -67,6 +69,7 @@ export function MarkdownEditor({
   embedAncestors,
   autoFocus = false,
   readOnly = false,
+  selectable = true,
   edgeFade = false,
   warm,
   register,
@@ -132,6 +135,7 @@ export function MarkdownEditor({
     const prefs = hostRef.current.prefs
     const extensions = [
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
+      EditorView.editable.of(selectable),
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),

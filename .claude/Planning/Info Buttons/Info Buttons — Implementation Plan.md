@@ -1321,7 +1321,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 #### Task 3-3
 
-The Label Format and Value Format rows cite their examples, adding `info` to the item row `pickerRow` builds; Settings' Date Format row cites `date-format` through `RowText.info`, which `settingsRow` turns into the row's InfoButton; and a page's Aliases row cites `aliases` through `ManageRow`'s new `info`. `RowText.info`, `settingsRow`'s one line, and `ManageRow.info` are the slots Settings rows and managed lists cite through, and stay; the citations themselves are temporary. With a Settings row citing, a frame switch or the window's exit can unmount an open pane mid-exit, which `PickerMenu`'s dev guard logs as `ManageRow`'s pane already does; the drive records it. and the Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
+The Label Format and Value Format rows cite their examples, adding `info` to the item row `pickerRow` builds; Settings' Date Format row cites `date-format` through `RowText.info`, which `settingsRow` turns into the row's InfoButton; and a page's Aliases row cites `aliases` through `ManageRow`'s new `info`. `RowText.info`, `settingsRow`'s one line, and `ManageRow.info` are the slots Settings rows and managed lists cite through, and stay; the citations themselves are temporary. With a Settings row citing, a frame switch or the window's exit can unmount an open pane mid-exit, which `PickerMenu`'s dev guard logs as `ManageRow`'s pane already does; the drive records it. The Iteration window holds a disabled citing row and the look's variants, the three glyphs and every type with and without a border, for the drive. All of it is temporary and leaves in Task 5-1.
 
 **AFTER**
 
@@ -1502,7 +1502,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 +| The entries | open each of the four panes and scroll each through | every construct in each entry draws (emphasis, strikethrough, highlights, lists, checklist, quote, callout, tables, code, links, divider); a shot of each pane, top and scrolled | C-2 |
 +| A frame switch | hold Date Format's pane open and switch Settings frames | record what the console logs | — |
 +| The entry | as above | bold, the list, and inline code draw, with no heading above them; Value Format's table, quote, code block, and link draw, and its body scrolls past 320px | C-2 |
-+| The long code line | open Value Format's pane | the code block's long line rests clipped at its ellipsis and can't scroll sideways, the trade Task 3-1 records; the body still wheels | C-2 |
++| The long code line | open Value Format's pane | the code block's long line rests clipped at its ellipsis and can't scroll sideways, the trade Task 3-2 records; the body still wheels | C-2 |
 +
 +#### Group 2 — The Disabled Row and the Variants
 +
