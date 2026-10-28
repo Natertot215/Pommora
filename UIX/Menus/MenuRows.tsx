@@ -68,7 +68,7 @@ export function MenuTopRow({
 
 type MenuItemProps = {
   leading?: ReactNode
-  subLabel?: ReactNode
+  caption?: ReactNode
   detail?: ReactNode
   trailing?: ReactNode
   overlay?: ReactNode
@@ -93,7 +93,7 @@ type MenuItemProps = {
 
 export function MenuItem({
   leading,
-  subLabel,
+  caption,
   detail,
   trailing,
   overlay,
@@ -150,7 +150,7 @@ export function MenuItem({
       {leading != null && <span className={s.side}>{leading}</span>}
       <span className={cx(s.titleWrap, centered && s.titleCentered)}>
         <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
-        {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
+        {caption != null && <span className={s.caption}>{caption}</span>}
       </span>
       {hasTrailing && (
         <span className={s.side}>

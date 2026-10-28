@@ -224,7 +224,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
       <div className="window-pane-scroll nav-list">
         <MenuItem
           className="page-history-row"
-          subLabel={modifiedAt === null ? undefined : when(modifiedAt)}
+          caption={modifiedAt === null ? undefined : when(modifiedAt)}
           selected={shown === null}
           overlay={<Checkbox className={gutter} size="compact" state={shown === null} readOnly />}
           onClick={() => setShown(null)}
@@ -236,7 +236,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
           <MenuItem
             key={ts}
             className="page-history-row"
-            subLabel={when(ts)}
+            caption={when(ts)}
             selected={shown === ts}
             overlay={
               <Checkbox
