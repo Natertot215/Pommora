@@ -1,23 +1,19 @@
 import { Button } from '@pommora/uix/Buttons/Button'
 import { useTimedLabel } from '@pommora/uix/Animations/useTimedLabel'
-import { SettingsFieldRow } from './SettingsFieldRow'
+import { MenuRowView } from '@pommora/uix/Menus'
+import { type RowOf, settingsRow } from './frames'
 
-export function ClearActionRow({
-  label,
-  hint,
-  clear,
-}: {
-  label: string
-  hint?: string
-  clear: () => Promise<boolean>
-}): React.JSX.Element {
+export function ClearActionRow({ row }: { row: RowOf<'clear'> }): React.JSX.Element {
   const [buttonLabel, mark] = useTimedLabel('Clear', 'Cleared')
   const run = async (): Promise<void> => {
-    if (await clear()) mark()
+    if (await row.clear()) mark()
   }
   return (
-    <SettingsFieldRow label={label} hint={hint}>
-      <Button type="destructive" label={buttonLabel} onClick={() => void run()} />
-    </SettingsFieldRow>
+    <MenuRowView
+      row={settingsRow(row, {
+        kind: 'field',
+        children: <Button type="destructive" label={buttonLabel} onClick={() => void run()} />,
+      })}
+    />
   )
 }

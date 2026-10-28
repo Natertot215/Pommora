@@ -38,8 +38,11 @@ const render = async (openInPreview?: StandaloneFilter): Promise<void> => {
   await act(async () =>
     root.render(
       <PreviewRulesRow
-        label="Open In Preview"
-        hint="Pages matching these rules open within preview windows by default."
+        row={{
+          kind: 'previewRules',
+          label: 'Open In Preview',
+          caption: 'Pages matching these rules open within preview windows by default.',
+        }}
       />,
     ),
   )

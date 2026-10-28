@@ -9,7 +9,7 @@ import * as s from './manage-row.css'
 /** A row whose value is a list edited in its own pane: its count where it shows one, and Manage to open the pane. */
 export function ManageRow({
   label,
-  hint,
+  caption,
   icon,
   count,
   solid,
@@ -17,7 +17,7 @@ export function ManageRow({
   children,
 }: {
   label: string
-  hint?: string
+  caption?: string
   icon?: IconName
   count?: number
   /** Stacked over another glass surface, as a picker opened from a menu is. */
@@ -34,7 +34,7 @@ export function ManageRow({
         kind: 'item',
         icon: icon ? <Icon name={icon} size="control" /> : undefined,
         label,
-        caption: hint,
+        caption,
         trailing: {
           kind: 'field',
           children: (

@@ -3,14 +3,7 @@ import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
 import { useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
-import {
-  Menu,
-  MenuItem,
-  MenuRowView,
-  MenuSeparator,
-  type MenuRow,
-  type Trailing,
-} from '@pommora/uix/Menus'
+import { Menu, MenuItem, MenuRowView, MenuSeparator } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
@@ -44,19 +37,12 @@ import {
   PERCENT,
   type Row,
   type RowOf,
-  type RowText,
+  settingsRow,
 } from './frames'
 import './settings-window.css'
 
 const DRAG_SURFACES =
   '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
-
-const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
-  kind: 'item',
-  label: row.label,
-  caption: row.hint,
-  trailing,
-})
 
 export function SettingsWindow(): React.JSX.Element | null {
   const open = useSession((s) => s.settingsOpen)
@@ -192,13 +178,13 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
     case 'zoom':
       return <ZoomRow row={row} />
     case 'path':
-      return <AssetDirectoryRow label={row.label} hint={row.hint} />
+      return <AssetDirectoryRow row={row} />
     case 'exclusions':
-      return <ExcludedDirectoriesRow label={row.label} hint={row.hint} />
+      return <ExcludedDirectoriesRow row={row} />
     case 'previewRules':
-      return <PreviewRulesRow label={row.label} hint={row.hint} />
+      return <PreviewRulesRow row={row} />
     case 'clear':
-      return <ClearActionRow label={row.label} hint={row.hint} clear={row.clear} />
+      return <ClearActionRow row={row} />
     case 'color':
       return <ColorRow row={row} />
     case 'nexus':

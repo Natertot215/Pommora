@@ -27,7 +27,9 @@ const render = async (excluded: string[]): Promise<void> => {
   document.body.appendChild(host)
   root = createRoot(host)
   await act(async () =>
-    root.render(<ExcludedDirectoriesRow label="Excluded Directories" hint="h" />),
+    root.render(
+      <ExcludedDirectoriesRow row={{ kind: 'exclusions', label: 'Excluded Directories' }} />,
+    ),
   )
 }
 
