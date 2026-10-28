@@ -31,7 +31,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
 | 1 | +75 / −125 | +284 / −254 (+30) | +30 |
-| 2 | +135 / −18 | | |
+| 2 | +135 / −18 | +147 / −32 (+115) | +145 |
 | 3 | +115 / −13 | | |
 | 4 | 0 | | |
 | 5 | 0 / −55 | | |
@@ -119,12 +119,12 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Task 1-2 · `subLabel` becomes `caption`
   - [x] Task 1-3 · Settings' `hint` becomes `caption`, and `SettingsFieldRow` leaves
   - [x] Review Checkpoint
-- [ ] **Phase 2** — The InfoButton
-  - [ ] Task 2-1 · The reveal's dwell, reset, and coarse test
-  - [ ] Task 2-2 · One fit for a row's accessory
-  - [ ] Task 2-3 · The InfoButton
-  - [ ] Task 2-4 · A row's info slot
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — The InfoButton
+  - [x] Task 2-1 · The reveal's dwell, reset, and coarse test
+  - [x] Task 2-2 · One fit for a row's accessory
+  - [x] Task 2-3 · The InfoButton
+  - [x] Task 2-4 · A row's info slot
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — The InfoIndex and Its Pane
   - [ ] Task 3-1 · An editor out of the keyboard's reach
   - [ ] Task 3-2 · The InfoIndex, its format, and the pane
@@ -1112,7 +1112,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 ```UIX/Menus/MenuIndex.test.tsx diff
 @@ the info slot @@
 
-+describe('a row carrying an InfoButton', () => {
++describe('a row carrying info', () => {
 +  it('draws the button inside the title line, after the title', () => {
 +    row({ kind: 'item', label: 'Format', info: <i data-id="info" /> })
 +    const line = host.querySelector('[class*="titleText"]')?.parentElement
@@ -1120,7 +1120,7 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 +    expect(line?.lastElementChild?.getAttribute('data-id')).toBe('info')
 +  })
 +
-+  it('leaves a row without one drawing its title as before', () => {
++  it('draws a row without info as a bare title', () => {
 +    row({ kind: 'item', label: 'Format' })
 +    expect(host.querySelector('[class*="titleLine"]')).toBeNull()
 +  })
@@ -1482,7 +1482,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 
 #### Task 4-1
 
-`.claude/scripts/Info Buttons Drive/` holds `live-drive.mjs` and `MATRIX.md`, with no README paragraph,, on port 9413 with shots under `info-shots`, built on `drive-harness.mjs` (`launch`, `restore`, `hover`, `mouseAt`, `mouseClick`, `sweep`, `pressKey`, `shot`, `item`, `tally`) and the Metadata Drive's `openEditor` and `trigger`, copied in, since drives share only the harness. `.claude/scripts/README.md` gains its paragraph. Each check prints as `[g<group> <decisions>] <name>`.
+`.claude/scripts/Info Buttons Drive/` holds `live-drive.mjs` and `MATRIX.md`, with no README paragraph, on port 9413 with shots under `info-shots`, built on `drive-harness.mjs` (`launch`, `restore`, `hover`, `mouseAt`, `mouseClick`, `sweep`, `pressKey`, `shot`, `item`, `tally`) and the Metadata Drive's `openEditor` and `trigger`, copied in, since drives share only the harness. Each check prints as `[g<group> <decisions>] <name>`.
 
 **AFTER**
 
@@ -1515,6 +1515,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 +
 +| Case | Operation | Expected | Decisions |
 +| --- | --- | --- | --- |
++| The crossing | rest on Label Format's glyph until the pane opens, move into the pane's body, and rest there past the grace | the pane stays open; leaving it closes it after the grace | B-1 |
 +| No hover | move across the body, its lists, its table, and its code block | nothing reveals or highlights, and the pointer stays the arrow | C-3 |
 +| No selection | drag across the body, and across the table's cells | nothing highlights, and `getSelection().toString()` is empty | C-3 |
 +| No copy | press in the body, ⌘A, ⌘C; click the code block's language tag | the clipboard holds what it held | C-3 |

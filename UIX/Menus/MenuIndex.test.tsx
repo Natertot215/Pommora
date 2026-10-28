@@ -126,7 +126,7 @@ describe('MenuRowView', () => {
   })
 })
 
-describe('a row carrying an InfoButton', () => {
+describe('a row carrying info', () => {
   it('draws the button inside the title line, after the title', () => {
     row({ kind: 'item', label: 'Format', info: <i data-id="info" /> })
     const line = host.querySelector('[class*="titleText"]')?.parentElement
@@ -134,7 +134,7 @@ describe('a row carrying an InfoButton', () => {
     expect(line?.lastElementChild?.getAttribute('data-id')).toBe('info')
   })
 
-  it('leaves a row without one drawing its title as before', () => {
+  it('draws a row without info as a bare title', () => {
     row({ kind: 'item', label: 'Format' })
     expect(host.querySelector('[class*="titleLine"]')).toBeNull()
   })
