@@ -22,7 +22,7 @@ A row's secondary line takes one name, `caption`, from Settings through `MenuIte
 
 **InfoButton** (`Core/Info/InfoButton.tsx`) is a small UIX `Button` that sits right after a row's title through `MenuItem`'s new `info` slot: a 0.5-second rest opens its pane below it, a click holds the pane open and a second click closes it, Escape or an outside press closes it, a tap opens it on touch, it works on a disabled row, and one pane shows at a time. Its look is three independent props (glyph, type, border), defaulting to the `info` glyph, the `filled` type, and no border, its three glyphs curated in the icon registry; its accessible name is "Title - Info." The same file holds `infoFor(id, title, look?)`, the one call a row cites an entry through, which hands a row an InfoButton whose **InfoPane** shows the entry as read-only, unselectable Markdown with no hover behavior. **InfoIndex** (`Core/Info/InfoIndex.md`) holds each entry once, wrapped in a tag naming its ID, and `Core/Info/infoIndex.ts` reads its format once into its entries by ID.
 
-Four example entries, cited by the Label Format and Value Format rows, Settings' Date Format row, and a page's Aliases row, and an Iteration window preview of a disabled row and the look's variants, carry the build and its verification through a live drive; they leave after verification, so the InfoIndex ships empty and rows cite their first real entries later. Last, `.claude/Resources/` returns holding a symlink to the InfoIndex, so the folder's existing mirror row carries it to NexusOS, and the daily commit line lands; the three outdated notes the folder once held aren't restored.
+Four example entries, cited by the Label Format and Value Format rows, Settings' Date Format row, and a page's Aliases row, and an Iteration window preview of a disabled row and the look's variants, carry the build and its verification through a live drive; they leave after verification, so the InfoIndex ships empty and rows cite their first real entries later. Last, `.claude/Resources/` returns holding a symlink to the InfoIndex, so the folder's existing mirror row carries it to NexusOS; the three outdated notes the folder once held aren't restored.
 
 **The Number:** about +325 / −155 across Phases 1–3, roughly +170 net counting code alone (tests, documents, and `.claude/` excluded), of which about +55 is the examples and the Iteration window's preview that Phase 5 removes, so about +115 ships. Phase 1 removes more than it adds (`SettingsFieldRow`, four split props, two translation seams); the InfoButton, its pane, and its stylesheet (about +110) are the behavior the decisions require that nothing in the tree did, built from the kit's button, hover reveal, dropdown, and read-only editor. Each phase's measured delta is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
 
@@ -100,10 +100,10 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
     - Anything changed or implemented should be reflected across the board — nothing that's done this way here, while something else works differently elsewhere, unless that's *genuinely* correct
     - Zero data-level spaghetti, complexity, or additional 'stuff' should be added without reason. Rewiring things to become more understandable, more efficient, more appropriate, and more effective is preferred when the alternative is just adding more to something that's inherently unfit to suit the long-term mandate of what's actually being offered
 - **Briefs:** every agent brief — executors and reviewers — and every handoff or compaction continuation carries the Mandate above (the Approach and the Principles) in full and *§Constraints* whole, except the neutral gate's, which carries the Mandate alone.
-- **Rulings (Not Re-Raised):** every entry in *Info Buttons — Decisions & Intention*, its *§Planning Rulings*, and its *§Rejected* list. The ones a task leans on: rows cite by ID (D-2); no real row carries an InfoButton, and the examples leave after verification (F-1, G-2); captions stay (F-2); `MenuCaption` becomes `MenuDesc` (F-4); the look's three props are independent, defaulting to `info`, `filled`, and no border (A-2); the dwell is the InfoButton's own 0.5 seconds (B-2); no missing-entry guard; the Resources link and the commit line land last.
+- **Rulings (Not Re-Raised):** every entry in *Info Buttons — Decisions & Intention*, its *§Planning Rulings*, and its *§Rejected* list. The ones a task leans on: rows cite by ID (D-2); no real row carries an InfoButton, and the examples leave after verification (F-1, G-2); captions stay (F-2); `MenuCaption` becomes `MenuDesc` (F-4); the look's three props are independent, defaulting to `info`, `filled`, and no border (A-2); the dwell is the InfoButton's own 0.5 seconds (B-2); no missing-entry guard; the Resources link lands last.
 - **Placements:** as *§Concepts* names them, every one approved by Nathan (H-1); no other new file.
 - **Gates:** `npm run typecheck && npm run test && npm run lint` from the repo root; each prints its own failures, and lint runs clean. `npm run build`, confirming `✓ built in`, runs at Task 3-2 (the InfoIndex's `?raw` emit) and from a clean state at the final head. Pommora's typecheck compiles The Studio's dashboard (`package.json:20`). Biome formats every TS and CSS write, so an edit failing on whitespace means it reformatted: re-read and retry. "Run the gates" in a task means those three.
-- **Commits:** each task commits once its VERIFY passes, through `git commit --only -m "…" -- <paths>` after `git add` for new files (*Development-Environment · §Gates & Commits*); messages are past tense and one to three sentences, ending with the session's attribution lines. A Bash command carrying `git` or `gh` can't contain a personal name anywhere, paths included (`no-name-mentions.mjs`). Pommora's post-commit hook pushes `active` and refreshes the dashboard. The Studio's `MenuLeaf.tsx` edit commits in The Studio's repo (Task 1-2); the `~/.claude` edits commit in that repo (Task 5-2).
+- **Commits:** each task commits once its VERIFY passes, through `git commit --only -m "…" -- <paths>` after `git add` for new files (*Development-Environment · §Gates & Commits*); messages are past tense and one to three sentences, ending with the session's attribution lines. A Bash command carrying `git` or `gh` can't contain a personal name anywhere, paths included (`no-name-mentions.mjs`). Pommora's post-commit hook pushes `active` and refreshes the dashboard. The Studio's `MenuLeaf.tsx` edit commits in The Studio's repo (Task 1-2).
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land.
 - **Tests:** each new behavior gets a test that fails without its change; a rewritten case counts as that test. The InfoPane's pointer rule (Task 3-2), a CSS hit rule jsdom can't apply, is held by the drive's Group 3 instead. The InfoIndex's citation test is written last (D-3), in Phase 6, while the examples still cite their entries.
 - **Docs:** feature docs fix only what's false, in place, at its length or shorter, and the InfoButton gains its description where *§Reconciliation* names; nothing else in `.claude/Features` changes.
@@ -139,7 +139,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 - [ ] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
 - [ ] **Phase 5** — Removal and Wiring
   - [ ] Task 5-1 · The examples leave
-  - [ ] Task 5-2 · The Resources link and the commit line
+  - [ ] Task 5-2 · The Resources link
   - [ ] Spotcheck
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -1603,7 +1603,7 @@ The Label Format and Value Format rows cite their examples, adding `info` to the
 
 #### Task 4-3
 
-Every line *§Reconciliation* assigns this task is rewritten in place, plainly, at its length or shorter, and the InfoButton gains its description in `InterfacePM.md`, in its own register; the docs gain about four lines in all, and nothing else in `.claude/Features` changes. The feature docs describe the state at this head: InfoButtons are a mechanism rows cite entries through, and no row carries one yet; the mirror and the daily commit are Task 5-2's to describe, once they exist.
+Every line *§Reconciliation* assigns this task is rewritten in place, plainly, at its length or shorter, and the InfoButton gains its description in `InterfacePM.md`, in its own register; the docs gain about four lines in all, and nothing else in `.claude/Features` changes. The feature docs describe the state at this head: InfoButtons are a mechanism rows cite entries through, and no row carries one yet; the mirror is Task 5-2's to describe, once it exists.
 
 **PROCEDURE**
 
@@ -1622,7 +1622,7 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 **VERIFY**
 
-- [ ] Every *§Reconciliation* line assigned Task 4-3 is ticked and reads true against the code at this head; none describes the mirror or the daily commit.
+- [ ] Every *§Reconciliation* line assigned Task 4-3 is ticked and reads true against the code at this head; none describes the mirror.
 - [ ] `git grep -n "subLabel\|MenuCaption\|SettingsFieldRow" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md` prints nothing; `.claude/CLAUDE.md`'s structure lists `// Info` under Core and none under UIX; the docs gained about four lines in all.
 - [ ] Check for unnecessary changes or mistakes.
 
@@ -1636,7 +1636,7 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 ### Phase 5 — Removal and Wiring
 
-**GOAL:** After *§Final Verification* passes with the examples live, the examples leave and the InfoIndex ships empty; then the Resources folder returns holding the InfoIndex's link, and the daily commit line lands, so nothing of Claude's wording ever reaches NexusOS or a wording commit.
+**GOAL:** After *§Final Verification* passes with the examples live, the examples leave and the InfoIndex ships empty; then the Resources folder returns holding the InfoIndex's link, so nothing of Claude's wording ever reaches NexusOS.
 
 #### Task 5-1
 
@@ -1665,29 +1665,20 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 #### Task 5-2
 
-`.claude/Resources/` returns holding one file, `PM-Info-Index.md`, a symlink to `../../Core/Info/InfoIndex.md`, so the folder's own doc-tree row (`mirror-map.md:101`) carries the InfoIndex to NexusOS as `II. Resources/PM-Info-Index.md` and the mirror map gains nothing. The watcher reads and writes through the link: its tree scan keeps a linked file (`f.is_file()`, `cross-file-mirroring:1028-1030`), and its writes open the path, which writes the target (`:751`); NexusOS's frontmatter stays on the vault side but for the mirror's Metadata keys (`description`, `version`), which cross both ways as for every mirrored note and which the parse reads as the file's own. `Deployment.md`, `Distribution.md`, and `Libraries.md`, which the folder held before, describe a tree that's gone and aren't restored; once the scope is back online, the watcher's prune moves those three recorded notes to the vault's `.trash`, where they stay recoverable (`:1270-1291`). `auto-push.sh` gains the line that commits the InfoIndex alone.
+`.claude/Resources/` returns holding one file, `PM-Info-Index.md`, a symlink to `../../Core/Info/InfoIndex.md`, so the folder's own doc-tree row (`mirror-map.md:101`) carries the InfoIndex to NexusOS as `II. Resources/PM-Info-Index.md` and the mirror map gains nothing. The watcher reads and writes through the link: its tree scan keeps a linked file (`f.is_file()`, `cross-file-mirroring:1028-1030`), and its writes open the path, which writes the target (`:751`); NexusOS's frontmatter stays on the vault side but for the mirror's Metadata keys (`description`, `version`), which cross both ways as for every mirrored note and which the parse reads as the file's own. `Deployment.md`, `Distribution.md`, and `Libraries.md`, which the folder held before, describe a tree that's gone and aren't restored; once the scope is back online, the watcher's prune moves those three recorded notes to the vault's `.trash`, where they stay recoverable (`:1270-1291`).
 
 **PROCEDURE**
 
 1. Read the watcher's pruning (`prune_orphans`, `_judge`) and confirm that, with `// Resources` online again, it trashes exactly the three recorded notes and leaves the rest of `II. Resources` (its `_pageset.json` included) alone; stop and report if anything else would move.
 2. `mkdir .claude/Resources` and `ln -s ../../Core/Info/InfoIndex.md .claude/Resources/PM-Info-Index.md`, from the repo root.
 3. Watch `mirror.log` through a pass and the prune's settle: `II. Resources/PM-Info-Index.md` is seeded with an empty body, and the three old notes sit in the vault's `.trash`.
-4. Add the commit line below.
-5. Write the two *§Reconciliation* lines assigned Task 5-2 (`InterfacePM.md` *§InfoPanes*, `Development-Environment.md` *§Gates & Commits*).
-6. Commit the link and the two documents in Pommora, and `auto-push.sh` in `~/.claude`.
+4. Write the *§Reconciliation* line assigned Task 5-2 (`InterfacePM.md` *§InfoPanes*).
+5. Commit the link and `InterfacePM.md`.
 
 **AFTER**
 
 ```.claude/Resources/PM-Info-Index.md diff
 +../../Core/Info/InfoIndex.md (symlink)
-```
-
-```~/.claude/scripts/auto-push.sh diff
-@@ before the loop @@
-
- node ~/"The Studio"/.claude/dashboard/sync.mjs --refresh >> ~/Library/Logs/auto-push.log 2>&1
-+git -C ~/"The Studio/Projects/Project Pommora" commit --only -qm "The InfoIndex's wording was updated." -- Core/Info/InfoIndex.md >> ~/Library/Logs/auto-push.log 2>&1
- for repo in ~/"The Studio" ~/NexusOS ~/.claude; do
 ```
 
 **VERIFY**
@@ -1710,7 +1701,7 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 - **Correctness:** each behavior the decisions name was watched happen in the drive: the glyph after the title, the 0.5-second rest, the hold, the second click, Escape, the outside press, one pane at a time, the tap on touch, the disabled row, the variants' inks, no hover, selection, or copy (the table's cells included), the web link, and the entries' formatting; every Settings frame draws as at the baseline.
 - **Completeness:** every task and checkpoint in *§Process Overview* is ticked; every *§Concepts* removal is gone; nothing of the examples remains; no scaffolding, debug output, or unauthorized TODO remains.
 - **Confirmation:** every new or rewritten test went red without its change; every VERIFY ran and its output was read; the drive's shots were delivered.
-- **Continuity:** *§Reconciliation* is walked; the mirror and the commit line work as Task 5-2's VERIFY proves; every deviation is fixed or ruled on.
+- **Continuity:** *§Reconciliation* is walked; the mirror works as Task 5-2's VERIFY proves; every deviation is fixed or ruled on.
 - **Confidence:** the gates are green from a clean state at the final head; `view-delta <BASELINE>..HEAD` is reported with additions and removals apart, per phase and in total, against *§Overview · The Number*.
 
 #### Final Verification
@@ -1739,7 +1730,7 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 **Feature Docs**
 
 - `.claude/Features/InterfacePM.md` — *§InfoPanes*, after *§Confirmation & Notifications*, as Task 4-3's AFTER writes it — Task 4-3
-- `.claude/Features/InterfacePM.md` *§InfoPanes* — one sentence: the InfoIndex mirrors to NexusOS as `PM-Info-Index.md`, where its wording is edited, and the day's edits commit on their own — Task 5-2
+- `.claude/Features/InterfacePM.md` *§InfoPanes* — one sentence: the InfoIndex mirrors to NexusOS as `PM-Info-Index.md`, where its wording is edited — Task 5-2
 - `.claude/Features/PommoraUIX.md:361` — "`MenuCaption`" and "`subLabel`" read `MenuDesc` and `caption`, in place — Task 4-3
 
 **Issues**
@@ -1750,7 +1741,6 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 
 - `.claude/CLAUDE.md` *§Codebase Structure* — `// Info` under Core ("In-app information: the InfoButton, its pane, and the InfoIndex") — Task 4-3
 - `.claude/HistoryPM.md` — one entry titled *App Information Index*, in the file's own entry format, written with the final report
-- `~/.claude/scripts/auto-push.sh:4` — the InfoIndex's commit line — Task 5-2
 
 #### Open Items
 

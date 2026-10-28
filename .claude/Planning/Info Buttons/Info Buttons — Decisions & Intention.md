@@ -53,17 +53,17 @@ An **InfoButton** glyph sits at the end of a row's title; resting on it or click
 - **D-1 [CONFIRMED]:** Every explanation lives once in an InfoIndex file of Markdown entries, each wrapped in a tag naming its ID (`<date-format>`, a blank line, the Markdown, a blank line, `</date-format>`); a row cites its entry by ID, and no copy is duplicated or inlined. Headings stay free for organizing the file.
 - **D-2 [CONFIRMED]:** Rows cite entries by ID through one Core call, the pattern the test scans for, so one entry can serve several rows; the call also takes the row's title for A-5's accessible name. [INFERRED] The app reads the InfoIndex as text through Vite's `?raw` import and parses its entries once, when the module loads.
 - **D-3 [CONFIRMED]:** A minimal test holds the InfoIndex and its citations together: every cited ID resolves to an entry and no cited entry is empty, so a row carries an InfoButton only once its entry has wording. An entry no row cites is a draft and passes, so nothing written in NexusOS breaks the tests. The test is written last, while the examples still cite their entries.
-- **D-4 [CONFIRMED]:** Nathan writes every InfoIndex entry's wording. The work's only entries are the two examples, `label-format` and `value-format`, in Claude's wording, exercising formatting, layout, and syntax for the live drive's matrix; they leave with their citations, and the InfoIndex ends empty.
+- **D-4 [CONFIRMED]:** Nathan writes every InfoIndex entry's wording. The work's only entries are the four examples, `label-format`, `value-format`, `date-format`, and `aliases`, in Claude's wording, exercising formatting, layout, and syntax for the live drive's matrix; they leave with their citations, and the InfoIndex ends empty.
 - **D-5 [CONFIRMED]:** The InfoIndex is in-app information, a step toward release, not the user guide the Locked Decisions name.
 
 #### E - Editing From NexusOS
 
 - **E-1 [CONFIRMED]:** Nathan edits the InfoIndex's wording from a NexusOS document, `Studio/Pommora/II. Resources/PM-Info-Index.md`. It gets there through `.claude/Resources/`, which holds `PM-Info-Index.md`, a symlink to `Core/Info/InfoIndex.md`, so the folder's own doc-tree row in the mirror map carries it to NexusOS and the mirror keeps NexusOS's frontmatter on the vault side.
-- **E-2 [CONFIRMED]:** Wording edits made in NexusOS get committed without waiting for a session. [INFERRED] `~/.claude/scripts/auto-push.sh`, which commits The Studio, NexusOS, and `~/.claude` daily, gains one line committing the InfoIndex alone in Pommora's repo under its own message, so a session's work in progress is never swept in. Nathan left the mechanism to Claude.
+- **E-2 [CONFIRMED]:** Wording edits made in NexusOS land in Pommora's working tree and commit with the next session's work, as Nathan's other edits do; `auto-push.sh` doesn't change.
 
 #### F - Rows & Captions
 
-- **F-1 [CONFIRMED]:** The InfoButton enters through the shared menu-row recipe (`MenuItem`, reached through `MenuRow`), so any surface built on it can carry one. This work ships no citing row: the Label Format and Value Format rows in a property's settings (`Core/Properties/Schema/formatRows.ts`; Nathan's "Key Format" is the one labeled Label Format) carry example InfoButtons while the work is built and verified, and the work's last step removes them, so Nathan's own rows are implemented on the finished mechanism.
+- **F-1 [CONFIRMED]:** The InfoButton enters through the shared menu-row recipe (`MenuItem`, reached through `MenuRow`), so any surface built on it can carry one. This work ships no citing row: the Label Format and Value Format rows in a property's settings (`Core/Properties/Schema/formatRows.ts`; Nathan's "Key Format" is the one labeled Label Format), Settings' Date Format row, and a page's Aliases row carry example InfoButtons while the work is built and verified, and the work's last step removes them, so Nathan's own rows are implemented on the finished mechanism.
 - **F-2 [CONFIRMED]:** Captions stay as they are; nothing migrates into the InfoIndex. InfoButtons sit beside captions.
 - **F-3 [CONFIRMED]:** A row's secondary line takes one name, `caption`, in place of `hint`, `caption`, and `subLabel`. It rides with this work because the InfoButton's slot travels the same three seams (`SettingsWindow.tsx:57`, `SettingsFieldRow.tsx:16`, `ManageRow.tsx:37`).
 - **F-4 [CONFIRMED]:** `MenuCaption`, the centered note a pane shows on its own — empty states such as "No headings," and the filter's hand-authored note — becomes `MenuDesc`, so `caption` names only a row's secondary line and `hint` keeps its one meaning in UIX, a field's value affix (`FieldPicker`, `EditableInput`).
@@ -92,7 +92,7 @@ An **InfoButton** glyph sits at the end of a row's title; resting on it or click
 - **No Screenshot Stop:** Nathan takes no visual pass of his own before the final report.
 
 - **Placements:** nothing new goes in UIX; `Core/Info/` holds `InfoButton.tsx` (the button, `infoFor`, and the pane's contents), `info-button.css`, `InfoButton.test.tsx`, `InfoIndex.md`, `infoIndex.ts` (its format), and `infoIndex.test.ts`; `settingsRow` moves to `Core/Settings/frames.ts` beside `RowText`; the temporary drive is `.claude/scripts/Info Buttons Drive/`.
-- **Outside Pommora's Repo:** The Studio's `.claude/dashboard/src/showcase/MenuLeaf.tsx` takes the `caption` rename in The Studio's own commit; `~/.claude/scripts/auto-push.sh` gains the InfoIndex's commit line; `mirror-map.md` doesn't change.
+- **Outside Pommora's Repo:** The Studio's `.claude/dashboard/src/showcase/MenuLeaf.tsx` takes the `caption` rename in The Studio's own commit; `mirror-map.md` doesn't change.
 - **No Missing-Entry Guard:** a cited ID with no entry, or an empty one, fails D-3's test; nothing at runtime hides the glyph. Nathan left it to Claude.
 - **The Iteration Window:** `Core/Interface/Windows/IterationWindow.tsx` holds a temporary disabled citing row and the glyph, type, and border variants for the drive, removed with the examples.
 - **The Drive Retires:** it leaves with the examples; its matrix and results go into the plan's Results document.
@@ -101,8 +101,7 @@ An **InfoButton** glyph sits at the end of a row's title; resting on it or click
 - **The Dropdown:** the InfoPane opens and places itself through `PickerMenu` exactly as every other dropdown and hover reveal does; `PickerMenu` doesn't change.
 - **The InfoPane's Pointer:** the pane's text takes no pointer at its root, everything inside it included, so the pane has no hover behavior and nothing in it presses, selects, focuses, or copies; the web links in its prose keep theirs, and the editor's `editable` switch keeps the keyboard out (C-3). Table drag handles and reveals aren't a concern anywhere in this work.
 - **The Dashboard Line:** `.claude/CLAUDE.md`'s `// Dashboard` line leaves, since the dashboard lives in The Studio.
-- **The Daily Commit:** a daily commit that lands a tree failing lint or a test is accepted; the next session's gates catch it.
-- **Claude's Calls, Approved:** `useHoverReveal` takes `dwellMs` in place of `dwell`, its existing callers passing `REVEAL_DWELL_MS`; `MarkdownEditor` gains an opt-out of selection; the row accessory's overhang becomes one shared class; the Resources symlink and the commit line land last, after the examples leave and the empty InfoIndex is committed once.
+- **Claude's Calls, Approved:** `useHoverReveal` takes `dwellMs` in place of `dwell`, its existing callers passing `REVEAL_DWELL_MS`; `MarkdownEditor` gains an opt-out of selection; the row accessory's overhang becomes one shared class; the Resources symlink lands last, after the examples leave and the empty InfoIndex is committed once.
 
 ---
 
@@ -181,4 +180,3 @@ An **InfoButton** glyph sits at the end of a row's title; resting on it or click
 - `Core/Properties/Schema/formatRows.ts:30` — the Label Format and Value Format rows; `Core/Pages/AliasesRow.tsx:18` — the Aliases row
 - `UIX/Menus/menu-row.css.ts:158` — a disabled row's `pointer-events: none`
 - `.claude/scripts/drive-harness.mjs:10`, `:566` — a drive builds and launches whatever `POMMORA_DRIVE_REPO` names
-- `~/.claude/scripts/auto-push.sh:4-8` — the daily commit loop, which doesn't visit Pommora's repo
