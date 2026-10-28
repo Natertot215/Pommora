@@ -30,6 +30,7 @@ export type MenuRow = (
       icon?: ReactNode
       label: ReactNode
       caption?: ReactNode
+      info?: ReactNode
       trailing?: Trailing
       disabled?: boolean
       inert?: boolean
@@ -143,6 +144,7 @@ function rowNode(row: MenuRow): React.JSX.Element {
           className={row.className}
           leading={row.icon}
           caption={row.caption}
+          info={row.info}
           trailing={t && trailingNode(t)}
           disabled={row.disabled}
           inert={row.inert}

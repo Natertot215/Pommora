@@ -153,9 +153,11 @@ export const chipPicked = styleVariants(RUN_EDGES, ([top, bottom]) => ({
 
 export const itemEmphasized = style([text.body.emphasized])
 
+/** A disabled row takes no pointer and no wash, even when a control inside it takes the pointer back, as a row's information button does. */
 export const rowDisabled = style({
   selectors: {
     '&&': { opacity: STATE_OPACITY.inactive, pointerEvents: 'none' },
+    '&&:hover': { backgroundColor: 'transparent' },
   },
 })
 
@@ -199,6 +201,9 @@ export const titleWrap = style({
 export const titleCentered = style({ alignItems: 'center' })
 
 export const titleText = style({ vars: { '--scroll-fade': 'var(--fade-base)' } })
+
+/** A title with something after it (a row's `info`) runs as a line, so that sits right after the text; every other title fills its row, as a rename's field needs. */
+export const titleLine = style({ display: 'flex', alignItems: 'center', gap: '4px' })
 
 export const titleInput = style([fillInput, { WebkitAppRegion: 'no-drag' } as StyleRule])
 

@@ -126,6 +126,20 @@ describe('MenuRowView', () => {
   })
 })
 
+describe('a row carrying an InfoButton', () => {
+  it('draws the button inside the title line, after the title', () => {
+    row({ kind: 'item', label: 'Format', info: <i data-id="info" /> })
+    const line = host.querySelector('[class*="titleText"]')?.parentElement
+    expect(line?.className).toContain('titleLine')
+    expect(line?.lastElementChild?.getAttribute('data-id')).toBe('info')
+  })
+
+  it('leaves a row without one drawing its title as before', () => {
+    row({ kind: 'item', label: 'Format' })
+    expect(host.querySelector('[class*="titleLine"]')).toBeNull()
+  })
+})
+
 describe('MenuIndex', () => {
   it('renders nothing for zero sections', () => {
     render(<MenuIndex sections={[]} />)
