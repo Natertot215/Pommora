@@ -30,7 +30,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
-| 1 | +75 / −125 | | |
+| 1 | +75 / −125 | +284 / −254 (+30) | +30 |
 | 2 | +135 / −18 | | |
 | 3 | +115 / −13 | | |
 | 4 | 0 | | |
@@ -114,11 +114,11 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 
 #### Process Overview
 
-- [ ] **Phase 1** — One Name for a Caption
-  - [ ] Task 1-1 · `MenuCaption` becomes `MenuDesc`
-  - [ ] Task 1-2 · `subLabel` becomes `caption`
-  - [ ] Task 1-3 · Settings' `hint` becomes `caption`, and `SettingsFieldRow` leaves
-  - [ ] Review Checkpoint
+- [x] **Phase 1** — One Name for a Caption
+  - [x] Task 1-1 · `MenuCaption` becomes `MenuDesc`
+  - [x] Task 1-2 · `subLabel` becomes `caption`
+  - [x] Task 1-3 · Settings' `hint` becomes `caption`, and `SettingsFieldRow` leaves
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — The InfoButton
   - [ ] Task 2-1 · The reveal's dwell, reset, and coarse test
   - [ ] Task 2-2 · One fit for a row's accessory
