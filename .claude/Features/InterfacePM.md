@@ -81,7 +81,7 @@ The two ways the app speaks for itself, and neither hurries the user. A **confir
 
 ### InfoPanes
 
-A row can carry an **InfoButton** right after its title (`Core/Info/InfoButton.tsx`): resting on it, clicking it, or tapping it opens a read-only **InfoPane** of Markdown from the **InfoIndex** (`Core/Info/InfoIndex.md`), where each explanation lives once under the ID rows cite through `infoFor`.
+A row can carry an **InfoButton** right after its title (`Core/Info/InfoButton.tsx`): resting on it, clicking it, or tapping it opens a read-only **InfoPane** of Markdown from the **InfoIndex** (`Core/Info/InfoIndex.md`), where each explanation lives once under the ID rows cite through `infoFor`. The InfoIndex mirrors to NexusOS as `PM-Info-Index.md`, where its wording is edited.
 
 ### The Glance Pane
 

@@ -139,7 +139,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 - [x] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
 - [ ] **Phase 5** — Removal and Wiring
   - [x] Task 5-1 · The examples leave
-  - [ ] Task 5-2 · The Resources link
+  - [x] Task 5-2 · The Resources link
   - [ ] Spotcheck
 - [ ] `[Stop: the final report, per §Final Verification]`
 
