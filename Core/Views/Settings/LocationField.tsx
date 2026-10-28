@@ -6,7 +6,7 @@ import { foldKey, matches, matchKey, matchQuery } from '../../Paths/caseFold'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import {
   DisclosureRow,
-  MenuCaption,
+  MenuDesc,
   MenuScrollFrame,
   pickRuns,
   useDisclosureSet,
@@ -83,7 +83,7 @@ function LocationTree({
   }
   return (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-      {nodes.length ? renderLevel(nodes) : <MenuCaption>No Sets in this collection.</MenuCaption>}
+      {nodes.length ? renderLevel(nodes) : <MenuDesc>No Sets in this collection.</MenuDesc>}
     </MenuScrollFrame>
   )
 }

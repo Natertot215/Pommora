@@ -231,7 +231,7 @@ export const separatorLine = style({
 export const separatorLineGroup = style({ height: 'var(--width-175)' })
 export const separatorFlush = style({ padding: 0 })
 
-export const caption = style([
+export const desc = style([
   text.body.standard,
   { padding: '28px 8px', textAlign: 'center', color: c.label.secondary, userSelect: 'none' },
 ])

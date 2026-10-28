@@ -179,8 +179,8 @@ export function MenuSeparator({
   )
 }
 
-export function MenuCaption({ children }: { children: ReactNode }): React.JSX.Element {
-  return <div className={s.caption}>{children}</div>
+export function MenuDesc({ children }: { children: ReactNode }): React.JSX.Element {
+  return <div className={s.desc}>{children}</div>
 }
 
 export function FootingItem({
