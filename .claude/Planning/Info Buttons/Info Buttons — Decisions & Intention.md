@@ -83,6 +83,7 @@ An **InfoButton** glyph sits at the end of a row's title; resting on it or click
 #### Planning Rulings (10-27-2026)
 
 - **No Real Rows Yet:** no row carries a real InfoButton in this pass; temporary examples on Label Format, Value Format, Settings' Date Format row, and a page's Aliases row show the proof of concept, each entry exercising every Markdown construct the editor draws, and leave after verification (F-1).
+- **No Headings in Entries:** an entry carries no heading, since the row's title already names what its pane explains.
 - **The Overnight Run:** execution runs headlessly; the drive's screenshots are read and shown in chat; the docs gain about four lines (InterfacePM's *§InfoPanes*, `CLAUDE.md`'s structure line), with renamed identifiers corrected in place; `HistoryPM.md` gains one entry, *App Information Index*.
 - **IDs:** an entry's ID is its row's title in lowercase kebab case — the examples' are `label-format` and `value-format`.
 - **Default Look:** an InfoButton defaults to the `info` glyph, the `filled` type — the button's grey rounded square behind the outlined glyph — and no border; a citing row overrides any of the three.
