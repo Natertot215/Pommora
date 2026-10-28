@@ -84,12 +84,6 @@ export const infoFor = (id: string, title: string, look?: InfoLook): React.JSX.E
 function Entry({ body }: { body: string }): React.JSX.Element {
   const host = useEditorHost({ inert: true })
   return (
-    <MarkdownEditor
-      initialBody={body}
-      onChange={() => {}}
-      host={host}
-      readOnly
-      selectable={false}
-    />
+    <MarkdownEditor initialBody={body} onChange={() => {}} host={host} readOnly editable={false} />
   )
 }

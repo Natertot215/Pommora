@@ -414,11 +414,16 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).toBe(find('trigger'))
   })
 
-  it('refuses every press inside the pane only when focus is kept', async () => {
+  it('refuses every press inside the pane only when focus is kept, before the content it lands on reads it', async () => {
     const press = (): boolean => {
-      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
-      find('first').dispatchEvent(e)
-      return e.defaultPrevented
+      let seen = false
+      const read = (e: Event): void => {
+        seen = e.defaultPrevented
+      }
+      find('first').addEventListener('mousedown', read)
+      find('first').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+      find('first').removeEventListener('mousedown', read)
+      return seen
     }
     await render(<Host open focus="leave" />)
     expect(press()).toBe(false)

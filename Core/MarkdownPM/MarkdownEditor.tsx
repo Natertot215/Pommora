@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
 import { scrollerOf, travelToHeading } from './travel'
 import { EditorView, keymap, placeholder } from '@codemirror/view'
-import { Compartment, EditorState, Prec } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownInput } from './Input/markdownInput'
@@ -39,16 +39,6 @@ export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 
 const WARM_FIELDS = { history: historyField, codeScroll: codeScrolls }
 
-// CodeMirror's own press handler blurs whatever holds focus before a surface's `keepFocus` sees the press, so an unselectable editor claims it here.
-const claimPresses = Prec.lowest(
-  EditorView.domEventHandlers({
-    mousedown: (event) => {
-      event.preventDefault()
-      return true
-    },
-  }),
-)
-
 interface Props {
   initialBody: string
   onChange: (body: string) => void
@@ -57,8 +47,8 @@ interface Props {
   embedAncestors?: readonly string[]
   autoFocus?: boolean
   readOnly?: boolean
-  /** False takes the content out of the keyboard's reach and out of selection: a press on it selects nothing and moves no focus, after the link handlers have read it. Read once, at mount. */
-  selectable?: boolean
+  /** False makes the content plain rather than contenteditable: out of the keyboard's reach, with no caret, so a kept-focus pane claims its presses; `readOnly` only refuses edits. Read once, at mount. */
+  editable?: boolean
   edgeFade?: boolean
   warm?: WarmSeam
   active?: boolean
@@ -79,7 +69,7 @@ export function MarkdownEditor({
   embedAncestors,
   autoFocus = false,
   readOnly = false,
-  selectable = true,
+  editable = true,
   edgeFade = false,
   warm,
   register,
@@ -145,7 +135,7 @@ export function MarkdownEditor({
     const prefs = hostRef.current.prefs
     const extensions = [
       readOnlyGate.current.of(EditorState.readOnly.of(lastReadOnly.current)),
-      selectable ? [] : [EditorView.editable.of(false), claimPresses],
+      editable ? [] : EditorView.editable.of(false),
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
