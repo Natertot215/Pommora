@@ -1,16 +1,6 @@
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { useSession } from '../../Session/store'
-import { Menu, MenuItem } from '@pommora/uix/Menus'
-import { infoFor } from '../../Info/InfoButton'
-
-const VARIANTS = [
-  ...(['info', 'circle-question-mark', 'circle-alert'] as const).map((icon) => ({ icon })),
-  ...(['base', 'filled', 'tinted', 'solid', 'destructive'] as const).flatMap((type) => [
-    { type },
-    { type, outline: true },
-  ]),
-]
 
 /** A blank floating surface summoned by its chord (App.tsx) for previewing a component in isolation. */
 export function IterationWindow(): React.JSX.Element | null {
@@ -32,19 +22,7 @@ export function IterationWindow(): React.JSX.Element | null {
           scrollbarWidth: 'none',
         }}
       >
-        <Menu>
-          <MenuItem disabled info={infoFor('label-format', 'Disabled Row')}>
-            Disabled Row
-          </MenuItem>
-          {VARIANTS.map((look) => {
-            const title = JSON.stringify(look)
-            return (
-              <MenuItem key={title} info={infoFor('value-format', title, look)}>
-                {title}
-              </MenuItem>
-            )
-          })}
-        </Menu>
+        {/* drop JSX here to preview it */}
       </div>
     </WindowBase>
   )

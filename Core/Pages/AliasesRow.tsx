@@ -6,7 +6,6 @@ import { heldAliases } from '../Connections/aliasMemory'
 import { AliasList } from '../MarkdownPM/Autocomplete/AliasList'
 import { pageMetaOf, useSession } from '../Session/store'
 import { editAliasesIn } from './editorHost'
-import { infoFor } from '../Info/InfoButton'
 
 export function AliasesRow({
   page,
@@ -16,14 +15,7 @@ export function AliasesRow({
   const worn = useSession(pageMetaOf(page.id))?.aliases
   const aliases = useMemo(() => heldAliases(worn ?? [], page.title), [worn, page.title])
   return (
-    <ManageRow
-      label="Aliases"
-      icon={ALIAS_ICON}
-      count={aliases.length}
-      info={infoFor('aliases', 'Aliases')}
-      solid
-      menu
-    >
+    <ManageRow label="Aliases" icon={ALIAS_ICON} count={aliases.length} solid menu>
       <AliasList
         aliases={aliases}
         host={{
