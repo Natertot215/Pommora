@@ -8,7 +8,7 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `6f283376f` | 8,948 passed, 2 skipped (544 files) | 10-27-2026 | 10-28-2026 · `186726aed` · 8,967 passed, 2 skipped (546 files) |
+| `6f283376f` | 8,948 passed, 2 skipped (544 files) | 10-27-2026 | 10-28-2026 · `14fc9d5e6` · 8,968 passed, 2 skipped (546 files) |
 
 ### Context
 
@@ -24,7 +24,7 @@ A row's secondary line takes one name, `caption`, from Settings through `MenuIte
 
 Four example entries, cited by the Label Format and Value Format rows, Settings' Date Format row, and a page's Aliases row, and an Iteration window preview of a disabled row and the look's variants, carry the build and its verification through a live drive; they leave after verification, so the InfoIndex ships empty and rows cite their first real entries later. Last, `.claude/Resources/` returns holding a symlink to the InfoIndex, so the folder's existing mirror row carries it to NexusOS; the three outdated notes the folder once held aren't restored.
 
-**The Number** (the estimate; the Net Ledger carries the measure, +243 shipped): about +325 / −155 across Phases 1–3, roughly +170 net counting code alone (tests, documents, and `.claude/` excluded), of which about +55 is the examples and the Iteration window's preview that Phase 5 removes, so about +115 ships. Phase 1 removes more than it adds (`SettingsFieldRow`, four split props, two translation seams); the InfoButton, its pane, and its stylesheet (about +110) are the behavior the decisions require that nothing in the tree did, built from the kit's button, hover reveal, dropdown, and read-only editor. Each phase's measured delta is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
+**The Number** (the estimate; the Net Ledger carries the measure, +250 shipped): about +325 / −155 across Phases 1–3, roughly +170 net counting code alone (tests, documents, and `.claude/` excluded), of which about +55 is the examples and the Iteration window's preview that Phase 5 removes, so about +115 ships. Phase 1 removes more than it adds (`SettingsFieldRow`, four split props, two translation seams); the InfoButton, its pane, and its stylesheet (about +110) are the behavior the decisions require that nothing in the tree did, built from the kit's button, hover reveal, dropdown, and read-only editor. Each phase's measured delta is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
 
 **Net Ledger** (the Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head):
 
@@ -37,6 +37,7 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | Final Verification | — | +9 / −5 (+4) | +279 |
 | 5 | 0 / −55 | +8 / −55 (−47) | +232 |
 | The Rulings | — | +13 / −2 (+11) | +243 |
+| Closeout | — | +17 / −10 (+7) | +250 |
 
 #### Concepts
 
@@ -1797,6 +1798,6 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 
 - **The Look's Dials After the Preview (Final Verification, for Nathan's ruling):** A-2 rules the look's three independent props (`icon`, `type`, `outline`) and its three glyphs, so `InfoLook`, `infoFor`'s `look` argument, and the `circle-question-mark` and `circle-alert` registry entries ship; once the Iteration preview leaves, no row overrides the default look and those two glyphs are uncited. They stand as ruled until a look is chosen, when the dials no row uses can go.
 
-- **A Hover-Closed InfoPane and the Next Press (Final Verification, ruled by Nathan):** a press outside in the 255ms exit of a hover-closed pane dismissed nothing beneath it, so closing the settings pane behind took a second press. The dismissal stack held every press while any layer was exiting, a gate whose purpose was written nowhere and which a press on the exiting pane's own box doesn't need, since its layer still holds that press. The gate left, so an exiting layer is passed by for presses as it already was for Escape, for every dropdown alike.
+- **A Hover-Closed InfoPane and the Next Press (Final Verification, ruled by Nathan):** a press outside in the 255ms exit of a hover-closed pane dismissed nothing beneath it, so closing the settings pane behind took a second press. The dismissal stack held every press while any layer was exiting, a gate whose one purpose was written nowhere: a pick that opens a confirmation as its menu closes would otherwise lose that confirmation to the double-click's second press. The gate narrowed to that case, holding a press only while a surface opened over an exiting layer stands, and the gate states its reason where a reader meets it; otherwise an exiting layer is passed by for presses as it already was for Escape, for every dropdown alike.
 
-- **The InfoPane Near the Window's Bottom (Task 4-1, ruled by Nathan):** a pane whose glyph sat low in the window opened downward and ran past the window's edge, since `PickerMenu` decided its side at its first measure, while the InfoPane is still empty, as `MarkdownEditor` builds its view in an effect after that measure. The InfoPane is a `PickerMenu`, so the fix went where the cause lives despite the freeze: a pane grown by the time its children's effects have run decides its side again (`UIX/Pickers/PickerMenu.tsx:274-285`), and every dropdown keeps one rule.
+- **The InfoPane Near the Window's Bottom (Task 4-1, ruled by Nathan):** a pane whose glyph sat low in the window opened downward and ran past the window's edge, since `PickerMenu` decided its side at its first measure, while the InfoPane is still empty, as `MarkdownEditor` builds its view in an effect after that measure. The InfoPane is a `PickerMenu`, so the fix went where the cause lives despite the freeze: a pane grown by the time its children's effects have run decides its side again (`UIX/Pickers/PickerMenu.tsx:279-286`), and every dropdown keeps one rule.
