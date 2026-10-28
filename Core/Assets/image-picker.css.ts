@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { strip } from '@pommora/uix/Controls/slider.css'
 import { text, vars } from '@pommora/uix/Theme'
-import { accessoryButton, detail, rowBox } from '@pommora/uix/Menus/menu-row.css'
+import { detail, rowBox } from '@pommora/uix/Menus/menu-row.css'
 
 const c = vars.color
 
@@ -46,14 +46,11 @@ export const seatImage = style({
   objectFit: 'fill',
 })
 
-const cornerGlyph = style([
-  accessoryButton,
-  {
-    position: 'absolute',
-    bottom: CORNER_INSET,
-    color: c.label.secondary,
-  },
-])
+const cornerGlyph = style({
+  position: 'absolute',
+  bottom: CORNER_INSET,
+  color: c.label.secondary,
+})
 export const cornerGlyphStart = style([cornerGlyph, { left: CORNER_INSET }])
 export const cornerGlyphEnd = style([cornerGlyph, { right: CORNER_INSET }])
 

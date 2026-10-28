@@ -255,17 +255,20 @@ export const footingLabel = style([
 export const footingSymbol = style({ display: 'inline-flex', color: c.label.secondary })
 export const footingQuiet = style({ selectors: { '&&&': { color: c.label.tertiary } } })
 
-/** A row's accessory overhangs into the row's padding, so an eye or × row stands as tall as a plain one. */
-export const accessoryButton = style({
+/** A row's accessory overhangs into the row's padding, so a row carrying one stands as tall as a plain one. */
+export const rowAccessory = style({
   width: '20px',
-  color: c.label.tertiary,
   selectors: {
-    '&&:disabled': { opacity: STATE_OPACITY.ghost },
     [`${rowBox} &`]: {
       marginBlock: 'max(calc(-1 * var(--row-pad-y)), calc((var(--row-line) - var(--btn-h)) / 2))',
     },
   },
 })
+
+export const accessoryButton = style([
+  rowAccessory,
+  { color: c.label.tertiary, selectors: { '&&:disabled': { opacity: STATE_OPACITY.ghost } } },
+])
 
 export const detail = style([text.footnote.emphasized, { flex: '0 1 auto', minWidth: 0 }])
 
