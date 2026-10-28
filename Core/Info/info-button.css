@@ -1,0 +1,10 @@
+/* A disabled row takes the pointer from its contents; the host takes it back for its glyph, so the row's explanation stays reachable. */
+.info-button {
+  display: inline-flex;
+  pointer-events: auto;
+}
+/* The pane's size is its own, as the text pane's is (`text-pane.css`), so its contents bring their own inset. */
+.info-pane {
+  width: 285px; /* KNOB */
+  padding: 0;
+}
