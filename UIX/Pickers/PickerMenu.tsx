@@ -111,7 +111,7 @@ export function PickerMenu({
   anchorHeight?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
-  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` takes none, so a press anywhere in the pane but inside a field leaves focus with its owner. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane stays modal, Escape and outside presses closing it, but draws no shield, so an outside press that closes it also lands. */
+  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` takes none, so a press anywhere in the pane but inside a field leaves focus with its owner, claimed as it enters the pane, before an editor inside reads it and moves focus itself. Under `keep` the trigger belongs to the pane, so pressing it never closes the pane, and the pane stays modal, Escape and outside presses closing it, but draws no shield, so an outside press that closes it also lands. */
   focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
@@ -340,7 +340,7 @@ export function PickerMenu({
             {...{ [PICKER_PORTAL_ATTR]: '' }}
             tabIndex={trap ? -1 : undefined}
             onPointerDown={stopPointerBubble}
-            onMouseDown={focus === 'keep' ? keepFocus : undefined}
+            onMouseDownCapture={focus === 'keep' ? keepFocus : undefined}
             onContextMenu={stopContextBubble}
             onKeyDown={trap ? trapTab : undefined}
             style={{
