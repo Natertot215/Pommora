@@ -40,6 +40,7 @@ import {
   TIME_FORMAT_LABELS,
 } from '../Properties/displayLabels'
 import { TrashFrame } from './TrashFrame'
+import { infoFor } from '../Info/InfoButton'
 import type { MenuRow, Trailing } from '@pommora/uix/Menus'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'
@@ -75,6 +76,8 @@ type Scoped<Nexus, Device> = { key: Nexus; device?: never } | { key: Device; dev
 export interface RowText {
   label: string
   caption?: string
+  /** The InfoIndex entry the row's InfoButton shows. */
+  info?: string
   when?: (s: SessionState) => boolean
 }
 
@@ -82,6 +85,7 @@ export const settingsRow = (row: RowText, trailing: Trailing): MenuRow => ({
   kind: 'item',
   label: row.label,
   caption: row.caption,
+  info: row.info === undefined ? undefined : infoFor(row.info, row.label),
   trailing,
 })
 
@@ -203,6 +207,7 @@ export const FRAMES = roster([
             key: 'dateFormat',
             label: 'Date Format',
             caption: 'How a date reads wherever a column has not chosen its own form.',
+            info: 'date-format',
             options: DATE_FORMAT_OPTIONS,
           },
           {

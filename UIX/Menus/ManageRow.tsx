@@ -10,6 +10,7 @@ import * as s from './manage-row.css'
 export function ManageRow({
   label,
   caption,
+  info,
   icon,
   count,
   solid,
@@ -18,6 +19,7 @@ export function ManageRow({
 }: {
   label: string
   caption?: string
+  info?: ReactNode
   icon?: IconName
   count?: number
   /** Stacked over another glass surface, as a picker opened from a menu is. */
@@ -35,6 +37,7 @@ export function ManageRow({
         icon: icon ? <Icon name={icon} size="control" /> : undefined,
         label,
         caption,
+        info,
         trailing: {
           kind: 'field',
           children: (
