@@ -1,14 +1,14 @@
 ## Info Buttons — Implementation Plan
 
 **DATE:** 10-27-2026
-**STATUS:** Ratified 10-27-2026
+**STATUS:** Implemented 10-28-2026
 **SOURCE:** *Info Buttons — Decisions & Intention* (ratified 10-27-2026, with its *§Planning Rulings*), *Info Buttons — Investigation* and its cleaned reports in `Scouts/`, and *Info Buttons — Scout Findings* (the brainstorm's).
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `6f283376f` | 8,948 passed, 2 skipped (544 files) | 10-27-2026 | |
+| `6f283376f` | 8,948 passed, 2 skipped (544 files) | 10-27-2026 | 10-28-2026 · `d098fcf4d` · 8,966 passed, 2 skipped (546 files) |
 
 ### Context
 
@@ -34,7 +34,8 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
 | 2 | +135 / −18 | +147 / −32 (+115) | +145 |
 | 3 | +115 / −13 | +128 / −11 (+117) | +262 |
 | 4 | 0 | +16 / −3 (+13) | +275 |
-| 5 | 0 / −55 | | |
+| Final Verification | — | +9 / −5 (+4) | +279 |
+| 5 | 0 / −55 | +8 / −55 (−47) | +232 |
 
 #### Concepts
 
@@ -130,18 +131,18 @@ Four example entries, cited by the Label Format and Value Format rows, Settings'
   - [x] Task 3-2 · The InfoIndex, its format, and the pane
   - [x] Task 3-3 · The examples
   - [x] Review Checkpoint
-- [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
+- [x] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [x] **Phase 4** — Verification and the Documents
   - [x] Task 4-1 · The Info Buttons Drive
   - [x] Task 4-2 · The citation test
   - [x] Task 4-3 · The documents
   - [x] Review Checkpoint
 - [x] *§Final Verification* over `{baseline}..{head before Phase 5}`, the examples live
-- [ ] **Phase 5** — Removal and Wiring
+- [x] **Phase 5** — Removal and Wiring
   - [x] Task 5-1 · The examples leave
   - [x] Task 5-2 · The Resources link
-  - [ ] Spotcheck
-- [ ] `[Stop: the final report, per §Final Verification]`
+  - [x] Spotcheck
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -198,9 +199,9 @@ The same two-line change lands in `Core/Properties/Schema/PropertyFrame.tsx` (`:
 
 **VERIFY**
 
-- [ ] `git grep -n "MenuCaption" -- Core UIX` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "MenuCaption" -- Core UIX` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -279,10 +280,10 @@ The same two-line change lands in `Core/Properties/Schema/PropertyFrame.tsx` (`:
 
 **VERIFY**
 
-- [ ] `git grep -n "subLabel" -- Core UIX` and `grep -rni "subLabel\|sub-label" ~/"The Studio/.claude/dashboard/src"` print nothing.
-- [ ] The Studio's commit holds `MenuLeaf.tsx` alone, and Pommora's typecheck passes over the dashboard.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "subLabel" -- Core UIX` and `grep -rni "subLabel\|sub-label" ~/"The Studio/.claude/dashboard/src"` print nothing.
+- [x] The Studio's commit holds `MenuLeaf.tsx` alone, and Pommora's typecheck passes over the dashboard.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -589,16 +590,16 @@ Nexus Password's field row takes the same form as This Device's; the file's iner
 
 **VERIFY**
 
-- [ ] `Core/Settings/SettingsFieldRow.tsx` is gone and `git grep -n "SettingsFieldRow" -- Core UIX` prints nothing.
-- [ ] `git grep -c "caption:" -- Core/Settings/frames.ts` reads 64 (the roster's 63 and `settingsRow`'s), and `git grep -n "hint" -- Core/Settings UIX/Menus` prints nothing.
-- [ ] Run the gates; `ExclusionRows.test.tsx` and `PreviewRulesRow.test.tsx` pass.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `Core/Settings/SettingsFieldRow.tsx` is gone and `git grep -n "SettingsFieldRow" -- Core UIX` prints nothing.
+- [x] `git grep -c "caption:" -- Core/Settings/frames.ts` reads 64 (the roster's 63 and `settingsRow`'s), and `git grep -n "hint" -- Core/Settings UIX/Menus` prints nothing.
+- [x] Run the gates; `ExclusionRows.test.tsx` and `PreviewRulesRow.test.tsx` pass.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Among UIX's props and components, `caption` names only a row's secondary line (the type ramp's `caption` step and icon size are type tokens); `MenuDesc` names the centered note; `hint` survives only as a field's value affix (`EditableInput`, `FieldPicker`).
-- [ ] Every Settings row component takes its whole row; `settingsRow` is the only map from a labeled Settings control to a menu row, `NexusRows`' five field rows included.
-- [ ] Every Settings frame and the Nexus rows draw exactly as at the baseline (captions, controls, the Sync and Server captions).
+- [x] Among UIX's props and components, `caption` names only a row's secondary line (the type ramp's `caption` step and icon size are type tokens); `MenuDesc` names the centered note; `hint` survives only as a field's value affix (`EditableInput`, `FieldPicker`).
+- [x] Every Settings row component takes its whole row; `settingsRow` is the only map from a labeled Settings control to a menu row, `NexusRows`' five field rows included.
+- [x] Every Settings frame and the Nexus rows draw exactly as at the baseline (captions, controls, the Sync and Server captions).
 
 ### Phase 2 — The InfoButton
 
@@ -751,10 +752,10 @@ Each imports `REVEAL_DWELL_MS` from `@pommora/uix/Interactions/hoverReveal` besi
 
 **VERIFY**
 
-- [ ] The two new cases fail before the hook's edit and pass after; every existing case passes unchanged in substance, the touch cases (`:191`, `:269`) included.
-- [ ] `git grep -n "dwell: \(true\|false\)\|dwell = false\|s\.dwell &&\|s\.dwell ||" -- Core UIX` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The two new cases fail before the hook's edit and pass after; every existing case passes unchanged in substance, the touch cases (`:191`, `:269`) included.
+- [x] `git grep -n "dwell: \(true\|false\)\|dwell = false\|s\.dwell &&\|s\.dwell ||" -- Core UIX` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
@@ -787,9 +788,9 @@ A row accessory's width and its overhang into the row's padding become one class
 
 **VERIFY**
 
-- [ ] Every accessory measures as at the baseline, 20px wide with its row's height unchanged: an `AccessoryButton` (a ×, a footing's create, a row's trailing button), an `EyeToggle` in the Visibility frame, an option row's edit button, and an image picker's corner glyph.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Every accessory measures as at the baseline, 20px wide with its row's height unchanged: an `AccessoryButton` (a ×, a footing's create, a row's trailing button), an `EyeToggle` in the Visibility frame, an option row's edit button, and an image picker's corner glyph.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -1032,10 +1033,10 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 **VERIFY**
 
-- [ ] Every `InfoButton.test.tsx` case fails before the component exists and passes after; `glyph` finding "Label Format - Info" pins the accessible name in every case. A held pane's Escape and an outside press are `PickerMenu`'s and the dismissal stack's, already pinned there (`UIX/Pickers/PickerMenu.test.tsx`, `UIX/Interactions/dismissalStack.test.tsx`).
-- [ ] `INFO_DWELL_MS` and the pane's `285px` are each written once in `Core/Info/`, both marked `KNOB`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Every `InfoButton.test.tsx` case fails before the component exists and passes after; `glyph` finding "Label Format - Info" pins the accessible name in every case. A held pane's Escape and an outside press are `PickerMenu`'s and the dismissal stack's, already pinned there (`UIX/Pickers/PickerMenu.test.tsx`, `UIX/Interactions/dismissalStack.test.tsx`).
+- [x] `INFO_DWELL_MS` and the pane's `285px` are each written once in `Core/Info/`, both marked `KNOB`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-4
 
@@ -1137,15 +1138,15 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 **VERIFY**
 
-- [ ] The first case fails before the edit and both pass after; `MenuIndex.test.tsx:117` passes unchanged.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The first case fails before the edit and both pass after; `MenuIndex.test.tsx:117` passes unchanged.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] The title-search hint and the ViewTile strip dwell 1.5 seconds and rest open on touch, as at the baseline; every accessory measures as it did.
-- [ ] The InfoButton's behavior lives in its one file, its reveal from the hook, its pane from `PickerMenu`, its fit from `rowAccessory`; nothing restates any of them.
-- [ ] Every existing row renders the markup it rendered at the baseline; a sidebar rename's field still fills its row, and the slot's two shapes carry their reason in `titleLine`'s docstring.
+- [x] The title-search hint and the ViewTile strip dwell 1.5 seconds and rest open on touch, as at the baseline; every accessory measures as it did.
+- [x] The InfoButton's behavior lives in its one file, its reveal from the hook, its pane from `PickerMenu`, its fit from `rowAccessory`; nothing restates any of them.
+- [x] Every existing row renders the markup it rendered at the baseline; a sidebar rename's field still fills its row, and the slot's two shapes carry their reason in `titleLine`'s docstring.
 
 ### Phase 3 — The InfoIndex and Its Pane
 
@@ -1222,9 +1223,9 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 **VERIFY**
 
-- [ ] The two new cases fail before the edit and pass after; the existing describes pass unchanged, every selectable editor carrying nothing new.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The two new cases fail before the edit and pass after; the existing describes pass unchanged, every selectable editor carrying nothing new.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
@@ -1346,9 +1347,9 @@ The InfoButton lives in `Core/Info/`, beside the pane it opens, and reaches UIX 
 
 **VERIFY**
 
-- [ ] `git grep -n "?raw" -- Core UIX Desktop` prints only `infoIndex.ts`; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "?raw" -- Core UIX Desktop` prints only `infoIndex.ts`; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-3
 
@@ -1504,16 +1505,16 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 
 **VERIFY**
 
-- [ ] Run `npm run build`; the renderer bundle carries the InfoIndex's text.
-- [ ] In `~/Test`, a Select's settings show the glyph right after "Label Format" and "Value Format," Settings › General shows it after "Date Format," a page's settings show it after "Aliases," and the Iteration window (⌘⇧T) shows the disabled row and thirteen variants: three glyphs, and five types each with and without a border.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Run `npm run build`; the renderer bundle carries the InfoIndex's text.
+- [x] In `~/Test`, a Select's settings show the glyph right after "Label Format" and "Value Format," Settings › General shows it after "Date Format," a page's settings show it after "Aliases," and the Iteration window (⌘⇧T) shows the disabled row and thirteen variants: three glyphs, and five types each with and without a border.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] No read-only surface changed but the InfoPane: the history reader and the glance select and behave as before.
-- [ ] The InfoIndex is read once; nothing parses or reads it per open or per render, and the pane's host passes no connections.
-- [ ] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, `AliasesRow.tsx`, the Date Format row's `info` key and `frames.ts`'s `infoFor` import, and the InfoIndex's four entries; nothing else needs undoing in Task 5-1.
+- [x] No read-only surface changed but the InfoPane: the history reader and the glance select and behave as before.
+- [x] The InfoIndex is read once; nothing parses or reads it per open or per render, and the pane's host passes no connections.
+- [x] Every temporary line sits in `formatRows.ts`, `IterationWindow.tsx`, `AliasesRow.tsx`, the Date Format row's `info` key and `frames.ts`'s `infoFor` import, and the InfoIndex's four entries; nothing else needs undoing in Task 5-1.
 
 ### Phase 4 — Verification and the Documents
 
@@ -1580,8 +1581,8 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 
 **VERIFY**
 
-- [ ] Every group runs from a clean build, and every case passes or is recorded under *§Deviations* for Nathan's ruling.
-- [ ] The run left `~/Test` as it found it.
+- [x] Every group runs from a clean build, and every case passes or is recorded under *§Deviations* for Nathan's ruling.
+- [x] The run left `~/Test` as it found it.
 
 #### Task 4-2
 
@@ -1637,9 +1638,9 @@ The same `info={row.info}` lands in `PreviewRulesRow.tsx`, so every Settings row
 
 **VERIFY**
 
-- [ ] With an example's closing tag broken, the citation case fails, naming a citing file and the ID; restored, it passes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] With an example's closing tag broken, the citation case fails, naming a citing file and the ID; restored, it passes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-3
 
@@ -1662,15 +1663,15 @@ Every line *§Reconciliation* assigns this task is rewritten in place, plainly, 
 
 **VERIFY**
 
-- [ ] Every *§Reconciliation* line assigned Task 4-3 is ticked and reads true against the code at this head; none describes the mirror.
-- [ ] `git grep -n "subLabel\|MenuCaption\|SettingsFieldRow" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md` prints nothing; `.claude/CLAUDE.md`'s structure lists `// Info` under Core and none under UIX; the docs gained about four lines in all.
-- [ ] Check for unnecessary changes or mistakes.
+- [x] Every *§Reconciliation* line assigned Task 4-3 is ticked and reads true against the code at this head; none describes the mirror.
+- [x] `git grep -n "subLabel\|MenuCaption\|SettingsFieldRow" -- .claude/Features .claude/CLAUDE.md .claude/IssuesPM.md` prints nothing; `.claude/CLAUDE.md`'s structure lists `// Info` under Core and none under UIX; the docs gained about four lines in all.
+- [x] Check for unnecessary changes or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Every fix the drive caused landed in the task that owns it, with its test where a unit test can hold it.
-- [ ] The test pins the format and the citations without pinning today's temporary state.
-- [ ] Every document reads true at this head, and none describes the examples as shipping.
+- [x] Every fix the drive caused landed in the task that owns it, with its test where a unit test can hold it.
+- [x] The test pins the format and the citations without pinning today's temporary state.
+- [x] Every document reads true at this head, and none describes the examples as shipping.
 
 ---
 
@@ -1699,10 +1700,10 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 **VERIFY**
 
-- [ ] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx Core/Pages/AliasesRow.tsx` prints nothing, and `git grep -n "Info/InfoButton" -- Core/Settings/frames.ts` prints nothing.
-- [ ] `git grep -n "infoFor(" -- Core UIX` prints nothing, `InfoButton.tsx` defining it as `infoFor = (`; `Core/Info/InfoIndex.md` is tracked and empty.
-- [ ] Run the gates; `infoIndex.test.ts` passes with no citation.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git diff <the commit before Task 3-3's> -- Core/Properties/Schema/formatRows.ts Core/Interface/Windows/IterationWindow.tsx Core/Pages/AliasesRow.tsx` prints nothing, and `git grep -n "Info/InfoButton" -- Core/Settings/frames.ts` prints nothing.
+- [x] `git grep -n "infoFor(" -- Core UIX` prints nothing, `InfoButton.tsx` defining it as `infoFor = (`; `Core/Info/InfoIndex.md` is tracked and empty.
+- [x] Run the gates; `infoIndex.test.ts` passes with no citation.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-2
 
@@ -1724,15 +1725,15 @@ The examples leave in one commit: the four InfoIndex entries (the file stays, em
 
 **VERIFY**
 
-- [ ] `git ls-files -s .claude/Resources` lists one entry of mode `120000`, and `readlink .claude/Resources/PM-Info-Index.md` prints `../../Core/Info/InfoIndex.md`.
-- [ ] The three old notes sit in the vault's `.trash`, and nothing else in `II. Resources` moved or changed.
-- [ ] `II. Resources/PM-Info-Index.md` exists, its body empty; an edit to it reaches `Core/Info/InfoIndex.md` within a pass with the link intact (`test -L`), and is reverted from the codebase side (`git checkout -- Core/Info/InfoIndex.md`), since a revert from the vault would leave the file a single newline (`cross-file-mirroring:868`); the next pass empties the vault note and `git status` shows the InfoIndex clean.
-- [ ] Check for unnecessary changes or mistakes.
+- [x] `git ls-files -s .claude/Resources` lists one entry of mode `120000`, and `readlink .claude/Resources/PM-Info-Index.md` prints `../../Core/Info/InfoIndex.md`.
+- [x] The three old notes sit in the vault's `.trash`, and nothing else in `II. Resources` moved or changed.
+- [x] `II. Resources/PM-Info-Index.md` exists, its body empty; an edit to it reaches `Core/Info/InfoIndex.md` within a pass with the link intact (`test -L`), and is reverted from the codebase side (`git checkout -- Core/Info/InfoIndex.md`), since a revert from the vault would leave the file a single newline (`cross-file-mirroring:868`); the next pass empties the vault note and `git status` shows the InfoIndex clean.
+- [x] Check for unnecessary changes or mistakes.
 
 #### Spotcheck
 
-- [ ] One `opus-high` agent reads Phase 5's range against the Mandate alone: nothing of the examples remains, and nothing the examples needed lingers.
-- [ ] Run the gates and `npm run build` from a clean state.
+- [x] One `opus-high` agent reads Phase 5's range against the Mandate alone: nothing of the examples remains, and nothing the examples needed lingers.
+- [x] Run the gates and `npm run build` from a clean state.
 
 ---
 
@@ -1755,10 +1756,10 @@ The reviews run over `<BASELINE>..<head before Phase 5>` with the examples live 
 - [x] **Wave One:** two read-only `opus-xhigh` reviewers, briefed with `code-simplification`, one reading inward at the diff and one outward against the rest of Core, UIX, and Desktop; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
 - [x] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, briefed with `adversarial-review` over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
 - [x] **Neutral Gate:** one `fable-high` agent given only the BASELINE head, the head before Phase 5, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after each fold until it answers yes.
-- [ ] **Phase 5 and Its Spotcheck:** the examples leave and the wiring lands; any fold after the gate gets the spotcheck against the Mandate alone.
-- [ ] **Own Pass:** gates from clean, baseline counts, the diff read once, *§Completion Criteria* ticked.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
-- [ ] **Report:** in `closeout-review`'s closeout format, with the range presented through `/view-changes`, the per-phase and total delta, every deviation, and the neutral gate's answer verbatim.
+- [x] **Phase 5 and Its Spotcheck:** the examples leave and the wiring lands; any fold after the gate gets the spotcheck against the Mandate alone.
+- [x] **Own Pass:** gates from clean, baseline counts, the diff read once, *§Completion Criteria* ticked.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
+- [x] **Report:** in `closeout-review`'s closeout format, with the range presented through `/view-changes`, the per-phase and total delta, every deviation, and the neutral gate's answer verbatim.
 
 #### Reconciliation
 
