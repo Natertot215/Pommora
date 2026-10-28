@@ -238,15 +238,17 @@ describe('the stack', () => {
     expect(log).toEqual(['b', 'a'])
   })
 
-  it('ignores presses while a popup is exiting, and Escape passes the exiting one by', () => {
+  it('passes an exiting popup by, so a press outside or Escape reaches the one beneath', () => {
     const log: string[] = []
     const layers = { a: layer(), b: layer() }
     stack(['a', 'b'], log, layers)
     handles[1].setClosing(true)
-    press(document.body)
+    press(layers.b)
     expect(log).toEqual([])
-    pressEscape(document)
+    press(document.body)
     expect(log).toEqual(['a'])
+    pressEscape(document)
+    expect(log).toEqual(['a', 'a'])
     expect(handles[0].shields()).toBe(true)
   })
 

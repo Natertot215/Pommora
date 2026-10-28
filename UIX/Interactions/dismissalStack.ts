@@ -47,7 +47,6 @@ const holds = (e: Live, target: Node): 'layer' | 'trigger' | null =>
         : 'trigger'
       : null
 const closes = (e: Live): boolean => dismissable(e) && e.entry.outsidePress !== false
-const exiting = (): boolean => entries.some((e) => e.closing)
 
 export const SHIELD_ATTR = 'data-dismissal-shield'
 
@@ -62,7 +61,7 @@ const beneathShield = (e: PointerEvent): Node => {
 }
 
 const onPointerDown = (e: PointerEvent): void => {
-  if (e.button !== 0 || exiting()) return
+  if (e.button !== 0) return
   const target = beneathShield(e)
   let keep = -1
   let onTrigger = false
