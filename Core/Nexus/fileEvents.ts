@@ -275,11 +275,22 @@ export async function indexEvents(root: string, events: readonly FileEvent[]): P
   try {
     const written: Changed[] = []
     for (const ev of events) {
-      if (ev.event === 'add' || ev.event === 'change') written.push(ev)
-      else if (ev.event === 'move') await moveIndexPaths(root, ev.from, ev.absPath)
-      else if (ev.event !== 'addDir') {
-        const seen = await deindexPath(root, ev.absPath)
-        if (ev.origin === 'watched') oweSeen(root, seen)
+      switch (ev.event) {
+        case 'add':
+        case 'change':
+          written.push(ev)
+          break
+        case 'move':
+          await moveIndexPaths(root, ev.from, ev.absPath)
+          break
+        case 'unlink':
+        case 'unlinkDir': {
+          const seen = await deindexPath(root, ev.absPath)
+          if (ev.origin === 'watched') oweSeen(root, seen)
+          break
+        }
+        case 'addDir':
+          break
       }
     }
     const outside = written.filter((ev) => ev.origin === 'watched')
