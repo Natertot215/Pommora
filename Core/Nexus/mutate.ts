@@ -62,7 +62,7 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { finishOwed } from './finishOwed'
-import { inSettleTurn, relink, settledIndex, underContexts } from './settle'
+import { inContextsTurn, inSettleTurn, relink, settledIndex, underContexts } from './settle'
 import { pageMoves } from './record'
 import { putBackEntries } from './governedRoot'
 
@@ -85,7 +85,7 @@ export async function handleMutate(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // A write that moves, adds, sweeps, or removes a page runs in the settle's turn, nested inside `underContexts` rather than around it, since that lock's `finally` takes a turn of its own. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
+  // A write that moves, adds, or removes a page, re-spells its links, or renames a Context or Space runs in the settle's turn. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
   const addressed = (
     req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
     fn: () => Promise<MutateReply>,
@@ -131,7 +131,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'
-        ? underContexts(root, () => inSettleTurn(root, () => deleteOp(ctx, req)))
+        ? inContextsTurn(root, () => deleteOp(ctx, req))
         : inSettleTurn(root, () => deleteOp(ctx, req))
 
     case 'archive':
@@ -150,7 +150,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       }
       return bundleAddressOf(root, resolved.value)?.store.kind === 'archive'
         ? inSettleTurn(root, restore)
-        : underContexts(root, () => inSettleTurn(root, restore))
+        : inContextsTurn(root, restore)
     }
 
     case 'emptyBundle': {
@@ -250,10 +250,10 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await underContexts(root, () => setSpaceColor(root, req.spaceId, req.color)))
 
     case 'renameContext':
-      return underContexts(root, () => renameContextOp(root, req.contextId, req.newName))
+      return inContextsTurn(root, () => renameContextOp(root, req.contextId, req.newName))
 
     case 'renameSpace':
-      return underContexts(root, () => renameSpaceOp(root, req.spaceId, req.newName))
+      return inContextsTurn(root, () => renameSpaceOp(root, req.spaceId, req.newName))
 
     case 'reorderContexts':
       return reorderContextsOp(ctx, req)
