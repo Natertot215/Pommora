@@ -14,7 +14,7 @@ import { dropTileLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
 import {
   applyEvents,
-  indexEvent,
+  indexEvents,
   nothingOwed,
   oweAgain,
   oweCascade,
@@ -50,18 +50,19 @@ import { machine } from '../Platform/machine'
 
 // ── The app's own events ──
 
-async function applyOwn(ev: FileEvent): Promise<void> {
+async function applyOwn(evs: FileEvent[]): Promise<void> {
   const root = sessionRoot()
-  if (root === null || escapes(relative(root, ev.absPath))) return
-  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
-  if (ev.event === 'move' || !ev.bodyOnly) diskMoved()
+  if (root === null) return
+  const mine = evs.filter((ev) => !escapes(relative(root, ev.absPath)))
+  // Each landing marks the disk moved once, after its renames and before its record, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
+  if (mine.some((ev) => ev.event === 'move' || !ev.bodyOnly)) diskMoved()
   if (heldTreeOf(root)) {
     // Under a folder awaiting its stamp, that folder's read holds the page if it carries its ID, and otherwise leaves it for its own event or a walk.
-    await applyEvents(root, [ev])
+    await applyEvents(root, mine)
     return
   }
   // No tree to patch: an open stamps before it holds a tree, and the tree it seeds is read after its stamps.
-  if (!adopting()) await indexEvent(root, ev)
+  if (!adopting()) await indexEvents(root, mine)
 }
 
 // The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle; it is installed on import, not by a host's call, since it is the same function for the life of the process, where the Sync taps are a session's to set and clear and the commands tap is the host's.

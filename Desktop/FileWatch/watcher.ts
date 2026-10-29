@@ -1,4 +1,4 @@
-// Events settle, then apply one at a time through the path the app's own writes take; what they listed missing is stamped before the batch's settle.
+// Events settle, then apply as one batch through the path the app's own writes take: the index in commits of up to 200 pages, then each event's patch; what they listed missing is stamped before the batch's settle.
 
 import chokidar, { type FSWatcher } from 'chokidar'
 import {

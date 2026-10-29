@@ -1,6 +1,6 @@
-// The app's writes and the watcher's events pass through here: the echo window tells the app's writes from outside ones, the own tap lands each write as an event (`Core/Nexus/settle.ts` installs it when imported, so a process that writes without importing the settle reaches neither the tree nor the index), and the write and watch taps feed sync.
+// The app's writes and the watcher's events pass through here: the echo window tells the app's writes from outside ones, the own tap lands each landing's files as one batch of events (`Core/Nexus/settle.ts` installs it when imported, so a process that writes without importing the settle reaches neither the tree nor the index), and the write and watch taps feed sync.
 
-import { machine } from '../Platform/machine'
+import { type FileStat, machine } from '../Platform/machine'
 
 // A write recorded with its bytes is an echo while the file still holds them, however late its event arrives, until an event finds other bytes there, so an outside write reaches the watcher even when it restores the app's bytes; a move or rename, recorded without bytes, is an echo for the whole window.
 type Echo = { at: number; hash?: string }
@@ -36,10 +36,10 @@ export const reportRename = (absFrom: string, absTo: string): void => tap?.renam
 
 export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
-// The app's own event carries the text it wrote, since its writer still holds the file's lock.
+// The app's own event carries the text it wrote and the stat its landing answered, since its writer still holds the file's lock.
 export type Changed = { event: ChangeEvent; absPath: string } & (
-  | { origin: 'watched'; written?: string; text?: never; bodyOnly?: never }
-  | { origin: 'own'; text?: string; bodyOnly?: boolean; written?: never }
+  | { origin: 'watched'; written?: string; text?: never; bodyOnly?: never; stat?: never }
+  | { origin: 'own'; text?: string; bodyOnly?: boolean; stat?: FileStat; written?: never }
 )
 
 export interface Moved {
@@ -50,13 +50,13 @@ export interface Moved {
 
 export type FileEvent = Changed | Moved
 
-let ownTap: ((ev: FileEvent) => Promise<void>) | null = null
+let ownTap: ((evs: FileEvent[]) => Promise<void>) | null = null
 
-export function setOwnTap(fn: ((ev: FileEvent) => Promise<void>) | null): void {
+export function setOwnTap(fn: ((evs: FileEvent[]) => Promise<void>) | null): void {
   ownTap = fn
 }
 
-export const noteOwn = (ev: FileEvent): Promise<void> => ownTap?.(ev) ?? Promise.resolve()
+export const noteOwn = (...evs: FileEvent[]): Promise<void> => ownTap?.(evs) ?? Promise.resolve()
 
 let watchTap: ((ev: Changed) => void) | null = null
 

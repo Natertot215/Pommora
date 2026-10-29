@@ -1,4 +1,4 @@
-// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own write as it lands. An event maintains the index, then patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to 200 pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -29,7 +29,7 @@ import {
   deindexPath,
   type HeadingRenameSeen,
   type IndexSeen,
-  indexWrittenPage,
+  indexWrittenPages,
   moveIndexPaths,
 } from '../Index/indexSeed'
 import type { ConnPage } from '../Connections/pageIndex'
@@ -270,27 +270,22 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
 
 // ── The index's half ──
 
-export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
+// Removals and moves first, in order, then every written page in commits of up to 200, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
   try {
-    switch (ev.event) {
-      case 'move':
-        await moveIndexPaths(root, ev.from, ev.absPath)
-        return
-      case 'unlink':
-      case 'unlinkDir': {
+    const written: Changed[] = []
+    for (const ev of events) {
+      if (ev.event === 'add' || ev.event === 'change') written.push(ev)
+      else if (ev.event === 'move') await moveIndexPaths(root, ev.from, ev.absPath)
+      else if (ev.event !== 'addDir') {
         const seen = await deindexPath(root, ev.absPath)
         if (ev.origin === 'watched') oweSeen(root, seen)
-        return
-      }
-      case 'addDir':
-        return
-      case 'add':
-      case 'change': {
-        const seen = await indexWrittenPage(root, ev.absPath, ev.text)
-        if (ev.origin === 'watched') oweSeen(root, seen)
-        return
       }
     }
+    const outside = written.filter((ev) => ev.origin === 'watched')
+    const own = written.filter((ev) => ev.origin === 'own')
+    oweSeen(root, await indexWrittenPages(root, outside))
+    await indexWrittenPages(root, own)
   } catch (e) {
     console.error('events: the index missed an event and reseeds:', errText(e))
     owedFor(root).corpus = true
@@ -651,8 +646,8 @@ export async function applyEvents(
 ): Promise<FileEvent[]> {
   const owed = owedFor(root)
   const later = new Map<string, FileEvent>()
+  if (!replay) await indexEvents(root, events)
   for (const ev of events) {
-    if (!replay) await indexEvent(root, ev)
     try {
       const applied = await applyOne(root, ev, owed)
       if (applied === 'later') later.set(ev.absPath, ev)
