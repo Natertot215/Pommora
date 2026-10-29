@@ -41,6 +41,10 @@ export const fileStat = (s: {
   isDirectory: s.isDirectory(),
 })
 
+/** A host's directory entry as the seam's `DirEntry` kind. */
+export const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
+  e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
+
 export interface Machine {
   /** Absent → null; any other failure throws. */
   readText(p: string): Promise<string | null>

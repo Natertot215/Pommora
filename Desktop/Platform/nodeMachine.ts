@@ -3,7 +3,7 @@ import { realpathSync } from 'node:fs'
 import { lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import {
-  type DirEntry,
+  entryKind,
   fileStat,
   type FileStat,
   type Landing,
@@ -45,9 +45,6 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
     }
   }
 }
-
-const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
-  e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
 
 // Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the file's commit, which lands it once its group has flushed.
 async function stage({
