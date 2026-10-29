@@ -5,6 +5,7 @@ import { sameItems } from '@pommora/uix/Utilities/same'
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
 
+// An atomic writer's transient temp beside its file, `Name.md.<digits>`, refused while that file is its sibling; the app's own temp is dotted, so it never reaches this.
 const TEMP_SUFFIX = /\.\d+$/
 
 export function hiddenName(name: string): boolean {

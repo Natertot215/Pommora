@@ -2,40 +2,114 @@ import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
-import { noteOwn, recordWrite, reportRename } from './writeEcho'
-import { machine, statOrNull } from '../Platform/machine'
-import { basename, dirname, join } from '../Paths/posix'
+import { type FileEvent, noteOwn, recordWrite, reportRename } from './writeEcho'
+import { type FileStat, type Landing, machine, statOrNull } from '../Platform/machine'
+import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
 
-async function land(filePath: string, data: string): Promise<void> {
-  recordWrite(filePath, data)
-  await machine().writeText(filePath, data)
+/** Lands the app's own writes as one group under the locks their callers hold: each echo is recorded before its name points at the new bytes, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
+async function landOwn(
+  files: readonly Landing[],
+  bodyOnly?: boolean,
+): Promise<PromiseSettledResult<FileStat>[]> {
+  for (const { path, data } of files) recordWrite(path, data)
+  const landed = await machine().land(files)
+  const events: FileEvent[] = []
+  files.forEach(({ path, data, mtimeMs }, i) => {
+    const at = landed[i]
+    if (at.status === 'rejected') return
+    if (mtimeMs !== undefined) forgetParse(path)
+    const text = typeof data === 'string' ? data : undefined
+    const event = text === undefined ? 'add' : 'change'
+    events.push({ event, absPath: path, origin: 'own', text, bodyOnly, stat: at.value })
+  })
+  await noteOwn(...events)
+  return landed
 }
 
-// Both text writers report 'change' for a new file too, since the tree and the index take an add and a change alike.
+/** A lone file's landing, its failure thrown. */
+function sole([landed]: PromiseSettledResult<FileStat>[]): void {
+  if (landed.status === 'rejected') throw landed.reason
+}
+
 export async function atomicWriteFile(
   filePath: string,
-  data: string,
-  bodyOnly = false,
+  data: string | Uint8Array,
+  bodyOnly?: boolean,
 ): Promise<void> {
-  await land(filePath, data)
-  await noteOwn({ event: 'change', absPath: filePath, origin: 'own', text: data, bodyOnly })
+  sole(await landOwn([{ path: filePath, data }], bodyOnly))
 }
 
-export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {
-  const before = await machine().stat(filePath)
-  if (!before) throw new Error(`${basename(filePath)} vanished before its rewrite.`)
-  await land(filePath, data)
-  // A volume that refuses utimes leaves the page dated now; the write itself already landed.
-  await machine()
-    .utimes(filePath, before.mtimeMs)
-    .catch(() => {})
-  forgetParse(filePath)
-  // After the times settle, so the index records the stat the file keeps.
-  await noteOwn({ event: 'change', absPath: filePath, origin: 'own', text: data })
+/** The files a held rewrite holds and lands together, so their flushes overlap. */
+const CHUNK = 64
+
+/** Runs `fn` holding each file's lock, taken in sorted order, so two held rewrites sharing files never each hold a lock the other waits on; nothing a chunk runs takes another lock, and no other writer holds two of the files a chunk can hold. A lock rejects only when re-taken inside its own hold, so a rejection fails the whole rewrite. */
+const holding = (files: readonly string[], fn: () => Promise<void>): Promise<void> =>
+  [...files]
+    .sort()
+    .reduceRight<() => Promise<void>>((inner, file) => () => machine().lock(file, inner), fn)()
+
+/** What a held rewrite did with a file it reached: couldn't read it, was refused by its rewrite, failed in its rewrite or its landing, or rewrote it, as a dry run would have. A file its rewrite left alone is absent. */
+export type Rewritten =
+  | { status: 'unread' | 'refused' }
+  | { status: 'failed'; reason: unknown }
+  | { status: 'rewritten'; before: string; after: string }
+
+/** Rewrites `files` a chunk at a time, each chunk held from its read through its record, so no write of the app's lands between, and landed as one group: a page keeps its modification time, and a file changed since its read is left as its writer left it and answered failed. `rewrite` answers a file's next text from the text and the stat its read saw, null to leave it, or undefined to refuse it; a dry run stops at the read. */
+export async function rewriteHeld(
+  files: readonly string[],
+  rewrite: (before: string, file: string, was: FileStat) => string | null | undefined,
+  dry = false,
+): Promise<Map<string, Rewritten>> {
+  const out = new Map<string, Rewritten>()
+  // A path listed twice would take its own lock twice within one chunk.
+  const unique = [...new Set(files)]
+  for (let at = 0; at < unique.length; at += CHUNK) {
+    const chunk = unique.slice(at, at + CHUNK)
+    await holding(chunk, async () => {
+      const due: { file: string; was: FileStat; before: string; after: string }[] = []
+      for (const file of chunk) {
+        // The stat ahead of the text, so the stat the landing checks never postdates the text it works from.
+        const was = await statOrNull(file)
+        const before = was && (await readTextOrNull(file))
+        if (!was || before === null) {
+          out.set(file, { status: 'unread' })
+          continue
+        }
+        try {
+          const after = rewrite(before, file, was)
+          if (after === undefined) out.set(file, { status: 'refused' })
+          else if (after !== null) due.push({ file, was, before, after })
+        } catch (reason) {
+          // A file whose rewrite throws costs only itself, so the rest of its chunk still lands.
+          out.set(file, { status: 'failed', reason })
+        }
+      }
+      const landed = dry
+        ? []
+        : await landOwn(
+            due.map(({ file, was, after }) => ({
+              path: file,
+              data: after,
+              expect: was,
+              mtimeMs: isMarkdownFile(file) ? was.mtimeMs : undefined,
+            })),
+          )
+      due.forEach(({ file, before, after }, i) => {
+        const settled = landed[i]
+        out.set(
+          file,
+          dry || settled.status === 'fulfilled'
+            ? { status: 'rewritten', before, after }
+            : { status: 'failed', reason: settled.reason },
+        )
+      })
+    })
+  }
+  return out
 }
 
 // Sync's landing records no echo and notes no event, so the watcher reports it like any outside write and the tree and index take it from that event.
@@ -44,18 +118,8 @@ export async function landBytes(
   bytes: Uint8Array,
   mtimeMs: number,
 ): Promise<void> {
-  await machine().writeBytes(filePath, bytes)
-  await machine()
-    .utimes(filePath, mtimeMs)
-    .catch(() => {})
+  sole(await machine().land([{ path: filePath, data: bytes, mtimeMs }]))
   forgetParse(filePath)
-}
-
-export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
-  recordWrite(filePath, data)
-  await machine().writeBytes(filePath, data)
-  // 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed.
-  await noteOwn({ event: 'add', absPath: filePath, origin: 'own' })
 }
 
 /** Under the SOURCE path's lock, the same key every other write to it takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost. `landed` runs before sync hears of the rename, so it pushes under what the landing settled. */
@@ -316,18 +380,13 @@ export function withoutId(
   )
 }
 
-export function rewritePageSerialized(
+export async function rewritePageSerialized(
   file: string,
-  rewrite: (content: string) => string | null,
+  rewrite: (content: string, was: FileStat) => string | null,
 ): Promise<boolean> {
-  return machine().lock(file, async () => {
-    const content = await readTextOrNull(file)
-    if (content === null) return false
-    const next = rewrite(content)
-    if (next === null) return false
-    await rewritePreservingTimes(file, next)
-    return true
-  })
+  const done = (await rewriteHeld([file], (before, _file, was) => rewrite(before, was))).get(file)
+  if (done?.status === 'failed') throw done.reason
+  return done?.status === 'rewritten'
 }
 
 /** `absPath`'s text, or null when it's missing or can't be read. */

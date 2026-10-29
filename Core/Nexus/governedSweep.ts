@@ -1,11 +1,4 @@
-import {
-  atomicWriteFile,
-  jsonText,
-  parseJsonObject,
-  readTextOrNull,
-  rewritePreservingTimes,
-} from '../Files/atomicWrite'
-import { machine } from '../Platform/machine'
+import { jsonText, parseJsonObject, rewriteHeld } from '../Files/atomicWrite'
 import { damagedFolders } from './treePatch'
 import type { NexusTree } from './tree'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
@@ -25,7 +18,7 @@ import { isBlankRaw, landValue } from '../Files/rootValues'
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
   touched: Map<string, { before: string; after: string }>
-  /** Each file left as it was that the sweep should have reached: one it couldn't read, and one whose root can't round-trip. */
+  /** Each file left as it was that the sweep should have reached: one it couldn't read, one whose root can't round-trip, one whose rewrite failed, and one that changed outside the app while its chunk waited or whose landing failed. */
   skipped: string[]
   /** The files among `skipped` whose root can't round-trip, which only a fix by hand lets a sweep reach, so they're named once and let go (B-5). */
   refused: string[]
@@ -48,11 +41,6 @@ export const collectionFolders = (root: string, tree: NexusTree): string[] =>
     ...damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection'),
   ].map((c) => join(root, c.path))
 
-// A file whose lock or write throws costs only itself, so the files after it are still reached.
-const guarded = (file: string, missed: string[], body: () => Promise<void>): Promise<void> =>
-  machine()
-    .lock(file, body)
-    .catch(() => void missed.push(file))
 /** A file's text after `plan`, by its kind: null when nothing changes, undefined when its root can't round-trip (an Unknown page, a sidecar nobody can parse), which won't read any better on a retry, so it's left byte-identical. */
 function rewritten(plan: SweepPlan, file: string, content: string): string | null | undefined {
   if (!isMarkdownFile(file)) {
@@ -67,34 +55,18 @@ function rewritten(plan: SweepPlan, file: string, content: string): string | nul
   return rewriteRoot((root) => plan.raw(root, file), plan.above?.(page.raw, file))(page)
 }
 
-/** Files are absolute, pages and Space sidecars alike. */
+/** Files are absolute, pages and Space sidecars alike, each rewritten as `rewriteHeld` rewrites it. */
 export async function sweepGovernedRoots(
   files: string[],
   plan: SweepPlan,
   dry = false,
 ): Promise<SweepResult> {
   const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
-
-  for (const file of files) {
-    await guarded(file, out.skipped, async () => {
-      const content = await readTextOrNull(file)
-      if (content === null) {
-        out.skipped.push(file)
-        return
-      }
-      const next = rewritten(plan, file, content)
-      if (next === undefined) {
-        out.skipped.push(file)
-        out.refused.push(file)
-        return
-      }
-      if (next === null) return
-      if (!dry)
-        await (isMarkdownFile(file)
-          ? rewritePreservingTimes(file, next)
-          : atomicWriteFile(file, next))
-      out.touched.set(file, { before: content, after: next })
-    })
+  const done = await rewriteHeld(files, (before, file) => rewritten(plan, file, before), dry)
+  for (const [file, r] of done) {
+    if (r.status === 'rewritten') out.touched.set(file, { before: r.before, after: r.after })
+    else out.skipped.push(file)
+    if (r.status === 'refused') out.refused.push(file)
   }
   return out
 }

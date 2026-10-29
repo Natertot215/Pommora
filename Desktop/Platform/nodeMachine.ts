@@ -1,19 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { realpathSync, type Stats } from 'node:fs'
-import {
-  lstat,
-  mkdir,
-  open,
-  readdir,
-  readFile,
-  realpath,
-  rename,
-  rm,
-  stat,
-  utimes,
-} from 'node:fs/promises'
+import { lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import writeFileAtomic from 'write-file-atomic'
 import {
   type DirEntry,
   type FileStat,
@@ -59,9 +47,6 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
 
 const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
   e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
-
-const asBuffer = (bytes: Uint8Array): Buffer =>
-  Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
 
 const fileStat = (s: Stats): FileStat => ({
   size: s.size,
@@ -115,8 +100,6 @@ async function stage({
 export const nodeMachine: Machine = {
   readText: (p) => absentToNull(readFile(p, 'utf8')),
   readBytes: (p) => absentToNull(readFile(p)),
-  writeText: (p, text) => outlastHolder(p, () => writeFileAtomic(p, text, { encoding: 'utf8' })),
-  writeBytes: (p, bytes) => outlastHolder(p, () => writeFileAtomic(p, asBuffer(bytes))),
   // Every temp is written and flushed before any rename, so the group's flushes overlap rather than wait in turn.
   async land(files) {
     const staged = await Promise.allSettled(files.map(stage))
@@ -140,7 +123,6 @@ export const nodeMachine: Machine = {
   },
   rename: (from, to) => outlastHolder(from, () => rename(from, to)),
   remove: (p) => outlastHolder(p, () => rm(p, { recursive: true, force: true })),
-  utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
   realpath: async (p) => posixPath(await realpath(p)),
   lock: serializeOnFile,
   sha256Hex: (input) => createHash('sha256').update(input).digest('hex'),
