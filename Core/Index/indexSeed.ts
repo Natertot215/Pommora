@@ -27,7 +27,7 @@ import {
   type Relation,
   type PageIndexEntry,
 } from '../Platform/stores'
-import { machine } from '../Platform/machine'
+import { statOrNull } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
@@ -114,9 +114,7 @@ export async function indexWrittenPage(
   if (!isMarkdownFile(abs)) return NOTHING_SEEN
   const rel = await relCorpusPath(root, abs)
   if (!rel) return NOTHING_SEEN
-  const st = await machine()
-    .stat(abs)
-    .catch(() => null)
+  const st = await statOrNull(abs)
   if (!st) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
   // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
   const content = text ?? (await readTextOrNull(abs))
@@ -217,9 +215,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
     for (const rel of rels) {
       const abs = join(root, rel)
       const prior = indexed.get(rel)
-      const st = await machine()
-        .stat(abs)
-        .catch(() => null)
+      const st = await statOrNull(abs)
       if (!st) {
         seen.delete(rel)
         continue

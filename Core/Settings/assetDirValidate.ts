@@ -1,5 +1,5 @@
 import { join, relative } from '../Paths/posix'
-import { machine } from '../Platform/machine'
+import { statOrNull } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
 import { isContentName, listEntries } from '../Files/walk'
 import { hiddenFolder } from '../Paths/exclusion'
@@ -14,9 +14,7 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
   if (!resolved.ok) return resolved
   const refusal = nexusFolderRefusal(rel)
   if (refusal) return fail('invalid-path', refusal)
-  const stats = await machine()
-    .stat(resolved.value)
-    .catch(() => null)
+  const stats = await statOrNull(resolved.value)
   if (!stats) return fail('not-found', 'Path not found.')
   // `realpath` succeeds on a file and a directory listing of one reads as empty, so without this a picked image would be accepted and every asset would quietly stop resolving.
   if (!stats.isDirectory) return fail('invalid-path', 'That is a file, not a folder.')

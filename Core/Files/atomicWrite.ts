@@ -3,7 +3,7 @@ import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
 import { noteOwn, recordWrite, reportRename } from './writeEcho'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import { basename, dirname, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
@@ -330,13 +330,11 @@ export function rewritePageSerialized(
   })
 }
 
-export async function readTextOrNull(absPath: string): Promise<string | null> {
-  try {
-    return await machine().readText(absPath)
-  } catch {
-    return null
-  }
-}
+/** `absPath`'s text, or null when it's missing or can't be read. */
+export const readTextOrNull = (absPath: string): Promise<string | null> =>
+  machine()
+    .readText(absPath)
+    .catch(() => null)
 
 // READ PATH ONLY: null conflates absent with unreadable, so a write based on it would clobber a file it merely failed to read.
 export async function readJsonObject(absPath: string): Promise<Record<string, unknown> | null> {
@@ -344,13 +342,7 @@ export async function readJsonObject(absPath: string): Promise<Record<string, un
   return text === null ? null : parseJsonObject(text)
 }
 
-export async function pathExists(p: string): Promise<boolean> {
-  try {
-    return (await machine().stat(p)) !== null
-  } catch {
-    return false
-  }
-}
+export const pathExists = async (p: string): Promise<boolean> => (await statOrNull(p)) !== null
 
 export async function heldName(abs: string): Promise<string | null> {
   const names = (await machine().readDir(dirname(abs))).map((e) => e.name)
