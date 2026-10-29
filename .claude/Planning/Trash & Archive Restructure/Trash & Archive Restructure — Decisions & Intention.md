@@ -11,7 +11,7 @@ The two stores run different models. The Archive is reach-in: its pages are inde
 
 ### Overview
 
-This work restructures the Trash, the Archive, and their adjacencies so the system reads as one design: what's duplicated or defined in parallel is consolidated, what's separate without earning it is merged, and what was patched on is replaced by the rule it was patching around. Whether the Trash moves onto the Archive's reach-in is decided by measurement and the investigation, not assumed. User-facing behavior stays as it is.
+This work restructures the Trash, the Archive, and their adjacencies so the system reads as one design: what's duplicated or defined in parallel is consolidated, what's separate without earning it is merged, and what was patched on is replaced by the rule it was patching around. The Trash moves onto the Archive's reach-in, decided by measurement and the investigation (24). User-facing behavior stays as it is.
 
 #### Concepts
 
@@ -48,6 +48,13 @@ This work restructures the Trash, the Archive, and their adjacencies so the syst
 21. [CONFIRMED] The write path keeps waiting for the drive to confirm each rewritten file is stored, and waits for files in groups rather than one at a time, so a crash or power loss mid-cascade can't leave a file empty or garbled.
 22. [CONFIRMED] The work carries across sessions through *Write Path — Brief* (`.claude/Planning/Write Path/`): one session writes, ratifies, implements, and verifies the Write Path plan, re-runs the reach-in measurement on its result, and resumes this document's brainstorm from the brief's last section.
 23. [CONFIRMED] The Write Path plan takes the whole fix, chosen so the write path needn't be revisited: every cascade reads and parses each file once, lands its writes in flushed groups, and records each group once, with every redundant read and parse removed. A confirmation's count stays its operation's own dry run, the one counter MetadataV3 established. The added lines are justified by what leaves, and offsets inside the files it touches are taken where they hold. Nathan approves the reviewed plan the night it's written, before it runs.
+24. [INFERRED] The Trash moves onto the Archive's reach-in: trashed pages and Spaces stay in the index and inside every cascade while hidden from display and link resolution, so a restore is the Archive's move plus the refill of the Link values its delete stripped from other pages. Re-run on the Write Path plan's result, reach-in costs the whole operation sequence 10% more with a Trash a tenth the live Nexus's size and 42-43% more with one half its size, linear in the trashed holders a cascade reaches, while restores run 10-38% faster (*Investigation · §The Trash's Model · §The Measurement*). Resolve-on-restore can't return a current page after a rename without a rename history nothing keeps (B-9), and three paths already reach into the Trash.
+25. [CONFIRMED] The plan opens with the change-time identity (*Write Path — Implementation Plan · §Deviations*, D-2): the index tells a changed file by its change time beside its size and modified time, since a cascade's rewrite keeps a page's modified time and a same-length rewrite would otherwise read unchanged, and reach-in finds trashed copies through the index. With it, the clash check and option edits pass over the rows the index vouches for.
+26. [CONFIRMED] A page moved out of the Trash by hand (I-064) is recognized by the ID it already carries: its bundle's record holds that ID and the index tracks it, so a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed, with its stripped Link values put back and the emptied bundle cleared. [INFERRED] A copy that leaves its bundle's page in place is a live page sharing a trashed copy's ID rather than a restore.
+27. [CONFIRMED] Two trashed copies sharing one ID is unreachable in practice and gets no rule of its own. [INFERRED] A live page sharing an ID with a trashed copy stays addressable, so a trashed claim never contests the tree's or the Archive's.
+28. [CONFIRMED] A trashed Collection's saved views are preserved. [INFERRED] They stay current as an archived Set's do, so a restored Collection's views read as they would had it never left.
+29. [CONFIRMED] Bundles trashed before this plan get no migration and no handling of their own (5, 12).
+30. [CONFIRMED] The plan weighs a property rename's time specifically. [INFERRED] Each trashed holder costs what a live one does, about 2.1 ms a file, so the plan measures a property rename at its start and end, live and trashed holders alike, and sets what it removes per file against where that time goes.
 ---
 
 #### Constraints
@@ -86,6 +93,8 @@ This work restructures the Trash, the Archive, and their adjacencies so the syst
 #### Rejected
 
 - **Archive-Style Link Values in the Trash:** a trashed page's Link values staying in place, unresolved, until the Trash is emptied; a delete keeps stripping them (2).
+- **Resolve-on-Restore, Consolidated, and Partial Reach:** the first keeps the scrub and `targets` as permanent drift repair and still returns a page holding the old names after a rename; the second puts a walk of the Trash in every page lookup (24).
+- **A Trash Mark in the Page's ID:** a trashed page's ID carrying a mark so a page moved out by hand is recognized. The ID's mark position already names its kind (`T` is a Task's), the ID is the page's identity to the index, the records, and Sync, so a mark would rewrite every trashed page on its delete and again on its restore, and the record and the index already recognize it (26).
 - **One Path Level Under an Archive's ID Folder:** dropping the Collection's own folder beneath its ID folder; it removes nothing and costs a lookup at every reader of an origin path, a mismatch with links written before a Collection rename, and a migration of every Archive (10).
 
 #### Open Items

@@ -71,7 +71,7 @@
 | [I-062](#I-062 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-063](#I-063 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-077](#I-077 • A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row.) | A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row. | Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-| [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
 | [I-065](#I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-069](#I-069 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.) | A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash. | Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
@@ -928,15 +928,15 @@ A Set's or Collection's row in the Trash or the Archive opens onto the pages and
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
-| Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
 
 **Description**
 
 A page dragged out of `.trash` in Finder reaches the settle as a page arriving, like any file added outside, so the outside lane re-spells only the bare links its title now collides with. The Trash's restore does more: it reads the bundle's record, repairs the returning page's own links against the targets the delete recorded, and hands back the Link values parked with the bundle. A page returned by hand gets none of that, so links inside it that went stale while it sat in the Trash stay as they are. `payOutsideMoves` pairs a vanish with a landing and reads every other landed id as an arrival, and reaches neither the record, `repairLanded`, nor `parkLinks`.[^64]
 
-**Solution** [TBD]
+**Solution** [Proposed]
 
-**Your call:** the outside lane recognises a path arriving from `.trash`, reads the bundle's record, and runs the restore's repair for it, or the behavior stands, with the Trash's restore the one way to return a page.
+Under the Trash & Archive Restructure's reach-in Trash, a trashed page stays current through every cascade, so a page moved out by hand misses only the Link values its delete stripped from other pages and the clearing of its bundle. The page is recognized by the ID it already carries, which its bundle's record holds and the index tracks: a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed (*Trash & Archive Restructure — Decisions & Intention*, Decision 26).
 
 #### I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.
 

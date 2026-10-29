@@ -3,7 +3,7 @@
 **DATE:** 10-28-2026
 **HEAD:** `15fe7422a` on `active`, verified against the working tree, which is clean outside `.claude/Planning/Trash & Archive Restructure/`.
 
-This document reconciles six read-only scouts (delete and the record; restore and empty; reach and the index; the Archive's filing and the store shape; the interface; owed work, adjacencies, and documentation) against *Trash & Archive Restructure — Decisions & Intention* as it stands on 10-28-2026, with its rulings through Decision 14: the Archive keeps its layout (10), files the Trash takes without a bundle stay invisible (11), compatibility-only decodes leave (12), every kind remembers its place one way, a Context's included (13), and system Trash Mode leaves (14). Every bug, every dead or unreachable claim, every duplication, and every call-site count was re-read in the code; a scout's citations were checked mechanically against file lengths, and none points past its file. Findings several scouts made are stated once, with the scouts credited by number. Where a finding depends on the Trash's model, which waits on the measurement, it says so; findings that only the rejected Archive layout or system Trash Mode would have needed are gone. The reach-in measurement isn't in yet, so *§The Trash's Model* is written as the ledger it will be read against. The cleaned scout reports sit in `Scouts/` beside this document.
+This document reconciles six read-only scouts (delete and the record; restore and empty; reach and the index; the Archive's filing and the store shape; the interface; owed work, adjacencies, and documentation) against *Trash & Archive Restructure — Decisions & Intention* as it stands on 10-28-2026, with its rulings through Decision 14: the Archive keeps its layout (10), files the Trash takes without a bundle stay invisible (11), compatibility-only decodes leave (12), every kind remembers its place one way, a Context's included (13), and system Trash Mode leaves (14). Every bug, every dead or unreachable claim, every duplication, and every call-site count was re-read in the code; a scout's citations were checked mechanically against file lengths, and none points past its file. Findings several scouts made are stated once, with the scouts credited by number. Where a finding depends on the Trash's model, it says so; findings that only the rejected Archive layout or system Trash Mode would have needed are gone. *§The Trash's Model* holds the measurement and the code side of the move onto reach-in that Decision 24 makes. The cleaned scout reports sit in `Scouts/` beside this document.
 
 ---
 
@@ -166,7 +166,7 @@ Each was confirmed by reading the code; none was run. "Uncovered" means no test 
 
 #### Removal & Consolidation Ledger
 
-Ordered removal-first: residue, then merges, then relocations. Deltas are production lines, rough, and exclude tests and docs unless stated; overlaps between items aren't netted. **Depends** names what an item waits on: *reach-in* (the Trash's model, after the measurement), *Nathan* (*§Questions for Nathan*), or *none*. Decisions 10, 11, 13, and 14 are settled, so nothing waits on them.
+Ordered removal-first: residue, then merges, then relocations. Deltas are production lines, rough, and exclude tests and docs unless stated; overlaps between items aren't netted. **Depends** names what an item waits on: *reach-in* (lands with the Trash's move onto it, Decision 24) or *none*. Decisions 10, 11, 13, and 14 are settled, so nothing waits on them.
 
 ##### Residue to Remove
 
@@ -243,7 +243,7 @@ Ordered removal-first: residue, then merges, then relocations. Deltas are produc
 
 #### The Trash's Model
 
-The Archive is reach-in: its pages are indexed, every cascade rewrites them, and a restore is a move. The Trash is resolve-on-restore except for three paths that already rewrite trashed copies (*§What's True · The Trash's Partial Reach Today*). The measurement (Decision 4) decides between them; this section is the code side it will be read against.
+The Archive is reach-in: its pages are indexed, every cascade rewrites them, and a restore is a move. The Trash is resolve-on-restore except for three paths that already rewrite trashed copies (*§What's True · The Trash's Partial Reach Today*). Decision 24 moves the Trash onto reach-in on the measurement's result (Decision 4); this section is the code side that move carries.
 
 ##### What Reach-In Means Here
 
@@ -261,14 +261,14 @@ A reach-in Trash isn't a copy of the Archive's. Archived pages are both addressa
 | **Holders & Reach** | — | `findHolders`' reading and addressing | Trashed Spaces and Contexts as `{ kind: 'space', path }` roots in `byId`, and a stored-Space source for `findHolders`, `deleteCascade`, and `renameCascade` (`keyHolders.ts:69-75,94-102`; `cascade.ts:128,263`), a bounded walk of `.trash/.nexus/contexts`; the Trash in `pagesInReach`'s `governed` reach (`keyHolders.ts:52-58`); a `{ collection }` reach for the Trash from each bundle's record, since its chains spell folder names (`unassignProperty.ts:71-73` is the one caller) |
 | **Display** | Hand-placed Archive hiding (into M-16) | Store-blind display: tree, link suggestions (`pageConnections.ts:30`), matrix, headings, `pages:changed`, counts, clash refusal | Every display filter reading `storedAt(path) === null` |
 | **Watcher & Sync** | — | Sync code unchanged (Decision 1): the tap already drops watched `.trash` events (`tap.ts:50`), and sync keeps learning the Trash through the write tap | Optionally, a watcher exemption for `.trash` in `syncIgnoredUnder` rather than `neverWatched`, which also feeds `manifestAdmits`, `adoptFile.ts:24`, and `assetMap.ts:14`; without it, outside changes to the Trash re-index at the next seed. With it, `tap.ts:50` becomes load-bearing and needs its reason where a reader meets it |
-| **Views** | — | — | Either the config pass reaches trashed Sets' and Collections' sidecars as it reaches archived Sets' (`configReach.ts:297-304,339-347`), an O(Trash folders) walk per pass, or a restore reconciles a returning container's views; today `finishProperty` purges trashed Collections' assignments but never their views (`deleteProperty.ts:139-140`) |
+| **Views** | — | A trashed Collection's views, preserved and kept current (Decision 28) | Either the config pass reaches trashed Sets' and Collections' sidecars as it reaches archived Sets' (`configReach.ts:297-304,339-347`), an O(Trash folders) walk per pass, or a restore reconciles a returning container's views; today `finishProperty` purges trashed Collections' assignments but never their views (`deleteProperty.ts:139-140`) |
 
 ##### Correctness Conditions
 
 1. **The Sweep Set Apart From the Link World:** every trashed page and Space is addressable through `byId`, and none appears in `archived`, `linkWorld`, or `after`; a test deletes a page, trashes a linker, and asserts the strip reaches the trashed linker and records its value.
 2. **The Delete Strip Skips Its Own Bundle:** `finishContainer` calls `deleteCascade(root, join(root, e.at), e.strip)` with the live `e.at` (`finishOwed.ts:402`), and `deleteCascade` excludes by that live path (`cascade.ts:100,129`), but by then the artifact has moved and its index rows renamed under `.trash` (`delete.ts:131-139`, `indexSeed.ts:177-179`). The exclusion must also drop every path whose `storedAt(rel).bundle` is `e.bundle`, or a Set's internal links are stripped and recorded as its own `links` (`deleteReach.test.ts:315,346` pin the live form). The same holds for every sweep that runs after a move: the configuration pass already skips a Set the edit names gone (`configReach.ts:342-343`).
-3. **Ids Shared Between a Live Page and a Trashed Copy, or Between Two Trashed Copies:** `claim` nulls any id two files carry (`heldPages.ts:18-20`), and `heldElsewhere` reads a null as live (`placement.ts:38-40`). A live page sharing an id with a trashed copy (pinned at `spend.test.ts:1973`) must stay addressable, so a trashed claim never contests the tree's or the Archive's; two trashed copies of one id must still restore first-come, as today, so the id-live refusal reads only the tree and the Archive, never another Trash bundle. Which copy a by-id refill writes when two trashed copies share an id needs a stated rule; today `trashedHolders` keeps the last one it lists (`trashedCopies.ts:61,67`).
-4. **Bundles Minted Before Any Change:** a trashed copy minted under resolve-on-restore missed every cascade since its delete; its `targets` stop being read once they leave. Decision 12 rules out keeping a path only for those bundles, so their handling is the plan's statement (*§Approaches Worth Weighing*, 2). Records in I-069's range decode again once `targets` leaves the schema, since `z.object` strips the unknown key.
+3. **Ids Shared Between a Live Page and a Trashed Copy, or Between Two Trashed Copies:** `claim` nulls any id two files carry (`heldPages.ts:18-20`), and `heldElsewhere` reads a null as live (`placement.ts:38-40`). A live page sharing an id with a trashed copy (pinned at `spend.test.ts:1973`) must stay addressable, so a trashed claim never contests the tree's or the Archive's, and the id-live refusal reads only the tree and the Archive, or a trashed page's own row would refuse its restore. Two trashed copies of one id are unreachable in practice and get no rule of their own (Decision 27).
+4. **Bundles Minted Before Any Change:** a trashed copy minted under resolve-on-restore missed every cascade since its delete; its `targets` stop being read once they leave, and those bundles get no handling of their own (Decisions 12, 29). Records in I-069's range decode again once `targets` leaves the schema, since `z.object` strips the unknown key.
 5. **Flat-Trashed Tile Texts and Leftovers (Decision 11):** admission requires a stamped segment wearing `.deleted` with a path below it (`stampedSegment`, `layout.ts:36-37`), so `<stamp>__<name>.md` flat leaves, record-less folders, and retired provenance entries never enter the walk, the index, or a reach. Whether admission also requires a decodable record is open: without it, a stamped bundle whose `_record.json` won't decode has its pages indexed and swept while the Trash lists nothing for it; with it, the seed pays one read per bundle (`listPathsUnder`'s `siblings` carries a folder's siblings, not its children, `walk.ts:62-67`).
 6. **Leftover Bundles:** an empty bundle (B-1) or a record-only bundle (L-5) holds no artifact, so it adds nothing to the index; neither needs a rule.
 7. **Display Stays Blind:** `CascadeReport.pages`, `sweepCount`, the matrix, headings, link suggestions, and the clash refusal show nothing from the Trash.
@@ -346,11 +346,10 @@ The wrapper stays, in both stores. It is the record's home beside the artifact (
 
 - **Keep the Destination Reconcile Only:** a restore into a different destination meets a schema the copy never lived under, which has independent justification; the Archive's restore to a destination doesn't reconcile (`archive.ts:89-110`), so keeping it in one restore is a divergence the plan states or closes.
 - **Remove It Whole:** the restore becomes the Archive's move; bundles minted before the change come back as they were frozen, and values return as the file spelled them.
-- **A One-Time Catch-Up for Existing Bundles:** run once, outside the app, so no transitional pass remains in the code (Decision 12).
 
 ##### 3. The Twin Rule
 
-Trashed claims rank below the tree's and the Archive's and don't contest each other, with the id-live refusal reading the tree and the Archive alone; or placement looks past holders inside other Trash bundles while `claim` stays as it is. The first keeps one rule in one place.
+Trashed claims rank below the tree's and the Archive's, with the id-live refusal reading the tree and the Archive alone, and two trashed copies of one id get no rule (Decision 27); or placement looks past holders inside other Trash bundles while `claim` stays as it is. The first keeps one rule in one place.
 
 ##### 4. One Restore or Two Sharing a Spine
 
@@ -434,12 +433,6 @@ Remove `deps` from the Trash's signatures, the empty reading the Platform seam d
 9. **Behavior Pins Before Refactors:** where a refactor breaks an implementation pin (`deleteOrder.test.ts:43-95`, `bundle.test.ts:345-372`, the journal-shape pins), the behavior assertion is in place first.
 10. **Placements Before Moving Commits:** every P-item and M-3's new home is approved by Nathan before the commit that moves it.
 11. **Docs With Each:** each item's *§What Becomes False* lines change in the commit that makes them false.
-
----
-
-#### Questions for Nathan
-
-1. **A Page Dragged Out of the Trash in Finder (I-064):** a page moved out of `.trash` by hand comes back without what a real restore does. If the Trash moves to the Archive's model, that shrinks to one thing, putting back the link values its delete removed. Should a hand-moved page get that, or should Restore stay the one way back? This waits on the measurement. Nathan's direction (10-29-2026): a page that leaves the Trash by hand should be recognized and restored properly wherever it's found. His suggestion, kept open for the brainstorm: trashing a page gives its ID a trash mark (a "T"), so a misplaced page is recognized by the mark. Points to weigh there: the ID is the page's identity for the index, the bundle record, held IDs, and Sync, so a mark inside it changes that identity on every delete and restore; under reach-in, the index already follows a page out of the Trash as a move, which recognizes it without a mark; and the bundle's record already holds the trashed page's ID, so a page that arrives holding an ID a Trash record claims can be recognized by that match.
 
 ---
 
