@@ -1,7 +1,7 @@
 // Key holders: which pages and Spaces hold a key, found from the content index and the tree, and what each one holds.
 
 import { queryMembers, readPageRelations } from './contentIndex'
-import { nexusCorpus } from './indexSeed'
+import { indexVouches, nexusCorpus } from './indexSeed'
 import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
@@ -27,6 +27,8 @@ export type HolderQuery = {
   title?: string
   id?: string
   moved?: FolderMove
+  /** Only the pages holding every key, as a rename's clash check asks, each page the index can't vouch for read as well; Spaces still answer for any key. */
+  every?: true
 }
 
 /** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, in the page's own key order. */
@@ -80,10 +82,21 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)
   const rels = q.keys.map((key) => queryMembers(key, title))
+  const listed = rels.map((r) => r && new Set(r))
+  const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
+  // A page the index lists without every key is passed over only while its row still describes the file, since an outside edit the index hasn't taken may have given it the rest.
+  const kept =
+    named && q.every
+      ? await Promise.all(
+          named.map(
+            async (rel) => listed.every((l) => l?.has(rel)) || !(await indexVouches(root, rel)),
+          ),
+        )
+      : null
   const pages = await pagesInReach(
     root,
     tree,
-    rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))],
+    kept && named ? named.filter((_, i) => kept[i]) : named,
     q.reach,
   )
   const holds = (s: SpaceNode): boolean =>
@@ -102,7 +115,6 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       : []
   const files = [...pages, ...spaces]
   if (!read) return { files, held: [] }
-  const listed = rels.map((r) => r && new Set(r))
   const { byId } = await nexusPages(root, tree)
   const held: Held[] = []
   const heldOut = new Set<string>()

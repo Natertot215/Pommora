@@ -120,6 +120,10 @@ const unmoved = (
   return !now || describes(now, prior)
 }
 
+/** Whether `rel`'s index row still describes its file: the one condition on which what the index holds of a page decides what a cascade writes, the file read otherwise, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
+export const indexVouches = async (root: string, rel: string): Promise<boolean> =>
+  describes(readIndexedStat(rel), await statOrNull(join(root, rel)))
+
 // Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
 export async function indexWrittenPages(
   root: string,
