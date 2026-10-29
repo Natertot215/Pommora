@@ -32,6 +32,11 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
   tap?.wrote(absPath)
 }
 
+/** Forgets the write recorded at `absPath` while it still holds `hash`, so a later write of those bytes reads as another writer's. */
+export function forgetWrite(absPath: string, hash: string): void {
+  if (recent.get(absPath)?.hash === hash) recent.delete(absPath)
+}
+
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
 export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
@@ -101,7 +106,7 @@ export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
       if (e.written === undefined) return true
       const bytes = await machine().readBytes(e.absPath)
       if (bytes !== null && machine().sha256Hex(bytes) === e.written) return false
-      if (recent.get(e.absPath)?.hash === e.written) recent.delete(e.absPath)
+      forgetWrite(e.absPath, e.written)
       return true
     }),
   )

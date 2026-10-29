@@ -50,6 +50,7 @@ beforeEach(async () => {
   root = tempRoot('pom-regcrud-')
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await rm(root, { recursive: true, force: true })
 })
 

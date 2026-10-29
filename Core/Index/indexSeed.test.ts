@@ -5,6 +5,7 @@ import { dirname, join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, type Relation, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import * as contentIndex from './contentIndex'
 import {
   queryKeyHolders,
   queryMembers,
@@ -56,11 +57,19 @@ beforeEach(async () => {
   installStores(mem.stores)
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
 describe('seedContentIndex', () => {
+  it('a seed of exactly 200 pages commits them once', async () => {
+    for (let i = 0; i < 198; i++) await writeFile(abs('Notes', `P${i}.md`), `page ${i}\n`)
+    const upserts = vi.spyOn(contentIndex, 'upsertPageIndexes')
+    await seedContentIndex(root)
+    expect(upserts.mock.calls.map(([rows]) => rows.length)).toEqual([200])
+  })
+
   it('MUST AGREE with the corpus: every admitted corpusFiles path is indexed; excluded paths are in neither', async () => {
     await seedContentIndex(root)
     const corpus = await corpusFiles(root, { excluded: ['Hidden'], assetDir: ASSETS_DIR_REL })
@@ -351,7 +360,7 @@ describe('what an index step reports', () => {
     const b = abs('Notes', 'Sub', 'B.md')
     const read = machine().readText.bind(machine())
     let during: { path: string; act: () => Promise<void> } | null = null
-    const reads = vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+    vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
       const text = await read(p)
       const hook = during?.path === p ? during : null
       if (hook) {
@@ -368,20 +377,30 @@ describe('what an index step reports', () => {
       [...mem.index.values.values()]
         .filter((v) => v.path === 'Notes/A.md' && v.key === 'Status')
         .map((v) => v.value)
-    try {
-      for (const path of [b, a]) {
-        await writeFile(a, `---\nID: ${ULID_A}\nStatus: Batch\n---\n`)
-        during = { path, act: writer }
-        await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
-        expect(statusOfA()).toEqual([JSON.stringify('Writer')])
-      }
-      const fresh = memoryStores()
-      during = { path: b, act: async () => installStores(fresh.stores) }
-      await indexWrittenPages(root, [{ absPath: b }])
-      expect(fresh.index.stats.size).toBe(0)
-    } finally {
-      reads.mockRestore()
+    for (const path of [b, a]) {
+      await writeFile(a, `---\nID: ${ULID_A}\nStatus: Batch\n---\n`)
+      during = { path, act: writer }
+      await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+      expect(statusOfA()).toEqual([JSON.stringify('Writer')])
     }
+    const fresh = memoryStores()
+    during = { path: b, act: async () => installStores(fresh.stores) }
+    await indexWrittenPages(root, [{ absPath: b }])
+    expect(fresh.index.stats.size).toBe(0)
+    // An entry outside the corpus reads only the settings its scope comes from, so the switch lands after b's in-loop check.
+    const later = memoryStores()
+    const switching = {
+      path: abs('.nexus', 'settings.json'),
+      act: async () => installStores(later.stores),
+    }
+    during = {
+      path: b,
+      act: async () => {
+        during = switching
+      },
+    }
+    await indexWrittenPages(root, [{ absPath: b }, { absPath: abs('Hidden', 'Secret.md') }])
+    expect(later.index.stats.size).toBe(0)
   })
 })
 

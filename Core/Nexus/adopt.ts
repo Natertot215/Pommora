@@ -83,9 +83,9 @@ export async function stampPage(
   held?: string,
 ): Promise<string | null> {
   const ids = new Map<string, string>()
-  const stamp = stamping(kind, new Map([[absFile, { overForeign, held }]]), ids)
-  const landed = await rewritePageSerialized(absFile, (content, was) =>
-    stamp(content, absFile, was),
+  const landed = await rewritePageSerialized(
+    absFile,
+    stamping(kind, new Map([[absFile, { overForeign, held }]]), ids),
   )
   return landed ? (ids.get(absFile) ?? null) : null
 }

@@ -83,6 +83,7 @@ beforeEach(async () => {
   await seedContentIndex(root)
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   dropLiveTree()
   installStores(NO_STORES)
   closeSession()
@@ -259,13 +260,9 @@ describe('the own tap indexes a batch', () => {
       await noteOwn(...evs)
       return upserts.mock.calls.map(([rows]) => rows.length)
     }
-    try {
-      expect(await committed(pages.slice(0, 70).map(own))).toEqual([70])
-      expect(await committed([own(pages[70])])).toEqual([1])
-      expect(await committed(pages.map(own))).toEqual([200, 1])
-    } finally {
-      upserts.mockRestore()
-    }
+    expect(await committed(pages.slice(0, 70).map(own))).toEqual([70])
+    expect(await committed([own(pages[70])])).toEqual([1])
+    expect(await committed(pages.map(own))).toEqual([200, 1])
     await expectMaintained()
   })
 
@@ -276,18 +273,13 @@ describe('the own tap indexes a batch', () => {
     const r = await sweepGovernedRoots(files, { raw: (raw) => ({ ...raw, Tags: ['b'] }) })
     expect([...r.touched.keys()]).toEqual(files)
     for (const file of files) expect(stats.mock.calls.filter(([p]) => p === file)).toHaveLength(1)
-    stats.mockRestore()
     for (const [i, rel] of rels.entries()) {
       const { mtimeMs, size } = await stat(files[i])
       expect(readIndexedStat(rel)).toMatchObject({ mtimeMs, size })
     }
     const reads = vi.spyOn(machine(), 'readText')
-    try {
-      await seedContentIndex(root)
-      expect(reads.mock.calls.filter(([p]) => files.includes(p))).toEqual([])
-    } finally {
-      reads.mockRestore()
-    }
+    await seedContentIndex(root)
+    expect(reads.mock.calls.filter(([p]) => files.includes(p))).toEqual([])
   })
 })
 

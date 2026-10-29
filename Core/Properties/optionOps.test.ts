@@ -72,6 +72,7 @@ beforeEach(async () => {
   root = tempRoot('pom-opt-')
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -1711,7 +1712,6 @@ describe('registerHeldOptions', () => {
       const reads = vi.spyOn(machine(), 'readText')
       await settleNow({ push: () => {}, watch: async () => {} }, root)
       expect(reads.mock.calls.filter(([path]) => path === page)).toEqual([])
-      reads.mockRestore()
     } finally {
       closeSession()
       installStores(NO_STORES)

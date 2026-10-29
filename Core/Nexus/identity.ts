@@ -32,7 +32,7 @@ export async function ensureIdentity(
   const existingId = existing && asString(existing.id)
   if (existing && existingId) {
     if ('agenda_singletons' in existing) {
-      await writeJson(path, retireAgendaKey(existing), was).catch((e) =>
+      await writeJson(path, retireAgendaKey(existing), { expect: was }).catch((e) =>
         console.error('nexus.json retired-key cleanup failed:', errText(e)),
       )
     }
@@ -45,11 +45,11 @@ export async function ensureIdentity(
   const createdAt = new Date().toISOString()
   // An id-less file is a damaged identity, not a new nexus: mint an id over it and seed nothing, or folders its owner deleted would be recreated and every asset keyed to the old id orphaned.
   if (existing) {
-    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt }, was)
+    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt }, { expect: was })
     return { id, created: false }
   }
 
-  await writeJson(path, { id, createdAt }, was)
+  await writeJson(path, { id, createdAt }, { expect: was })
   const agenda_folders = await seedAgenda(root)
   if (Object.keys(agenda_folders).length) await writeJson(path, { id, createdAt, agenda_folders })
   return { id, created: true }

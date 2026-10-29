@@ -9,6 +9,7 @@ import { syncIgnoredUnder } from '../FileWatch/watcher'
 import { nodeMachine } from './nodeMachine'
 
 const log = vi.hoisted((): string[] => [])
+const synced = vi.hoisted(() => ({ hook: async (): Promise<void> => {} }))
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
@@ -20,7 +21,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
       handle.sync = async () => {
         const r = await sync()
         log.push('synced')
+        await synced.hook()
         return r
+      }
+      const close = handle.close.bind(handle)
+      handle.close = async () => {
+        log.push(`close ${args[0]}`)
+        return close()
       }
       return handle
     },
@@ -48,6 +55,7 @@ describe('nodeMachine landing', () => {
     host = (await import('./nodeMachine')).nodeMachine
     root = tempRoot('pom-node-landing-')
     log.length = 0
+    synced.hook = async () => {}
   })
   afterEach(async () => {
     await rm(root, { recursive: true, force: true })
@@ -58,6 +66,20 @@ describe('nodeMachine landing', () => {
     expect(landed.every((l) => l.status === 'fulfilled')).toBe(true)
     expect(log.filter((l) => l === 'synced')).toHaveLength(3)
     expect(log.lastIndexOf('synced')).toBeLessThan(log.findIndex((l) => l.startsWith('rename ')))
+    for (const temp of renamed())
+      expect(log.indexOf(`close ${temp}`)).toBeLessThan(log.indexOf(`rename ${temp}`))
+  })
+
+  it('a file rewritten while its group flushes is left as its writer left it', async () => {
+    await writeFile(at('a.md'), 'old')
+    const was = await host.stat(at('a.md'))
+    synced.hook = async () => {
+      synced.hook = async () => {}
+      await writeFile(at('a.md'), 'written elsewhere')
+    }
+    const [landed] = await host.land([{ path: at('a.md'), data: 'new', expect: was }])
+    expect(landed.status).toBe('rejected')
+    expect(await readFile(at('a.md'), 'utf8')).toBe('written elsewhere')
   })
 
   it('a landing whose data cannot be written rejects and leaves no temp', async () => {

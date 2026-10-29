@@ -34,6 +34,7 @@ beforeEach(async () => {
   )
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   closeSession()
   dropLiveTree()
   installStores(NO_STORES)
@@ -216,9 +217,7 @@ describe('stampMissing', () => {
       root,
       ['A', 'B', 'C'].map((t) => ({ path: `Notes/${t}.md`, kind: 'page', reason: 'missing' })),
     )
-    const calls = lands.mock.calls.length
-    lands.mockRestore()
-    expect(calls).toBe(1)
+    expect(lands).toHaveBeenCalledTimes(1)
     const idOf = async (p: string) => splitFrontmatter(await readFile(p, 'utf8'))[ID_KEY]
     expect(landed).toEqual([await idOf(a), await idOf(c)])
     expect(landed.every(isUlidShaped)).toBe(true)
@@ -244,7 +243,6 @@ describe('stampPage', () => {
     const stats = vi.spyOn(machine(), 'stat')
     const id = await stampPage(page, 'page')
     const own = stats.mock.calls.flatMap(([p], i) => (p === page ? [stats.mock.results[i]] : []))
-    stats.mockRestore()
     expect(own).toHaveLength(1)
     const seen = await own[0].value
     expect(id && idTime(id)).toBe(Math.floor(Math.min(seen.birthtimeMs, seen.mtimeMs)))

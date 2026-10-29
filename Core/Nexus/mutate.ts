@@ -89,8 +89,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
   const addressed = (
     req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
     fn: () => Promise<MutateReply>,
+    turn: typeof inSettleTurn = inSettleTurn,
   ): Promise<MutateReply> =>
-    inSettleTurn(root, async () => {
+    turn(root, async () => {
       const before = await settledIndex(root)
       const reply = await fn()
       if (!reply.ok) return reply
@@ -113,9 +114,11 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     })
   switch (req.op) {
     case 'createPage':
-      return seedsContext(req)
-        ? underContexts(root, () => addressed(req, () => createPageOp(ctx, req)))
-        : addressed(req, () => createPageOp(ctx, req))
+      return addressed(
+        req,
+        () => createPageOp(ctx, req),
+        seedsContext(req) ? inContextsTurn : inSettleTurn,
+      )
 
     case 'createContainer':
       return createContainerOp(ctx, req)

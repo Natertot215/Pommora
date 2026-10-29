@@ -22,7 +22,14 @@ import {
 } from './atomicWrite'
 import { mintBundle } from '../Bundles/bundle'
 import { discardFile, trashFileFlat } from '../Trash/discard'
-import { type FileEvent, isRecentWrite, setOwnTap, setWriteTap } from './writeEcho'
+import {
+  dropOwnEchoes,
+  type FileEvent,
+  isRecentWrite,
+  setOwnTap,
+  setWriteTap,
+  writtenHash,
+} from './writeEcho'
 import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 
@@ -42,6 +49,22 @@ describe('atomicWriteFile', () => {
     expect(await readFile(p, 'utf8')).toBe('first')
     await atomicWriteFile(p, 'second')
     expect(await readFile(p, 'utf8')).toBe('second')
+  })
+
+  it('a rejected landing forgets its echo, so an outside write of the same bytes is heard', async () => {
+    const p = join(dir, 'a.md')
+    await writeFile(p, 'old\n')
+    raceLandings((file) => file === p, 'new!\n')
+    await expect(
+      atomicWriteFile(p, 'new!\n', { expect: await machine().stat(p) }),
+    ).rejects.toThrow()
+    const heard = {
+      event: 'change',
+      absPath: p,
+      origin: 'watched',
+      written: writtenHash(p),
+    } as const
+    expect(await dropOwnEchoes([heard])).toEqual([heard])
   })
 })
 
