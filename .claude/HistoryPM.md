@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 10-29-2026              | PM-156 | One Landing                                          |
 | 10-28-2026              | PM-155 | App Information Index                                |
 | 10-20-2026              | PM-154 | Collection Archives                                  |
 | 10-18-2026              | PM-153 | MetadataV3 — Keys & Labels                           |
@@ -158,6 +159,16 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-156 || One Landing
+**DATE:** 10-29-2026
+
+Every write the app makes came to land through one grouped landing the host implements itself, replacing the `write-file-atomic` library: each file in a group is written to a dotted temp beside it, and every temp is flushed before any is renamed into place, so a group's flushes overlap while each page still reaches the drive before its name points at it. A landing that follows a read carries the stat that read saw, so a file another program changed meanwhile is left as that program left it. One held rewrite reads, rewrites, and lands 64 files at a time under their locks, behind every sweep, a lone page rewrite, a relink's tile rewrites, and adoption's stamps; the content index records each landing's pages in batched commits of 200 in place of one transaction per page; and each file a property, option, or Context cascade rewrites is read and parsed once, that one read serving the index, the tree's patch, and the walk the rename owes.
+
+A Context or Space rename came to run inside the settle's turn, so its walk is paid once, after its sweep, and the settle reads a page's option words from its index row rather than its file. On the Medium-0 benchmark Nexus, a property rename fell from 48.4 s to 14.7 s, a Context rename from 34.4 s to 9.6 s, and a page rename from 4.1 s to 1.7 s. A shortcut that let an index row decide which pages a cascade passes over was withdrawn before the landing, since a rewrite that keeps a page's time and size can leave a stale row looking current; giving the index the file's change time, which would let it tell those rewrites apart, is left to the owner.
+
+- **Commits:** `23b5aba89^..9b9c0d630`
+- **Delta:** +198 (+704 / -506)
 
 #### PM-155 || App Information Index
 **DATE:** 10-28-2026
