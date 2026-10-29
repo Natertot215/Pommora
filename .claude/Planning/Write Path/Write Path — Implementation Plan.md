@@ -33,14 +33,14 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 - **The Wait:** while a held rewrite lands a chunk (a sweep's, a relink's tiles, an adoption's stamps), its flushes hold the host's thread pool, so any other read or write the app makes, of any file, waits behind them for tens of milliseconds, about 30-45 ms with Task 1-8's sixteen threads or 16-20 ms with sixteen files a chunk, where today a read doesn't wait; and an in-app write to a page inside the chunk waits for the chunk, up to about 50-200 ms, where today it waits about 7 ms.
 - **The Temps:** a crash, a force quit, or a power loss while a chunk flushes, or a folder another operation moves while a chunk inside it flushes, can leave that chunk's dotted `.landing-*` temps beside their files, where the library left at most one undotted `Name.md.<digits>`. They're accepted as they lie, with no cleanup pass: they're hidden, every reader and Sync ignore a dotted name, and only a crash or that mid-flush move makes them. Git and cloud clients do list them.
 
-**The Number:** this plan is net-positive in lines, about **+180 Actionable** by `view-delta`, against the Mandate's north star of net-negative: about +190 in production code (blank lines included, +174 without), +73 in `Core/Testing/`'s machines, contract cases, and landing seams, which `view-delta` counts as code, and about −83 in the lockfile and `Desktop/package.json`, the dead `Pommora` lockfile entry that also listed the library among them. What it buys is what leaves: a third-party dependency and its transitive one, three Machine methods folded into one, the library's duplicate per-path queue and its per-file `realpath` (an `lstat` in its place, with `realpath` only for a link), `stat`, `chown`, and `chmod`, a per-file database transaction, two of three reads and stats and three or four of five or six parses per rewritten file, the settle's re-read, the clash read, the option sweep's non-carrying reads, the owed walk's re-read, an outside edit's second stat, read, and parse, zero to four redundant Nexus walks per Context rename, a relink's tiles' and a first adoption's stamps' one flush per file, eight duplicated stat-or-null forms, and the second pipeline that read, rewrote, and landed a held file. About 47 of the production lines are the host doing what about 160 lines of library code did, flushing as a group and writing through a symlink. Task 1-4 is +4 in all: the held rewrite and its per-file catch cost about +25 against the sweep loop and the lone rewrite they replace, and carrying the adoption stamps and the tile relink onto it about +19 more, against the library's removal from the test machines (−22) and the host (−17). Task 1-2 is +21: the batch's commit taking the seed's own rules, its in-flight row kept and its switch check, with the seed's two hand-written comparisons folded into `describes` and `unmoved`. OP-3 is +31, about eleven of it the commit carrying each read to the tree's patch and the patch's check that the read is still the index's, and Task 1-1's consolidation pays back 21. R-1 and R-2 are +13 each, about half of it `indexVouches` and the stat check that keeps the clash refusal and the option sweep's reach exact while the index lags an outside edit. The ruling's +110 counted OP-5 at `rmwLocked` alone; Task 1-7, which carries it through all ten landings that follow a read, is +12. Task 1-8 sits outside the estimates: AFTER A adds three lines, AFTER B none. Each phase's measure is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
+**The Number:** this plan is net-positive in lines, about **+180 Actionable** by `view-delta`, against the Mandate's north star of net-negative: about +190 in production code (blank lines included, +174 without), +73 in `Core/Testing/`'s machines, contract cases, and landing seams, which `view-delta` counts as code, and about −83 in the lockfile and `Desktop/package.json`, the dead `Pommora` lockfile entry that also listed the library among them. What it buys is what leaves: a third-party dependency and its transitive one, three Machine methods folded into one, the library's duplicate per-path queue and its per-file `realpath` (an `lstat` in its place, with `realpath` only for a link), `stat`, `chown`, and `chmod`, a per-file database transaction, two of three reads and stats and three or four of five or six parses per rewritten file, the settle's re-read, the clash read, the option sweep's non-carrying reads, the owed walk's re-read, an outside edit's second stat, read, and parse, zero to four redundant Nexus walks per Context rename, a relink's tiles' and a first adoption's stamps' one flush per file, eight duplicated stat-or-null forms, and the second pipeline that read, rewrote, and landed a held file. About 47 of the production lines are the host doing what about 160 lines of library code did, flushing as a group and writing through a symlink. Task 1-4 is +4 in all: the held rewrite and its per-file catch cost about +25 against the sweep loop and the lone rewrite they replace, and carrying the adoption stamps and the tile relink onto it about +19 more, against the library's removal from the test machines (−22) and the host (−17). Task 1-2 is +21: the batch's commit taking the seed's own rules, its in-flight row kept and its switch check, with the seed's two hand-written comparisons folded into `describes` and `unmoved`. OP-3 is +31, about eleven of it the commit carrying each read to the tree's patch and the patch's check that the read is still the index's, and Task 1-1's consolidation pays back 21. R-1 and R-2 are +13 each, about half of it `unlessVouched` and the stat check that keeps the clash refusal and the option sweep from trusting a row an outside edit has outrun. The ruling's +110 counted OP-5 at `rmwLocked` alone; Task 1-7, which carries it through all ten landings that follow a read, is +12. Task 1-8 sits outside the estimates: AFTER A adds three lines, AFTER B none. Each phase's measure is recorded in the Net Ledger, and growth past an estimate is reported with what it buys.
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; the estimates are measured on the validated worktree and include `Core/Testing/` and the lockfile, which `view-delta` counts as code):
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
 | 1 | +518 / −400 (+118) | +560 / −417 (+143), its checkpoint fold included | +143 |
-| 2 | +107 / −45 (+62) | | |
+| 2 | +107 / −45 (+62) | +138 / −79 (+59), its checkpoint fold included | +202 |
 | Final Verification | — | | |
 | Closeout | — | | |
 
@@ -77,15 +77,16 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `addressed`'s `turn` • Parameter | The turn a page-addressed write runs in: `inSettleTurn`, or `inContextsTurn` for a create that seeds a Context. | `Core/Nexus/mutate.ts` |
 | `indexEvents` • Function | Maintains the index for a batch of events, its written pages in commits of up to 200, answering each page's read for the tree's patch; replaces `indexEvent`. | `Core/Nexus/fileEvents.ts` |
 | `indexWrittenPages` • Function | Re-indexes written pages as the seed does, 200 a transaction, a row another writer landed mid-read kept, from the text and stat their events carry or else from their files; replaces `indexWrittenPage`. | `Core/Index/indexSeed.ts` |
-| `describes` • Function | Whether the index's recorded stat describes another, the same time and size: the seed's skip, `unmoved`, and `indexVouches` all ask it. | `Core/Index/indexSeed.ts` |
-| `unmoved` • Function | Whether a page's row is still the one a read saw ahead of it: the seed's in-flight rule, which the batch's commit and the tree's patch share. | `Core/Index/indexSeed.ts` |
-| `indexVouches` • Function | Whether a page's index row still describes its file: the one rule on which an index answer may decide what a cascade writes, behind R-1 and R-2. | `Core/Index/indexSeed.ts` |
+| `describes` • Function | Whether the index's recorded stat describes another, the same time and size: the seed's skip, `unmoved`, and `unlessVouched` all ask it. | `Core/Index/indexSeed.ts` |
+| `unmoved` • Function | Whether a page's row is still the one a read saw ahead of it, a row that left since then vouching for nothing: the seed's in-flight rule, which the batch's commit and the tree's patch share. | `Core/Index/indexSeed.ts` |
+| `unlessVouched` • Function | The files a cascade still reads: each a caller's test doesn't pass over by its index row, and each whose row no longer describes its file, the one condition on which the index may pass over a page it lists; behind R-1 and R-2. | `Core/Index/indexSeed.ts` |
 | `PageRead` • Type | What the index read of a written page, its text, stat, and parse, which the tree's patch takes rather than reading the page again. | `Core/Index/indexSeed.ts` |
 | `indexWrittenPages`' `reads` · `applyOne`'s and `applyPage`'s `given` • Parameters | Each page's `PageRead`, from the index half to the tree half. | `Core/Index/indexSeed.ts`, `Core/Nexus/fileEvents.ts` |
 | `HolderQuery.every` • Field | Asks for the pages holding every key rather than any, each page the index can't vouch for read as well. | `Core/Index/keyHolders.ts` |
 | `rekeyed` • Function | A parsed page with one key renamed in its place; `renameFrontmatterKey`'s body. | `Core/Files/pageFile.ts` |
 | `SweptPage.rekey` • Field | `rekeyed` over the parse the sweep admitted the page by. | `Core/Files/pageFile.ts` |
-| `rememberParse` • Function | Holds a parse in the walk cache under the stat a write just answered. | `Core/Files/walkCache.ts` |
+| `rekeySweep` • Function | The one plan that renames a key in place, in each page's parse and each Space sidecar's object, behind a property rename and a Context's. | `Core/Nexus/governedSweep.ts` |
+| `rememberParse` • Function | Holds a parse in the walk cache under the stat of the read that built it, which the tree's patch hands over for the app's own write. | `Core/Files/walkCache.ts` |
 | `extractPageIndex`'s and `pageRecordOf`'s `page` • Parameters | A parse the caller already holds, defaulting to parsing the content. | `Core/Index/indexSeed.ts`, `Core/Nexus/readNexus.ts` |
 | `failLandings` • Function | The test seam that fails the landings a predicate picks; replaces `refuseWrites`. | `Core/Testing/hostFs.ts` |
 | `raceLandings` • Function | The test seam that overwrites the files a predicate picks just before their landing, as another program's write. | `Core/Testing/hostFs.ts` |
@@ -103,6 +104,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `atomicWriteBinary` • Function | The byte writer; `atomicWriteFile` takes bytes. | `Core/Files/atomicWrite.ts` |
 | `guarded` • Function | The sweep's per-file lock and catch; the catch moves into `rewriteHeld`, and a lock's rejection, which only re-entrancy causes, now fails the sweep. | `Core/Nexus/governedSweep.ts` |
 | `indexEvent` • Function | The per-event index switch. | `Core/Nexus/fileEvents.ts` |
+| `pageLeg` • Function | A Context rename's own page plan; `rekeySweep` builds it. | `Core/Contexts/contextCascade.ts` |
 | `indexWrittenPage` • Function | The per-page index transaction and stat. | `Core/Index/indexSeed.ts` |
 | `refuseWrites` · `writers` • Test Helpers | Replaced by `failLandings`. | `Core/Testing/hostFs.ts` |
 | `put` · `atomicWrite` • Test Machine Helpers | The test machines' single-file writers. | `Core/Testing/machines.ts` |
@@ -136,7 +138,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   - **OP-4:** `deleteCascade`'s post-sweep parse and `restoreScrub`'s text plan stay with the Trash & Archive plan (*§Open Items*).
   - **OP-5, As Planned:** the ruling named `rmwLocked`; the planning read found nine more landings that follow a read (`editJsonStrict`, `rewriteRootAt`, `updatePageBody`, `writeMarkdownTile`, `ensureIdentity`, and four creates that follow a read finding no file, `ensureContextsRegistry`, `createPage`, `restoreTile`, and `writeAssetFile`), and Task 1-7 carries the stat through all ten so the rule's exception list holds Sync's landing alone, as the ruling asked.
   - **D-5:** `UV_THREADPOOL_SIZE` ships only if Task 1-8 measures the threshold it states, and `CHUNK` follows it: 64 with the line, 16 without.
-  - **The Index's Trust:** a page's index answer decides what a cascade writes only while its recorded `(mtime, size)` matches the file's current stat; otherwise the file is read (`indexVouches`, behind R-1 and R-2).
+  - **The Index's Trust:** a page's index answer decides what a cascade writes only while its recorded `(mtime, size)` matches the file's current stat; otherwise the file is read (`unlessVouched`, behind R-1 and R-2).
   - **Chokidar's Directory Rescans:** outside this plan, since the watcher is its own owner; *§Final Verification* re-profiles them and *§Reconciliation* files the issue.
   - **The Confirmation Count:** stays its operation's own dry run (Decision 23); no index-based count.
   - **One Held Rewrite:** the sweep's chunk and `rewritePageSerialized` are one pipeline, `rewriteHeld`, and a relink's tile rewrites and `stampMissing`'s page stamps land through it in groups, each page's stamp landing or failing on its own and an ID the tree held going back to one page alone, as it does today.
@@ -180,13 +182,17 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   | T-N24 | 1-7 | `Core/Nexus/page.test.ts` | `updatePageBody` with `raceLandings` overwriting its page answers a failed `Result`, and the page keeps the outside bytes | `expect` in `updatePageBody` |
   | T-N32 | 1-7 | `Core/Contexts/contextsRegistry.test.ts`, `page.test.ts` | `ensureContextsRegistry` on a Nexus with no registry, with `raceLandings` writing one just before the seed lands: it rejects, and the file keeps the outside registry; `createPage` the same way: it rejects, and the page keeps the outside bytes | `null` in `ensureContextsRegistry` and `createPage` |
   | T-N14 | 2-1 | `registryProperty.test.ts` | With a warm index, a property rename makes one `readText` per holder (its confirmation's dry run is a separate request) | R-1, with the Core's settle read |
-  | T-N15 | 2-1 | `registryProperty.test.ts` | With no file holding the new key, `rekeyPlan` reads nothing; a page holding both keys still refuses; and a page the index holds with the old key alone, whose file gained the new key with no event, still refuses | R-1's `every`; `indexVouches` |
-  | T-N16 | 2-2 | `optionOps.test.ts` | An option rename reads only the pages whose indexed value carries the word, plus Spaces; a page the index holds no row for is still read and rewritten; and a page whose file took the word with no event since its row was written is rewritten too | R-2's filter; its no-row fallback; `indexVouches` |
+  | T-N15 | 2-1 | `registryProperty.test.ts` | With no file holding the new key, `rekeyPlan` reads nothing; a page holding both keys still refuses; and a page the index holds with the old key alone, whose file gained the new key with no event, still refuses | R-1's `every`; `unlessVouched` |
+  | T-N16 | 2-2 | `optionOps.test.ts` | An option rename reads only the pages whose indexed value carries the word, plus the Spaces, which the index holds no row for; a page is still read and rewritten while the index isn't ready; and a page whose file took the word with no event since its row was written is rewritten too | R-2's filter and its no-row arm; its fallback while the index isn't ready; `unlessVouched` |
   | T-N17 | 2-3 | `governedSweep.test.ts` | `vi.mock('yaml', …)` counts `parseDocument`: `sweepGovernedRoots` over one page with a property rename's plan, no session open, parses once | R-3's `rekey` |
   | T-N25 | 2-4 | `Core/Nexus/settle.test.ts` | With a session, a tree, and an index, one `atomicWriteFile` of a page makes exactly one `parsePage` call (spy `pageFile.parsePage`) | the index's read handed to the tree's patch |
   | T-N30 | 2-4 | `Core/Nexus/fileEvents.test.ts` | A watched `change` of one page makes one `machine().readText` and one `parsePage` call for it (the rewritten "an ID: 42 page saved twice is read once per save" counts the reads) | the index's read handed to the tree's patch |
   | T-N33 | 2-4 | `fileEvents.test.ts` | With an index and a tree, a watched batch of `Notes/_pagecollection.json` and page A, A's file changed outside: a `readText` hook on the sidecar's read lands an own write tagging A, after the batch's commit and before A's patch, and the tree's A holds the own write's tag and agrees with a fresh walk | `unmoved` in `applyPage` |
-  | T-N18 | 2-5 | `contextCascade.test.ts`; `Core/Views/loadValues.test.ts` | After a Context rename, its owed walk makes no `readText` of the pages the rename rewrote, and `loadValues` still serves each page's kept modified time | `rememberParse`; the landed time `pageRecordOf` takes from Task 2-4's read |
+  | T-N37 | 2-4 | `fileEvents.test.ts` | T-N33's batch, with the hook moving A to `Notes/Moved.md` through `relocate` in place of the own write: the tree holds the page at `Notes/Moved.md` alone and agrees with a fresh walk | `unmoved`'s answer for a row that left since its read |
+  | T-N38 | 2-4 | `indexSeed.test.ts` | A batch over A and B whose `readText` hook on B's read moves A away, renaming the file and moving its row as a maintaining writer does: no row is left at A's old path, and the moved path holds one | `unmoved` at the batch's commit, for a row that left since its read |
+  | T-N39 | 2-4 | `settle.test.ts` | The three cases that hold an event mid-arm do it through `machine().readText` hooks on the path production takes: "an event whose arm resumes…" holds the index's read of B and fails it and the patch's read after it; "a reply while a batch applies…" holds the tree half's read of the Collection sidecar, an event between the two pages; "a stamp never lands on a file…" fails the index's read of the page, so the patch reads it for each event, and holds the second | the owed record emptied in place; the stamp's `batching` gate and `shown`; the stamp's `batching` gate |
+  | T-N18 | 2-5 | `contextCascade.test.ts`; `Core/Views/loadValues.test.ts`; `fileEvents.test.ts` | After a Context rename, its owed walk makes no `readText` of the pages the rename rewrote, and `loadValues` still serves each page's kept modified time; and an own event whose patch reads its page again, a write having landed since the index's read, leaves the walk cache that read, so a walk makes no `readText` of it | `rememberParse`; the landed time `pageRecordOf` takes from Task 2-4's read; `rememberParse` taking only the handed read, under its own stat |
+  | T-N40 | 2-5 | `Core/Files/walkCache.test.ts` | A cached file replaced whole by rename with one of the same time and size re-parses | `sameFile` in `cachedParse`'s hit test |
 
   The break-on-purpose rewrites are each task's AFTER, and the ones stated as a rule are stated where they land.
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land. These comments misdescribe the code after the plan and are rewritten or removed by the task named: `atomicWrite.ts`'s "Both text writers report 'change'…" (1-4, into `landOwn`'s docstring), `rewritePreservingTimes`' two comments (1-4, with it), `governedSweep.ts`'s `guarded` comment (1-4, onto `rewriteHeld`'s per-file catch) and `SweepResult.skipped`'s and `sweepGovernedRoots`' docstrings (1-4), `exclusion.ts`'s `TEMP_SUFFIX`, which gains the comment *§Constraints · Rulings · OP-1* names (1-4), `writeEcho.ts`'s header, "the own tap lands each write as an event" (1-2), and its "The app's own event carries the text it wrote…" (1-2), `Desktop/FileWatch/watcher.ts`'s header, "Events settle, then apply one at a time…" (1-2), `settle.ts`'s "Every own write marks the disk moved…" (1-2), `fileEvents.ts`'s header (1-2), `indexSeed.ts`'s "Re-indexes a written page…" (1-2, again 2-4), its seed's "A maintaining writer that landed…" (1-2, into `unmoved`'s docstring), `optionOps.ts`'s `registerHeldOptions` docstring (1-5), `finishOwed.ts`'s header (1-6), `mutate.ts:88`'s turn rule, whose nesting clause moves into `inContextsTurn`'s docstring (1-6), `machine.ts`'s two `writeText`/`writeBytes` docstrings (1-4, into `land`'s), `landBytes`' comment (1-7), `renameFrontmatterKey`'s docstring (2-3, into `rekeyed`'s), `SweepPlan`'s docstring (2-3), `rootValues.ts:47`'s "the twin of `renameFrontmatterKey`" (2-3), and the test comment at `Core/Nexus/mutate.test.ts:1909` naming `atomicWriteBinary` (1-4). One becomes true without an edit: `pageFile.ts:280`'s "one parse serves a sweep's admission, its read of the values, and its merge" (2-3).
@@ -208,13 +214,13 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   - [x] Task 1-8 · The chunk and the thread pool, measured together
   - [x] Review Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
-- [ ] **Phase 2** — W-2 · One Read
-  - [ ] Task 2-1 · The clash check reads only files holding both keys
-  - [ ] Task 2-2 · An option edit sweeps only pages its value changes
-  - [ ] Task 2-3 · A text plan rewrites the parse the sweep admitted
-  - [ ] Task 2-4 · One parse serves the index and the tree
-  - [ ] Task 2-5 · The owed walk reuses the write's parse
-  - [ ] Review Checkpoint
+- [x] **Phase 2** — W-2 · One Read
+  - [x] Task 2-1 · The clash check reads only files holding both keys
+  - [x] Task 2-2 · An option edit sweeps only pages its value changes
+  - [x] Task 2-3 · A text plan rewrites the parse the sweep admitted
+  - [x] Task 2-4 · One parse serves the index and the tree
+  - [x] Task 2-5 · The owed walk reuses the write's parse
+  - [x] Review Checkpoint
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -3107,7 +3113,7 @@ Every landing that follows a read of the same file carries the stat that read sa
 
 #### Task 2-1
 
-A rename's clash check asks the index for the pages holding both the old and the new key, intersecting the two holder lists rather than joining them, so with no page holding the new key it reads none. A page the index lists under one key alone is still read where its row no longer describes its file, through `indexVouches`, the one rule by which an index answer may decide what a cascade writes: a page's row is trusted only while its recorded time and size match the file's stat, and otherwise the file is read. Without it, a page an outside edit gave the new key, still in the watcher's debounce or drain, passes the check, and the sweep's `prefer-new` silently drops the old key's value where today the rename is refused. Paying the watcher's pending batch first can't stand in for the stat, since an edit still inside the debounce isn't in any batch yet. A stat costs about 10 µs against a read and parse's 115 µs, so the cut keeps most of its saving. Spaces still answer for either key and are read as before, since the tree keeps no stat to vouch for them; an index that isn't ready still falls back to the corpus, and unreadable Spaces are still listed and read.
+A rename's clash check asks the index for the pages holding both the old and the new key, intersecting the two holder lists rather than joining them, so with no page holding the new key it reads none. A page the index lists under one key alone is still read where its row no longer describes its file, through `unlessVouched`, which holds the one condition on which the index may pass over a page it lists: a page's row is trusted only while its recorded time and size match the file's stat, and otherwise the file is read. The filter runs after `pagesInReach`, so only the pages in the rename's reach are stat'ed. Without it, a page an outside edit gave the new key, still in the watcher's debounce or drain, passes the check, and the sweep's `prefer-new` silently drops the old key's value where today the rename is refused. Paying the watcher's pending batch first can't stand in for the stat, since an edit still inside the debounce isn't in any batch yet. The stat reaches only the pages the index lists under a key: a page it indexed with neither, whose file gains both inside the debounce, is listed under none and passes the check, which matches the rename sweep's own reach, the index's holders of the old key, and predates this plan. A stat costs about 10 µs against a read and parse's 115 µs, so the cut keeps most of its saving. Spaces still answer for either key and are read as before, since the tree keeps no stat to vouch for them; an index that isn't ready still falls back to the corpus, and unreadable Spaces are still listed and read.
 
 **PROCEDURE**
 
@@ -3123,16 +3129,27 @@ A rename's clash check asks the index for the pages holding both the old and the
    return !now || describes(now, prior)
  }
 +
-+/** Whether `rel`'s index row still describes its file: the one condition on which what the index holds of a page decides what a cascade writes, the file read otherwise, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
-+export const indexVouches = async (root: string, rel: string): Promise<boolean> =>
-+  describes(readIndexedStat(rel), await statOrNull(join(root, rel)))
++/** The files among `files` a cascade still reads: each `passOver` doesn't name as one the index answers for, handed its root-relative path, and each whose row no longer describes its file. That row describing the file is the one condition on which the index may pass over a page it lists, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
++export async function unlessVouched(
++  root: string,
++  files: readonly string[],
++  passOver: (rel: string, file: string) => boolean,
++): Promise<string[]> {
++  const kept = await Promise.all(
++    files.map(async (file) => {
++      const rel = relative(root, file)
++      return !passOver(rel, file) || !describes(readIndexedStat(rel), await statOrNull(file))
++    }),
++  )
++  return files.filter((_, i) => kept[i])
++}
 ```
 
 ```Core/Index/keyHolders.ts diff
 @@ imports @@
  import { queryMembers, readPageRelations } from './contentIndex'
 -import { nexusCorpus } from './indexSeed'
-+import { indexVouches, nexusCorpus } from './indexSeed'
++import { nexusCorpus, unlessVouched } from './indexSeed'
  import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 @@ HolderQuery @@
    title?: string
@@ -3147,24 +3164,20 @@ A rename's clash check asks the index for the pages holding both the old and the
    const tree = await liveTreeOf(root)
    const title = q.title === undefined ? undefined : exactTitle(q.title)
    const rels = q.keys.map((key) => queryMembers(key, title))
+-  const pages = await pagesInReach(
+-    root,
+-    tree,
+-    rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))],
+-    q.reach,
+-  )
 +  const listed = rels.map((r) => r && new Set(r))
 +  const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
++  const reached = await pagesInReach(root, tree, named, q.reach)
 +  // A page the index lists without every key is passed over only while its row still describes the file, since an outside edit the index hasn't taken may have given it the rest.
-+  const kept =
++  const pages =
 +    named && q.every
-+      ? await Promise.all(
-+          named.map(
-+            async (rel) => listed.every((l) => l?.has(rel)) || !(await indexVouches(root, rel)),
-+          ),
-+        )
-+      : null
-   const pages = await pagesInReach(
-     root,
-     tree,
--    rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))],
-+    kept && named ? named.filter((_, i) => kept[i]) : named,
-     q.reach,
-   )
++      ? await unlessVouched(root, reached, (rel) => !listed.every((l) => l?.has(rel)))
++      : reached
    const holds = (s: SpaceNode): boolean =>
 @@ findHolders @@
    const files = [...pages, ...spaces]
@@ -3195,7 +3208,7 @@ A rename's clash check asks the index for the pages holding both the old and the
 
 #### Task 2-2
 
-An option rename, delete, or value-format change runs its own rewrite over each holder's indexed value and sweeps only the files whose value it changes, plus every file the index holds no row for (every Space sidecar, and any page it never read) and every page whose row no longer describes its file, by Task 2-1's rule (`indexVouches`). Without the rule, a page whose value an outside edit changed, still in the watcher's debounce, would be passed over with no skip and nothing owed, and its old word registered again once its event settles. Which files hold the key it takes from `findHolders`, at the trust `findHolders` already has.
+An option rename, delete, or value-format change runs its own rewrite over each holder's indexed value and sweeps only the files whose value it changes, plus every file the index holds no row for (every Space sidecar, and any page it never read) and every page whose row no longer describes its file, by Task 2-1's rule (`unlessVouched`). Without the rule, a page whose value an outside edit changed, still in the watcher's debounce, would be passed over with no skip and nothing owed, and its old word registered again once its event settles. Which files hold the key it takes from `findHolders`, at the trust `findHolders` already has.
 
 **PROCEDURE**
 
@@ -3209,7 +3222,7 @@ An option rename, delete, or value-format change runs its own rewrite over each 
 @@ imports @@
  import { validateOptionValues } from './validation'
  import { readPageRelations } from '../Index/contentIndex'
-+import { indexVouches } from '../Index/indexSeed'
++import { unlessVouched } from '../Index/indexSeed'
  import { findHolders } from '../Index/keyHolders'
 @@ imports @@
  import { readPageRecord } from '../Nexus/readNexus'
@@ -3232,14 +3245,11 @@ An option rename, delete, or value-format change runs its own rewrite over each 
 +    files.map((file) => relative(root, file)),
 +    def.key,
 +  )?.pages
-+  const reaches = await Promise.all(
-+    files.map(async (file) => {
-+      const rel = relative(root, file)
-+      const row = rows?.[rel]
-+      return !row || raw(row.values, file) !== null || !(await indexVouches(root, rel))
-+    }),
-+  )
-+  return { files: files.filter((_, i) => reaches[i]), plan: { raw } }
++  const passOver = (rel: string, file: string): boolean => {
++    const row = rows?.[rel]
++    return !!row && raw(row.values, file) === null
++  }
++  return { files: await unlessVouched(root, files, passOver), plan: { raw } }
  }
  
  async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
@@ -3253,7 +3263,7 @@ An option rename, delete, or value-format change runs its own rewrite over each 
 
 #### Task 2-3
 
-A text plan receives the parse the sweep admitted its page by. `renameFrontmatterKey`'s body after its parse becomes `rekeyed`, which `SweptPage.rekey` runs over the held document, so a property or Context rename's page plan stops re-parsing; `renameFrontmatterKey` stays as parse plus `rekeyed` for its one remaining caller (`restoreScrub.ts:105`, the Trash plan's). The relink's plan reads the held page's values in place of `splitFrontmatter(content)`.
+A text plan receives the parse the sweep admitted its page by. `renameFrontmatterKey`'s body after its parse becomes `rekeyed`, which `SweptPage.rekey` runs over the held document, so a property or Context rename's page plan stops re-parsing; both renames take their plan from one builder, `rekeySweep`, which pairs `SweptPage.rekey` with `rekeyHeld` under the caller's collision rule, and the Context rename's own `pageLeg` leaves; `renameFrontmatterKey` stays as parse plus `rekeyed` for its one remaining caller (`restoreScrub.ts:105`, the Trash plan's). The relink's plan reads the held page's values in place of `splitFrontmatter(content)`.
 
 **PROCEDURE**
 
@@ -3272,15 +3282,37 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
  import type { Json } from '../Files/stableJson'
  import { contextDirRel } from '../Paths/nexusPaths'
  import type { MutateReply } from '../Nexus/mutateRequest'
+ import { followRelinks, owedRename, owedSwept, runNoted } from '../Nexus/owed'
+-import { type Rewrite, type RewriteText, sweepGovernedRoots } from '../Nexus/governedSweep'
++import {
++  type Rewrite,
++  rekeySweep,
++  sweepGovernedRoots,
++  type SweepPlan,
++} from '../Nexus/governedSweep'
+ import { type ConfigReach, sweptReach } from '../Nexus/configReach'
 @@ pageLeg @@
- function pageLeg(from: string, to: string): RewriteText {
-   const oldKey = contextKey(from)
-   const newKey = contextKey(to)
+-function pageLeg(from: string, to: string): RewriteText {
+-  const oldKey = contextKey(from)
+-  const newKey = contextKey(to)
 -  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
-+  return (_content, _file, page) => page.rekey(oldKey, newKey, NEITHER_KEY_IS_FRESHER)
- }
- 
+-}
+-
  /** The files holding the key a title change rewrites, found before the rename's list or folder step, so no settle between them can drop a moved Space from the tree; `moved` points a Space the tree still lists under the folder it left at the one it went to. The key comes from the old title, never the registry title, which may already read old or new. */
+@@ cascadeTitle @@
+   files: string[],
+ ): Promise<ConfigReach> {
+-  const raw: Rewrite = space
+-    ? (r) => retitleSpace(r, contextTitle, from, to)
+-    : rekeyContext(from, to)
+-  return sweptReach(
+-    await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) }),
+-  )
++  const plan: SweepPlan = space
++    ? { raw: (r) => retitleSpace(r, contextTitle, from, to) }
++    : rekeySweep(contextKey(from), contextKey(to), NEITHER_KEY_IS_FRESHER)
++  return sweptReach(await sweepGovernedRoots(files, plan))
+ }
 ```
 
 ```Core/Files/pageFile.ts diff
@@ -3382,7 +3414,8 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
  import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
 -import type { Place } from '../Files/pageFile'
  import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
- import { isBlankRaw, landValue } from '../Files/rootValues'
+-import { isBlankRaw, landValue } from '../Files/rootValues'
++import { isBlankRaw, type KeyCollision, landValue, rekeyHeld } from '../Files/rootValues'
  
 @@ RewriteText @@
  
@@ -3396,6 +3429,14 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
  export type SweepPlan = {
    raw: Rewrite
    text?: RewriteText
+   above?: (root: Json, file: string) => Place
+ }
++
++/** The plan that renames `from` to `to` in place, in each page's parse and each Space sidecar's object, a held `to` met by `collision`. */
++export const rekeySweep = (from: string, to: string, collision: KeyCollision): SweepPlan => ({
++  raw: (raw) => rekeyHeld(raw, from, to, collision),
++  text: (_content, _file, page) => page.rekey(from, to, collision),
++})
 @@ rewritten @@
    }
    const page = sweepParse(content)
@@ -3416,20 +3457,26 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
  import { findHolders } from '../Index/keyHolders'
  import {
    outsideArchive,
-+  type RewriteText,
++  rekeySweep,
    sweepCount,
    sweepGovernedRoots,
    type SweepPlan,
+ } from '../Nexus/governedSweep'
+ import { type ConfigReach, NO_REACH, sweptReach } from '../Nexus/configReach'
+-import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
++import type { KeyCollision } from '../Files/rootValues'
 @@ renamePlan @@
  ): Promise<{ files: string[]; plan: SweepPlan }> {
    // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
    const { files } = await findHolders(root, { keys: [from], reach: 'governed' })
 -  const text = (content: string): string | null =>
 -    renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
-+  const text: RewriteText = (_content, _file, page) => page.rekey(from, to, NEW_KEY_IS_FRESHER)
-   return {
-     files,
-     plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },
+-  return {
+-    files,
+-    plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },
+-  }
++  return { files, plan: rekeySweep(from, to, NEW_KEY_IS_FRESHER) }
+ }
 ```
 
 **VERIFY**
@@ -3440,12 +3487,12 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
 
 #### Task 2-4
 
-The index half reads and parses each written page once and hands that read to the tree half: `indexWrittenPages` puts each page's text, stat, and parse into `reads`, `indexEvents` answers them, and `applyEvents` hands each page event its own, so the index row (`extractPageIndex`) and the tree patch (`pageRecordOf`) take one parse, for the app's own writes and outside edits alike, and the record carries the read's modification time where an own write's record carried none. The patch takes that read only while the page's index row is still the one the read committed (`unmoved`, exported for it): an own write can land between a watched batch's commit and that page's patch, while the apply loop awaits an earlier event's folder or sidecar read, and its fresher row sends the patch back to the file. A host with no index holds no row to contradict the read, so its patch always takes it. An outside edit, and every page another device's cascade lands here through Sync, drops from two stats, reads, and parses per page to one. A page the index didn't read (a replay, or one its read couldn't reach) is read by the tree half as before, and both functions take the parse as a defaulted last argument, so every other caller parses as before. Four existing cases pinned the tree half's own read: the three `settle.test.ts` cases that hold an event mid-arm on `readPageRecord` now have the tree half read each page itself, through one `readsItself` helper, as a replay does, and "an ID: 42 page saved twice is read once per save" counts `machine().readText` in place of `readPageRecord`.
+The index half reads and parses each written page once and hands that read to the tree half: `indexWrittenPages` puts each page's text, stat, and parse into `reads`, `indexEvents` answers them, and `applyEvents` hands each page event its own, so the index row (`extractPageIndex`) and the tree patch (`pageRecordOf`) take one parse, for the app's own writes and outside edits alike, and the record carries the read's modification time where an own write's record carried none. The patch takes that read only while the page's index row is still the one the read committed (`unmoved`, exported for it): an own write, move, or Trash can land between a watched batch's commit and that page's patch, while the apply loop awaits an earlier event's folder or sidecar read, and its fresher row, or its row's leaving, sends the patch back to the file. `unmoved` therefore counts a row that left after its read as one the read no longer describes, a rule the batch's commit shares, so a page moved or trashed during the batch's read keeps no row at the path it left; a page with no row before its read or after it still takes the read, and a host with no index holds no row to contradict the read, so its patch always takes it. An outside edit, and every page another device's cascade lands here through Sync, drops from two stats, reads, and parses per page to one. A page the index didn't read (a replay, or one its read couldn't reach) is read from its file by the tree half, an own event's replay among them, which took the text its event carried before; both functions take the parse as a defaulted last argument, so every other caller parses as before. Four existing cases pinned the tree half's own read: the three `settle.test.ts` cases that held an event mid-arm on `readPageRecord` now hold it through `machine().readText` hooks on the path production takes (T-N39), and "an ID: 42 page saved twice is read once per save" counts `machine().readText` in place of `readPageRecord`.
 
 **PROCEDURE**
 
 1. Apply the AFTER.
-2. Write T-N25, T-N30, and T-N33 in the suites *§Constraints · Tests* names.
+2. Write T-N25, T-N30, T-N33, T-N37, T-N38, and T-N39 in the suites *§Constraints · Tests* names.
 3. For each, revert the change its row names, watch it go red, and restore it.
 
 **AFTER**
@@ -3489,10 +3536,17 @@ The index half reads and parses each written page once and hands that read to th
    const { body } = splitEnvelope(content)
    const scan = scanDoc(body)
 @@ unmoved @@
- /** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
+-/** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
 -const unmoved = (
++/** Whether `path`'s row is still the one `prior` describes, taken ahead of a page's read: a writer that landed while the read was in flight left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
 +export const unmoved = (
    path: string,
+   prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
+ ): boolean => {
+   const now = readIndexedStat(path)
+-  return !now || describes(now, prior)
++  return now ? describes(now, prior) : !prior || contentIndexStore() === null
+ }
 @@ indexWrittenPages @@
 +/** What the index read of a written page, for the tree's patch to take rather than read and parse it again. */
 +export type PageRead = { text: string; stat: FileStat; page: ParsedPage }
@@ -3596,14 +3650,14 @@ The index half reads and parses each written page once and hands that read to th
    if (!containerAt(tree, dirRel)) {
 @@ applyPage @@
    const abs = join(root, rel)
++  // A write that landed, moved, or removed the page since the index read it left a row the read no longer describes, so the patch reads the page again.
++  const taken = given && unmoved(rel, given.stat) ? given : undefined
    let read: PageRecord
    try {
 -    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
-+    // A write that landed since the index read the page left a row the read no longer describes, so the patch reads the page again.
-+    read =
-+      given && unmoved(rel, given.stat)
-+        ? pageRecordOf(given.text, rel, given.stat.mtimeMs, given.page)
-+        : await readPageRecord(abs, rel)
++    read = taken
++      ? pageRecordOf(taken.text, rel, taken.stat.mtimeMs, taken.page)
++      : await readPageRecord(abs, rel)
    } catch {
      if (await pathExists(abs)) return 'walk'
      return applyPatch(root, (t) => removeNodeInTree(t, rel))
@@ -3665,58 +3719,92 @@ The index half reads and parses each written page once and hands that read to th
 ```
 
 ```Core/Nexus/settle.test.ts diff
-@@ gate @@
-   })
-   return { promise, open, fail }
- }
-+// The tree's patch then reads each page itself, as a replay's does, so a hook on `readPageRecord` holds an event mid-arm.
-+const readsItself = (): void => {
-+  const index = indexSeed.indexWrittenPages
-+  vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementation((at, written) => index(at, written))
-+}
- 
- beforeEach(async () => {
-   root = tempRoot('pom-settle-')
+@@ imports @@
+ import { memoryStores } from '../Testing/memoryStores'
++import { machine } from '../Platform/machine'
+ import { buildPageIndex, connPage } from '../Connections/pageIndex'
 @@ it 'an event whose arm resumes after a concurrent settle has pushed still …' @@
- describe('the settle', () => {
-   it('an event whose arm resumes after a concurrent settle has pushed still owes its walk to the next settle', async () => {
      await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-+    readsItself()
      const reached = gate<void>()
      const read = gate<never>()
-     vi.spyOn(readNexusModule, 'readPageRecord').mockImplementationOnce(() => {
+-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementationOnce(() => {
++    const text = machine().readText
++    let failing = true
++    // The index's read of B is held and then fails, and so does the patch's own read after it.
++    vi.spyOn(machine(), 'readText').mockImplementation((path) => {
++      if (!failing || path !== abs('Notes', 'B.md')) return text(path)
+       reached.open()
+       return read.promise
+     })
+@@ it 'an event whose arm resumes after a concurrent settle has pushed still …' @@
+     const walk = vi.spyOn(liveTree, 'refreshTree')
+     read.fail(new Error('mid-read'))
+     await applying
++    failing = false
+     expect(owedFor(root).walk).toBe(true)
 @@ it 'a reply while a batch applies stamps nothing the batch listed, and the…' @@
-   it('a reply while a batch applies stamps nothing the batch listed, and the window isn’t shown it as unreadable', async () => {
-     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
      await writeFile(abs('Notes', 'Late.md'), 'late\n')
-+    readsItself()
      const reached = gate<void>()
      const release = gate<void>()
-     const read = readNexusModule.readPageRecord
+-    const read = readNexusModule.readPageRecord
+-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
+-      if (rel === 'Notes/Late.md') {
++    const sidecar = abs('Notes', '_pagecollection.json')
++    const read = machine().readText
++    let armed = true
++    vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
++      if (armed && path === sidecar) {
++        armed = false
+         reached.open()
+         await release.promise
+       }
+-      return read(file, rel)
++      return read(path)
+     })
+     const batch = settleBatch(pusher, root, [
+       ev('add', 'Notes', 'Bare.md'),
++      ev('change', 'Notes', '_pagecollection.json'),
+       ev('add', 'Notes', 'Late.md'),
+     ])
 @@ it 'a stamp never lands on a file while the batch that listed it is still …' @@
- 
-   it('a stamp never lands on a file while the batch that listed it is still reading it', async () => {
      await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
-+    readsItself()
      const reached = gate<void>()
      const release = gate<void>()
-     const read = readNexusModule.readPageRecord
+-    const read = readNexusModule.readPageRecord
++    const page = abs('Notes', 'Bare.md')
++    const read = machine().readText
+     let reads = 0
+-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
+-      const record = await read(file, rel)
+-      if (++reads === 2) {
++    // The index's read of Bare fails, so the patch reads it for each event, and the second read is held.
++    vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
++      if (path !== page) return read(path)
++      if (++reads === 1) throw new Error('unreadable')
++      const text = await read(path)
++      if (reads === 3) {
+         reached.open()
+         await release.promise
+       }
+-      return record
++      return text
+     })
 ```
 
 **VERIFY**
 
-- [ ] T-N25, T-N30, and T-N33 are green.
+- [ ] T-N25, T-N30, T-N33, T-N37, T-N38, and T-N39 are green.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 2-5
 
-The tree patch builds a written page's record from the index's one read of its landed text (Task 2-4), so it hands that record to the walk cache under the stat the landing answered, and the walk the write owes reuses it rather than reading and parsing the page again. `loadValues` serves a cached record's time as the page's modified time, which the record carries from Task 2-4's read. The cache holds each entry's whole stat and asks `sameFile` whether it still describes the file, so a file replaced whole at the same time and size misses, as the landing's own check already treats it. `forgetParse` stays in `landOwn`: its bump is what stops a walk in flight from caching the old bytes over this entry, and a freshly dated page still misses under the cache's racy window.
+The tree patch builds a written page's record from the index's one read of its landed text (Task 2-4), so for the app's own write it hands that record to the walk cache under that read's own stat, and the walk the write owes reuses it rather than reading and parsing the page again. It hands over only the read it took: a patch that read the page again leaves the entry `cachedParse` stored for that read, and a watched read hands nothing, since no forget stands behind it to stop a walk in flight from caching older bytes over it. `loadValues` serves a cached record's time as the page's modified time, which the record carries from Task 2-4's read. The cache holds each entry's whole stat and asks `sameFile` whether it still describes the file, so a file replaced whole at the same time and size misses, as the landing's own check already treats it. `forgetParse` stays in `landOwn`: its bump is what stops a walk in flight from caching the old bytes over this entry, and a freshly dated page still misses under the cache's racy window.
 
 **PROCEDURE**
 
 1. Apply the AFTER.
-2. Write T-N18 in the suites *§Constraints · Tests* names.
+2. Write T-N18 and T-N40 in the suites *§Constraints · Tests* names.
 3. For each, revert the change its row names, watch it go red, and restore it.
 
 **AFTER**
@@ -3765,7 +3853,8 @@ The tree patch builds a written page's record from the index's one read of its l
      return e.value as T
    }
    const value = await parse(s)
-   // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy (mtime, size) would serve the failure until the file next changes. A parse that straddled a forget may hold the bytes the forget retired, under the same (mtime, size).
+-  // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy (mtime, size) would serve the failure until the file next changes. A parse that straddled a forget may hold the bytes the forget retired, under the same (mtime, size).
++  // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy stat would serve the failure until the file next changes. A parse that straddled a forget may hold the bytes the forget retired, under the same stat.
    if (value !== null && forgets === forgetsAtStart)
 -    entries.set(absPath, { mtimeMs: s.mtimeMs, size: s.size, verifiedAt: Date.now(), gen, value })
 +    entries.set(absPath, { stat: s, verifiedAt: Date.now(), gen, value })
@@ -3787,23 +3876,23 @@ The tree patch builds a written page's record from the index's one read of its l
      if (await pathExists(abs)) return 'walk'
      return applyPatch(root, (t) => removeNodeInTree(t, rel))
    }
-+  // The app's own write leaves the record its bytes give for the next walk, which would otherwise read the page again.
-+  if (ev.stat) rememberParse(abs, ev.stat, read)
++  // The app's own write leaves the record its landed bytes give for the next walk, under the stat that read was taken at; a watched read has no forget behind it to stop a walk in flight from caching older bytes over it.
++  if (taken && ev.origin === 'own') rememberParse(abs, taken.stat, read)
    oweValue(owed, rel, !!ev.bodyOnly)
    if (ev.origin === 'watched') owed.pages.add(rel)
 ```
 
 **VERIFY**
 
-- [ ] T-N18 is green, both halves.
+- [ ] T-N18 is green, all three halves, and T-N40 is green.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 2's range outward: each cut against the one rule for trusting the index (`indexVouches`) and the trust `findHolders` already has, the tree's patch taking the index's read only while `unmoved` vouches for it, the shared parse never mutated between its two readers, the walk cache's racy window and forget counter, and anything that reads as an odd-one-out.
-- [ ] Run the gates and `npm run build` from a clean state; record Phase 2's Actionable in the Net Ledger.
-- [ ] `PushNotification`: Phase 2's delta and the gates' result.
+- [x] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 2's range outward: each cut against the one rule for trusting the index (`unlessVouched`) and the trust `findHolders` already has, the tree's patch taking the index's read only while `unmoved` vouches for it, the shared parse never mutated between its two readers, the walk cache's racy window and forget counter, and anything that reads as an odd-one-out.
+- [x] Run the gates and `npm run build` from a clean state; record Phase 2's Actionable in the Net Ledger.
+- [x] `PushNotification`: Phase 2's delta and the gates' result.
 
 ---
 
@@ -3879,8 +3968,10 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **The Trash Plan's Two Parses (OP-4):** `deleteCascade`'s post-sweep parse (`cascade.ts:142`, about 0.03 s per Medium delete strip) could take each stripped root from the plan's own `raw` callback, and `restoreScrub`'s text plan re-parses with `splitFrontmatter` and `renameFrontmatterKey` (`restoreScrub.ts:104-107,195-197`) and lands unchanged files. Both are record-minting code the Trash & Archive plan reworks, so they're that plan's.
 - **Chokidar's Directory Rescans:** `readdirp` rescans each directory a write touches, about 28 `lstat`s per written file and 2.5 s of main-thread time per Medium property rename at the baseline. They're the watcher's own cost and outside this plan; the item stands until *§Final Verification* re-profiles them and *§Reconciliation* files the issue with those numbers.
 - **The Per-File Landings Left:** Sync's pull lands each arrival alone (`Core/Sync/Arrival/land.ts:96`), one flush per file, and *§Constraints · Sync* keeps Sync's code as it is; the open's Agenda stamps (`stampTree`, before the open's read) stay one landing each inside a folder walk, over the few files Agenda's scaffolding holds; and a remint, an asset migration, and a strict sidecar edit write single files or a handful.
+- **A Restore's Move From Outside the Tree:** a move whose old path the tree never held, as a Trash restore lands one, re-indexes through `moveIndexPaths` without handing its read on, so `applyPage` reads the page again; carrying `reads` through is about three lines, and it belongs with the Trash & Archive plan, which reworks restore.
 - **A Timing Case:** `Core/Matrix/matrixRuntime.test.ts` "wakes on a shuffle" failed once in the fourteen full runs the planning worktree made, at Task 1-4's state, and passed on its rerun and in every other run; it touches nothing this plan changes, so a failure there is rerun once before it's investigated.
-- **The Dashboard's Typecheck:** `npm run typecheck`'s last project, `tsc -p ../../.claude/dashboard`, couldn't run in the planning worktree, whose path sits outside The Studio; the six code projects ran clean at every task, and the main checkout runs all seven.
 
 #### Deviations
+
+- **D-1 · An Option Edit No Longer Names Pages It Leaves Alone (Task 2-2, for Nathan):** R-2 sweeps only the pages whose indexed value an option edit changes, so a page holding another word of the property is no longer reached. Such a page whose root can't round-trip is no longer reported as refused, and one that can't be read is no longer counted as skipped or kept on the owed note. Before, every holder of the key was reached and named. The ratified R-2 implies it, and the report now names only pages the edit would change; it's recorded here because *§Overview · Race-Only Changes* didn't list it.
 
