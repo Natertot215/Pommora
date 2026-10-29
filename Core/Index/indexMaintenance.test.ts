@@ -1,6 +1,6 @@
 // After every maintaining seam fires, the rows it kept current are byte-identical to a from-scratch reconcile of the same disk.
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { newContentId } from '../Nexus/ids'
 import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
@@ -12,6 +12,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { createProperty } from '../Properties/registryProperty'
 import { listBundles } from '../Bundles/bundle'
 import { seedContentIndex } from './indexSeed'
+import * as contentIndex from './contentIndex'
 import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -21,6 +22,7 @@ import { homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
+import { type FileEvent, noteOwn } from '../Files/writeEcho'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -241,6 +243,28 @@ describe('the writers maintain the rows', () => {
         key: '',
       },
     ])
+    await expectMaintained()
+  })
+})
+
+describe('the own tap indexes a batch', () => {
+  it('one noteOwn commits its written pages 200 a transaction', async () => {
+    const pages = Array.from({ length: 201 }, (_, i) => join(root, 'Notes', 'Daily', `P${i}.md`))
+    for (const p of pages) await writeFile(p, `page ${p}\n`)
+    const own = (absPath: string): FileEvent => ({ event: 'add', absPath, origin: 'own' })
+    const upserts = vi.spyOn(contentIndex, 'upsertPageIndexes')
+    const committed = async (evs: FileEvent[]): Promise<number[]> => {
+      upserts.mockClear()
+      await noteOwn(...evs)
+      return upserts.mock.calls.map(([rows]) => rows.length)
+    }
+    try {
+      expect(await committed(pages.slice(0, 70).map(own))).toEqual([70])
+      expect(await committed([own(pages[70])])).toEqual([1])
+      expect(await committed(pages.map(own))).toEqual([200, 1])
+    } finally {
+      upserts.mockRestore()
+    }
     await expectMaintained()
   })
 })

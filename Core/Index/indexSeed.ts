@@ -27,7 +27,7 @@ import {
   type Relation,
   type PageIndexEntry,
 } from '../Platform/stores'
-import { statOrNull } from '../Platform/machine'
+import { type FileStat, statOrNull } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
@@ -105,27 +105,59 @@ const unindexed = (rel: string, stat = readIndexedStat(rel)): ConnPage[] => {
   return pageOf(rel, stat)
 }
 
-// Re-indexes a written page, from `text` when its writer hands it over, and reports what it saw.
-export async function indexWrittenPage(
+/** Whether the index's recorded `held` describes `st`, the same time and size: the one test by which the index vouches for a page, against its file's stat or against what it held before a read. The index keeps no birth time, so unlike `sameFile` it passes a replacement at the same time and size. */
+const describes = (
+  held: IndexedStat | null | undefined,
+  st: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
+): boolean => !!held && !!st && held.mtimeMs === st.mtimeMs && held.size === st.size
+
+/** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
+const unmoved = (
+  path: string,
+  prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
+): boolean => {
+  const now = readIndexedStat(path)
+  return !now || describes(now, prior)
+}
+
+// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
+export async function indexWrittenPages(
   root: string,
-  abs: string,
-  text?: string,
+  written: readonly { absPath: string; text?: string; stat?: FileStat }[],
 ): Promise<IndexSeen> {
-  if (!isMarkdownFile(abs)) return NOTHING_SEEN
-  const rel = await relCorpusPath(root, abs)
-  if (!rel) return NOTHING_SEEN
-  const st = await statOrNull(abs)
-  if (!st) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
-  // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
-  const content = text ?? (await readTextOrNull(abs))
-  if (content === null) return NOTHING_SEEN
-  const prior = readIndexedStat(rel)
-  const stat = { mtimeMs: st.mtimeMs, size: st.size }
-  const entry = extractPageIndex(content)
-  const renames = reindex([{ path: rel, entry, stat }])
-  const [now] = idOf(entry)
-  if (prior?.id === now) return { ...NOTHING_SEEN, renames }
-  return { renames, vanished: pageOf(rel, prior), landed: now === undefined ? [] : [now] }
+  const seen: IndexSeen = { renames: [], vanished: [], landed: [] }
+  const db0 = contentIndexStore()
+  const queued: { row: PageIndexRow; prior: IndexedStat | null }[] = []
+  const flush = (): void => {
+    const rows = queued.splice(0).filter(({ row, prior }) => unmoved(row.path, prior))
+    if (rows.length) seen.renames.push(...reindex(rows.map(({ row }) => row)))
+    for (const { row, prior } of rows) {
+      const [now] = idOf(row.entry)
+      if (prior?.id === now) continue
+      seen.vanished.push(...pageOf(row.path, prior))
+      if (now !== undefined) seen.landed.push(now)
+    }
+  }
+  for (const { absPath, text, stat } of new Map(written.map((w) => [w.absPath, w])).values()) {
+    const rel = isMarkdownFile(absPath) && (await relCorpusPath(root, absPath))
+    if (!rel) continue
+    // Ahead of the read, so a writer that lands while it's in flight shows at the commit.
+    const prior = readIndexedStat(rel)
+    const st = stat ?? (await statOrNull(absPath))
+    const content = st && (text ?? (await readTextOrNull(absPath)))
+    if (contentIndexStore() !== db0) return NOTHING_SEEN
+    if (!st) {
+      seen.vanished.push(...unindexed(rel))
+      continue
+    }
+    // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
+    if (content === null) continue
+    const entry = extractPageIndex(content)
+    queued.push({ row: { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }, prior })
+    if (queued.length === SEED_BATCH) flush()
+  }
+  flush()
+  return seen
 }
 
 // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
@@ -169,12 +201,13 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
     const landed = isMarkdownFile(newRel)
       ? [newRel]
       : await corpusFilesUnder(root, newAbs, await readWatchScope(root))
-    for (const rel of landed) await indexWrittenPage(root, join(root, rel))
+    const pages = landed.map((rel) => ({ absPath: join(root, rel) }))
+    await indexWrittenPages(root, pages)
     return
   }
   if (isMarkdownFile(oldRel)) renamePathIndex(oldRel, newRel)
   else renamePathPrefixIndex(oldRel, newRel)
-  await indexWrittenPage(root, newAbs)
+  await indexWrittenPages(root, [{ absPath: newAbs }])
 }
 
 /** What a seed saw and the pages it re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
@@ -197,12 +230,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
   const queued: PageIndexRow[] = []
   const landed: string[] = []
   const flush = (): void => {
-    const rows = queued.splice(0).filter(({ path }) => {
-      // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
-      const prior = indexed.get(path)
-      const row = readIndexedStat(path)
-      return !row || (row.mtimeMs === prior?.mtimeMs && row.size === prior?.size)
-    })
+    const rows = queued.splice(0).filter(({ path }) => unmoved(path, indexed.get(path)))
     renames.push(...reindex(rows))
     for (const { path, entry } of rows) {
       reread.push(path)
@@ -220,7 +248,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
         seen.delete(rel)
         continue
       }
-      if (prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
+      if (describes(prior, st)) continue
       const content = await readTextOrNull(abs)
       if (content === null) continue
       if (contentIndexStore() !== db0) return NO_REREAD

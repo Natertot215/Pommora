@@ -479,14 +479,15 @@ describe('the settle', () => {
     await mkdir(abs('Bulk'))
     const names = Array.from({ length: 50 }, (_, i) => `n${i}.md`)
     for (const name of names) await writeFile(abs('Bulk', name), `${name}\n`)
-    const indexed = vi.spyOn(indexSeed, 'indexWrittenPage')
+    const indexed = vi.spyOn(indexSeed, 'indexWrittenPages')
     await settleBatch(pusher, root, [
       ev('addDir', 'Bulk'),
       ...names.map((name) => ev('add', 'Bulk', name)),
     ])
     expect(heldTreeOf(root)?.collections.find((c) => c.path === 'Bulk')?.pages).toHaveLength(50)
     const times = new Map<string, number>()
-    for (const [, file] of indexed.mock.calls) times.set(file, (times.get(file) ?? 0) + 1)
+    for (const [, written] of indexed.mock.calls)
+      for (const { absPath } of written) times.set(absPath, (times.get(absPath) ?? 0) + 1)
     for (const name of names) expect(times.get(abs('Bulk', name))).toBeLessThanOrEqual(2)
   })
 

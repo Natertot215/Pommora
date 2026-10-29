@@ -134,7 +134,7 @@ describe('the watcher settle', () => {
       await startWatcher(root, win)
       await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
       const reading = vi
-        .spyOn(indexSeed, 'indexWrittenPage')
+        .spyOn(indexSeed, 'indexWrittenPages')
         .mockRejectedValueOnce(new Error('mid-read'))
       emit('add', 'Notes', 'B.md')
       await settleAll(() => readIndexedStat('Notes/B.md') !== null)

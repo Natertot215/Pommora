@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdir, readFile, rename, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
@@ -14,10 +14,11 @@ import {
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { sweepParse, splitEnvelope } from '../Files/pageFile'
-import { deindexPath, indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
+import { deindexPath, indexWrittenPages, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { renameCascade } from '../Nexus/cascade'
 import { owedFor, oweSeen } from '../Nexus/fileEvents'
 import { newContentId } from '../Nexus/ids'
+import { machine } from '../Platform/machine'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
@@ -126,7 +127,7 @@ describe('seedContentIndex', () => {
       'Hidden/Secret.md',
     ]) {
       await writeFile(abs(rel), 'links [[Target]]\n')
-      await indexWrittenPage(root, abs(rel))
+      await indexWrittenPages(root, [{ absPath: abs(rel) }])
     }
     expect(queryMentions(['target'])?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     await moveIndexPaths(root, abs('Loose'), abs('Hidden', 'Loose'))
@@ -218,11 +219,11 @@ describe('seedContentIndex', () => {
     await seedContentIndex(root)
     // An external editor rewrites only the heading line — the raw file's link still reads the old heading, exactly as an outside writer leaves it.
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
-    const [seen] = (await indexWrittenPage(root, abs('Notes', 'A.md'))).renames
+    const [seen] = (await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).renames
     expect(seen).toEqual({ path: 'Notes/A.md', old: 'setup', next: 'Intro' })
     await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next })
     // The cascade's own writes re-enter the re-scan with nothing gone, so nothing loops.
-    expect((await indexWrittenPage(root, abs('Notes', 'B.md'))).renames).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'B.md') }])).renames).toEqual([])
     expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
       '## Intro\n\n[[#Intro]]\n',
     )
@@ -237,7 +238,7 @@ describe('seedContentIndex', () => {
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n---\n\n## One\n\n## Two\n\n[[#Setup]]\n`,
     )
-    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).renames).toEqual([])
   })
 
   it('a linked heading replaced by a section elsewhere is not a rename', async () => {
@@ -248,7 +249,7 @@ describe('seedContentIndex', () => {
       abs('Notes', 'A.md'),
       `---\nID: ${ULID_A}\n---\n\n## Keep\n\n## Meeting Notes\n`,
     )
-    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).renames).toEqual([])
   })
 
   it('renaming one of two headings sharing the old text is not a rename', async () => {
@@ -256,7 +257,7 @@ describe('seedContentIndex', () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
     await seedContentIndex(root)
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n## Setup\n`)
-    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).renames).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).renames).toEqual([])
   })
 
   it('with no database the seed stands down and queries stay null', async () => {
@@ -325,7 +326,7 @@ describe('what an index step reports', () => {
 
   it('a page re-indexed under another ID answers the old page vanished and the new ID landed', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_C}\n---\n\nalpha\n`)
-    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toEqual({
+    expect(await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).toEqual({
       renames: [],
       vanished: [{ id: ULID_A, title: 'A', path: 'Notes/A.md' }],
       landed: [ULID_C],
@@ -334,11 +335,53 @@ describe('what an index step reports', () => {
 
   it('a page indexed at a path the index lacked lands its ID; one it held, or one without an ID, lands nothing', async () => {
     await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
-    expect((await indexWrittenPage(root, abs('Notes', 'C.md'))).landed).toEqual([ULID_C])
-    expect((await indexWrittenPage(root, abs('Notes', 'C.md'))).landed).toEqual([])
-    expect((await indexWrittenPage(root, abs('Notes', 'A.md'))).landed).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'C.md') }])).landed).toEqual([
+      ULID_C,
+    ])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'C.md') }])).landed).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'A.md') }])).landed).toEqual([])
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
-    expect((await indexWrittenPage(root, abs('Notes', 'Bare.md'))).landed).toEqual([])
+    expect((await indexWrittenPages(root, [{ absPath: abs('Notes', 'Bare.md') }])).landed).toEqual(
+      [],
+    )
+  })
+
+  it("a batch keeps the row a writer landed during a page's read, and writes nothing once a switch moved the database", async () => {
+    const a = abs('Notes', 'A.md')
+    const b = abs('Notes', 'Sub', 'B.md')
+    const read = machine().readText.bind(machine())
+    let during: { path: string; act: () => Promise<void> } | null = null
+    const reads = vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+      const text = await read(p)
+      const hook = during?.path === p ? during : null
+      if (hook) {
+        during = null
+        await hook.act()
+      }
+      return text
+    })
+    const writer = async (): Promise<void> => {
+      await writeFile(a, `---\nID: ${ULID_A}\nStatus: Writer\n---\n`)
+      await indexWrittenPages(root, [{ absPath: a }])
+    }
+    const statusOfA = (): string[] =>
+      [...mem.index.values.values()]
+        .filter((v) => v.path === 'Notes/A.md' && v.key === 'Status')
+        .map((v) => v.value)
+    try {
+      for (const path of [b, a]) {
+        await writeFile(a, `---\nID: ${ULID_A}\nStatus: Batch\n---\n`)
+        during = { path, act: writer }
+        await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+        expect(statusOfA()).toEqual([JSON.stringify('Writer')])
+      }
+      const fresh = memoryStores()
+      during = { path: b, act: async () => installStores(fresh.stores) }
+      await indexWrittenPages(root, [{ absPath: b }])
+      expect(fresh.index.stats.size).toBe(0)
+    } finally {
+      reads.mockRestore()
+    }
   })
 })
 

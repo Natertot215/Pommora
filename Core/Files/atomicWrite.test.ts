@@ -380,10 +380,12 @@ describe('the own tap', () => {
   const noted: { ev: FileEvent; text: string | null; mtimeMs: number | null }[] = []
   beforeEach(() => {
     noted.length = 0
-    setOwnTap(async (ev) => {
-      const st = await stat(ev.absPath).catch(() => null)
-      const text = st?.isFile() ? await readFile(ev.absPath, 'utf8') : null
-      noted.push({ ev, text, mtimeMs: st?.mtimeMs ?? null })
+    setOwnTap(async (evs) => {
+      for (const ev of evs) {
+        const st = await stat(ev.absPath).catch(() => null)
+        const text = st?.isFile() ? await readFile(ev.absPath, 'utf8') : null
+        noted.push({ ev, text, mtimeMs: st?.mtimeMs ?? null })
+      }
     })
   })
   afterEach(() => setOwnTap(null))
@@ -423,13 +425,13 @@ describe('the own tap', () => {
     const to = join(dir, 'to.md')
     await writeFile(from, 'moving')
     const locked: string[] = []
-    setOwnTap((ev) =>
-      ev.event === 'move'
-        ? machine().lock(ev.from, async () => {
+    setOwnTap(async (evs) => {
+      for (const ev of evs)
+        if (ev.event === 'move')
+          await machine().lock(ev.from, async () => {
             locked.push(ev.from)
           })
-        : Promise.resolve(),
-    )
+    })
     await relocate(from, to)
     expect(locked).toEqual([from])
     expect(await readFile(to, 'utf8')).toBe('moving')

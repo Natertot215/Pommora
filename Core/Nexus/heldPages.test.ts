@@ -8,7 +8,7 @@ import { buildPageIndex } from '../Connections/pageIndex'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { indexWrittenPage } from '../Index/indexSeed'
+import { indexWrittenPages } from '../Index/indexSeed'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 
 const held = { tree: null as NexusTree | null }
@@ -93,7 +93,7 @@ describe('nexusPages — the tree and the Archive by id', () => {
     const file = join(root, rel)
     await mkdir(dirname(file), { recursive: true })
     await writeFile(file, `---\nID: ${id}\n---\nb\n`)
-    await indexWrittenPage(root, file)
+    await indexWrittenPages(root, [{ absPath: file }])
   }
   const copyOfA = (t: NexusTree): NexusTree => {
     t.collections[0].pages.push({

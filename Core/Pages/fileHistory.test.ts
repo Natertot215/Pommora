@@ -153,8 +153,8 @@ describe('captureIfDue', () => {
 describe('writeBody', () => {
   it("notes the editor's own save held, and a restore not", async () => {
     const noted: FileEvent[] = []
-    setOwnTap(async (ev) => {
-      noted.push(ev)
+    setOwnTap(async (evs) => {
+      noted.push(...evs)
     })
     try {
       await writeBody(root, file, 'two', 'edit')

@@ -10,7 +10,7 @@ import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree, refreshTree } from './liveTree'
-import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
+import { indexWrittenPages, seedContentIndex } from '../Index/indexSeed'
 import { readRecord } from '../Bundles/record'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
@@ -550,7 +550,7 @@ describe('unreadable holders keep the entry', () => {
       await seedContentIndex(root)
       const b = join(root, 'Col', 'B.md')
       await chmod(b, 0o000)
-      await indexWrittenPage(root, b)
+      await indexWrittenPages(root, [{ absPath: b }])
       const deleted = await deleteProperty(root, 'prop_s')
       await chmod(b, 0o644)
       if (!deleted.ok) throw new Error('delete refused')
@@ -559,7 +559,7 @@ describe('unreadable holders keep the entry', () => {
       const record = await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))
       expect(record).toMatchObject({ values: { [PAGE_IDS[1]]: 'Draft' } })
       expect(record).not.toHaveProperty('partial')
-      await indexWrittenPage(root, b)
+      await indexWrittenPages(root, [{ absPath: b }])
       await finishOwed(root, DEPS)
       expect(await page(root, 'B')).not.toContain('Stage')
       expect(await readNotes(root)).toEqual({})

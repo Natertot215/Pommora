@@ -4,7 +4,7 @@ import { dirname, join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { indexWrittenPage, nexusCorpus, seedContentIndex } from './indexSeed'
+import { indexWrittenPages, nexusCorpus, seedContentIndex } from './indexSeed'
 import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -46,7 +46,7 @@ const archived = async (name: string, fm: string, collection = 'c1'): Promise<st
   )
   await mkdir(dirname(file), { recursive: true })
   await writeFile(file, pageText(name, fm))
-  await indexWrittenPage(root, file)
+  await indexWrittenPages(root, [{ absPath: file }])
   return file
 }
 
@@ -115,7 +115,7 @@ describe('findHolders', () => {
       const b = abs('Notes', 'HolderB.md')
       try {
         await chmod(a, 0o000)
-        await indexWrittenPage(root, a)
+        await indexWrittenPages(root, [{ absPath: a }])
         await page('HolderB', 'Stage: Done\n')
         await chmod(b, 0o000)
         await seedContentIndex(root)
@@ -135,7 +135,7 @@ describe('findHolders', () => {
       await seedContentIndex(root)
       try {
         await chmod(q, 0o000)
-        await indexWrittenPage(root, q)
+        await indexWrittenPages(root, [{ absPath: q }])
         expect((await renameProperty(root, 'prop_s', 'Phase')).ok).toBe(false)
         expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
       } finally {
@@ -150,7 +150,7 @@ describe('findHolders', () => {
       const a = abs('Notes', 'HolderA.md')
       try {
         await chmod(a, 0o000)
-        await indexWrittenPage(root, a)
+        await indexWrittenPages(root, [{ absPath: a }])
         expect((await renameProperty(root, 'prop_s', 'STAGE')).ok).toBe(true)
       } finally {
         await chmod(a, 0o644)
@@ -187,7 +187,7 @@ describe('findHolders', () => {
       JSON.stringify({ id: 'c2', properties: ['prop_s'] }),
     )
     await writeFile(abs('Other', 'Elsewhere.md'), pageText('Elsewhere', 'Stage: Draft\n'))
-    await indexWrittenPage(root, abs('Other', 'Elsewhere.md'))
+    await indexWrittenPages(root, [{ absPath: abs('Other', 'Elsewhere.md') }])
     const own = await archived('Q9D', 'Stage: Draft\n')
     await archived('Q9E', 'Stage: Draft\n', 'c2')
     await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Stage: 'Draft' })
@@ -312,7 +312,7 @@ describe('findHolders, reading', () => {
     const a = abs('Notes', 'HolderA.md')
     const copy = abs('Notes', 'HolderA copy.md')
     await writeFile(copy, await readFile(a, 'utf8'))
-    await indexWrittenPage(root, copy)
+    await indexWrittenPages(root, [{ absPath: copy }])
     dropLiveTree()
     const { files, held } = await stageHeld()
     expect(files).not.toContain(a)
