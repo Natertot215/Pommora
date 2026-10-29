@@ -38,6 +38,7 @@ function sole([landed]: PromiseSettledResult<FileStat>[]): void {
   if (landed.status === 'rejected') throw landed.reason
 }
 
+/** Lands one file as the app's own write, its failure thrown. A write that follows a read passes as `expect` the stat that read saw, a create whose read found no file passes null, and a write no read preceded passes none, so a file another writer changed or created since its read is left as that writer left it. */
 export async function atomicWriteFile(
   filePath: string,
   data: string | Uint8Array,
