@@ -1,0 +1,65 @@
+diff --git a/Core/Nexus/handlers.ts b/Core/Nexus/handlers.ts
+index 68f7cb1a3..5284a471c 100644
+--- a/Core/Nexus/handlers.ts
++++ b/Core/Nexus/handlers.ts
+@@ -57,6 +57,8 @@ export async function openNexusSequence(
+   latchRecord: boolean,
+ ): Promise<void> {
+   // Re-adopting the already-open nexus is a re-point of a live session, not a genuine open.
++  const __bench = ((globalThis as any).__bench ??= {})
++  __bench.openStartedAt = performance.now()
+   const priorRoot = sessionRoot()
+   await stopSession(ctx)
+   if (priorRoot !== null) await retireFileHistory(priorRoot)
+@@ -94,6 +96,7 @@ export async function openNexusSequence(
+       )
+         tree = await readNexus(root)
+       seedLiveTree(tree)
++      __bench.treeAt = performance.now()
+       if (latchRecord) await runOpenLedger(root, tree)
+       await settleArchives(root, tree).catch((e) =>
+         console.error('archive: the open pass failed:', errText(e)),
+@@ -102,14 +105,19 @@ export async function openNexusSequence(
+       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
+     }
+     const reread = await seedContentIndex(root)
++    __bench.indexAt = performance.now()
+     oweSeen(root, reread)
+     void sweepFileHistory(root)
+     void sweepStashes(root)
+     await finishOwed(root, await trashDeps(ctx))
+     await settleNow(ctx, root)
++    __bench.openAt = performance.now()
+     void runRepairSweep(root, reread)
+       .then(() => registerHeldOptions(root))
+       .then(() => settleNow(ctx, root))
++      .then(() => {
++        __bench.repairAt = performance.now()
++      })
+   }
+   if (nexusId !== null) void startSession(ctx, root, nexusId)
+ }
+diff --git a/Desktop/Platform/nodeMachine.ts b/Desktop/Platform/nodeMachine.ts
+index 99a7d7c46..391136f70 100644
+--- a/Desktop/Platform/nodeMachine.ts
++++ b/Desktop/Platform/nodeMachine.ts
+@@ -46,6 +46,13 @@ const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['
+ const asBuffer = (bytes: Uint8Array): Buffer =>
+   Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+ 
++const benchIo = ((globalThis as any).__benchIo ??= { calls: {}, trash: {} }) as { calls: Record<string, number>; trash: Record<string, number> }
++const counted = <F extends (p: string, ...a: any[]) => any>(name: string, f: F): F =>
++  ((p: string, ...a: any[]) => {
++    benchIo.calls[name] = (benchIo.calls[name] ?? 0) + 1
++    if (typeof p === 'string' && p.includes('/.trash/')) benchIo.trash[name] = (benchIo.trash[name] ?? 0) + 1
++    return f(p, ...a)
++  }) as F
+ export const nodeMachine: Machine = {
+   readText: (p) => absentToNull(readFile(p, 'utf8')),
+   readBytes: (p) => absentToNull(readFile(p)),
+@@ -78,3 +85,5 @@ export const nodeMachine: Machine = {
+   platform: isWindows ? 'windows' : 'posix',
+   home: posixPath(realpathSync.native(homedir())),
+ }
++for (const k of ['readText', 'readBytes', 'writeText', 'writeBytes', 'stat', 'readDir', 'mkdir', 'rename', 'remove', 'utimes'] as const)
++  (nodeMachine as any)[k] = counted(k, (nodeMachine as any)[k])

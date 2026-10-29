@@ -1,0 +1,14 @@
+{
+  "renameProperty": {
+    "ok": true,
+    "settleMs": 55272
+  },
+  "renameContext": {
+    "ok": true,
+    "settleMs": 38549
+  },
+  "renamePage": {
+    "ok": true,
+    "settleMs": 4568
+  }
+}

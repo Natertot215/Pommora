@@ -1,0 +1,129 @@
+{
+  "renameProperty": {
+    "ok": true,
+    "replyMs": 48383,
+    "settleMs": 48384,
+    "calls": {
+      "readText": 21081,
+      "writeText": 7027,
+      "mkdir": 3,
+      "stat": 21073,
+      "utimes": 7024,
+      "remove": 1,
+      "readBytes": 7025
+    },
+    "fs": {
+      "on": false,
+      "n": {
+        "p.readFile": 28106,
+        "p.stat": 36586,
+        "cb.realpath": 7027,
+        "cb.lstat": 82919,
+        "cb.stat": 43394,
+        "cb.open": 7027,
+        "cb.write": 7027,
+        "cb.fsync": 7027,
+        "cb.close": 7027,
+        "cb.rename": 7027,
+        "cb.unlink": 7028,
+        "cb.chown": 7026,
+        "cb.chmod": 7026,
+        "p.readdir": 2018,
+        "p.lstat": 174700,
+        "p.utimes": 7024
+      },
+      "ms": {
+        "fsync": 27893.31498400001
+      },
+      "who": {},
+      "walks": {}
+    }
+  },
+  "renameContext": {
+    "ok": true,
+    "replyMs": 34447,
+    "settleMs": 34448,
+    "calls": {
+      "readText": 10036,
+      "writeText": 4927,
+      "mkdir": 2,
+      "readDir": 493,
+      "stat": 36319,
+      "rename": 1,
+      "utimes": 4846,
+      "readBytes": 4925,
+      "remove": 1
+    },
+    "fs": {
+      "on": false,
+      "n": {
+        "p.readFile": 14961,
+        "cb.realpath": 4927,
+        "cb.lstat": 58339,
+        "cb.stat": 30922,
+        "cb.open": 4927,
+        "cb.write": 4927,
+        "cb.fsync": 4927,
+        "cb.close": 4927,
+        "cb.rename": 4927,
+        "cb.unlink": 4928,
+        "p.readdir": 2856,
+        "p.lstat": 132414,
+        "p.stat": 47473,
+        "cb.chown": 4926,
+        "cb.chmod": 4926,
+        "p.rename": 1,
+        "p.utimes": 4846
+      },
+      "ms": {
+        "fsync": 20579.92888100024
+      },
+      "who": {},
+      "walks": {
+        "walk": 4
+      }
+    }
+  },
+  "renamePage": {
+    "ok": true,
+    "replyMs": 3729,
+    "settleMs": 4088,
+    "calls": {
+      "readText": 1551,
+      "writeText": 522,
+      "mkdir": 2,
+      "stat": 1563,
+      "rename": 1,
+      "utimes": 520,
+      "remove": 1,
+      "readBytes": 520
+    },
+    "fs": {
+      "on": false,
+      "n": {
+        "p.readFile": 2071,
+        "p.stat": 2681,
+        "p.rename": 1,
+        "p.readdir": 398,
+        "p.lstat": 34387,
+        "cb.realpath": 522,
+        "cb.lstat": 6162,
+        "cb.stat": 3206,
+        "cb.open": 522,
+        "cb.write": 522,
+        "cb.fsync": 522,
+        "cb.close": 522,
+        "cb.rename": 522,
+        "cb.unlink": 523,
+        "cb.chown": 521,
+        "cb.chmod": 521,
+        "p.utimes": 520
+      },
+      "ms": {
+        "fsync": 2098.936537000014
+      },
+      "who": {},
+      "walks": {}
+    }
+  }
+}
