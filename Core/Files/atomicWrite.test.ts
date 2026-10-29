@@ -9,6 +9,7 @@ import {
   editJsonStrict,
   heldName,
   landBytes,
+  rewriteHeld,
   rewritePageSerialized,
   writeJson,
   readJsonStrict,
@@ -78,6 +79,31 @@ describe('rewritePageSerialized', () => {
     expect(await readFile(file, 'utf8')).toContain('Status: New')
     expect(Math.floor((await stat(file)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
+})
+
+describe('rewriteHeld', () => {
+  it("reads a chunk's files together, so one file's read never waits on the next one's stat", async () => {
+    const [a, b] = [join(dir, 'a.md'), join(dir, 'b.md')]
+    await writeFile(a, 'A')
+    await writeFile(b, 'B')
+    let bStat: () => void = () => {}
+    const bStatted = new Promise<void>((resolve) => {
+      bStat = resolve
+    })
+    const m = machine()
+    const stat0 = m.stat.bind(m)
+    const read0 = m.readText.bind(m)
+    vi.spyOn(m, 'stat').mockImplementation(async (p) => {
+      if (p === b) bStat()
+      return stat0(p)
+    })
+    vi.spyOn(m, 'readText').mockImplementation(async (p) => {
+      if (p === a) await bStatted
+      return read0(p)
+    })
+    const done = await rewriteHeld([a, b], (text) => `${text}!`)
+    expect([...done.values()].map((r) => r.status)).toEqual(['rewritten', 'rewritten'])
+  }, 2000)
 })
 
 describe('stableStringify', () => {
