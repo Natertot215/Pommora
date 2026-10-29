@@ -57,7 +57,8 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `sameFile` • Function | Whether a stat still describes the file another stat was taken of: the same time, size, and birth, a null stat describing no file; the walk cache's hit test too. | `Core/Platform/machine.ts` |
 | `statOrNull` • Function | A path's stat, or null when it's missing or can't be read; the one form of what eight call sites spelled by hand, Desktop's `appConfig.ts` among them. | `Core/Platform/machine.ts` |
 | `stage` • Function | The host's half of one file's landing: writes, dates, and flushes its temp beside the file, or beside a symlink's target, which it lands at, and answers the commit that checks `expect`, keeps the mode, and renames it. | `Desktop/Platform/nodeMachine.ts` |
-| `fileStat` • Function | A Node `Stats` as the seam's `FileStat`, shared by `stat` and the landing. | `Desktop/Platform/nodeMachine.ts` |
+| `fileStat` • Function | A host's stat of a file as the seam's `FileStat`, typed by its shape so Core imports nothing from Node; the host's and the disk test machine's `stat` and landing share it. | `Core/Platform/machine.ts` |
+| `entryKind` • Function (Moved) | A host's directory entry as the seam's `DirEntry` kind, moved beside `fileStat` from the host and the disk test machine, which each spelled it. | `Core/Platform/machine.ts` |
 | `.landing-<12 hex>` • Temp Name | The temp a landing writes beside its file: dotted, so the walk, the watcher, and Sync never admit it, and one a crash strands is left where it lies; and fixed-length. | `Desktop/Platform/nodeMachine.ts`, `Core/Testing/machines.ts` |
 | `landOwn` • Function | Lands the app's own writes as one group: records each echo, lands, forgets the echo of a file whose landing rejects, and notes the landed files as one batch carrying each one's stat; private to its file. | `Core/Files/atomicWrite.ts` |
 | `forgetWrite` • Function | Forgets the write recorded at a path while it still holds a given hash, so a rejected landing's bytes, landed by another writer, read as theirs; `dropOwnEchoes` asks it too. | `Core/Files/writeEcho.ts` |
@@ -77,6 +78,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `addressed`'s `turn` • Parameter | The turn a page-addressed write runs in: `inSettleTurn`, or `inContextsTurn` for a create that seeds a Context. | `Core/Nexus/mutate.ts` |
 | `indexEvents` • Function | Maintains the index for a slice of up to 200 events, which `applyEvents` hands it before their patches, answering each page's read for the tree's patch; replaces `indexEvent`. | `Core/Nexus/fileEvents.ts` |
 | `indexWrittenPages` • Function | Re-indexes written pages as the seed does, 200 a transaction, a row another writer landed mid-read kept, from the text and stat their events carry or else from their files; replaces `indexWrittenPage`. | `Core/Index/indexSeed.ts` |
+| `INDEX_BATCH` • Constant | The index's commit size, 200 pages: the seed's commits, a watched batch's, and `applyEvents`' slices; renamed from `SEED_BATCH`. | `Core/Index/indexSeed.ts` |
 | `describes` • Function | Whether the index's recorded stat describes a file's, the same time and size: the seed's skip. | `Core/Index/indexSeed.ts` |
 | `commit` · `commits` · `lastCommits` • Commit Sequence | Counts each commit of index rows, written, moved, or removed, and records each path's last one per store, so a switch's store starts with none; every index write of a page goes through `commit`. | `Core/Index/indexSeed.ts` |
 | `unmoved` • Function | Whether no commit landed at a page's path after a sequence taken ahead of its read, or after the commit that took it: the seed's in-flight rule, which the batch's commit and the tree's patch share, every read taken where no index holds rows. | `Core/Index/indexSeed.ts` |
@@ -90,7 +92,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `extractPageIndex`'s and `pageRecordOf`'s `page` • Parameters | A parse the caller already holds, defaulting to parsing the content. | `Core/Index/indexSeed.ts`, `Core/Nexus/readNexus.ts` |
 | `failLandings` • Function | The test seam that fails the landings a predicate picks; replaces `refuseWrites`. | `Core/Testing/hostFs.ts` |
 | `raceLandings` • Function | The test seam that overwrites the files a predicate picks just before their landing, as another program's write. | `Core/Testing/hostFs.ts` |
-| `land`, `entryStat`, `landOnDisk`, `fileStat` • Test Machine Members | The memory and disk test machines' landing. | `Core/Testing/machines.ts` |
+| `land`, `entryStat`, `landOnDisk` • Test Machine Members | The memory and disk test machines' landing. | `Core/Testing/machines.ts` |
 
 **REMOVED**
 
@@ -164,9 +166,9 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   | T-N20 | 1-3 | `nodeMachine.test.ts` | A file at `0o664` landed over keeps `0o664` (skipped under `noModeBits`) | the `chmod` |
   | T-N21 | 1-3 | `nodeMachine.test.ts` | The temp a landing renames (captured through the `rename` mock) is ignored by `syncIgnoredUnder` and refused by `manifestAdmits` | the leading dot |
   | T-N27 | 1-3 | `nodeMachine.test.ts` | A landing onto a symlink lands at its target: the link is still a link (`lstat`), and the target holds the new bytes | the `lstat` and `realpath` in `stage` |
-  | T-N10 | 1-2 | `Core/Index/indexMaintenance.test.ts` | One `noteOwn` of 70 page events makes one `upsertPageIndexes` call, one page event makes one, and 201 make two, of 200 and 1 | `indexEvents` batching; the flush at `SEED_BATCH` |
+  | T-N10 | 1-2 | `Core/Index/indexMaintenance.test.ts` | One `noteOwn` of 70 page events makes one `upsertPageIndexes` call, one page event makes one, and 201 make two, of 200 and 1 | `indexEvents` batching; the flush at `INDEX_BATCH` |
   | T-N31 | 1-2 | `Core/Index/indexSeed.test.ts` | A `readText` hook that writes page P and indexes it, as a maintaining writer does, fired during a batch's read of Q and, again, during its read of P itself: P's row holds the writer's value; a hook that installs fresh stores during the batch's read leaves them with no row; and so does one that installs them during the settings read of a last entry outside the corpus (`Hidden/Secret.md`), armed from the batch's read of the page before it | `unmoved` at the batch's commit; its prior read ahead of the page's; the switch check in the loop; the switch check before the last commit |
-  | T-N34 | 1-2 | `indexSeed.test.ts` | A seed of exactly `SEED_BATCH` (200) pages makes one `upsertPageIndexes` call | `reindex`'s empty-batch guard |
+  | T-N34 | 1-2 | `indexSeed.test.ts` | A seed of exactly `INDEX_BATCH` (200) pages makes one `upsertPageIndexes` call | `reindex`'s empty-batch guard |
   | T-N5 | 1-4 | `Core/Nexus/governedSweep.test.ts`, `Core/Properties/registryProperty.test.ts` | A property rename over pages A and B, with `raceLandings` overwriting B: B keeps the outside bytes and is `skipped`, A is rewritten, the note stays owed, and, after the spy's `.mockRestore()`, `finishOwed` rewrites B and clears it | `expect: was` in `rewriteHeld` |
   | T-N6 | 1-4 | `governedSweep.test.ts` | With the chunk's own landing paused (the next `land` call alone), `updatePageBody` on a chunk page stays pending; once released, both edits land and nothing is skipped | the chunk holding its locks through its landing |
   | T-N7 | 1-4 | `governedSweep.test.ts` | Before the sweep, `writer = gate.then(() => rewritePageSerialized(A, (c) => c + 'Z [[P1]]'))`, a link so the index and the tree can tell the write apart, with the chunk's record slowed 50 ms (the first `indexWrittenPages` call carrying files, since each origin takes its own call) so a writer not held behind the chunk would record first; a `readText` hook on A only resolves `gate` (a `lock(A)` started inside the hook would inherit the chunk's held keys and reject as re-entrant). After the sweep and `await writer`, A reads the swept text plus `Z [[P1]]`, and the index and the tree agree with a fresh seed and a fresh `readNexus` | the record running inside the chunk's locks |
@@ -459,7 +461,7 @@ One function, `statOrNull`, answers a path's stat or null, beside `machine()` in
 
 #### Task 1-2
 
-The own tap takes a batch: `noteOwn` takes any number of events, the settle's `applyOwn` marks the disk moved once per batch and hands the batch on whole, and the index half of `applyEvents` runs once over a batch, indexing its written pages through `indexWrittenPages`, each from the text and stat its event carries or else from its file. `indexWrittenPages` commits as the seed commits its own: `SEED_BATCH` (200) pages a transaction, so a watched batch of thousands (a Sync pull, a `git pull`) never holds the main thread for one unbounded commit; a row another writer landed while a page's read was in flight is kept, since each page's prior row is read ahead of its read and checked at the commit; and nothing is written once a Nexus switch has moved the database, checked before the last commit as the seed checks it. The seed's two hand-written stat comparisons become `describes`, and its in-flight rule becomes `unmoved`, which the batch shares, so each is spelled once; `reindex` skips an empty batch, so neither commit guards its own. An own event gains `stat`, which the landing supplies from Task 1-4; until then each writer still notes one event and the index stats the page itself, as today.
+The own tap takes a batch: `noteOwn` takes any number of events, the settle's `applyOwn` marks the disk moved once per batch and hands the batch on whole, and the index half of `applyEvents` runs once over a batch, indexing its written pages through `indexWrittenPages`, each from the text and stat its event carries or else from its file. `indexWrittenPages` commits as the seed commits its own: `INDEX_BATCH` (200) pages a transaction, so a watched batch of thousands (a Sync pull, a `git pull`) never holds the main thread for one unbounded commit; a row another writer landed while a page's read was in flight is kept, since each page's prior row is read ahead of its read and checked at the commit; and nothing is written once a Nexus switch has moved the database, checked before the last commit as the seed checks it. The seed's two hand-written stat comparisons become `describes`, and its in-flight rule becomes `unmoved`, which the batch shares, so each is spelled once; `reindex` skips an empty batch, so neither commit guards its own. An own event gains `stat`, which the landing supplies from Task 1-4; until then each writer still notes one event and the index stats the page itself, as today.
 
 **PROCEDURE**
 
@@ -563,7 +565,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
  import { outsideContent } from '../Paths/exclusion'
 @@ NO_ROWS @@
  const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
-+const SEED_BATCH = 200
++const INDEX_BATCH = 200
 @@ unindexed @@
    return pageOf(rel, stat)
  }
@@ -585,7 +587,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 +
 -// Re-indexes a written page, from `text` when its writer hands it over, and reports what it saw.
 -export async function indexWrittenPage(
-+// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
++// Re-indexes written pages as the seed commits its own, INDEX_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
 +export async function indexWrittenPages(
    root: string,
 -  abs: string,
@@ -636,7 +638,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 +    if (content === null) continue
 +    const entry = extractPageIndex(content)
 +    queued.push({ row: { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }, prior })
-+    if (queued.length === SEED_BATCH) flush()
++    if (queued.length === INDEX_BATCH) flush()
 +  }
 +  if (contentIndexStore() !== db0) return NOTHING_SEEN
 +  flush()
@@ -689,12 +691,20 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 +      if (describes(prior, st)) continue
        const content = await readTextOrNull(abs)
        if (content === null) continue
+       if (contentIndexStore() !== db0) return NO_REREAD
+       queued.push({
+         path: rel,
+         entry: extractPageIndex(content),
+         stat: { mtimeMs: st.mtimeMs, size: st.size },
+       })
+-      if (queued.length === SEED_BATCH) flush()
++      if (queued.length === INDEX_BATCH) flush()
 ```
 
 ```Core/Nexus/fileEvents.ts diff
 @@ top of file @@
 -// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own write as it lands. An event maintains the index, then patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
-+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to `SEED_BATCH` pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
++// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to `INDEX_BATCH` pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
  
  import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
  import { escapes } from '../Paths/pathSafety'
@@ -712,7 +722,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
  // ── The index's half ──
  
 -export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
-+// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
++// Removals and moves first, in order, then every written page in commits of up to `INDEX_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 +export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
    try {
 -    switch (ev.event) {
@@ -849,7 +859,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 ```Desktop/FileWatch/watcher.ts diff
 @@ top of file @@
 -// Events settle, then apply one at a time through the path the app's own writes take; what they listed missing is stamped before the batch's settle.
-+// Events settle, then apply as one batch through the path the app's own writes take: the index in commits of up to `SEED_BATCH` pages, then each event's patch; what they listed missing is stamped before the batch's settle.
++// Events settle, then apply as one batch through the path the app's own writes take: the index in commits of up to `INDEX_BATCH` pages, then each event's patch; what they listed missing is stamped before the batch's settle.
  
  import chokidar, { type FSWatcher } from 'chokidar'
  import {
@@ -895,6 +905,19 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 +      now.mtimeMs === was.mtimeMs &&
 +      now.size === was.size &&
 +      now.birthtimeMs === was.birthtimeMs
++
++/** A host's stat of a file as the seam's `FileStat`. */
++export const fileStat = (s: {
++  size: number
++  mtimeMs: number
++  birthtimeMs: number
++  isDirectory(): boolean
++}): FileStat => ({
++  size: s.size,
++  mtimeMs: s.mtimeMs,
++  birthtimeMs: s.birthtimeMs,
++  isDirectory: s.isDirectory(),
++})
 +
  export interface Machine {
    /** Absent → null; any other failure throws. */
@@ -999,7 +1022,6 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
  import { AsyncLocalStorage } from 'node:async_hooks'
 -import { createHash } from 'node:crypto'
 +import { createHash, randomBytes } from 'node:crypto'
-+import type { Stats } from 'node:fs'
  import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
 -import { dirname } from '../Paths/posix'
 +import { dirname, join } from '../Paths/posix'
@@ -1007,6 +1029,7 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 -import { type DirEntry, type FileStat, type Machine, machine } from '../Platform/machine'
 +import {
 +  type DirEntry,
++  fileStat,
 +  type FileStat,
 +  type Landing,
 +  type Machine,
@@ -1053,20 +1076,6 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
        return dirs.has(p) ? { size: 0, mtimeMs: 0, birthtimeMs: null, isDirectory: true } : null
      },
      readDir: async (p): Promise<DirEntry[]> => {
-@@ fileStat @@
- const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
-   e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
- 
-+const fileStat = (s: Stats): FileStat => ({
-+  size: s.size,
-+  mtimeMs: s.mtimeMs,
-+  birthtimeMs: s.birthtimeMs,
-+  isDirectory: s.isDirectory(),
-+})
-+
- async function atomicWrite(p: string, data: string | Uint8Array): Promise<void> {
-   const tmp = `${p}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`
-   try {
 @@ atomicWrite @@
    }
  }
@@ -1117,7 +1126,7 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 -import { realpathSync } from 'node:fs'
 -import { mkdir, readdir, readFile, realpath, rename, rm, stat, utimes } from 'node:fs/promises'
 +import { createHash, randomBytes } from 'node:crypto'
-+import { realpathSync, type Stats } from 'node:fs'
++import { realpathSync } from 'node:fs'
 +import {
 +  lstat,
 +  mkdir,
@@ -1135,6 +1144,7 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 -import type { DirEntry, Machine } from '@pommora/core/Platform/machine'
 +import {
 +  type DirEntry,
++  fileStat,
 +  type FileStat,
 +  type Landing,
 +  type Machine,
@@ -1147,17 +1157,10 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
  
  const isAbsent = (e: unknown): boolean => {
    const code = (e as NodeJS.ErrnoException).code
-@@ fileStat @@
+@@ stage @@
  const asBuffer = (bytes: Uint8Array): Buffer =>
    Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
  
-+const fileStat = (s: Stats): FileStat => ({
-+  size: s.size,
-+  mtimeMs: s.mtimeMs,
-+  birthtimeMs: s.birthtimeMs,
-+  isDirectory: s.isDirectory(),
-+})
-+
 +// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the file's commit, which lands it once its group has flushed.
 +async function stage({
 +  path: named,
@@ -2426,7 +2429,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 ```Desktop/Platform/nodeMachine.ts diff
 @@ imports @@
  import { createHash, randomBytes } from 'node:crypto'
- import { realpathSync, type Stats } from 'node:fs'
+ import { realpathSync } from 'node:fs'
 -import {
 -  lstat,
 -  mkdir,
@@ -2452,9 +2455,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -const asBuffer = (bytes: Uint8Array): Buffer =>
 -  Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
 -
- const fileStat = (s: Stats): FileStat => ({
-   size: s.size,
-   mtimeMs: s.mtimeMs,
+ // Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the file's commit, which lands it once its group has flushed.
 @@ nodeMachine @@
  export const nodeMachine: Machine = {
    readText: (p) => absentToNull(readFile(p, 'utf8')),
@@ -2832,6 +2833,7 @@ Every landing that follows a read of the same file carries the stat that read sa
 
 ```Core/Files/atomicWrite.ts diff
 @@ atomicWriteFile @@
++/** Lands one file as the app's own write, its failure thrown. A write that follows a read passes as `expect` the stat that read saw, a create whose read found no file passes null, and a write no read preceded passes none, so a file another writer changed or created since its read is left as that writer left it. */
  export async function atomicWriteFile(
    filePath: string,
    data: string | Uint8Array,
@@ -3583,8 +3585,8 @@ The index half reads and parses each written page once and hands that read to th
 +/** What the index read of a written page, for the tree's patch to take rather than read and parse it again. */
 +export type PageRead = { text: string; stat: FileStat; page: ParsedPage }
 +
--// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
-+// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw, and puts each committed page's one read and parse into `reads`.
+-// Re-indexes written pages as the seed commits its own, INDEX_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
++// Re-indexes written pages as the seed commits its own, INDEX_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw, and puts each committed page's one read and parse into `reads`.
  export async function indexWrittenPages(
    root: string,
    written: readonly { absPath: string; text?: string; stat?: FileStat }[],
@@ -3616,7 +3618,7 @@ The index half reads and parses each written page once and hands that read to th
 +    const entry = extractPageIndex(content, page)
 +    const row = { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }
 +    queued.push({ row, prior, absPath, read: { text: content, stat: st, page } })
-     if (queued.length === SEED_BATCH) flush()
+     if (queued.length === INDEX_BATCH) flush()
 ```
 
 ```Core/Nexus/fileEvents.test.ts diff
@@ -3645,9 +3647,9 @@ The index half reads and parses each written page once and hands that read to th
  
  // ── The index's half ──
  
--// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+-// Removals and moves first, in order, then every written page in commits of up to `INDEX_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 -export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
-+// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
++// Removals and moves first, in order, then every written page in commits of up to `INDEX_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 +export async function indexEvents(
 +  root: string,
 +  events: readonly FileEvent[],
@@ -4001,6 +4003,8 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **Chokidar's Directory Rescans:** `readdirp` rescans each directory a write touches, about 28 `lstat`s per written file and 2.5 s of main-thread time per Medium property rename at the baseline. They're the watcher's own cost and outside this plan; the item stands until *§Final Verification* re-profiles them and *§Reconciliation* files the issue with those numbers.
 - **The Per-File Landings Left:** Sync's pull lands each arrival alone (`Core/Sync/Arrival/land.ts:96`), one flush per file, and *§Constraints · Sync* keeps Sync's code as it is; the open's Agenda stamps (`stampTree`, before the open's read) stay one landing each inside a folder walk, over the few files Agenda's scaffolding holds; a new Space's blank tiles land one at a time (`Core/Contexts/contextWrite.ts`); and a remint, an asset migration, and a strict sidecar edit write single files or a handful.
 - **A Restore's Move From Outside the Tree:** a move whose old path the tree never held, as a Trash restore lands one, re-indexes through `moveIndexPaths` without handing its read on, so `applyPage` reads the page again; carrying `reads` through is about three lines, and it belongs with the Trash & Archive plan, which reworks restore.
+- **`TEMP_SUFFIX` (For Nathan):** with the library gone, it guards only the temps other programs' atomic writers leave beside a file, which the Mandate's constraints set aside; removing it threads `manifestAdmits`' `siblings` out of `Core/Files/walk.ts` and Sync's `push.ts` and `reconcile.ts`, so it's Nathan's call under *§Constraints · Sync*.
+- **The Thread-Pool Line's Placement:** `Desktop/main.ts` sets `UV_THREADPOOL_SIZE` after the bundle's hoisted imports, and Task 1-8's measure shows it takes effect; nothing pins that a later import won't start the pool first, and the structural fix is a first side-effect-only import, a new file whose placement is Nathan's.
 - **A Timing Case:** `Core/Matrix/matrixRuntime.test.ts` "wakes on a shuffle" failed once in the fourteen full runs the planning worktree made, at Task 1-4's state, and passed on its rerun and in every other run; it touches nothing this plan changes, so a failure there is rerun once before it's investigated.
 
 #### Deviations
