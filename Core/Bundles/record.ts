@@ -11,7 +11,7 @@ import type { ContainerKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
 import { containerAt, containerTrailById } from '../Nexus/treePatch'
 
-/** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
+/** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp beside it is dotted, so it is skipped alongside Finder's litter. */
 const RECORD_FILENAME = '_record.json'
 
 const parentRef = z.discriminatedUnion('kind', [

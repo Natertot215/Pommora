@@ -5,9 +5,6 @@ import { sameItems } from '@pommora/uix/Utilities/same'
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
 
-// An atomic writer's transient temp beside its file, `Name.md.<digits>`, refused while that file is its sibling; the app's own temp is dotted, so it never reaches this.
-const TEMP_SUFFIX = /\.\d+$/
-
 export function hiddenName(name: string): boolean {
   return name.startsWith('.') || name.startsWith('_')
 }
@@ -35,17 +32,13 @@ const thumbnailSegs = (segs: string[]): boolean =>
   segs[1] === ASSETS_DIRNAME &&
   segs[3] === THUMBNAILS_SEGMENT
 
-export function manifestAdmits(
-  scope: WatchScope,
-): (rel: string, siblings?: ReadonlySet<string>) => boolean {
+export function manifestAdmits(scope: WatchScope): (rel: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
-  return (rel, siblings) => {
+  return (rel) => {
     if (!rel || rel === '..' || rel.startsWith('../') || rel.startsWith('/')) return false
     const segs = rel.split('/')
-    const name = segs[segs.length - 1]
-    if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
     if (segs[0] === TRASH_DIR) return !neverWatched(segs.slice(1)) && !isExcluded(segs.slice(1))
     if (thumbnailSegs(segs)) return false
     if (isAsset(segs)) return !neverWatched(segs.slice(assetDepth))

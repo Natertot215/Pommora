@@ -148,14 +148,8 @@ describe('manifestAdmits', () => {
     expect(admits('.obsidian/x')).toBe(false)
   })
 
-  it('refuses an atomic-write temp while its target is a sibling', () => {
-    expect(admits('Notes/Page.md.123', new Set(['Page.md']))).toBe(false)
-    expect(admits('Notes/Page.md.123', new Set())).toBe(true)
-  })
-
   it('refuses inside the trash what it refuses outside it', () => {
     const bundle = '.trash/Notes/2026__A.md.deleted'
-    expect(admits(`${bundle}/_record.json.123`, new Set(['_record.json']))).toBe(false)
     expect(admits(`${bundle}/.DS_Store`)).toBe(false)
     expect(admits(`${bundle}/nexus.db-wal`)).toBe(false)
   })

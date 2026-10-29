@@ -162,7 +162,7 @@ export async function pushDirty(session: Session, rels: string[], sweep = false)
     if (stat?.isDirectory === true) {
       const under = new Set([
         ...readBasesUnder(rel).map((row) => row.path),
-        ...(await listPathsUnder(root, abs, (child, _kind, siblings) => admits(child, siblings))),
+        ...(await listPathsUnder(root, abs, admits)),
       ])
       for (const child of under) await collect(child)
       return
