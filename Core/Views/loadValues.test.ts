@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, writeFile, utimes } from 'node:fs/promises'
 import { decodeTime } from 'ulidx'
 import { join } from '../Paths/posix'
@@ -6,6 +6,13 @@ import { tempRoot } from '../Testing/hostFs'
 import { loadValues } from './loadValues'
 import { readNexus } from '../Nexus/readNexus'
 import { dropLiveTree, seedLiveTree } from '../Nexus/liveTree'
+import { closeSession, openSession } from '../Nexus/session'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
+import { rewritePageSerialized } from '../Files/atomicWrite'
+import { machine } from '../Platform/machine'
+import { settleNow } from '../Nexus/settle'
 
 const P1 = '01KVGMT8BFP350FZZXAMG1QDR1'
 const P2 = '01KVGMT8BFP350FZZXAMG1QDR2'
@@ -20,6 +27,7 @@ beforeEach(async () => {
   await writeFile(join(root, 'Col', 'SetA', '_pageset.json'), JSON.stringify({ id: 'set' }))
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   dropLiveTree()
   await rm(root, { recursive: true, force: true })
 })
@@ -60,6 +68,34 @@ describe('loadValues', () => {
       expect(values[P1].modifiedAt).toBe('2026-09-01T20:30:00')
       expect(values[P1].createdAt).toBe('2026-06-19T15:13:08')
     } finally {
+      if (tz === undefined) delete process.env.TZ
+      else process.env.TZ = tz
+    }
+  })
+
+  it("serves an own write's kept modified time from the record the write left", async () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    installStores(memoryStores().stores)
+    await openSession(root)
+    try {
+      const file = join(root, 'Col', 'p1.md')
+      await writeFile(file, `---\nID: ${P1}\nStatus: a\n---\n\nbody\n`)
+      const modified = new Date('2026-09-02T00:30:00.000Z')
+      await utimes(file, modified, modified)
+      await hold()
+      await seedContentIndex(root)
+      await rewritePageSerialized(file, (c) => c.replace('Status: a', 'Status: b'))
+      await settleNow({ push: () => {}, watch: async () => {} }, root)
+      const reads = vi.spyOn(machine(), 'readText')
+
+      const values = await loadValues(root, 'Col')
+      expect((values[P1].frontmatter as Record<string, unknown>).Status).toBe('b')
+      expect(values[P1].modifiedAt).toBe('2026-09-01T20:30:00')
+      expect(reads.mock.calls.filter(([at]) => at === file)).toHaveLength(0)
+    } finally {
+      closeSession()
+      installStores(NO_STORES)
       if (tz === undefined) delete process.env.TZ
       else process.env.TZ = tz
     }

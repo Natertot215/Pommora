@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { rm, mkdir, readdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { rm, mkdir, readdir, symlink, writeFile, readFile, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, windows, readJsonAt, putJson } from '../Testing/hostFs'
 import {
@@ -30,7 +30,7 @@ import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
-import { newId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { handleMutate } from '../Nexus/mutate'
 import { settleNow } from '../Nexus/settle'
 import * as readNexusModule from '../Nexus/readNexus'
@@ -83,6 +83,7 @@ beforeEach(async () => {
   await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
   closeSession()
@@ -387,7 +388,27 @@ describe('renameContextOp', () => {
     await settling
     await settleNow(quiet, root)
     expect(walks).toHaveBeenCalledTimes(1)
-    vi.restoreAllMocks()
+  })
+
+  it('the walk a rename owes reads none of the pages it rewrote', async () => {
+    const tagged = Array.from({ length: 3 }, (_, i) => join(root, 'Notes', `P${i}.md`))
+    const kept = new Date('2026-01-02T03:04:05.000Z')
+    for (const p of tagged) {
+      await writeFile(p, `---\nID: ${newContentId('page')}\n<Projects>:\n  - Pommora\n---\nbody`)
+      await utimes(p, kept, kept)
+    }
+    installStores(memoryStores().stores)
+    await refreshTree(root)
+    await seedContentIndex(root)
+    const reads = vi.spyOn(machine(), 'readText')
+    const walks = vi.spyOn(readNexusModule, 'readNexus')
+    const rename = { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const
+    expect((await handleMutate(root, rename, deps)).ok).toBe(true)
+    expect(walks).toHaveBeenCalledTimes(1)
+    for (const p of tagged) {
+      expect((await fmOf(p))['<Ventures>']).toEqual(['Pommora'])
+      expect(reads.mock.calls.filter(([at]) => at === p)).toHaveLength(1)
+    }
   })
 })
 

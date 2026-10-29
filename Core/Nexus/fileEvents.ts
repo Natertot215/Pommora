@@ -52,6 +52,7 @@ import {
   readOrder,
   readPageRecord,
 } from './readNexus'
+import { rememberParse } from '../Files/walkCache'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
@@ -401,6 +402,8 @@ async function applyPage(
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
+  // The app's own write leaves the record its bytes give for the next walk, which would otherwise read the page again.
+  if (ev.stat) rememberParse(abs, ev.stat, read)
   oweValue(owed, rel, !!ev.bodyOnly)
   if (ev.origin === 'watched') owed.pages.add(rel)
   if (read.kind === 'unread' && read.reason === 'missing')
