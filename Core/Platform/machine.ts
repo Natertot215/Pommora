@@ -28,6 +28,19 @@ export const sameFile = (was: FileStat | null, now: FileStat | null): boolean =>
       now.size === was.size &&
       now.birthtimeMs === was.birthtimeMs
 
+/** A host's stat of a file as the seam's `FileStat`. */
+export const fileStat = (s: {
+  size: number
+  mtimeMs: number
+  birthtimeMs: number
+  isDirectory(): boolean
+}): FileStat => ({
+  size: s.size,
+  mtimeMs: s.mtimeMs,
+  birthtimeMs: s.birthtimeMs,
+  isDirectory: s.isDirectory(),
+})
+
 export interface Machine {
   /** Absent → null; any other failure throws. */
   readText(p: string): Promise<string | null>

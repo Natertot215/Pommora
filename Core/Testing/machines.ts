@@ -1,11 +1,11 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash, randomBytes } from 'node:crypto'
-import type { Stats } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
 import {
   type DirEntry,
+  fileStat,
   type FileStat,
   type Landing,
   type Machine,
@@ -154,13 +154,6 @@ async function absentToNull<T>(read: Promise<T>): Promise<T | null> {
 
 const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
   e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
-
-const fileStat = (s: Stats): FileStat => ({
-  size: s.size,
-  mtimeMs: s.mtimeMs,
-  birthtimeMs: s.birthtimeMs,
-  isDirectory: s.isDirectory(),
-})
 
 // The fast double Core's suites install: the host's temp and rename without its flush, its mode, or its symlink's target, which `nodeMachine.test.ts` carries.
 async function landOnDisk({ path, data, mtimeMs, expect }: Landing): Promise<FileStat> {

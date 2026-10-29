@@ -37,7 +37,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
-export const SEED_BATCH = 200
+export const INDEX_BATCH = 200
 
 export function extractPageIndex(content: string, page = parsePage(content)): PageIndexEntry {
   const { frontmatter: values, admission } = page
@@ -135,7 +135,7 @@ export const unmoved = (path: string, since: number): boolean => {
 /** What the index read of a written page and the sequence of the commit that took it, for the tree's patch to take rather than read and parse it again. */
 export type PageRead = { text: string; stat: FileStat; page: ParsedPage; seq: number }
 
-// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw, and puts each committed page's one read and parse into `reads`.
+// Re-indexes written pages as the seed commits its own, INDEX_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw, and puts each committed page's one read and parse into `reads`.
 export async function indexWrittenPages(
   root: string,
   written: readonly { absPath: string; text?: string; stat?: FileStat }[],
@@ -181,7 +181,7 @@ export async function indexWrittenPages(
     const entry = extractPageIndex(content, page)
     const row = { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }
     queued.push({ row, prior, since, absPath, read: { text: content, stat: st, page } })
-    if (queued.length === SEED_BATCH) flush()
+    if (queued.length === INDEX_BATCH) flush()
   }
   if (contentIndexStore() !== db0) return NOTHING_SEEN
   flush()
@@ -294,7 +294,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
         entry: extractPageIndex(content),
         stat: { mtimeMs: st.mtimeMs, size: st.size },
       })
-      if (queued.length === SEED_BATCH) flush()
+      if (queued.length === INDEX_BATCH) flush()
     }
     if (contentIndexStore() !== db0) return NO_REREAD
     flush()

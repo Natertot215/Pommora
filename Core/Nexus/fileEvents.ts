@@ -1,4 +1,4 @@
-// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch applies `SEED_BATCH` events at a time, each slice maintaining the index before its events patch the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch applies `INDEX_BATCH` events at a time, each slice maintaining the index before its events patch the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -32,7 +32,7 @@ import {
   indexWrittenPages,
   moveIndexPaths,
   type PageRead,
-  SEED_BATCH,
+  INDEX_BATCH,
   unmoved,
 } from '../Index/indexSeed'
 import type { ConnPage } from '../Connections/pageIndex'
@@ -274,7 +274,7 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
 
 // ── The index's half ──
 
-// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+// Removals and moves first, in order, then every written page in commits of up to `INDEX_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 export async function indexEvents(
   root: string,
   events: readonly FileEvent[],
@@ -672,7 +672,7 @@ async function applyOne(
   }
 }
 
-// Answers the events that wait on a folder's stamp, one per path. Events apply `SEED_BATCH` at a time, each slice indexed before it patches, so a batch holds one slice's reads at once. A replay places events already indexed, so it neither indexes them nor owes their renames again.
+// Answers the events that wait on a folder's stamp, one per path. Events apply `INDEX_BATCH` at a time, each slice indexed before it patches, so a batch holds one slice's reads at once. A replay places events already indexed, so it neither indexes them nor owes their renames again.
 export async function applyEvents(
   root: string,
   events: FileEvent[],
@@ -680,8 +680,8 @@ export async function applyEvents(
 ): Promise<FileEvent[]> {
   const owed = owedFor(root)
   const later = new Map<string, FileEvent>()
-  for (let at = 0; at < events.length; at += SEED_BATCH) {
-    const slice = events.slice(at, at + SEED_BATCH)
+  for (let at = 0; at < events.length; at += INDEX_BATCH) {
+    const slice = events.slice(at, at + INDEX_BATCH)
     const reads = replay ? undefined : await indexEvents(root, slice)
     for (const ev of slice) {
       try {
