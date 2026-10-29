@@ -428,7 +428,7 @@ Remove `deps` from the Trash's signatures, the empty reading the Platform seam d
 
 #### Questions for Nathan
 
-1. **A Page Dragged Out of the Trash in Finder (I-064):** a page moved out of `.trash` by hand comes back without what a real restore does. If the Trash moves to the Archive's model, that shrinks to one thing, putting back the link values its delete removed. Should a hand-moved page get that, or should Restore stay the one way back? This waits on the measurement.
+1. **A Page Dragged Out of the Trash in Finder (I-064):** a page moved out of `.trash` by hand comes back without what a real restore does. If the Trash moves to the Archive's model, that shrinks to one thing, putting back the link values its delete removed. Should a hand-moved page get that, or should Restore stay the one way back? This waits on the measurement. Nathan's direction (10-29-2026): a page that leaves the Trash by hand should be recognized and restored properly wherever it's found. His suggestion, kept open for the brainstorm: trashing a page gives its ID a trash mark (a "T"), so a misplaced page is recognized by the mark. Points to weigh there: the ID is the page's identity for the index, the bundle record, held IDs, and Sync, so a mark inside it changes that identity on every delete and restore; under reach-in, the index already follows a page out of the Trash as a move, which recognizes it without a mark; and the bundle's record already holds the trashed page's ID, so a page that arrives holding an ID a Trash record claims can be recognized by that match.
 
 ---
 
