@@ -119,7 +119,7 @@ export function unregisteredMembers(def: PropertyDefinition, raw: unknown): stri
   })
 }
 
-/** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole: an open's pages from the index its seed just filled, and a settle's from the files it was handed, which a rescope's reseed has yet to index. */
+/** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole: each page from its index row, which every event writes ahead of its settle, and from its file where the index holds none, as for a page a rescope just brought into reach. */
 export async function registerHeldOptions(root: string, rels?: readonly string[]): Promise<void> {
   const r = await serializeSchemaOp(root, async (): Promise<Result<null>> => {
     const tree = heldTreeOf(root)
@@ -135,23 +135,29 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       ...tree.collections.map((c) => c.path),
       ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
     ]
+    const pages = new Map<string, PropertyDefinition[]>()
+    const spaces: [Json, PropertyDefinition[]][] = []
     for (const rel of rels ?? everywhere) {
-      const pages = isMarkdownFile(rel) ? [rel] : null
-      const space = pages ? null : spaceAt(tree, rel)
+      const isPage = isMarkdownFile(rel)
+      const space = isPage ? null : spaceAt(tree, rel)
       const defs = holderSchema(tree, space ?? rel).filter(
         (d) => PROPERTY_TYPES[d.type].registersMembers,
       )
       if (!defs.length) continue
-      const files = pages ?? pagePathsIn(containerAt(tree, rel))
-      const indexed = rels || space ? null : readPageRelations(files)
-      if (space) collect(space.values ?? {}, defs)
-      else if (indexed) for (const { values } of Object.values(indexed.pages)) collect(values, defs)
+      if (space) spaces.push([space.values ?? {}, defs])
       else
-        for (const page of files) {
-          const read = await readPageRecord(join(root, page), page).catch(() => null)
-          if (read?.kind === 'read') collect(read.fm, defs)
-        }
+        for (const file of isPage ? [rel] : pagePathsIn(containerAt(tree, rel)))
+          pages.set(file, defs)
     }
+    const indexed = readPageRelations([...pages.keys()])?.pages
+    for (const [file, defs] of pages) {
+      const row = indexed?.[file]
+      const read = row ? null : await readPageRecord(join(root, file), file).catch(() => null)
+      const values = row?.values ?? (read?.kind === 'read' ? read.fm : null)
+      if (values) collect(values, defs)
+    }
+    // After the pages, as an open has always registered them.
+    for (const [values, defs] of spaces) collect(values, defs)
     if (!held.size) return ok(null)
     const notes = await readNotes(root)
     return mutateRegistry(root, (registry) => {
