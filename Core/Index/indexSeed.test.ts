@@ -427,6 +427,58 @@ describe('what an index step reports', () => {
     )
     expect(status.map((v) => v.value)).toEqual([JSON.stringify('Bunch')])
   })
+
+  it('a batch leaves out the row of a page unindexed during its read', async () => {
+    const a = abs('Notes', 'A.md')
+    const b = abs('Notes', 'Sub', 'B.md')
+    const read = machine().readText.bind(machine())
+    vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+      const text = await read(p)
+      if (p === b) {
+        await unlink(a)
+        await deindexPath(root, a)
+      }
+      return text
+    })
+    await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+    expect(readIndexedStats()?.has('Notes/A.md')).toBe(false)
+  })
+
+  it('a batch leaves out the row of a page whose folder was removed during its read', async () => {
+    const a = abs('Notes', 'A.md')
+    const b = abs('Notes', 'Sub', 'B.md')
+    const read = machine().readText.bind(machine())
+    vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+      const text = await read(p)
+      if (p === b) {
+        await rm(abs('Notes'), { recursive: true })
+        await deindexPath(root, abs('Notes'))
+      }
+      return text
+    })
+    await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+    expect([...(readIndexedStats()?.keys() ?? [])]).toEqual(['Loose/Note.md'])
+  })
+
+  it('a batch leaves a page whose folder moved during its read at the new path alone', async () => {
+    const a = abs('Notes', 'A.md')
+    const b = abs('Notes', 'Sub', 'B.md')
+    const read = machine().readText.bind(machine())
+    vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+      const text = await read(p)
+      if (p === b) {
+        await rename(abs('Notes'), abs('Moved'))
+        await moveIndexPaths(root, abs('Notes'), abs('Moved'))
+      }
+      return text
+    })
+    await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+    expect([...(readIndexedStats()?.keys() ?? [])].sort()).toEqual([
+      'Loose/Note.md',
+      'Moved/A.md',
+      'Moved/Sub/B.md',
+    ])
+  })
 })
 
 describe('the relations a page yields', () => {
