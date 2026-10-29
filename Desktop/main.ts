@@ -1,6 +1,6 @@
 import { existsSync, rmSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { availableParallelism, tmpdir } from 'node:os'
 import { extname, join, sep } from 'node:path'
 import {
   app,
@@ -65,8 +65,8 @@ import {
   wheelGuest,
 } from './Web/webGuests'
 
-// A held rewrite flushes a chunk's files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms; libuv sizes the pool at its first task, which nothing imported above starts.
-process.env.UV_THREADPOOL_SIZE ??= '16'
+// A held rewrite flushes a chunk's files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms. The threads wait on the drive rather than compute, so the pool takes twice the machine's cores, kept between libuv's four and sixteen; libuv sizes it at its first task, which nothing imported above starts.
+process.env.UV_THREADPOOL_SIZE ??= String(Math.min(16, Math.max(4, 2 * availableParallelism())))
 
 // FIRST, ahead of anything that could read a path: the name resolves userData, and Electron caches
 // that directory on its first read.
