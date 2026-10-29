@@ -41,7 +41,7 @@ function sole([landed]: PromiseSettledResult<FileStat>[]): void {
 export async function atomicWriteFile(
   filePath: string,
   data: string | Uint8Array,
-  { bodyOnly, expect }: { bodyOnly?: boolean; expect?: FileStat | null } = {},
+  { bodyOnly, expect }: { bodyOnly?: boolean } & Pick<Landing, 'expect'> = {},
 ): Promise<void> {
   sole(await landOwn([{ path: filePath, data, expect }], bodyOnly))
 }
@@ -61,10 +61,13 @@ type Rewritten =
   | { status: 'failed'; reason: unknown }
   | { status: 'rewritten'; before: string; after: string }
 
-/** Rewrites `files` a chunk at a time, each chunk held from its read through its record, so no write of the app's lands between, and landed as one group: a page keeps its modification time, and a file changed since its read is left as its writer left it and answered failed. `rewrite` answers a file's next text from the text and the stat its read saw, null to leave it, or undefined to refuse it; a dry run stops at the read. */
+/** A held rewrite's answer for one file: its next text from the text and the stat its read saw, null to leave it, or undefined to refuse it. */
+export type HeldRewrite = (before: string, file: string, was: FileStat) => string | null | undefined
+
+/** Rewrites `files` a chunk at a time, each chunk held from its read through its record, so no write of the app's lands between, and landed as one group: a page keeps its modification time, and a file changed since its read is left as its writer left it and answered failed; a dry run stops short of the landing. */
 export async function rewriteHeld(
   files: readonly string[],
-  rewrite: (before: string, file: string, was: FileStat) => string | null | undefined,
+  rewrite: HeldRewrite,
   dry = false,
 ): Promise<Map<string, Rewritten>> {
   const out = new Map<string, Rewritten>()
@@ -91,16 +94,17 @@ export async function rewriteHeld(
           out.set(file, { status: 'failed', reason })
         }
       }
-      const landed = dry
-        ? []
-        : await landOwn(
-            due.map(({ file, was, after }) => ({
-              path: file,
-              data: after,
-              expect: was,
-              mtimeMs: isMarkdownFile(file) ? was.mtimeMs : undefined,
-            })),
-          )
+      const landed =
+        dry || !due.length
+          ? []
+          : await landOwn(
+              due.map(({ file, was, after }) => ({
+                path: file,
+                data: after,
+                expect: was,
+                mtimeMs: isMarkdownFile(file) ? was.mtimeMs : undefined,
+              })),
+            )
       due.forEach(({ file, before, after }, i) => {
         const settled = landed[i]
         out.set(
@@ -164,9 +168,9 @@ export const jsonText = (value: unknown): string => `${stableStringify(value)}\n
 export async function writeJson(
   filePath: string,
   value: unknown,
-  { expect }: { expect?: FileStat | null } = {},
+  options: Pick<Landing, 'expect'> = {},
 ): Promise<void> {
-  await atomicWriteFile(filePath, jsonText(value), { expect })
+  await atomicWriteFile(filePath, jsonText(value), options)
 }
 
 type StrictRead =
@@ -390,10 +394,7 @@ export function withoutId(
   )
 }
 
-export async function rewritePageSerialized(
-  file: string,
-  rewrite: Parameters<typeof rewriteHeld>[1],
-): Promise<boolean> {
+export async function rewritePageSerialized(file: string, rewrite: HeldRewrite): Promise<boolean> {
   const done = (await rewriteHeld([file], rewrite)).get(file)
   if (done?.status === 'failed') throw done.reason
   return done?.status === 'rewritten'

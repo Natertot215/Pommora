@@ -1,6 +1,6 @@
 import { basename, join } from '../Paths/posix'
 import { fault, ok, type Result } from '../Contract/result'
-import { type FileStat, machine } from '../Platform/machine'
+import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
 import {
@@ -12,6 +12,7 @@ import {
 import { contentIdAt, newId } from './ids'
 import type { Unreadable } from './tree'
 import {
+  type HeldRewrite,
   readJsonStrict,
   readTextOrNull,
   pathExists,
@@ -63,8 +64,12 @@ type Stamping = { overForeign?: boolean; held?: string }
 
 /** The rewrite that stamps each page `pages` names, recording the ID each one takes in `ids`: a page missing its ID, or holding a foreign one where its entry says `overForeign`, takes the entry's `held` ID or one minted from its file's age; one that keeps its ID is left. */
 const stamping =
-  (kind: ContentKind, pages: ReadonlyMap<string, Stamping>, ids: Map<string, string>) =>
-  (content: string, file: string, { birthtimeMs, mtimeMs }: FileStat): string | null => {
+  (
+    kind: ContentKind,
+    pages: ReadonlyMap<string, Stamping>,
+    ids: Map<string, string>,
+  ): HeldRewrite =>
+  (content, file, { birthtimeMs, mtimeMs }) => {
     const { overForeign, held }: Stamping = pages.get(file) ?? {}
     const { admission } = parsePage(content, kind)
     // The long-term approach is remembering an old ID to re-stamp in such an event; this *must* be done before any official release.
@@ -76,17 +81,9 @@ const stamping =
     return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
   }
 
-export async function stampPage(
-  absFile: string,
-  kind: ContentKind,
-  overForeign = false,
-  held?: string,
-): Promise<string | null> {
+export async function stampPage(absFile: string, kind: ContentKind): Promise<string | null> {
   const ids = new Map<string, string>()
-  const landed = await rewritePageSerialized(
-    absFile,
-    stamping(kind, new Map([[absFile, { overForeign, held }]]), ids),
-  )
+  const landed = await rewritePageSerialized(absFile, stamping(kind, new Map(), ids))
   return landed ? (ids.get(absFile) ?? null) : null
 }
 
@@ -147,7 +144,7 @@ export async function stampMissing(root: string, listed: readonly Stamp[] = []):
     const abs = join(root, path)
     if (kind === 'page') {
       if (pages.has(abs)) continue
-      // A held ID goes back to one page alone, as it does when one stamp lands before the next is weighed.
+      // A held ID goes back to one page alone.
       const kept = held && !idHeld(root, held) && !heldBack.has(held) ? held : undefined
       if (kept) heldBack.add(kept)
       pages.set(abs, { overForeign: reason === 'malformed', held: kept })

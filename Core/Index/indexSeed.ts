@@ -37,6 +37,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
+const SEED_BATCH = 200
 
 export function extractPageIndex(content: string, page = parsePage(content)): PageIndexEntry {
   const { frontmatter: values, admission } = page
@@ -111,7 +112,7 @@ const describes = (
   st: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
 ): boolean => !!held && !!st && held.mtimeMs === st.mtimeMs && held.size === st.size
 
-/** Whether `path`'s row is still the one `prior` describes, taken ahead of a page's read: a writer that landed while the read was in flight left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
+/** Whether `path`'s row is still the one `prior` describes, the row taken ahead of a page's read or the stat its batch committed: a writer that landed since left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
 export const unmoved = (
   path: string,
   prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
@@ -246,8 +247,6 @@ export interface SeedReread extends IndexSeen {
 }
 
 const NO_REREAD: SeedReread = { ...NOTHING_SEEN, db: null, rels: [] }
-
-const SEED_BATCH = 200
 
 export async function seedContentIndex(root: string): Promise<SeedReread> {
   const indexed = readIndexedStats()

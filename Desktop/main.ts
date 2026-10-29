@@ -65,7 +65,7 @@ import {
   wheelGuest,
 } from './Web/webGuests'
 
-// A held rewrite flushes 64 files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms; libuv sizes the pool at its first task, which nothing imported above starts.
+// A held rewrite flushes a chunk's files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms; libuv sizes the pool at its first task, which nothing imported above starts.
 process.env.UV_THREADPOOL_SIZE ??= '16'
 
 // FIRST, ahead of anything that could read a path: the name resolves userData, and Electron caches
