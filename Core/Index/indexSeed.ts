@@ -6,7 +6,7 @@ import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { contextTitles, parseContextKey } from '../Contexts/contexts'
 import { normalizeTitle } from '../Paths/caseFold'
-import { parsePage, splitEnvelope } from '../Files/pageFile'
+import { type ParsedPage, parsePage, splitEnvelope } from '../Files/pageFile'
 import {
   markIndexReady,
   readHeadings,
@@ -38,8 +38,8 @@ import { readWatchScope } from '../Settings/settings'
 
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
 
-export function extractPageIndex(content: string): PageIndexEntry {
-  const { frontmatter: values, admission } = parsePage(content)
+export function extractPageIndex(content: string, page = parsePage(content)): PageIndexEntry {
+  const { frontmatter: values, admission } = page
   if (admission.state === 'unknown') return NO_ROWS
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)
@@ -112,7 +112,7 @@ const describes = (
 ): boolean => !!held && !!st && held.mtimeMs === st.mtimeMs && held.size === st.size
 
 /** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
-const unmoved = (
+export const unmoved = (
   path: string,
   prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
 ): boolean => {
@@ -124,18 +124,28 @@ const unmoved = (
 export const indexVouches = async (root: string, rel: string): Promise<boolean> =>
   describes(readIndexedStat(rel), await statOrNull(join(root, rel)))
 
-// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw.
+/** What the index read of a written page, for the tree's patch to take rather than read and parse it again. */
+export type PageRead = { text: string; stat: FileStat; page: ParsedPage }
+
+// Re-indexes written pages as the seed commits its own, SEED_BATCH a transaction, a row another writer landed during a page's read kept and nothing written once a switch has moved the database; each from the text and stat its writer hands over or else from its file, a page listed twice as it last stood. Reports what it saw, and puts each committed page's one read and parse into `reads`.
 export async function indexWrittenPages(
   root: string,
   written: readonly { absPath: string; text?: string; stat?: FileStat }[],
+  reads?: Map<string, PageRead>,
 ): Promise<IndexSeen> {
   const seen: IndexSeen = { renames: [], vanished: [], landed: [] }
   const db0 = contentIndexStore()
-  const queued: { row: PageIndexRow; prior: IndexedStat | null }[] = []
+  const queued: {
+    row: PageIndexRow
+    prior: IndexedStat | null
+    absPath: string
+    read: PageRead
+  }[] = []
   const flush = (): void => {
     const rows = queued.splice(0).filter(({ row, prior }) => unmoved(row.path, prior))
     seen.renames.push(...reindex(rows.map(({ row }) => row)))
-    for (const { row, prior } of rows) {
+    for (const { row, prior, absPath, read } of rows) {
+      reads?.set(absPath, read)
       const [now] = idOf(row.entry)
       if (prior?.id === now) continue
       seen.vanished.push(...pageOf(row.path, prior))
@@ -156,8 +166,10 @@ export async function indexWrittenPages(
     }
     // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
     if (content === null) continue
-    const entry = extractPageIndex(content)
-    queued.push({ row: { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }, prior })
+    const page = parsePage(content)
+    const entry = extractPageIndex(content, page)
+    const row = { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }
+    queued.push({ row, prior, absPath, read: { text: content, stat: st, page } })
     if (queued.length === SEED_BATCH) flush()
   }
   if (contentIndexStore() !== db0) return NOTHING_SEEN

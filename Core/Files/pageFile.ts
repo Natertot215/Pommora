@@ -75,10 +75,9 @@ function valuesOf(doc: Document): Record<string, unknown> {
 export const splitFrontmatter = (content: string): Record<string, unknown> =>
   valuesOf(parseDocument(splitEnvelope(content).frontmatter))
 
-export function parsePage(
-  content: string,
-  kind: ContentKind = 'page',
-): { frontmatter: Record<string, unknown>; admission: Admission } {
+export type ParsedPage = { frontmatter: Record<string, unknown>; admission: Admission }
+
+export function parsePage(content: string, kind: ContentKind = 'page'): ParsedPage {
   const frontmatter = splitFrontmatter(content)
   return { frontmatter, admission: admitContentFile(frontmatter, kind) }
 }

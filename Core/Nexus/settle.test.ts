@@ -23,6 +23,7 @@ import * as adopt from './adopt'
 import { atomicWriteFile } from '../Files/atomicWrite'
 import { readNotes } from './owed'
 import { updatePageBody } from './page'
+import * as pageFile from '../Files/pageFile'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
@@ -84,6 +85,11 @@ const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error
     fail = rej
   })
   return { promise, open, fail }
+}
+// The tree's patch then reads each page itself, as a replay's does, so a hook on `readPageRecord` holds an event mid-arm.
+const readsItself = (): void => {
+  const index = indexSeed.indexWrittenPages
+  vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementation((at, written) => index(at, written))
 }
 
 beforeEach(async () => {
@@ -247,6 +253,7 @@ describe('what a settle pushes for a batch', () => {
 describe('the settle', () => {
   it('an event whose arm resumes after a concurrent settle has pushed still owes its walk to the next settle', async () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    readsItself()
     const reached = gate<void>()
     const read = gate<never>()
     vi.spyOn(readNexusModule, 'readPageRecord').mockImplementationOnce(() => {
@@ -743,6 +750,7 @@ describe('an outside batch’s turn', () => {
   it('a reply while a batch applies stamps nothing the batch listed, and the window isn’t shown it as unreadable', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await writeFile(abs('Notes', 'Late.md'), 'late\n')
+    readsItself()
     const reached = gate<void>()
     const release = gate<void>()
     const read = readNexusModule.readPageRecord
@@ -808,6 +816,7 @@ describe('an outside batch’s turn', () => {
 
   it('a stamp never lands on a file while the batch that listed it is still reading it', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    readsItself()
     const reached = gate<void>()
     const release = gate<void>()
     const read = readNexusModule.readPageRecord
@@ -1258,6 +1267,22 @@ describe('a page created while no watcher listened', () => {
       expect(splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body).toBe(
         '[[Notes/A|A]]\n',
       )
+    } finally {
+      installStores(NO_STORES)
+    }
+  })
+})
+
+describe('an own write of a page', () => {
+  it('is parsed once, the index’s parse serving the tree’s patch', async () => {
+    installStores(memoryStores().stores)
+    try {
+      recordHanded(await refreshTree(root))
+      await indexSeed.seedContentIndex(root)
+      const parses = vi.spyOn(pageFile, 'parsePage')
+      await atomicWriteFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nicon: moon\n---\n\nmine\n`)
+      await settleNow(pusher, root)
+      expect(parses).toHaveBeenCalledTimes(1)
     } finally {
       installStores(NO_STORES)
     }

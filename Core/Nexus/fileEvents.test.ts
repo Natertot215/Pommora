@@ -3,7 +3,7 @@ import { STASHED_AT } from '../Testing/definitions'
 import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { seedNexus, tempRoot } from '../Testing/hostFs'
-import { forgetLastReads } from '../Files/atomicWrite'
+import { atomicWriteFile, forgetLastReads } from '../Files/atomicWrite'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -29,6 +29,7 @@ import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { contextsDir, contextsRegistryFile, tileFilePath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
+import * as pageFile from '../Files/pageFile'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import * as cascade from './cascade'
 import { ID_KEY } from './identityMark'
@@ -765,17 +766,47 @@ describe('the parity cases', () => {
   })
 
   it('an ID: 42 page saved twice is read once per save and costs no walk', async () => {
-    const reads = vi.spyOn(readNexusModule, 'readPageRecord')
+    const reads = vi.spyOn(machine(), 'readText')
+    const parses = vi.spyOn(pageFile, 'parsePage')
     for (const body of ['one', 'two']) {
       await writeFile(abs('Notes', 'Foreign.md'), `---\nID: 42\n---\n\n${body}\n`)
       await settled([ev('change', 'Notes', 'Foreign.md')])
     }
     expect(reads.mock.calls.filter(([p]) => p === abs('Notes', 'Foreign.md'))).toHaveLength(2)
+    expect(parses.mock.calls.filter(([text]) => text.includes('ID: 42'))).toHaveLength(2)
     expect(held().unreadable).toEqual([
       { path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' },
     ])
     await agrees()
     expect(walk).not.toHaveBeenCalled()
+  })
+
+  it('an own write landing while a batch applies keeps its page as it wrote it', async () => {
+    installStores(memoryStores().stores)
+    try {
+      await seedContentIndex(root)
+      const sidecar = abs('Notes', '_pagecollection.json')
+      const read = machine().readText
+      let armed = true
+      vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
+        if (armed && path === sidecar) {
+          armed = false
+          await atomicWriteFile(
+            abs('Notes', 'A.md'),
+            `---\nID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
+          )
+        }
+        return read(path)
+      })
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\noutside\n`)
+      await settled([ev('change', 'Notes', '_pagecollection.json'), ev('change', 'Notes', 'A.md')])
+      expect(armed).toBe(false)
+      expect(held().collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
+      await agrees()
+      expect(walk).not.toHaveBeenCalled()
+    } finally {
+      installStores(NO_STORES)
+    }
   })
 })
 
