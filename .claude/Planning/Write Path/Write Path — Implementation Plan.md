@@ -41,10 +41,12 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | ----- | -------- | -------- | ---------- |
 | 1 | +518 / −400 (+118) | +560 / −417 (+143), its checkpoint fold included | +143 |
 | 2 | +107 / −45 (+62) | +138 / −79 (+59), its checkpoint fold included | +202 |
-| Final Verification | — | +106 / −111 (−5), Waves One and Two | +197 |
+| Final Verification | — | +135 / −139 (−4), Waves One and Two and the neutral gate's fold | +198 |
 | Closeout | — | | |
 
 **Task 1-8's Measure:** the Medium-0 property rename's median was 3.292 ms per file (23,135 ms over 7,027 files) at four pool threads and 2.388 ms (16,782 ms) at sixteen, 0.904 ms apart, so the line shipped and `CHUNK` stayed 64.
+
+**The Own Pass's Measure** (Medium-0, code head `9b9c0d630`): the property rename took 14,708 ms over 7,027 files (2.09 ms per file, against 6.89), with 2 `readText`, 1 `stat`, and 1 `readBytes` per holder; the Context rename 9,569 ms over 4,927 (1.94 ms, against 6.99), one walk; the page rename 1,680 ms over 522 (3.22 ms, against 7.83). Chokidar's rescans are 968 ms, 21.6% of a property rename's busy time (2.53 s, 23% at the baseline). The baseline's "four walks" counted root listings, two per walk, so it was two walks.
 
 #### Concepts
 
@@ -3950,7 +3952,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - [x] **Wave One:** two read-only `opus-xhigh` reviewers briefed with `code-simplification`, one reading inward at the diff and one outward against the rest of Core, Desktop, and UIX; one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
 - [x] **Wave Two:** two fresh `opus-xhigh` reviewers, inward and outward, briefed with `adversarial-review` over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
 - [x] **The Neutral Gate:** one `fable-high` agent given only `<BASELINE>..HEAD`, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
-- [ ] **The Own Pass:**
+- [x] **The Own Pass:**
   1. The gates from a clean state, and `npm run build`.
   2. The harness's before-and-after for the three renames on Medium-0. With the harness worktree moved to HEAD and rebuilt (`git -C "$WORK/baseline" checkout -- .`, `git -C "$WORK/baseline" checkout --detach <HEAD>`, the re-fitted patch applied again, and `npm run build` inside it), copy `profiles/profile.json`, the baseline's own run at `15fe7422a`, to `profiles/profile-15fe7422a.json`, then run `node profile.mjs profile`. For the property, Context, and page renames, report wall time, files landed, per-file cost, and the machine call counts beside the baseline's, against OP-7's expected counts: the property rename at two `readText`s and one `stat` per holder (the clash check's read, and the rewrite's read and stat) plus one `readBytes` (the echo); the Context rename at one `readText` per rewritten page and one walk's `stat` and `readDir`; the page rename at one `readText` per page the index names as mentioning the old title, with no settle re-read. The option rename isn't among the profile's operations. The baseline's figures: property rename 48,384 ms over 7,027 files (6.89 ms per file), 21,081 `readText`, 21,073 `stat`; Context rename 34,448 ms over 4,927 (6.99 ms), 10,036 `readText`, 36,319 `stat`, four walks; page rename 4,088 ms over 522 (7.83 ms).
   3. The chokidar re-profile: `node analyze-profile.mjs renameProperty _read,filterPath` and the same for `renameContext`, recording their inclusive time and share of main-thread busy time beside the baseline's (2.53 s, 23% of a property rename's busy time), for *§Reconciliation*'s issue. Then delete the `*.cpuprofile` files the run wrote; `profile.json` and `profile-15fe7422a.json` stay beside the harness as its results.
