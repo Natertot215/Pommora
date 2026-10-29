@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
-import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { seedNexus, tempRoot } from '../Testing/hostFs'
-import { atomicWriteFile, forgetLastReads } from '../Files/atomicWrite'
+import { atomicWriteFile, forgetLastReads, relocate } from '../Files/atomicWrite'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -28,7 +28,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { contextsDir, contextsRegistryFile, tileFilePath } from '../Paths/paths'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import * as pageFile from '../Files/pageFile'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import * as cascade from './cascade'
@@ -808,6 +808,30 @@ describe('the parity cases', () => {
       installStores(NO_STORES)
     }
   })
+
+  it('an own move landing while a batch applies leaves its page at the path it moved to alone', async () => {
+    installStores(memoryStores().stores)
+    try {
+      await seedContentIndex(root)
+      const sidecar = abs('Notes', '_pagecollection.json')
+      const read = machine().readText
+      let armed = true
+      vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
+        if (armed && path === sidecar) {
+          armed = false
+          await relocate(abs('Notes', 'A.md'), abs('Notes', 'Moved.md'))
+        }
+        return read(path)
+      })
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\noutside\n`)
+      await settled([ev('change', 'Notes', '_pagecollection.json'), ev('change', 'Notes', 'A.md')])
+      expect(armed).toBe(false)
+      expect(held().collections[0]?.pages.map((p) => p.path)).toEqual(['Notes/Moved.md'])
+      await agrees()
+    } finally {
+      installStores(NO_STORES)
+    }
+  })
 })
 
 describe('classifyEvent', () => {
@@ -1239,6 +1263,45 @@ describe('the app’s own events', () => {
     await writeFile(abs('Notes', 'B.md'), 'stale\n')
     await ownUnderLock('Notes/B.md', `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     expect(held().collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+  })
+
+  it('a page its patch reads again leaves the walk cache that read, not the record of the write it outran', async () => {
+    installStores(memoryStores().stores)
+    try {
+      await seedContentIndex(root)
+      const page = abs('Notes', 'A.md')
+      const sidecar = abs('Notes', '_pagecollection.json')
+      const backdate = (secondsAgo: number): Promise<void> => {
+        const t = new Date(Date.now() - secondsAgo * 1000)
+        return utimes(page, t, t)
+      }
+      const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
+      await writeFile(page, text)
+      await backdate(20)
+      const stat = await statOrNull(page)
+      if (!stat) throw new Error('no stat')
+      const read = machine().readText
+      let armed = true
+      const reads = vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
+        if (armed && path === sidecar) {
+          armed = false
+          await writeFile(page, `${text}again\n`)
+          await backdate(10)
+          await indexSeed.indexWrittenPages(root, [{ absPath: page }])
+        }
+        return read(path)
+      })
+      await applyEvents(root, [
+        ev('change', 'Notes', '_pagecollection.json'),
+        { event: 'change', absPath: page, origin: 'own', text, stat },
+      ])
+      expect(armed).toBe(false)
+      reads.mockClear()
+      await readNexus(root)
+      expect(reads.mock.calls.filter(([p]) => p === page)).toHaveLength(0)
+    } finally {
+      installStores(NO_STORES)
+    }
   })
 
   it('a container sidecar lands from its text', async () => {

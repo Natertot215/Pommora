@@ -36,6 +36,7 @@ import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { machine } from '../Platform/machine'
 import { buildPageIndex, connPage } from '../Connections/pageIndex'
 import * as bundles from '../Bundles/bundle'
 import { handleMutate } from './mutate'
@@ -85,11 +86,6 @@ const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error
     fail = rej
   })
   return { promise, open, fail }
-}
-// The tree's patch then reads each page itself, as a replay's does, so a hook on `readPageRecord` holds an event mid-arm.
-const readsItself = (): void => {
-  const index = indexSeed.indexWrittenPages
-  vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementation((at, written) => index(at, written))
 }
 
 beforeEach(async () => {
@@ -253,10 +249,13 @@ describe('what a settle pushes for a batch', () => {
 describe('the settle', () => {
   it('an event whose arm resumes after a concurrent settle has pushed still owes its walk to the next settle', async () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-    readsItself()
     const reached = gate<void>()
     const read = gate<never>()
-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementationOnce(() => {
+    const text = machine().readText
+    let failing = true
+    // The index's read of B is held and then fails, and so does the patch's own read after it.
+    vi.spyOn(machine(), 'readText').mockImplementation((path) => {
+      if (!failing || path !== abs('Notes', 'B.md')) return text(path)
       reached.open()
       return read.promise
     })
@@ -268,6 +267,7 @@ describe('the settle', () => {
     const walk = vi.spyOn(liveTree, 'refreshTree')
     read.fail(new Error('mid-read'))
     await applying
+    failing = false
     expect(owedFor(root).walk).toBe(true)
     await settleNow(pusher, root)
     expect(walk).toHaveBeenCalledTimes(1)
@@ -750,19 +750,22 @@ describe('an outside batch’s turn', () => {
   it('a reply while a batch applies stamps nothing the batch listed, and the window isn’t shown it as unreadable', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await writeFile(abs('Notes', 'Late.md'), 'late\n')
-    readsItself()
     const reached = gate<void>()
     const release = gate<void>()
-    const read = readNexusModule.readPageRecord
-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
-      if (rel === 'Notes/Late.md') {
+    const sidecar = abs('Notes', '_pagecollection.json')
+    const read = machine().readText
+    let armed = true
+    vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
+      if (armed && path === sidecar) {
+        armed = false
         reached.open()
         await release.promise
       }
-      return read(file, rel)
+      return read(path)
     })
     const batch = settleBatch(pusher, root, [
       ev('add', 'Notes', 'Bare.md'),
+      ev('change', 'Notes', '_pagecollection.json'),
       ev('add', 'Notes', 'Late.md'),
     ])
     await reached.promise
@@ -816,18 +819,21 @@ describe('an outside batch’s turn', () => {
 
   it('a stamp never lands on a file while the batch that listed it is still reading it', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
-    readsItself()
     const reached = gate<void>()
     const release = gate<void>()
-    const read = readNexusModule.readPageRecord
+    const page = abs('Notes', 'Bare.md')
+    const read = machine().readText
     let reads = 0
-    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
-      const record = await read(file, rel)
-      if (++reads === 2) {
+    // The index's read of Bare fails, so the patch reads it for each event, and the second read is held.
+    vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
+      if (path !== page) return read(path)
+      if (++reads === 1) throw new Error('unreadable')
+      const text = await read(path)
+      if (reads === 3) {
         reached.open()
         await release.promise
       }
-      return record
+      return text
     })
     const batch = settleBatch(pusher, root, [
       ev('add', 'Notes', 'Bare.md'),

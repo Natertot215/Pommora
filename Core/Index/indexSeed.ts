@@ -111,18 +111,29 @@ const describes = (
   st: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
 ): boolean => !!held && !!st && held.mtimeMs === st.mtimeMs && held.size === st.size
 
-/** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
+/** Whether `path`'s row is still the one `prior` describes, taken ahead of a page's read: a writer that landed while the read was in flight left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
 export const unmoved = (
   path: string,
   prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
 ): boolean => {
   const now = readIndexedStat(path)
-  return !now || describes(now, prior)
+  return now ? describes(now, prior) : !prior || contentIndexStore() === null
 }
 
-/** Whether `rel`'s index row still describes its file: the one condition on which what the index holds of a page decides what a cascade writes, the file read otherwise, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
-export const indexVouches = async (root: string, rel: string): Promise<boolean> =>
-  describes(readIndexedStat(rel), await statOrNull(join(root, rel)))
+/** The files among `files` a cascade still reads: each `passOver` doesn't name as one the index answers for, handed its root-relative path, and each whose row no longer describes its file. That row describing the file is the one condition on which the index may pass over a page it lists, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
+export async function unlessVouched(
+  root: string,
+  files: readonly string[],
+  passOver: (rel: string, file: string) => boolean,
+): Promise<string[]> {
+  const kept = await Promise.all(
+    files.map(async (file) => {
+      const rel = relative(root, file)
+      return !passOver(rel, file) || !describes(readIndexedStat(rel), await statOrNull(file))
+    }),
+  )
+  return files.filter((_, i) => kept[i])
+}
 
 /** What the index read of a written page, for the tree's patch to take rather than read and parse it again. */
 export type PageRead = { text: string; stat: FileStat; page: ParsedPage }

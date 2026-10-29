@@ -504,6 +504,7 @@ describe('renameProperty and configureProperty', () => {
 describe('a rename’s clash check reads the index', () => {
   beforeEach(() => installStores(memoryStores().stores))
   afterEach(() => {
+    vi.mocked(runNoted).mockReset()
     closeSession()
     installStores(NO_STORES)
   })

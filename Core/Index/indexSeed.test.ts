@@ -402,6 +402,25 @@ describe('what an index step reports', () => {
     await indexWrittenPages(root, [{ absPath: b }, { absPath: abs('Hidden', 'Secret.md') }])
     expect(later.index.stats.size).toBe(0)
   })
+
+  it('a batch leaves no row at the path a page moved away from during its read', async () => {
+    const a = abs('Notes', 'A.md')
+    const b = abs('Notes', 'Sub', 'B.md')
+    const moved = abs('Notes', 'Moved.md')
+    const read = machine().readText.bind(machine())
+    vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
+      const text = await read(p)
+      if (p === b) {
+        await rename(a, moved)
+        await moveIndexPaths(root, a, moved)
+      }
+      return text
+    })
+    await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
+    const stats = readIndexedStats()
+    expect(stats?.has('Notes/A.md')).toBe(false)
+    expect(stats?.has('Notes/Moved.md')).toBe(true)
+  })
 })
 
 describe('the relations a page yields', () => {

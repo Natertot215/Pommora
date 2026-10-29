@@ -24,13 +24,13 @@ import { ok, fail, type Result } from '../Contract/result'
 import { findHolders } from '../Index/keyHolders'
 import {
   outsideArchive,
-  type RewriteText,
+  rekeySweep,
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
 } from '../Nexus/governedSweep'
 import { type ConfigReach, NO_REACH, sweptReach } from '../Nexus/configReach'
-import { rekeyHeld, type KeyCollision } from '../Files/rootValues'
+import type { KeyCollision } from '../Files/rootValues'
 import {
   OWED,
   owedName,
@@ -142,11 +142,7 @@ async function renamePlan(
 ): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const { files } = await findHolders(root, { keys: [from], reach: 'governed' })
-  const text: RewriteText = (_content, _file, page) => page.rekey(from, to, NEW_KEY_IS_FRESHER)
-  return {
-    files,
-    plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },
-  }
+  return { files, plan: rekeySweep(from, to, NEW_KEY_IS_FRESHER) }
 }
 
 export async function renameSweep(root: string, from: string, to: string): Promise<ConfigReach> {

@@ -1767,7 +1767,7 @@ describe('an option rename sweeps the pages its indexed value changes', () => {
     expect((await readJsonAt(space)).Tags).toEqual(['Critical'])
   })
 
-  it('reads and rewrites a page the index holds no row for', async () => {
+  it('reads and rewrites a page while the index isn’t ready', async () => {
     const { id, pages } = await nexus(true, 'Urgent')
     expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
     expect(await readFile(pages[0], 'utf8')).toContain('Critical')
