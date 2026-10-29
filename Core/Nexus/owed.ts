@@ -57,7 +57,7 @@ type Owner =
   | { kind: 'space'; contextId: string }
   | { kind: 'option'; propertyId: string }
 /** A name a create or rename lands on, and the item landing there, whose own owed names never refuse it. */
-type Landing = { owner: Owner; name: string; except?: string }
+type NameLanding = { owner: Owner; name: string; except?: string }
 
 const OWED_LINE = 'An earlier change hasn’t reached every file yet.'
 export const OWED = fail('owed', OWED_LINE)
@@ -183,7 +183,7 @@ export function withOption(
 }
 
 /** Whether an item other than `except` still owes `name` within its owner, so no create or rename may land on it: the work still due would land there too. Option words compare as written; every other name folds case. */
-export function owedName(notes: Notes, { owner, name, except }: Landing): boolean {
+export function owedName(notes: Notes, { owner, name, except }: NameLanding): boolean {
   const fold = owner.kind === 'option' ? memberKey : normalizeTitle
   const scope: [string, Owed][] =
     owner.kind === 'option'
@@ -243,7 +243,7 @@ export async function runNoted<T>(
   root: string,
   id: string,
   change: {
-    lands?: readonly Landing[]
+    lands?: readonly NameLanding[]
     note: (e: Entry | undefined) => Entry
     list: () => Promise<Result<T>>
     sweep: (listed: T, prior: Entry | undefined) => Promise<ConfigReach>

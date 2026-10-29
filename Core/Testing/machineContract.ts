@@ -14,6 +14,10 @@ export function describeMachine(
     let machine: Machine
     let root: string
     const at = (rel: string): string => `${root}/${rel}`
+    const write = async (rel: string, data: string | Uint8Array): Promise<void> => {
+      const [landed] = await machine.land([{ path: at(rel), data }])
+      if (landed.status === 'rejected') throw landed.reason
+    }
 
     beforeEach(async () => {
       ;({ machine, root } = await make())
@@ -89,6 +93,54 @@ export function describeMachine(
       await machine.writeText(at('t.txt'), 'v')
       await machine.utimes(at('t.txt'), 2_000_000_000_000)
       expect((await machine.stat(at('t.txt')))?.mtimeMs).toBe(2_000_000_000_000)
+    })
+
+    it('a landing keeps the time it is given and answers the stat the file then holds', async () => {
+      const [landed] = await machine.land([
+        { path: at('t.txt'), data: 'v', mtimeMs: 2_000_000_000_000 },
+      ])
+      expect(landed).toEqual({ status: 'fulfilled', value: await machine.stat(at('t.txt')) })
+      expect((await machine.stat(at('t.txt')))?.mtimeMs).toBe(2_000_000_000_000)
+    })
+
+    it('rejects a file changed since its expected stat and lands the rest of its group', async () => {
+      await write('a.md', 'read')
+      const was = await machine.stat(at('a.md'))
+      await write('a.md', 'outside, longer')
+      const [a, b] = await machine.land([
+        { path: at('a.md'), data: 'mine', expect: was },
+        { path: at('b.md'), data: 'other' },
+      ])
+      expect(a.status).toBe('rejected')
+      expect(b.status).toBe('fulfilled')
+      expect(await machine.readText(at('a.md'))).toBe('outside, longer')
+      expect(await machine.readText(at('b.md'))).toBe('other')
+    })
+
+    it('rejects a file removed since its expected stat, or created since a read found none', async () => {
+      await write('gone.md', 'read')
+      const was = await machine.stat(at('gone.md'))
+      await machine.remove(at('gone.md'))
+      await write('new.md', 'outside')
+      const [gone, created] = await machine.land([
+        { path: at('gone.md'), data: 'mine', expect: was },
+        { path: at('new.md'), data: 'mine', expect: null },
+      ])
+      expect(gone.status).toBe('rejected')
+      expect(created.status).toBe('rejected')
+      expect(await machine.stat(at('gone.md'))).toBeNull()
+      expect(await machine.readText(at('new.md'))).toBe('outside')
+    })
+
+    it('a file that fails to land costs only itself and leaves no temp beside it', async () => {
+      await machine.mkdir(at('dir'))
+      const [dir, b] = await machine.land([
+        { path: at('dir'), data: 'x' },
+        { path: at('b.md'), data: 'y' },
+      ])
+      expect(dir.status).toBe('rejected')
+      expect(b.status).toBe('fulfilled')
+      expect((await machine.readDir(root)).map((e) => e.name).sort()).toEqual(['b.md', 'dir'])
     })
 
     it('realpath answers the root it was given', async () => {

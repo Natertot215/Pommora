@@ -1,9 +1,17 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
+import type { Stats } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { dirname } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
-import { type DirEntry, type FileStat, type Machine, machine } from '../Platform/machine'
+import {
+  type DirEntry,
+  type FileStat,
+  type Landing,
+  type Machine,
+  machine,
+  sameFile,
+} from '../Platform/machine'
 
 const sha256Hex = (input: string | Uint8Array): string =>
   createHash('sha256').update(input).digest('hex')
@@ -72,6 +80,12 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
   const put = (p: string, text: string): void => {
     files.set(p, { text, mtimeMs: ++clock })
   }
+  const entryStat = (e: { text: string; mtimeMs: number }): FileStat => ({
+    size: e.text.length,
+    mtimeMs: e.mtimeMs,
+    birthtimeMs: null,
+    isDirectory: false,
+  })
   const machine: Machine = {
     readText: async (p) => files.get(p)?.text ?? null,
     readBytes: async (p) => {
@@ -80,10 +94,21 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
     },
     writeText: async (p, text) => put(p, text),
     writeBytes: async (p, bytes) => put(p, decoder.decode(bytes)),
+    land: (list) =>
+      Promise.allSettled(
+        list.map(async ({ path, data, mtimeMs, expect }) => {
+          if (dirs.has(path)) throw new Error(`EISDIR ${path}`)
+          if (expect !== undefined && !sameFile(expect, await machine.stat(path)))
+            throw new Error(`${path} changed`)
+          const text = typeof data === 'string' ? data : decoder.decode(data)
+          const e = { text, mtimeMs: mtimeMs ?? ++clock }
+          files.set(path, e)
+          return entryStat(e)
+        }),
+      ),
     stat: async (p): Promise<FileStat | null> => {
       const e = files.get(p)
-      if (e)
-        return { size: e.text.length, mtimeMs: e.mtimeMs, birthtimeMs: null, isDirectory: false }
+      if (e) return entryStat(e)
       return dirs.has(p) ? { size: 0, mtimeMs: 0, birthtimeMs: null, isDirectory: true } : null
     },
     readDir: async (p): Promise<DirEntry[]> => {
@@ -139,6 +164,13 @@ async function absentToNull<T>(read: Promise<T>): Promise<T | null> {
 const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
   e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
 
+const fileStat = (s: Stats): FileStat => ({
+  size: s.size,
+  mtimeMs: s.mtimeMs,
+  birthtimeMs: s.birthtimeMs,
+  isDirectory: s.isDirectory(),
+})
+
 async function atomicWrite(p: string, data: string | Uint8Array): Promise<void> {
   const tmp = `${p}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`
   try {
@@ -150,22 +182,33 @@ async function atomicWrite(p: string, data: string | Uint8Array): Promise<void> 
   }
 }
 
+// The fast double Core's suites install: the host's temp and rename without its flush, its mode, or its symlink's target, which `nodeMachine.test.ts` carries.
+async function landOnDisk({ path, data, mtimeMs, expect }: Landing): Promise<FileStat> {
+  const was = await absentToNull(stat(path))
+  if (expect !== undefined && !sameFile(expect, was && fileStat(was)))
+    throw new Error(`${path} changed`)
+  const tmp = join(dirname(path), `.landing-${randomBytes(6).toString('hex')}`)
+  try {
+    await writeFile(tmp, data, { flag: 'wx' })
+    if (mtimeMs !== undefined) await utimes(tmp, mtimeMs / 1000, mtimeMs / 1000)
+    await rename(tmp, path)
+  } catch (e) {
+    await rm(tmp, { force: true })
+    throw e
+  }
+  return fileStat(await stat(path))
+}
+
 export function diskMachine(): Machine {
   return {
     readText: (p) => absentToNull(readFile(p, 'utf8')),
     readBytes: (p) => absentToNull(readFile(p)),
     writeText: (p, text) => atomicWrite(p, text),
     writeBytes: (p, bytes) => atomicWrite(p, bytes),
+    land: (list) => Promise.allSettled(list.map(landOnDisk)),
     async stat(p) {
       const s = await absentToNull(stat(p))
-      return (
-        s && {
-          size: s.size,
-          mtimeMs: s.mtimeMs,
-          birthtimeMs: s.birthtimeMs,
-          isDirectory: s.isDirectory(),
-        }
-      )
+      return s && fileStat(s)
     },
     async readDir(p) {
       const entries = await absentToNull(readdir(p, { withFileTypes: true }))
