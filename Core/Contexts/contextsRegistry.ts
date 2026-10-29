@@ -21,7 +21,7 @@ function parseRegistry(raw: Record<string, unknown>): Result<ContextsRegistry> {
 export async function ensureContextsRegistry(root: string): Promise<void> {
   const raw = await readJsonStrict(contextsRegistryFile(root))
   if (raw.ok || raw.error.code !== 'not-found') return
-  await writeJson(contextsRegistryFile(root), seededRegistry(newId))
+  await writeJson(contextsRegistryFile(root), seededRegistry(newId), null)
 }
 
 export async function readRegistryStrict(root: string): Promise<Result<ContextsRegistry>> {

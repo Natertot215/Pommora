@@ -29,7 +29,7 @@ import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewriteHeld } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
 import { discardFile, type TrashDeps } from '../Trash/discard'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath } from '../Paths/paths'
 import { tileHostsOf } from './tileHosts'
@@ -183,7 +183,7 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
   if (known ? TILE_KINDS[known.type].fileBacked : 'body' in removed) {
     const file = tileFilePath(dir, id)
     await machine().lock(file, async () => {
-      if (!(await pathExists(file))) await atomicWriteFile(file, body)
+      if (!(await pathExists(file))) await atomicWriteFile(file, body, { expect: null })
     })
   }
   const written = await seatTile(dir, removed.entry, (layout) =>
@@ -245,9 +245,10 @@ export async function writeMarkdownTile(
 ): Promise<BodyWrite> {
   const file = tileFilePath(dir, tileId)
   return machine().lock(file, async () => {
+    const was = await statOrNull(file)
     const held = await machine().readText(file)
     if (held !== null && machine().sha256Hex(held) !== baseHash) return { stale: true }
-    await atomicWriteFile(file, body, true)
+    await atomicWriteFile(file, body, { bodyOnly: true, expect: was })
     dropTileLinks()
     return { stale: false, hash: machine().sha256Hex(body) }
   })

@@ -7,7 +7,7 @@ import { listOf } from '../Contract/validators'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { isBlankRaw, landValue, memberKey, namesValue } from '../Files/rootValues'
 import { atomicWriteFile, parseJsonObject } from '../Files/atomicWrite'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import {
   type Place,
   splitFrontmatter,
@@ -188,6 +188,7 @@ export async function rewriteRootAt(
   absFile: string,
   rewrite: (page: SweptPage) => string | null,
 ): Promise<Result<null>> {
+  const was = await statOrNull(absFile)
   let content: string | null
   try {
     content = await machine().readText(absFile)
@@ -198,7 +199,7 @@ export async function rewriteRootAt(
   const page = sweepParse(content)
   if (!page) return fault(UNPARSED_FRONTMATTER)
   const next = rewrite(page)
-  if (next !== null) await atomicWriteFile(absFile, next)
+  if (next !== null) await atomicWriteFile(absFile, next, { expect: was })
   return ok(null)
 }
 

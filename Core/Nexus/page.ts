@@ -2,7 +2,7 @@ import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
@@ -22,7 +22,9 @@ export async function createPage(
   const keys = [...PAGE_MODELED_KEYS, ...Object.keys(seeded)]
   return machine().lock(file, async () => {
     if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
-    await atomicWriteFile(file, mergeFrontmatter('', modeled, keys, opts.body ?? ''))
+    await atomicWriteFile(file, mergeFrontmatter('', modeled, keys, opts.body ?? ''), {
+      expect: null,
+    })
     return ok({ path: file })
   })
 }
@@ -53,11 +55,12 @@ export async function updatePageBody(
 ): Promise<Result<PageWrite | { stale: true }>> {
   return machine().lock(absFile, async () => {
     try {
+      const was = await statOrNull(absFile)
       const previous = await machine().readText(absFile)
       if (previous === null) return fail('not-found', 'Page not found.')
       if (baseHash !== undefined && bodyHash(previous) !== baseHash) return ok({ stale: true })
       const written = mergeFrontmatter(previous, {}, [], body)
-      await atomicWriteFile(absFile, written, bodyOnly)
+      await atomicWriteFile(absFile, written, { bodyOnly, expect: was })
       return ok({ previous, written })
     } catch (e) {
       return fault(e)
