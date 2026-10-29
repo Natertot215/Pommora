@@ -1,14 +1,14 @@
 ## Write Path — Implementation Plan
 
 **DATE:** 10-29-2026
-**STATUS:** Ratified (10-29-2026)
+**STATUS:** Complete (10-29-2026)
 **SOURCE:** *Write Path — Brief* (its Context, Mandate, Constraints, Verification, and Insights), *Write Path — Investigation*, *Trash & Archive Restructure — Reach-In Measurement · §5 Where the Time Goes*, *Write Path — Merged Design* and its inputs (`Scouts/A-Writers-Seam.md`, `Scouts/B-Sweep-Recording-Reads.md`), *Trash & Archive Restructure — Decisions & Intention* (Decisions 1, 12, and 18-23), and the planning session's rulings on the merged design's open points (10-29-2026), which *§Constraints · Rulings* records.
 
 **BASELINE** (filled after ratification; the end logged in the final report)
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `15fe7422a` | 8,967 passed, 2 skipped (546 files); typecheck and lint clean | 10-29-2026 10:55 AM | |
+| `15fe7422a` | 8,967 passed, 2 skipped (546 files); typecheck and lint clean | 10-29-2026 10:55 AM | `58a7b41a6` (code): 9,023 passed, 2 skipped (546 files); typecheck, lint, and build clean; 10-29-2026 06:59 PM |
 
 ### Context
 
@@ -42,7 +42,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | 1 | +518 / −400 (+118) | +560 / −417 (+143), its checkpoint fold included | +143 |
 | 2 | +107 / −45 (+62) | +138 / −79 (+59), its checkpoint fold included | +202 |
 | Final Verification | — | +141 / −151 (−10), Waves One and Two, the neutral gate's fold, the temp guard's removal (D-3), and the scaled pool (D-4) | +192 |
-| Closeout | — | | |
+| Closeout | — | ±0 (comments and docs only) | +192 |
 
 **Task 1-8's Measure:** the Medium-0 property rename's median was 3.292 ms per file (23,135 ms over 7,027 files) at four pool threads and 2.388 ms (16,782 ms) at sixteen, 0.904 ms apart, so the line shipped and `CHUNK` stayed 64.
 
@@ -227,7 +227,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   - [x] Task 1-7 · Every landing after a read checks it
   - [x] Task 1-8 · The chunk and the thread pool, measured together
   - [x] Review Checkpoint
-- [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
+- [x] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [x] **Phase 2** — W-2 · One Read
   - [x] Task 2-1 · The clash check reads only files holding both keys
   - [x] Task 2-2 · An option edit sweeps only pages its value changes
@@ -235,8 +235,8 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   - [x] Task 2-4 · One parse serves the index and the tree
   - [x] Task 2-5 · The owed walk reuses the write's parse
   - [x] Review Checkpoint
-- [ ] *§Final Verification* over `<BASELINE>..HEAD`
-- [ ] `[Stop: the final report, per §Final Verification]`
+- [x] *§Final Verification* over `<BASELINE>..HEAD`
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -459,9 +459,9 @@ One function, `statOrNull`, answers a path's stat or null, beside `machine()` in
 
 **VERIFY**
 
-- [ ] `git grep -n -A2 "machine()$" -- 'Core/*.ts' 'Desktop/*.ts' ':!*.test.ts' | grep -c "\.stat("` prints `1`, `statOrNull`'s own body; `pathExists` is one line over it; and `git grep -n "node:fs/promises" -- Desktop/Config` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n -A2 "machine()$" -- 'Core/*.ts' 'Desktop/*.ts' ':!*.test.ts' | grep -c "\.stat("` prints `1`, `statOrNull`'s own body; `pathExists` is one line over it; and `git grep -n "node:fs/promises" -- Desktop/Config` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -871,10 +871,10 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 
 **VERIFY**
 
-- [ ] `git grep -n "indexWrittenPage\b\|indexEvent\b" -- Core Desktop` prints nothing.
-- [ ] T-N10, T-N31, and T-N34 are green and went red against their rows' reverts.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "indexWrittenPage\b\|indexEvent\b" -- Core Desktop` prints nothing.
+- [x] T-N10, T-N31, and T-N34 are green and went red against their rows' reverts.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -1240,9 +1240,9 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 
 **VERIFY**
 
-- [ ] T-N1 to T-N4 are green on all three machines (`Core/Testing/contracts.test.ts`, `Desktop/Platform/nodeMachine.test.ts`), and T-N3's host half, T-N19 to T-N21, T-N27, and T-N35 are green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N1 to T-N4 are green on all three machines (`Core/Testing/contracts.test.ts`, `Desktop/Platform/nodeMachine.test.ts`), and T-N3's host half, T-N19 to T-N21, T-N27, and T-N35 are green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-4
 
@@ -2501,11 +2501,11 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 **VERIFY**
 
-- [ ] `git grep -n -w -e writeText -e writeBytes -e rewritePreservingTimes -e atomicWriteBinary -e refuseWrites -e writeFileAtomic -- Core Desktop Sync` prints only `Desktop/main.ts`'s `clipboard.writeText`; `git grep -n "utimes" -- Core Desktop Sync ':!*.test.ts'` prints three lines: `Core/Testing/machines.ts`'s `node:fs/promises` import and `landOnDisk`'s call, and `Desktop/Platform/nodeMachine.ts`'s `handle.utimes`; and `git grep -c "write-file-atomic" -- Desktop/package.json package-lock.json` prints nothing.
-- [ ] `git diff --stat -- Core/Sync Sync`, before the commit, prints nothing.
-- [ ] T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, T-N29, and T-N36 are green, and the three `notesWiring.test.ts` assertions went red against a notes write.
-- [ ] Run the gates, then `npm run build`.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n -w -e writeText -e writeBytes -e rewritePreservingTimes -e atomicWriteBinary -e refuseWrites -e writeFileAtomic -- Core Desktop Sync` prints only `Desktop/main.ts`'s `clipboard.writeText`; `git grep -n "utimes" -- Core Desktop Sync ':!*.test.ts'` prints three lines: `Core/Testing/machines.ts`'s `node:fs/promises` import and `landOnDisk`'s call, and `Desktop/Platform/nodeMachine.ts`'s `handle.utimes`; and `git grep -c "write-file-atomic" -- Desktop/package.json package-lock.json` prints nothing.
+- [x] `git diff --stat -- Core/Sync Sync`, before the commit, prints nothing.
+- [x] T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, T-N29, and T-N36 are green, and the three `notesWiring.test.ts` assertions went red against a notes write.
+- [x] Run the gates, then `npm run build`.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-5
 
@@ -2604,9 +2604,9 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 **VERIFY**
 
-- [ ] T-N12 and the rewritten handlers case are green, and the handlers case went red against the old loop.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N12 and the rewritten handlers case are green, and the handlers case went red against the old loop.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-6
 
@@ -2802,9 +2802,9 @@ The Context and Space renames, and `finishOwed`'s Context and Space pass, run in
 
 **VERIFY**
 
-- [ ] T-N13 and the rewritten mutate case are green, and the mutate case went red against the old dispatch.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N13 and the rewritten mutate case are green, and the mutate case went red against the old dispatch.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-7
 
@@ -3041,10 +3041,10 @@ Every landing that follows a read of the same file carries the stat that read sa
 
 **VERIFY**
 
-- [ ] Every `atomicWriteFile(` and `writeJson(` call in `git grep -n "atomicWriteFile(\|writeJson(" -- Core Desktop ':!*.test.ts'` passes `expect`, or is one of these, whose functions read nothing of the file first: `writeRecord`'s record (`Core/Bundles/record.ts`), a new folder's sidecar after its `mkdir` answered `created` (`folderEntity.ts`), a new Space's blank tiles (`contextWrite.ts`), a new tile's body (`addTile`), the thumbnail (`Desktop/Capture/thumbnails.ts`), and `ensureIdentity`'s Agenda write over the file its own create just landed; each is checked by reading its function.
-- [ ] T-N23, T-N24, and T-N32 are green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Every `atomicWriteFile(` and `writeJson(` call in `git grep -n "atomicWriteFile(\|writeJson(" -- Core Desktop ':!*.test.ts'` passes `expect`, or is one of these, whose functions read nothing of the file first: `writeRecord`'s record (`Core/Bundles/record.ts`), a new folder's sidecar after its `mkdir` answered `created` (`folderEntity.ts`), a new Space's blank tiles (`contextWrite.ts`), a new tile's body (`addTile`), the thumbnail (`Desktop/Capture/thumbnails.ts`), and `ensureIdentity`'s Agenda write over the file its own create just landed; each is checked by reading its function.
+- [x] T-N23, T-N24, and T-N32 are green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-8
 
@@ -3118,9 +3118,9 @@ Every landing that follows a read of the same file carries the stat that read sa
 
 **VERIFY**
 
-- [ ] Both medians are recorded; the line exists in `Desktop/main.ts` and `CHUNK` is 64 exactly when the difference is at least 0.5 ms, and otherwise `CHUNK` is 16 and T-N9 reads its 16-file form.
-- [ ] `git -C "$REPO" worktree list` shows what it showed at the baseline, plus `$WORK/baseline`.
-- [ ] Run the gates.
+- [x] Both medians are recorded; the line exists in `Desktop/main.ts` and `CHUNK` is 64 exactly when the difference is at least 0.5 ms, and otherwise `CHUNK` is 16 and T-N9 reads its 16-file form.
+- [x] `git -C "$REPO" worktree list` shows what it showed at the baseline, plus `$WORK/baseline`.
+- [x] Run the gates.
 
 #### Review Checkpoint
 
@@ -3225,9 +3225,9 @@ A rename's clash check asks the index for the pages holding both the old and the
 
 **VERIFY**
 
-- [ ] T-N14 and T-N15 are green, and the existing refusal of a page holding both keys still passes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N14 and T-N15 are green, and the existing refusal of a page holding both keys still passes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
@@ -3280,9 +3280,9 @@ An option rename, delete, or value-format change runs its own rewrite over each 
 
 **VERIFY**
 
-- [ ] T-N16 is green, all three halves.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N16 is green, all three halves.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -3519,9 +3519,9 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
 
 **VERIFY**
 
-- [ ] T-N17 is green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N17 is green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-4
 
@@ -3831,9 +3831,9 @@ The index half reads and parses each written page once and hands that read to th
 
 **VERIFY**
 
-- [ ] T-N25, T-N30, T-N33, T-N37, T-N38, and T-N39 are green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N25, T-N30, T-N33, T-N37, T-N38, and T-N39 are green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-5
 
@@ -3922,9 +3922,9 @@ The tree patch builds a written page's record from the index's one read of its l
 
 **VERIFY**
 
-- [ ] T-N18 is green, all three halves, and T-N40 is green.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N18 is green, all three halves, and T-N40 is green.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
@@ -3958,9 +3958,9 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
   2. The harness's before-and-after for the three renames on Medium-0. With the harness worktree moved to HEAD and rebuilt (`git -C "$WORK/baseline" checkout -- .`, `git -C "$WORK/baseline" checkout --detach <HEAD>`, the re-fitted patch applied again, and `npm run build` inside it), copy `profiles/profile.json`, the baseline's own run at `15fe7422a`, to `profiles/profile-15fe7422a.json`, then run `node profile.mjs profile`. For the property, Context, and page renames, report wall time, files landed, per-file cost, and the machine call counts beside the baseline's, against OP-7's expected counts: the property rename at two `readText`s and one `stat` per holder (the clash check's read, and the rewrite's read and stat) plus one `readBytes` (the echo); the Context rename at one `readText` per rewritten page and one walk's `stat` and `readDir`; the page rename at one `readText` per page the index names as mentioning the old title, with no settle re-read. The option rename isn't among the profile's operations. The baseline's figures: property rename 48,384 ms over 7,027 files (6.89 ms per file), 21,081 `readText`, 21,073 `stat`; Context rename 34,448 ms over 4,927 (6.99 ms), 10,036 `readText`, 36,319 `stat`, four walks; page rename 4,088 ms over 522 (7.83 ms).
   3. The chokidar re-profile: `node analyze-profile.mjs renameProperty _read,filterPath` and the same for `renameContext`, recording their inclusive time and share of main-thread busy time beside the baseline's (2.53 s, 23% of a property rename's busy time), for *§Reconciliation*'s issue. Then delete the `*.cpuprofile` files the run wrote; `profile.json` and `profile-15fe7422a.json` stay beside the harness as its results.
   4. The diff read once; *§Completion Criteria* ticked.
-- [ ] **The Cold-Machine Check:** `./teardown.sh` from the harness folder, then each of these prints nothing, or only what it names: `git -C "$REPO" worktree list` (the main checkout alone); `ls -d ~/Benchmark-* 2>/dev/null`; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`; `ps -A -o pid=,command= | grep -E "pommora-reach-in|Benchmark-" | grep -v grep`; `lsof -nP -iTCP:9391-9396 -sTCP:LISTEN`; `git -C "$REPO" status --short` (nothing, since the planning folders and the harness are committed at closeout); and `git -C "$REPO" stash list` (as it stood at the baseline). A Pommora instance launched from the main checkout before the run is left running.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
-- [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, the per-phase and total delta, the before-and-after numbers, Task 1-8's two medians and the chunk they set, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim.
+- [x] **The Cold-Machine Check:** `./teardown.sh` from the harness folder, then each of these prints nothing, or only what it names: `git -C "$REPO" worktree list` (the main checkout alone); `ls -d ~/Benchmark-* 2>/dev/null`; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`; `ps -A -o pid=,command= | grep -E "pommora-reach-in|Benchmark-" | grep -v grep`; `lsof -nP -iTCP:9391-9396 -sTCP:LISTEN`; `git -C "$REPO" status --short` (nothing, since the planning folders and the harness are committed at closeout); and `git -C "$REPO" stash list` (as it stood at the baseline). A Pommora instance launched from the main checkout before the run is left running.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
+- [x] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, the per-phase and total delta, the before-and-after numbers, Task 1-8's two medians and the chunk they set, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim.
 
 #### Reconciliation
 

@@ -49,7 +49,7 @@ The operational layer for running, driving, and committing to the app; the Featu
 
 ### Data-Layer Traps
 
-- **Watcher Settle:** The watcher holds a path until it's quiet for 200 ms; an external editor's slower write-then-rename surfaces a `Name.md.<digits>` temp name, which `manifestAdmits` drops while the final name sits beside it.
+- **Watcher Settle:** The watcher holds a path until it's quiet for 200 ms.
 - **Stale Trees in Tests:** `refreshTree` joins an in-flight walk, so call `diskMoved` first. Chained mutations go through `Core/Testing/settledMutate.ts`, and a raw disk edit needs a re-walk.
 - **Fake Timers Over I/O:** Fake only `setTimeout`, `clearTimeout`, and `Date`; faking microtasks strands awaited writes. Advance the clock between writes, and wait on row counts rather than fixed delays.
 - **Held Chunks:** A held rewrite holds its chunk's file locks from the read through the record, so a `readText` or `land` hook that takes one of those locks rejects as re-entrant. Resolve a gate from the hook and take the lock outside it, as `governedSweep.test.ts`' queued-writer case does.

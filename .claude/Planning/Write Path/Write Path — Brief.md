@@ -1,7 +1,7 @@
 ### Write Path — Brief
 
 **DATE:** 10-28-2026
-**STATUS:** The plan is ratified (10-29-2026) and executing; the resume follows
+**STATUS:** The plan is complete (10-29-2026) and the reach-in matrix re-run; the Trash & Archive brainstorm's last phase is next
 **SOURCE:** the Trash & Archive Restructure brainstorm (10-28-2026), *Trash & Archive Restructure — Decisions & Intention* (Decisions 18-21), and *Write Path — Investigation* beside this brief.
 
 This brief is the handoff for one session. That session writes the Write Path plan, reviews and ratifies it, implements its two phases, verifies them, and then hands the Trash & Archive Restructure back in a state the session after it resumes from this brief alone.
