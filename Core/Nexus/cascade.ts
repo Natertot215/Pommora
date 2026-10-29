@@ -3,7 +3,7 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { isBlankRaw, landValue, stripKeys } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { errText, ok } from '../Contract/result'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter, sweepParse } from '../Files/pageFile'
+import { splitEnvelope, mergeFrontmatter, sweepParse } from '../Files/pageFile'
 import {
   type Rewrite,
   type RewriteText,
@@ -197,10 +197,10 @@ export function fileRewrites(
   const withPatch = (raw: Json, patch: Record<string, string>): Json | null =>
     Object.keys(patch).length ? { ...raw, ...patch } : null
   return {
-    text: (content, file) => {
+    text: (content, file, page) => {
       const { body } = splitEnvelope(content)
       const own = relative(root, file) === ownRel
-      const patch = patchOf(splitFrontmatter(content), isLinkKey, own, body)
+      const patch = patchOf(page.raw, isLinkKey, own, body)
       const keys = Object.keys(patch)
       const next = own && settled ? body : rewrite(body, own)
       return next === body && keys.length === 0

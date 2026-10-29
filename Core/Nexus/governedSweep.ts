@@ -8,10 +8,9 @@ import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 import { addressable } from './heldPages'
 import type { EntityRecord } from './record'
-import { sweepParse } from '../Files/pageFile'
+import { type Place, type SweptPage, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
-import type { Place } from '../Files/pageFile'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
 import { isBlankRaw, landValue } from '../Files/rootValues'
 
@@ -26,9 +25,9 @@ export interface SweepResult {
 
 export type Rewrite = (root: Json, file: string) => Json | null
 
-export type RewriteText = (content: string, file: string) => string | null
+export type RewriteText = (content: string, file: string, page: SweptPage) => string | null
 
-/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place; `above`, when given, places each key a page's rewrite adds. */
+/** `raw` rewrites a page's front matter or a Space sidecar's object; `text`, when given, rewrites a page's whole text in its place, handed the parse the sweep admitted it by; `above`, when given, places each key a page's rewrite adds. */
 export type SweepPlan = {
   raw: Rewrite
   text?: RewriteText
@@ -51,7 +50,7 @@ function rewritten(plan: SweepPlan, file: string, content: string): string | nul
   }
   const page = sweepParse(content)
   if (!page) return undefined
-  if (plan.text) return plan.text(content, file)
+  if (plan.text) return plan.text(content, file, page)
   return rewriteRoot((root) => plan.raw(root, file), plan.above?.(page.raw, file))(page)
 }
 

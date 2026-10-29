@@ -217,17 +217,27 @@ export function mergeFrontmatter(
   return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
 
-/** Renames `from` to `to` in its place; null when nothing moves. A held `to` is the rival: under `'prefer-new'` it keeps its value and `from` goes; under `'merge'` the two combine through `joinValues` in `from`'s place. The value lands through `setAbove`, so a blank one leaves. */
+/** `content` with `from` renamed to `to` as `rekeyed` renames it. */
 export function renameFrontmatterKey(
   content: string,
   from: string,
   to: string,
   collision: KeyCollision,
 ): string | null {
-  if (from === to) return null
   const { frontmatter, body } = splitEnvelope(content)
   const doc = parseDocument(frontmatter)
-  if (doc.errors.length > 0 || !isMap(doc.contents)) return null
+  return doc.errors.length > 0 ? null : rekeyed(doc, body, from, to, collision)
+}
+
+/** The page of `doc` and `body` with `from` renamed to `to` in its place; null when nothing moves. A held `to` is the rival: under `'prefer-new'` it keeps its value and `from` goes; under `'merge'` the two combine through `joinValues` in `from`'s place. The value lands through `setAbove`, so a blank one leaves. */
+function rekeyed(
+  doc: Document,
+  body: string,
+  from: string,
+  to: string,
+  collision: KeyCollision,
+): string | null {
+  if (from === to || !isMap(doc.contents)) return null
   const items = doc.contents.items
   const held = (key: string) => items.find((i) => String(i.key) === key)
   const pair = held(from)
@@ -268,6 +278,8 @@ export async function readPage(rootPath: string, relPath: string): Promise<Resul
 
 export interface SweptPage {
   raw: Record<string, unknown>
+  /** `rekeyed` over this parse. */
+  rekey: (from: string, to: string, collision: KeyCollision) => string | null
   merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[], above?: Place) => string
   /** `key`'s pair as the block was parsed, its quoting, style, comment, and alias kept; undefined when the block holds no `key`. */
   pair: (key: string) => string | undefined
@@ -292,6 +304,7 @@ export function sweepParse(content: string): SweptPage | null {
   }
   return {
     raw,
+    rekey: (from, to, collision) => rekeyed(doc, body, from, to, collision),
     merge: (modeled, keys, above) => envelope(fenced, mergeInto(doc, modeled, keys, above), body),
     pair,
     above: (key) => {
