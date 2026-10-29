@@ -78,10 +78,14 @@ export async function rewriteHeld(
     const chunk = unique.slice(at, at + CHUNK)
     await holding(chunk, async () => {
       const due: { file: string; was: FileStat; before: string; after: string }[] = []
-      for (const file of chunk) {
-        // The stat ahead of the text, so the stat the landing checks never postdates the text it works from.
-        const was = await statOrNull(file)
-        const before = was && (await readTextOrNull(file))
+      const reads = await Promise.all(
+        chunk.map(async (file) => {
+          // The stat ahead of the text, so the stat the landing checks never postdates the text it works from.
+          const was = await statOrNull(file)
+          return { file, was, before: was && (await readTextOrNull(file)) }
+        }),
+      )
+      for (const { file, was, before } of reads) {
         if (!was || before === null) {
           out.set(file, { status: 'unread' })
           continue
