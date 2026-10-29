@@ -13,7 +13,7 @@ import { currentSession, startSession, stopSession } from '../Sync/Client/sessio
 import { currentStatus } from '../Sync/Client/status'
 import { putJson, readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
-import { seedContentIndex } from '../Index/indexSeed'
+import { deindexPath, seedContentIndex } from '../Index/indexSeed'
 import * as indexSeedModule from '../Index/indexSeed'
 import * as refileModule from '../Archive/refile'
 import { jsonText, pathExists } from '../Files/atomicWrite'
@@ -197,7 +197,7 @@ describe('openNexusSequence', () => {
     expect(openStores).toHaveBeenLastCalledWith(root, NEXUS)
   })
 
-  it('the open registers the Multi-Select members its pages hold from the index, and a settle registers from the file it’s handed', async () => {
+  it('the open and a settle register the Multi-Select members each page’s index row holds, and a page with no row from its file', async () => {
     const registry = join(root, '.nexus', 'properties.json')
     await seedNexus(root, {
       defs: [
@@ -233,6 +233,9 @@ describe('openNexusSequence', () => {
     await registerHeldOptions(root)
     expect(reads).not.toHaveBeenCalled()
     expect(await options()).toEqual(['alpha', 'Ideas'])
+    await registerHeldOptions(root, ['Library/Notes.md'])
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+    await deindexPath(root, notes)
     await registerHeldOptions(root, ['Library/Notes.md'])
     expect(await options()).toEqual(['alpha', 'Ideas', 'Later'])
   })

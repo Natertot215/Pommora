@@ -48,6 +48,10 @@ import type { Pushes } from '../Contract/bridge'
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree } from '../Nexus/liveTree'
 import type { Json } from '../Files/stableJson'
+import { machine } from '../Platform/machine'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -1683,6 +1687,39 @@ describe('unregisteredMembers', () => {
     expect(unregisteredMembers(under('PascalCase'), ['AB', 'J.Crew', 'Red'])).toEqual(['Red'])
     expect(unregisteredMembers(under('lowercase'), ['Green', 'green'])).toEqual(['green'])
     expect(unregisteredMembers(under('lowercase'), [' green '])).toEqual([' green '])
+  })
+})
+
+describe('registerHeldOptions', () => {
+  it('a settle registers the word an own write added from the index, reading no page', async () => {
+    installStores(memoryStores().stores)
+    const id = await mkProperty({
+      label: 'Tags',
+      key: 'Tags',
+      type: 'multiSelect',
+      select_options: [{ id: 'opt_A', key: 'A', label: 'A' }],
+    })
+    const page = await pageHolding(id, 'A')
+    await openSession(root)
+    await refreshTree(root)
+    await seedContentIndex(root)
+    try {
+      await rewriteRootAt(
+        page,
+        rewriteRoot((raw) => landValue(raw, 'Tags', ['A', 'Fresh'])),
+      )
+      const reads = vi.spyOn(machine(), 'readText')
+      await settleNow({ push: () => {}, watch: async () => {} }, root)
+      expect(reads.mock.calls.filter(([path]) => path === page)).toEqual([])
+      reads.mockRestore()
+    } finally {
+      closeSession()
+      installStores(NO_STORES)
+    }
+    expect(optionsOf((await readRegistry(root)).defs[id]).map((o) => o.label)).toEqual([
+      'A',
+      'Fresh',
+    ])
   })
 })
 
