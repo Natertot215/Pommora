@@ -15,8 +15,22 @@ import * as indexSeed from '../Index/indexSeed'
 import { seedContentIndex } from '../Index/indexSeed'
 import * as contentIndex from '../Index/contentIndex'
 import { readNexus } from './readNexus'
+import * as keyHolders from '../Index/keyHolders'
+import { renameSweep } from '../Properties/registryProperty'
 // Installs the own tap that records each landing in the index and the tree.
 import './settle'
+
+const parses = vi.hoisted(() => ({ count: 0 }))
+vi.mock('yaml', async (importOriginal) => {
+  const real = await importOriginal<typeof import('yaml')>()
+  return {
+    ...real,
+    parseDocument: (...args: Parameters<typeof real.parseDocument>) => {
+      parses.count++
+      return real.parseDocument(...args)
+    },
+  }
+})
 
 const roots: string[] = []
 afterEach(async () => {
@@ -282,6 +296,18 @@ describe('sweepGovernedRoots', () => {
     expect(r.skipped).toEqual([a])
     expect(r.refused).toEqual([])
     expect([...r.touched.keys()]).toEqual([b])
+  })
+
+  it('a property rename’s plan rewrites the parse the sweep admitted its page by', async () => {
+    const { root, a } = await seed()
+    await writeFile(a, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nOld: x\n---\nbody\n')
+    vi.spyOn(keyHolders, 'findHolders').mockResolvedValue({ files: [a], held: [] })
+    parses.count = 0
+    await renameSweep(root, 'Old', 'New')
+    expect(parses.count).toBe(1)
+    expect(await readFile(a, 'utf8')).toBe(
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nNew: x\n---\nbody\n',
+    )
   })
 })
 

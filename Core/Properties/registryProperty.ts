@@ -21,10 +21,10 @@ import {
   withOptionGroups,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
-import { renameFrontmatterKey } from '../Files/pageFile'
 import { findHolders } from '../Index/keyHolders'
 import {
   outsideArchive,
+  type RewriteText,
   sweepCount,
   sweepGovernedRoots,
   type SweepPlan,
@@ -142,8 +142,7 @@ async function renamePlan(
 ): Promise<{ files: string[]; plan: SweepPlan }> {
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const { files } = await findHolders(root, { keys: [from], reach: 'governed' })
-  const text = (content: string): string | null =>
-    renameFrontmatterKey(content, from, to, NEW_KEY_IS_FRESHER)
+  const text: RewriteText = (_content, _file, page) => page.rekey(from, to, NEW_KEY_IS_FRESHER)
   return {
     files,
     plan: { text, raw: (raw) => rekeyHeld(raw, from, to, NEW_KEY_IS_FRESHER) },

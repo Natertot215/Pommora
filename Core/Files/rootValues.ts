@@ -44,7 +44,7 @@ export function stripKeys(root: Json, keys: readonly string[]): Json | null {
 
 export type KeyCollision = 'prefer-new' | 'merge'
 
-/** A JSON root with `from` moved to `to`, null when nothing moves; the twin of `renameFrontmatterKey`, by the same collision rule, landing through `landValue`. */
+/** A JSON root with `from` moved to `to`, null when nothing moves; the twin of `rekeyed`, by the same collision rule, landing through `landValue`. */
 export function rekeyHeld(
   raw: Json,
   from: string,

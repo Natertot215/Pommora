@@ -4,7 +4,6 @@ import { contextKey } from './contexts'
 import { ok, fail, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, relocate, targetTaken } from '../Files/atomicWrite'
-import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextDirRel } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
@@ -46,7 +45,7 @@ const retitleSpace = (raw: Json, contextTitle: string, from: string, to: string)
 function pageLeg(from: string, to: string): RewriteText {
   const oldKey = contextKey(from)
   const newKey = contextKey(to)
-  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
+  return (_content, _file, page) => page.rekey(oldKey, newKey, NEITHER_KEY_IS_FRESHER)
 }
 
 /** The files holding the key a title change rewrites, found before the rename's list or folder step, so no settle between them can drop a moved Space from the tree; `moved` points a Space the tree still lists under the folder it left at the one it went to. The key comes from the old title, never the registry title, which may already read old or new. */
