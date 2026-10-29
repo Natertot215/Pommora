@@ -1,7 +1,7 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { validateOptionValues } from './validation'
 import { readPageRelations } from '../Index/contentIndex'
-import { indexVouches } from '../Index/indexSeed'
+import { unlessVouched } from '../Index/indexSeed'
 import { findHolders } from '../Index/keyHolders'
 import {
   type Rewrite,
@@ -233,14 +233,11 @@ async function valueEditPlan(
     files.map((file) => relative(root, file)),
     def.key,
   )?.pages
-  const reaches = await Promise.all(
-    files.map(async (file) => {
-      const rel = relative(root, file)
-      const row = rows?.[rel]
-      return !row || raw(row.values, file) !== null || !(await indexVouches(root, rel))
-    }),
-  )
-  return { files: files.filter((_, i) => reaches[i]), plan: { raw } }
+  const passOver = (rel: string, file: string): boolean => {
+    const row = rows?.[rel]
+    return !!row && raw(row.values, file) === null
+  }
+  return { files: await unlessVouched(root, files, passOver), plan: { raw } }
 }
 
 async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {

@@ -391,19 +391,19 @@ async function applyPage(
         : applied
   }
   const abs = join(root, rel)
+  // A write that landed, moved, or removed the page since the index read it left a row the read no longer describes, so the patch reads the page again.
+  const taken = given && unmoved(rel, given.stat) ? given : undefined
   let read: PageRecord
   try {
-    // A write that landed since the index read the page left a row the read no longer describes, so the patch reads the page again.
-    read =
-      given && unmoved(rel, given.stat)
-        ? pageRecordOf(given.text, rel, given.stat.mtimeMs, given.page)
-        : await readPageRecord(abs, rel)
+    read = taken
+      ? pageRecordOf(taken.text, rel, taken.stat.mtimeMs, taken.page)
+      : await readPageRecord(abs, rel)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  // The app's own write leaves the record its bytes give for the next walk, which would otherwise read the page again.
-  if (ev.stat) rememberParse(abs, ev.stat, read)
+  // The app's own write leaves the record its landed bytes give for the next walk, under the stat that read was taken at; a watched read has no forget behind it to stop a walk in flight from caching older bytes over it.
+  if (taken && ev.origin === 'own') rememberParse(abs, taken.stat, read)
   oweValue(owed, rel, !!ev.bodyOnly)
   if (ev.origin === 'watched') owed.pages.add(rel)
   if (read.kind === 'unread' && read.reason === 'missing')

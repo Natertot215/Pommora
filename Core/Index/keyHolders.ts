@@ -1,7 +1,7 @@
 // Key holders: which pages and Spaces hold a key, found from the content index and the tree, and what each one holds.
 
 import { queryMembers, readPageRelations } from './contentIndex'
-import { indexVouches, nexusCorpus } from './indexSeed'
+import { nexusCorpus, unlessVouched } from './indexSeed'
 import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
@@ -84,21 +84,12 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const rels = q.keys.map((key) => queryMembers(key, title))
   const listed = rels.map((r) => r && new Set(r))
   const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
+  const reached = await pagesInReach(root, tree, named, q.reach)
   // A page the index lists without every key is passed over only while its row still describes the file, since an outside edit the index hasn't taken may have given it the rest.
-  const kept =
+  const pages =
     named && q.every
-      ? await Promise.all(
-          named.map(
-            async (rel) => listed.every((l) => l?.has(rel)) || !(await indexVouches(root, rel)),
-          ),
-        )
-      : null
-  const pages = await pagesInReach(
-    root,
-    tree,
-    kept && named ? named.filter((_, i) => kept[i]) : named,
-    q.reach,
-  )
+      ? await unlessVouched(root, reached, (rel) => !listed.every((l) => l?.has(rel)))
+      : reached
   const holds = (s: SpaceNode): boolean =>
     q.keys.some((key) =>
       Object.hasOwn(s[parseContextKey(key) === null ? 'values' : 'contextKeys'] ?? {}, key),

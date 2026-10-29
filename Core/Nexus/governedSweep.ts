@@ -12,7 +12,7 @@ import { type Place, type SweptPage, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
-import { isBlankRaw, landValue } from '../Files/rootValues'
+import { isBlankRaw, type KeyCollision, landValue, rekeyHeld } from '../Files/rootValues'
 
 export interface SweepResult {
   /** Each file the sweep wrote, or a dry run would write, with the text it held before and the text the write leaves. */
@@ -33,6 +33,12 @@ export type SweepPlan = {
   text?: RewriteText
   above?: (root: Json, file: string) => Place
 }
+
+/** The plan that renames `from` to `to` in place, in each page's parse and each Space sidecar's object, a held `to` met by `collision`. */
+export const rekeySweep = (from: string, to: string, collision: KeyCollision): SweepPlan => ({
+  raw: (raw) => rekeyHeld(raw, from, to, collision),
+  text: (_content, _file, page) => page.rekey(from, to, collision),
+})
 
 export const collectionFolders = (root: string, tree: NexusTree): string[] =>
   [

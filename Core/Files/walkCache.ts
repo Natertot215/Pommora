@@ -45,7 +45,7 @@ export async function cachedParse<T>(
     return e.value as T
   }
   const value = await parse(s)
-  // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy (mtime, size) would serve the failure until the file next changes. A parse that straddled a forget may hold the bytes the forget retired, under the same (mtime, size).
+  // null is a non-answer (absent OR transiently unreadable) — caching it against a healthy stat would serve the failure until the file next changes. A parse that straddled a forget may hold the bytes the forget retired, under the same stat.
   if (value !== null && forgets === forgetsAtStart)
     entries.set(absPath, { stat: s, verifiedAt: Date.now(), gen, value })
   return value

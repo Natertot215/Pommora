@@ -8,7 +8,12 @@ import type { Json } from '../Files/stableJson'
 import { contextDirRel } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { followRelinks, owedRename, owedSwept, runNoted } from '../Nexus/owed'
-import { type Rewrite, type RewriteText, sweepGovernedRoots } from '../Nexus/governedSweep'
+import {
+  type Rewrite,
+  rekeySweep,
+  sweepGovernedRoots,
+  type SweepPlan,
+} from '../Nexus/governedSweep'
 import { type ConfigReach, sweptReach } from '../Nexus/configReach'
 import { withoutOrderId } from './spaceSidecar'
 import {
@@ -42,12 +47,6 @@ export const rekeyContext =
 const retitleSpace = (raw: Json, contextTitle: string, from: string, to: string): Json | null =>
   editHeldList(raw, contextKey(contextTitle), (held) => editList(held, new Map([[from, to]])))
 
-function pageLeg(from: string, to: string): RewriteText {
-  const oldKey = contextKey(from)
-  const newKey = contextKey(to)
-  return (_content, _file, page) => page.rekey(oldKey, newKey, NEITHER_KEY_IS_FRESHER)
-}
-
 /** The files holding the key a title change rewrites, found before the rename's list or folder step, so no settle between them can drop a moved Space from the tree; `moved` points a Space the tree still lists under the folder it left at the one it went to. The key comes from the old title, never the registry title, which may already read old or new. */
 export async function titleHolders(
   root: string,
@@ -70,12 +69,10 @@ export async function cascadeTitle(
   space: boolean,
   files: string[],
 ): Promise<ConfigReach> {
-  const raw: Rewrite = space
-    ? (r) => retitleSpace(r, contextTitle, from, to)
-    : rekeyContext(from, to)
-  return sweptReach(
-    await sweepGovernedRoots(files, space ? { raw } : { raw, text: pageLeg(from, to) }),
-  )
+  const plan: SweepPlan = space
+    ? { raw: (r) => retitleSpace(r, contextTitle, from, to) }
+    : rekeySweep(contextKey(from), contextKey(to), NEITHER_KEY_IS_FRESHER)
+  return sweptReach(await sweepGovernedRoots(files, plan))
 }
 
 export async function unlinkContextKey(
