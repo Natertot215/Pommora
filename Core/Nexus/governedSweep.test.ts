@@ -68,8 +68,8 @@ async function indexed(count: number): Promise<{ root: string; pages: string[] }
   return { root, pages }
 }
 
-// Holds every landing until `release` runs.
-function pausedLandings(): { landing: Promise<void>; release: () => void } {
+// Holds the next landing until `release` runs.
+function pausedLanding(): { landing: Promise<void>; release: () => void } {
   const m = machine()
   const real = m.land.bind(m)
   let release = (): void => {}
@@ -80,7 +80,7 @@ function pausedLandings(): { landing: Promise<void>; release: () => void } {
   const landing = new Promise<void>((r) => {
     landed = r
   })
-  vi.spyOn(m, 'land').mockImplementation(async (files) => {
+  vi.spyOn(m, 'land').mockImplementationOnce(async (files) => {
     landed()
     await gate
     return real(files)
@@ -195,7 +195,7 @@ describe('sweepGovernedRoots', () => {
 
   it('a write to a page its chunk holds waits for the landing, and both land', async () => {
     const { a, b } = await seed()
-    const { landing, release } = pausedLandings()
+    const { landing, release } = pausedLanding()
     const sweep = sweepGovernedRoots([a, b], tagging)
     await landing
     let edited = false
