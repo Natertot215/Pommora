@@ -1,7 +1,7 @@
 // Device-level config, not nexus data. Parametrized by the userData dir (not app.getPath) so the logic stays testable without Electron.
 
 import { join } from '@pommora/core/Paths/posix'
-import { stat } from 'node:fs/promises'
+import { statOrNull } from '@pommora/core/Platform/machine'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
 import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashMode'
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
@@ -62,13 +62,8 @@ export function addRecent(recents: string[], path: string, cap = 10): string[] {
   return [path, ...recents.filter((p) => foldKey(p) !== foldKey(path))].slice(0, cap)
 }
 
-async function isExistingDir(p: string): Promise<boolean> {
-  try {
-    return (await stat(p)).isDirectory()
-  } catch {
-    return false
-  }
-}
+const isExistingDir = async (p: string): Promise<boolean> =>
+  (await statOrNull(p))?.isDirectory === true
 
 /** Never prompts — a launch must not block on a modal (headless runs and tests must not hang). */
 export async function resolveRestorePath(config: AppConfig): Promise<string | null> {

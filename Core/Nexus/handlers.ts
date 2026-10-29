@@ -12,7 +12,7 @@ import { formatPath } from '../Paths/pathFormat'
 import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
 import { mutateRequest } from './mutateRequest'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import { devicePref, readDevicePrefs } from '../Settings/devicePrefs'
 import { registerHeldOptions } from '../Properties/optionOps'
 import { runRepairSweep } from '../Properties/repairSweep'
@@ -144,9 +144,7 @@ export const nexusHandlers = {
   // A renderer-origin path, accepted only if it's an existing directory.
   'nexus:openPath': async (ctx, p: unknown) => {
     if (typeof p !== 'string' || p.length === 0) return ok(false)
-    const stat = await machine()
-      .stat(p)
-      .catch(() => null)
+    const stat = await statOrNull(p)
     if (!stat?.isDirectory) return ok(false)
     await adoptNexus(ctx, p)
     return ok(true)

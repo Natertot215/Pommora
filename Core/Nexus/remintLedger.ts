@@ -1,6 +1,6 @@
 import { join } from '../Paths/posix'
 import { CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
-import { machine } from '../Platform/machine'
+import { statOrNull } from '../Platform/machine'
 import { type EntityRecord, recordsOf } from './record'
 import { errText } from '../Contract/result'
 import type { NexusTree, Unreadable } from './tree'
@@ -73,9 +73,7 @@ async function pickEldest(
     if (prior?.[id]) continue
     const births = await Promise.all(
       claims.map(async (c) => {
-        const st = await machine()
-          .stat(join(root, c.path))
-          .catch(() => null)
+        const st = await statOrNull(join(root, c.path))
         return st?.birthtimeMs ?? Number.POSITIVE_INFINITY
       }),
     )

@@ -1,4 +1,4 @@
-import { type FileStat, machine } from '../Platform/machine'
+import { type FileStat, statOrNull } from '../Platform/machine'
 
 // A hit is refused while the parse happened within this window of the file's own mtime — a same-tick edit on a coarse-mtime volume (exFAT/SMB) is invisible to (mtime, size). git's racy-index rule.
 const RACY_WINDOW_MS = 2000
@@ -36,9 +36,7 @@ export async function cachedParse<T>(
   parse: (stat: FileStat | null) => Promise<T>,
 ): Promise<T> {
   const forgetsAtStart = forgets
-  const s = await machine()
-    .stat(absPath)
-    .catch(() => null)
+  const s = await statOrNull(absPath)
   if (!s) return parse(null)
   const e = entries.get(absPath)
   if (

@@ -46,3 +46,9 @@ export function machine(): Machine {
   if (!installed) throw new Error('no platform installed')
   return installed
 }
+
+/** `p`'s stat, or null when it's missing or can't be read; beside the seam rather than `readTextOrNull`, since the walk cache it serves can't import `atomicWrite.ts`, which imports the cache. */
+export const statOrNull = (p: string): Promise<FileStat | null> =>
+  machine()
+    .stat(p)
+    .catch(() => null)
