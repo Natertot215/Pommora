@@ -5,6 +5,7 @@ import { dirname, join } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
 import {
   type DirEntry,
+  entryKind,
   fileStat,
   type FileStat,
   type Landing,
@@ -151,9 +152,6 @@ async function absentToNull<T>(read: Promise<T>): Promise<T | null> {
     throw e
   }
 }
-
-const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['kind'] =>
-  e.isDirectory() ? 'dir' : e.isFile() ? 'file' : 'other'
 
 // The fast double Core's suites install: the host's temp and rename without its flush, its mode, or its symlink's target, which `nodeMachine.test.ts` carries.
 async function landOnDisk({ path, data, mtimeMs, expect }: Landing): Promise<FileStat> {
