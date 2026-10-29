@@ -3001,46 +3001,39 @@ describe('the Contexts lock', () => {
     expect('<Projects>' in fm).toBe(false)
   })
 
-  it('a walk that read the disk before a Context rename committed its registry reads it again', async () => {
+  it('a settle queued during a Context rename waits for it, and its walk reads the committed registry', async () => {
     await refreshTree(root)
     const gamma = join(root, '.nexus', 'contexts', 'Projects', 'Gamma')
     await mkdir(gamma)
     await writeFile(join(gamma, '_space.json'), JSON.stringify({ id: newId() }))
-    const signal = (): { promise: Promise<void>; open: () => void } => {
-      let open = (): void => {}
-      const promise = new Promise<void>((resolve) => {
-        open = resolve
-      })
-      return { promise, open }
-    }
-    const atCommit = signal()
-    const walkRead = signal()
-    const committed = signal()
+    let open = (): void => {}
+    const release = new Promise<void>((resolve) => {
+      open = resolve
+    })
+    let atCommit = (): void => {}
+    const committing = new Promise<void>((resolve) => {
+      atCommit = resolve
+    })
     const commit = contextsRegistry.mutateRegistryFile
     vi.spyOn(contextsRegistry, 'mutateRegistryFile').mockImplementation(async (r, fn) => {
-      atCommit.open()
-      await walkRead.promise
-      const out = await commit(r, fn)
-      committed.open()
-      return out
+      atCommit()
+      await release
+      return commit(r, fn)
     })
-    const walk = readNexusModule.readNexus
-    vi.spyOn(readNexusModule, 'readNexus').mockImplementationOnce(async (r) => {
-      const walked = await walk(r)
-      walkRead.open()
-      await committed.promise
-      return walked
-    })
+    const walks = vi.spyOn(readNexusModule, 'readNexus')
     const renaming = settledMutate(
       root,
       { op: 'renameContext', contextId: 'ctxA', newName: 'Zones' },
       nexusDeps,
     )
-    await atCommit.promise
+    await committing
     const batch = settleBatch({ push: () => {}, watch: async () => {} }, root, [
       { event: 'addDir', absPath: gamma, origin: 'watched' },
       { event: 'add', absPath: join(gamma, '_space.json'), origin: 'watched' },
     ])
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(walks).not.toHaveBeenCalled()
+    open()
     expect((await renaming).ok).toBe(true)
     await batch
     vi.restoreAllMocks()

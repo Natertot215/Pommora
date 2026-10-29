@@ -264,6 +264,10 @@ export const inSettleTurn = <T>(root: string, op: () => Promise<T>): Promise<T> 
     return op()
   })
 
+/** `op` in the settle's turn under the Contexts lock, the turn nested inside the lock rather than around it, since the lock's `finally` takes a turn of its own. */
+export const inContextsTurn = <T>(root: string, op: () => Promise<T>): Promise<T> =>
+  underContexts(root, () => inSettleTurn(root, op))
+
 /** The index once the walk the latest writes may have owed is paid; null when the tree isn't this root's. */
 export async function settledIndex(root: string): Promise<PageIndex | null> {
   await walkWhileOwed(root)

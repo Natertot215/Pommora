@@ -27,11 +27,14 @@ import { fault, ok } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
-import '../Nexus/settle'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
 import { newId } from '../Nexus/ids'
+import { handleMutate } from '../Nexus/mutate'
+import { settleNow } from '../Nexus/settle'
+import * as readNexusModule from '../Nexus/readNexus'
+import { machine } from '../Platform/machine'
 
 vi.mock('../Nexus/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Nexus/governedSweep')>()
@@ -358,6 +361,33 @@ describe('renameContextOp', () => {
     expect(await regTitle('ctx_projects')).toBe('Projects')
     expect((await renameContextOp(root, 'ctx_projects', 'No[pe')).ok).toBe(true)
     expect(await regTitle('ctx_projects')).toBe('No[pe')
+  })
+
+  it('a settle fired mid-sweep waits for the rename, so the walk it owes runs once', async () => {
+    await Promise.all(
+      Array.from({ length: 70 }, (_, i) =>
+        writeFile(
+          join(root, 'Notes', `P${i}.md`),
+          `---\nid: ${newId()}\n<Projects>:\n  - Pommora\n---\nbody`,
+        ),
+      ),
+    )
+    await refreshTree(root)
+    const quiet = { push: () => {}, watch: async () => {} }
+    const m = machine()
+    const land = m.land.bind(m)
+    let settling: Promise<void> | undefined
+    vi.spyOn(m, 'land').mockImplementation(async (files) => {
+      if (files.some((f) => f.path.endsWith('.md'))) settling ??= settleNow(quiet, root)
+      return land(files)
+    })
+    const walks = vi.spyOn(readNexusModule, 'readNexus')
+    const rename = { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const
+    expect((await handleMutate(root, rename, deps)).ok).toBe(true)
+    await settling
+    await settleNow(quiet, root)
+    expect(walks).toHaveBeenCalledTimes(1)
+    vi.restoreAllMocks()
   })
 })
 

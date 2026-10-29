@@ -1,4 +1,4 @@
-// The one finishing pass, at the open and on Try Again: Context entries under the Contexts lock, then Space entries, then property entries under the schema lock, then the content deletes' and moves' entries in the settle's turn, the notes file's own lock innermost and never nested; each entry under a catch that logs it and counts it missed, so one that throws costs only itself and still offers Try Again. Every arm re-derives from the lists as they read now: a name a live entity holds now is skipped and dropped, and an entity gone takes its owed renames with it.
+// The one finishing pass, at the open and on Try Again: Context and then Space entries under the Contexts lock in the settle's turn, then property entries under the schema lock, then the content deletes' and moves' entries in the settle's turn, the notes file's own lock innermost and never nested; each entry under a catch that logs it and counts it missed, so one that throws costs only itself and still offers Try Again. Every arm re-derives from the lists as they read now: a name a live entity holds now is skipped and dropped, and an entity gone takes its owed renames with it.
 
 import { errText } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
@@ -32,7 +32,7 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from '../Contexts/contextCascade'
-import { inSettleTurn, underContexts } from './settle'
+import { inContextsTurn, inSettleTurn } from './settle'
 import { dropContextOrder } from './reorder'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
@@ -83,7 +83,7 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
       }
     }
   }
-  await underContexts(root, async () => {
+  await inContextsTurn(root, async () => {
     await each('context')
     await each('space')
   })
