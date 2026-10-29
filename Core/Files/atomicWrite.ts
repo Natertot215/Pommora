@@ -38,9 +38,9 @@ function sole([landed]: PromiseSettledResult<FileStat>[]): void {
 export async function atomicWriteFile(
   filePath: string,
   data: string | Uint8Array,
-  bodyOnly?: boolean,
+  { bodyOnly, expect }: { bodyOnly?: boolean; expect?: FileStat | null } = {},
 ): Promise<void> {
-  sole(await landOwn([{ path: filePath, data }], bodyOnly))
+  sole(await landOwn([{ path: filePath, data, expect }], bodyOnly))
 }
 
 /** The files a held rewrite holds and lands together, so their flushes overlap. */
@@ -112,7 +112,7 @@ export async function rewriteHeld(
   return out
 }
 
-// Sync's landing records no echo and notes no event, so the watcher reports it like any outside write and the tree and index take it from that event.
+// Sync's landing records no echo, notes no event, and checks no stat its read saw: an arrival replaces what the file holds by Sync's own rules, which capture what it would lose, so the watcher reports it like any outside write and the tree and index take it from that event.
 export async function landBytes(
   filePath: string,
   bytes: Uint8Array,
@@ -158,8 +158,12 @@ export function parseJsonObject(text: string): Record<string, unknown> | null {
 
 export const jsonText = (value: unknown): string => `${stableStringify(value)}\n`
 
-export async function writeJson(filePath: string, value: unknown): Promise<void> {
-  await atomicWriteFile(filePath, jsonText(value))
+export async function writeJson(
+  filePath: string,
+  value: unknown,
+  expect?: FileStat | null,
+): Promise<void> {
+  await atomicWriteFile(filePath, jsonText(value), { expect })
 }
 
 type StrictRead =
@@ -216,6 +220,7 @@ export async function rmwLocked(
   seedOnAbsent?: () => Record<string, unknown>,
   repair?: (absPath: string) => Promise<Record<string, unknown>>,
 ): Promise<Result<Record<string, unknown>>> {
+  const was = await statOrNull(absPath)
   const read = await readJsonStrictly(absPath)
   let base: Record<string, unknown>
   if (read.kind === 'ok') base = read.value
@@ -225,7 +230,8 @@ export async function rmwLocked(
   // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it; a repaired file lands regardless, since its damaged copy has moved aside.
   const next = mutate(base) ?? (read.kind === 'corrupt' ? base : null)
   if (next === null) return ok(base)
-  await writeJson(absPath, next)
+  // A rebuilt file's damaged copy has moved aside, so its landing expects no file there, as a seeded one's does.
+  await writeJson(absPath, next, read.kind === 'corrupt' ? null : was)
   return ok(next)
 }
 
@@ -321,10 +327,11 @@ export function editJsonStrict(
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
 ): Promise<StrictEdit> {
   return machine().lock(absPath, async () => {
+    const was = await statOrNull(absPath)
     const read = await readJsonStrictly(absPath)
     if (read.kind !== 'ok') return read.kind
     const next = mutate(read.value)
-    if (next !== null) await writeJson(absPath, next)
+    if (next !== null) await writeJson(absPath, next, was)
     lastRead.set(absPath, next ?? read.value)
     return next === null ? 'unchanged' : 'written'
   })

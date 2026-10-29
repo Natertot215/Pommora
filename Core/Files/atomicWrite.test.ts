@@ -3,7 +3,7 @@ import { ok } from '../Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/promises'
 import { dirname, join, basename } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, raceLandings, readJsonAt } from '../Testing/hostFs'
 import {
   atomicWriteFile,
   editJsonStrict,
@@ -31,6 +31,7 @@ beforeEach(async () => {
   dir = tempRoot('pom-io-')
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await rm(dir, { recursive: true, force: true })
 })
 
@@ -140,6 +141,14 @@ describe('rmwJsonStrict', () => {
     expect(written.ok).toBe(false)
     expect(await readFile(p, 'utf8')).toBe('[1, 2]')
   })
+
+  it('rejects a file changed outside since its read and keeps the outside bytes', async () => {
+    const p = join(dir, 'state.json')
+    await writeJson(p, { count: 1 })
+    raceLandings((file) => file === p, '{"outside":true}\n')
+    await expect(rmwJsonStrict(p, (cur) => ({ ...cur, count: 2 }))).rejects.toThrow()
+    expect(await readFile(p, 'utf8')).toBe('{"outside":true}\n')
+  })
 })
 
 describe('editJsonStrict', () => {
@@ -181,6 +190,14 @@ describe('editJsonStrict', () => {
     expect(await editJsonStrict(p, bump)).toBe('written')
     await writeFile(p, '{ corrupt')
     expect(await readAppFile(p)).toEqual({ n: 2 })
+  })
+
+  it('rejects a file changed outside since its read and keeps the outside bytes', async () => {
+    const p = join(dir, 'a.json')
+    await writeJson(p, { n: 1 })
+    raceLandings((file) => file === p, '{"outside":true}\n')
+    await expect(editJsonStrict(p, bump)).rejects.toThrow()
+    expect(await readFile(p, 'utf8')).toBe('{"outside":true}\n')
   })
 })
 

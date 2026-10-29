@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { tempRoot, raceLandings, readJsonAt } from '../Testing/hostFs'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
@@ -12,6 +12,7 @@ beforeEach(async () => {
   await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -43,6 +44,13 @@ describe('ensureContextsRegistry', () => {
     await ensureContextsRegistry(root)
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe('{nope')
     expect((await readRegistryStrict(root)).ok).toBe(false)
+  })
+
+  it('rejects when another writer seeds the registry before its own lands, keeping that one', async () => {
+    const outside = '{"contexts":[]}\n'
+    raceLandings((file) => file === contextsRegistryFile(root), outside)
+    await expect(ensureContextsRegistry(root)).rejects.toThrow()
+    expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(outside)
   })
 })
 

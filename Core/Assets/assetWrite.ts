@@ -30,7 +30,7 @@ export async function writeAssetFile(
       const file = `${stem}${ext}`
       if (await taken(stem)) return fail('exists', `${file} already exists.`)
       const abs = join(dir, file)
-      await atomicWriteFile(abs, bytes)
+      await atomicWriteFile(abs, bytes, { expect: null })
       return ok(fileLinkText(file))
     },
     taken,

@@ -1,5 +1,5 @@
 import { capitalize } from '@pommora/uix/Utilities/capitalize'
-import { machine } from '../Platform/machine'
+import { machine, statOrNull } from '../Platform/machine'
 import { errText, valueOr } from '../Contract/result'
 import { newId } from './ids'
 import { readJsonStrict, readKept, writeJson } from '../Files/atomicWrite'
@@ -25,13 +25,14 @@ export async function ensureIdentity(
   root: string,
 ): Promise<{ id: string | null; created: boolean }> {
   const path = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
+  const was = await statOrNull(path)
   const read = await readJsonStrict(path)
   if (!read.ok && read.error.code !== 'not-found') return { id: null, created: false }
   const existing = valueOr(read, null)
   const existingId = existing && asString(existing.id)
   if (existing && existingId) {
     if ('agenda_singletons' in existing) {
-      await writeJson(path, retireAgendaKey(existing)).catch((e) =>
+      await writeJson(path, retireAgendaKey(existing), was).catch((e) =>
         console.error('nexus.json retired-key cleanup failed:', errText(e)),
       )
     }
@@ -44,11 +45,11 @@ export async function ensureIdentity(
   const createdAt = new Date().toISOString()
   // An id-less file is a damaged identity, not a new nexus: mint an id over it and seed nothing, or folders its owner deleted would be recreated and every asset keyed to the old id orphaned.
   if (existing) {
-    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt })
+    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt }, was)
     return { id, created: false }
   }
 
-  await writeJson(path, { id, createdAt })
+  await writeJson(path, { id, createdAt }, was)
   const agenda_folders = await seedAgenda(root)
   if (Object.keys(agenda_folders).length) await writeJson(path, { id, createdAt, agenda_folders })
   return { id, created: true }

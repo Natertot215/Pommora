@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits } from '../Testing/hostFs'
+import { tempRoot, noModeBits, raceLandings } from '../Testing/hostFs'
 import { renamePage, updatePageBody, movePage } from './page'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
@@ -16,6 +16,7 @@ beforeEach(async () => {
   await mkdir(typeDir, { recursive: true })
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -47,6 +48,14 @@ describe('createPage', () => {
       createTestPage(typeDir, 'Twin'),
     ])
     expect(both.map((r) => r.ok).sort()).toEqual([false, true])
+  })
+
+  it('rejects a page another writer created since its check and keeps that page', async () => {
+    const file = join(typeDir, 'Raced.md')
+    const outside = 'written elsewhere\n'
+    raceLandings((f) => f === file, outside)
+    await expect(createTestPage(typeDir, 'Raced')).rejects.toThrow()
+    expect(await readFile(file, 'utf8')).toBe(outside)
   })
 })
 
@@ -88,6 +97,16 @@ describe('renamePage', () => {
 })
 
 describe('updatePageBody', () => {
+  it('fails on a page changed outside since its read and keeps the outside bytes', async () => {
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
+    if (!c.ok) throw new Error('setup failed')
+    const outside = `${await readFile(c.value.path, 'utf8')}written elsewhere\n`
+    raceLandings((file) => file === c.value.path, outside)
+    const r = await updatePageBody(c.value.path, 'two')
+    expect(r.ok).toBe(false)
+    expect(await readFile(c.value.path, 'utf8')).toBe(outside)
+  })
+
   it('refuses a body whose base hash is not the disk body and leaves the file', async () => {
     const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
