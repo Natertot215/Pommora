@@ -41,7 +41,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | ----- | -------- | -------- | ---------- |
 | 1 | +518 / −400 (+118) | +560 / −417 (+143), its checkpoint fold included | +143 |
 | 2 | +107 / −45 (+62) | +138 / −79 (+59), its checkpoint fold included | +202 |
-| Final Verification | — | +135 / −139 (−4), Waves One and Two and the neutral gate's fold | +198 |
+| Final Verification | — | +141 / −151 (−10), Waves One and Two, the neutral gate's fold, the temp guard's removal (D-3), and the scaled pool (D-4) | +192 |
 | Closeout | — | | |
 
 **Task 1-8's Measure:** the Medium-0 property rename's median was 3.292 ms per file (23,135 ms over 7,027 files) at four pool threads and 2.388 ms (16,782 ms) at sixteen, 0.904 ms apart, so the line shipped and `CHUNK` stayed 64.
