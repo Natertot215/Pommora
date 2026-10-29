@@ -39,10 +39,12 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 
 | Phase | Estimate | Measured | Cumulative |
 | ----- | -------- | -------- | ---------- |
-| 1 | +518 / −400 (+118) | | |
+| 1 | +518 / −400 (+118) | +560 / −417 (+143), its checkpoint fold included | +143 |
 | 2 | +107 / −45 (+62) | | |
 | Final Verification | — | | |
 | Closeout | — | | |
+
+**Task 1-8's Measure:** the Medium-0 property rename's median was 3.292 ms per file (23,135 ms over 7,027 files) at four pool threads and 2.388 ms (16,782 ms) at sixteen, 0.904 ms apart, so the line shipped and `CHUNK` stayed 64.
 
 #### Concepts
 
@@ -57,20 +59,22 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `stage` • Function | The host's half of one file's landing: writes, dates, and flushes its temp beside the file, or beside a symlink's target, which it lands at, and answers the commit that checks `expect`, keeps the mode, and renames it. | `Desktop/Platform/nodeMachine.ts` |
 | `fileStat` • Function | A Node `Stats` as the seam's `FileStat`, shared by `stat` and the landing. | `Desktop/Platform/nodeMachine.ts` |
 | `.landing-<12 hex>` • Temp Name | The temp a landing writes beside its file: dotted, so the walk, the watcher, and Sync never admit it, and one a crash strands is left where it lies; and fixed-length. | `Desktop/Platform/nodeMachine.ts`, `Core/Testing/machines.ts` |
-| `landOwn` • Function | Lands the app's own writes as one group: records each echo, lands, and notes the landed files as one batch carrying each one's stat; private to its file. | `Core/Files/atomicWrite.ts` |
+| `landOwn` • Function | Lands the app's own writes as one group: records each echo, lands, forgets the echo of a file whose landing rejects, and notes the landed files as one batch carrying each one's stat; private to its file. | `Core/Files/atomicWrite.ts` |
+| `forgetWrite` • Function | Forgets the write recorded at a path while it still holds a given hash, so a rejected landing's bytes, landed by another writer, read as theirs; `dropOwnEchoes` asks it too. | `Core/Files/writeEcho.ts` |
 | `sole` • Function | A lone file's landing, its failure thrown. | `Core/Files/atomicWrite.ts` |
 | `rewriteHeld` • Function | The one held rewrite: reads each file's stat and then its text under its chunk's locks, rewrites it, and lands the chunk as one group, a page keeping its time, a file changed since its read left as its writer left it and answered failed, and a file whose rewrite throws costing only itself; behind the sweep, `rewritePageSerialized`, the tile relink, and `stampMissing`. | `Core/Files/atomicWrite.ts` |
-| `Rewritten` • Type | What a held rewrite did with each file it reached: unread, refused by its rewrite (a root that can't round-trip), failed, or rewritten. | `Core/Files/atomicWrite.ts` |
+| `Rewritten` • Type | What a held rewrite did with each file it reached: unread, refused by its rewrite (a root that can't round-trip), failed, or rewritten; private to its file. | `Core/Files/atomicWrite.ts` |
 | `CHUNK` • Constant | The files a held rewrite holds and lands together: 64 with Task 1-8's thread-pool line, 16 without. | `Core/Files/atomicWrite.ts` |
 | `holding` • Function | Runs a function holding each of a chunk's locks, taken in sorted order. | `Core/Files/atomicWrite.ts` |
 | `atomicWriteFile`'s `{ bodyOnly, expect }` • Parameter | The writer's options, `expect` being the stat a read of the file saw. | `Core/Files/atomicWrite.ts` |
-| `writeJson`'s `expect` • Parameter | The same stat for a JSON landing. | `Core/Files/atomicWrite.ts` |
-| `rewritePageSerialized`'s `was` • Argument | The stat the rewrite's read was checked against, handed to its `rewrite`. | `Core/Files/atomicWrite.ts` |
+| `writeJson`'s `{ expect }` • Parameter | The same stat for a JSON landing, in the options shape `atomicWriteFile` takes. | `Core/Files/atomicWrite.ts` |
+| `rewritePageSerialized`'s `rewrite` • Parameter | `rewriteHeld`'s own callback, so a lone rewrite is handed its file and the stat its read was checked against. | `Core/Files/atomicWrite.ts` |
 | `NameLanding` • Type | `owed.ts`' private name a create or rename lands on, renamed from `Landing` so the seam's type owns the word. | `Core/Nexus/owed.ts` |
 | `Changed.stat` • Field | The stat an own write's landing answered, which the index records in place of its own stat. | `Core/Files/writeEcho.ts` |
 | `ParsedPage` • Type | What `parsePage` answers: the frontmatter and its admission. | `Core/Files/pageFile.ts` |
 | `stamping` • Function | The rewrite that stamps a page missing its ID, shared by `stampPage` and `stampMissing`'s one held rewrite. | `Core/Nexus/adopt.ts` |
 | `inContextsTurn` • Function | Runs an operation in the settle's turn under the Contexts lock, the turn nested inside it. | `Core/Nexus/settle.ts` |
+| `addressed`'s `turn` • Parameter | The turn a page-addressed write runs in: `inSettleTurn`, or `inContextsTurn` for a create that seeds a Context. | `Core/Nexus/mutate.ts` |
 | `indexEvents` • Function | Maintains the index for a batch of events, its written pages in commits of up to 200, answering each page's read for the tree's patch; replaces `indexEvent`. | `Core/Nexus/fileEvents.ts` |
 | `indexWrittenPages` • Function | Re-indexes written pages as the seed does, 200 a transaction, a row another writer landed mid-read kept, from the text and stat their events carry or else from their files; replaces `indexWrittenPage`. | `Core/Index/indexSeed.ts` |
 | `describes` • Function | Whether the index's recorded stat describes another, the same time and size: the seed's skip, `unmoved`, and `indexVouches` all ask it. | `Core/Index/indexSeed.ts` |
@@ -151,22 +155,25 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   | T-N2 | 1-3 | `machineContract.ts` | `expect` on a path removed since: it rejects and creates nothing; `expect: null` on a path another writer created since: it rejects and keeps that writer's bytes | `sameFile`'s two `null` arms |
   | T-N3 | 1-3 | `machineContract.ts`; `Desktop/Platform/nodeMachine.test.ts` | A group landing onto a folder and onto `b.md`: the folder rejects, `b.md` lands, and the sorted listing is `['b.md', 'dir']`, no `.landing-*` left; host only, a landing whose data can't be written (`42 as never`) rejects and leaves no temp | `discard` in the commit; `discard` in `stage` |
   | T-N4 | 1-3 | `machineContract.ts` | A landing keeps the time it's given (a whole second), and its answer equals a later `stat` | the time on the temp, or answering a stat taken before it |
-  | T-N19 | 1-3 | `nodeMachine.test.ts` | `vi.mock('node:fs/promises')` spreads the real module, so the contract cases in the same file run unchanged, wraps each handle `open` returns so its `sync` logs as it finishes (`const sync = handle.sync.bind(handle); handle.sync = async () => { const r = await sync(); log.push('synced'); return r }`), and logs each `rename`; the case lands three files through a host imported after `vi.resetModules()`, since the setup file imported the host before the mock: `synced` is logged three times, and the last `synced` comes before the first `rename` | every flush finishing before any commit (`void handle.sync().catch(() => {})` in `stage` turns it red) |
+  | T-N19 | 1-3 | `nodeMachine.test.ts` | `vi.mock('node:fs/promises')` spreads the real module, so the contract cases in the same file run unchanged, wraps each handle `open` returns so its `sync` logs as it finishes (`const sync = handle.sync.bind(handle); handle.sync = async () => { const r = await sync(); log.push('synced'); return r }`), and logs each handle's `close` with the path `open` took and each `rename`; the case lands three files through a host imported after `vi.resetModules()`, since the setup file imported the host before the mock: `synced` is logged three times, the last `synced` comes before the first `rename`, and each temp's `close` comes before its `rename` | every flush finishing before any commit (`void handle.sync().catch(() => {})` in `stage` turns it red); the handle closed before the rename (`close` moved after it turns it red) |
+  | T-N35 | 1-3 | `nodeMachine.test.ts` | Under T-N19's mock, a hook in the mocked `sync` rewrites the target while its group flushes: that file's landing, carrying the stat taken before, rejects, and the file keeps the outside bytes | `sameFile` checked in the commit, after the flush (moved into `stage` ahead of the flush, it turns red) |
   | T-N20 | 1-3 | `nodeMachine.test.ts` | A file at `0o664` landed over keeps `0o664` (skipped under `noModeBits`) | the `chmod` |
   | T-N21 | 1-3 | `nodeMachine.test.ts` | The temp a landing renames (captured through the `rename` mock) is ignored by `syncIgnoredUnder` and refused by `manifestAdmits` | the leading dot |
   | T-N27 | 1-3 | `nodeMachine.test.ts` | A landing onto a symlink lands at its target: the link is still a link (`lstat`), and the target holds the new bytes | the `lstat` and `realpath` in `stage` |
   | T-N10 | 1-2 | `Core/Index/indexMaintenance.test.ts` | One `noteOwn` of 70 page events makes one `upsertPageIndexes` call, one page event makes one, and 201 make two, of 200 and 1 | `indexEvents` batching; the flush at `SEED_BATCH` |
-  | T-N31 | 1-2 | `Core/Index/indexSeed.test.ts` | A `readText` hook that writes page P and indexes it, as a maintaining writer does, fired during a batch's read of Q and, again, during its read of P itself: P's row holds the writer's value; and a hook that installs fresh stores during the batch's read leaves them with no row | `unmoved` at the batch's commit; its prior read ahead of the page's; the switch check |
+  | T-N31 | 1-2 | `Core/Index/indexSeed.test.ts` | A `readText` hook that writes page P and indexes it, as a maintaining writer does, fired during a batch's read of Q and, again, during its read of P itself: P's row holds the writer's value; a hook that installs fresh stores during the batch's read leaves them with no row; and so does one that installs them during the settings read of a last entry outside the corpus (`Hidden/Secret.md`), armed from the batch's read of the page before it | `unmoved` at the batch's commit; its prior read ahead of the page's; the switch check in the loop; the switch check before the last commit |
+  | T-N34 | 1-2 | `indexSeed.test.ts` | A seed of exactly `SEED_BATCH` (200) pages makes one `upsertPageIndexes` call | `reindex`'s empty-batch guard |
   | T-N5 | 1-4 | `Core/Nexus/governedSweep.test.ts`, `Core/Properties/registryProperty.test.ts` | A property rename over pages A and B, with `raceLandings` overwriting B: B keeps the outside bytes and is `skipped`, A is rewritten, the note stays owed, and, after the spy's `.mockRestore()`, `finishOwed` rewrites B and clears it | `expect: was` in `rewriteHeld` |
-  | T-N6 | 1-4 | `governedSweep.test.ts` | With `land` paused, `updatePageBody` on a chunk page stays pending; once released, both edits land and nothing is skipped | the chunk holding its locks through its landing |
-  | T-N7 | 1-4 | `governedSweep.test.ts` | Before the sweep, `writer = gate.then(() => rewritePageSerialized(A, (c) => c + 'Z'))`; a `readText` hook on A only resolves `gate` (a `lock(A)` started inside the hook would inherit the chunk's held keys and reject as re-entrant). After the sweep and `await writer`, A reads the swept text plus `Z`, and `readPageRelations([relA])` and the tree's page agree with the file | the record running inside the chunk's locks |
+  | T-N6 | 1-4 | `governedSweep.test.ts` | With the chunk's own landing paused (the next `land` call alone), `updatePageBody` on a chunk page stays pending; once released, both edits land and nothing is skipped | the chunk holding its locks through its landing |
+  | T-N7 | 1-4 | `governedSweep.test.ts` | Before the sweep, `writer = gate.then(() => rewritePageSerialized(A, (c) => c + 'Z [[P1]]'))`, a link so the index and the tree can tell the write apart, with the chunk's record slowed 50 ms so a writer not held behind the chunk would record first; a `readText` hook on A only resolves `gate` (a `lock(A)` started inside the hook would inherit the chunk's held keys and reject as re-entrant). After the sweep and `await writer`, A reads the swept text plus `Z [[P1]]`, and the index and the tree agree with a fresh seed and a fresh `readNexus` | the record running inside the chunk's locks |
   | T-N8 | 1-4 | `governedSweep.test.ts` | Sweeps over `[a, b]` and `[b, a]` started together, with `land` delayed, both finish within a 2 s timeout | the sort in `holding` |
   | T-N9 | 1-4 | `governedSweep.test.ts` | 65 files make two `land` calls, of 64 and 1, and two `upsertPageIndexes` calls; where Task 1-8 lands AFTER B, 17 files make two, of 16 and 1 | `CHUNK` |
   | T-N26 | 1-4 | `governedSweep.test.ts` | A plan whose `raw` throws for A, over `[A, B]`: A is `skipped` and not `refused`, and B is rewritten | the per-file catch in `rewriteHeld` |
   | T-N11 | 1-4 | `Core/Index/indexMaintenance.test.ts` | `sweepGovernedRoots` over two indexed pages, with `machine().stat` spied: each rewritten page is stat'ed once (`rewriteHeld`'s `was`), `readIndexedStat(rel)` equals `fs.stat`'s `(mtimeMs, size)` for each, and a following `seedContentIndex` re-reads none of them | the landing's stat riding the event (without it the index stats each page again, and the count doubles) |
   | T-N22 | 1-4 | `Core/Nexus/adopt.test.ts` | `stampPage` stats its page once (spy `machine().stat`), and the ID it mints matches that stat's time | O-2 |
   | T-N28 | 1-4 | `adopt.test.ts` | `stampMissing` over pages A, B, and C missing their IDs, with `failLandings` failing B: one `land` call, A and C stamped and answered, B left as it was; and two pages listed with one `held` ID no tree holds: one takes it, the other a fresh ID | the stamps' one `rewriteHeld`; `heldBack` |
-  | T-N29 | 1-4 | `Core/Tiles/tilesFile.test.ts` | `rewriteTileConnections` over one host's two linking tiles makes one `land` call, and a tile whose landing fails counts as `failed` | the tile relink's one `rewriteHeld` |
+  | T-N29 | 1-4 | `Core/Tiles/tilesFile.test.ts` | `rewriteTileConnections` over two hosts, the homepage's two linking tiles and a Space's one, makes one `land` call, and a tile whose landing fails counts as `failed` | the tile relink's one `rewriteHeld` across every host |
+  | T-N36 | 1-4 | `Core/Files/atomicWrite.test.ts` | `raceLandings` writes exactly the bytes the landing would write: the landing rejects, and a watched event carrying that file's `writtenHash` survives `dropOwnEchoes` | `forgetWrite` in `landOwn` |
   | T-N12 | 1-5 | `Core/Properties/optionOps.test.ts` | With a warm index, an own write adding an unregistered Multi-Select word registers it with no `readText` of that page | the settle reading the index |
   | T-N13 | 1-6 | `Core/Contexts/contextCascade.test.ts` | A Context with 70 tagged pages renamed through the dispatch, with a mid-sweep `settleNow` fired from a gate registered before the rename, makes exactly one `readNexus` call | `inSettleTurn` around the rename |
   | T-N23 | 1-7 | `Core/Files/atomicWrite.test.ts` | `rmwJsonStrict` and `editJsonStrict` over a file `raceLandings` overwrites: each rejects, and the file keeps the outside bytes | `expect` in `rmwLocked` and `editJsonStrict` |
@@ -190,16 +197,16 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 
 #### Process Overview
 
-- [ ] **Phase 1** — W-1 · One Landing
+- [x] **Phase 1** — W-1 · One Landing
   - [x] Task 1-1 · One stat-or-null
   - [x] Task 1-2 · Recording takes a batch
   - [x] Task 1-3 · The host lands a group
-  - [ ] Task 1-4 · Every write lands through the group, and the library leaves
-  - [ ] Task 1-5 · The settle reads the index
-  - [ ] Task 1-6 · A rename pays its walk once
-  - [ ] Task 1-7 · Every landing after a read checks it
-  - [ ] Task 1-8 · The chunk and the thread pool, measured together
-  - [ ] Review Checkpoint
+  - [x] Task 1-4 · Every write lands through the group, and the library leaves
+  - [x] Task 1-5 · The settle reads the index
+  - [x] Task 1-6 · A rename pays its walk once
+  - [x] Task 1-7 · Every landing after a read checks it
+  - [x] Task 1-8 · The chunk and the thread pool, measured together
+  - [x] Review Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [ ] **Phase 2** — W-2 · One Read
   - [ ] Task 2-1 · The clash check reads only files holding both keys
@@ -438,13 +445,13 @@ One function, `statOrNull`, answers a path's stat or null, beside `machine()` in
 
 #### Task 1-2
 
-The own tap takes a batch: `noteOwn` takes any number of events, the settle's `applyOwn` marks the disk moved once per batch and hands the batch on whole, and the index half of `applyEvents` runs once over a batch, indexing its written pages through `indexWrittenPages`, each from the text and stat its event carries or else from its file. `indexWrittenPages` commits as the seed commits its own: `SEED_BATCH` (200) pages a transaction, so a watched batch of thousands (a Sync pull, a `git pull`) never holds the main thread for one unbounded commit; a row another writer landed while a page's read was in flight is kept, since each page's prior row is read ahead of its read and checked at the commit; and nothing is written once a Nexus switch has moved the database. The seed's two hand-written stat comparisons become `describes`, and its in-flight rule becomes `unmoved`, which the batch shares, so each is spelled once. An own event gains `stat`, which the landing supplies from Task 1-4; until then each writer still notes one event and the index stats the page itself, as today.
+The own tap takes a batch: `noteOwn` takes any number of events, the settle's `applyOwn` marks the disk moved once per batch and hands the batch on whole, and the index half of `applyEvents` runs once over a batch, indexing its written pages through `indexWrittenPages`, each from the text and stat its event carries or else from its file. `indexWrittenPages` commits as the seed commits its own: `SEED_BATCH` (200) pages a transaction, so a watched batch of thousands (a Sync pull, a `git pull`) never holds the main thread for one unbounded commit; a row another writer landed while a page's read was in flight is kept, since each page's prior row is read ahead of its read and checked at the commit; and nothing is written once a Nexus switch has moved the database, checked before the last commit as the seed checks it. The seed's two hand-written stat comparisons become `describes`, and its in-flight rule becomes `unmoved`, which the batch shares, so each is spelled once; `reindex` skips an empty batch, so neither commit guards its own. An own event gains `stat`, which the landing supplies from Task 1-4; until then each writer still notes one event and the index stats the page itself, as today.
 
 **PROCEDURE**
 
 1. Apply the AFTER.
 2. In `Core/Index/indexSeed.test.ts`, `Core/Index/keyHolders.test.ts`, `Core/Nexus/heldPages.test.ts`, and `Core/Nexus/finishOwed.test.ts`, every `indexWrittenPage(root, X)` becomes `indexWrittenPages(root, [{ absPath: X }])`, and each import names `indexWrittenPages`; the result shape is the same, so no expectation changes. `Desktop/FileWatch/watcher.test.ts:137` spies `indexWrittenPages` in place of `indexWrittenPage`.
-3. Write T-N10 and T-N31 in the suites *§Constraints · Tests* names; for each, revert the change its row names, watch it go red, and restore it.
+3. Write T-N10, T-N31, and T-N34 in the suites *§Constraints · Tests* names; for each, revert the change its row names, watch it go red, and restore it.
 
 **AFTER**
 
@@ -588,7 +595,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 +  const queued: { row: PageIndexRow; prior: IndexedStat | null }[] = []
 +  const flush = (): void => {
 +    const rows = queued.splice(0).filter(({ row, prior }) => unmoved(row.path, prior))
-+    if (rows.length) seen.renames.push(...reindex(rows.map(({ row }) => row)))
++    seen.renames.push(...reindex(rows.map(({ row }) => row)))
 +    for (const { row, prior } of rows) {
 +      const [now] = idOf(row.entry)
 +      if (prior?.id === now) continue
@@ -614,11 +621,15 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 +    queued.push({ row: { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }, prior })
 +    if (queued.length === SEED_BATCH) flush()
 +  }
++  if (contentIndexStore() !== db0) return NOTHING_SEEN
 +  flush()
 +  return seen
  }
  
  // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+ function reindex(rows: readonly PageIndexRow[]): HeadingRenameSeen[] {
++  if (!rows.length) return []
+   const held = readHeadings(rows.map(({ path }) => path)) ?? {}
 @@ moveIndexPaths @@
      const landed = isMarkdownFile(newRel)
        ? [newRel]
@@ -660,7 +671,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 ```Core/Nexus/fileEvents.ts diff
 @@ top of file @@
 -// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own write as it lands. An event maintains the index, then patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
-+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to 200 pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
++// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to `SEED_BATCH` pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
  
  import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
  import { escapes } from '../Paths/pathSafety'
@@ -678,7 +689,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
  // ── The index's half ──
  
 -export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
-+// Removals and moves first, in order, then every written page in commits of up to 200, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
++// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 +export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
    try {
 -    switch (ev.event) {
@@ -815,7 +826,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 ```Desktop/FileWatch/watcher.ts diff
 @@ top of file @@
 -// Events settle, then apply one at a time through the path the app's own writes take; what they listed missing is stamped before the batch's settle.
-+// Events settle, then apply as one batch through the path the app's own writes take: the index in commits of up to 200 pages, then each event's patch; what they listed missing is stamped before the batch's settle.
++// Events settle, then apply as one batch through the path the app's own writes take: the index in commits of up to `SEED_BATCH` pages, then each event's patch; what they listed missing is stamped before the batch's settle.
  
  import chokidar, { type FSWatcher } from 'chokidar'
  import {
@@ -824,7 +835,7 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
 **VERIFY**
 
 - [ ] `git grep -n "indexWrittenPage\b\|indexEvent\b" -- Core Desktop` prints nothing.
-- [ ] T-N10 and T-N31 are green and went red against their rows' reverts.
+- [ ] T-N10, T-N31, and T-N34 are green and went red against their rows' reverts.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -835,7 +846,7 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 **PROCEDURE**
 
 1. Apply the AFTER.
-2. T-N1 to T-N4 are in the AFTER; write T-N3's host half, T-N19 to T-N21, and T-N27 in `Desktop/Platform/nodeMachine.test.ts`, its `node:fs/promises` mock passing every call through to the real module so the contract cases in the same file run unchanged. `Desktop/vitest.setup.ts` imports the host before the file's mock takes hold, so a case that reads the mock lands through `(await import('./nodeMachine')).nodeMachine` after `vi.resetModules()`.
+2. T-N1 to T-N4 are in the AFTER; write T-N3's host half, T-N19 to T-N21, T-N27, and T-N35 in `Desktop/Platform/nodeMachine.test.ts`, its `node:fs/promises` mock passing every call through to the real module so the contract cases in the same file run unchanged. `Desktop/vitest.setup.ts` imports the host before the file's mock takes hold, so a case that reads the mock lands through `(await import('./nodeMachine')).nodeMachine` after `vi.resetModules()`.
 3. For each, revert the change its row names, watch it go red, and restore it.
 
 **AFTER**
@@ -1199,20 +1210,20 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 
 **VERIFY**
 
-- [ ] T-N1 to T-N4 are green on all three machines (`Core/Testing/contracts.test.ts`, `Desktop/Platform/nodeMachine.test.ts`), and T-N3's host half, T-N19 to T-N21, and T-N27 are green.
+- [ ] T-N1 to T-N4 are green on all three machines (`Core/Testing/contracts.test.ts`, `Desktop/Platform/nodeMachine.test.ts`), and T-N3's host half, T-N19 to T-N21, T-N27, and T-N35 are green.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 1-4
 
-Every writer moves onto `land`, and what only a single-file write needed leaves. `landOwn`, private to `atomicWrite.ts`, records each file's echo, lands the group, drops the walk cache's parse for a file kept at its time, and notes the landed files as one batch with each one's stat; `atomicWriteFile` takes text or bytes (O-1), the event kind following the data, so `atomicWriteBinary` leaves. One held rewrite, `rewriteHeld`, reads, rewrites, lands, and records each chunk of 64 files under the chunk's locks, taken in sorted order: it takes each file's stat ahead of its text, so its landing can keep a page's time and leave a file that changed since as its writer left it, and a file whose rewrite or landing fails costs only itself, as under `guarded`. `guarded` also skipped a file whose lock rejected; the only rejection is re-entrancy, a programming error no sweep caller reaches (Step 3 re-checks it), so a lock's rejection now fails the sweep instead. The sweep is one call to it; `rewritePageSerialized` is a one-file call that hands its rewrite the stat it read (O-2), so `stampPage` mints from it rather than stat'ing outside the lock; a relink's tile rewrites land a host's tiles through one call; and `stampMissing` lands its page stamps through one call, each stamp landing or failing on its own and an ID the tree held going back to one page alone, so a first adoption flushes a chunk at a time. Sync's `landBytes` becomes one landing. The seam's three old methods, the library, and its types leave; `TEMP_SUFFIX` stays and gains its comment (*§Constraints · Rulings · OP-1*); the test seam `refuseWrites` becomes `failLandings`, a spy on the landing that sees every writer, and `raceLandings` beside it is the outside writer T-N5, T-N23, T-N24, and T-N32 share. `notesWiring.test.ts`'s six module mocks become one spy on the landing, so its three assertions that the notes file isn't written can fail, and `cascade.test.ts`'s two tile cases spy `rewriteHeld` in place of `rewritePageSerialized`.
+Every writer moves onto `land`, and what only a single-file write needed leaves. `landOwn`, private to `atomicWrite.ts`, records each file's echo, lands the group, forgets the echo of a file whose landing rejects (`forgetWrite`, the rule `dropOwnEchoes` already applied), so another writer's landing of the same bytes still reaches the index and the tree, drops the walk cache's parse for a file kept at its time, and notes the landed files as one batch with each one's stat; `atomicWriteFile` takes text or bytes (O-1), the event kind following the data, so `atomicWriteBinary` leaves. One held rewrite, `rewriteHeld`, reads, rewrites, lands, and records each chunk of 64 files under the chunk's locks, taken in sorted order: it takes each file's stat ahead of its text, so its landing can keep a page's time and leave a file that changed since as its writer left it, and a file whose rewrite or landing fails costs only itself, as under `guarded`. `guarded` also skipped a file whose lock rejected; the only rejection is re-entrancy, a programming error no sweep caller reaches (Step 3 re-checks it), so a lock's rejection now fails the sweep instead. The sweep is one call to it; `rewritePageSerialized` is a one-file call taking `rewriteHeld`'s own callback, so its rewrite is handed the stat it read (O-2) and `stampPage` passes `stamping` straight through, minting from that stat rather than stat'ing outside the lock; a relink's tile rewrites land every host's tiles through one call per relink; and `stampMissing` lands its page stamps through one call, each stamp landing or failing on its own and an ID the tree held going back to one page alone, so a first adoption flushes a chunk at a time. Sync's `landBytes` becomes one landing. The seam's three old methods, the library, and its types leave; `TEMP_SUFFIX` stays and gains its comment (*§Constraints · Rulings · OP-1*); the test seam `refuseWrites` becomes `failLandings`, a spy on the landing that sees every writer, and `raceLandings` beside it is the outside writer T-N5, T-N23, T-N24, and T-N32 share. `notesWiring.test.ts`'s six module mocks become one spy on the landing, so its three assertions that the notes file isn't written can fail, and `cascade.test.ts`'s two tile cases spy `rewriteHeld` in place of `rewritePageSerialized`.
 
 **PROCEDURE**
 
 1. Apply the AFTER.
 2. From the repo root, `npm uninstall write-file-atomic @types/write-file-atomic -w Desktop`. The lockfile's extraneous `"Pommora"` entry (`pommora-react`, a folder that no longer exists) lists the library and its types too, and npm keeps it (`npm prune --package-lock-only` and `npm install --package-lock-only` both leave it), so remove that entry from `package-lock.json` by hand, run `npm install --package-lock-only`, and confirm it leaves the lockfile as it stands; `git grep -c "write-file-atomic" -- package-lock.json` must then print nothing. `signal-exit@4.1.0` leaves with it (`signal-exit@3.0.7` stays, under `proper-lockfile`).
 3. Re-read `git grep -n "\.lock(" -- Core Desktop Sync ':!*.test.ts'` and confirm no body holding a page's or a Space sidecar's lock takes another page's or Space sidecar's lock (a property write's walk takes the config files' locks under its page's, which no chunk holds), and that nothing under `renameContextOp`, `renameSpaceOp`, `finishContext`, or `finishSpace` awaits `inTurn`, `payOwedWalk`, or `settleNow` (Task 1-6 relies on it). A body that takes a second page's or sidecar's lock goes to *§Deviations*, since the sweep's deadlock freedom rests on none existing.
-4. Write T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, and T-N29 in the suites *§Constraints · Tests* names.
+4. Write T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, T-N29, and T-N36 in the suites *§Constraints · Tests* names, each suite restoring its spies in `afterEach` with `vi.restoreAllMocks()`.
 5. For each, revert the change its row names, watch it go red, and restore it.
 6. The three `notesWiring.test.ts` assertions that the notes file isn't written (in "writes no entry for a rename refused before the commit", "writes no entry for a non-rename edit", and "editOption never writes an entry"): for each, land the notes file once inside the case, watch it go red, and remove it.
 
@@ -1341,7 +1352,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -import { noteOwn, recordWrite, reportRename } from './writeEcho'
 -import { machine, statOrNull } from '../Platform/machine'
 -import { basename, dirname, join } from '../Paths/posix'
-+import { type FileEvent, noteOwn, recordWrite, reportRename } from './writeEcho'
++import { type FileEvent, forgetWrite, noteOwn, recordWrite, reportRename } from './writeEcho'
 +import { type FileStat, type Landing, machine, statOrNull } from '../Platform/machine'
 +import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
  import { foldKey } from '../Paths/caseFold'
@@ -1352,7 +1363,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -async function land(filePath: string, data: string): Promise<void> {
 -  recordWrite(filePath, data)
 -  await machine().writeText(filePath, data)
-+/** Lands the app's own writes as one group under the locks their callers hold: each echo is recorded before its name points at the new bytes, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
++/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
 +async function landOwn(
 +  files: readonly Landing[],
 +  bodyOnly?: boolean,
@@ -1362,7 +1373,10 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +  const events: FileEvent[] = []
 +  files.forEach(({ path, data, mtimeMs }, i) => {
 +    const at = landed[i]
-+    if (at.status === 'rejected') return
++    if (at.status === 'rejected') {
++      forgetWrite(path, machine().sha256Hex(data))
++      return
++    }
 +    if (mtimeMs !== undefined) forgetParse(path)
 +    const text = typeof data === 'string' ? data : undefined
 +    const event = text === undefined ? 'add' : 'change'
@@ -1413,7 +1427,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +    .reduceRight<() => Promise<void>>((inner, file) => () => machine().lock(file, inner), fn)()
 +
 +/** What a held rewrite did with a file it reached: couldn't read it, was refused by its rewrite, failed in its rewrite or its landing, or rewrote it, as a dry run would have. A file its rewrite left alone is absent. */
-+export type Rewritten =
++type Rewritten =
 +  | { status: 'unread' | 'refused' }
 +  | { status: 'failed'; reason: unknown }
 +  | { status: 'rewritten'; before: string; after: string }
@@ -1503,7 +1517,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +export async function rewritePageSerialized(
    file: string,
 -  rewrite: (content: string) => string | null,
-+  rewrite: (content: string, was: FileStat) => string | null,
++  rewrite: Parameters<typeof rewriteHeld>[1],
  ): Promise<boolean> {
 -  return machine().lock(file, async () => {
 -    const content = await readTextOrNull(file)
@@ -1513,12 +1527,33 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -    await rewritePreservingTimes(file, next)
 -    return true
 -  })
-+  const done = (await rewriteHeld([file], (before, _file, was) => rewrite(before, was))).get(file)
++  const done = (await rewriteHeld([file], rewrite)).get(file)
 +  if (done?.status === 'failed') throw done.reason
 +  return done?.status === 'rewritten'
  }
  
  /** `absPath`'s text, or null when it's missing or can't be read. */
+```
+
+```Core/Files/writeEcho.ts diff
+@@ forgetWrite @@
+   tap?.wrote(absPath)
+ }
+ 
++/** Forgets the write recorded at `absPath` while it still holds `hash`, so a later write of those bytes reads as another writer's. */
++export function forgetWrite(absPath: string, hash: string): void {
++  if (recent.get(absPath)?.hash === hash) recent.delete(absPath)
++}
++
+ export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
+@@ dropOwnEchoes @@
+       if (e.written === undefined) return true
+       const bytes = await machine().readBytes(e.absPath)
+       if (bytes !== null && machine().sha256Hex(bytes) === e.written) return false
+-      if (recent.get(e.absPath)?.hash === e.written) recent.delete(e.absPath)
++      forgetWrite(e.absPath, e.written)
+       return true
+     }),
 ```
 
 ```Core/Nexus/adopt.test.ts diff
@@ -1593,9 +1628,9 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -  })
 -  return landed ? id : null
 +  const ids = new Map<string, string>()
-+  const stamp = stamping(kind, new Map([[absFile, { overForeign, held }]]), ids)
-+  const landed = await rewritePageSerialized(absFile, (content, was) =>
-+    stamp(content, absFile, was),
++  const landed = await rewritePageSerialized(
++    absFile,
++    stamping(kind, new Map([[absFile, { overForeign, held }]]), ids),
 +  )
 +  return landed ? (ids.get(absFile) ?? null) : null
  }
@@ -2142,6 +2177,12 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 ```Core/Tiles/tilesFile.ts diff
 @@ imports @@
+   TILE_KINDS,
+   type TileDoc,
++  type TileHostRef,
+   type TilesChanged,
+ } from './tiles'
+@@ imports @@
  import type { Json } from '../Files/stableJson'
  import { findContainerById } from '../Nexus/treePatch'
  import { resolveUnderRoot } from '../Paths/pathSafety'
@@ -2151,30 +2192,48 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
  import { discardFile, type TrashDeps } from '../Trash/discard'
  import { machine } from '../Platform/machine'
 @@ rewriteTileConnections @@
-     const wrote: string[] = []
+ ): Promise<{ hosts: TilesChanged[]; failed: number }> {
+   const found = tileHostsOf(root, await liveTreeOf(root))
+-  const hosts: TilesChanged[] = []
+   let failed = found.unreadable
++  const boards: { host?: TileHostRef; dir: string; ids: string[] }[] = []
+   for (const { host, dir } of found.hosts) {
+-    const wrote: string[] = []
      const ids = await markdownTileIds(dir)
-     if (!ids) failed++
+-    if (!ids) failed++
 -    for (const id of ids ?? []) {
 -      // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
 -      const landed = await rewritePageSerialized(tileFilePath(dir, id), (body) => {
-+    // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-+    const done = await rewriteHeld(
-+      (ids ?? []).map((id) => tileFilePath(dir, id)),
-+      (body) => {
-         const next = rewrite(body)
-         return next === body ? null : next
+-        const next = rewrite(body)
+-        return next === body ? null : next
 -      }).catch(() => null)
 -      if (landed === null) failed++
 -      else if (landed) wrote.push(id)
-+      },
-+    )
-+    for (const id of ids ?? []) {
-+      const status = done.get(tileFilePath(dir, id))?.status
-+      if (status === 'failed') failed++
-+      else if (status === 'rewritten') wrote.push(id)
-     }
-     if (!wrote.length) continue
-     dropTileLinks()
+-    }
+-    if (!wrote.length) continue
+-    dropTileLinks()
+-    if (host) hosts.push({ host, ids: wrote })
++    if (ids) boards.push({ host, dir, ids })
++    else failed++
+   }
+-  return { hosts, failed }
++  // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
++  const done = await rewriteHeld(
++    boards.flatMap(({ dir, ids }) => ids.map((id) => tileFilePath(dir, id))),
++    (body) => {
++      const next = rewrite(body)
++      return next === body ? null : next
++    },
++  )
++  const hosts: TilesChanged[] = []
++  for (const { host, dir, ids } of boards) {
++    const wrote = ids.filter((id) => done.get(tileFilePath(dir, id))?.status === 'rewritten')
++    if (host && wrote.length) hosts.push({ host, ids: wrote })
++  }
++  const statuses = [...done.values()].map(({ status }) => status)
++  if (statuses.includes('rewritten')) dropTileLinks()
++  return { hosts, failed: failed + statuses.filter((s) => s === 'failed').length }
+ }
 ```
 
 ```Core/Trash/restoreScrub.test.ts diff
@@ -2417,7 +2476,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 - [ ] `git grep -n -w -e writeText -e writeBytes -e rewritePreservingTimes -e atomicWriteBinary -e refuseWrites -e writeFileAtomic -- Core Desktop Sync` prints only `Desktop/main.ts`'s `clipboard.writeText`; `git grep -n "utimes" -- Core Desktop Sync ':!*.test.ts'` prints three lines: `Core/Testing/machines.ts`'s `node:fs/promises` import and `landOnDisk`'s call, and `Desktop/Platform/nodeMachine.ts`'s `handle.utimes`; and `git grep -c "write-file-atomic" -- Desktop/package.json package-lock.json` prints nothing.
 - [ ] `git diff --stat -- Core/Sync Sync`, before the commit, prints nothing.
-- [ ] T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, and T-N29 are green, and the three `notesWiring.test.ts` assertions went red against a notes write.
+- [ ] T-N5 to T-N9, T-N11, T-N22, T-N26, T-N28, T-N29, and T-N36 are green, and the three `notesWiring.test.ts` assertions went red against a notes write.
 - [ ] Run the gates, then `npm run build`.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -2509,7 +2568,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +      const values = row?.values ?? (read?.kind === 'read' ? read.fm : null)
 +      if (values) collect(values, defs)
 +    }
-+    // After the pages, as an open has always registered them.
++    // Spaces register after pages, so new words keep collection order.
 +    for (const [values, defs] of spaces) collect(values, defs)
      if (!held.size) return ok(null)
      const notes = await readNotes(root)
@@ -2524,7 +2583,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 #### Task 1-6
 
-The Context and Space renames, and `finishOwed`'s Context and Space pass, run in the settle's turn inside `underContexts`, as a Context delete and a restore already do (`mutate.ts:134,153`), so a settle the watcher queues mid-sweep waits for the turn and the owed walk runs once, after the sweep, where today `runWalk` (`liveTree.ts:103-124`) restarts it each time the sweep's landings move the epoch: one to five walks at the baseline, and 177 restarts once the flush was removed. What HEAD already guarantees stays as it is: the epoch loop keeps a walk from installing what it read before a landing, and a reply's settle already waited for the sweep to stop landing, so the turn adds no wait a reply didn't have. The five sites take that nesting through one helper, `inContextsTurn`, whose docstring carries the ordering rule `mutate.ts:88` stated by hand. The mutate test that staged a walk inside a rename's registry commit pinned the epoch loop's re-read; under the turn that walk can't start until the rename ends, so it now pins the wait.
+The Context and Space renames, and `finishOwed`'s Context and Space pass, run in the settle's turn inside `underContexts`, as a Context delete and a restore already do (`mutate.ts:134,153`), so a settle the watcher queues mid-sweep waits for the turn and the owed walk runs once, after the sweep, where today `runWalk` (`liveTree.ts:103-124`) restarts it each time the sweep's landings move the epoch: one to five walks at the baseline, and 177 restarts once the flush was removed. What HEAD already guarantees stays as it is: the epoch loop keeps a walk from installing what it read before a landing, and a reply's settle already waited for the sweep to stop landing, so the turn adds no wait a reply didn't have. The five sites take that nesting through one helper, `inContextsTurn`, whose docstring carries the ordering rule `mutate.ts:88` stated by hand, and a create that seeds a Context, which spelled the same nesting around `addressed`, hands `addressed` that helper as its turn. The mutate test that staged a walk inside a rename's registry commit pinned the epoch loop's re-read; under the turn that walk can't start until the rename ends, so it now pins the wait.
 
 **PROCEDURE**
 
@@ -2647,6 +2706,26 @@ The Context and Space renames, and `finishOwed`'s Context and Space pass, run in
    const addressed = (
      req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
      fn: () => Promise<MutateReply>,
++    turn: typeof inSettleTurn = inSettleTurn,
+   ): Promise<MutateReply> =>
+-    inSettleTurn(root, async () => {
++    turn(root, async () => {
+       const before = await settledIndex(root)
+       const reply = await fn()
+       if (!reply.ok) return reply
+@@ case 'createPage' @@
+   switch (req.op) {
+     case 'createPage':
+-      return seedsContext(req)
+-        ? underContexts(root, () => addressed(req, () => createPageOp(ctx, req)))
+-        : addressed(req, () => createPageOp(ctx, req))
++      return addressed(
++        req,
++        () => createPageOp(ctx, req),
++        seedsContext(req) ? inContextsTurn : inSettleTurn,
++      )
+ 
+     case 'createContainer':
 @@ case 'delete' @@
  
      case 'delete':
@@ -2702,7 +2781,7 @@ The Context and Space renames, and `finishOwed`'s Context and Space pass, run in
 
 #### Task 1-7
 
-Every landing that follows a read of the same file carries the stat that read saw, so the stale-read check reads the same everywhere: the JSON read-modify-write (`rmwLocked`, behind `rmwJsonStrict`, `updateNexusFile`, and every sidecar patch) and `editJsonStrict`, a property value's write (`rewriteRootAt`), a page's body save (`updatePageBody`), a Markdown tile's save (`writeMarkdownTile`), the identity file's two rewrites and its create (`ensureIdentity`), the Contexts registry's seed (`ensureContextsRegistry`), a page's create (`createPage`), a removed tile's file put back (`restoreTile`), and an asset's create (`writeAssetFile`). `atomicWriteFile` takes `{ bodyOnly, expect }` in place of its positional `bodyOnly`, and `writeJson` takes `expect`. A read that found no file passes `null`, which rejects a file created since: a tile's first body, a seeded JSON file, the identity file's create, the registry's seed, and the three creates whose functions checked the name was free, as their own comments promise ("never over the file its id names", `fail('exists')`); a rebuilt JSON file passes `null` too, since its damaged copy has moved aside. Sync's landing is the one exception, and its comment states why.
+Every landing that follows a read of the same file carries the stat that read saw, so the stale-read check reads the same everywhere: the JSON read-modify-write (`rmwLocked`, behind `rmwJsonStrict`, `updateNexusFile`, and every sidecar patch) and `editJsonStrict`, a property value's write (`rewriteRootAt`), a page's body save (`updatePageBody`), a Markdown tile's save (`writeMarkdownTile`), the identity file's two rewrites and its create (`ensureIdentity`), the Contexts registry's seed (`ensureContextsRegistry`), a page's create (`createPage`), a removed tile's file put back (`restoreTile`), and an asset's create (`writeAssetFile`). `atomicWriteFile` takes `{ bodyOnly, expect }` in place of its positional `bodyOnly`, and `writeJson` takes `{ expect }` the same way. A read that found no file passes `null`, which rejects a file created since: a tile's first body, a seeded JSON file, the identity file's create, the registry's seed, and the three creates whose functions checked the name was free, as their own comments promise ("never over the file its id names", `fail('exists')`); a rebuilt JSON file passes `null` too, since its damaged copy has moved aside. Sync's landing is the one exception, and its comment states why.
 
 **PROCEDURE**
 
@@ -2725,7 +2804,7 @@ Every landing that follows a read of the same file carries the stat that read sa
    const raw = await readJsonStrict(contextsRegistryFile(root))
    if (raw.ok || raw.error.code !== 'not-found') return
 -  await writeJson(contextsRegistryFile(root), seededRegistry(newId))
-+  await writeJson(contextsRegistryFile(root), seededRegistry(newId), null)
++  await writeJson(contextsRegistryFile(root), seededRegistry(newId), { expect: null })
  }
 ```
 
@@ -2760,7 +2839,7 @@ Every landing that follows a read of the same file carries the stat that read sa
 +export async function writeJson(
 +  filePath: string,
 +  value: unknown,
-+  expect?: FileStat | null,
++  { expect }: { expect?: FileStat | null } = {},
 +): Promise<void> {
 +  await atomicWriteFile(filePath, jsonText(value), { expect })
  }
@@ -2780,7 +2859,7 @@ Every landing that follows a read of the same file carries the stat that read sa
    if (next === null) return ok(base)
 -  await writeJson(absPath, next)
 +  // A rebuilt file's damaged copy has moved aside, so its landing expects no file there, as a seeded one's does.
-+  await writeJson(absPath, next, read.kind === 'corrupt' ? null : was)
++  await writeJson(absPath, next, { expect: read.kind === 'corrupt' ? null : was })
    return ok(next)
  }
  
@@ -2793,7 +2872,7 @@ Every landing that follows a read of the same file carries the stat that read sa
      if (read.kind !== 'ok') return read.kind
      const next = mutate(read.value)
 -    if (next !== null) await writeJson(absPath, next)
-+    if (next !== null) await writeJson(absPath, next, was)
++    if (next !== null) await writeJson(absPath, next, { expect: was })
      lastRead.set(absPath, next ?? read.value)
      return next === null ? 'unchanged' : 'written'
    })
@@ -2848,7 +2927,7 @@ Every landing that follows a read of the same file carries the stat that read sa
    if (existing && existingId) {
      if ('agenda_singletons' in existing) {
 -      await writeJson(path, retireAgendaKey(existing)).catch((e) =>
-+      await writeJson(path, retireAgendaKey(existing), was).catch((e) =>
++      await writeJson(path, retireAgendaKey(existing), { expect: was }).catch((e) =>
          console.error('nexus.json retired-key cleanup failed:', errText(e)),
        )
      }
@@ -2857,12 +2936,12 @@ Every landing that follows a read of the same file carries the stat that read sa
    // An id-less file is a damaged identity, not a new nexus: mint an id over it and seed nothing, or folders its owner deleted would be recreated and every asset keyed to the old id orphaned.
    if (existing) {
 -    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt })
-+    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt }, was)
++    await writeJson(path, { ...retireAgendaKey(existing), id, createdAt }, { expect: was })
      return { id, created: false }
    }
  
 -  await writeJson(path, { id, createdAt })
-+  await writeJson(path, { id, createdAt }, was)
++  await writeJson(path, { id, createdAt }, { expect: was })
    const agenda_folders = await seedAgenda(root)
    if (Object.keys(agenda_folders).length) await writeJson(path, { id, createdAt, agenda_folders })
    return { id, created: true }
@@ -2983,7 +3062,7 @@ Every landing that follows a read of the same file carries the stat that read sa
 ```Core/Files/atomicWrite.ts diff
 @@ CHUNK @@
 -/** The files a held rewrite holds and lands together, so their flushes overlap. */
-+/** The files a held rewrite holds and lands together, so their flushes overlap: each holds one of the host's sixteen pool threads until the drive answers, so the app's other reads and writes wait tens of milliseconds behind a chunk. */
++/** The files a held rewrite holds and lands together, so their flushes overlap: each holds one of the host's I/O threads until the drive answers, so the app's other reads and writes wait tens of milliseconds behind a chunk. */
  const CHUNK = 64
 ```
 
@@ -3016,9 +3095,9 @@ Every landing that follows a read of the same file carries the stat that read sa
 
 #### Review Checkpoint
 
-- [ ] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp flushed before any rename; the handle closed before the rename on Windows), the stale-read check (`expect` checked under the caller's lock, immediately before the rename), deadlock freedom (sorted chunk locks, no page's or Space sidecar's lock taken under another's, and the tile relink and the stamps holding nothing their record takes), echo suppression and Sync's tap, the index's stat matching the file's, a watched batch's commit keeping a row another writer landed mid-read, the epoch moving once per landing after its renames, and the turn around the renames; and for anything that reads as an odd-one-out beside the code around it.
-- [ ] Run the gates and `npm run build` from a clean state; record Phase 1's Actionable in the Net Ledger.
-- [ ] `PushNotification`: Phase 1's delta and the gates' result.
+- [x] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp flushed before any rename; the handle closed before the rename on Windows), the stale-read check (`expect` checked under the caller's lock, immediately before the rename), deadlock freedom (sorted chunk locks, no page's or Space sidecar's lock taken under another's, and the tile relink and the stamps holding nothing their record takes), echo suppression and Sync's tap, the index's stat matching the file's, a watched batch's commit keeping a row another writer landed mid-read, the epoch moving once per landing after its renames, and the turn around the renames; and for anything that reads as an odd-one-out beside the code around it.
+- [x] Run the gates and `npm run build` from a clean state; record Phase 1's Actionable in the Net Ledger.
+- [x] `PushNotification`: Phase 1's delta and the gates' result.
 
 ---
 
@@ -3436,7 +3515,7 @@ The index half reads and parses each written page once and hands that read to th
 +  }[] = []
    const flush = (): void => {
      const rows = queued.splice(0).filter(({ row, prior }) => unmoved(row.path, prior))
-     if (rows.length) seen.renames.push(...reindex(rows.map(({ row }) => row)))
+     seen.renames.push(...reindex(rows.map(({ row }) => row)))
 -    for (const { row, prior } of rows) {
 +    for (const { row, prior, absPath, read } of rows) {
 +      reads?.set(absPath, read)
@@ -3480,9 +3559,9 @@ The index half reads and parses each written page once and hands that read to th
  
  // ── The index's half ──
  
--// Removals and moves first, in order, then every written page in commits of up to 200, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+-// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 -export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
-+// Removals and moves first, in order, then every written page in commits of up to 200, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
++// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 +export async function indexEvents(
 +  root: string,
 +  events: readonly FileEvent[],

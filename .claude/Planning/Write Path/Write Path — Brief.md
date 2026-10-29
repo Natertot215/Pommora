@@ -68,7 +68,7 @@ The plan is two phases, as the Investigation's *§Recommendation* sizes them. **
 ##### Implement and Verify
 
 8. Execute through `c/plan-execution`. Each task goes to an `execution-agent` (`opus-medium`), and each phase ends with a read-only review checkpoint (`opus-high`, loading `code-simplification` then `adversarial-review`, reading outward).
-9. Run Final Verification over `<BASELINE>..HEAD`: Wave One, Wave Two, and the neutral gate, then the own pass. The harness was torn down after the first run, so it's set up once here and serves both the own pass's before-and-after on Medium-0 and step 11's matrix: re-fit both patches onto HEAD (step 11), run `./setup.sh <HEAD>` and `./fills.sh Small Medium Large`, then profile. The Cold-Machine Check moves to after step 12, since the matrix still needs the harness.
+9. Run Final Verification over `<BASELINE>..HEAD`: Wave One, Wave Two, and the neutral gate, then the own pass. Task 1-8 leaves the harness's baseline worktree, the re-fitted `instrumentation.patch`, and Medium-0 behind; the own pass moves that worktree to HEAD for its before-and-after, and step 11's matrix reuses it, adding the reach-in worktree and the other fills, so the harness is built once. The Cold-Machine Check moves to after step 12, since the matrix still needs the harness.
 10. Close out through `closeout-review`: the closeout report, a `HistoryPM.md` entry in the file's own format, and the reconciled docs.
 
 ##### Resume the Trash & Archive Restructure
