@@ -152,7 +152,7 @@ Each was confirmed by reading the code; none was run. "Uncovered" means no test 
 ##### B-9 • A Page Restored After a Rename Comes Back Holding the Old Names
 
 - **Cause:** the scrub moves a returning key or word only to a current one whose label some format spells the same way (`matchOf`, `restoreScrub.ts:46-58`). A property, option, Space, or Context renamed while the page sat in the Trash leaves no spelling to match, so the old key, word, title, and `<Title>` key return as foreign data.
-- **Evidence:** the reach-in measurement's spot check, in every cell at `15fe7422a` (*§The Trash's Model · §The Measurement*).
+- **Evidence:** the reach-in measurement's spot check, in every cell at `15fe7422a` and again at `9b9c0d630` (*§The Trash's Model · §The Measurement*).
 - **Coverage:** pinned as intended for a renamed property: `restoreScrub.test.ts:524` ("leaves a key whose property was renamed while it sat in the Trash as written"). A Link value the delete stripped from another page does come back under the new name, since the record files it by the property's id (`trashRecovery.test.ts:516`); only what the trashed copy itself holds stays old.
 - **Fix:** under reach-in, the cascade renames the trashed copy as it renames a live one; under resolve-on-restore, the scrub would need the registry's rename history, which nothing keeps. (Measurement)
 
@@ -303,7 +303,18 @@ A reach-in Trash isn't a copy of the Archive's. Archived pages are both addressa
 - **Cost:** no crossover. With an empty Trash the two models are within noise. At a Trash of 10% of the live pages the reach-in prototype runs the whole operation sequence about 10% slower, and at 50% about 41-60% slower (Small, Medium, Large), because every cascade rewrites trashed holders at the same per-file cost as live ones. A Set's restore is about 41% faster without the scrub. Today's only Trash-scaling cost is a page restore's walk of every trashed page, about 0.38 ms per trashed page.
 - **Correctness:** today's restore doesn't return a current page. A page that sat in the Trash through a property rename, an option rename, a Space rename, and a Context rename came back holding all four old names in every cell, since `matchOf` re-spells only format and casing variants of current names (`restoreScrub.ts:46-58`), and a rename leaves no spelling to match. The prototype's restored page read current in every cell, its deletes still stripped the Link values naming what they trashed, and trashed pages never entered `linkWorld`.
 - **Tests the prototype broke worth routing:** `archive.test.ts`'s "a trashed page's link to an archived page follows it to where it lands on restore", which `targets` carries today and nothing in the prototype replaced, and `spend.test.ts`'s "a live property holding the key keeps it", where a later property reusing a deleted property's key no longer inherits trashed copies' values.
-- **The multiplier:** reach-in's extra cost is the per-file write cost times the trashed holders a cascade reaches, so the decision waits on the matrix re-run on the Write Path plan's result (Decision 20).
+- **The multiplier:** reach-in's extra cost is the per-file write cost times the trashed holders a cascade reaches, which the Write Path plan cut from about 7 ms to about 2 ms a file.
+- **The re-run (10-29-2026, at `9b9c0d630`, after the Write Path plan):** the cells the decision rests on, Medium-10 and Medium-50 at three runs per build and Large-50 at two (`results/<cell>.jsonl`; the first run's files carry `-15fe7422a`). Every run passed; the whole operation sequence's median, opens aside:
+
+  | Cell | Baseline | Reach-In | Change |
+  |---|---|---|---|
+  | Medium-10 | 50.9 s | 55.8 s | +10% |
+  | Medium-50 | 51.4 s | 73.6 s | +43% |
+  | Large-50 | 137.6 s | 195.9 s | +42% |
+
+  The cost tracks the trashed holders a cascade reaches, linearly: at Medium-10 a property rename is 14.7 s against 16.3 s (+11%), at Medium-50 14.8 s against 22.3 s (+51%), and at Large-50 42.1 s against 62.3 s (+48%), each trashed holder costing what a live one does. A cold open indexes the trashed pages too (+8% at Medium-10, +51% at Medium-50, +47% at Large-50); a warm open costs +1-10%. A page restore is 10-38% faster and a Set's 14-23% faster, the scrub gone; emptying one bundle stays under a seventh of a second. With the Write Path plan, reach-in's heaviest Medium cell (a property rename over a Trash half the size of the live Nexus, 22.3 s) runs well under the first run's baseline for the same rename on an empty Trash (48.4 s).
+- **Correctness, re-run:** unchanged in every cell. The baseline's trashed pages keep every old name, the deleted property's values, and links to the page a delete removed (54, 244, and 631 by cell), and its restored page returns holding the old names; reach-in rewrites trashed pages exactly as live ones (the new-name counts match the old ones) and returns a current page. Live links to the restored page agree between builds.
+- **A third prototype gap:** with trashed pages in `byId`, a restore's refill sends a trashed holder through `refillValues` rather than `refillTrashed`, so a refill whose write fails reports the holder unrestored where the baseline owes it with Try Again (`trashRecovery.test.ts`'s "a trashed copy the restore's refill couldn't write owes its value"); the same at `15fe7422a`.
 
 ---
 
