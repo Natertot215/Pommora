@@ -1,5 +1,5 @@
 diff --git a/Core/Nexus/handlers.ts b/Core/Nexus/handlers.ts
-index 68f7cb1a3..5284a471c 100644
+index 09049b00c..2f709a721 100644
 --- a/Core/Nexus/handlers.ts
 +++ b/Core/Nexus/handlers.ts
 @@ -57,6 +57,8 @@ export async function openNexusSequence(
@@ -40,12 +40,12 @@ index 68f7cb1a3..5284a471c 100644
    if (nexusId !== null) void startSession(ctx, root, nexusId)
  }
 diff --git a/Desktop/Platform/nodeMachine.ts b/Desktop/Platform/nodeMachine.ts
-index 99a7d7c46..391136f70 100644
+index 5c1167917..32125638e 100644
 --- a/Desktop/Platform/nodeMachine.ts
 +++ b/Desktop/Platform/nodeMachine.ts
-@@ -46,6 +46,13 @@ const entryKind = (e: { isFile(): boolean; isDirectory(): boolean }): DirEntry['
- const asBuffer = (bytes: Uint8Array): Buffer =>
-   Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+@@ -97,6 +97,13 @@ async function stage({
+   }
+ }
  
 +const benchIo = ((globalThis as any).__benchIo ??= { calls: {}, trash: {} }) as { calls: Record<string, number>; trash: Record<string, number> }
 +const counted = <F extends (p: string, ...a: any[]) => any>(name: string, f: F): F =>
@@ -57,9 +57,16 @@ index 99a7d7c46..391136f70 100644
  export const nodeMachine: Machine = {
    readText: (p) => absentToNull(readFile(p, 'utf8')),
    readBytes: (p) => absentToNull(readFile(p)),
-@@ -78,3 +85,5 @@ export const nodeMachine: Machine = {
+@@ -129,3 +136,12 @@ export const nodeMachine: Machine = {
    platform: isWindows ? 'windows' : 'posix',
    home: posixPath(realpathSync.native(homedir())),
  }
-+for (const k of ['readText', 'readBytes', 'writeText', 'writeBytes', 'stat', 'readDir', 'mkdir', 'rename', 'remove', 'utimes'] as const)
++for (const k of ['readText', 'readBytes', 'stat', 'readDir', 'mkdir', 'rename', 'remove'] as const)
 +  (nodeMachine as any)[k] = counted(k, (nodeMachine as any)[k])
++const landAll = nodeMachine.land
++nodeMachine.land = (files) => {
++  benchIo.calls.land = (benchIo.calls.land ?? 0) + files.length
++  const trashed = files.filter((f) => f.path.includes('/.trash/')).length
++  if (trashed) benchIo.trash.land = (benchIo.trash.land ?? 0) + trashed
++  return landAll(files)
++}
