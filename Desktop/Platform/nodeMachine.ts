@@ -86,8 +86,8 @@ async function stage({
       if (expect !== undefined && !sameFile(expect, held && fileStat(held)))
         throw new Error(`${basename(path)} changed while its write waited.`)
       const own = await handle.stat()
-      // The temp was created through the umask, so the file keeps the permissions it had.
-      if (held && held.mode !== own.mode) await handle.chmod(held.mode)
+      // The temp was created through the umask, so the file keeps the permissions it had; a volume that refuses them leaves the temp's, and its bytes still land.
+      if (held && held.mode !== own.mode) await handle.chmod(held.mode).catch(() => {})
       await handle.close()
       await outlastHolder(path, () => rename(temp, path))
       return fileStat(own)

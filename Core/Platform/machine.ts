@@ -19,7 +19,7 @@ export interface Landing {
   expect?: FileStat | null
 }
 
-/** Whether `now` is still the file `was` describes: the same time, size, and birth, which a file replaced whole doesn't keep; a `was` of null describes no file. */
+/** Whether `now` is still the file `was` describes: the same time, size, and birth, a `was` of null describing no file. Birth tells a file replaced whole apart only where the new file keeps a birth of its own, since on APFS a time set earlier than a file's birth moves its birth back to it. */
 export const sameFile = (was: FileStat | null, now: FileStat | null): boolean =>
   was === null
     ? now === null
