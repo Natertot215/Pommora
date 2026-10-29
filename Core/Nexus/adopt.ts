@@ -1,6 +1,6 @@
 import { basename, join } from '../Paths/posix'
 import { fault, ok, type Result } from '../Contract/result'
-import { machine } from '../Platform/machine'
+import { type FileStat, machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
 import {
@@ -16,6 +16,7 @@ import {
   readTextOrNull,
   pathExists,
   relocate,
+  rewriteHeld,
   rewritePageSerialized,
   rmwJsonStrict,
 } from '../Files/atomicWrite'
@@ -58,26 +59,35 @@ async function reHomeRegistered(
   return false
 }
 
+type Stamping = { overForeign?: boolean; held?: string }
+
+/** The rewrite that stamps each page `pages` names, recording the ID each one takes in `ids`: a page missing its ID, or holding a foreign one where its entry says `overForeign`, takes the entry's `held` ID or one minted from its file's age; one that keeps its ID is left. */
+const stamping =
+  (kind: ContentKind, pages: ReadonlyMap<string, Stamping>, ids: Map<string, string>) =>
+  (content: string, file: string, { birthtimeMs, mtimeMs }: FileStat): string | null => {
+    const { overForeign, held }: Stamping = pages.get(file) ?? {}
+    const { admission } = parsePage(content, kind)
+    // The long-term approach is remembering an old ID to re-stamp in such an event; this *must* be done before any official release.
+    const foreign = admission.state === 'unknown' && admission.reason === 'malformed'
+    if (admission.state !== 'missing' && !(overForeign && foreign)) return null
+    // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
+    const id = held ?? contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
+    ids.set(file, id)
+    return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
+  }
+
 export async function stampPage(
   absFile: string,
   kind: ContentKind,
   overForeign = false,
   held?: string,
 ): Promise<string | null> {
-  const st = await machine().stat(absFile)
-  if (!st) return null
-  // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
-  const { birthtimeMs, mtimeMs } = st
-  let id: string | null = null
-  const landed = await rewritePageSerialized(absFile, (content) => {
-    const { admission } = parsePage(content, kind)
-    // The long-term approach is remembering an old ID to re-stamp in such an event; this *must* be done before any official release.
-    const foreign = admission.state === 'unknown' && admission.reason === 'malformed'
-    if (admission.state !== 'missing' && !(overForeign && foreign)) return null
-    id = held ?? contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
-    return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
-  })
-  return landed ? id : null
+  const ids = new Map<string, string>()
+  const stamp = stamping(kind, new Map([[absFile, { overForeign, held }]]), ids)
+  const landed = await rewritePageSerialized(absFile, (content, was) =>
+    stamp(content, absFile, was),
+  )
+  return landed ? (ids.get(absFile) ?? null) : null
 }
 
 async function pageAdmission(absFile: string) {
@@ -130,16 +140,26 @@ export type Stamp = Unreadable & { held?: string }
 /** Answers every id it stamped or found written, a folder's as well as a page's: for the index, a page that arrived without one arrives when its ID lands. */
 export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<string[]> {
   const landed: string[] = []
+  const pages = new Map<string, Stamping>()
+  const heldBack = new Set<string>()
   for (const { path, kind, reason, held } of listed) {
     if (reason !== 'missing' && reason !== 'malformed') continue
     const abs = join(root, path)
-    const kept = held && !idHeld(root, held) ? held : undefined
-    let id: string | null = null
-    if (kind === 'page')
-      id = await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)
-    else if (reason === 'missing') id = await stampFolder(abs, kind).catch(() => null)
-    if (id !== null) landed.push(id)
+    if (kind === 'page') {
+      if (pages.has(abs)) continue
+      // A held ID goes back to one page alone, as it does when one stamp lands before the next is weighed.
+      const kept = held && !idHeld(root, held) && !heldBack.has(held) ? held : undefined
+      if (kept) heldBack.add(kept)
+      pages.set(abs, { overForeign: reason === 'malformed', held: kept })
+    } else if (reason === 'missing') {
+      const id = await stampFolder(abs, kind).catch(() => null)
+      if (id !== null) landed.push(id)
+    }
   }
+  // The pages land as one held rewrite, so a first adoption's stamps flush a chunk at a time, each landing or failing on its own.
+  const ids = new Map<string, string>()
+  const done = await rewriteHeld([...pages.keys()], stamping('page', pages, ids))
+  for (const [file, id] of ids) if (done.get(file)?.status === 'rewritten') landed.push(id)
   return landed
 }
 

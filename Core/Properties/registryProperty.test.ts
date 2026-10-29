@@ -6,6 +6,7 @@ import { join } from '../Paths/posix'
 import {
   noModeBits,
   putJson,
+  raceLandings,
   readJsonAt,
   seedNexus,
   seedSpaceSidecar,
@@ -35,6 +36,7 @@ import type { PropertyDraft } from './properties'
 import { fail, ok } from '../Contract/result'
 import { deleteProperty } from './deleteProperty'
 import { deleteOption, renameOption, setValueFormat } from './optionOps'
+import { finishOwed } from '../Nexus/finishOwed'
 
 vi.mock('../Nexus/owed', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Nexus/owed')>()
@@ -740,6 +742,23 @@ describe('renames on the notes', () => {
       })
     },
   )
+
+  it('a rename leaves a page changed outside since its read as written, owes it, and Try Again rewrites it', async () => {
+    const id = await created('Priority')
+    const open = await holding('Open', [id], 'Priority: hi\n')
+    const raced = await holding('Raced', [id], 'Priority: hi\n')
+    const outside = `${await readFile(raced.page, 'utf8')}written elsewhere\n`
+    const race = raceLandings((file) => file === raced.page, outside)
+    const r = await renameProperty(root, id, 'Urgency')
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
+    expect(await readFile(raced.page, 'utf8')).toBe(outside)
+    expect(await readFile(open.page, 'utf8')).toContain('Urgency: hi')
+    expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
+    race.mockRestore()
+    await finishOwed(root, { trashMode: 'nexus', trashToSystem: async () => {} })
+    expect(await readFile(raced.page, 'utf8')).toContain('Urgency: hi')
+    expect(await readNotes(root)).toEqual({})
+  })
 
   it.skipIf(noModeBits)('a rename onto an owed key is refused', async () => {
     const { id } = await owedPriority()

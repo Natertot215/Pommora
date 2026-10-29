@@ -5,7 +5,7 @@ import {
   bytesUnder,
   putJson,
   readJsonAt,
-  refuseWrites,
+  failLandings,
   seedNexus,
   tempRoot,
 } from '../Testing/hostFs'
@@ -902,7 +902,7 @@ describe('a delete from the Archive', () => {
     })
     await reseed()
     const archived = await archive('Notes/Daily', 'set')
-    refuseWrites('editJsonStrict', (file) => file === sidecar)
+    failLandings((file) => file === sidecar)
     await trash(join(archived, 'Daily', 'Sub'), 'set')
     const [owed] = Object.values(await readNotes(root))
     const edit = owed?.kind === 'container' ? owed.edit : undefined
@@ -1110,7 +1110,7 @@ describe('a delete from the Archive', () => {
 
   it('a live page’s delete owes an archived linker whose strip failed, and its record stays whole', async () => {
     const linker = await archive('Notes/Linker.md')
-    refuseWrites('rewritePreservingTimes', (file) => file.startsWith(at(linker)))
+    failLandings((file) => file.startsWith(at(linker)))
     const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
     expect(r.ok && r.value.cascade).toMatchObject({
       warning: 'Couldn’t update 1 Item.',

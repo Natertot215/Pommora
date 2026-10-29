@@ -77,9 +77,6 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
   let clock = 1000
   const encoder = new TextEncoder()
   const decoder = new TextDecoder()
-  const put = (p: string, text: string): void => {
-    files.set(p, { text, mtimeMs: ++clock })
-  }
   const entryStat = (e: { text: string; mtimeMs: number }): FileStat => ({
     size: e.text.length,
     mtimeMs: e.mtimeMs,
@@ -92,8 +89,6 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
       const e = files.get(p)
       return e ? encoder.encode(e.text) : null
     },
-    writeText: async (p, text) => put(p, text),
-    writeBytes: async (p, bytes) => put(p, decoder.decode(bytes)),
     land: (list) =>
       Promise.allSettled(
         list.map(async ({ path, data, mtimeMs, expect }) => {
@@ -134,10 +129,6 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
       files.delete(p)
       dirs.delete(p)
     },
-    utimes: async (p, mtimeMs) => {
-      const e = files.get(p)
-      if (e) e.mtimeMs = mtimeMs
-    },
     realpath: async (p) => p,
     lock: chainLock(),
     sha256Hex,
@@ -171,17 +162,6 @@ const fileStat = (s: Stats): FileStat => ({
   isDirectory: s.isDirectory(),
 })
 
-async function atomicWrite(p: string, data: string | Uint8Array): Promise<void> {
-  const tmp = `${p}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`
-  try {
-    await writeFile(tmp, data)
-    await rename(tmp, p)
-  } catch (e) {
-    await rm(tmp, { force: true })
-    throw e
-  }
-}
-
 // The fast double Core's suites install: the host's temp and rename without its flush, its mode, or its symlink's target, which `nodeMachine.test.ts` carries.
 async function landOnDisk({ path, data, mtimeMs, expect }: Landing): Promise<FileStat> {
   const was = await absentToNull(stat(path))
@@ -203,8 +183,6 @@ export function diskMachine(): Machine {
   return {
     readText: (p) => absentToNull(readFile(p, 'utf8')),
     readBytes: (p) => absentToNull(readFile(p)),
-    writeText: (p, text) => atomicWrite(p, text),
-    writeBytes: (p, bytes) => atomicWrite(p, bytes),
     land: (list) => Promise.allSettled(list.map(landOnDisk)),
     async stat(p) {
       const s = await absentToNull(stat(p))
@@ -219,7 +197,6 @@ export function diskMachine(): Machine {
     },
     rename,
     remove: (p) => rm(p, { recursive: true, force: true }),
-    utimes: (p, mtimeMs) => utimes(p, mtimeMs / 1000, mtimeMs / 1000),
     realpath: realpathPosix,
     lock: chainLock(),
     sha256Hex,

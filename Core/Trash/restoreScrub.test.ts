@@ -2,8 +2,8 @@
 
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { join } from '../Paths/posix'
-import { readJsonAt, seedNexus, tempRoot } from '../Testing/hostFs'
+import { isMarkdownFile, join } from '../Paths/posix'
+import { readJsonAt, failLandings, seedNexus, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
@@ -23,17 +23,7 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { noModeBits } from '../Testing/hostFs'
 import { STATUS_DEF } from '../Testing/definitions'
 
-const trashWrites = vi.hoisted(() => ({ fail: false }))
-vi.mock('../Files/atomicWrite', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../Files/atomicWrite')>()
-  return {
-    ...actual,
-    rewritePreservingTimes: (file: string, data: string): Promise<void> =>
-      trashWrites.fail && file.includes('/.trash/')
-        ? Promise.reject(new Error('read-only'))
-        : actual.rewritePreservingTimes(file, data),
-  }
-})
+const trashWrites = { fail: false }
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
@@ -106,9 +96,11 @@ beforeEach(async () => {
     `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\nPriority: hi\n---\nbody`,
   )
   await openSession(root)
+  failLandings((file) => trashWrites.fail && file.includes('/.trash/') && isMarkdownFile(file))
 })
 
 afterEach(async () => {
+  vi.restoreAllMocks()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })

@@ -1906,7 +1906,7 @@ describe('handleMutate — setBanner', () => {
     expect(await bannerOf()).toBeUndefined()
   })
 
-  // `atomicWriteBinary` records its own write and the watcher drops the echo, so a test that rebuilds the map from the directory passes while the app renders blank. The adopted value must resolve against the map main is HOLDING.
+  // `atomicWriteFile` records its own write and the watcher drops the echo, so a test that rebuilds the map from the directory passes while the app renders blank. The adopted value must resolve against the map main is HOLDING.
   it('the adopted value resolves against the map main holds, and that map is owed a push', async () => {
     await withAssetDir()
     await refreshTree(root)

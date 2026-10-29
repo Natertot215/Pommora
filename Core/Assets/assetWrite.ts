@@ -2,7 +2,7 @@ import { basename, extname, join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { expressibleInLink, fileLinkText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
-import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
 import { liveAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
 import { assetsDir } from '../Paths/paths'
@@ -30,7 +30,7 @@ export async function writeAssetFile(
       const file = `${stem}${ext}`
       if (await taken(stem)) return fail('exists', `${file} already exists.`)
       const abs = join(dir, file)
-      await atomicWriteBinary(abs, bytes)
+      await atomicWriteFile(abs, bytes)
       return ok(fileLinkText(file))
     },
     taken,

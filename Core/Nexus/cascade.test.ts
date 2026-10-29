@@ -10,7 +10,7 @@ import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { rewritePageSerialized } from '../Files/atomicWrite'
+import { rewriteHeld, rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -29,11 +29,11 @@ vi.mock('./governedSweep', async (importOriginal) => {
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
-  return { ...mod, rewritePageSerialized: vi.fn(mod.rewritePageSerialized) }
+  return { ...mod, rewriteHeld: vi.fn(mod.rewriteHeld) }
 })
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
-const rewriteSpy = vi.mocked(rewritePageSerialized)
+const rewriteSpy = vi.mocked(rewriteHeld)
 const sweptFiles = (): string[] => sweepSpy.mock.calls[0]?.[0] ?? []
 
 let root: string
@@ -98,7 +98,7 @@ describe('renameCascade', () => {
     rewriteSpy.mockClear()
     const r = await renameCascade(root, titled('Target', 'Omega'))
     expect(r.hosts).toEqual([])
-    expect(rewriteSpy.mock.calls.map(([file]) => file)).not.toContain(
+    expect(rewriteSpy.mock.calls.flatMap(([files]) => files)).not.toContain(
       tileFilePath(homepageDir(root), tile),
     )
   })
@@ -360,7 +360,7 @@ describe('renameCascade for a heading', () => {
     const r = await renameCascade(root, { path: 'Notes/A.md', heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)
     expect(r.hosts).toEqual([])
-    expect(rewriteSpy.mock.calls.map(([file]) => file)).not.toContain(
+    expect(rewriteSpy.mock.calls.flatMap(([files]) => files)).not.toContain(
       tileFilePath(homepageDir(root), tile),
     )
     expect(await readMarkdownTile(homepageDir(root), tile)).toEqual(ok('see [[A#Other]]'))

@@ -2,8 +2,8 @@ import { mkdtempSync, realpathSync } from 'node:fs'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { vi } from 'vitest'
-import * as atomicWrite from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
+import { type FileStat, machine } from '../Platform/machine'
 import { contextsDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { CONTEXTS_REGISTRY_REL, NEXUS_CONFIG_FILES, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { basename, dirname, join } from '../Paths/posix'
@@ -36,19 +36,27 @@ export const bytesUnder = async (dir: string): Promise<Record<string, string>> =
     ),
   )
 
-const writers = {
-  atomicWriteFile: atomicWrite.atomicWriteFile,
-  rewritePreservingTimes: atomicWrite.rewritePreservingTimes,
-  editJsonStrict: atomicWrite.editJsonStrict,
+/** Fails each landing `fails` picks, as a disk failing the write, and lands every other file. */
+export const failLandings = (fails: (file: string) => boolean) => {
+  const m = machine()
+  const real = m.land.bind(m)
+  return vi.spyOn(m, 'land').mockImplementation(async (files) => {
+    const landed = await real(files.filter((f) => !fails(f.path)))
+    return files.map(
+      (f): PromiseSettledResult<FileStat> =>
+        fails(f.path) ? { status: 'rejected', reason: new Error('failed') } : landed.shift()!,
+    )
+  })
 }
 
-/** Refuses `name`'s write to each file `refuses` picks, and hands every other file to the real write. */
-export const refuseWrites = (name: keyof typeof writers, refuses: (file: string) => boolean) => {
-  const real = writers[name] as (file: string, ...rest: never[]) => Promise<unknown>
-  return vi
-    .spyOn(atomicWrite, name)
-    .mockImplementation(((file: string, ...rest: never[]) =>
-      refuses(file) ? Promise.reject(new Error('refused')) : real(file, ...rest)) as never)
+/** Overwrites each file `picks` chooses with `outside` just before its landing, as another program writing between the app's read and its landing; `outside` differs in length from what the file holds. */
+export const raceLandings = (picks: (file: string) => boolean, outside: string) => {
+  const m = machine()
+  const real = m.land.bind(m)
+  return vi.spyOn(m, 'land').mockImplementation(async (files) => {
+    for (const f of files) if (picks(f.path)) await writeFile(f.path, outside)
+    return real(files)
+  })
 }
 
 /** A Space the tree holds: its sidecar, and its Context in the Context list when the list doesn't name it. */

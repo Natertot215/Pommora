@@ -26,7 +26,7 @@ import { readStoredView } from '../Views/viewsFile'
 import type { Json } from '../Files/stableJson'
 import { findContainerById } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists, rewriteHeld } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
 import { discardFile, type TrashDeps } from '../Trash/discard'
 import { machine } from '../Platform/machine'
@@ -305,14 +305,18 @@ export async function rewriteTileConnections(
     const wrote: string[] = []
     const ids = await markdownTileIds(dir)
     if (!ids) failed++
-    for (const id of ids ?? []) {
-      // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-      const landed = await rewritePageSerialized(tileFilePath(dir, id), (body) => {
+    // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
+    const done = await rewriteHeld(
+      (ids ?? []).map((id) => tileFilePath(dir, id)),
+      (body) => {
         const next = rewrite(body)
         return next === body ? null : next
-      }).catch(() => null)
-      if (landed === null) failed++
-      else if (landed) wrote.push(id)
+      },
+    )
+    for (const id of ids ?? []) {
+      const status = done.get(tileFilePath(dir, id))?.status
+      if (status === 'failed') failed++
+      else if (status === 'rewritten') wrote.push(id)
     }
     if (!wrote.length) continue
     dropTileLinks()

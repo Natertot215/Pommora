@@ -1,10 +1,10 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { bytesUnder, putJson, readJsonAt, refuseWrites, tempRoot } from '../Testing/hostFs'
+import { bytesUnder, putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import * as atomicWrite from '../Files/atomicWrite'
+import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -686,7 +686,7 @@ describe('links come back with the page', () => {
     if (!inPlain || !inJournal) throw new Error('setup failed')
     const bare = { page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }
     const pathed = { page: BETA_ID, property: 'prop_parent', value: '[[Plain/Alpha]]' }
-    const reads = vi.spyOn(atomicWrite, 'readTextOrNull')
+    const reads = vi.spyOn(machine(), 'readText')
     try {
       await parkLinks(root, [bare, pathed])
       expect(reads.mock.calls.filter(([file]) => file.endsWith('.md'))).toEqual([])
@@ -909,7 +909,7 @@ describe('an item pulled out of a trashed bundle', () => {
     const sidecar = join(root, 'Plain', '_pagecollection.json')
     const views = ['set-daily', 'set-sub'].map(located)
     await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
-    const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar)
+    const refusal = failLandings((file) => file === sidecar)
     await del('Journal/Daily', 'set')
     refusal.mockRestore()
     return { sidecar, views, bundle: await bundleOf('Daily') }
@@ -990,7 +990,7 @@ describe('an item pulled out of a trashed bundle', () => {
     [true, false],
   ])('a page pulled while its Set’s delete still owes its strip comes off the strip, and Try Again keeps the linker on its landing (stepped aside %s, linker refused at the pull %s)', async (aside, refusedAtPull) => {
     await linker(gamma, GAMMA_ID, 'Related: "[[Daily/Alpha]]"')
-    const refusal = refuseWrites('rewritePreservingTimes', (file) => file === join(root, gamma))
+    const refusal = failLandings((file) => file === join(root, gamma))
     await del('Journal/Daily', 'set')
     expect(await owed()).toContain('Journal/Daily/Alpha.md')
     if (aside) await page(join('Journal', 'Alpha.md'), ALEPH_ID)
@@ -1014,7 +1014,7 @@ describe('an item pulled out of a trashed bundle', () => {
     const sidecar = join(root, 'Plain', '_pagecollection.json')
     const views = ['set-daily', 'set-sub', 'set-weekly'].map(located)
     await writeFile(sidecar, JSON.stringify({ id: 'col-plain', views }))
-    const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar)
+    const refusal = failLandings((file) => file === sidecar)
     await del('Journal', 'collection')
     refusal.mockRestore()
     const entry = Object.values(await readNotes(root)).find((e) => e.kind === 'container')

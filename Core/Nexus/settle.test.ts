@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { putJson, readJsonAt, refuseWrites, tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/discard'
 import { assignProperty } from '../Properties/assignment'
@@ -1301,9 +1301,7 @@ describe('a re-spell on the notes', () => {
   }
 
   beforeEach(() => {
-    const refusing = (file: string): boolean => failing.some((f) => file.endsWith(f))
-    refuseWrites('atomicWriteFile', refusing)
-    refuseWrites('rewritePreservingTimes', refusing)
+    failLandings((file) => failing.some((f) => file.endsWith(f)))
   })
   afterEach(() => {
     failing.length = 0

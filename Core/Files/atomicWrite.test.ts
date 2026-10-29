@@ -5,7 +5,6 @@ import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/p
 import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
-  atomicWriteBinary,
   atomicWriteFile,
   editJsonStrict,
   heldName,
@@ -19,7 +18,6 @@ import {
   setRepairSeed,
   updateNexusConfig,
   relocate,
-  rewritePreservingTimes,
   updateNexusFile,
 } from './atomicWrite'
 import { mintBundle } from '../Bundles/bundle'
@@ -395,7 +393,13 @@ describe('the own tap', () => {
     await atomicWriteFile(p, 'first')
     expect(noted).toEqual([
       {
-        ev: { event: 'change', absPath: p, origin: 'own', text: 'first', bodyOnly: false },
+        ev: {
+          event: 'change',
+          absPath: p,
+          origin: 'own',
+          text: 'first',
+          stat: expect.objectContaining({ size: 5 }),
+        },
         text: 'first',
         mtimeMs: expect.any(Number),
       },
@@ -407,17 +411,25 @@ describe('the own tap', () => {
     await writeFile(p, 'old')
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(p, past, past)
-    await rewritePreservingTimes(p, 'new')
+    await rewritePageSerialized(p, () => 'new')
     expect(noted).toHaveLength(1)
-    expect(noted[0].ev).toEqual({ event: 'change', absPath: p, origin: 'own', text: 'new' })
+    expect(noted[0].ev).toEqual({
+      event: 'change',
+      absPath: p,
+      origin: 'own',
+      text: 'new',
+      stat: expect.objectContaining({ mtimeMs: past.getTime() }),
+    })
     expect(noted[0].text).toBe('new')
     expect(Math.floor((noted[0].mtimeMs ?? 0) / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
   it('notes a binary write as an add', async () => {
     const p = join(dir, 'x.png')
-    await atomicWriteBinary(p, new TextEncoder().encode('bytes'))
-    expect(noted.map((n) => n.ev)).toEqual([{ event: 'add', absPath: p, origin: 'own' }])
+    await atomicWriteFile(p, new TextEncoder().encode('bytes'))
+    expect(noted.map((n) => n.ev)).toEqual([
+      { event: 'add', absPath: p, origin: 'own', stat: expect.objectContaining({ size: 5 }) },
+    ])
   })
 
   it('notes a relocate as a move, with the source free for the tap to lock', async () => {

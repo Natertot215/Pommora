@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { newContentId } from '../Nexus/ids'
-import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
+import { rm, mkdir, readFile, stat, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
@@ -13,7 +13,7 @@ import { createProperty } from '../Properties/registryProperty'
 import { listBundles } from '../Bundles/bundle'
 import { seedContentIndex } from './indexSeed'
 import * as contentIndex from './contentIndex'
-import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
+import { queryKeyHolders, queryMembers, queryMentions, readIndexedStat } from './contentIndex'
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settleBatch } from '../Nexus/settle'
@@ -23,6 +23,7 @@ import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { type FileEvent, noteOwn } from '../Files/writeEcho'
+import { sweepGovernedRoots } from '../Nexus/governedSweep'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -266,6 +267,27 @@ describe('the own tap indexes a batch', () => {
       upserts.mockRestore()
     }
     await expectMaintained()
+  })
+
+  it('a swept page is stat’ed once, and the index records the stat its landing answered', async () => {
+    const rels = ['Notes/Daily/Alpha.md', 'Notes/Daily/Beta.md']
+    const files = rels.map((rel) => join(root, rel))
+    const stats = vi.spyOn(machine(), 'stat')
+    const r = await sweepGovernedRoots(files, { raw: (raw) => ({ ...raw, Tags: ['b'] }) })
+    expect([...r.touched.keys()]).toEqual(files)
+    for (const file of files) expect(stats.mock.calls.filter(([p]) => p === file)).toHaveLength(1)
+    stats.mockRestore()
+    for (const [i, rel] of rels.entries()) {
+      const { mtimeMs, size } = await stat(files[i])
+      expect(readIndexedStat(rel)).toMatchObject({ mtimeMs, size })
+    }
+    const reads = vi.spyOn(machine(), 'readText')
+    try {
+      await seedContentIndex(root)
+      expect(reads.mock.calls.filter(([p]) => files.includes(p))).toEqual([])
+    } finally {
+      reads.mockRestore()
+    }
   })
 })
 

@@ -31,26 +31,27 @@ export function describeMachine(
       expect(await machine.readBytes(at('ghost.md'))).toBeNull()
     })
 
-    it('writes then reads text and bytes', async () => {
-      await machine.writeText(at('a.txt'), 'hello')
+    it('lands then reads text and bytes', async () => {
+      await write('a.txt', 'hello')
       expect(await machine.readText(at('a.txt'))).toBe('hello')
-      const bytes = await machine.readBytes(at('a.txt'))
-      expect(bytes && new TextDecoder().decode(bytes)).toBe('hello')
+      await write('b.bin', new TextEncoder().encode('bytes'))
+      const bytes = await machine.readBytes(at('b.bin'))
+      expect(bytes && new TextDecoder().decode(bytes)).toBe('bytes')
     })
 
-    it('writes atomically — a concurrent reader sees the old or the new bytes, never a torn mix', async () => {
+    it('lands atomically — a concurrent reader sees the old or the new bytes, never a torn mix', async () => {
       const p = at('atomic.md')
       const a = 'a'.repeat(64 * 1024)
       const b = 'b'.repeat(64 * 1024)
-      await machine.writeText(p, a)
-      const writes = Array.from({ length: 20 }, (_, i) => machine.writeText(p, i % 2 ? a : b))
+      await write('atomic.md', a)
+      const writes = Array.from({ length: 20 }, (_, i) => write('atomic.md', i % 2 ? a : b))
       const reads = await Promise.all(Array.from({ length: 200 }, () => machine.readText(p)))
       await Promise.all(writes)
       for (const seen of reads) expect(seen === a || seen === b).toBe(true)
     })
 
     it('stats a file and a directory, and an absent path as null', async () => {
-      await machine.writeText(at('a.txt'), 'hello')
+      await write('a.txt', 'hello')
       const s = await machine.stat(at('a.txt'))
       expect(s?.size).toBe(5)
       expect(s?.isDirectory).toBe(false)
@@ -62,7 +63,7 @@ export function describeMachine(
 
     it('lists a directory by kind and an absent one as []', async () => {
       await machine.mkdir(at('sub'))
-      await machine.writeText(at('a.txt'), 'x')
+      await write('a.txt', 'x')
       const entries = (await machine.readDir(root)).sort((a, b) => a.name.localeCompare(b.name))
       expect(entries).toEqual([
         { name: 'a.txt', kind: 'file' },
@@ -77,22 +78,16 @@ export function describeMachine(
     })
 
     it('renames a file', async () => {
-      await machine.writeText(at('x.txt'), 'v')
+      await write('x.txt', 'v')
       await machine.rename(at('x.txt'), at('y.txt'))
       expect(await machine.readText(at('y.txt'))).toBe('v')
       expect(await machine.readText(at('x.txt'))).toBeNull()
     })
 
     it('removes a file', async () => {
-      await machine.writeText(at('z.txt'), 'v')
+      await write('z.txt', 'v')
       await machine.remove(at('z.txt'))
       expect(await machine.readText(at('z.txt'))).toBeNull()
-    })
-
-    it('utimes moves the modification time', async () => {
-      await machine.writeText(at('t.txt'), 'v')
-      await machine.utimes(at('t.txt'), 2_000_000_000_000)
-      expect((await machine.stat(at('t.txt')))?.mtimeMs).toBe(2_000_000_000_000)
     })
 
     it('a landing keeps the time it is given and answers the stat the file then holds', async () => {

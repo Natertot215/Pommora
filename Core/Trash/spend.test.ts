@@ -9,14 +9,14 @@ import {
   noModeBits,
   putJson,
   readJsonAt,
-  refuseWrites,
+  failLandings,
   seedNexus,
   seedSpaceSidecar,
   tempRoot,
 } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as atomicWrite from '../Files/atomicWrite'
+import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -512,7 +512,7 @@ describe('the bundle records the page each outbound link named', () => {
   })
 
   it('a Set delete records them bundle-wide from the index, reading none of its pages', async () => {
-    const reads = vi.spyOn(atomicWrite, 'readTextOrNull')
+    const reads = vi.spyOn(machine(), 'readText')
     try {
       const r = await settledMutate(
         root,
@@ -1787,7 +1787,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
       })
       await putJson(sidecar(), { id: 'col-other', views: located(values) })
       await refreshTree(root)
-      const refusal = refuseWrites('editJsonStrict', (file) => file === sidecar())
+      const refusal = failLandings((file) => file === sidecar())
       await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
       refusal.mockRestore()
       expect((await readJsonAt(sidecar())).views).toEqual(located(values))
@@ -1819,7 +1819,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
       const taker = join(root, 'Other', 'Taker.md')
       await writeFile(taker, `---\nID: ${PAGE_D}\nRelated: "[[Alpha]]"\n---\ntaker`)
       await refreshTree(root)
-      refuseWrites('rewritePreservingTimes', (file) => file === taker)
+      failLandings((file) => file === taker)
       const handed: string[] = []
       const item = join(bundle, 'Daily', 'Alpha.md')
       const r = await settledMutate(

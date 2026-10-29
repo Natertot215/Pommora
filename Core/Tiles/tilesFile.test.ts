@@ -1,7 +1,7 @@
 import { ok } from '../Contract/result'
 import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
+import { failLandings, tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { landedId, tileId } from '../Testing/tileLayouts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
@@ -567,6 +567,20 @@ describe('rewriteTileConnections', () => {
     })
     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('see [[Renamed]]'))
     expect(await readMarkdownTile(broken, lost)).toEqual(ok('see [[Renamed]]'))
+  })
+
+  it('lands a host’s tiles as one group, and counts a tile whose landing fails', async () => {
+    const kept = await landedId(createTile(root, home(), append))
+    const lost = await landedId(createTile(root, home(), append))
+    await write(home(), kept, 'see [[Target]]')
+    await write(home(), lost, 'see [[Target]]')
+    const lands = failLandings((file) => file === tileFilePath(home(), lost))
+    const r = await rewriteTileConnections(root, rename)
+    const calls = lands.mock.calls.length
+    lands.mockRestore()
+    expect(calls).toBe(1)
+    expect(r).toEqual({ hosts: [{ host: { kind: 'homepage' }, ids: [kept] }], failed: 1 })
+    expect(await readMarkdownTile(home(), lost)).toEqual(ok('see [[Target]]'))
   })
 })
 

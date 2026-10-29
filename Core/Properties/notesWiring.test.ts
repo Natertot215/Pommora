@@ -3,16 +3,8 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import {
-  atomicWriteFile,
-  editJsonStrict,
-  rewritePageSerialized,
-  rewritePreservingTimes,
-  updateNexusConfig,
-  writeJson,
-} from '../Files/atomicWrite'
-import { nexusConfig } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
+import { machine } from '../Platform/machine'
+import { OWED_REL } from '../Paths/nexusPaths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -22,19 +14,6 @@ import { createProperty, configureProperty, renameProperty } from './registryPro
 import { deleteProperty } from './deleteProperty'
 import { clearOption, editOption, deleteOption, renameOption } from './optionOps'
 import { readNotes } from '../Nexus/owed'
-
-vi.mock('../Files/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
-  return {
-    ...mod,
-    atomicWriteFile: vi.fn(mod.atomicWriteFile),
-    editJsonStrict: vi.fn(mod.editJsonStrict),
-    writeJson: vi.fn(mod.writeJson),
-    rewritePageSerialized: vi.fn(mod.rewritePageSerialized),
-    rewritePreservingTimes: vi.fn(mod.rewritePreservingTimes),
-    updateNexusConfig: vi.fn(mod.updateNexusConfig),
-  }
-})
 
 let root: string
 const notesFile = (): string => join(root, OWED_REL)
@@ -63,51 +42,16 @@ beforeEach(async () => {
   )
   await openSession(root)
   observed = []
-  const note = (path: string): void => {
-    observed.push({ path, noted: existsSync(notesFile()) })
-  }
-  const real = await vi.importActual<typeof import('../Files/atomicWrite')>('../Files/atomicWrite')
-  vi.mocked(atomicWriteFile).mockImplementation(async (path, data) => {
-    note(path)
-    return real.atomicWriteFile(path, data)
-  })
-  vi.mocked(writeJson).mockImplementation(async (path, data) => {
-    note(path)
-    return real.writeJson(path, data)
-  })
-  vi.mocked(rewritePageSerialized).mockImplementation(async (path, fn) => {
-    note(path)
-    return real.rewritePageSerialized(path, fn)
-  })
-  vi.mocked(rewritePreservingTimes).mockImplementation(async (path, data) => {
-    note(path)
-    return real.rewritePreservingTimes(path, data)
-  })
-  vi.mocked(editJsonStrict).mockImplementation(async (path, mutate) => {
+  const m = machine()
+  const land = m.land.bind(m)
+  vi.spyOn(m, 'land').mockImplementation(async (files) => {
     const noted = existsSync(notesFile())
-    const outcome = await real.editJsonStrict(path, mutate)
-    if (outcome === 'written') observed.push({ path, noted })
-    return outcome
-  })
-  vi.mocked(updateNexusConfig).mockImplementation(async (at, file, mutate) => {
-    const noted = existsSync(notesFile())
-    let changed = false
-    const r = await real.updateNexusConfig(at, file, (cur) => {
-      const next = mutate(cur)
-      changed = next !== null
-      return next
-    })
-    if (r.ok && changed) observed.push({ path: nexusConfig(at, NEXUS_CONFIG_FILES[file]), noted })
-    return r
+    for (const { path } of files) observed.push({ path, noted })
+    return land(files)
   })
 })
 afterEach(async () => {
-  vi.mocked(atomicWriteFile).mockRestore()
-  vi.mocked(writeJson).mockRestore()
-  vi.mocked(rewritePageSerialized).mockRestore()
-  vi.mocked(rewritePreservingTimes).mockRestore()
-  vi.mocked(editJsonStrict).mockRestore()
-  vi.mocked(updateNexusConfig).mockRestore()
+  vi.restoreAllMocks()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })

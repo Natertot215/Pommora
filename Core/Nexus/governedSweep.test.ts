@@ -1,13 +1,29 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { chmod, mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { jsonText } from '../Files/atomicWrite'
+import { join, relative } from '../Paths/posix'
+import { noModeBits, raceLandings, tempRoot } from '../Testing/hostFs'
+import { jsonText, rewritePageSerialized } from '../Files/atomicWrite'
 import { refillOf, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 import type { PropertyDefinition } from '../Properties/properties'
+import { machine } from '../Platform/machine'
+import { updatePageBody } from './page'
+import { closeSession, openSession } from './session'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import * as indexSeed from '../Index/indexSeed'
+import { seedContentIndex } from '../Index/indexSeed'
+import * as contentIndex from '../Index/contentIndex'
+import { readNexus } from './readNexus'
+// Installs the own tap that records each landing in the index and the tree.
+import './settle'
 
 const roots: string[] = []
 afterEach(async () => {
+  vi.restoreAllMocks()
+  dropLiveTree()
+  installStores(NO_STORES)
+  closeSession()
   for (const r of roots.splice(0)) await rm(r, { recursive: true, force: true })
 })
 
@@ -32,6 +48,45 @@ async function seedSidecar(root: string): Promise<{ file: string; text: string }
 }
 
 const plan: SweepPlan = { text: (c) => `${c}x`, raw: (raw) => ({ ...raw, Tags: ['b'] }) }
+const tagging: SweepPlan = { raw: (raw) => ({ ...raw, Tags: ['b'] }) }
+
+// A session over a Collection of `count` pages, its index seeded and its tree held.
+async function indexed(count: number): Promise<{ root: string; pages: string[] }> {
+  const root = tempRoot('pom-sweep-')
+  roots.push(root)
+  await mkdir(join(root, '.nexus'), { recursive: true })
+  await mkdir(join(root, 'Notes'), { recursive: true })
+  await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
+  await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
+  const pages = Array.from({ length: count }, (_, i) => join(root, 'Notes', `P${i}.md`))
+  for (const [i, p] of pages.entries())
+    await writeFile(p, `---\nID: 01KVGMT8BFP350FZZXAMG1Q${String(i).padStart(3, '0')}\n---\nbody\n`)
+  await openSession(root)
+  installStores(memoryStores().stores)
+  await seedContentIndex(root)
+  await refreshTree(root)
+  return { root, pages }
+}
+
+// Holds every landing until `release` runs.
+function pausedLandings(): { landing: Promise<void>; release: () => void } {
+  const m = machine()
+  const real = m.land.bind(m)
+  let release = (): void => {}
+  let landed = (): void => {}
+  const gate = new Promise<void>((r) => {
+    release = r
+  })
+  const landing = new Promise<void>((r) => {
+    landed = r
+  })
+  vi.spyOn(m, 'land').mockImplementation(async (files) => {
+    landed()
+    await gate
+    return real(files)
+  })
+  return { landing, release }
+}
 
 describe('sweepGovernedRoots', () => {
   it.skipIf(noModeBits)(
@@ -126,6 +181,108 @@ describe('sweepGovernedRoots', () => {
       }
     },
   )
+
+  it('a file changed outside the app since its read is left as written and skipped', async () => {
+    const { a, b } = await seed()
+    const outside = '---\nID: 01KVGMT8BFP350FZZXAMG1QDRB\n---\nwritten elsewhere\n'
+    raceLandings((file) => file === b, outside)
+    const r = await sweepGovernedRoots([a, b], tagging)
+    expect(r.skipped).toEqual([b])
+    expect([...r.touched.keys()]).toEqual([a])
+    expect(await readFile(b, 'utf8')).toBe(outside)
+    expect(await readFile(a, 'utf8')).toContain('Tags:')
+  })
+
+  it('a write to a page its chunk holds waits for the landing, and both land', async () => {
+    const { a, b } = await seed()
+    const { landing, release } = pausedLandings()
+    const sweep = sweepGovernedRoots([a, b], tagging)
+    await landing
+    let edited = false
+    const edit = updatePageBody(a, 'edited\n').then((r) => {
+      edited = true
+      return r
+    })
+    await new Promise((r) => setTimeout(r, 30))
+    expect(edited).toBe(false)
+    release()
+    expect((await sweep).skipped).toEqual([])
+    expect((await edit).ok).toBe(true)
+    const text = await readFile(a, 'utf8')
+    expect(text).toContain('Tags:')
+    expect(text).toContain('edited')
+  })
+
+  it('a write queued behind a chunk records after the chunk does, so the index and the tree hold the file', async () => {
+    const { root, pages } = await indexed(2)
+    const [a] = pages
+    const relA = relative(root, a)
+    let open = (): void => {}
+    const gate = new Promise<void>((r) => {
+      open = r
+    })
+    const m = machine()
+    const read = m.readText.bind(m)
+    vi.spyOn(m, 'readText').mockImplementation(async (p) => {
+      if (p === a) open()
+      return read(p)
+    })
+    // The chunk's record is slowed, so a writer that wasn't held behind it would record first.
+    const record = indexSeed.indexWrittenPages
+    vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementationOnce(async (...args) => {
+      await new Promise((r) => setTimeout(r, 50))
+      return record(...args)
+    })
+    const writer = gate.then(() => rewritePageSerialized(a, (c) => `${c}Z [[P1]]`))
+    const { touched } = await sweepGovernedRoots(pages, tagging)
+    await writer
+    expect(await readFile(a, 'utf8')).toBe(`${touched.get(a)?.after}Z [[P1]]`)
+    const held = contentIndex.readPageRelations([relA])
+    const node = heldTreeOf(root)?.collections[0].pages.find((p) => p.path === relA)
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    expect(held).toEqual(contentIndex.readPageRelations([relA]))
+    expect(node).toEqual((await readNexus(root)).collections[0].pages.find((p) => p.path === relA))
+  })
+
+  it('two sweeps over the same files in opposite orders both finish', {
+    timeout: 2000,
+  }, async () => {
+    const { a, b } = await seed()
+    const m = machine()
+    const real = m.land.bind(m)
+    vi.spyOn(m, 'land').mockImplementation(async (files) => {
+      await new Promise((r) => setTimeout(r, 20))
+      return real(files)
+    })
+    const [one, two] = await Promise.all([
+      sweepGovernedRoots([a, b], tagging),
+      sweepGovernedRoots([b, a], { raw: (raw) => ({ ...raw, Kind: 'x' }) }),
+    ])
+    expect([one.skipped, two.skipped]).toEqual([[], []])
+  })
+
+  it('lands 64 files a chunk, each chunk indexed in one commit', async () => {
+    const { pages } = await indexed(65)
+    const lands = vi.spyOn(machine(), 'land')
+    const upserts = vi.spyOn(contentIndex, 'upsertPageIndexes')
+    await sweepGovernedRoots(pages, tagging)
+    expect(lands.mock.calls.map(([files]) => files.length)).toEqual([64, 1])
+    expect(upserts).toHaveBeenCalledTimes(2)
+  })
+
+  it('a file whose rewrite throws costs only itself', async () => {
+    const { a, b } = await seed()
+    const r = await sweepGovernedRoots([a, b], {
+      raw: (raw, file) => {
+        if (file === a) throw new Error('boom')
+        return { ...raw, Tags: ['b'] }
+      },
+    })
+    expect(r.skipped).toEqual([a])
+    expect(r.refused).toEqual([])
+    expect([...r.touched.keys()]).toEqual([b])
+  })
 })
 
 describe('sweepCount', () => {

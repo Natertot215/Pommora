@@ -6,7 +6,7 @@ import { nativeImage } from 'electron'
 import type { BrowserWindow, NativeImage } from 'electron'
 import { WINDOW_BG } from '@pommora/uix/Theme/colors'
 import type { ThumbRect } from '@pommora/core/Interface/chrome'
-import { atomicWriteBinary } from '@pommora/core/Files/atomicWrite'
+import { atomicWriteFile } from '@pommora/core/Files/atomicWrite'
 import { thumbKey, thumbRel, thumbsRel } from '@pommora/core/Paths/nexusPaths'
 import { assetUrl } from '@pommora/core/Platform/assetScheme'
 
@@ -79,7 +79,7 @@ export async function captureThumbnail(
   const key = thumbKey(navKey)
   const rel = thumbRel(nexusId, key)
   await mkdir(dirname(join(root, rel)), { recursive: true })
-  await atomicWriteBinary(join(root, rel), buf)
+  await atomicWriteFile(join(root, rel), buf)
   return assetUrl(rel)
 }
 

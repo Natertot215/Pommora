@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY, isUlidShaped, kindOf } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { failLandings, tempRoot, readJsonAt } from '../Testing/hostFs'
 import { lockContention } from '../Testing/machines'
-import { ensurePageId, stampAdopted, stampMissing } from './adopt'
+import { ensurePageId, stampAdopted, stampMissing, stampPage } from './adopt'
 import { splitFrontmatter } from '../Files/pageFile'
-import { idTime } from './ids'
+import { contentIdAt, idTime } from './ids'
 import { nexusConfig, nexusDir, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
@@ -202,10 +202,52 @@ describe('stampMissing', () => {
       { path: 'Notes/Daily/Day1.md', kind: 'page', reason: 'missing' },
     ])
     expect(landed).toEqual([
-      await idOf('Notes', 'Note1.md'),
       (await coll(join(root, 'Notes')))?.id,
+      await idOf('Notes', 'Note1.md'),
       await idOf('Notes', 'Daily', 'Day1.md'),
     ])
+  })
+
+  it('lands its page stamps as one group, a stamp that fails costing only its page', async () => {
+    const [a, b, c] = ['A', 'B', 'C'].map((t) => join(root, 'Notes', `${t}.md`))
+    for (const p of [a, b, c]) await writeFile(p, 'body')
+    const lands = failLandings((file) => file === b)
+    const landed = await stampMissing(
+      root,
+      ['A', 'B', 'C'].map((t) => ({ path: `Notes/${t}.md`, kind: 'page', reason: 'missing' })),
+    )
+    const calls = lands.mock.calls.length
+    lands.mockRestore()
+    expect(calls).toBe(1)
+    const idOf = async (p: string) => splitFrontmatter(await readFile(p, 'utf8'))[ID_KEY]
+    expect(landed).toEqual([await idOf(a), await idOf(c)])
+    expect(landed.every(isUlidShaped)).toBe(true)
+    expect(await readFile(b, 'utf8')).toBe('body')
+  })
+
+  it('a held ID two listed pages carry goes back to one of them', async () => {
+    const [a, b] = ['A', 'B'].map((t) => join(root, 'Notes', `${t}.md`))
+    for (const p of [a, b]) await writeFile(p, 'body')
+    const held = contentIdAt(Date.UTC(2020, 0, 1), 'page')
+    const landed = await stampMissing(
+      root,
+      ['A', 'B'].map((t) => ({ path: `Notes/${t}.md`, kind: 'page', reason: 'missing', held })),
+    )
+    expect(landed).toHaveLength(2)
+    expect(landed.filter((id) => id === held)).toHaveLength(1)
+  })
+})
+
+describe('stampPage', () => {
+  it('stats its page once and mints from that stat', async () => {
+    const page = join(root, 'Notes', 'Note1.md')
+    const stats = vi.spyOn(machine(), 'stat')
+    const id = await stampPage(page, 'page')
+    const own = stats.mock.calls.flatMap(([p], i) => (p === page ? [stats.mock.results[i]] : []))
+    stats.mockRestore()
+    expect(own).toHaveLength(1)
+    const seen = await own[0].value
+    expect(id && idTime(id)).toBe(Math.floor(Math.min(seen.birthtimeMs, seen.mtimeMs)))
   })
 })
 

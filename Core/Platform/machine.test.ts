@@ -7,7 +7,6 @@ import {
   readJsonStrict,
   readTextOrNull,
   rewritePageSerialized,
-  rewritePreservingTimes,
   writeJson,
 } from '../Files/atomicWrite'
 import { memoryMachine, type MemoryFs } from '../Testing/machines'
@@ -51,7 +50,7 @@ describe('Core over an in-memory machine', () => {
 
   it('a sweep rewrite keeps the modification time; a plain write moves it', async () => {
     const page = join(ROOT, 'Notes', 'A.md')
-    await rewritePreservingTimes(page, 'swept\n')
+    await rewritePageSerialized(page, () => 'swept\n')
     expect(fs.files.get(page)).toEqual({ text: 'swept\n', mtimeMs: 500 })
     await atomicWriteFile(page, 'edited\n')
     expect(fs.files.get(page)?.mtimeMs).toBeGreaterThan(500)

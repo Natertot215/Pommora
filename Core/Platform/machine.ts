@@ -32,10 +32,6 @@ export interface Machine {
   /** Absent → null; any other failure throws. */
   readText(p: string): Promise<string | null>
   readBytes(p: string): Promise<Uint8Array | null>
-  /** Atomic: all-or-nothing. A failed write leaves no partial file, and a concurrent reader sees the old or the new bytes, never a torn mix. */
-  writeText(p: string, text: string): Promise<void>
-  /** Atomic: all-or-nothing. A failed write leaves no partial file, and a concurrent reader sees the old or the new bytes, never a torn mix. */
-  writeBytes(p: string, bytes: Uint8Array): Promise<void>
   /** Writes each file whole and answers each one in order, with the stat its new bytes hold or why they didn't land: a failed file leaves no partial file and costs only itself, a concurrent reader sees the old or the new bytes, never a torn mix, and the new bytes reach the drive before the name points at them. A group is flushed together, each file holding an open handle until it lands, so a caller passes a bounded group, each path once. */
   land(files: readonly Landing[]): Promise<PromiseSettledResult<FileStat>[]>
   stat(p: string): Promise<FileStat | null>
@@ -44,7 +40,6 @@ export interface Machine {
   mkdir(p: string): Promise<'created' | 'exists'>
   rename(from: string, to: string): Promise<void>
   remove(p: string): Promise<void>
-  utimes(p: string, mtimeMs: number): Promise<void>
   /** Hosts without one return `p`. */
   realpath(p: string): Promise<string>
   /** Re-taking a key already held inside `fn` rejects rather than deadlocks. */
