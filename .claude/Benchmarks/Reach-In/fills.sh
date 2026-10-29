@@ -11,5 +11,5 @@ for S in "$@"; do
   rm -rf $WORK/nexus/Benchmark-$S
   mv ~/Benchmark-$S $WORK/nexus/
   node $HERE/augment.mjs $WORK/nexus/Benchmark-$S base > /dev/null
-  node $HERE/fill.mjs $S 0 10 50
+  node $HERE/fill.mjs $S ${=PCTS:-0 10 50}
 done

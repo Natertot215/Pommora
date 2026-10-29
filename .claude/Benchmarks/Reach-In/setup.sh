@@ -7,7 +7,7 @@ REPO=${POMMORA_REPO:-$(git -C $HERE rev-parse --show-toplevel)}
 WORK=${REACH_IN_WORK:-${TMPDIR:-/tmp}/pommora-reach-in}
 COMMIT=${1:-52bf41b6f}
 mkdir -p $WORK
-for w in baseline reach-in; do
+for w in ${=BUILDS:-baseline reach-in}; do
   [ -d $WORK/$w ] && git -C $REPO worktree remove --force $WORK/$w
   git -C $REPO worktree add --detach $WORK/$w $COMMIT >/dev/null
   mkdir -p $WORK/$w/node_modules/@pommora
@@ -20,5 +20,5 @@ for w in baseline reach-in; do
   done
   git -C $WORK/$w apply $HERE/instrumentation.patch
 done
-patch -p1 -d $WORK/reach-in < $HERE/reach-in.patch
-for w in baseline reach-in; do (cd $WORK/$w && npm run build >/dev/null && echo "built $w at $COMMIT"); done
+[ -d $WORK/reach-in ] && patch -p1 -d $WORK/reach-in < $HERE/reach-in.patch
+for w in ${=BUILDS:-baseline reach-in}; do (cd $WORK/$w && npm run build >/dev/null && echo "built $w at $COMMIT"); done

@@ -150,7 +150,7 @@ Reach-in's extra cost per cascade shrinks by the same factor, since it's the per
 
 ##### The Durability Choice
 
-Chunked flushing keeps today's guarantee: a page's new bytes are on the drive before its name points at them. Dropping the flush for cascade rewrites is about three times faster again, and it keeps atomicity against running readers. What it gives up is protection from power loss or a kernel panic during or just after a cascade, which could leave pages empty or torn (*inferred*; APFS's ordering of a renamed file's data isn't documented). The owed notes recover interrupted *work*, never lost *content*, since the bytes are gone. "One flush at the end" isn't an option, because a flush covers only its own file. **Ruled:** the flush stays, chunked (*Trash & Archive Restructure — Decisions & Intention*, Decision 21).
+Chunked flushing keeps today's guarantee: a page's new bytes are on the drive before its name points at them. Dropping the flush for cascade rewrites is about three times faster again, and it keeps atomicity against running readers. What it gives up is protection from power loss or a kernel panic during or just after a cascade, which could leave pages empty or torn (*inferred*; APFS's ordering of a renamed file's data isn't documented). The owed notes recover interrupted *work*, never lost *content*, since the bytes are gone. A flush pushes only its own file's bytes out of memory before emptying the drive's cache, so one flush covers a group only when every temp is written through to the drive as it's written (`O_DSYNC`). **Ruled:** the flush stays, chunked (*Trash & Archive Restructure — Decisions & Intention*, Decision 21).
 
 ---
 
