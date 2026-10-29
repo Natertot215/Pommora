@@ -31,6 +31,8 @@ import {
   type IndexSeen,
   indexWrittenPages,
   moveIndexPaths,
+  type PageRead,
+  unmoved,
 } from '../Index/indexSeed'
 import type { ConnPage } from '../Connections/pageIndex'
 import { contentIndexStore } from '../Platform/stores'
@@ -270,8 +272,12 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
 
 // ── The index's half ──
 
-// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
-export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
+// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first, and answers each page's read for the tree's patch. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+export async function indexEvents(
+  root: string,
+  events: readonly FileEvent[],
+): Promise<Map<string, PageRead>> {
+  const reads = new Map<string, PageRead>()
   try {
     const written: Changed[] = []
     for (const ev of events) {
@@ -295,12 +301,13 @@ export async function indexEvents(root: string, events: readonly FileEvent[]): P
     }
     const outside = written.filter((ev) => ev.origin === 'watched')
     const own = written.filter((ev) => ev.origin === 'own')
-    oweSeen(root, await indexWrittenPages(root, outside))
-    await indexWrittenPages(root, own)
+    oweSeen(root, await indexWrittenPages(root, outside, reads))
+    await indexWrittenPages(root, own, reads)
   } catch (e) {
     console.error('events: the index missed an event and reseeds:', errText(e))
     owedFor(root).corpus = true
   }
+  return reads
 }
 
 // Without an index there is no memory to pair against, so nothing is owed; a seed that bailed reads none, so a root a switch left behind never takes the record.
@@ -370,6 +377,7 @@ async function applyPage(
   rel: string,
   ev: Changed,
   owed: Owed,
+  given?: PageRead,
 ): Promise<Applied> {
   const dirRel = relDirname(rel)
   if (!containerAt(tree, dirRel)) {
@@ -384,7 +392,11 @@ async function applyPage(
   const abs = join(root, rel)
   let read: PageRecord
   try {
-    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
+    // A write that landed since the index read the page left a row the read no longer describes, so the patch reads the page again.
+    read =
+      given && unmoved(rel, given.stat)
+        ? pageRecordOf(given.text, rel, given.stat.mtimeMs, given.page)
+        : await readPageRecord(abs, rel)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
@@ -595,7 +607,12 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   return left === 'ok' ? landed : 'walk'
 }
 
-async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applied> {
+async function applyOne(
+  root: string,
+  ev: FileEvent,
+  owed: Owed,
+  given?: PageRead,
+): Promise<Applied> {
   if (ev.event === 'move') return applyMove(root, ev, owed)
   const tree = heldTreeOf(root)
   if (!tree) return 'walk'
@@ -609,7 +626,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       if (patchHeldAssetMap(root, c.rel, ev.event)) owed.assets = true
       return 'ok'
     case 'page':
-      return applyPage(root, tree, c.rel, ev, owed)
+      return applyPage(root, tree, c.rel, ev, owed, given)
     case 'gone': {
       const cleared = applyPatch(root, (t) => removeNodeInTree(t, c.rel))
       // A sidecar that left a folder still on disk changes what the folder is, which the walk decides.
@@ -657,10 +674,10 @@ export async function applyEvents(
 ): Promise<FileEvent[]> {
   const owed = owedFor(root)
   const later = new Map<string, FileEvent>()
-  if (!replay) await indexEvents(root, events)
+  const reads = replay ? undefined : await indexEvents(root, events)
   for (const ev of events) {
     try {
-      const applied = await applyOne(root, ev, owed)
+      const applied = await applyOne(root, ev, owed, reads?.get(ev.absPath))
       if (applied === 'later') later.set(ev.absPath, ev)
       if (applied !== 'walk') continue
     } catch (e) {

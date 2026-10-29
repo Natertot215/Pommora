@@ -112,8 +112,13 @@ export type PageRecord =
   | { kind: 'read'; node: PageNode; fm: Json; mtimeMs: number | null }
   | { kind: 'unread'; reason: UnreadReason }
 
-export function pageRecordOf(content: string, relFile: string, mtimeMs: number | null): PageRecord {
-  const { frontmatter: fm, admission } = parsePage(content)
+export function pageRecordOf(
+  content: string,
+  relFile: string,
+  mtimeMs: number | null,
+  page = parsePage(content),
+): PageRecord {
+  const { frontmatter: fm, admission } = page
   if (admission.state === 'missing')
     return { kind: 'unread', reason: frontmatterWritable(content) ? 'missing' : 'unparsed' }
   if (admission.state === 'unknown') return { kind: 'unread', reason: admission.reason }
