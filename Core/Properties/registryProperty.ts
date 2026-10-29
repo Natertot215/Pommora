@@ -173,7 +173,7 @@ async function rekeyPlan(
   if (moved.key !== prior.key) {
     const { held } = await findHolders(
       root,
-      { keys: [prior.key, moved.key], reach: 'governed', every: true },
+      { keys: [prior.key, moved.key], reach: 'governed' },
       'values',
     )
     const clashes = held.filter((h) => h.keys.length === 2 && outsideArchive(root, h.file))

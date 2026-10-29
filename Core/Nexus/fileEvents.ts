@@ -1,4 +1,4 @@
-// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to `SEED_BATCH` pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch applies `SEED_BATCH` events at a time, each slice maintaining the index before its events patch the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -32,6 +32,7 @@ import {
   indexWrittenPages,
   moveIndexPaths,
   type PageRead,
+  SEED_BATCH,
   unmoved,
 } from '../Index/indexSeed'
 import type { ConnPage } from '../Connections/pageIndex'
@@ -52,7 +53,7 @@ import {
   readOrder,
   readPageRecord,
 } from './readNexus'
-import { rememberParse } from '../Files/walkCache'
+import { forgetParse, rememberParse } from '../Files/walkCache'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
 import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
@@ -391,8 +392,10 @@ async function applyPage(
         : applied
   }
   const abs = join(root, rel)
-  // A write that landed, moved, or removed the page since the index read it left a row the read no longer describes, so the patch reads the page again.
-  const taken = given && unmoved(rel, given.stat) ? given : undefined
+  // An outside edit can keep the time, size, and birth the walk cache's hit test reads, so its parse leaves the cache.
+  if (ev.origin === 'watched') forgetParse(abs)
+  // A write that landed, moved, or removed the page since the index read it committed after that read, so the patch reads the page again.
+  const taken = given && unmoved(rel, given.seq) ? given : undefined
   let read: PageRecord
   try {
     read = taken
@@ -402,7 +405,7 @@ async function applyPage(
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  // The app's own write leaves the record its landed bytes give for the next walk, under the stat that read was taken at; a watched read has no forget behind it to stop a walk in flight from caching older bytes over it.
+  // The app's own write leaves the record its landed bytes give for the next walk, under the stat that read was taken at; a watched read predates the forget above, so a later edit keeping its identity could be served it, and it isn't held.
   if (taken && ev.origin === 'own') rememberParse(abs, taken.stat, read)
   oweValue(owed, rel, !!ev.bodyOnly)
   if (ev.origin === 'watched') owed.pages.add(rel)
@@ -669,7 +672,7 @@ async function applyOne(
   }
 }
 
-// Answers the events that wait on a folder's stamp, one per path. A replay places events already indexed, so it neither indexes them nor owes their renames again.
+// Answers the events that wait on a folder's stamp, one per path. Events apply `SEED_BATCH` at a time, each slice indexed before it patches, so a batch holds one slice's reads at once. A replay places events already indexed, so it neither indexes them nor owes their renames again.
 export async function applyEvents(
   root: string,
   events: FileEvent[],
@@ -677,16 +680,19 @@ export async function applyEvents(
 ): Promise<FileEvent[]> {
   const owed = owedFor(root)
   const later = new Map<string, FileEvent>()
-  const reads = replay ? undefined : await indexEvents(root, events)
-  for (const ev of events) {
-    try {
-      const applied = await applyOne(root, ev, owed, reads?.get(ev.absPath))
-      if (applied === 'later') later.set(ev.absPath, ev)
-      if (applied !== 'walk') continue
-    } catch (e) {
-      console.error('events: an event could not be placed, walking:', errText(e))
+  for (let at = 0; at < events.length; at += SEED_BATCH) {
+    const slice = events.slice(at, at + SEED_BATCH)
+    const reads = replay ? undefined : await indexEvents(root, slice)
+    for (const ev of slice) {
+      try {
+        const applied = await applyOne(root, ev, owed, reads?.get(ev.absPath))
+        if (applied === 'later') later.set(ev.absPath, ev)
+        if (applied !== 'walk') continue
+      } catch (e) {
+        console.error('events: an event could not be placed, walking:', errText(e))
+      }
+      owed.walk = true
     }
-    owed.walk = true
   }
   return [...later.values()]
 }

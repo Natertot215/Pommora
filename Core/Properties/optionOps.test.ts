@@ -1723,15 +1723,14 @@ describe('registerHeldOptions', () => {
   })
 })
 
-describe('an option rename sweeps the pages its indexed value changes', () => {
+describe('an option rename with the index warm', () => {
   beforeEach(() => installStores(memoryStores().stores))
   afterEach(() => {
     closeSession()
     installStores(NO_STORES)
   })
 
-  // Tags, assigned to a Collection holding a page for each of `words`, with a Space holding Urgent, the session and its tree open, and the index seeded unless `cold`.
-  const nexus = async (cold: boolean, ...words: string[]) => {
+  it('rewrites a page whose file took the word since the index read it', async () => {
     const id = await mkSelect([
       { id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' },
       { id: 'opt_Other', key: 'Other', label: 'Other' },
@@ -1739,46 +1738,19 @@ describe('an option rename sweeps the pages its indexed value changes', () => {
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) throw new Error('folder failed')
     await assignProperty(root, col.value.path, id)
-    const pages: string[] = []
-    for (const [i, word] of words.entries()) {
-      const p = await createTestPage(col.value.path, `P${i}`, { body: 'b' })
-      if (!p.ok) throw new Error('page failed')
-      await rewriteRootAt(
-        p.value.path,
-        rewriteRoot((raw) => landValue(raw, 'Tags', [word])),
-      )
-      pages.push(p.value.path)
-    }
-    const space = await spaceSidecar('Pommora', { id: 'sp1', Tags: 'Urgent' })
+    const p = await createTestPage(col.value.path, 'P0', { body: 'b' })
+    if (!p.ok) throw new Error('page failed')
+    const page = p.value.path
+    await rewriteRootAt(
+      page,
+      rewriteRoot((raw) => landValue(raw, 'Tags', ['Other'])),
+    )
     await openSession(root)
     await refreshTree(root)
-    if (!cold) await seedContentIndex(root)
-    return { id, pages, space }
-  }
-  const readsOf = (reads: { mock: { calls: unknown[][] } }, file: string) =>
-    reads.mock.calls.filter(([path]) => path === file).length
-
-  it('reads only the pages whose indexed value carries the word, and the Spaces', async () => {
-    const { id, pages, space } = await nexus(false, 'Urgent', 'Other')
-    const reads = vi.spyOn(machine(), 'readText')
+    await seedContentIndex(root)
+    await writeFile(page, (await readFile(page, 'utf8')).replace('Other', 'Urgent'))
     expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
-    expect([...pages, space].map((file) => readsOf(reads, file))).toEqual([1, 0, 1])
-    expect(await readFile(pages[0], 'utf8')).toContain('Critical')
-    expect((await readJsonAt(space)).Tags).toEqual(['Critical'])
-  })
-
-  it('reads and rewrites a page while the index isn’t ready', async () => {
-    const { id, pages } = await nexus(true, 'Urgent')
-    expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
-    expect(await readFile(pages[0], 'utf8')).toContain('Critical')
-  })
-
-  it('rewrites a page whose file took the word since the index read it', async () => {
-    const { id, pages } = await nexus(false, 'Other')
-    const content = await readFile(pages[0], 'utf8')
-    await writeFile(pages[0], content.replace('Other', 'Urgent'))
-    expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
-    expect(await readFile(pages[0], 'utf8')).toContain('Critical')
+    expect(await readFile(page, 'utf8')).toContain('Critical')
   })
 })
 

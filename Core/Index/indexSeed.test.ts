@@ -403,23 +403,29 @@ describe('what an index step reports', () => {
     expect(later.index.stats.size).toBe(0)
   })
 
-  it('a batch leaves no row at the path a page moved away from during its read', async () => {
+  it('a batch keeps the row a writer that kept the page’s time and size landed during its read', async () => {
     const a = abs('Notes', 'A.md')
     const b = abs('Notes', 'Sub', 'B.md')
-    const moved = abs('Notes', 'Moved.md')
+    const at = (text: string) => async (): Promise<void> => {
+      await writeFile(a, `---\nID: ${ULID_A}\nStatus: ${text}\n---\n`)
+      await utimes(a, 1700000000, 1700000000)
+    }
+    await at('Batch')()
+    await seedContentIndex(root)
     const read = machine().readText.bind(machine())
     vi.spyOn(machine(), 'readText').mockImplementation(async (p) => {
       const text = await read(p)
       if (p === b) {
-        await rename(a, moved)
-        await moveIndexPaths(root, a, moved)
+        await at('Bunch')()
+        await indexWrittenPages(root, [{ absPath: a }])
       }
       return text
     })
     await indexWrittenPages(root, [{ absPath: a }, { absPath: b }])
-    const stats = readIndexedStats()
-    expect(stats?.has('Notes/A.md')).toBe(false)
-    expect(stats?.has('Notes/Moved.md')).toBe(true)
+    const status = [...mem.index.values.values()].filter(
+      (v) => v.path === 'Notes/A.md' && v.key === 'Status',
+    )
+    expect(status.map((v) => v.value)).toEqual([JSON.stringify('Bunch')])
   })
 })
 

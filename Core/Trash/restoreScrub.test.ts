@@ -180,7 +180,8 @@ describe('a returning artifact is reconciled against the world it comes back to'
   })
 
   it('an edit made after the restore keeps it through Try Again', async () => {
-    expect((await missedScrub()).ok).toBe(true)
+    const r = await missedScrub()
+    expect(r.ok && r.value.cascade?.owed).toBe(true)
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - Sapphire\n---\nbody`,

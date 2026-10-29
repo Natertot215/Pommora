@@ -40,7 +40,6 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree } from '../Nexus/liveTree'
 import { seedContentIndex } from '../Index/indexSeed'
-import { machine } from '../Platform/machine'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 
@@ -501,10 +500,9 @@ describe('renameProperty and configureProperty', () => {
   })
 })
 
-describe('a rename’s clash check reads the index', () => {
+describe('a rename’s clash check with the index warm', () => {
   beforeEach(() => installStores(memoryStores().stores))
   afterEach(() => {
-    vi.mocked(runNoted).mockReset()
     closeSession()
     installStores(NO_STORES)
   })
@@ -528,24 +526,6 @@ describe('a rename’s clash check reads the index', () => {
     await seedContentIndex(root)
     return { id: c.value.id, pages }
   }
-  const readsOf = (reads: { mock: { calls: unknown[][] } }, page: string) =>
-    reads.mock.calls.filter(([path]) => path === page).length
-
-  it('a rename reads each holder once', async () => {
-    const { id, pages } = await warm('Priority: hi\n', 'Priority: lo\n')
-    const reads = vi.spyOn(machine(), 'readText')
-    expect((await renameProperty(root, id, 'Urgency')).ok).toBe(true)
-    expect(pages.map((page) => readsOf(reads, page))).toEqual([1, 1])
-  })
-
-  it('with no file holding the new key, the check reads nothing', async () => {
-    const { id, pages } = await warm('Priority: hi\n', 'Priority: lo\n')
-    const swept = fail('operation-failed', 'swept')
-    vi.mocked(runNoted).mockResolvedValueOnce(swept)
-    const reads = vi.spyOn(machine(), 'readText')
-    expect(await renameProperty(root, id, 'Urgency')).toBe(swept)
-    expect(pages.map((page) => readsOf(reads, page))).toEqual([0, 0])
-  })
 
   it('refuses a page holding both keys', async () => {
     const { id } = await warm('Priority: hi\n', 'Priority: lo\nUrgency: now\n')

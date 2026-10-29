@@ -42,7 +42,7 @@ describe('walkCache', () => {
   })
 
   it.skipIf(process.platform !== 'darwin')(
-    're-parses a file replaced whole by one of the same time and size',
+    're-parses a file replaced whole by a twin of the same time and size, the original born before that time',
     async () => {
       const file = join(root, 'a.md')
       const twin = join(root, 'b.md')

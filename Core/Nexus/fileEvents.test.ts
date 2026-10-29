@@ -3,12 +3,12 @@ import { STASHED_AT } from '../Testing/definitions'
 import { mkdir, readFile, rename, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { seedNexus, tempRoot } from '../Testing/hostFs'
-import { atomicWriteFile, forgetLastReads, relocate } from '../Files/atomicWrite'
+import { forgetLastReads, relocate, rewritePageSerialized } from '../Files/atomicWrite'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { contentIdAt } from './ids'
+import { contentIdAt, newContentId } from './ids'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
@@ -23,6 +23,7 @@ import { noteExternalEdit } from '../Pages/fileHistory'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import * as contentIndex from '../Index/contentIndex'
 import * as indexSeed from '../Index/indexSeed'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -765,6 +766,19 @@ describe('the parity cases', () => {
     })
   })
 
+  it('a batch of 201 pages indexes and patches 200 before it indexes the last', async () => {
+    const names = Array.from({ length: 201 }, (_, i) => `P${i}.md`)
+    for (const name of names)
+      await writeFile(abs('Notes', name), `---\nID: ${newContentId('page')}\n---\n\n${name}\n`)
+    const upserts = vi.spyOn(contentIndex, 'upsertPageIndexes')
+    const patches = vi.spyOn(liveTree, 'patchLiveTree')
+    await settled(names.map((name) => ev('add', 'Notes', name)))
+    const patchedBefore = (at: number): number =>
+      patches.mock.invocationCallOrder.filter((order) => order < at).length
+    expect(upserts.mock.invocationCallOrder.slice(0, 2).map(patchedBefore)).toEqual([0, 200])
+    await agrees()
+  })
+
   it('an ID: 42 page saved twice is read once per save and costs no walk', async () => {
     const reads = vi.spyOn(machine(), 'readText')
     const parses = vi.spyOn(pageFile, 'parsePage')
@@ -781,24 +795,23 @@ describe('the parity cases', () => {
     expect(walk).not.toHaveBeenCalled()
   })
 
-  it('an own write landing while a batch applies keeps its page as it wrote it', async () => {
+  it('an own write that keeps its page’s time and size, landing while a batch applies, keeps its page as it wrote it', async () => {
     installStores(memoryStores().stores)
     try {
       await seedContentIndex(root)
+      const a = abs('Notes', 'A.md')
       const sidecar = abs('Notes', '_pagecollection.json')
       const read = machine().readText
       let armed = true
       vi.spyOn(machine(), 'readText').mockImplementation(async (path) => {
         if (armed && path === sidecar) {
           armed = false
-          await atomicWriteFile(
-            abs('Notes', 'A.md'),
-            `---\nID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`,
-          )
+          await rewritePageSerialized(a, (c) => c.replace('Work', 'Home'))
         }
         return read(path)
       })
-      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\noutside\n`)
+      await writeFile(a, `---\nID: ${ULID_A}\n<Areas>:\n  - Work\n---\n\nalpha\n`)
+      await utimes(a, 1700000000, 1700000000)
       await settled([ev('change', 'Notes', '_pagecollection.json'), ev('change', 'Notes', 'A.md')])
       expect(armed).toBe(false)
       expect(held().collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
@@ -807,6 +820,20 @@ describe('the parity cases', () => {
     } finally {
       installStores(NO_STORES)
     }
+  })
+
+  it('an outside edit that keeps its page’s time, size, and birth leaves the next walk no parse of the old bytes', async () => {
+    const a = abs('Notes', 'A.md')
+    const tagged = async (title: string): Promise<void> => {
+      await writeFile(a, `---\nID: ${ULID_A}\n<Areas>:\n  - ${title}\n---\n\nalpha\n`)
+      await utimes(a, 1700000000, 1700000000)
+    }
+    await tagged('Work')
+    await refreshTree(root)
+    await tagged('Home')
+    await settled([ev('change', 'Notes', 'A.md')])
+    expect(held().collections[0]?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
+    await agrees()
   })
 
   it('an own move landing while a batch applies leaves its page at the path it moved to alone', async () => {

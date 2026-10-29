@@ -1,4 +1,14 @@
-import { chmod, lstat, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  lstat,
+  open,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { manifestAdmits } from '@pommora/core/Paths/exclusion'
 import { relative } from '@pommora/core/Paths/posix'
@@ -93,6 +103,24 @@ describe('nodeMachine landing', () => {
     await chmod(at('a.md'), 0o664)
     await host.land([{ path: at('a.md'), data: 'new' }])
     expect((await stat(at('a.md'))).mode & 0o777).toBe(0o664)
+  })
+
+  it.skipIf(noModeBits)('a file whose volume refuses its permissions still lands', async () => {
+    await writeFile(at('a.md'), 'old')
+    await chmod(at('a.md'), 0o600)
+    const probe = await open(at('a.md'))
+    const refused = vi
+      .spyOn(Object.getPrototypeOf(probe), 'chmod')
+      .mockRejectedValue(Object.assign(new Error('refused'), { code: 'EPERM' }))
+    await probe.close()
+    try {
+      const [landed] = await host.land([{ path: at('a.md'), data: 'new' }])
+      expect(refused).toHaveBeenCalled()
+      expect(landed.status).toBe('fulfilled')
+      expect(await readFile(at('a.md'), 'utf8')).toBe('new')
+    } finally {
+      refused.mockRestore()
+    }
   })
 
   it('names its temp so the watcher and the manifest never admit it', async () => {
