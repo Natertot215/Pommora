@@ -37,6 +37,12 @@ import { fail, ok } from '../Contract/result'
 import { deleteProperty } from './deleteProperty'
 import { deleteOption, renameOption, setValueFormat } from './optionOps'
 import { finishOwed } from '../Nexus/finishOwed'
+import { closeSession, openSession } from '../Nexus/session'
+import { refreshTree } from '../Nexus/liveTree'
+import { seedContentIndex } from '../Index/indexSeed'
+import { machine } from '../Platform/machine'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 vi.mock('../Nexus/owed', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Nexus/owed')>()
@@ -492,6 +498,67 @@ describe('renameProperty and configureProperty', () => {
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBe('blue')
     await configureProperty(root, c.value.id, { checkbox_color: undefined })
     expect((await readRegistry(root)).defs[c.value.id].checkbox_color).toBeUndefined()
+  })
+})
+
+describe('a rename’s clash check reads the index', () => {
+  beforeEach(() => installStores(memoryStores().stores))
+  afterEach(() => {
+    closeSession()
+    installStores(NO_STORES)
+  })
+
+  // Priority, assigned to a Collection holding a page for each of `frontmatters`, with the session, its tree, and the index warm.
+  const warm = async (...frontmatters: string[]) => {
+    const c = await createProperty(root, def({ label: 'Priority', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) throw new Error('setup failed')
+    await assignProperty(root, col.value.path, c.value.id)
+    const pages: string[] = []
+    for (const [i, frontmatter] of frontmatters.entries()) {
+      const p = await createTestPage(col.value.path, `P${i}`, { body: 'b' })
+      if (!p.ok) throw new Error('setup failed')
+      const content = await readFile(p.value.path, 'utf8')
+      await writeFile(p.value.path, content.replace('---\n', `---\n${frontmatter}`))
+      pages.push(p.value.path)
+    }
+    await openSession(root)
+    await refreshTree(root)
+    await seedContentIndex(root)
+    return { id: c.value.id, pages }
+  }
+  const readsOf = (reads: { mock: { calls: unknown[][] } }, page: string) =>
+    reads.mock.calls.filter(([path]) => path === page).length
+
+  it('a rename reads each holder once', async () => {
+    const { id, pages } = await warm('Priority: hi\n', 'Priority: lo\n')
+    const reads = vi.spyOn(machine(), 'readText')
+    expect((await renameProperty(root, id, 'Urgency')).ok).toBe(true)
+    expect(pages.map((page) => readsOf(reads, page))).toEqual([1, 1])
+  })
+
+  it('with no file holding the new key, the check reads nothing', async () => {
+    const { id, pages } = await warm('Priority: hi\n', 'Priority: lo\n')
+    const swept = fail('operation-failed', 'swept')
+    vi.mocked(runNoted).mockResolvedValueOnce(swept)
+    const reads = vi.spyOn(machine(), 'readText')
+    expect(await renameProperty(root, id, 'Urgency')).toBe(swept)
+    expect(pages.map((page) => readsOf(reads, page))).toEqual([0, 0])
+  })
+
+  it('refuses a page holding both keys', async () => {
+    const { id } = await warm('Priority: hi\n', 'Priority: lo\nUrgency: now\n')
+    const r = await renameProperty(root, id, 'Urgency')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Priority', 'Urgency', 1))
+  })
+
+  it('refuses a page whose file took the new key since the index read it', async () => {
+    const { id, pages } = await warm('Priority: hi\n')
+    const content = await readFile(pages[0], 'utf8')
+    await writeFile(pages[0], content.replace('Priority: hi\n', 'Priority: hi\nUrgency: now\n'))
+    const r = await renameProperty(root, id, 'Urgency')
+    expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Priority', 'Urgency', 1))
+    expect(await readFile(pages[0], 'utf8')).toContain('Priority: hi\nUrgency: now\n')
   })
 })
 
