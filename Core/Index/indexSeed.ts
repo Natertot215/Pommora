@@ -130,7 +130,7 @@ export async function indexWrittenPages(
   const queued: { row: PageIndexRow; prior: IndexedStat | null }[] = []
   const flush = (): void => {
     const rows = queued.splice(0).filter(({ row, prior }) => unmoved(row.path, prior))
-    if (rows.length) seen.renames.push(...reindex(rows.map(({ row }) => row)))
+    seen.renames.push(...reindex(rows.map(({ row }) => row)))
     for (const { row, prior } of rows) {
       const [now] = idOf(row.entry)
       if (prior?.id === now) continue
@@ -156,12 +156,14 @@ export async function indexWrittenPages(
     queued.push({ row: { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }, prior })
     if (queued.length === SEED_BATCH) flush()
   }
+  if (contentIndexStore() !== db0) return NOTHING_SEEN
   flush()
   return seen
 }
 
 // Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
 function reindex(rows: readonly PageIndexRow[]): HeadingRenameSeen[] {
+  if (!rows.length) return []
   const held = readHeadings(rows.map(({ path }) => path)) ?? {}
   upsertPageIndexes(rows)
   return rows.flatMap(({ path, entry }) => {

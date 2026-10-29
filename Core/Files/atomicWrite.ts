@@ -2,7 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
-import { type FileEvent, noteOwn, recordWrite, reportRename } from './writeEcho'
+import { type FileEvent, forgetWrite, noteOwn, recordWrite, reportRename } from './writeEcho'
 import { type FileStat, type Landing, machine, statOrNull } from '../Platform/machine'
 import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
@@ -10,7 +10,7 @@ import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
 
-/** Lands the app's own writes as one group under the locks their callers hold: each echo is recorded before its name points at the new bytes, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
+/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
 async function landOwn(
   files: readonly Landing[],
   bodyOnly?: boolean,
@@ -20,7 +20,10 @@ async function landOwn(
   const events: FileEvent[] = []
   files.forEach(({ path, data, mtimeMs }, i) => {
     const at = landed[i]
-    if (at.status === 'rejected') return
+    if (at.status === 'rejected') {
+      forgetWrite(path, machine().sha256Hex(data))
+      return
+    }
     if (mtimeMs !== undefined) forgetParse(path)
     const text = typeof data === 'string' ? data : undefined
     const event = text === undefined ? 'add' : 'change'
@@ -43,7 +46,7 @@ export async function atomicWriteFile(
   sole(await landOwn([{ path: filePath, data, expect }], bodyOnly))
 }
 
-/** The files a held rewrite holds and lands together, so their flushes overlap: each holds one of the host's sixteen pool threads until the drive answers, so the app's other reads and writes wait tens of milliseconds behind a chunk. */
+/** The files a held rewrite holds and lands together, so their flushes overlap: each holds one of the host's I/O threads until the drive answers, so the app's other reads and writes wait tens of milliseconds behind a chunk. */
 const CHUNK = 64
 
 /** Runs `fn` holding each file's lock, taken in sorted order, so two held rewrites sharing files never each hold a lock the other waits on; nothing a chunk runs takes another lock, and no other writer holds two of the files a chunk can hold. A lock rejects only when re-taken inside its own hold, so a rejection fails the whole rewrite. */
@@ -53,7 +56,7 @@ const holding = (files: readonly string[], fn: () => Promise<void>): Promise<voi
     .reduceRight<() => Promise<void>>((inner, file) => () => machine().lock(file, inner), fn)()
 
 /** What a held rewrite did with a file it reached: couldn't read it, was refused by its rewrite, failed in its rewrite or its landing, or rewrote it, as a dry run would have. A file its rewrite left alone is absent. */
-export type Rewritten =
+type Rewritten =
   | { status: 'unread' | 'refused' }
   | { status: 'failed'; reason: unknown }
   | { status: 'rewritten'; before: string; after: string }
@@ -161,7 +164,7 @@ export const jsonText = (value: unknown): string => `${stableStringify(value)}\n
 export async function writeJson(
   filePath: string,
   value: unknown,
-  expect?: FileStat | null,
+  { expect }: { expect?: FileStat | null } = {},
 ): Promise<void> {
   await atomicWriteFile(filePath, jsonText(value), { expect })
 }
@@ -231,7 +234,7 @@ export async function rmwLocked(
   const next = mutate(base) ?? (read.kind === 'corrupt' ? base : null)
   if (next === null) return ok(base)
   // A rebuilt file's damaged copy has moved aside, so its landing expects no file there, as a seeded one's does.
-  await writeJson(absPath, next, read.kind === 'corrupt' ? null : was)
+  await writeJson(absPath, next, { expect: read.kind === 'corrupt' ? null : was })
   return ok(next)
 }
 
@@ -331,7 +334,7 @@ export function editJsonStrict(
     const read = await readJsonStrictly(absPath)
     if (read.kind !== 'ok') return read.kind
     const next = mutate(read.value)
-    if (next !== null) await writeJson(absPath, next, was)
+    if (next !== null) await writeJson(absPath, next, { expect: was })
     lastRead.set(absPath, next ?? read.value)
     return next === null ? 'unchanged' : 'written'
   })
@@ -389,9 +392,9 @@ export function withoutId(
 
 export async function rewritePageSerialized(
   file: string,
-  rewrite: (content: string, was: FileStat) => string | null,
+  rewrite: Parameters<typeof rewriteHeld>[1],
 ): Promise<boolean> {
-  const done = (await rewriteHeld([file], (before, _file, was) => rewrite(before, was))).get(file)
+  const done = (await rewriteHeld([file], rewrite)).get(file)
   if (done?.status === 'failed') throw done.reason
   return done?.status === 'rewritten'
 }

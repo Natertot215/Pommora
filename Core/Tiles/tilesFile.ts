@@ -12,6 +12,7 @@ import {
   type RemovedTile,
   TILE_KINDS,
   type TileDoc,
+  type TileHostRef,
   type TilesChanged,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
@@ -300,28 +301,27 @@ export async function rewriteTileConnections(
   rewrite: (body: string) => string,
 ): Promise<{ hosts: TilesChanged[]; failed: number }> {
   const found = tileHostsOf(root, await liveTreeOf(root))
-  const hosts: TilesChanged[] = []
   let failed = found.unreadable
+  const boards: { host?: TileHostRef; dir: string; ids: string[] }[] = []
   for (const { host, dir } of found.hosts) {
-    const wrote: string[] = []
     const ids = await markdownTileIds(dir)
-    if (!ids) failed++
-    // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
-    const done = await rewriteHeld(
-      (ids ?? []).map((id) => tileFilePath(dir, id)),
-      (body) => {
-        const next = rewrite(body)
-        return next === body ? null : next
-      },
-    )
-    for (const id of ids ?? []) {
-      const status = done.get(tileFilePath(dir, id))?.status
-      if (status === 'failed') failed++
-      else if (status === 'rewritten') wrote.push(id)
-    }
-    if (!wrote.length) continue
-    dropTileLinks()
-    if (host) hosts.push({ host, ids: wrote })
+    if (ids) boards.push({ host, dir, ids })
+    else failed++
   }
-  return { hosts, failed }
+  // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
+  const done = await rewriteHeld(
+    boards.flatMap(({ dir, ids }) => ids.map((id) => tileFilePath(dir, id))),
+    (body) => {
+      const next = rewrite(body)
+      return next === body ? null : next
+    },
+  )
+  const hosts: TilesChanged[] = []
+  for (const { host, dir, ids } of boards) {
+    const wrote = ids.filter((id) => done.get(tileFilePath(dir, id))?.status === 'rewritten')
+    if (host && wrote.length) hosts.push({ host, ids: wrote })
+  }
+  const statuses = [...done.values()].map(({ status }) => status)
+  if (statuses.includes('rewritten')) dropTileLinks()
+  return { hosts, failed: failed + statuses.filter((s) => s === 'failed').length }
 }

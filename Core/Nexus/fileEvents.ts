@@ -1,4 +1,4 @@
-// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to 200 pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
+// Every change to a Nexus file is one event through here, whoever made it: the watcher's batch for an outside edit, the app's own writes as they land. A batch maintains the index in commits of up to `SEED_BATCH` pages, then each event patches the held tree from the one file that changed; one no arm can place owes a walk, and the rest of its batch still applies.
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -270,7 +270,7 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
 
 // ── The index's half ──
 
-// Removals and moves first, in order, then every written page in commits of up to 200, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
+// Removals and moves first, in order, then every written page in commits of up to `SEED_BATCH`, each from the text its writer handed over or from its file as it now stands, so it reads right whichever event came first. What the app's own writes show is theirs to have spoken for, so only what an outside one shows is owed.
 export async function indexEvents(root: string, events: readonly FileEvent[]): Promise<void> {
   try {
     const written: Changed[] = []

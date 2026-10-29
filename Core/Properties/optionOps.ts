@@ -156,7 +156,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       const values = row?.values ?? (read?.kind === 'read' ? read.fm : null)
       if (values) collect(values, defs)
     }
-    // After the pages, as an open has always registered them.
+    // Spaces register after pages, so new words keep collection order.
     for (const [values, defs] of spaces) collect(values, defs)
     if (!held.size) return ok(null)
     const notes = await readNotes(root)
