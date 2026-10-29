@@ -66,13 +66,13 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `Rewritten` • Type | What a held rewrite did with each file it reached: unread, refused by its rewrite (a root that can't round-trip), failed, or rewritten; private to its file. | `Core/Files/atomicWrite.ts` |
 | `CHUNK` • Constant | The files a held rewrite holds and lands together: 64 with Task 1-8's thread-pool line, 16 without. | `Core/Files/atomicWrite.ts` |
 | `holding` • Function | Runs a function holding each of a chunk's locks, taken in sorted order. | `Core/Files/atomicWrite.ts` |
-| `atomicWriteFile`'s `{ bodyOnly, expect }` • Parameter | The writer's options, `expect` being the stat a read of the file saw. | `Core/Files/atomicWrite.ts` |
-| `writeJson`'s `{ expect }` • Parameter | The same stat for a JSON landing, in the options shape `atomicWriteFile` takes. | `Core/Files/atomicWrite.ts` |
-| `rewritePageSerialized`'s `rewrite` • Parameter | `rewriteHeld`'s own callback, so a lone rewrite is handed its file and the stat its read was checked against. | `Core/Files/atomicWrite.ts` |
+| `atomicWriteFile`'s `{ bodyOnly, expect }` • Parameter | The writer's options, `expect` being the stat a read of the file saw, as `Landing` spells it. | `Core/Files/atomicWrite.ts` |
+| `writeJson`'s `{ expect }` • Parameter | The same stat for a JSON landing, passed straight through to `atomicWriteFile`. | `Core/Files/atomicWrite.ts` |
+| `HeldRewrite` • Type | A held rewrite's answer for one file from its text and the stat its read saw; `rewriteHeld` and `rewritePageSerialized` take it, so a lone rewrite is handed its file and the stat its read was checked against, and `stamping` builds one. | `Core/Files/atomicWrite.ts` |
 | `NameLanding` • Type | `owed.ts`' private name a create or rename lands on, renamed from `Landing` so the seam's type owns the word. | `Core/Nexus/owed.ts` |
 | `Changed.stat` • Field | The stat an own write's landing answered, which the index records in place of its own stat. | `Core/Files/writeEcho.ts` |
 | `ParsedPage` • Type | What `parsePage` answers: the frontmatter and its admission. | `Core/Files/pageFile.ts` |
-| `stamping` • Function | The rewrite that stamps a page missing its ID, shared by `stampPage` and `stampMissing`'s one held rewrite. | `Core/Nexus/adopt.ts` |
+| `stamping` • Function | The rewrite that stamps a page missing its ID, shared by `stampPage`, which takes a page and its kind alone, and `stampMissing`'s one held rewrite. | `Core/Nexus/adopt.ts` |
 | `inContextsTurn` • Function | Runs an operation in the settle's turn under the Contexts lock, the turn nested inside it. | `Core/Nexus/settle.ts` |
 | `addressed`'s `turn` • Parameter | The turn a page-addressed write runs in: `inSettleTurn`, or `inContextsTurn` for a create that seeds a Context. | `Core/Nexus/mutate.ts` |
 | `indexEvents` • Function | Maintains the index for a batch of events, its written pages in commits of up to 200, answering each page's read for the tree's patch; replaces `indexEvent`. | `Core/Nexus/fileEvents.ts` |
@@ -86,6 +86,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `rekeyed` • Function | A parsed page with one key renamed in its place; `renameFrontmatterKey`'s body. | `Core/Files/pageFile.ts` |
 | `SweptPage.rekey` • Field | `rekeyed` over the parse the sweep admitted the page by. | `Core/Files/pageFile.ts` |
 | `rekeySweep` • Function | The one plan that renames a key in place, in each page's parse and each Space sidecar's object, behind a property rename and a Context's. | `Core/Nexus/governedSweep.ts` |
+| `rekeyContext` • Function | A Context rename's `rekeySweep`, which `cascadeTitle` sweeps and a relink's rekey takes the `raw` of. | `Core/Contexts/contextCascade.ts` |
 | `rememberParse` • Function | Holds a parse in the walk cache under the stat of the read that built it, which the tree's patch hands over for the app's own write. | `Core/Files/walkCache.ts` |
 | `extractPageIndex`'s and `pageRecordOf`'s `page` • Parameters | A parse the caller already holds, defaulting to parsing the content. | `Core/Index/indexSeed.ts`, `Core/Nexus/readNexus.ts` |
 | `failLandings` • Function | The test seam that fails the landings a predicate picks; replaces `refuseWrites`. | `Core/Testing/hostFs.ts` |
@@ -104,7 +105,8 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
 | `atomicWriteBinary` • Function | The byte writer; `atomicWriteFile` takes bytes. | `Core/Files/atomicWrite.ts` |
 | `guarded` • Function | The sweep's per-file lock and catch; the catch moves into `rewriteHeld`, and a lock's rejection, which only re-entrancy causes, now fails the sweep. | `Core/Nexus/governedSweep.ts` |
 | `indexEvent` • Function | The per-event index switch. | `Core/Nexus/fileEvents.ts` |
-| `pageLeg` • Function | A Context rename's own page plan; `rekeySweep` builds it. | `Core/Contexts/contextCascade.ts` |
+| `pageLeg` • Function | A Context rename's own page plan; `rekeyContext` builds it through `rekeySweep`. | `Core/Contexts/contextCascade.ts` |
+| `stampPage`'s `overForeign` · `held` • Parameters | Left without a caller once `stampMissing` stamps through one held rewrite. | `Core/Nexus/adopt.ts` |
 | `indexWrittenPage` • Function | The per-page index transaction and stat. | `Core/Index/indexSeed.ts` |
 | `refuseWrites` · `writers` • Test Helpers | Replaced by `failLandings`. | `Core/Testing/hostFs.ts` |
 | `put` · `atomicWrite` • Test Machine Helpers | The test machines' single-file writers. | `Core/Testing/machines.ts` |
@@ -167,7 +169,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   | T-N34 | 1-2 | `indexSeed.test.ts` | A seed of exactly `SEED_BATCH` (200) pages makes one `upsertPageIndexes` call | `reindex`'s empty-batch guard |
   | T-N5 | 1-4 | `Core/Nexus/governedSweep.test.ts`, `Core/Properties/registryProperty.test.ts` | A property rename over pages A and B, with `raceLandings` overwriting B: B keeps the outside bytes and is `skipped`, A is rewritten, the note stays owed, and, after the spy's `.mockRestore()`, `finishOwed` rewrites B and clears it | `expect: was` in `rewriteHeld` |
   | T-N6 | 1-4 | `governedSweep.test.ts` | With the chunk's own landing paused (the next `land` call alone), `updatePageBody` on a chunk page stays pending; once released, both edits land and nothing is skipped | the chunk holding its locks through its landing |
-  | T-N7 | 1-4 | `governedSweep.test.ts` | Before the sweep, `writer = gate.then(() => rewritePageSerialized(A, (c) => c + 'Z [[P1]]'))`, a link so the index and the tree can tell the write apart, with the chunk's record slowed 50 ms so a writer not held behind the chunk would record first; a `readText` hook on A only resolves `gate` (a `lock(A)` started inside the hook would inherit the chunk's held keys and reject as re-entrant). After the sweep and `await writer`, A reads the swept text plus `Z [[P1]]`, and the index and the tree agree with a fresh seed and a fresh `readNexus` | the record running inside the chunk's locks |
+  | T-N7 | 1-4 | `governedSweep.test.ts` | Before the sweep, `writer = gate.then(() => rewritePageSerialized(A, (c) => c + 'Z [[P1]]'))`, a link so the index and the tree can tell the write apart, with the chunk's record slowed 50 ms (the first `indexWrittenPages` call carrying files, since each origin takes its own call) so a writer not held behind the chunk would record first; a `readText` hook on A only resolves `gate` (a `lock(A)` started inside the hook would inherit the chunk's held keys and reject as re-entrant). After the sweep and `await writer`, A reads the swept text plus `Z [[P1]]`, and the index and the tree agree with a fresh seed and a fresh `readNexus` | the record running inside the chunk's locks |
   | T-N8 | 1-4 | `governedSweep.test.ts` | Sweeps over `[a, b]` and `[b, a]` started together, with `land` delayed, both finish within a 2 s timeout | the sort in `holding` |
   | T-N9 | 1-4 | `governedSweep.test.ts` | 65 files make two `land` calls, of 64 and 1, and two `upsertPageIndexes` calls; where Task 1-8 lands AFTER B, 17 files make two, of 16 and 1 | `CHUNK` |
   | T-N26 | 1-4 | `governedSweep.test.ts` | A plan whose `raw` throws for A, over `[A, B]`: A is `skipped` and not `refused`, and B is rewritten | the per-file catch in `rewriteHeld` |
@@ -192,7 +194,7 @@ Nathan ruled the fix its own plan, run before the Trash & Archive Restructure de
   | T-N38 | 2-4 | `indexSeed.test.ts` | A batch over A and B whose `readText` hook on B's read moves A away, renaming the file and moving its row as a maintaining writer does: no row is left at A's old path, and the moved path holds one | `unmoved` at the batch's commit, for a row that left since its read |
   | T-N39 | 2-4 | `settle.test.ts` | The three cases that hold an event mid-arm do it through `machine().readText` hooks on the path production takes: "an event whose arm resumes…" holds the index's read of B and fails it and the patch's read after it; "a reply while a batch applies…" holds the tree half's read of the Collection sidecar, an event between the two pages; "a stamp never lands on a file…" fails the index's read of the page, so the patch reads it for each event, and holds the second | the owed record emptied in place; the stamp's `batching` gate and `shown`; the stamp's `batching` gate |
   | T-N18 | 2-5 | `contextCascade.test.ts`; `Core/Views/loadValues.test.ts`; `fileEvents.test.ts` | After a Context rename, its owed walk makes no `readText` of the pages the rename rewrote, and `loadValues` still serves each page's kept modified time; and an own event whose patch reads its page again, a write having landed since the index's read, leaves the walk cache that read, so a walk makes no `readText` of it | `rememberParse`; the landed time `pageRecordOf` takes from Task 2-4's read; `rememberParse` taking only the handed read, under its own stat |
-  | T-N40 | 2-5 | `Core/Files/walkCache.test.ts` | A cached file replaced whole by rename with one of the same time and size re-parses | `sameFile` in `cachedParse`'s hit test |
+  | T-N40 | 2-5 | `Core/Files/walkCache.test.ts` | A cached file replaced whole by rename with one of the same time and size re-parses (skipped off macOS, since it relies on APFS moving a file's birth back to an earlier time set on it) | `sameFile` in `cachedParse`'s hit test |
 
   The break-on-purpose rewrites are each task's AFTER, and the ones stated as a rule are stated where they land.
 - **Comments:** docstrings in the house register where a neighbor has one, and a comment only where the code would otherwise be misread; an AFTER block's comments are the ones that land. These comments misdescribe the code after the plan and are rewritten or removed by the task named: `atomicWrite.ts`'s "Both text writers report 'change'…" (1-4, into `landOwn`'s docstring), `rewritePreservingTimes`' two comments (1-4, with it), `governedSweep.ts`'s `guarded` comment (1-4, onto `rewriteHeld`'s per-file catch) and `SweepResult.skipped`'s and `sweepGovernedRoots`' docstrings (1-4), `exclusion.ts`'s `TEMP_SUFFIX`, which gains the comment *§Constraints · Rulings · OP-1* names (1-4), `writeEcho.ts`'s header, "the own tap lands each write as an event" (1-2), and its "The app's own event carries the text it wrote…" (1-2), `Desktop/FileWatch/watcher.ts`'s header, "Events settle, then apply one at a time…" (1-2), `settle.ts`'s "Every own write marks the disk moved…" (1-2), `fileEvents.ts`'s header (1-2), `indexSeed.ts`'s "Re-indexes a written page…" (1-2, again 2-4), its seed's "A maintaining writer that landed…" (1-2, into `unmoved`'s docstring), `optionOps.ts`'s `registerHeldOptions` docstring (1-5), `finishOwed.ts`'s header (1-6), `mutate.ts:88`'s turn rule, whose nesting clause moves into `inContextsTurn`'s docstring (1-6), `machine.ts`'s two `writeText`/`writeBytes` docstrings (1-4, into `land`'s), `landBytes`' comment (1-7), `renameFrontmatterKey`'s docstring (2-3, into `rekeyed`'s), `SweepPlan`'s docstring (2-3), `rootValues.ts:47`'s "the twin of `renameFrontmatterKey`" (2-3), and the test comment at `Core/Nexus/mutate.test.ts:1909` naming `atomicWriteBinary` (1-4). One becomes true without an edit: `pageFile.ts:280`'s "one parse serves a sweep's admission, its read of the values, and its merge" (2-3).
@@ -553,6 +555,9 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
  import { readTextOrNull } from '../Files/atomicWrite'
  import { corpusFiles, corpusFilesUnder } from '../Files/walk'
  import { outsideContent } from '../Paths/exclusion'
+@@ NO_ROWS @@
+ const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
++const SEED_BATCH = 200
 @@ unindexed @@
    return pageOf(rel, stat)
  }
@@ -652,6 +657,12 @@ The own tap takes a batch: `noteOwn` takes any number of events, the settle's `a
  }
  
  /** What a seed saw and the pages it re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
+@@ NO_REREAD @@
+ const NO_REREAD: SeedReread = { ...NOTHING_SEEN, db: null, rels: [] }
+ 
+-const SEED_BATCH = 200
+-
+ export async function seedContentIndex(root: string): Promise<SeedReread> {
 @@ seedContentIndex @@
    const landed: string[] = []
    const flush = (): void => {
@@ -1222,7 +1233,7 @@ The seam gains `land(files)`, `Landing`, and `sameFile`, and all three machines 
 
 #### Task 1-4
 
-Every writer moves onto `land`, and what only a single-file write needed leaves. `landOwn`, private to `atomicWrite.ts`, records each file's echo, lands the group, forgets the echo of a file whose landing rejects (`forgetWrite`, the rule `dropOwnEchoes` already applied), so another writer's landing of the same bytes still reaches the index and the tree, drops the walk cache's parse for a file kept at its time, and notes the landed files as one batch with each one's stat; `atomicWriteFile` takes text or bytes (O-1), the event kind following the data, so `atomicWriteBinary` leaves. One held rewrite, `rewriteHeld`, reads, rewrites, lands, and records each chunk of 64 files under the chunk's locks, taken in sorted order: it takes each file's stat ahead of its text, so its landing can keep a page's time and leave a file that changed since as its writer left it, and a file whose rewrite or landing fails costs only itself, as under `guarded`. `guarded` also skipped a file whose lock rejected; the only rejection is re-entrancy, a programming error no sweep caller reaches (Step 3 re-checks it), so a lock's rejection now fails the sweep instead. The sweep is one call to it; `rewritePageSerialized` is a one-file call taking `rewriteHeld`'s own callback, so its rewrite is handed the stat it read (O-2) and `stampPage` passes `stamping` straight through, minting from that stat rather than stat'ing outside the lock; a relink's tile rewrites land every host's tiles through one call per relink; and `stampMissing` lands its page stamps through one call, each stamp landing or failing on its own and an ID the tree held going back to one page alone, so a first adoption flushes a chunk at a time. Sync's `landBytes` becomes one landing. The seam's three old methods, the library, and its types leave; `TEMP_SUFFIX` stays and gains its comment (*§Constraints · Rulings · OP-1*); the test seam `refuseWrites` becomes `failLandings`, a spy on the landing that sees every writer, and `raceLandings` beside it is the outside writer T-N5, T-N23, T-N24, and T-N32 share. `notesWiring.test.ts`'s six module mocks become one spy on the landing, so its three assertions that the notes file isn't written can fail, and `cascade.test.ts`'s two tile cases spy `rewriteHeld` in place of `rewritePageSerialized`.
+Every writer moves onto `land`, and what only a single-file write needed leaves. `landOwn`, private to `atomicWrite.ts`, records each file's echo, lands the group, forgets the echo of a file whose landing rejects (`forgetWrite`, the rule `dropOwnEchoes` already applied), so another writer's landing of the same bytes still reaches the index and the tree, drops the walk cache's parse for a file kept at its time, and notes the landed files as one batch with each one's stat; `atomicWriteFile` takes text or bytes (O-1), the event kind following the data, so `atomicWriteBinary` leaves. One held rewrite, `rewriteHeld`, reads, rewrites, lands, and records each chunk of 64 files under the chunk's locks, taken in sorted order, a chunk with nothing due landing nothing: it takes each file's stat ahead of its text, so its landing can keep a page's time and leave a file that changed since as its writer left it, and a file whose rewrite or landing fails costs only itself, as under `guarded`. `guarded` also skipped a file whose lock rejected; the only rejection is re-entrancy, a programming error no sweep caller reaches (Step 3 re-checks it), so a lock's rejection now fails the sweep instead. The sweep is one call to it; `rewritePageSerialized` is a one-file call taking the same `HeldRewrite`, so its rewrite is handed the stat it read (O-2) and `stampPage`, taking a page and its kind alone, passes `stamping` straight through, minting from that stat rather than stat'ing outside the lock; a relink's tile rewrites land every host's tiles through one call per relink; and `stampMissing` lands its page stamps through one call, each stamp landing or failing on its own and an ID the tree held going back to one page alone, so a first adoption flushes a chunk at a time. Sync's `landBytes` becomes one landing. The seam's three old methods, the library, and its types leave; `TEMP_SUFFIX` stays and gains its comment (*§Constraints · Rulings · OP-1*); the test seam `refuseWrites` becomes `failLandings`, a spy on the landing that sees every writer, and `raceLandings` beside it is the outside writer T-N5, T-N23, T-N24, and T-N32 share. `notesWiring.test.ts`'s six module mocks become one spy on the landing, so its three assertions that the notes file isn't written can fail, and `cascade.test.ts`'s two tile cases spy `rewriteHeld` in place of `rewritePageSerialized`.
 
 **PROCEDURE**
 
@@ -1438,10 +1449,13 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +  | { status: 'failed'; reason: unknown }
 +  | { status: 'rewritten'; before: string; after: string }
 +
-+/** Rewrites `files` a chunk at a time, each chunk held from its read through its record, so no write of the app's lands between, and landed as one group: a page keeps its modification time, and a file changed since its read is left as its writer left it and answered failed. `rewrite` answers a file's next text from the text and the stat its read saw, null to leave it, or undefined to refuse it; a dry run stops at the read. */
++/** A held rewrite's answer for one file: its next text from the text and the stat its read saw, null to leave it, or undefined to refuse it. */
++export type HeldRewrite = (before: string, file: string, was: FileStat) => string | null | undefined
++
++/** Rewrites `files` a chunk at a time, each chunk held from its read through its record, so no write of the app's lands between, and landed as one group: a page keeps its modification time, and a file changed since its read is left as its writer left it and answered failed; a dry run stops short of the landing. */
 +export async function rewriteHeld(
 +  files: readonly string[],
-+  rewrite: (before: string, file: string, was: FileStat) => string | null | undefined,
++  rewrite: HeldRewrite,
 +  dry = false,
 +): Promise<Map<string, Rewritten>> {
 +  const out = new Map<string, Rewritten>()
@@ -1468,16 +1482,17 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +          out.set(file, { status: 'failed', reason })
 +        }
 +      }
-+      const landed = dry
-+        ? []
-+        : await landOwn(
-+            due.map(({ file, was, after }) => ({
-+              path: file,
-+              data: after,
-+              expect: was,
-+              mtimeMs: isMarkdownFile(file) ? was.mtimeMs : undefined,
-+            })),
-+          )
++      const landed =
++        dry || !due.length
++          ? []
++          : await landOwn(
++              due.map(({ file, was, after }) => ({
++                path: file,
++                data: after,
++                expect: was,
++                mtimeMs: isMarkdownFile(file) ? was.mtimeMs : undefined,
++              })),
++            )
 +      due.forEach(({ file, before, after }, i) => {
 +        const settled = landed[i]
 +        out.set(
@@ -1520,11 +1535,10 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
  }
  
 -export function rewritePageSerialized(
-+export async function rewritePageSerialized(
-   file: string,
+-  file: string,
 -  rewrite: (content: string) => string | null,
-+  rewrite: Parameters<typeof rewriteHeld>[1],
- ): Promise<boolean> {
+-): Promise<boolean> {
++export async function rewritePageSerialized(file: string, rewrite: HeldRewrite): Promise<boolean> {
 -  return machine().lock(file, async () => {
 -    const content = await readTextOrNull(file)
 -    if (content === null) return false
@@ -1577,14 +1591,8 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 
 ```Core/Nexus/adopt.ts diff
 @@ imports @@
- import { basename, join } from '../Paths/posix'
- import { fault, ok, type Result } from '../Contract/result'
--import { machine } from '../Platform/machine'
-+import { type FileStat, machine } from '../Platform/machine'
- import { isContentFile, listEntries } from '../Files/walk'
- import { ID_KEY } from './identityMark'
- import {
-@@ imports @@
++  type HeldRewrite,
+   readJsonStrict,
    readTextOrNull,
    pathExists,
    relocate,
@@ -1600,8 +1608,12 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +
 +/** The rewrite that stamps each page `pages` names, recording the ID each one takes in `ids`: a page missing its ID, or holding a foreign one where its entry says `overForeign`, takes the entry's `held` ID or one minted from its file's age; one that keeps its ID is left. */
 +const stamping =
-+  (kind: ContentKind, pages: ReadonlyMap<string, Stamping>, ids: Map<string, string>) =>
-+  (content: string, file: string, { birthtimeMs, mtimeMs }: FileStat): string | null => {
++  (
++    kind: ContentKind,
++    pages: ReadonlyMap<string, Stamping>,
++    ids: Map<string, string>,
++  ): HeldRewrite =>
++  (content, file, { birthtimeMs, mtimeMs }) => {
 +    const { overForeign, held }: Stamping = pages.get(file) ?? {}
 +    const { admission } = parsePage(content, kind)
 +    // The long-term approach is remembering an old ID to re-stamp in such an event; this *must* be done before any official release.
@@ -1613,12 +1625,13 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 +    return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
 +  }
 +
- export async function stampPage(
-   absFile: string,
-   kind: ContentKind,
-   overForeign = false,
-   held?: string,
- ): Promise<string | null> {
+-export async function stampPage(
+-  absFile: string,
+-  kind: ContentKind,
+-  overForeign = false,
+-  held?: string,
+-): Promise<string | null> {
++export async function stampPage(absFile: string, kind: ContentKind): Promise<string | null> {
 -  const st = await machine().stat(absFile)
 -  if (!st) return null
 -  // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
@@ -1634,10 +1647,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -  })
 -  return landed ? id : null
 +  const ids = new Map<string, string>()
-+  const landed = await rewritePageSerialized(
-+    absFile,
-+    stamping(kind, new Map([[absFile, { overForeign, held }]]), ids),
-+  )
++  const landed = await rewritePageSerialized(absFile, stamping(kind, new Map(), ids))
 +  return landed ? (ids.get(absFile) ?? null) : null
  }
  
@@ -1659,7 +1669,7 @@ Every writer moves onto `land`, and what only a single-file write needed leaves.
 -    if (id !== null) landed.push(id)
 +    if (kind === 'page') {
 +      if (pages.has(abs)) continue
-+      // A held ID goes back to one page alone, as it does when one stamp lands before the next is weighed.
++      // A held ID goes back to one page alone.
 +      const kept = held && !idHeld(root, held) && !heldBack.has(held) ? held : undefined
 +      if (kept) heldBack.add(kept)
 +      pages.set(abs, { overForeign: reason === 'malformed', held: kept })
@@ -2820,7 +2830,7 @@ Every landing that follows a read of the same file carries the stat that read sa
    filePath: string,
    data: string | Uint8Array,
 -  bodyOnly?: boolean,
-+  { bodyOnly, expect }: { bodyOnly?: boolean; expect?: FileStat | null } = {},
++  { bodyOnly, expect }: { bodyOnly?: boolean } & Pick<Landing, 'expect'> = {},
  ): Promise<void> {
 -  sole(await landOwn([{ path: filePath, data }], bodyOnly))
 +  sole(await landOwn([{ path: filePath, data, expect }], bodyOnly))
@@ -2845,9 +2855,9 @@ Every landing that follows a read of the same file carries the stat that read sa
 +export async function writeJson(
 +  filePath: string,
 +  value: unknown,
-+  { expect }: { expect?: FileStat | null } = {},
++  options: Pick<Landing, 'expect'> = {},
 +): Promise<void> {
-+  await atomicWriteFile(filePath, jsonText(value), { expect })
++  await atomicWriteFile(filePath, jsonText(value), options)
  }
  
  type StrictRead =
@@ -2949,6 +2959,7 @@ Every landing that follows a read of the same file carries the stat that read sa
 -  await writeJson(path, { id, createdAt })
 +  await writeJson(path, { id, createdAt }, { expect: was })
    const agenda_folders = await seedAgenda(root)
++  // This write lands over the app's own create just above, so it checks no stat.
    if (Object.keys(agenda_folders).length) await writeJson(path, { id, createdAt, agenda_folders })
    return { id, created: true }
 ```
@@ -3077,7 +3088,7 @@ Every landing that follows a read of the same file carries the stat that read sa
    wheelGuest,
  } from './Web/webGuests'
  
-+// A held rewrite flushes 64 files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms; libuv sizes the pool at its first task, which nothing imported above starts.
++// A held rewrite flushes a chunk's files at once, and each flush holds a pool thread until the drive answers, so the default four threads would queue every other read and write behind a chunk for about 110 ms; libuv sizes the pool at its first task, which nothing imported above starts.
 +process.env.UV_THREADPOOL_SIZE ??= '16'
 +
  // FIRST, ahead of anything that could read a path: the name resolves userData, and Electron caches
@@ -3263,7 +3274,7 @@ An option rename, delete, or value-format change runs its own rewrite over each 
 
 #### Task 2-3
 
-A text plan receives the parse the sweep admitted its page by. `renameFrontmatterKey`'s body after its parse becomes `rekeyed`, which `SweptPage.rekey` runs over the held document, so a property or Context rename's page plan stops re-parsing; both renames take their plan from one builder, `rekeySweep`, which pairs `SweptPage.rekey` with `rekeyHeld` under the caller's collision rule, and the Context rename's own `pageLeg` leaves; `renameFrontmatterKey` stays as parse plus `rekeyed` for its one remaining caller (`restoreScrub.ts:105`, the Trash plan's). The relink's plan reads the held page's values in place of `splitFrontmatter(content)`.
+A text plan receives the parse the sweep admitted its page by. `renameFrontmatterKey`'s body after its parse becomes `rekeyed`, which `SweptPage.rekey` runs over the held document, so a property or Context rename's page plan stops re-parsing; both renames take their plan from one builder, `rekeySweep`, which pairs `SweptPage.rekey` with `rekeyHeld` under the caller's collision rule, and the Context rename's own `pageLeg` leaves, `rekeyContext` answering the Context's `rekeySweep` and a relink's rekey taking its `raw`; `renameFrontmatterKey` stays as parse plus `rekeyed` for its one remaining caller (`restoreScrub.ts:105`, the Trash plan's). The relink's plan reads the held page's values in place of `splitFrontmatter(content)`.
 
 **PROCEDURE**
 
@@ -3291,6 +3302,17 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
 +  type SweepPlan,
 +} from '../Nexus/governedSweep'
  import { type ConfigReach, sweptReach } from '../Nexus/configReach'
+@@ imports @@
+   namesValue,
+-  rekeyHeld,
+   stripKeys,
+@@ rekeyContext @@
+-export const rekeyContext =
+-  (oldTitle: string, newTitle: string): Rewrite =>
+-  (raw) =>
+-    rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
++export const rekeyContext = (oldTitle: string, newTitle: string): SweepPlan =>
++  rekeySweep(contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
 @@ pageLeg @@
 -function pageLeg(from: string, to: string): RewriteText {
 -  const oldKey = contextKey(from)
@@ -3310,7 +3332,7 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
 -  )
 +  const plan: SweepPlan = space
 +    ? { raw: (r) => retitleSpace(r, contextTitle, from, to) }
-+    : rekeySweep(contextKey(from), contextKey(to), NEITHER_KEY_IS_FRESHER)
++    : rekeyContext(from, to)
 +  return sweptReach(await sweepGovernedRoots(files, plan))
  }
 ```
@@ -3401,6 +3423,10 @@ A text plan receives the parse the sweep admitted its page by. `renameFrontmatte
        const keys = Object.keys(patch)
        const next = own && settled ? body : rewrite(body, own)
        return next === body && keys.length === 0
+@@ relinkReach @@
+-    const rekey = e.rekey && rekeyContext(...e.rekey)
++    const rekey = e.rekey && rekeyContext(...e.rekey).raw
+     const raw: Rewrite = rekey
 ```
 
 ```Core/Nexus/governedSweep.ts diff
@@ -3538,7 +3564,7 @@ The index half reads and parses each written page once and hands that read to th
 @@ unmoved @@
 -/** Whether `path`'s row is still the one `prior` saw ahead of a page's read: a maintaining writer that landed while the read was in flight left a fresher row than the read knew, so the read's row gives way to theirs. */
 -const unmoved = (
-+/** Whether `path`'s row is still the one `prior` describes, taken ahead of a page's read: a writer that landed while the read was in flight left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
++/** Whether `path`'s row is still the one `prior` describes, the row taken ahead of a page's read or the stat its batch committed: a writer that landed since left a fresher row, and one that moved or removed the page took its row away, so the read gives way to theirs. A page with no row then or now takes the read, and so does every read where no index holds rows. */
 +export const unmoved = (
    path: string,
    prior: Pick<IndexedStat, 'mtimeMs' | 'size'> | null | undefined,
@@ -3967,7 +3993,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 
 - **The Trash Plan's Two Parses (OP-4):** `deleteCascade`'s post-sweep parse (`cascade.ts:142`, about 0.03 s per Medium delete strip) could take each stripped root from the plan's own `raw` callback, and `restoreScrub`'s text plan re-parses with `splitFrontmatter` and `renameFrontmatterKey` (`restoreScrub.ts:104-107,195-197`) and lands unchanged files. Both are record-minting code the Trash & Archive plan reworks, so they're that plan's.
 - **Chokidar's Directory Rescans:** `readdirp` rescans each directory a write touches, about 28 `lstat`s per written file and 2.5 s of main-thread time per Medium property rename at the baseline. They're the watcher's own cost and outside this plan; the item stands until *§Final Verification* re-profiles them and *§Reconciliation* files the issue with those numbers.
-- **The Per-File Landings Left:** Sync's pull lands each arrival alone (`Core/Sync/Arrival/land.ts:96`), one flush per file, and *§Constraints · Sync* keeps Sync's code as it is; the open's Agenda stamps (`stampTree`, before the open's read) stay one landing each inside a folder walk, over the few files Agenda's scaffolding holds; and a remint, an asset migration, and a strict sidecar edit write single files or a handful.
+- **The Per-File Landings Left:** Sync's pull lands each arrival alone (`Core/Sync/Arrival/land.ts:96`), one flush per file, and *§Constraints · Sync* keeps Sync's code as it is; the open's Agenda stamps (`stampTree`, before the open's read) stay one landing each inside a folder walk, over the few files Agenda's scaffolding holds; a new Space's blank tiles land one at a time (`Core/Contexts/contextWrite.ts`); and a remint, an asset migration, and a strict sidecar edit write single files or a handful.
 - **A Restore's Move From Outside the Tree:** a move whose old path the tree never held, as a Trash restore lands one, re-indexes through `moveIndexPaths` without handing its read on, so `applyPage` reads the page again; carrying `reads` through is about three lines, and it belongs with the Trash & Archive plan, which reworks restore.
 - **A Timing Case:** `Core/Matrix/matrixRuntime.test.ts` "wakes on a shuffle" failed once in the fourteen full runs the planning worktree made, at Task 1-4's state, and passed on its rerun and in every other run; it touches nothing this plan changes, so a failure there is rerun once before it's investigated.
 
