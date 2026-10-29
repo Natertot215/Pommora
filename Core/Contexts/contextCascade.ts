@@ -20,7 +20,6 @@ import {
   editHeldList,
   editList,
   namesValue,
-  rekeyHeld,
   stripKeys,
   stripList,
   type KeyCollision,
@@ -39,10 +38,8 @@ export const rivalTitled =
   (e: { id: string; title: string }): boolean =>
     e.id !== id && normalizeTitle(e.title) === normalizeTitle(title)
 
-export const rekeyContext =
-  (oldTitle: string, newTitle: string): Rewrite =>
-  (raw) =>
-    rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
+export const rekeyContext = (oldTitle: string, newTitle: string): SweepPlan =>
+  rekeySweep(contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER)
 
 const retitleSpace = (raw: Json, contextTitle: string, from: string, to: string): Json | null =>
   editHeldList(raw, contextKey(contextTitle), (held) => editList(held, new Map([[from, to]])))
@@ -71,7 +68,7 @@ export async function cascadeTitle(
 ): Promise<ConfigReach> {
   const plan: SweepPlan = space
     ? { raw: (r) => retitleSpace(r, contextTitle, from, to) }
-    : rekeySweep(contextKey(from), contextKey(to), NEITHER_KEY_IS_FRESHER)
+    : rekeyContext(from, to)
   return sweptReach(await sweepGovernedRoots(files, plan))
 }
 

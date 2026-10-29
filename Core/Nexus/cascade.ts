@@ -309,7 +309,7 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
     const { text, spaceMoved } = fileRewrites(root, await liveTreeOf(root), (t) =>
       rewriteConnections(t, names),
     )
-    const rekey = e.rekey && rekeyContext(...e.rekey)
+    const rekey = e.rekey && rekeyContext(...e.rekey).raw
     const raw: Rewrite = rekey
       ? (r, f) => rekey(spaceMoved(r, f) ?? r, f) ?? spaceMoved(r, f)
       : spaceMoved

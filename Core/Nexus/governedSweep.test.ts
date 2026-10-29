@@ -243,7 +243,9 @@ describe('sweepGovernedRoots', () => {
     })
     // The chunk's record is slowed, so a writer that wasn't held behind it would record first.
     const record = indexSeed.indexWrittenPages
-    vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementationOnce(async (...args) => {
+    const slowed = vi.spyOn(indexSeed, 'indexWrittenPages').mockImplementation(async (...args) => {
+      if (!args[1].length) return record(...args)
+      slowed.mockRestore()
       await new Promise((r) => setTimeout(r, 50))
       return record(...args)
     })

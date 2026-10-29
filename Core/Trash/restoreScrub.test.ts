@@ -23,7 +23,7 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { noModeBits } from '../Testing/hostFs'
 import { STATUS_DEF } from '../Testing/definitions'
 
-const trashWrites = { fail: false }
+const trashPage = (file: string): boolean => file.includes('/.trash/') && isMarkdownFile(file)
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
@@ -96,7 +96,6 @@ beforeEach(async () => {
     `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\nPriority: hi\n---\nbody`,
   )
   await openSession(root)
-  failLandings((file) => trashWrites.fail && file.includes('/.trash/') && isMarkdownFile(file))
 })
 
 afterEach(async () => {
@@ -154,11 +153,11 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(d.ok).toBe(true)
     await refreshTree(root)
     const [listed] = await listBundles(root, { kind: 'trash' })
-    trashWrites.fail = true
+    const failing = failLandings(trashPage)
     try {
       return await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     } finally {
-      trashWrites.fail = false
+      failing.mockRestore()
     }
   }
 
@@ -209,7 +208,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       bundles.find((b) => b.artifactName === 'Beta.md')?.bundlePath ?? '',
       'Beta.md',
     )
-    trashWrites.fail = true
+    const failing = failLandings(trashPage)
     try {
       const r = await settledMutate(
         root,
@@ -218,7 +217,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       )
       expect(r.ok && r.value.cascade?.owed).toBe(true)
     } finally {
-      trashWrites.fail = false
+      failing.mockRestore()
     }
     expect((await readNotes(root))['Notes/Alpha.md']).toMatchObject({
       kind: 'relink',

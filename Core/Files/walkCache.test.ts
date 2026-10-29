@@ -41,22 +41,25 @@ describe('walkCache', () => {
     expect(parses).toBe(2)
   })
 
-  it('re-parses a file replaced whole by one of the same time and size', async () => {
-    const file = join(root, 'a.md')
-    const twin = join(root, 'b.md')
-    const at = Math.floor(Date.now() / 1000) - 10
-    writeFileSync(file, 'one')
-    // A time set before a file's birth moves its birth to it, so the original is born before the twin dated to the same time.
-    utimesSync(file, at - 10, at - 10)
-    utimesSync(file, at, at)
-    let parses = 0
-    const parse = async (): Promise<string> => `parsed-${++parses}`
-    expect(await walk(file, parse)).toBe('parsed-1')
-    writeFileSync(twin, 'two')
-    utimesSync(twin, at, at)
-    renameSync(twin, file)
-    expect(await walk(file, parse)).toBe('parsed-2')
-  })
+  it.skipIf(process.platform !== 'darwin')(
+    're-parses a file replaced whole by one of the same time and size',
+    async () => {
+      const file = join(root, 'a.md')
+      const twin = join(root, 'b.md')
+      const at = Math.floor(Date.now() / 1000) - 10
+      writeFileSync(file, 'one')
+      // A time set before a file's birth moves its birth to it, so the original is born before the twin dated to the same time.
+      utimesSync(file, at - 10, at - 10)
+      utimesSync(file, at, at)
+      let parses = 0
+      const parse = async (): Promise<string> => `parsed-${++parses}`
+      expect(await walk(file, parse)).toBe('parsed-1')
+      writeFileSync(twin, 'two')
+      utimesSync(twin, at, at)
+      renameSync(twin, file)
+      expect(await walk(file, parse)).toBe('parsed-2')
+    },
+  )
 
   it('a forgotten entry re-parses even while (mtime, size) hold', async () => {
     const file = join(root, 'a.md')

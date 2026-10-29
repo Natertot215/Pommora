@@ -134,6 +134,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  vi.restoreAllMocks()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
