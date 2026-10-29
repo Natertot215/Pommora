@@ -1,14 +1,14 @@
-// report.mjs — folds the harness's results/*.jsonl into Markdown tables: per operation, size, and fill, each build's median settle time (min–max), median reply time, and median machine calls (reads/writes, the Trash's share).
+// report.mjs — folds the harness's results/<Size>-<pct>.jsonl (a run kept under a commit suffix stays out) into Markdown tables: per operation, size, and fill, each build's median settle time (min–max), median reply time, and median machine calls (reads/writes, the Trash's share).
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 const dir = join(import.meta.dirname, 'results')
-const recs = readdirSync(dir).filter((f) => f.endsWith('.jsonl')).flatMap((f) => readFileSync(join(dir, f), 'utf8').trim().split('\n').map((l) => JSON.parse(l)))
+const recs = readdirSync(dir).filter((f) => /^[A-Za-z]+-\d+\.jsonl$/.test(f)).flatMap((f) => readFileSync(join(dir, f), 'utf8').trim().split('\n').map((l) => JSON.parse(l)))
 const SIZES = ['Small', 'Medium', 'Large', 'XLarge']
 const med = (xs) => { const s = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2 }
 const r0 = (x) => (x === null ? '—' : Math.round(x))
 const fmtS = (ms) => (ms === null ? '—' : ms >= 10000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}`)
 const reads = (c = {}) => (c.readText ?? 0) + (c.readBytes ?? 0)
-const writes = (c = {}) => (c.writeText ?? 0) + (c.writeBytes ?? 0)
+const writes = (c = {}) => c.land ?? 0
 const cells = new Map()
 for (const r of recs) { const k = `${r.size}|${r.pct}|${r.build}`; cells.set(k, [...(cells.get(k) ?? []), r]) }
 const keys = [...new Set(recs.map((r) => `${r.size}|${r.pct}`))].sort((a, b) => { const [sa, pa] = a.split('|'); const [sb, pb] = b.split('|'); return SIZES.indexOf(sa) - SIZES.indexOf(sb) || pa - pb })

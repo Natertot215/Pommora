@@ -1,11 +1,11 @@
 #!/bin/zsh
-# setup.sh [commit] — cuts the baseline and reach-in worktrees from the repo at <commit> (default 15fe7422a) into the working folder,
+# setup.sh [commit] — cuts the baseline and reach-in worktrees from the repo at <commit> (default 52bf41b6f) into the working folder,
 # applies instrumentation.patch to both and reach-in.patch to the prototype, links node_modules to the main checkout's, and builds both.
 set -e
 HERE=${0:A:h}
 REPO=${POMMORA_REPO:-$(git -C $HERE rev-parse --show-toplevel)}
 WORK=${REACH_IN_WORK:-${TMPDIR:-/tmp}/pommora-reach-in}
-COMMIT=${1:-15fe7422a}
+COMMIT=${1:-52bf41b6f}
 mkdir -p $WORK
 for w in baseline reach-in; do
   [ -d $WORK/$w ] && git -C $REPO worktree remove --force $WORK/$w

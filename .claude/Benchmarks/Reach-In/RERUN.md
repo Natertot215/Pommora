@@ -4,7 +4,7 @@ The harness that measured moving the Trash onto the Archive's reach-in model (`r
 
 #### The Patches
 
-Both were cut against `15fe7422a` and may need re-fitting onto a newer HEAD; `setup.sh` applies them in this order.
+Both are cut against `52bf41b6f` (the first run's, against `15fe7422a`, kept its results as `results/<cell>-15fe7422a.jsonl` and `profiles/profile-15fe7422a.json`) and may need re-fitting onto a newer HEAD; `setup.sh` applies them in this order.
 
 - **`instrumentation.patch`:** byte-identical in both builds, a `git diff` from the repo root. `Desktop/Platform/nodeMachine.ts` counts every machine call on `globalThis.__benchIo`, split out for paths under `/.trash/`; `Core/Nexus/handlers.ts` stamps the open's phases (`openStartedAt`, `treeAt`, `indexAt`, `openAt`, `repairAt`) on `globalThis.__bench`.
 - **`reach-in.patch`:** the prototype alone, a `diff -ruN baseline reach-in` cut after the instrumentation, applied with `patch -p1`. It touches `Core/Paths/nexusPaths.ts`, `Core/Paths/exclusion.ts`, `Core/Files/walk.ts`, `Core/Index/indexSeed.ts`, `Core/Index/keyHolders.ts`, `Core/Nexus/heldPages.ts`, `Core/Nexus/cascade.ts`, `Core/Nexus/governedSweep.ts`, `Core/Nexus/handlers.ts`, `Core/Matrix/matrixGraph.ts`, `Core/Trash/delete.ts`, and `Core/Trash/spend.ts`.
