@@ -72,7 +72,7 @@ async function adoptHubCase(session: Session, heads: Map<string, Change>): Promi
 
 export function admittedPaths(session: Session): Promise<string[]> {
   const admits = manifestAdmits(session.scope)
-  return listPathsUnder(session.root, session.root, (rel, _kind, siblings) => admits(rel, siblings))
+  return listPathsUnder(session.root, session.root, admits)
 }
 
 export async function reconcile(session: Session): Promise<void> {
