@@ -23,12 +23,14 @@ import {
 } from '../Bundles/bundle'
 import { originPathOf } from '../Bundles/layout'
 import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
-import { readJsonObject, relocate } from '../Files/atomicWrite'
+import { pathExists, readJsonObject, relocate } from '../Files/atomicWrite'
+import { listMarkdownFiles } from '../Files/walk'
+import { archiveStoreOf } from '../Paths/names'
+import { archiveDirRel } from '../Paths/nexusPaths'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
-import { goneContainers } from '../Nexus/configReach'
-import { collectionArchive } from '../Archive/archive'
+import { archivedSetIds, goneContainers } from '../Nexus/configReach'
 import { refileLanded } from '../Archive/refile'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { returningCascade } from '../Nexus/settle'
@@ -51,11 +53,12 @@ import {
   propertyNote,
   readNotes,
   restoreNote,
+  runNoted,
   type Worked,
 } from '../Nexus/owed'
 import { finishEntry } from '../Nexus/finishOwed'
 
-// Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
+// Nothing is gone for good until the first disposal lands, so one that fails takes the note back and leaves the bundle whole; a Collection's Archive goes first, so the Collection stays listed while it can still lose anything, and the bundle goes last, so a failed removal leaves a record with no artifact, litter the listing skips.
 export async function emptyBundle(root: string, bundleAbs: string): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
@@ -87,23 +90,48 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
   const pages = await contentPages(record.entity, artifactAbs)
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
-  // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked as a finish strips it.
+  // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked before a finish strips it.
   const id = relative(root, bundleAbs)
-  const noted = await editNote(root, id, () =>
-    containerNote(
-      relative(root, artifactAbs),
-      [...pages.map((file) => originPathOf(root, store, file)), ...(archive?.origins ?? [])],
-      archive?.sets.length ? goneContainers(archive.sets) : null,
-    ),
-  )
-  if (!noted.ok) return noted
-  await dispose(artifactAbs)
-  if (archive) await dispose(archive.abs)
-  await dropPageMetadata(root, pageIds)
-  await spendBundle(root, opened.value)
-  const recorded = 'links' in record ? (record.links ?? []) : []
-  await parkLinks(root, recorded)
-  return ok({ cascade: owedReport(root, await finishEntry(root, id)) })
+  const ran = await runNoted(root, id, {
+    note: () =>
+      containerNote(
+        relative(root, artifactAbs),
+        [...pages.map((file) => originPathOf(root, store, file)), ...(archive?.origins ?? [])],
+        archive?.sets.length ? goneContainers(archive.sets) : null,
+      ),
+    list: async () => {
+      try {
+        await dispose(archive?.abs ?? artifactAbs)
+      } catch (e) {
+        return fault(e)
+      }
+      if (archive) await dispose(artifactAbs)
+      await dropPageMetadata(root, pageIds)
+      await parkLinks(root, 'links' in record ? (record.links ?? []) : [])
+      await spendBundle(root, opened.value)
+      return ok(null)
+    },
+    sweep: () => finishEntry(root, id),
+  })
+  return ran.ok ? ok({ cascade: ran.value.cascade }) : ran
+}
+
+/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
+async function collectionArchive(
+  root: string,
+  id: string | undefined,
+): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
+  const store = archiveStoreOf(id)
+  if (!store) return null
+  const abs = join(root, archiveDirRel(store.id))
+  if (!(await pathExists(abs))) return null
+  const files = await listMarkdownFiles(abs)
+  return {
+    abs,
+    files,
+    origins: files.map((f) => originPathOf(root, store, f)),
+    sets: await archivedSetIds(root, abs),
+  }
 }
 
 type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>
