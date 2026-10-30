@@ -131,6 +131,14 @@ describe('a landing’s echo', () => {
     expect(await dropOwnEchoes([watched(p)])).toEqual([])
   })
 
+  it('is still dropped while the next landing of its file is in flight', async () => {
+    vi.useRealTimers()
+    const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'next.md')
+    await land(p, 'mine')
+    recordWrite(p, true)
+    expect(await dropOwnEchoes([watched(p)])).toEqual([])
+  })
+
   it.skipIf(windows)(
     'is heard when an outside write keeps the landing’s time and size',
     async () => {

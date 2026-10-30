@@ -822,7 +822,7 @@ describe('the parity cases', () => {
     }
   })
 
-  it('an outside edit that keeps its page’s time, size, and birth leaves the next walk no parse of the old bytes', async () => {
+  it('an outside edit that keeps its page’s time and size leaves the next walk no parse of the old bytes', async () => {
     const a = abs('Notes', 'A.md')
     const tagged = async (title: string): Promise<void> => {
       await writeFile(a, `---\nID: ${ULID_A}\n<Areas>:\n  - ${title}\n---\n\nalpha\n`)

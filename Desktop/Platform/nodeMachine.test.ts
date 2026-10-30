@@ -8,6 +8,7 @@ import {
   rm,
   stat,
   symlink,
+  utimes,
   writeFile,
 } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -106,10 +107,13 @@ describe('nodeMachine landing', () => {
     expect(await readdir(root)).toEqual(['a.md'])
   })
 
-  it('answers its own stat when an outside write lands between the rename and the stat', async () => {
+  it.each([
+    ['of the same length', 'mind', false],
+    ['dated to its own time', 'theirs, longer', true],
+  ])('answers its own stat when an outside write %s lands between the rename and the stat', async (_, data, dated) => {
     afterRename.hook = async (to) => {
-      afterRename.hook = async () => {}
-      await writeFile(to, 'theirs, longer')
+      await writeFile(to, data)
+      if (dated) await utimes(to, 1_700_000_000_000 / 1000, 1_700_000_000_000 / 1000)
     }
     const [landed] = await host.land([
       { path: at('a.md'), data: 'mine', mtimeMs: 1_700_000_000_000 },

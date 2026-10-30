@@ -49,7 +49,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `indexed_files.ctime_ms` • Column | `Desktop/Store/ddl.ts` | 1 |
 | `MemoryFile` • Type (module-private) | `Core/Testing/machines.ts` | 1 |
 | `recordLanding` • Function | `Core/Files/writeEcho.ts` | 1 |
-| `Echo.landing`, `Echo.stat` • Fields | `Core/Files/writeEcho.ts` | 1 |
+| `Echo`'s move-or-landing union (`kind`, `stat`) • Type | `Core/Files/writeEcho.ts` | 1 |
 | `unlessVouched` • Function | `Core/Index/indexSeed.ts` | 1 |
 | `HolderQuery.every` • Field | `Core/Index/keyHolders.ts` | 1 |
 | "metadata: `<month>` refused its copies:" • String | `Core/Nexus/pageMetadata.ts` | 1 |
@@ -451,6 +451,11 @@ User-facing behavior stays as it is, except that a restored page returns current
  import {
    chmod,
 @@ imports @@
+   symlink,
++  utimes,
+   writeFile,
+ } from 'node:fs/promises'
+@@ imports @@
 -import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
 +import { noModeBits, tempRoot, windows } from '@pommora/core/Testing/hostFs'
 @@ hoisted @@
@@ -503,10 +508,13 @@ User-facing behavior stays as it is, except that a restored page returns current
 +    expect(await readdir(root)).toEqual(['a.md'])
 +  })
 +
-+  it('answers its own stat when an outside write lands between the rename and the stat', async () => {
++  it.each([
++    ['of the same length', 'mind', false],
++    ['dated to its own time', 'theirs, longer', true],
++  ])('answers its own stat when an outside write %s lands between the rename and the stat', async (_, data, dated) => {
 +    afterRename.hook = async (to) => {
-+      afterRename.hook = async () => {}
-+      await writeFile(to, 'theirs, longer')
++      await writeFile(to, data)
++      if (dated) await utimes(to, 1_700_000_000_000 / 1000, 1_700_000_000_000 / 1000)
 +    }
 +    const [landed] = await host.land([{ path: at('a.md'), data: 'mine', mtimeMs: 1_700_000_000_000 }])
 +    expect(landed.status === 'fulfilled' && landed.value).toMatchObject({
@@ -778,14 +786,14 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```Core/Nexus/fileEvents.ts diff
 @@ applyPage @@
 -  // An outside edit can keep the time, size, and birth the walk cache's hit test reads, so its parse leaves the cache.
-+  // An outside edit can keep the time and size the walk cache's hit test reads, and on a volume whose change time is coarse or absent its whole identity (`sameFile`), so its parse leaves the cache.
++  // An outside edit can keep the identity the walk cache's hit test reads (`sameFile`), so its parse leaves the cache.
    if (ev.origin === 'watched') forgetParse(abs)
 ```
 
 ```Core/Files/atomicWrite.ts diff
 @@ landOwn @@
 -/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. …
-+/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume whose change time is coarse or absent (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. …
++/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse, which its identity (`sameFile`) would still vouch for, and the files that landed are noted as one batch carrying the stat each now holds. …
 @@ landBytes @@
 -// Sync's landing records no echo, notes no event, and checks no stat its read saw: an arrival replaces what the file holds by Sync's own rules, which capture what it would lose, so the watcher reports it like any outside write and the tree and index take it from that event.
 +// Sync's landing records no echo, notes no event, and checks no stat its read saw: an arrival replaces what the file holds by Sync's own rules, which capture what it would lose, so the watcher reports it like any outside write and the tree and index take it from that event. Its kept time drops the walk cache's parse, as an own kept-time landing does.
@@ -842,9 +850,9 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time; it rests on the change time moving between two calls microseconds apart, so it skips on Windows through `it.skipIf(windows)`, `windows` imported from `../Testing/hostFs`, *§Open Items · Windows and exFAT*), and "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task).
+- [ ] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time; it rests on the change time moving between two calls microseconds apart, so it skips on Windows through `it.skipIf(windows)`, `windows` imported from `../Testing/hostFs`, *§Open Items · Windows and exFAT*), "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task), and "is still dropped while the next landing of its file is in flight" (landed, then `recordWrite(p, true)`, and `dropOwnEchoes([watched(p)])` equals `[]`; it fails while an in-flight record drops its predecessor's stat).
 - [ ] Rewrite T-N36 as "a rejected landing leaves no echo, so an outside write of the same bytes is heard": after the rejection, `isRecentWrite(p)` is false and `dropOwnEchoes` keeps an event carrying no `written`; it fails while an in-flight record reads as a move's.
-- [ ] In `Desktop/FileWatch/watcher.test.ts:539,596,604`, each `recordWrite(path, bytes)` becomes `recordWrite(path, true)` followed, once the file holds its bytes, by `recordLanding(path, (await machine().stat(path))!)`.
+- [ ] In `Desktop/FileWatch/watcher.test.ts:539,596,604`, each `recordWrite(path, bytes)` becomes, once the file holds its bytes, `recordLanding(path, (await machine().stat(path))!)`.
 - [ ] Watch the added cases and T-N36 fail, then apply the AFTER.
 - [ ] In `.claude/Features/DesktopPM.md:22`, "a write is recognized by the bytes it left, while the file still holds them" becomes "a write is recognized by the stat its landing answered, while the file still holds it".
 
@@ -859,8 +867,8 @@ User-facing behavior stays as it is, except that a restored page returns current
  
 -// A write recorded with its bytes is an echo while the file still holds them, however late its event arrives, until an event finds other bytes there, so an outside write reaches the watcher even when it restores the app's bytes; a move or rename, recorded without bytes, is an echo for the whole window.
 -type Echo = { at: number; hash?: string }
-+// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume whose change time is coarse or absent, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
-+type Echo = { at: number; landing: boolean; stat?: FileStat }
++// A landing is an echo while its file still holds the stat it answered (`sameFile`), however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes. While the file's next landing is in flight, its record keeps the stat the last one answered. A move or rename is an echo for the whole window.
++type Echo = { kind: 'move'; at: number } | { kind: 'landing'; stat?: FileStat }
 @@ PREFIX_WINDOW_MS @@
  const PREFIX_WINDOW_MS = 800
 +let sweepAbove = 256
@@ -872,10 +880,12 @@ User-facing behavior stays as it is, except that a restored page returns current
 -    hash: content === undefined ? undefined : machine().sha256Hex(content),
 -  })
 +export function recordWrite(absPath: string, landing = false): void {
-+  recent.set(absPath, { at: Date.now(), landing })
++  const last = recent.get(absPath)
++  const stat = last?.kind === 'landing' ? last.stat : undefined
++  recent.set(absPath, landing ? { kind: 'landing', stat } : { kind: 'move', at: Date.now() })
 ~  if (recent.size > sweepAbove) {
      const cutoff = Date.now() - WINDOW_MS
-~    for (const [p, r] of recent) if (!r.landing && r.at < cutoff) recent.delete(p)
+~    for (const [p, r] of recent) if (r.kind === 'move' && r.at < cutoff) recent.delete(p)
 +    sweepAbove = Math.max(256, 2 * recent.size)
    }
    tap?.wrote(absPath)
@@ -887,7 +897,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 -}
 +/** Gives the landing recorded at `absPath` the stat it answered, so its echo is told by that stat. */
 +export function recordLanding(absPath: string, stat: FileStat): void {
-+  recent.set(absPath, { at: Date.now(), landing: true, stat })
++  recent.set(absPath, { kind: 'landing', stat })
 +}
 @@ Changed @@
  export type Changed = { event: ChangeEvent; absPath: string } & (
@@ -899,13 +909,15 @@ User-facing behavior stays as it is, except that a restored page returns current
 @@ held @@
  const held = (absPath: string): Echo | undefined => {
    const r = recent.get(absPath)
-~  if (r === undefined || r.landing || Date.now() - r.at <= WINDOW_MS) return r
+~  if (r?.kind !== 'move' || Date.now() - r.at <= WINDOW_MS) return r
 @@ isRecentWrite @@
 -/** An echo known without reading the file: a bytes-less record, or a descendant of a folder just moved. */
 +/** An echo known without a stat: a move's or rename's record, or a descendant of a folder just moved. */
  export function isRecentWrite(absPath: string): boolean {
    const r = held(absPath)
-~  if (r !== undefined) return !r.landing
+~  if (r !== undefined) return r.kind === 'move'
+@@ isRecentWrite's ancestor walk @@
+~    if (tp?.kind === 'move' && Date.now() - tp.at <= PREFIX_WINDOW_MS) return true
 @@ writtenHash @@
 -/** The hash of the bytes the app just wrote at a path, taken as its event arrives. */
 -export const writtenHash = (absPath: string): string | undefined => held(absPath)?.hash
@@ -921,7 +933,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 -      if (bytes !== null && machine().sha256Hex(bytes) === e.written) return false
 -      forgetWrite(e.absPath, e.written)
 +      const r = held(e.absPath)
-+      if (!r?.stat) return true
++      if (r?.kind !== 'landing' || !r.stat) return true
 +      if (sameFile(r.stat, await statOrNull(e.absPath))) return false
 +      if (recent.get(e.absPath) === r) recent.delete(e.absPath)
        return true
@@ -1025,7 +1037,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 @@ findHolders @@
 -// The pages and Spaces holding any of `keys`: … and `moved` points a Space under a folder the op moved ahead of the tree.
 -// With `read`, each file is read once: … which a strip passes over since no restore could put its value back.
-+/** The pages and Spaces holding any of `keys`: … and `moved` points a Space under a folder the op moved ahead of the tree. `every` keeps only the pages holding every key, as a rename's clash check counts them: a page the index lists without every key is read only where its row no longer describes its file, and an archived page, which no clash counts, isn't read. With `read`, each file is read once: … which a strip passes over since no restore could put its value back. */
++/** The pages and Spaces holding any of `keys`: … and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no archived page. With `read`, each file is read once: … which a strip passes over since no restore could put its value back. */
  export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
 @@ findHolders @@
    const rels = q.keys.map((key) => queryMembers(key, title))
@@ -9270,7 +9282,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `.claude/Features/DesktopPM.md:22` — "a write is recognized by the bytes it left, while the file still holds them" — Task 1-4
 - `Core/Files/writeEcho.test.ts:72-152`, `Core/Files/atomicWrite.test.ts:55` (T-N36), `Desktop/FileWatch/watcher.test.ts:539,596,604` — echoes recorded with bytes — Task 1-4
 - `.claude/Features/CorePM.md:113` — "so no row decides what a cascade passes over" — Task 1-5
-- `Core/Nexus/fileEvents.test.ts:825` — "an outside edit that keeps its page's time, size, and birth leaves the next walk no parse of the old bytes" stays true, but on APFS it no longer goes red without the watched forget, which the change time covers there — Task 1-3 (no edit)
+- `Core/Nexus/fileEvents.test.ts:825` — "an outside edit that keeps its page's time, size, and birth leaves the next walk no parse of the old bytes" stays true, but on APFS it no longer goes red without the watched forget, which the change time covers there; its name drops "and birth" — Phase 1's Review Checkpoint
 - `.claude/Planning/Write Path/Write Path — Implementation Plan.md:148` (*§Rulings · The Index's Trust*, "No index row decides what a cascade passes over") and its Deviation D-4 — a completed plan's record, left as written — Tasks 1-2 and 1-5 (no edit)
 - `Core/Trash/discard.ts:35` — "still goes where Trash Mode sends deletions" — Task 2-1
 - `Core/Trash/trashMode.ts:1` — "The in-nexus `.trash` … or the macOS system Trash" — Task 2-1
@@ -9421,6 +9433,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 
 - **Windows and exFAT:** the write-through flag (Decision G-4) and the change time on an NTFS rename-over and on exFAT ship unverified, so the guards the change time retires leave only where it's known to be real.
 - **Power Loss:** that a write-through temp counts as flushed when the drive's cache is emptied rests on Apple's `fcntl(2)` documentation and git's batch mode, not on a power-cut test.
+- **Extended Attributes:** a sync client that writes extended attributes (iCloud Drive, Dropbox) moves a file's change time, so inside such a folder an own save would be heard as outside and no index row would vouch; that degrades toward re-reading, never toward a missed write, and is unprobed.
 
 #### Deviations
 
@@ -9438,7 +9451,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Task 1-1 · The Landing Hears an Outside Write:** the landing answers the stat taken after its rename only while its modified time and size still match its own temp's, so another program writing the file in that instant (Obsidian on NexusOS, a sync arrival) is heard and re-read rather than mistaken for the app's own write; one line.
 
 **Inside the Code:**
-- **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it.
+- **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it; the checkpoint gave the echo record a move-or-landing union, and an in-flight landing's record keeps the stat its file last landed with, so an echo drained during the file's next landing is still dropped.
 - **Phase 2:** Task 2-2's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`.
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.

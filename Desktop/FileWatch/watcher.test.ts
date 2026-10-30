@@ -537,7 +537,6 @@ describe('a host document under the watcher', () => {
   it('pushes the host for an outside edit to a tile body, and nothing for its own write', async () => {
     await startWatcher(root, win)
     await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
-    recordWrite(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), true)
     await writeFile(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'typed')
     recordLanding(
       abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`),
@@ -598,7 +597,6 @@ describe('a page the app just wrote', () => {
 
   it('drops its own echo', async () => {
     await startWatcher(root, win)
-    recordWrite(abs('Notes', 'A.md'), true)
     recordLanding(abs('Notes', 'A.md'), (await machine().stat(abs('Notes', 'A.md')))!)
     emit('change', 'Notes', 'A.md')
     await settleAll()
@@ -607,7 +605,6 @@ describe('a page the app just wrote', () => {
 
   it('lands an outside edit inside the echo window', async () => {
     await startWatcher(root, win)
-    recordWrite(abs('Notes', 'A.md'), true)
     recordLanding(abs('Notes', 'A.md'), (await machine().stat(abs('Notes', 'A.md')))!)
     await writeFile(abs('Notes', 'A.md'), `${own}outside\n`)
     emit('change', 'Notes', 'A.md')
