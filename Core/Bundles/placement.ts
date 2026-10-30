@@ -11,8 +11,13 @@ import type { RestoreDestination } from '../Nexus/mutateRequest'
 import type { NexusPages } from '../Nexus/heldPages'
 import type { EntityRecord } from '../Nexus/record'
 import { containerTrailById, findContainerById } from '../Nexus/treePatch'
-import { type Slot, spliceBeside } from '../Nexus/order'
-import { setChildOrder, setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
+import { spliceBeside } from '../Nexus/order'
+import {
+  setChildOrder,
+  setCollectionOrder,
+  setPanelContextOrder,
+  setSpaceOrder,
+} from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { type ArtifactRecord, originOf, type Place, retrailed } from './record'
 import { archiveOwned, collectionsElsewhere } from './bundle'
@@ -149,13 +154,11 @@ function withDestination(
   }
 }
 
-export function slotOf(
-  place: Place | undefined,
-  liveIds: readonly string[],
-): { anchor: string | null; where: Slot } {
-  if (place?.above && liveIds.includes(place.above)) return { anchor: place.above, where: 'above' }
-  if (place?.below && liveIds.includes(place.below)) return { anchor: place.below, where: 'below' }
-  return { anchor: null, where: place && !place.below ? 'first' : 'last' }
+/** `ids` with `id` back between the neighbors `place` names: beside whichever still stands, else first or last as it sat. */
+export function placeAmong(ids: string[], id: string, place: Place | undefined): string[] {
+  if (place?.above && ids.includes(place.above)) return spliceBeside(ids, place.above, id, 'above')
+  if (place?.below && ids.includes(place.below)) return spliceBeside(ids, place.below, id, 'below')
+  return spliceBeside(ids, null, id, place && !place.below ? 'first' : 'last')
 }
 
 /** The tree's free title stepped further past what the disk holds there that the tree can't see — an outside file, an excluded folder, the asset directory — in the item's own form, so a restore lands beside it, never over it. */
@@ -274,10 +277,25 @@ export async function placeRecord(
   const asked = record.entity === 'context' ? record.registry.title : titleFromPath(baseName)
   const landedAs = title === asked ? undefined : title
   const { order } = resolution
-  if (record.entity === 'context' || !record.id || !order)
-    return ok({ record, placement, landedAs })
-  const ids = order.siblings.map((n) => n.id)
-  const { anchor, where } = slotOf(record.place, ids)
-  const next = spliceBeside(ids, anchor, record.id, where)
+  if (record.entity === 'context') {
+    const { id } = record.registry
+    const { panel, spaceOrder } = record
+    const panelIds = placeAmong(tree.config.order.contexts ?? [], id, panel)
+    return ok({
+      record,
+      placement,
+      landedAs,
+      writeOrder: async () => {
+        if (panel) await setPanelContextOrder(root, panelIds)
+        if (spaceOrder) await setSpaceOrder(root, id, spaceOrder)
+      },
+    })
+  }
+  if (!record.id || !order) return ok({ record, placement, landedAs })
+  const next = placeAmong(
+    order.siblings.map((n) => n.id),
+    record.id,
+    record.place,
+  )
   return ok({ record, placement, landedAs, writeOrder: () => order.write(root, next) })
 }

@@ -25,7 +25,6 @@ import { originPathOf } from '../Bundles/layout'
 import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
 import { readJsonObject, relocate } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
-import { dropContextOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
 import { goneContainers } from '../Nexus/configReach'
@@ -36,7 +35,7 @@ import { returningCascade } from '../Nexus/settle'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { joinCascades, type StrippedLink, withUnswept } from '../Nexus/cascade'
 import { frozenWorld, parkLinks, refillTrashed } from './trashedCopies'
-import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
+import { NO_DESTINATION, placeAmong, placeRecord } from '../Bundles/placement'
 import { containerSchema, schemaOf } from '../Nexus/treePatch'
 import { assignedIds } from '../Nexus/containerFields'
 import { sidecarPath } from '../Paths/paths'
@@ -103,7 +102,6 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   await dispose(artifactAbs)
   if (archive) await dispose(archive.abs)
   await dropPageMetadata(root, pageIds)
-  if (record.entity === 'context') await dropContextOrder(root, record.registry.id)
   await spendBundle(root, opened.value)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, recorded)
@@ -181,9 +179,16 @@ export async function restoreTrashed(
         : null
   if (landing && owedName(await readNotes(root), landing)) return OWED
   if (record.entity === 'context') {
-    const committed = await mutateRegistryFile(
-      root,
-      withContextAt({ ...record.registry, title }, record.at),
+    const { id } = record.registry
+    const committed = await mutateRegistryFile(root, (cur) =>
+      withContextAt(
+        { ...record.registry, title },
+        placeAmong(
+          cur.contexts.map((c) => c.id),
+          id,
+          record.place,
+        ).indexOf(id),
+      )(cur),
     )
     if (!committed.ok) return committed
   }

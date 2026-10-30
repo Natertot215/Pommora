@@ -1,13 +1,11 @@
-import { basename, dirname, isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
-import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
-import type { Result } from '../Contract/result'
+import { isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
+import type { ContextDef } from '../Contexts/contexts'
 import type { Holders } from '../Index/keyHolders'
 import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
-import { sidecarIdentity } from '../Files/sidecar'
 import { exactTitle } from '../Paths/caseFold'
 import { readPageRelations } from '../Index/contentIndex'
 import { extractPageIndex } from '../Index/indexSeed'
@@ -16,7 +14,8 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { pageIndexOf } from '../Nexus/record'
 import { nexusPages } from '../Nexus/heldPages'
 import { buildPageIndex } from '../Connections/pageIndex'
-import type { NexusTree } from '../Nexus/tree'
+import type { NexusTree, SpaceNode } from '../Nexus/tree'
+import { asStringArray } from '../Nexus/coerce'
 import type { Relation } from '../Platform/stores'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { placeOf, type RecordFile } from '../Bundles/record'
@@ -69,73 +68,56 @@ const rootsOf = (
 /** A capture missing a holder: one neither its file nor the index could answer, or one no id files. */
 const partly = (holders: Holders): boolean => holders.held.some((h) => !h.id || !h.values)
 
-export async function gatherSpaceRecord(
-  tree: NexusTree,
-  abs: string,
-  registry: Result<ContextsRegistry> | null,
-  held: Holders,
-): Promise<RecordFile | null> {
-  const { id, icon } = await sidecarIdentity(abs, 'space')
-  if (!id) return null
-  const contextTitle = basename(dirname(abs))
-  const def = registry?.ok
-    ? registry.value.contexts.find((c) => c.title === contextTitle)
-    : undefined
-  const group = def && contextWorldOf(tree.contexts).groupById.get(def.id)
-  const place =
-    group &&
-    placeOf(
-      group.spaces.map((s) => s.id),
-      id,
-    )
-  const members = rootsOf(held).map(([member]) => member)
+export function gatherSpaceRecord(tree: NexusTree, space: SpaceNode, held: Holders): RecordFile {
+  const group = contextWorldOf(tree.contexts).groupById.get(space.contextId)!
+  const place = placeOf(
+    group.spaces.map((s) => s.id),
+    space.id,
+  )
   return {
     entity: 'space',
-    id,
-    ...(icon ? { icon } : {}),
-    parent: def ? { kind: 'context', id: def.id } : { kind: 'unaddressable' },
+    id: space.id,
+    ...(space.icon ? { icon: space.icon } : {}),
+    parent: { kind: 'context', id: space.contextId },
     ...(place ? { place } : {}),
-    members,
+    members: rootsOf(held).map(([member]) => member),
     ...(partly(held) ? { partial: true as const } : {}),
   }
 }
 
-interface ContextEvidence {
-  entry: ContextDef
-  at: number
-  spaceIds: Map<string, string>
-  unresolved: boolean
-}
-
-export async function gatherContextEvidence(
+export async function gatherContextRecord(
+  tree: NexusTree,
   abs: string,
   entry: ContextDef,
-  at: number,
-): Promise<ContextEvidence> {
-  const { ids, unread: unresolved } = await spaceIdsIn(abs)
+  held: Holders,
+): Promise<RecordFile> {
+  const { ids, unread } = await spaceIdsIn(abs)
   const spaceIds = new Map([...ids].map(([name, id]) => [exactTitle(name), id]))
-  return { entry: { ...entry }, at, spaceIds, unresolved }
-}
-
-export function buildContextRecord(evidence: ContextEvidence, held: Holders): RecordFile {
-  const key = contextKey(evidence.entry.title)
+  const key = contextKey(entry.title)
   const membership = rootsOf(held).map(([member, values]) => ({
     root: member,
     spaces: [
       ...new Map(
         scalarMembers(values[key]).map((title) => {
-          const id = evidence.spaceIds.get(exactTitle(title))
+          const id = spaceIds.get(exactTitle(title))
           return [id ?? title, id ? { id, title } : { title }]
         }),
       ).values(),
     ],
   }))
-  const partial = evidence.unresolved || partly(held)
+  const place = placeOf(
+    tree.contexts.map((g) => g.def.id),
+    entry.id,
+  )
+  const panel = placeOf(tree.config.order.contexts ?? [], entry.id)
+  const spaceOrder = asStringArray(tree.config.order.spaces[entry.id])
   return {
     entity: 'context',
-    registry: evidence.entry,
-    at: evidence.at,
+    registry: entry,
+    ...(place ? { place } : {}),
+    ...(panel ? { panel } : {}),
+    ...(spaceOrder?.length ? { spaceOrder } : {}),
     membership,
-    ...(partial ? { partial: true as const } : {}),
+    ...(unread || partly(held) ? { partial: true as const } : {}),
   }
 }

@@ -18,7 +18,7 @@ import { isPlainObject } from '../Contract/validators'
 import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
 import { linkedPage } from '../Connections/linkValue'
 import { stampedIdOf } from '../Files/pageFile'
-import { sidecarId } from '../Files/sidecar'
+import { sidecarId, sidecarIdentity } from '../Files/sidecar'
 import { isContentFile, listEntries, listMarkdownFiles } from '../Files/walk'
 import { pathExists, readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
 import { asStringArray } from '../Nexus/coerce'
@@ -27,7 +27,6 @@ import { isContainerKind } from '../Nexus/entities'
 import { distinct, editNote, readNotes } from '../Nexus/owed'
 import type { NexusTree } from '../Nexus/tree'
 import {
-  identityOf,
   originOf,
   originWithin,
   type RawRecord,
@@ -260,7 +259,10 @@ async function innerRecord(
   item: string,
 ): Promise<InnerRecord> {
   const entity = isMarkdownFile(item) ? 'page' : 'set'
-  const { id, icon } = await identityOf(entity, item)
+  const { id, icon } =
+    entity === 'page'
+      ? { id: (await stampedIdOf(item)) ?? undefined, icon: undefined }
+      : await sidecarIdentity(item, 'set')
   return {
     entity,
     ...(id ? { id } : {}),

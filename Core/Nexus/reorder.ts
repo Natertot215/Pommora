@@ -7,7 +7,7 @@ import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
 import { CONTAINER_KINDS, type HeldKind } from './entities'
 import type { NexusTree } from './tree'
-import { containerAt, pageAt, spaceAt } from './treePatch'
+import { containerAt, contextAt, pageAt, spaceAt } from './treePatch'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -50,15 +50,6 @@ export const setSpaceOrder = (
     spaces: { ...spacesOf(order), [contextId]: ids },
   }))
 
-/** A Context gone for good takes its panel id and its Space order with it. */
-export const dropContextOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
-  writeStateOrder(nexusRoot, (order) => {
-    const panel = withoutId(order, 'contexts', contextId)
-    const { [contextId]: dropped, ...spaces } = spacesOf(order)
-    if (dropped === undefined) return panel
-    return { ...(panel ?? order), spaces }
-  })
-
 const patchContainer = async (
   absFolder: string,
   fn: (cur: Record<string, unknown>) => Record<string, unknown> | null,
@@ -74,7 +65,7 @@ const dropFromChildOrder = (
   id: string,
 ): Promise<Result<unknown>> => patchContainer(absFolder, (cur) => withoutId(cur, key, id))
 
-/** A departing item leaves the order it sat in, its id read from `tree`, the tree from before it left. A Context keeps its panel id while bundled, as its restore returns to it. */
+/** A departing item leaves the order it sat in, its id read from `tree`, the tree from before it left; a Context takes its own Space order with it, which its record keeps. */
 export async function dropDeparture(
   root: string,
   tree: NexusTree,
@@ -103,8 +94,16 @@ export async function dropDeparture(
         })
       return
     }
-    case 'context':
+    case 'context': {
+      const id = contextAt(tree, rel)?.def.id
+      if (id)
+        await writeStateOrder(root, (order) => {
+          const panel = withoutId(order, 'contexts', id)
+          const { [id]: dropped, ...spaces } = spacesOf(order)
+          return dropped === undefined ? panel : { ...(panel ?? order), spaces }
+        })
       return
+    }
   }
 }
 
