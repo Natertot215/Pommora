@@ -273,7 +273,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 3-4 · The empty is the one gone-for-good step
   - [x] Task 3-5 · One trail resolver and one carry
   - [x] Task 3-6 · One owned-Archives iterator
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 4** — Reach-In
@@ -1724,7 +1724,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 +    await leave(root, join(root, space.path), e.bundle!)
 ```
 
-`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional (`Core/Nexus/owed.ts:21-22`): a rename's entry carries none, and `finishSpace:342` writes one without it. Every strip a finish meets comes from a delete, which now always notes its bundle, so `bundle` is present exactly when `strip` is, and the two strip-path callers' `!`s assert that pairing.
+`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional (`Core/Nexus/owed.ts:21-22`): a rename's entry carries none, and `finishSpace:342` writes one without it. Every strip a finish meets comes from a delete, which now always notes its bundle, so every strip carries a `bundle`, and the two strip-path callers' `!`s assert that; a swept entry keeps its `bundle` after its strip leaves.
 
 ```Core/Trash/spend.ts diff
 @@ imports @@
@@ -2738,7 +2738,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Task 3-1
 
-**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes ten and adds eleven, `Departing`'s and `DeletePlan`'s docs the two new ones; the codebase stays below the BASELINE's count, Phases 1 and 2 having removed seven.
+**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes ten and adds nine, `Departing`'s doc the one new.
 
 **NOW:**
 - **Mint, Then Record:** every `mintBundle` caller writes a record right after it (`Core/Bundles/bundle.ts:64-79`): `deleteOp` (`Core/Trash/delete.ts:99`, its write at `:112-118`), `snapshot` (`Core/Properties/deleteProperty.ts:63-73`), `fileInto` (`bundle.ts:103-115`, which removes the bundle on a throw), and `seedPropertyBundle` (`Core/Testing/fixtures.ts:52-53`).
@@ -2756,6 +2756,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
   - **`deleteReach.test.ts`, beside `:756`, "a page delete whose note throws leaves no bundle and deletes nothing":** `vi.spyOn(atomicWrite, 'updateNexusFile').mockRejectedValueOnce(new Error('the disk is gone'))`, then the delete of `Notes/Target.md` fails, the page stands, and `readdir(join(root, '.trash', 'Notes'))` is `[]`. It fails today on the bundle the outer catch leaves.
   - **`deleteReach.test.ts:652`, *"a crash between the note and the list step finishes the delete"*, retitled "…finishes the delete, its folder leaving every order it sat in":** before `finishOwed`, `setPanelContextOrder(root, ['ctx_areas', 'ctx_other'])` and `setSpaceOrder(root, 'ctx_areas', ['sp_work'])`; after it, the `state.json` order is `{ contexts: ['ctx_other'] }`. It fails today, the finish's `leave` dropping nothing.
   - **`deleteReach.test.ts`, beside it, "a Space delete cut short before its move leaves its Context's Space order once its finish moves it":** mint a bundle for `WORK` with `{}`, `setSpaceOrder(root, 'ctx_areas', ['sp_work', 'sp_home'])`, note `{ sp_work: { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle } }`, and `finishOwed(root)`; the folder sits in the bundle and the Space order is `['sp_home']`.
+  - **`finishOwed.test.ts`, beside the Context case below, "a Space delete whose order drop failed after its folder moved drops it at the finish":** `setSpaceOrder(root, 'ctx_projects', ['sp-pom', 'sp-other'])`, the delete's `dropDeparture` rejecting once, then `finishOwed(root)`; the `state.json` order is `{ spaces: { ctx_projects: ['sp-other'] } }` and no note is left.
 - [ ] Apply the AFTER.
 - [ ] Every test call of `mintBundle` passes the record it wrote right after, and that `writeRecord` leaves: `bundle.test.ts:76-78`, `handlers.test.ts:55-57,87-93,147-149`, `archive.test.ts:722-727`, `spend.test.ts:1573-1579`. The calls that wrote none pass `{}`: `bundle.test.ts:39,51,52,63,72`, `atomicWrite.test.ts:367,376`, and `deleteReach.test.ts:660,813`.
 - [ ] Phase 2's two `reorder.test.ts` Context cases call `dropDeparture(root, { kind: 'context', id: 'g1' })`, their expectations unchanged.
@@ -2849,7 +2850,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 -import type { NexusTree } from './tree'
 -import { containerAt, contextAt, pageAt, spaceAt } from './treePatch'
 +import { CONTAINER_KINDS } from './entities'
-+import type { CollectionNode, PageNode, SetNode, SpaceNode } from './tree'
++import type { CollectionNode, PageNode, SetNode } from './tree'
 @@ dropDeparture @@
 -/** A departing item leaves the order it sat in, its id read from `tree`, the tree from before it left; a Context takes its own Space order with it, which its record keeps. */
 -export async function dropDeparture(
@@ -2892,8 +2893,13 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 -    }
 -  }
 -}
-+/** What leaves an order: a node of the tree it left, or a Context by its id, since its finish may move its folder after its registry entry is gone. */
-+export type Departing = PageNode | SetNode | CollectionNode | SpaceNode | { kind: 'context'; id: string }
++/** What leaves an order: a node of the tree it left, or a Context or Space by its id, since its finish may run after its folder moved and its entry is gone. */
++export type Departing =
++  | PageNode
++  | SetNode
++  | CollectionNode
++  | { kind: 'space'; contextId: string; id: string }
++  | { kind: 'context'; id: string }
 +
 +/** A departing item leaves the order it sat in; a Context takes its own Space order with it, which its record keeps. */
 +export async function dropDeparture(root: string, item: Departing): Promise<void> {
@@ -2937,7 +2943,6 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 -  await relocate(abs, join(root, bundle, basename(abs)))
 -  oweWalk(root)
 -}
-+/** A deleted item into the bundle its delete noted, `bundle` root-relative, then out of the order it sat in. */
 +export async function leave(
 +  root: string,
 +  abs: string,
@@ -2961,12 +2966,13 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +  if (deleted && (await heldName(join(root, space.path))) === space.title) {
 +    await leave(root, join(root, space.path), e.bundle!, space)
 +    oweWalk(root)
-+  } else if (deleted) await dropDeparture(root, space)
++  } else if (!space && e.bundle && e.strip?.length)
++    await dropDeparture(root, { kind: 'space', contextId: e.contextId, id })
 ```
 
 A finish whose folder has already left drops the departure all the same, since a delete whose order drop failed or was cut short after its move leaves no folder for `leave` to find, and `dropDeparture` writes nothing where the id is already gone.
 
-`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional: a rename's entry carries none (`finishSpace:342`, `contextCascade.ts`), so `bundle` is present exactly when `strip` is, and the two `!`s at the strip path assert that pairing.
+`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional: a rename's entry carries none (`finishSpace:342`, `contextCascade.ts`), so every strip carries a `bundle`, and the two `!`s at the strip path assert that; a swept entry keeps its `bundle` after its strip leaves, which is why `finishSpace` reads a delete's leftover departure by `bundle` and `strip` together.
 
 ```Core/Trash/delete.ts diff
 @@ imports @@
@@ -3007,7 +3013,6 @@ A finish whose folder has already left drops the departure all the same, since a
 +  (kind: { kind: 'context' } | { kind: 'space'; contextId: string }, title: string) =>
 +  (e: Entry | undefined): Entry => ({ ...kind, strip: owedDelete(e ?? {}, title).strip })
 +
-+/** What one kind's delete takes, gathered before anything is minted: the id its note is keyed by, its record, its note, the order entry its `leave` drops, and a Context's list step with the step that puts its entry back. */
 +interface DeletePlan {
 +  id: string
 +  record: RecordFile
@@ -3287,15 +3292,23 @@ A finish whose folder has already left drops the departure all the same, since a
    const r = await movePage(at.value.src, at.value.dst)
    if (!r.ok) return r
 -  await dropDeparture(root, tree, 'page', req.path)
-+  const page = pageAt(tree, req.path)
-+  if (page) await dropDeparture(root, page)
++  await dropDeparture(root, pageAt(tree, req.path)!)
 @@ moveSetOp @@
 -  const setId = containerAt(held, req.path)?.id
-+  const set = containerAt(held, req.path)
-+  const setId = set?.id
++  const set = containerAt(held, req.path)!
+   // What was archived from within it moves with it.
+-  const within =
+-    left !== null && owner && setId ? await archivedWithin(root, setId, owner, held) : []
++  const within = left !== null && owner ? await archivedWithin(root, set.id, owner, held) : []
 @@ move @@
 -    await dropDeparture(root, held, 'set', req.path)
-+    if (set) await dropDeparture(root, set)
++    await dropDeparture(root, set)
+@@ the note @@
+-  if (left === null || !edit || !setId) return done(await move())
++  if (left === null || !edit) return done(await move())
+   // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
+-  return runNoted(root, setId, {
++  return runNoted(root, set.id, {
 ```
 
 (`pageAt` joins `move.ts`'s `./treePatch` import beside `containerAt` and `owningCollection`.)
@@ -3310,7 +3323,7 @@ A finish whose folder has already left drops the departure all the same, since a
 
 #### Task 3-2
 
-**TASK:** A content delete records the Link values its strip will take before the artifact moves (M-17; closes B-10), as a Space's or Context's delete records its holders' values, read through the same holder reader with the same index fallback. The strip's rule becomes one `linkStrip` in `Core/Nexus/cascade.ts` that the gatherer in `Core/Trash/gather.ts` (*§Placements*) and `deleteCascade` share; `deleteCascade` strips and reports and no longer reads what it took, so the finish's append for a delete leaves, with the post-sweep parse and `DeleteCascade.links` (Write Path's OP-4). The record's link edits become one pair beside `patchRecord` (M-5), and the record's arm types are named once there beside `ContentRecord`, where `bundle.ts` and `restoreProperty.ts` each declared their own and `fixtures.ts` spelled one inline. **Fold:** the empty gathers through the same `gatherLinks` and parks before its strip rather than after it, closing the empty's own crash window (a strip landed, its park not yet), so no strip anywhere reads what it took; `appendLinks` adds a link once, since a finish run again re-gathers what its strip missed. **Departure, Disclosed:** the Ledger's M-17 kept "the empty's parking reads the strip's links"; with the gatherer serving both, that read leaves too. **Comments:** the AFTER removes five and adds ten, the docs of `linkStrip`, `readHolders`, `gatherLinks`, and `appendLinks` and the park comment the new ones; the codebase stays at or below the BASELINE's count.
+**TASK:** A content delete records the Link values its strip will take before the artifact moves (M-17; closes B-10), as a Space's or Context's delete records its holders' values, read through the same holder reader with the same index fallback. The strip's rule becomes one `linkStrip` in `Core/Nexus/cascade.ts` that the gatherer in `Core/Trash/gather.ts` (*§Placements*) and `deleteCascade` share; `deleteCascade` strips and reports and no longer reads what it took, so the finish's append for a delete leaves, with the post-sweep parse and `DeleteCascade.links` (Write Path's OP-4). The record's link edits become one pair beside `patchRecord` (M-5), and the record's arm types are named once there beside `ContentRecord`, where `bundle.ts` and `restoreProperty.ts` each declared their own and `fixtures.ts` spelled one inline. **Fold:** the empty gathers through the same `gatherLinks` and parks before its strip rather than after it, closing the empty's own crash window (a strip landed, its park not yet), so no strip anywhere reads what it took; `appendLinks` adds a link once, since a finish run again re-gathers what its strip missed. **Departure, Disclosed:** the Ledger's M-17 kept "the empty's parking reads the strip's links"; with the gatherer serving both, that read leaves too. **Comments:** the AFTER removes five and adds nine, the docs of `linkStrip`, `readHolders`, `gatherLinks`, and `appendLinks` the new ones.
 
 **NOW:**
 - **B-10:** a content delete's record lands without `links` (`Core/Trash/delete.ts:114` at HEAD); `finishContainer` appends the strip's values afterward through `patchRecord` with a cast (`Core/Nexus/finishOwed.ts:403-407`). A crash after a strip group lands and before the patch loses the values, and Try Again finds nothing left to strip. `patchRecord` discards `rmwJsonStrict`'s `Result` (`Core/Bundles/record.ts:141`).
@@ -3327,6 +3340,7 @@ A finish whose folder has already left drops the departure all the same, since a
   - **`deleteReach.test.ts:756`, *"a page delete that misses a linker owes it with Try Again"*,** opens with `installStores(memoryStores().stores)` and `seedContentIndex(root)`, as `:625` does, and asserts the linker's value in the bundle's `links` right after the delete, before `finishOwed`; after it, the linker is stripped and `links.filter((l) => l.page === linkerId)` has length 1.
   - **`trashRecovery.test.ts`, beside `:749`, "an emptying parks a value its strip takes before the strip lands":** the setup of `:749`, with `vi.spyOn(cascade, 'deleteCascade')` reading the Plain namesake's record at the call; that record already holds Beta's `[[Alpha]]`. It fails today, the park following the strip.
   - **`bundle.test.ts`, in *"spendBundle"*, "appendLinks adds each link once":** a record holding `P_LINK`, then `appendLinks(inBundle(), [P_LINK, Q_LINK])` leaves `[P_LINK, Q_LINK]`.
+  - **`trashRecovery.test.ts`, in *"links come back with the page"*, "a value taken up while the delete is owed joins the record before Try Again strips it":** Beta unreadable while Alpha's delete runs, so its strip misses it and the note stays owed; Gamma then takes `Related: [[Alpha]]` through `setProperty`, and Try Again's `finishOwed` leaves Alpha's record holding both values, which its restore puts back on both pages.
 - [ ] Apply the AFTER.
 - [ ] `cascade.test.ts`'s describe *"deleteCascade"* (`:480-948`): each case reading `r.links` reads `await gatherLinks(root, <its abs>, <its paths>)` taken before its `deleteCascade` call instead, and each `toEqual({ reach: …, links: … })` compares the reach alone (`:641,700`).
 - [ ] `bundle.test.ts:345` is retitled "strips exactly the inner item’s carried values from the bundle’s record, keeping every other value it holds", its body unchanged.
@@ -3465,10 +3479,8 @@ A finish whose folder has already left drops the departure all the same, since a
 +          heldOut++
 +          return null
 +        }
-+        return stripKeys(
-+          raw,
-+          named.map(({ key }) => key),
-+        )
++        const keys = named.map(({ key }) => key)
++        return stripKeys(raw, keys)
 +      },
 +    })
 +    return {
@@ -3729,6 +3741,7 @@ A finish whose folder has already left drops the departure all the same, since a
 @@ imports @@
 -import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } from './cascade'
 -import { patchRecord } from '../Bundles/record'
++import { appendLinks } from '../Bundles/record'
 +import { type CascadeReport, deleteCascade, relinkReach } from './cascade'
  import { parkLinks } from '../Trash/trashedCopies'
 +import { gatherLinks } from '../Trash/gather'
@@ -3744,8 +3757,10 @@ A finish whose folder has already left drops the departure all the same, since a
 -  }
 -  const stripped = !!gone && add(reach, gone.reach)
 +  const strip = back ? undefined : e.strip
-+  // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
-+  if (strip && e.park) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
++  if (strip) {
++    const links = await gatherLinks(root, join(root, e.at), strip)
++    await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
++  }
 +  const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
    const viewed =
 ```
@@ -3897,9 +3912,10 @@ A finish whose folder has already left drops the departure all the same, since a
 +    if (e.edit?.kind !== 'gone') return back ? undefined : e.edit
 @@
    const strip = back ? undefined : e.strip
-   // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
--  if (strip && e.park) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
-+  if (strip && !e.bundle) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
+   if (strip) {
+     const links = await gatherLinks(root, join(root, e.at), strip)
+     await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
+   }
    const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
 -  const viewed =
 -    !!edit && add(reach, await reachConfig(root, edit, e.within && join(root, e.within)))
@@ -4026,7 +4042,7 @@ A finish whose folder has already left drops the departure all the same, since a
 -  const recorded = 'links' in record ? (record.links ?? []) : []
 -  await parkLinks(root, recorded)
 -  return ok({ cascade: owedReport(root, await finishEntry(root, id)) })
-+  const ran = await runNoted(root, id, {
++  return runNoted(root, id, {
 +    note: () =>
 +      containerNote(
 +        relative(root, artifactAbs),
@@ -4047,7 +4063,6 @@ A finish whose folder has already left drops the departure all the same, since a
 +    },
 +    sweep: () => finishEntry(root, id),
 +  })
-+  return ran.ok ? ok({ cascade: ran.value.cascade }) : ran
  }
 +
 +/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
@@ -4124,15 +4139,9 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 +    .reverse()
 +    .map((id) => containerTrailById(tree, id))
 +    .find((trail) => trail !== null)
-+  return held
-+    ? {
-+        parent: origin.parent,
-+        trail: retrailed(
-+          origin,
-+          held.map((n) => n.id),
-+        ),
-+      }
-+    : null
++  if (!held) return null
++  const ids = held.map((n) => n.id)
++  return { ...origin, trail: retrailed(origin, ids) }
 +}
 ```
 
@@ -4252,12 +4261,12 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 @@ refileMoved @@
      if (!was || node.kind !== 'set') return
 -    if (was.at(-2)?.id === containerTrailById(next, node.id)?.at(-2)?.id) return
-+    const now = containerTrailById(next, node.id)
-+    if (was.at(-2)?.id === now?.at(-2)?.id) return
++    const now = containerTrailById(next, node.id)?.map((n) => n.id)
++    if (was.at(-2)?.id === now?.at(-2)) return
      const from = owningCollection(prev, was[was.length - 1])
 -    const to = owningCollection(next, node)
 -    if (from && to) await refileArchived(root, node.id, from.id, to.id, next)
-+    if (from && now) await refileArchived(root, node.id, now.map((n) => n.id), from.id, next)
++    if (from && now) await refileArchived(root, node.id, now, from.id, next)
    }
 @@ settleArchives @@
 -/** The open pass, once per open before the index seed: an Archive filed under a live Collection re-files each record whose origin the tree holds, which a Set moved while Pommora was closed leaves misfiled; …
@@ -4319,7 +4328,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 #### Task 3-6
 
-**TASK:** One owned-Archives iterator (M-11). `ownedArchives` answers each Archive by its Collection's id with whether that Collection still answers for it, reading the Collections outside the tree at most once; the open pass and the finish's owed `gone` edit both walk it, where each listed the Archive's root and memoized that read by hand. `archiveFiling`'s one question for one id (`Core/Bundles/placement.ts:206`) keeps `archiveOwned` itself, since an Archive it files into needn't have a folder yet. **M-11's Walk Half Holds at HEAD:** `archivedSetIds` and `archivedSets` already share one walk, `setSidecarsUnder` (`Core/Nexus/configReach.ts:284-304`); their scopes come from the settings file and the tree, and `archivedSetIds`' callers in `delete.ts` and `spend.ts` hold no tree, so nothing changes there. **Comments:** the AFTER adds one.
+**TASK:** One owned-Archives iterator (M-11). `ownedArchives` answers each Archive by its Collection's id with whether that Collection still answers for it, reading the Collections outside the tree at most once; the open pass and the finish's owed `gone` edit both walk it, where each listed the Archive's root and memoized that read by hand. `archiveFiling`'s one question for one id (`Core/Bundles/placement.ts:206`) keeps `archiveOwned` itself, since an Archive it files into needn't have a folder yet. **M-11's Walk Half Holds at HEAD:** `archivedSetIds` and `archivedSets` already share one walk, `setSidecarsUnder` (`Core/Nexus/configReach.ts:284-304`); their scopes come from the settings file and the tree, and `archivedSetIds`' callers in `delete.ts` and `spend.ts` hold no tree, so nothing changes there. **Comments:** the AFTER adds none.
 
 **NOW:** `settleArchives` (`Core/Archive/refile.ts:125-152`) and `finishContainer`'s `owedEdit` (`Core/Nexus/finishOwed.ts:390-397`) each list `.nexus/archive`, skip non-folders, and ask `archiveOwned` (`Core/Bundles/bundle.ts:192-203`) with a hand-written `elsewhere ??= collectionsElsewhere(root, tree)` memo.
 
@@ -4339,7 +4348,6 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
    )
  }
 +
-+/** Each Archive by its Collection's id, and whether that Collection still answers for it, the Collections outside the tree read once at most. */
 +export async function ownedArchives(
 +  root: string,
 +  tree: NexusTree,
@@ -4419,17 +4427,17 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 #### Review Checkpoint
 
-- [ ] **One Mint, One Tail, One Leave:** every production `mintBundle` call passes its record, no bundle stands without one after a throw, `deleteOp` mints after every guard, and the delete and both finish arms move through one `leave` that drops the departure.
-- [ ] **Recorded Ahead:** a page, Set, or Collection delete's record holds its strip's Link values at the move (`atSettle`), a delete from the Archive's included, and no strip reads what it took; the empty parks before its strip.
-- [ ] **One Journal Owner:** only `Core/Nexus/owed.ts` and the finish edit a journal entry, the container note is built once, and `ContainerEntry` serves a delete and an emptying alone.
-- [ ] **The Gone-for-Good Step:** a Collection whose Archive won't go stays listed, owns its Archive, and owes nothing.
-- [ ] **One Resolver, One Carry:** `currentOrigin` answers where a record stands for the open pass, the Undo's filing, and the Trash restore's carry source, and `refileArchived` is the one carry its three triggers share.
-- [ ] **A Live Drive** on a scratch copy of `~/Test`, from a worktree build (*Development-Environment*):
+- [x] **One Mint, One Tail, One Leave:** every production `mintBundle` call passes its record, no bundle stands without one after a throw, `deleteOp` mints after every guard, and the delete and both finish arms move through one `leave` that drops the departure.
+- [x] **Recorded Ahead:** a page, Set, or Collection delete's record holds its strip's Link values at the move (`atSettle`), a delete from the Archive's included, and no strip reads what it took; the empty parks before its strip.
+- [x] **One Journal Owner:** only `Core/Nexus/owed.ts` and the finish edit a journal entry, the container note is built once, and `ContainerEntry` serves a delete and an emptying alone.
+- [x] **The Gone-for-Good Step:** a Collection whose Archive won't go stays listed, owns its Archive, and owes nothing.
+- [x] **One Resolver, One Carry:** `currentOrigin` answers where a record stands for the open pass, the Undo's filing, and the Trash restore's carry source, and `refileArchived` is the one carry its three triggers share.
+- [x] **A Live Drive** on a scratch copy of `~/Test`, from a worktree build (*Development-Environment*):
   1. Give a page in Collection B a Link value naming a page in Collection A, delete the A page, and read its bundle's `_record.json` on disk: it holds the value.
   2. Restore it: the value is back.
   3. Archive a Set holding a page, delete the Collection, and empty it from the Trash: its Archive folder is gone and nothing from it lists in the Trash.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in its Net Ledger row beside that row's estimate, additions and removals apart, and the gap is reported in chat with what it buys before Phase 4 opens.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 4's starting point, reading outward; what holds is folded before Phase 4 opens, and the compaction checkpoint follows.
+- [x] **The Number:** `view-delta`'s Actionable column for the phase is recorded in its Net Ledger row beside that row's estimate, additions and removals apart, and the gap is reported in chat with what it buys before Phase 4 opens.
+- [x] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 4's starting point, reading outward; what holds is folded before Phase 4 opens, and the compaction checkpoint follows.
 
 ---
 
@@ -7566,6 +7574,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 **CHANGE**
 
 - [ ] Write these and watch each fail:
+  - **`restore.test.ts` (or the suite the restore's cases sit in at this task), "a restore and an empty leave no folder their bundle emptied in the Trash":** a page deleted from `Notes/Daily/` mints `.trash/Notes/Daily/<stamp>__Alpha.md.deleted`; its restore, and an empty of a second such bundle, each leave no empty `Notes/Daily/` or `Notes/` under `.trash`. The BASELINE left them (Phase 3's live drive); the one restore and the empty remove each emptied folder above the bundle up to `.trash`, through one helper beside `removeOwn`.
   - **`spend.test.ts`, "a holder stripped under two Link properties takes both back in one landing":** page `L` holds `Related: "[[A]]"` and `See: "[[A]]"` under two Link definitions; delete `A`, spy `machine().land`, restore `A`. `L` holds both values back, each above the key it stood above, and the spy's calls name `L`'s path once. Fails today with two landings.
   - **`archive.test.ts:735`, rewritten in place as "a restore takes the Contexts lock only for a Context's or a Space's bundle":** an Archive page's restore and a Trash page's restore take no Contexts lock, and a trashed Space's restore takes it. Fails today on the Trash page.
   - **`spend.test.ts`, "a bundle whose artifact has left refuses its restore in either store with one line":** remove a trashed page's artifact and an archived page's artifact by hand; each restore answers "That item is no longer there.". Fails today on both texts.
@@ -9456,7 +9465,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 **Inside the Code:**
 - **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it; the checkpoint gave the echo record a move-or-landing union, and an in-flight landing's record keeps the stat its file last landed with, so an echo drained during the file's next landing is still dropped.
 - **Phase 2:** Task 2-3's `withContextAt` keeps its index parameter.
-- **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`.
+- **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`; the checkpoint made a delete's finish gather ahead of every strip, as the empty's does, so a Try Again records what it strips; gave `Departing` a Space-by-id arm, so a Space delete cut short after its move leaves the Context's Space order, replacing a branch that couldn't fire; and pointed `archivedWithin` at `currentOrigin`.
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
 - **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.

@@ -811,7 +811,7 @@ describe('deleteCascade', () => {
   })
 
   it.skipIf(noModeBits)(
-    'a linker it can’t write is counted in the warning and recorded nowhere',
+    'a linker it can’t write is counted in the warning, its value left as it is',
     async () => {
       const locked = await set(dir, 'Locked')
       const x = await linker('X', '[[Target]]', locked)

@@ -862,6 +862,29 @@ describe('the Context and Space rename arms', () => {
     ).toEqual({ contexts: ['ctx_other'], spaces: {} })
     expect(await readNotes(root)).toEqual({})
   })
+
+  it('a Space delete whose order drop failed after its folder moved drops it at the finish', async () => {
+    const root = await seedContexts()
+    await setSpaceOrder(root, 'ctx_projects', ['sp-pom', 'sp-other'])
+    await refreshTree(root)
+    vi.spyOn(reorder, 'dropDeparture').mockRejectedValueOnce(new Error('the order write failed'))
+    const r = await handleMutate(root, {
+      op: 'delete',
+      path: '.nexus/contexts/Projects/Pommora',
+      kind: 'space',
+    })
+    expect(r.ok).toBe(false)
+    expect(await readdir(join(contextsDir(root), 'Projects'))).not.toContain('Pommora')
+    await finishOwed(root)
+    expect(
+      (
+        await readJsonAt<{ order: Record<string, unknown> }>(
+          nexusConfig(root, NEXUS_CONFIG_FILES.state),
+        )
+      ).order,
+    ).toEqual({ spaces: { ctx_projects: ['sp-other'] } })
+    expect(await readNotes(root)).toEqual({})
+  })
 })
 
 describe('a page only a fix by hand reaches', () => {

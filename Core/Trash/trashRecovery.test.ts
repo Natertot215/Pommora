@@ -1,7 +1,14 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { bytesUnder, putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
+import {
+  bytesUnder,
+  putJson,
+  readJsonAt,
+  failLandings,
+  noModeBits,
+  tempRoot,
+} from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { installMachine, machine } from '../Platform/machine'
@@ -543,6 +550,41 @@ describe('links come back with the page', () => {
     const { bundlePath } = await find(title)
     expect((await settledMutate(root, { op: 'emptyBundle', bundlePath })).ok).toBe(true)
   }
+
+  it.skipIf(noModeBits)(
+    'a value taken up while the delete is owed joins the record before Try Again strips it',
+    async () => {
+      const gamma = join('Journal', 'Gamma.md')
+      const GAMMA_ID = '01KVGMT8BFP350FZZXAMG1QDVD'
+      await page(gamma, GAMMA_ID)
+      await chmod(join(root, beta), 0o000)
+      try {
+        await del('Journal/Daily/Alpha.md', 'page')
+      } finally {
+        await chmod(join(root, beta), 0o644)
+      }
+      await refreshTree(root)
+      expect(await readNotes(root)).not.toEqual({})
+      const typed = await settledMutate(root, {
+        op: 'setProperty',
+        path: gamma,
+        propertyId: 'prop_related',
+        value: { kind: 'link', value: '[[Alpha]]' },
+      })
+      expect(typed.ok).toBe(true)
+      expect((await settledMutate(root, { op: 'finishOwed' })).ok).toBe(true)
+      expect(await readNotes(root)).toEqual({})
+      expect(await recordOf('Alpha')).toMatchObject({
+        links: expect.arrayContaining([
+          { page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' },
+          { page: GAMMA_ID, property: 'prop_related', value: '[[Alpha]]' },
+        ]),
+      })
+      expect(await restore('Alpha')).toBeUndefined()
+      expect((await frontmatter()).Related).toBe('[[Alpha]]')
+      expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
+    },
+  )
 
   it('a page restored while its link’s page sits in the Trash comes back without it, and that page’s restore puts it back', async () => {
     await del(beta, 'page')

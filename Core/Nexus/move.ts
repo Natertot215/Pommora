@@ -35,8 +35,7 @@ export async function movePageOp(
   const tree = await liveTreeOf(root)
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
-  const page = pageAt(tree, req.path)
-  if (page) await dropDeparture(root, page)
+  await dropDeparture(root, pageAt(tree, req.path)!)
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   return ok({})
 }
@@ -57,11 +56,9 @@ export async function moveSetOp(
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
   const held = await liveTreeOf(root)
   const owner = owningCollection(held, req.path)?.id
-  const set = containerAt(held, req.path)
-  const setId = set?.id
+  const set = containerAt(held, req.path)!
   // What was archived from within it moves with it.
-  const within =
-    left !== null && owner && setId ? await archivedWithin(root, setId, owner, held) : []
+  const within = left !== null && owner ? await archivedWithin(root, set.id, owner, held) : []
   const archived = await Promise.all(
     within.map(({ bundlePath, record }) =>
       record.entity === 'set' ? archivedSetIds(root, join(root, bundlePath)) : [],
@@ -71,13 +68,13 @@ export async function moveSetOp(
   const move = async (): Promise<Result<null>> => {
     const r = await moveFolderEntity(root, at.value.src, at.value.dst)
     if (!r.ok) return r
-    if (set) await dropDeparture(root, set)
+    await dropDeparture(root, set)
     await setChildOrder(at.value.dst, 'set_order', req.order)
     return ok(null)
   }
-  if (left === null || !edit || !setId) return done(await move())
+  if (left === null || !edit) return done(await move())
   // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
-  return runNoted(root, setId, {
+  return runNoted(root, set.id, {
     note: () => ({ kind: 'move', at: req.path, edit, within: left }),
     list: move,
     sweep: () => reachConfig(root, edit, join(root, left)),

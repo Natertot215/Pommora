@@ -130,10 +130,8 @@ export async function deleteCascade(
           heldOut++
           return null
         }
-        return stripKeys(
-          raw,
-          named.map(({ key }) => key),
-        )
+        const keys = named.map(({ key }) => key)
+        return stripKeys(raw, keys)
       },
     })
     return {

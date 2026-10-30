@@ -171,7 +171,7 @@ export function placeOf(ids: readonly string[], id: string): Place | undefined {
   return { ...(above ? { above } : {}), ...(below ? { below } : {}) }
 }
 
-export const trailAbove = (tree: NexusTree, containerId: string): string[] | null =>
+const trailAbove = (tree: NexusTree, containerId: string): string[] | null =>
   containerTrailById(tree, containerId)
     ?.slice(0, -1)
     .map((n) => n.id) ?? null
@@ -186,10 +186,6 @@ export const originOf = (record: RecordFile): Origin | null =>
 
 export const collectionOf = ({ parent, trail }: Origin): string => trail[0] ?? parent
 
-/** Whether an origin lies within the Set `setId`: by `held`, the tree's trail above its parent, while the tree holds the parent, else by the trail it stored. */
-export const originWithin = (origin: Origin, setId: string, held: string[] | null): boolean =>
-  origin.parent === setId || (held ?? origin.trail).includes(setId)
-
 /** The trail an origin stands on once a container on its chain stands at `held`, its ids Collection first: those down to it, then those the origin's record stored below it. */
 export function retrailed(origin: Origin, held: readonly string[]): string[] {
   const chain = [...origin.trail, origin.parent]
@@ -202,15 +198,9 @@ export function currentOrigin(tree: NexusTree, origin: Origin): Origin | null {
     .reverse()
     .map((id) => containerTrailById(tree, id))
     .find((trail) => trail !== null)
-  return held
-    ? {
-        parent: origin.parent,
-        trail: retrailed(
-          origin,
-          held.map((n) => n.id),
-        ),
-      }
-    : null
+  if (!held) return null
+  const ids = held.map((n) => n.id)
+  return { ...origin, trail: retrailed(origin, ids) }
 }
 
 export function gatherContentRecord(

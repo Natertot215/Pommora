@@ -92,7 +92,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
   // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked before a finish strips it.
   const id = relative(root, bundleAbs)
-  const ran = await runNoted(root, id, {
+  return runNoted(root, id, {
     note: () =>
       containerNote(
         relative(root, artifactAbs),
@@ -113,7 +113,6 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
     },
     sweep: () => finishEntry(root, id),
   })
-  return ran.ok ? ok({ cascade: ran.value.cascade }) : ran
 }
 
 /** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
