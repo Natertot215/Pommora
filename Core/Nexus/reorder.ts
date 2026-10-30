@@ -5,9 +5,8 @@ import { sidecarPath } from '../Paths/paths'
 import { dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
-import { CONTAINER_KINDS, type HeldKind } from './entities'
-import type { NexusTree } from './tree'
-import { containerAt, contextAt, pageAt, spaceAt } from './treePatch'
+import { CONTAINER_KINDS } from './entities'
+import type { CollectionNode, PageNode, SetNode, SpaceNode } from './tree'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -65,45 +64,41 @@ const dropFromChildOrder = (
   id: string,
 ): Promise<Result<unknown>> => patchContainer(absFolder, (cur) => withoutId(cur, key, id))
 
-/** A departing item leaves the order it sat in, its id read from `tree`, the tree from before it left; a Context takes its own Space order with it, which its record keeps. */
-export async function dropDeparture(
-  root: string,
-  tree: NexusTree,
-  kind: HeldKind,
-  rel: string,
-): Promise<void> {
-  switch (kind) {
+/** What leaves an order: a node of the tree it left, or a Context by its id, since its finish may move its folder after its registry entry is gone. */
+export type Departing =
+  | PageNode
+  | SetNode
+  | CollectionNode
+  | SpaceNode
+  | { kind: 'context'; id: string }
+
+/** A departing item leaves the order it sat in; a Context takes its own Space order with it, which its record keeps. */
+export async function dropDeparture(root: string, item: Departing): Promise<void> {
+  switch (item.kind) {
     case 'page':
-    case 'set': {
-      const id = (kind === 'page' ? pageAt(tree, rel) : containerAt(tree, rel))?.id
-      const key = kind === 'page' ? 'page_order' : 'set_order'
-      if (id) await dropFromChildOrder(dirname(join(root, rel)), key, id)
+    case 'set':
+      await dropFromChildOrder(
+        dirname(join(root, item.path)),
+        item.kind === 'page' ? 'page_order' : 'set_order',
+        item.id,
+      )
       return
-    }
-    case 'collection': {
-      const id = containerAt(tree, rel)?.id
-      if (id) await writeStateOrder(root, (order) => withoutId(order, 'collections', id))
+    case 'collection':
+      await writeStateOrder(root, (order) => withoutId(order, 'collections', item.id))
       return
-    }
-    case 'space': {
-      const space = spaceAt(tree, rel)
-      if (space)
-        await writeStateOrder(root, (order) => {
-          const spaces = withoutId(spacesOf(order), space.contextId, space.id)
-          return spaces && { ...order, spaces }
-        })
+    case 'space':
+      await writeStateOrder(root, (order) => {
+        const spaces = withoutId(spacesOf(order), item.contextId, item.id)
+        return spaces && { ...order, spaces }
+      })
       return
-    }
-    case 'context': {
-      const id = contextAt(tree, rel)?.def.id
-      if (id)
-        await writeStateOrder(root, (order) => {
-          const panel = withoutId(order, 'contexts', id)
-          const { [id]: dropped, ...spaces } = spacesOf(order)
-          return dropped === undefined ? panel : { ...(panel ?? order), spaces }
-        })
+    case 'context':
+      await writeStateOrder(root, (order) => {
+        const panel = withoutId(order, 'contexts', item.id)
+        const { [item.id]: dropped, ...spaces } = spacesOf(order)
+        return dropped === undefined ? panel : { ...(panel ?? order), spaces }
+      })
       return
-    }
   }
 }
 

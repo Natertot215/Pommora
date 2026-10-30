@@ -8,7 +8,7 @@ import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { archivedSetIds, goneEdit, reachConfig } from './configReach'
 import { runNoted } from './owed'
-import { containerAt, owningCollection } from './treePatch'
+import { containerAt, owningCollection, pageAt } from './treePatch'
 import { dropDeparture, setChildOrder } from './reorder'
 import { archivedWithin } from '../Bundles/bundle'
 
@@ -35,7 +35,8 @@ export async function movePageOp(
   const tree = await liveTreeOf(root)
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
-  await dropDeparture(root, tree, 'page', req.path)
+  const page = pageAt(tree, req.path)
+  if (page) await dropDeparture(root, page)
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   return ok({})
 }
@@ -56,7 +57,8 @@ export async function moveSetOp(
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
   const held = await liveTreeOf(root)
   const owner = owningCollection(held, req.path)?.id
-  const setId = containerAt(held, req.path)?.id
+  const set = containerAt(held, req.path)
+  const setId = set?.id
   // What was archived from within it moves with it.
   const within =
     left !== null && owner && setId ? await archivedWithin(root, setId, owner, held) : []
@@ -69,7 +71,7 @@ export async function moveSetOp(
   const move = async (): Promise<Result<null>> => {
     const r = await moveFolderEntity(root, at.value.src, at.value.dst)
     if (!r.ok) return r
-    await dropDeparture(root, held, 'set', req.path)
+    if (set) await dropDeparture(root, set)
     await setChildOrder(at.value.dst, 'set_order', req.order)
     return ok(null)
   }

@@ -1,5 +1,4 @@
 import { mintBundle } from '../Bundles/bundle'
-import { writeRecord } from '../Bundles/record'
 import { assignedIds } from '../Nexus/containerFields'
 import { stashedBlock, patchStashBlock, type StashBlock } from './propertyStash'
 import {
@@ -60,8 +59,7 @@ async function snapshot(
     if (holds && id) assignments.push(id)
     if (stashed && id) stashes[id] = stashed
   }
-  const bundle = await mintBundle(root, { kind: 'trash' }, join(root, `property-${propertyId}`))
-  await writeRecord(bundle, {
+  return mintBundle(root, { kind: 'trash' }, join(root, `property-${propertyId}`), {
     entity: 'property',
     id: propertyId,
     def,
@@ -71,7 +69,6 @@ async function snapshot(
     ...(Object.keys(stashes).length ? { stashes } : {}),
     ...(partial ? { partial: true as const } : {}),
   })
-  return bundle
 }
 
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {

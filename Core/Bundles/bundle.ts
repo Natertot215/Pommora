@@ -59,22 +59,28 @@ export async function chainDir(
   return dir
 }
 
-/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
+/** A bundle for `absSource` in `store` holding `record`, which takes its bundle back when it can't be written, so no bundle stands without one; `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
 export async function mintBundle(
   root: string,
   store: BundleStore,
   absSource: string,
+  record: RecordFile | RawRecord,
   leaf?: string,
 ): Promise<string> {
   const dir = await chainDir(root, store, absSource)
   const base = `${basename(absSource)}${layoutOf(store).suffix}`
   const own = leaf !== undefined && holdsName(leaf) && leaf.endsWith(`__${base}`)
-  if (own && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
   const stamp = fileStamp()
-  for (let n = 0; ; n++) {
-    const bundle = join(dir, stampedLeaf(stamp, n, base))
-    if ((await machine().mkdir(bundle)) === 'created') return bundle
+  let bundle = join(dir, own ? leaf : stampedLeaf(stamp, 0, base))
+  for (let n = own ? 0 : 1; (await machine().mkdir(bundle)) !== 'created'; n++)
+    bundle = join(dir, stampedLeaf(stamp, n, base))
+  try {
+    await writeRecord(bundle, record)
+  } catch (e) {
+    await removeOwn(bundle)
+    throw e
   }
+  return bundle
 }
 
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
@@ -103,10 +109,10 @@ export async function fileInto(
     root,
     to,
     origin,
+    record,
     held && !held.item ? basename(held.bundle) : undefined,
   )
   try {
-    await writeRecord(bundle, record)
     await relocate(artifact, join(bundle, basename(origin)))
   } catch (e) {
     await removeOwn(bundle)
