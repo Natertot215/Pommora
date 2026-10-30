@@ -22,6 +22,8 @@
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | |
 | **Total** | **about −415** | |
 
+**Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
+
 ### Context
 
 Pommora keeps every departed item as a bundle: a stamped folder holding the item beside a `_record.json` saying where it belonged and what it carried. The Trash keeps deleted pages, Sets, Collections, Spaces, Contexts, and properties in `.trash`; each Collection's Archive keeps archived pages and Sets in `.nexus/archive/<Collection ID>`. The two stores run two models. The Archive is reach-in: its pages are indexed and every cascade rewrites them as it rewrites live pages, so its restore is a move. The Trash is resolve-on-restore: a trashed copy is frozen, and its restore re-spells keys and option words, repairs its links against a frozen snapshot of their targets, and refills what its delete stripped. The scrub can't follow a rename, so a page restored after one returns holding the old names (*Investigation*, B-9), and three paths reach into trashed copies regardless. Around the two models sit a second delete mode that bypasses the Trash, two restores, two Undo shapes, two notice owners, six hand-written Archive hides, and compatibility-only decodes.
@@ -252,7 +254,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 - [ ] **Phase 1** — The Landing
   - [x] Task 1-1 · One flush per drive, and the stat after the rename
-  - [ ] Task 1-2 · The thread-pool line, measured and removed
+  - [x] Task 1-2 · The thread-pool line, measured and removed
   - [ ] Task 1-3 · The change time identifies a file
   - [ ] Task 1-4 · The echo by stat
   - [ ] Task 1-5 · The clash check and the option edit pass over vouched rows
