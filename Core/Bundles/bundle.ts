@@ -253,7 +253,7 @@ async function trailWithin(
   return ids.every((id): id is string => id !== undefined) ? ids : null
 }
 
-/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one, the bundle's targets, and its partial mark, since what the bundle recorded partly it recorded partly for each item it holds; no place, since the siblings it left are gone with it. */
+/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one, and the bundle's targets; no place, since the siblings it left are gone with it. */
 async function innerRecord(
   held: ContainerRecord,
   trail: readonly string[] | null,
@@ -268,7 +268,6 @@ async function innerRecord(
     parent: trail ? { kind: 'container', id: trail[trail.length - 1] } : { kind: 'unaddressable' },
     ...(trail && trail.length > 1 ? { trail: trail.slice(0, -1) } : {}),
     ...(held.targets ? { targets: held.targets } : {}),
-    ...(held.partial ? { partial: true as const } : {}),
   }
 }
 

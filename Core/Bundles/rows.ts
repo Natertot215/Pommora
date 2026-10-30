@@ -144,7 +144,7 @@ function artifactRow(
       ? { stored: { id: record.id, path: at.path } }
       : {}),
     homeResolves: !('refuse' in home) || home.refuse === 'id-live',
-    ...(record.partial ? { partial: true as const } : {}),
+    ...('partial' in record && record.partial ? { partial: true as const } : {}),
   })
 }
 
