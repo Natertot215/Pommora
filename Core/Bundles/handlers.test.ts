@@ -52,9 +52,11 @@ describe('bundles:list', () => {
 
   it('lists an Archive whose Collection id isn’t ULID-shaped', async () => {
     const store = { kind: 'archive', id: 'col-foreign' } as const
-    const bundle = await mintBundle(root, store, join(root, 'Notes', 'Alpha.md'))
+    const bundle = await mintBundle(root, store, join(root, 'Notes', 'Alpha.md'), {
+      entity: 'page',
+      parent: { kind: 'unaddressable' },
+    })
     await writeFile(join(bundle, 'Alpha.md'), '# Alpha\n')
-    await writeRecord(bundle, { entity: 'page', parent: { kind: 'unaddressable' } })
     const listed = await bundlesHandlers['bundles:list'](ctx, store)
     expect(listed.ok && listed.value.map((r) => [r.kind, r.title])).toEqual([['page', 'Alpha']])
   })
@@ -84,13 +86,12 @@ describe('bundles:list', () => {
     )
     const store = { kind: 'archive', id: 'col-notes' } as const
     const archived = async (from: string, title: string, parent: string, trail?: string[]) => {
-      const bundle = await mintBundle(root, store, join(root, from, `${title}.md`))
-      await writeFile(join(bundle, `${title}.md`), `# ${title}\n`)
-      await writeRecord(bundle, {
+      const bundle = await mintBundle(root, store, join(root, from, `${title}.md`), {
         entity: 'page',
         parent: { kind: 'container', id: parent },
         ...(trail ? { trail } : {}),
       })
+      await writeFile(join(bundle, `${title}.md`), `# ${title}\n`)
     }
     await archived('Notes/Daily/Morning', 'Held', 'set-morning')
     await archived('Notes/Daily/Evening', 'Stored', 'set-evening', ['col-notes', 'set-daily'])
@@ -144,9 +145,11 @@ describe('bundles:children', () => {
 
   it('answers no rows for a gone address, one escaping the root, a page’s or property’s bundle, or an inner page, beside the others it answers', async () => {
     await seedTrashedCollection()
-    const page = await mintBundle(root, { kind: 'trash' }, join(root, 'Notes', 'Alpha.md'))
+    const page = await mintBundle(root, { kind: 'trash' }, join(root, 'Notes', 'Alpha.md'), {
+      entity: 'page',
+      parent: { kind: 'unaddressable' },
+    })
     await writeFile(join(page, 'Alpha.md'), '# Alpha\n')
-    await writeRecord(page, { entity: 'page', parent: { kind: 'unaddressable' } })
     const property = await seedPropertyBundle(root, {
       entity: 'property',
       id: 'prop_x',

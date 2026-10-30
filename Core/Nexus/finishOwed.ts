@@ -31,6 +31,7 @@ import {
   unlinkSpaceValue,
 } from '../Contexts/contextCascade'
 import { inContextsTurn, inSettleTurn } from './settle'
+import { type Departing, dropDeparture } from './reorder'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
   type ContainerEntry,
@@ -246,10 +247,15 @@ async function finishOptions(
   return Object.keys(left).length ? left : undefined
 }
 
-/** A deleted Context's or Space's folder, where its delete's list step left it, into the bundle its delete noted. */
-const leave = async (root: string, abs: string, bundle: string): Promise<void> => {
+/** A deleted item into the bundle its delete noted, `bundle` root-relative, then out of the order it sat in. */
+export async function leave(
+  root: string,
+  abs: string,
+  bundle: string,
+  departing?: Departing,
+): Promise<void> {
   await relocate(abs, join(root, bundle, basename(abs)))
-  oweWalk(root)
+  if (departing) await dropDeparture(root, departing)
 }
 
 async function finishContext(
@@ -299,7 +305,10 @@ async function finishContext(
     (old) => contexts.some(rivalTitled(old, id)),
     async (old) => {
       const dir = join(contextsDir(root), old)
-      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle!)
+      if ((await heldName(dir)) === old) {
+        await leave(root, dir, e.bundle!, { kind: 'context', id })
+        oweWalk(root)
+      } else await dropDeparture(root, { kind: 'context', id })
       return unlinkContextKey(root, old, id, dir)
     },
     reach,
@@ -324,8 +333,10 @@ async function finishSpace(
   const space = spaceById.get(id)
   // A Space's folder is its list entry, so its current title sitting in `strip` is a delete; a folder still standing is the move it owes.
   const deleted = space !== undefined && !!e.strip?.includes(space.title)
-  if (deleted && (await heldName(join(root, space.path))) === space.title)
-    await leave(root, join(root, space.path), e.bundle!)
+  if (deleted && (await heldName(join(root, space.path))) === space.title) {
+    await leave(root, join(root, space.path), e.bundle!, space)
+    oweWalk(root)
+  } else if (deleted) await dropDeparture(root, space)
   const title = deleted ? undefined : space?.title
   const rename =
     title === undefined

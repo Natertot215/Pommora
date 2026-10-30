@@ -14,7 +14,6 @@ import { createFolderEntity } from './folderEntity'
 import { newId } from './ids'
 import { nexusDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
-import { makeTree } from '../Testing/testTree'
 
 let root: string
 beforeEach(async () => {
@@ -79,7 +78,7 @@ describe('setCollectionOrder', () => {
     await setSpaceOrder(root, 'g1', ['y'])
     await setSpaceOrder(root, 'other', ['x'])
     await setPanelContextOrder(root, ['g1', 'other'])
-    await dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')
+    await dropDeparture(root, { kind: 'context', id: 'g1' })
     expect((await readState()).order).toEqual({
       spaces: { other: ['x'] },
       contexts: ['other'],
@@ -87,7 +86,7 @@ describe('setCollectionOrder', () => {
   })
 
   it('a departing Context with no order writes nothing', async () => {
-    await dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')
+    await dropDeparture(root, { kind: 'context', id: 'g1' })
     expect(await pathExists(nexusConfig(root, NEXUS_CONFIG_FILES.state))).toBe(false)
   })
 

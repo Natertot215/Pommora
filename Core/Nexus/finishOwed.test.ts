@@ -15,8 +15,8 @@ import { readRecord } from '../Bundles/record'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
-import { OWED_REL } from '../Paths/nexusPaths'
+import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import { readJsonObject } from '../Files/atomicWrite'
 import * as registryModule from '../Properties/registryProperty'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
@@ -31,6 +31,8 @@ import { finishOwed } from './finishOwed'
 import { handleMutate } from './mutate'
 import { readNotes, type Notes } from './owed'
 import { ok } from '../Contract/result'
+import * as reorder from './reorder'
+import { setPanelContextOrder, setSpaceOrder } from './reorder'
 
 vi.mock('../Properties/registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/registryProperty')>()
@@ -834,6 +836,30 @@ describe('the Context and Space rename arms', () => {
     })
     expect(Object.keys(await tags(root))).toEqual(['id', '<Projects>'])
     expect((await tags(root))['<Projects>']).toEqual(['Pommora'])
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Context delete whose order drop failed after its folder moved drops it at the finish', async () => {
+    const root = await seedContexts()
+    await setPanelContextOrder(root, ['ctx_projects', 'ctx_other'])
+    await setSpaceOrder(root, 'ctx_projects', ['sp-pom'])
+    await refreshTree(root)
+    vi.spyOn(reorder, 'dropDeparture').mockRejectedValueOnce(new Error('the order write failed'))
+    const r = await handleMutate(root, {
+      op: 'delete',
+      path: '.nexus/contexts/Projects',
+      kind: 'context',
+    })
+    expect(r.ok).toBe(false)
+    expect(await readdir(contextsDir(root))).not.toContain('Projects')
+    await finishOwed(root)
+    expect(
+      (
+        await readJsonAt<{ order: Record<string, unknown> }>(
+          nexusConfig(root, NEXUS_CONFIG_FILES.state),
+        )
+      ).order,
+    ).toEqual({ contexts: ['ctx_other'], spaces: {} })
     expect(await readNotes(root)).toEqual({})
   })
 })

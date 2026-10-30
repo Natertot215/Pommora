@@ -1,6 +1,6 @@
 import { applyEvents } from '../Nexus/fileEvents'
 import { settleNow } from '../Nexus/settle'
-import { chmod, copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -26,7 +26,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
-import { setPanelContextOrder } from '../Nexus/reorder'
+import { setPanelContextOrder, setSpaceOrder } from '../Nexus/reorder'
 import { type HeldKind, unsweptLine } from '../Nexus/entities'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, OWED_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
@@ -576,7 +576,16 @@ describe('a Context or Space delete on the notes', () => {
     expect(roots.sort()).toEqual([await idOf(a), await idOf(b)].sort())
   })
 
-  it('a crash between the note and the list step finishes the delete', async () => {
+  it('a Context delete the registry no longer lists refuses with nothing minted', async () => {
+    await refreshTree(root)
+    await putJson(contextsRegistryFile(root), { contexts: [] })
+    const r = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' })
+    expect(!r.ok && r.error.message).toBe('Unknown Context.')
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
+    expect(await pathExists(join(root, AREAS))).toBe(true)
+  })
+
+  it('a crash between the note and the list step finishes the delete, its folder leaving every order it sat in', async () => {
     const sidecar = sidecarPath(notes, 'collection')
     await putJson(sidecar, {
       ...(await readJsonAt(sidecar)),
@@ -584,17 +593,37 @@ describe('a Context or Space delete on the notes', () => {
     })
     await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
     await refreshTree(root)
-    const bundle = await mintBundle(root, { kind: 'trash' }, join(root, AREAS))
+    const bundle = await mintBundle(root, { kind: 'trash' }, join(root, AREAS), {})
     const bundlePath = relative(root, bundle)
     await putJson(join(root, OWED_REL), {
       ctx_areas: { kind: 'context', strip: ['Areas'], bundle: bundlePath },
     })
+    await setPanelContextOrder(root, ['ctx_areas', 'ctx_other'])
+    await setSpaceOrder(root, 'ctx_areas', ['sp_work'])
     await finishOwed(root)
     expect((await readJsonAt(contextsRegistryFile(root))).contexts).toEqual([])
     expect(await pathExists(join(root, bundlePath, 'Areas'))).toBe(true)
     expect([await tagsOf(a), await tagsOf(b)]).toEqual([undefined, undefined])
     expect(((await readJsonAt(sidecar)).views as Raw[])[0]?.property_order).toEqual(['_title'])
     expect(await readNotes(root)).toEqual({})
+    expect(
+      (await readJsonAt<{ order: Raw }>(nexusConfig(root, NEXUS_CONFIG_FILES.state))).order,
+    ).toEqual({ contexts: ['ctx_other'], spaces: {} })
+  })
+
+  it("a Space delete cut short before its move leaves its Context's Space order once its finish moves it", async () => {
+    const bundle = await mintBundle(root, { kind: 'trash' }, join(root, WORK), {})
+    const bundlePath = relative(root, bundle)
+    await setSpaceOrder(root, 'ctx_areas', ['sp_work', 'sp_home'])
+    await putJson(join(root, OWED_REL), {
+      sp_work: { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle: bundlePath },
+    })
+    await finishOwed(root)
+    expect(await pathExists(join(root, WORK))).toBe(false)
+    expect(await pathExists(join(root, bundlePath, 'Work'))).toBe(true)
+    expect(
+      (await readJsonAt<{ order: Raw }>(nexusConfig(root, NEXUS_CONFIG_FILES.state))).order,
+    ).toEqual({ spaces: { ctx_areas: ['sp_home'] } })
   })
 
   it("a Context delete's own Spaces aren't owed", async () => {
@@ -720,7 +749,7 @@ describe('a content delete on the notes', () => {
     const id = (await idOf(target)) as string
     const linker = await page(notes, 'One', 'Target')
     await refreshTree(root)
-    const bundle = await mintBundle(root, { kind: 'trash' }, target)
+    const bundle = await mintBundle(root, { kind: 'trash' }, target, {})
     await rename(target, join(bundle, 'Target.md'))
     await putJson(join(root, OWED_REL), {
       [id]: {
@@ -734,6 +763,16 @@ describe('a content delete on the notes', () => {
     await finishOwed(root)
     expect(await relatedOf(linker)).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a page delete whose note throws leaves no bundle and deletes nothing', async () => {
+    const target = await page(notes, 'Target')
+    await refreshTree(root)
+    vi.spyOn(atomicWrite, 'updateNexusFile').mockRejectedValueOnce(new Error('the disk is gone'))
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' })
+    expect(r.ok).toBe(false)
+    expect(await pathExists(target)).toBe(true)
+    expect(await readdir(join(root, '.trash', 'Notes'))).toEqual([])
   })
 
   it('a crash between the note and the move leaves the live page its links', async () => {

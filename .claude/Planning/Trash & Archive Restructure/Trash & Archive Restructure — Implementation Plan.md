@@ -267,7 +267,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 2-4 · The rest of the residue
   - [x] Review Checkpoint
 - [ ] **Phase 3** — Delete, Journal, and Carry
-  - [ ] Task 3-1 · One mint, one tail, one `leave`
+  - [x] Task 3-1 · One mint, one tail, one `leave`
   - [ ] Task 3-2 · A content delete records its links ahead of the strip
   - [ ] Task 3-3 · One container note, and the Set move's own kind
   - [ ] Task 3-4 · The empty is the one gone-for-good step
@@ -2738,7 +2738,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Task 3-1
 
-**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes eleven and adds nine.
+**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes ten and adds eleven, `Departing`'s and `DeletePlan`'s docs the two new ones; the codebase stays below the BASELINE's count, Phases 1 and 2 having removed seven.
 
 **NOW:**
 - **Mint, Then Record:** every `mintBundle` caller writes a record right after it (`Core/Bundles/bundle.ts:64-79`): `deleteOp` (`Core/Trash/delete.ts:99`, its write at `:112-118`), `snapshot` (`Core/Properties/deleteProperty.ts:63-73`), `fileInto` (`bundle.ts:103-115`, which removes the bundle on a throw), and `seedPropertyBundle` (`Core/Testing/fixtures.ts:52-53`).
@@ -3304,7 +3304,7 @@ A finish whose folder has already left drops the departure all the same, since a
 
 - [ ] The six new and rewritten cases are green, and each was watched red against the code before this task.
 - [ ] The write-ahead pins stay green: `deleteOrder.test.ts:148-257` (the record before the move and the strip, the strip and the pass after it), `deleteReach.test.ts:566-652` (a refused note or list step, a move that throws, a Context entry that can't go back), and `archive.test.ts:166-242,283` (the lift and its rollback, `fileInto`'s ghost bundle).
-- [ ] `git grep -nP "unminted|let moved|const write =|writeRecord\(bundle|dropDeparture\(root, (tree|held|before)," -- Core` prints nothing, and `git grep -nP "mintBundle\([^)]*\)$" -- Core ':!*.test.ts'` shows every production call passing a record.
+- [ ] `git grep -nP "unminted|let moved|const write =|dropDeparture\(root, (tree|held|before)," -- Core/Trash Core/Archive Core/Nexus/finishOwed.ts Core/Nexus/move.ts ':!*.test.ts'` prints nothing, `writeRecord(bundle` sits in `mintBundle` alone among production files, and `git grep -nP "mintBundle\([^)]*\)$" -- Core ':!*.test.ts'` shows every production call passing a record.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 

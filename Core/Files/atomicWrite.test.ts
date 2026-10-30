@@ -353,7 +353,7 @@ describe('relocate', () => {
   it('moves the artifact in under its original basename and clears the original', async () => {
     const p = join(dir, '12__Notes.md')
     await atomicWriteFile(p, 'bye')
-    const bundle = await mintBundle(dir, { kind: 'trash' }, p)
+    const bundle = await mintBundle(dir, { kind: 'trash' }, p, {})
     const dest = join(bundle, '12__Notes.md')
     await relocate(p, dest)
     expect(await readFile(dest, 'utf8')).toBe('bye')
@@ -362,7 +362,7 @@ describe('relocate', () => {
 
   it('rejects when the source vanished — the caller surfaces it', async () => {
     const p = join(dir, 'ghost.md')
-    const bundle = await mintBundle(dir, { kind: 'trash' }, p)
+    const bundle = await mintBundle(dir, { kind: 'trash' }, p, {})
     await expect(relocate(p, join(bundle, 'ghost.md'))).rejects.toThrow()
   })
 })

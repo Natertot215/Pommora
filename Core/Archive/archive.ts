@@ -14,7 +14,7 @@ import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
 import { departingCascade, returningCascade } from '../Nexus/settle'
 import { liftSetAside } from '../Nexus/folderEntity'
-import type { NexusTree } from '../Nexus/tree'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import {
@@ -41,14 +41,15 @@ export async function archiveOp(
   const store = archiveStoreOf(owningCollection(tree, req.path)?.id)
   if (!store)
     return fail('invalid-path', 'Only pages and Sets inside a Collection can be archived.')
-  const { to, origin, record, at } = await filingOf(root, tree, req, abs, store)
+  const node = (req.kind === 'page' ? pageAt(tree, req.path) : containerAt(tree, req.path))!
+  const { to, origin, record, at } = await filingOf(root, tree, req.back, node, abs, store)
   const lifted = req.kind === 'set' ? await liftSetAside(root, abs) : null
   if (lifted && !lifted.ok) return lifted
   const filed = await fileInto(root, to, origin, abs, record, at).catch(async (e) => {
     await lifted?.value.rollback()
     throw e
   })
-  await dropDeparture(root, tree, req.kind, req.path)
+  await dropDeparture(root, node)
   const left = at === undefined ? null : originOf(record)
   if (record.entity === 'set' && record.id && left)
     await refileFiled(root, record.id, [...left.trail, left.parent], store.id, to.id)
@@ -68,7 +69,8 @@ export async function archiveOp(
 async function filingOf(
   root: string,
   tree: NexusTree,
-  { kind, path, back }: Extract<MutateRequest, { op: 'archive' }>,
+  back: Extract<MutateRequest, { op: 'archive' }>['back'],
+  node: PageNode | CollectionNode | SetNode,
   abs: string,
   store: ArchiveStore,
 ): Promise<{ to: ArchiveStore; origin: string; record: RecordFile; at?: string }> {
@@ -82,8 +84,7 @@ async function filingOf(
     const name = holdsName(back.name) ? back.name : basename(abs)
     return { to: into, at, origin: join(root, folder, name), record }
   }
-  const node = kind === 'page' ? pageAt(tree, path) : containerAt(tree, path)
-  return { to: store, origin: abs, record: gatherContentRecord(tree, node!) }
+  return { to: store, origin: abs, record: gatherContentRecord(tree, node) }
 }
 
 /** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */

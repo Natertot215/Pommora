@@ -16,6 +16,7 @@ import {
   openBundle,
   spendBundle,
 } from './bundle'
+import * as record from './record'
 import { patchRecord, readRawRecord, writeRecord } from './record'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
@@ -36,7 +37,7 @@ describe('mintBundle', () => {
     await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
     const p = join(root, 'Notes', 'Daily', 'Beta.md')
     await writeFile(p, 'bye')
-    const bundle = await mintBundle(root, TRASH, p)
+    const bundle = await mintBundle(root, TRASH, p, {})
     expect(dirname(bundle)).toBe(join(root, '.trash', 'Notes', 'Daily'))
     expect(basename(bundle).endsWith('__Beta.md.deleted')).toBe(true)
     expect((await stat(bundle)).isDirectory()).toBe(true)
@@ -48,8 +49,8 @@ describe('mintBundle', () => {
     vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
     try {
       const p = join(root, 'twice.md')
-      const first = await mintBundle(root, TRASH, p)
-      const second = await mintBundle(root, TRASH, p)
+      const first = await mintBundle(root, TRASH, p, {})
+      const second = await mintBundle(root, TRASH, p, {})
       expect(second).not.toBe(first)
       expect(basename(second)).toBe('2026-08-01T12-00-00-000Z__1__twice.md.deleted')
     } finally {
@@ -60,7 +61,7 @@ describe('mintBundle', () => {
   it('lands flat when the source is not under the root', async () => {
     const outside = tempRoot('pom-out-')
     try {
-      const bundle = await mintBundle(root, TRASH, join(outside, 'Stray.md'))
+      const bundle = await mintBundle(root, TRASH, join(outside, 'Stray.md'), {})
       expect(dirname(bundle)).toBe(join(root, '.trash'))
     } finally {
       await rm(outside, { recursive: true, force: true })
@@ -69,19 +70,29 @@ describe('mintBundle', () => {
 
   it('mirrors the chain under an Archive with its suffix', async () => {
     await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
-    const bundle = await mintBundle(root, ARCHIVE, join(root, 'Notes', 'Daily', 'Beta.md'))
+    const bundle = await mintBundle(root, ARCHIVE, join(root, 'Notes', 'Daily', 'Beta.md'), {})
     expect(dirname(bundle)).toBe(join(root, '.nexus', 'archive', ID, 'Notes', 'Daily'))
     expect(basename(bundle).endsWith('__Beta.md.archived')).toBe(true)
     expect((await stat(bundle)).isDirectory()).toBe(true)
+  })
+
+  it("a record that can't be written takes its bundle back", async () => {
+    await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
+    const p = join(root, 'Notes', 'Daily', 'Beta.md')
+    vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
+    await expect(mintBundle(root, TRASH, p, {})).rejects.toThrow('the write failed')
+    expect(await readdir(join(root, '.trash', 'Notes', 'Daily'))).toEqual([])
   })
 })
 
 describe('listBundles', () => {
   it('lists an Archive’s bundles under its own root and suffix, and none of the Trash’s', async () => {
     const seed = async (store: typeof TRASH | typeof ARCHIVE, name: string): Promise<void> => {
-      const bundle = await mintBundle(root, store, join(root, 'Notes', name))
+      const bundle = await mintBundle(root, store, join(root, 'Notes', name), {
+        entity: 'page',
+        parent: { kind: 'container', id: 'col' },
+      })
       await writeFile(join(bundle, name), 'body')
-      await writeRecord(bundle, { entity: 'page', parent: { kind: 'container', id: 'col' } })
     }
     await seed(ARCHIVE, 'Alpha.md')
     await seed(TRASH, 'Beta.md')

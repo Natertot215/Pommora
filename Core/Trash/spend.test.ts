@@ -1401,9 +1401,9 @@ describe('restore — the gate-four pins', () => {
       root,
       { kind: 'archive', id: '01KVGMT8BFP350FZZXAMG1QDVC' },
       join(root, 'Notes', 'Beta.md'),
+      { entity: 'page', parent: { kind: 'root' } },
     )
     await writeFile(join(bundle, 'Beta.md'), 'body')
-    await writeRecord(bundle, { entity: 'page', parent: { kind: 'root' } })
     const bundlePath = relative(root, bundle)
     const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath })
     expect(emptied.ok ? '' : emptied.error.message).toBe('Only a trash record can be emptied.')

@@ -32,7 +32,7 @@ import { writeExcludedFolders } from '../Settings/settings'
 import { readNotes } from '../Nexus/owed'
 import { listBundles, mintBundle } from '../Bundles/bundle'
 import type { BundleStore } from '../Bundles/layout'
-import { readRawRecord, readRecord, writeRecord } from '../Bundles/record'
+import { readRawRecord, readRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { NO_DESTINATION } from '../Bundles/placement'
 
@@ -223,7 +223,7 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
     ).toEqual(['Notes/Daily/Private', 'Notes/Daily/Raw'])
   })
 
-  it('a Set delete whose record write throws puts the lifted folder back', async () => {
+  it('a Set delete whose record write throws leaves no bundle and puts the lifted folder back', async () => {
     await mkdir(at('Notes', 'Daily', 'Private'), { recursive: true })
     await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
     await writeFile(
@@ -239,6 +239,7 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
         .excluded_folders,
     ).toEqual(['Notes/Daily/Private'])
+    expect(await readdir(at('.trash', 'Notes'))).toEqual([])
   })
 
   it('an Undo filing back under a name other than its bundle’s takes a fresh stamp in that chain', async () => {
@@ -718,8 +719,7 @@ describe('restore — an archived item comes back by a plain move', () => {
   it('its own identity in the Archive doesn’t refuse its restore, and a twin elsewhere does', async () => {
     expect((await restore(await archive('Notes/Daily/Beta.md'))).ok).toBe(true)
     const bundlePath = await archive('Notes/Daily/Beta.md')
-    const twin = await mintBundle(root, ARCHIVE, at('Notes', 'Beta.md'))
-    await writeRecord(twin, {
+    const twin = await mintBundle(root, ARCHIVE, at('Notes', 'Beta.md'), {
       entity: 'page',
       id: PAGE_B,
       parent: { kind: 'container', id: NOTES },
