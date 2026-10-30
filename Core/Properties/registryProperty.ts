@@ -22,13 +22,7 @@ import {
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
 import { findHolders } from '../Index/keyHolders'
-import {
-  outsideArchive,
-  rekeySweep,
-  sweepCount,
-  sweepGovernedRoots,
-  type SweepPlan,
-} from '../Nexus/governedSweep'
+import { rekeySweep, sweepCount, sweepGovernedRoots, type SweepPlan } from '../Nexus/governedSweep'
 import { type ConfigReach, NO_REACH, sweptReach } from '../Nexus/configReach'
 import type { KeyCollision } from '../Files/rootValues'
 import {
@@ -173,10 +167,10 @@ async function rekeyPlan(
   if (moved.key !== prior.key) {
     const { held } = await findHolders(
       root,
-      { keys: [prior.key, moved.key], reach: 'governed' },
+      { keys: [prior.key, moved.key], reach: 'governed', every: true },
       'values',
     )
-    const clashes = held.filter((h) => h.keys.length === 2 && outsideArchive(root, h.file))
+    const clashes = held.filter((h) => h.keys.length === 2)
     if (clashes.length)
       return fail('invalid-property', KEY_REFUSAL.held(prior.key, moved.key, clashes.length))
   }

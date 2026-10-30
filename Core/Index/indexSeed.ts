@@ -128,6 +128,21 @@ export const unmoved = (path: string, since: number): boolean => {
   return !db || (lastCommits.get(db)?.get(path) ?? 0) <= since
 }
 
+/** The files among `files` a cascade still reads: each `passOver` doesn't name as one the index answers for, handed its root-relative path, and each whose row no longer describes its file. That row describing the file is the one condition on which the index may pass over a page it lists, since an outside edit the index hasn't taken yet may still sit in the watcher's debounce. */
+export async function unlessVouched(
+  root: string,
+  files: readonly string[],
+  passOver: (rel: string, file: string) => boolean,
+): Promise<string[]> {
+  const kept = await Promise.all(
+    files.map(async (file) => {
+      const rel = relative(root, file)
+      return !passOver(rel, file) || !sameFile(readIndexedStat(rel), await statOrNull(file))
+    }),
+  )
+  return files.filter((_, i) => kept[i])
+}
+
 /** What the index read of a written page and the sequence of the commit that took it, for the tree's patch to take rather than read and parse it again. */
 export type PageRead = { text: string; stat: FileStat; page: ParsedPage; seq: number }
 

@@ -1,13 +1,13 @@
 // Key holders: which pages and Spaces hold a key, found from the content index and the tree, and what each one holds.
 
 import { queryMembers, readPageRelations } from './contentIndex'
-import { nexusCorpus } from './indexSeed'
+import { nexusCorpus, unlessVouched } from './indexSeed'
 import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
-import { collectionFolders, rootId } from '../Nexus/governedSweep'
+import { collectionFolders, outsideArchive, rootId } from '../Nexus/governedSweep'
 import { addressable, nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
@@ -27,6 +27,7 @@ export type HolderQuery = {
   title?: string
   id?: string
   moved?: FolderMove
+  every?: true
 }
 
 /** A holder a finder read: the id `byId` addresses it by, the query keys it holds, their values as written, or null when it couldn't be read, and, for a page read from its own file, the key each one's line stood above, in the page's own key order. */
@@ -74,18 +75,21 @@ export const spaceFiles = (
 ): string[] =>
   tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 
-// The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree.
-// With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back.
+/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` keeps only the pages holding every key, as a rename's clash check counts them: a page the index lists without every key is read only where its row no longer describes its file, and an archived page, which no clash counts, isn't read. With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back. */
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)
   const rels = q.keys.map((key) => queryMembers(key, title))
-  const pages = await pagesInReach(
-    root,
-    tree,
-    rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))],
-    q.reach,
-  )
+  const listed = rels.map((r) => r && new Set(r))
+  const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
+  const reached = await pagesInReach(root, tree, named, q.reach)
+  const pages = q.every
+    ? await unlessVouched(
+        root,
+        reached.filter((file) => outsideArchive(root, file)),
+        (rel) => !!named && !listed.every((l) => l?.has(rel)),
+      )
+    : reached
   const holds = (s: SpaceNode): boolean =>
     q.keys.some((key) =>
       Object.hasOwn(s[parseContextKey(key) === null ? 'values' : 'contextKeys'] ?? {}, key),
@@ -102,7 +106,6 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       : []
   const files = [...pages, ...spaces]
   if (!read) return { files, held: [] }
-  const listed = rels.map((r) => r && new Set(r))
   const { byId } = await nexusPages(root, tree)
   const held: Held[] = []
   const heldOut = new Set<string>()

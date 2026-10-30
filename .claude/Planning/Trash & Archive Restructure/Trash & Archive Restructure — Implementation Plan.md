@@ -257,7 +257,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 1-2 · The thread-pool line, measured and removed
   - [x] Task 1-3 · The change time identifies a file
   - [x] Task 1-4 · The echo by stat
-  - [ ] Task 1-5 · The clash check and the option edit pass over vouched rows
+  - [x] Task 1-5 · The clash check and the option edit pass over vouched rows
   - [ ] Task 1-6 · A metadata copy writes each month once
   - [ ] Review Checkpoint
 - [ ] **Phase 2** — Residue

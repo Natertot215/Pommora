@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
-import { chmod, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import {
   noModeBits,
@@ -11,6 +11,7 @@ import {
   seedNexus,
   seedSpaceSidecar,
   tempRoot,
+  windows,
 } from '../Testing/hostFs'
 import {
   createProperty,
@@ -40,6 +41,9 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree } from '../Nexus/liveTree'
 import { seedContentIndex } from '../Index/indexSeed'
+import { findHolders } from '../Index/keyHolders'
+import { archiveDirRel } from '../Paths/nexusPaths'
+import { machine } from '../Platform/machine'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 
@@ -507,10 +511,12 @@ describe('a rename’s clash check with the index warm', () => {
     installStores(NO_STORES)
   })
 
-  // Priority, assigned to a Collection holding a page for each of `frontmatters`, with the session, its tree, and the index warm.
-  const warm = async (...frontmatters: string[]) => {
+  // Priority, assigned to a Collection holding a page for each of `frontmatters` and, with `archived`, an archived page holding it, with the session, its tree, and the index warm.
+  const kept = new Date('2026-01-02T03:04:05.000Z')
+  const warm = async (frontmatters: string[], archived?: string) => {
     const c = await createProperty(root, def({ label: 'Priority', type: 'select' }))
-    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    const colId = newId()
+    const col = await createFolderEntity(root, 'collection', 'Col', colId)
     if (!c.ok || !col.ok) throw new Error('setup failed')
     await assignProperty(root, col.value.path, c.value.id)
     const pages: string[] = []
@@ -519,27 +525,70 @@ describe('a rename’s clash check with the index warm', () => {
       if (!p.ok) throw new Error('setup failed')
       const content = await readFile(p.value.path, 'utf8')
       await writeFile(p.value.path, content.replace('---\n', `---\n${frontmatter}`))
+      await utimes(p.value.path, kept, kept)
       pages.push(p.value.path)
+    }
+    const shelf = join(root, archiveDirRel(colId), 'Col')
+    const stored = join(shelf, 'A.md')
+    if (archived !== undefined) {
+      await mkdir(shelf, { recursive: true })
+      await writeFile(stored, `---\nID: ${newContentId('page')}\n${archived}---\nb`)
     }
     await openSession(root)
     await refreshTree(root)
     await seedContentIndex(root)
-    return { id: c.value.id, pages }
+    return { id: c.value.id, pages, stored }
   }
 
   it('refuses a page holding both keys', async () => {
-    const { id } = await warm('Priority: hi\n', 'Priority: lo\nUrgency: now\n')
+    const { id } = await warm(['Priority: hi\n', 'Priority: lo\nUrgency: now\n'])
     const r = await renameProperty(root, id, 'Urgency')
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Priority', 'Urgency', 1))
   })
 
   it('refuses a page whose file took the new key since the index read it', async () => {
-    const { id, pages } = await warm('Priority: hi\n')
+    const { id, pages } = await warm(['Priority: hi\n'])
     const content = await readFile(pages[0], 'utf8')
     await writeFile(pages[0], content.replace('Priority: hi\n', 'Priority: hi\nUrgency: now\n'))
     const r = await renameProperty(root, id, 'Urgency')
     expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Priority', 'Urgency', 1))
     expect(await readFile(pages[0], 'utf8')).toContain('Priority: hi\nUrgency: now\n')
+  })
+
+  it.skipIf(windows)(
+    'refuses a page whose file took the new key at the time and size the index read it at',
+    async () => {
+      const { id, pages } = await warm(['Priority: hi\nUrgenzy: no\n'])
+      const content = await readFile(pages[0], 'utf8')
+      await writeFile(pages[0], content.replace('Urgenzy: no\n', 'Urgency: no\n'))
+      await utimes(pages[0], kept, kept)
+      const r = await renameProperty(root, id, 'Urgency')
+      expect(!r.ok && r.error.message).toBe(KEY_REFUSAL.held('Priority', 'Urgency', 1))
+    },
+  )
+
+  it('reads no page the index vouches for holding the old key alone', async () => {
+    const { pages } = await warm(['Priority: hi\n', 'Priority: lo\n'])
+    const reads = vi.spyOn(machine(), 'readText')
+    await findHolders(
+      root,
+      { keys: ['Priority', 'Urgency'], reach: 'governed', every: true },
+      'values',
+    )
+    expect(reads.mock.calls.filter(([at]) => pages.includes(at))).toEqual([])
+  })
+
+  it('an archived page holding both keys refuses nothing and isn’t read', async () => {
+    const { id, stored } = await warm(['Priority: hi\n'], 'Priority: lo\nUrgency: now\n')
+    const reads = vi.spyOn(machine(), 'readText')
+    const { files } = await findHolders(
+      root,
+      { keys: ['Priority', 'Urgency'], reach: 'governed', every: true },
+      'values',
+    )
+    expect(files).not.toContain(stored)
+    expect(reads.mock.calls.filter(([at]) => at === stored)).toEqual([])
+    expect((await renameProperty(root, id, 'Urgency')).ok).toBe(true)
   })
 })
 

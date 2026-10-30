@@ -2,9 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { STASHED_AT } from '../Testing/definitions'
 import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
-import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
-import { noModeBits, putJson, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
+import {
+  noModeBits,
+  putJson,
+  seedSpaceSidecar,
+  readJsonAt,
+  tempRoot,
+  windows,
+} from '../Testing/hostFs'
 import { fail, fault, ok } from '../Contract/result'
 import {
   editOption,
@@ -1751,6 +1758,38 @@ describe('an option rename with the index warm', () => {
     await writeFile(page, (await readFile(page, 'utf8')).replace('Other', 'Urgent'))
     expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
     expect(await readFile(page, 'utf8')).toContain('Critical')
+  })
+
+  const kept = new Date('2026-01-02T03:04:05.000Z')
+  const warm = async () => {
+    const id = await mkSelect([
+      { id: 'opt_Urgent', key: 'Urgent', label: 'Urgent' },
+      { id: 'opt_Normal', key: 'Normal', label: 'Normal' },
+    ])
+    const page = await pageHolding(id, 'Normal')
+    await utimes(page, kept, kept)
+    await openSession(root)
+    await refreshTree(root)
+    await seedContentIndex(root)
+    return { id, page }
+  }
+
+  it.skipIf(windows)(
+    'rewrites a page whose file took the word at the time and size the index read it at',
+    async () => {
+      const { id, page } = await warm()
+      await writeFile(page, (await readFile(page, 'utf8')).replace('Normal', 'Urgent'))
+      await utimes(page, kept, kept)
+      expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
+      expect(await readFile(page, 'utf8')).toContain('Critical')
+    },
+  )
+
+  it('reads no page whose indexed value the edit leaves alone', async () => {
+    const { id, page } = await warm()
+    const reads = vi.spyOn(machine(), 'readText')
+    expect((await renameOption(root, id, 'opt_Urgent', 'Critical')).ok).toBe(true)
+    expect(reads.mock.calls.filter(([at]) => at === page)).toEqual([])
   })
 })
 
