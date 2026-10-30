@@ -16,11 +16,13 @@ The plan's *§Constraints · Mandate* holds the Approach and the Principles verb
 #### What Nathan Wants Held Throughout
 
 - **The Measure:** the Approach, the Principles, and net-less weigh every decision for the whole system; anything made bigger is justified by them. Net-negative lines are the north star, and "less" counts mechanisms, files, types, branches, tests, and docs too (Decision A-7).
+- **The Decisions Are the What:** the decision log holds the "what" and the rough "how", not a contract. A "how" that isn't the core of the feature changes when another way produces the cleaner outcome and there's reason for it, stated where the plan departs.
 - **Comments and Docs:** the codebase's comment count doesn't grow. Documentation changes are minimal re-wordings where a claim turns false, net-less where possible.
 - **Obvious Folds:** included without asking where his answer to "fix it here" would be yes and there's no architectural risk or domino effect.
 - **His Weigh-Ins:** anything needing him is decided within the hour if it can be, and otherwise planned without and recorded for him; his messages during the work are input, never a stop.
 - **Headless:** planning runs to the presented plan without stopping; execution, once ratified, runs to the report.
 - **Talking to Him:** plain, non-technical words; never a bare code (an ID, a bug number, a decision letter) without saying what it is; explain changes as if to a fresh non-technical reader, covering how they reduce the codebase, raise efficiency, cut duplication, and serve the Approach and Principles. He's in character with sarcasm and directness, and wants honest pushback.
+- **Notifications:** a push notification (`PushNotification`) at each checkpoint and with each update.
 - **Runs:** short; a measurement covers only the cells a decision rests on.
 - **No Hand Checks:** every live check is an agent's CDP drive on a scratch copy of `~/Test` from a worktree build; the app is never launched from the main checkout, where his instance runs.
 - **Placements:** approved 10-29-2026 and listed in the plan's *§Constraints · Placements*; no other file is created, moved, renamed, or deleted.
@@ -34,9 +36,10 @@ The plan's *§Constraints · Mandate* holds the Approach and the Principles verb
 
 #### Resume
 
-1. **Wave A (running):** drafters for Phases 1, 2, and 4 write `Drafts/Phase-1.md`, `Phase-2.md`, and `Phase-4.md` from the shared brief (the session scratchpad's `plan/brief-common.md`, which states the format, the rules, and the report).
-2. **Wave B:** Phase 3's drafter reads Phases 2 and 4 and reconciles Phase 4's hunks in the files both touch (`delete.ts`, `gather.ts`, `spend.ts`, `finishOwed.ts`, `owed.ts`, `bundle.ts`, `record.ts`); Phase 5's drafter reads Phase 4.
+1. **Wave A (done):** `Drafts/Phase-1.md` (about +49), `Phase-2.md` (about −135), and `Phase-4.md` (about −455), drafted from the shared brief (the session scratchpad's `plan/brief-common.md`: the format, the rules, the owner's standing rules, the report).
+   - **Calls for the consistency pass:** drop Phase 1's LD-8 (remint as one held rewrite, +12 for a rare open-time path, against net-less) and keep remint serial with its reason; keep the Write Path plan's Deviation D-4 as the record it is; Decision G-2's opening measurement isn't carried, since its before is on record; break Phase 4's `exclusion.ts` ↔ `bundleLayout.ts` import cycle by moving `hiddenName` and `hiddenFolder` into `Core/Paths/nexusPaths.ts`, which every importer can reach without a loop.
+2. **Wave B (Phase 3 done, about −35; Phase 5 running):** Phase 3 dropped M-18 (its premise is false), kept `bundle` optional on the journal's entries since rename entries carry none, and accepted two narrow edges (an unreadable linker missing from the index stripped unrecorded; parking into an unreadable bundle dropped). Its one user-visible departure: the open pass re-files a record whose parent is gone into its deepest live ancestor's Archive, recorded for Nathan under the plan's *§Deviations*. The original step:  Phase 3's drafter reads Phases 2 and 4 and reconciles Phase 4's hunks in the files both touch (`delete.ts`, `gather.ts`, `spend.ts`, `finishOwed.ts`, `owed.ts`, `bundle.ts`, `record.ts`); Phase 5's drafter reads Phase 4.
 3. **Wave C:** Phase 6's drafter (tests where their behavior lives, the bundle fixture, the closing measurement, the harness's removal), then one consistency pass over all six drafts.
 4. **Assemble:** splice the drafts into the plan at its markers, fill *§Process Overview* (compaction checkpoints after Phases 2 and 4), *§Concepts*, and *§Reconciliation* from the drafts' trailing sections, and delete `Drafts/`.
-5. **Review:** two read-only plan reviewers in parallel (simplification, adversarial), folded; the self-review read; the advisor.
+5. **Review:** two read-only plan reviewers in parallel (simplification, adversarial), each reading outward as well as inward: anything the plan didn't consider, both as an error and as a missed opportunity or insight across the codebase, folded; the self-review read; the advisor.
 6. **Present:** the plan's Overview and Process Overview, in plain words, with anything recorded for Nathan; on his approval, the baseline filled, STATUS Ratified, the plan committed, and `c/pre-compaction`.
