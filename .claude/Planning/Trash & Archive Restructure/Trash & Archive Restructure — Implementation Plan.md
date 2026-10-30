@@ -15,7 +15,7 @@
 | Phase | Estimate | Measured |
 |---|---|---|
 | 1 · The Landing | about +46 | +68 (+198 / −130); +45 outside `Core/Testing` |
-| 2 · Residue | about −136 | |
+| 2 · Residue | about −136 | −157 (+215 / −372); −152 outside `Core/Testing` |
 | 3 · Delete, Journal, and Carry | about −46 | |
 | 4 · Reach-In | about −360 | |
 | 5 · One Restore, Recognition, and the Interface | about +80 | |
@@ -1236,10 +1236,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Write `spend.test.ts`'s *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"* and watch it fail with `dispose`'s system call replaced by a no-op.
-- [ ] Delete `Core/Trash/trashMode.ts`.
-- [ ] Apply the AFTER.
-- [ ] Remove the cases that pin system behavior, by name:
+- [x] Write `spend.test.ts`'s *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"* and watch it fail with `dispose`'s system call replaced by a no-op.
+- [x] Delete `Core/Trash/trashMode.ts`.
+- [x] Apply the AFTER.
+- [x] Remove the cases that pin system behavior, by name:
   - `Core/Archive/archive.test.ts:919-936`, *"under the system Trash Mode, it leaves for the system trash with its metadata"*;
   - `Core/Assets/assetMigrate.test.ts:220-232`, *"sends swept leftovers to the system trash in System mode"*;
   - `Core/Interface/Confirm/confirmations.test.ts:198-212`, *"a delete under the system Trash Mode says it moves to the system trash"*, the Nexus wording staying pinned at `:377`;
@@ -1257,20 +1257,20 @@ User-facing behavior stays as it is, except that a restored page returns current
   - `Core/Trash/spend.test.ts:378-389`, *"system trash mode refuses the same Context delete"*, the Nexus refusal staying pinned at `:366`;
   - `Core/Trash/spend.test.ts:1877-1893`, *"a Set deleted to the system trash drops its pages' entries with the delete"*, the empty's drop staying pinned at `:1747`;
   - `Desktop/Config/appConfig.test.ts:58-68`, *"round-trips a valid trashMode through write then read"* and *"ignores an invalid trashMode (consumer defaults to nexus)"*.
-- [ ] Switch the cases that only borrowed the mode:
+- [x] Switch the cases that only borrowed the mode:
   - `Core/Files/writePathRace.test.ts:83`: `const ctx = { root }`;
   - `Core/Nexus/mutate.test.ts:731-749`: the second delete runs as the first does, and the title drops *", in either Trash Mode"*;
   - `Core/Nexus/mutate.test.ts:1415-1421`, *"a replaced photo reaches no trash"*: installs `{ ...diskMachine(), trashToSystem }` around its two mutations and restores `diskMachine()` after, its assertion unchanged;
   - `Core/Nexus/settle.test.ts:854` and `Core/Properties/setSpaceProperty.test.ts:26-27`: the literal goes and `ctx` becomes `(): MutateContext => ({ root })`;
   - `Core/Trash/deleteReach.test.ts:608-620` becomes *"a Context delete whose move fails keeps its order"*: `vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))` in place of the system deps, `handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' })`, its assertions unchanged;
   - `Desktop/Config/appConfig.test.ts:84-95` becomes *"keeps an unmodelled key when the device is written"*, seeding `{ windowBounds: { w: 1 } }` alone and dropping the two `trashMode` lines.
-- [ ] Remove `trashMode: async () => 'nexus'` from every `HostContext` stub: `Core/Contract/writeGate.test.ts:34`, `Core/Nexus/admission.test.ts:75`, `Core/Nexus/adopt.test.ts:48`, `Core/Nexus/handlers.test.ts:82`, `Core/Properties/handlers.test.ts:49`, `Core/Nexus/mutate.test.ts:1538,1582,1633,1740,3308`.
-- [ ] Narrow the `delete:facts` stubs: drop the `'delete:facts'` key where its suite now asks it nothing (`Core/Archive/ArchiveView.test.tsx:145-148`; `confirmations.test.ts:222` and `:472`), and answer `{ permanentDelete: false }` where `askEmptyTrash` still asks it (`confirmations.test.ts:340`; `Core/Settings/TrashFrame.test.tsx:157-160`).
-- [ ] Remove every `TrashDeps` literal and its import (35 files, 32 of them stubbing `trashToSystem`), and drop the argument at each call site: `settledMutate(root, req, X)` → `settledMutate(root, req)`; `handleMutate(root, req, X)` → `handleMutate(root, req)`; `finishOwed(root, X)` → `finishOwed(root)`; `migrateAssets(root, X)`, `removeTile(…, X)`, `convertTile(…, X)` lose their last argument; `{ root, deps: X }` → `{ root }`; `discardFile(dir, p, { … })` → `discardFile(dir, p)` (`Core/Files/atomicWrite.test.ts:521`). Typecheck finds every one.
-- [ ] Helpers typed to forward the literal lose the parameter as well as the argument: `spend.test.ts:280`'s `deleteProjects(deps)` becomes `deleteProjects()`, and `setSpaceProperty.test.ts:137`'s `settled` leaves.
-- [ ] Suites that empty a bundle with Permanently Delete off install the machine their literal stubbed, in a `beforeEach`, and `afterEach(() => installMachine(diskMachine()))`: `Core/Trash/spend.test.ts` (`trashToSystem: async () => {}`), `Core/Trash/trashRecovery.test.ts` (`trashToSystem: async (p) => void handed.push(p)`), and `Core/Archive/archive.test.ts` (`trashToSystem: async () => {}`).
-- [ ] `Core/Files/atomicWrite.test.ts:390-430`'s describe *"trashFileFlat"* becomes *"discardFile"*: `discardFile` keeps HEAD's `void`, since only these cases read the destination `trashFileFlat` answered, so each case calls `discardFile(dir, p)` and lists `.trash` for what it left, its assertions otherwise unchanged (the AFTER's test hunk).
-- [ ] Apply the doc lines under the AFTER.
+- [x] Remove `trashMode: async () => 'nexus'` from every `HostContext` stub: `Core/Contract/writeGate.test.ts:34`, `Core/Nexus/admission.test.ts:75`, `Core/Nexus/adopt.test.ts:48`, `Core/Nexus/handlers.test.ts:82`, `Core/Properties/handlers.test.ts:49`, `Core/Nexus/mutate.test.ts:1538,1582,1633,1740,3308`.
+- [x] Narrow the `delete:facts` stubs: drop the `'delete:facts'` key where its suite now asks it nothing (`Core/Archive/ArchiveView.test.tsx:145-148`; `confirmations.test.ts:222` and `:472`), and answer `{ permanentDelete: false }` where `askEmptyTrash` still asks it (`confirmations.test.ts:340`; `Core/Settings/TrashFrame.test.tsx:157-160`).
+- [x] Remove every `TrashDeps` literal and its import (35 files, 32 of them stubbing `trashToSystem`), and drop the argument at each call site: `settledMutate(root, req, X)` → `settledMutate(root, req)`; `handleMutate(root, req, X)` → `handleMutate(root, req)`; `finishOwed(root, X)` → `finishOwed(root)`; `migrateAssets(root, X)`, `removeTile(…, X)`, `convertTile(…, X)` lose their last argument; `{ root, deps: X }` → `{ root }`; `discardFile(dir, p, { … })` → `discardFile(dir, p)` (`Core/Files/atomicWrite.test.ts:521`). Typecheck finds every one.
+- [x] Helpers typed to forward the literal lose the parameter as well as the argument: `spend.test.ts:280`'s `deleteProjects(deps)` becomes `deleteProjects()`, and `setSpaceProperty.test.ts:137`'s `settled` leaves.
+- [x] Suites that empty a bundle with Permanently Delete off install the machine their literal stubbed, in a `beforeEach`, and `afterEach(() => installMachine(diskMachine()))`: `Core/Trash/spend.test.ts` (`trashToSystem: async () => {}`), `Core/Trash/trashRecovery.test.ts` (`trashToSystem: async (p) => void handed.push(p)`), and `Core/Archive/archive.test.ts` (`trashToSystem: async () => {}`).
+- [x] `Core/Files/atomicWrite.test.ts:390-430`'s describe *"trashFileFlat"* becomes *"discardFile"*: `discardFile` keeps HEAD's `void`, since only these cases read the destination `trashFileFlat` answered, so each case calls `discardFile(dir, p)` and lists `.trash` for what it left, its assertions otherwise unchanged (the AFTER's test hunk).
+- [x] Apply the doc lines under the AFTER.
 
 **AFTER**
 
@@ -2004,13 +2004,13 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 
 **VERIFY**
 
-- [ ] *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"* is green, and red with `dispose`'s system call replaced by a no-op.
-- [ ] *"a Context delete whose move fails keeps its order"* (`deleteReach.test.ts:608`) is green in the Nexus's Trash.
-- [ ] `git grep -nP "TrashMode|trashMode|DEFAULT_TRASH_MODE|TrashDeps|trashDeps|trashFileFlat|trashModeOf" -- Core Desktop` prints nothing.
-- [ ] `git grep -nP "system[- ]trash (mode|delete)|Trash Mode" -- Core Desktop .claude/Features .claude/CLAUDE.md` prints nothing.
-- [ ] `test ! -e Core/Trash/trashMode.ts` succeeds.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"* is green, and red with `dispose`'s system call replaced by a no-op.
+- [x] *"a Context delete whose move fails keeps its order"* (`deleteReach.test.ts:608`) is green in the Nexus's Trash.
+- [x] `git grep -nP "TrashMode|trashMode|DEFAULT_TRASH_MODE|TrashDeps|trashDeps|trashFileFlat|trashModeOf" -- Core Desktop` prints nothing.
+- [x] `git grep -nP "system[- ]trash (mode|delete)|Trash Mode" -- Core Desktop .claude/Features .claude/CLAUDE.md` prints nothing.
+- [x] `test ! -e Core/Trash/trashMode.ts` succeeds.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-2
 
@@ -2020,13 +2020,13 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 
 **CHANGE**
 
-- [ ] Apply the AFTER.
-- [ ] Remove `expect(atSettle).not.toHaveProperty('partial')` and `expect(after).not.toHaveProperty('partial')` (`Core/Trash/deleteOrder.test.ts:167,173`) and `expect(atSettle).not.toHaveProperty('partial')` (`:215`); the Space and Context cases' `not.toMatchObject({ partial: true })` (`:184,200`) stay.
-- [ ] Remove `Core/Trash/deleteReach.test.ts:800-806`, *"a clean delete's record carries no partial"*, and the content records' `not.toHaveProperty('partial')` assertions at `:142` and `:374`, which nothing can make fail once content records carry no mark.
-- [ ] `Core/Trash/spend.test.ts`'s *"a partly recorded page's restore says so"* becomes *"a partly recorded Space's restore says so"*, deleting and restoring `.nexus/contexts/Projects/Pommora` in place of `Notes/Daily/Alpha.md`; it's red with `recordedPartly`'s `'partial' in record` guard removed.
-- [ ] Remove `Core/Trash/spend.test.ts:685-699`, *"old-format trash entries are invisible"*.
-- [ ] Remove `Core/Bundles/bundle.test.ts:200-205`, *"marks an inner item of a partly recorded bundle partial, and one of a whole record not"*, and `Core/Bundles/rows.test.ts:463-468`, *"a row inside a partly recorded bundle carries the mark"*, which pin the copy into an inner record; and the absence assertions at `rows.test.ts:406` and `Core/Archive/archive.test.ts:1120`, whose case drops *", and its record stays whole"* from its title.
-- [ ] `rows.test.ts:190-216` becomes *"a partly recorded entry's row carries the mark, a property's and a Space's alike"*: its page element becomes `{ bundlePath: '.trash/.nexus/contexts/Areas/s__Work.deleted', artifactName: 'Work', record: { entity: 'space' as const, id: 'sp_work', parent: { kind: 'context' as const, id: 'ctx_areas' }, members: [], ...(partial ? { partial: true as const } : {}) } }`, so the artifact row's reading of the mark stays pinned.
+- [x] Apply the AFTER.
+- [x] Remove `expect(atSettle).not.toHaveProperty('partial')` and `expect(after).not.toHaveProperty('partial')` (`Core/Trash/deleteOrder.test.ts:167,173`) and `expect(atSettle).not.toHaveProperty('partial')` (`:215`); the Space and Context cases' `not.toMatchObject({ partial: true })` (`:184,200`) stay.
+- [x] Remove `Core/Trash/deleteReach.test.ts:800-806`, *"a clean delete's record carries no partial"*, and the content records' `not.toHaveProperty('partial')` assertions at `:142` and `:374`, which nothing can make fail once content records carry no mark.
+- [x] `Core/Trash/spend.test.ts`'s *"a partly recorded page's restore says so"* becomes *"a partly recorded Space's restore says so"*, deleting and restoring `.nexus/contexts/Projects/Pommora` in place of `Notes/Daily/Alpha.md`; it's red with `recordedPartly`'s `'partial' in record` guard removed.
+- [x] Remove `Core/Trash/spend.test.ts:685-699`, *"old-format trash entries are invisible"*.
+- [x] Remove `Core/Bundles/bundle.test.ts:200-205`, *"marks an inner item of a partly recorded bundle partial, and one of a whole record not"*, and `Core/Bundles/rows.test.ts:463-468`, *"a row inside a partly recorded bundle carries the mark"*, which pin the copy into an inner record; and the absence assertions at `rows.test.ts:406` and `Core/Archive/archive.test.ts:1120`, whose case drops *", and its record stays whole"* from its title.
+- [x] `rows.test.ts:190-216` becomes *"a partly recorded entry's row carries the mark, a property's and a Space's alike"*: its page element becomes `{ bundlePath: '.trash/.nexus/contexts/Areas/s__Work.deleted', artifactName: 'Work', record: { entity: 'space' as const, id: 'sp_work', parent: { kind: 'context' as const, id: 'ctx_areas' }, members: [], ...(partial ? { partial: true as const } : {}) } }`, so the artifact row's reading of the mark stays pinned.
 
 **AFTER**
 
@@ -2069,11 +2069,11 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 
 **VERIFY**
 
-- [ ] `git grep -nP "held\.partial|partial, \.\.\.filed" -- Core` prints nothing.
-- [ ] `git grep -n "provenance" -- Core` prints nothing.
-- [ ] The rewritten `rows.test.ts` case is green, and red with `rows.ts`'s `'partial' in record` arm removed; the Space and Context cases at `deleteOrder.test.ts:176,188`, `BundleTable.test.tsx:133`, and `finishOwed.test.ts:561` still pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nP "held\.partial|partial, \.\.\.filed" -- Core` prints nothing.
+- [x] `git grep -n "provenance" -- Core` prints nothing.
+- [x] The rewritten `rows.test.ts` case is green, and red with `rows.ts`'s `'partial' in record` arm removed; the Space and Context cases at `deleteOrder.test.ts:176,188`, `BundleTable.test.tsx:133`, and `finishOwed.test.ts:561` still pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-3
 
@@ -2090,14 +2090,14 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 
 **CHANGE**
 
-- [ ] Write `spend.test.ts`'s *"a Context returns beside the neighbor its record names, wherever that neighbor has moved"* and watch it fail.
-- [ ] Rewrite `spend.test.ts:299-312` as *"a Context's delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders"* and watch it fail.
-- [ ] Apply the AFTER.
-- [ ] Remove `spend.test.ts:314-322`, *"a record from before the place was kept restores its Context at the end"*.
-- [ ] Rewrite `spend.test.ts:324-340` as *"emptying a Context's bundle leaves the orders as its delete left them"*: the same `stateOrder()` expectation, `{ spaces: { ctx_areas: ['sp-home'] }, contexts: ['ctx_areas'] }`, now read after the empty.
-- [ ] Rewrite `Core/Nexus/reorder.test.ts:77-90`'s two `dropContextOrder` cases through `dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')` (`Core/Testing/testTree.ts`'s Context `g1`): *"a departing Context takes its panel id and its Space order, leaving the rest"* seeds `setSpaceOrder(root, 'g1', ['y'])`, `setSpaceOrder(root, 'other', ['x'])`, and `setPanelContextOrder(root, ['g1', 'other'])` and expects `{ spaces: { other: ['x'] }, contexts: ['other'] }`; *"a departing Context with no order writes nothing"* expects no `state.json`.
-- [ ] Rewrite `Core/Bundles/placement.test.ts:271-290`'s describe *"slotOf"* as *"placeAmong"*, its four cases unchanged in name: `placeAmong(['a', 'b'], 'x', { above: 'b', below: 'a' })` and `placeAmong(['a', 'b'], 'x', { above: 'gone', below: 'a' })` are `['a', 'x', 'b']`; `placeAmong(['a', 'b'], 'x', { above: 'gone' })` is `['x', 'a', 'b']`; `placeAmong(['a'], 'x', { above: 'gone', below: 'lost' })` and `placeAmong(['a'], 'x', undefined)` are `['a', 'x']`.
-- [ ] Apply the doc lines under the AFTER.
+- [x] Write `spend.test.ts`'s *"a Context returns beside the neighbor its record names, wherever that neighbor has moved"* and watch it fail.
+- [x] Rewrite `spend.test.ts:299-312` as *"a Context's delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders"* and watch it fail.
+- [x] Apply the AFTER.
+- [x] Remove `spend.test.ts:314-322`, *"a record from before the place was kept restores its Context at the end"*.
+- [x] Rewrite `spend.test.ts:324-340` as *"emptying a Context's bundle leaves the orders as its delete left them"*: the same `stateOrder()` expectation, `{ spaces: { ctx_areas: ['sp-home'] }, contexts: ['ctx_areas'] }`, now read after the empty.
+- [x] Rewrite `Core/Nexus/reorder.test.ts:77-90`'s two `dropContextOrder` cases through `dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')` (`Core/Testing/testTree.ts`'s Context `g1`): *"a departing Context takes its panel id and its Space order, leaving the rest"* seeds `setSpaceOrder(root, 'g1', ['y'])`, `setSpaceOrder(root, 'other', ['x'])`, and `setPanelContextOrder(root, ['g1', 'other'])` and expects `{ spaces: { other: ['x'] }, contexts: ['other'] }`; *"a departing Context with no order writes nothing"* expects no `state.json`.
+- [x] Rewrite `Core/Bundles/placement.test.ts:271-290`'s describe *"slotOf"* as *"placeAmong"*, its four cases unchanged in name: `placeAmong(['a', 'b'], 'x', { above: 'b', below: 'a' })` and `placeAmong(['a', 'b'], 'x', { above: 'gone', below: 'a' })` are `['a', 'x', 'b']`; `placeAmong(['a', 'b'], 'x', { above: 'gone' })` is `['x', 'a', 'b']`; `placeAmong(['a'], 'x', { above: 'gone', below: 'lost' })` and `placeAmong(['a'], 'x', undefined)` are `['a', 'x']`.
+- [x] Apply the doc lines under the AFTER.
 
 **AFTER**
 
@@ -2576,13 +2576,13 @@ The second case discriminates the neighbor from the index: by `at`, the Context 
 
 **VERIFY**
 
-- [ ] *"a Context returns beside the neighbor its record names, wherever that neighbor has moved"* and *"a Context's delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders"* are green, and red against the code before this task.
-- [ ] *"a Context delete whose move fails keeps its order"* (`deleteReach.test.ts:608`) stays green: the delete's order drop runs only after its folder has moved.
-- [ ] The rewritten `reorder.test.ts` and `placement.test.ts` cases are green.
-- [ ] M-4 changes no behavior beyond a Space's icon, which the tree reads from `$icon` where the old sidecar read looked for `icon` (so `rows.test.ts`' Space fixture writes `$icon`), and the record-shape pins still pass unchanged: `spend.test.ts:164-208` (a Space's and a Context's records), `spend.test.ts:209-268` (`place` between neighbors, a Space's included), `deleteOrder.test.ts:148-216`, and `archive.test.ts:945-951`.
-- [ ] `git grep -nP "\bslotOf\b|dropContextOrder|identityOf\(entity|identityOf\(kind|ContextEvidence|gatherContextEvidence|buildContextRecord|record\.at\b" -- Core ':!Core/Interface/Sidebar'` prints nothing (the sidebar's drag model keeps a test-local `slotOf` of its own).
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] *"a Context returns beside the neighbor its record names, wherever that neighbor has moved"* and *"a Context's delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders"* are green, and red against the code before this task.
+- [x] *"a Context delete whose move fails keeps its order"* (`deleteReach.test.ts:608`) stays green: the delete's order drop runs only after its folder has moved.
+- [x] The rewritten `reorder.test.ts` and `placement.test.ts` cases are green.
+- [x] M-4 changes no behavior beyond a Space's icon, which the tree reads from `$icon` where the old sidecar read looked for `icon` (so `rows.test.ts`' Space fixture writes `$icon`), and the record-shape pins still pass unchanged: `spend.test.ts:164-208` (a Space's and a Context's records), `spend.test.ts:209-268` (`place` between neighbors, a Space's included), `deleteOrder.test.ts:148-216`, and `archive.test.ts:945-951`.
+- [x] `git grep -nP "\bslotOf\b|dropContextOrder|identityOf\(entity|identityOf\(kind|ContextEvidence|gatherContextEvidence|buildContextRecord|record\.at\b" -- Core ':!Core/Interface/Sidebar'` prints nothing (the sidebar's drag model keeps a test-local `slotOf` of its own).
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 2-4
 
@@ -2596,13 +2596,13 @@ The second case discriminates the neighbor from the index: by `at`, the Context 
 
 **CHANGE**
 
-- [ ] Rewrite `spend.test.ts:797-808` as *"a tag that can't go back is named, and the bundle is spent"* and `:810-826` as *"a tag neither of two pages claiming one id takes back is named, and the bundle is spent"*, each asserting `expect(await pathExists(join(root, listed.bundlePath))).toBe(false)` in place of the kept record, and watch both fail.
-- [ ] Write `settle.test.ts`'s *"a restore re-spells a key only its returning page answered"* in the describe *"a re-spell on the notes"*, before the export changes, and watch it fail with `returningCascade`'s `names` built from `respellings(live, after, [], ids)` alone.
-- [ ] Apply the AFTER.
-- [ ] Remove `confirmations.test.ts:275-283`, *"an Undo given a destination restores its bundle there"*.
-- [ ] Remove `settle.test.ts:1298-1322`, the describe *"returningNames"*, with `returningNames` from its import at `:31` and the `buildPageIndex, connPage` import at `:40`, which only it used.
-- [ ] `Core/Archive/ArchiveView.test.tsx:77` renders `<ArchiveView owner={owner} archiveId={collection.id} />`.
-- [ ] Apply the doc line under the AFTER.
+- [x] Rewrite `spend.test.ts:797-808` as *"a tag that can't go back is named, and the bundle is spent"* and `:810-826` as *"a tag neither of two pages claiming one id takes back is named, and the bundle is spent"*, each asserting `expect(await pathExists(join(root, listed.bundlePath))).toBe(false)` in place of the kept record, and watch both fail.
+- [x] Write `settle.test.ts`'s *"a restore re-spells a key only its returning page answered"* in the describe *"a re-spell on the notes"*, before the export changes, and watch it fail with `returningCascade`'s `names` built from `respellings(live, after, [], ids)` alone.
+- [x] Apply the AFTER.
+- [x] Remove `confirmations.test.ts:275-283`, *"an Undo given a destination restores its bundle there"*.
+- [x] Remove `settle.test.ts:1298-1322`, the describe *"returningNames"*, with `returningNames` from its import at `:31` and the `buildPageIndex, connPage` import at `:40`, which only it used.
+- [x] `Core/Archive/ArchiveView.test.tsx:77` renders `<ArchiveView owner={owner} archiveId={collection.id} />`.
+- [x] Apply the doc line under the AFTER.
 
 **AFTER**
 
@@ -2710,12 +2710,12 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 **VERIFY**
 
-- [ ] The two rewritten L-5 cases are green, and red with the `unspent` gate restored.
-- [ ] *"a restore re-spells a key only its returning page answered"* is green, and red with `returningCascade`'s `own`-into-`names` join removed.
-- [ ] `ArchiveView.test.tsx`'s Set-owner case (`:341`, listing `{ kind: 'archive', id: 'c1' }` within `s1`) passes.
-- [ ] `git grep -nP "undoTo\?|export function returningNames|\?\? owner\.id|outlives a partial re-tag" -- Core` prints only `offerDeleted`'s own `undoTo?` parameter (`confirmations.ts`), which Task 5-2 removes.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The two rewritten L-5 cases are green, and red with the `unspent` gate restored.
+- [x] *"a restore re-spells a key only its returning page answered"* is green, and red with `returningCascade`'s `own`-into-`names` join removed.
+- [x] `ArchiveView.test.tsx`'s Set-owner case (`:341`, listing `{ kind: 'archive', id: 'c1' }` within `s1`) passes.
+- [x] `git grep -nP "undoTo\?|export function returningNames|\?\? owner\.id|outlives a partial re-tag" -- Core` prints only `offerDeleted`'s own `undoTo?` parameter (`confirmations.ts`), which Task 5-2 removes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
