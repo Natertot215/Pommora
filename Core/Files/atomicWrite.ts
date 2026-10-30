@@ -2,7 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
-import { type FileEvent, forgetWrite, noteOwn, recordWrite, reportRename } from './writeEcho'
+import { type FileEvent, noteOwn, recordLanding, recordWrite, reportRename } from './writeEcho'
 import { type FileStat, type Landing, machine, statOrNull } from '../Platform/machine'
 import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
@@ -10,20 +10,18 @@ import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
 
-/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume whose change time is coarse or absent (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
+/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and takes the stat its landing answered, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume whose change time is coarse or absent (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
 async function landOwn(
   files: readonly Landing[],
   bodyOnly?: boolean,
 ): Promise<PromiseSettledResult<FileStat>[]> {
-  for (const { path, data } of files) recordWrite(path, data)
+  for (const { path } of files) recordWrite(path, true)
   const landed = await machine().land(files)
   const events: FileEvent[] = []
   files.forEach(({ path, data, mtimeMs }, i) => {
     const at = landed[i]
-    if (at.status === 'rejected') {
-      forgetWrite(path, machine().sha256Hex(data))
-      return
-    }
+    if (at.status === 'rejected') return
+    recordLanding(path, at.value)
     if (mtimeMs !== undefined) forgetParse(path)
     const text = typeof data === 'string' ? data : undefined
     const event = text === undefined ? 'add' : 'change'

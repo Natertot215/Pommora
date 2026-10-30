@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -7,11 +7,13 @@ import {
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
+  recordLanding,
   recordWrite,
   setWatchTap,
   setWriteTap,
-  writtenHash,
 } from './writeEcho'
+import { machine } from '../Platform/machine'
+import { windows } from '../Testing/hostFs'
 
 // WINDOW_MS is 2000; PREFIX_WINDOW_MS is 800. The module-level map has no reset, so each test uses a distinct root to keep records from bleeding across tests.
 beforeEach(() => {
@@ -19,6 +21,7 @@ beforeEach(() => {
   vi.setSystemTime(0)
 })
 afterEach(() => {
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
@@ -69,26 +72,25 @@ describe('setWriteTap', () => {
   })
 })
 
-describe('an echo recorded with its bytes', () => {
-  it('is left to the content check, which drops it only while the file still holds the bytes its arrival named', async () => {
+describe('a landing’s echo', () => {
+  const land = async (p: string, data: string, at?: Date): Promise<void> => {
+    recordWrite(p, true)
+    writeFileSync(p, data)
+    if (at) utimesSync(p, at, at)
+    recordLanding(p, (await machine().stat(p))!)
+  }
+  const watched = (absPath: string): Changed => ({ event: 'change', absPath, origin: 'watched' })
+
+  it('is dropped while the file still holds the stat its landing answered, and kept once it doesn’t', async () => {
     vi.useRealTimers()
     const dir = mkdtempSync(join(tmpdir(), 'pom-echo-'))
-    const own = join(dir, 'own.md')
-    const theirs = join(dir, 'theirs.md')
-    recordWrite(own, 'mine')
-    recordWrite(theirs, 'mine')
-    writeFileSync(own, 'mine')
+    const [own, theirs, gone] = ['own.md', 'theirs.md', 'gone.md'].map((f) => join(dir, f))
+    for (const p of [own, theirs, gone]) await land(p, 'mine')
     writeFileSync(theirs, 'an outside edit')
+    unlinkSync(gone)
     expect(isRecentWrite(own)).toBe(false)
-    const events = [own, theirs, join(dir, 'gone.md')].map(
-      (absPath): Changed => ({
-        event: 'change',
-        absPath,
-        origin: 'watched',
-        written: writtenHash(absPath),
-      }),
-    )
-    // A settle long past the window still judges by what arrival named.
+    const events = [own, theirs, gone].map(watched)
+    // A settle long past the window still judges by the stat its landing answered.
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.now() + 10_000)
     expect(await dropOwnEchoes(events)).toEqual([events[1], events[2]])
@@ -97,57 +99,59 @@ describe('an echo recorded with its bytes', () => {
   it('is still told apart however late its events arrive', async () => {
     vi.useRealTimers()
     const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'late.md')
-    recordWrite(p, 'mine')
-    writeFileSync(p, 'mine')
+    await land(p, 'mine')
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.now() + 10_000)
-    const late: Changed = {
-      event: 'change',
-      absPath: p,
-      origin: 'watched',
-      written: writtenHash(p),
-    }
-    expect(await dropOwnEchoes([late, late])).toEqual([])
+    expect(await dropOwnEchoes([watched(p), watched(p)])).toEqual([])
   })
 
-  it('stops being an echo once an event finds other bytes, so an outside write restoring the app’s bytes still reaches the watcher', async () => {
+  it('stops being an echo once an event finds the file changed, so an outside write restoring the app’s bytes still reaches the watcher', async () => {
     vi.useRealTimers()
     const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'restored.md')
-    const arrival = (): Changed => ({
-      event: 'change',
-      absPath: p,
-      origin: 'watched',
-      written: writtenHash(p),
-    })
-    recordWrite(p, 'mine')
+    await land(p, 'mine')
     writeFileSync(p, 'an outside edit')
-    const edit = arrival()
+    const edit = watched(p)
     expect(await dropOwnEchoes([edit])).toEqual([edit])
     writeFileSync(p, 'mine')
-    const restore = arrival()
+    const restore = watched(p)
     expect(await dropOwnEchoes([restore])).toEqual([restore])
   })
 
-  it('keeps a newer write’s record when an older event finds the newer bytes', async () => {
+  it('keeps a newer landing’s record when an older event finds the file it left', async () => {
     vi.useRealTimers()
     const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'newer.md')
-    recordWrite(p, 'one')
-    const older: Changed = {
-      event: 'change',
-      absPath: p,
-      origin: 'watched',
-      written: writtenHash(p),
-    }
-    recordWrite(p, 'two')
-    writeFileSync(p, 'two')
-    await dropOwnEchoes([older])
-    const newer: Changed = {
-      event: 'change',
-      absPath: p,
-      origin: 'watched',
-      written: writtenHash(p),
-    }
-    expect(await dropOwnEchoes([newer])).toEqual([])
+    await land(p, 'one')
+    const m = machine()
+    const real = m.stat.bind(m)
+    vi.spyOn(m, 'stat').mockImplementationOnce(async (path) => {
+      await land(p, 'two!')
+      return real(path)
+    })
+    await dropOwnEchoes([watched(p)])
+    expect(await dropOwnEchoes([watched(p)])).toEqual([])
+  })
+
+  it.skipIf(windows)(
+    'is heard when an outside write keeps the landing’s time and size',
+    async () => {
+      vi.useRealTimers()
+      const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'kept.md')
+      const second = new Date(Math.floor(Date.now() / 1000) * 1000 - 1000)
+      await land(p, 'mine', second)
+      writeFileSync(p, 'mint')
+      utimesSync(p, second, second)
+      const heard = watched(p)
+      expect(await dropOwnEchoes([heard])).toEqual([heard])
+    },
+  )
+
+  it('drops a landing’s echo without reading the file', async () => {
+    vi.useRealTimers()
+    const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'unread.md')
+    await land(p, 'mine')
+    const reads = [vi.spyOn(machine(), 'readBytes'), vi.spyOn(machine(), 'readText')]
+    expect(await dropOwnEchoes([watched(p)])).toEqual([])
+    for (const read of reads) expect(read).not.toHaveBeenCalled()
   })
 })
 

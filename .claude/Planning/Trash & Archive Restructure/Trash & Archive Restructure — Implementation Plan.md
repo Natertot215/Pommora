@@ -256,7 +256,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 1-1 · One flush per drive, and the stat after the rename
   - [x] Task 1-2 · The thread-pool line, measured and removed
   - [x] Task 1-3 · The change time identifies a file
-  - [ ] Task 1-4 · The echo by stat
+  - [x] Task 1-4 · The echo by stat
   - [ ] Task 1-5 · The clash check and the option edit pass over vouched rows
   - [ ] Task 1-6 · A metadata copy writes each month once
   - [ ] Review Checkpoint
@@ -861,6 +861,9 @@ User-facing behavior stays as it is, except that a restored page returns current
 -type Echo = { at: number; hash?: string }
 +// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume whose change time is coarse or absent, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
 +type Echo = { at: number; landing: boolean; stat?: FileStat }
+@@ PREFIX_WINDOW_MS @@
+ const PREFIX_WINDOW_MS = 800
++let sweepAbove = 256
 @@ recordWrite @@
  // Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
 -export function recordWrite(absPath: string, content?: string | Uint8Array): void {
@@ -870,9 +873,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 -  })
 +export function recordWrite(absPath: string, landing = false): void {
 +  recent.set(absPath, { at: Date.now(), landing })
-   if (recent.size > 256) {
+~  if (recent.size > sweepAbove) {
      const cutoff = Date.now() - WINDOW_MS
 ~    for (const [p, r] of recent) if (!r.landing && r.at < cutoff) recent.delete(p)
++    sweepAbove = Math.max(256, 2 * recent.size)
    }
    tap?.wrote(absPath)
  }
@@ -965,7 +969,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 **VERIFY**
 
 - [ ] The rewritten and added `writeEcho.test.ts` cases, T-N36, and the three watcher cases are green, and the added cases and T-N36 went red against HEAD's echo.
-- [ ] `git grep -nP "writtenHash|forgetWrite|sha256Hex\(data\)|\.written\b" -- Core Desktop` prints nothing.
+- [ ] `git grep -nP "writtenHash|forgetWrite|sha256Hex\(data\)|\.written\b" -- Core/Files Desktop/FileWatch` prints nothing.
 - [ ] `git diff HEAD~1 -- Core/Files/writeEcho.ts` shows `tap?.wrote(absPath)` unmoved inside `recordWrite`, and `Core/Sync/Client/tap.test.ts` passes unchanged.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.

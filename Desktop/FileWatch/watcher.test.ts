@@ -7,7 +7,8 @@ import * as liveTree from '@pommora/core/Nexus/liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from '@pommora/core/Nexus/liveTree'
 import { splitFrontmatter } from '@pommora/core/Files/pageFile'
 import { ID_KEY, isUlidShaped } from '@pommora/core/Nexus/identityMark'
-import { recordWrite } from '@pommora/core/Files/writeEcho'
+import { recordLanding, recordWrite } from '@pommora/core/Files/writeEcho'
+import { machine } from '@pommora/core/Platform/machine'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
@@ -536,8 +537,12 @@ describe('a host document under the watcher', () => {
   it('pushes the host for an outside edit to a tile body, and nothing for its own write', async () => {
     await startWatcher(root, win)
     await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
-    recordWrite(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'typed')
+    recordWrite(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), true)
     await writeFile(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'typed')
+    recordLanding(
+      abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`),
+      (await machine().stat(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`)))!,
+    )
     emit('change', '.nexus', 'interface', 'homepage', `${ULID_B}.md`)
     await settleAll()
     expect(pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')).toEqual([])
@@ -593,7 +598,8 @@ describe('a page the app just wrote', () => {
 
   it('drops its own echo', async () => {
     await startWatcher(root, win)
-    recordWrite(abs('Notes', 'A.md'), own)
+    recordWrite(abs('Notes', 'A.md'), true)
+    recordLanding(abs('Notes', 'A.md'), (await machine().stat(abs('Notes', 'A.md')))!)
     emit('change', 'Notes', 'A.md')
     await settleAll()
     expect(changedPages()).toEqual([])
@@ -601,7 +607,8 @@ describe('a page the app just wrote', () => {
 
   it('lands an outside edit inside the echo window', async () => {
     await startWatcher(root, win)
-    recordWrite(abs('Notes', 'A.md'), own)
+    recordWrite(abs('Notes', 'A.md'), true)
+    recordLanding(abs('Notes', 'A.md'), (await machine().stat(abs('Notes', 'A.md')))!)
     await writeFile(abs('Notes', 'A.md'), `${own}outside\n`)
     emit('change', 'Notes', 'A.md')
     await settleAll(() => changedPages().length > 0)

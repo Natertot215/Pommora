@@ -1,13 +1,14 @@
-// The app's writes and the watcher's events pass through here: the echo window tells the app's writes from outside ones, the own tap lands each landing's files as one batch of events (`Core/Nexus/settle.ts` installs it when imported, so a process that writes without importing the settle reaches neither the tree nor the index), and the write and watch taps feed sync.
+// The app's writes and the watcher's events pass through here: the echo records tell the app's writes from outside ones, the own tap lands each landing's files as one batch of events (`Core/Nexus/settle.ts` installs it when imported, so a process that writes without importing the settle reaches neither the tree nor the index), and the write and watch taps feed sync.
 
-import { type FileStat, machine } from '../Platform/machine'
+import { type FileStat, sameFile, statOrNull } from '../Platform/machine'
 
-// A write recorded with its bytes is an echo while the file still holds them, however late its event arrives, until an event finds other bytes there, so an outside write reaches the watcher even when it restores the app's bytes; a move or rename, recorded without bytes, is an echo for the whole window.
-type Echo = { at: number; hash?: string }
+// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume whose change time is coarse or absent, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
+type Echo = { at: number; landing: boolean; stat?: FileStat }
 const recent = new Map<string, Echo>()
 const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
 const PREFIX_WINDOW_MS = 800
+let sweepAbove = 256
 
 interface WriteTap {
   wrote(absPath: string): void
@@ -20,21 +21,19 @@ export function setWriteTap(next: WriteTap | null): void {
 }
 
 // Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
-export function recordWrite(absPath: string, content?: string | Uint8Array): void {
-  recent.set(absPath, {
-    at: Date.now(),
-    hash: content === undefined ? undefined : machine().sha256Hex(content),
-  })
-  if (recent.size > 256) {
+export function recordWrite(absPath: string, landing = false): void {
+  recent.set(absPath, { at: Date.now(), landing })
+  if (recent.size > sweepAbove) {
     const cutoff = Date.now() - WINDOW_MS
-    for (const [p, r] of recent) if (r.hash === undefined && r.at < cutoff) recent.delete(p)
+    for (const [p, r] of recent) if (!r.landing && r.at < cutoff) recent.delete(p)
+    sweepAbove = Math.max(256, 2 * recent.size)
   }
   tap?.wrote(absPath)
 }
 
-/** Forgets the write recorded at `absPath` while it still holds `hash`, so a later write of those bytes reads as another writer's. */
-export function forgetWrite(absPath: string, hash: string): void {
-  if (recent.get(absPath)?.hash === hash) recent.delete(absPath)
+/** Gives the landing recorded at `absPath` the stat it answered, so its echo is told by that stat. */
+export function recordLanding(absPath: string, stat: FileStat): void {
+  recent.set(absPath, { at: Date.now(), landing: true, stat })
 }
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
@@ -43,8 +42,8 @@ export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
 // The app's own event carries the text it wrote and the stat its landing answered, since its writer still holds the file's lock.
 export type Changed = { event: ChangeEvent; absPath: string } & (
-  | { origin: 'watched'; written?: string; text?: never; bodyOnly?: never; stat?: never }
-  | { origin: 'own'; text?: string; bodyOnly?: boolean; stat?: FileStat; written?: never }
+  | { origin: 'watched'; text?: never; bodyOnly?: never; stat?: never }
+  | { origin: 'own'; text?: string; bodyOnly?: boolean; stat?: FileStat }
 )
 
 export interface Moved {
@@ -75,15 +74,15 @@ export function emitWatch(event: ChangeEvent, absPath: string): void {
 
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
-  if (r === undefined || r.hash !== undefined || Date.now() - r.at <= WINDOW_MS) return r
+  if (r === undefined || r.landing || Date.now() - r.at <= WINDOW_MS) return r
   recent.delete(absPath)
   return undefined
 }
 
-/** An echo known without reading the file: a bytes-less record, or a descendant of a folder just moved. */
+/** An echo known without a stat: a move's or rename's record, or a descendant of a folder just moved. */
 export function isRecentWrite(absPath: string): boolean {
   const r = held(absPath)
-  if (r !== undefined) return r.hash === undefined
+  if (r !== undefined) return !r.landing
   // Only an exact ancestor can prefix-match, so walk absPath's parent directories instead of scanning every record: O(depth) lookups replace the O(N) scan.
   for (
     let slash = absPath.lastIndexOf('/');
@@ -96,17 +95,14 @@ export function isRecentWrite(absPath: string): boolean {
   return false
 }
 
-/** The hash of the bytes the app just wrote at a path, taken as its event arrives. */
-export const writtenHash = (absPath: string): string | undefined => held(absPath)?.hash
-
-/** Drops the events whose file still holds exactly the bytes their arrival named, however late the settle runs. */
+/** Drops the events whose file still holds exactly the stat its landing answered, however late the settle runs; an event that finds the file changed retires that landing's record. */
 export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
-      if (e.written === undefined) return true
-      const bytes = await machine().readBytes(e.absPath)
-      if (bytes !== null && machine().sha256Hex(bytes) === e.written) return false
-      forgetWrite(e.absPath, e.written)
+      const r = held(e.absPath)
+      if (!r?.stat) return true
+      if (sameFile(r.stat, await statOrNull(e.absPath))) return false
+      if (recent.get(e.absPath) === r) recent.delete(e.absPath)
       return true
     }),
   )

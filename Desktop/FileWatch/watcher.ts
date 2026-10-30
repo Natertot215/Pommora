@@ -18,7 +18,6 @@ import {
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
-  writtenHash,
 } from '@pommora/core/Files/writeEcho'
 import {
   isMetadataShardRel,
@@ -110,13 +109,13 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     (hostPath: string): void => {
       const path = posixPath(hostPath)
       emitWatch(event, path)
-      // The app's own writes echo back after they have already applied as they landed: a bytes-less echo stops here, and one recorded with its bytes is dropped at the settle while the file still holds them. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
+      // The app's own writes echo back after they have already applied as they landed: a move's or rename's echo stops here, and a landing's is dropped at the settle while the file still holds the stat it landed with. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
       if (isConfigPath(root, path, 'state'))
         pushConfig(root, win, 'nav:changed', readNavigationFile)
       else if (isConfigPath(root, path, 'matrix'))
         pushConfig(root, win, 'matrix:changed', readMatrixFile)
       else if (!isMetadataShardRel(relative(root, path)) && isRecentWrite(path)) return
-      batch.push({ event, absPath: path, origin: 'watched', written: writtenHash(path) })
+      batch.push({ event, absPath: path, origin: 'watched' })
       if (debounce) clearTimeout(debounce)
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
