@@ -41,6 +41,7 @@ import { assignedIds } from '../Nexus/containerFields'
 import { sidecarPath } from '../Paths/paths'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
+  containerNote,
   distinct,
   editNote,
   OWED,
@@ -88,16 +89,13 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
   // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked as a finish strips it.
   const id = relative(root, bundleAbs)
-  const noted = await editNote(root, id, () => ({
-    kind: 'container',
-    at: relative(root, artifactAbs),
-    strip: distinct(
-      pages.map((file) => originPathOf(root, store, file)),
-      archive?.origins,
+  const noted = await editNote(root, id, () =>
+    containerNote(
+      relative(root, artifactAbs),
+      [...pages.map((file) => originPathOf(root, store, file)), ...(archive?.origins ?? [])],
+      archive?.sets.length ? goneContainers(archive.sets) : null,
     ),
-    ...(archive?.sets.length ? { edit: goneContainers(archive.sets) } : {}),
-    park: true,
-  }))
+  )
   if (!noted.ok) return noted
   await dispose(artifactAbs)
   if (archive) await dispose(archive.abs)

@@ -269,7 +269,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 3** — Delete, Journal, and Carry
   - [x] Task 3-1 · One mint, one tail, one `leave`
   - [x] Task 3-2 · A content delete records its links ahead of the strip
-  - [ ] Task 3-3 · One container note, and the Set move's own kind
+  - [x] Task 3-3 · One container note, and the Set move's own kind
   - [ ] Task 3-4 · The empty is the one gone-for-good step
   - [ ] Task 3-5 · One trail resolver and one carry
   - [ ] Task 3-6 · One owned-Archives iterator
@@ -3773,7 +3773,7 @@ A finish whose folder has already left drops the departure all the same, since a
 
 #### Task 3-3
 
-**TASK:** The journal's container note is one builder for the delete and the empty, `park` leaves (an entry with a strip and no `bundle` is always an emptying), and the Set move becomes its own `move` kind, so `finishContainer` reads one meaning and loses both `within` tests (M-6). The journal's strip release moves out of `spendBundle` into `Core/Nexus/owed.ts` beside `restoreNote` (P-5), so only `owed.ts` edits a journal entry. **Real Purpose:** the `move` kind adds about eight lines (its type, its arm, its finish); it buys an entry union whose kinds name their operations, where `ContainerEntry` served three told apart by field presence (*Investigation · §What's True · The Journal*). **Comments:** the AFTER removes four and adds four.
+**TASK:** The journal's container note is one builder for the delete and the empty, `park` leaves (an entry with a strip and no `bundle` is always an emptying), and the Set move becomes its own `move` kind, so `finishContainer` reads one meaning and loses both `within` tests (M-6). The journal's strip release moves out of `spendBundle` into `Core/Nexus/owed.ts` beside `restoreNote` (P-5), so only `owed.ts` edits a journal entry. **Real Purpose:** the `move` kind adds about eight lines (its type, its arm, its finish); it buys an entry union whose kinds name their operations, where `ContainerEntry` served three told apart by field presence (*Investigation · §What's True · The Journal*). **Comments:** the AFTER removes two and adds four (the `ContainerEntry` doc and `finishContainer`'s comment rewritten in place, `releaseStrip`'s and `finishMove`'s docs new).
 
 **NOW:**
 - **One Type, Three Operations:** `ContainerEntry` (`Core/Nexus/owed.ts:23-31`) serves a delete (`strip`, `edit`, `bundle`), an empty (`strip`, `edit`, `park: true`; `Core/Trash/spend.ts:95-104`), and a Set move (`edit`, `within`; `Core/Nexus/move.ts:79`); `finishContainer` re-derives which from `e.within` (`Core/Nexus/finishOwed.ts:385,387,412`). The delete's note (Task 3-1's `planOf`) and the empty's spell the same shape twice.
@@ -3803,8 +3803,7 @@ A finish whose folder has already left drops the departure all the same, since a
 -}
 +/** A page, Collection, or Set delete, or a Trash emptying: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes; a delete's `bundle` holds its record, and an emptying's links park with a trashed page that still answers them. */
 +export type ContainerEntry = Owed & { kind: 'container'; at: string; edit?: ConfigEdit; bundle?: string }
-+/** A Set move: the views of the Collection `within` it left, owed until reached. */
-+export type MoveEntry = { kind: 'move'; at: string; edit?: ConfigEdit; within: string }
++export type MoveEntry = Owed & { kind: 'move'; at: string; edit?: ConfigEdit; within: string }
 @@ Entry @@
 -export type Entry = PropertyEntry | ContextEntry | SpaceEntry | ContainerEntry | RelinkEntry
 +export type Entry =
@@ -3967,7 +3966,7 @@ A finish whose folder has already left drops the departure all the same, since a
 **VERIFY**
 
 - [ ] `move.test.ts:40-68`, `deleteReach.test.ts:886-910`, `bundle.test.ts:333-372`, `trashRecovery.test.ts:986-1060` (an inner item's share of the owed strip; the Set-move and the owed `gone` edits), and the emptying cases (`trashRecovery.test.ts:701-791`) are green.
-- [ ] `git grep -nP "\bpark\??:|e\.park|e\.within|kind: 'container', at: req" -- Core` prints nothing, and `git grep -n "editNote" -- Core/Bundles` prints nothing.
+- [ ] `git grep -nP "\bpark\??:|e\.park|kind: 'container', at: req" -- Core` prints nothing, `e.within` sits in `finishMove` alone, and `git grep -n "editNote" -- Core/Bundles` prints nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 

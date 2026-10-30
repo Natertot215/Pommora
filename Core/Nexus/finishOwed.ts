@@ -38,6 +38,7 @@ import {
   type ContextEntry,
   editNote,
   type Entry,
+  type MoveEntry,
   type Notes,
   type Owed,
   owedReport,
@@ -88,6 +89,7 @@ export async function finishOwed(root: string): Promise<CascadeReport> {
   await serializeSchemaOp(root, () => each('property'))
   await inSettleTurn(root, async () => {
     await each('container')
+    await each('move')
     await each('relink')
   })
   return owedReport(root, total)
@@ -113,6 +115,8 @@ function finishArm(root: string, id: string, e: Entry, notes: Notes): Promise<Fi
       return finishSpace(root, id, e, notes)
     case 'container':
       return finishContainer(root, id, e)
+    case 'move':
+      return finishMove(root, id, e)
     case 'relink':
       return relinkReach(root, e).then((reach) => ({
         left: retries(reach) ? e : { ...e, names: {}, rekey: undefined, values: undefined },
@@ -371,12 +375,11 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds; a moved Set is live by design, so it's back only while it stands where it left, its move never made or made undone.
+  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds.
   const tree = await liveTreeOf(root)
-  const live = findContainerById(tree, id)
-  const back = e.within ? live?.path === e.at : pagesByIdOf(tree).has(id) || !!live
+  const back = pagesByIdOf(tree).has(id) || !!findContainerById(tree, id)
   const owedEdit = async (): Promise<ContainerEntry['edit']> => {
-    if (e.edit?.kind !== 'gone' || e.within) return back ? undefined : e.edit
+    if (e.edit?.kind !== 'gone') return back ? undefined : e.edit
     const unheld = e.edit.ids.filter((x) => !findContainerById(tree, x))
     if (!unheld.length) return undefined
     let elsewhere: Promise<Set<string>> | undefined
@@ -393,12 +396,18 @@ async function finishContainer(
   const edit = await owedEdit()
   const strip = back ? undefined : e.strip
   // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
-  if (strip && e.park) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
+  if (strip && !e.bundle) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
   const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
-  const viewed =
-    !!edit && add(reach, await reachConfig(root, edit, e.within && join(root, e.within)))
+  const viewed = !!edit && add(reach, await reachConfig(root, edit))
   return {
     left: { ...e, strip: stripped ? e.strip : undefined, edit: viewed ? e.edit : undefined },
     reach,
   }
+}
+
+/** A moved Set is live by design, so it owes nothing while it stands where it left, its move never made or made undone. */
+async function finishMove(root: string, id: string, e: MoveEntry): Promise<Finished<MoveEntry>> {
+  const back = findContainerById(await liveTreeOf(root), id)?.path === e.at
+  const reach = back || !e.edit ? NO_REACH : await reachConfig(root, e.edit, join(root, e.within))
+  return { left: retries(reach) ? e : { ...e, edit: undefined }, reach }
 }

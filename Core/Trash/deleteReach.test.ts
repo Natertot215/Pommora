@@ -829,7 +829,7 @@ describe('a content delete on the notes', () => {
     })
     await putJson(join(root, OWED_REL), {
       [set.id]: {
-        kind: 'container',
+        kind: 'move',
         at: 'Notes/S',
         edit: { kind: 'gone', propertyId: '_location', ids: [set.id] },
         within: 'Notes',

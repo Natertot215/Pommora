@@ -55,7 +55,7 @@ describe('moveSetOp', () => {
       })
       expect(r.ok && r.value.cascade?.owed).toBe(true)
       expect(await readNotes(root)).toMatchObject({
-        [deep.id]: { kind: 'container', at: 'Notes/Deep', within: 'Notes' },
+        [deep.id]: { kind: 'move', at: 'Notes/Deep', within: 'Notes' },
       })
     } finally {
       await chmod(file, 0o644)

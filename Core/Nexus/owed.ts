@@ -6,7 +6,7 @@ import { memberKey } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { normalizeTitle } from '../Paths/caseFold'
 import { contextDirRel, OWED_REL } from '../Paths/nexusPaths'
-import { basename, join } from '../Paths/posix'
+import { basename, isAtOrUnder, join } from '../Paths/posix'
 import type { CascadeReport } from './cascade'
 import { type ConfigEdit, type ConfigReach, reachReport, retries } from './configReach'
 import { pageKey } from '../Connections/pageIndex'
@@ -20,15 +20,14 @@ export type PropertyEntry = Owed & {
 }
 export type ContextEntry = Owed & { kind: 'context'; bundle?: string }
 export type SpaceEntry = Owed & { kind: 'space'; contextId: string; bundle?: string }
-/** A page, Collection, or Set delete, a Trash emptying, or a Set move: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes, reached under `within`; a delete's `bundle` holds its record, and the links an emptying's strip takes are parked where `park` says the Trash entry is gone. */
+/** A page, Collection, or Set delete, or a Trash emptying: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes; a delete's `bundle` holds its record, and an emptying's links park with a trashed page that still answers them. */
 export type ContainerEntry = Owed & {
   kind: 'container'
   at: string
   edit?: ConfigEdit
-  within?: string
   bundle?: string
-  park?: true
 }
+export type MoveEntry = Owed & { kind: 'move'; at: string; edit?: ConfigEdit; within: string }
 /** By file, each value a restore worked out and couldn't write: what the file read then and what it lands as, either absent where there was or will be none. */
 export type Worked = Record<string, Record<string, { from?: unknown; to?: unknown }>>
 /** Each value `to` holds other than `from`, as a note keeps it. */
@@ -47,7 +46,13 @@ export type RelinkEntry = Owed & {
   rekey?: [from: string, to: string]
   values?: Worked
 }
-export type Entry = PropertyEntry | ContextEntry | SpaceEntry | ContainerEntry | RelinkEntry
+export type Entry =
+  | PropertyEntry
+  | ContextEntry
+  | SpaceEntry
+  | ContainerEntry
+  | MoveEntry
+  | RelinkEntry
 export type Notes = Record<string, Entry>
 
 /** Where a name lives: a property's keys, a Context's titles, a Space's titles inside its Context, or one property's option words. */
@@ -84,7 +89,7 @@ const owesAnything = (e: Entry): boolean =>
   owes(e) ||
   (e.kind === 'property' &&
     (!!e.collections?.length || Object.values(e.options ?? {}).some(owes))) ||
-  (e.kind === 'container' && !!e.edit) ||
+  ((e.kind === 'container' || e.kind === 'move') && !!e.edit) ||
   (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey || !!e.values))
 
 /** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files, and what it worked out for them, follow to where `paths` moves them, and its re-key to the title its Context's folder moves to. */
@@ -207,6 +212,25 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
     root,
     id,
     (e) => e && { ...e, rename: distinct(e.rename, e.strip), strip: undefined, bundle: undefined },
+  )
+}
+
+export const containerNote = (
+  at: string,
+  strip: readonly string[],
+  edit: ConfigEdit | null,
+): ContainerEntry => ({ kind: 'container', at, strip: distinct(strip), ...(edit ? { edit } : {}) })
+
+/** An inner item taken out of the bundle at `bundle` takes its pages, at the paths they left under `from`, off the strip that bundle's delete still owes. */
+export async function releaseStrip(root: string, bundle: string, from: string): Promise<void> {
+  const owing = Object.entries(await readNotes(root)).find(
+    ([, e]) => e.kind === 'container' && e.bundle === bundle,
+  )
+  if (!owing) return
+  await editNote(root, owing[0], (e) =>
+    e?.kind === 'container'
+      ? { ...e, strip: distinct(e.strip?.filter((path) => !isAtOrUnder(path, from))) }
+      : e,
   )
 }
 
