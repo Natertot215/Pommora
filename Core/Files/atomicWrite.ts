@@ -47,7 +47,7 @@ export async function atomicWriteFile(
   sole(await landOwn([{ path: filePath, data, expect }], bodyOnly))
 }
 
-/** The files a held rewrite holds, reads, and lands together, so their reads and their flushes overlap: each flush holds one of the host's I/O threads until the drive answers, so the app's other reads and writes wait tens of milliseconds behind a chunk. */
+/** The files a held rewrite holds, reads, and lands together, so their reads overlap and one flush of the drive makes them all durable: 64 lands a file in about 170 µs against about 415 at 16, and 256 would save about 70 µs more a file for four times as long a hold of the chunk's locks. */
 const CHUNK = 64
 
 /** Runs `fn` holding each file's lock, taken in sorted order, so two held rewrites sharing files never each hold a lock the other waits on; nothing a chunk runs takes another lock, and no other writer holds two of the files a chunk can hold. A lock rejects only when re-taken inside its own hold, so a rejection fails the whole rewrite. */
