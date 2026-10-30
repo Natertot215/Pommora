@@ -10,6 +10,7 @@ import type {
   Unreadable,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
+import type { StoredNodes } from './heldPages'
 import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
@@ -100,19 +101,20 @@ export function topContainerOf(
   return node && isTopContainer(node) ? node : undefined
 }
 
-/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, by the one whose Archive holds it, or, in the Trash, by the one `trashed` names for its bundle (`trashedOwners`). */
+/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, by the one whose Archive holds it, or, in the Trash, by the one `stored` names for its bundle, live or trashed itself. */
 export function owningCollection(
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
-  trashed?: ReadonlyMap<string, string>,
+  stored?: StoredNodes,
 ): CollectionNode | undefined {
   if (typeof of !== 'string' && of.kind === 'collection') return of
   const path = typeof of === 'string' ? of : of.path
   const at = storeOf(path)
   const filed =
-    at?.store.kind === 'archive' ? at.store.id : at?.bundle ? trashed?.get(at.bundle) : undefined
+    at?.store.kind === 'archive' ? at.store.id : at?.bundle && stored?.owners.get(at.bundle)
   const top = path.split('/', 1)[0]
-  return tree?.collections.find((c) => (at ? c.id === filed : c.path === top))
+  const owns = (c: CollectionNode): boolean => (at ? c.id === filed : c.path === top)
+  return tree?.collections.find(owns) ?? stored?.collections.find(owns)
 }
 
 /** The Archive a reach covers: every one across the whole Nexus, or all of the owning Collection's for a reach scoped under `rel`, since an archived chain spells its folders as they were named when it left. A Collection whose id can't name a folder has none. */
@@ -122,15 +124,22 @@ export function archiveReach(tree: NexusTree, rel?: string): string | null {
   return store ? archiveDirRel(store.id) : null
 }
 
+export const trashReach = (tree: NexusTree, stored: StoredNodes, rel?: string): string[] => {
+  const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
+  return [...stored.owners].flatMap(([bundle, id]) =>
+    rel === undefined || id === owner ? [bundle] : [],
+  )
+}
+
 export const NO_SCHEMA: PropertyDefinition[] = []
 
 /** A Set or page takes its Collection's schema; the one empty schema when nothing owns it. */
 export const containerSchema = (
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
-  trashed?: ReadonlyMap<string, string>,
+  stored?: StoredNodes,
 ): PropertyDefinition[] => {
-  const owner = owningCollection(tree, of, trashed)
+  const owner = owningCollection(tree, of, stored)
   return tree && owner ? schemaOf(tree, owner.propertyIds) : NO_SCHEMA
 }
 

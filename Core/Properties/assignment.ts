@@ -3,8 +3,6 @@ import { placeAt } from '@pommora/uix/Utilities/moveItem'
 import { isAtOrUnder, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
-import { trashedOwners } from '../Bundles/bundle'
-import { storeOf } from '../Paths/bundleLayout'
 import { patchSidecar } from '../Files/sidecar'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -36,16 +34,11 @@ export async function refillStash(
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return 0
   const { values } = stash
-  const { byId, archived } = await nexusPages(root, tree)
-  const trashed = Object.keys(values).some(
-    (id) => storeOf(byId.get(id)?.path ?? '')?.store.kind === 'trash',
-  )
-    ? await trashedOwners(root, tree)
-    : undefined
+  const { byId, archived, stored } = await nexusPages(root, tree)
   const members = new Map(
     Object.keys(values).flatMap((id) => {
       const r = byId.get(id)
-      return r?.kind === 'page' && owningCollection(tree, r.path, trashed)?.id === collectionId
+      return r?.kind === 'page' && owningCollection(tree, r.path, stored)?.id === collectionId
         ? [[id, r] as const]
         : []
     }),

@@ -4,8 +4,9 @@ import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { patchSidecar } from '../Files/sidecar'
 import { heldTreeOf } from '../Nexus/liveTree'
+import { type StoredNodes, storedNodes } from '../Nexus/heldPages'
 import { readFileHistoryConfig } from '../Settings/settings'
-import type { CollectionNode } from '../Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 import { stashBlock, type StashBlock } from './properties'
 
 export function stashedBlock(
@@ -36,10 +37,11 @@ export function patchStashBlock(
   return next
 }
 
-/** Edits the values each Collection the tree lists as stashing one of `propertyIds` holds, through `edit`, which reads a block's values, its property's id, and its stamp, and answers its next values or null to leave it; answers how many it couldn't edit. */
+/** Edits the values each Collection the tree or `stored` lists as stashing one of `propertyIds` holds, through `edit`, which reads a block's values, its property's id, and its stamp, and answers its next values or null to leave it; answers how many it couldn't edit. */
 export async function editStashes(
   root: string,
-  collections: readonly CollectionNode[],
+  tree: NexusTree,
+  stored: StoredNodes,
   propertyIds: ReadonlySet<string>,
   edit: (
     values: Record<string, unknown>,
@@ -48,7 +50,7 @@ export async function editStashes(
   ) => Record<string, unknown> | null,
 ): Promise<number> {
   let skipped = 0
-  for (const node of collections) {
+  for (const node of [...tree.collections, ...stored.collections]) {
     const ids = (node.stashed ?? []).filter((id) => propertyIds.has(id))
     if (!ids.length) continue
     // Each block the edit changes keeps its stamp, and one it empties leaves.
@@ -66,13 +68,15 @@ export async function editStashes(
   return skipped
 }
 
-/** Drops every block a Remove last stamped before the History Timeframe, in the Collections the held tree lists as stashing one; with none listed, it reads nothing. */
+/** Drops every block a Remove last stamped before the History Timeframe, in the Collections the held tree and the Trash list as stashing one; with no tree held, it reads nothing. */
 export async function sweepStashes(root: string): Promise<void> {
-  const collections = heldTreeOf(root)?.collections ?? []
-  const ids = new Set(collections.flatMap((c) => c.stashed ?? []))
+  const tree = heldTreeOf(root)
+  if (!tree) return
+  const stored = await storedNodes(root, tree)
+  const ids = new Set([...tree.collections, ...stored.collections].flatMap((c) => c.stashed ?? []))
   if (!ids.size) return
   const cutoff = Date.now() - (await readFileHistoryConfig(root)).keepMs
-  await editStashes(root, collections, ids, (_values, _id, removedAt) =>
+  await editStashes(root, tree, stored, ids, (_values, _id, removedAt) =>
     Date.parse(removedAt) < cutoff ? {} : null,
   )
 }

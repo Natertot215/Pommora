@@ -25,8 +25,9 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
-import { addressable, nexusPages, storedSpaces, twinned } from './heldPages'
+import { addressable, nexusPages, storedNodes, twinned } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
+import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { rekeyContext } from '../Contexts/contextCascade'
 import { type ConfigReach, NO_REACH } from './configReach'
 import { type Entry, type RelinkEntry, reachReport, runNoted } from './owed'
@@ -86,7 +87,7 @@ export async function linkStrip(root: string, left: readonly string[], paths: re
       return def && value ? [{ key, def, value }] : []
     })
   const files = [
-    ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
+    ...(await pagesInReach(root, tree, stored, queryMentions([...gone]), 'governed')),
     ...spaceFiles(root, tree, stored, (s) => !!s.values && named(s.values).length > 0),
   ].filter((file) => !inside(relative(root, file)))
   return { files, keys: [...defs.keys()], byId, named }
@@ -184,7 +185,7 @@ export type CascadeChange =
   | { names: ReadonlyMap<string, string>; label: string }
   | { path: string; heading: string; to: string }
 
-/** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
+/** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost, as a listing of the whole Trash would be, so it lists only the Trash's Contexts, where every stored Space and board sits. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
 export async function renameCascade(
   root: string,
   change: CascadeChange,
@@ -219,23 +220,19 @@ export async function renameCascade(
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
+    const stored = await storedNodes(root, tree, 'names' in change ? undefined : CONTEXTS_DIR_REL)
     const files = [
       ...[...new Set(rels)].map((rel) => join(root, rel)),
-      ...spaceFiles(
-        root,
-        tree,
-        await storedSpaces(root),
-        (s) => !!s.values && spaceMoved(s.values, '') !== null,
-      ),
+      ...spaceFiles(root, tree, stored, (s) => !!s.values && spaceMoved(s.values, '') !== null),
     ]
     const swept = await sweepGovernedRoots(files, { text, raw: spaceMoved })
-    const tiles = (await tilesLink(root, keys, headingKey))
-      ? await rewriteTileConnections(root, rewrite)
+    const tiles = (await tilesLink(root, stored, keys, headingKey))
+      ? await rewriteTileConnections(root, stored, rewrite)
       : { hosts: [], failed: 0 }
     // A heading edit settles often and a stashed Link still reaches its page, so only a re-spell reaches the stashes.
     const linkIds = new Set(tree.config.registry.filter((d) => isLinkKey(d.key)).map((d) => d.id))
     const unstashed =
-      'names' in change ? await editStashes(root, tree.collections, linkIds, stashMoved) : 0
+      'names' in change ? await editStashes(root, tree, stored, linkIds, stashMoved) : 0
     const unmoved = swept.skipped.length + tiles.failed + unstashed
     return {
       pages: [...swept.touched.keys()]

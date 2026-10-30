@@ -10,6 +10,7 @@ import {
   type SweepPlan,
 } from '../Nexus/governedSweep'
 import { editStashes } from './propertyStash'
+import { storedNodes } from '../Nexus/heldPages'
 import { editHeldList, editList, memberKey, type ValueEdit } from '../Files/rootValues'
 import { fault, ok, fail, type Result } from '../Contract/result'
 import { claimsWord, optionList } from './propertyValue'
@@ -240,8 +241,8 @@ async function valueEditPlan(
 }
 
 async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
-  const { collections } = await liveTreeOf(root)
-  return editStashes(root, collections, new Set([def.id]), (values) =>
+  const tree = await liveTreeOf(root)
+  return editStashes(root, tree, await storedNodes(root, tree), new Set([def.id]), (values) =>
     Object.keys(values).reduce<Json | null>(
       (next, id) => editHeldList(next ?? values, id, (held) => editList(held, keys)) ?? next,
       null,

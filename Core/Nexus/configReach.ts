@@ -18,8 +18,7 @@ import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { SIDECAR_FILENAME, TRASH_DIR } from '../Paths/nexusPaths'
-import { trashReach } from '../Bundles/bundle'
-import { storedSpaces } from './heldPages'
+import { type StoredNodes, storedNodes } from './heldPages'
 import { asString } from './coerce'
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
@@ -30,7 +29,7 @@ import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { ContainerKind, HeldKind } from './entities'
-import { archiveReach, containerAt, damagedFolders } from './treePatch'
+import { archiveReach, containerAt, damagedFolders, trashReach } from './treePatch'
 
 // ── Roles ──
 type Role =
@@ -282,6 +281,7 @@ export async function archivedSetIds(root: string, abs: string): Promise<string[
 
 async function storedContainers(
   tree: NexusTree,
+  stored: StoredNodes,
   root: string,
   under?: string,
 ): Promise<Container[]> {
@@ -289,7 +289,7 @@ async function storedContainers(
   const archive = archiveReach(tree, rel)
   const dirs = [
     ...(archive === null ? [] : [archive]),
-    ...(rel === undefined ? [TRASH_DIR] : await trashReach(root, tree, rel)),
+    ...(rel === undefined ? [TRASH_DIR] : trashReach(tree, stored, rel)),
   ]
   const scope = scopeOf(tree.config)
   const found = await Promise.all(
@@ -309,11 +309,8 @@ export async function reachConfig(
   } catch {
     return { skipped: 1, hosts: [] }
   }
-  const tiles = tileHostsOf(root, tree)
-  const boards: typeof tiles.hosts = [
-    ...tiles.hosts,
-    ...(await storedSpaces(root)).map((s) => ({ dir: join(root, s.path) })),
-  ]
+  const stored = await storedNodes(root, tree)
+  const tiles = tileHostsOf(root, tree, stored)
   // A file that doesn't parse won't read any better on a retry, so it's left as it is and holds nothing owed; only a file this pass can't read, or whose edit throws, is a skip.
   const reach: ConfigReach = { skipped: tiles.unreadable, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
@@ -335,7 +332,7 @@ export async function reachConfig(
     .filter(({ dir }) => reaches(dir, under))
   for (const { kind, dir } of [...live, ...damaged])
     await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
-  for (const { kind, dir } of await storedContainers(tree, root, under)) {
+  for (const { kind, dir } of await storedContainers(tree, stored, root, under)) {
     await written(sidecarPath(dir, kind), (cur) => {
       const id = asString(cur.id)
       // A container the edit names as gone leaves together with everything else it names, so its own views still answer.
@@ -348,7 +345,7 @@ export async function reachConfig(
     const source = isPlainObject(entry) ? String(entry.source_id) : ''
     return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.includes(source))
   }
-  for (const { host, dir } of boards) {
+  for (const { host, dir } of tiles.hosts) {
     const wrote = await written(tileDocPath(dir), (cur) =>
       mapTiles(cur, (tile) =>
         mapViews(tile, (view, i) => (inScope((tile.views as unknown[])[i]) ? edit(view) : null)),

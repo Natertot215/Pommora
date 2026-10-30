@@ -9,11 +9,17 @@ import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
 import { collectionFolders, rootId } from '../Nexus/governedSweep'
 import { storeOf } from '../Paths/bundleLayout'
-import { addressable, type NexusPages, nexusPages, storedSpaces, twinned } from '../Nexus/heldPages'
+import {
+  addressable,
+  type NexusPages,
+  nexusPages,
+  type StoredNodes,
+  storedNodes,
+  twinned,
+} from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
-import { archiveReach } from '../Nexus/treePatch'
-import { trashReach } from '../Bundles/bundle'
+import { archiveReach, trashReach } from '../Nexus/treePatch'
 import { exactTitle } from '../Paths/caseFold'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { isAtOrUnder, isMarkdownFile, join, relative } from '../Paths/posix'
@@ -47,6 +53,7 @@ export type Holders = { files: string[]; held: Held[] }
 export async function pagesInReach(
   root: string,
   tree: NexusTree,
+  stored: StoredNodes,
   rels: readonly string[] | null,
   reach: Reach,
 ): Promise<string[]> {
@@ -55,9 +62,7 @@ export async function pagesInReach(
   const only = reach === 'governed' ? undefined : reach.collection
   const scoped = only && relative(root, only)
   const archive = archiveReach(tree, scoped)
-  const trashed = files.some((f) => storeOf(relative(root, f))?.store.kind === 'trash')
-    ? await trashReach(root, tree, scoped)
-    : []
+  const trashed = trashReach(tree, stored, scoped)
   const folders = [
     ...(only === undefined ? collectionFolders(root, tree) : [only]),
     ...(archive === null ? [] : [join(root, archive)]),
@@ -77,11 +82,11 @@ const sidecarAt = (root: string, rel: string, moved?: FolderMove): string =>
 export const spaceFiles = (
   root: string,
   tree: NexusTree,
-  stored: readonly SpaceNode[],
+  stored: StoredNodes,
   holds: (space: SpaceNode) => boolean,
   moved?: FolderMove,
 ): string[] =>
-  [...tree.contexts.flatMap((g) => g.spaces), ...stored]
+  [...tree.contexts.flatMap((g) => g.spaces), ...stored.spaces]
     .filter(holds)
     .map((s) => sidecarAt(root, s.path, moved))
 
@@ -92,7 +97,9 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const rels = q.keys.map((key) => queryMembers(key, title))
   const listed = rels.map((r) => r && new Set(r))
   const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
-  const reached = await pagesInReach(root, tree, named, q.reach)
+  const known = read ? await nexusPages(root, tree) : null
+  const stored = known?.stored ?? (await storedNodes(root, tree))
+  const reached = await pagesInReach(root, tree, stored, named, q.reach)
   const pages = q.every
     ? await unlessVouched(
         root,
@@ -105,11 +112,10 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       Object.hasOwn(s[parseContextKey(key) === null ? 'values' : 'contextKeys'] ?? {}, key),
     ) ||
     (q.id !== undefined && !!s.rowOrder?.includes(q.id))
-  const known = read ? await nexusPages(root, tree) : null
   const spaces =
     typeof q.reach === 'string'
       ? [
-          ...spaceFiles(root, tree, known?.stored ?? (await storedSpaces(root)), holds, q.moved),
+          ...spaceFiles(root, tree, stored, holds, q.moved),
           ...(tree.unreadable ?? []).flatMap((u) =>
             u.kind === 'space' ? [sidecarAt(root, u.path, q.moved)] : [],
           ),
