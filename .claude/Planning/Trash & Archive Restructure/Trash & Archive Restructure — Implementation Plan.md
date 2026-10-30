@@ -79,6 +79,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `stashBlock`, `StashBlock` (moved from `Core/Properties/propertyStash.ts`) | `Core/Properties/properties.ts` | 4 |
 | `storedSpaces`, `storedPageIds` (renamed from `archivedPageIds`), `rootFile`; `NexusPages.stored` | `Core/Nexus/heldPages.ts` | 4 |
 | `trashedOwners`, `trashReach` | `Core/Bundles/bundle.ts` | 4 |
+| `LinkStrip` • Type | `Core/Nexus/cascade.ts` | 4 |
 | `owningCollection`'s and `containerSchema`'s `trashed` parameter; `listBundles`' `chain` parameter | `treePatch.ts`; `bundle.ts` | 4 |
 | `storedContainers` (from `archivedSets`), `containerSidecarsUnder` (from `setSidecarsUnder`) | `Core/Nexus/configReach.ts` | 4 |
 | `partitionGone`, `goneLink` (private) | `Core/Nexus/governedSweep.ts` | 4 |
@@ -245,7 +246,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude` and records the **Actionable** column in the Net Ledger beside the phase's estimate, additions and removals apart. A phase that lands above its estimate is reported in chat before the next phase opens, with what the increase buys.
 - **The Measurement (Decision G-2):** the property rename's before is on record: the re-run's medians at `9b9c0d630` (*Investigation · §The Trash's Model · §The Measurement*), whose property-rename path the BASELINE head carries unchanged, with the baseline build for today's Trash and the reach-in prototype for a reach-in one. After Phase 5, the harness in `.claude/Benchmarks/Reach-In/` (`RERUN.md`) measures HEAD alone at Medium-0 and Medium-50, three runs each, since the code itself is now reach-in, and the Net Ledger records both against the recorded medians. Phase 1's thread-pool measurement is its own task. The harness and its fixtures leave in Phase 6 (Decision A-1).
 - **Live Drives:** Nathan takes no hand checks (10-29-2026). Every live check runs as an agent's CDP drive (*Development-Environment*) on a scratch copy of `~/Test`, from a worktree build with its own userData and debug port; the app is never launched from the main checkout, where Nathan's instance runs.
-- **Execution:** the plan runs end to end through `c/plan-execution`, headlessly once Nathan ratifies it, and no step waits on Nathan; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*; anything that needs Nathan's word is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint: two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation. Compaction checkpoints follow Phases 3 and 6 (Nathan, 10-30-2026), each a stop with `c/pre-compaction`'s two blocks for him.
+- **Execution:** the plan runs end to end through `c/plan-execution`, headlessly once Nathan ratifies it, and no step waits on Nathan; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*; anything that needs Nathan's word is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint: two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation. Compaction checkpoints follow Phases 3, 4, and 6 (Nathan, 10-30-2026), each a stop with `c/pre-compaction`'s two blocks for him.
 - **Cold Machine:** when the run ends, no process, worktree, benchmark Nexus, scratch userData, test fixture, or temporary script it created remains; *§Final Verification · The Cold-Machine Check* proves it with commands, and the final report states the result. A Pommora instance launched from the main checkout before the run isn't the run's, and it's left alone.
 - **Neutral Gate:** the post-implementation neutral reviewer (`fable-high`) gets only the BASELINE head, HEAD, the Mandate, and this intention: *"Pommora kept departed items in two stores built on two models. The Archive kept its pages in the index and inside every cascade, so its restore was a move; the Trash froze each copy and repaired it on return through a scrub that couldn't follow a rename, while three paths reached into trashed copies anyway, a second delete mode bypassed the Trash, each restore, notice, and Undo was written twice, and every write waited for the drive one file at a time. This work moves the Trash onto the Archive's model so trashed pages stay current and one restore serves both stores and every item moved out of a store by hand, removes the frozen-copy machinery and the second delete mode, and lands each group of files with one flush, identified by the file's change time. User-facing behavior is unchanged except where trashed pages now follow live pages' rules."*
 - **Out of Scope Everywhere:** the watcher swap (I-081); Sync's code; a Context moved back by hand (Decision E-4); verifying the write-through flag and the change time on Windows and exFAT (*§Open Items*); merging the two stores or changing the Archive's layout (Decision C-1); merging a Context's two orders, which is feature-level; a keyboard path to a bundle row's menu (I-080), which is interaction-level and independent of either model.
@@ -274,8 +275,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 3-5 · One trail resolver and one carry
   - [x] Task 3-6 · One owned-Archives iterator
   - [x] Review Checkpoint
-  - [ ] Compaction Checkpoint
-- [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
+  - [x] Compaction Checkpoint
+- [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 4** — Reach-In
   - [ ] Task 4-1 · The store-of-path rule
   - [ ] Task 4-2 · Trashed Spaces become holders
@@ -284,6 +285,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [ ] Task 4-5 · The returning side of the frozen model leaves
   - [ ] Task 4-6 · The holders' side of the frozen model leaves
   - [ ] Review Checkpoint
+  - [ ] Compaction Checkpoint
+- [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
   - [ ] Task 5-1 · Following an id covers a Set
   - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
@@ -5538,39 +5541,57 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 @@
 -  // The held tree may still list the deleted pages, since its patch can fall to a walk, and the index an archived one's rows until its artifact leaves the Archive, so each is left out by where it's held.
    const { byId, archived, stored } = await nexusPages(root, tree)
+@@ after linkStrip @@
++export type LinkStrip = NonNullable<Awaited<ReturnType<typeof linkStrip>>>
 @@ deleteCascade @@
  export async function deleteCascade(
    root: string,
 -  abs: string,
-+  left: readonly string[],
-   paths: readonly string[],
+-  paths: readonly string[],
++  strip: LinkStrip | null,
  ): Promise<ConfigReach> {
++  if (!strip) return NO_REACH
    try {
 -    const strip = await linkStrip(root, abs, paths)
-+    const strip = await linkStrip(root, left, paths)
+-    if (!strip) return NO_REACH
+     let heldOut = 0
 ```
 
 (In `linkStrip`'s doc, "archived ones among them" becomes "stored ones among them".)
 
 ```Core/Trash/gather.ts diff
+@@ imports @@
+-import { linkStrip, type StrippedLink } from '../Nexus/cascade'
++import type { LinkStrip, StrippedLink } from '../Nexus/cascade'
 @@ gatherLinks @@
- export async function gatherLinks(
-   root: string,
+-export async function gatherLinks(
+-  root: string,
 -  abs: string,
-+  left: readonly string[],
-   paths: readonly string[],
- ): Promise<StrippedLink[]> {
+-  paths: readonly string[],
+-): Promise<StrippedLink[]> {
 -  const strip = await linkStrip(root, abs, paths)
-+  const strip = await linkStrip(root, left, paths)
+-  if (!strip) return []
++export async function gatherLinks(root: string, strip: LinkStrip): Promise<StrippedLink[]> {
+   const { held } = await readHolders(root, strip.files, strip.keys, strip.byId)
 ```
 
 ```Core/Trash/delete.ts diff
+@@ imports @@
+-import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
++import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
 @@ planOf @@
+       const record = from?.record ?? gatherContentRecord(before, node!)
 -      const links = await gatherLinks(root, abs, strip)
-+      const links = await gatherLinks(root, [rel], strip)
+       return ok({
+         // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
+         id: node?.id ?? rel,
+-        record: links.length ? { ...record, links } : record,
++        record,
 ```
 
-`cascade.test.ts`'s `deleteCascade` and `gatherLinks` calls pass `[relative(root, <abs>)]` in place of the path.
+**One Strip, Recorded at the Finish (Phase 4's Opening Call):** nothing reads a content record's `links` between the artifact's move and its finish (`keptLinksUnder`, `parkLinks`, and the restore's refill read a bundle whose strip has run or never will), so a content delete records its links at the finish, ahead of its strip, rather than at the move: the finish computes one `linkStrip`, records what it takes (`appendLinks` for a delete, `parkLinks` for an emptying), and strips from the same computation. Phase 3's checkpoint had `planOf` gather at the move and the finish gather again before stripping, three strip computations a delete; this keeps Decision M-17's write-ahead (the record holds a value before any holder loses it) with one. A `linkStrip` that throws now leaves its entry owed through the finish's own catch rather than `deleteCascade`'s, the same outcome.
+
+`cascade.test.ts`' `deleteCascade` and `gatherLinks` calls take `await linkStrip(root, [relative(root, <abs>)], <paths>)`. `deleteOrder.test.ts`' *"a content delete records the Link values its strip takes before the artifact moves"* and *"a delete from the Archive records, with the bundle it left, before the artifact moves"* become *"…before its strip"*: the record holds its `links` when the strip runs (`atSweep`), and none at the move (`atSettle`).
 
 ▸ Phases 2 (L-1, L-2) and 3 (M-6, M-8, M-11, M-17) also rewrite `finishOwed.ts`. These hunks touch `finishProperty`'s Trash arm and `finishContainer`'s strip alone.
 
@@ -5612,13 +5633,18 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
    }
 @@ finishContainer @@
    const strip = back ? undefined : e.strip
-+  const left = [e.at, ...(e.bundle ? [e.bundle] : [])]
-   // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
--  if (strip && !e.bundle) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
+-  if (strip) {
+-    const links = await gatherLinks(root, join(root, e.at), strip)
++  const taken = strip && (await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip))
++  if (taken) {
++    const links = await gatherLinks(root, taken)
+     await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
+   }
 -  const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
-+  if (strip && !e.bundle) await parkLinks(root, await gatherLinks(root, left, strip))
-+  const stripped = !!strip && add(reach, await deleteCascade(root, left, strip))
++  const stripped = !!strip && add(reach, await deleteCascade(root, taken || null))
 ```
+
+`finishOwed.ts` imports `linkStrip` beside `deleteCascade` from `./cascade`.
 
 ```Core/Properties/assignment.ts diff
 @@ imports @@
@@ -5819,8 +5845,8 @@ A restore now moves the item's bytes, as the Archive's restore does (*§The Rule
 
 ```Core/Trash/delete.ts diff
 @@ imports @@
--import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
-+import { gatherContextRecord, gatherLinks, gatherSpaceRecord } from './gather'
+-import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
++import { gatherContextRecord, gatherSpaceRecord } from './gather'
 @@ fromArchive doc @@
 -/** … and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
 +/** … and its record keeps the address it left for the Undo. Link values name its pages where they lived. */
@@ -6432,7 +6458,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
   4. Restore it: it lands holding them, with no notice beyond the restore's own.
   5. Remove another page's bundle in Finder, then rename a property it held: no "Couldn't update" notice.
 - [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 4 row beside its estimate, and anything above the estimate is reported with what it buys.
-- [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files.
+- [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files, and the compaction checkpoint follows.
 
 ---
 
@@ -9467,5 +9493,6 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 2:** Task 2-3's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`; the checkpoint made a delete's finish gather ahead of every strip, as the empty's does, so a Try Again records what it strips; gave `Departing` a Space-by-id arm, so a Space delete cut short after its move leaves the Context's Space order, replacing a branch that couldn't fire; and pointed `archivedWithin` at `currentOrigin`.
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
+- **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
 - **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.
