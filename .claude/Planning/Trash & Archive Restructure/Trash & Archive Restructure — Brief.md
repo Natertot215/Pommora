@@ -1,7 +1,7 @@
 ### Trash & Archive Restructure — Brief
 
 **DATE:** 10-29-2026
-**STATUS:** Plan ratified 10-30-2026; execution next, headless to the report
+**STATUS:** Executing (plan ratified 10-30-2026), headless to the report
 
 The continuation record for this work: what it is, what governs it, what Nathan wants, and where the process stands, so a session picking it up after a compaction loses nothing. *§Resume* is the one section that changes as the work moves.
 
@@ -43,4 +43,4 @@ The plan's *§Constraints · Mandate* holds the Approach and the Principles verb
 4. **Assemble (done):** the drafts are spliced into the plan with *§Process Overview*, *§Concepts*, *§Reconciliation*, and *§Deviations* filled; the Net Ledger re-totaled to about −600 (+37, −135, −35, −450, −15, ±0); *§Constraints · Placements* gained a "Placements Taken in Planning" line for Nathan's word (tests follow modules; `hiddenName`/`hiddenFolder`, `stashBlock`, and `respell` between existing files); `Drafts/` removed.
 5. **Review (done):** four read-only reviewers (simplification and adversarial, each over Phases 1–3 and 4–6, reading outward) and three fold agents (Edit-only on the one file). Folded: every unrouted test flip named; Tasks 5-1 and 5-2 re-cut so no renderer function is written twice (5-1 is `livePath` alone); the landing answers its post-rename stat only while modified time and size match its temp's (cautionary, one line, for Nathan's word); a trashed twin is passed over silently, neither skipped nor owed; one Trash read per holder query; `originPathOf` derives its store; `editShards`, `Identity`, and the record arm types named once; Windows skips on change-time cases; Task 3-4 parks links before the record goes. Re-counted from the AFTERs: +46, −136, −46, −360, +80 (recognition about +110), ±0, total about −415 production and about −850 tests. Skipped with reasons: `reachConfig`'s two Trash reads (different walks), `partitionGone`'s default (its inputs are optional).
 6. **Present (done):** Nathan approved the plan and every item recorded for his word (10-30-2026): Task 6-10's five Codebase Structure lines, the placements taken in planning, the landing's cautionary line, and the six user-visible departures; the baseline is filled and STATUS is Ratified.
-7. **Execute (next):** `c/plan-execution` on the plan, from its BASELINE head, headless to the report.
+7. **Execute (in progress):** `c/plan-execution` on the plan, from its BASELINE head, headless to the report; the plan's *§Process Overview* ticks what's landed.

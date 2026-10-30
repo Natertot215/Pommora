@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { realpathSync } from 'node:fs'
+import { constants, realpathSync, type Stats } from 'node:fs'
 import { lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import {
@@ -46,58 +46,73 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
   }
 }
 
-// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the file's commit, which lands it once its group has flushed.
-async function stage({
-  path: named,
-  data,
-  mtimeMs,
-  expect,
-}: Landing): Promise<() => Promise<FileStat>> {
+// Each temp writes through to its drive, so one flush of the drive's cache makes a whole group durable. Node names no write-through flag on Windows, where libuv maps its own value to FILE_FLAG_WRITE_THROUGH; that mapping ships unverified there.
+const TEMP_FLAGS =
+  constants.O_WRONLY |
+  constants.O_CREAT |
+  constants.O_EXCL |
+  (isWindows ? 0x04000000 : constants.O_DSYNC)
+
+// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the drive the temp sits on, the flush that empties that drive's cache, and the file's commit, which lands it once that flush answers and answers the stat the file then holds while its time and size are still the temp's, which a rename keeps, and the temp's own otherwise, so an outside write landing between the rename and the stat is heard.
+async function stage({ path: named, data, mtimeMs, expect }: Landing): Promise<{
+  dev: number
+  flush: () => Promise<void>
+  commit: (flushed: Promise<void>) => Promise<FileStat>
+}> {
   const path = (await absentToNull(lstat(named)))?.isSymbolicLink()
     ? posixPath(await realpath(named).catch(() => named))
     : named
   const temp = join(dirname(path), `.landing-${randomBytes(6).toString('hex')}`)
-  const handle = await open(temp, 'wx')
+  const handle = await open(temp, TEMP_FLAGS)
   const discard = async (e: unknown): Promise<never> => {
     await handle.close()
     await rm(temp, { force: true })
     throw e
   }
+  let own: Stats
   try {
     await handle.writeFile(data)
     // A volume that refuses the time leaves the file dated now; its bytes still land.
     if (mtimeMs !== undefined) await handle.utimes(mtimeMs / 1000, mtimeMs / 1000).catch(() => {})
-    await handle.sync()
+    own = await handle.stat()
   } catch (e) {
     return discard(e)
   }
-  return async () => {
-    try {
-      const held = await absentToNull(stat(path))
-      if (expect !== undefined && !sameFile(expect, held && fileStat(held)))
-        throw new Error(`${basename(path)} changed while its write waited.`)
-      const own = await handle.stat()
-      // The temp was created through the umask, so the file keeps the permissions it had; a volume that refuses them leaves the temp's, and its bytes still land.
-      if (held && held.mode !== own.mode) await handle.chmod(held.mode).catch(() => {})
-      await handle.close()
-      await outlastHolder(path, () => rename(temp, path))
-      return fileStat(own)
-    } catch (e) {
-      return discard(e)
-    }
+  return {
+    dev: own.dev,
+    flush: () => handle.sync(),
+    commit: async (flushed) => {
+      try {
+        await flushed
+        const held = await absentToNull(stat(path))
+        if (expect !== undefined && !sameFile(expect, held && fileStat(held)))
+          throw new Error(`${basename(path)} changed while its write waited.`)
+        // The temp was created through the umask, so the file keeps the permissions it had; a volume that refuses them leaves the temp's, and its bytes still land.
+        if (held && held.mode !== own.mode) await handle.chmod(held.mode).catch(() => {})
+        await handle.close()
+        await outlastHolder(path, () => rename(temp, path))
+        const now = fileStat(await stat(path))
+        return now.mtimeMs === own.mtimeMs && now.size === own.size ? now : fileStat(own)
+      } catch (e) {
+        return discard(e)
+      }
+    },
   }
 }
 
 export const nodeMachine: Machine = {
   readText: (p) => absentToNull(readFile(p, 'utf8')),
   readBytes: (p) => absentToNull(readFile(p)),
-  // Every temp is written and flushed before any rename, so the group's flushes overlap rather than wait in turn.
   async land(files) {
     const staged = await Promise.allSettled(files.map(stage))
+    const flushes = new Map<number, Promise<void>>()
+    for (const s of staged)
+      if (s.status === 'fulfilled' && !flushes.has(s.value.dev))
+        flushes.set(s.value.dev, s.value.flush())
     return Promise.allSettled(
       staged.map(async (s) => {
         if (s.status === 'rejected') throw s.reason
-        return s.value()
+        return s.value.commit(flushes.get(s.value.dev)!)
       }),
     )
   },

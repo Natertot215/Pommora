@@ -251,7 +251,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 #### Process Overview
 
 - [ ] **Phase 1** — The Landing
-  - [ ] Task 1-1 · One flush per drive, and the stat after the rename
+  - [x] Task 1-1 · One flush per drive, and the stat after the rename
   - [ ] Task 1-2 · The thread-pool line, measured and removed
   - [ ] Task 1-3 · The change time identifies a file
   - [ ] Task 1-4 · The echo by stat
@@ -465,6 +465,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 +      await real.rename(from, to)
 +      await afterRename.hook(to)
      },
+@@ describe 'nodeMachine landing' · beforeEach @@
+     synced.hook = async () => {}
++    afterRename.hook = async () => {}
+   })
 @@ describe 'nodeMachine landing' @@
 -  it('flushes every file of a group before renaming any', async () => {
 +  it('flushes a group once, before renaming any of its files', async () => {

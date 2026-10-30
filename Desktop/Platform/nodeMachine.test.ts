@@ -1,3 +1,4 @@
+import { constants } from 'node:fs'
 import {
   chmod,
   lstat,
@@ -13,19 +14,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { manifestAdmits } from '@pommora/core/Paths/exclusion'
 import { relative } from '@pommora/core/Paths/posix'
 import type { Machine } from '@pommora/core/Platform/machine'
-import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
+import { noModeBits, tempRoot, windows } from '@pommora/core/Testing/hostFs'
 import { describeMachine } from '@pommora/core/Testing/machineContract'
 import { syncIgnoredUnder } from '../FileWatch/watcher'
 import { nodeMachine } from './nodeMachine'
 
 const log = vi.hoisted((): string[] => [])
 const synced = vi.hoisted(() => ({ hook: async (): Promise<void> => {} }))
+const afterRename = vi.hoisted(() => ({ hook: async (_to: string): Promise<void> => {} }))
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
   return {
     ...real,
     open: async (...args: Parameters<typeof real.open>) => {
+      log.push(`open ${args[1]}`)
       const handle = await real.open(...args)
       const sync = handle.sync.bind(handle)
       handle.sync = async () => {
@@ -43,7 +46,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     },
     rename: async (from: string, to: string) => {
       log.push(`rename ${from}`)
-      return real.rename(from, to)
+      await real.rename(from, to)
+      await afterRename.hook(to)
     },
   }
 })
@@ -66,18 +70,54 @@ describe('nodeMachine landing', () => {
     root = tempRoot('pom-node-landing-')
     log.length = 0
     synced.hook = async () => {}
+    afterRename.hook = async () => {}
   })
   afterEach(async () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  it('flushes every file of a group before renaming any', async () => {
+  it('flushes a group once, before renaming any of its files', async () => {
     const landed = await host.land(['a.md', 'b.md', 'c.md'].map((n) => ({ path: at(n), data: n })))
     expect(landed.every((l) => l.status === 'fulfilled')).toBe(true)
-    expect(log.filter((l) => l === 'synced')).toHaveLength(3)
+    expect(log.filter((l) => l === 'synced')).toHaveLength(1)
     expect(log.lastIndexOf('synced')).toBeLessThan(log.findIndex((l) => l.startsWith('rename ')))
     for (const temp of renamed())
       expect(log.indexOf(`close ${temp}`)).toBeLessThan(log.indexOf(`rename ${temp}`))
+  })
+
+  it.skipIf(windows)('opens each temp to write through to its drive', async () => {
+    await host.land(['a.md', 'b.md'].map((n) => ({ path: at(n), data: n })))
+    const flags = log.filter((l) => l.startsWith('open ')).map((l) => Number(l.slice(5)))
+    expect(flags).toHaveLength(2)
+    for (const f of flags) expect(f & constants.O_DSYNC).toBe(constants.O_DSYNC)
+  })
+
+  it('a failed flush rejects every file it would have made durable and leaves no temp', async () => {
+    await writeFile(at('a.md'), 'old')
+    synced.hook = async () => {
+      throw new Error('flush failed')
+    }
+    const landed = await host.land([
+      { path: at('a.md'), data: 'new' },
+      { path: at('b.md'), data: 'b' },
+    ])
+    expect(landed.map((l) => l.status)).toEqual(['rejected', 'rejected'])
+    expect(await readFile(at('a.md'), 'utf8')).toBe('old')
+    expect(await readdir(root)).toEqual(['a.md'])
+  })
+
+  it('answers its own stat when an outside write lands between the rename and the stat', async () => {
+    afterRename.hook = async (to) => {
+      afterRename.hook = async () => {}
+      await writeFile(to, 'theirs, longer')
+    }
+    const [landed] = await host.land([
+      { path: at('a.md'), data: 'mine', mtimeMs: 1_700_000_000_000 },
+    ])
+    expect(landed.status === 'fulfilled' && landed.value).toMatchObject({
+      size: 4,
+      mtimeMs: 1_700_000_000_000,
+    })
   })
 
   it('a file rewritten while its group flushes is left as its writer left it', async () => {
