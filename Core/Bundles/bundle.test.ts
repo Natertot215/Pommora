@@ -106,7 +106,6 @@ const S = 'setS'
 const T = 'setT'
 const OUT = newContentId('page')
 const P_ID = newContentId('page')
-const TARGETS = { '[[Q]]': { id: 'q', path: 'A/Q.md' } }
 const P_LINK = { page: OUT, property: 'Rel', value: '[[P]]' }
 const Q_LINK = { page: OUT, property: 'Rel', value: '[[Q]]' }
 const BUNDLE_REL = `.trash/${STAMPED}__A.deleted`
@@ -123,7 +122,6 @@ const seedTrashedCollection = async (record: Record<string, unknown> = {}): Prom
     entity: 'collection',
     id: A,
     parent: { kind: 'root' },
-    targets: TARGETS,
     links: [P_LINK, Q_LINK],
     ...record,
   })
@@ -148,14 +146,13 @@ describe('openBundle', () => {
     expect('trail' in record).toBe(false)
   })
 
-  it('opens a page under its own Set, with the containers above as its trail, its id, the bundle’s targets, and only the kept values naming it', async () => {
+  it('opens a page under its own Set, with the containers above as its trail, its id, and only the kept values naming it', async () => {
     await seedTrashedCollection()
     expect((await opened(inBundle('A', 'S', 'T', 'P.md'))).record).toEqual({
       entity: 'page',
       id: P_ID,
       parent: { kind: 'container', id: T },
       trail: [A, S],
-      targets: TARGETS,
       links: [P_LINK],
     })
   })

@@ -1110,20 +1110,6 @@ describe('a delete from the Archive', () => {
     expect(await related()).toBe('[[Beta]]')
   })
 
-  it('a trashed page’s link to an archived page follows it to where it lands on restore', async () => {
-    await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\n[[Alpha]]\n`)
-    await reseed()
-    const alpha = await archive('Notes/Daily/Alpha.md')
-    const gamma = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
-    expect(
-      (await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Alpha' }))).ok,
-    ).toBe(true)
-    const back = await restore(alpha)
-    expect(back.ok && back.value.landedAs).toBe('Alpha (2)')
-    expect((await restore(gamma.ok ? (gamma.value.bundled?.bundlePath ?? '') : '')).ok).toBe(true)
-    expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha (2)]]')
-  })
-
   it('a trashed page’s link a live page and an archived page both answer names the live one', async () => {
     await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\n[[Alpha]]\n`)
     await reseed()

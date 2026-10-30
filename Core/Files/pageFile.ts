@@ -216,18 +216,6 @@ export function mergeFrontmatter(
   return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
 
-/** `content` with `from` renamed to `to` as `rekeyed` renames it. */
-export function renameFrontmatterKey(
-  content: string,
-  from: string,
-  to: string,
-  collision: KeyCollision,
-): string | null {
-  const { frontmatter, body } = splitEnvelope(content)
-  const doc = parseDocument(frontmatter)
-  return doc.errors.length > 0 ? null : rekeyed(doc, body, from, to, collision)
-}
-
 /** The page of `doc` and `body` with `from` renamed to `to` in its place; null when nothing moves. A held `to` is the rival: under `'prefer-new'` it keeps its value and `from` goes; under `'merge'` the two combine through `joinValues` in `from`'s place. The value lands through `setAbove`, so a blank one leaves. */
 function rekeyed(
   doc: Document,

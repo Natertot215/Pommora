@@ -64,20 +64,6 @@ export function joinCascades(
   }
 }
 
-/** `cascade` joined with the line counting the files in “title” whose values a restore couldn't reconcile. */
-export function withUnswept(
-  cascade: CascadeReport | undefined,
-  title: string,
-  unswept: readonly string[],
-): CascadeReport | undefined {
-  if (!unswept.length) return cascade
-  return joinCascades(cascade, {
-    pages: [],
-    hosts: [],
-    warning: unsweptLine(unswept.length, `values in “${title}” across `),
-  })
-}
-
 /** What a delete's strip takes: every Link property value naming a page it took, by any key that now resolves to nothing, in the governed pages outside it, stored ones among them, and in every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. `files` are its holders, `named` what one root holds of it under the Link `keys`, and `byId` what addresses each holder; null when nothing names a page it took. Nothing at or under `left` is reached, since it left with the delete: the folder it stood in, which the held tree may still list, an archived item's rows, which the index keeps until its artifact leaves the Archive, and the bundle it moved into. */
 export async function linkStrip(root: string, left: readonly string[], paths: readonly string[]) {
   const inside = (rel: string): boolean => left.some((at) => isAtOrUnder(rel, at))

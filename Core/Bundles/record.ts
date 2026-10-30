@@ -33,9 +33,6 @@ export const strippedLink = z.object({
   above: z.string().optional(),
 })
 
-/** The page each outbound link under the artifact named at the delete, by its id and its path then under the key it was written with, so a restore follows it by identity and re-spells only what changed since. */
-const linkTargets = z.record(z.string(), z.object({ id: z.string(), path: z.string() })).optional()
-
 /** The ids of the siblings it sat above and below in its origin's order as it left, so a restore lands it back between them. */
 const place = z.object({ above: z.string().optional(), below: z.string().optional() }).optional()
 
@@ -54,7 +51,6 @@ const contentRecord = <E extends string>(entity: E) =>
     archive: z.string().optional(),
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),
-    targets: linkTargets,
   })
 
 // The record itself is never rewritten from its decode; `def` and `registry` decode loose because a restore writes them back. A page's or Set's record decodes whole, so a delete from the Archive and its Undo each write the other store's record from it.
@@ -69,7 +65,6 @@ const recordFile = z.discriminatedUnion('entity', [
     parent: parentRef,
     place,
     members: z.array(memberRoot),
-    targets: linkTargets,
     partial: z.literal(true).optional(),
   }),
   z.object({
@@ -91,7 +86,6 @@ const recordFile = z.discriminatedUnion('entity', [
     panel: place,
     spaceOrder: z.array(z.string()).optional(),
     membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
-    targets: linkTargets,
     partial: z.literal(true).optional(),
   }),
 ])

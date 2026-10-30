@@ -4,9 +4,12 @@ import {
   splitFrontmatter,
   assembleEnvelope,
   mergeFrontmatter,
-  renameFrontmatterKey,
   sweepParse,
 } from './pageFile'
+import type { KeyCollision } from './rootValues'
+
+const rekey = (content: string, from: string, to: string, collision: KeyCollision): string | null =>
+  sweepParse(content)?.rekey(from, to, collision) ?? null
 
 describe('splitEnvelope / assembleEnvelope', () => {
   it('round-trips a canonical envelope', () => {
@@ -212,7 +215,7 @@ describe('mergeFrontmatter — foreign preservation (the contract)', () => {
   })
 })
 
-describe('renameFrontmatterKey — the key keeps its place', () => {
+describe('`rekey` — the key keeps its place', () => {
   const page = (fm: string): string => assembleEnvelope(`${fm}\n`, 'Body')
   const fmOf = (out: string | null): string | null =>
     out === null ? null : splitEnvelope(out).frontmatter
@@ -220,39 +223,29 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
   it('renames the key where it sits, keeping the comment attached to it', () => {
     const before =
       'title: Alpha\n# which clients this is for\n<Projects>:\n  - Pommora\nstatus: draft'
-    const out = renameFrontmatterKey(page(before), '<Projects>', '<Ventures>', 'prefer-new')
+    const out = rekey(page(before), '<Projects>', '<Ventures>', 'prefer-new')
     expect(fmOf(out)).toBe(
       'title: Alpha\n# which clients this is for\n<Ventures>:\n  - Pommora\nstatus: draft',
     )
   })
 
   it('leaves the body alone', () => {
-    const out = renameFrontmatterKey(page('Status: Old'), 'Status', 'Stage', 'prefer-new')
+    const out = rekey(page('Status: Old'), 'Status', 'Stage', 'prefer-new')
     expect(splitEnvelope(out ?? '').body).toBe('Body')
   })
 
   it('prefer-new drops the old key, the pre-existing one keeping its own place', () => {
-    const out = renameFrontmatterKey(
-      page('Status: Stale\nkeep: 1\nStage: Fresh'),
-      'Status',
-      'Stage',
-      'prefer-new',
-    )
+    const out = rekey(page('Status: Stale\nkeep: 1\nStage: Fresh'), 'Status', 'Stage', 'prefer-new')
     expect(fmOf(out)).toBe('keep: 1\nStage: Fresh')
   })
 
   it('prefer-new drops a blank rival with the old key', () => {
-    const out = renameFrontmatterKey(
-      page('Status: Stale\nkeep: 1\nStage:'),
-      'Status',
-      'Stage',
-      'prefer-new',
-    )
+    const out = rekey(page('Status: Stale\nkeep: 1\nStage:'), 'Status', 'Stage', 'prefer-new')
     expect(fmOf(out)).toBe('keep: 1')
   })
 
   it('merge folds both lists into one at the renamed key’s place, deduped', () => {
-    const out = renameFrontmatterKey(
+    const out = rekey(
       page(
         'id: p2\n# tags\n<Projects>:\n  - Pommora\n<Ventures>:\n  - Other\n  - Pommora\nforeign: 1',
       ),
@@ -265,63 +258,41 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
 
   it('renames a key to its own name in another casing at the same line, under either rule', () => {
     for (const collision of ['prefer-new', 'merge'] as const) {
-      const out = renameFrontmatterKey(page('a: 1\nTags: [a]\nz: 2'), 'Tags', 'tags', collision)
+      const out = rekey(page('a: 1\nTags: [a]\nz: 2'), 'Tags', 'tags', collision)
       expect(fmOf(out)).toBe('a: 1\ntags: [a]\nz: 2')
     }
   })
 
   it('merge joins a scalar rival with the old list', () => {
-    const out = renameFrontmatterKey(
-      page('<Projects>: [Y]\n<Ventures>: X'),
-      '<Projects>',
-      '<Ventures>',
-      'merge',
-    )
+    const out = rekey(page('<Projects>: [Y]\n<Ventures>: X'), '<Projects>', '<Ventures>', 'merge')
     expect(Object.entries(splitFrontmatter(out ?? ''))).toEqual([['<Ventures>', ['X', 'Y']]])
   })
 
   it('a lone key with no rival changes only the key’s text', () => {
-    const out = renameFrontmatterKey(
-      page('Tags:\n  # first\n  - a # mine\n  - b'),
-      'Tags',
-      'Labels',
-      'prefer-new',
-    )
+    const out = rekey(page('Tags:\n  # first\n  - a # mine\n  - b'), 'Tags', 'Labels', 'prefer-new')
     expect(fmOf(out)).toBe('Labels:\n  # first\n  - a # mine\n  - b')
   })
 
   it('answers null for a page holding neither key', () => {
-    expect(renameFrontmatterKey(page('<Other>: x'), 'Status', 'Stage', 'prefer-new')).toBeNull()
+    expect(rekey(page('<Other>: x'), 'Status', 'Stage', 'prefer-new')).toBeNull()
   })
 
   it('answers null for frontmatter that cannot round-trip, in either shape', () => {
     // A tab-indented sequence never parses; an unresolved alias parses clean and refuses to serialize. Both would lose everything the parser did not recover.
+    expect(rekey(page('<Projects>:\n\t- Pommora'), '<Projects>', '<Ventures>', 'merge')).toBeNull()
     expect(
-      renameFrontmatterKey(page('<Projects>:\n\t- Pommora'), '<Projects>', '<Ventures>', 'merge'),
-    ).toBeNull()
-    expect(
-      renameFrontmatterKey(
-        page('<Projects>:\n  - Pommora\nother: *word'),
-        '<Projects>',
-        '<Ventures>',
-        'merge',
-      ),
+      rekey(page('<Projects>:\n  - Pommora\nother: *word'), '<Projects>', '<Ventures>', 'merge'),
     ).toBeNull()
   })
 })
 
-describe('renameFrontmatterKey — a key in another casing is another key', () => {
+describe('`rekey` — a key in another casing is another key', () => {
   const page = (fm: string): string => assembleEnvelope(`${fm}\n`, 'Body')
   const held = (out: string | null): [string, unknown][] =>
     Object.entries(splitFrontmatter(out ?? ''))
 
   it('renames only the exact key, leaving another casing where it sits', () => {
-    const out = renameFrontmatterKey(
-      page('a: 1\nTags: ["b"]\ntags: [a, B]\nz: 2'),
-      'Tags',
-      'Labels',
-      'prefer-new',
-    )
+    const out = rekey(page('a: 1\nTags: ["b"]\ntags: [a, B]\nz: 2'), 'Tags', 'Labels', 'prefer-new')
     expect(held(out)).toEqual([
       ['a', 1],
       ['Labels', ['b']],
@@ -332,7 +303,7 @@ describe('renameFrontmatterKey — a key in another casing is another key', () =
   })
 
   it('prefer-new reads a key in another casing as no rival', () => {
-    const out = renameFrontmatterKey(page('Tags: [b]\nlabels: [x]'), 'Tags', 'Labels', 'prefer-new')
+    const out = rekey(page('Tags: [b]\nlabels: [x]'), 'Tags', 'Labels', 'prefer-new')
     expect(held(out)).toEqual([
       ['Labels', ['b']],
       ['labels', ['x']],

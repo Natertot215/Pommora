@@ -320,7 +320,7 @@ function returningNames(
   return { names, own }
 }
 
-/** A restore's arrival under `title`: the index settled with `back` landed, the returning files repaired at `landed.abs` through `landed.repair` (the returning pages' own re-spellings when it has none), then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index can't settle. */
+/** A restore's arrival under `title`: the index settled with `back` landed, the returning files' own links re-spelled at `landed.abs`, then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index can't settle. */
 export async function returningCascade(
   root: string,
   tree: NexusTree,
@@ -330,7 +330,6 @@ export async function returningCascade(
     entity: RecordFile['entity']
     abs: string
     rekey?: [from: string, to: string]
-    repair?: (after: PageIndex) => Map<string, string>
   },
 ): Promise<{
   after: PageIndex | null
@@ -340,7 +339,7 @@ export async function returningCascade(
   const after = await settledIndex(root)
   if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
   const { names, own } = returningNames(pageIndexOf(tree), after, back)
-  const repaired = await repairLanded(root, landed, title, landed.repair?.(after) ?? own)
+  const repaired = await repairLanded(root, landed, title, own)
   if (!names.size) return { after, own, cascade: repaired }
   return {
     after,

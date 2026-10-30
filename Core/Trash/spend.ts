@@ -5,7 +5,6 @@ import type { MutateOutcome, MutateReply, RestoreDestination } from '../Nexus/mu
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, unlistContext, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
-import { scrubReturning } from './restoreScrub'
 import { readLiveSetting } from '../Settings/settings'
 import { refillValues, sweepRootsById } from '../Nexus/governedSweep'
 import { joinValues, landValue } from '../Files/rootValues'
@@ -23,7 +22,7 @@ import {
 } from '../Bundles/bundle'
 import { archiveDirRel, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import { collectionOf, currentOrigin, originOf, recordedPartly } from '../Bundles/record'
-import { pathExists, readJsonObject, relocate } from '../Files/atomicWrite'
+import { pathExists, relocate } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
@@ -33,12 +32,9 @@ import { refileLanded } from '../Archive/refile'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { returningCascade } from '../Nexus/settle'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
-import { joinCascades, type StrippedLink, withUnswept } from '../Nexus/cascade'
+import { joinCascades, type StrippedLink } from '../Nexus/cascade'
 import { frozenWorld, parkLinks, refillTrashed } from './trashedCopies'
 import { NO_DESTINATION, placeAmong, placeRecord } from '../Bundles/placement'
-import { containerSchema, schemaOf } from '../Nexus/treePatch'
-import { assignedIds } from '../Nexus/containerFields'
-import { sidecarPath } from '../Paths/paths'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
   containerNote,
@@ -169,24 +165,7 @@ export async function restoreTrashed(
   const { dir, finalName, finalTitle } = placement
   let targetAbs = join(root, dir, finalName)
   const back = await originPagesOf(root, await contentPages(record.entity, artifactAbs))
-  const targets = new Map(Object.entries(record.targets ?? {}))
   const world = linkWorld(tree, archived, back)
-  const frozen = frozenWorld(world, targets)
-  // A returning Collection sits in the Trash, outside the tree, so its own sidecar names its schema; a page or Set takes its destination's, and nothing under `.nexus/contexts` has one.
-  const schema =
-    record.entity === 'collection'
-      ? schemaOf(tree, assignedIds(await readJsonObject(sidecarPath(artifactAbs, 'collection'))))
-      : containerSchema(tree, dir)
-  const scrubbed = await scrubReturning(
-    root,
-    tree,
-    record.entity,
-    artifactAbs,
-    schema,
-    frozen,
-    record.entity === 'context' ? contextKey(record.registry.title) : undefined,
-  )
-  await parkLinks(root, scrubbed.dropped)
   // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an entry written after the move would destroy the evidence on failure and reply ok.
   const title = finalTitle ?? finalName
   // A Context's or Space's own owed titles never refuse it; another's do, since the work still due would land on it. Placement lands a Space only under the live Context its record's `parent` names.
@@ -216,10 +195,10 @@ export async function restoreTrashed(
     if (!committed.ok) return committed
   }
   try {
-    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
+    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, and nothing lands in the tree.
     if (into && (record.entity === 'page' || record.entity === 'set')) {
       const origin = join(root, originPathOf(root, artifactAbs))
-      const { archive, links, targets, ...filed } = record
+      const { archive, links, ...filed } = record
       targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
     } else {
       await machine().mkdir(dirname(targetAbs))
@@ -243,21 +222,9 @@ export async function restoreTrashed(
       record.entity === 'context' && title !== record.registry.title
         ? [record.registry.title, title]
         : undefined,
-    repair: (after) => {
-      const repair = new Map<string, string>()
-      for (const [key, { id, path }] of targets) {
-        const q = after.byId.get(id)
-        const next = q && after.respell(key, q, path)
-        if (next) repair.set(key, next)
-      }
-      return repair
-    },
   })
   const { after, own } = arrived
   const worked: Worked = {}
-  // What the scrub worked out for a returning file it couldn't write follows the file to where it landed.
-  for (const [file, values] of Object.entries(scrubbed.worked))
-    worked[relative(root, join(targetAbs, file))] = values
   const settled = after && heldTreeOf(root)
   const untagged: string[] = []
   const unlinked = new Set<string>()
@@ -312,10 +279,7 @@ export async function restoreTrashed(
     Object.assign(worked, await refillTrashed(root, trashed, defs, refilled))
   }
   const owed = await oweWorked(root, relative(root, targetAbs), title, worked)
-  const cascade = joinCascades(
-    withUnswept(joinCascades(arrived.cascade, owed), title, scrubbed.unread),
-    recordedPartly(stored, title),
-  )
+  const cascade = joinCascades(joinCascades(arrived.cascade, owed), recordedPartly(stored, title))
   await spendBundle(root, bundle)
   const left = originOf(stored)
   // What was archived from within the Set sits in the Archive of the Collection the Set's chain stands in now, since a Trash record keeps the trail it left on.

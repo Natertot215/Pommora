@@ -14,7 +14,8 @@ import { indexWrittenPages, seedContentIndex } from '../Index/indexSeed'
 import { readRecord } from '../Bundles/record'
 import { listBundles } from '../Bundles/bundle'
 import { mutateRegistry, readRegistry } from '../Properties/propertiesRegistry'
-import { renameFrontmatterKey } from '../Files/pageFile'
+import { sweepParse } from '../Files/pageFile'
+import type { KeyCollision } from '../Files/rootValues'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, OWED_REL } from '../Paths/nexusPaths'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -113,10 +114,13 @@ const relabel = (root: string, label: string, key = label, over: Record<string, 
     result: ok(null),
   }))
 
+const rekey = (content: string, from: string, to: string, collision: KeyCollision): string | null =>
+  sweepParse(content)?.rekey(from, to, collision) ?? null
+
 async function renameCrashState(root: string): Promise<void> {
   await seedNotes(root, RENAMED)
   await relabel(root, 'Phase')
-  const half = renameFrontmatterKey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new')
+  const half = rekey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new')
   if (half === null) throw new Error('fixture: half-fold produced nothing')
   await writeFile(join(root, 'Col', 'A.md'), half)
 }

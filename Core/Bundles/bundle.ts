@@ -293,12 +293,8 @@ async function trailWithin(
   return ids.every((id): id is string => id !== undefined) ? ids : null
 }
 
-/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one, and the bundle's targets; no place, since the siblings it left are gone with it. */
-async function innerRecord(
-  held: ContainerRecord,
-  trail: readonly string[] | null,
-  item: string,
-): Promise<InnerRecord> {
+/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one; no place, since the siblings it left are gone with it. */
+async function innerRecord(trail: readonly string[] | null, item: string): Promise<InnerRecord> {
   const entity = isMarkdownFile(item) ? 'page' : 'set'
   const { id, icon } =
     entity === 'page'
@@ -310,7 +306,6 @@ async function innerRecord(
     ...(icon ? { icon } : {}),
     parent: trail ? { kind: 'container', id: trail[trail.length - 1] } : { kind: 'unaddressable' },
     ...(trail && trail.length > 1 ? { trail: trail.slice(0, -1) } : {}),
-    ...(held.targets ? { targets: held.targets } : {}),
   }
 }
 
@@ -331,7 +326,7 @@ export async function openBundle(root: string, abs: string): Promise<Result<Open
   const { bundle, store, record, artifact, inner } = read.value
   if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
   const { item, held } = inner
-  const own = await innerRecord(held, await trailWithin(held, inner.artifact, dirname(item)), item)
+  const own = await innerRecord(await trailWithin(held, inner.artifact, dirname(item)), item)
   const links = await keptLinksUnder(root, held, inner.artifact, item)
   return ok({
     abs: bundle,
@@ -372,7 +367,7 @@ export async function listInner(
   const items = await Promise.all(
     entries.map(async ({ name }) => {
       const at = join(folder, name)
-      const own = await innerRecord(record, trail, at)
+      const own = await innerRecord(trail, at)
       return {
         address: relative(root, at),
         record: own,

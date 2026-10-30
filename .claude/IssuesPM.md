@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 81 | 0 | 3 | 13 | 38 | 27 |
+| 80 | 0 | 3 | 13 | 38 | 26 |
 
 #### A1 • Sync & Devices
 
@@ -73,7 +73,6 @@
 | [I-077](#I-077 • A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row.) | A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row. | Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
 | [I-065](#I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
-| [I-069](#I-069 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.) | A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash. | Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
@@ -952,20 +951,6 @@ A Link value stripped for naming a page the Trash holds joins that page's bundle
 
 **Your call:** `parkLinks` parks a value when every holder of its title shares one bundle id, one line, or the value stays dropped, since the refill would land it ambiguous again.
 
-#### I-069 • A Trash bundle whose record holds its link targets as bare IDs fails to decode and drops out of the Trash.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Mini (±0) | Residue | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
-
-**Description**
-
-A Trash bundle written between `d5462735f` and `6231cb841` records its link targets as `key → id`, where the record decodes `key → { id, path }`. Such a bundle fails to decode: `readRecord` answers null, `listBundles` skips it, so the Trash lists nothing for it, and a restore or empty request for it answers that the deletion record is unreadable. Bundles written before `d5462735f` carry no targets and bundles written after `6231cb841` carry the object form, so only that range is affected.[^69]
-
-**Solution** [Deferred]
-
-Deferred by the owner, whose rule keeps no compatibility decode for a record format that changed within a plan. A bundle found this way is mended by editing its record by hand, or by emptying its folder.
-
 #### I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1459,7 +1444,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^66]: **I-066:** `Core/Tiles/tileHosts.ts:~22-36` (the Space arm's `boards`), `Core/Tiles/tileHosts.ts:~44-54` (`tileHostsOf`), `Core/Nexus/tree.ts:111`, `Core/Nexus/readNexus.ts:~314-322` (the registry's `unreadable` entry), `Core/Nexus/configReach.ts:~306` (`reachConfig`), `Core/Tiles/tilesFile.ts:~286-327` (`tilesLink`, `rewriteTileConnections`), `Core/Nexus/cascade.ts:~246-257`
 [^67]: **I-067:** `Core/Connections/rewrite.ts:~76-110` (`follower`), `Core/Connections/connections.ts:~19-22` (`pageLinkPattern`), `Core/Connections/connections.ts:~132-143` (`expressibleInLink`, `spellsAsWiki`), `Core/MarkdownPM/Engine/detect.ts:~406-411` (`loneEmbedRe`, `loneEmbedTitle`)
 [^68]: **I-068:** `Core/MarkdownPM/Links/connectionsApi.ts:~24-33` (`headingMissing`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:~138-151` (`commit`, `keptHeading`)
-[^69]: **I-069:** `Core/Bundles/record.ts:~39-40` (`linkTargets`), `Core/Bundles/record.ts:~127-134` (`decodeRecord`, `readRecord`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Bundles/bundle.ts:~292-307` (`openBundle`)
 [^70]: **I-070:** `Core/Bundles/placement.ts:~41-116` (`resolveRecord`), `Core/Bundles/placement.ts:~159-183` (`freeOnDisk`), `Core/Paths/names.ts:~56-79` (`freeName`, `createDisambiguated`)
 [^71]: **I-071:** `Core/Nexus/fileEvents.ts:~524-540` (`applySettings`, `oweRescope`), `Core/Nexus/settle.ts:~197-201` (`reseed`), `Core/Settings/settings.ts:107-139` (`carrySetAside`), `Core/Nexus/folderEntity.ts:53-71` (`liftSetAside`), `.claude/Features/DesktopPM.md:22`
 [^72]: **I-072:** `Desktop/FileWatch/watcher.ts:38` (`SETTLE_MS`), `Desktop/FileWatch/watcher.ts:106` (`awaitWriteFinish`)

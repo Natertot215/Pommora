@@ -1,61 +1,16 @@
-import { isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
+import { isMarkdownFile } from '../Paths/posix'
 import type { ContextDef } from '../Contexts/contexts'
 import { type Holders, readHolders } from '../Index/keyHolders'
 import type { LinkStrip, StrippedLink } from '../Nexus/cascade'
 import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
-import { readTextOrNull } from '../Files/atomicWrite'
 import { contextDirRel } from '../Paths/nexusPaths'
 import { exactTitle } from '../Paths/caseFold'
-import { readPageRelations } from '../Index/contentIndex'
-import { extractPageIndex } from '../Index/indexSeed'
-import { valueLinks } from '../Connections/scan'
-import { ID_KEY } from '../Nexus/identityMark'
-import { pageIndexOf } from '../Nexus/record'
-import { nexusPages } from '../Nexus/heldPages'
-import { buildPageIndex } from '../Connections/pageIndex'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { asStringArray } from '../Nexus/coerce'
-import type { Relation } from '../Platform/stores'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { placeOf, type RecordFile } from '../Bundles/record'
-
-/** The page-to-page rows of the pages at `paths`: the index's, or read from their files by the index's own extractor while it has none to answer with. */
-async function pageRelationsOf(root: string, paths: readonly string[]): Promise<Relation[]> {
-  const indexed = readPageRelations(paths, ID_KEY)
-  if (indexed) return indexed.relations
-  const texts = await Promise.all(paths.map((p) => readTextOrNull(join(root, p))))
-  return texts.flatMap((text) =>
-    text === null ? [] : extractPageIndex(text).relations.filter((r) => r.kind !== 'space'),
-  )
-}
-
-/** What each outbound link at or under `rel` named: the id and path of the page its key resolves to alone, from the rows of the pages there (`paths`) and the values the Spaces there hold; a key no live page answers names the archived page that answers it. */
-export async function gatherLinkTargets(
-  root: string,
-  tree: NexusTree,
-  rel: string,
-  paths: readonly string[],
-): Promise<Record<string, { id: string; path: string }>> {
-  const live = pageIndexOf(tree)
-  const archived = buildPageIndex((await nexusPages(root, tree)).archived)
-  const out = new Map<string, { id: string; path: string }>()
-  const note = (key: string): void => {
-    const hit = live.resolve(key)
-    const page = out.has(key)
-      ? undefined
-      : hit.status === 'phantom'
-        ? archived.resolve(key).page
-        : hit.page
-    if (page) out.set(key, { id: page.id, path: page.path })
-  }
-  for (const row of await pageRelationsOf(root, paths)) note(row.target)
-  for (const g of tree.contexts)
-    for (const s of g.spaces)
-      if (isAtOrUnder(s.path, rel)) for (const hit of valueLinks(s.values ?? {})) note(hit.target)
-  return Object.fromEntries(out)
-}
 
 /** The Link values a delete's strip will take, read from each holder as a Space's or Context's capture reads it, so they're written down before anything is stripped. */
 export async function gatherLinks(root: string, strip: LinkStrip): Promise<StrippedLink[]> {

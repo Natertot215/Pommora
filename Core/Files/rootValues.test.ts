@@ -8,7 +8,10 @@ import {
   rekeyHeld,
   stripList,
 } from './rootValues'
-import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './pageFile'
+import { assembleEnvelope, splitFrontmatter, sweepParse } from './pageFile'
+
+const rekey = (content: string, from: string, to: string, collision: KeyCollision): string | null =>
+  sweepParse(content)?.rekey(from, to, collision) ?? null
 
 describe('joinValues', () => {
   it('keeps the first value and adds each member of the second that matches none of it: a scalar by its exact title, any other member only by itself', () => {
@@ -39,7 +42,7 @@ describe('editHeldList', () => {
   })
 })
 
-describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
+describe("rekeyHeld — the twin of the page parse's `rekey`", () => {
   const cases: [string, string, string, KeyCollision][] = [
     ['a: 1\nTags: [b]\nz: 2', 'Tags', 'tags', 'prefer-new'],
     ['a: 1\nTags: [b]\nz: 2', 'Tags', 'tags', 'merge'],
@@ -54,7 +57,7 @@ describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
     cases,
   )('answers the keys and values the page rename does for %j', (fm, from, to, collision) => {
     const content = assembleEnvelope(`${fm}\n`, 'Body')
-    const page = renameFrontmatterKey(content, from, to, collision)
+    const page = rekey(content, from, to, collision)
     const json = rekeyHeld(splitFrontmatter(content), from, to, collision)
     expect(json).toEqual(page === null ? null : splitFrontmatter(page))
   })
