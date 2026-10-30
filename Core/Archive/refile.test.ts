@@ -420,6 +420,32 @@ describe('the restore — a Set landing in another Collection carries what was a
     ])
   })
 
+  it('a Set restored from the Trash after its parent moved to another Collection carries what was archived from within it from where it sits now', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    const trashed = await bundled({ op: 'delete', path: 'Notes/Daily/Sub', kind: 'set' })
+    expect(
+      (await mutate({ op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [DAILY] }))
+        .ok,
+    ).toBe(true)
+    expect(
+      (
+        await mutate({
+          op: 'restore',
+          bundlePath: trashed,
+          destination: { kind: 'container', id: NOTES },
+        })
+      ).ok,
+    ).toBe(true)
+    expect(await filed(IN_NOTES)).toEqual([
+      {
+        bundlePath: `.nexus/archive/${NOTES}/Notes/Daily/Sub/${leafOf(bundlePath)}`,
+        id: PAGE_N,
+        trail: [NOTES],
+      },
+    ])
+    expect(await filed(IN_OTHER)).toEqual([])
+  })
+
   it.each([
     ['the Trash', 'delete'],
     ['the Archive', 'archive'],
@@ -524,5 +550,19 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
     await settleArchives(root, await reread())
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(stored)
     expect(await filed(IN_OTHER)).toEqual([])
+  })
+
+  it('a record whose parent is gone is re-filed by the deepest container its chain still holds', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    await rm(at('Notes', 'Daily', 'Sub'), { recursive: true })
+    await rename(at('Notes', 'Daily'), at('Other', 'Daily'))
+    await settleArchives(root, await reread())
+    expect(await filed(IN_OTHER)).toEqual([
+      {
+        bundlePath: `.nexus/archive/${OTHER}/Notes/Daily/Sub/${leafOf(bundlePath)}`,
+        id: PAGE_N,
+        trail: [OTHER, DAILY],
+      },
+    ])
   })
 })

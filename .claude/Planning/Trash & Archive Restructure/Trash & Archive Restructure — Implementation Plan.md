@@ -271,7 +271,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 3-2 · A content delete records its links ahead of the strip
   - [x] Task 3-3 · One container note, and the Set move's own kind
   - [x] Task 3-4 · The empty is the one gone-for-good step
-  - [ ] Task 3-5 · One trail resolver and one carry
+  - [x] Task 3-5 · One trail resolver and one carry
   - [ ] Task 3-6 · One owned-Archives iterator
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
@@ -4095,7 +4095,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 #### Task 3-5
 
-**TASK:** One current-trail resolver and one carry (M-10; closes B-6). `archiveFiling`'s deepest-live-container rule lifts into `Core/Bundles/record.ts` as `currentOrigin`, the one answer to "where does a record stand now", which the open pass, the Undo's filing, and the Trash restore's carry source read. `refileLanded` and `refileFiled` become one trigger taking the Set's record and the chain it carries along, a Set's landing in either place (a restore reads its chain from the tree, as `refileLanded`'s `trailAbove` did; an Undo passes the chain of the record it was filed with, as `refileFiled`'s `above` was, since the held tree may still list the Set where it stood until the settle), and `refileArchived` carries each record within the Set onto the trail the Set's chain gives it, taking its Archive from that trail. **Departure, Disclosed:** the Ledger's M-10 has `currentTrail` replace all three formulas; the carry keeps its own, the Set's chain retrailed below it, since an Undo files a Set back that the tree no longer holds, and the deepest-live rule would read each record's own chain, which its restore re-trailed to where the Set landed (`archive.test.ts:352-400` pin that case). **Behavior, Decided:** the open pass now re-files a record whose own parent is gone by the deepest container on its chain the tree holds, as the live carry already does, where it left such a record misfiled. **Comments:** the AFTER removes six and adds four.
+**TASK:** One current-trail resolver and one carry (M-10; closes B-6). `archiveFiling`'s deepest-live-container rule lifts into `Core/Bundles/record.ts` as `currentOrigin`, the one answer to "where does a record stand now", which the open pass, the Undo's filing, and the Trash restore's carry source read. `refileLanded` and `refileFiled` become one trigger taking the Set's record and the chain it carries along, a Set's landing in either place (a restore reads its chain from the tree, as `refileLanded`'s `trailAbove` did; an Undo passes the chain of the record it was filed with, as `refileFiled`'s `above` was, since the held tree may still list the Set where it stood until the settle), and `refileArchived` carries each record within the Set onto the trail the Set's chain gives it, taking its Archive from that trail. **Departure, Disclosed:** the Ledger's M-10 has `currentTrail` replace all three formulas; the carry keeps its own, the Set's chain retrailed below it, since an Undo files a Set back that the tree no longer holds, and the deepest-live rule would read each record's own chain, which its restore re-trailed to where the Set landed (`archive.test.ts:352-400` pin that case). **Behavior, Decided:** the open pass now re-files a record whose own parent is gone by the deepest container on its chain the tree holds, as the live carry already does, where it left such a record misfiled. **Comments:** the AFTER removes five and adds six, `currentOrigin`'s doc and the restore's carry-source line the new ones.
 
 **NOW:**
 - **Three Formulas:** `settleArchives` re-files a record only while its parent is live, by `trailAbove` (`Core/Archive/refile.ts:131-141`); `refileArchived` takes `held ?? retrailed(origin, [...above, setId])` (`refile.ts:50-63`); `archiveFiling` takes the deepest live container on the record's chain, then `retrailed` (`Core/Bundles/placement.ts:197-225`).
@@ -4289,9 +4289,8 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 @@ archiveOp @@
    await dropDeparture(root, node)
    const left = at === undefined ? null : originOf(record)
--  if (record.entity === 'set' && record.id && left)
+   if (record.entity === 'set' && record.id && left)
 -    await refileFiled(root, record.id, [...left.trail, left.parent], store.id, to.id)
-+  if (left && record.id)
 +    await refileLanded(root, record, store.id, [...left.trail, left.parent, record.id])
 @@ restoreArchived @@
 -  await refileLanded(root, record, store.id, dir)

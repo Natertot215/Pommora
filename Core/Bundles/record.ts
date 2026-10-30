@@ -196,6 +196,23 @@ export function retrailed(origin: Origin, held: readonly string[]): string[] {
   return [...held, ...chain.slice(chain.indexOf(held[held.length - 1]) + 1)].slice(0, -1)
 }
 
+/** `origin` on the trail it stands on now: down to the deepest container on its chain the tree holds, then the ids its record stored below that one; null when the tree holds none of them. */
+export function currentOrigin(tree: NexusTree, origin: Origin): Origin | null {
+  const held = [...origin.trail, origin.parent]
+    .reverse()
+    .map((id) => containerTrailById(tree, id))
+    .find((trail) => trail !== null)
+  return held
+    ? {
+        parent: origin.parent,
+        trail: retrailed(
+          origin,
+          held.map((n) => n.id),
+        ),
+      }
+    : null
+}
+
 export function gatherContentRecord(
   tree: NexusTree,
   node: PageNode | CollectionNode | SetNode,

@@ -10,7 +10,7 @@ import type { NexusTree } from '../Nexus/tree'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import type { NexusPages } from '../Nexus/heldPages'
 import type { EntityRecord } from '../Nexus/record'
-import { containerTrailById, findContainerById } from '../Nexus/treePatch'
+import { findContainerById } from '../Nexus/treePatch'
 import { spliceBeside } from '../Nexus/order'
 import {
   setChildOrder,
@@ -19,7 +19,7 @@ import {
   setSpaceOrder,
 } from '../Nexus/reorder'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { type ArtifactRecord, originOf, type Place, retrailed } from './record'
+import { type ArtifactRecord, collectionOf, currentOrigin, originOf, type Place } from './record'
 import { archiveOwned, collectionsElsewhere } from './bundle'
 import { type BundleStore, bundleAddressOf, layoutOf, originPathOf } from './layout'
 
@@ -198,13 +198,8 @@ export async function archiveFiling<R extends Extract<ArtifactRecord, { entity: 
   const named = bundleAddressOf(root, join(root, address))
   if (named?.store.kind !== 'archive') return fault(NO_DESTINATION)
   const origin = originOf(record)
-  const live = origin
-    ? [...origin.trail, origin.parent]
-        .reverse()
-        .map((id) => containerTrailById(tree, id))
-        .find((held) => held !== null)
-    : undefined
-  const into = archiveStoreOf(live?.[0].id) ?? named.store
+  const now = origin && currentOrigin(tree, origin)
+  const into = archiveStoreOf(now ? collectionOf(now) : undefined) ?? named.store
   // A Collection in the Trash keeps its Archive; one gone for good would leave the item filed where no view reaches it.
   if (!(await archiveOwned(tree, into.id, () => collectionsElsewhere(root, tree))))
     return fault(REFUSAL_TEXT['parent-gone'])
@@ -216,16 +211,7 @@ export async function archiveFiling<R extends Extract<ArtifactRecord, { entity: 
       relative(join(root, layoutOf(named.store).dir), join(root, address)),
     ),
     folder: named.item ? dirname(left) : left,
-    record:
-      origin && live
-        ? {
-            ...record,
-            trail: retrailed(
-              origin,
-              live.map((n) => n.id),
-            ),
-          }
-        : record,
+    record: now ? { ...record, trail: now.trail } : record,
   })
 }
 
