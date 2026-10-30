@@ -7,6 +7,7 @@ import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
 import { contentIdAt } from './ids'
+import { machine } from '../Platform/machine'
 import {
   copyPageMetadata,
   dropPageMetadata,
@@ -232,6 +233,23 @@ describe('the writer', () => {
     })
     expect(await shardOnDisk('08-2026')).toEqual({
       pages: { [AUG]: { icon: 'star', locked: true } },
+    })
+  })
+
+  it('copyPageMetadata writes each month it copies into once', async () => {
+    await updatePageMetadata(root, AUG, { icon: 'star' })
+    const land = vi.spyOn(machine(), 'land')
+    await copyPageMetadata(root, [
+      [AUG, SEP_A],
+      [AUG, SEP_B],
+    ])
+    const september = land.mock.calls
+      .flatMap(([files]) => files)
+      .filter((f) => f.path === metadataShardPath(root, '09-2026'))
+    land.mockRestore()
+    expect(september).toHaveLength(1)
+    expect(JSON.parse(String(september[0].data))).toEqual({
+      pages: { [SEP_A]: { icon: 'star' }, [SEP_B]: { icon: 'star' } },
     })
   })
 })

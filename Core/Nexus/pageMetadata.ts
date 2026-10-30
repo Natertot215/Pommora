@@ -91,6 +91,25 @@ function byShard(ids: readonly string[]): Map<string, string[]> {
   return out
 }
 
+async function editShards(
+  root: string,
+  ids: readonly string[],
+  refused: string,
+  edit: (pages: Record<string, unknown>, ids: string[]) => Record<string, unknown> | null,
+): Promise<void> {
+  for (const [shard, held] of byShard(ids)) {
+    const written = await updateNexusFile(
+      metadataShardPath(root, shard),
+      (cur) => {
+        const pages = edit({ ...rawPages(cur) }, held)
+        return pages && { ...cur, pages }
+      },
+      false,
+    ).catch(fault)
+    if (!written.ok) console.error(`metadata: ${shard} ${refused}:`, written.error.message)
+  }
+}
+
 export async function updatePageMetadata(
   root: string,
   id: string,
@@ -116,21 +135,13 @@ export async function updatePageMetadata(
   return written.ok ? ok(null) : written
 }
 
-export async function dropPageMetadata(root: string, ids: readonly string[]): Promise<void> {
-  for (const [shard, gone] of byShard(ids.filter((id) => !idHeld(root, id)))) {
-    const written = await updateNexusFile(
-      metadataShardPath(root, shard),
-      (cur) => {
-        const pages = { ...rawPages(cur) }
-        if (!gone.some((id) => id in pages)) return null
-        for (const id of gone) delete pages[id]
-        return { ...cur, pages }
-      },
-      false,
-    ).catch(fault)
-    if (!written.ok)
-      console.error(`metadata: ${shard} kept dropped entries:`, written.error.message)
-  }
+export function dropPageMetadata(root: string, ids: readonly string[]): Promise<void> {
+  const unheld = ids.filter((id) => !idHeld(root, id))
+  return editShards(root, unheld, 'kept dropped entries', (pages, gone) => {
+    if (!gone.some((id) => id in pages)) return null
+    for (const id of gone) delete pages[id]
+    return pages
+  })
 }
 
 export async function copyPageMetadata(
@@ -146,12 +157,15 @@ export async function copyPageMetadata(
       if (isPlainObject(entry)) sources.set(from, entry)
     }
   }
+  const copies = new Map<string, Record<string, unknown>>()
   for (const [from, to] of pairs) {
     const entry = sources.get(from)
-    if (!entry) continue
-    const copied = await updatePageMetadata(root, to, entry as PageMetaPatch).catch(fault)
-    if (!copied.ok) console.error(`metadata: the copy to ${to} refused:`, copied.error.message)
+    if (entry) copies.set(to, entry)
   }
+  await editShards(root, [...copies.keys()], 'refused its copies', (pages, tos) => {
+    for (const to of tos) pages[to] = copies.get(to)
+    return pages
+  })
 }
 
 export async function writePageMeta(
