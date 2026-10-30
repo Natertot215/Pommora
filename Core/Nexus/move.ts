@@ -78,7 +78,7 @@ export async function moveSetOp(
   if (left === null || !edit || !setId) return done(await move())
   // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
   return runNoted(root, setId, {
-    note: () => ({ kind: 'container', at: req.path, edit, within: left }),
+    note: () => ({ kind: 'move', at: req.path, edit, within: left }),
     list: move,
     sweep: () => reachConfig(root, edit, join(root, left)),
     settle: () => undefined,

@@ -23,7 +23,7 @@ import { pathExists, readJsonObject, relocate, removeOwn } from '../Files/atomic
 import { asStringArray } from '../Nexus/coerce'
 import { resolveOrder } from '../Nexus/order'
 import { isContainerKind } from '../Nexus/entities'
-import { distinct, editNote, readNotes } from '../Nexus/owed'
+import { releaseStrip } from '../Nexus/owed'
 import type { NexusTree } from '../Nexus/tree'
 import {
   type ContainerRecord,
@@ -376,17 +376,7 @@ export async function spendBundle(root: string, opened: OpenBundle): Promise<voi
   if (!inner) return void (await removeOwn(abs))
   const gone = 'links' in record ? (record.links ?? []) : []
   if (gone.length) await removeLinks(abs, gone)
-  const bundle = relative(root, abs)
-  const owing = Object.entries(await readNotes(root)).find(
-    ([, e]) => e.kind === 'container' && e.bundle === bundle,
-  )
-  if (!owing) return
-  const from = originPathOf(root, store, artifact)
-  await editNote(root, owing[0], (e) =>
-    e?.kind === 'container'
-      ? { ...e, strip: distinct(e.strip?.filter((path) => !isAtOrUnder(path, from))) }
-      : e,
-  )
+  await releaseStrip(root, relative(root, abs), originPathOf(root, store, artifact))
 }
 
 export async function contentPages(

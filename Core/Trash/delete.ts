@@ -10,7 +10,7 @@ import { pathExists, removeOwn } from '../Files/atomicWrite'
 import { findHolders, type Holders } from '../Index/keyHolders'
 import { contextKey } from '../Contexts/contexts'
 import { finishEntry, leave } from '../Nexus/finishOwed'
-import { distinct, type Entry, owedDelete, runNoted } from '../Nexus/owed'
+import { containerNote, type Entry, owedDelete, runNoted } from '../Nexus/owed'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import {
   mutateRegistryFile,
@@ -123,12 +123,7 @@ async function planOf(
         // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
         id: node?.id ?? rel,
         record: links.length ? { ...record, links } : record,
-        note: () => ({
-          kind: 'container',
-          at: rel,
-          strip: distinct(strip),
-          ...(edit ? { edit } : {}),
-        }),
+        note: () => containerNote(rel, strip, edit),
         departing: node ?? undefined,
       })
     }
