@@ -17,7 +17,7 @@ import {
   spendBundle,
 } from './bundle'
 import * as record from './record'
-import { patchRecord, readRawRecord, writeRecord } from './record'
+import { appendLinks, patchRecord, readRawRecord, writeRecord } from './record'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
 const TRASH = { kind: 'trash' } as const
@@ -346,7 +346,7 @@ describe('spendBundle', () => {
     seedTrashedCollection({ links: [P_LINK, { ...P_LINK, property: 'Other' }, Q_LINK] }),
   )
 
-  it('strips exactly the inner item’s carried values from the bundle’s record, keeping those a finish appended since the open', async () => {
+  it('strips exactly the inner item’s carried values from the bundle’s record, keeping every other value it holds', async () => {
     const item = await opened(inBundle('A', 'S', 'T', 'P.md'))
     const appended = [
       { ...P_LINK, page: newContentId('page') },
@@ -355,6 +355,12 @@ describe('spendBundle', () => {
     await patchRecord(inBundle(), (raw) => ({ links: [...(raw.links as unknown[]), ...appended] }))
     await spendBundle(root, item)
     expect((await readRawRecord(inBundle()))?.links).toEqual([Q_LINK, ...appended])
+  })
+
+  it('appendLinks adds each link once', async () => {
+    await patchRecord(inBundle(), () => ({ links: [P_LINK] }))
+    await appendLinks(inBundle(), [P_LINK, Q_LINK])
+    expect((await readRawRecord(inBundle()))?.links).toEqual([P_LINK, Q_LINK])
   })
 
   it('takes the inner item’s pages off the strip its bundle’s delete still owes, leaving the rest of the note', async () => {

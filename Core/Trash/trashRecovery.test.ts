@@ -12,6 +12,7 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
 import { parkLinks } from './trashedCopies'
 import { readRecord } from '../Bundles/record'
+import * as cascade from '../Nexus/cascade'
 import { bundleRows } from '../Bundles/rows'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
@@ -733,6 +734,27 @@ describe('links come back with the page', () => {
     const restored = await settledMutate(root, { op: 'restore', bundlePath: plain.bundlePath })
     expect(restored.ok).toBe(true)
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('an emptying parks a value its strip takes before the strip lands', async () => {
+    await linker(beta, BETA_ID, '')
+    await linker(join('Plain', 'Alpha.md'), '01KVGMT8BFP350FZZXAMG1QDVF', '')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del('Plain/Alpha.md', 'page')
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    const alphas = (await rows()).filter((r) => r.title === 'Alpha')
+    const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    const plain = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    if (!daily || !plain) throw new Error('setup failed')
+    const strip = cascade.deleteCascade
+    let atStrip: unknown
+    vi.spyOn(cascade, 'deleteCascade').mockImplementation(async (...args) => {
+      atStrip = await readRecord(join(root, plain.bundlePath))
+      return strip(...args)
+    })
+    const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath: daily.bundlePath })
+    expect(emptied.ok).toBe(true)
+    expect(atStrip).toMatchObject({ links: [{ page: BETA_ID, value: '[[Alpha]]' }] })
   })
 
   it('emptying a page keeps a Link value a new namesake answers', async () => {

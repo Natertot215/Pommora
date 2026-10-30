@@ -95,6 +95,7 @@ beforeEach(async () => {
 afterEach(async () => {
   dropLiveTree()
   closeSession()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
 
@@ -451,7 +452,6 @@ describe('a Context or Space delete on the notes', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
-    installStores(NO_STORES)
   })
 
   const shut = async <T>(file: string, run: () => Promise<T>): Promise<T> => {
@@ -705,6 +705,8 @@ describe('a content delete on the notes', () => {
   })
 
   it.skipIf(noModeBits)('a page delete that misses a linker owes it with Try Again', async () => {
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
     const target = await page(notes, 'Target')
     const id = await idOf(target)
     const linker = await page(notes, 'One', 'Target')
@@ -714,7 +716,11 @@ describe('a content delete on the notes', () => {
     )
     if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     const { bundlePath } = r.value.bundled
+    const linkerId = await idOf(linker)
     expect(r.value.cascade?.owed).toBe(true)
+    expect((await recordOf(bundlePath)).links).toContainEqual(
+      expect.objectContaining({ page: linkerId, value: '[[Target]]' }),
+    )
     expect(await readNotes(root)).toEqual({
       [id as string]: {
         kind: 'container',
@@ -725,9 +731,8 @@ describe('a content delete on the notes', () => {
     })
     await finishOwed(root)
     expect(await relatedOf(linker)).toBeUndefined()
-    expect((await recordOf(bundlePath)).links).toContainEqual(
-      expect.objectContaining({ page: await idOf(linker), value: '[[Target]]' }),
-    )
+    const links = (await recordOf(bundlePath)).links as Raw[]
+    expect(links.filter((l) => l.page === linkerId)).toHaveLength(1)
     expect(await readNotes(root)).toEqual({})
   })
 

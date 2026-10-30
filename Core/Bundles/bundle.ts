@@ -14,7 +14,6 @@ import { archiveStoreOf, holdsName } from '../Paths/names'
 import { NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fail, fault, ok, type Result } from '../Contract/result'
-import { isPlainObject } from '../Contract/validators'
 import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
 import { linkedPage } from '../Connections/linkValue'
 import { stampedIdOf } from '../Files/pageFile'
@@ -27,13 +26,15 @@ import { isContainerKind } from '../Nexus/entities'
 import { distinct, editNote, readNotes } from '../Nexus/owed'
 import type { NexusTree } from '../Nexus/tree'
 import {
+  type ContainerRecord,
+  type InnerRecord,
   originOf,
   originWithin,
   type RawRecord,
-  patchRecord,
   type RecordFile,
   readRawRecord,
   readRecord,
+  removeLinks,
   trailAbove,
   writeRecord,
 } from './record'
@@ -213,12 +214,8 @@ export type OpenBundle = { abs: string; store: BundleStore; record: RecordFile }
   | { inner: false; artifact: string | null }
 )
 
-type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
-
 const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
   isContainerKind(record.entity)
-
-type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
 
 /** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more. */
 async function readBundleAt(root: string, abs: string) {
@@ -279,7 +276,7 @@ async function innerRecord(
   }
 }
 
-/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`, read from the record as it stands at the op, so a value its delete's finish appends later stays with the bundle; a title two of its pages share stays with the bundle. */
+/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
 async function keptLinksUnder(
   root: string,
   store: BundleStore,
@@ -378,14 +375,7 @@ export async function spendBundle(root: string, opened: OpenBundle): Promise<voi
   const { abs, store, record, artifact, inner } = opened
   if (!inner) return void (await removeOwn(abs))
   const gone = 'links' in record ? (record.links ?? []) : []
-  const same = (l: unknown): boolean =>
-    isPlainObject(l) &&
-    gone.some((g) => g.page === l.page && g.property === l.property && g.value === l.value)
-  if (gone.length)
-    await patchRecord(abs, (raw) => {
-      const links = (Array.isArray(raw.links) ? raw.links : []).filter((l) => !same(l))
-      return { links: links.length ? links : undefined }
-    })
+  if (gone.length) await removeLinks(abs, gone)
   const bundle = relative(root, abs)
   const owing = Object.entries(await readNotes(root)).find(
     ([, e]) => e.kind === 'container' && e.bundle === bundle,

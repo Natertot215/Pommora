@@ -1,7 +1,7 @@
 import { pageKey } from '../Connections/pageIndex'
 import { type BundleRow, matched } from '../Bundles/rows'
 import { mintBundle } from '../Bundles/bundle'
-import type { RecordFile } from '../Bundles/record'
+import type { PropertyRecord } from '../Bundles/record'
 import { join } from '../Paths/posix'
 import type { CascadeChange } from '../Nexus/cascade'
 import type { PageDetail } from '../Pages/pageDetail'
@@ -45,10 +45,7 @@ export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
   })
 }
 
-export const seedPropertyBundle = (
-  root: string,
-  record: Extract<RecordFile, { entity: 'property' }>,
-): Promise<string> =>
+export const seedPropertyBundle = (root: string, record: PropertyRecord): Promise<string> =>
   mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
 
 export function titled(title: string, to: string): CascadeChange {

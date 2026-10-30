@@ -8,7 +8,7 @@ import type { Json } from '../Files/stableJson'
 import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
 import { collectionFolders, outsideArchive, rootId } from '../Nexus/governedSweep'
-import { addressable, nexusPages } from '../Nexus/heldPages'
+import { addressable, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { archiveReach } from '../Nexus/treePatch'
@@ -75,7 +75,7 @@ export const spaceFiles = (
 ): string[] =>
   tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 
-/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no archived page. With `read`, each file is read once: `held` lists each one holding a key or that couldn't be read, with the keys the index last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back. */
+/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no archived page. */
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)
@@ -106,7 +106,17 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       : []
   const files = [...pages, ...spaces]
   if (!read) return { files, held: [] }
-  const { byId } = await nexusPages(root, tree)
+  return readHolders(root, files, q.keys, (await nexusPages(root, tree)).byId, listed)
+}
+
+/** Each of `files` read once: `held` lists each one holding any of `keys`, or that couldn't be read, with the keys `listed`, the index's members of each key in turn, last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back. */
+export async function readHolders(
+  root: string,
+  files: readonly string[],
+  keys: readonly string[],
+  byId: NexusPages['byId'],
+  listed: readonly (ReadonlySet<string> | null)[] = [],
+): Promise<Holders> {
   const held: Held[] = []
   const heldOut = new Set<string>()
   for (const file of files) {
@@ -122,17 +132,17 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
         : isMarkdownFile(file)
           ? ((readPageRelations([rel])?.pages[rel]?.values as Json | undefined) ?? null)
           : null
-    const keys = q.keys.filter((k, i) => (raw ? Object.hasOwn(raw, k) : !!listed[i]?.has(rel)))
-    if (raw && !keys.length) continue
+    const holding = keys.filter((k, i) => (raw ? Object.hasOwn(raw, k) : !!listed[i]?.has(rel)))
+    if (raw && !holding.length) continue
     const id = raw ? rootId(file, raw) : undefined
     const addressed = addressable(byId, id) ? id : null
     if (raw && addressed === null) heldOut.add(file)
     held.push({
       file,
       id: addressed,
-      keys,
-      values: raw && Object.fromEntries(keys.map((k) => [k, raw[k]])),
-      above: Object.fromEntries(keys.map((k) => [k, page?.above(k)])),
+      keys: holding,
+      values: raw && Object.fromEntries(holding.map((k) => [k, raw[k]])),
+      above: Object.fromEntries(holding.map((k) => [k, page?.above(k)])),
     })
   }
   return { files: files.filter((file) => !heldOut.has(file)), held }

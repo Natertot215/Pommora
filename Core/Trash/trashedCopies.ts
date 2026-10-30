@@ -13,12 +13,8 @@ import { stampedIdOf } from '../Files/pageFile'
 import { refillOf, rootId, sweepGovernedRoots } from '../Nexus/governedSweep'
 import type { PropertyDefinition } from '../Properties/properties'
 import { contentPages, listBundles, originPagesIn } from '../Bundles/bundle'
-import { collectionOf, originOf, patchRecord } from '../Bundles/record'
+import { appendLinks, collectionOf, originOf } from '../Bundles/record'
 
-const appendLinks = (bundleDir: string, links: StrippedLink[]): Promise<void> =>
-  patchRecord(bundleDir, (raw) => ({
-    links: [...(Array.isArray(raw.links) ? raw.links : []), ...links],
-  }))
 /** A world a value is read against: a key `targets` recorded at the delete answers by whether the page it named is there under any name, any other key by the name. */
 export function frozenWorld(
   index: PageIndex,

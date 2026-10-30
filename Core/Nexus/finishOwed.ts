@@ -9,9 +9,9 @@ import { collectionFolders } from './governedSweep'
 import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
-import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } from './cascade'
-import { patchRecord } from '../Bundles/record'
+import { type CascadeReport, deleteCascade, relinkReach } from './cascade'
 import { parkLinks } from '../Trash/trashedCopies'
+import { gatherLinks } from '../Trash/gather'
 import { findContainerById } from './treePatch'
 import { pagesByIdOf } from './record'
 import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
@@ -391,15 +391,10 @@ async function finishContainer(
     return ids.length ? { ...e.edit, ids } : undefined
   }
   const edit = await owedEdit()
-  const gone = e.strip && !back ? await deleteCascade(root, join(root, e.at), e.strip) : null
-  if (gone?.links.length) {
-    if (e.bundle)
-      await patchRecord(join(root, e.bundle), (raw) => ({
-        links: [...((raw.links as StrippedLink[] | undefined) ?? []), ...gone.links],
-      }))
-    else if (e.park) await parkLinks(root, gone.links)
-  }
-  const stripped = !!gone && add(reach, gone.reach)
+  const strip = back ? undefined : e.strip
+  // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
+  if (strip && e.park) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
+  const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
   const viewed =
     !!edit && add(reach, await reachConfig(root, edit, e.within && join(root, e.within)))
   return {
