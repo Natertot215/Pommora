@@ -1,7 +1,7 @@
 ### Trash & Archive Restructure — Decisions & Intention
 
 **DATE:** 10-28-2026
-**STATUS:** ACTIVE
+**STATUS:** RATIFIED 10-29-2026
 
 ### Context
 
@@ -58,7 +58,7 @@ This work restructures the Trash, the Archive, and their adjacencies so the syst
 
 #### D - The Trash's Model
 
-- **D-1 [INFERRED]:** The Trash moves onto the Archive's reach-in: trashed pages stay in the index and trashed Spaces are read from the Trash's own Contexts folder, both inside every cascade while hidden from display and link resolution, so a restore is the Archive's move plus the refill of the Link values its delete stripped from other pages. Re-run on the Write Path plan's result, reach-in costs the whole operation sequence 10% more with a Trash a tenth the live Nexus's size and 42-43% more with one half its size, linear in the trashed holders a cascade reaches, while restores run 10-38% faster (*Investigation · §The Trash's Model · §The Measurement*). Resolve-on-restore can't return a current page after a rename without a rename history nothing keeps (*Investigation*, B-9), and three paths already reach into the Trash.
+- **D-1 [CONFIRMED]:** The Trash moves onto the Archive's reach-in: trashed pages stay in the index and trashed Spaces are read from the Trash's own Contexts folder, both inside every cascade while hidden from display and link resolution, so a restore is the Archive's move plus the refill of the Link values its delete stripped from other pages. Re-run on the Write Path plan's result, reach-in costs the whole operation sequence 10% more with a Trash a tenth the live Nexus's size and 42-43% more with one half its size, linear in the trashed holders a cascade reaches, while restores run 10-38% faster (*Investigation · §The Trash's Model · §The Measurement*). Resolve-on-restore can't return a current page after a rename without a rename history nothing keeps (*Investigation*, B-9), and three paths already reach into the Trash.
 - **D-2 [CONFIRMED]:** Two trashed copies sharing one ID, reachable only by copying a trashed page out by hand and deleting the copy, gets no rule of its own. [INFERRED] A live page sharing an ID with a trashed copy stays addressable, so a trashed claim never contests the tree's or the Archive's.
 - **D-3 [CONFIRMED]:** A trashed Collection's saved views are preserved. [INFERRED] They stay current as an archived Set's do, so a restored Collection's views read as they would had it never left.
 - **D-4 [CONFIRMED]:** Trashed pages follow live pages' rules: deleting a property clears its values from trashed pages as from live ones, recorded in the property's bundle so its restore returns them, and a later property reusing its key inherits none. [INFERRED] A property cascade reaches a trashed page only when it came from a Collection, judged by the Collection ID its record holds, so a Collection renamed after the delete keeps its trashed pages in reach.
