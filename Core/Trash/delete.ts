@@ -23,11 +23,11 @@ import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
 import { originPathOf, storeOf } from '../Paths/bundleLayout'
-import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
+import { gatherContextRecord, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
-/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
+/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Link values name its pages where they lived. */
 async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
   if (storeOf(req.path)?.store.kind !== 'archive') return null
   const resolved = await resolveUnderRoot(root, req.path)
@@ -43,7 +43,6 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
     opened: opened.value,
     abs,
     origin: join(root, originPathOf(root, abs)),
-    under: pages.map((file) => relative(root, file)),
     keys: pages.map((file) => originPathOf(root, file)),
     edit: sets.length ? goneContainers(sets) : null,
     record: { ...held, archive: relative(root, resolved.value) },
@@ -140,12 +139,10 @@ export async function deleteOp(
   const rel = relative(root, abs)
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   const before = await liveTreeOf(root)
-  const under =
-    from?.under ?? pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
+  const under = pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
   const planned = await planOf(root, req, abs, before, from, under)
   if (!planned.ok) return planned
   const plan = planned.value
-  const targets = await gatherLinkTargets(root, before, rel, under)
   const lifted = !from && isContainer(req) ? await liftSetAside(root, abs) : null
   if (lifted && !lifted.ok) return lifted
   let bundle: string | undefined
@@ -157,10 +154,7 @@ export async function deleteOp(
   }
   try {
     // Write-ahead: the record lands with its bundle, holding what every strip will take, then the note, then the list step and the move; every strip runs after the artifact moves, so a failed move strips nothing, and a strip that misses a file leaves the note for Try Again.
-    bundle = await mintBundle(root, { kind: 'trash' }, from?.origin ?? abs, {
-      ...plan.record,
-      ...(Object.keys(targets).length ? { targets } : {}),
-    })
+    bundle = await mintBundle(root, { kind: 'trash' }, from?.origin ?? abs, plan.record)
     const into = relative(root, bundle)
     const ran = await runNoted(root, plan.id, {
       note: (e) => ({ ...plan.note(e), bundle: into }),
