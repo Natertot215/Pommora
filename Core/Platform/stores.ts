@@ -1,3 +1,5 @@
+import type { Identity } from './machine'
+
 export interface KeyValueStore {
   get(scope: string, key: string): string | null
   /** One commit for every row; a null clears its key rather than storing it. */
@@ -27,9 +29,7 @@ export interface PageIndexEntry {
   values: Record<string, unknown>
 }
 
-export interface IndexedStat {
-  mtimeMs: number
-  size: number
+export interface IndexedStat extends Identity {
   /** The ID the page's frontmatter carries, when one is written: what pairs its rows' removal with where the tree holds it next. */
   id?: string
 }

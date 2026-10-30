@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 19
+export const INDEX_GENERATION = 20
 
 const META_DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -41,7 +41,8 @@ const DDL = `
   CREATE TABLE IF NOT EXISTS indexed_files (
     path TEXT PRIMARY KEY,
     mtime_ms REAL NOT NULL,
-    size INTEGER NOT NULL
+    size INTEGER NOT NULL,
+    ctime_ms REAL NOT NULL
   );
   CREATE TABLE IF NOT EXISTS sync_base (
     fold TEXT PRIMARY KEY,

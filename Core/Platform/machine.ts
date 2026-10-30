@@ -2,6 +2,7 @@ import type { HostPlatform } from '../Contract/bridge'
 export interface FileStat {
   size: number
   mtimeMs: number
+  ctimeMs: number
   birthtimeMs: number | null
   isDirectory: boolean
 }
@@ -19,24 +20,28 @@ export interface Landing {
   expect?: FileStat | null
 }
 
-/** Whether `now` is still the file `was` describes: the same time, size, and birth, a `was` of null describing no file. Birth tells a file replaced whole apart only where the new file keeps a birth of its own, since on APFS a time set earlier than a file's birth moves its birth back to it. */
-export const sameFile = (was: FileStat | null, now: FileStat | null): boolean =>
+export type Identity = Pick<FileStat, 'mtimeMs' | 'size' | 'ctimeMs'>
+
+/** Whether `now` is still the file `was` describes: the same modification time, size, and change time, which no program can set, so a rewrite that keeps a file's time and size still reads as another file; a `was` of null describes no file. A volume whose change time is coarse or absent, as HFS+'s one-second times and exFAT's missing one are, can't always tell such a rewrite apart, so a write that keeps a file's time also forgets the walk cache's parse of it. */
+export const sameFile = (was: Identity | null, now: Identity | null): boolean =>
   was === null
     ? now === null
     : now !== null &&
       now.mtimeMs === was.mtimeMs &&
       now.size === was.size &&
-      now.birthtimeMs === was.birthtimeMs
+      now.ctimeMs === was.ctimeMs
 
 /** A host's stat of a file as the seam's `FileStat`. */
 export const fileStat = (s: {
   size: number
   mtimeMs: number
+  ctimeMs: number
   birthtimeMs: number
   isDirectory(): boolean
 }): FileStat => ({
   size: s.size,
   mtimeMs: s.mtimeMs,
+  ctimeMs: s.ctimeMs,
   birthtimeMs: s.birthtimeMs,
   isDirectory: s.isDirectory(),
 })

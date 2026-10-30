@@ -392,7 +392,7 @@ async function applyPage(
         : applied
   }
   const abs = join(root, rel)
-  // An outside edit can keep the time, size, and birth the walk cache's hit test reads, so its parse leaves the cache.
+  // An outside edit can keep the time and size the walk cache's hit test reads, and on a volume whose change time is coarse or absent its whole identity (`sameFile`), so its parse leaves the cache.
   if (ev.origin === 'watched') forgetParse(abs)
   // A write that landed, moved, or removed the page since the index read it committed after that read, so the patch reads the page again.
   const taken = given && unmoved(rel, given.seq) ? given : undefined
