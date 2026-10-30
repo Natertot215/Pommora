@@ -1,8 +1,8 @@
 // Where a recorded artifact re-enters: the placement resolved against the CURRENT tree and stepped past what the disk holds, the order it lands in, or the refusal that says why it cannot be placed.
 
-import { type ArchiveStore, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { basename, dirname, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
-import { archiveStoreOf, createDisambiguated, freeName } from '../Paths/names'
+import { createDisambiguated, freeName } from '../Paths/names'
 import { pathExists } from '../Files/atomicWrite'
 import { landingRefusal } from '../Nexus/folderEntity'
 import { fail, fault, ok, type Result } from '../Contract/result'
@@ -21,7 +21,14 @@ import {
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { type ArtifactRecord, collectionOf, currentOrigin, originOf, type Place } from './record'
 import { archiveOwned, collectionsElsewhere } from './bundle'
-import { type BundleStore, bundleAddressOf, layoutOf, originPathOf } from './layout'
+import {
+  type ArchiveStore,
+  archiveStoreOf,
+  type BundleStore,
+  bundleAddressOf,
+  layoutOf,
+  originPathOf,
+} from '../Paths/bundleLayout'
 
 interface Placement {
   /** The folder it lands in; for an Archive destination, the address it files back at. */
@@ -203,7 +210,7 @@ export async function archiveFiling<R extends Extract<ArtifactRecord, { entity: 
   // A Collection in the Trash keeps its Archive; one gone for good would leave the item filed where no view reaches it.
   if (!(await archiveOwned(tree, into.id, () => collectionsElsewhere(root, tree))))
     return fault(REFUSAL_TEXT['parent-gone'])
-  const left = originPathOf(root, named.store, named.item ?? named.bundle)
+  const left = originPathOf(root, named.item ?? named.bundle)
   return ok({
     into,
     at: join(

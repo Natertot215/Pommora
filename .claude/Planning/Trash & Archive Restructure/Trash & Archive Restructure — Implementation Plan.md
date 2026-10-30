@@ -278,7 +278,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Compaction Checkpoint
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 4** — Reach-In
-  - [ ] Task 4-1 · The store-of-path rule
+  - [x] Task 4-1 · The store-of-path rule
   - [ ] Task 4-2 · Trashed Spaces become holders
   - [ ] Task 4-3 · The Trash is admitted and watched
   - [ ] Task 4-4 · A cascade reaches the Trash by the record's Collection

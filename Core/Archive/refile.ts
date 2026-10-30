@@ -5,7 +5,6 @@ import { join } from '../Paths/posix'
 import { isPlainObject } from '../Contract/validators'
 import { errText } from '../Contract/result'
 import { isContainerKind } from '../Nexus/entities'
-import { archiveStoreOf } from '../Paths/names'
 import { removeOwn } from '../Files/atomicWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -21,7 +20,7 @@ import {
   type RecordFile,
   retrailed,
 } from '../Bundles/record'
-import { archiveDirRel } from '../Paths/nexusPaths'
+import { archiveDirRel, archiveStoreOf } from '../Paths/bundleLayout'
 import { listFilesRecursive } from '../Files/walk'
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */

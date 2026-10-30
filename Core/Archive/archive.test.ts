@@ -31,7 +31,7 @@ import { minted, type MutateReply, type RestoreDestination } from '../Nexus/muta
 import { writeExcludedFolders } from '../Settings/settings'
 import { readNotes } from '../Nexus/owed'
 import { listBundles, mintBundle } from '../Bundles/bundle'
-import type { BundleStore } from '../Bundles/layout'
+import type { BundleStore } from '../Paths/bundleLayout'
 import { readRawRecord, readRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { NO_DESTINATION } from '../Bundles/placement'

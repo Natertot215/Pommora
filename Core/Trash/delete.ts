@@ -5,7 +5,6 @@ import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { pagesOf } from '../Nexus/record'
 import { isContainer } from '../Nexus/entities'
 import { archivedSetIds, type ConfigEdit, goneContainers, goneEdit } from '../Nexus/configReach'
-import { isArchived } from '../Paths/nexusPaths'
 import { pathExists, removeOwn } from '../Files/atomicWrite'
 import { findHolders, type Holders } from '../Index/keyHolders'
 import { contextKey } from '../Contexts/contexts'
@@ -23,14 +22,14 @@ import type { Departing } from '../Nexus/reorder'
 import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
-import { originPathOf } from '../Bundles/layout'
+import { originPathOf, storeOf } from '../Paths/bundleLayout'
 import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
 /** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
 async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
-  if (!isArchived(req.path)) return null
+  if (storeOf(req.path)?.store.kind !== 'archive') return null
   const resolved = await resolveUnderRoot(root, req.path)
   if (!resolved.ok) return NOT_HELD
   const opened = await openBundle(root, resolved.value)
@@ -43,9 +42,9 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
   return ok({
     opened: opened.value,
     abs,
-    origin: join(root, originPathOf(root, store, abs)),
+    origin: join(root, originPathOf(root, abs)),
     under: pages.map((file) => relative(root, file)),
-    keys: pages.map((file) => originPathOf(root, store, file)),
+    keys: pages.map((file) => originPathOf(root, file)),
     edit: sets.length ? goneContainers(sets) : null,
     record: { ...held, archive: relative(root, resolved.value) },
   })

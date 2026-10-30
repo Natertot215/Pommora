@@ -1,8 +1,8 @@
 import { wikiTitle } from '../Connections/linkValue'
 import { fail } from '../Contract/result'
-import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, assetSubRoot, hiddenFolder } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
-import { hiddenFolder, remainderUnder, rootSegs } from '../Paths/exclusion'
+import { remainderUnder, rootSegs } from '../Paths/exclusion'
 import { indexable, liveAssetMap, resolveAssetName } from './assetMap'
 import { readWatchScope } from '../Settings/settings'
 

@@ -3,7 +3,7 @@ import { errText, fail, ok, type Result, fault } from '../Contract/result'
 import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readHeadings } from '../Index/contentIndex'
-import { isArchived } from '../Paths/nexusPaths'
+import { storeOf } from '../Paths/bundleLayout'
 import { isStringArray } from '../Contract/validators'
 import { forgetLastReads, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
@@ -165,7 +165,7 @@ export const nexusHandlers = {
 
   'index:headings': withRoot(async (_root, _ctx, paths: unknown) => {
     const headings = Object.entries(readHeadings(isStringArray(paths) ? paths : undefined) ?? {})
-    return ok(Object.fromEntries(headings.filter(([path]) => !isArchived(path))))
+    return ok(Object.fromEntries(headings.filter(([path]) => !storeOf(path))))
   }),
 
   'path:reveal': withRoot(async (root, ctx, p: unknown) => {

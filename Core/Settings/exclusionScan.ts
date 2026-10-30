@@ -10,14 +10,13 @@ import { reachReport, retries, sweptReach } from '../Nexus/configReach'
 import { stripKeys } from '../Files/rootValues'
 import {
   excludedMatcher,
-  hiddenFolder,
   outsideContent,
   reachingExcluded,
   rootSegs,
   type WatchScope,
 } from '../Paths/exclusion'
 import { listPathsUnder } from '../Files/walk'
-import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { hiddenFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 export interface ClearReport {
   pages: number

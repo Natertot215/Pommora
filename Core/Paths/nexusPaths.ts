@@ -6,17 +6,17 @@ export const TRASH_DIR = '.trash'
 
 export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
 
-export type ArchiveStore = { kind: 'archive'; id: string }
+export function hiddenName(name: string): boolean {
+  return name.startsWith('.') || name.startsWith('_')
+}
 
-export const archiveDirRel = (collectionId: string): string => `${ARCHIVE_DIR_REL}/${collectionId}`
+/** A folder the app never enters: hidden behind a leading dot or underscore, or a package cache. */
+export function hiddenFolder(name: string): boolean {
+  return hiddenName(name) || name === 'node_modules'
+}
 
 export const archiveSegs = (segs: string[]): string[] | null =>
   `${segs[0]}/${segs[1]}` === ARCHIVE_DIR_REL ? segs.slice(2) : null
-
-export const archivedCollectionIdOf = (rel: string): string | null =>
-  archiveSegs(rel.split('/'))?.[0] ?? null
-
-export const isArchived = (rel: string): boolean => archivedCollectionIdOf(rel) !== null
 
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'

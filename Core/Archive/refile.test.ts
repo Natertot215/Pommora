@@ -15,7 +15,7 @@ import { settleBatch, settleNow } from '../Nexus/settle'
 import type { MutateReply, RestoreDestination } from '../Nexus/mutateRequest'
 import * as bundles from '../Bundles/bundle'
 import { listBundles } from '../Bundles/bundle'
-import type { BundleStore } from '../Bundles/layout'
+import type { BundleStore } from '../Paths/bundleLayout'
 import { readRecord } from '../Bundles/record'
 import { settleArchives } from './refile'
 

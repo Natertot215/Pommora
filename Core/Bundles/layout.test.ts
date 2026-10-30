@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bundleAddressOf, layoutOf, originPathOf } from './layout'
+import { bundleAddressOf, layoutOf, originPathOf, storeOf } from '../Paths/bundleLayout'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
 const TRASH = { kind: 'trash' } as const
@@ -71,26 +71,56 @@ describe('bundleAddressOf', () => {
 describe('originPathOf', () => {
   it('reads a bundled file’s origin from the chain and the artifact’s own tree', () => {
     const page = `/n/.trash/Studio/Pommora/${STAMPED}__ClaudeMD.md.deleted`
-    expect(originPathOf('/n', TRASH, `${page}/ClaudeMD.md`)).toBe('Studio/Pommora/ClaudeMD.md')
+    expect(originPathOf('/n', `${page}/ClaudeMD.md`)).toBe('Studio/Pommora/ClaudeMD.md')
     const set = `/n/.trash/Coll/${STAMPED}__Set.deleted`
-    expect(originPathOf('/n', TRASH, `${set}/Set/X.md`)).toBe('Coll/Set/X.md')
+    expect(originPathOf('/n', `${set}/Set/X.md`)).toBe('Coll/Set/X.md')
   })
 
   it('reads an archived file under its Archive’s root the same way', () => {
     const set = `/n/.nexus/archive/${ID}/Coll/${STAMPED}__Set.archived`
-    expect(originPathOf('/n', ARCHIVE, `${set}/Set/Sub/X.md`)).toBe('Coll/Set/Sub/X.md')
+    expect(originPathOf('/n', `${set}/Set/Sub/X.md`)).toBe('Coll/Set/Sub/X.md')
   })
 
   it('keeps a chain or artifact folder that wears the suffix, finding the bundle by its stamp', () => {
     const bundle = `/n/.trash/Archive.deleted/${STAMPED}__Notes.deleted`
-    expect(originPathOf('/n', TRASH, `${bundle}/Notes/Old.deleted/X.md`)).toBe(
+    expect(originPathOf('/n', `${bundle}/Notes/Old.deleted/X.md`)).toBe(
       'Archive.deleted/Notes/Old.deleted/X.md',
     )
   })
 
   it('a bundle wearing no stamp keeps its folder in the origin path', () => {
-    expect(originPathOf('/n', TRASH, '/n/.trash/Notes/Alpha.md.deleted/Alpha.md')).toBe(
+    expect(originPathOf('/n', '/n/.trash/Notes/Alpha.md.deleted/Alpha.md')).toBe(
       'Notes/Alpha.md.deleted/Alpha.md',
     )
+  })
+})
+
+describe('storeOf', () => {
+  it('answers a Trash page’s bundle, inner segments, and origin', () => {
+    expect(storeOf(`.trash/Notes/${STAMPED}__A.md.deleted/A.md`)).toEqual({
+      store: TRASH,
+      bundle: `.trash/Notes/${STAMPED}__A.md.deleted`,
+      inner: ['A.md'],
+      origin: 'Notes/A.md',
+    })
+  })
+
+  it('answers an Archive path’s Collection, its origin under the Collection’s own folder', () => {
+    expect(storeOf(`.nexus/archive/C1/Notes/${STAMPED}__S.archived/S/P.md`)).toEqual({
+      store: { kind: 'archive', id: 'C1' },
+      bundle: `.nexus/archive/C1/Notes/${STAMPED}__S.archived`,
+      inner: ['S', 'P.md'],
+      origin: 'Notes/S/P.md',
+    })
+  })
+
+  it('answers a chain folder and a leftover beside the bundles with no bundle', () => {
+    expect(storeOf('.trash/Notes')?.bundle).toBeNull()
+    expect(storeOf(`.trash/Notes/${STAMPED}__x.md`)?.bundle).toBeNull()
+  })
+
+  it('answers null outside both stores and at their roots', () => {
+    for (const rel of ['.trash', '.nexus/archive', '.nexus/contexts/A', 'Notes/A.md'])
+      expect(storeOf(rel)).toBeNull()
   })
 })

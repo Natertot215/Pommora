@@ -8,7 +8,7 @@ import { containerTrailById } from '../Nexus/treePatch'
 import { type PropertyType, typeIds } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { InnerListing, ListedBundle } from './bundle'
-import { type BundleStore, layoutOf, storedAtOf } from './layout'
+import { type BundleStore, layoutOf, storedAtOf } from '../Paths/bundleLayout'
 import { resolveRecord } from './placement'
 import type { ArtifactRecord } from './record'
 

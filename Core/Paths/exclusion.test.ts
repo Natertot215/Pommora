@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  ARCHIVE_DIR_REL,
-  ASSETS_DIR_REL,
-  archiveSegs,
-  archivedCollectionIdOf,
-  thumbsRel,
-} from './nexusPaths'
+import { ASSETS_DIR_REL, archiveSegs, thumbsRel } from './nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
@@ -176,15 +170,5 @@ describe('the Archive’s segments', () => {
     expect(archiveSegs(['.nexus'])).toBeNull()
     expect(archiveSegs(['.nexus', 'contexts'])).toBeNull()
     expect(archiveSegs(['Notes', 'archive'])).toBeNull()
-  })
-
-  it('answers the Collection id an archived path files under, and null for the folder itself or outside it', () => {
-    expect(
-      archivedCollectionIdOf(
-        '.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__A.md.archived/A.md',
-      ),
-    ).toBe('C1')
-    expect(archivedCollectionIdOf(ARCHIVE_DIR_REL)).toBeNull()
-    expect(archivedCollectionIdOf('Notes/A.md')).toBeNull()
   })
 })

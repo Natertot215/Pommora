@@ -14,7 +14,7 @@ import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { bundleRowOf, bundleRows, innerRows } from './rows'
-import { storedAtOf } from './layout'
+import { storedAtOf } from '../Paths/bundleLayout'
 import { scopeOf } from '../Settings/codec'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'

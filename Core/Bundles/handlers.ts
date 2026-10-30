@@ -3,11 +3,10 @@ import { fault, ok } from '../Contract/result'
 import { isPlainObject, isString } from '../Contract/validators'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
-import { archiveStoreOf } from '../Paths/names'
 import { scopeOf } from '../Settings/codec'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { archivedWithin, listBundles, listInner } from './bundle'
-import type { BundleStore } from './layout'
+import { archiveStoreOf, type BundleStore } from '../Paths/bundleLayout'
 import { bundleRows, innerRows } from './rows'
 
 function storeFrom(raw: unknown): BundleStore | null {

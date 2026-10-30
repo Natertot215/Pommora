@@ -24,7 +24,7 @@ import {
 import { emptyBundle, restoreTrashed } from '../Trash/spend'
 import { archiveOp, restoreArchived } from '../Archive/archive'
 import { openBundle } from '../Bundles/bundle'
-import { bundleAddressOf } from '../Bundles/layout'
+import { bundleAddressOf } from '../Paths/bundleLayout'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
