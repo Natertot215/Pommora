@@ -1,7 +1,7 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Paths/caseFold'
-import { isBlankRaw, landValue, stripKeys } from '../Files/rootValues'
-import { type Json, same } from '../Files/stableJson'
+import { stripKeys } from '../Files/rootValues'
+import type { Json } from '../Files/stableJson'
 import { errText, ok } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter } from '../Files/pageFile'
 import { type Rewrite, type RewriteText, rootId, sweepGovernedRoots } from './governedSweep'
@@ -29,7 +29,7 @@ import { addressable, nexusPages, storedSpaces } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
 import { rekeyContext } from '../Contexts/contextCascade'
 import { type ConfigReach, NO_REACH, reachReport } from './configReach'
-import { type Entry, type RelinkEntry, runNoted, type Worked } from './owed'
+import { type Entry, type RelinkEntry, runNoted } from './owed'
 import type { z } from 'zod'
 import type { strippedLink } from '../Bundles/record'
 
@@ -78,7 +78,7 @@ export async function linkStrip(root: string, left: readonly string[], paths: re
   const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
   if (!gone.size) return null
   const goneEntry = (value: unknown): string | null =>
-    gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
+    gonePageEntry(value, (t) => !gone.has(pageKey(t)))
   const named = (raw: Record<string, unknown>) =>
     Object.entries(raw).flatMap(([key, held]) => {
       const def = defs.get(key)
@@ -250,16 +250,7 @@ export async function renameCascade(
   }
 }
 
-/** `raw` with each value a restore worked out for it landed where it still reads what the restore found, blank matching blank; null where none does. */
-function landWorked(raw: Json, worked: Worked[string] = {}): Json | null {
-  const keys = Object.keys(worked).filter((k) =>
-    isBlankRaw(raw[k]) ? isBlankRaw(worked[k].from) : same(raw[k], worked[k].from),
-  )
-  if (!keys.length) return null
-  return keys.reduce((r, k) => landValue(r, k, worked[k].to), raw)
-}
-
-/** A relink entry's sweep: what a restore worked out landed first in the files `values` names, then its names re-spelled in every file naming them, or in those of its `files` still there with its `rekey` applied, counting each file either missed once. */
+/** A relink entry's sweep: its names re-spelled in every file naming them, or in those of its `files` still there with its `rekey` applied, counting each file it missed. */
 export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigReach> {
   const names = new Map(Object.entries(e.names))
   if (e.files) {
@@ -269,9 +260,6 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
           files.map(async (f) => ((await pathExists(join(root, f))) ? [join(root, f)] : [])),
         )
       ).flat()
-    const landed = await sweepGovernedRoots(await here(Object.keys(e.values ?? {})), {
-      raw: (r, f) => landWorked(r, e.values?.[relative(root, f)]),
-    })
     const { text, spaceMoved } = fileRewrites(root, await liveTreeOf(root), (t) =>
       rewriteConnections(t, names),
     )
@@ -280,8 +268,7 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
       ? (r, f) => rekey(spaceMoved(r, f) ?? r, f) ?? spaceMoved(r, f)
       : spaceMoved
     const swept = await sweepGovernedRoots(await here(e.files), { text, raw })
-    const missed = (k: 'skipped' | 'refused'): string[] => [...new Set([...landed[k], ...swept[k]])]
-    return { skipped: missed('skipped').length, refused: missed('refused'), hosts: [] }
+    return { skipped: swept.skipped.length, refused: swept.refused, hosts: [] }
   }
   const { missed, hosts, pages } = await renameCascade(root, { names, label: e.label })
   return { ...missed, hosts, pages }

@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 80 | 0 | 3 | 13 | 38 | 26 |
+| 78 | 0 | 3 | 13 | 37 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -61,7 +61,6 @@
 | [I-032](#I-032 • Twenty-three channels write Nexus files beside %60mutate%60, and six files can be written through both.) | Twenty-three channels write Nexus files beside `mutate`, and six files can be written through both. | Moderate | Large (±0) | Parallel Build | `e448ed46f` | **Created:** 09-27-2026<br>**Updated:** 10-25-2026 |
 | [I-036](#I-036 • A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read.) | A page missing its ID that a folder's read finds after its own event was spent stays out of the tree until the next full read. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-19-2026 |
 | [I-037](#I-037 • A write's reply waits behind a walk an outside change owes.) | A write's reply waits behind a walk an outside change owes. | Low | Medium (=🟢+10=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-29-2026 |
-| [I-033](#I-033 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.) | Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it. | Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
 | [I-060](#I-060 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.) | An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word. | Low | Medium (=🟢+15=) | Drift | `0c80012cb` | **Created:** 09-26-2026<br>**Updated:** 10-25-2026 |
 | [I-074](#I-074 • A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own.) | A property's stash ages out on the page history timeframe, a setting that governs a different kind of data, so the stash likely needs a timeframe of its own. | Low | Medium (TBD) | Shortcut | `57da5c1db` | **Created:** 10-22-2026<br>**Updated:** 10-25-2026 |
 | [I-076](#I-076 • An action refused for earlier work still owed runs that cleanup unseen, so files it lets go are never named and Try Again leaves the action undone.) | An action refused for earlier work still owed runs that cleanup unseen, so files it lets go are never named and Try Again leaves the action undone. | Low | Medium (TBD) | Shortcut | `0b6857ddb` | **Created:** 10-25-2026<br>**Updated:** 10-25-2026 |
@@ -72,7 +71,6 @@
 | [I-063](#I-063 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-077](#I-077 • A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row.) | A Set or Collection emptied out of the Trash or the Archive one item at a time stays behind as an empty row. | Low | Small (TBD) | Shortcut | `312d63751` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 | [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
-| [I-065](#I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.) | A Link value naming a title that two pages of one trashed bundle share is parked with neither. | Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
@@ -773,20 +771,6 @@ A write the user makes while the app is re-reading the Nexus for an outside chan
 
 A write's own change is pushed, and its reply sent, ahead of a walk it didn't owe: the settle pushes what the applied events moved before it pays a walk another batch owed, and the walk's result follows as its own version.
 
-#### I-033 • Delete All and Restore All walk the whole Trash once for every bundle that hands a Link value to it.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Low | Medium (=🟢+15=) | Shortcut | `34227ef5c` | **Created:** 09-28-2026<br>**Updated:** 10-16-2026 |
-
-**Description**
-
-Emptying a bundle hands the Link values its record kept, and any its empty-time strip took, to the page each value named, still in the Trash, through `parkLinks`, whose `originPagesIn` lists every bundle and each Set or Collection bundle's pages once per call. The Trash frame's Delete All sends one request per row, so a batch of link-carrying bundles walks the Trash once per bundle: about 13 ms per empty at 100 bundles and 32 ms at 300, summing to about 0.45 s and 4 s.[^33]
-
-**Solution** [Proposed]
-
-Send the frame's Delete All and Restore All as one request carrying the bundle list; the host lists the Trash's pages once for the batch and strikes each emptied bundle's pages from that list as it goes. Single-row empties and restores keep today's path.
-
 #### I-060 • An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.
 
 | Concern | Scale | Origin | Base | Date |
@@ -936,20 +920,6 @@ A page dragged out of `.trash` in Finder reaches the settle as a page arriving, 
 **Solution** [Proposed]
 
 Under the Trash & Archive Restructure's reach-in Trash, a trashed page stays current through every cascade, so a page moved out by hand misses only the Link values its delete stripped from other pages and the clearing of its bundle. The page is recognized by the ID it already carries, which its bundle's record holds and the index tracks: a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed (*Trash & Archive Restructure — Decisions & Intention*, Decision E-1).
-
-#### I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Mini (=🟢+2=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
-
-**Description**
-
-A Link value stripped for naming a page the Trash holds joins that page's bundle, so the restore writes it back. A title that two pages of one deleted Set share, such as two `Notes`, resolves to no page over the Trash's pages, so the value joins no bundle and is dropped. The link was ambiguous before the delete, and the Trash applies the live resolver's rule, but both holders sit in one bundle, so parking there would keep the value for a refill that lands it ambiguous again. `originPagesIn` gives each page the id of its bundle, and `parkLinks` builds `buildPageIndex` over them and parks only a value that resolves to a page.[^65]
-
-**Solution** [TBD]
-
-**Your call:** `parkLinks` parks a value when every holder of its title shares one bundle id, one line, or the value stays dropped, since the refill would land it ambiguous again.
 
 #### I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.
 
@@ -1408,7 +1378,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^30]: **I-030:** `UIX/Buttons/button-base.css.ts:68-93` (`button`), `UIX/Buttons/Button.tsx:54-77`, `UIX/Menus/menu-row.css.ts:24-37` (`rowFocus`, `rowShell`), `UIX/Fields/fieldRing.ts:11,19-33` (`fieldRing`)
 [^31]: **I-031:** `UIX/Interactions/dismissalStack.ts:68-83` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:122` (`shields`), `UIX/Pickers/PickerMenu.tsx:123-132,310,326` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
 [^32]: **I-032:** `Core/Contract/bridge.ts:57-215` (`Asks`), `Core/Nexus/mutateRequest.ts:73-152` (`mutateRequest`), `Core/Nexus/mutate.ts:~166-201` (`setProfileImage`, `setProfileIcon`, `setDisclosureLock`, `setActiveView`), `Core/Nexus/mutate.ts:~237` (`reorderTop`), `Core/Nexus/reorder.ts:26-55`, `Core/Views/handlers.ts:26-64`, `Core/Settings/handlers.ts:20-53`, `Core/Assets/handlers.ts:41` (`assets:setDir`), `Core/Assets/handlers.ts:73` (`assets:adopt`), `Core/Assets/assetMigrate.ts:113`, `Core/Pages/setBanner.ts:49`, `Core/Nexus/configReach.ts:338,340`, `Core/Nexus/cascade.ts:267` (`rewriteTileConnections`), `Core/Navigation/handlers.ts:18` (`nav:write`), `Core/Matrix/handlers.ts:14` (`matrix:write`), `Core/Pages/handlers.ts:26` (`page:updateBody`), `Core/Pages/handlers.ts:45-47` (`history:restore`), `Core/Pages/fileHistory.ts:170-181` (`restoreSnapshot`), `Core/Nexus/handlers.ts:~154` (`nexus:rename`), `Core/Nexus/liveTree.ts:80` (`mutableTarget`), `Core/Tiles/handlers.ts:60-113`, `Core/Contract/handlers.ts:99-112` (`withWriteRoot`), `Desktop/FileWatch/watcher.ts:69-92,114-117` (`pushConfig`)
-[^33]: **I-033:** `Core/Bundles/bundle.ts:417` (`originPagesIn`), `Core/Trash/trashedCopies.ts:36` (`parkLinks`), `Core/Trash/spend.ts:60-114` (`emptyBundle`), `Core/Trash/spend.ts:131,171` (a restore's parking), `Core/Bundles/browser.ts:402-443` (`many`, one request per row)
 [^34]: **I-034:** `Desktop/Store/stores.ts:45-47` (`clearPath`), `Desktop/Store/stores.ts:50-77` (`upsertPageIndexes`), `Desktop/Store/stores.ts:78-98` (`removePathIndex`, `renamePathIndex`, `removePathPrefixIndex`, `renamePathPrefixIndex`), `Desktop/Store/driver.ts:16-26` (`inTransaction`), `Desktop/Store/stores.ts:217-259` (`syncStore`), `Core/Sync/handlers.ts:352,365`, `Core/Sync/Client/base.ts:16,21` (`readAllBases`, `deleteBase`)
 [^35]: **I-035:** `Core/Nexus/fileEvents.ts:~462-485` (`applySpace`), `Core/Nexus/fileEvents.ts:~594-614` (`applyMove`), `Core/Nexus/treePatch.ts:278-304` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:~488-509` (`regroup`, `applyContexts`), `Core/Contexts/contextCascade.ts:~118,~143-149` (`renameContextOp`), `Core/Contexts/contextCascade.ts:~161,~191` (`renameSpaceOp`), `Core/Files/atomicWrite.ts:~138-151` (`relocate`), `Core/Nexus/readNexus.ts:74-82` (`contextLinker`), `Core/Nexus/fileEvents.ts:~376-427` (`applyPage`), `Core/Views/pageRow.ts:11-27` (`pageRowOf`), `Core/Contexts/contextResolve.ts:38` (`resolveContextKeys`)
 [^36]: **I-036:** `Core/Nexus/fileEvents.ts:~150-163` (`oweRetry`, `stampable`), `Core/Nexus/fileEvents.ts:~348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:~376-427` (`applyPage`), `Core/Nexus/fileEvents.ts:~524-540` (`applySettings`, `oweRescope`), `Core/Nexus/mutate.ts:~277-282` (`retryUnreadable`), `Core/Nexus/settle.ts:~116-140` (`walkWhileOwed`), `Core/Nexus/settle.ts:~216-226` (`stampListed`), `Core/Nexus/settle.ts:~83-91` (`shown`), `Core/Nexus/settle.ts:~142-194` (`settle`), `Core/Trash/spend.ts:~120-303` (`restoreTrashed`, `relocate` at `:~201`)
@@ -1440,7 +1409,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^62]: **I-062:** `Core/Nexus/settle.ts:~204-213` (`missedEvents`), `Core/Nexus/settle.ts:~229-246` (`settleBatch`), `Core/Nexus/settle.ts:~383-387` (`paid`), `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Index/indexSeed.ts:~259-310` (`seedContentIndex`, `landed` at `:~268`), `Core/Contract/handlers.ts:73` (the restart's catch-up)
 [^63]: **I-063:** `Core/Nexus/settle.ts:~145-154` (the renames loop before `walkWhileOwed`), `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Nexus/cascade.ts:~227-285` (`renameCascade`), `Core/Connections/pageIndex.ts:111` (`namesOf`), `Core/Nexus/heldPages.ts:~44-47` (`livePathOf`), `Core/Index/indexSeed.ts:~84-88,~192-213` (`HeadingRenameSeen`, `reindex`)
 [^64]: **I-064:** `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Trash/spend.ts:~120-303` (`restoreTrashed`, `parkLinks` at `:~171`), `Core/Nexus/settle.ts:~323-358` (`returningCascade`, `repairLanded` at `:~343`)
-[^65]: **I-065:** `Core/Bundles/bundle.ts:417` (`originPagesIn`), `Core/Trash/trashedCopies.ts:36` (`parkLinks`)
 [^66]: **I-066:** `Core/Tiles/tileHosts.ts:~22-36` (the Space arm's `boards`), `Core/Tiles/tileHosts.ts:~44-54` (`tileHostsOf`), `Core/Nexus/tree.ts:111`, `Core/Nexus/readNexus.ts:~314-322` (the registry's `unreadable` entry), `Core/Nexus/configReach.ts:~306` (`reachConfig`), `Core/Tiles/tilesFile.ts:~286-327` (`tilesLink`, `rewriteTileConnections`), `Core/Nexus/cascade.ts:~246-257`
 [^67]: **I-067:** `Core/Connections/rewrite.ts:~76-110` (`follower`), `Core/Connections/connections.ts:~19-22` (`pageLinkPattern`), `Core/Connections/connections.ts:~132-143` (`expressibleInLink`, `spellsAsWiki`), `Core/MarkdownPM/Engine/detect.ts:~406-411` (`loneEmbedRe`, `loneEmbedTitle`)
 [^68]: **I-068:** `Core/MarkdownPM/Links/connectionsApi.ts:~24-33` (`headingMissing`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:~138-151` (`commit`, `keptHeading`)

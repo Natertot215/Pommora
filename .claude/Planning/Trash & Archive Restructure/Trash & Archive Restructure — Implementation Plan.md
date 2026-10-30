@@ -284,7 +284,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 4-3 · The Trash is admitted and watched
   - [x] Task 4-4 · A cascade reaches the Trash by the record's Collection
   - [x] Task 4-5 · The returning side of the frozen model leaves
-  - [ ] Task 4-6 · The holders' side of the frozen model leaves
+  - [x] Task 4-6 · The holders' side of the frozen model leaves
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
@@ -6124,6 +6124,9 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +      return at?.bundle ? [connPage(join(root, at.bundle), at.origin)] : []
 +    }),
 +  )
+@@
+-  for (const [bundle, rows] of parked) await appendLinks(bundle, rows)
++  for (const [bundle, held] of parked) await appendLinks(bundle, held)
 @@ trashedHolders, refillTrashed @@
 -/** Where the Trash holds each page or Space `ids` names: … */
 -export async function trashedHolders(…) { … }      (lines 47-80, removed)
@@ -6438,6 +6441,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 - [ ] The new `assignment.test.ts` case is green, and Task 4-4's B-7 case still is.
 - [ ] *"emptying a Set holding one of two namesakes hands its record's links to the other"* is green, and watched red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, then put back.
 - [ ] **Flips:** none beyond the removed `trashedCopies.test.ts` and `spend.test.ts:1005`; `governedRoot.test.ts:261,271` and `governedSweep.test.ts:352` change their arguments alone, as CHANGE names.
+- [ ] **Flips Found in Execution:** `trashRecovery.test.ts`, "a link parks with the trashed page its path names, and with neither of two namesakes its bare title names", installs `memoryStores` and seeds the content index before its read spy, and installs `NO_STORES` in its `finally`, so its no-read assertion pins the indexed park rather than `storedPageIds`' unindexed fallback; I-033 and I-065 are closed by hand in `IssuesPM.md`.
 - [ ] These print nothing:
   - `git grep -nwE "frozenWorld|Frozen|trashedHolders|refillTrashed|originPagesIn|Worked|workedOut|oweWorked|landWorked" -- Core`;
   - `git grep -n "values: undefined" -- Core/Nexus/finishOwed.ts`;

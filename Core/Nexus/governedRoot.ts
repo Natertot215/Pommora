@@ -57,15 +57,11 @@ export async function pageWorldOf(root: string, absFile: string): Promise<Govern
   return governedWorld(tree, containerSchema(tree, relative(root, absFile)))
 }
 
-/** The pages a frozen copy may still name: `holds` answers which still exist. */
-export interface Frozen {
-  holds: (title: string) => boolean
-}
-
-export function gonePageEntry(raw: unknown, frozen: Frozen): string | null {
+/** `raw`'s Link entry where it names a page `holds` answers false for, else null. */
+export function gonePageEntry(raw: unknown, holds: (title: string) => boolean): string | null {
   const entry = linkEntry(raw, 2)
   const link = entry === null ? null : readLinkText(entry)
-  const gone = link?.kind === 'page' && link.title !== '' && !frozen.holds(link.title)
+  const gone = link?.kind === 'page' && link.title !== '' && !holds(link.title)
   return gone ? entry : null
 }
 

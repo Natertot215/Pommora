@@ -25,6 +25,7 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { closeSession, openSession } from '../Nexus/session'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { patchSidecar } from '../Files/sidecar'
+import { listBundles } from '../Bundles/bundle'
 
 let root: string
 let notes: string
@@ -218,6 +219,32 @@ describe('a re-assign puts a stashed value back', () => {
         | Record<string, StashBlock>
         | undefined
       expect(stash?.[made.value.id]?.values ?? {}).not.toHaveProperty(page.value.id)
+    } finally {
+      closeSession()
+    }
+  })
+
+  it('a re-assign refills a trashed page’s stashed value into its copy, which returns with it', async () => {
+    await openSession(root)
+    try {
+      const made = await createProperty(root, { ...status })
+      if (!made.ok) throw new Error('setup failed')
+      await assignProperty(root, notes, made.value.id)
+      const page = await createTestPage(notes, 'A', { body: 'b' })
+      if (!page.ok) throw new Error('setup failed')
+      await writeFile(page.value.path, `---\nID: ${page.value.id}\nStatus: hi\n---\nb`)
+      await refreshTree(root)
+      expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
+      const deleted = await handleMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' })
+      expect(deleted.ok).toBe(true)
+      expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
+      const [trashed] = await listBundles(root, { kind: 'trash' })
+      if (!trashed?.artifactName) throw new Error('setup failed')
+      const copy = join(root, trashed.bundlePath, trashed.artifactName)
+      expect(splitFrontmatter(await readFile(copy, 'utf8')).Status).toBe('hi')
+      const restored = await handleMutate(root, { op: 'restore', bundlePath: trashed.bundlePath })
+      expect(restored.ok).toBe(true)
+      expect(splitFrontmatter(await readFile(page.value.path, 'utf8')).Status).toBe('hi')
     } finally {
       closeSession()
     }

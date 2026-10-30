@@ -8,7 +8,9 @@ import { asString } from './coerce'
 import { addressable, rootFile, type RootsById } from './heldPages'
 import { type Place, type SweptPage, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
+import { gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
+import type { PageIndex } from '../Connections/pageIndex'
+import type { StrippedLink } from './cascade'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
 import { isBlankRaw, type KeyCollision, landValue, rekeyHeld } from '../Files/rootValues'
 
@@ -110,17 +112,41 @@ export async function sweepRootsById<T>(
   return { taken: new Set(asked.values()), skipped: swept.skipped.length }
 }
 
-/** `value` landed under `def`'s key as a live reconcile lands it, where `root` reads blank; null where it doesn't land, or where it's a Link naming a page `frozen` no longer holds. */
-export const refillOf =
-  (def: PropertyDefinition, frozen: Frozen) =>
-  (root: Json, value: unknown): Json | null => {
-    const gone =
-      PROPERTY_TYPES[def.type].connections === 'value' && gonePageEntry(value, frozen) !== null
+/** The Link entry `value` holds under `def` where it names a page `world` doesn't hold, else null: the one check a refill lands by and a park takes by. */
+const goneLink =
+  (def: PropertyDefinition, world: PageIndex) =>
+  (value: unknown): string | null =>
+    PROPERTY_TYPES[def.type].connections === 'value'
+      ? gonePageEntry(value, (title) => world.holders(title).length > 0)
+      : null
+
+/** `value` landed under `def`'s key as a live reconcile lands it, where `root` reads blank; null where it doesn't land, or where it's a Link naming a page `world` doesn't hold. */
+export const refillOf = (def: PropertyDefinition, world: PageIndex) => {
+  const gone = goneLink(def, world)
+  return (root: Json, value: unknown): Json | null => {
     const next = liveLanding(value, reencode(def, value))
-    return gone || next === undefined || !isBlankRaw(root[def.key])
+    return gone(value) !== null || next === undefined || !isBlankRaw(root[def.key])
       ? null
       : landValue(root, def.key, next)
   }
+}
+
+export function partitionGone(
+  def: PropertyDefinition,
+  values: Record<string, unknown>,
+  world: PageIndex,
+  above: Record<string, string | undefined> = {},
+): { kept: Record<string, unknown>; gone: StrippedLink[] } {
+  const isGone = goneLink(def, world)
+  const kept: Record<string, unknown> = {}
+  const gone: StrippedLink[] = []
+  for (const [page, value] of Object.entries(values)) {
+    const entry = isGone(value)
+    if (entry === null) kept[page] = value
+    else gone.push({ page, property: def.id, value: entry, above: above[page] })
+  }
+  return { kept, gone }
+}
 
 /** Puts each value back as `refillOf` lands it, on the page or Space its ID names wherever that root holds none, above the key `above` names for that ID, and answers the IDs that took theirs. */
 export async function refillValues(
@@ -128,8 +154,8 @@ export async function refillValues(
   def: PropertyDefinition,
   roots: RootsById,
   values: Record<string, unknown>,
-  frozen: Frozen,
+  world: PageIndex,
   above: Record<string, string | undefined> = {},
 ): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
-  return sweepRootsById(root, roots, values, above, refillOf(def, frozen))
+  return sweepRootsById(root, roots, values, above, refillOf(def, world))
 }

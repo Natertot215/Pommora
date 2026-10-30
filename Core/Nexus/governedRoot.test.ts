@@ -258,7 +258,7 @@ describe('reconcileGovernedRoot — skip', () => {
 })
 
 describe('gonePageEntry — the entry a restore parks', () => {
-  const gone = { holds: () => false }
+  const gone = () => false
   it('reads an unquoted `[[Page]]` as the entry it spells', () => {
     expect(gonePageEntry([['Gone']], gone)).toBe('[[Gone]]')
   })
@@ -268,7 +268,7 @@ describe('gonePageEntry — the entry a restore parks', () => {
   it('leaves an address, a bare heading, and a page the world holds', () => {
     expect(gonePageEntry('[x](example.com)', gone)).toBeNull()
     expect(gonePageEntry('[[#Intro]]', gone)).toBeNull()
-    expect(gonePageEntry('[[Alpha]]', { holds: (t) => t === 'Alpha' })).toBeNull()
+    expect(gonePageEntry('[[Alpha]]', (t) => t === 'Alpha')).toBeNull()
   })
 })
 

@@ -39,6 +39,9 @@ import { renameProperty } from '../Properties/registryProperty'
 import { setCollectionOrder, setSpaceOrder } from '../Nexus/reorder'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { readNotes } from '../Nexus/owed'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 
 let root: string
 const handed: string[] = []
@@ -713,12 +716,15 @@ describe('links come back with the page', () => {
     if (!inPlain || !inJournal) throw new Error('setup failed')
     const bare = { page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }
     const pathed = { page: BETA_ID, property: 'prop_parent', value: '[[Plain/Alpha]]' }
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
     const reads = vi.spyOn(machine(), 'readText')
     try {
       await parkLinks(root, [bare, pathed])
       expect(reads.mock.calls.filter(([file]) => file.endsWith('.md'))).toEqual([])
     } finally {
       reads.mockRestore()
+      installStores(NO_STORES)
     }
     expect(await readRecord(join(root, inPlain.bundlePath))).toMatchObject({ links: [pathed] })
     expect(await readRecord(join(root, inJournal.bundlePath))).not.toHaveProperty('links')
@@ -738,6 +744,20 @@ describe('links come back with the page', () => {
     expect(emptied.ok).toBe(true)
     const restored = await settledMutate(root, { op: 'restore', bundlePath: kept.bundlePath })
     expect(restored.ok).toBe(true)
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('emptying a Set holding one of two namesakes hands its record’s links to the other', async () => {
+    await mkdir(join(root, 'Plain', 'Box'), { recursive: true })
+    await writeFile(join(root, 'Plain', 'Box', '_pageset.json'), JSON.stringify({ id: 'set-box' }))
+    await linker(join('Plain', 'Box', 'Alpha.md'), newContentId('page'), '')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del(join('Plain', 'Box'), 'set')
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    const box = await find('Box')
+    const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath: box.bundlePath })
+    expect(emptied.ok).toBe(true)
+    await restoreRow('Alpha')
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 

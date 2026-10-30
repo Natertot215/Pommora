@@ -5,6 +5,7 @@ import { noModeBits, raceLandings, tempRoot } from '../Testing/hostFs'
 import { jsonText, rewritePageSerialized } from '../Files/atomicWrite'
 import { refillOf, sweepCount, sweepGovernedRoots, type SweepPlan } from './governedSweep'
 import type { PropertyDefinition } from '../Properties/properties'
+import { buildPageIndex } from '../Connections/pageIndex'
 import { machine } from '../Platform/machine'
 import { updatePageBody } from './page'
 import { closeSession, openSession } from './session'
@@ -349,7 +350,7 @@ describe('refillOf', () => {
     type: 'multiSelect',
     select_options: [{ id: 'opt_alpha', key: 'alpha', label: 'alpha' }],
   }
-  const refill = refillOf(tags, { holds: () => true })
+  const refill = refillOf(tags, buildPageIndex([]))
 
   it('lands a Multi-Select in the order it was set aside in, its options and the words no option names alike', () => {
     expect(refill({ ID: 'x' }, ['zeta', 'alpha'])).toEqual({ ID: 'x', Tags: ['zeta', 'alpha'] })
