@@ -16,7 +16,7 @@
 |---|---|---|
 | 1 · The Landing | about +46 | +68 (+198 / −130); +45 outside `Core/Testing` |
 | 2 · Residue | about −136 | −157 (+215 / −372); −152 outside `Core/Testing` |
-| 3 · Delete, Journal, and Carry | about −46 | |
+| 3 · Delete, Journal, and Carry | about −46 | +19 (+469 / −450); +25 outside `Core/Testing`, the estimate not having priced Task 3-2's second holder read (about +32) or the journal's `move` kind (about +10) |
 | 4 · Reach-In | about −360 | |
 | 5 · One Restore, Recognition, and the Interface | about +80 | |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | |
@@ -266,7 +266,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 2-3 · Records from the tree, and a Context's place
   - [x] Task 2-4 · The rest of the residue
   - [x] Review Checkpoint
-- [ ] **Phase 3** — Delete, Journal, and Carry
+- [x] **Phase 3** — Delete, Journal, and Carry
   - [x] Task 3-1 · One mint, one tail, one `leave`
   - [x] Task 3-2 · A content delete records its links ahead of the strip
   - [x] Task 3-3 · One container note, and the Set move's own kind
@@ -2749,7 +2749,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`bundle.test.ts`, in *"mintBundle"*, "a record that can't be written takes its bundle back":** `vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))`, then `mintBundle(root, TRASH, p, {})` rejects and `readdir(join(root, '.trash', 'Notes', 'Daily'))` is `[]`. It fails at HEAD, where `mintBundle` writes no record.
   - **`archive.test.ts:227`, rewritten as "a Set delete whose record write throws leaves no bundle and puts the lifted folder back":** its assertions stay, and it adds `expect(await readdir(at('.trash', 'Notes'))).toEqual([])`. It fails today on the bundle the catch leaves.
   - **`deleteReach.test.ts`, in the Context describe beside `:652`, "a Context delete the registry no longer lists refuses with nothing minted":** after `refreshTree`, `putJson(contextsRegistryFile(root), { contexts: [] })`, then `del(AREAS, 'context')` refuses with *"Unknown Context."*, `pathExists(join(root, '.trash'))` is false, and `AREAS` still stands. It fails today on the minted bundle.
@@ -2757,10 +2757,10 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
   - **`deleteReach.test.ts:652`, *"a crash between the note and the list step finishes the delete"*, retitled "…finishes the delete, its folder leaving every order it sat in":** before `finishOwed`, `setPanelContextOrder(root, ['ctx_areas', 'ctx_other'])` and `setSpaceOrder(root, 'ctx_areas', ['sp_work'])`; after it, the `state.json` order is `{ contexts: ['ctx_other'] }`. It fails today, the finish's `leave` dropping nothing.
   - **`deleteReach.test.ts`, beside it, "a Space delete cut short before its move leaves its Context's Space order once its finish moves it":** mint a bundle for `WORK` with `{}`, `setSpaceOrder(root, 'ctx_areas', ['sp_work', 'sp_home'])`, note `{ sp_work: { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle } }`, and `finishOwed(root)`; the folder sits in the bundle and the Space order is `['sp_home']`.
   - **`finishOwed.test.ts`, beside the Context case below, "a Space delete whose order drop failed after its folder moved drops it at the finish":** `setSpaceOrder(root, 'ctx_projects', ['sp-pom', 'sp-other'])`, the delete's `dropDeparture` rejecting once, then `finishOwed(root)`; the `state.json` order is `{ spaces: { ctx_projects: ['sp-other'] } }` and no note is left.
-- [ ] Apply the AFTER.
-- [ ] Every test call of `mintBundle` passes the record it wrote right after, and that `writeRecord` leaves: `bundle.test.ts:76-78`, `handlers.test.ts:55-57,87-93,147-149`, `archive.test.ts:722-727`, `spend.test.ts:1573-1579`. The calls that wrote none pass `{}`: `bundle.test.ts:39,51,52,63,72`, `atomicWrite.test.ts:367,376`, and `deleteReach.test.ts:660,813`.
-- [ ] Phase 2's two `reorder.test.ts` Context cases call `dropDeparture(root, { kind: 'context', id: 'g1' })`, their expectations unchanged.
-- [ ] Write `finishOwed.test.ts`' *"a Context delete whose order drop failed after its folder moved drops it at the finish"* (the delete's `dropDeparture` rejecting once; the finish leaves `state.json` holding neither the Context's panel id nor its Space order) and watch it fail without the finish arms' `else` drop.
+- [x] Apply the AFTER.
+- [x] Every test call of `mintBundle` passes the record it wrote right after, and that `writeRecord` leaves: `bundle.test.ts:76-78`, `handlers.test.ts:55-57,87-93,147-149`, `archive.test.ts:722-727`, `spend.test.ts:1573-1579`. The calls that wrote none pass `{}`: `bundle.test.ts:39,51,52,63,72`, `atomicWrite.test.ts:367,376`, and `deleteReach.test.ts:660,813`.
+- [x] Phase 2's two `reorder.test.ts` Context cases call `dropDeparture(root, { kind: 'context', id: 'g1' })`, their expectations unchanged.
+- [x] Write `finishOwed.test.ts`' *"a Context delete whose order drop failed after its folder moved drops it at the finish"* (the delete's `dropDeparture` rejecting once; the finish leaves `state.json` holding neither the Context's panel id nor its Space order) and watch it fail without the finish arms' `else` drop.
 
 **AFTER**
 
@@ -3315,11 +3315,11 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **VERIFY**
 
-- [ ] The six new and rewritten cases are green, and each was watched red against the code before this task.
-- [ ] The write-ahead pins stay green: `deleteOrder.test.ts:148-257` (the record before the move and the strip, the strip and the pass after it), `deleteReach.test.ts:566-652` (a refused note or list step, a move that throws, a Context entry that can't go back), and `archive.test.ts:166-242,283` (the lift and its rollback, `fileInto`'s ghost bundle).
-- [ ] `git grep -nP "unminted|let moved|const write =|dropDeparture\(root, (tree|held|before)," -- Core/Trash Core/Archive Core/Nexus/finishOwed.ts Core/Nexus/move.ts ':!*.test.ts'` prints nothing, `writeRecord(bundle` sits in `mintBundle` alone among production files, and `git grep -nP "mintBundle\([^)]*\)$" -- Core ':!*.test.ts'` shows every production call passing a record.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The six new and rewritten cases are green, and each was watched red against the code before this task.
+- [x] The write-ahead pins stay green: `deleteOrder.test.ts:148-257` (the record before the move and the strip, the strip and the pass after it), `deleteReach.test.ts:566-652` (a refused note or list step, a move that throws, a Context entry that can't go back), and `archive.test.ts:166-242,283` (the lift and its rollback, `fileInto`'s ghost bundle).
+- [x] `git grep -nP "unminted|let moved|const write =|dropDeparture\(root, (tree|held|before)," -- Core/Trash Core/Archive Core/Nexus/finishOwed.ts Core/Nexus/move.ts ':!*.test.ts'` prints nothing, `writeRecord(bundle` sits in `mintBundle` alone among production files, and `git grep -nP "mintBundle\([^)]*\)$" -- Core ':!*.test.ts'` shows every production call passing a record.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-2
 
@@ -3334,17 +3334,17 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`deleteOrder.test.ts:159`, rewritten from "a content delete records whole, and the links its strip takes join the record" to "a content delete records the Link values its strip takes before the artifact moves" (B-10):** `expect(atSettle).toMatchObject({ entity: 'page', links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }] })` and `expect(await anyRecord()).toEqual(atSettle)`, the finish writing nothing more.
   - **`deleteOrder.test.ts:203`, *"a delete from the Archive records, with the bundle it left, before the artifact moves"*,** gains `links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }]` in its `atSettle` match. It fails without `linkStrip`'s filter on archived rows, the archived Alpha still answering its key.
   - **`deleteReach.test.ts:756`, *"a page delete that misses a linker owes it with Try Again"*,** opens with `installStores(memoryStores().stores)` and `seedContentIndex(root)`, as `:625` does, and asserts the linker's value in the bundle's `links` right after the delete, before `finishOwed`; after it, the linker is stripped and `links.filter((l) => l.page === linkerId)` has length 1.
   - **`trashRecovery.test.ts`, beside `:749`, "an emptying parks a value its strip takes before the strip lands":** the setup of `:749`, with `vi.spyOn(cascade, 'deleteCascade')` reading the Plain namesake's record at the call; that record already holds Beta's `[[Alpha]]`. It fails today, the park following the strip.
   - **`bundle.test.ts`, in *"spendBundle"*, "appendLinks adds each link once":** a record holding `P_LINK`, then `appendLinks(inBundle(), [P_LINK, Q_LINK])` leaves `[P_LINK, Q_LINK]`.
   - **`trashRecovery.test.ts`, in *"links come back with the page"*, "a value taken up while the delete is owed joins the record before Try Again strips it":** Beta unreadable while Alpha's delete runs, so its strip misses it and the note stays owed; Gamma then takes `Related: [[Alpha]]` through `setProperty`, and Try Again's `finishOwed` leaves Alpha's record holding both values, which its restore puts back on both pages.
-- [ ] Apply the AFTER.
-- [ ] `cascade.test.ts`'s describe *"deleteCascade"* (`:480-948`): each case reading `r.links` reads `await gatherLinks(root, <its abs>, <its paths>)` taken before its `deleteCascade` call instead, and each `toEqual({ reach: …, links: … })` compares the reach alone (`:641,700`).
-- [ ] `bundle.test.ts:345` is retitled "strips exactly the inner item’s carried values from the bundle’s record, keeping every other value it holds", its body unchanged.
-- [ ] Apply the doc line under the AFTER.
+- [x] Apply the AFTER.
+- [x] `cascade.test.ts`'s describe *"deleteCascade"* (`:480-948`): each case reading `r.links` reads `await gatherLinks(root, <its abs>, <its paths>)` taken before its `deleteCascade` call instead, and each `toEqual({ reach: …, links: … })` compares the reach alone (`:641,700`).
+- [x] `bundle.test.ts:345` is retitled "strips exactly the inner item’s carried values from the bundle’s record, keeping every other value it holds", its body unchanged.
+- [x] Apply the doc line under the AFTER.
 
 **AFTER**
 
@@ -3779,12 +3779,12 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **VERIFY**
 
-- [ ] The five new and rewritten cases are green, each watched red against the code before this task.
-- [ ] The parking cases hold: `trashRecovery.test.ts:462-791` (a link parks with the one trashed page its title names, a namesake's record handed on, a new namesake keeping its value), and the strip's cases in `cascade.test.ts:480-948` under their reworded reads.
-- [ ] `deleteOrder.test.ts`'s `deleteCascade` wrapper (`:59-66`) sees the strip alone: the content delete's gather calls `linkStrip`, and the Space and Context cases' `atSweep` still equals `atSettle`.
-- [ ] `git grep -nP "DeleteCascade|NO_STRIP|gone\.links|raw\.links as" -- Core` prints nothing, and `git grep -n "patchRecord" -- Core ':!*.test.ts'` prints only `record.ts` and `refile.ts`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The five new and rewritten cases are green, each watched red against the code before this task.
+- [x] The parking cases hold: `trashRecovery.test.ts:462-791` (a link parks with the one trashed page its title names, a namesake's record handed on, a new namesake keeping its value), and the strip's cases in `cascade.test.ts:480-948` under their reworded reads.
+- [x] `deleteOrder.test.ts`'s `deleteCascade` wrapper (`:59-66`) sees the strip alone: the content delete's gather calls `linkStrip`, and the Space and Context cases' `atSweep` still equals `atSettle`.
+- [x] `git grep -nP "DeleteCascade|NO_STRIP|gone\.links|raw\.links as" -- Core` prints nothing, and `git grep -n "patchRecord" -- Core ':!*.test.ts'` prints only `record.ts` and `refile.ts`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-3
 
@@ -3797,8 +3797,8 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **CHANGE**
 
-- [ ] Apply the AFTER.
-- [ ] `move.test.ts:60` expects `{ kind: 'move', at: 'Notes/Deep', within: 'Notes' }`, and `deleteReach.test.ts:879`'s `setMoveNoted` seeds `kind: 'move'`; no behavior changes, and both suites' Set-move cases (`move.test.ts:40-68`, `deleteReach.test.ts:886-910`) stay green.
+- [x] Apply the AFTER.
+- [x] `move.test.ts:60` expects `{ kind: 'move', at: 'Notes/Deep', within: 'Notes' }`, and `deleteReach.test.ts:879`'s `setMoveNoted` seeds `kind: 'move'`; no behavior changes, and both suites' Set-move cases (`move.test.ts:40-68`, `deleteReach.test.ts:886-910`) stay green.
 
 **AFTER**
 
@@ -3981,10 +3981,10 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **VERIFY**
 
-- [ ] `move.test.ts:40-68`, `deleteReach.test.ts:886-910`, `bundle.test.ts:333-372`, `trashRecovery.test.ts:986-1060` (an inner item's share of the owed strip; the Set-move and the owed `gone` edits), and the emptying cases (`trashRecovery.test.ts:701-791`) are green.
-- [ ] `git grep -nP "\bpark\??:|e\.park|kind: 'container', at: req" -- Core` prints nothing, `e.within` sits in `finishMove` alone, and `git grep -n "editNote" -- Core/Bundles` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `move.test.ts:40-68`, `deleteReach.test.ts:886-910`, `bundle.test.ts:333-372`, `trashRecovery.test.ts:986-1060` (an inner item's share of the owed strip; the Set-move and the owed `gone` edits), and the emptying cases (`trashRecovery.test.ts:701-791`) are green.
+- [x] `git grep -nP "\bpark\??:|e\.park|kind: 'container', at: req" -- Core` prints nothing, `e.within` sits in `finishMove` alone, and `git grep -n "editNote" -- Core/Bundles` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-4
 
@@ -3997,11 +3997,11 @@ A finish whose folder has already left drops the departure all the same, since a
 
 **CHANGE**
 
-- [ ] Rewrite `trashRecovery.test.ts:1051` from *"a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive's Sets at its Try Again"* to "a Collection whose Archive refuses to go stays whole in the Trash, owning its Archive, and nothing is taken" (B-5): after the refused empty, `listBundles(root, { kind: 'trash' })` lists the Journal bundle, `readNotes(root)` is `{}`, `finish()` leaves the sidecar's views as written, and `settleArchives(root, await readNexus(root))` leaves `listBundles(root, { kind: 'archive', id: 'col-journal' })` at length 1. Watch it fail.
-- [ ] `spend.test.ts:2059`, *"a system-trash handoff that rejects leaves the bundle whole"*, becomes "…leaves the bundle whole and owes nothing", adding `expect(await readNotes(root)).toEqual({})`. Watch it fail.
-- [ ] `trashRecovery.test.ts`' `beforeEach` fake `trashToSystem` removes what it's handed (`handed.push(p)`, then `await rm(p, { recursive: true })`), as disposal does, so an emptied artifact no longer lists as a namesake once its links park ahead of the spend.
-- [ ] Write `trashRecovery.test.ts`' "an emptying that can't spend its bundle has already handed its record's links on" beside `:701`: its setup, with `vi.spyOn(bundle, 'spendBundle').mockRejectedValueOnce(new Error('the disk is gone'))` (`import * as bundle from '../Bundles/bundle'` where the suite has none), then the empty of the first namesake and the other's record holding its links. Watch it fail with the park after the spend.
-- [ ] Apply the AFTER.
+- [x] Rewrite `trashRecovery.test.ts:1051` from *"a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive's Sets at its Try Again"* to "a Collection whose Archive refuses to go stays whole in the Trash, owning its Archive, and nothing is taken" (B-5): after the refused empty, `listBundles(root, { kind: 'trash' })` lists the Journal bundle, `readNotes(root)` is `{}`, `finish()` leaves the sidecar's views as written, and `settleArchives(root, await readNexus(root))` leaves `listBundles(root, { kind: 'archive', id: 'col-journal' })` at length 1. Watch it fail.
+- [x] `spend.test.ts:2059`, *"a system-trash handoff that rejects leaves the bundle whole"*, becomes "…leaves the bundle whole and owes nothing", adding `expect(await readNotes(root)).toEqual({})`. Watch it fail.
+- [x] `trashRecovery.test.ts`' `beforeEach` fake `trashToSystem` removes what it's handed (`handed.push(p)`, then `await rm(p, { recursive: true })`), as disposal does, so an emptied artifact no longer lists as a namesake once its links park ahead of the spend.
+- [x] Write `trashRecovery.test.ts`' "an emptying that can't spend its bundle has already handed its record's links on" beside `:701`: its setup, with `vi.spyOn(bundle, 'spendBundle').mockRejectedValueOnce(new Error('the disk is gone'))` (`import * as bundle from '../Bundles/bundle'` where the suite has none), then the empty of the first namesake and the other's record holding its links. Watch it fail with the park after the spend.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -4102,11 +4102,11 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **VERIFY**
 
-- [ ] The two rewritten cases and the new one are green, each watched red against the code before this task.
-- [ ] The empty's cases stay green: `spend.test.ts:1705-2077` (a Collection emptied for good empties its Archive and takes its Sets' views, `permanentDelete` both ways), `trashRecovery.test.ts:701-791` (parking on empty), and Phase 2's *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"*, which now also owes nothing.
-- [ ] `git grep -n "collectionArchive" -- Core` prints only `Core/Trash/spend.ts`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The two rewritten cases and the new one are green, each watched red against the code before this task.
+- [x] The empty's cases stay green: `spend.test.ts:1705-2077` (a Collection emptied for good empties its Archive and takes its Sets' views, `permanentDelete` both ways), `trashRecovery.test.ts:701-791` (parking on empty), and Phase 2's *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"*, which now also owes nothing.
+- [x] `git grep -n "collectionArchive" -- Core` prints only `Core/Trash/spend.ts`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-5
 
@@ -4119,10 +4119,10 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`refile.test.ts`, in *"the restore"*, "a Set restored from the Trash after its parent moved to another Collection carries what was archived from within it from where it sits now" (B-6):** archive `Notes/Daily/Sub/Note.md`, delete `Notes/Daily/Sub`, `moveSet` `Notes/Daily` into `Other` (carrying the record into `IN_OTHER`), then restore the Sub bundle with destination `{ kind: 'container', id: NOTES }`. `filed(IN_NOTES)` is `[{ bundlePath: `.nexus/archive/${NOTES}/Notes/Daily/Sub/${leafOf(bundlePath)}`, id: PAGE_N, trail: [NOTES] }]` and `filed(IN_OTHER)` is `[]`.
   - **`refile.test.ts`, in *"the open pass"*, "a record whose parent is gone is re-filed by the deepest container its chain still holds":** archive `Notes/Daily/Sub/Note.md`, `rm` `Notes/Daily/Sub`, `rename` `Notes/Daily` to `Other/Daily`, and `settleArchives(root, await reread())`; `filed(IN_OTHER)` is `[{ bundlePath: `.nexus/archive/${OTHER}/Notes/Daily/Sub/${leafOf(bundlePath)}`, id: PAGE_N, trail: [OTHER, DAILY] }]`.
-- [ ] Apply the AFTER.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -4320,11 +4320,11 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **VERIFY**
 
-- [ ] The two new cases are green, each watched red against the code before this task.
-- [ ] The carry's pins stay green: `refile.test.ts:110-441` (the comparison, the restores, a carry that throws), `refile.test.ts:442-540` (the open pass, `:522`'s record left byte-identical, since its re-trailed trail is the one it stored), `archive.test.ts:325-416` (a landed Set's carry and each Undo's carry on the trail it was archived on), and `archive.test.ts:656-698` (an Undo filing into the Archive its origin sits in now).
-- [ ] `git grep -nP "refileFiled|trailAbove\(tree, origin\.parent\)|\blive\?\.\[0\]" -- Core` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The two new cases are green, each watched red against the code before this task.
+- [x] The carry's pins stay green: `refile.test.ts:110-441` (the comparison, the restores, a carry that throws), `refile.test.ts:442-540` (the open pass, `:522`'s record left byte-identical, since its re-trailed trail is the one it stored), `archive.test.ts:325-416` (a landed Set's carry and each Undo's carry on the trail it was archived on), and `archive.test.ts:656-698` (an Undo filing into the Archive its origin sits in now).
+- [x] `git grep -nP "refileFiled|trailAbove\(tree, origin\.parent\)|\blive\?\.\[0\]" -- Core` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 3-6
 
@@ -4334,8 +4334,8 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **CHANGE**
 
-- [ ] Apply the AFTER.
-- [ ] No behavior changes; the open pass's cases (`refile.test.ts:442-540`) and the owed `gone` edits (`trashRecovery.test.ts:1012-1060`, `spend.test.ts:1951`) stay green.
+- [x] Apply the AFTER.
+- [x] No behavior changes; the open pass's cases (`refile.test.ts:442-540`) and the owed `gone` edits (`trashRecovery.test.ts:1012-1060`, `spend.test.ts:1951`) stay green.
 
 **AFTER**
 
@@ -4421,9 +4421,9 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **VERIFY**
 
-- [ ] `git grep -n "elsewhere ??=" -- Core` prints only `Core/Bundles/bundle.ts`, and `git grep -n "ARCHIVE_DIR_REL" -- Core/Archive Core/Nexus/finishOwed.ts` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "elsewhere ??=" -- Core` prints only `Core/Bundles/bundle.ts`, and `git grep -n "ARCHIVE_DIR_REL" -- Core/Archive Core/Nexus/finishOwed.ts` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
