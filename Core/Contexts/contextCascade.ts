@@ -76,35 +76,35 @@ export async function unlinkContextKey(
   root: string,
   contextTitle: string,
   contextId: string | undefined,
-  skipUnder: string,
+  left: readonly string[],
 ): Promise<ConfigReach> {
   const key = contextKey(contextTitle)
   const strip: Rewrite = (raw) => (Object.hasOwn(raw, key) ? stripKeys(raw, [key]) : null)
   const rewrite = contextId === undefined ? strip : withoutOrderId(strip, contextId)
-  return unlinkMembers(root, { keys: [key], id: contextId }, rewrite, skipUnder)
+  return unlinkMembers(root, { keys: [key], id: contextId }, rewrite, left)
 }
 
 export async function unlinkSpaceValue(
   root: string,
   contextTitle: string,
   spaceTitle: string,
-  skipUnder: string,
+  left: readonly string[],
 ): Promise<ConfigReach> {
   const key = contextKey(contextTitle)
   const names = namesValue(spaceTitle)
   const take: Rewrite = (raw) => editHeldList(raw, key, (held) => stripList(held, names))
-  return unlinkMembers(root, { keys: [key], title: spaceTitle }, take, skipUnder)
+  return unlinkMembers(root, { keys: [key], title: spaceTitle }, take, left)
 }
 
-// What sits under `skipUnder` left with the deleted folder, which the tree may still list at its old path until the walk, so it's neither swept nor owed.
+// What sits under `left` left with the deleted folder, at its old path the tree may still list until the walk and in the bundle it moved into, so it's neither swept nor owed.
 async function unlinkMembers(
   root: string,
   holding: Pick<HolderQuery, 'keys' | 'title' | 'id'>,
   rewrite: Rewrite,
-  skipUnder: string,
+  left: readonly string[],
 ): Promise<ConfigReach> {
   const { files } = await findHolders(root, { ...holding, reach: 'anywhere' })
-  const kept = files.filter((file) => !isAtOrUnder(file, skipUnder))
+  const kept = files.filter((file) => !left.some((at) => isAtOrUnder(file, at)))
   return sweptReach(await sweepGovernedRoots(kept, { raw: rewrite }))
 }
 

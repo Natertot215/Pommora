@@ -25,7 +25,7 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
-import { addressable, nexusPages } from './heldPages'
+import { addressable, nexusPages, storedSpaces } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
 import { rekeyContext } from '../Contexts/contextCascade'
 import { type ConfigReach, NO_REACH, reachReport } from './configReach'
@@ -87,7 +87,7 @@ export async function linkStrip(root: string, abs: string, paths: readonly strin
   const defs = byKey(linkDefsOf(tree.config.registry))
   if (!defs.size) return null
   // The held tree may still list the deleted pages, since its patch can fall to a walk, and the index an archived one's rows until its artifact leaves the Archive, so each is left out by where it's held.
-  const { byId, archived } = await nexusPages(root, tree)
+  const { byId, archived, stored } = await nexusPages(root, tree)
   const after = buildPageIndex(
     [...pagesOf(tree), ...archived].filter((p) => !inside(byId.get(p.id)?.path ?? p.path)),
   )
@@ -103,12 +103,12 @@ export async function linkStrip(root: string, abs: string, paths: readonly strin
     })
   const files = [
     ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
-    ...spaceFiles(root, tree, (s) => !!s.values && named(s.values).length > 0),
+    ...spaceFiles(root, tree, stored, (s) => !!s.values && named(s.values).length > 0),
   ].filter((file) => !inside(relative(root, file)))
   return { files, keys: [...defs.keys()], byId, named }
 }
 
-/** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. */
+/** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back; a stored copy of a root `byId` addresses elsewhere is passed over unreported, since its live twin holds what the strip takes. */
 export async function deleteCascade(
   root: string,
   abs: string,
@@ -121,8 +121,9 @@ export async function deleteCascade(
     const swept = await sweepGovernedRoots(strip.files, {
       raw: (raw, file) => {
         const named = strip.named(raw)
-        if (named.length && !addressable(strip.byId, rootId(file, raw))) {
-          heldOut++
+        const id = rootId(file, raw)
+        if (named.length && !addressable(root, strip.byId, id, file)) {
+          if (id === undefined || strip.byId.get(id) === null) heldOut++
           return null
         }
         const keys = named.map(({ key }) => key)
@@ -239,7 +240,12 @@ export async function renameCascade(
     })
     const files = [
       ...[...new Set(rels)].map((rel) => join(root, rel)),
-      ...spaceFiles(root, tree, (s) => !!s.values && spaceMoved(s.values, '') !== null),
+      ...spaceFiles(
+        root,
+        tree,
+        await storedSpaces(root),
+        (s) => !!s.values && spaceMoved(s.values, '') !== null,
+      ),
     ]
     const swept = await sweepGovernedRoots(files, { text, raw: spaceMoved })
     const tiles = (await tilesLink(root, keys, headingKey))

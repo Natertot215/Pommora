@@ -155,7 +155,11 @@ export async function archivedWithin(root: string, setId: string, from: string, 
   })
 }
 
-export async function listBundles(root: string, store: BundleStore): Promise<ListedBundle[]> {
+export async function listBundles(
+  root: string,
+  store: BundleStore,
+  chain = '',
+): Promise<ListedBundle[]> {
   const { dir, suffix } = layoutOf(store)
   const out: ListedBundle[] = []
   const walk = async (at: string): Promise<void> => {
@@ -176,7 +180,7 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
       })
     }
   }
-  await walk(join(root, dir))
+  await walk(join(root, dir, chain))
   return out
 }
 

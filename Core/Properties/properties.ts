@@ -182,6 +182,14 @@ export const countedChange = z.discriminatedUnion('of', [
 ])
 export type CountedChange = z.infer<typeof countedChange>
 
+/** One property's stashed values by page id, when they were removed, and, per page, the key its line stood above; a malformed `above` reads as none. */
+export const stashBlock = z.object({
+  removed_at: z.string(),
+  values: z.record(z.string(), z.unknown()),
+  above: z.record(z.string(), z.string()).optional().catch(undefined),
+})
+export type StashBlock = z.infer<typeof stashBlock>
+
 // A display-setting write decodes against the definition's own fields, so it can patch nothing else: a key absent from the patch is left, and a present-but-invalid one goes back to its default.
 export const propertyConfig = propertyDefinitionFields.pick({
   icon: true,

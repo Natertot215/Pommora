@@ -2,12 +2,10 @@ import { jsonText, parseJsonObject, rewriteHeld } from '../Files/atomicWrite'
 import { damagedFolders } from './treePatch'
 import type { NexusTree } from './tree'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
-import { sidecarPath } from '../Paths/paths'
 import { storeOf } from '../Paths/bundleLayout'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
-import { addressable } from './heldPages'
-import type { EntityRecord } from './record'
+import { addressable, rootFile, type RootsById } from './heldPages'
 import { type Place, type SweptPage, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { type Frozen, gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
@@ -85,9 +83,6 @@ export async function sweepCount(root: string, files: string[], plan: SweepPlan)
   return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 
-/** What a by-id sweep reads of each root: where its file is and what kind it is, so a trashed copy joins the live tree's records. */
-export type RootsById = ReadonlyMap<string, Pick<EntityRecord, 'kind' | 'path'> | null>
-
 /** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
 export async function sweepRootsById<T>(
   root: string,
@@ -99,13 +94,12 @@ export async function sweepRootsById<T>(
   const asked = new Map<string, string>()
   const files = Object.keys(values).flatMap((id) => {
     const at = roots.get(id)
-    if (at?.kind === 'page') return [join(root, at.path)]
-    return at?.kind === 'space' ? [sidecarPath(join(root, at.path), 'space')] : []
+    return at?.kind === 'page' || at?.kind === 'space' ? [rootFile(root, at)] : []
   })
   const swept = await sweepGovernedRoots(files, {
     raw: (raw, file) => {
       const id = rootId(file, raw)
-      if (!addressable(roots, id) || !Object.hasOwn(values, id)) return null
+      if (!addressable(root, roots, id, file) || !Object.hasOwn(values, id)) return null
       const next = rewrite(raw, values[id])
       if (next !== null) asked.set(file, id)
       return next
