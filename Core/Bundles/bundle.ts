@@ -427,18 +427,6 @@ export async function pageIdsOf(pages: string[]): Promise<string[]> {
   return ids.flatMap((id) => id ?? [])
 }
 
-/** Every stored page at the path it left, its `id` the bundle holding it, since parking needs the bundle alone and reads no file. */
-export async function originPagesIn(root: string, store: BundleStore): Promise<ConnPage[]> {
-  const out: ConnPage[] = []
-  for (const { bundlePath, record, artifactName } of await listBundles(root, store)) {
-    if (!artifactName) continue
-    const bundle = join(root, bundlePath)
-    for (const file of await contentPages(record.entity, join(bundle, artifactName)))
-      out.push(connPage(bundle, originPathOf(root, file)))
-  }
-  return out
-}
-
 /** One bundle's pages at the paths they left, with the ids their files carry; an ID-less one answers to its file, which no index holds as an id. */
 export async function originPagesOf(root: string, files: readonly string[]): Promise<ConnPage[]> {
   const out: ConnPage[] = []

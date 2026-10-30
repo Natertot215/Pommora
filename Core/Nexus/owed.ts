@@ -3,7 +3,7 @@
 import { fail, ok, type Result } from '../Contract/result'
 import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'
 import { memberKey } from '../Files/rootValues'
-import { type Json, same } from '../Files/stableJson'
+import { same } from '../Files/stableJson'
 import { normalizeTitle } from '../Paths/caseFold'
 import { contextDirRel, OWED_REL } from '../Paths/nexusPaths'
 import { basename, isAtOrUnder, join } from '../Paths/posix'
@@ -28,23 +28,13 @@ export type ContainerEntry = Owed & {
   bundle?: string
 }
 export type MoveEntry = Owed & { kind: 'move'; at: string; edit?: ConfigEdit; within: string }
-/** By file, each value a restore worked out and couldn't write: what the file read then and what it lands as, either absent where there was or will be none. */
-export type Worked = Record<string, Record<string, { from?: unknown; to?: unknown }>>
-/** Each value `to` holds other than `from`, as a note keeps it. */
-export const workedOut = (from: Json, to: Json): Worked[string] =>
-  Object.fromEntries(
-    [...new Set([...Object.keys(from), ...Object.keys(to)])].flatMap((k) =>
-      same(from[k], to[k]) ? [] : [[k, { from: from[k], to: to[k] }]],
-    ),
-  )
-/** A move's or a restore's re-spell, each old link key mapped to how it spells its page now; `files` scopes a restore's repair of its own landed files to them alone, `rekey` re-keys a Context restored under a new title in its own Spaces' sidecars among them, and `values` holds, by file, what the restore worked out and couldn't write. */
+/** A move's or a restore's re-spell, each old link key mapped to how it spells its page now; `files` scopes a restore's repair of its own landed files to them alone, and `rekey` re-keys a Context restored under a new title in its own Spaces' sidecars among them. */
 export type RelinkEntry = Owed & {
   kind: 'relink'
   names: Record<string, string>
   label: string
   files?: string[]
   rekey?: [from: string, to: string]
-  values?: Worked
 }
 export type Entry =
   | PropertyEntry
@@ -90,9 +80,9 @@ const owesAnything = (e: Entry): boolean =>
   (e.kind === 'property' &&
     (!!e.collections?.length || Object.values(e.options ?? {}).some(owes))) ||
   ((e.kind === 'container' || e.kind === 'move') && !!e.edit) ||
-  (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey || !!e.values))
+  (e.kind === 'relink' && (Object.keys(e.names).length > 0 || !!e.rekey))
 
-/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files, and what it worked out for them, follow to where `paths` moves them, and its re-key to the title its Context's folder moves to. */
+/** `e`'s re-spell with `names` laid over it: an old key that spelled a page `names` moves follows it to where `names` leaves it, and a restore's repair, scoped by `files`, follows without taking `names`' keys, so its landed files keep their own targets; its files follow to where `paths` moves them, and its re-key to the title its Context's folder moves to. */
 export const relinkNote = (
   e: Entry | undefined,
   names: ReadonlyMap<string, string>,
@@ -104,8 +94,6 @@ export const relinkNote = (
     k,
     names.get(pageKey(v)) ?? v,
   ])
-  const worked =
-    held?.values && Object.fromEntries(Object.entries(held.values).map(([f, v]) => [paths(f), v]))
   const rekey: RelinkEntry['rekey'] = held?.rekey && [
     held.rekey[0],
     basename(paths(contextDirRel(held.rekey[1]))),
@@ -114,7 +102,7 @@ export const relinkNote = (
     kind: 'relink',
     label: label ?? held?.label ?? '',
     names: { ...Object.fromEntries(followed), ...(held?.files ? {} : Object.fromEntries(names)) },
-    ...(held?.files ? { files: held.files.map(paths), rekey, values: worked } : {}),
+    ...(held?.files ? { files: held.files.map(paths), rekey } : {}),
   }
 }
 
@@ -243,23 +231,6 @@ export function owedReport(root: string, reach: ConfigReach, owed = retries(reac
   }
   if (lost.delete(root)) report.warning = [report.warning, LOST_LINE].filter(Boolean).join(' ')
   return report
-}
-
-/** What a restore worked out for the files it couldn't write joins the relink entry its landed path `at` keys, so Try Again lands it where a file still reads what the restore found. A note that can't be written owes nothing. */
-export async function oweWorked(
-  root: string,
-  at: string,
-  label: string,
-  values: Worked,
-): Promise<CascadeReport | undefined> {
-  const reach = { skipped: Object.keys(values).length, hosts: [] }
-  if (!reach.skipped) return undefined
-  const noted = await editNote(root, at, (e) => {
-    const held: RelinkEntry =
-      e?.kind === 'relink' ? e : { kind: 'relink', names: {}, label, files: [] }
-    return { ...held, values: { ...held.values, ...values } }
-  })
-  return noted.ok ? owedReport(root, reach) : reachReport(reach)
 }
 
 /** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename (H-1), and a sweep that is the finish's own arm writes back its entry itself. The report is owed while the entry still stands, whatever left it owing. */

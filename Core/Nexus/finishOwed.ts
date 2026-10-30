@@ -120,7 +120,7 @@ function finishArm(root: string, id: string, e: Entry, notes: Notes): Promise<Fi
       return finishMove(root, id, e)
     case 'relink':
       return relinkReach(root, e).then((reach) => ({
-        left: retries(reach) ? e : { ...e, names: {}, rekey: undefined, values: undefined },
+        left: retries(reach) ? e : { ...e, names: {}, rekey: undefined },
         reach,
       }))
   }

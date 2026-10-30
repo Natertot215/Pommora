@@ -8,22 +8,20 @@ import { patchSidecar } from '../Files/sidecar'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { assignedIds } from '../Nexus/containerFields'
-import { linkWorld, nexusPages, type RootsById } from '../Nexus/heldPages'
+import { linkWorld, nexusPages } from '../Nexus/heldPages'
 import type { CascadeReport } from '../Nexus/cascade'
 import { distinct, propertyNote, runNoted } from '../Nexus/owed'
 import { containerAt, owningCollection } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { PROPERTY_TYPES, type PropertyDraft } from './properties'
+import type { PropertyDraft } from './properties'
 import { createProperty, removeFromRegistry } from './registryProperty'
-import { gonePageEntry } from '../Nexus/governedRoot'
-import { frozenWorld, parkLinks, trashedHolders } from '../Trash/trashedCopies'
-import { refillValues } from '../Nexus/governedSweep'
-import type { EntityRecord } from '../Nexus/record'
+import { parkLinks } from '../Trash/trashedCopies'
+import { partitionGone, refillValues } from '../Nexus/governedSweep'
 import { ok, fail, type Result } from '../Contract/result'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { exactTitle } from '../Paths/caseFold'
 
-/** Puts the values the Collection at `folder` stashes for `propertyId` back on its pages, and into the Trash copies of pages trashed from it, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
+/** Puts the values the Collection at `folder` stashes for `propertyId` back on its pages, trashed ones among them, wherever the property reads blank, keeping only what it still owes them; answers how many it couldn't write. */
 export async function refillStash(
   root: string,
   folder: string,
@@ -47,32 +45,16 @@ export async function refillStash(
         : []
     }),
   )
-  // The Trash is listed only when a stashed id is missing from the tree, since the listing opens every trashed Set's pages.
-  const unplaced = new Set(Object.keys(values).filter((id) => !byId.has(id)))
-  const copies = unplaced.size
-    ? await trashedHolders(root, unplaced, collectionId)
-    : new Map<string, string>()
   // A page the tree couldn't read under the Collection could be any id it can't place, so while one is, those stay owed.
   const unread = tree.unreadable?.some((u) => isAtOrUnder(u.path, relative(root, folder)))
-  const unfound = unread ? [...unplaced].filter((id) => !copies.has(id)) : []
-  const roots: RootsById = new Map<string, Pick<EntityRecord, 'kind' | 'path'>>([
-    ...members,
-    ...[...copies].map(([id, file]) => [id, { kind: 'page', path: relative(root, file) }] as const),
-  ])
-  const frozen = frozenWorld(linkWorld(tree, archived))
+  const unfound = unread ? Object.keys(values).filter((id) => !byId.has(id)) : []
+  const world = linkWorld(tree, archived)
   // A stashed Link naming a page gone leaves the stash: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
-  const gone =
-    PROPERTY_TYPES[def.type].connections === 'value'
-      ? [...members.keys()].flatMap((id) => {
-          const entry = gonePageEntry(values[id], frozen)
-          return entry === null
-            ? []
-            : [{ page: id, property: propertyId, value: entry, above: stash.above?.[id] }]
-        })
-      : []
-  const { taken, skipped } = await refillValues(root, def, roots, values, frozen, stash.above)
+  const held = Object.fromEntries([...members.keys()].map((id) => [id, values[id]]))
+  const { gone } = partitionGone(def, held, world, stash.above)
+  const { taken, skipped } = await refillValues(root, def, members, values, world, stash.above)
   await parkLinks(root, gone)
-  const owed = new Set([...roots.keys()].filter((id) => !taken.has(id)).concat(unfound))
+  const owed = new Set([...members.keys()].filter((id) => !taken.has(id)).concat(unfound))
   for (const { page } of gone) owed.delete(page)
   const written = await patchSidecar(folder, 'collection', (cur) => {
     const block = stashedBlock(cur, propertyId)

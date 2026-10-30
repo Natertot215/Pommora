@@ -32,8 +32,8 @@ import { refileLanded } from '../Archive/refile'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { returningCascade } from '../Nexus/settle'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
-import { joinCascades, type StrippedLink } from '../Nexus/cascade'
-import { frozenWorld, parkLinks, refillTrashed } from './trashedCopies'
+import { joinCascades } from '../Nexus/cascade'
+import { parkLinks } from './trashedCopies'
 import { NO_DESTINATION, placeAmong, placeRecord } from '../Bundles/placement'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
@@ -43,12 +43,10 @@ import {
   OWED,
   owedName,
   owedReport,
-  oweWorked,
   propertyNote,
   readNotes,
   restoreNote,
   runNoted,
-  type Worked,
 } from '../Nexus/owed'
 import { finishEntry } from '../Nexus/finishOwed'
 
@@ -224,7 +222,6 @@ export async function restoreTrashed(
         : undefined,
   })
   const { after, own } = arrived
-  const worked: Worked = {}
   const settled = after && heldTreeOf(root)
   const untagged: string[] = []
   const unlinked = new Set<string>()
@@ -261,8 +258,7 @@ export async function restoreTrashed(
   ) {
     const defs = linkDefsOf(tree.config.registry)
     // Back in the Archive the page sits in no settled tree, so only the world from before the landing holds it.
-    const refilled = frozenWorld(settled && !into ? linkWorld(settled, archived) : world)
-    const trashed: StrippedLink[] = []
+    const refilled = settled && !into ? linkWorld(settled, archived) : world
     for (const def of defs) {
       const stripped = record.links.filter((l) => l.property === def.id)
       const all = Object.fromEntries(
@@ -271,15 +267,10 @@ export async function restoreTrashed(
       const above = Object.fromEntries(stripped.map((l) => [l.page, l.above]))
       const { taken } = await refillValues(root, def, roots, all, refilled, above)
       for (const id of Object.keys(all))
-        if (roots.get(id) === undefined)
-          trashed.push({ page: id, property: def.id, value: all[id], above: above[id] })
-        else if (!taken.has(id)) unlinked.add(id)
+        if (roots.get(id) !== undefined && !taken.has(id)) unlinked.add(id)
     }
-    // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
-    Object.assign(worked, await refillTrashed(root, trashed, defs, refilled))
   }
-  const owed = await oweWorked(root, relative(root, targetAbs), title, worked)
-  const cascade = joinCascades(joinCascades(arrived.cascade, owed), recordedPartly(stored, title))
+  const cascade = joinCascades(arrived.cascade, recordedPartly(stored, title))
   await spendBundle(root, bundle)
   const left = originOf(stored)
   // What was archived from within the Set sits in the Archive of the Collection the Set's chain stands in now, since a Trash record keeps the trail it left on.

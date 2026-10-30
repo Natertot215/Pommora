@@ -1,5 +1,5 @@
 // The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write and every link world.
-// Relinks (create, rename, move) resolve against the live index; strips, refills, and frozen worlds resolve against the tree plus the Archive, `linkWorld`.
+// Relinks (create, rename, move) resolve against the live index; strips and refills resolve against the tree plus the Archive, `linkWorld`.
 
 import { heldTreeOf } from './liveTree'
 import { dirname, join, relative, titleFromPath } from '../Paths/posix'
@@ -62,7 +62,7 @@ export interface NexusPages {
   stored: readonly SpaceNode[]
 }
 
-/** What a by-id sweep reads of each root: where its file is and what kind it is, so a trashed copy joins the live tree's records. */
+/** What a by-id sweep reads of each root: where its file is and what kind it is. */
 export type RootsById = ReadonlyMap<string, Pick<EntityRecord, 'kind' | 'path'> | null>
 
 export const rootFile = (root: string, at: Pick<EntityRecord, 'kind' | 'path'>): string =>
