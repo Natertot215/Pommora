@@ -78,15 +78,13 @@ export function withUnswept(
   })
 }
 
-/** What a delete's strip takes: every Link property value naming a page it took, by any key that now resolves to nothing, in the governed pages outside it, archived ones among them, and in every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. `files` are its holders, `named` what one root holds of it under the Link `keys`, and `byId` what addresses each holder; null when nothing names a page it took. Nothing at or under `abs` is reached, since it left with the delete. */
-export async function linkStrip(root: string, abs: string, paths: readonly string[]) {
-  const deleted = relative(root, abs)
-  const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
+/** What a delete's strip takes: every Link property value naming a page it took, by any key that now resolves to nothing, in the governed pages outside it, stored ones among them, and in every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. `files` are its holders, `named` what one root holds of it under the Link `keys`, and `byId` what addresses each holder; null when nothing names a page it took. Nothing at or under `left` is reached, since it left with the delete: the folder it stood in, which the held tree may still list, an archived item's rows, which the index keeps until its artifact leaves the Archive, and the bundle it moved into. */
+export async function linkStrip(root: string, left: readonly string[], paths: readonly string[]) {
+  const inside = (rel: string): boolean => left.some((at) => isAtOrUnder(rel, at))
   const tree = heldTreeOf(root)
   if (!tree) return null
   const defs = byKey(linkDefsOf(tree.config.registry))
   if (!defs.size) return null
-  // The held tree may still list the deleted pages, since its patch can fall to a walk, and the index an archived one's rows until its artifact leaves the Archive, so each is left out by where it's held.
   const { byId, archived, stored } = await nexusPages(root, tree)
   const after = buildPageIndex(
     [...pagesOf(tree), ...archived].filter((p) => !inside(byId.get(p.id)?.path ?? p.path)),
@@ -108,15 +106,12 @@ export async function linkStrip(root: string, abs: string, paths: readonly strin
   return { files, keys: [...defs.keys()], byId, named }
 }
 
+export type LinkStrip = NonNullable<Awaited<ReturnType<typeof linkStrip>>>
+
 /** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back; a stored copy of a root `byId` addresses elsewhere is passed over unreported, since its live twin holds what the strip takes. */
-export async function deleteCascade(
-  root: string,
-  abs: string,
-  paths: readonly string[],
-): Promise<ConfigReach> {
+export async function deleteCascade(root: string, strip: LinkStrip | null): Promise<ConfigReach> {
+  if (!strip) return NO_REACH
   try {
-    const strip = await linkStrip(root, abs, paths)
-    if (!strip) return NO_REACH
     let heldOut = 0
     const swept = await sweepGovernedRoots(strip.files, {
       raw: (raw, file) => {

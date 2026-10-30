@@ -23,7 +23,7 @@ import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
 import { originPathOf, storeOf } from '../Paths/bundleLayout'
-import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
+import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
@@ -116,11 +116,10 @@ async function planOf(
       const strip = from?.keys ?? under
       const edit = from ? from.edit : goneEdit(before, req.kind, req.path)
       const record = from?.record ?? gatherContentRecord(before, node!)
-      const links = await gatherLinks(root, abs, strip)
       return ok({
         // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
         id: node?.id ?? rel,
-        record: links.length ? { ...record, links } : record,
+        record,
         note: () => containerNote(rel, strip, edit),
         departing: node ?? undefined,
       })

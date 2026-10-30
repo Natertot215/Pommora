@@ -15,9 +15,6 @@ export function hiddenFolder(name: string): boolean {
   return hiddenName(name) || name === 'node_modules'
 }
 
-export const archiveSegs = (segs: string[]): string[] | null =>
-  `${segs[0]}/${segs[1]}` === ARCHIVE_DIR_REL ? segs.slice(2) : null
-
 /** The bare name exists because the watcher matches path segments rather than prefixes. */
 export const CONTEXTS_DIRNAME = 'contexts'
 const CONTEXTS_REGISTRY_FILENAME = 'contexts.json'

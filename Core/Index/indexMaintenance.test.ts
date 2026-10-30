@@ -188,7 +188,7 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
-  it('a delete clears the rows; a restore indexes what came back', async () => {
+  it('a delete moves its rows under its bundle; a restore indexes what came back', async () => {
     const del = await settledMutate(root, {
       op: 'delete',
       path: 'Notes/Daily/Beta.md',
@@ -203,11 +203,11 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
-  it('a Set delete clears every row beneath it; its restore indexes each page that came back', async () => {
+  it('a Set delete moves every row beneath it under its bundle; its restore moves each back', async () => {
     const del = await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })
     expect(del.ok).toBe(true)
-    expect(queryMentions(['beta'])).toEqual([])
     const [listed] = await listBundles(root, { kind: 'trash' })
+    expect(queryMentions(['beta'])).toEqual([`${listed.bundlePath}/Daily/Alpha.md`])
     const restored = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(restored.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])

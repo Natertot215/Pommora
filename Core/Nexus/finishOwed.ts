@@ -9,7 +9,7 @@ import { collectionFolders } from './governedSweep'
 import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
-import { type CascadeReport, deleteCascade, relinkReach } from './cascade'
+import { type CascadeReport, deleteCascade, linkStrip, relinkReach } from './cascade'
 import { parkLinks } from '../Trash/trashedCopies'
 import { gatherLinks } from '../Trash/gather'
 import { findContainerById } from './treePatch'
@@ -49,7 +49,7 @@ import {
   type SpaceEntry,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
-import { contentPages, listBundles, ownedArchives } from '../Bundles/bundle'
+import { listBundles, ownedArchives } from '../Bundles/bundle'
 import { appendLinks } from '../Bundles/record'
 import { refillStash } from '../Properties/assignment'
 
@@ -160,26 +160,21 @@ async function finishProperty(
     Object.values(defs).some((d) => d.id !== id && d.key === key)
   if (!def) {
     const strip = (e.strip ?? []).filter((key) => !held(key))
-    // With no Trash entry left for the property it can't come back, so the Collections and pages the Trash holds lose it as the live ones do.
+    // With no Trash entry left for the property it can't come back, so the Collections the Trash holds lose its assignment as the live ones do; every page lost its values at the delete.
     const bundles = await listBundles(root, { kind: 'trash' })
     const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
-    const trashed = kept
-      ? []
-      : bundles.flatMap((b) =>
-          b.artifactName
-            ? [{ entity: b.record.entity, abs: join(root, b.bundlePath, b.artifactName) }]
-            : [],
-        )
     const folders = [
       ...collectionFolders(root, await liveTreeOf(root)),
-      ...trashed.flatMap((b) => (b.entity === 'collection' ? [b.abs] : [])),
+      ...bundles.flatMap((b) =>
+        !kept && b.record.entity === 'collection' && b.artifactName
+          ? [join(root, b.bundlePath, b.artifactName)]
+          : [],
+      ),
     ]
-    const planned = await deletePlan(root, id, strip)
-    const inTrash = strip.length
-      ? (await Promise.all(trashed.map((b) => contentPages(b.entity, b.abs)))).flat()
-      : []
-    const holders = { ...planned.holders, files: [...planned.holders.files, ...inTrash] }
-    const missed = add(reach, await stripProperty(root, id, folders, { ...planned, holders }))
+    const missed = add(
+      reach,
+      await stripProperty(root, id, folders, await deletePlan(root, id, strip)),
+    )
     return { left: { kind: 'property', strip: missed ? strip : undefined }, reach }
   }
   const rename = await sweepEach(
@@ -391,11 +386,12 @@ async function finishContainer(
   }
   const edit = await owedEdit()
   const strip = back ? undefined : e.strip
-  if (strip) {
-    const links = await gatherLinks(root, join(root, e.at), strip)
+  const taken = strip && (await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip))
+  if (taken) {
+    const links = await gatherLinks(root, taken)
     await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
   }
-  const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
+  const stripped = !!strip && add(reach, await deleteCascade(root, taken || null))
   const viewed = !!edit && add(reach, await reachConfig(root, edit))
   return {
     left: { ...e, strip: stripped ? e.strip : undefined, edit: viewed ? e.edit : undefined },

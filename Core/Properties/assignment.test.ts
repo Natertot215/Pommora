@@ -198,6 +198,30 @@ describe('a re-assign puts a stashed value back', () => {
     )
     expect(fm.Related).toBe('[[Old]]')
   })
+
+  it('a re-assign drops a trashed page’s stashed Link naming a page gone, as a live page’s', async () => {
+    await openSession(root)
+    try {
+      const made = await createProperty(root, { label: 'Related', type: 'link' })
+      if (!made.ok) throw new Error('setup failed')
+      await assignProperty(root, notes, made.value.id)
+      const target = await createTestPage(notes, 'Target', { body: 'b' })
+      const page = await createTestPage(notes, 'A', { body: 'b' })
+      if (!target.ok || !page.ok) throw new Error('setup failed')
+      await writeFile(page.value.path, `---\nID: ${page.value.id}\nRelated: "[[Target]]"\n---\nb`)
+      await refreshTree(root)
+      expect((await unassignProperty(root, notes, made.value.id)).ok).toBe(true)
+      for (const path of ['Notes/A.md', 'Notes/Target.md'])
+        expect((await handleMutate(root, { op: 'delete', path, kind: 'page' })).ok).toBe(true)
+      expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
+      const stash = (await readJsonObject(sidecarPath(notes, 'collection')))?.property_stash as
+        | Record<string, StashBlock>
+        | undefined
+      expect(stash?.[made.value.id]?.values ?? {}).not.toHaveProperty(page.value.id)
+    } finally {
+      closeSession()
+    }
+  })
 })
 
 describe('a re-assign that can’t refill a page', () => {

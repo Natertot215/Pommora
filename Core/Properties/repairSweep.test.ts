@@ -14,6 +14,9 @@ import { refreshTree } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { closeSession, openSession } from '../Nexus/session'
+import { handleMutate } from '../Nexus/mutate'
+import { listBundles } from '../Bundles/bundle'
 
 let root: string
 let page: string
@@ -89,6 +92,22 @@ describe('runRepairSweep', () => {
     )
     await runRepairSweep(root, await seedContentIndex(root))
     expect(await readFile(archived, 'utf8')).toContain('Status:\n  - Open\n---')
+  })
+
+  it('canonicalizes a drifted trashed page against the definitions of the Collection it left', async () => {
+    await openSession(root)
+    try {
+      expect(
+        (await handleMutate(root, { op: 'delete', path: 'Col/One.md', kind: 'page' })).ok,
+      ).toBe(true)
+    } finally {
+      closeSession()
+    }
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    page = join(root, bundle.bundlePath, 'One.md')
+    await frontmatter('Status:\n  - Open\n  - Open')
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open\n---')
   })
 
   it('walks the tree once however many re-read pages it checks', async () => {

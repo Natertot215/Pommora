@@ -18,6 +18,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { identityFor } from '../Testing/testTree'
 import { seedContentIndex } from '../Index/indexSeed'
+import { readIndexedStats } from '../Index/contentIndex'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -170,6 +171,23 @@ describe('a page delete', () => {
       { page: 'sp_work', property: RELATED.id, value: '[[Target]]' },
     ])
     await finishOwed(root)
+    expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a trashed bundle removed by hand leaves the index, and a cascade after it owes nothing', async () => {
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    await page(notes, 'One', 'Target')
+    await refreshTree(root)
+    const trashed = await del('Notes/One.md', 'page')
+    if (!trashed.ok || !trashed.value.bundled) throw new Error('the delete did not trash')
+    const bundle = join(root, trashed.value.bundled.bundlePath)
+    await rm(bundle, { recursive: true })
+    await applyEvents(root, [{ event: 'unlinkDir', absPath: bundle, origin: 'watched' }])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    expect(readIndexedStats(trashed.value.bundled.bundlePath)?.size).toBe(0)
+    const r = await del('Notes/Target.md', 'page')
+    expect(r.ok && r.value.cascade?.warning).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
   })
 

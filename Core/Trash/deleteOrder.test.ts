@@ -150,14 +150,15 @@ describe('the record is written before the destruction it describes', () => {
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
   })
 
-  it('a content delete records the Link values its strip takes before the artifact moves', async () => {
+  it('a content delete records the Link values its strip takes before its strip', async () => {
     const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(true)
-    expect(atSettle).toMatchObject({
+    expect(atSettle).not.toHaveProperty('links')
+    expect(atSweep).toMatchObject({
       entity: 'page',
       links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],
     })
-    expect(await anyRecord()).toEqual(atSettle)
+    expect(await anyRecord()).toEqual(atSweep)
   })
 
   it('a Space delete records what its holders held before the move strips a single tag', async () => {
@@ -188,7 +189,7 @@ describe('the record is written before the destruction it describes', () => {
     expect(atSweep).toEqual(atSettle)
   })
 
-  it('a delete from the Archive records, with the bundle it left, before the artifact moves', async () => {
+  it('a delete from the Archive records, with the bundle it left, before its strip', async () => {
     const archived = await handleMutate(root, {
       op: 'archive',
       path: 'Notes/Alpha.md',
@@ -198,7 +199,9 @@ describe('the record is written before the destruction it describes', () => {
     expect(archive).toBeDefined()
     const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' })
     expect(r.ok).toBe(true)
-    expect(atSettle).toMatchObject({
+    expect(atSettle).toMatchObject({ entity: 'page', archive })
+    expect(atSettle).not.toHaveProperty('links')
+    expect(atSweep).toMatchObject({
       entity: 'page',
       archive,
       links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],

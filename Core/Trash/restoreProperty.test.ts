@@ -460,6 +460,29 @@ describe('restoring a deleted property', () => {
     expect((await readJsonAt(join(root, space.value.path, '_space.json'))).Priority).toBe('hi')
   })
 
+  it('a property restore returns a value to a page that sat in the Trash through it', async () => {
+    const id = await seedPriority()
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('page failed')
+    await rewriteRootAt(
+      page.value.path,
+      rewriteRoot((raw) => landValue(raw, 'Priority', ['hi'])),
+    )
+    await refreshTree(root)
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' })).ok).toBe(
+      true,
+    )
+    const bundles = await listBundles(root, { kind: 'trash' })
+    const [property, trashed] = ['property', 'page'].map((entity) =>
+      bundles.find((b) => b.record.entity === entity),
+    )
+    await settledMutate(root, { op: 'restore', bundlePath: property?.bundlePath ?? '' })
+    expect(await valueOn(join(root, trashed?.bundlePath ?? '', 'A.md'), 'Priority')).toEqual(['hi'])
+    await settledMutate(root, { op: 'restore', bundlePath: trashed?.bundlePath ?? '' })
+    expect(await valueOn(page.value.path, 'Priority')).toEqual(['hi'])
+  })
+
   it.skipIf(noModeBits)(
     'a restore that can’t refill a page from its stash says so with Try Again',
     async () => {

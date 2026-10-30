@@ -224,8 +224,8 @@ function reindex(rows: readonly PageIndexRow[]): { renames: HeadingRenameSeen[];
 }
 
 export async function deindexPath(root: string, abs: string): Promise<IndexSeen> {
-  const rel = await relCorpusPath(root, abs)
-  if (!rel) return NOTHING_SEEN
+  const rel = relative(root, abs)
+  if (!rel || escapes(rel)) return NOTHING_SEEN
   if (isMarkdownFile(rel)) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
   const rows = readIndexedStats(rel) ?? new Map<string, IndexedStat>()
   removePathPrefixIndex(rel)

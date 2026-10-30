@@ -80,6 +80,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `storedSpaces`, `storedPageIds` (renamed from `archivedPageIds`), `rootFile`; `NexusPages.stored` | `Core/Nexus/heldPages.ts` | 4 |
 | `trashedOwners`, `trashReach` | `Core/Bundles/bundle.ts` | 4 |
 | `LinkStrip` • Type | `Core/Nexus/cascade.ts` | 4 |
+| `watchedUnder` (the watcher's and Sync manifest's one watch rule) | `Core/Paths/exclusion.ts` | 4 |
 | `owningCollection`'s and `containerSchema`'s `trashed` parameter; `listBundles`' `chain` parameter | `treePatch.ts`; `bundle.ts` | 4 |
 | `storedContainers` (from `archivedSets`), `containerSidecarsUnder` (from `setSidecarsUnder`) | `Core/Nexus/configReach.ts` | 4 |
 | `partitionGone`, `goneLink` (private) | `Core/Nexus/governedSweep.ts` | 4 |
@@ -280,8 +281,8 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 4** — Reach-In
   - [x] Task 4-1 · The store-of-path rule
   - [x] Task 4-2 · Trashed Spaces become holders
-  - [ ] Task 4-3 · The Trash is admitted and watched
-  - [ ] Task 4-4 · A cascade reaches the Trash by the record's Collection
+  - [x] Task 4-3 · The Trash is admitted and watched
+  - [x] Task 4-4 · A cascade reaches the Trash by the record's Collection
   - [ ] Task 4-5 · The returning side of the frozen model leaves
   - [ ] Task 4-6 · The holders' side of the frozen model leaves
   - [ ] Review Checkpoint
@@ -5243,7 +5244,7 @@ The stash schema moves into the property model, the one module a Collection side
     - "reads the Trash off disk where no index store opened."
   - **`spend.test.ts`, beside `:1974`, "of two trashed copies of one id the first restores and the second is refused as live" (Decision D-2).**
   - **`restoreProperty.test.ts`, "a property restore returns a value to a page that sat in the Trash through it" (B-2):** page A holds P; P is deleted; A is deleted; P is restored. A's trashed copy holds its value, and A's restore returns it.
-  - **`deleteReach.test.ts`, "a trashed bundle removed by hand leaves the index, and a cascade after it owes nothing":** trash a page holding `Related: "[[Target]]"` with `memoryStores` seeded, `rm` the bundle, `applyEvents` a watched `unlinkDir` of it, `settleNow`, then delete `Target`. The reply carries no warning and the notes are empty. It fails today because the row stays and the sweep reads the missing file as skipped.
+  - **`deleteReach.test.ts`, "a trashed bundle removed by hand leaves the index, and a cascade after it owes nothing":** trash a page holding `Related: "[[Target]]"` with `memoryStores` seeded, `rm` the bundle, `applyEvents` a watched `unlinkDir` of it, `settleNow`, then delete `Target`. The index holds no row under the bundle, the reply carries no warning, and the notes are empty. It passes today, since today's delete drops the row rather than moving it, and a stale row whose file is gone draws no warning either, so the index assertion is the one that tells: it fails without the AFTER's admission of a store's folders, where the watched removal leaves the moved row.
   - **`watcher.test.ts:671`**, rewritten from "still refuses .trash" to "watches the Trash's contents and refuses what's hidden or excluded below it, as Sync's manifest does":
     - `/nexus/.trash/Notes/<stamp>__A.md.deleted/A.md` → false.
     - `/nexus/.trash/Notes/.DS_Store` → true.
@@ -5408,6 +5409,10 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
   - `indexMaintenance.test.ts:197`, "a delete clears the rows", is retitled "a delete moves its rows under its bundle", and its expectations hold.
   - `indexMaintenance.test.ts:218`'s title becomes "a Set delete moves every row beneath it under its bundle; its restore moves each back", and its first `queryMentions(['beta'])` expects the trashed `Alpha.md`'s `.trash/…` path.
   - `restoreScrub.test.ts:194`, "a trashed copy the restore's refill couldn't write owes its value", becomes "a trashed holder the restore's refill couldn't write is named" (Decision D-5). The reply's `unrestored` is `['Beta']`, no relink entry holds `values`, and the `finishOwed` half leaves.
+- [ ] **Flips Found in Execution:**
+  - `indexSeed.test.ts`, "a removal of the Archive itself prunes every row beneath it", failed once the store root read `'hidden'`, since `deindexPath` gated on the corpus admission. A removal now prunes a path's rows whether or not it's admitted, and "a removal of the Trash itself prunes every row beneath it" joins it.
+  - `spend.test.ts:1217`, "a bundle without targets restores by the name", leaves here rather than in Task 4-5: the rename now reaches the trashed copy, so the frozen model it pins is already gone.
+  - `deleteReach.test.ts`'s new case gains `readIndexedStats(<bundle>)?.size` at 0, the one assertion that fails without the change.
 - [ ] `git grep -nw archiveSegs -- Core` and `git grep -n archivedPageIds -- Core` print nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -5800,7 +5805,6 @@ A restore now moves the item's bytes, as the Archive's restore does (*§The Rule
     - `:1`'s header becomes "// A trashed artifact stays current while it sits in the Trash, since every cascade reaches it there. These pin what it returns holding: the current keys, titles, and links, and its own Context key left for the rekey while a live Context holds its title."
   - **`spend.test.ts`:**
     - `:460-566`, the whole `describe('the bundle records the page each outbound link named')`, leaves with `targets`: "a page delete records each key, embeds included, resolved alone, and none ambiguous or phantom", "a page delete with no index records the same keys, read from its file", "a Set delete records them bundle-wide from the index, reading none of its pages", "a Space delete records the targets of its values", and "a record with targets round-trips, and one without them still reads".
-    - `:1217`, "a bundle without targets restores by the name", leaves.
     - `:1391` drops its `targets` expectation and is retitled "a trashed Context's Spaces' values follow a page renamed meanwhile".
     - `:1160` is retitled "keeps its body, and a page deleted meanwhile records the value it stripped from the trashed copy". Its expectations hold.
     - `:2443`, "a Collection comes back reconciled against the definitions its own sidecar assigns", leaves.
@@ -9418,10 +9422,10 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - Tests, as each task's VERIFY routes them:
   - `exclusion.test.ts:37,173-189` — Tasks 4-1 and 4-3
   - `walk.test.ts:77` and `indexMaintenance.test.ts:197,218` — Task 4-3
-  - `watcher.test.ts:671` and `restoreScrub.test.ts:194` — Task 4-3
+  - `watcher.test.ts:671`, `restoreScrub.test.ts:194`, `spend.test.ts:1217`, and `indexSeed.test.ts:119` — Task 4-3
   - `restoreScrub.test.ts:553` — Task 4-2
   - `restoreScrub.test.ts:516` and `spend.test.ts:2638,2660` — Task 4-4
-  - `archive.test.ts:1135`, `spend.test.ts:460-566,1160,1217,1391,2443`, the scrub's cases and `restoreScrub.test.ts:1`'s header, and `renameFrontmatterKey`'s tests — Task 4-5
+  - `archive.test.ts:1135`, `spend.test.ts:460-566,1160,1391,2443`, the scrub's cases and `restoreScrub.test.ts:1`'s header, and `renameFrontmatterKey`'s tests — Task 4-5
   - `spend.test.ts:1005` and `trashedCopies.test.ts` — Task 4-6
 - `Core/Nexus/mutateRequest.ts:20` — "Where a removal filed what it took" (`bundled`) — Task 5-2
 - `Core/Nexus/mutateRequest.ts:48` — "returning the item to the address its record names" — Task 5-2
@@ -9494,6 +9498,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 2:** Task 2-3's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`; the checkpoint made a delete's finish gather ahead of every strip, as the empty's does, so a Try Again records what it strips; gave `Departing` a Space-by-id arm, so a Space delete cut short after its move leaves the Context's Space order, replacing a branch that couldn't fire; and pointed `archivedWithin` at `currentOrigin`.
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
+- **Phase 4 · Tasks 4-3 and 4-4 Land as One Commit:** Task 4-3 alone left a trashed page's stashed value unreached (`refillStash`'s `members` needs `owningCollection`'s Trash arm, which Task 4-4 adds), so the two commit together; Task 4-3 also writes the watcher's and Sync's manifest's shared watch rule once (`watchedUnder`) and has `deindexPath` prune a removed path's rows whether or not it's content.
 - **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
 - **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.

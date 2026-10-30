@@ -8,7 +8,7 @@ import { buildPageIndex } from '../Connections/pageIndex'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { indexWrittenPages } from '../Index/indexSeed'
+import { indexWrittenPages, seedContentIndex } from '../Index/indexSeed'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 
 const held = { tree: null as NexusTree | null }
@@ -151,6 +151,62 @@ describe('nexusPages — the tree and the Archive by id', () => {
   })
 
   it('reads the Archive off disk where no index store opened', async () => {
+    const indexed = await nexusPages(root, tree(root))
+    installStores(NO_STORES)
+    expect(await nexusPages(root, tree(root))).toEqual(indexed)
+  })
+})
+
+describe('nexusPages — the Trash by id', () => {
+  let root: string
+  const PT = '01KVGMT8BFP350FZZXAMG1QTRS'
+  const GONE = '.trash/Notes/2026-10-20T12-00-00-000Z__Gone.md.deleted/Gone.md'
+  const AGAIN = '.trash/Notes/2026-10-20T12-00-01-000Z__Gone.md.deleted/Gone.md'
+  const OLD = '.nexus/archive/cN/Notes/2026-10-20T12-00-00-000Z__Old.md.archived/Old.md'
+  const store = async (rel: string, id: string): Promise<void> => {
+    const file = join(root, rel)
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, `---\nID: ${id}\n---\nb\n`)
+    await indexWrittenPages(root, [{ absPath: file }])
+  }
+
+  beforeEach(async () => {
+    root = tempRoot('pom-nexuspages-trashed-')
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    installStores(memoryStores().stores)
+  })
+  afterEach(async () => {
+    installStores(NO_STORES)
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('holds a trashed page at its store path and leaves it out of `archived`', async () => {
+    await store(GONE, PT)
+    const { byId, archived } = await nexusPages(root, tree(root))
+    expect(byId.get(PT)).toEqual({ id: PT, kind: 'page', title: 'Gone', path: GONE })
+    expect(archived).toEqual([])
+  })
+
+  it('a live page sharing a trashed page’s id keeps its entry', async () => {
+    await store(GONE, 'pA')
+    expect((await nexusPages(root, tree(root))).byId.get('pA')?.path).toBe('Notes/A.md')
+  })
+
+  it('an archived page sharing it keeps its entry', async () => {
+    await store(GONE, PT)
+    await store(OLD, PT)
+    expect((await nexusPages(root, tree(root))).byId.get(PT)?.path).toBe(OLD)
+  })
+
+  it('of two trashed copies of one id the first listed claims it and neither nulls it', async () => {
+    await store(GONE, PT)
+    await store(AGAIN, PT)
+    expect((await nexusPages(root, tree(root))).byId.get(PT)?.path).toBe(GONE)
+  })
+
+  it('reads the Trash off disk where no index store opened', async () => {
+    await store(GONE, PT)
+    await seedContentIndex(root)
     const indexed = await nexusPages(root, tree(root))
     installStores(NO_STORES)
     expect(await nexusPages(root, tree(root))).toEqual(indexed)

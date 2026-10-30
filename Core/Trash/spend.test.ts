@@ -32,6 +32,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { newId, shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import { nexusPages } from '../Nexus/heldPages'
 import { refillTrashed } from './trashedCopies'
 import type { ContextsRegistry } from '../Contexts/contexts'
 import type { RestoreDestination } from '../Nexus/mutateRequest'
@@ -1079,23 +1080,6 @@ describe('restore — the returning page’s links follow the pages they named',
     )
   })
 
-  it('a bundle without targets restores by the name', async () => {
-    await del(ALPHA)
-    const [listed] = await listBundles(root, { kind: 'trash' })
-    const recordFile = join(root, listed.bundlePath, '_record.json')
-    const { targets: _, ...without } = JSON.parse(await readFile(recordFile, 'utf8'))
-    await writeFile(recordFile, JSON.stringify(without))
-    const renamed = await settledMutate(root, {
-      op: 'rename',
-      path: 'Notes/Beta.md',
-      kind: 'page',
-      newName: 'Gamma',
-    })
-    expect(renamed.ok).toBe(true)
-    await restore('Alpha.md')
-    expect(await text(ALPHA)).toBe(`---\nID: ${PAGE_A}\n---\n[[Beta]] ![[Beta]]`)
-  })
-
   it('a Set restore keeps a value naming a page it holds that carries no ID', async () => {
     const gamma = 'Notes/Daily/Gamma.md'
     await write(gamma, '01KVGMT8BFP350FZZXAMG1QDVG', 'Related: "[[Omega]]"\n', 'gamma')
@@ -1748,6 +1732,25 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_A]: { icon: 'star' } })
   })
 
+  it('of two trashed copies of one id the first restores and the second is refused as live', async () => {
+    await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)
+    await refreshTree(root)
+    for (const path of ['Notes/Daily/Alpha copy.md', 'Notes/Daily/Alpha.md'])
+      expect((await settledMutate(root, { op: 'delete', path, kind: 'page' })).ok).toBe(true)
+    const claimed = (await nexusPages(root, await liveTree.liveTreeOf(root))).byId.get(PAGE_A)
+    const bundles = await listBundles(root, { kind: 'trash' })
+    const first = bundles.find((b) => claimed?.path.startsWith(`${b.bundlePath}/`))
+    const second = bundles.find((b) => b !== first)
+    const restore = (bundlePath = '') => settledMutate(root, { op: 'restore', bundlePath })
+    const live = {
+      ok: false,
+      error: { message: 'Something in the nexus already carries this identity.' },
+    }
+    expect(await restore(second?.bundlePath)).toMatchObject(live)
+    expect((await restore(first?.bundlePath)).ok).toBe(true)
+    expect(await restore(second?.bundlePath)).toMatchObject(live)
+  })
+
   it('refuses a chain folder that merely wears the suffix, bundles and all', async () => {
     // `.trash` mirrors the nexus, so a user's own folder can wear the bundle name anywhere in the chain. Path, root and suffix all pass here; only the record test refuses it.
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
@@ -2229,49 +2232,56 @@ describe('a partly recorded entry', () => {
   })
 })
 
-describe('emptying a property’s Trash entry', () => {
-  let tasks: string
-  let tasksPage: string
-  let propertyId: string
-  const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
+let tasks: string
+let tasksPage: string
+let propertyId: string
+const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
+const bundleOf = async (entity: string, artifact?: string): Promise<string> => {
+  const found = (await listBundles(root, { kind: 'trash' })).find(
+    (b) => b.record.entity === entity && (!artifact || b.artifactName === artifact),
+  )
+  if (!found) throw new Error(`no ${entity} bundle`)
+  return found.bundlePath
+}
+const trashedNotes = async (): Promise<string> =>
+  join(root, await bundleOf('collection', 'Notes'), 'Notes')
+const priorityOn = async (file: string): Promise<unknown> =>
+  splitFrontmatter(await readFile(file, 'utf8')).Priority
+const restoreTasks = async (): Promise<unknown> =>
+  settledMutate(root, { op: 'restore', bundlePath: await bundleOf('collection', 'Tasks') })
 
+async function seedPriority(): Promise<void> {
+  const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
+  const created = await createProperty(root, {
+    label: 'Priority',
+    type: 'select',
+    select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
+  })
+  if (!made.ok || !created.ok) throw new Error('setup failed')
+  tasks = made.value.path
+  propertyId = created.value.id
+  await assignProperty(root, tasks, propertyId)
+  await assignProperty(root, join(root, 'Notes'), propertyId)
+  const page = await createTestPage(tasks, 'Task', { body: 'b' })
+  if (!page.ok) throw new Error('setup failed')
+  tasksPage = page.value.path
+  for (const file of [tasksPage, alpha()])
+    await rewriteRootAt(
+      file,
+      rewriteRoot((raw) => landValue(raw, 'Priority', ['hi'])),
+    )
+  await refreshTree(root)
+  for (const path of ['Tasks', 'Notes'])
+    await settledMutate(root, { op: 'delete', path, kind: 'collection' })
+}
+
+describe('emptying a property’s Trash entry', () => {
   beforeEach(async () => {
-    const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
-    const created = await createProperty(root, {
-      label: 'Priority',
-      type: 'select',
-      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
-    })
-    if (!made.ok || !created.ok) throw new Error('setup failed')
-    tasks = made.value.path
-    propertyId = created.value.id
-    await assignProperty(root, tasks, propertyId)
-    await assignProperty(root, join(root, 'Notes'), propertyId)
-    const page = await createTestPage(tasks, 'Task', { body: 'b' })
-    if (!page.ok) throw new Error('setup failed')
-    tasksPage = page.value.path
-    for (const file of [tasksPage, alpha()])
-      await rewriteRootAt(
-        file,
-        rewriteRoot((raw) => landValue(raw, 'Priority', ['hi'])),
-      )
-    await refreshTree(root)
-    for (const path of ['Tasks', 'Notes'])
-      await settledMutate(root, { op: 'delete', path, kind: 'collection' })
+    await seedPriority()
     await settledMutate(root, { op: 'deleteProperty', propertyId })
-    const tasksBundle = await bundleOf('collection', 'Tasks')
-    await settledMutate(root, { op: 'restore', bundlePath: tasksBundle })
+    await restoreTasks()
   })
 
-  const bundleOf = async (entity: string, artifact?: string): Promise<string> => {
-    const found = (await listBundles(root, { kind: 'trash' })).find(
-      (b) => b.record.entity === entity && (!artifact || b.artifactName === artifact),
-    )
-    if (!found) throw new Error(`no ${entity} bundle`)
-    return found.bundlePath
-  }
-  const trashedNotes = async (): Promise<string> =>
-    join(root, await bundleOf('collection', 'Notes'), 'Notes')
   // The system trash takes the bundle away, so no Trash entry for the property remains.
   const empty = async (): Promise<MutateReply> => {
     installMachine({
@@ -2280,8 +2290,6 @@ describe('emptying a property’s Trash entry', () => {
     })
     return handleMutate(root, { op: 'emptyBundle', bundlePath: await bundleOf('property') })
   }
-  const priorityOn = async (file: string): Promise<unknown> =>
-    splitFrontmatter(await readFile(file, 'utf8')).Priority
 
   it('emptying a property’s Trash entry drops it from every Collection still listing it', async () => {
     expect((await empty()).ok).toBe(true)
@@ -2297,15 +2305,33 @@ describe('emptying a property’s Trash entry', () => {
     expect(await priorityOn(join(notes, 'Daily', 'Alpha.md'))).toBeUndefined()
   })
 
+  it('a later property reusing a deleted property’s key inherits nothing', async () => {
+    const again = await createProperty(root, {
+      label: 'Priority',
+      type: 'select',
+      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
+    })
+    if (!again.ok) throw new Error('setup failed')
+    expect((await empty()).ok).toBe(true)
+    expect(await priorityOn(tasksPage)).toBeUndefined()
+  })
+})
+
+describe('a property delete’s strip', () => {
+  beforeEach(async () => {
+    await seedPriority()
+    await restoreTasks()
+  })
+
   it.skipIf(noModeBits).each(['the live page', 'the trashed page'])(
-    'an empty that misses %s offers Try Again',
+    'a property delete that misses %s offers Try Again',
     async (which) => {
       const file =
         which === 'the live page' ? tasksPage : join(await trashedNotes(), 'Daily', 'Alpha.md')
       const { chmod } = await import('node:fs/promises')
       await chmod(file, 0o000)
       try {
-        const r = await empty()
+        const r = await handleMutate(root, { op: 'deleteProperty', propertyId })
         expect(r.ok && r.value.cascade?.owed).toBe(true)
         expect(await readNotes(root)).toEqual({
           [propertyId]: expect.objectContaining({ strip: ['Priority'] }),
@@ -2319,14 +2345,22 @@ describe('emptying a property’s Trash entry', () => {
     },
   )
 
-  it('a live property holding the key keeps it', async () => {
-    const again = await createProperty(root, {
-      label: 'Priority',
-      type: 'select',
-      select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
+  it.skipIf(noModeBits)('an owed strip leaves a key a later property took', async () => {
+    const { chmod } = await import('node:fs/promises')
+    await chmod(tasksPage, 0o000)
+    try {
+      await handleMutate(root, { op: 'deleteProperty', propertyId })
+      await seedNexus(root, {
+        defs: [{ id: 'prop_again', label: 'Priority', key: 'Priority', type: 'text' }],
+      })
+    } finally {
+      await chmod(tasksPage, 0o644)
+    }
+    expect(await readNotes(root)).toEqual({
+      [propertyId]: expect.objectContaining({ strip: ['Priority'] }),
     })
-    if (!again.ok) throw new Error('setup failed')
-    expect((await empty()).ok).toBe(true)
+    await finishOwed(root)
     expect(await priorityOn(tasksPage)).toEqual(['hi'])
+    expect(await readNotes(root)).toEqual({})
   })
 })

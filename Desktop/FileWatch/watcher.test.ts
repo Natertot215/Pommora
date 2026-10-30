@@ -673,10 +673,15 @@ describe('isConfigPath', () => {
 describe('syncIgnoredUnder beside the classifier', () => {
   const scope = (assetDir: string) => ({ excluded: [], assetDir })
 
-  it('still refuses .trash', () => {
-    expect(syncIgnoredUnder('/nexus', scope('.nexus/assets'))('/nexus/.trash/Notes/gone.md')).toBe(
-      true,
-    )
+  it('watches the Trash’s contents and refuses what’s hidden or excluded below it, as Sync’s manifest does', () => {
+    const ignored = syncIgnoredUnder('/nexus', scope('.nexus/assets'))
+    expect(ignored('/nexus/.trash/Notes/2026-10-20T12-00-00-000Z__A.md.deleted/A.md')).toBe(false)
+    expect(ignored('/nexus/.trash/Notes/.DS_Store')).toBe(true)
+    const excluding = syncIgnoredUnder('/nexus', {
+      excluded: ['Hidden'],
+      assetDir: '.nexus/assets',
+    })
+    expect(excluding('/nexus/.trash/Hidden/x.md')).toBe(true)
   })
 
   it('the asset root escapes the cruft rules; what sits below it does not', () => {

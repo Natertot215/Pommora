@@ -15,7 +15,7 @@ import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
-import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, tileDocPath } from '../Paths/paths'
 import * as bundle from '../Bundles/bundle'
 import { listBundles } from '../Bundles/bundle'
 import { parkLinks } from './trashedCopies'
@@ -1029,6 +1029,75 @@ describe('an item pulled out of a trashed bundle', () => {
       artifactName: 'Kept.md',
       record: { id: ALEPH_ID, parent: { kind: 'container', id: 'set-sub' }, trail: ['col-plain'] },
     })
+  })
+
+  it('a property deleted while a Collection sat in the Trash leaves its saved views, as a live Collection’s', async () => {
+    const view = {
+      id: 'view_main',
+      name: 'Main',
+      type: 'table',
+      property_order: ['prop_status', 'prop_related'],
+      hidden_properties: ['prop_status'],
+      filter: { match: 'all', rules: [{ property_id: 'prop_status', op: 'is', values: ['live'] }] },
+    }
+    const sidecar = join(root, 'Journal', '_pagecollection.json')
+    await putJson(sidecar, { ...(await readJsonAt(sidecar)), views: [view] })
+    await del('Journal', 'collection')
+    expect(
+      (await settledMutate(root, { op: 'deleteProperty', propertyId: 'prop_status' })).ok,
+    ).toBe(true)
+    await restoreRow('Journal')
+    const [kept] = (await readJsonAt(sidecar)).views as Record<string, unknown>[]
+    expect(kept).toMatchObject({ id: 'view_main', property_order: ['prop_related'] })
+    expect(JSON.stringify(kept)).not.toContain('prop_status')
+  })
+
+  it('a trashed Space’s tile docs lose a deleted Collection’s sources, as a live Space’s do', async () => {
+    const doc = {
+      tiles: [
+        {
+          id: 't',
+          type: 'view',
+          views: [{ source_id: 'col-plain', config: located('set-daily') }],
+        },
+      ],
+    }
+    const boards = ['Projects/Pommora', 'Areas/Health'].map((space) =>
+      tileDocPath(join(contextsDir(root), space)),
+    )
+    for (const board of boards) await putJson(board, doc)
+    await del('.nexus/contexts/Areas/Health', 'space')
+    await del('Journal', 'collection')
+    const [trashed] = (await listBundles(root, { kind: 'trash' })).filter(
+      (b) => b.record.entity === 'space',
+    )
+    const tiles = [boards[0], tileDocPath(join(root, trashed.bundlePath, 'Health'))]
+    const { filter, ...unfiltered } = located('set-daily')
+    for (const board of tiles)
+      expect(
+        ((await readJsonAt(board)).tiles as { views: { config: unknown }[] }[])[0].views[0].config,
+      ).toEqual(unfiltered)
+  })
+
+  it('a Set moved to another Collection takes its location from the views a Set trashed from the Collection it left holds', async () => {
+    await putJson(join(root, 'Journal', 'Weekly', '_pageset.json'), {
+      id: 'set-weekly',
+      views: [located('set-daily')],
+    })
+    await del('Journal/Weekly', 'set')
+    await refreshTree(root)
+    const moved = await settledMutate(root, {
+      op: 'moveSet',
+      path: 'Journal/Daily',
+      newParentPath: 'Plain',
+      order: ['set-daily'],
+    })
+    expect(moved.ok).toBe(true)
+    const weekly = await bundleOf('Weekly')
+    const { filter, ...unfiltered } = located('set-daily')
+    expect((await readJsonAt(join(root, weekly, 'Weekly', '_pageset.json'))).views).toEqual([
+      unfiltered,
+    ])
   })
 
   it.each([

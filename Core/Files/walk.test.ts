@@ -74,18 +74,27 @@ describe('corpusFiles', () => {
     expect(await corpusFiles(join(root, 'nope'), scope())).toEqual([])
   })
 
-  it('never reads inside `.trash`, `.nexus` outside its Archive, or an excluded folder', async () => {
+  it('reads the Trash’s bundles alone, never a leftover beside them, `.nexus` outside its Archive, or an excluded folder', async () => {
+    const trashed = '.trash/Notes/2026-10-20T12-00-00-000Z__k.md.deleted'
     await mkdir(join(root, '.trash', 'deep'), { recursive: true })
+    await mkdir(join(root, trashed), { recursive: true })
     await mkdir(join(root, 'Hidden', 'deep'), { recursive: true })
     await writeFile(join(root, '.trash', 'deep', 'gone.md'), 'x', 'utf8')
-    expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual(['a.md', 'sub/b.md'])
+    await writeFile(join(root, trashed, 'k.md'), 'x', 'utf8')
+    expect((await corpusFiles(root, scope(['Hidden']))).sort()).toEqual([
+      `${trashed}/k.md`,
+      'a.md',
+      'sub/b.md',
+    ])
     const opened = readSpy.mock.calls.map((c) => relative(root, String(c[0])))
-    expect(opened).toEqual(['', 'sub', '.nexus/archive'])
+    expect(opened.sort()).toEqual(
+      ['', 'sub', '.nexus/archive', '.trash', '.trash/deep', '.trash/Notes', trashed].sort(),
+    )
   })
 })
 
 describe('sidecarsUnder', () => {
-  it('lists every container sidecar under both content roots, or under one folder, and never inside a hidden folder', async () => {
+  it('lists every container sidecar under every content root, or under one folder, and never inside a hidden folder', async () => {
     const archived =
       '.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json'
     for (const rel of [

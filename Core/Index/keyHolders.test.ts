@@ -15,6 +15,11 @@ import { findHolders, heldValues } from './keyHolders'
 import { readPageRelations } from './contentIndex'
 import { collectionFolders, sweepGovernedRoots } from '../Nexus/governedSweep'
 import { splitFrontmatter } from '../Files/pageFile'
+import { closeSession, openSession } from '../Nexus/session'
+import { settledMutate } from '../Testing/settledMutate'
+import type { MutateRequest } from '../Nexus/mutateRequest'
+import { listBundles } from '../Bundles/bundle'
+import { writeRecord } from '../Bundles/record'
 
 vi.mock('../Nexus/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Nexus/governedSweep')>()
@@ -293,6 +298,41 @@ describe('findHolders', () => {
     expect((await renameOption(root, 'prop_s', 'opt_Draft', 'Sketch')).ok).toBe(true)
     expect(await readFile(held, 'utf8')).toContain('Sketch')
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
+  })
+
+  it('a governed reach takes a trashed page and a trashed Collection’s pages by their record, a Collection renamed since included, and leaves one that left no Collection', async () => {
+    await mkdir(abs('Tasks'))
+    await writeFile(
+      abs('Tasks', '_pagecollection.json'),
+      JSON.stringify({ id: 'c2', properties: ['prop_s'] }),
+    )
+    await writeFile(abs('Tasks', 'Task.md'), pageText('T', 'Stage: Draft\n'))
+    const rootLeft = abs('.trash', '2026-10-20T12-00-00-000Z__Note.md.deleted')
+    await mkdir(rootLeft, { recursive: true })
+    await writeFile(join(rootLeft, 'Note.md'), pageText('N', 'Stage: Draft\n'))
+    await writeRecord(rootLeft, { entity: 'page', parent: { kind: 'root' } })
+    await openSession(root)
+    try {
+      const reqs: MutateRequest[] = [
+        { op: 'delete', path: 'Notes/HolderA.md', kind: 'page' },
+        { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+        { op: 'delete', path: 'Tasks', kind: 'collection' },
+      ]
+      for (const req of reqs) expect((await settledMutate(root, req)).ok).toBe(true)
+    } finally {
+      closeSession()
+    }
+    await seedContentIndex(root)
+    const trashed = await listBundles(root, { kind: 'trash' })
+    const at = (file: string): string =>
+      abs(trashed.find((b) => b.artifactName === file.split('/')[0])!.bundlePath, file)
+    const trashOnly = (files: string[]): string[] => files.filter((f) => f.includes('/.trash/'))
+    expect(trashOnly(await stage()).sort()).toEqual([at('HolderA.md'), at('Tasks/Task.md')].sort())
+    const journal = await findHolders(root, {
+      keys: ['Stage'],
+      reach: { collection: abs('Journal') },
+    })
+    expect(trashOnly(journal.files)).toEqual([at('HolderA.md')])
   })
 
   it('collectionFolders lists every collection folder from the live tree', async () => {

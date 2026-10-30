@@ -126,6 +126,16 @@ describe('seedContentIndex', () => {
     expect(readIndexedStats('.nexus/archive')?.size).toBe(0)
   })
 
+  it('a removal of the Trash itself prunes every row beneath it', async () => {
+    const page = '.trash/Notes/2026-10-20T12-00-00-000Z__Old.md.deleted/Old.md'
+    await mkdir(dirname(abs(page)), { recursive: true })
+    await writeFile(abs(page), `---\nID: ${ULID_B}\n---\n\nold\n`)
+    await seedContentIndex(root)
+    const seen = await deindexPath(root, abs('.trash'))
+    expect(seen.vanished).toEqual([{ id: ULID_B, title: 'Old', path: page }])
+    expect(readIndexedStats('.trash')?.size).toBe(0)
+  })
+
   it('writes and moves index only what the corpus admits: hidden and excluded paths get no rows', async () => {
     await seedContentIndex(root)
     await mkdir(abs('.obsidian', 'plugins'), { recursive: true })

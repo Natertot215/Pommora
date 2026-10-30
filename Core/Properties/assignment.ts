@@ -3,6 +3,7 @@ import { placeAt } from '@pommora/uix/Utilities/moveItem'
 import { isAtOrUnder, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
+import { trashedOwners } from '../Bundles/bundle'
 import { patchSidecar } from '../Files/sidecar'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -37,27 +38,26 @@ export async function refillStash(
   if (!def) return 0
   const { values } = stash
   const { byId, archived } = await nexusPages(root, tree)
+  const trashed = await trashedOwners(root)
   const members = new Map(
     Object.keys(values).flatMap((id) => {
       const r = byId.get(id)
-      return r?.kind === 'page' && owningCollection(tree, r.path)?.id === collectionId
+      return r?.kind === 'page' && owningCollection(tree, r.path, trashed)?.id === collectionId
         ? [[id, r] as const]
         : []
     }),
   )
   // The Trash is listed only when a stashed id is missing from the tree, since the listing opens every trashed Set's pages.
   const unplaced = new Set(Object.keys(values).filter((id) => !byId.has(id)))
-  const trashed = unplaced.size
+  const copies = unplaced.size
     ? await trashedHolders(root, unplaced, collectionId)
     : new Map<string, string>()
   // A page the tree couldn't read under the Collection could be any id it can't place, so while one is, those stay owed.
   const unread = tree.unreadable?.some((u) => isAtOrUnder(u.path, relative(root, folder)))
-  const unfound = unread ? [...unplaced].filter((id) => !trashed.has(id)) : []
+  const unfound = unread ? [...unplaced].filter((id) => !copies.has(id)) : []
   const roots: RootsById = new Map<string, Pick<EntityRecord, 'kind' | 'path'>>([
     ...members,
-    ...[...trashed].map(
-      ([id, file]) => [id, { kind: 'page', path: relative(root, file) }] as const,
-    ),
+    ...[...copies].map(([id, file]) => [id, { kind: 'page', path: relative(root, file) }] as const),
   ])
   const frozen = frozenWorld(linkWorld(tree, archived))
   // A stashed Link naming a page gone leaves the stash: one whose page the Trash holds joins its bundle, one naming nothing is dropped.

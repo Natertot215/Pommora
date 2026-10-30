@@ -72,7 +72,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
     await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
   }
   if (record.entity === 'property') {
-    // Gone for good once its bundle goes, so its delete's finish reaches the Trash too; what it misses stays owed, so Try Again reaches it.
+    // Gone for good once its bundle goes, so its delete's finish takes its assignment from the Collections the Trash holds too; what it misses stays owed, so Try Again reaches it.
     const key = asString(record.def.key)
     const noted = await editNote(root, record.id, (e) => ({
       ...propertyNote(e),

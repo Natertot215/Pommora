@@ -185,7 +185,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(await readNotes(root)).toEqual({})
   })
 
-  it('a trashed copy the restore’s refill couldn’t write owes its value', async () => {
+  it('a trashed holder the restore’s refill couldn’t write is named', async () => {
     await seedNexus(root, { defs: [PRIORITY, RELATED], assigned: { Notes: [PROP, LINK] } })
     const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
     await writeFile(
@@ -197,24 +197,16 @@ describe('a returning artifact is reconciled against the world it comes back to'
       expect((await settledMutate(root, { op: 'delete', path, kind: 'page' })).ok).toBe(true)
     const bundles = await listBundles(root, { kind: 'trash' })
     const alpha = bundles.find((b) => b.artifactName === 'Alpha.md')
-    const copy = join(
-      bundles.find((b) => b.artifactName === 'Beta.md')?.bundlePath ?? '',
-      'Beta.md',
-    )
     const failing = failLandings(trashPage)
     try {
       const r = await settledMutate(root, { op: 'restore', bundlePath: alpha?.bundlePath ?? '' })
-      expect(r.ok && r.value.cascade?.owed).toBe(true)
+      expect(r.ok && r.value.unrestored).toEqual(['Beta'])
     } finally {
       failing.mockRestore()
     }
-    expect((await readNotes(root))['Notes/Alpha.md']).toMatchObject({
-      kind: 'relink',
-      values: { [copy]: { Related: { to: '[[Alpha]]' } } },
-    })
-    await finishOwed(root)
-    expect((await fm(copy)).Related).toBe('[[Alpha]]')
-    expect(await readNotes(root)).toEqual({})
+    expect(Object.values(await readNotes(root))).not.toContainEqual(
+      expect.objectContaining({ kind: 'relink', values: expect.anything() }),
+    )
   })
 
   it.skipIf(noModeBits)(
@@ -499,13 +491,27 @@ describe('a returning page takes the current keys', () => {
     expect(f).not.toHaveProperty('Due-Date')
   })
 
-  it('leaves a key whose property was renamed while it sat in the Trash as written', async () => {
+  it('a page that sat in the Trash through a property, option, Space, and Context rename returns holding the new names', async () => {
     await cycle('Notes/Alpha.md', 'page', async () => {
-      await priority({ label: 'Urgency', key: 'Urgency' })
+      for (const req of [
+        { op: 'renameProperty', propertyId: PROP, label: 'Urgency' },
+        { op: 'renameOption', propertyId: PROP, optionId: 'opt_hi', label: 'high' },
+        { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pommora 2' },
+        { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
+      ] as const)
+        expect((await settledMutate(root, req)).ok).toBe(true)
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      const trashed = await fm(join(listed.bundlePath, 'Alpha.md'))
+      expect(trashed.Urgency).toEqual(['high'])
+      expect(trashed['<Ventures>']).toEqual(['Pommora 2'])
+      expect(trashed).not.toHaveProperty('Priority')
+      expect(trashed).not.toHaveProperty('<Projects>')
     })
     const f = await fm('Notes/Alpha.md')
-    expect(f.Priority).toBe('hi')
-    expect(f).not.toHaveProperty('Urgency')
+    expect(f.Urgency).toEqual(['high'])
+    expect(f['<Ventures>']).toEqual(['Pommora 2'])
+    expect(f).not.toHaveProperty('Priority')
+    expect(f).not.toHaveProperty('<Projects>')
   })
 })
 

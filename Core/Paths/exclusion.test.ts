@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL, archiveSegs, thumbsRel } from './nexusPaths'
+import { ASSETS_DIR_REL, thumbsRel } from './nexusPaths'
 import {
   assetMatcher,
   excludedMatcher,
@@ -26,9 +26,9 @@ describe('outsideContent', () => {
     expect(outsideContent('Notes/_Idea.md', scope())).toBe('hidden')
   })
 
-  it('admits the Archive, the one hidden folder read as content, while a hidden folder inside it stays hidden', () => {
+  it('admits the Archive’s contents, past its root, while a hidden folder inside it stays hidden', () => {
     const page = '.nexus/archive/C1/Alpha/2026-10-20T12-00-00-000Z__Beta.archived/Beta/Notes.md'
-    expect(outsideContent('.nexus/archive', scope())).toBeNull()
+    expect(outsideContent('.nexus/archive', scope())).toBe('hidden')
     expect(outsideContent('.nexus/archive/C1', scope())).toBeNull()
     expect(outsideContent(page, scope())).toBeNull()
     expect(
@@ -39,6 +39,22 @@ describe('outsideContent', () => {
     ).toBe('hidden')
     expect(outsideContent('.nexus/settings.json', scope())).toBe('hidden')
     expect(outsideContent('.nexus/contexts/Areas/Home', scope())).toBe('hidden')
+  })
+
+  it('admits a page inside either store’s bundle, hides one beside the bundles, and judges a stored page where it lived', () => {
+    const stamp = '2026-10-20T12-00-00-000Z'
+    expect(outsideContent(`.trash/Notes/${stamp}__A.md.deleted/A.md`, scope())).toBeNull()
+    expect(outsideContent('.trash/Notes', scope())).toBeNull()
+    expect(outsideContent(`.trash/Notes/${stamp}__x.md`, scope())).toBe('hidden')
+    expect(outsideContent(`.trash/${stamp}__A.md.deleted/_record.json`, scope())).toBe('hidden')
+    expect(outsideContent('.nexus/archive/C1/loose.md', scope())).toBe('hidden')
+    expect(outsideContent('.trash', scope())).toBe('hidden')
+    expect(outsideContent(`.trash/Notes/${stamp}__P.md.deleted/P.md`, scope(['Notes']))).toBe(
+      'excluded',
+    )
+    expect(
+      outsideContent(`.nexus/archive/C1/Notes/${stamp}__P.md.archived/P.md`, scope(['Notes'])),
+    ).toBe('excluded')
   })
 
   it('keeps normal paths', () => {
@@ -160,15 +176,5 @@ describe('manifestAdmits', () => {
 
   it('refuses a thumbnail cache under any nexus id', () => {
     expect(admits(`${ASSETS_DIR_REL}/OTHER-ID/thumbnails/a.jpg`)).toBe(false)
-  })
-})
-
-describe('the Archive’s segments', () => {
-  it('answers the segments below .nexus/archive, and null outside it', () => {
-    expect(archiveSegs(['.nexus', 'archive'])).toEqual([])
-    expect(archiveSegs(['.nexus', 'archive', 'C1', 'A.md'])).toEqual(['C1', 'A.md'])
-    expect(archiveSegs(['.nexus'])).toBeNull()
-    expect(archiveSegs(['.nexus', 'contexts'])).toBeNull()
-    expect(archiveSegs(['Notes', 'archive'])).toBeNull()
   })
 })

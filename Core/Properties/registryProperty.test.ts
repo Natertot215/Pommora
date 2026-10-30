@@ -44,6 +44,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { findHolders } from '../Index/keyHolders'
 import { archiveDirRel } from '../Paths/bundleLayout'
 import { machine } from '../Platform/machine'
+import { writeRecord } from '../Bundles/record'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 
@@ -369,6 +370,25 @@ describe('renameProperty and configureProperty', () => {
     expect((await renameProperty(root, c.value.id, 'Description')).ok).toBe(true)
     expect((await readRegistry(root)).defs[c.value.id].label).toBe('Description')
     expect(await readFile(p.value.path, 'utf8')).toBe(held)
+  })
+
+  it('a property rename leaves an ungoverned trashed page’s bare key, as a live one’s', async () => {
+    const c = await createProperty(root, def({ label: 'Priority', type: 'text' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const bundle = join(root, '.trash', '2026-10-20T12-00-00-000Z__Note.md.deleted')
+    await mkdir(bundle, { recursive: true })
+    await writeRecord(bundle, { entity: 'page', parent: { kind: 'root' } })
+    const held = new Map(
+      [join(root, 'Loose.md'), join(bundle, 'Note.md')].map((file) => [
+        file,
+        `---\nID: ${newContentId('page')}\nPriority: x\n---\nb\n`,
+      ]),
+    )
+    for (const [file, text] of held) await writeFile(file, text)
+    expect((await renameProperty(root, c.value.id, 'Urgency')).ok).toBe(true)
+    for (const [file, text] of held) expect(await readFile(file, 'utf8')).toBe(text)
   })
 
   it('a change of case alone moves the key on every holder and clears its note', async () => {
