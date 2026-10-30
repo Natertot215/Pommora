@@ -22,9 +22,13 @@ beforeEach(() => {
   installMachine(m.machine)
   for (const d of [ROOT, join(ROOT, 'Notes'), join(ROOT, 'Hidden'), join(ROOT, '.trash')])
     fs.dirs.add(d)
-  fs.files.set(join(ROOT, 'Notes', 'A.md'), { text: '---\nID: x\n---\nbody\n', mtimeMs: 500 })
-  fs.files.set(join(ROOT, 'Hidden', 'B.md'), { text: 'hidden\n', mtimeMs: 500 })
-  fs.files.set(join(ROOT, '.trash', 'C.md'), { text: 'trashed\n', mtimeMs: 500 })
+  fs.files.set(join(ROOT, 'Notes', 'A.md'), {
+    text: '---\nID: x\n---\nbody\n',
+    mtimeMs: 500,
+    ctimeMs: 500,
+  })
+  fs.files.set(join(ROOT, 'Hidden', 'B.md'), { text: 'hidden\n', mtimeMs: 500, ctimeMs: 500 })
+  fs.files.set(join(ROOT, '.trash', 'C.md'), { text: 'trashed\n', mtimeMs: 500, ctimeMs: 500 })
 })
 
 describe('Core over an in-memory machine', () => {
@@ -51,7 +55,7 @@ describe('Core over an in-memory machine', () => {
   it('a sweep rewrite keeps the modification time; a plain write moves it', async () => {
     const page = join(ROOT, 'Notes', 'A.md')
     await rewritePageSerialized(page, () => 'swept\n')
-    expect(fs.files.get(page)).toEqual({ text: 'swept\n', mtimeMs: 500 })
+    expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })
     await atomicWriteFile(page, 'edited\n')
     expect(fs.files.get(page)?.mtimeMs).toBeGreaterThan(500)
   })

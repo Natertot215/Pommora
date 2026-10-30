@@ -274,8 +274,8 @@ describe('the own tap indexes a batch', () => {
     expect([...r.touched.keys()]).toEqual(files)
     for (const file of files) expect(stats.mock.calls.filter(([p]) => p === file)).toHaveLength(1)
     for (const [i, rel] of rels.entries()) {
-      const { mtimeMs, size } = await stat(files[i])
-      expect(readIndexedStat(rel)).toMatchObject({ mtimeMs, size })
+      const { mtimeMs, size, ctimeMs } = await stat(files[i])
+      expect(readIndexedStat(rel)).toMatchObject({ mtimeMs, size, ctimeMs })
     }
     const reads = vi.spyOn(machine(), 'readText')
     await seedContentIndex(root)

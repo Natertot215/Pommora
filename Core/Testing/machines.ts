@@ -67,20 +67,23 @@ export function lockContention(key: string): { contended: Promise<void>; restore
   }
 }
 
+type MemoryFile = { text: string; mtimeMs: number; ctimeMs: number }
+
 export interface MemoryFs {
-  files: Map<string, { text: string; mtimeMs: number }>
+  files: Map<string, MemoryFile>
   dirs: Set<string>
 }
 
 export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
-  const files = new Map<string, { text: string; mtimeMs: number }>()
+  const files = new Map<string, MemoryFile>()
   const dirs = new Set<string>()
   let clock = 1000
   const encoder = new TextEncoder()
   const decoder = new TextDecoder()
-  const entryStat = (e: { text: string; mtimeMs: number }): FileStat => ({
+  const entryStat = (e: MemoryFile): FileStat => ({
     size: e.text.length,
     mtimeMs: e.mtimeMs,
+    ctimeMs: e.ctimeMs,
     birthtimeMs: null,
     isDirectory: false,
   })
@@ -97,7 +100,7 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
           if (expect !== undefined && !sameFile(expect, await machine.stat(path)))
             throw new Error(`${path} changed`)
           const text = typeof data === 'string' ? data : decoder.decode(data)
-          const e = { text, mtimeMs: mtimeMs ?? ++clock }
+          const e = { text, mtimeMs: mtimeMs ?? ++clock, ctimeMs: ++clock }
           files.set(path, e)
           return entryStat(e)
         }),
@@ -105,7 +108,9 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
     stat: async (p): Promise<FileStat | null> => {
       const e = files.get(p)
       if (e) return entryStat(e)
-      return dirs.has(p) ? { size: 0, mtimeMs: 0, birthtimeMs: null, isDirectory: true } : null
+      return dirs.has(p)
+        ? { size: 0, mtimeMs: 0, ctimeMs: 0, birthtimeMs: null, isDirectory: true }
+        : null
     },
     readDir: async (p): Promise<DirEntry[]> => {
       const out: DirEntry[] = []
@@ -124,7 +129,7 @@ export function memoryMachine(): { machine: Machine; fs: MemoryFs } {
       const e = files.get(from)
       if (!e) throw new Error(`ENOENT ${from}`)
       files.delete(from)
-      files.set(to, e)
+      files.set(to, { ...e, ctimeMs: ++clock })
     },
     remove: async (p) => {
       files.delete(p)

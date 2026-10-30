@@ -49,7 +49,7 @@ export const failLandings = (fails: (file: string) => boolean) => {
   })
 }
 
-/** Overwrites each file `picks` chooses with `outside` just before its landing, as another program writing between the app's read and its landing; `outside` differs in length from what the file holds. */
+/** Overwrites each file `picks` chooses with `outside` just before its landing, as another program writing between the app's read and its landing. */
 export const raceLandings = (picks: (file: string) => boolean, outside: string) => {
   const m = machine()
   const real = m.land.bind(m)

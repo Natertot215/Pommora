@@ -255,7 +255,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 1** — The Landing
   - [x] Task 1-1 · One flush per drive, and the stat after the rename
   - [x] Task 1-2 · The thread-pool line, measured and removed
-  - [ ] Task 1-3 · The change time identifies a file
+  - [x] Task 1-3 · The change time identifies a file
   - [ ] Task 1-4 · The echo by stat
   - [ ] Task 1-5 · The clash check and the option edit pass over vouched rows
   - [ ] Task 1-6 · A metadata copy writes each month once
@@ -593,7 +593,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 - [ ] Write the contract case "a rename moves the change time and keeps the modification time" (`Core/Testing/machineContract.ts`, run on all three machines) and the T-N40 rewrite, and watch each fail. Both rest on the change time moving between two calls microseconds apart, which ships unverified on Windows (*§Open Items · Windows and exFAT*), so each skips there through `it.skipIf(windows)`, as the suites' other platform guards spell it; Biome wraps T-N40's title.
 - [ ] Apply the AFTER.
-- [ ] Add `ctimeMs` to every `IndexedStat` literal the suites build: `Core/Index/contentIndex.test.ts:24,98,105`; `Core/Matrix/matrixGraph.test.ts:36,43,50,83,110,127,142,154`; `Core/Pages/fileHistory.test.ts:397`; `Core/Testing/storesContract.ts:64,155,160,238`; `Desktop/Store/open.test.ts:268`; `Desktop/Store/stores.test.ts:68,78`. In `Core/Platform/machine.test.ts`, the three seeded entries (`:25-27`) take `ctimeMs: 500`, and the sweep case (`:54`) reads `expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })`.
+- [ ] Add `ctimeMs` to every `IndexedStat` literal the suites build: `Core/Index/contentIndex.test.ts:24,98,105`; `Core/Matrix/matrixGraph.test.ts:36,43,50,83,110,127,142,154`; `Core/Pages/fileHistory.test.ts:397`; `Core/Testing/storesContract.ts:64,155,160,238`; `Desktop/Store/open.test.ts:268`; `Desktop/Store/stores.test.ts:68,78,122`; and `open.test.ts`'s two raw `INSERT INTO indexed_files` fixtures (the stale-generation and generation-6 rebuild cases) take the `ctime_ms` column. In `Core/Platform/machine.test.ts`, the three seeded entries (`:25-27`) take `ctimeMs: 500`, and the sweep case (`:54`) reads `expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })`.
 - [ ] Extend T-N11: `const { mtimeMs, size, ctimeMs } = await stat(files[i])` and `toMatchObject({ mtimeMs, size, ctimeMs })`, which fails without the row's change time.
 - [ ] Make Task 1-1's commit answer the temp's `fileStat(own)` alone, watch T-N4 ("a landing keeps the time it is given and answers the stat the file then holds") go red on `nodeMachine`, and restore it: T-N4 is LD-1's pin from here.
 - [ ] Docs: in `.claude/Features/CorePM.md:113`, "reading only files whose mtime or size moved since they were last indexed" becomes "reading only files whose modification time, size, or change time moved since they were last indexed"; in `CorePM.md:160`, "the mtime and size it was read at" becomes "the modification time, size, and change time it was read at" and "re-indexes any file whose mtime or size moved" becomes "re-indexes any file whose modification time, size, or change time moved"; in `.claude/Features/DesktopPM.md:22`, "whose modification time, size, and birth time are unchanged" becomes "whose modification time, size, and change time are unchanged".
@@ -829,7 +829,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] The contract case is green on `memoryMachine`, `diskMachine`, and `nodeMachine`; T-N40 and T-N11 are green and went red with `sameFile` comparing birth; T-N4 went red with a pre-rename answer.
+- [ ] The contract case is green on `memoryMachine`, `diskMachine`, and `nodeMachine`; T-N40 is green and went red with `sameFile` comparing birth, T-N11 is green and went red without the row's change time; T-N4 went red with a pre-rename answer.
 - [ ] `git grep -nP "describes\(|birthtimeMs === " -- Core Desktop` prints nothing, and `git grep -n "skipIf(process.platform !== 'darwin')" -- Core/Files/walkCache.test.ts` prints nothing.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.

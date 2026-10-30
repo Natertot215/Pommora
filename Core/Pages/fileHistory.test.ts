@@ -394,7 +394,7 @@ describe('sweepFileHistory', () => {
       [PAGE, OTHER].map((id) => ({
         path: `${ARCHIVE_DIR_REL}/c1/Notes/1__${id}.archived/${id}.md`,
         entry: { relations: [], headings: [], values: { ID: id } },
-        stat: { mtimeMs: 0, size: 0 },
+        stat: { mtimeMs: 0, size: 0, ctimeMs: 0 },
       })),
     )
     markIndexReady()

@@ -33,21 +33,21 @@ beforeEach(() => {
         headings: [],
         values: { ID: A, Status: ['Open'] },
       },
-      stat: { mtimeMs: 1000, size: 10 },
+      stat: { mtimeMs: 1000, size: 10, ctimeMs: 1000 },
     },
   ])
   index.upsertPageIndexes([
     {
       path: 'Notes/B.md',
       entry: { relations: [relation('value', 'alpha', 'Ref')], headings: [], values: { ID: B } },
-      stat: { mtimeMs: 2000, size: 20 },
+      stat: { mtimeMs: 2000, size: 20, ctimeMs: 2000 },
     },
   ])
   index.upsertPageIndexes([
     {
       path: 'Notes/Loose.md',
       entry: { relations: [relation('body', 'alpha')], headings: [], values: {} },
-      stat: { mtimeMs: 3000, size: 30 },
+      stat: { mtimeMs: 3000, size: 30, ctimeMs: 3000 },
     },
   ])
 })
@@ -80,7 +80,7 @@ describe('readMatrixGraph', () => {
       {
         path: 'Notes/C.md',
         entry: { relations: [], headings: [], values: { ID: C } },
-        stat: { mtimeMs: 4000, size: 40 },
+        stat: { mtimeMs: 4000, size: 40, ctimeMs: 4000 },
       },
     ])
     expect(readMatrixGraph(false, ['Notes/B.md', 'Notes/C.md'])!.ids!.sort()).toEqual([B, C])
@@ -107,7 +107,7 @@ describe('readMatrixGraph', () => {
           headings: [],
           values: { ID: A },
         },
-        stat: { mtimeMs: 1000, size: 10 },
+        stat: { mtimeMs: 1000, size: 10, ctimeMs: 1000 },
       },
     ])
     expect(readMatrixGraph(true, ['Notes/A.md'])!.links).toEqual([
@@ -124,7 +124,7 @@ describe('readMatrixGraph', () => {
           headings: [],
           values: { ID: B },
         },
-        stat: { mtimeMs: 2000, size: 20 },
+        stat: { mtimeMs: 2000, size: 20, ctimeMs: 2000 },
       },
     ])
     expect(readMatrixGraph(true, ['Notes/B.md'])!.links.map((l) => l.key)).toEqual(['Ref', 'Rank'])
@@ -139,7 +139,7 @@ describe('readMatrixGraph', () => {
           headings: [],
           values: { ID: A },
         },
-        stat: { mtimeMs: 1000, size: 10 },
+        stat: { mtimeMs: 1000, size: 10, ctimeMs: 1000 },
       },
     ])
     expect(readMatrixGraph(true, ['Notes/A.md'])!.links.map((l) => l.target)).toEqual(['beta'])
@@ -151,7 +151,7 @@ describe('readMatrixGraph', () => {
       {
         path: archived,
         entry: { relations: [relation('body', 'alpha')], headings: [], values: { ID: D } },
-        stat: { mtimeMs: 5000, size: 50 },
+        stat: { mtimeMs: 5000, size: 50, ctimeMs: 5000 },
       },
     ])
     const reply = readMatrixGraph(true)!

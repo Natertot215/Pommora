@@ -65,7 +65,7 @@ describe('the content index over SQLite', () => {
       {
         path: 'Notes/A.md',
         entry: { relations: [], headings: [{ text: 'Setup', level: 2 }], values: {} },
-        stat: { mtimeMs: 1, size: 1 },
+        stat: { mtimeMs: 1, size: 1, ctimeMs: 1 },
       },
     ])
     const only = ['Notes/A.md', ...Array.from({ length: 40_000 }, (_, i) => `Notes/${i}.md`)]
@@ -75,7 +75,7 @@ describe('the content index over SQLite', () => {
 
   it('writes a batch of pages whole or not at all', () => {
     const store = contentIndexStore(db)
-    const stat = { mtimeMs: 1, size: 1 }
+    const stat = { mtimeMs: 1, size: 1, ctimeMs: 1 }
     expect(() =>
       store.upsertPageIndexes([
         {
@@ -122,6 +122,7 @@ describe('the content index over SQLite', () => {
           stat: {
             mtimeMs: 1000,
             size: 10,
+            ctimeMs: 1000,
           },
         },
       ]),

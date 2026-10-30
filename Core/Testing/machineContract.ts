@@ -1,6 +1,7 @@
 import { rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Machine } from '../Platform/machine'
+import { windows } from './hostFs'
 
 const EMPTY_SHA = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 const HIGH_BYTE_SHA = 'a8100ae6aa1940d0b663bb31cd466142ebbdbd5187131b92d93818987832eb89'
@@ -83,6 +84,18 @@ export function describeMachine(
       expect(await machine.readText(at('y.txt'))).toBe('v')
       expect(await machine.readText(at('x.txt'))).toBeNull()
     })
+
+    it.skipIf(windows)(
+      'a rename moves the change time and keeps the modification time',
+      async () => {
+        await machine.land([{ path: at('x.txt'), data: 'v', mtimeMs: 2_000_000_000_000 }])
+        const was = await machine.stat(at('x.txt'))
+        await machine.rename(at('x.txt'), at('y.txt'))
+        const moved = await machine.stat(at('y.txt'))
+        expect(moved?.mtimeMs).toBe(2_000_000_000_000)
+        expect(moved?.ctimeMs).not.toBe(was?.ctimeMs)
+      },
+    )
 
     it('removes a file', async () => {
       await write('z.txt', 'v')

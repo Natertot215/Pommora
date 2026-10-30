@@ -61,7 +61,7 @@ const OUTLINE: PageHeading[] = [
 export function describeContentIndexStore(name: string, make: () => ContentIndexStore): void {
   describe(name, () => {
     let store: ContentIndexStore
-    const STAT = { mtimeMs: 1000, size: 10 }
+    const STAT = { mtimeMs: 1000, size: 10, ctimeMs: 1000 }
     // Built rather than spelled: `space` takes (key, title) in `queryMembers` order, so the transposition onto (target, qualifier) reads on one line and a reversed binding reads wrong at the call site.
     const relation = (kind: RelationKind, target: string, qualifier = '', key = ''): Relation => ({
       kind,
@@ -152,12 +152,16 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       upsert(
         'Notes/A.md',
         { relations: [body('gamma')], headings: [], values: {} },
-        { mtimeMs: 2000, size: 12 },
+        { mtimeMs: 2000, size: 12, ctimeMs: 2000 },
       )
       expect(store.queryMentions(['beta'])).toEqual([])
       expect(store.queryMentions(['gamma'])).toEqual(['Notes/A.md'])
       expect(store.queryKeyHolders('Status')).toEqual([])
-      expect(store.readIndexedStat('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
+      expect(store.readIndexedStat('Notes/A.md')).toEqual({
+        mtimeMs: 2000,
+        size: 12,
+        ctimeMs: 2000,
+      })
     })
 
     it('answers a key holder by its exact key', () => {
@@ -235,7 +239,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       upsert(
         'Notes/B.md',
         { relations: [], headings: [], values: { ID: 'idB' } },
-        { mtimeMs: 2000, size: 20 },
+        { mtimeMs: 2000, size: 20, ctimeMs: 2000 },
       )
       const whole = store.readPageRelations()
       expect(whole.relations).toEqual([

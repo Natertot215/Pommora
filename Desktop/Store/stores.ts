@@ -43,11 +43,12 @@ export const keyValueStore = (db: Db): KeyValueStore => ({
   },
 })
 
-const SELECT_STATS = `SELECT f.path, f.mtime_ms, f.size, json_extract(v.value, '$') AS id FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text' AND v.value <> '""'`
-type StatRow = { path: string; mtime_ms: number; size: number; id: string | null }
+const SELECT_STATS = `SELECT f.path, f.mtime_ms, f.size, f.ctime_ms, json_extract(v.value, '$') AS id FROM indexed_files f LEFT JOIN page_values v ON v.path = f.path AND v.key = ? AND json_type(v.value) = 'text' AND v.value <> '""'`
+type StatRow = { path: string; mtime_ms: number; size: number; ctime_ms: number; id: string | null }
 const statOf = (r: StatRow): IndexedStat => ({
   mtimeMs: r.mtime_ms,
   size: r.size,
+  ctimeMs: r.ctime_ms,
   ...(r.id === null ? {} : { id: r.id }),
 })
 
@@ -67,7 +68,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       'INSERT OR REPLACE INTO page_values (path, key, value) VALUES (?, ?, ?)',
     )
     const insFile = db.prepare(
-      'INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)',
+      'INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size, ctime_ms) VALUES (?, ?, ?, ?)',
     )
     inTransaction(db, () => {
       for (const { path, entry, stat } of rows) {
@@ -79,7 +80,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
         })
         for (const [key, value] of Object.entries(entry.values))
           insValue.run(path, key, JSON.stringify(value) ?? 'null')
-        insFile.run(path, stat.mtimeMs, stat.size)
+        insFile.run(path, stat.mtimeMs, stat.size, stat.ctimeMs)
       }
     })
   },

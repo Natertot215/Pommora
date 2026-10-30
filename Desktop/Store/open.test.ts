@@ -82,7 +82,11 @@ describe('openNexusDb', () => {
         "INSERT INTO relations (path, kind, target, qualifier, key) VALUES ('a.md', 'body', 'x', '', '')",
       )
       .run()
-    first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
+    first
+      .prepare(
+        "INSERT INTO indexed_files (path, mtime_ms, size, ctime_ms) VALUES ('a.md', 1, 1, 1)",
+      )
+      .run()
     // A table this generation retired, as a database written before the merge still carries it.
     first.exec('CREATE TABLE mentions (path TEXT NOT NULL, title TEXT NOT NULL)')
     first.prepare("INSERT INTO mentions (path, title) VALUES ('a.md', 'x')").run()
@@ -112,7 +116,11 @@ describe('openNexusDb', () => {
         "INSERT INTO relations (path, kind, target, qualifier, key) VALUES ('a.md', 'embed', 'x', '', '')",
       )
       .run()
-    first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
+    first
+      .prepare(
+        "INSERT INTO indexed_files (path, mtime_ms, size, ctime_ms) VALUES ('a.md', 1, 1, 1)",
+      )
+      .run()
     first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '6')").run()
     first.close()
 
@@ -265,7 +273,7 @@ describe('the root stamp', () => {
 
 // Upgrade
 
-const STAT = { mtimeMs: 1000, size: 10 }
+const STAT = { mtimeMs: 1000, size: 10, ctimeMs: 1000 }
 
 describe('upgrade in place', () => {
   it('a pre-index database gains the tables on open with its rows intact', () => {

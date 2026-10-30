@@ -21,7 +21,7 @@ afterEach(() => {
   installStores(NO_STORES)
 })
 
-const STAT = { mtimeMs: 1000, size: 10 }
+const STAT = { mtimeMs: 1000, size: 10, ctimeMs: 1000 }
 const TAGGED: PageIndexEntry = {
   relations: [
     { kind: 'body', target: 'beta', qualifier: '', key: '' },
@@ -95,14 +95,18 @@ describe('the content index', () => {
           headings: [],
           values: {},
         },
-        stat: { mtimeMs: 2000, size: 12 },
+        stat: { mtimeMs: 2000, size: 12, ctimeMs: 2000 },
       },
     ])
     expect(queryMentions(['beta'])).toEqual([])
     expect(queryMentions(['gamma'])).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual([])
     expect(queryMembers('<Projects>', 'pommora')).toEqual([])
-    expect(readIndexedStats()?.get('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
+    expect(readIndexedStats()?.get('Notes/A.md')).toEqual({
+      mtimeMs: 2000,
+      size: 12,
+      ctimeMs: 2000,
+    })
   })
 
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {

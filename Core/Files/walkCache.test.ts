@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renameSync, rmSync, writeFileSync, utimesSync } from 'node:fs'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, windows } from '../Testing/hostFs'
 import { beginWalk, cachedParse, endWalk, forgetParse } from './walkCache'
 
 // Backdate a file past the racy window so (mtime, size) is trusted immediately.
@@ -41,23 +41,24 @@ describe('walkCache', () => {
     expect(parses).toBe(2)
   })
 
-  it.skipIf(process.platform !== 'darwin')(
-    're-parses a file replaced whole by a twin of the same time and size, the original born before that time',
+  it.skipIf(windows)(
+    're-parses a file rewritten in place or replaced whole at the time and size it was cached at',
     async () => {
       const file = join(root, 'a.md')
       const twin = join(root, 'b.md')
       const at = Math.floor(Date.now() / 1000) - 10
       writeFileSync(file, 'one')
-      // A time set before a file's birth moves its birth to it, so the original is born before the twin dated to the same time.
-      utimesSync(file, at - 10, at - 10)
       utimesSync(file, at, at)
       let parses = 0
       const parse = async (): Promise<string> => `parsed-${++parses}`
       expect(await walk(file, parse)).toBe('parsed-1')
-      writeFileSync(twin, 'two')
+      writeFileSync(file, 'two')
+      utimesSync(file, at, at)
+      expect(await walk(file, parse)).toBe('parsed-2')
+      writeFileSync(twin, 'six')
       utimesSync(twin, at, at)
       renameSync(twin, file)
-      expect(await walk(file, parse)).toBe('parsed-2')
+      expect(await walk(file, parse)).toBe('parsed-3')
     },
   )
 

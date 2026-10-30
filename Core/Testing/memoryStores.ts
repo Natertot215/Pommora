@@ -1,6 +1,7 @@
 import { foldKey } from '../Paths/caseFold'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
+import type { Identity } from '../Platform/machine'
 import type {
   BaseRecord,
   CaptureReason,
@@ -23,7 +24,7 @@ interface MemoryIndex {
   relations: Map<string, RelationRow>
   headings: Map<string, { path: string; text: string; level: number; ordinal: number }>
   values: Map<string, { path: string; key: string; value: string }>
-  stats: Map<string, IndexedStat>
+  stats: Map<string, Identity>
 }
 
 const k = (...parts: string[]): string => JSON.stringify(parts)
@@ -79,10 +80,10 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     index.stats.delete(path)
   }
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
-  const statOf = (path: string, { mtimeMs, size }: IndexedStat): IndexedStat => {
+  const statOf = (path: string, identity: Identity): IndexedStat => {
     const row = index.values.get(k(path, ID_KEY))
     const id = row && asString(JSON.parse(row.value))
-    return id === undefined ? { mtimeMs, size } : { mtimeMs, size, id }
+    return id === undefined ? identity : { ...identity, id }
   }
   const relationRows = (): RelationRow[] => [...index.relations.values()]
   return {
@@ -102,7 +103,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         })
         for (const [key, value] of Object.entries(entry.values))
           index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
-        index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size })
+        index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size, ctimeMs: stat.ctimeMs })
       }
     },
     removePathIndex(path) {

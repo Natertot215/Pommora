@@ -27,7 +27,7 @@ import {
   type Relation,
   type PageIndexEntry,
 } from '../Platform/stores'
-import { type FileStat, statOrNull } from '../Platform/machine'
+import { type FileStat, sameFile, statOrNull } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
@@ -107,10 +107,6 @@ const unindexed = (rel: string, stat = readIndexedStat(rel)): ConnPage[] => {
   return pageOf(rel, stat)
 }
 
-/** Whether the index's recorded `held` describes the file `st` was taken of, the same time and size: the seed's skip. The index keeps no birth time, so unlike `sameFile` it passes a replacement at the same time and size. */
-const describes = (held: IndexedStat | undefined, st: FileStat): boolean =>
-  !!held && held.mtimeMs === st.mtimeMs && held.size === st.size
-
 // The index's commits, counted, and each path's last one, per store, so a switch's store starts with none.
 let commits = 0
 const lastCommits = new WeakMap<ContentIndexStore, Map<string, number>>()
@@ -179,7 +175,7 @@ export async function indexWrittenPages(
     if (content === null) continue
     const page = parsePage(content)
     const entry = extractPageIndex(content, page)
-    const row = { path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }
+    const row = { path: rel, entry, stat: st }
     queued.push({ row, prior, since, absPath, read: { text: content, stat: st, page } })
     if (queued.length === INDEX_BATCH) flush()
   }
@@ -285,15 +281,11 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
         seen.delete(rel)
         continue
       }
-      if (describes(prior, st)) continue
+      if (sameFile(prior ?? null, st)) continue
       const content = await readTextOrNull(abs)
       if (content === null) continue
       if (contentIndexStore() !== db0) return NO_REREAD
-      queued.push({
-        path: rel,
-        entry: extractPageIndex(content),
-        stat: { mtimeMs: st.mtimeMs, size: st.size },
-      })
+      queued.push({ path: rel, entry: extractPageIndex(content), stat: st })
       if (queued.length === INDEX_BATCH) flush()
     }
     if (contentIndexStore() !== db0) return NO_REREAD
