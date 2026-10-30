@@ -5,7 +5,7 @@ import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
 import { readTextOrNull } from '../Files/atomicWrite'
-import { spaceIdsIn } from '../Contexts/spaceSidecar'
+import { contextDirRel } from '../Paths/nexusPaths'
 import { exactTitle } from '../Paths/caseFold'
 import { readPageRelations } from '../Index/contentIndex'
 import { extractPageIndex } from '../Index/indexSeed'
@@ -85,14 +85,11 @@ export function gatherSpaceRecord(tree: NexusTree, space: SpaceNode, held: Holde
   }
 }
 
-export async function gatherContextRecord(
-  tree: NexusTree,
-  abs: string,
-  entry: ContextDef,
-  held: Holders,
-): Promise<RecordFile> {
-  const { ids, unread } = await spaceIdsIn(abs)
-  const spaceIds = new Map([...ids].map(([name, id]) => [exactTitle(name), id]))
+export function gatherContextRecord(tree: NexusTree, entry: ContextDef, held: Holders): RecordFile {
+  const group = contextWorldOf(tree.contexts).groupById.get(entry.id)!
+  const spaceIds = new Map(group.spaces.map((s) => [exactTitle(s.title), s.id]))
+  const under = `${contextDirRel(entry.title)}/`
+  const unread = tree.unreadable?.some((u) => u.kind === 'space' && u.path.startsWith(under))
   const key = contextKey(entry.title)
   const membership = rootsOf(held).map(([member, values]) => ({
     root: member,

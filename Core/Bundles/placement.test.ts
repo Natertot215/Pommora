@@ -270,7 +270,12 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
 
 describe('placeAmong', () => {
   it('lands above the sibling it sat above while that one is live', () => {
-    expect(placeAmong(['a', 'b'], 'x', { above: 'b', below: 'a' })).toEqual(['a', 'x', 'b'])
+    expect(placeAmong(['a', 'c', 'b'], 'x', { above: 'b', below: 'a' })).toEqual([
+      'a',
+      'c',
+      'x',
+      'b',
+    ])
   })
 
   it('lands below the sibling it sat below once the one after it is gone', () => {

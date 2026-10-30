@@ -236,7 +236,7 @@ export async function restoreTrashed(
   for (const [file, values] of Object.entries(scrubbed.worked))
     worked[relative(root, join(targetAbs, file))] = values
   const settled = after && heldTreeOf(root)
-  const unspent: string[] = []
+  const untagged: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
     const titlesById = new Map(
@@ -252,7 +252,7 @@ export async function restoreTrashed(
       if (titles.length) additions[m.root.id] = titles
       above[m.root.id] = m.root.above
     }
-    unspent.push(...(await reapply(root, roots, contextKey(title), additions, above)))
+    untagged.push(...(await reapply(root, roots, contextKey(title), additions, above)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = contextWorldOf(tree.contexts).groupById.get(parentId)
@@ -262,7 +262,7 @@ export async function restoreTrashed(
       )
       const additions = Object.fromEntries(members.map((m) => [m.id, [title]]))
       const above = Object.fromEntries(members.map((m) => [m.id, m.above]))
-      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions, above)))
+      untagged.push(...(await reapply(root, roots, contextKey(group.def.title), additions, above)))
     }
   } else if (
     record.entity !== 'space' &&
@@ -297,7 +297,7 @@ export async function restoreTrashed(
   const left = originOf(stored)
   if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
   return ok({
-    ...restored([...unspent, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
+    ...restored([...untagged, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
     ...(cascade ? { cascade } : {}),
     ...(landedAs ? { landedAs } : {}),
   })

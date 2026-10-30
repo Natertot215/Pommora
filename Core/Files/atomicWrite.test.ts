@@ -413,13 +413,19 @@ describe('discardFile', () => {
   })
 
   it('de-collides two trashes of the same name from the same folder', async () => {
-    const p = join(dir, 'twice.md')
-    await atomicWriteFile(p, 'one')
-    await discardFile(dir, p)
-    await atomicWriteFile(p, 'two')
-    await discardFile(dir, p)
-    const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
-    expect(kept.sort()).toEqual(['one', 'two'])
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+    try {
+      const p = join(dir, 'twice.md')
+      await atomicWriteFile(p, 'one')
+      await discardFile(dir, p)
+      await atomicWriteFile(p, 'two')
+      await discardFile(dir, p)
+      const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
+      expect(kept.sort()).toEqual(['one', 'two'])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

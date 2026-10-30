@@ -156,12 +156,7 @@ export async function deleteOp(
       if (!entry) return fail('not-found', 'Unknown Context.')
       const query = { keys: [contextKey(title)], reach: 'anywhere' as const }
       await write(
-        await gatherContextRecord(
-          before,
-          abs,
-          entry,
-          outside(await findHolders(root, query, 'values')),
-        ),
+        gatherContextRecord(before, entry, outside(await findHolders(root, query, 'values'))),
       )
       const ran = await deleted(
         entry.id,

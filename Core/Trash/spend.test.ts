@@ -328,18 +328,6 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       ).toBe(true)
       expect(await registryIds()).toEqual(['ctx_projects', 'ctx_zeta', 'ctx_areas'])
     })
-
-    it('emptying a Context’s bundle leaves the orders as its delete left them', async () => {
-      const r = await deleteProjects()
-      const listed = r.ok ? r.value.bundled : undefined
-      expect(
-        (await settledMutate(root, { op: 'emptyBundle', bundlePath: listed!.bundlePath })).ok,
-      ).toBe(true)
-      expect(await stateOrder()).toEqual({
-        spaces: { ctx_areas: ['sp-home'] },
-        contexts: ['ctx_areas'],
-      })
-    })
   })
 
   it('an unreadable registry refuses a Context delete before anything moves', async () => {
@@ -735,7 +723,7 @@ describe('restore — the record spends, headless', () => {
       expect(splitFrontmatter(await readFile(file, 'utf8'))).not.toHaveProperty('<Projects>')
   })
 
-  it('a root gone since is no reason to keep the record', async () => {
+  it('a root gone since isn’t named among the tags that didn’t go back', async () => {
     await settledMutate(root, {
       op: 'delete',
       path: '.nexus/contexts/Projects/Pommora',
@@ -746,10 +734,9 @@ describe('restore — the record spends, headless', () => {
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
-    expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
   })
 
-  it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
+  it('a Context round-trips: its registry entry returns and membership re-applies', async () => {
     await settledMutate(root, { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' })
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })

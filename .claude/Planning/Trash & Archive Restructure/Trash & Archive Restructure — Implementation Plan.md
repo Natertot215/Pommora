@@ -245,7 +245,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - **The Number:** every phase's VERIFY runs `python3 ~/"The Studio/.claude/scripts/view-delta/view-delta.py" <BASELINE>..HEAD --exclude .claude` and records the **Actionable** column in the Net Ledger beside the phase's estimate, additions and removals apart. A phase that lands above its estimate is reported in chat before the next phase opens, with what the increase buys.
 - **The Measurement (Decision G-2):** the property rename's before is on record: the re-run's medians at `9b9c0d630` (*Investigation · §The Trash's Model · §The Measurement*), whose property-rename path the BASELINE head carries unchanged, with the baseline build for today's Trash and the reach-in prototype for a reach-in one. After Phase 5, the harness in `.claude/Benchmarks/Reach-In/` (`RERUN.md`) measures HEAD alone at Medium-0 and Medium-50, three runs each, since the code itself is now reach-in, and the Net Ledger records both against the recorded medians. Phase 1's thread-pool measurement is its own task. The harness and its fixtures leave in Phase 6 (Decision A-1).
 - **Live Drives:** Nathan takes no hand checks (10-29-2026). Every live check runs as an agent's CDP drive (*Development-Environment*) on a scratch copy of `~/Test`, from a worktree build with its own userData and debug port; the app is never launched from the main checkout, where Nathan's instance runs.
-- **Execution:** the plan runs end to end through `c/plan-execution`, headlessly once Nathan ratifies it, and no step waits on Nathan; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*; anything that needs Nathan's word is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint: two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation. Compaction checkpoints follow Phases 2 and 4.
+- **Execution:** the plan runs end to end through `c/plan-execution`, headlessly once Nathan ratifies it, and no step waits on Nathan; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*; anything that needs Nathan's word is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint: two read-only agents, one under `code-simplification` and one under `adversarial-review`, each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation. Compaction checkpoints follow Phases 3 and 6 (Nathan, 10-30-2026), each a stop with `c/pre-compaction`'s two blocks for him.
 - **Cold Machine:** when the run ends, no process, worktree, benchmark Nexus, scratch userData, test fixture, or temporary script it created remains; *§Final Verification · The Cold-Machine Check* proves it with commands, and the final report states the result. A Pommora instance launched from the main checkout before the run isn't the run's, and it's left alone.
 - **Neutral Gate:** the post-implementation neutral reviewer (`fable-high`) gets only the BASELINE head, HEAD, the Mandate, and this intention: *"Pommora kept departed items in two stores built on two models. The Archive kept its pages in the index and inside every cascade, so its restore was a move; the Trash froze each copy and repaired it on return through a scrub that couldn't follow a rename, while three paths reached into trashed copies anyway, a second delete mode bypassed the Trash, each restore, notice, and Undo was written twice, and every write waited for the drive one file at a time. This work moves the Trash onto the Archive's model so trashed pages stay current and one restore serves both stores and every item moved out of a store by hand, removes the frozen-copy machinery and the second delete mode, and lands each group of files with one flush, identified by the file's change time. User-facing behavior is unchanged except where trashed pages now follow live pages' rules."*
 - **Out of Scope Everywhere:** the watcher swap (I-081); Sync's code; a Context moved back by hand (Decision E-4); verifying the write-through flag and the change time on Windows and exFAT (*§Open Items*); merging the two stores or changing the Archive's layout (Decision C-1); merging a Context's two orders, which is feature-level; a keyboard path to a bundle row's menu (I-080), which is interaction-level and independent of either model.
@@ -260,14 +260,12 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 1-5 · The clash check and the option edit pass over vouched rows
   - [x] Task 1-6 · A metadata copy writes each month once
   - [x] Review Checkpoint
-- [ ] **Phase 2** — Residue
+- [x] **Phase 2** — Residue
   - [x] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
   - [x] Task 2-2 · The content record's `partial` leaves
   - [x] Task 2-3 · Records from the tree, and a Context's place
   - [x] Task 2-4 · The rest of the residue
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
-- [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
+  - [x] Review Checkpoint
 - [ ] **Phase 3** — Delete, Journal, and Carry
   - [ ] Task 3-1 · One mint, one tail, one `leave`
   - [ ] Task 3-2 · A content delete records its links ahead of the strip
@@ -276,6 +274,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [ ] Task 3-5 · One trail resolver and one carry
   - [ ] Task 3-6 · One owned-Archives iterator
   - [ ] Review Checkpoint
+  - [ ] Compaction Checkpoint
+- [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 4** — Reach-In
   - [ ] Task 4-1 · The store-of-path rule
   - [ ] Task 4-2 · Trashed Spaces become holders
@@ -284,8 +284,6 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [ ] Task 4-5 · The returning side of the frozen model leaves
   - [ ] Task 4-6 · The holders' side of the frozen model leaves
   - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
-- [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
   - [ ] Task 5-1 · Following an id covers a Set
   - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
@@ -309,6 +307,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [ ] Task 6-11 · The closing measurement
   - [ ] Task 6-12 · The harness's removal
   - [ ] Review Checkpoint
+  - [ ] Compaction Checkpoint
+- [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -2110,8 +2110,9 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 +import type { ContextDef } from '../Contexts/contexts'
  import type { Holders } from '../Index/keyHolders'
 @@ imports @@
- import { spaceIdsIn } from '../Contexts/spaceSidecar'
+-import { spaceIdsIn } from '../Contexts/spaceSidecar'
 -import { sidecarIdentity } from '../Files/sidecar'
++import { contextDirRel } from '../Paths/nexusPaths'
  import { exactTitle } from '../Paths/caseFold'
 @@ imports @@
 -import type { NexusTree } from '../Nexus/tree'
@@ -2179,14 +2180,11 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 -
 -export function buildContextRecord(evidence: ContextEvidence, held: Holders): RecordFile {
 -  const key = contextKey(evidence.entry.title)
-+export async function gatherContextRecord(
-+  tree: NexusTree,
-+  abs: string,
-+  entry: ContextDef,
-+  held: Holders,
-+): Promise<RecordFile> {
-+  const { ids, unread } = await spaceIdsIn(abs)
-+  const spaceIds = new Map([...ids].map(([name, id]) => [exactTitle(name), id]))
++export function gatherContextRecord(tree: NexusTree, entry: ContextDef, held: Holders): RecordFile {
++  const group = contextWorldOf(tree.contexts).groupById.get(entry.id)!
++  const spaceIds = new Map(group.spaces.map((s) => [exactTitle(s.title), s.id]))
++  const under = `${contextDirRel(entry.title)}/`
++  const unread = tree.unreadable?.some((u) => u.kind === 'space' && u.path.startsWith(under))
 +  const key = contextKey(entry.title)
    const membership = rootsOf(held).map(([member, values]) => ({
      root: member,
@@ -2368,7 +2366,7 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
        const query = { keys: [contextKey(title)], reach: 'anywhere' as const }
 -      await write(buildContextRecord(evidence, outside(await findHolders(root, query, 'values'))))
 +      await write(
-+        await gatherContextRecord(before, abs, entry, outside(await findHolders(root, query, 'values'))),
++        gatherContextRecord(before, entry, outside(await findHolders(root, query, 'values'))),
 +      )
 @@ deleteOp @@
      } else {
@@ -2454,13 +2452,13 @@ The Context arm keeps `at` for its own rollback (`delete.ts:190,201`) and its re
 +  if (record.entity === 'context') {
 +    const { id } = record.registry
 +    const { panel, spaceOrder } = record
-+    const panelIds = placeAmong(tree.config.order.contexts ?? [], id, panel)
 +    return ok({
 +      record,
 +      placement,
 +      landedAs,
 +      writeOrder: async () => {
-+        if (panel) await setPanelContextOrder(root, panelIds)
++        if (panel)
++          await setPanelContextOrder(root, placeAmong(tree.config.order.contexts ?? [], id, panel))
 +        if (spaceOrder) await setSpaceOrder(root, id, spaceOrder)
 +      },
 +    })
@@ -2721,12 +2719,12 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Review Checkpoint
 
-- [ ] No branch, type, key, line of copy, or doc passage names a second delete mode, and `git grep -nP "TrashDeps|trashDeps|trashMode|TrashMode" -- Core Desktop .claude/Features` prints nothing.
-- [ ] Every delete mints a bundle in the Nexus's own Trash, and the system trash is reached only through `machine().trashToSystem`, by the empty and by `setAside`.
-- [ ] Every kind names its siblings through `place`, a Context in both of its orders, and no departed item's id sits in `state.json` once its delete's folder has moved.
-- [ ] The records a delete and an archive write are built from the tree, with no second read of a sidecar, the registry, or a page's id.
-- [ ] *Reconciliation (Phase 2)* is walked; the Net Ledger's Phase 2 row is filled from `view-delta`, additions and removals apart, and any drift past that row's estimate is reported in chat with what it buys.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 3's starting point, reading outward; what holds is folded before Phase 3 opens, and the compaction checkpoint follows.
+- [x] No branch, type, key, line of copy, or doc passage names a second delete mode, and `git grep -nP "TrashDeps|trashDeps|trashMode|TrashMode" -- Core Desktop .claude/Features` prints nothing.
+- [x] Every delete mints a bundle in the Nexus's own Trash, and the system trash is reached only through `machine().trashToSystem`, by the empty and by `setAside`.
+- [x] Every kind names its siblings through `place`, a Context in both of its orders, and no departed item's id sits in `state.json` once its delete's folder has moved.
+- [x] The records a delete and an archive write are built from the tree, with no second read of a sidecar, the registry, or a page's id.
+- [x] *Reconciliation (Phase 2)* is walked; the Net Ledger's Phase 2 row is filled from `view-delta`, additions and removals apart, and any drift past that row's estimate is reported in chat with what it buys.
+- [x] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 3's starting point, reading outward; what holds is folded before Phase 3 opens.
 
 ---
 
@@ -2761,6 +2759,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 - [ ] Apply the AFTER.
 - [ ] Every test call of `mintBundle` passes the record it wrote right after, and that `writeRecord` leaves: `bundle.test.ts:76-78`, `handlers.test.ts:55-57,87-93,147-149`, `archive.test.ts:722-727`, `spend.test.ts:1573-1579`. The calls that wrote none pass `{}`: `bundle.test.ts:39,51,52,63,72`, `atomicWrite.test.ts:367,376`, and `deleteReach.test.ts:660,813`.
 - [ ] Phase 2's two `reorder.test.ts` Context cases call `dropDeparture(root, { kind: 'context', id: 'g1' })`, their expectations unchanged.
+- [ ] Write `finishOwed.test.ts`' *"a Context delete whose order drop failed after its folder moved drops it at the finish"* (the delete's `dropDeparture` rejecting once; the finish leaves `state.json` holding neither the Context's panel id nor its Space order) and watch it fail without the finish arms' `else` drop.
 
 **AFTER**
 
@@ -2954,7 +2953,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +      if ((await heldName(dir)) === old) {
 +        await leave(root, dir, e.bundle!, { kind: 'context', id })
 +        oweWalk(root)
-+      }
++      } else await dropDeparture(root, { kind: 'context', id })
        return unlinkContextKey(root, old, id, dir)
 @@ finishSpace @@
 -  if (deleted && (await heldName(join(root, space.path))) === space.title)
@@ -2962,8 +2961,10 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +  if (deleted && (await heldName(join(root, space.path))) === space.title) {
 +    await leave(root, join(root, space.path), e.bundle!, space)
 +    oweWalk(root)
-+  }
++  } else if (deleted) await dropDeparture(root, space)
 ```
+
+A finish whose folder has already left drops the departure all the same, since a delete whose order drop failed or was cut short after its move leaves no folder for `leave` to find, and `dropDeparture` writes nothing where the id is already gone.
 
 `ContextEntry.bundle` and `SpaceEntry.bundle` stay optional: a rename's entry carries none (`finishSpace:342`, `contextCascade.ts`), so `bundle` is present exactly when `strip` is, and the two `!`s at the strip path assert that pairing.
 
@@ -3057,7 +3058,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +      const held = outside(await findHolders(root, query, 'values'))
 +      return ok({
 +        id: entry.id,
-+        record: await gatherContextRecord(before, abs, entry, held),
++        record: gatherContextRecord(before, entry, held),
 +        note: deleteNote({ kind: 'context' }, title),
 +        departing: { kind: 'context', id: entry.id },
 +        unlist: () => unlistContext(root, entry.id),
@@ -3186,7 +3187,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 -      if (!entry) return fail('not-found', 'Unknown Context.')
 -      const query = { keys: [contextKey(title)], reach: 'anywhere' as const }
 -      await write(
--        await gatherContextRecord(before, abs, entry, outside(await findHolders(root, query, 'values'))),
+-        gatherContextRecord(before, entry, outside(await findHolders(root, query, 'values'))),
 -      )
 -      const ran = await deleted(
 -        entry.id,
@@ -4429,7 +4430,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
   2. Restore it: the value is back.
   3. Archive a Set holding a page, delete the Collection, and empty it from the Trash: its Archive folder is gone and nothing from it lists in the Trash.
 - [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in its Net Ledger row beside that row's estimate, additions and removals apart, and the gap is reported in chat with what it buys before Phase 4 opens.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 4's starting point, reading outward; what holds is folded before Phase 4 opens.
+- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 4's starting point, reading outward; what holds is folded before Phase 4 opens, and the compaction checkpoint follows.
 
 ---
 
@@ -6424,7 +6425,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
   4. Restore it: it lands holding them, with no notice beyond the restore's own.
   5. Remove another page's bundle in Finder, then rename a property it held: no "Couldn't update" notice.
 - [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 4 row beside its estimate, and anything above the estimate is reported with what it buys.
-- [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files, and the compaction checkpoint follows.
+- [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files.
 
 ---
 
@@ -9229,7 +9230,7 @@ The other two files' import blocks change the same way, line for line.
 - [ ] **Tests Where Their Behavior Lives:** every file in the GOAL's ledger stands where it names, `git ls-files 'Core/**/*.test.ts' 'Core/**/*.test.tsx' | xargs -n1 basename | sort | uniq -d` names no Trash or Archive suite twice, and each moved or created suite's base name is a module beside it.
 - [ ] **One Fixture:** `Core/Testing/bundles.ts` holds only what two or more suites read: `git grep -l` of each export across `Core`, `bundles.ts` aside, names at least two files.
 - [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 6 row beside its ±0 production estimate, Task 6-9's three rewritten comments and one refusal alone, with Task 6-11's medians beneath the Ledger.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 4 and 5's moves; what holds is folded before *§Final Verification* opens.
+- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 4 and 5's moves; what holds is folded before *§Final Verification* opens, and the compaction checkpoint follows.
 
 ---
 
@@ -9455,7 +9456,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 
 **Inside the Code:**
 - **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it; the checkpoint gave the echo record a move-or-landing union, and an in-flight landing's record keeps the stat its file last landed with, so an echo drained during the file's next landing is still dropped.
-- **Phase 2:** Task 2-2's `withContextAt` keeps its index parameter.
+- **Phase 2:** Task 2-3's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`.
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
 - **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
