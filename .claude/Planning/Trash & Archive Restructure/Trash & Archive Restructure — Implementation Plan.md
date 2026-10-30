@@ -1,14 +1,14 @@
 ## Trash & Archive Restructure — Implementation Plan
 
 **DATE:** 10-29-2026
-**STATUS:** Draft
+**STATUS:** Ratified 10-30-2026
 **SOURCE:** *Trash & Archive Restructure — Decisions & Intention* (ratified 10-29-2026, Decisions A-1–G-4 and its *§Rejected*), *Trash & Archive Restructure — Investigation* and its `Scouts/`, *Trash & Archive Restructure — Reach-In Measurement*, and the planning session's placements (10-29-2026), which *§Constraints · Placements* records.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| | | | |
+| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | |
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; estimates from each phase's tasks; Task 1-2's and Task 6-11's measurements go beneath it):
 
@@ -231,7 +231,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - **Renamed:** `Core/Trash/spend.ts` → `Core/Trash/empty.ts`; `Core/Archive/archivePlace.ts` → `Core/Archive/archiveLabel.ts`.
   - **Deleted:** `Core/Trash/restoreScrub.ts`, `Core/Trash/trashedCopies.ts`, `Core/Trash/trashMode.ts`, `Core/Trash/handlers.ts` (its channel into `Core/Bundles/handlers.ts`).
   - **Between Existing Files:** `parkLinks` into `Core/Bundles/record.ts`; `collectionArchive` into `empty.ts`; the journal's strip release into `Core/Nexus/owed.ts`; the links-ahead gatherer into `Core/Trash/gather.ts`; the one notice builder into `Core/Interface/Notifications/notifications.ts`; the flat discard's two functions into one in `Core/Trash/discard.ts`; the stored-Space source into `Core/Nexus/heldPages.ts`, which stays one file.
-- **Placements Taken in Planning (Nathan's Word at Ratification):** a test file follows its module, so Task 6-3 moves `Core/Trash/spend.test.ts` → `Core/Bundles/restore.test.ts`, `Core/Trash/restoreScrub.test.ts` → `Core/Nexus/arrival.test.ts`, `Core/Bundles/layout.test.ts` → `Core/Paths/bundleLayout.test.ts`, and `Core/Settings/TrashFrame.test.tsx` → `Core/Trash/TrashFrame.test.tsx`, and Tasks 6-4 to 6-6 create `Core/Trash/gather.test.ts`, `empty.test.ts`, and `discard.test.ts` beside their modules; between existing files, `hiddenName` and `hiddenFolder` move into `Core/Paths/nexusPaths.ts` (Task 4-1), which keeps `exclusion.ts` and `bundleLayout.ts` from importing each other; `stashBlock` and `StashBlock` into `Core/Properties/properties.ts` (Task 4-2), so `record.ts` reads the schema from outside the import loop Phase 4 widens; and `respell` into `Core/Nexus/cascade.ts` (Task 5-4), which keeps `arrival.ts` from importing `settle.ts`, which imports it.
+- **Placements Taken in Planning (Nathan, 10-30-2026):** a test file follows its module, so Task 6-3 moves `Core/Trash/spend.test.ts` → `Core/Bundles/restore.test.ts`, `Core/Trash/restoreScrub.test.ts` → `Core/Nexus/arrival.test.ts`, `Core/Bundles/layout.test.ts` → `Core/Paths/bundleLayout.test.ts`, and `Core/Settings/TrashFrame.test.tsx` → `Core/Trash/TrashFrame.test.tsx`, and Tasks 6-4 to 6-6 create `Core/Trash/gather.test.ts`, `empty.test.ts`, and `discard.test.ts` beside their modules; between existing files, `hiddenName` and `hiddenFolder` move into `Core/Paths/nexusPaths.ts` (Task 4-1), which keeps `exclusion.ts` and `bundleLayout.ts` from importing each other; `stashBlock` and `StashBlock` into `Core/Properties/properties.ts` (Task 4-2), so `record.ts` reads the schema from outside the import loop Phase 4 widens; and `respell` into `Core/Nexus/cascade.ts` (Task 5-4), which keeps `arrival.ts` from importing `settle.ts`, which imports it.
 - **Plan Rules:** removal comes first in every phase, Phase 4's reach landing with L-10's removals being the one inversion (*Investigation · §Order Constraints*, 7). Tasks are written to their result, so no executor reads an opening to do more than they say. A test that changes asserts the behavior the decisions name rather than being bent to pass. AFTER blocks leave fewer comments than they find, and add one only where the code would otherwise be misread. Any cautionary code has its reason asked of Nathan before it's written. Consolidation that's unambiguously right needs no separate sign-off, and dead or dormant code inside the surface leaves. Every *§Reconciliation* line lands in the commit of the task it names, read with that task's CHANGE, so each doc, comment, and issue turns true in the commit that makes it false.
 - **Net-Less, for the Whole System (Nathan, 10-29-2026):** the Approach, the Principles, and net-less weigh every decision for the whole system, not the task in isolation; anything a task makes bigger is justified by them where a reader meets it. The codebase's comment count doesn't grow. Documentation changes are minimal, small re-wordings where a claim turns false, and net-less where possible: no new sections, since little here is user-facing.
 - **Obvious Folds (Nathan, 10-29-2026):** a fold inside the surface that Nathan would answer "fix it here" to, and that carries no architectural risk or domino effect, is included without asking; anything larger is recorded under *§Deviations* for him.
@@ -324,7 +324,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Task 1-1
 
-**TASK:** Every temp a landing writes goes through to its drive as it's written, so one flush of each drive the group's temps sit on makes the group durable before any of its files is renamed, which keeps Decision F-3's guarantee (LD-3, with Decision G-4's flag); and each commit answers a stat of the file taken after its rename (LD-1). The temp's stat moves from the commit into `stage`, where it also names the drive. **Cautionary (Its Reason, for Nathan at Ratification):** a rename keeps a file's modification time and size, so the commit answers the post-rename stat only while those are still the temp's, and the temp's own otherwise, so an outside writer (Obsidian on NexusOS, a sync arrival) landing between the rename and the stat is heard and re-read rather than vouched for as the app's own write by the echo record, the index row, and the walk cache. **Departures:** each commit waits on its own drive's flush rather than every flush answering before any commit (*Investigation · §The Group Flush*), since Decision F-3's guarantee is each file's, and waiting on every drive would hold one drive's renames behind another's flush for nothing; `CHUNK`'s docstring changes here, where it turns false, rather than with LD-6. `land`'s comment leaves, since `stage`'s states the order, so the flag's comment leaves the count level.
+**TASK:** Every temp a landing writes goes through to its drive as it's written, so one flush of each drive the group's temps sit on makes the group durable before any of its files is renamed, which keeps Decision F-3's guarantee (LD-3, with Decision G-4's flag); and each commit answers a stat of the file taken after its rename (LD-1). The temp's stat moves from the commit into `stage`, where it also names the drive. **Cautionary (Nathan, 10-30-2026):** a rename keeps a file's modification time and size, so the commit answers the post-rename stat only while those are still the temp's, and the temp's own otherwise, so an outside writer (Obsidian on NexusOS, a sync arrival) landing between the rename and the stat is heard and re-read rather than vouched for as the app's own write by the echo record, the index row, and the walk cache. **Departures:** each commit waits on its own drive's flush rather than every flush answering before any commit (*Investigation · §The Group Flush*), since Decision F-3's guarantee is each file's, and waiting on every drive would hold one drive's renames behind another's flush for nothing; `CHUNK`'s docstring changes here, where it turns false, rather than with LD-6. `land`'s comment leaves, since `stage`'s states the order, so the flag's comment leaves the count level.
 
 **NOW:** `stage` (`Desktop/Platform/nodeMachine.ts:50-89`) opens each temp `'wx'` (`:60`), writes it, dates it (`:69`), and flushes it with its own `handle.sync()` (`:70`), the only production flush. Its commit checks `expect` against a fresh stat (`:76-78`), takes the temp's `handle.stat()` (`:79`), restores the file's mode (`:81`), closes (`:82`), renames (`:83`), and answers that pre-rename stat (`:84`); `land` (`:95-103`) stages the whole group, then commits it, one full drive flush per file. T-N19 (`Desktop/Platform/nodeMachine.test.ts:74-81`) pins three `synced` for three files, and `CHUNK`'s docstring (`Core/Files/atomicWrite.ts:50`) and `CorePM.md:105` describe a flush per file. The disk double already answers a stat taken after its rename (`Core/Testing/machines.ts:170`). A rename keeps a file's modification time, size, and birth, so the post-rename answer changes nothing `sameFile` reads until Task 1-3 gives it the change time, where T-N4 starts pinning it.
 
@@ -9113,7 +9113,7 @@ The other two files' import blocks change the same way, line for line.
 
 #### Task 6-10
 
-**TASK:** `.claude/CLAUDE.md`'s Codebase Structure lines that the restructure leaves false read true, in the minimal wording, the table not widened. The file is Nathan's, so the wording below is his to approve when the plan is presented, and this task lands what he approved.
+**TASK:** `.claude/CLAUDE.md`'s Codebase Structure lines that the restructure leaves false read true, in the minimal wording, the table not widened. The file is Nathan's, and he approved the wording below (10-30-2026).
 
 **NOW:**
 - `.claude/CLAUDE.md` is Nathan's file, and its Trash line (`:94`) reads his own wording, "Item deletion and restoration".
@@ -9121,7 +9121,7 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Apply the AFTER's wording as Nathan approved it, and commit.
+- [ ] Apply the AFTER's wording, and commit.
 
 **AFTER**
 
@@ -9416,7 +9416,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 
 Departures the plan takes from a decision's or the Investigation's "how", each with its reason in the task that departs (*§Constraints · Rulings*); execution adds its own beneath.
 
-**What a User Sees (Nathan's Word at Ratification):**
+**What a User Sees (Nathan, 10-30-2026):**
 - **Task 3-5 · An Orphaned Archive Record Re-Files Upward:** the open pass files a record whose parent has gone under the deepest container its chain still holds, where it used to leave it misfiled.
 - **Task 5-2 · An Archive Restore's Undo Whose Item Has Left:** the Undo is sent at the path the item stood at and refused with the host's message, where it used to do nothing without a word.
 - **Task 5-2 · A Batch Undo Names Its Refusals:** an Undo over several bundles counts the rows it couldn't restore ("N Pages couldn’t be undone.") among its lines, where a refusal's own message used to be replaced by the next row's notice.
@@ -9424,7 +9424,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Task 5-6 · A Hand-Moved Item's Misses Go Unnamed:** a page or Set moved out of a store by hand takes its stripped values back where they still resolve, and what doesn't resolve stays as it is, since no window is open to name it.
 - **Task 6-9 · The Spend Refusal's Copy:** "Only a trash or archive record can be spent." becomes "That path is in neither the Trash nor an Archive.", which is what it answers.
 
-**Cautionary Code (Nathan's Word at Ratification):**
+**Cautionary Code (Nathan, 10-30-2026):**
 - **Task 1-1 · The Landing Hears an Outside Write:** the landing answers the stat taken after its rename only while its modified time and size still match its own temp's, so another program writing the file in that instant (Obsidian on NexusOS, a sync arrival) is heard and re-read rather than mistaken for the app's own write; one line.
 
 **Inside the Code:**
