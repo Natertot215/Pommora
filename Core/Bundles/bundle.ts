@@ -11,7 +11,7 @@ import { sidecarPath } from '../Paths/paths'
 import { escapes } from '../Paths/pathSafety'
 import { hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
 import { archiveStoreOf, holdsName } from '../Paths/names'
-import { NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
@@ -206,6 +206,22 @@ export async function archiveOwned(
     (tree.unreadable?.some((u) => u.kind === 'collection') ?? false) ||
     (await elsewhere()).has(id)
   )
+}
+
+/** Each Archive by its Collection's id, and whether that Collection still answers for it, the Collections outside the tree read once at most. */
+export async function ownedArchives(
+  root: string,
+  tree: NexusTree,
+): Promise<{ id: string; owned: boolean }[]> {
+  let elsewhere: Promise<Set<string>> | undefined
+  const answers: { id: string; owned: boolean }[] = []
+  for (const { name: id, kind } of await listEntries(join(root, ARCHIVE_DIR_REL)))
+    if (kind === 'dir')
+      answers.push({
+        id,
+        owned: await archiveOwned(tree, id, () => (elsewhere ??= collectionsElsewhere(root, tree))),
+      })
+  return answers
 }
 
 /** A bundle as one open reads it: its store, its record, and the one artifact it holds, which a property's record holds none of and a bundle cut short may not. An inner item opens as `inner`: the record the bundle's own derives for it, and the item as the artifact. */
