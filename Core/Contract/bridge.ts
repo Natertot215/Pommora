@@ -7,7 +7,6 @@ import type { RemovedView, SavedView, ViewPatch } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { BundleStore } from '../Bundles/layout'
 import type { BundleRow } from '../Bundles/rows'
-import type { TrashMode } from '../Trash/trashMode'
 import type { ClearReport } from '../Settings/exclusionScan'
 import type { NavigationState, StoredTabSet } from '../Navigation/navRef'
 import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
@@ -200,7 +199,7 @@ export interface Asks {
   // One level of inner items per row a browser holds open, asked on opening and again on each refresh, since `bundles:list` walks no artifact.
   'bundles:children': { args: [addresses: string[]]; reply: Result<BundleRow[][]> }
   // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
-  'delete:facts': { args: []; reply: Result<{ trashMode: TrashMode; permanentDelete: boolean }> }
+  'delete:facts': { args: []; reply: Result<{ permanentDelete: boolean }> }
 
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
   'link:open': { args: [url: string]; reply: Result<null> }

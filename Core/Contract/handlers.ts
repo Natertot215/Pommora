@@ -5,7 +5,6 @@ import { settleNow } from '../Nexus/settle'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
-import type { TrashMode } from '../Trash/trashMode'
 import type { SyncDevice } from '../Sync/Contract/wire'
 
 export type PickKind = 'file' | 'folder' | 'image' | 'exclusion'
@@ -60,7 +59,6 @@ export interface HostContext {
     evict(root: string, nexusId: string, liveKeys: string[]): Promise<void>
   }
   webGuests: { setZoom(guestId: number, factor: number): void; pauseMedia(guestId: number): void }
-  trashMode(): Promise<TrashMode>
   fetchTitle(url: string): Promise<string | null>
   device: HostDevice | null
   secrets: {

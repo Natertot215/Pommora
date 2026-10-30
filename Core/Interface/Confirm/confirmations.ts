@@ -1,7 +1,6 @@
 import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
 import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
-import { DEFAULT_TRASH_MODE } from '../../Trash/trashMode'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
@@ -9,10 +8,7 @@ import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/n
 import { dialer } from '../../Platform/dialer'
 import type { CountedChange, SelectOption } from '../../Properties/properties'
 
-const DELETE_FACTS_FALLBACK = {
-  trashMode: DEFAULT_TRASH_MODE,
-  permanentDelete: SETTING_DEFAULTS.permanentDelete,
-}
+const DELETE_FACTS_FALLBACK = { permanentDelete: SETTING_DEFAULTS.permanentDelete }
 
 export interface ConfirmRequest {
   message: string
@@ -72,20 +68,16 @@ export function offerUndo(
 /** The one question a move into the Trash asks, put once for a batch: unasked only while Confirm Before Deletion is off and nothing in it always asks. */
 export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> => {
   if (targets.every(({ kind }) => waived('confirmDeletion', kind))) return true
-  const { trashMode } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
   const it = targets.length > 1 ? 'They' : 'It'
   return ask({
     message: deleteQuestion(targets),
-    detail:
-      trashMode === 'system'
-        ? `${it} will be moved to the system trash.`
-        : `${it} will be moved to the nexus’s .trash folder (recoverable).`,
+    detail: `${it} will be moved to the nexus’s .trash folder (recoverable).`,
     action: 'Delete',
     tone: 'destructive',
   })
 }
 
-/** A held item asks the Trash's question and a property its own, counting what holds it. A system-trash delete mints no bundle, so it offers no Undo; `undoTo` returns a held item where the delete took it from rather than to its origin, and a property, which a restore lands only in the registry, takes none. */
+/** A held item asks the Trash's question and a property its own, counting what holds it. `undoTo` returns a held item where the delete took it from rather than to its origin, and a property, which a restore lands only in the registry, takes none. */
 export const confirmDelete = async (
   target: { title: string } & (
     | { path: string; kind: HeldKind; undoTo?: RestoreDestination }

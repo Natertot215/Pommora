@@ -36,7 +36,6 @@ import { returningCascade } from '../Nexus/settle'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { joinCascades, type StrippedLink, withUnswept } from '../Nexus/cascade'
 import { frozenWorld, parkLinks, refillTrashed } from './trashedCopies'
-import type { TrashDeps } from './discard'
 import { NO_DESTINATION, placeRecord } from '../Bundles/placement'
 import { containerSchema, schemaOf } from '../Nexus/treePatch'
 import { assignedIds } from '../Nexus/containerFields'
@@ -57,11 +56,7 @@ import {
 import { finishEntry } from '../Nexus/finishOwed'
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
-export async function emptyBundle(
-  root: string,
-  bundleAbs: string,
-  deps: TrashDeps,
-): Promise<MutateReply> {
+export async function emptyBundle(root: string, bundleAbs: string): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   const { store, record, artifact: artifactAbs } = opened.value
@@ -70,7 +65,9 @@ export async function emptyBundle(
   const dispose = async (abs: string): Promise<void> => {
     recordWrite(abs)
     if (permanent) await machine().remove(abs)
-    else await deps.trashToSystem(abs)
+    else
+      await (machine().trashToSystem?.(abs) ??
+        Promise.reject(new Error('This host has no system trash.')))
     await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
   }
   if (record.entity === 'property') {
@@ -82,7 +79,7 @@ export async function emptyBundle(
     }))
     if (!noted.ok) return noted
     await dispose(bundleAbs)
-    const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id, deps))
+    const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id))
     return ok({ cascade: owedReport(root, reach) })
   }
   if (!artifactAbs)
@@ -110,7 +107,7 @@ export async function emptyBundle(
   await spendBundle(root, opened.value)
   const recorded = 'links' in record ? (record.links ?? []) : []
   await parkLinks(root, recorded)
-  return ok({ cascade: owedReport(root, await finishEntry(root, id, deps)) })
+  return ok({ cascade: owedReport(root, await finishEntry(root, id)) })
 }
 
 type Restored = Pick<MutateOutcome, 'unrestored' | 'cascade' | 'landedAs'>

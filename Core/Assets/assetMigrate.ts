@@ -17,7 +17,7 @@ import {
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive, sidecarsUnder } from '../Files/walk'
 import { reachingExcluded } from '../Paths/exclusion'
-import { discardFile, type TrashDeps } from '../Trash/discard'
+import { discardFile } from '../Trash/discard'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
 import {
@@ -155,7 +155,7 @@ async function collectRefs(root: string, skipped: AssetMigration['skipped']): Pr
   return refs
 }
 
-export async function migrateAssets(root: string, deps: TrashDeps): Promise<AssetMigration | null> {
+export async function migrateAssets(root: string): Promise<AssetMigration | null> {
   const { assetDir } = await readWatchScope(root)
   if (assetDir === ASSETS_DIR_REL) return null
 
@@ -214,18 +214,18 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
     if (toRel) rekeys.set(from, toRel)
   }
   if (rekeys.size) await rekeyCrops(root, (key) => rekeys.get(key))
-  // Last, so a discard the system trash refuses leaves the move itself whole.
-  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root, deps)
+  // Last, so a discard that fails leaves the move itself whole.
+  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root)
   return result
 }
 
-async function sweepLegacyRoot(root: string, deps: TrashDeps): Promise<number> {
+async function sweepLegacyRoot(root: string): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
   // Every file the move left behind goes to the trash, the ones the map never indexed included.
   const files = (await listFilesRecursive(dir)).filter(
     (abs) => !legacyBookkeeping(relative(root, abs)),
   )
-  for (const abs of files) await discardFile(root, abs, deps)
+  for (const abs of files) await discardFile(root, abs)
   for (const entry of await listEntries(dir)) {
     if (entry.kind === 'dir') await machine().remove(join(dir, entry.name))
   }

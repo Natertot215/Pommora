@@ -13,7 +13,6 @@ import { validateAssetDir } from '../Settings/assetDirValidate'
 import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
-import { trashDeps } from '../Trash/discard'
 
 export const assetsHandlers = {
   'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),
@@ -38,7 +37,7 @@ export const assetsHandlers = {
     return below !== null && validPropertyDir(below, assetDir) ? ok(below) : NOT_A_PROPERTY_DIR
   }),
 
-  'assets:setDir': withWriteRoot(async (root, ctx, dir: unknown) => {
+  'assets:setDir': withWriteRoot(async (root, _ctx, dir: unknown) => {
     if (typeof dir !== 'string') return fault('A folder path is required.')
     const trimmed = dir.trim()
     let next = ''
@@ -49,7 +48,7 @@ export const assetsHandlers = {
     }
     await writeAssetDirectory(root, next)
     try {
-      const migrated = await migrateAssets(root, await trashDeps(ctx))
+      const migrated = await migrateAssets(root)
       for (const { store, why } of migrated?.skipped ?? [])
         console.error(`assets: the legacy folder stays — ${store}: ${why}`)
     } catch (e) {

@@ -30,7 +30,6 @@ import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
 import { settleNow, recordHanded } from './settle'
 import type { NexusState } from './tree'
-import { trashDeps } from '../Trash/discard'
 import { settleArchives } from '../Archive/refile'
 import { sweepStashes } from '../Properties/propertyStash'
 
@@ -105,7 +104,7 @@ export async function openNexusSequence(
     oweSeen(root, reread)
     void sweepFileHistory(root)
     void sweepStashes(root)
-    await finishOwed(root, await trashDeps(ctx))
+    await finishOwed(root)
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)
       .then(() => registerHeldOptions(root))
@@ -192,11 +191,11 @@ export const nexusHandlers = {
     return ok(null)
   }, ok(null)),
 
-  mutate: withWriteRoot(async (root, ctx, raw: unknown) => {
+  mutate: withWriteRoot(async (root, _ctx, raw: unknown) => {
     const read = mutateRequest.safeParse(raw)
     if (!read.success) return fault('Malformed request.')
     const req = read.data
-    const reply = await handleMutate(root, req, await trashDeps(ctx))
+    const reply = await handleMutate(root, req)
     if (!reply.ok) return reply
     const { cascade } = reply.value
     // A delete's or an empty's linkers changed frontmatter alone, which `values:changed` carries.

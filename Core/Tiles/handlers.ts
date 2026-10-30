@@ -1,4 +1,4 @@
-import { type Handlers, type HostContext, withRoot, withWriteRoot } from '../Contract/handlers'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { machine } from '../Platform/machine'
@@ -14,7 +14,6 @@ import {
   writeMarkdownTile,
 } from './tilesFile'
 import { hostDir } from './tileHosts'
-import { trashDeps } from '../Trash/discard'
 import { captureLoser } from '../Sync/Arrival/captures'
 import { relative } from '../Paths/posix'
 import { tileFilePath } from '../Paths/paths'
@@ -36,22 +35,16 @@ async function tileHostAnd(
 }
 
 const onTile =
-  <T>(
-    fn: (
-      tile: TileCtx & { ctx: HostContext },
-      tileId: string,
-      ...args: unknown[]
-    ) => Promise<Result<T>>,
-  ) =>
+  <T>(fn: (tile: TileCtx, tileId: string, ...args: unknown[]) => Promise<Result<T>>) =>
   async (
     root: string,
-    ctx: HostContext,
+    _ctx: unknown,
     host: unknown,
     tileId: unknown,
     ...args: unknown[]
   ): Promise<Result<T>> => {
     const tile = await tileHostAnd(root, host, tileId)
-    return tile.ok ? fn({ ...tile.value, ctx }, tileId as string, ...args) : tile
+    return tile.ok ? fn(tile.value, tileId as string, ...args) : tile
   }
 
 export const tilesHandlers = {
@@ -84,9 +77,7 @@ export const tilesHandlers = {
   ),
 
   'tiles:removeTile': withWriteRoot(
-    onTile(async ({ root, dir, ctx }, tileId) =>
-      removeTile(root, dir, tileId, await trashDeps(ctx)),
-    ),
+    onTile(({ root, dir }, tileId) => removeTile(root, dir, tileId)),
   ),
 
   'tiles:restoreTile': withWriteRoot(async (root, _ctx, host: unknown, removed: unknown) => {
@@ -118,9 +109,7 @@ export const tilesHandlers = {
   ),
 
   'tiles:convert': withWriteRoot(
-    onTile(async ({ root, dir, ctx }, tileId, pick) =>
-      convertTile(root, dir, tileId, pick, await trashDeps(ctx)),
-    ),
+    onTile(({ root, dir }, tileId, pick) => convertTile(root, dir, tileId, pick)),
   ),
 
   'tiles:duplicateTile': withWriteRoot(onTile(({ dir }, tileId) => duplicateTile(dir, tileId))),
