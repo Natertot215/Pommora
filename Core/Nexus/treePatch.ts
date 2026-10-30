@@ -11,18 +11,12 @@ import type {
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
-import {
-  ARCHIVE_DIR_REL,
-  archiveDirRel,
-  archivedCollectionIdOf,
-  CONTEXTS_DIR_REL,
-  contextDirRel,
-} from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { type ContainerKind, isContainer } from './entities'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { archiveStoreOf } from '../Paths/names'
+import { archiveDirRel, archiveStoreOf, storeOf } from '../Paths/bundleLayout'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
@@ -113,9 +107,10 @@ export function owningCollection(
 ): CollectionNode | undefined {
   if (typeof of !== 'string' && of.kind === 'collection') return of
   const path = typeof of === 'string' ? of : of.path
-  const filed = archivedCollectionIdOf(path)
+  const at = storeOf(path)
+  const filed = at?.store.kind === 'archive' ? at.store.id : undefined
   const top = path.split('/', 1)[0]
-  return tree?.collections.find((c) => (filed === null ? c.path === top : c.id === filed))
+  return tree?.collections.find((c) => (at ? c.id === filed : c.path === top))
 }
 
 /** The Archive a reach covers: every one across the whole Nexus, or all of the owning Collection's for a reach scoped under `rel`, since an archived chain spells its folders as they were named when it left. A Collection whose id can't name a folder has none. */

@@ -6,11 +6,11 @@ import { join, relative, titleFromPath } from '../Paths/posix'
 import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 import { entityMemo, type NexusTree } from './tree'
 import { indexReady, readIndexedStats } from '../Index/contentIndex'
-import { ARCHIVE_DIR_REL, archivedCollectionIdOf } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL } from '../Paths/nexusPaths'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
 import { scopeOf } from '../Settings/codec'
-import { originPathOf } from '../Bundles/layout'
+import { storeOf } from '../Paths/bundleLayout'
 import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 
 type ById = Map<string, EntityRecord | null>
@@ -75,11 +75,10 @@ export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPa
   const byId: ById = new Map(entitiesById(tree))
   const archived: ConnPage[] = []
   for (const [path, { id }] of rows) {
-    const owner = archivedCollectionIdOf(path)
-    if (!id || owner === null) continue
+    const at = storeOf(path)
+    if (!id || !at) continue
     claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
-    const left = originPathOf(root, { kind: 'archive', id: owner }, join(root, path))
-    archived.push(connPage(id, left))
+    archived.push(connPage(id, at.origin))
   }
   return { byId, archived }
 }

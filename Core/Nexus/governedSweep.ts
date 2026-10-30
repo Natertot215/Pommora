@@ -3,7 +3,7 @@ import { damagedFolders } from './treePatch'
 import type { NexusTree } from './tree'
 import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
-import { isArchived } from '../Paths/nexusPaths'
+import { storeOf } from '../Paths/bundleLayout'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 import { addressable } from './heldPages'
@@ -76,16 +76,12 @@ export async function sweepGovernedRoots(
   return out
 }
 
-/** A file outside the Archive: the only kind a confirmation, a what-changed count, a rename's clash refusal, or a cascade's `pages` names, since nothing displays an archived path. */
-export const outsideArchive = (root: string, file: string): boolean =>
-  !isArchived(relative(root, file))
-
 /** The id a governed root carries: a page's `ID`, a Space sidecar's `id`. */
 export const rootId = (file: string, root: Json): string | undefined =>
   asString(root[isMarkdownFile(file) ? ID_KEY : 'id'])
 
 export async function sweepCount(root: string, files: string[], plan: SweepPlan): Promise<number> {
-  const shown = files.filter((file) => outsideArchive(root, file))
+  const shown = files.filter((file) => !storeOf(relative(root, file)))
   return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 

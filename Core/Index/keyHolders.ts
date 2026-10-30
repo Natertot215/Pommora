@@ -7,7 +7,8 @@ import { splitFrontmatter, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
-import { collectionFolders, outsideArchive, rootId } from '../Nexus/governedSweep'
+import { collectionFolders, rootId } from '../Nexus/governedSweep'
+import { storeOf } from '../Paths/bundleLayout'
 import { addressable, type NexusPages, nexusPages } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
@@ -75,7 +76,7 @@ export const spaceFiles = (
 ): string[] =>
   tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
 
-/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no archived page. */
+/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no stored page. */
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)
@@ -86,7 +87,7 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const pages = q.every
     ? await unlessVouched(
         root,
-        reached.filter((file) => outsideArchive(root, file)),
+        reached.filter((file) => !storeOf(relative(root, file))),
         (rel) => !!named && !listed.every((l) => l?.has(rel)),
       )
     : reached

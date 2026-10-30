@@ -2,10 +2,9 @@ import { join, relative } from '../Paths/posix'
 import { statOrNull } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
 import { isContentName, listEntries } from '../Files/walk'
-import { hiddenFolder } from '../Paths/exclusion'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { nexusFolderRefusal } from './codec'
-import { SIDECARS } from '../Paths/nexusPaths'
+import { hiddenFolder, SIDECARS } from '../Paths/nexusPaths'
 
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
   const rel = relative(root, abs)

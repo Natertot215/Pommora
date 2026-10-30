@@ -36,8 +36,7 @@ import { basename, join, relative } from '../Paths/posix'
 import { listPathsUnder } from '../Files/walk'
 import { contentPages } from '../Bundles/bundle'
 import type { RecordFile } from '../Bundles/record'
-import { hiddenFolder } from '../Paths/exclusion'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
 
 type Match = (word: string) => string | undefined

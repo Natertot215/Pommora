@@ -3,7 +3,7 @@ import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
 import { chainDir } from '../Bundles/bundle'
-import { fileStamp, stampedLeaf } from '../Bundles/layout'
+import { fileStamp, stampedLeaf } from '../Paths/bundleLayout'
 
 /** A file the Trash can't list, a tile's text or an image sweep's leftover, moves into `.trash` under the chain it left from, stamped, with no record. */
 export async function discardFile(nexusRoot: string, absPath: string): Promise<void> {

@@ -1,5 +1,5 @@
-import { hiddenFolder, hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
-import { ARCHIVE_DIR_REL, SIDECARS } from '../Paths/nexusPaths'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
+import { ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS } from '../Paths/nexusPaths'
 import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
 

@@ -21,12 +21,10 @@ import {
   pageIdsOf,
   spendBundle,
 } from '../Bundles/bundle'
-import { originPathOf } from '../Bundles/layout'
+import { archiveDirRel, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import { collectionOf, currentOrigin, originOf, recordedPartly } from '../Bundles/record'
 import { pathExists, readJsonObject, relocate } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
-import { archiveStoreOf } from '../Paths/names'
-import { archiveDirRel } from '../Paths/nexusPaths'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
@@ -96,7 +94,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
     note: () =>
       containerNote(
         relative(root, artifactAbs),
-        [...pages.map((file) => originPathOf(root, store, file)), ...(archive?.origins ?? [])],
+        [...pages.map((file) => originPathOf(root, file)), ...(archive?.origins ?? [])],
         archive?.sets.length ? goneContainers(archive.sets) : null,
       ),
     list: async () => {
@@ -128,7 +126,7 @@ async function collectionArchive(
   return {
     abs,
     files,
-    origins: files.map((f) => originPathOf(root, store, f)),
+    origins: files.map((f) => originPathOf(root, f)),
     sets: await archivedSetIds(root, abs),
   }
 }
@@ -142,7 +140,7 @@ export async function restoreTrashed(
   bundle: OpenBundle,
   destination?: RestoreDestination,
 ): Promise<Result<Restored>> {
-  const { abs: bundleAbs, store, record: stored, artifact: artifactAbs } = bundle
+  const { abs: bundleAbs, record: stored, artifact: artifactAbs } = bundle
   if (stored.entity === 'property') {
     if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, stored)
@@ -170,7 +168,7 @@ export async function restoreTrashed(
   const { record, placement, writeOrder, landedAs, into } = placed.value
   const { dir, finalName, finalTitle } = placement
   let targetAbs = join(root, dir, finalName)
-  const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
+  const back = await originPagesOf(root, await contentPages(record.entity, artifactAbs))
   const targets = new Map(Object.entries(record.targets ?? {}))
   const world = linkWorld(tree, archived, back)
   const frozen = frozenWorld(world, targets)
@@ -220,7 +218,7 @@ export async function restoreTrashed(
   try {
     // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
     if (into && (record.entity === 'page' || record.entity === 'set')) {
-      const origin = join(root, originPathOf(root, store, artifactAbs))
+      const origin = join(root, originPathOf(root, artifactAbs))
       const { archive, links, targets, ...filed } = record
       targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
     } else {

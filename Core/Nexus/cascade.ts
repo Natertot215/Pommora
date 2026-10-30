@@ -4,13 +4,8 @@ import { isBlankRaw, landValue, stripKeys } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { errText, ok } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter } from '../Files/pageFile'
-import {
-  type Rewrite,
-  type RewriteText,
-  outsideArchive,
-  rootId,
-  sweepGovernedRoots,
-} from './governedSweep'
+import { type Rewrite, type RewriteText, rootId, sweepGovernedRoots } from './governedSweep'
+import { storeOf } from '../Paths/bundleLayout'
 import { pagesInReach, spaceFiles } from '../Index/keyHolders'
 import { unsweptLine } from './entities'
 import { byKey } from '../Properties/properties'
@@ -39,7 +34,7 @@ import type { z } from 'zod'
 import type { strippedLink } from '../Bundles/record'
 
 export interface CascadeReport {
-  /** The Nexus paths written outside the Archive, which feed the `pages:changed` push; nothing displays an archived path. */
+  /** The Nexus paths written outside both stores, which feed the `pages:changed` push; nothing displays a stored path. */
   pages: string[]
   hosts: TilesChanged[]
   warning?: string
@@ -139,8 +134,8 @@ export async function deleteCascade(
       refused: swept.refused,
       hosts: [],
       pages: [...swept.touched.keys()]
-        .filter((file) => outsideArchive(root, file))
-        .map((file) => relative(root, file)),
+        .map((file) => relative(root, file))
+        .filter((rel) => !storeOf(rel)),
     }
   } catch (e) {
     // A strip that stopped counts as one missed file, so its entry stays owed.
@@ -257,8 +252,8 @@ export async function renameCascade(
     const unmoved = swept.skipped.length + tiles.failed + unstashed
     return {
       pages: [...swept.touched.keys()]
-        .filter((file) => isMarkdownFile(file) && outsideArchive(root, file))
-        .map((file) => relative(root, file)),
+        .map((file) => relative(root, file))
+        .filter((rel) => isMarkdownFile(rel) && !storeOf(rel)),
       hosts: tiles.hosts,
       warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
       missed: { skipped: unmoved, refused: swept.refused },

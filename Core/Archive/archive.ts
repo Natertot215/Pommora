@@ -1,10 +1,9 @@
 // The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
 
 import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
-import { archiveStoreOf, holdsName } from '../Paths/names'
+import { holdsName } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
 import { relocate } from '../Files/atomicWrite'
-import type { ArchiveStore } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
@@ -22,7 +21,7 @@ import {
   type OpenBundle,
   spendBundle,
 } from '../Bundles/bundle'
-import { originPathOf } from '../Bundles/layout'
+import { type ArchiveStore, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import { decodeRecord, gatherContentRecord, originOf, type RecordFile } from '../Bundles/record'
 import { archiveFiling, placeRecord } from '../Bundles/placement'
 import { refileLanded } from './refile'
@@ -52,11 +51,11 @@ export async function archiveOp(
   if (record.entity === 'set' && record.id && left)
     await refileLanded(root, record, store.id, [...left.trail, left.parent, record.id])
   const cascade =
-    originPathOf(root, to, filed.landed) !== relative(root, abs)
+    originPathOf(root, filed.landed) !== relative(root, abs)
       ? await departingCascade(
           root,
           tree,
-          await originPagesOf(root, to, await contentPages(req.kind, filed.landed)),
+          await originPagesOf(root, await contentPages(req.kind, filed.landed)),
           titleFromPath(origin),
         )
       : undefined
@@ -108,7 +107,7 @@ export async function restoreArchived(
   const { record, placement, writeOrder, landedAs } = placed.value
   const { dir, finalName, finalTitle } = placement
   const targetAbs = join(root, dir, finalName)
-  const back = await originPagesOf(root, store, await contentPages(record.entity, artifact))
+  const back = await originPagesOf(root, await contentPages(record.entity, artifact))
   await machine().mkdir(dirname(targetAbs))
   await relocate(artifact, targetAbs)
   await writeOrder?.()

@@ -1,18 +1,16 @@
 import { foldKey } from './caseFold'
-import { archiveSegs, ASSETS_DIRNAME, NEXUS_DIR, THUMBNAILS_SEGMENT, TRASH_DIR } from './nexusPaths'
+import {
+  archiveSegs,
+  ASSETS_DIRNAME,
+  hiddenFolder,
+  NEXUS_DIR,
+  THUMBNAILS_SEGMENT,
+  TRASH_DIR,
+} from './nexusPaths'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
-
-export function hiddenName(name: string): boolean {
-  return name.startsWith('.') || name.startsWith('_')
-}
-
-/** A folder the app never enters: hidden behind a leading dot or underscore, or a package cache. */
-export function hiddenFolder(name: string): boolean {
-  return hiddenName(name) || name === 'node_modules'
-}
 
 /** `.nexus` is the exception, since Contexts and settings live there. Every folder on the way is held to `hiddenFolder`, while the leaf is held only to the dot, since sidecars carry the underscore. Shared so any lister of a watched directory skips exactly what it drops. */
 export function neverWatched(segs: string[]): boolean {

@@ -9,9 +9,9 @@ import {
 } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { escapes } from '../Paths/pathSafety'
-import { hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
-import { archiveStoreOf, holdsName } from '../Paths/names'
-import { ARCHIVE_DIR_REL, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
+import { holdsName } from '../Paths/names'
+import { ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
@@ -38,13 +38,14 @@ import {
   writeRecord,
 } from './record'
 import {
+  archiveStoreOf,
   type BundleStore,
   bundleAddressOf,
   fileStamp,
   layoutOf,
   originPathOf,
   stampedLeaf,
-} from './layout'
+} from '../Paths/bundleLayout'
 
 /** A store reads as a shadow of the nexus, so a stored item shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
 export async function chainDir(
@@ -128,11 +129,10 @@ export async function moveIntoStore(
   to: BundleStore,
   extra: RawRecord,
 ): Promise<void> {
-  const from = bundleAddressOf(root, fromBundle)?.store
   const artifact = await bundleArtifact(fromBundle)
   const raw = await readRawRecord(fromBundle)
-  if (!from || !artifact || !raw) return
-  const origin = join(root, originPathOf(root, from, artifact))
+  if (!artifact || !raw) return
+  const origin = join(root, originPathOf(root, artifact))
   await fileInto(root, to, origin, artifact, { ...raw, ...extra }, relative(root, fromBundle))
   await removeOwn(fromBundle)
 }
@@ -291,16 +291,10 @@ async function innerRecord(
 }
 
 /** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
-async function keptLinksUnder(
-  root: string,
-  store: BundleStore,
-  held: ContainerRecord,
-  artifact: string,
-  item: string,
-) {
+async function keptLinksUnder(root: string, held: ContainerRecord, artifact: string, item: string) {
   if (!held.links?.length) return []
   const files = await listMarkdownFiles(artifact)
-  const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, store, f))))
+  const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, f))))
   return held.links.filter((link) => {
     const page = linkedPage(link.value, index)
     return page !== undefined && isAtOrUnder(page.id, item)
@@ -314,7 +308,7 @@ export async function openBundle(root: string, abs: string): Promise<Result<Open
   if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
   const { item, held } = inner
   const own = await innerRecord(held, await trailWithin(held, inner.artifact, dirname(item)), item)
-  const links = await keptLinksUnder(root, store, held, inner.artifact, item)
+  const links = await keptLinksUnder(root, held, inner.artifact, item)
   return ok({
     abs: bundle,
     store,
@@ -349,7 +343,7 @@ export async function listInner(
   const entries = (await listEntries(folder)).filter(
     (e) =>
       (e.kind === 'dir' || isContentFile(e)) &&
-      !outsideContent(originPathOf(root, store, join(folder, e.name)), scope),
+      !outsideContent(originPathOf(root, join(folder, e.name)), scope),
   )
   const items = await Promise.all(
     entries.map(async ({ name }) => {
@@ -386,11 +380,11 @@ export async function listInner(
 
 /** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
 export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
-  const { abs, store, record, artifact, inner } = opened
+  const { abs, record, artifact, inner } = opened
   if (!inner) return void (await removeOwn(abs))
   const gone = 'links' in record ? (record.links ?? []) : []
   if (gone.length) await removeLinks(abs, gone)
-  await releaseStrip(root, relative(root, abs), originPathOf(root, store, artifact))
+  await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
 }
 
 export async function contentPages(
@@ -421,19 +415,15 @@ export async function originPagesIn(root: string, store: BundleStore): Promise<C
     if (!artifactName) continue
     const bundle = join(root, bundlePath)
     for (const file of await contentPages(record.entity, join(bundle, artifactName)))
-      out.push(connPage(bundle, originPathOf(root, store, file)))
+      out.push(connPage(bundle, originPathOf(root, file)))
   }
   return out
 }
 
 /** One bundle's pages at the paths they left, with the ids their files carry; an ID-less one answers to its file, which no index holds as an id. */
-export async function originPagesOf(
-  root: string,
-  store: BundleStore,
-  files: readonly string[],
-): Promise<ConnPage[]> {
+export async function originPagesOf(root: string, files: readonly string[]): Promise<ConnPage[]> {
   const out: ConnPage[] = []
   for (const file of files)
-    out.push(connPage((await stampedIdOf(file)) ?? file, originPathOf(root, store, file)))
+    out.push(connPage((await stampedIdOf(file)) ?? file, originPathOf(root, file)))
   return out
 }
