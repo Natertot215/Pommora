@@ -1,6 +1,7 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { validateOptionValues } from './validation'
 import { readPageRelations } from '../Index/contentIndex'
+import { unlessVouched } from '../Index/indexSeed'
 import { findHolders } from '../Index/keyHolders'
 import {
   type Rewrite,
@@ -46,7 +47,7 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, holderSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
 import type { Json } from '../Files/stableJson'
-import { isMarkdownFile, join } from '../Paths/posix'
+import { isMarkdownFile, join, relative } from '../Paths/posix'
 import { findOption, NO_OPTION } from './propertyValue'
 
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
@@ -225,8 +226,17 @@ async function valueEditPlan(
   def: PropertyDefinition,
   keys: ValueEdit,
 ): Promise<{ files: string[]; plan: SweepPlan }> {
+  const raw = valueEditRewrite(def, keys)
   const { files } = await findHolders(root, { keys: [def.key], reach: 'governed' })
-  return { files, plan: { raw: valueEditRewrite(def, keys) } }
+  const rows = readPageRelations(
+    files.map((file) => relative(root, file)),
+    def.key,
+  )?.pages
+  const passOver = (rel: string, file: string): boolean => {
+    const row = rows?.[rel]
+    return !!row && raw(row.values, file) === null
+  }
+  return { files: await unlessVouched(root, files, passOver), plan: { raw } }
 }
 
 async function stashSweep(root: string, def: PropertyDefinition, keys: ValueEdit): Promise<number> {
