@@ -285,7 +285,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 4-4 · A cascade reaches the Trash by the record's Collection
   - [x] Task 4-5 · The returning side of the frozen model leaves
   - [x] Task 4-6 · The holders' side of the frozen model leaves
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
@@ -4517,7 +4517,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 -/** The bundle is the folder wearing its mint's stamp, so a chain or artifact folder that only wears the suffix is never taken for it. */
 -const stampedSegment = (segs: readonly string[], suffix: string): number =>
 -  segs.findIndex((seg) => seg.endsWith(suffix) && storedAtOf(seg) !== null)
-+export interface Stored {
++interface Stored {
 +  store: BundleStore
 +  bundle: string | null
 +  inner: string[]
@@ -5017,6 +5017,17 @@ The stash schema moves into the property model, the one module a Collection side
 +  const at = id === undefined ? null : byId.get(id)
 +  return at !== null && (at === undefined || rootFile(root, at) === file)
 +}
++
++/** Whether `file` is a copy of the one root `byId` holds for its `id` elsewhere, which every strip and refill passes over unreported, since that root holds what it would take. */
++export const twinned = (
++  root: string,
++  byId: RootsById,
++  id: string | undefined,
++  file: string,
++): boolean => {
++  const at = id === undefined ? null : byId.get(id)
++  return !!at && rootFile(root, at) !== file
++}
 @@ nexusPages @@
      archived.push(connPage(id, at.origin))
    }
@@ -5074,7 +5085,7 @@ The stash schema moves into the property model, the one module a Collection side
 ```Core/Index/keyHolders.ts diff
 @@ imports @@
 -import { addressable, type NexusPages, nexusPages } from '../Nexus/heldPages'
-+import { addressable, type NexusPages, nexusPages, storedSpaces } from '../Nexus/heldPages'
++import { addressable, type NexusPages, nexusPages, storedSpaces, twinned } from '../Nexus/heldPages'
 @@ spaceFiles @@
 -/** The sidecar of each Space the tree holds that `holds` answers for, at the folder `moved` sent it to when the tree still lists the one it left. */
 +/** The sidecar of each Space the tree or `stored` holds that `holds` answers for, a tree Space at the folder `moved` sent it to when the tree still lists the one it left. */
@@ -5105,12 +5116,14 @@ The stash schema moves into the property model, the one module a Collection side
 @@ readHolders @@
 -    const addressed = addressable(byId, id) ? id : null
 +    const addressed = addressable(root, byId, id, file) ? id : null
+     if (raw && addressed === null) heldOut.add(file)
++    if (twinned(root, byId, id, file)) continue
 ```
 
 ```Core/Nexus/cascade.ts diff
 @@ imports @@
 -import { addressable, nexusPages } from './heldPages'
-+import { addressable, nexusPages, storedSpaces } from './heldPages'
++import { addressable, nexusPages, storedSpaces, twinned } from './heldPages'
 @@ linkStrip @@
 -  const { byId, archived } = await nexusPages(root, tree)
 +  const { byId, archived, stored } = await nexusPages(root, tree)
@@ -5124,7 +5137,7 @@ The stash schema moves into the property model, the one module a Collection side
 -          heldOut++
 +        const id = rootId(file, raw)
 +        if (named.length && !addressable(root, strip.byId, id, file)) {
-+          if (id === undefined || strip.byId.get(id) === null) heldOut++
++          if (!twinned(root, strip.byId, id, file)) heldOut++
            return null
          }
 @@ renameCascade @@
@@ -5207,7 +5220,7 @@ The stash schema moves into the property model, the one module a Collection side
 
 - [ ] The four new cases are green, and each is watched red with its hunk reverted.
 - [ ] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`. `contextCascade.test.ts`'s twelve unlink calls change as CHANGE names, every expectation holding.
-- [ ] **Flips Found in Execution:** `setSpaceProperty.test.ts`' "a restored Space keeps an option word deleted while it sat in the Trash" becomes "a trashed Space loses an option word deleted meanwhile, as a live one does", expecting `['alpha']` (Decision D-4); `configReach.test.ts` mocks `./liveTree` with `{ spy: true }`, since the new edge puts `configReach.ts` inside `liveTree`'s import loop, where an `importOriginal` factory binds it to the original `liveTreeOf`. `RootsById` moves from `governedSweep.ts` into `heldPages.ts`, beside `addressable`, which reads it.
+- [ ] **Flips Found in Execution:** `setSpaceProperty.test.ts`' "a restored Space keeps an option word deleted while it sat in the Trash" becomes "a trashed Space loses an option word deleted meanwhile, as a live one does", expecting `['alpha']` (Decision D-4); `configReach.test.ts` mocks `./liveTree` with `{ spy: true }`, since this task's edges put `configReach.ts` inside `liveTree`'s import loop, where an `importOriginal` factory bound it to the original `liveTreeOf` (Phase 4's checkpoint moved `retries` and `reachReport` into `owed.ts`, which took it back out; the spy mock stays correct either way). `RootsById` moves from `governedSweep.ts` into `heldPages.ts`, beside `addressable`, which reads it.
 - [ ] `git grep -n "skipUnder" -- Core` prints nothing, and `git grep -n "stashBlock\|StashBlock" -- Core` shows the schema defined in `properties.ts` alone, with no file importing it from `propertyStash`.
 - [ ] Run the gates (`npm run typecheck`, `npm run test`, `npm run lint`). `assignment.test.ts`, `governedWorldWrite.test.ts`, `repairSweep.test.ts`, and `deleteOrder.test.ts` are the suites that break without the move: each enters the cycle through `propertyStash.ts` (`deleteOrder.test.ts` by way of `mutate.ts` and `assignment.ts`), so `record.ts` evaluates before it finishes. Native module evaluation throws a ReferenceError at that read; vitest's module runner answers it `undefined`, and `recordFile` then refuses every property record holding `stashes`.
 - [ ] Check for unnecessary code or mistakes.
@@ -5466,12 +5479,15 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 @@
 +import { owningCollection } from '../Nexus/treePatch'
 @@ collectionsElsewhere @@
-+/** Each Trash bundle's Collection, by the bundle's root-relative path: a trashed Collection's own, or the one a page or Set left, as its record names it, so a Collection renamed or moved since keeps what the Trash holds of it. */
-+export async function trashedOwners(root: string): Promise<Map<string, string>> {
++/** Each Trash bundle's Collection, by the bundle's root-relative path: a trashed Collection's own, or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it. */
++export async function trashedOwners(root: string, tree: NexusTree): Promise<Map<string, string>> {
 +  const owners = new Map<string, string>()
 +  for (const { bundlePath, record } of await listBundles(root, { kind: 'trash' })) {
 +    const origin = originOf(record)
-+    const owner = record.entity === 'collection' ? record.id : origin && collectionOf(origin)
++    const owner =
++      record.entity === 'collection'
++        ? record.id
++        : origin && collectionOf(currentOrigin(tree, origin) ?? origin)
 +    if (owner) owners.set(bundlePath, owner)
 +  }
 +  return owners
@@ -5479,7 +5495,7 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +
 +export async function trashReach(root: string, tree: NexusTree, rel?: string): Promise<string[]> {
 +  const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
-+  return [...(await trashedOwners(root))].flatMap(([bundle, id]) =>
++  return [...(await trashedOwners(root, tree))].flatMap(([bundle, id]) =>
 +    rel === undefined || id === owner ? [bundle] : [],
 +  )
 +}
@@ -5622,8 +5638,8 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
      const folders = [
        ...collectionFolders(root, await liveTreeOf(root)),
 -      ...trashed.flatMap((b) => (b.entity === 'collection' ? [b.abs] : [])),
-+      ...bundles.flatMap((b) =>
-+        !kept && b.record.entity === 'collection' && b.artifactName
++      ...(kept ? [] : bundles).flatMap((b) =>
++        b.record.entity === 'collection' && b.artifactName
 +          ? [join(root, b.bundlePath, b.artifactName)]
 +          : [],
 +      ),
@@ -5641,13 +5657,13 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
    const strip = back ? undefined : e.strip
 -  if (strip) {
 -    const links = await gatherLinks(root, join(root, e.at), strip)
-+  const taken = strip && (await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip))
++  const taken = strip ? await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip) : null
 +  if (taken) {
 +    const links = await gatherLinks(root, taken)
      await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
    }
 -  const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
-+  const stripped = !!strip && add(reach, await deleteCascade(root, taken || null))
++  const stripped = !!strip && add(reach, await deleteCascade(root, taken))
 ```
 
 `finishOwed.ts` imports `linkStrip` beside `deleteCascade` from `./cascade`.
@@ -5655,9 +5671,14 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 ```Core/Properties/assignment.ts diff
 @@ imports @@
 +import { trashedOwners } from '../Bundles/bundle'
++import { storeOf } from '../Paths/bundleLayout'
 @@ refillStash @@
    const { byId, archived } = await nexusPages(root, tree)
-+  const trashed = await trashedOwners(root)
++  const trashed = Object.keys(values).some(
++    (id) => storeOf(byId.get(id)?.path ?? '')?.store.kind === 'trash',
++  )
++    ? await trashedOwners(root, tree)
++    : undefined
    const members = new Map(
      Object.keys(values).flatMap((id) => {
        const r = byId.get(id)
@@ -5670,7 +5691,7 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +import { trashedOwners } from '../Bundles/bundle'
 @@ runRepairSweep @@
      const tree = await liveTreeOf(root)
-+    const trashed = await trashedOwners(root)
++    const trashed = await trashedOwners(root, tree)
      const raw: Rewrite = (fm, file) => {
 -      const schema = containerSchema(tree, relative(root, file))
 +      const schema = containerSchema(tree, relative(root, file), trashed)
@@ -5692,11 +5713,10 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +  scope: WatchScope,
 +  abs: string,
 +): Promise<Container[]> =>
-+  (await sidecarsUnder(root, scope, abs)).flatMap((file) =>
-+    (['collection', 'set'] as const).flatMap((kind) =>
-+      basename(file) === SIDECAR_FILENAME[kind] ? [{ kind, dir: dirname(file) }] : [],
-+    ),
-+  )
++  (await sidecarsUnder(root, scope, abs)).flatMap((file) => {
++    const kind = (['collection', 'set'] as const).find((k) => basename(file) === SIDECAR_FILENAME[k])
++    return kind ? [{ kind, dir: dirname(file) }] : []
++  })
  
  /** The ids of the Sets an archived folder holds, read from their sidecars. */
  export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
@@ -6297,7 +6317,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 -export async function oweWorked(…) { … }            (lines 223-240, removed)
 ```
 
-(`same` stays for `editNote`, `:145`, and `reachReport`'s import stays for `owedReport`.)
+(`same` stays for `editNote`, `:145`, and `reachReport` for `owedReport`.)
 
 ▸ Phases 2 and 3 also rewrite `finishOwed.ts`.
 
@@ -6452,25 +6472,25 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 #### Review Checkpoint
 
-- [ ] **B-9 by Construction:** a page, a Set, a Collection, and a Space that sat in the Trash through a property, option, Space, and Context rename each return holding the new names, with no restore-side rewrite left in the code: `git grep -n "matchOf\|currentKeys\|targets" -- Core/Trash Core/Bundles ':!*.test.ts'` prints nothing.
-- [ ] **The Reach Reads One Rule:**
+- [x] **B-9 by Construction:** a page, a Set, a Collection, and a Space that sat in the Trash through a property, option, Space, and Context rename each return holding the new names, with no restore-side rewrite left in the code: `git grep -n "matchOf\|currentKeys\|targets" -- Core/Trash Core/Bundles ':!*.test.ts' ':!Core/Bundles/browser.ts'` prints nothing.
+- [x] **The Reach Reads One Rule:**
   - The index, the walk, `listInner`, and the watcher judge a stored path by `storeOf` or the store root alone.
   - A governed or scoped reach and the repair sweep take a trashed item's owner from `owningCollection`.
   - `byId` is the one addressing map for both stores.
   - The six display hides read `storeOf`.
-- [ ] **Decided Behaviors Hold:**
+- [x] **Decided Behaviors Hold:**
   - B-2, B-3, B-7, B-8, and B-9 each have a case watched red at its own task's head.
   - The claim rule's four cases and the pass-over are green.
   - A trashed holder's refill miss is named (Decision D-5).
   - A trashed Collection's views and a trashed Space's tile docs follow deletes (Decision D-3).
-- [ ] **A Live Drive** on a scratch copy of `~/Test`, from a worktree build (*Development-Environment*):
+- [x] **A Live Drive** on a scratch copy of `~/Test`, from a worktree build (*Development-Environment*):
   1. Trash a page from Collection A.
   2. Rename one of its properties, one of its option words, its Space, and its Context.
   3. Read the trashed file on disk: it holds the new names.
   4. Restore it: it lands holding them, with no notice beyond the restore's own.
   5. Remove another page's bundle in Finder, then rename a property it held: no "Couldn't update" notice.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 4 row beside its estimate, and anything above the estimate is reported with what it buys.
-- [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files, and the compaction checkpoint follows.
+- [x] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 4 row beside its estimate, and anything above the estimate is reported with what it buys.
+- [x] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files, and the compaction checkpoint follows.
 
 ---
 
@@ -7397,7 +7417,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 #### Task 5-4
 
-**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins the record helpers in `Core/Bundles/record.ts` (P-2). `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
+**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins the record helpers in `Core/Bundles/record.ts` (P-2), taking its Trash rows or scope from its caller rather than calling `storedPageIds` or `liveTreeOf`, so `record.ts` stays outside the import loop around `liveTree.ts`; the one restore and the arrival pass a `NexusPages.stored` they already hold rather than listing `storedSpaces` again. `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
 
 **NOW:**
 - `Core/Trash/restoreScrub.ts` holds `artifactFiles` and `repairLanded` alone after Phase 4, `repairLanded`'s one caller being `returningCascade` (`Core/Nexus/settle.ts:343`, imported at `:46`).
@@ -9483,6 +9503,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **Windows and exFAT:** the write-through flag (Decision G-4) and the change time on an NTFS rename-over and on exFAT ship unverified, so the guards the change time retires leave only where it's known to be real.
 - **Power Loss:** that a write-through temp counts as flushed when the drive's cache is emptied rests on Apple's `fcntl(2)` documentation and git's batch mode, not on a power-cut test.
 - **Extended Attributes:** a sync client that writes extended attributes (iCloud Drive, Dropbox) moves a file's change time, so inside such a folder an own save would be heard as outside and no index row would vouch; that degrades toward re-reading, never toward a missed write, and is unprobed.
+- **Live Store Browsers:** the Trash's and the Archive's browsers re-list only when shown or after the app's own mutate, so a change made outside the app (Finder, Obsidian, a Sync arrival) reaches an open browser only when it's shown again; the Archive behaved so before this plan, and a push that carries it is feature-level.
 
 #### Deviations
 
@@ -9504,7 +9525,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it; the checkpoint gave the echo record a move-or-landing union, and an in-flight landing's record keeps the stat its file last landed with, so an echo drained during the file's next landing is still dropped.
 - **Phase 2:** Task 2-3's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`; the checkpoint made a delete's finish gather ahead of every strip, as the empty's does, so a Try Again records what it strips; gave `Departing` a Space-by-id arm, so a Space delete cut short after its move leaves the Context's Space order, replacing a branch that couldn't fire; and pointed `archivedWithin` at `currentOrigin`.
-- **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
+- **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks. The checkpoint took a trashed item's owner from the trail its origin stands on now (`currentOrigin`), so a Set moved into another Collection carries its trashed pages' values with it; gave a trashed twin one pass-over, `twinned` beside `addressable`, which the holder read and the strip share; and moved `retries` and `reachReport` into `owed.ts` beside `owedReport`, which took `bundle.ts`, `configReach.ts`, `owed.ts`, and `tileHosts.ts` back out of the import loop around `liveTree.ts`, eleven modules to seven.
 - **Phase 4 · Tasks 4-3 and 4-4 Land as One Commit:** Task 4-3 alone left a trashed page's stashed value unreached (`refillStash`'s `members` needs `owningCollection`'s Trash arm, which Task 4-4 adds), so the two commit together; Task 4-3 also writes the watcher's and Sync's manifest's shared watch rule once (`watchedUnder`) and has `deindexPath` prune a removed path's rows whether or not it's content.
 - **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
 - **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.

@@ -481,6 +481,8 @@ describe('renameCascade for a heading', () => {
 describe('deleteCascade', () => {
   let related: string
   const target = (): string => join(dir, 'Target.md')
+  const strip = (at = target(), paths = ['Notes/Target.md']) =>
+    linkStrip(root, [relative(root, at)], paths)
   const set = async (parent: string, name: string): Promise<string> => {
     const folder = join(parent, name)
     await mkdir(folder, { recursive: true })
@@ -527,14 +529,9 @@ describe('deleteCascade', () => {
   it('strips a Link property naming the page, keeps the body’s link, and records the value', async () => {
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    const r = await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(await bodyOf(a.path)).toBe('see [[Target]]')
     expect(r).toEqual({ skipped: 0, refused: [], hosts: [], pages: [rel(a.path)] })
@@ -544,14 +541,9 @@ describe('deleteCascade', () => {
   it('strips a hand-written markdown Link value naming the page, recording it as written', async () => {
     const a = await linker('Cites', '[x](Target)')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: a.id, property: related, value: '[x](Target)' }])
   })
@@ -561,14 +553,9 @@ describe('deleteCascade', () => {
     const bytes = await readFile(a.path, 'utf8')
     await writeFile(a.path, bytes.replace('Related: held', 'Related: [[Target]]'))
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
@@ -576,14 +563,9 @@ describe('deleteCascade', () => {
   it('leaves a Link value held under another casing of the Link property’s key, recording nothing', async () => {
     const a = await linker('Cites', '[[Target]]', dir, 'related')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect((await fmOf(a.path)).related).toBe('[[Target]]')
     expect(links).toEqual([])
   })
@@ -591,14 +573,9 @@ describe('deleteCascade', () => {
   it('records an aliased heading value verbatim', async () => {
     const a = await linker('Cites', '[[Target#Intro|see]]')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: a.id, property: related, value: '[[Target#Intro|see]]' }])
   })
@@ -608,10 +585,7 @@ describe('deleteCascade', () => {
     const b = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     const before = await readFile(a.path, 'utf8')
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const r = await deleteCascade(root, await strip())
     expect(await readFile(a.path, 'utf8')).toBe(before)
     expect(r.pages).toEqual([rel(b.path)])
   })
@@ -623,10 +597,7 @@ describe('deleteCascade', () => {
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     sweepSpy.mockClear()
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const r = await deleteCascade(root, await strip())
     expect(sweptFiles()).toEqual([a.path])
     expect(r.pages).toEqual([rel(a.path)])
     expect(await readFile(loose, 'utf8')).toBe(content)
@@ -647,20 +618,14 @@ describe('deleteCascade', () => {
       installStores(memoryStores().stores)
       await seedContentIndex(root)
       sweepSpy.mockClear()
-      await deleteCascade(
-        root,
-        await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-      )
+      await deleteCascade(root, await strip())
       expect(sweptFiles()).toEqual([a.path])
       expect(await fmOf(a.path)).not.toHaveProperty('Related')
     })
 
     it('through the corpus when there is no index', async () => {
       sweepSpy.mockClear()
-      await deleteCascade(
-        root,
-        await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-      )
+      await deleteCascade(root, await strip())
       expect(sweptFiles()).toHaveLength(4)
       expect(await fmOf(a.path)).not.toHaveProperty('Related')
     })
@@ -672,7 +637,7 @@ describe('deleteCascade', () => {
     await refreshTree(root)
     const before = await readFile(t.path, 'utf8')
     sweepSpy.mockClear()
-    await deleteCascade(root, await linkStrip(root, [relative(root, t.path)], ['Notes/Target.md']))
+    await deleteCascade(root, await strip(t.path))
     expect(sweptFiles()).toEqual([a.path])
     expect(await readFile(t.path, 'utf8')).toBe(before)
   })
@@ -682,10 +647,7 @@ describe('deleteCascade', () => {
     if (!(await createTestPage(other, 'Target')).ok) throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const r = await deleteCascade(root, await strip())
     expect((await fmOf(a.path)).Related).toBe('[[Target]]')
     expect(r).toEqual({ skipped: 0, refused: [], hosts: [], pages: [] })
   })
@@ -697,22 +659,9 @@ describe('deleteCascade', () => {
       throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(
-        root,
-        [relative(root, other)],
-        ['Notes/Other/Target.md', 'Notes/Other/Deep/Target.md'],
-      ))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(
-        root,
-        [relative(root, other)],
-        ['Notes/Other/Target.md', 'Notes/Other/Deep/Target.md'],
-      ),
-    )
+    const taken = await strip(other, ['Notes/Other/Target.md', 'Notes/Other/Deep/Target.md'])
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
@@ -725,14 +674,9 @@ describe('deleteCascade', () => {
     const b = await linker('Cites B', '[[B/Notes]]')
     const bare = await linker('Cites Bare', '[[Notes]]')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, join(dir, 'A', 'Notes.md'))], ['Notes/A/Notes.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, join(dir, 'A', 'Notes.md'))], ['Notes/A/Notes.md']),
-    )
+    const taken = await strip(join(dir, 'A', 'Notes.md'), ['Notes/A/Notes.md'])
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect((await fmOf(b.path)).Related).toBe('[[B/Notes]]')
     expect((await fmOf(bare.path)).Related).toBe('[[Notes]]')
@@ -746,14 +690,9 @@ describe('deleteCascade', () => {
     if (!(await createTestPage(await set(dir, 'B'), 'Notes')).ok) throw new Error('setup failed')
     const a = await linker('Cites', '[[B/Notes]]')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, join(dir, 'B', 'Notes.md'))], ['Notes/B/Notes.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, join(dir, 'B', 'Notes.md'))], ['Notes/B/Notes.md']),
-    )
+    const taken = await strip(join(dir, 'B', 'Notes.md'), ['Notes/B/Notes.md'])
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect((await fmOf(a.path)).Related).toBe('[[B/Notes]]')
     expect(links).toEqual([])
   })
@@ -763,10 +702,7 @@ describe('deleteCascade', () => {
     await linker('Inner', '[[Other]]', gone)
     const sib = await linker('Sib', '[[Inner]]', await set(dir, 'Gone Archive'))
     await refreshTree(root)
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, gone)], ['Notes/Gone/Inner.md']),
-    )
+    const r = await deleteCascade(root, await strip(gone, ['Notes/Gone/Inner.md']))
     expect(r.pages).toEqual([rel(sib.path)])
   })
 
@@ -775,12 +711,7 @@ describe('deleteCascade', () => {
     await seedNexus(root, { defs: [] })
     await refreshTree(root)
     sweepSpy.mockClear()
-    expect(
-      await deleteCascade(
-        root,
-        await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-      ),
-    ).toEqual({
+    expect(await deleteCascade(root, await strip())).toEqual({
       skipped: 0,
       hosts: [],
     })
@@ -797,14 +728,9 @@ describe('deleteCascade', () => {
       kind: 'page',
       reason: 'missing',
     })
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    const r = await deleteCascade(root, taken)
     expect(links).toEqual([])
     expect(r.skipped).toBe(1)
     expect(await readFile(loose, 'utf8')).toBe(content)
@@ -819,14 +745,9 @@ describe('deleteCascade', () => {
     await mkdir(join(archived, '..'), { recursive: true })
     await writeFile(archived, `---\nID: ${id}\nRelated: "[[Target]]"\n---\nb\n`)
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(archived)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
   })
@@ -843,10 +764,7 @@ describe('deleteCascade', () => {
       `---\nID: 01KVGMT8BFP350FZZXAMG1QARC\nRelated: "[[Target]]"\n---\nb\n`,
     )
     await refreshTree(root)
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const r = await deleteCascade(root, await strip())
     expect(await fmOf(archived)).not.toHaveProperty('Related')
     expect(r.pages).toEqual([rel(a.path)])
   })
@@ -855,14 +773,9 @@ describe('deleteCascade', () => {
     const a = await linker('Cites', '[[Target]]')
     await writeFile(join(dir, '_pagecollection.json'), '{ not json')
     await refreshTree(root)
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(root, [relative(root, target())], ['Notes/Target.md']))!,
-    )
-    await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const taken = await strip()
+    const links = await gatherLinks(root, taken!)
+    await deleteCascade(root, taken)
     expect(await fmOf(a.path)).not.toHaveProperty('Related')
     expect(links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
@@ -877,11 +790,7 @@ describe('deleteCascade', () => {
     sweepSpy.mockClear()
     const r = await deleteCascade(
       root,
-      await linkStrip(
-        root,
-        [relative(root, gone)],
-        ['Notes/Gone/Inner.md', 'Notes/Gone/Deep/Deeper.md'],
-      ),
+      await strip(gone, ['Notes/Gone/Inner.md', 'Notes/Gone/Deep/Deeper.md']),
     )
     expect(sweptFiles()).toEqual([a.path])
     expect(r.pages).toEqual([rel(a.path)])
@@ -895,22 +804,9 @@ describe('deleteCascade', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
-    const links = await gatherLinks(
-      root,
-      (await linkStrip(
-        root,
-        [relative(root, join(dir, 'Gone'))],
-        ['Notes/Gone/Alpha.md', 'Notes/Gone/Beta.md'],
-      ))!,
-    )
-    const r = await deleteCascade(
-      root,
-      await linkStrip(
-        root,
-        [relative(root, join(dir, 'Gone'))],
-        ['Notes/Gone/Alpha.md', 'Notes/Gone/Beta.md'],
-      ),
-    )
+    const taken = await strip(join(dir, 'Gone'), ['Notes/Gone/Alpha.md', 'Notes/Gone/Beta.md'])
+    const links = await gatherLinks(root, taken!)
+    const r = await deleteCascade(root, taken)
     expect(sweepSpy.mock.calls.length).toBe(1)
     expect(r.pages?.sort()).toEqual([rel(a.path), rel(b.path)].sort())
     expect(links).toEqual(
@@ -930,10 +826,7 @@ describe('deleteCascade', () => {
       await refreshTree(root)
       await chmod(locked, 0o555)
       try {
-        const r = await deleteCascade(
-          root,
-          await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-        )
+        const r = await deleteCascade(root, await strip())
         expect(r).toEqual({ skipped: 1, refused: [], hosts: [], pages: [] })
       } finally {
         await chmod(locked, 0o755)
@@ -949,10 +842,7 @@ describe('deleteCascade', () => {
     await writeFile(broken, content)
     await refreshTree(root)
     sweepSpy.mockClear()
-    const r = await deleteCascade(
-      root,
-      await linkStrip(root, [relative(root, target())], ['Notes/Target.md']),
-    )
+    const r = await deleteCascade(root, await strip())
     expect(heldTreeOf(root)?.unreadable).toContainEqual({
       path: rel(broken),
       kind: 'page',

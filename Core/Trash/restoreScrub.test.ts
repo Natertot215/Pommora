@@ -17,7 +17,6 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { closeSession, openSession } from '../Nexus/session'
 import type { PropertyDefinition } from '../Properties/properties'
-import { readNotes } from '../Nexus/owed'
 
 const trashPage = (file: string): boolean => file.includes('/.trash/') && isMarkdownFile(file)
 
@@ -88,7 +87,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('a returning artifact is reconciled against the world it comes back to', () => {
+describe('a restore returns a trashed page as the Trash kept it', () => {
   it('a trashed holder the restore’s refill couldn’t write is named', async () => {
     await seedNexus(root, { defs: [PRIORITY, RELATED], assigned: { Notes: [PROP, LINK] } })
     const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -108,9 +107,6 @@ describe('a returning artifact is reconciled against the world it comes back to'
     } finally {
       failing.mockRestore()
     }
-    expect(Object.values(await readNotes(root))).not.toContainEqual(
-      expect.objectContaining({ kind: 'relink', values: expect.anything() }),
-    )
   })
 
   it('a trashed page’s Link follows a page renamed meanwhile', async () => {
@@ -178,6 +174,27 @@ describe('a returning page takes the current keys', () => {
     expect(f['<Ventures>']).toEqual(['Pommora 2'])
     expect(f).not.toHaveProperty('Priority')
     expect(f).not.toHaveProperty('<Projects>')
+  })
+
+  it('a page whose Set moved to another Collection while it sat in the Trash keeps a value only the Collection it left removed', async () => {
+    await seedNexus(root, { assigned: { Notes: [PROP], Tasks: [PROP] } })
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Beta.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nPriority: hi\n---\nbody',
+    )
+    await refreshTree(root)
+    await cycle('Notes/Daily/Beta.md', 'page', async () => {
+      const moved = await settledMutate(root, {
+        op: 'moveSet',
+        path: 'Notes/Daily',
+        newParentPath: 'Tasks',
+        order: ['set-daily'],
+      })
+      expect(moved.ok).toBe(true)
+      const removed = { op: 'unassignProperty', containerPath: 'Notes', propertyId: PROP } as const
+      expect((await settledMutate(root, removed)).ok).toBe(true)
+    })
+    expect((await fm('Tasks/Daily/Beta.md')).Priority).toBe('hi')
   })
 })
 

@@ -29,8 +29,7 @@ import type { WatchScope } from '../Paths/exclusion'
 import { sidecarId } from '../Files/sidecar'
 import { isPlainObject } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
-import type { CascadeReport } from './cascade'
-import { type ContainerKind, type HeldKind, refusedLine, unsweptLine } from './entities'
+import type { ContainerKind, HeldKind } from './entities'
 import { archiveReach, containerAt, damagedFolders } from './treePatch'
 
 // ── Roles ──
@@ -217,30 +216,6 @@ export const sweptReach = ({ skipped, refused }: SweepResult): ConfigReach => ({
   hosts: [],
 })
 
-/** The files `reach` missed that a later sweep can reach, which is what an entry owes. */
-export const retries = ({ skipped, refused }: ConfigReach): number =>
-  skipped - (refused?.length ?? 0)
-
-export const reachReport = ({
-  hosts,
-  skipped,
-  refused = [],
-  pages = [],
-}: ConfigReach): CascadeReport => ({
-  pages,
-  hosts,
-  ...(skipped
-    ? {
-        warning: [
-          skipped > refused.length && unsweptLine(skipped - refused.length),
-          refused.length && refusedLine(refused),
-        ]
-          .filter(Boolean)
-          .join(' '),
-      }
-    : {}),
-})
-
 const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] => [
   node,
   ...(node.sets ?? []).flatMap(within),
@@ -288,11 +263,12 @@ const containerSidecarsUnder = async (
   scope: WatchScope,
   abs: string,
 ): Promise<Container[]> =>
-  (await sidecarsUnder(root, scope, abs)).flatMap((file) =>
-    (['collection', 'set'] as const).flatMap((kind) =>
-      basename(file) === SIDECAR_FILENAME[kind] ? [{ kind, dir: dirname(file) }] : [],
-    ),
-  )
+  (await sidecarsUnder(root, scope, abs)).flatMap((file) => {
+    const kind = (['collection', 'set'] as const).find(
+      (k) => basename(file) === SIDECAR_FILENAME[k],
+    )
+    return kind ? [{ kind, dir: dirname(file) }] : []
+  })
 
 /** The ids of the Sets an archived folder holds, read from their sidecars. */
 export async function archivedSetIds(root: string, abs: string): Promise<string[]> {

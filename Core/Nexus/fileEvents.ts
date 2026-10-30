@@ -293,7 +293,7 @@ export async function indexEvents(
           break
         case 'unlink':
         case 'unlinkDir': {
-          const seen = await deindexPath(root, ev.absPath)
+          const seen = deindexPath(root, ev.absPath)
           if (ev.origin === 'watched') oweSeen(root, seen)
           break
         }

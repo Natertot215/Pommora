@@ -25,11 +25,11 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
-import { addressable, nexusPages, storedSpaces } from './heldPages'
+import { addressable, nexusPages, storedSpaces, twinned } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
 import { rekeyContext } from '../Contexts/contextCascade'
-import { type ConfigReach, NO_REACH, reachReport } from './configReach'
-import { type Entry, type RelinkEntry, runNoted } from './owed'
+import { type ConfigReach, NO_REACH } from './configReach'
+import { type Entry, type RelinkEntry, reachReport, runNoted } from './owed'
 import type { z } from 'zod'
 import type { strippedLink } from '../Bundles/record'
 
@@ -94,7 +94,7 @@ export async function linkStrip(root: string, left: readonly string[], paths: re
 
 export type LinkStrip = NonNullable<Awaited<ReturnType<typeof linkStrip>>>
 
-/** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back; a stored copy of a root `byId` addresses elsewhere is passed over unreported, since its live twin holds what the strip takes. */
+/** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back; a copy of a root `byId` addresses elsewhere is passed over unreported, since that root holds what the strip takes. */
 export async function deleteCascade(root: string, strip: LinkStrip | null): Promise<ConfigReach> {
   if (!strip) return NO_REACH
   try {
@@ -104,7 +104,7 @@ export async function deleteCascade(root: string, strip: LinkStrip | null): Prom
         const named = strip.named(raw)
         const id = rootId(file, raw)
         if (named.length && !addressable(root, strip.byId, id, file)) {
-          if (id === undefined || strip.byId.get(id) === null) heldOut++
+          if (!twinned(root, strip.byId, id, file)) heldOut++
           return null
         }
         const keys = named.map(({ key }) => key)

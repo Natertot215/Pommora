@@ -79,6 +79,17 @@ export const addressable = (
   return at !== null && (at === undefined || rootFile(root, at) === file)
 }
 
+/** Whether `file` is a copy of the one root `byId` holds for its `id` elsewhere, which every strip and refill passes over unreported, since that root holds what it would take. */
+export const twinned = (
+  root: string,
+  byId: RootsById,
+  id: string | undefined,
+  file: string,
+): boolean => {
+  const at = id === undefined ? null : byId.get(id)
+  return !!at && rootFile(root, at) !== file
+}
+
 /** The title the window shows for `id`: its one holder's, or the first-listed page's where two files claim it. */
 export const shownTitle = (
   tree: NexusTree,

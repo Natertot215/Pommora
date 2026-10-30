@@ -8,7 +8,6 @@ import { contextDirRel, spaceDirRel } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { reachReport } from '../Nexus/configReach'
 import { spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
 import { type MutateReply, type MutateRequest, type PutBack, undoOf } from '../Nexus/mutateRequest'
@@ -24,7 +23,7 @@ import { contextsDir, sidecarPath, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 import { listOf } from '../Contract/validators'
-import { OWED, owedName, readNotes } from '../Nexus/owed'
+import { OWED, owedName, reachReport, readNotes } from '../Nexus/owed'
 
 /** Unknown ids fail — a stale renderer id must never serialize as a guess. */
 export function contextTarget(

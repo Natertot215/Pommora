@@ -4,6 +4,7 @@ import { isAtOrUnder, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { trashedOwners } from '../Bundles/bundle'
+import { storeOf } from '../Paths/bundleLayout'
 import { patchSidecar } from '../Files/sidecar'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -36,7 +37,11 @@ export async function refillStash(
   if (!def) return 0
   const { values } = stash
   const { byId, archived } = await nexusPages(root, tree)
-  const trashed = await trashedOwners(root)
+  const trashed = Object.keys(values).some(
+    (id) => storeOf(byId.get(id)?.path ?? '')?.store.kind === 'trash',
+  )
+    ? await trashedOwners(root, tree)
+    : undefined
   const members = new Map(
     Object.keys(values).flatMap((id) => {
       const r = byId.get(id)

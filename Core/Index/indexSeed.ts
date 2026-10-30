@@ -223,7 +223,7 @@ function reindex(rows: readonly PageIndexRow[]): { renames: HeadingRenameSeen[];
   return { renames, seq }
 }
 
-export async function deindexPath(root: string, abs: string): Promise<IndexSeen> {
+export function deindexPath(root: string, abs: string): IndexSeen {
   const rel = relative(root, abs)
   if (!rel || escapes(rel)) return NOTHING_SEEN
   if (isMarkdownFile(rel)) return { ...NOTHING_SEEN, vanished: unindexed(rel) }
@@ -234,12 +234,9 @@ export async function deindexPath(root: string, abs: string): Promise<IndexSeen>
 }
 
 export async function moveIndexPaths(root: string, oldAbs: string, newAbs: string): Promise<void> {
-  const oldRel = await relCorpusPath(root, oldAbs)
   const newRel = await relCorpusPath(root, newAbs)
-  if (!newRel) {
-    if (oldRel) await deindexPath(root, oldAbs)
-    return
-  }
+  if (!newRel) return void deindexPath(root, oldAbs)
+  const oldRel = await relCorpusPath(root, oldAbs)
   if (!oldRel) {
     const landed = isMarkdownFile(newRel)
       ? [newRel]

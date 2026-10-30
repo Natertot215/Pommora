@@ -7,7 +7,8 @@ import { contextsDir, contextsRegistryFile, nexusConfig, homepageDir } from '../
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { dropLiveTree, liveTreeOf } from './liveTree'
 import './settle'
-import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
+import { goneContainers, goneEdit, propertyClear, reachConfig } from './configReach'
+import { reachReport } from './owed'
 import { forgetLastReads } from '../Files/atomicWrite'
 import { unsweptLine } from './entities'
 

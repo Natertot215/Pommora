@@ -2,7 +2,18 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { landValue } from '../Files/rootValues'
 import { ID_KEY } from '../Nexus/identityMark'
-import { chmod, mkdir, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  copyFile,
+  cp,
+  mkdir,
+  rename,
+  rm,
+  readFile,
+  stat,
+  utimes,
+  writeFile,
+} from 'node:fs/promises'
 import { dirname, join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
 import { ok } from '../Contract/result'
@@ -172,6 +183,34 @@ describe('unassignProperty — strip + stash', () => {
     await assignProperty(root, folder, propId)
     expect([await pageValue(pageA), await pageValue(copy)]).toEqual([['active'], ['done']])
     expect(await stashBlock()).toBeUndefined()
+  })
+
+  it('a Remove passes over a trashed page whose live copy holds its id, without a warning', async () => {
+    await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' })
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    const trashed = join(root, bundle.bundlePath, 'A.md')
+    await copyFile(trashed, pageA)
+    await refreshTree(root)
+    const r = await unassignProperty(root, folder, propId)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBeUndefined()
+    expect([await pageValue(pageA), await pageValue(trashed)]).toEqual([undefined, ['active']])
+  })
+
+  it('a Remove reaches one of two trashed copies sharing an id and passes over the other, without a warning', async () => {
+    await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' })
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    await cp(join(root, bundle.bundlePath), join(root, `${bundle.bundlePath}-copy.deleted`), {
+      recursive: true,
+    })
+    await refreshTree(root)
+    const r = await unassignProperty(root, folder, propId)
+    if (!r.ok) throw new Error(r.error.message)
+    expect(r.value.cascade?.warning).toBeUndefined()
+    const copies = (await listBundles(root, { kind: 'trash' })).map((b) =>
+      join(root, b.bundlePath, 'A.md'),
+    )
+    expect((await Promise.all(copies.map(pageValue))).sort()).toEqual([['active'], undefined])
   })
 
   it('a Remove strips its own Collection’s archived holder and stashes its value, and leaves another Collection’s', async () => {

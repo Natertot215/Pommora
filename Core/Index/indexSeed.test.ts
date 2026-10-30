@@ -121,7 +121,7 @@ describe('seedContentIndex', () => {
     await mkdir(dirname(abs(page)), { recursive: true })
     await writeFile(abs(page), `---\nID: ${ULID_B}\n---\n\nold\n`)
     await seedContentIndex(root)
-    const seen = await deindexPath(root, abs('.nexus/archive'))
+    const seen = deindexPath(root, abs('.nexus/archive'))
     expect(seen.vanished).toEqual([{ id: ULID_B, title: 'Old', path: page }])
     expect(readIndexedStats('.nexus/archive')?.size).toBe(0)
   })
@@ -131,7 +131,7 @@ describe('seedContentIndex', () => {
     await mkdir(dirname(abs(page)), { recursive: true })
     await writeFile(abs(page), `---\nID: ${ULID_B}\n---\n\nold\n`)
     await seedContentIndex(root)
-    const seen = await deindexPath(root, abs('.trash'))
+    const seen = deindexPath(root, abs('.trash'))
     expect(seen.vanished).toEqual([{ id: ULID_B, title: 'Old', path: page }])
     expect(readIndexedStats('.trash')?.size).toBe(0)
   })
@@ -325,7 +325,7 @@ describe('what an index step reports', () => {
 
   it('removing a page answers that page and removes its rows', async () => {
     await unlink(abs('Notes', 'A.md'))
-    expect(await deindexPath(root, abs('Notes', 'A.md'))).toEqual({
+    expect(deindexPath(root, abs('Notes', 'A.md'))).toEqual({
       renames: [],
       vanished: [{ id: ULID_A, title: 'A', path: 'Notes/A.md' }],
       landed: [],
@@ -335,7 +335,7 @@ describe('what an index step reports', () => {
 
   it('removing a folder answers every page under it and removes their rows', async () => {
     await rm(abs('Notes'), { recursive: true })
-    const seen = await deindexPath(root, abs('Notes'))
+    const seen = deindexPath(root, abs('Notes'))
     expect(seen.vanished.sort((a, b) => a.path.localeCompare(b.path))).toEqual([
       { id: ULID_A, title: 'A', path: 'Notes/A.md' },
       { id: ULID_B, title: 'B', path: 'Notes/Sub/B.md' },
@@ -446,7 +446,7 @@ describe('what an index step reports', () => {
       const text = await read(p)
       if (p === b) {
         await unlink(a)
-        await deindexPath(root, a)
+        deindexPath(root, a)
       }
       return text
     })
@@ -462,7 +462,7 @@ describe('what an index step reports', () => {
       const text = await read(p)
       if (p === b) {
         await rm(abs('Notes'), { recursive: true })
-        await deindexPath(root, abs('Notes'))
+        deindexPath(root, abs('Notes'))
       }
       return text
     })

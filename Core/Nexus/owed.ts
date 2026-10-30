@@ -8,7 +8,8 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { contextDirRel, OWED_REL } from '../Paths/nexusPaths'
 import { basename, isAtOrUnder, join } from '../Paths/posix'
 import type { CascadeReport } from './cascade'
-import { type ConfigEdit, type ConfigReach, reachReport, retries } from './configReach'
+import type { ConfigEdit, ConfigReach } from './configReach'
+import { refusedLine, unsweptLine } from './entities'
 import { pageKey } from '../Connections/pageIndex'
 
 /** Each name in `rename` becomes the current name wherever a file still holds it; each in `strip` leaves. `kept` marks an option part a Clear wrote: the option stays listed, so its own word in `strip` leaves the pages without the option leaving. */
@@ -221,6 +222,30 @@ export async function releaseStrip(root: string, bundle: string, from: string): 
       : e,
   )
 }
+
+/** The files `reach` missed that a later sweep can reach, which is what an entry owes. */
+export const retries = ({ skipped, refused }: ConfigReach): number =>
+  skipped - (refused?.length ?? 0)
+
+export const reachReport = ({
+  hosts,
+  skipped,
+  refused = [],
+  pages = [],
+}: ConfigReach): CascadeReport => ({
+  pages,
+  hosts,
+  ...(skipped
+    ? {
+        warning: [
+          skipped > refused.length && unsweptLine(skipped - refused.length),
+          refused.length && refusedLine(refused),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      }
+    : {}),
+})
 
 /** A many-file change's report, marked owed while an entry still owes work, which Try Again finishes; a pass's total is owed while it missed a file. The lost-work line joins it once, after a write set a damaged notes file aside. */
 export function owedReport(root: string, reach: ConfigReach, owed = retries(reach) > 0) {

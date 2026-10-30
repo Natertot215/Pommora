@@ -235,7 +235,7 @@ describe('openNexusSequence', () => {
     expect(await options()).toEqual(['alpha', 'Ideas'])
     await registerHeldOptions(root, ['Library/Notes.md'])
     expect(await options()).toEqual(['alpha', 'Ideas'])
-    await deindexPath(root, notes)
+    deindexPath(root, notes)
     await registerHeldOptions(root, ['Library/Notes.md'])
     expect(await options()).toEqual(['alpha', 'Ideas', 'Later'])
   })

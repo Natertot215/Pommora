@@ -1906,7 +1906,7 @@ describe('restore — into a chosen destination', () => {
     expect(r.ok).toBe(false)
   })
 
-  it('a relocation is reconciled against the schema it lands in, not the one it left', async () => {
+  it('a relocation keeps its values whatever schema it lands in', async () => {
     await writeFile(
       join(root, '.nexus', 'properties.json'),
       JSON.stringify({
