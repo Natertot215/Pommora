@@ -3,7 +3,7 @@ import { normalizeTitle } from '../Paths/caseFold'
 import { isBlankRaw, landValue, stripKeys } from '../Files/rootValues'
 import { type Json, same } from '../Files/stableJson'
 import { errText, ok } from '../Contract/result'
-import { splitEnvelope, mergeFrontmatter, sweepParse } from '../Files/pageFile'
+import { splitEnvelope, mergeFrontmatter } from '../Files/pageFile'
 import {
   type Rewrite,
   type RewriteText,
@@ -29,11 +29,11 @@ import { rewriteTileConnections, tilesLink } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
-import { gonePageEntry, governedRoot } from './governedRoot'
+import { gonePageEntry } from './governedRoot'
 import { addressable, nexusPages } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
 import { rekeyContext } from '../Contexts/contextCascade'
-import { type ConfigReach, reachReport } from './configReach'
+import { type ConfigReach, NO_REACH, reachReport } from './configReach'
 import { type Entry, type RelinkEntry, runNoted, type Worked } from './owed'
 import type { z } from 'zod'
 import type { strippedLink } from '../Bundles/record'
@@ -55,13 +55,6 @@ export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
 })
 
 export type StrippedLink = z.infer<typeof strippedLink>
-
-interface DeleteCascade {
-  reach: ConfigReach
-  links: StrippedLink[]
-}
-
-const NO_STRIP: DeleteCascade = { reach: { skipped: 0, hosts: [] }, links: [] }
 
 export function joinCascades(
   a: CascadeReport | null | undefined,
@@ -90,78 +83,71 @@ export function withUnswept(
   })
 }
 
-/** A delete strips every Link property value naming a page it took, by any key that now resolves to nothing, from the governed pages outside it, archived ones among them, and from every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. A linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. Nothing at or under `abs` is swept, since it left with the delete. */
+/** What a delete's strip takes: every Link property value naming a page it took, by any key that now resolves to nothing, in the governed pages outside it, archived ones among them, and in every Space; a key a page the tree holds outside it still answers is left to that page, and bodies keep their links and read unresolved. `files` are its holders, `named` what one root holds of it under the Link `keys`, and `byId` what addresses each holder; null when nothing names a page it took. Nothing at or under `abs` is reached, since it left with the delete. */
+export async function linkStrip(root: string, abs: string, paths: readonly string[]) {
+  const deleted = relative(root, abs)
+  const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
+  const tree = heldTreeOf(root)
+  if (!tree) return null
+  const defs = byKey(linkDefsOf(tree.config.registry))
+  if (!defs.size) return null
+  // The held tree may still list the deleted pages, since its patch can fall to a walk, and the index an archived one's rows until its artifact leaves the Archive, so each is left out by where it's held.
+  const { byId, archived } = await nexusPages(root, tree)
+  const after = buildPageIndex(
+    [...pagesOf(tree), ...archived].filter((p) => !inside(byId.get(p.id)?.path ?? p.path)),
+  )
+  const gone = new Set(paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'))
+  if (!gone.size) return null
+  const goneEntry = (value: unknown): string | null =>
+    gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
+  const named = (raw: Record<string, unknown>) =>
+    Object.entries(raw).flatMap(([key, held]) => {
+      const def = defs.get(key)
+      const value = def && goneEntry(held)
+      return def && value ? [{ key, def, value }] : []
+    })
+  const files = [
+    ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
+    ...spaceFiles(root, tree, (s) => !!s.values && named(s.values).length > 0),
+  ].filter((file) => !inside(relative(root, file)))
+  return { files, keys: [...defs.keys()], byId, named }
+}
+
+/** A delete's strip of what `linkStrip` takes; a linker with no ID, or one of two files claiming one, keeps its value, since no restore could put it back. */
 export async function deleteCascade(
   root: string,
   abs: string,
   paths: readonly string[],
-): Promise<DeleteCascade> {
-  const deleted = relative(root, abs)
-  const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
-  const tree = heldTreeOf(root)
-  if (!tree) return NO_STRIP
-  const defs = byKey(linkDefsOf(tree.config.registry))
-  if (!defs.size) return NO_STRIP
+): Promise<ConfigReach> {
   try {
-    // The held tree may still list the deleted pages, since its patch can fall to a walk, so they're left out by path.
-    const { byId, archived } = await nexusPages(root, tree)
-    const after = buildPageIndex([...pagesOf(tree).filter((p) => !inside(p.path)), ...archived])
-    const gone = new Set(
-      paths.flatMap(pathKeys).filter((k) => after.resolve(k).status === 'phantom'),
-    )
-    if (!gone.size) return NO_STRIP
-    const goneEntry = (value: unknown): string | null =>
-      gonePageEntry(value, { holds: (t) => !gone.has(pageKey(t)) })
-    const named = (raw: Record<string, unknown>) =>
-      Object.entries(raw).flatMap(([key, held]) => {
-        const def = defs.get(key)
-        const value = def && goneEntry(held)
-        return def && value ? [{ key, def, value }] : []
-      })
-    const strip: Rewrite = (raw) =>
-      stripKeys(
-        raw,
-        named(raw).map(({ key }) => key),
-      )
-    const files = [
-      ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
-      ...spaceFiles(root, tree, (s) => !!s.values && strip(s.values, '') !== null),
-    ].filter((file) => !inside(relative(root, file)))
+    const strip = await linkStrip(root, abs, paths)
+    if (!strip) return NO_REACH
     let heldOut = 0
-    const swept = await sweepGovernedRoots(files, {
+    const swept = await sweepGovernedRoots(strip.files, {
       raw: (raw, file) => {
-        if (named(raw).length && !addressable(byId, rootId(file, raw))) {
+        const named = strip.named(raw)
+        if (named.length && !addressable(strip.byId, rootId(file, raw))) {
           heldOut++
           return null
         }
-        return strip(raw, file)
+        return stripKeys(
+          raw,
+          named.map(({ key }) => key),
+        )
       },
     })
-    const links: StrippedLink[] = []
-    for (const [file, { before }] of swept.touched) {
-      const page = isMarkdownFile(file) ? sweepParse(before) : null
-      const raw = page?.raw ?? governedRoot(file, before)
-      const id = rootId(file, raw)
-      if (!id) continue
-      for (const { def, key, value } of named(raw))
-        links.push({ page: id, property: def.id, value, above: page?.above(key) })
-    }
-    const unswept = swept.skipped.length + heldOut
     return {
-      reach: {
-        skipped: unswept,
-        refused: swept.refused,
-        hosts: [],
-        pages: [...swept.touched.keys()]
-          .filter((file) => outsideArchive(root, file))
-          .map((file) => relative(root, file)),
-      },
-      links,
+      skipped: swept.skipped.length + heldOut,
+      refused: swept.refused,
+      hosts: [],
+      pages: [...swept.touched.keys()]
+        .filter((file) => outsideArchive(root, file))
+        .map((file) => relative(root, file)),
     }
   } catch (e) {
     // A strip that stopped counts as one missed file, so its entry stays owed.
     console.error('links weren’t removed:', errText(e))
-    return { reach: { skipped: 1, hosts: [] }, links: [] }
+    return { skipped: 1, hosts: [] }
   }
 }
 

@@ -1,6 +1,7 @@
 import { isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
 import type { ContextDef } from '../Contexts/contexts'
-import type { Holders } from '../Index/keyHolders'
+import { type Holders, readHolders } from '../Index/keyHolders'
+import { linkStrip, type StrippedLink } from '../Nexus/cascade'
 import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
@@ -54,6 +55,27 @@ export async function gatherLinkTargets(
     for (const s of g.spaces)
       if (isAtOrUnder(s.path, rel)) for (const hit of valueLinks(s.values ?? {})) note(hit.target)
   return Object.fromEntries(out)
+}
+
+/** The Link values a delete's strip will take, read from each holder as a Space's or Context's capture reads it, so they're written down before anything is stripped. */
+export async function gatherLinks(
+  root: string,
+  abs: string,
+  paths: readonly string[],
+): Promise<StrippedLink[]> {
+  const strip = await linkStrip(root, abs, paths)
+  if (!strip) return []
+  const { held } = await readHolders(root, strip.files, strip.keys, strip.byId)
+  return held.flatMap(({ id, values, above }) =>
+    id && values
+      ? strip.named(values).map(({ key, def, value }) => ({
+          page: id,
+          property: def.id,
+          value,
+          above: above[key],
+        }))
+      : [],
+  )
 }
 
 /** Each holder the capture filed by id, as a record names it, a page with the key its line stood above. */

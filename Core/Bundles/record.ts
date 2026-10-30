@@ -1,6 +1,7 @@
 import { join, relDirname } from '../Paths/posix'
 import { z } from 'zod'
-import type { CascadeReport } from '../Nexus/cascade'
+import type { CascadeReport, StrippedLink } from '../Nexus/cascade'
+import { isPlainObject } from '../Contract/validators'
 import { stashBlock } from '../Properties/propertyStash'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { contextEntry } from '../Contexts/contexts'
@@ -96,6 +97,10 @@ const recordFile = z.discriminatedUnion('entity', [
 ])
 
 export type RecordFile = z.infer<typeof recordFile>
+export type ContentRecord = Extract<RecordFile, { entity: 'page' | 'collection' | 'set' }>
+export type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
+export type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
+export type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 /** A partly recorded entry's restore says so, since some of what it held may not have been written down. */
 export const recordedPartly = (record: RecordFile, title: string): CascadeReport | undefined =>
   'partial' in record && record.partial
@@ -139,6 +144,25 @@ export async function patchRecord(
   await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({ ...raw, ...patch(raw) }))
 }
 
+const sameLink = (a: StrippedLink, b: unknown): boolean =>
+  isPlainObject(b) && a.page === b.page && a.property === b.property && a.value === b.value
+
+const patchLinks = (bundleDir: string, edit: (held: unknown[]) => unknown[]): Promise<void> =>
+  patchRecord(bundleDir, (raw) => {
+    const links = edit(Array.isArray(raw.links) ? raw.links : [])
+    return { links: links.length ? links : undefined }
+  })
+
+/** Each of `links` the record doesn't already hold joins its `links`, so a finish run again over what its strip missed parks nothing twice. */
+export const appendLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
+  patchLinks(bundleDir, (held) => [
+    ...held,
+    ...links.filter((l) => !held.some((h) => sameLink(l, h))),
+  ])
+
+export const removeLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
+  patchLinks(bundleDir, (held) => held.filter((h) => !links.some((l) => sameLink(l, h))))
+
 export function placeOf(ids: readonly string[], id: string): Place | undefined {
   const at = ids.indexOf(id)
   if (at === -1) return undefined
@@ -175,7 +199,7 @@ export function retrailed(origin: Origin, held: readonly string[]): string[] {
 export function gatherContentRecord(
   tree: NexusTree,
   node: PageNode | CollectionNode | SetNode,
-): RecordFile {
+): ContentRecord {
   const atRoot = node.kind === 'collection'
   const container = atRoot ? null : containerAt(tree, relDirname(node.path))
   const siblings: readonly { id: string }[] | undefined = atRoot

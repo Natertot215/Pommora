@@ -24,8 +24,8 @@ import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
 import { originPathOf } from '../Bundles/layout'
-import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
-import { gatherContentRecord, type RecordFile } from '../Bundles/record'
+import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
+import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
 /** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Its pages' index rows sit at their Archive paths, while Link values name them where they lived. */
@@ -70,7 +70,7 @@ async function planOf(
   req: Extract<MutateRequest, { op: 'delete' }>,
   abs: string,
   before: NexusTree,
-  from: { record: RecordFile; keys: string[]; edit: ConfigEdit | null } | undefined,
+  from: { record: ContentRecord; keys: string[]; edit: ConfigEdit | null } | undefined,
   under: string[],
 ): Promise<Result<DeletePlan>> {
   const rel = relative(root, abs)
@@ -115,15 +115,18 @@ async function planOf(
     }
     default: {
       const node = req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel)
+      const strip = from?.keys ?? under
       const edit = from ? from.edit : goneEdit(before, req.kind, req.path)
+      const record = from?.record ?? gatherContentRecord(before, node!)
+      const links = await gatherLinks(root, abs, strip)
       return ok({
         // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
         id: node?.id ?? rel,
-        record: from?.record ?? gatherContentRecord(before, node!),
+        record: links.length ? { ...record, links } : record,
         note: () => ({
           kind: 'container',
           at: rel,
-          strip: distinct(from?.keys ?? under),
+          strip: distinct(strip),
           ...(edit ? { edit } : {}),
         }),
         departing: node ?? undefined,

@@ -20,7 +20,7 @@ export type PropertyEntry = Owed & {
 }
 export type ContextEntry = Owed & { kind: 'context'; bundle?: string }
 export type SpaceEntry = Owed & { kind: 'space'; contextId: string; bundle?: string }
-/** A page, Collection, or Set delete, a Trash emptying, or a Set move: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes, reached under `within`; the links a finish strips go into `bundle`'s record, or are parked where `park` says the Trash entry is gone. */
+/** A page, Collection, or Set delete, a Trash emptying, or a Set move: `strip` holds the gone pages' paths, whose links leave the files outside `at`, and `edit` the views it still owes, reached under `within`; a delete's `bundle` holds its record, and the links an emptying's strip takes are parked where `park` says the Trash entry is gone. */
 export type ContainerEntry = Owed & {
   kind: 'container'
   at: string

@@ -3,7 +3,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { ok, type Result, fault } from '../Contract/result'
 import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 import { exactTitle } from '../Paths/caseFold'
-import { type RecordFile, recordedPartly } from '../Bundles/record'
+import { type PropertyRecord, recordedPartly } from '../Bundles/record'
 import { linkWorld, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { join } from '../Paths/posix'
@@ -17,8 +17,6 @@ import { type CascadeReport, joinCascades, type StrippedLink } from '../Nexus/ca
 import type { MutateOutcome } from '../Nexus/mutateRequest'
 import { createProperty } from '../Properties/registryProperty'
 import { restoreNote } from '../Nexus/owed'
-
-type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
 /** A property restore's answer, its numbered label and what the re-assign couldn't refill from the stash read as the reply reads them. */
 interface RestoredProperty extends Pick<MutateOutcome, 'landedAs' | 'cascade'> {
