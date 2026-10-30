@@ -55,18 +55,6 @@ describe('appConfig', () => {
     expect((await readAppConfig(dir)).recents).toEqual(['/a', '/b'])
   })
 
-  it('round-trips a valid trashMode through write then read', async () => {
-    await updateAppConfig(dir, () => ({ trashMode: 'system' }))
-    expect((await readAppConfig(dir)).trashMode).toBe('system')
-    await updateAppConfig(dir, () => ({ trashMode: 'nexus' }))
-    expect((await readAppConfig(dir)).trashMode).toBe('nexus')
-  })
-
-  it('ignores an invalid trashMode (consumer defaults to nexus)', async () => {
-    writeFileSync(appConfigPath(dir), JSON.stringify({ trashMode: 'recycle-bin' }))
-    expect((await readAppConfig(dir)).trashMode).toBeUndefined()
-  })
-
   it('reads back a well-formed device', async () => {
     const device = { id: 'a'.repeat(64), publicKey: 'k'.repeat(43), name: 'Test-Air' }
     writeFileSync(appConfigPath(dir), JSON.stringify({ device }))
@@ -81,15 +69,11 @@ describe('appConfig', () => {
     expect((await readAppConfig(dir)).device).toBeUndefined()
   })
 
-  it('keeps trashMode and an unmodelled key when the device is written', async () => {
-    writeFileSync(
-      appConfigPath(dir),
-      JSON.stringify({ trashMode: 'system', windowBounds: { w: 1 } }),
-    )
+  it('keeps an unmodelled key when the device is written', async () => {
+    writeFileSync(appConfigPath(dir), JSON.stringify({ windowBounds: { w: 1 } }))
     const device = { id: 'b'.repeat(64), publicKey: 'p'.repeat(43), name: 'Test-Air' }
     await updateAppConfig(dir, () => ({ device }))
     const raw = JSON.parse(readFileSync(appConfigPath(dir), 'utf8'))
-    expect(raw.trashMode).toBe('system')
     expect(raw.windowBounds).toEqual({ w: 1 })
     expect((await readAppConfig(dir)).device).toEqual(device)
   })

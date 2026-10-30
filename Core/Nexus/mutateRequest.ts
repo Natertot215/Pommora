@@ -17,7 +17,7 @@ export interface MutateOutcome {
   created?: { path: string } | { propertyId: string }
   cascade?: CascadeReport
   adopted?: string
-  /** Where a removal filed what it took, in the Trash or an Archive; absent when the system trash took it. */
+  /** Where a removal filed what it took, in the Trash or an Archive. */
   bundled?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]

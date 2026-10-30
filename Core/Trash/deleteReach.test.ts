@@ -32,11 +32,8 @@ import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../
 import { NEXUS_CONFIG_FILES, OWED_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import type { FilterGroup } from '../Views/filterRules'
 import { filterSeeds } from '../Views/Pipeline/creationSeeds'
-import type { TrashDeps } from './discard'
 
 type Raw = Record<string, unknown>
-
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let notes: string
@@ -49,8 +46,7 @@ const view = (rules: unknown[], extra: Raw = {}): Raw => ({
   ...extra,
 })
 
-const del = (path: string, kind: HeldKind) =>
-  settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
+const del = (path: string, kind: HeldKind) => settledMutate(root, { op: 'delete', path, kind })
 
 const entity = async (
   parent: string,
@@ -210,11 +206,13 @@ describe('a Space delete', () => {
       setTree: [],
       identity: identityFor({ ctx_areas: [] }),
     })
-    const r = await settledMutate(
-      root,
-      { op: 'createPage', id, parentPath: 'Notes', name: 'Fresh', seeds },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, {
+      op: 'createPage',
+      id,
+      parentPath: 'Notes',
+      name: 'Fresh',
+      seeds,
+    })
     expect(r.ok ? 'created' : r.error.message).toBe('created')
   })
 })
@@ -321,25 +319,8 @@ describe('a Set delete', () => {
 
   it('restores the Set with its own views and none of the configuration that named it', async () => {
     const bundlePath = await trashGone()
-    expect((await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
     expect((await readJsonAt(sidecarPath(gone.path, 'set'))).views).toEqual([located])
-    expect((await surfaces.read()).collection).toEqual(stripped)
-  })
-
-  it('runs the pass for a system-trash delete, which mints no bundle', async () => {
-    const systemDeps: TrashDeps = {
-      trashMode: 'system',
-      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
-    }
-    const r = await settledMutate(
-      root,
-      { op: 'delete', path: 'Notes/Gone', kind: 'set' },
-      systemDeps,
-    )
-    expect(r.ok && r.value.bundled).toBeUndefined()
-    expect(r.ok && r.value.cascade?.hosts).toEqual([
-      { host: { kind: 'space', id: 'sp_home' }, ids: [] },
-    ])
     expect((await surfaces.read()).collection).toEqual(stripped)
   })
 
@@ -440,51 +421,6 @@ describe('a Collection delete', () => {
       preview: null,
     })
   })
-  describe('to the system trash', () => {
-    const systemDeps: TrashDeps = {
-      trashMode: 'system',
-      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
-    }
-    const archived = async (): Promise<string> =>
-      join(
-        root,
-        '.nexus',
-        'archive',
-        String((await readJsonAt(sidecarPath(notes, 'collection'))).id),
-      )
-    const deleteNotes = () =>
-      settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, systemDeps)
-
-    it('a Collection deleted to the system trash takes its Archive, its pages’ links stripped', async () => {
-      await addRelated()
-      await page(notes, 'Gone')
-      const other = await entity(root, 'collection', 'Other')
-      const linker = await page(other.path, 'Linker', 'Gone')
-      await refreshTree(root)
-      await settledMutate(root, { op: 'archive', path: 'Notes/Gone.md', kind: 'page' }, nexusDeps)
-      const archive = await archived()
-      const r = await deleteNotes()
-      expect(r.ok && r.value.cascade?.pages).toEqual(['Other/Linker.md'])
-      expect(await pathExists(archive)).toBe(false)
-      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
-    })
-
-    it('a Collection deleted to the system trash takes the saved views naming the Sets in its Archive', async () => {
-      const daily = await entity(notes, 'set', 'Daily')
-      const other = await entity(root, 'collection', 'Other')
-      const otherFile = sidecarPath(other.path, 'collection')
-      await putJson(otherFile, {
-        ...(await readJsonAt(otherFile)),
-        views: [view([{ property_id: '_location', op: 'is', values: [daily.id, other.id] }])],
-      })
-      await refreshTree(root)
-      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
-      expect((await deleteNotes()).ok).toBe(true)
-      expect((await readJsonAt(otherFile)).views).toEqual([
-        view([{ property_id: '_location', op: 'is', values: [other.id] }]),
-      ])
-    })
-  })
 })
 
 describe('a Context or Space delete on the notes', () => {
@@ -565,7 +501,7 @@ describe('a Context or Space delete on the notes', () => {
 
   it("a Space delete whose folder can't move deletes nothing and offers Try Again", async () => {
     vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
-    const r = await handleMutate(root, { op: 'delete', path: WORK, kind: 'space' }, nexusDeps)
+    const r = await handleMutate(root, { op: 'delete', path: WORK, kind: 'space' })
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, WORK))).toBe(true)
     expect(await listBundles(root, { kind: 'trash' })).toEqual([])
@@ -577,7 +513,7 @@ describe('a Context or Space delete on the notes', () => {
 
   it("a Context delete whose folder can't move puts its entry back", async () => {
     vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
-    const r = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' }, nexusDeps)
+    const r = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' })
     expect(r.ok).toBe(false)
     expect(
       (await readJsonAt<{ contexts: Raw[] }>(contextsRegistryFile(root))).contexts.map((c) => c.id),
@@ -587,11 +523,7 @@ describe('a Context or Space delete on the notes', () => {
     vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
     // The list step leaves through `unlistContext`, so the spy meets only the put-back.
     vi.spyOn(contextsRegistry, 'mutateRegistryFile').mockResolvedValueOnce(fault('refused'))
-    const stuck = await handleMutate(
-      root,
-      { op: 'delete', path: AREAS, kind: 'context' },
-      nexusDeps,
-    )
+    const stuck = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' })
     vi.restoreAllMocks()
     if (!stuck.ok) throw new Error(stuck.error.message)
     expect(stuck.value.cascade?.owed).toBe(true)
@@ -599,19 +531,16 @@ describe('a Context or Space delete on the notes', () => {
     expect(await readNotes(root)).toMatchObject({
       ctx_areas: { kind: 'context', strip: ['Areas'] },
     })
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await pathExists(join(root, AREAS))).toBe(false)
     expect(await tagsOf(a)).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
   })
 
-  it('a System Trash Context delete whose move fails keeps its order', async () => {
+  it('a Context delete whose move fails keeps its order', async () => {
     await setPanelContextOrder(root, ['ctx_first', 'ctx_areas', 'ctx_last'])
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: AREAS, kind: 'context' },
-      { trashMode: 'system', trashToSystem: () => Promise.reject(new Error('busy')) },
-    )
+    vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('busy'))
+    const r = await handleMutate(root, { op: 'delete', path: AREAS, kind: 'context' })
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, AREAS))).toBe(true)
     expect(
@@ -662,20 +591,11 @@ describe('a Context or Space delete on the notes', () => {
     await putJson(join(root, OWED_REL), {
       ctx_areas: { kind: 'context', strip: ['Areas'], bundle: bundlePath },
     })
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect((await readJsonAt(contextsRegistryFile(root))).contexts).toEqual([])
     expect(await pathExists(join(root, bundlePath, 'Areas'))).toBe(true)
     expect([await tagsOf(a), await tagsOf(b)]).toEqual([undefined, undefined])
     expect(((await readJsonAt(sidecar)).views as Raw[])[0]?.property_order).toEqual(['_title'])
-    expect(await readNotes(root)).toEqual({})
-
-    await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_last', title: 'Last' }] })
-    await mkdir(join(contextsDir(root), 'Last'))
-    await refreshTree(root)
-    await putJson(join(root, OWED_REL), { ctx_last: { kind: 'context', strip: ['Last'] } })
-    const trashToSystem = vi.fn(async (p: string) => rm(p, { recursive: true, force: true }))
-    await finishOwed(root, { trashMode: 'system', trashToSystem })
-    expect(trashToSystem).toHaveBeenCalledWith(join(contextsDir(root), 'Last'))
     expect(await readNotes(root)).toEqual({})
   })
 
@@ -701,7 +621,7 @@ describe('a Context or Space delete on the notes', () => {
     expect(await readNotes(root)).toMatchObject({
       sp_gym: { kind: 'space', contextId: 'ctx_areas', strip: ['Gym'] },
     })
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     const fm = splitFrontmatter(await readFile(b, 'utf8'))
     expect([fm['<Old>'], fm['<Areas>']]).toEqual([undefined, undefined])
     expect(await readNotes(root)).toEqual({})
@@ -721,7 +641,7 @@ describe('a Context or Space delete on the notes', () => {
       if (!r.ok) throw new Error(r.error.message)
       expect(r.value.cascade?.owed).toBe(true)
       expect(await readNotes(root)).toMatchObject({ ctx_areas: { strip: ['Areas'] } })
-      await finishOwed(root, nexusDeps)
+      await finishOwed(root)
       const [view] = (await readJsonAt(sidecar)).views as Raw[]
       expect(view.property_order).toEqual(['_title'])
       expect(await readNotes(root)).toEqual({})
@@ -763,7 +683,7 @@ describe('a content delete on the notes', () => {
     const linker = await page(notes, 'One', 'Target')
     await refreshTree(root)
     const r = await shut(linker, () =>
-      handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }, nexusDeps),
+      handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }),
     )
     if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
     const { bundlePath } = r.value.bundled
@@ -776,7 +696,7 @@ describe('a content delete on the notes', () => {
         bundle: bundlePath,
       },
     })
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await relatedOf(linker)).toBeUndefined()
     expect((await recordOf(bundlePath)).links).toContainEqual(
       expect.objectContaining({ page: await idOf(linker), value: '[[Target]]' }),
@@ -791,7 +711,7 @@ describe('a content delete on the notes', () => {
       const r = await shut(tiles, () => del('Old', 'collection'))
       expect(r.ok && r.value.cascade?.owed).toBe(true)
       expect(JSON.stringify(await readJsonAt(tiles))).toContain(old.id)
-      await finishOwed(root, nexusDeps)
+      await finishOwed(root)
       expect(JSON.stringify(await readJsonAt(tiles))).not.toContain(old.id)
       expect(await readNotes(root)).toEqual({})
     },
@@ -821,7 +741,7 @@ describe('a content delete on the notes', () => {
       },
     })
     await refreshTree(root)
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await relatedOf(linker)).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
   })
@@ -834,7 +754,7 @@ describe('a content delete on the notes', () => {
     await putJson(join(root, OWED_REL), {
       [id]: { kind: 'container', at: 'Notes/Target.md', strip: ['Notes/Target.md'] },
     })
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await relatedOf(linker)).toBe('[[Target]]')
     expect(await readNotes(root)).toEqual({})
   })
@@ -847,18 +767,17 @@ describe('a content delete on the notes', () => {
       const two = await page(notes, 'Two', 'Target')
       await refreshTree(root)
       const deleted = await shut(two, () =>
-        handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }, nexusDeps),
+        handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }),
       )
       if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
       expect(deleted.value.cascade?.owed).toBe(true)
       await refreshTree(root)
-      const r = await settledMutate(
-        root,
-        { op: 'restore', bundlePath: deleted.value.bundled.bundlePath },
-        nexusDeps,
-      )
+      const r = await settledMutate(root, {
+        op: 'restore',
+        bundlePath: deleted.value.bundled.bundlePath,
+      })
       expect(r.ok).toBe(true)
-      await finishOwed(root, nexusDeps)
+      await finishOwed(root)
       expect(await relatedOf(one)).toBe('[[Target]]')
       expect(await relatedOf(two)).toBe('[[Target]]')
       expect(await readNotes(root)).toEqual({})
@@ -888,7 +807,7 @@ describe('a content delete on the notes', () => {
   it("a crash between a Set move's note and its relocation keeps the Set in its Collection's views", async () => {
     const { id, views } = await setMoveNoted()
     await refreshTree(root)
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await views()).toContain(id)
     expect(await readNotes(root)).toEqual({})
   })
@@ -897,7 +816,7 @@ describe('a content delete on the notes', () => {
     const { id, views } = await setMoveNoted()
     await rename(join(notes, 'S'), join(root, 'Other', 'S'))
     await refreshTree(root)
-    await finishOwed(root, nexusDeps)
+    await finishOwed(root)
     expect(await views()).not.toContain(id)
     expect(await readNotes(root)).toEqual({})
   })
@@ -910,14 +829,10 @@ describe('a content delete on the notes', () => {
         const deleted = await del('Old', 'collection')
         if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
         expect(deleted.value.cascade?.owed).toBe(true)
-        return settledMutate(
-          root,
-          { op: 'restore', bundlePath: deleted.value.bundled.bundlePath },
-          nexusDeps,
-        )
+        return settledMutate(root, { op: 'restore', bundlePath: deleted.value.bundled.bundlePath })
       })
       expect(r.ok).toBe(true)
-      await finishOwed(root, nexusDeps)
+      await finishOwed(root)
       expect(JSON.stringify(await readJsonAt(tiles))).toContain(old.id)
       expect(await readNotes(root)).toEqual({})
     },

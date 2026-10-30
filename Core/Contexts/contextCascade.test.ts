@@ -29,7 +29,6 @@ import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
-import type { TrashDeps } from '../Trash/discard'
 import { newContentId, newId } from '../Nexus/ids'
 import { handleMutate } from '../Nexus/mutate'
 import { settleNow } from '../Nexus/settle'
@@ -47,7 +46,6 @@ vi.mock('./contextsRegistry', async (importOriginal) => {
 })
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const page = () => join(root, 'Notes', 'A.md')
@@ -202,11 +200,11 @@ describe('renames and casing', () => {
     const tagged = () =>
       heldTreeOf(root)?.collections[0].pages.find((p) => p.title === 'B')?.contextValues
     expect(tagged()).toEqual({ ctx_projects: ['sp-pom'] })
-    const r = await settledMutate(
-      root,
-      { op: 'renameContext', contextId: 'ctx_projects', newName: 'projects' },
-      deps,
-    )
+    const r = await settledMutate(root, {
+      op: 'renameContext',
+      contextId: 'ctx_projects',
+      newName: 'projects',
+    })
     expect(r.ok).toBe(true)
     expect(await fmOf(other())).toEqual({
       ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
@@ -350,7 +348,7 @@ describe('renameContextOp', () => {
       ctx_projects: { kind: 'context', rename: ['Projects'] },
     })
     await rm(join(contextsDir(root), 'Ventures'), { recursive: true })
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora'))).toBe(true)
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora'])
     expect(await readNotes(root)).toEqual({})
@@ -384,7 +382,7 @@ describe('renameContextOp', () => {
     })
     const walks = vi.spyOn(readNexusModule, 'readNexus')
     const rename = { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const
-    expect((await handleMutate(root, rename, deps)).ok).toBe(true)
+    expect((await handleMutate(root, rename)).ok).toBe(true)
     await settling
     await settleNow(quiet, root)
     expect(walks).toHaveBeenCalledTimes(1)
@@ -403,7 +401,7 @@ describe('renameContextOp', () => {
     const reads = vi.spyOn(machine(), 'readText')
     const walks = vi.spyOn(readNexusModule, 'readNexus')
     const rename = { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const
-    expect((await handleMutate(root, rename, deps)).ok).toBe(true)
+    expect((await handleMutate(root, rename)).ok).toBe(true)
     expect(walks).toHaveBeenCalledTimes(1)
     for (const p of tagged) {
       expect((await fmOf(p))['<Ventures>']).toEqual(['Pommora'])
@@ -510,7 +508,7 @@ describe('renameSpaceOp', () => {
     const before = contextWorldOf((await refreshTree(root)).contexts)
     expect(contextWorldOf(heldTreeOf(root)?.contexts ?? [])).toBe(before)
     const req = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
-    expect((await settledMutate(root, req, deps)).ok).toBe(true)
+    expect((await settledMutate(root, req)).ok).toBe(true)
     const after = contextWorldOf(heldTreeOf(root)?.contexts ?? [])
     expect(after).not.toBe(before)
     expect(after.spaceById.get('sp-pom')?.title).toBe('Pom')
@@ -534,9 +532,7 @@ describe('renames on the notes', () => {
     await seedNotes(held)
     await refreshTree(root)
     const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
-    expect(await settledMutate(root, rename, deps)).toEqual(
-      ok({ cascade: { pages: [], hosts: [] } }),
-    )
+    expect(await settledMutate(root, rename)).toEqual(ok({ cascade: { pages: [], hosts: [] } }))
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
     expect(await readNotes(root)).toEqual(held)
   })
@@ -553,7 +549,7 @@ describe('renames on the notes', () => {
         ctx_projects: { kind: 'context', rename: ['Projects'] },
       })
       await readable()
-      await finishOwed(root, deps)
+      await finishOwed(root)
       expect((await fmOf(broken()))['<Ventures>']).toEqual(['Pommora'])
       expect(await readNotes(root)).toEqual({})
     },
@@ -568,15 +564,15 @@ describe('renames on the notes', () => {
       const missed = ok({
         cascade: { pages: [], hosts: [], warning: unsweptLine(1), owed: true as const },
       })
-      expect(await settledMutate(root, rename, deps)).toEqual(missed)
+      expect(await settledMutate(root, rename)).toEqual(missed)
       const owed = {
         'sp-pom': { kind: 'space', contextId: 'ctx_projects', rename: ['Pommora'] },
       }
       expect(await readNotes(root)).toEqual(owed)
-      expect(await settledMutate(root, { op: 'finishOwed' }, deps)).toEqual(missed)
+      expect(await settledMutate(root, { op: 'finishOwed' })).toEqual(missed)
       expect(await readNotes(root)).toEqual(owed)
       await readable()
-      expect((await settledMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect((await settledMutate(root, { op: 'finishOwed' })).ok).toBe(true)
       expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
       expect(await readNotes(root)).toEqual({})
     },
@@ -592,7 +588,7 @@ describe('renames on the notes', () => {
         ctx_projects: { kind: 'context', rename: ['Projects', 'Domains'] },
       })
       await readable()
-      await finishOwed(root, deps)
+      await finishOwed(root)
       expect((await fmOf(broken()))['<Fields>']).toEqual(['Pommora'])
       expect(await readNotes(root)).toEqual({})
     },
@@ -772,14 +768,14 @@ describe('the finish’s Context and Space arms', () => {
     }
     await seedNotes(owed)
     await refreshTree(root)
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora'])
     expect(await readNotes(root)).toEqual(owed)
   })
 
   it('a Space entry whose Context is gone drops', async () => {
     await seedNotes({ 'sp-x': { kind: 'space', contextId: 'ctx_gone', rename: ['Gym'] } })
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readNotes(root)).toEqual({})
   })
 
@@ -792,7 +788,7 @@ describe('the finish’s Context and Space arms', () => {
     await openSession(root)
     const opened = await refreshTree(root)
     expect(opened.contexts.find((g) => g.def.id === 'ctx_projects')?.spaces ?? []).toEqual([])
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readJsonAt(projectSidecar('Ventures', 'Pommora'))).toEqual({
       id: 'sp-pom',
       '<Ventures>': ['Sapphire'],
@@ -806,7 +802,7 @@ describe('the finish’s Context and Space arms', () => {
     const before = await readFile(page(), 'utf8')
     await rm(contextsRegistryFile(root))
     await mkdir(contextsRegistryFile(root))
-    expect(await finishOwed(root, deps)).toMatchObject({ owed: true, warning: unsweptLine(1) })
+    expect(await finishOwed(root)).toMatchObject({ owed: true, warning: unsweptLine(1) })
     expect(await readFile(page(), 'utf8')).toBe(before)
     expect(await readNotes(root)).toEqual(owed)
   })

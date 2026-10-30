@@ -14,9 +14,7 @@ import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
-import type { TrashDeps } from '../Trash/discard'
 
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 let root: string
 let notes: string
 let statusId: string
@@ -69,16 +67,12 @@ describe('a property write reconciles the whole file', () => {
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(page.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`)
-    const r = await handleMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: rel(page.value.path),
-        propertyId: priorityId,
-        value: { kind: 'number', value: 3 },
-      },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'setProperty',
+      path: rel(page.value.path),
+      propertyId: priorityId,
+      value: { kind: 'number', value: 3 },
+    })
     expect(r.ok).toBe(true)
     const out = await readFile(page.value.path, 'utf8')
     expect(out).toContain('Priority: 3\n')
@@ -94,16 +88,12 @@ describe('a property write reconciles the whole file', () => {
     )
     await writeFile(join(contextsDir(root), 'Areas', 'Work', '_space.json'), '{corrupt')
     await refreshTree(root)
-    const r = await handleMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: rel(page.value.path),
-        propertyId: priorityId,
-        value: { kind: 'number', value: 2 },
-      },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'setProperty',
+      path: rel(page.value.path),
+      propertyId: priorityId,
+      value: { kind: 'number', value: 2 },
+    })
     expect(r.ok).toBe(true)
     const out = await fm(page.value.path)
     expect(out.Priority).toBe(2)
@@ -114,11 +104,7 @@ describe('a property write reconciles the whole file', () => {
     const sidecar = join(contextsDir(root), 'Areas', 'Work', '_space.json')
     await writeFile(sidecar, '{corrupt')
     await refreshTree(root)
-    const r = await handleMutate(
-      root,
-      { op: 'setSpaceColor', spaceId: 'sp-work', color: 'cyan' },
-      deps,
-    )
+    const r = await handleMutate(root, { op: 'setSpaceColor', spaceId: 'sp-work', color: 'cyan' })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.code).toBe('not-found')
     expect(await readFile(sidecar, 'utf8')).toBe('{corrupt')
@@ -161,11 +147,12 @@ describe('a registry definition named for a key Pommora manages', () => {
     expect(names(containerSchema(tree, rel(notes)))).toEqual(['Status', 'Priority'])
 
     for (const path of [rel(page.value.path), rel(space)]) {
-      const r = await handleMutate(
-        root,
-        { op: 'setProperty', path, propertyId: priorityId, value: { kind: 'number', value: 3 } },
-        deps,
-      )
+      const r = await handleMutate(root, {
+        op: 'setProperty',
+        path,
+        propertyId: priorityId,
+        value: { kind: 'number', value: 3 },
+      })
       expect(r.ok).toBe(true)
     }
     expect((await readFile(page.value.path, 'utf8')).startsWith(ownLines)).toBe(true)

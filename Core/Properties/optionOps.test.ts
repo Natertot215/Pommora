@@ -43,7 +43,6 @@ type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
 import { OWED, readNotes, runNoted } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { OWED_REL } from '../Paths/nexusPaths'
-import type { TrashDeps } from '../Trash/discard'
 import { unsweptLine } from '../Nexus/entities'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -70,7 +69,6 @@ vi.mock('../Nexus/owed', async (importOriginal) => {
   return { ...mod, runNoted: vi.fn(mod.runNoted) }
 })
 
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
 const seedNotes = (notes: Record<string, unknown>): Promise<void> =>
   putJson(join(root, OWED_REL), notes)
 
@@ -857,7 +855,7 @@ describe('each option change keeps its own note', () => {
     expect(await readNotes(root)).toEqual({
       [id]: { kind: 'property', options: { opt_A: { strip: ['A'], kept: true } } },
     })
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(splitFrontmatter(await readFile(page, 'utf8'))).not.toHaveProperty('Tags')
     expect(await labels(id)).toEqual(['A', 'C'])
     expect(await readNotes(root)).toEqual({})
@@ -876,7 +874,7 @@ describe('each option change keeps its own note', () => {
       page,
       rewriteRoot((raw) => landValue(raw, 'Tags', ['C'])),
     )
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['C'])
     expect(await readNotes(root)).toEqual({})
   })
@@ -950,7 +948,7 @@ describe('each option change keeps its own note', () => {
       }
       expect(await renameOption(root, id, 'opt_High', 'Urgent')).toEqual(OWED)
       expect(splitFrontmatter(await readFile(page, 'utf8')).Tags).toEqual(['High'])
-      await finishOwed(root, deps)
+      await finishOwed(root)
       expect((await renameOption(root, id, 'opt_High', 'Urgent')).ok).toBe(true)
       expect(await readFile(page, 'utf8')).not.toContain('Urgent')
       expect(await labels(id)).toEqual(['Urgent'])
@@ -1582,7 +1580,7 @@ describe('a Value Format change re-keys every option', () => {
           },
         },
       })
-      await finishOwed(root, deps)
+      await finishOwed(root)
       expect(splitFrontmatter(await readFile(page, 'utf8')).Tones).toEqual([
         'light-blue',
         'dark-red',

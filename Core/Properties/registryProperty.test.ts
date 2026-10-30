@@ -853,7 +853,7 @@ describe('renames on the notes', () => {
     expect(await readFile(open.page, 'utf8')).toContain('Urgency: hi')
     expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', rename: ['Priority'] } })
     race.mockRestore()
-    await finishOwed(root, { trashMode: 'nexus', trashToSystem: async () => {} })
+    await finishOwed(root)
     expect(await readFile(raced.page, 'utf8')).toContain('Urgency: hi')
     expect(await readNotes(root)).toEqual({})
   })

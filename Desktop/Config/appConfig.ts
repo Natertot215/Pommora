@@ -3,7 +3,6 @@
 import { join } from '@pommora/core/Paths/posix'
 import { statOrNull } from '@pommora/core/Platform/machine'
 import { readJsonObject, rmwJsonStrict } from '@pommora/core/Files/atomicWrite'
-import { DEFAULT_TRASH_MODE, type TrashMode } from '@pommora/core/Trash/trashMode'
 import { TRASH_DIR } from '@pommora/core/Paths/nexusPaths'
 import { foldKey } from '@pommora/core/Paths/caseFold'
 import type { SyncDevice } from '@pommora/core/Sync/Contract/wire'
@@ -11,13 +10,10 @@ import type { SyncDevice } from '@pommora/core/Sync/Contract/wire'
 interface AppConfig {
   lastNexusPath?: string
   recents?: string[]
-  trashMode?: TrashMode
   device?: SyncDevice
 }
 
 const FILE = 'pommora.json'
-
-export const trashModeOf = (config: AppConfig): TrashMode => config.trashMode ?? DEFAULT_TRASH_MODE
 
 export function appConfigPath(userDataDir: string): string {
   return join(userDataDir, FILE)
@@ -40,7 +36,6 @@ export async function readAppConfig(userDataDir: string): Promise<AppConfig> {
     recents: Array.isArray(obj.recents)
       ? obj.recents.filter((p): p is string => typeof p === 'string')
       : undefined,
-    trashMode: obj.trashMode === 'system' || obj.trashMode === 'nexus' ? obj.trashMode : undefined,
     device: readDevice(obj.device),
   }
 }

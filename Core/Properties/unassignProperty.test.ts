@@ -34,7 +34,6 @@ import { putJson } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
 import { listBundles } from '../Bundles/bundle'
 import { deleteProperty } from './deleteProperty'
-import type { TrashDeps } from '../Trash/discard'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
@@ -96,7 +95,6 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 const collectionId = async (): Promise<string> => (await sidecar())?.id as string
 const pageValue = async (path: string): Promise<unknown> =>
   splitFrontmatter(await readFile(path, 'utf8'))[liveDef.key]
@@ -159,7 +157,7 @@ describe('unassignProperty — strip + stash', () => {
     const id = newContentId('page')
     await writeFile(pageA, bare.replace('---\n', `---\n${ID_KEY}: ${id}\n`))
     await refreshTree(root)
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await pageValue(pageA)).toBeUndefined()
     expect((await stashBlock())?.values[id]).toEqual(['active'])
     expect(await readNotes(root)).toEqual({})
@@ -268,7 +266,7 @@ describe('a Remove on the notes', () => {
       expect(await readNotes(root)).toEqual({
         [propId]: { kind: 'property', collections: [await collectionId()] },
       })
-      await finishOwed(root, deps)
+      await finishOwed(root)
       expect(await pageValue(pageB)).toBeUndefined()
       expect(Object.values((await stashBlock())?.values ?? {})).toContainEqual(['done'])
       expect(await readNotes(root)).toEqual({})
@@ -291,7 +289,7 @@ describe('a Remove on the notes', () => {
     await shut(pageB, () => unassignProperty(root, folder, propId))
     expect(await readNotes(root)).not.toEqual({})
     await assignProperty(root, folder, propId)
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await pageValue(pageB)).toEqual(['done'])
     expect(await readNotes(root)).toEqual({})
   })
@@ -497,7 +495,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await tasksCollection()
     await unassignProperty(root, folder, propId)
     const moved = await idOf(pageA)
-    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' }, deps)
+    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' })
     await assignProperty(root, folder, propId)
     expect((await stashBlock())?.values ?? {}).not.toHaveProperty(moved)
     expect(await pageValue(join(root, 'Tasks', 'A.md'))).toBeUndefined()
@@ -507,12 +505,12 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     const placed = `---\nID: ${await idOf(pageA)}\nNote: a\n${liveDef.key}:\n  - active\nZed: z\n---\nb\n`
     await writeFile(pageA, placed)
     await unassignProperty(root, folder, propId)
-    await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' }, deps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/A.md', kind: 'page' })
     await assignProperty(root, folder, propId)
     const [bundle] = await listBundles(root, { kind: 'trash' })
     expect(await readFile(join(root, bundle.bundlePath, 'A.md'), 'utf8')).toBe(placed)
     expect(await stashBlock()).toBeUndefined()
-    await settledMutate(root, { op: 'restore', bundlePath: bundle.bundlePath }, deps)
+    await settledMutate(root, { op: 'restore', bundlePath: bundle.bundlePath })
     expect(await pageValue(pageA)).toEqual(['active'])
   })
 
@@ -520,8 +518,8 @@ describe('restore on re-assign — per-value schema-currency reconciliation', ()
     await tasksCollection()
     await unassignProperty(root, folder, propId)
     const moved = await idOf(pageA)
-    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' }, deps)
-    await settledMutate(root, { op: 'delete', path: 'Tasks/A.md', kind: 'page' }, deps)
+    await settledMutate(root, { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Tasks' })
+    await settledMutate(root, { op: 'delete', path: 'Tasks/A.md', kind: 'page' })
     await assignProperty(root, folder, propId)
     const [bundle] = await listBundles(root, { kind: 'trash' })
     expect(

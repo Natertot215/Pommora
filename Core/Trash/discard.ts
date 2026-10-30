@@ -2,12 +2,11 @@ import { basename, join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { noteOwn, recordWrite } from '../Files/writeEcho'
-import type { HostContext } from '../Contract/handlers'
 import { chainDir } from '../Bundles/bundle'
 import { fileStamp, stampedLeaf } from '../Bundles/layout'
-import type { TrashMode } from './trashMode'
 
-export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
+/** A file the Trash can't list, a tile's text or an image sweep's leftover, moves into `.trash` under the chain it left from, stamped, with no record. */
+export async function discardFile(nexusRoot: string, absPath: string): Promise<void> {
   recordWrite(absPath)
   const dir = await chainDir(nexusRoot, { kind: 'trash' }, absPath)
   const stamp = fileStamp()
@@ -16,32 +15,5 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
   for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
   recordWrite(dest)
   await machine().rename(absPath, dest)
-  return dest
-}
-
-export interface TrashDeps {
-  trashMode: TrashMode
-  trashToSystem: (absPath: string) => Promise<void>
-}
-
-export async function trashDeps(ctx: HostContext): Promise<TrashDeps> {
-  return {
-    trashMode: await ctx.trashMode(),
-    trashToSystem: (p) =>
-      machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-  }
-}
-
-/** A file the Trash can't list — a tile's text, an image sweep's leftover — still goes where Trash Mode sends deletions. */
-export async function discardFile(
-  nexusRoot: string,
-  absPath: string,
-  deps: TrashDeps,
-): Promise<void> {
-  if (deps.trashMode === 'nexus') await trashFileFlat(nexusRoot, absPath)
-  else {
-    recordWrite(absPath)
-    await deps.trashToSystem(absPath)
-  }
   await noteOwn({ event: 'unlink', absPath, origin: 'own' })
 }

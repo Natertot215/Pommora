@@ -20,11 +20,10 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-import { machine } from '../Platform/machine'
+import { installMachine, machine } from '../Platform/machine'
+import { diskMachine } from '../Testing/machines'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
-import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
-import { shardOf } from '../Nexus/ids'
 import { settleNow } from '../Nexus/settle'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
@@ -36,7 +35,6 @@ import type { BundleStore } from '../Bundles/layout'
 import { readRawRecord, readRecord, writeRecord } from '../Bundles/record'
 import { bundleRows } from '../Bundles/rows'
 import { NO_DESTINATION } from '../Bundles/placement'
-import type { TrashDeps } from '../Trash/discard'
 
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDN0'
 const DAILY = '01KVGMT8BFP350FZZXAMG1QDD0'
@@ -52,7 +50,6 @@ const THIRD = '01KVGMT8BFP350FZZXAMG1QDT0'
 const THIRD_DAILY = '01KVGMT8BFP350FZZXAMG1QDY0'
 const PAGE_X = '01KVGMT8BFP350FZZXAMG1QDVX'
 const DEEP = `---\nID: ${PAGE_D}\n---\ndeep\n`
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 const ARCHIVE: BundleStore = { kind: 'archive', id: NOTES }
 const BETA = `---\nID: ${PAGE_B}\n---\nbeta\n`
 
@@ -66,7 +63,7 @@ const reseed = async (): Promise<void> => {
   await seedContentIndex(root)
 }
 const mutate = (req: Parameters<typeof settledMutate>[1]): Promise<MutateReply> =>
-  settledMutate(root, req, nexusDeps)
+  settledMutate(root, req)
 const message = (r: MutateReply): string => (r.ok ? '' : r.error.message)
 const archive = async (path: string, kind: 'page' | 'set' = 'page'): Promise<string> => {
   const r = await mutate({ op: 'archive', path, kind })
@@ -107,9 +104,11 @@ beforeEach(async () => {
   await writeFile(at('Notes', 'Linker.md'), `---\nID: ${PAGE_K}\n---\n[[Notes/Daily/Beta]]`)
   await openSession(root)
   await reseed()
+  installMachine({ ...diskMachine(), trashToSystem: async () => {} })
 })
 
 afterEach(async () => {
+  installMachine(diskMachine())
   vi.restoreAllMocks()
   dropLiveTree()
   closeSession()
@@ -916,25 +915,6 @@ describe('a delete from the Archive', () => {
     expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 
-  it('under the system Trash Mode, it leaves for the system trash with its metadata', async () => {
-    await updatePageMetadata(root, PAGE_A, { icon: 'moon' })
-    await updatePageMetadata(root, PAGE_B, { icon: 'star' })
-    const archived = await archive('Notes/Daily/Beta.md')
-    const trashToSystem = vi.fn((p: string) => rm(p, { recursive: true }))
-    const r = await settledMutate(
-      root,
-      { op: 'delete', path: archived, kind: 'page' },
-      { trashMode: 'system', trashToSystem },
-    )
-    expect(r.ok).toBe(true)
-    expect(r.ok && r.value).not.toHaveProperty('bundled')
-    expect(trashToSystem).toHaveBeenCalledWith(at(archived, 'Beta.md'))
-    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
-    expect(await pathExists(at(archived))).toBe(false)
-    const month = await readShard(root, shardOf(PAGE_A)!)
-    expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_A]: { icon: 'moon' } })
-  })
-
   it('its Undo returns it to the Archive under the same name, its Link values back', async () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
@@ -1201,9 +1181,7 @@ describe('a delete from the Archive', () => {
       JSON.stringify({ personalization: { permanentDelete: true } }),
     )
     await refreshTree(root)
-    expect(
-      (await settledMutate(root, { op: 'emptyBundle', bundlePath: notes }, nexusDeps)).ok,
-    ).toBe(true)
+    expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: notes })).ok).toBe(true)
     expect(message(await restore(trashed, UNDO))).toBe(
       'The place this belonged to no longer exists.',
     )

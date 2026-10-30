@@ -156,7 +156,7 @@ describe('the Trash pane', () => {
       mutate: mutated,
       'delete:facts': vi.fn(async () => ({
         ok: true,
-        value: { trashMode: 'nexus', permanentDelete: false },
+        value: { permanentDelete: false },
       })),
     })
     nexus('A')

@@ -11,7 +11,6 @@ import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { setPropertyOp } from './setProperty'
 import type { MutateContext } from '../Nexus/mutate'
-import type { TrashDeps } from '../Trash/discard'
 import type { PropertyDraft } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { closeSession, openSession } from '../Nexus/session'
@@ -23,8 +22,7 @@ let root: string
 let spaceRel: string
 let statusId: string
 
-const deps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
-const ctx = (): MutateContext => ({ root, deps })
+const ctx = (): MutateContext => ({ root })
 
 const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft['type'] }) =>
   over as PropertyDraft
@@ -134,7 +132,6 @@ describe('setProperty on a Space path', () => {
 })
 
 describe('a value write reconciles the Space it lands on', () => {
-  const settled: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
   let priorityId: string
   let tagsId: string
 
@@ -170,7 +167,7 @@ describe('a value write reconciles the Space it lands on', () => {
     await refreshTree(root)
   }
   const set = (propertyId: string, value: PropertyValue | null) =>
-    settledMutate(root, { op: 'setProperty', path: spaceRel, propertyId, value }, settled)
+    settledMutate(root, { op: 'setProperty', path: spaceRel, propertyId, value })
 
   it('leaves a scalar Select spelling its option as written', async () => {
     await seed({ Status: 'Option 1' })
@@ -200,15 +197,11 @@ describe('a value write reconciles the Space it lands on', () => {
 
   it('a restored Space keeps an option word deleted while it sat in the Trash', async () => {
     await seed({ Tags: ['alpha', 'beta'] })
-    const deleted = await settledMutate(
-      root,
-      { op: 'delete', path: spaceRel, kind: 'space' },
-      settled,
-    )
+    const deleted = await settledMutate(root, { op: 'delete', path: spaceRel, kind: 'space' })
     if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
     expect((await deleteOption(root, tagsId, 'opt_beta')).ok).toBe(true)
     const { bundlePath } = deleted.value.bundled
-    expect((await settledMutate(root, { op: 'restore', bundlePath }, settled)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
     expect((await sidecar()).Tags).toEqual(['alpha', 'beta'])
   })
 

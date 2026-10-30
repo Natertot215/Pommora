@@ -261,7 +261,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 1-6 · A metadata copy writes each month once
   - [x] Review Checkpoint
 - [ ] **Phase 2** — Residue
-  - [ ] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
+  - [x] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
   - [ ] Task 2-2 · The content record's `partial` leaves
   - [ ] Task 2-3 · Records from the tree, and a Context's place
   - [ ] Task 2-4 · The rest of the residue
@@ -1243,6 +1243,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - `Core/Archive/archive.test.ts:919-936`, *"under the system Trash Mode, it leaves for the system trash with its metadata"*;
   - `Core/Assets/assetMigrate.test.ts:220-232`, *"sends swept leftovers to the system trash in System mode"*;
   - `Core/Interface/Confirm/confirmations.test.ts:198-212`, *"a delete under the system Trash Mode says it moves to the system trash"*, the Nexus wording staying pinned at `:377`;
+  - `Core/Interface/Confirm/confirmations.test.ts`, *"offers no Undo for a system-trash delete, which leaves no bundle, and still counts its linkers"*, the linker count staying pinned by the case above it;
   - `Core/Nexus/finishOwed.test.ts:762-776`, *"a System Trash Context delete cut short before its list step takes its order with it once its folder leaves"*;
   - `Core/Nexus/mutate.test.ts:716-726`, *"system mode delegates to the injected OS-trash fn (not the .trash)"*;
   - `Core/Nexus/mutate.test.ts:3693-3707`, *"lifts under the system Trash Mode too, so the system trash never takes an excluded folder"*, the Nexus lift staying pinned by the cases above it;

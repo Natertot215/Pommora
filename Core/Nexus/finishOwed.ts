@@ -9,7 +9,6 @@ import { collectionFolders } from './governedSweep'
 import { optionsOf, type PropertyDefinition } from '../Properties/properties'
 import { findOption } from '../Properties/propertyValue'
 import { memberKey } from '../Files/rootValues'
-import { discardFile, type TrashDeps } from '../Trash/discard'
 import { type CascadeReport, deleteCascade, relinkReach, type StrippedLink } from './cascade'
 import { patchRecord } from '../Bundles/record'
 import { parkLinks } from '../Trash/trashedCopies'
@@ -17,7 +16,6 @@ import { findContainerById } from './treePatch'
 import { pagesByIdOf } from './record'
 import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
 import { oweWalk } from './fileEvents'
-import { machine } from '../Platform/machine'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
 import { ARCHIVE_DIR_REL, archiveDirRel, contextDirRel } from '../Paths/nexusPaths'
@@ -33,7 +31,6 @@ import {
   unlinkSpaceValue,
 } from '../Contexts/contextCascade'
 import { inContextsTurn, inSettleTurn } from './settle'
-import { dropContextOrder } from './reorder'
 import { liveTreeOf, refreshTree } from './liveTree'
 import {
   type ContainerEntry,
@@ -70,13 +67,13 @@ const add = (reach: ConfigReach, r: ConfigReach): boolean => {
   return retries(r) > 0
 }
 
-export async function finishOwed(root: string, deps: TrashDeps): Promise<CascadeReport> {
+export async function finishOwed(root: string): Promise<CascadeReport> {
   const total: ConfigReach = { skipped: 0, hosts: [] }
   const each = async (kind: Entry['kind']): Promise<void> => {
     for (const [id, e] of Object.entries(await readNotes(root))) {
       if (e.kind !== kind) continue
       try {
-        add(total, await finishEntry(root, id, deps))
+        add(total, await finishEntry(root, id))
       } catch (err) {
         console.error('owed work could not finish:', errText(err))
         total.skipped += 1
@@ -96,29 +93,23 @@ export async function finishOwed(root: string, deps: TrashDeps): Promise<Cascade
 }
 
 /** Finishes one entry inside a caller already holding its kind's lock (the pass, or a Context or Space delete), writing back what it still owes. */
-export async function finishEntry(root: string, id: string, deps: TrashDeps): Promise<ConfigReach> {
+export async function finishEntry(root: string, id: string): Promise<ConfigReach> {
   const notes = await readNotes(root)
   const e = notes[id]
   if (!e) return NO_REACH
-  const done = await finishArm(root, id, e, notes, deps)
+  const done = await finishArm(root, id, e, notes)
   await editNote(root, id, () => done.left)
   return done.reach
 }
 
-function finishArm(
-  root: string,
-  id: string,
-  e: Entry,
-  notes: Notes,
-  deps: TrashDeps,
-): Promise<Finished<Entry>> {
+function finishArm(root: string, id: string, e: Entry, notes: Notes): Promise<Finished<Entry>> {
   switch (e.kind) {
     case 'property':
       return finishProperty(root, id, e)
     case 'context':
-      return finishContext(root, id, e, deps)
+      return finishContext(root, id, e)
     case 'space':
-      return finishSpace(root, id, e, notes, deps)
+      return finishSpace(root, id, e, notes)
     case 'container':
       return finishContainer(root, id, e)
     case 'relink':
@@ -255,15 +246,9 @@ async function finishOptions(
   return Object.keys(left).length ? left : undefined
 }
 
-/** A deleted Context's or Space's folder, where its delete's list step left it, into its bundle or where Trash Mode sends it. */
-const leave = async (
-  root: string,
-  abs: string,
-  bundle: string | undefined,
-  deps: TrashDeps,
-): Promise<void> => {
-  if (bundle) await relocate(abs, join(root, bundle, basename(abs)))
-  else await machine().lock(abs, () => discardFile(root, abs, deps))
+/** A deleted Context's or Space's folder, where its delete's list step left it, into the bundle its delete noted. */
+const leave = async (root: string, abs: string, bundle: string): Promise<void> => {
+  await relocate(abs, join(root, bundle, basename(abs)))
   oweWalk(root)
 }
 
@@ -271,7 +256,6 @@ async function finishContext(
   root: string,
   id: string,
   e: ContextEntry,
-  deps: TrashDeps,
 ): Promise<Finished<ContextEntry>> {
   const reg = await readRegistryStrict(root)
   if (!reg.ok && reg.error.code !== 'not-found') return stuck(e)
@@ -315,14 +299,12 @@ async function finishContext(
     (old) => contexts.some(rivalTitled(old, id)),
     async (old) => {
       const dir = join(contextsDir(root), old)
-      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle, deps)
+      if ((await heldName(dir)) === old) await leave(root, dir, e.bundle!)
       return unlinkContextKey(root, old, id, dir)
     },
     reach,
     () => reachConfig(root, { kind: 'property', propertyId: id }),
   )
-  // A Context gone for good, with no bundle to restore it from, takes its order with it.
-  if (!e.bundle && title === undefined) await dropContextOrder(root, id)
   return { left: { ...e, rename, strip }, reach }
 }
 
@@ -331,7 +313,6 @@ async function finishSpace(
   id: string,
   e: SpaceEntry,
   notes: Notes,
-  deps: TrashDeps,
 ): Promise<Finished<SpaceEntry>> {
   const parent = notes[e.contextId]
   const { groupById, spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
@@ -344,7 +325,7 @@ async function finishSpace(
   // A Space's folder is its list entry, so its current title sitting in `strip` is a delete; a folder still standing is the move it owes.
   const deleted = space !== undefined && !!e.strip?.includes(space.title)
   if (deleted && (await heldName(join(root, space.path))) === space.title)
-    await leave(root, join(root, space.path), e.bundle, deps)
+    await leave(root, join(root, space.path), e.bundle!)
   const title = deleted ? undefined : space?.title
   const rename =
     title === undefined

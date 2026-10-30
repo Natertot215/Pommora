@@ -17,11 +17,9 @@ import { bundleRowOf, bundleRows, innerRows } from './rows'
 import { storedAtOf } from './layout'
 import { patchRecord } from './record'
 import { scopeOf } from '../Settings/codec'
-import type { TrashDeps } from '../Trash/discard'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const ARCHIVE_ID = '01KVGMT8BFP350FZZXAMG1QDVB'
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
@@ -33,7 +31,7 @@ const rows = async (): Promise<BundleRow[]> => {
 const del = (
   path: string,
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
-): Promise<MutateReply> => settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
+): Promise<MutateReply> => settledMutate(root, { op: 'delete', path, kind })
 
 beforeEach(async () => {
   root = tempRoot('pom-rows-')
@@ -113,11 +111,12 @@ describe('bundleRows — a bundle as the browser reads it', () => {
 
   it('a renamed ancestor reads true, because the crumb resolves by id', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
-    const renamed = await settledMutate(
-      root,
-      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journals' },
-      nexusDeps,
-    )
+    const renamed = await settledMutate(root, {
+      op: 'rename',
+      path: 'Notes',
+      kind: 'collection',
+      newName: 'Journals',
+    })
     expect(renamed.ok).toBe(true)
     expect((await rows())[0].crumbs).toEqual([
       { kind: 'collection', title: 'Journals' },
@@ -314,11 +313,7 @@ describe('bundleRows — a container’s and a Space’s own icons', () => {
       join(root, 'Notes', 'Daily', '_pageset.json'),
       JSON.stringify({ id: 'set-daily', icon: 'folder-heart' }),
     )
-    const archived = await settledMutate(
-      root,
-      { op: 'archive', path: 'Notes/Daily', kind: 'set' },
-      nexusDeps,
-    )
+    const archived = await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
     const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
     await rm(join(root, bundlePath, 'Daily', '_pageset.json'))
     const store = { kind: 'archive' as const, id: 'col-notes' }
@@ -333,11 +328,7 @@ describe('bundleRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const [row] = await rows()
     expect(row.homeResolves).toBe(true)
-    const restored = await settledMutate(
-      root,
-      { op: 'restore', bundlePath: row.bundlePath },
-      nexusDeps,
-    )
+    const restored = await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath })
     expect(restored.ok).toBe(true)
     expect((await readNexus(root)).collections[0].sets[0].pages[0].title).toBe('Alpha')
   })
@@ -347,11 +338,7 @@ describe('bundleRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily', 'set')
     const page = (await rows()).find((r) => r.kind === 'page') as BundleRow
     expect(page.homeResolves).toBe(false)
-    const restored = await settledMutate(
-      root,
-      { op: 'restore', bundlePath: page.bundlePath },
-      nexusDeps,
-    )
+    const restored = await settledMutate(root, { op: 'restore', bundlePath: page.bundlePath })
     expect(restored.ok).toBe(false)
   })
 })
@@ -441,11 +428,7 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
   })
 
   it('an archived Set’s inner page row is homeless, addressed by its own path, and trailed from the Archive', async () => {
-    const archived = await settledMutate(
-      root,
-      { op: 'archive', path: 'Notes/Daily', kind: 'set' },
-      nexusDeps,
-    )
+    const archived = await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
     const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
     const address = `${bundlePath}/Daily/Alpha.md`
     expect(await innerOf(bundlePath)).toMatchObject([

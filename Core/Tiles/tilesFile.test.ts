@@ -21,11 +21,9 @@ import type { TileDoc } from './tiles'
 import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
-import type { TrashDeps } from '../Trash/discard'
 import { dropLiveTree } from '../Nexus/liveTree'
 
 const append = { kind: 'append' } as const
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const home = (): string => homepageDir(root)
@@ -264,7 +262,7 @@ describe('markdown tile lifecycle', () => {
     await seed(home(), [{ id: tileId('a'), type: 'widget', keep: true }])
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'kept text')
-    const removed = await removeTile(root, home(), id, nexusDeps)
+    const removed = await removeTile(root, home(), id)
     expect(removed).toEqual(
       ok({
         removed: { entry: { id, type: 'markdown' }, body: 'kept text' },
@@ -281,11 +279,11 @@ describe('markdown tile lifecycle', () => {
     const [w, gone] = [tileId('w'), tileId('g')]
     await seed(home(), [{ id: w, type: 'widget' }])
     await write(home(), gone, 'orphaned')
-    expect(await removeTile(root, home(), w, nexusDeps)).toMatchObject(
+    expect(await removeTile(root, home(), w)).toMatchObject(
       ok({ removed: { entry: { id: w, type: 'widget' } } }),
     )
     expect(await entries()).toEqual([])
-    expect(await removeTile(root, home(), gone, nexusDeps)).toMatchObject(
+    expect(await removeTile(root, home(), gone)).toMatchObject(
       ok({ removed: { entry: null, body: 'orphaned' } }),
     )
     expect(await pathExists(tileFilePath(home(), gone))).toBe(false)
@@ -299,7 +297,7 @@ describe('markdown tile lifecycle', () => {
   it('convert refuses an entry this build doesn’t know and leaves it alone', async () => {
     await seed(home(), [{ id: tileId('w'), type: 'widget' }])
     const pick = { kind: 'page', value: 'page-1' } as const
-    expect(await convertTile(root, home(), tileId('w'), pick, nexusDeps)).toMatchObject({
+    expect(await convertTile(root, home(), tileId('w'), pick)).toMatchObject({
       error: { code: 'not-found' },
     })
     expect(await entries()).toEqual([{ id: tileId('w'), type: 'widget' }])
@@ -308,7 +306,7 @@ describe('markdown tile lifecycle', () => {
   it('a removed tile restores with its text, once, and never over a file already there', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'kept text')
-    const removed = await removeTile(root, home(), id, nexusDeps)
+    const removed = await removeTile(root, home(), id)
     if (!removed.ok) throw new Error('remove refused')
     expect(await restoreTile(home(), removed.value.removed)).toEqual(ok({ landed: await docAt() }))
     expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
@@ -331,7 +329,7 @@ describe('markdown tile lifecycle', () => {
   it('a restored tile’s links count again for a heading renamed outside the app', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'see [[A#Keep]]')
-    const removed = await removeTile(root, home(), id, nexusDeps)
+    const removed = await removeTile(root, home(), id)
     if (!removed.ok) throw new Error('remove refused')
     expect(await tilesLink(root, ['a'], 'keep')).toBe(false)
     await restoreTile(home(), removed.value.removed)
@@ -342,7 +340,7 @@ describe('markdown tile lifecycle', () => {
     const id = await landedId(createTile(root, home(), append))
     const band = (tile: string) => ({ node: { kind: 'tile', id: tileId(tile), h: 80 } })
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [band('a'), band('b')] } }))
-    const removed = await removeTile(root, home(), id, nexusDeps)
+    const removed = await removeTile(root, home(), id)
     if (!removed.ok) throw new Error('remove refused')
     await restoreTile(home(), { ...removed.value.removed, at: { band: 1, h: 120 } })
     expect((await docAt()).layout).toEqual({
@@ -351,24 +349,10 @@ describe('markdown tile lifecycle', () => {
     expect((await restoreTile(home(), { entry: { id: '../x', type: 'markdown' } })).ok).toBe(false)
   })
 
-  it('a removed tile file goes to the system trash in System mode', async () => {
-    const id = await landedId(createTile(root, home(), append))
-    const sent: string[] = []
-    await removeTile(root, home(), id, {
-      trashMode: 'system',
-      trashToSystem: async (p) => {
-        sent.push(p)
-        await machine().remove(p)
-      },
-    })
-    expect(sent).toEqual([tileFilePath(home(), id)])
-    expect(await pathExists(join(root, '.trash'))).toBe(false)
-  })
-
   it('an entry op leaves the layout and lock alone', async () => {
     const id = await landedId(createTile(root, home(), append))
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [] }, locked: true }))
-    await convertTile(root, home(), id, { kind: 'page', value: 'p1' }, nexusDeps)
+    await convertTile(root, home(), id, { kind: 'page', value: 'p1' })
     const doc = await docAt()
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.locked).toBe(true)
@@ -393,7 +377,7 @@ describe('markdown tile lifecycle', () => {
     const id = await landedId(createTile(root, home(), append))
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }])
     const pick = { kind: 'view', value: { source_id: 'col-notes', view_id: 'view_src' } } as const
-    expect((await convertTile(root, home(), id, pick, nexusDeps)).ok).toBe(true)
+    expect((await convertTile(root, home(), id, pick)).ok).toBe(true)
     const entry = (await entries())[0]
     expect(entry).toMatchObject({ type: 'view', style: 'borderless', outside_key: 1, active: 0 })
     const view = (entry.views as Array<Record<string, unknown>>)[0]
@@ -413,7 +397,7 @@ describe('markdown tile lifecycle', () => {
     dropLiveTree()
     const id = await landedId(createTile(root, home(), append))
     const pick = { kind: 'view', value: { source_id: 'col-notes' } } as const
-    expect((await convertTile(root, home(), id, pick, nexusDeps)).ok).toBe(true)
+    expect((await convertTile(root, home(), id, pick)).ok).toBe(true)
     const view = ((await entries())[0].views as Array<Record<string, unknown>>)[0]
     expect(view.config).toMatchObject({ name: 'Table', type: 'table' })
     expect((view.config as { id: string }).id).toMatch(/^view_/)
@@ -422,12 +406,10 @@ describe('markdown tile lifecycle', () => {
   it('convert to page points the tile at the page and refuses a pick it cannot read', async () => {
     const id = await landedId(createTile(root, home(), append))
     await seed(home(), [{ id, type: 'markdown', style: 'borderless' }])
-    expect((await convertTile(root, home(), id, { kind: 'view', value: 3 }, nexusDeps)).ok).toBe(
-      false,
-    )
+    expect((await convertTile(root, home(), id, { kind: 'view', value: 3 })).ok).toBe(false)
     expect((await entries())[0].type).toBe('markdown')
     const pick = { kind: 'page', value: 'page-1' } as const
-    expect((await convertTile(root, home(), id, pick, nexusDeps)).ok).toBe(true)
+    expect((await convertTile(root, home(), id, pick)).ok).toBe(true)
     expect((await entries())[0]).toMatchObject({
       type: 'page',
       page_id: 'page-1',
@@ -510,7 +492,7 @@ describe('markdown tile lifecycle', () => {
 
   it('removing a non-markdown tile touches no files', async () => {
     await seed(home(), [{ id: tileId('p'), type: 'page', page_id: 'x' }])
-    await removeTile(root, home(), tileId('p'), nexusDeps)
+    await removeTile(root, home(), tileId('p'))
     expect(await entries()).toEqual([])
     expect(await pathExists(join(root, '.trash'))).toBe(false)
   })

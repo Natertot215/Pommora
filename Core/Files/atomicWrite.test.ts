@@ -22,7 +22,7 @@ import {
   updateNexusFile,
 } from './atomicWrite'
 import { mintBundle } from '../Bundles/bundle'
-import { discardFile, trashFileFlat } from '../Trash/discard'
+import { discardFile } from '../Trash/discard'
 import { dropOwnEchoes, type FileEvent, isRecentWrite, setOwnTap, setWriteTap } from './writeEcho'
 import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
@@ -376,12 +376,18 @@ describe('heldName', () => {
   })
 })
 
-describe('trashFileFlat', () => {
+describe('discardFile', () => {
+  const trashed = async (...chain: string[]): Promise<string[]> => {
+    const at = join(dir, '.trash', ...chain)
+    return (await readdir(at)).map((leaf) => join(at, leaf))
+  }
+
   it('moves a file into .trash under a stamped leaf and removes the original', async () => {
     const p = join(dir, 'doomed.md')
     await atomicWriteFile(p, 'bye')
-    const dest = await trashFileFlat(dir, p)
-    expect(dest).toContain('.trash')
+    await discardFile(dir, p)
+    const [dest] = await trashed()
+    expect(basename(dest).endsWith('__doomed.md')).toBe(true)
     expect(await readFile(dest, 'utf8')).toBe('bye')
     await expect(stat(p)).rejects.toThrow()
   })
@@ -391,17 +397,17 @@ describe('trashFileFlat', () => {
     await atomicWriteFile(p, 'bye')
     const seen: string[] = []
     setWriteTap({ wrote: (w) => seen.push(w), renamed: () => {} })
-    const dest = await trashFileFlat(dir, p)
+    await discardFile(dir, p)
     setWriteTap(null)
-    expect(seen).toEqual([p, dest])
+    expect(seen).toEqual([p, ...(await trashed())])
   })
 
   it('mirrors the folder chain the file was deleted from', async () => {
     await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
     const p = join(dir, 'Notes', 'Daily', 'Beta.md')
     await atomicWriteFile(p, 'bye')
-    const dest = await trashFileFlat(dir, p)
-    expect(dest.startsWith(join(dir, '.trash', 'Notes', 'Daily'))).toBe(true)
+    await discardFile(dir, p)
+    const [dest] = await trashed('Notes', 'Daily')
     expect(basename(dest).endsWith('__Beta.md')).toBe(true)
     expect(await readFile(dest, 'utf8')).toBe('bye')
   })
@@ -409,12 +415,11 @@ describe('trashFileFlat', () => {
   it('de-collides two trashes of the same name from the same folder', async () => {
     const p = join(dir, 'twice.md')
     await atomicWriteFile(p, 'one')
-    const first = await trashFileFlat(dir, p)
+    await discardFile(dir, p)
     await atomicWriteFile(p, 'two')
-    const second = await trashFileFlat(dir, p)
-    expect(second).not.toBe(first)
-    expect(await readFile(first, 'utf8')).toBe('one')
-    expect(await readFile(second, 'utf8')).toBe('two')
+    await discardFile(dir, p)
+    const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
+    expect(kept.sort()).toEqual(['one', 'two'])
   })
 })
 
@@ -507,7 +512,7 @@ describe('the own tap', () => {
   it('notes a discard as an unlink', async () => {
     const p = join(dir, 'gone.md')
     await writeFile(p, 'bye')
-    await discardFile(dir, p, { trashMode: 'nexus', trashToSystem: async () => {} })
+    await discardFile(dir, p)
     expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
     expect(noted[0].text).toBeNull()
   })

@@ -26,7 +26,6 @@ import { finishOwed } from '../Nexus/finishOwed'
 import { closeSession, openSession } from '../Nexus/session'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { patchSidecar } from '../Files/sidecar'
-import type { TrashDeps } from '../Trash/discard'
 
 let root: string
 let notes: string
@@ -206,7 +205,6 @@ describe('a re-assign that can’t refill a page', () => {
   let propertyId: string
   let page: string
   let collectionId: string
-  const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
   const priority = async (): Promise<unknown> =>
     splitFrontmatter(await readFile(page, 'utf8')).Priority
   const stash = async (): Promise<unknown> =>
@@ -235,18 +233,18 @@ describe('a re-assign that can’t refill a page', () => {
     'answers Couldn’t update 1 Item with Try Again, and Try Again refills it',
     async () => {
       await chmod(page, 0o000)
-      const r = await handleMutate(
-        root,
-        { op: 'assignProperty', containerPath: 'Notes', propertyId },
-        deps,
-      ).finally(() => chmod(page, 0o644))
+      const r = await handleMutate(root, {
+        op: 'assignProperty',
+        containerPath: 'Notes',
+        propertyId,
+      }).finally(() => chmod(page, 0o644))
       expect(r).toEqual(
         ok({
           cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true },
         }),
       )
       expect((await readNotes(root))[propertyId]).toMatchObject({ collections: [collectionId] })
-      expect((await handleMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect((await handleMutate(root, { op: 'finishOwed' })).ok).toBe(true)
       expect(await priority()).toBe(7)
       expect(await stash()).toBeUndefined()
       expect(await readNotes(root)).toEqual({})
@@ -259,7 +257,7 @@ describe('a re-assign that can’t refill a page', () => {
       await chmod(page, 0o000)
       const r = await refreshTree(root)
         .then(() =>
-          handleMutate(root, { op: 'assignProperty', containerPath: 'Notes', propertyId }, deps),
+          handleMutate(root, { op: 'assignProperty', containerPath: 'Notes', propertyId }),
         )
         .finally(() => chmod(page, 0o644))
       expect(r).toEqual(
@@ -271,7 +269,7 @@ describe('a re-assign that can’t refill a page', () => {
       expect(Object.values(kept.values)).toEqual([7])
       expect((await readNotes(root))[propertyId]).toMatchObject({ collections: [collectionId] })
       await refreshTree(root)
-      expect((await handleMutate(root, { op: 'finishOwed' }, deps)).ok).toBe(true)
+      expect((await handleMutate(root, { op: 'finishOwed' })).ok).toBe(true)
       expect(await priority()).toBe(7)
       expect(await stash()).toBeUndefined()
       expect(await readNotes(root)).toEqual({})
@@ -294,7 +292,7 @@ describe('a re-assign that can’t refill a page', () => {
     await putJson(join(root, OWED_REL), {
       [propertyId]: { kind: 'property', collections: [collectionId] },
     })
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await priority()).toBe(7)
     expect(await readNotes(root)).toEqual({})
   })

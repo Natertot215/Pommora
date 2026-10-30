@@ -40,13 +40,7 @@ import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, settleAsks, type TellHandlers } from './Bridge/ipc'
 import { captureThumbnail, evictThumbnails } from './Capture/thumbnails'
-import {
-  addRecent,
-  readAppConfig,
-  resolveRestorePath,
-  trashModeOf,
-  updateAppConfig,
-} from './Config/appConfig'
+import { addRecent, readAppConfig, resolveRestorePath, updateAppConfig } from './Config/appConfig'
 import { ensureDevice } from './Config/device'
 import { getSecret, setSecret } from './Config/secrets'
 import { startWatcher, stopWatcher, waitUntilReadable } from './FileWatch/watcher'
@@ -298,7 +292,6 @@ function hostContext(win: BrowserWindow | null): HostContext {
       evict: evictThumbnails,
     },
     webGuests: { setZoom: setGuestTileZoom, pauseMedia: pauseGuestMedia },
-    trashMode: async () => trashModeOf(await readAppConfig(userData())),
     fetchTitle: fetchPageTitle,
     device,
     secrets: {

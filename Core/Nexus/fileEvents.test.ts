@@ -15,7 +15,6 @@ import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
 import { applyEvents, classifyEvent, owedFor } from './fileEvents'
 import { settleBatch, settleNow } from './settle'
 import { handleMutate } from './mutate'
-import type { TrashDeps } from '../Trash/discard'
 import type { Changed, FileEvent } from '../Files/writeEcho'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import { containerAt, containerSchema } from './treePatch'
@@ -437,15 +436,13 @@ describe('the parity cases', () => {
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
-
-  const DEPS: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
   for (const [label, req] of [
     ['renames', { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Weekly' }],
     ['deletes', { op: 'delete', path: 'Notes/Daily', kind: 'set' }],
   ] as const) {
     it(`a page event that settles after the app ${label} its Set lists nothing unreadable`, async () => {
       await withDaily()
-      expect((await handleMutate(root, req, DEPS)).ok).toBe(true)
+      expect((await handleMutate(root, req)).ok).toBe(true)
       await settleNow(QUIET, root)
       await settled([ev('change', 'Notes', 'Daily', 'D.md')])
       expect(held().unreadable).toBeUndefined()

@@ -8,7 +8,6 @@ import { newId } from '../Nexus/ids'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settledMutate } from '../Testing/settledMutate'
-import type { TrashDeps } from '../Trash/discard'
 import type { PropertyDefinition } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { renameProperty } from './registryProperty'
@@ -16,7 +15,6 @@ import type { MutateReply } from '../Nexus/mutateRequest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { pathExists } from '../Files/atomicWrite'
 
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 const PAGE_ID = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 
 let root: string
@@ -112,11 +110,11 @@ const space: Target = {
 }
 
 const set = (target: Target, key: string, value: PropertyValue | null) =>
-  settledMutate(root, { op: 'setProperty', path: target.path(), propertyId: ids[key], value }, deps)
+  settledMutate(root, { op: 'setProperty', path: target.path(), propertyId: ids[key], value })
 /** Sends the record the write's own reply carries, as the window's undo does. */
 const undo = async (written: MutateReply): Promise<MutateReply> => {
   if (!written.ok || !written.value.undo) throw new Error('The write answered no record to undo.')
-  return settledMutate(root, written.value.undo, deps)
+  return settledMutate(root, written.value.undo)
 }
 
 interface Case {
@@ -296,11 +294,12 @@ describe('an undo on a page', () => {
 
   it('an unknown Space title survives a Context undo', async () => {
     await page.seed('<Projects>', ['Pommora', 'Ghost'], '<Projects>: [Pommora, Ghost]')
-    const written = await settledMutate(
-      root,
-      { op: 'setContext', path: pagePath, contextId: groupId, spaceIds: [] },
-      deps,
-    )
+    const written = await settledMutate(root, {
+      op: 'setContext',
+      path: pagePath,
+      contextId: groupId,
+      spaceIds: [],
+    })
     expect(await page.held('<Projects>')).toBeUndefined()
     await undo(written)
     expect(await page.held('<Projects>')).toBe('<Projects>: [Pommora, Ghost]')
@@ -319,11 +318,12 @@ describe('an undo on a page', () => {
   })
 
   it('a Context tag’s undo lands while the property list is damaged', async () => {
-    const written = await settledMutate(
-      root,
-      { op: 'setContext', path: pagePath, contextId: groupId, spaceIds: [spaceId] },
-      deps,
-    )
+    const written = await settledMutate(root, {
+      op: 'setContext',
+      path: pagePath,
+      contextId: groupId,
+      spaceIds: [spaceId],
+    })
     expect(await page.held('<Projects>')).toBe('<Projects>:\n  - Pommora')
     // Damaged bytes are the case under test.
     await writeFile(join(nexusDir(root), 'properties.json'), '{')
@@ -339,11 +339,12 @@ describe('an undo of a Space link', () => {
     const home = await createSpace(root, areas, 'Home', newId())
     if (!home.ok) throw new Error('setup')
     await refreshTree(root)
-    const written = await settledMutate(
-      root,
-      { op: 'setContext', path: home.value.path, contextId: groupId, spaceIds: [spaceId] },
-      deps,
-    )
+    const written = await settledMutate(root, {
+      op: 'setContext',
+      path: home.value.path,
+      contextId: groupId,
+      spaceIds: [spaceId],
+    })
     expect(
       written.ok && written.value.undo?.op === 'putBack' && written.value.undo.entries,
     ).toHaveLength(2)

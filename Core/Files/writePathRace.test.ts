@@ -80,7 +80,7 @@ describe('a value write racing a body write on one page', () => {
     await assignProperty(root, folder, made.value.id)
     const p = await createTestPage(folder, 'Note', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
-    const ctx = { root, deps: { trashMode: 'system' as const, trashToSystem: async () => {} } }
+    const ctx = { root }
 
     await Promise.all([
       updatePageBody(p.value.path, 'second'),

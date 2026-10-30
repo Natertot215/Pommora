@@ -50,7 +50,6 @@ import {
 } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
-import type { TrashDeps } from '../Trash/discard'
 import { createContainerOp, createPageOp, createSpaceOp, landedAs } from './create'
 import { movePageOp, moveSetOp } from './move'
 import { editPageAliases, writePageMeta } from './pageMetadata'
@@ -68,23 +67,18 @@ import { putBackEntries } from './governedRoot'
 
 export interface MutateContext {
   root: string
-  deps: TrashDeps
 }
 
-export async function handleMutate(
-  root: string,
-  req: MutateRequest,
-  deps: TrashDeps,
-): Promise<MutateReply> {
+export async function handleMutate(root: string, req: MutateRequest): Promise<MutateReply> {
   try {
-    return await dispatch({ root, deps }, req)
+    return await dispatch({ root }, req)
   } catch (e) {
     return fault(e)
   }
 }
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
-  const { root, deps } = ctx
+  const { root } = ctx
   // A write that moves, adds, or removes a page, re-spells its links, or renames a Context or Space runs in the settle's turn. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
   const addressed = (
     req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
@@ -158,9 +152,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
-      return resolved.ok
-        ? inSettleTurn(root, () => emptyBundle(root, resolved.value, deps))
-        : resolved
+      return resolved.ok ? inSettleTurn(root, () => emptyBundle(root, resolved.value)) : resolved
     }
 
     case 'setProfileImage':
@@ -322,7 +314,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     // Outside every per-op lock: the pass takes each kind's lock itself.
     case 'finishOwed':
-      return ok({ cascade: await finishOwed(root, deps) })
+      return ok({ cascade: await finishOwed(root) })
 
     case 'editOption':
       return done(await editOption(root, req.propertyId, req.edit))

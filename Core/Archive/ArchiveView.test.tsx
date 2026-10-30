@@ -142,10 +142,6 @@ describe('ArchiveView', () => {
       })),
       menu,
       mutate: mutated,
-      'delete:facts': vi.fn(async () => ({
-        ok: true,
-        value: { trashMode: 'nexus', permanentDelete: false },
-      })),
       'page:open': vi.fn(async () =>
         readable
           ? { ok: true, value: { body: 'Root body.' } }

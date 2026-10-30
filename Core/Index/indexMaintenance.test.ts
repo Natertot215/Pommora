@@ -17,7 +17,6 @@ import { queryKeyHolders, queryMembers, queryMentions, readIndexedStat } from '.
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settleBatch } from '../Nexus/settle'
-import type { TrashDeps } from '../Trash/discard'
 import { homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -30,7 +29,6 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 
 let root: string
 let mem: ReturnType<typeof memoryStores>
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[] =>
   rows.sort((a, b) => {
@@ -92,11 +90,12 @@ afterEach(async () => {
 
 describe('the writers maintain the rows', () => {
   it('a page rename moves its rows and re-points every mentioning page — cascade included', async () => {
-    const r = await settledMutate(
-      root,
-      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
-      deps,
-    )
+    const r = await settledMutate(root, {
+      op: 'rename',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+      newName: 'Gamma',
+    })
     expect(r.ok).toBe(true)
     expect(queryMentions(['gamma'])).toEqual(['Notes/Daily/Alpha.md'])
     expect(queryMentions(['beta'])).toEqual([])
@@ -109,11 +108,12 @@ describe('the writers maintain the rows', () => {
       `---\nID: ${B_ID}\n---\n\n## Part\n\n[[Beta#Part]]`,
     )
     await seedContentIndex(root)
-    const r = await settledMutate(
-      root,
-      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
-      deps,
-    )
+    const r = await settledMutate(root, {
+      op: 'rename',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+      newName: 'Gamma',
+    })
     expect(r.ok && r.value.cascade?.warning).toBeUndefined()
     expect(await readFile(join(root, 'Notes', 'Daily', 'Gamma.md'), 'utf8')).toContain(
       '[[Gamma#Part]]',
@@ -122,11 +122,12 @@ describe('the writers maintain the rows', () => {
   })
 
   it('a folder rename prefix-moves every row beneath it', async () => {
-    const r = await settledMutate(
-      root,
-      { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Weekly' },
-      deps,
-    )
+    const r = await settledMutate(root, {
+      op: 'rename',
+      path: 'Notes/Daily',
+      kind: 'set',
+      newName: 'Weekly',
+    })
     expect(r.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual(['Notes/Weekly/Alpha.md'])
     await expectMaintained()
@@ -139,101 +140,86 @@ describe('the writers maintain the rows', () => {
       type: 'select',
       select_options: [{ id: 'opt_open', key: 'Open', label: 'Open' }],
     })
-    const set = await settledMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: 'Notes/Daily/Alpha.md',
-        propertyId: 'prop_s',
-        value: { kind: 'select', value: 'opt_open' },
-      },
-      deps,
-    )
+    const set = await settledMutate(root, {
+      op: 'setProperty',
+      path: 'Notes/Daily/Alpha.md',
+      propertyId: 'prop_s',
+      value: { kind: 'select', value: 'opt_open' },
+    })
     expect(set.ok).toBe(true)
     expect(queryKeyHolders('Stage')).toEqual(['Notes/Daily/Alpha.md'])
-    const created = await settledMutate(
-      root,
-      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes', name: 'Fresh' },
-      deps,
-    )
+    const created = await settledMutate(root, {
+      op: 'createPage',
+      id: newContentId('page'),
+      parentPath: 'Notes',
+      name: 'Fresh',
+    })
     expect(created.ok).toBe(true)
     await expectMaintained()
   })
 
   it('a context write lands as a space row; a Space rename and delete each keep it current', async () => {
-    const tagged = await settledMutate(
-      root,
-      {
-        op: 'setContext',
-        path: 'Notes/Daily/Alpha.md',
-        contextId: 'ctx_projects',
-        spaceIds: ['sp-pom'],
-      },
-      deps,
-    )
+    const tagged = await settledMutate(root, {
+      op: 'setContext',
+      path: 'Notes/Daily/Alpha.md',
+      contextId: 'ctx_projects',
+      spaceIds: ['sp-pom'],
+    })
     expect(tagged.ok).toBe(true)
     expect(queryMembers('<Projects>', 'Pommora')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
-    const renamed = await settledMutate(
-      root,
-      { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' },
-      deps,
-    )
+    const renamed = await settledMutate(root, {
+      op: 'renameSpace',
+      spaceId: 'sp-pom',
+      newName: 'Pom',
+    })
     expect(renamed.ok).toBe(true)
     expect(queryMembers('<Projects>', 'Pommora')).toEqual([])
     expect(queryMembers('<Projects>', 'Pom')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     await refreshTree(root)
-    const deleted = await settledMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects/Pom', kind: 'space' },
-      deps,
-    )
+    const deleted = await settledMutate(root, {
+      op: 'delete',
+      path: '.nexus/contexts/Projects/Pom',
+      kind: 'space',
+    })
     expect(deleted.ok).toBe(true)
     expect(queryMembers('<Projects>')).toEqual([])
     await expectMaintained()
   })
 
   it('a delete clears the rows; a restore indexes what came back', async () => {
-    const del = await settledMutate(
-      root,
-      { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
-      deps,
-    )
+    const del = await settledMutate(root, {
+      op: 'delete',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+    })
     expect(del.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const [listed] = await listBundles(root, { kind: 'trash' })
-    const restored = await settledMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      deps,
-    )
+    const restored = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(restored.ok).toBe(true)
     await expectMaintained()
   })
 
   it('a Set delete clears every row beneath it; its restore indexes each page that came back', async () => {
-    const del = await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, deps)
+    const del = await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })
     expect(del.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual([])
     const [listed] = await listBundles(root, { kind: 'trash' })
-    const restored = await settledMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      deps,
-    )
+    const restored = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(restored.ok).toBe(true)
     expect(queryMentions(['beta'])).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
   })
 
   it('a page move re-keys its rows', async () => {
-    const r = await settledMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes' },
-      deps,
-    )
+    const r = await settledMutate(root, {
+      op: 'movePage',
+      path: 'Notes/Daily/Beta.md',
+      newParentPath: 'Notes',
+    })
     expect(r.ok).toBe(true)
     const scratch = dump() as { relations: unknown[] }
     expect(scratch.relations).toEqual([

@@ -17,7 +17,6 @@ import * as bundles from '../Bundles/bundle'
 import { listBundles } from '../Bundles/bundle'
 import type { BundleStore } from '../Bundles/layout'
 import { readRecord } from '../Bundles/record'
-import type { TrashDeps } from '../Trash/discard'
 import { settleArchives } from './refile'
 
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDN0'
@@ -32,7 +31,6 @@ const PAGE_G = '01KVGMT8BFP350FZZXAMG1QDVG'
 const GONE = '01KVGMT8BFP350FZZXAMG1QDG0'
 const GONE_SET = '01KVGMT8BFP350FZZXAMG1QDG1'
 const STAMP = '2026-10-20T00-00-00-000Z'
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 const QUIET = { push: () => {}, watch: async () => {} }
 const IN_NOTES: BundleStore = { kind: 'archive', id: NOTES }
 const IN_OTHER: BundleStore = { kind: 'archive', id: OTHER }
@@ -41,7 +39,7 @@ const INTO_OTHER: RestoreDestination = { kind: 'container', id: OTHER }
 let root: string
 const at = (...segs: string[]): string => join(root, ...segs)
 const mutate = (req: Parameters<typeof settledMutate>[1]): Promise<MutateReply> =>
-  settledMutate(root, req, nexusDeps)
+  settledMutate(root, req)
 const bundled = async (req: Parameters<typeof settledMutate>[1]): Promise<string> => {
   const r = await mutate(req)
   expect(r.ok).toBe(true)

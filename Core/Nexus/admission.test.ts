@@ -16,7 +16,6 @@ import { newId } from './ids'
 import { openSession, closeSession } from './session'
 import { contextsDir, contextsRegistryFile, nexusDir, nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
-import type { TrashDeps } from '../Trash/discard'
 import type { HostContext } from '../Contract/handlers'
 import { openNexusSequence } from './handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -24,7 +23,6 @@ import { memoryStores } from '../Testing/memoryStores'
 import { titled } from '../Testing/fixtures'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
@@ -72,7 +70,6 @@ const ctx = {
   push: () => {},
   device: null,
   openStores: () => installStores(memoryStores().stores),
-  trashMode: async () => 'nexus',
 } as unknown as HostContext
 const openNexus = async (): Promise<void> => {
   try {
@@ -137,11 +134,11 @@ describe('the nexus-wide write sweeps', () => {
   it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
     await openSession(root)
     const contextId = newId()
-    const made = await handleMutate(
-      root,
-      { op: 'createContextGroup', id: contextId, name: 'Projects' },
-      deps,
-    )
+    const made = await handleMutate(root, {
+      op: 'createContextGroup',
+      id: contextId,
+      name: 'Projects',
+    })
     expect(made.ok).toBe(true)
     if (!made.ok) return
 
@@ -151,11 +148,7 @@ describe('the nexus-wide write sweeps', () => {
     await writeFile(join(root, 'Notes', 'Member.md'), tagged(ID_KEY, '01KVGMT8BFP350FZZXAMG1QDM1'))
     const before = await bytes('Contradicting.md')
 
-    const r = await handleMutate(
-      root,
-      { op: 'renameContext', contextId, newName: 'Ventures' },
-      deps,
-    )
+    const r = await handleMutate(root, { op: 'renameContext', contextId, newName: 'Ventures' })
     expect(r.ok).toBe(true)
     expect(await bytes('Member.md')).toContain('<Ventures>:')
     expect(await bytes('Contradicting.md')).toBe(before)
@@ -166,11 +159,11 @@ describe('the move backstop', () => {
   it('refuses a page moved into a folder that holds no pages', async () => {
     await openSession(root)
     await mkdir(join(root, 'Nowhere'), { recursive: true })
-    const r = await handleMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Nowhere' },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'movePage',
+      path: 'Notes/Member.md',
+      newParentPath: 'Nowhere',
+    })
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.code).toBe('invalid-path')
@@ -180,11 +173,11 @@ describe('the move backstop', () => {
   // The nexus root holds no content of its own.
   it('refuses a move onto the nexus root itself', async () => {
     await openSession(root)
-    const r = await handleMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Member.md', newParentPath: '.' },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'movePage',
+      path: 'Notes/Member.md',
+      newParentPath: '.',
+    })
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.code).toBe('invalid-path')
@@ -205,11 +198,11 @@ describe('the move backstop', () => {
     await writeFile(join(root, 'Tasks', SIDECAR_FILENAME.tasks), JSON.stringify({ id: TASKS }))
     await openSession(root)
 
-    const r = await handleMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Tasks' },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'movePage',
+      path: 'Notes/Member.md',
+      newParentPath: 'Tasks',
+    })
     expect(r.ok).toBe(false)
     if (r.ok) return
     // The MESSAGE, not just the code: resolveUnderRoot refuses with `invalid-path` as well, so a code-only assertion passes for a destination that never reached the backstop at all.
@@ -224,11 +217,11 @@ describe('the move backstop', () => {
       join(root, 'Notes', 'Daily', SIDECAR_FILENAME.set),
       JSON.stringify({ id: '01KVGMT8BFP350FZZXAMG1QDS1' }),
     )
-    const r = await handleMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Member.md', newParentPath: 'Notes/Daily' },
-      deps,
-    )
+    const r = await handleMutate(root, {
+      op: 'movePage',
+      path: 'Notes/Member.md',
+      newParentPath: 'Notes/Daily',
+    })
     expect(r.ok).toBe(true)
   })
 })

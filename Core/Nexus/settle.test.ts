@@ -3,7 +3,6 @@ import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
 import { settledMutate } from '../Testing/settledMutate'
-import type { TrashDeps } from '../Trash/discard'
 import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption, setValueFormat } from '../Properties/optionOps'
@@ -671,11 +670,12 @@ describe('the settle', () => {
       .mockImplementationOnce(real)
       .mockRejectedValue(new Error('boom'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const moved = await handleMutate(
-      root,
-      { op: 'moveSet', path: 'Notes/Box', newParentPath: 'Other', order: [ULID_C] },
-      { trashMode: 'nexus', trashToSystem: async () => {} },
-    )
+    const moved = await handleMutate(root, {
+      op: 'moveSet',
+      path: 'Notes/Box',
+      newParentPath: 'Other',
+      order: [ULID_C],
+    })
     expect(moved.ok).toBe(true)
     await settleNow(pusher, root)
     expect(carry).toHaveBeenCalledTimes(2)
@@ -851,7 +851,6 @@ describe('an outside batch’s turn', () => {
 })
 
 describe('held options — the Multi-Select members a changed file holds are registered', () => {
-  const DEPS: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
   const SPACE = ['.nexus', 'contexts', 'Areas', 'Home', '_space.json'] as const
   const page = (id: string, fm = ''): string => `---\nID: ${id}\n${fm}---\n\nbody\n`
   const tags = (...members: string[]): string =>
@@ -929,16 +928,12 @@ describe('held options — the Multi-Select members a changed file holds are reg
   it('an in-app toggle of another option registers the member the page already holds', async () => {
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
     await walked()
-    const reply = await settledMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: 'Notes/A.md',
-        propertyId: 'tags',
-        value: { kind: 'multiSelect', value: ['opt_alpha'] },
-      },
-      DEPS,
-    )
+    const reply = await settledMutate(root, {
+      op: 'setProperty',
+      path: 'Notes/A.md',
+      propertyId: 'tags',
+      value: { kind: 'multiSelect', value: ['opt_alpha'] },
+    })
     expect(reply.ok).toBe(true)
     expect(await options()).toEqual(['alpha', 'Ideas'])
   })
@@ -946,16 +941,12 @@ describe('held options — the Multi-Select members a changed file holds are reg
   it('an in-app write of a different property registers the member the page already holds', async () => {
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
     await walked()
-    const reply = await settledMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: 'Notes/A.md',
-        propertyId: 'kind',
-        value: { kind: 'select', value: 'opt_Note' },
-      },
-      DEPS,
-    )
+    const reply = await settledMutate(root, {
+      op: 'setProperty',
+      path: 'Notes/A.md',
+      propertyId: 'kind',
+      value: { kind: 'select', value: 'opt_Note' },
+    })
     expect(reply.ok).toBe(true)
     expect(await options()).toEqual(['alpha', 'Ideas'])
   })
@@ -1077,7 +1068,7 @@ describe('held options — the Multi-Select members a changed file holds are reg
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
     await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
     expect(await options()).toEqual(['beta', 'Ideas'])
-    await finishOwed(root, DEPS)
+    await finishOwed(root)
     expect(splitFrontmatter(await readFile(abs('Notes', 'A.md'), 'utf8')).Tags).toEqual([
       'beta',
       'Ideas',
@@ -1323,7 +1314,6 @@ describe('returningNames', () => {
 })
 
 describe('a re-spell on the notes', () => {
-  const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
   const failing: string[] = []
   const linker = (): string => abs('Notes', 'L.md')
   const bundleOf = (r: Awaited<ReturnType<typeof settledMutate>>): string => {
@@ -1339,7 +1329,7 @@ describe('a re-spell on the notes', () => {
   })
 
   const renamed = async (from: string, to: string) =>
-    settledMutate(root, { op: 'rename', path: `Notes/${from}.md`, kind: 'page', newName: to }, deps)
+    settledMutate(root, { op: 'rename', path: `Notes/${from}.md`, kind: 'page', newName: to })
 
   const seedLinked = async (): Promise<void> => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
@@ -1354,7 +1344,7 @@ describe('a re-spell on the notes', () => {
     expect(r.ok && r.value.cascade?.owed).toBe(true)
     expect((await readNotes(root))[ULID_B]).toMatchObject({ kind: 'relink' })
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).toContain('See [[C]].')
     expect(await readNotes(root)).toEqual({})
   })
@@ -1375,7 +1365,7 @@ describe('a re-spell on the notes', () => {
     await renamed('B', 'C')
     await renamed('C', 'D')
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).toContain('See [[D]].')
     expect(await readNotes(root)).toEqual({})
   })
@@ -1386,16 +1376,16 @@ describe('a re-spell on the notes', () => {
     await writeFile(abs('Notes', 'Deep', 'X.md'), `---\nID: ${ULID_D}\n---\n\nx\n`)
     await refreshTree(root)
     const bundle = bundleOf(
-      await settledMutate(root, { op: 'delete', path: 'Notes/Deep/X.md', kind: 'page' }, deps),
+      await settledMutate(root, { op: 'delete', path: 'Notes/Deep/X.md', kind: 'page' }),
     )
     await writeFile(abs('Notes', 'X.md'), `---\nID: ${ULID_B}\n---\n\nx\n`)
     await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[X]].\n`)
     await refreshTree(root)
     failing.push('Notes/L.md')
-    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle })
     expect(r.ok && r.value.cascade?.owed).toBe(true)
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).not.toContain('See [[X]].')
     expect(await readNotes(root)).toEqual({})
   })
@@ -1408,14 +1398,14 @@ describe('a re-spell on the notes', () => {
     await writeFile(abs('Notes', 'Deep', 'Q.md'), `---\nID: ${ULID_C}\n---\n\nq\n`)
     await refreshTree(root)
     const bundle = bundleOf(
-      await settledMutate(root, { op: 'delete', path: 'Notes/Deep', kind: 'set' }, deps),
+      await settledMutate(root, { op: 'delete', path: 'Notes/Deep', kind: 'set' }),
     )
     await mkdir(abs('Notes', 'Deep'))
     await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_new' }))
     await writeFile(abs('Notes', 'Deep', 'Q.md'), `---\nID: ${ULID_D}\n---\n\nq\n`)
     await refreshTree(root)
     failing.push('/P.md')
-    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle })
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.cascade?.owed).toBe(true)
     const [landed = '', entry] =
@@ -1428,21 +1418,22 @@ describe('a re-spell on the notes', () => {
     const { landed, p } = await repairMissed()
     expect(landed).not.toBe('Notes/Deep')
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(p, 'utf8')).not.toContain('[[Deep/Q]]')
     expect(await readNotes(root)).toEqual({})
   })
 
   it('a restore’s owed repair follows its files through a rename', async () => {
     const { landed } = await repairMissed()
-    const moved = await settledMutate(
-      root,
-      { op: 'rename', path: landed, kind: 'set', newName: 'Moved' },
-      deps,
-    )
+    const moved = await settledMutate(root, {
+      op: 'rename',
+      path: landed,
+      kind: 'set',
+      newName: 'Moved',
+    })
     if (!moved.ok) throw new Error(moved.error.message)
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(abs('Notes', 'Moved', 'P.md'), 'utf8')).toContain('See [[Moved/Q|Q]].')
     expect(await readNotes(root)).toEqual({})
   })
@@ -1451,7 +1442,7 @@ describe('a re-spell on the notes', () => {
     const { p } = await repairMissed()
     await rm(p)
     await refreshTree(root)
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readNotes(root)).toEqual({})
   })
 
@@ -1465,11 +1456,7 @@ describe('a re-spell on the notes', () => {
     await putJson(abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'), { id: 'sp_h' })
     await refreshTree(root)
     const bundle = bundleOf(
-      await settledMutate(
-        root,
-        { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
-        deps,
-      ),
+      await settledMutate(root, { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' }),
     )
     await putJson(abs('.nexus', 'contexts', 'contexts.json'), {
       contexts: [{ id: 'ctx_new', title: 'Areas' }],
@@ -1477,7 +1464,7 @@ describe('a re-spell on the notes', () => {
     await mkdir(abs('.nexus', 'contexts', 'Areas'))
     await refreshTree(root)
     failing.push('Areas (2)/Work/_space.json')
-    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle }, deps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle })
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.cascade?.owed).toBe(true)
     expect(Object.values(await readNotes(root))).toContainEqual(
@@ -1488,7 +1475,7 @@ describe('a re-spell on the notes', () => {
   it('a Context restored under a new title owes the re-key a Space sidecar missed', async () => {
     await rekeyMissed()
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Work', '_space.json')
     expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
     expect(await readNotes(root)).toEqual({})
@@ -1496,14 +1483,10 @@ describe('a re-spell on the notes', () => {
 
   it('a restored Context’s owed re-key follows its Space through a rename', async () => {
     await rekeyMissed()
-    const moved = await settledMutate(
-      root,
-      { op: 'renameSpace', spaceId: 'sp_w', newName: 'Job' },
-      deps,
-    )
+    const moved = await settledMutate(root, { op: 'renameSpace', spaceId: 'sp_w', newName: 'Job' })
     if (!moved.ok) throw new Error(moved.error.message)
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Job', '_space.json')
     expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
     expect(await readNotes(root)).toEqual({})
@@ -1511,14 +1494,14 @@ describe('a re-spell on the notes', () => {
 
   it('a restored Context’s owed re-key follows it through a rename', async () => {
     await rekeyMissed()
-    const moved = await settledMutate(
-      root,
-      { op: 'renameContext', contextId: 'ctx_areas', newName: 'Life' },
-      deps,
-    )
+    const moved = await settledMutate(root, {
+      op: 'renameContext',
+      contextId: 'ctx_areas',
+      newName: 'Life',
+    })
     if (!moved.ok) throw new Error(moved.error.message)
     failing.length = 0
-    await finishOwed(root, deps)
+    await finishOwed(root)
     const rekeyed = abs('.nexus', 'contexts', 'Life', 'Work', '_space.json')
     expect(await readJsonAt(rekeyed)).toMatchObject({ '<Life>': ['Home'] })
     expect(await readNotes(root)).toEqual({})

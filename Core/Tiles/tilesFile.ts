@@ -29,7 +29,7 @@ import { findContainerById } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewriteHeld } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
-import { discardFile, type TrashDeps } from '../Trash/discard'
+import { discardFile } from '../Trash/discard'
 import { machine, statOrNull } from '../Platform/machine'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath } from '../Paths/paths'
@@ -121,7 +121,6 @@ async function reviseTile(
   dir: string,
   tileId: string,
   patch: Json | null,
-  deps: TrashDeps,
 ): Promise<Result<Landed<{ removed: RemovedTile }>>> {
   // A convert rewrites a tile this build knows; a removal takes any entry by its id, or none, since a box can outlive its entry.
   const matches = (b: unknown): boolean => (patch ? knownTile(b)?.id : tileIdOf(b)) === tileId
@@ -138,23 +137,18 @@ async function reviseTile(
   const known = knownTile(entry)
   if (patch && !known) return fail('not-found', 'No such tile.')
   if (known && !TILE_KINDS[known.type].fileBacked) return landed(written, { removed: { entry } })
-  const body = await discardTileFile(root, dir, tileId, deps)
+  const body = await discardTileFile(root, dir, tileId)
   return landed(written, { removed: body === null ? { entry } : { entry, body } })
 }
 
 /** Ordered against a still-pending editor flush, so a late body write can never land after the discard and resurrect it. */
-function discardTileFile(
-  root: string,
-  dir: string,
-  tileId: string,
-  deps: TrashDeps,
-): Promise<string | null> {
+function discardTileFile(root: string, dir: string, tileId: string): Promise<string | null> {
   const file = tileFilePath(dir, tileId)
   return machine().lock(file, async () => {
     const body = await machine().readText(file)
     // The entry is already gone, so a discard that fails leaves the file behind rather than the removal half-done.
     if (body !== null)
-      await discardFile(root, file, deps).catch((e) =>
+      await discardFile(root, file).catch((e) =>
         console.error('tiles: a removed tile’s file stayed:', e),
       )
     return body
@@ -165,8 +159,7 @@ export const removeTile = (
   root: string,
   dir: string,
   tileId: string,
-  deps: TrashDeps,
-): Promise<Result<Landed<{ removed: RemovedTile }>>> => reviseTile(root, dir, tileId, null, deps)
+): Promise<Result<Landed<{ removed: RemovedTile }>>> => reviseTile(root, dir, tileId, null)
 
 /** File first, as a create is, never over the file its id names. */
 export async function restoreTile(dir: string, removed: unknown): Promise<Result<Landed>> {
@@ -198,11 +191,10 @@ export async function convertTile(
   dir: string,
   tileId: string,
   pick: unknown,
-  deps: TrashDeps,
 ): Promise<Result<Landed>> {
   const patch = await pickEntry(root, pick)
   if (!patch.ok) return patch
-  const revised = await reviseTile(root, dir, tileId, patch.value, deps)
+  const revised = await reviseTile(root, dir, tileId, patch.value)
   return revised.ok ? ok({ landed: revised.value.landed }) : revised
 }
 

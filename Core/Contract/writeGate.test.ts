@@ -31,7 +31,6 @@ const ctx = {
   push: (channel: keyof Pushes, value: unknown) => void pushes.push([channel, value]),
   watch,
   applyZoom: async () => {},
-  trashMode: async () => 'nexus',
 } as unknown as HostContext
 
 const abs = (...segs: string[]): string => join(root, ...segs)

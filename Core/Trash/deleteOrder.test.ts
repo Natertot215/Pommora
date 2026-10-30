@@ -12,12 +12,10 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
 import { machine } from '../Platform/machine'
 import { closeSession, openSession } from '../Nexus/session'
-import type { TrashDeps } from './discard'
 import { readNotes } from '../Nexus/owed'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
-const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let atSweep: unknown
@@ -147,21 +145,13 @@ const relatedOf = async (): Promise<unknown> =>
 
 describe('the record is written before the destruction it describes', () => {
   it('a content delete records before the artifact moves', async () => {
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
   })
 
   it('a content delete records whole, and the links its strip takes join the record', async () => {
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page' })
     expect(atSettle).not.toHaveProperty('partial')
@@ -174,11 +164,11 @@ describe('the record is written before the destruction it describes', () => {
   })
 
   it('a Space delete records what its holders held before the move strips a single tag', async () => {
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, {
+      op: 'delete',
+      path: '.nexus/contexts/Projects/Pommora',
+      kind: 'space',
+    })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'space', members: [{ id: PAGE_A, kind: 'page' }] })
     expect(atSettle).not.toMatchObject({ partial: true })
@@ -186,11 +176,11 @@ describe('the record is written before the destruction it describes', () => {
   })
 
   it('a Context delete records what its holders held before the move and the strip', async () => {
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, {
+      op: 'delete',
+      path: '.nexus/contexts/Projects',
+      kind: 'context',
+    })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({
       entity: 'context',
@@ -202,39 +192,24 @@ describe('the record is written before the destruction it describes', () => {
   })
 
   it('a delete from the Archive records, with the bundle it left, before the artifact moves', async () => {
-    const archived = await handleMutate(
-      root,
-      { op: 'archive', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const archived = await handleMutate(root, {
+      op: 'archive',
+      path: 'Notes/Alpha.md',
+      kind: 'page',
+    })
     const archive = archived.ok ? archived.value.bundled?.bundlePath : undefined
     expect(archive).toBeDefined()
-    const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' }, nexusDeps)
+    const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', archive })
     expect(atSettle).not.toHaveProperty('partial')
-  })
-
-  it('system-trash mode records nothing and mints no bundle', async () => {
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      { trashMode: 'system', trashToSystem: async () => {} },
-    )
-    expect(r.ok).toBe(true)
-    expect(await anyRecord()).toBeUndefined()
-    expect(await relatedOf()).toBeUndefined()
   })
 })
 
 describe('the strip runs after the artifact moves', () => {
   it('a page delete that dies before the settle strips nothing', async () => {
     settleFails = true
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     expect(await relatedOf()).toBe('[[Alpha]]')
@@ -249,7 +224,7 @@ describe('the configuration pass runs after the artifact moves', () => {
   ] as const) {
     it(`a ${kind} delete finds its folder gone`, async () => {
       deleting = join(root, path)
-      const r = await handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      const r = await handleMutate(root, { op: 'delete', path, kind })
       expect(r.ok).toBe(true)
       expect(atReach).toBe(false)
     })
@@ -266,11 +241,11 @@ describe('one unparseable page never fails the sweep around it', () => {
   for (const [name, content] of Object.entries(BROKEN)) {
     it(`a Context delete completes past ${name}, and leaves it byte-identical`, async () => {
       await writeFile(join(root, 'Notes', name), content)
-      const r = await handleMutate(
-        root,
-        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-        nexusDeps,
-      )
+      const r = await handleMutate(root, {
+        op: 'delete',
+        path: '.nexus/contexts/Projects',
+        kind: 'context',
+      })
       expect(r.ok).toBe(true)
       expect(await tagOf()).toBeUndefined()
       expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
@@ -289,11 +264,7 @@ describe('one unparseable page never fails the sweep around it', () => {
 describe('a delete whose move fails deletes nothing', () => {
   it('a content delete whose move throws keeps the artifact and leaves no bundle', async () => {
     settleFails = true
-    const r = await handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
     expect(await anyRecord()).toBeUndefined()
@@ -314,11 +285,7 @@ describe('a page delete waits out a save in flight', () => {
       await gate
       await writeFile(file, 'saved')
     })
-    const del = handleMutate(
-      root,
-      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
-      nexusDeps,
-    )
+    const del = handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     await lock.contended
     lock.restore()
     release()

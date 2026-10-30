@@ -720,11 +720,11 @@ describe('pageWorldOf', () => {
     })
     if (!status.ok || !priority.ok) throw new Error('setup')
     statusId = status.value.id
-    await settledMutate(
-      root,
-      { op: 'assignProperty', containerPath: 'Notes', propertyId: statusId },
-      { trashMode: 'nexus', trashToSystem: async () => {} },
-    )
+    await settledMutate(root, {
+      op: 'assignProperty',
+      containerPath: 'Notes',
+      propertyId: statusId,
+    })
     await mkdir(join(root, 'Tasks'), { recursive: true })
     await writeFile(join(root, 'Tasks', '_taskconfig.json'), JSON.stringify({ id: 't1' }))
   })

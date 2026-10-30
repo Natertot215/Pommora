@@ -26,7 +26,6 @@ import { nexusHandlers } from '../Nexus/handlers'
 import type { MutateRequest } from '../Nexus/mutateRequest'
 import type { FormatChange } from './keyFormat'
 import { handleMutate } from '../Nexus/mutate'
-import type { TrashDeps } from '../Trash/discard'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -34,7 +33,6 @@ vi.mock('./propertiesRegistry', async (importOriginal) => {
 })
 
 const HOME = { host: { kind: 'space', id: 'sp_home' }, ids: [] }
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let col: string
@@ -46,7 +44,6 @@ const ctx = {
   push: (channel: string, payload: unknown) => {
     pushes.push({ channel, payload })
   },
-  trashMode: async () => 'nexus',
 } as unknown as HostContext
 
 const send = (req: MutateRequest) => nexusHandlers.mutate(ctx, req)
@@ -186,7 +183,7 @@ describe('the property ops', () => {
     await writeFile(setFile, held)
     await refreshTree(root)
     const bundlePath = r.value.bundled.bundlePath
-    expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
+    expect((await handleMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
     // The re-assign's refill settles once the rename it sits under does.
     const collectionId = (await readJsonObject(sidecarPath(col, 'collection')))?.id
     expect(await readNotes(root)).toEqual({

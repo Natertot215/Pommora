@@ -13,7 +13,6 @@ import { fault, ok } from '../Contract/result'
 import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import { OWED_REL } from '../Paths/nexusPaths'
-import type { TrashDeps } from '../Trash/discard'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { assignProperty } from './assignment'
 import { unassignProperty } from './unassignProperty'
@@ -40,8 +39,6 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
   return { ...mod, readTextOrNull: vi.fn(mod.readTextOrNull) }
 })
-
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
 
 /** The registry's copy is the ONLY def that addresses the same key the strip path resolves — one invented here would write somewhere no cascade ever looks. */
 const liveDef = async (id: string): Promise<PropertyDefinition> => {
@@ -461,7 +458,7 @@ describe('a delete reaches saved views', () => {
   it('a finished delete clears the views the same way', async () => {
     const { id, surfaces } = await seeded()
     await putJson(join(root, OWED_REL), { [id]: { kind: 'property', strip: ['Priority'] } })
-    await finishOwed(root, deps)
+    await finishOwed(root)
     await expectCleared(surfaces)
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
@@ -503,7 +500,7 @@ describe('a delete reaches saved views', () => {
     const { id } = await seeded()
     await putJson(join(root, OWED_REL), { [id]: { kind: 'property', strip: ['Priority'] } })
     await removeFromRegistry(root, id)
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readNotes(root)).toEqual({})
   })
 })
@@ -600,7 +597,7 @@ describe('the delete’s list step and its keys', () => {
       } finally {
         await chmod(file, 0o644)
       }
-      await finishOwed(root, deps)
+      await finishOwed(root)
       const sc = await readJsonObject(file)
       expect(sc?.properties ?? []).not.toContain(id)
       expect(sc).not.toHaveProperty('property_stash')
@@ -622,7 +619,7 @@ describe('the delete’s list step and its keys', () => {
     })
     await writeFile(bare, `---\n${ID_KEY}: ${newContentId('page')}\nPriority: hi\n---\nb\n`)
     dropLiveTree()
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(await readFile(bare, 'utf8')).not.toContain('Priority')
     expect(await readNotes(root)).toEqual({})
   })

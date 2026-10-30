@@ -194,22 +194,6 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked[0]).toContain('from the container')
     expect(asked[1]).toContain('from the tile')
   })
-
-  it('a delete under the system Trash Mode says it moves to the system trash', async () => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'delete:facts': async () => ok({ trashMode: 'system', permanentDelete: false }),
-    })
-    const details: string[] = []
-    useSession.setState({
-      tree: makeTree(),
-      askConfirm: async (r) => {
-        details.push(r.detail)
-        return false
-      },
-    })
-    await confirmDelete({ path: 'Notes/Alpha.md', kind: 'page', title: 'Alpha' })
-    expect(details).toEqual(['It will be moved to the system trash.'])
-  })
 })
 
 describe('a delete through the confirmation', () => {
@@ -218,9 +202,7 @@ describe('a delete through the confirmation', () => {
     confirmDelete({ path: 'Notes/A', kind, title: 'A' })
 
   beforeEach(() => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
-    })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
     mutate.mockReset()
     mutate.mockResolvedValue({ bundled: { bundlePath: '.trash/b1' } })
     useSession.setState({ mutate: mutate as never })
@@ -320,16 +302,6 @@ describe('a delete through the confirmation', () => {
       tone: 'normal',
     })
   })
-
-  it('offers no Undo for a system-trash delete, which leaves no bundle, and still counts its linkers', async () => {
-    mutate.mockResolvedValue({ cascade: { pages: ['A.md'], hosts: [] } })
-    await del('page')
-    expect(currentNotification()).toMatchObject({
-      message: 'Deleted “A”',
-      segment: '1 Internal Link',
-    })
-    expect(currentNotification()?.action).toBeUndefined()
-  })
 })
 
 describe('an Undo over several bundles', () => {
@@ -337,7 +309,7 @@ describe('an Undo over several bundles', () => {
 
   beforeEach(() => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
+      'delete:facts': async () => ok({ permanentDelete: false }),
     })
     mutate.mockReset()
     mutate.mockResolvedValue({})
@@ -468,9 +440,7 @@ describe('an archive through the confirmation', () => {
 
 describe('a delete’s question', () => {
   it('asks of one row by its title, of more by their count, Items where the kinds mix', async () => {
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
-    })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
     switchOn()
     await askTrashing([row({ title: 'Ideas' })])
     await askTrashing([row({}), row({})])

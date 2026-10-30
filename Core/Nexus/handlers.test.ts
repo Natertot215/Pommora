@@ -79,7 +79,7 @@ beforeEach(async () => {
   stores = memoryStores()
   installStores(stores.stores)
   made = await hubHost({ nexusId: NEXUS })
-  ctx = { ...made.ctx, openStores: () => {}, trashMode: async () => 'nexus' } as HostContext
+  ctx = { ...made.ctx, openStores: () => {} } as HostContext
   writeValue('sync', { address: ADDRESS, pin: null, cursor: 0 })
 })
 
@@ -480,7 +480,7 @@ describe('openNexusSequence', () => {
   it('the open runs the one finishing pass', async () => {
     const finishing = vi.spyOn(finishModule, 'finishOwed')
     await openNexusSequence(ctx, root, false)
-    expect(finishing).toHaveBeenCalledWith(root, expect.anything())
+    expect(finishing).toHaveBeenCalledWith(root)
   })
 
   it('a re-adopt of the open Nexus finishes no Context rename', async () => {

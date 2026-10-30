@@ -53,7 +53,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
     └── _taskconfig.json
 
 // <app-support>                             | • Machine-specific; never syncs
-├── pommora.json                             | • Last-opened Nexus, recent Nexuses, trash mode, the device's public key, fingerprint, and name
+├── pommora.json                             | • Last-opened Nexus, recent Nexuses, the device's public key, fingerprint, and name
 └── secrets.json                             | • The device's private key, keychain-encrypted
 ```
 
@@ -145,7 +145,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Saved views and what a container is                           | Each container's own sidecar                                                 | Editing the view; deleting the container                                        |
 | Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering                                                |
 | Page bodies, frontmatter, and their property values           | The Markdown files themselves                                                | Editing the page                                                                |
-| A page's icon, aliases, title-icon override, and lock         | `metadata/MM-YYYY.json`, by the month the page was created                   | Clearing the field; emptying the page, or a Collection whose Archive holds it, from the Trash; or deleting either to the system trash; an entry left with nothing set is deleted |
+| A page's icon, aliases, title-icon override, and lock         | `metadata/MM-YYYY.json`, by the month the page was created                   | Clearing the field; emptying the page, or a Collection whose Archive holds it, from the Trash; an entry left with nothing set is deleted |
 | The Matrix's group, filter, forces, and display               | `interface/matrix.json`                                                      | Changing a row; sections merge one at a time, and forces by value per grouping  |
 
 **Stays on this machine, filed under the Nexus's id.** `nexus.db` sits in the app's userData directory and holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history and the bytes its sync conflicts left behind.
@@ -168,7 +168,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 
 | State | What it remembers | What clears it |
 | --- | --- | --- |
-| The last Nexus opened, the recent Nexus list, and the trash mode | Where to reopen, and what deleting means | Opening another Nexus; the list rolls off at ten |
+| The last Nexus opened and the recent Nexus list | Where to reopen | Opening another Nexus; the list rolls off at ten |
 | Web sessions | Cookies, logins, and site storage for every embedded page, browser tab, and glance — one shared session | Nothing in the app clears it today |
 
 **Lasts the run.** Held in memory, gone when Pommora closes — the difference between returning to a page and rebuilding it.

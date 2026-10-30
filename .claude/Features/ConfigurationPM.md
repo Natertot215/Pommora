@@ -263,7 +263,7 @@ More keys sit at the settings root beside `personalization`: `excluded_folders`,
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair.
 
 ---
 

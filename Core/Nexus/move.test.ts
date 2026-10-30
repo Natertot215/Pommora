@@ -10,9 +10,6 @@ import { dropLiveTree, refreshTree } from './liveTree'
 import { handleMutate } from './mutate'
 import { finishOwed } from './finishOwed'
 import { readNotes } from './owed'
-import type { TrashDeps } from '../Trash/discard'
-
-const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 
@@ -50,11 +47,12 @@ describe('moveSetOp', () => {
     await refreshTree(root)
     await chmod(file, 0o000)
     try {
-      const r = await handleMutate(
-        root,
-        { op: 'moveSet', path: 'Notes/Deep', newParentPath: 'Other', order: [deep.id] },
-        deps,
-      )
+      const r = await handleMutate(root, {
+        op: 'moveSet',
+        path: 'Notes/Deep',
+        newParentPath: 'Other',
+        order: [deep.id],
+      })
       expect(r.ok && r.value.cascade?.owed).toBe(true)
       expect(await readNotes(root)).toMatchObject({
         [deep.id]: { kind: 'container', at: 'Notes/Deep', within: 'Notes' },
@@ -62,7 +60,7 @@ describe('moveSetOp', () => {
     } finally {
       await chmod(file, 0o644)
     }
-    await finishOwed(root, deps)
+    await finishOwed(root)
     expect(JSON.stringify(await readJsonAt(file))).not.toContain(deep.id)
     expect(await readNotes(root)).toEqual({})
   })
