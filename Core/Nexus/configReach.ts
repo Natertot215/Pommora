@@ -17,7 +17,9 @@ import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/ato
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
-import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { SIDECAR_FILENAME, TRASH_DIR } from '../Paths/nexusPaths'
+import { trashReach } from '../Bundles/bundle'
+import { storedSpaces } from './heldPages'
 import { asString } from './coerce'
 import { basename, dirname, isAtOrUnder, join, relative } from '../Paths/posix'
 import { sidecarsUnder } from '../Files/walk'
@@ -244,7 +246,7 @@ const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] =>
   ...(node.sets ?? []).flatMap(within),
 ]
 
-/** The containers a removal took, as locations every saved view, View Tile, and filter drops: read from the tree, or from an archived Set's sidecars on disk. */
+/** The containers a removal took, as locations every saved view, View Tile, and filter drops: read from the tree, or from a stored container's sidecars on disk. */
 export const goneContainers = (ids: string[]): ConfigEdit => ({
   kind: 'gone',
   propertyId: FILEDATA.location.id,
@@ -281,26 +283,43 @@ type Container = { kind: ContainerKind; dir: string }
 
 const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
-const setSidecarsUnder = async (root: string, scope: WatchScope, abs: string): Promise<string[]> =>
-  (await sidecarsUnder(root, scope, abs)).filter((file) => basename(file) === SIDECAR_FILENAME.set)
+const containerSidecarsUnder = async (
+  root: string,
+  scope: WatchScope,
+  abs: string,
+): Promise<Container[]> =>
+  (await sidecarsUnder(root, scope, abs)).flatMap((file) =>
+    (['collection', 'set'] as const).flatMap((kind) =>
+      basename(file) === SIDECAR_FILENAME[kind] ? [{ kind, dir: dirname(file) }] : [],
+    ),
+  )
 
 /** The ids of the Sets an archived folder holds, read from their sidecars. */
 export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
   const ids = await Promise.all(
-    (await setSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
-      sidecarId(dirname(file), 'set'),
+    (await containerSidecarsUnder(root, await readWatchScope(root), abs)).flatMap(
+      ({ kind, dir }) => (kind === 'set' ? [sidecarId(dir, 'set')] : []),
     ),
   )
   return ids.flatMap((id) => id ?? [])
 }
 
-async function archivedSets(tree: NexusTree, root: string, under?: string): Promise<Container[]> {
-  const archive = archiveReach(tree, under && relative(root, under))
-  if (archive === null) return []
-  return (await setSidecarsUnder(root, scopeOf(tree.config), join(root, archive))).map((file) => ({
-    kind: 'set',
-    dir: dirname(file),
-  }))
+async function storedContainers(
+  tree: NexusTree,
+  root: string,
+  under?: string,
+): Promise<Container[]> {
+  const rel = under && relative(root, under)
+  const archive = archiveReach(tree, rel)
+  const dirs = [
+    ...(archive === null ? [] : [archive]),
+    ...(rel === undefined ? [TRASH_DIR] : await trashReach(root, tree, rel)),
+  ]
+  const scope = scopeOf(tree.config)
+  const found = await Promise.all(
+    dirs.map((d) => containerSidecarsUnder(root, scope, join(root, d))),
+  )
+  return found.flat()
 }
 
 export async function reachConfig(
@@ -315,6 +334,10 @@ export async function reachConfig(
     return { skipped: 1, hosts: [] }
   }
   const tiles = tileHostsOf(root, tree)
+  const boards: typeof tiles.hosts = [
+    ...tiles.hosts,
+    ...(await storedSpaces(root)).map((s) => ({ dir: join(root, s.path) })),
+  ]
   // A file that doesn't parse won't read any better on a retry, so it's left as it is and holds nothing owed; only a file this pass can't read, or whose edit throws, is a skip.
   const reach: ConfigReach = { skipped: tiles.unreadable, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
@@ -336,10 +359,10 @@ export async function reachConfig(
     .filter(({ dir }) => reaches(dir, under))
   for (const { kind, dir } of [...live, ...damaged])
     await written(sidecarPath(dir, kind), (cur) => mapViews(cur, edit))
-  for (const { kind, dir } of await archivedSets(tree, root, under)) {
+  for (const { kind, dir } of await storedContainers(tree, root, under)) {
     await written(sidecarPath(dir, kind), (cur) => {
       const id = asString(cur.id)
-      // A Set the edit names as gone leaves together with everything else it names, so its own views still answer.
+      // A container the edit names as gone leaves together with everything else it names, so its own views still answer.
       if (id && e.kind === 'gone' && e.ids.includes(id)) return null
       if (id) sources.add(id)
       return mapViews(cur, edit)
@@ -349,7 +372,7 @@ export async function reachConfig(
     const source = isPlainObject(entry) ? String(entry.source_id) : ''
     return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.includes(source))
   }
-  for (const { host, dir } of tiles.hosts) {
+  for (const { host, dir } of boards) {
     const wrote = await written(tileDocPath(dir), (cur) =>
       mapTiles(cur, (tile) =>
         mapViews(tile, (view, i) => (inScope((tile.views as unknown[])[i]) ? edit(view) : null)),

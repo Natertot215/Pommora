@@ -100,15 +100,17 @@ export function topContainerOf(
   return node && isTopContainer(node) ? node : undefined
 }
 
-/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, or by the one whose Archive holds it. */
+/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root, by the one whose Archive holds it, or, in the Trash, by the one `trashed` names for its bundle (`trashedOwners`). */
 export function owningCollection(
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
+  trashed?: ReadonlyMap<string, string>,
 ): CollectionNode | undefined {
   if (typeof of !== 'string' && of.kind === 'collection') return of
   const path = typeof of === 'string' ? of : of.path
   const at = storeOf(path)
-  const filed = at?.store.kind === 'archive' ? at.store.id : undefined
+  const filed =
+    at?.store.kind === 'archive' ? at.store.id : at?.bundle ? trashed?.get(at.bundle) : undefined
   const top = path.split('/', 1)[0]
   return tree?.collections.find((c) => (at ? c.id === filed : c.path === top))
 }
@@ -126,8 +128,9 @@ export const NO_SCHEMA: PropertyDefinition[] = []
 export const containerSchema = (
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
+  trashed?: ReadonlyMap<string, string>,
 ): PropertyDefinition[] => {
-  const owner = owningCollection(tree, of)
+  const owner = owningCollection(tree, of, trashed)
   return tree && owner ? schemaOf(tree, owner.propertyIds) : NO_SCHEMA
 }
 

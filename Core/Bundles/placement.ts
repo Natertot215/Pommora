@@ -47,7 +47,7 @@ interface SiblingOrder {
 type Refusal = 'parent-gone' | 'cannot-hold' | 'unaddressable' | 'id-live'
 type Resolution = { place: Placement; order?: SiblingOrder } | { refuse: Refusal }
 
-/** An id `byId` holds anywhere but inside the restoring bundle is live, and a twin (null) always is; only an archived page's own file sits inside its bundle, since the map holds no Set ids. */
+/** An id `byId` holds anywhere but inside the restoring bundle is live, and a twin (null) always is; only a stored page's or Space's own file sits inside its bundle, since the map holds no stored container ids. */
 const heldElsewhere = (held: EntityRecord | null | undefined, restoring: string): boolean =>
   held !== undefined && !(held && isAtOrUnder(held.path, restoring))
 

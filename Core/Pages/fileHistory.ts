@@ -11,7 +11,8 @@ import {
   snapshotStore,
 } from '../Platform/stores'
 import { readFileHistoryConfig } from '../Settings/settings'
-import { archivedPageIds, idHeld, liveIdOf, livePathOf } from '../Nexus/heldPages'
+import { idHeld, liveIdOf, livePathOf, storedPageIds } from '../Nexus/heldPages'
+import { ARCHIVE_DIR_REL } from '../Paths/nexusPaths'
 import { heldTreeOf } from '../Nexus/liveTree'
 import { updatePageBody } from '../Nexus/page'
 import type { BodyWrite } from './pageDetail'
@@ -197,7 +198,7 @@ export async function sweepFileHistory(root: string): Promise<void> {
     const { keepMs, archiveKeepMs } = await readFileHistoryConfig(root)
     const tree = heldTreeOf(root)
     const ids = tree
-      ? [...(await archivedPageIds(root, tree)).values()].flatMap(({ id }) =>
+      ? [...(await storedPageIds(root, tree, ARCHIVE_DIR_REL)).values()].flatMap(({ id }) =>
           id && !idHeld(root, id) ? [id] : [],
         )
       : []

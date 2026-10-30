@@ -1,12 +1,13 @@
 import { foldKey } from './caseFold'
 import {
-  archiveSegs,
   ASSETS_DIRNAME,
   hiddenFolder,
   NEXUS_DIR,
   THUMBNAILS_SEGMENT,
   TRASH_DIR,
 } from './nexusPaths'
+import { storeOf } from './bundleLayout'
+import { isMarkdownFile } from './posix'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** None is content, and a journal's churn must never cost a walk. */
@@ -30,17 +31,23 @@ const thumbnailSegs = (segs: string[]): boolean =>
   segs[1] === ASSETS_DIRNAME &&
   segs[3] === THUMBNAILS_SEGMENT
 
-export function manifestAdmits(scope: WatchScope): (rel: string) => boolean {
+export function watchedUnder(scope: WatchScope): (segs: string[]) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
   const assetDepth = rootSegs(scope.assetDir).length
+  return (segs) => {
+    if (segs[0] === TRASH_DIR) return !neverWatched(segs.slice(1)) && !isExcluded(segs.slice(1))
+    if (isAsset(segs)) return !neverWatched(segs.slice(assetDepth))
+    return !neverWatched(segs) && !isExcluded(segs)
+  }
+}
+
+export function manifestAdmits(scope: WatchScope): (rel: string) => boolean {
+  const watched = watchedUnder(scope)
   return (rel) => {
     if (!rel || rel === '..' || rel.startsWith('../') || rel.startsWith('/')) return false
     const segs = rel.split('/')
-    if (segs[0] === TRASH_DIR) return !neverWatched(segs.slice(1)) && !isExcluded(segs.slice(1))
-    if (thumbnailSegs(segs)) return false
-    if (isAsset(segs)) return !neverWatched(segs.slice(assetDepth))
-    return !neverWatched(segs) && !isExcluded(segs)
+    return !thumbnailSegs(segs) && watched(segs)
   }
 }
 
@@ -57,12 +64,17 @@ export interface WatchScope {
 
 export type OutsideReason = 'hidden' | 'asset' | 'excluded'
 
-/** What keeps a nexus-relative path outside the content the app reads, or null: a hidden folder or name on the way, counted below `.nexus/archive` for a path inside it (the Archive is the one hidden folder read as content), the asset root (which holds files rather than content while remaining watched), or an excluded folder. */
+/** What keeps a nexus-relative path outside the content the app reads, or null: a hidden folder or name on the way, the asset root (which holds files rather than content while remaining watched), or an excluded folder. A path inside a store is read past the store's dotted root, a page there is content only inside a stamped bundle, and the asset root and exclusion judge it where it lived, so nothing a store holds beside its bundles is read. */
 export function outsideContent(rel: string, scope: WatchScope): OutsideReason | null {
+  const stored = storeOf(rel)
   const segs = rel.split('/')
-  if ((archiveSegs(segs) ?? segs).some(hiddenFolder)) return 'hidden'
-  if (assetMatcher(scope.assetDir)(segs)) return 'asset'
-  return excludedMatcher(scope.excluded)(segs) ? 'excluded' : null
+  const hidden = stored
+    ? segs.slice(1).some(hiddenFolder) || (isMarkdownFile(rel) && !stored.bundle)
+    : segs.some(hiddenFolder)
+  if (hidden) return 'hidden'
+  const lived = stored ? stored.origin.split('/') : segs
+  if (assetMatcher(scope.assetDir)(lived)) return 'asset'
+  return excludedMatcher(scope.excluded)(lived) ? 'excluded' : null
 }
 
 /** The scope of a deliberate reach into excluded folders, which still passes hidden folders and the asset root by. Clear Exclusion Cache and the legacy asset migration are the two; every other enumerator keeps excluded folders out. */

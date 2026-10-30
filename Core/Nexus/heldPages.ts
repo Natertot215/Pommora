@@ -1,4 +1,4 @@
-// The held tree's pages by path and by id, for the host's writers, and the one projection that adds the Archive's pages to the tree's entities, for every refill and every frozen world.
+// The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write and every link world.
 // Relinks (create, rename, move) resolve against the live index; strips, refills, and frozen worlds resolve against the tree plus the Archive, `linkWorld`.
 
 import { heldTreeOf } from './liveTree'
@@ -6,7 +6,7 @@ import { dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 import { entityMemo, type NexusTree, type SpaceNode } from './tree'
 import { indexReady, readIndexedStats } from '../Index/contentIndex'
-import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
@@ -55,7 +55,7 @@ export const idHeld = (root: string, id: string): boolean => {
   return tree ? writablePathsOf(tree).has(id) : false
 }
 
-/** `byId` holds every entity the tree holds and every page the Archive holds, an archived one at the path a writer opens, and every Space the Trash holds, a trashed Context's among them, read from its own sidecar, since the index holds pages alone; a trashed one fills only an id nothing else claims, and `stored` lists them, so a reach reads the Trash's Spaces once; and null where two files claim one id, so neither is addressed by it; `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them. */
+/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. `stored` lists the Trash's Spaces, read from their own sidecars since the index holds pages alone, so a reach reads them once. */
 export interface NexusPages {
   byId: ReadonlyMap<string, EntityRecord | null>
   archived: readonly ConnPage[]
@@ -87,17 +87,19 @@ export const shownTitle = (
 ): string | undefined => byId.get(id)?.title ?? pagesByIdOf(tree).get(id)?.title
 
 export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
-  const rows = await archivedPageIds(root, tree)
   const byId: ById = new Map(entitiesById(tree))
   const archived: ConnPage[] = []
-  for (const [path, { id }] of rows) {
+  for (const [path, { id }] of await storedPageIds(root, tree, ARCHIVE_DIR_REL)) {
     const at = storeOf(path)
     if (!id || !at) continue
     claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
     archived.push(connPage(id, at.origin))
   }
   const stored = await storedSpaces(root)
-  for (const { id, kind, title, path } of stored)
+  const trashed = [...(await storedPageIds(root, tree, TRASH_DIR))].flatMap(([path, { id }]) =>
+    id ? [{ id, kind: 'page' as const, title: titleFromPath(path), path }] : [],
+  )
+  for (const { id, kind, title, path } of [...trashed, ...stored])
     if (!byId.has(id)) byId.set(id, { id, kind, title, path })
   return { byId, archived, stored }
 }
@@ -137,13 +139,14 @@ export async function storedSpaces(root: string): Promise<SpaceNode[]> {
   return spaces
 }
 
-export async function archivedPageIds(
+export async function storedPageIds(
   root: string,
   tree: NexusTree,
+  dir: typeof ARCHIVE_DIR_REL | typeof TRASH_DIR,
 ): Promise<ReadonlyMap<string, { id?: string }>> {
-  const indexed = indexReady() ? readIndexedStats(ARCHIVE_DIR_REL) : null
+  const indexed = indexReady() ? readIndexedStats(dir) : null
   if (indexed) return indexed
-  const rels = await corpusFilesUnder(root, join(root, ARCHIVE_DIR_REL), scopeOf(tree.config))
+  const rels = await corpusFilesUnder(root, join(root, dir), scopeOf(tree.config))
   const ids = await Promise.all(rels.map((rel) => stampedIdOf(join(root, rel))))
   return new Map(rels.map((rel, i) => [rel, { id: ids[i] ?? undefined }]))
 }

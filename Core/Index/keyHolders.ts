@@ -13,6 +13,7 @@ import { addressable, type NexusPages, nexusPages, storedSpaces } from '../Nexus
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { archiveReach } from '../Nexus/treePatch'
+import { trashReach } from '../Bundles/bundle'
 import { exactTitle } from '../Paths/caseFold'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { isAtOrUnder, isMarkdownFile, join, relative } from '../Paths/posix'
@@ -52,10 +53,15 @@ export async function pagesInReach(
   const files = (rels ?? (await nexusCorpus(root))).map((rel) => join(root, rel))
   if (reach === 'anywhere') return files
   const only = reach === 'governed' ? undefined : reach.collection
-  const archive = archiveReach(tree, only && relative(root, only))
+  const scoped = only && relative(root, only)
+  const archive = archiveReach(tree, scoped)
+  const trashed = files.some((f) => storeOf(relative(root, f))?.store.kind === 'trash')
+    ? await trashReach(root, tree, scoped)
+    : []
   const folders = [
     ...(only === undefined ? collectionFolders(root, tree) : [only]),
     ...(archive === null ? [] : [join(root, archive)]),
+    ...trashed.map((bundle) => join(root, bundle)),
   ]
   return files.filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
 }
@@ -79,7 +85,7 @@ export const spaceFiles = (
     .filter(holds)
     .map((s) => sidecarAt(root, s.path, moved))
 
-/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no stored page. */
+/** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and what both stores hold of them, and `{ collection }` one Collection's and what both stores hold of it; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no stored page. */
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
   const tree = await liveTreeOf(root)
   const title = q.title === undefined ? undefined : exactTitle(q.title)

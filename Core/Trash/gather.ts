@@ -1,7 +1,7 @@
 import { isAtOrUnder, isMarkdownFile, join } from '../Paths/posix'
 import type { ContextDef } from '../Contexts/contexts'
 import { type Holders, readHolders } from '../Index/keyHolders'
-import { linkStrip, type StrippedLink } from '../Nexus/cascade'
+import type { LinkStrip, StrippedLink } from '../Nexus/cascade'
 import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
@@ -58,13 +58,7 @@ export async function gatherLinkTargets(
 }
 
 /** The Link values a delete's strip will take, read from each holder as a Space's or Context's capture reads it, so they're written down before anything is stripped. */
-export async function gatherLinks(
-  root: string,
-  abs: string,
-  paths: readonly string[],
-): Promise<StrippedLink[]> {
-  const strip = await linkStrip(root, abs, paths)
-  if (!strip) return []
+export async function gatherLinks(root: string, strip: LinkStrip): Promise<StrippedLink[]> {
   const { held } = await readHolders(root, strip.files, strip.keys, strip.byId)
   return held.flatMap(({ id, values, above }) =>
     id && values

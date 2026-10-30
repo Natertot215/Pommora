@@ -1,5 +1,5 @@
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
-import { ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS, TRASH_DIR } from '../Paths/nexusPaths'
 import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
 
@@ -39,8 +39,12 @@ export async function listMarkdownFiles(dir: string): Promise<string[]> {
   return rels.map((rel) => join(dir, rel))
 }
 
-/** The Nexus root, then its Archive: the one hidden folder read as content, which the root's own walk prunes with `.nexus`. */
-const contentRoots = (root: string): string[] => [root, join(root, ARCHIVE_DIR_REL)]
+/** The Nexus root, then its two stores, hidden folders whose bundles are read as content and which the root's own walk prunes. */
+const contentRoots = (root: string): string[] => [
+  root,
+  join(root, ARCHIVE_DIR_REL),
+  join(root, TRASH_DIR),
+]
 
 export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {
   const files: string[] = []
