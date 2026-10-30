@@ -280,13 +280,13 @@ export async function placeRecord(
   if (record.entity === 'context') {
     const { id } = record.registry
     const { panel, spaceOrder } = record
-    const panelIds = placeAmong(tree.config.order.contexts ?? [], id, panel)
     return ok({
       record,
       placement,
       landedAs,
       writeOrder: async () => {
-        if (panel) await setPanelContextOrder(root, panelIds)
+        if (panel)
+          await setPanelContextOrder(root, placeAmong(tree.config.order.contexts ?? [], id, panel))
         if (spaceOrder) await setSpaceOrder(root, id, spaceOrder)
       },
     })
