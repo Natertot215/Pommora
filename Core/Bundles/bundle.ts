@@ -200,12 +200,15 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
 }
 
-/** Each Trash bundle's Collection, by the bundle's root-relative path: a trashed Collection's own, or the one a page or Set left, as its record names it, so a Collection renamed or moved since keeps what the Trash holds of it. */
-export async function trashedOwners(root: string): Promise<Map<string, string>> {
+/** Each Trash bundle's Collection, by the bundle's root-relative path: a trashed Collection's own, or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it. */
+export async function trashedOwners(root: string, tree: NexusTree): Promise<Map<string, string>> {
   const owners = new Map<string, string>()
   for (const { bundlePath, record } of await listBundles(root, { kind: 'trash' })) {
     const origin = originOf(record)
-    const owner = record.entity === 'collection' ? record.id : origin && collectionOf(origin)
+    const owner =
+      record.entity === 'collection'
+        ? record.id
+        : origin && collectionOf(currentOrigin(tree, origin) ?? origin)
     if (owner) owners.set(bundlePath, owner)
   }
   return owners
@@ -213,7 +216,7 @@ export async function trashedOwners(root: string): Promise<Map<string, string>> 
 
 export async function trashReach(root: string, tree: NexusTree, rel?: string): Promise<string[]> {
   const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
-  return [...(await trashedOwners(root))].flatMap(([bundle, id]) =>
+  return [...(await trashedOwners(root, tree))].flatMap(([bundle, id]) =>
     rel === undefined || id === owner ? [bundle] : [],
   )
 }

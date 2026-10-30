@@ -9,7 +9,7 @@ import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
 import { collectionFolders, rootId } from '../Nexus/governedSweep'
 import { storeOf } from '../Paths/bundleLayout'
-import { addressable, type NexusPages, nexusPages, storedSpaces } from '../Nexus/heldPages'
+import { addressable, type NexusPages, nexusPages, storedSpaces, twinned } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { archiveReach } from '../Nexus/treePatch'
@@ -120,7 +120,7 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   return readHolders(root, files, q.keys, known.byId, listed)
 }
 
-/** Each of `files` read once: `held` lists each one holding any of `keys`, or that couldn't be read, with the keys `listed`, the index's members of each key in turn, last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back. */
+/** Each of `files` read once: `held` lists each one holding any of `keys`, or that couldn't be read, with the keys `listed`, the index's members of each key in turn, last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back, and a `twinned` copy, which `held` leaves out too. */
 export async function readHolders(
   root: string,
   files: readonly string[],
@@ -148,6 +148,7 @@ export async function readHolders(
     const id = raw ? rootId(file, raw) : undefined
     const addressed = addressable(root, byId, id, file) ? id : null
     if (raw && addressed === null) heldOut.add(file)
+    if (twinned(root, byId, id, file)) continue
     held.push({
       file,
       id: addressed,
@@ -171,6 +172,6 @@ export const heldValues = (held: readonly Held[], key: string): Record<string, u
 export const heldAbove = (held: readonly Held[], key: string): Record<string, string> =>
   Object.fromEntries(held.flatMap((h) => (h.id && h.above[key] ? [[h.id, h.above[key]]] : [])))
 
-/** The holders a values read leaves out of `files` because no id addresses them (none, or one another file shares): each keeps its value and counts as unfinished, since no restore could put it back. */
+/** The holders a values read leaves out of `files` because no id addresses them (none, or one two files claim): each keeps its value and counts as unfinished, since no restore could put it back. */
 export const unaddressed = (held: readonly Held[]): number =>
   held.filter((h) => h.values && !h.id).length

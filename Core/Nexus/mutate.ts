@@ -59,7 +59,7 @@ import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder 
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { oweRetry, oweWalk } from './fileEvents'
-import { reachReport } from './configReach'
+import { reachReport } from './owed'
 import { finishOwed } from './finishOwed'
 import { inContextsTurn, inSettleTurn, relink, settledIndex, underContexts } from './settle'
 import { pageMoves } from './record'

@@ -153,7 +153,7 @@ export async function deleteOp(
     await lifted?.value.rollback()
   }
   try {
-    // Write-ahead: the record lands with its bundle, holding what every strip will take, then the note, then the list step and the move; every strip runs after the artifact moves, so a failed move strips nothing, and a strip that misses a file leaves the note for Try Again.
+    // Write-ahead: the record lands with its bundle, a Space's or Context's holding its members from the mint and a content delete's taking its links at the finish ahead of its strip, then the note, then the list step and the move; every strip runs after the artifact moves, so a failed move strips nothing, and a strip that misses a file leaves the note for Try Again.
     bundle = await mintBundle(root, { kind: 'trash' }, from?.origin ?? abs, plan.record)
     const into = relative(root, bundle)
     const ran = await runNoted(root, plan.id, {

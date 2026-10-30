@@ -14,7 +14,7 @@ import { parkLinks } from '../Trash/trashedCopies'
 import { gatherLinks } from '../Trash/gather'
 import { findContainerById } from './treePatch'
 import { pagesByIdOf } from './record'
-import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig, retries } from './configReach'
+import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig } from './configReach'
 import { oweWalk } from './fileEvents'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
@@ -46,6 +46,7 @@ import {
   owesRename,
   type PropertyEntry,
   readNotes,
+  retries,
   type SpaceEntry,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
@@ -165,8 +166,8 @@ async function finishProperty(
     const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
     const folders = [
       ...collectionFolders(root, await liveTreeOf(root)),
-      ...bundles.flatMap((b) =>
-        !kept && b.record.entity === 'collection' && b.artifactName
+      ...(kept ? [] : bundles).flatMap((b) =>
+        b.record.entity === 'collection' && b.artifactName
           ? [join(root, b.bundlePath, b.artifactName)]
           : [],
       ),
@@ -386,12 +387,12 @@ async function finishContainer(
   }
   const edit = await owedEdit()
   const strip = back ? undefined : e.strip
-  const taken = strip && (await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip))
+  const taken = strip ? await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip) : null
   if (taken) {
     const links = await gatherLinks(root, taken)
     await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
   }
-  const stripped = !!strip && add(reach, await deleteCascade(root, taken || null))
+  const stripped = !!strip && add(reach, await deleteCascade(root, taken))
   const viewed = !!edit && add(reach, await reachConfig(root, edit))
   return {
     left: { ...e, strip: stripped ? e.strip : undefined, edit: viewed ? e.edit : undefined },

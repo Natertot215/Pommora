@@ -35,7 +35,7 @@ export function storedAtOf(bundlePath: string): number | null {
 export const stampedLeaf = (stamp: string, n: number, base: string): string =>
   n === 0 ? `${stamp}__${base}` : `${stamp}__${n}__${base}`
 
-export interface Stored {
+interface Stored {
   store: BundleStore
   bundle: string | null
   inner: string[]

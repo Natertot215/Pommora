@@ -6,7 +6,8 @@ import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { fault, ok, type Result } from '../Contract/result'
 import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
-import { reachReport, retries, sweptReach } from '../Nexus/configReach'
+import { sweptReach } from '../Nexus/configReach'
+import { reachReport, retries } from '../Nexus/owed'
 import { stripKeys } from '../Files/rootValues'
 import {
   excludedMatcher,
