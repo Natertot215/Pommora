@@ -142,7 +142,7 @@ The benchmark's CPU profiles (*Trash & Archive Restructure — Reach-In Measurem
 |---|---|---|
 | Today | about 7.3 ms | about 50 s |
 | With chunked flushing | about 3-3.5 ms | about 20-25 s |
-| Without a per-file flush (ruled out by Decision 21) | about 1 ms | about 7 s |
+| Without a per-file flush (ruled out by Decision F-3) | about 1 ms | about 7 s |
 
 These add the remaining parse, batched index, and tree work (about 0.5 ms) to the measured write shapes (1.6-2.7 ms and about 0.5 ms).
 
@@ -150,14 +150,14 @@ Reach-in's extra cost per cascade shrinks by the same factor, since it's the per
 
 ##### The Durability Choice
 
-Chunked flushing keeps today's guarantee: a page's new bytes are on the drive before its name points at them. Dropping the flush for cascade rewrites is about three times faster again, and it keeps atomicity against running readers. What it gives up is protection from power loss or a kernel panic during or just after a cascade, which could leave pages empty or torn (*inferred*; APFS's ordering of a renamed file's data isn't documented). The owed notes recover interrupted *work*, never lost *content*, since the bytes are gone. A flush pushes only its own file's bytes out of memory before emptying the drive's cache, so one flush covers a group only when every temp is written through to the drive as it's written (`O_DSYNC`). **Ruled:** the flush stays, chunked (*Trash & Archive Restructure — Decisions & Intention*, Decision 21).
+Chunked flushing keeps today's guarantee: a page's new bytes are on the drive before its name points at them. Dropping the flush for cascade rewrites is about three times faster again, and it keeps atomicity against running readers. What it gives up is protection from power loss or a kernel panic during or just after a cascade, which could leave pages empty or torn (*inferred*; APFS's ordering of a renamed file's data isn't documented). The owed notes recover interrupted *work*, never lost *content*, since the bytes are gone. A flush pushes only its own file's bytes out of memory before emptying the drive's cache, so one flush covers a group only when every temp is written through to the drive as it's written (`O_DSYNC`). **Ruled:** the flush stays, chunked (*Trash & Archive Restructure — Decisions & Intention*, Decision F-3).
 
 ---
 
 #### 4. Invariants It Must Keep
 
 - **Atomic Replace:** a reader sees old or new bytes, never a mix (`machine.ts:18-21`); the temp-and-rename keeps it.
-- **Durability:** content is flushed before the rename (Decision 21).
+- **Durability:** content is flushed before the rename (Decision F-3).
 - **Write-Ahead and Owed Work:** the note lands, flushed, before the list step and the sweep (`owed.ts:242-263`). A file the land pass refuses counts `skipped`, so `retries` keeps the entry and its Try Again (`owed.ts:266-268`, `configReach.ts`). `finishOwed` re-runs a sweep idempotently, because a rewrite of an already-rewritten file answers null and writes nothing (`governedSweep.ts:91`). The crash-window suite (`Core/Nexus/finishOwed.test.ts`) kills the process rather than the OS, so it pins ordering and not the flush; a test that pins the land pass's refusal is new.
 - **Echo Suppression:** `recordWrite` with the landed bytes' hash runs before each rename, and the event follows the landing (`writeEcho.ts:22-33`). The watcher's byte check stays (`writeEcho.ts:98-108`). Sync's write tap still hears every file (`writeEcho.ts:32`), and Sync's own landing still records no echo and notes no event (`atomicWrite.ts:41-52`). Sync code doesn't change.
 - **Outside Edits Racing a Sweep:** today an outside write landing between the read and the rename (about 7 ms) is overwritten silently. The land pass's recheck shrinks that window to the instant between its stat and its rename. Chunking holds a computed temp for up to one chunk's flush (about 100-170 ms at 64 files), and the recheck covers that wait.
@@ -195,9 +195,9 @@ The single writers (`atomicWriteFile`, `rewritePageSerialized`, `landBytes`) car
 
 No new file is needed, so no placement goes to Nathan.
 
-##### Inside and Outside Decision 7
+##### Inside and Outside Decision A-4
 
-Of the roughly 17 files, only `settle.ts` is on Decision 7's list, and the fix touches its event and settle half rather than the restore's and archive's re-spell. The Trash and Archive callers (`restoreProperty`, `spend`, `restoreScrub`, `trashedCopies`, `archive`) consume the sweep and don't change. The fix is shared machinery outside the plan's surface; the Trash plan is its largest beneficiary.
+Of the roughly 17 files, only `settle.ts` is on Decision A-4's list, and the fix touches its event and settle half rather than the restore's and archive's re-spell. The Trash and Archive callers (`restoreProperty`, `spend`, `restoreScrub`, `trashedCopies`, `archive`) consume the sweep and don't change. The fix is shared machinery outside the plan's surface; the Trash plan is its largest beneficiary.
 
 ---
 
@@ -232,7 +232,7 @@ Compressed into one phase, it would be the largest phase of the plan and touch e
 
 The deciding ground is containment, which holds however the rest of the plan is grouped:
 
-- About 16 of the fix's 17 files sit outside Decision 7.
+- About 16 of the fix's 17 files sit outside Decision A-4.
 - Its regression risks (echo suppression, write-ahead ordering, index and tree consistency, outside-edit races) have nothing to do with bundles, so its reviews need a different focus.
 - It carries a durability decision Nathan has to make.
 

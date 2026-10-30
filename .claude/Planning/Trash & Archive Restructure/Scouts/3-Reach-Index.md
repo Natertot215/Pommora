@@ -1,155 +1,165 @@
-# Scout 3 — Reach & the Index
+### Scout 3 — Reach, the Index, Paths, Filing, and the Change-Time Identity
 
-**Repo:** `~/The Studio/Projects/Project Pommora` at `15fe7422a` (branch `active`), read-only; cleaned against *Trash & Archive Restructure — Investigation* on 10-28-2026 under Decisions 10 through 14. The grounding, the inventory, the behavior to preserve, and the test notes are this scout's own; every finding is stated once in the Investigation, and this report maps each to it. Corrected claims are marked **Corrected**.
-#### Grounding Check
+**HEAD:** `776f3ea94` on `active`, read-only; cleaned against *Trash & Archive Restructure — Investigation* on 10-29-2026 under Decision B-1 through 37. This report also holds the Archive's filing, layout, and store shape. The inventory, the probe, the behavior to preserve, and the test notes are this scout's own; every finding is stated once in the Investigation, and this report maps each to it. The APFS behavior was probed with a throwaway Node script outside the repo, since removed.
 
-- **Confirmed:** `.trash` is unwatched (`neverWatched` treats any dotted first segment other than `.nexus` as hidden, `Core/Paths/exclusion.ts:20-29`, used by `Desktop/FileWatch/watcher.ts:55-65`) and unindexed (`outsideContent` reads it as `'hidden'`, `exclusion.ts:69-74`, which gates `indexWrittenPage`/`deindexPath`/`moveIndexPaths` through `relCorpusPath`, `Core/Index/indexSeed.ts:77-81`).
-- **Confirmed:** `.nexus/archive` is a content root (`Core/Files/walk.ts:43`), indexed, and watched (the `.nexus` exemption at `exclusion.ts:24` lets every Archive segment through).
-- **Refined:** the tree leaves the Archive out with no Archive-specific code. The root walk prunes `.nexus` as hidden (`Core/Nexus/readNexus.ts:321-322`), and `classifyEvent` sends every `.nexus/` path except `contexts` to `'ignored'` (`Core/Nexus/fileEvents.ts:241`). The index half still runs for those events, since `applyEvents` indexes every event *before* it classifies (`fileEvents.ts:655`), so an archived page edited from outside re-indexes on its event.
-- **More reach-ins than the grounding lists** (**Corrected:** three paths rewrite trashed copies; the others below read the Trash without rewriting copies): besides `finishOwed`'s property arm, `refillTrashed`/`trashedHolders`, and `refillStash`, three other paths reach into the Trash. `collectionsElsewhere` reads every Trash record (`Core/Bundles/bundle.ts:186-188`), and `parkLinks` lists every trashed page (`Core/Trash/trashedCopies.ts:38`, via `originPagesIn`, `bundle.ts:417-426`). `finishContainer`'s `park` arm runs on system-trash deletes and empties (`Core/Nexus/finishOwed.ts:408`, `Core/Trash/spend.ts:103`).
-- **One reach is missing, and it's inconsistent:** a property's restore doesn't reach trashed copies at all (§4, R-1).
+**What Moved Since `15fe7422a`:** `Desktop/Store/*`, `Core/Index/contentIndex.ts`, `Core/Index/keyHolders.ts`, `Core/Nexus/heldPages.ts`, `Core/Files/walk.ts`, `Core/Matrix/*`, `Core/Bundles/layout.ts`, `Core/Paths/nexusPaths.ts`, `Core/Nexus/treePatch.ts`, `Core/Nexus/configReach.ts`, `Core/Archive/refile.ts`, and `Core/Trash/trashedCopies.ts` are unchanged. `exclusion.ts` lost `TEMP_SUFFIX` and `manifestAdmits`' `siblings` parameter (the Write Path's Deviation D-3), moving its lines; `indexSeed.ts` was rewritten (batched commits, a per-path commit sequence, reads handed to the tree patch); every sweep runs on `rewriteHeld`; `Core/Platform/machine.ts` gained `Landing`, `land`, `sameFile`, `fileStat`, and `statOrNull` (`:14-85`). R-1's `unlessVouched` and R-2's `HolderQuery.every` were withdrawn by the Write Path's Deviation D-2 and don't exist at HEAD.
 
----
+#### 1. Inventory
 
-## 1. Inventory
-
-#### Paths & Admission
+##### Paths and Admission
 
 | Symbol | Where | Job | Callers |
 |---|---|---|---|
-| `NEXUS_DIR`, `TRASH_DIR`, `ARCHIVE_DIR_REL` | `Core/Paths/nexusPaths.ts:3-7` | The dotted roots | Widespread; Trash/Archive-specific callers below |
-| `ArchiveStore` | `nexusPaths.ts:9` | `{kind:'archive', id}` | `Bundles/layout.ts:10` (unioned into `BundleStore`), `Archive/archive.ts:73`, `Bundles/placement.ts:193`, `Paths/names.ts:20` |
+| `NEXUS_DIR`, `TRASH_DIR`, `ARCHIVE_DIR_REL` | `Core/Paths/nexusPaths.ts:3-7` | The dotted roots | Widespread |
+| `ArchiveStore` | `nexusPaths.ts:9` | `{ kind: 'archive', id }` | `layout.ts:10`, `archive.ts:73`, `placement.ts:193`, `names.ts:20` |
 | `archiveDirRel` | `nexusPaths.ts:11` | One Collection's Archive dir | `layout.ts:17`, `archive.ts:145`, `refile.ts:150`, `finishOwed.ts:397`, `treePatch.ts:125` |
-| `archiveSegs` | `nexusPaths.ts:13-14` | Segments below `.nexus/archive`, or null | `nexusPaths.ts:17`, `exclusion.ts:71` |
+| `archiveSegs` | `nexusPaths.ts:13-14` | Segments below `.nexus/archive`, or null | `nexusPaths.ts:17`, `exclusion.ts:65` |
 | `archivedCollectionIdOf` | `nexusPaths.ts:16-17` | The Collection id an Archive path is filed under | `layout.ts:45`, `heldPages.ts:78`, `treePatch.ts:116`, `nexusPaths.ts:19` |
-| `isArchived` | `nexusPaths.ts:19` | Whether a rel path lies in the Archive | `matrixGraph.ts:26`, `Nexus/handlers.ts:171`, `governedSweep.ts:104`, `Trash/delete.ts:42` |
-| `archiveStoreOf` | `Core/Paths/names.ts:20-21` | A Collection id → `ArchiveStore` when it can name a folder | 7 non-test call sites (`archive.ts:41,143`, `refile.ts:42`, `bundle.ts:143`, `Bundles/handlers.ts:16`, `placement.ts:204`, `treePatch.ts:124`; **Corrected** from 14) |
-| `hiddenName` / `hiddenFolder` | `exclusion.ts:10-17` | Leading `.`/`_`, plus `node_modules` | Walks, bundle listing, `classifyEvent` |
-| `neverWatched` | `exclusion.ts:20-29` | The watcher's ignore rule: `.nexus` is exempt, everything else dotted is hidden | `watcher.ts:63-64`, `manifestAdmits`, `Assets/adoptFile.ts:24`, `Assets/assetMap.ts:14` |
-| `manifestAdmits` | `exclusion.ts:37-53` | Sync's admission rule; **admits `.trash`** by judging what's below it (`:48`) | `Sync/Client/push.ts:149`, `reconcile.ts:74,79,114`, `tap.ts:17,42` |
-| `outsideContent` | `exclusion.ts:69-74` | What keeps a rel out of content: hidden (judged below `.nexus/archive` for an Archive path), asset, or excluded | Corpus walk (`walk.ts:87,99`), index (`indexSeed.ts:80`), tree (`readNexus.ts:155,322`, `folderKind.ts:100`, `adopt.ts:163,181`, `folderEntity.ts:27`), `listInner` (`bundle.ts:334`), `fileEvents.ts:513`, `exclusionScan.ts:46-47` |
-| `syncIgnoredUnder` | `watcher.ts:55-66` | Chokidar's ignore filter, built on `neverWatched` | `watcher.ts:101` |
-| Sync tap `.trash` drop | `Core/Sync/Client/tap.ts:50` | Drops *watched* events under `.trash` | `installTap` |
+| `isArchived` | `nexusPaths.ts:19` | Whether a rel path lies in the Archive | `matrixGraph.ts:26`, `Nexus/handlers.ts:169`, `governedSweep.ts:81`, `delete.ts:42` |
+| `archiveStoreOf` | `Core/Paths/names.ts:20-21` | A Collection id → `ArchiveStore` when it can name a folder | seven production call sites |
+| `hiddenName` / `hiddenFolder` | `exclusion.ts:8-15` | Leading `.` or `_`, plus `node_modules` | Walks, bundle listing, `classifyEvent` |
+| `neverWatched` | `exclusion.ts:18-27` | The watcher's ignore rule: `.nexus` exempt, everything else dotted hidden | `watcher.ts:63-64`, `manifestAdmits`, `adoptFile.ts:24`, `assetMap.ts:14` |
+| `manifestAdmits` | `exclusion.ts:35-47` | Sync's admission rule; admits `.trash` by judging what's below it (`:42`) | `Sync/Client/push.ts`, `reconcile.ts`, `tap.ts` |
+| `outsideContent` | `exclusion.ts:63-68` | What keeps a rel out of content: hidden (judged below `.nexus/archive` for an Archive path, `:65`), asset, or excluded | Corpus walk, index (`relCorpusPath`, `indexSeed.ts:78-82`), tree, `listInner` (`bundle.ts:334`), `fileEvents.ts`, `exclusionScan.ts:46-47` |
+| `syncIgnoredUnder` | `Desktop/FileWatch/watcher.ts:55-66` | chokidar's ignore filter, built on `neverWatched` | `watcher.ts:101` |
+| Sync tap `.trash` drop | `Core/Sync/Client/tap.ts:50` | Drops watched events under `.trash` | `installTap` |
 
-#### Walks
+##### Walks
 
 | Symbol | Where | Job | Callers |
 |---|---|---|---|
 | `contentRoots` | `walk.ts:43` | `[root, root/.nexus/archive]` | `corpusFiles`, `sidecarsUnder` |
-| `corpusFiles` | `walk.ts:45-49` | Every content page under both roots | `nexusCorpus` (`indexSeed.ts:73-75`), `Assets/assetMigrate.ts:135` |
-| `corpusFilesUnder` | `walk.ts:79-89` | Content pages under one dir, by `outsideContent` | `corpusFiles`, `heldPages.ts:100` (Archive fallback), `indexSeed.ts:173` (folder moved into content) |
-| `listMarkdownFiles` | `walk.ts:33-40` | Pages under a bundle's artifact, by `hiddenFolder` only | `contentPages` (`bundle.ts:404`), `collectionArchive` (`archive.ts:147`), `keptLinksUnder` (`bundle.ts:284`) |
-| `listPathsUnder` | `walk.ts:59-77` | The hand-descended walker under all of the above | `walk.ts:34,84,98`, `restoreScrub.ts:134` |
-| `sidecarsUnder` | `walk.ts:91-104` | Sidecars under both roots, or under one dir | `configReach.ts:285`, `assetMigrate.ts:117` |
-| `nexusCorpus` | `indexSeed.ts:73-75` | `corpusFiles` with the read scope | Seed (`:215`), `pagesInReach` fallback (`keyHolders.ts:50`), `renameCascade` fallback (`cascade.ts:241`) |
+| `corpusFiles` / `corpusFilesUnder` | `walk.ts:45-49,79-89` | Content pages under both roots, or one dir, by `outsideContent` | `nexusCorpus`, `assetMigrate.ts:135`, `heldPages.ts:100`, `indexSeed.ts` |
+| `listMarkdownFiles` | `walk.ts:33-40` | Pages under a bundle's artifact, by `hiddenFolder` only | `contentPages`, `collectionArchive`, `keptLinksUnder` |
+| `listPathsUnder` | `walk.ts:62-70` | The hand-descended walker; passes a folder's `siblings`, not its children | `walk.ts`, `restoreScrub.ts:134`, `exclusionScan.ts:43-44` |
+| `sidecarsUnder` | `walk.ts:91-104` | Sidecars under both roots or one dir; its directory filter is `outsideContent` (`:97-100`) | `configReach.ts:285`, `assetMigrate.ts:117` |
+| `nexusCorpus` | `indexSeed.ts:73-75` | `corpusFiles` with the read scope | the seed, `pagesInReach`'s fallback (`keyHolders.ts:50`), `renameCascade`'s fallback (`cascade.ts:241`) |
 
-#### The Index
+##### The Index
 
-| Symbol | Where | Job | Callers / Notes |
+| Symbol | Where | Job | Notes |
 |---|---|---|---|
-| `contentIndexStore` impl | `Desktop/Store/stores.ts:58-183` | SQLite rows by path; **knows nothing of either store** (no Archive or Trash term in `Desktop/Store/`) | Through `Core/Index/contentIndex.ts` |
-| `queryMentions` | `contentIndex.ts:66-68` | Paths whose relations name keys | `deleteCascade` (`cascade.ts:127`), `renameCascade` (`cascade.ts:241-242`) |
-| `queryMembers`/`queryKeyHolders` | `contentIndex.ts:74-83` | Paths holding a key (or a Space under it) | `findHolders` (`keyHolders.ts:82`) |
-| `readHeadings` | `contentIndex.ts:70-72` | Outlines | `index:headings` (`Nexus/handlers.ts:170-171`, filters Archive), `reindex` (`indexSeed.ts:135`) |
-| `readPageRelations` | `contentIndex.ts:85-87` | Rows + values | `matrixGraph.ts:20` (filters Archive), `keyHolders.ts:120`, `gather.ts:26`, `optionOps.ts:146` (tree-scoped, so no stored pages) |
-| `readIndexedStats(under)` | `contentIndex.ts:93-95` | Stat + ID per path under a prefix | `archivedPageIds` (`heldPages.ts:98`), `deindexPath` (`indexSeed.ts:158`), seed (`:193`) |
-| `seedContentIndex` | `indexSeed.ts:192-249` | Stats the whole corpus every open, re-reads what moved, prunes what vanished | Open |
-| `indexWrittenPage`/`deindexPath`/`moveIndexPaths` | `indexSeed.ts:109-180` | Per-event maintenance; a move across the content boundary becomes index or de-index (`:163-176`) | `indexEvent` (`fileEvents.ts:273-298`) |
+| `contentIndexStore` | `Desktop/Store/stores.ts:58-183` | SQLite rows by path; knows nothing of either store | through `Core/Index/contentIndex.ts` |
+| `queryMentions` / `queryMembers` / `queryKeyHolders` | `contentIndex.ts:66-83` | Paths whose relations name keys; paths holding a key | `deleteCascade`, `renameCascade`, `findHolders` |
+| `readHeadings` / `readPageRelations` / `readIndexedStats(under)` | `contentIndex.ts:70-95` | Outlines; rows + values; stat + ID per path under a prefix | `index:headings` (`handlers.ts:167-170`), `matrixGraph.ts:20`, `keyHolders.ts:120`, `gather.ts:26`, `optionOps.ts:146` (tree-scoped), `archivedPageIds` |
+| Seed | `indexSeed.ts:259-310` | Stats the corpus every open, re-reads what changed, prunes what vanished (`:301-303`); a cold seed answers `NO_REREAD` (`:305`) | batches of `INDEX_BATCH` = 200 (`:40`) |
+| `describes` | `indexSeed.ts:110-112` | The seed's skip: modification time and size, without birth | used at `:288` |
+| `commit` / `unmoved` | `indexSeed.ts:114-133` | Per-path commit sequence for the in-flight check (Deviation D-2) | no stat takes part |
+| `indexWrittenPages` / `deindexPath` / `moveIndexPaths` | `indexSeed.ts:139-189,215-223,225-249` | Per-event maintenance; a move into a non-corpus target de-indexes (`:228-231`), a move with no old corpus path indexes without the read (`:232-238`), a corpus-to-corpus move renames rows by prefix (`:240-247`) and re-reads the moved page (`:248`) | through `indexEvent` (`fileEvents.ts:292`) |
 
-#### The Stored Projection (`Core/Nexus/heldPages.ts`)
+##### The Stored Projection (`Core/Nexus/heldPages.ts`)
 
 | Symbol | Line | Job | Callers |
 |---|---|---|---|
-| `entitiesById`, `writablePathsOf`, `liveIdIndex`, `liveIdOf`, `livePathOf`, `idHeld` | `:23-52` | Live-tree id ↔ path for writers (a separate responsibility in the same file) | Writers, `settle.ts:113,123`, `fileHistory.ts:200` |
-| `NexusPages` | `:55-58` | `byId` (tree + Archive, null on a twin) and `archived` (Archive pages at their origin paths) | — |
-| `addressable` | `:61-64` | `byId` addresses exactly one file | `cascade.ts:133`, `keyHolders.ts:125`, `governedSweep.ts:135` |
-| `shownTitle` | `:67-71` | Title for an unrestored name | `spend.ts:299`, `restoreProperty.ts:86` |
-| `nexusPages` | `:73-85` | Builds `NexusPages` from `archivedPageIds` | `archive.ts:98`, `Bundles/handlers.ts:27,37`, `keyHolders.ts:106`, `cascade.ts:107`, `assignment.ts:39`, `gather.ts:42`, `restoreProperty.ts:69`, `spend.ts:140` |
-| `linkWorld` | `:88-92` | `PageIndex` of tree pages + archived at their origins (+ extras) | `assignment.ts:62`, `restoreProperty.ts:70`, `spend.ts:155,272` |
+| `claim` | `:18-20` | Sets an id, or nulls one two files claim | `entitiesById`, `nexusPages` |
+| `entitiesById`, `writablePathsOf`, `liveIdIndex`, `liveIdOf`, `livePathOf`, `idHeld` | `:23-52` | Live-tree id ↔ path for writers | writers, `settle.ts`, `fileHistory.ts:200` |
+| `NexusPages`, `addressable`, `shownTitle` | `:55-71` | `byId` and `archived`; whether `byId` addresses one file (unique, non-null) | `cascade.ts:133`, `keyHolders.ts:125`, `governedSweep.ts`, `spend.ts:299`, `restoreProperty.ts:86` |
+| `nexusPages` | `:73-85` | Builds `NexusPages`, nine production calls | `archive.ts:98`, `Bundles/handlers.ts:27,37`, `keyHolders.ts:106`, `cascade.ts:107`, `assignment.ts:39`, `gather.ts:42`, `restoreProperty.ts:69`, `spend.ts:140` |
+| `linkWorld` | `:88-92` | Tree pages + archived at their origins (+ extras) | `assignment.ts:62`, `restoreProperty.ts:70`, `spend.ts:155,272` |
 | `archivedPageIds` | `:94-103` | Archive stats from the index; walks and reads every archived file before it's ready | `nexusPages`, `fileHistory.ts:200` |
 
-#### Reach Scoping & Exclusion from Display
+##### Reach Scoping and Display
 
 | Symbol | Where | Job | Callers |
 |---|---|---|---|
-| `archiveReach` | `Core/Nexus/treePatch.ts:122-126` | Archive dir(s) a reach covers | `pagesInReach` (`keyHolders.ts:53`), `archivedSets` (`configReach.ts:298`) |
-| `owningCollection` | `treePatch.ts:110-119` | Owner by path, or by the Archive's filed id | Schema lookups, `refillStash`, `archiveOp` |
-| `pagesInReach` | `keyHolders.ts:44-59` | Pages in Collections + Archive (`governed`/`{collection}`) or anywhere | `findHolders`, `deleteCascade` |
-| `findHolders` | `keyHolders.ts:79-136` | Index pages + tree Spaces holding keys; with `read`, values by id through `nexusPages` | Property/option/Context cascades, deletes |
-| `outsideArchive` | `Core/Nexus/governedSweep.ts:103-104` | One-line wrapper of `isArchived` | `cascade.ts:156,276`, `governedSweep.ts:111`, `registryProperty.ts:184` |
-| `collectionFolders` | `governedSweep.ts:45-49` | Live + damaged Collection folders | `finishOwed.ts:177`, `deleteProperty`, `keyHolders` |
-| `archivedSetIds` / `archivedSets` | `Core/Nexus/configReach.ts:288-304` | Set ids/dirs in an Archive; the config pass reaches archived Set sidecars | `delete.ts:51`, `archive.ts:152`, `finishOwed.ts:397`, `reachConfig:339` |
-| `readMatrixGraph` | `Core/Matrix/matrixGraph.ts:19-43` | Graph rows; drops archived (`:26`) | Matrix |
-| `index:headings` | `Core/Nexus/handlers.ts:169-172` | Drops archived | Renderer |
-| `sweepFileHistory` | `Core/Pages/fileHistory.ts:195-210` | Archive-specific retention via `archivedPageIds` | Open, settings |
-| Link suggestions | `Core/Session/pageConnections.ts:30` | `pageIndexOf(tree)`: shows no stored page, with no store code | Editor |
+| `archiveReach` | `treePatch.ts:122-126` | Archive dirs a reach covers | `pagesInReach` (`keyHolders.ts:53`), `archivedSets` (`configReach.ts:298`) |
+| `owningCollection` | `treePatch.ts:110-119` | Owner by path, or by the Archive's filed id; none for `.trash/…` | schema lookups, `refillStash`, `archiveOp`, `containerSchema` |
+| `pagesInReach` / `spaceFiles` / `findHolders` | `keyHolders.ts:44-59,69-75,79-136` | Pages in Collections + Archive; Spaces from the tree; with `read`, values by id through `nexusPages` | property, option, and Context cascades; deletes |
+| `outsideArchive` / `collectionFolders` / `sweepCount` | `governedSweep.ts:79-81,43-47,87-90` | One-line `isArchived` wrapper; live + damaged Collection folders; the count hide | `cascade.ts:156,276`, `governedSweep.ts:88`, `registryProperty.ts:179` |
+| `readMatrixGraph` / `index:headings` | `matrixGraph.ts:19-43`; `Nexus/handlers.ts:167-170` | Drop archived rows (`:26`, `:169`) | matrix, renderer |
+| Link suggestions | `Core/Session/pageConnections.ts:30` | `pageIndexOf(tree)`: no stored page, no store code | editor |
+| `sweepFileHistory` | `Core/Pages/fileHistory.ts:195-210` | Archive retention via `archivedPageIds` | open, settings |
 
-#### The Trash's Partial Reach
+##### The Archive's Filing (`Core/Archive/refile.ts`, 153 Lines)
 
-| Symbol | Where | Job | Callers |
-|---|---|---|---|
-| `appendLinks` | `trashedCopies.ts:18-21` | Appends `StrippedLink`s to a bundle record | `parkLinks` |
-| `frozenWorld` | `trashedCopies.ts:23-33` | `Frozen` from a `PageIndex` + recorded `targets` | `spend.ts:156,272`, `restoreProperty.ts:70`, `assignment.ts:62` |
-| `parkLinks` | `trashedCopies.ts:36-45` | Files dropped Link values on the bundle of the trashed page they name | `spend.ts:112,131,171`, `finishOwed.ts:408`, `assignment.ts:74` |
-| `trashedHolders` | `trashedCopies.ts:48-80` | id → trashed file (page, Set/Collection page, Space sidecar, Context's Space sidecars) | `refillTrashed`, `assignment.ts:51` |
-| `refillTrashed` | `trashedCopies.ts:83-118` | Refills Link values into trashed copies, owing what it can't write | `spend.ts:287` |
-| `Frozen` | `Core/Nexus/governedRoot.ts:61-63` | `{ holds(title) }` | `gonePageEntry`, `refillOf`, `scrubReturning`, `trashedCopies` |
-| `gonePageEntry` | `governedRoot.ts:65-70` | The Link entry naming a page `frozen` doesn't hold | `cascade.ts:114` (**live** strip), `governedSweep.ts:151`, `restoreScrub.ts:159`, `restoreProperty.ts:78`, `assignment.ts:67` |
-| `reconcileGovernedRoot` | `governedRoot.ts:126-150` | Live-write reconcile of every governed key | `writtenRoot`, `repairSweep.ts:23`, `restoreScrub.ts:173,186` |
-| `refillOf`/`refillValues`/`sweepRootsById` | `governedSweep.ts:119-168` | Id-addressed refills over `RootsById` | `spend.ts:280,313`, `restoreProperty.ts:83`, `assignment.ts:73`, `refillTrashed` (`refillOf`) |
-| `finishProperty` gone-def arm | `finishOwed.ts:164-186` | Strips a permanently deleted property from trashed Collections' sidecars and trashed pages, unless a property bundle still holds it | `finishArm` |
-| `finishContainer` | `finishOwed.ts:376-417` | Gone-container view edit (walks every owned Archive), strip, bundle patch or `park` | `finishArm` |
-| `refillStash` | `Core/Properties/assignment.ts:26-83` | Stash → live/archived pages, plus trashed copies from that Collection | `assignInner`, `finishProperty:203` |
+| Symbol | Job | Callers |
+|---|---|---|
+| `refile` (`:34`) | Writes `trail` to a record; on a Collection change moves the bundle into `to`'s ID folder through `moveIntoStore` | `refileArchived` `:61`, `settleArchives` `:134` |
+| `refileArchived` (`:50`) | For each record within a Set in `from`'s Archive, computes the new trail (`held ?? retrailed(...)`) and refiles it | the three triggers |
+| `carried` (`:66`) | Swallows and logs a carry's failure, leaving the fix to the next open | the three triggers |
+| `refileLanded` (`:75`) / `refileFiled` (`:89`) / `refileMoved` (`:102`) | Restore, Undo, and settle triggers; `refileMoved` walks the push delta (`settle.ts:192`) and carries Archive records only | `archive.ts:121`, `spend.ts:297`; `archive.ts:54`; `settle.ts` |
+| `settleArchives` (`:125`) | Open pass: re-files every record in every live Archive; moves an orphaned ID folder's bundles into `.trash` | `Nexus/handlers.ts:98` |
 
----
+##### The Layout (`Core/Bundles/layout.ts`, 64 Lines) and Filing Half of `bundle.ts`
 
-## 2. Findings, as the Investigation Holds Them
+| Symbol | Job | Callers |
+|---|---|---|
+| `BundleStore` (`:10`), `layoutOf` (`:12`) | `{ trash } \| { archive, id }`; store → `{ dir, suffix }` | Bundles, `bridge.ts:199`, `placement.ts:212-213`, `rows.ts:49` |
+| `fileStamp` / `storedAtOf` / `stampedLeaf` (`:21`/`:25`/`:32`) | Stamp mint, parse, and leaf spelling | mintBundle, discard, rows (`rows.ts:91,99,168`) |
+| `stampedSegment` (`:36`), `bundleAddressOf` (`:40`), `originPathOf` (`:59`) | The bundle segment; path → bundle, store, inner item; store path → origin (pure; 14 production call sites, 11 Archive-capable) | bundle, placement, mutate, heldPages, archive, delete, spend |
+| `moveIntoStore` (`bundle.ts:120`) | Moves a bundle between stores or ID folders | `refile.ts:45,148`; every caller exists because of the ID level |
+| `listBundles` (`bundle.ts:153`), `archivedWithin` (`:142`) | A store's suffixed folders with a readable record; records within a Set in an Archive | refile, handlers, finishOwed, trashedCopies, `collectionsElsewhere`, `move.ts:62` |
+| `collectionsElsewhere` / `archiveOwned` (`bundle.ts:179`/`:193`) | Collections in unheld root folders or the Trash; whether an Archive's Collection still answers | `refile.ts:145`, `placement.ts:206`, `finishOwed.ts:395` |
+| `archiveFiling` (`placement.ts:188`) | The Archive an Undo files into, re-rooted (`:211-214`) and re-trailed (`:216-225`) | `archive.ts:78`, `placement.ts:250` |
 
-- **D-1 · The Record-Links Twin:** confirmed; M-5.
-- **D-2 · Three Ways to Refill a Stored Copy:** confirmed, with the owed-versus-named divergence; M-12 and, under reach-in, L-10.
-- **D-3 · Two Stored-Page Worlds and the `id` Overload:** confirmed; L-10 (reach-in) or M-9 (resolve-on-restore).
-- **D-4, D-5 · Listers Under Two Rules and Two Exclusion Readings:** confirmed by reading; B-8 and M-16.
-- **D-6, D-7 · Partial Root Lists and the Store Notion in Three Files:** confirmed; M-16 and P-4.
-- **D-8 · Hand-Placed Archive Hiding:** confirmed; four `outsideArchive` uses and four `isArchived` uses in production; M-16.
-- **D-9, D-10 · Archive-by-Collection Enumeration Twice, `archivedSetIds` vs `archivedSets`:** confirmed; M-11.
-- **S-1 · Two Reach Mechanisms:** confirmed; *§What's True · How the Archive Is Reach-In* and M-16.
-- **S-2, S-3 · `trashedCopies.ts` as Compensation, `Frozen`'s Name:** confirmed; M-12, P-2, L-10.
-- **S-4 · `heldPages.ts`'s Two Concerns:** confirmed; P-7.
-- **S-5, S-6:** confirmed; M-16, P-4.
-- **R-1 · A Property Restore Loses Trashed Holders' Values:** confirmed by reading; B-2. Uncovered.
-- **R-2 · A Dead Stash Entry:** confirmed by reading; B-7. Uncovered.
-- **R-3 · `tap.ts:50` Unreachable:** confirmed; the watcher is the tap's only feeder (`watcher.ts:112`).
-- **R-4 · A Stray File Under an Archive:** confirmed by reading; B-8.
-- **R-5 · Half-Reach Into Trashed Collection Sidecars:** confirmed; *§The Trash's Model*'s Views row.
-- **R-6, R-7, R-8:** confirmed; L-10, *§What Becomes False*, and the cost table.
-- **Reach-In Implications (§5):** carried into *§The Trash's Model* in full: the shared rule (M-16), the file-by-file table (its code-side ledger), the delete strip's own-bundle gap (condition 2), the cost model, and the behavior that must hold. Decision 11 settles §5.1's directory admission: only bundle contents are read, so flat leaves and record-less folders stay out.
-- **Proposals (§6):** C-1 → M-16; C-2 → L-10 (its partial form → *§Approaches Worth Weighing*, 1); C-3 → L-10; C-4 → M-5; C-5 → M-12, P-2; C-6 → M-11; C-7 → L-10; C-8 → P-7.
-- **Questions (§9):** Q-1 → condition 3; Q-2 → condition 4 and *§Approaches Worth Weighing*, 2 (Decision 12 rules out keeping a path only for old bundles); Q-3 → the Views row; Q-4 → condition 5; the sync and asset-walk risks → conditions 10 and the Watcher row.
-## 7. Behavior to Preserve (With the Tests That Pin It)
+#### 2. The Change-Time Identity, Site by Site
 
-- **Delete strips Link values naming the deleted page from other pages and Spaces, archived pages included; ID-less or twin linkers keep theirs:** `deleteReach.test.ts:111-155,346`; `keyHolders.test.ts:311,326`.
-- **Restore re-adds stripped values, including into stored copies, under Restore Links On Deletion; a key returns where it stood:** `spend.test.ts:951,1004`; `trashRecovery.test.ts:826,834`; and with the setting off, `trashRecovery.test.ts:852`.
-- **Parking: a value naming a trashed page returns with that page; bare-title ambiguity names neither:** `trashRecovery.test.ts:461-677,748,801,861`.
-- **Archived pages are cascade-reachable and resolve as link targets:** `keyHolders.test.ts:85,183,204,209,283,291`; `restoreProperty.test.ts:614,624`.
-- **Archived pages stay out of display:** matrix (`matrixGraph.ts:26`), headings (`handlers.ts:171`), `pages:changed` (`cascade.ts:42`), counts (`governedSweep.ts:102`). *These hide-the-Archive filters have no direct test cases in my domain beyond `keyHolders.test.ts`; inferred from a grep of test names.*
-- **The twin rule:** `heldPages.test.ts:134`. **Index-less fallback:** `heldPages.test.ts:146,153`; `keyHolders.test.ts:176`.
-- **Excluded folders are never reached:** `keyHolders.test.ts:438`. **Sweeps keep mtimes:** `keyHolders.test.ts:455`.
-- **The Archive restores by a plain move:** `archive.test.ts` (Archive scout's ground).
+| Site | What It Does | Under `ctimeMs` |
+|---|---|---|
+| `FileStat` (`machine.ts:2-7`) | size, mtime, birth, isDirectory | +1 field |
+| `fileStat` (`machine.ts:31-42`) | host stat → `FileStat`, shared by `nodeMachine` and `diskMachine` | +2 |
+| `sameFile` (`machine.ts:22-29`) | (mtime, size, birth): `land`'s `expect` (`nodeMachine.ts:77`; `Core/Testing/machines.ts:97,159`) and the walk cache (`walkCache.ts:43`) | birth swaps for ctime; its APFS-birth caveat goes |
+| `IndexedStat` (`Core/Platform/stores.ts:30-35`), rows (`indexSeed.ts:182,295`) | `{ mtimeMs, size, id? }` | gain ctime |
+| `describes` (`indexSeed.ts:110-112`) | the seed's skip, without birth | becomes `sameFile`'s identity (−3) |
+| SQLite store (`ddl.ts:41-45`; `stores.ts:46-52,69-71,82`) | `indexed_files(mtime_ms, size)` | +1 column, about +3 |
+| `memoryStores.ts:82-85,105` | test store | +2 |
+| `unmoved` (`indexSeed.ts:130-133`) | commit sequence | stays |
+| `RACY_WINDOW` (`walkCache.ts:3-4,43`) | mtime granularity on coarse volumes | stays; ctime granularity there unverifiable |
+| Sync's sweep (`Core/Sync/Client/push.ts:202`) | `(floor(mtime), size)` | stays under Decision B-1 |
+
+**Machines:** three, installed through `installMachine` (`Desktop/main.ts:75`, `Desktop/vitest.setup.ts:5`, `Core/vitest.setup.ts:7`). `nodeMachine`'s commit answers `handle.stat()` taken before `chmod` (`nodeMachine.ts:79-81`) and before the rename (`:83-84`); `diskMachine` already answers `stat(path)` after the rename (`machines.ts:170`); `memoryMachine` has no ctime and needs a clock bumped on `land` (`machines.ts:100`) and `rename` (`:123-128`), plus the field in `entryStat` and the directory stat (`:81-86,108`), about +4.
+
+**Probe (APFS, Node):** a file rename moves its ctime and keeps its mtime; a parent folder's rename leaves its children's ctime alone; the landing's pre-rename handle stat differs from the stat after; an `fstat` of a handle still open after the rename equals the path stat after it; `chmod` moves ctime. Windows (NTFS `ChangeTime`) and exFAT are unverifiable here. Two options for the post-rename answer: an `fstat` of the still-open handle (race-free; Windows rename-with-open-handle unverified), or a path stat after the rename (one syscall, with a window where another writer's stat could be answered); the Investigation's LD-1 takes the path stat, a file removed in that window rejecting as a race.
+
+**Guards Whose Cause the Change Time Removes:** `fileEvents.ts:395-396` (the watched edit's `forgetParse`, "can keep the time, size, and birth", −2); `atomicWrite.ts:27` (kept-time `forgetParse`, −1); `atomicWrite.ts:134` (`landBytes`' `forgetParse`, −1); `Core/Testing/hostFs.ts:52` (`raceLandings`' "`outside` differs in length", test only), each on volumes where the change time is real.
+
+**R-1 and R-2 Returning:** re-applying the Write Path plan's Task 2-1 and 2-2 AFTERs (`Write Path — Implementation Plan.md:3137-3230`) is sound only once `describes` compares ctime, every recorded stat is post-rename, a page move re-records its row (`indexSeed.ts:248`), and `unlessVouched` takes a fresh stat per passed-over page. The clash check reads every holder of either key, stored ones included, and discards stored ones after (`registryProperty.ts:174-179`); with R-1 the read narrows to pages holding both keys plus the unvouched, and the store hide moves ahead of the read.
+
+#### 3. Findings, as the Investigation Holds Them
+
+- **Two Reach Mechanisms, Hand-Placed Hiding, Three Spellings of "In the Archive," the Store Notion in Three Files, Two Exclusion Readings, the Stray File:** M-16, P-4, P-10, B-8.
+- **The Claim Rule and Its Four Cases:** *§The Trash's Model · §The Rules*, 1; condition-free, since `heldElsewhere` already exempts the restoring bundle.
+- **The Trashed Twin:** the pass-over, *§The Rules*, 2.
+- **Admission, Path-Only:** *§The Rules*, 4; a record's presence would be free in the walk (a bundle's children arrive with `_record.json` among their `siblings`) but impossible on the per-event path.
+- **Two Stores, Two Watch Policies:** *§The Rules*, 5.
+- **The Stored-Space Source, One Stored-Pages Read, Two Reach Rules for Two Stores:** *§The Trash's Model · §Added*, M-9.
+- **Two Governed Rules for Trashed Pages:** *§The Rules*, 3.
+- **Stored Data Read Only to Be Discarded:** LD-4 for the clash check; *§The Rules*, 7, and *§Approaches Worth Weighing*, 8, for the matrix and headings loads.
+- **`storedAt` Against `storedAtOf` and `rows.storedAt`:** M-16's rename.
+- **Two Identities of One File, the Double That Doesn't Match the Host:** LD-1, LD-2.
+- **`settleArchives` Under Reach-In:** its orphan-to-Trash move becomes an index rename rather than a de-index, needing nothing new; *§Approaches Worth Weighing*, 6.
+- **Three Trail Formulas, One Carry With Three Triggers:** M-10; B-6 is model-independent, since `refileMoved` carries Archive records only.
+- **Archive-by-Collection Enumeration Twice, `archivedSetIds` Against `archivedSets`:** M-11.
+- **The Store Shape (Two Stores, the ID Folder, the Collection's Own Folder, the Stamped Wrapper):** *§The Store Shape*.
+- **`refusedLine` Naming Stored Titles:** *§The Rules*, 7.
+
+#### 4. Behavior to Preserve
+
+- **A delete strips Link values naming the deleted page from other pages and Spaces, archived pages included; ID-less or twin linkers keep theirs:** `deleteReach.test.ts:111-155,346`; `keyHolders.test.ts:311,326`.
+- **A restore re-adds stripped values, including into stored copies, under Restore Links On Deletion:** `spend.test.ts:952,1005`; `trashRecovery.test.ts:827,835`; with the setting off, `trashRecovery.test.ts:853`.
+- **Parking: a value naming a trashed page returns with that page; bare-title ambiguity names neither:** `trashRecovery.test.ts:462-678,749,802,862`.
+- **Archived pages are cascade-reachable and resolve as link targets:** `keyHolders.test.ts:85,183,204,209,283,291`; `restoreProperty.test.ts:614,624`; `archive.test.ts:139,153,1101-1149`.
+- **Archived pages stay out of display:** matrix, headings, `pages:changed`, counts; no direct test beyond `keyHolders.test.ts` (inferred).
+- **The twin rule and the index-less fallback:** `heldPages.test.ts:134,146,153`; `keyHolders.test.ts:176`.
+- **Excluded folders are never reached; sweeps keep modification times:** `keyHolders.test.ts:438,455`.
 - **A trashed Collection switches a deleted-then-restored property back on:** `restoreProperty.test.ts:410`.
-- **A Set's own delete leaves its trashed sidecar byte-identical:** `deleteReach.test.ts:315`.
-- **Sync carries `.trash` through the write tap only** (`tap.ts:47-55`, `manifestAdmits` at `exclusion.ts:48`).
-- **File history keeps archived pages' snapshots on the Archive's retention** (`fileHistory.ts:197-206`).
+- **Sync carries `.trash` through the write tap only:** `tap.ts:47-55`, `manifestAdmits` at `exclusion.ts:42`.
+- **File history keeps archived pages' snapshots on the Archive's retention:** `fileHistory.ts:197-206`.
+- **A page or Set archives under its Collection's ID with its record:** `archive.test.ts:121`.
+- **What was archived from within a Set follows it to another Collection's Archive, records whole, trails current:** `refile.test.ts:111,294,319,336`; a rename moves nothing (`:355`); a within-Collection move rewrites trails only (`:279`).
+- **Archived Sets carried with a Set keep their own saved views; a moved-out Set takes archived sub-Sets from the views it left:** `refile.test.ts:189,217,248`.
+- **A restore or Undo carries archived records into the landing Collection's Archive:** `refile.test.ts:367,382,409`; `archive.test.ts:325-415`.
+- **An Undo files into the Archive the origin sits in now, on its current trail, and refuses or records afresh when that Archive is gone for good:** `archive.test.ts:656,678,1043,1195`.
+- **An orphaned Archive moves into the Trash with records byte-identical; one is kept while its Collection is excluded, hidden, trashed, or behind an unreadable root sidecar; an unparseable bundle stays as evidence:** `refile.test.ts:443,460,475,483,490,500`.
+- **A bad Collection id never names a folder or reaches outside the Archive:** `refile.test.ts:132,151`; `archive.test.ts:269`.
 
----
+#### 5. Tests
 
-## 8. Tests
-
-- **`trashedCopies.test.ts`** (26 lines) tests `frozenWorld` alone. It's an implementation-level unit and moves with C-5.
-- **`spend.test.ts:1004`** ("a Link value refilled into a trashed copy is reconciled as a live refill is") pins that the Trash path mirrors the live one. Under C-2 there is one path, so this becomes a duplicate of the live refill cases.
-- **Parking tests** (`trashRecovery.test.ts:461-677`) are phrased around "parks," but each asserts the user-visible restore outcome, so they survive the mechanism change. Keep the outcomes and drop the vocabulary if the mechanism changes.
-- **Archive reach cases in `keyHolders.test.ts`** (`:85,183,204,209,283,291,326`) are per-store. Under reach-in they'd want to cover both stores without doubling, by running one table over each store.
-- **Behavior with no coverage:** R-1 (property restore with a trashed holder), R-2 (stash refill into a trashed copy holding a gone Link), and R-4 (a stray file under a store root).
-- **No test pins the hide-the-Archive filters** in the matrix and headings readers (*inferred* from the absence of hits; not exhaustive outside my domain).
-- **`deleteReach.test.ts`** (925 lines) is mostly configuration-pass behavior (`:158-490`), not reach. It belongs to the configReach scout for fixture review.
-
----
+- **`trashedCopies.test.ts`** (26 lines) tests `frozenWorld` alone and leaves with it.
+- **`spend.test.ts:1005`** pins that the Trash's refill mirrors the live one; under reach-in there is one path, so it duplicates the live refill cases.
+- **Parking tests** (`trashRecovery.test.ts:462-678`) are phrased around "parks" but each asserts the restore's outcome, so they survive.
+- **Archive reach cases in `keyHolders.test.ts`** (`:85,183,204,209,283,291,326`) are per-store; under reach-in one table runs over each store.
+- **Near-Duplicates:** `refile.test.ts:132` and `:151`; `:189` and `:217`; `archive.test.ts:352/368/388/400` (four Undo-carry variations, one table-driven case); `archive.test.ts:971` against `:1016/1028`; `refile.test.ts:366-440` overlapping `archive.test.ts:325-415`.
+- **Pinning Implementation:** `layout.test.ts:10` asserts `layoutOf`'s literal return; `refile.test.ts:124,307,512` and `archive.test.ts:124` assert exact chain spellings, which stay, since the layout is the legibility contract (Decision C-1).
+- **Fixture Bloat:** `archive.test.ts` (52 `mkdir`/`writeFile` calls), `refile.test.ts` (35), and `bundle.test.ts` (30) each hand-build a similar disk tree; `Core/Testing/testTree.ts` builds in memory only (P-9).
+- **Gaps:** B-6's stale `from`; B-8's stray file; a path-spelled link naming an archived page across a Collection rename; the hide filters in the matrix and headings readers; the claim rule's four cases; the pass-over.

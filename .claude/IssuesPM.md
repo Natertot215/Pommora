@@ -936,7 +936,7 @@ A page dragged out of `.trash` in Finder reaches the settle as a page arriving, 
 
 **Solution** [Proposed]
 
-Under the Trash & Archive Restructure's reach-in Trash, a trashed page stays current through every cascade, so a page moved out by hand misses only the Link values its delete stripped from other pages and the clearing of its bundle. The page is recognized by the ID it already carries, which its bundle's record holds and the index tracks: a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed (*Trash & Archive Restructure — Decisions & Intention*, Decision 26).
+Under the Trash & Archive Restructure's reach-in Trash, a trashed page stays current through every cascade, so a page moved out by hand misses only the Link values its delete stripped from other pages and the clearing of its bundle. The page is recognized by the ID it already carries, which its bundle's record holds and the index tracks: a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed (*Trash & Archive Restructure — Decisions & Intention*, Decision E-1).
 
 #### I-065 • A Link value naming a title that two pages of one trashed bundle share is parked with neither.
 

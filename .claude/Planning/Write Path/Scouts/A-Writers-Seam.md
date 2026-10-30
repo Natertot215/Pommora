@@ -448,7 +448,7 @@ This goes after the imports, before `installMachine` (`:72`). See *§5* on wheth
 
 - **`utimes` Folds In:** its only callers were the two Core writers. `landBytes` becomes two lines, `sole(machine().land([{ path, data: bytes, mtimeMs }]))` then `forgetParse`.
 - **Sync's Behavior Afterward:** the same temp, flush, and rename (today write-file-atomic's, now the host's), still no echo and no event, a volume that refuses the time still lands the bytes dated now, and `forgetParse` still runs. One thing improves: the time is set on the temp before the rename, so the file never appears under its name dated now. Today a watcher `stat` landing between the rename and the `utimes` could see "now" (*inferred*). `Core/Sync/Arrival/land.ts:96` and its `recordBase` mtime are untouched.
-- **The One Sync-Code Touch:** the two `manifestAdmits` lambdas above, which behave the same. The only difference is that a `Page.md.<digits>` leftover from a past write-file-atomic crash, already on a user's disk, would now sync as an ordinary file. That's for Nathan under Decision 1. Keeping `TEMP_SUFFIX` instead leaves a rule matching a temp nothing produces.
+- **The One Sync-Code Touch:** the two `manifestAdmits` lambdas above, which behave the same. The only difference is that a `Page.md.<digits>` leftover from a past write-file-atomic crash, already on a user's disk, would now sync as an ordinary file. That's for Nathan under Decision B-1. Keeping `TEMP_SUFFIX` instead leaves a rule matching a temp nothing produces.
 
 ##### The Thread Pool
 
