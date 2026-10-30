@@ -3,14 +3,12 @@
 import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { archiveStoreOf, holdsName } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
-import { pathExists, relocate } from '../Files/atomicWrite'
-import { listMarkdownFiles } from '../Files/walk'
-import { type ArchiveStore, archiveDirRel } from '../Paths/nexusPaths'
+import { relocate } from '../Files/atomicWrite'
+import type { ArchiveStore } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
-import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
 import { departingCascade, returningCascade } from '../Nexus/settle'
 import { liftSetAside } from '../Nexus/folderEntity'
@@ -135,22 +133,4 @@ export async function restoreArchived(
       },
     },
   })
-}
-
-/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
-export async function collectionArchive(
-  root: string,
-  id: string | undefined,
-): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
-  const store = archiveStoreOf(id)
-  if (!store) return null
-  const abs = join(root, archiveDirRel(store.id))
-  if (!(await pathExists(abs))) return null
-  const files = await listMarkdownFiles(abs)
-  return {
-    abs,
-    files,
-    origins: files.map((f) => originPathOf(root, store, f)),
-    sets: await archivedSetIds(root, abs),
-  }
 }

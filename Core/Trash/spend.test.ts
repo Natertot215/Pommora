@@ -1793,7 +1793,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(await pathExists(join(root, bundlePath, 'Alpha.md'))).toBe(true)
   })
 
-  it('a system-trash handoff that rejects leaves the bundle whole', async () => {
+  it('a system-trash handoff that rejects leaves the bundle whole and owes nothing', async () => {
     installMachine({
       ...diskMachine(),
       trashToSystem: async () => {
@@ -1805,6 +1805,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
     expect(r.ok).toBe(false)
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
+    expect(await readNotes(root)).toEqual({})
   })
 })
 

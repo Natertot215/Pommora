@@ -270,7 +270,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 3-1 · One mint, one tail, one `leave`
   - [x] Task 3-2 · A content delete records its links ahead of the strip
   - [x] Task 3-3 · One container note, and the Set move's own kind
-  - [ ] Task 3-4 · The empty is the one gone-for-good step
+  - [x] Task 3-4 · The empty is the one gone-for-good step
   - [ ] Task 3-5 · One trail resolver and one carry
   - [ ] Task 3-6 · One owned-Archives iterator
   - [ ] Review Checkpoint
@@ -3972,7 +3972,7 @@ A finish whose folder has already left drops the departure all the same, since a
 
 #### Task 3-4
 
-**TASK:** The empty is the gone-for-good step's one home (M-7): `collectionArchive` moves into it out of `Core/Archive/archive.ts` (P-3, *§Placements*), and a Collection's Archive is given up before its artifact, so a failed disposal leaves the Collection listed and owning its Archive (closes B-5). **Fold:** the empty runs through `runNoted` as the delete does, so a first disposal that fails takes its note back, nothing having gone for good; with the Archive first, an owed note left behind would otherwise strip the links and views of a Collection still whole in the Trash at its Try Again. The record's links also park before its bundle is spent, where today a process dying between the spend and the park loses them. **Comments:** the AFTER removes two and adds one.
+**TASK:** The empty is the gone-for-good step's one home (M-7): `collectionArchive` moves into it out of `Core/Archive/archive.ts` (P-3, *§Placements*), and a Collection's Archive is given up before its artifact, so a failed disposal leaves the Collection listed and owning its Archive (closes B-5). **Fold:** the empty runs through `runNoted` as the delete does, so a first disposal that fails takes its note back, nothing having gone for good; with the Archive first, an owed note left behind would otherwise strip the links and views of a Collection still whole in the Trash at its Try Again. The record's links also park before its bundle is spent, where today a process dying between the spend and the park loses them. **Comments:** the AFTER removes two and adds two, `collectionArchive`'s doc moving with it.
 
 **NOW:**
 - **The Order:** `emptyBundle` disposes the artifact, then a Collection's Archive (`Core/Trash/spend.ts:106-107`). If the Archive's disposal throws, the bundle holds its record alone, `listBundles` stops listing it (`Core/Bundles/bundle.ts:165-166`), `collectionsElsewhere` stops counting the Collection (`bundle.ts:186-188`), and the next open's `settleArchives` reads the Archive as orphaned and moves its bundles into the Trash (`Core/Archive/refile.ts:145-148`).
@@ -3983,6 +3983,7 @@ A finish whose folder has already left drops the departure all the same, since a
 
 - [ ] Rewrite `trashRecovery.test.ts:1051` from *"a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive's Sets at its Try Again"* to "a Collection whose Archive refuses to go stays whole in the Trash, owning its Archive, and nothing is taken" (B-5): after the refused empty, `listBundles(root, { kind: 'trash' })` lists the Journal bundle, `readNotes(root)` is `{}`, `finish()` leaves the sidecar's views as written, and `settleArchives(root, await readNexus(root))` leaves `listBundles(root, { kind: 'archive', id: 'col-journal' })` at length 1. Watch it fail.
 - [ ] `spend.test.ts:2059`, *"a system-trash handoff that rejects leaves the bundle whole"*, becomes "…leaves the bundle whole and owes nothing", adding `expect(await readNotes(root)).toEqual({})`. Watch it fail.
+- [ ] `trashRecovery.test.ts`' `beforeEach` fake `trashToSystem` removes what it's handed (`handed.push(p)`, then `await rm(p, { recursive: true })`), as disposal does, so an emptied artifact no longer lists as a namesake once its links park ahead of the spend.
 - [ ] Write `trashRecovery.test.ts`' "an emptying that can't spend its bundle has already handed its record's links on" beside `:701`: its setup, with `vi.spyOn(bundle, 'spendBundle').mockRejectedValueOnce(new Error('the disk is gone'))` (`import * as bundle from '../Bundles/bundle'` where the suite has none), then the empty of the first namesake and the other's record holding its links. Watch it fail with the park after the spend.
 - [ ] Apply the AFTER.
 

@@ -9,12 +9,14 @@ import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import * as bundle from '../Bundles/bundle'
 import { listBundles } from '../Bundles/bundle'
 import { parkLinks } from './trashedCopies'
 import { readRecord } from '../Bundles/record'
 import * as cascade from '../Nexus/cascade'
 import { bundleRows } from '../Bundles/rows'
 import { readNexus } from '../Nexus/readNexus'
+import { settleArchives } from '../Archive/refile'
 import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -68,7 +70,13 @@ const frontmatter = async (rel = beta) => splitFrontmatter(await readFile(join(r
 
 beforeEach(async () => {
   handed.length = 0
-  installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
+  installMachine({
+    ...diskMachine(),
+    trashToSystem: async (p) => {
+      handed.push(p)
+      await rm(p, { recursive: true })
+    },
+  })
   root = tempRoot('pom-e2e-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
@@ -691,6 +699,22 @@ describe('links come back with the page', () => {
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 
+  it('an emptying that can’t spend its bundle has already handed its record’s links on', async () => {
+    const plain = join('Plain', 'Alpha.md')
+    await linker(plain, newContentId('page'), '')
+    await del(plain, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    const alphas = (await rows()).filter((r) => r.title === 'Alpha')
+    const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    const kept = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    if (!daily || !kept) throw new Error('setup failed')
+    const { links } = (await readRecord(join(root, daily.bundlePath))) as { links: unknown[] }
+    expect(links).toHaveLength(1)
+    vi.spyOn(bundle, 'spendBundle').mockRejectedValueOnce(new Error('the disk is gone'))
+    await settledMutate(root, { op: 'emptyBundle', bundlePath: daily.bundlePath })
+    expect(await readRecord(join(root, kept.bundlePath))).toMatchObject({ links })
+  })
+
   it('a Set restore reports the values of every page it lands, so the window rereads what the restore dropped', async () => {
     const box = join('Plain', 'Box')
     const gamma = join(box, 'Gamma.md')
@@ -1029,7 +1053,7 @@ describe('an item pulled out of a trashed bundle', () => {
     expect((await readJsonAt(sidecar)).views).toEqual([unfiltered, views[1]])
   })
 
-  it('a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive’s Sets at its Try Again', async () => {
+  it('a Collection whose Archive refuses to go stays whole in the Trash, owning its Archive, and nothing is taken', async () => {
     const archived = { op: 'archive', path: 'Journal/Daily', kind: 'set' } as const
     expect((await settledMutate(root, archived)).ok).toBe(true)
     await del('Journal', 'collection')
@@ -1047,8 +1071,13 @@ describe('an item pulled out of a trashed bundle', () => {
     })
     const emptied = { op: 'emptyBundle', bundlePath: await bundleOf('Journal') } as const
     expect((await settledMutate(root, emptied)).ok).toBe(false)
+    expect((await listBundles(root, { kind: 'trash' })).map((b) => b.artifactName)).toContain(
+      'Journal',
+    )
+    expect(await readNotes(root)).toEqual({})
     await finish()
-    const { filter, ...unfiltered } = views[0]
-    expect((await readJsonAt(sidecar)).views).toEqual([unfiltered])
+    expect((await readJsonAt(sidecar)).views).toEqual(views)
+    await settleArchives(root, await readNexus(root))
+    expect(await listBundles(root, { kind: 'archive', id: 'col-journal' })).toHaveLength(1)
   })
 })
