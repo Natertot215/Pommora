@@ -25,7 +25,7 @@ import {
 import { originPathOf } from '../Bundles/layout'
 import { decodeRecord, gatherContentRecord, originOf, type RecordFile } from '../Bundles/record'
 import { archiveFiling, placeRecord } from '../Bundles/placement'
-import { refileFiled, refileLanded } from './refile'
+import { refileLanded } from './refile'
 
 /** Link values and saved views naming what leaves stay where they are and resolve again on its restore, so nothing is stripped and no configuration pass runs; filed under another path than it stood under, what names it re-spells to that path. */
 export async function archiveOp(
@@ -50,7 +50,7 @@ export async function archiveOp(
   await dropDeparture(root, node)
   const left = at === undefined ? null : originOf(record)
   if (record.entity === 'set' && record.id && left)
-    await refileFiled(root, record.id, [...left.trail, left.parent], store.id, to.id)
+    await refileLanded(root, record, store.id, [...left.trail, left.parent, record.id])
   const cascade =
     originPathOf(root, to, filed.landed) !== relative(root, abs)
       ? await departingCascade(
@@ -118,7 +118,7 @@ export async function restoreArchived(
     entity: record.entity,
     abs: targetAbs,
   })
-  await refileLanded(root, record, store.id, dir)
+  await refileLanded(root, record, store.id)
   return ok({
     ...(cascade ? { cascade } : {}),
     ...(landedAs ? { landedAs } : {}),

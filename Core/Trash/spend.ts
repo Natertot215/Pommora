@@ -22,7 +22,7 @@ import {
   spendBundle,
 } from '../Bundles/bundle'
 import { originPathOf } from '../Bundles/layout'
-import { collectionOf, originOf, recordedPartly } from '../Bundles/record'
+import { collectionOf, currentOrigin, originOf, recordedPartly } from '../Bundles/record'
 import { pathExists, readJsonObject, relocate } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { archiveStoreOf } from '../Paths/names'
@@ -321,7 +321,9 @@ export async function restoreTrashed(
   )
   await spendBundle(root, bundle)
   const left = originOf(stored)
-  if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
+  // What was archived from within the Set sits in the Archive of the Collection the Set's chain stands in now, since a Trash record keeps the trail it left on.
+  const now = left && currentOrigin(tree, left)
+  if (!into) await refileLanded(root, record, now ? collectionOf(now) : null)
   return ok({
     ...restored([...untagged, ...unlinked].flatMap((id) => shownTitle(tree, roots, id) ?? [])),
     ...(cascade ? { cascade } : {}),
