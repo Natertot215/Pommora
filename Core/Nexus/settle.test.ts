@@ -19,7 +19,7 @@ import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
-import { atomicWriteFile } from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
 import { readNotes } from './owed'
 import { updatePageBody } from './page'
 import * as pageFile from '../Files/pageFile'
@@ -27,7 +27,7 @@ import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
-import { settleNow, recordHanded, returningNames, settleBatch } from './settle'
+import { settleNow, recordHanded, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
 import * as session from './session'
@@ -36,7 +36,6 @@ import { writeExcludedFolders } from '../Settings/settings'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { machine } from '../Platform/machine'
-import { buildPageIndex, connPage } from '../Connections/pageIndex'
 import * as bundles from '../Bundles/bundle'
 import { handleMutate } from './mutate'
 
@@ -1286,33 +1285,6 @@ describe('an own write of a page', () => {
   })
 })
 
-describe('returningNames', () => {
-  const live = buildPageIndex([connPage('A', 'Notes/Alpha.md')])
-  const back = [connPage('B', 'Notes/Daily/Alpha.md')]
-  const after = buildPageIndex([
-    connPage('A', 'Notes/Alpha.md'),
-    connPage('B', 'Notes/Ideas/Alpha.md'),
-  ])
-  const { names, own } = returningNames(live, after, back)
-  const holder = (map: Map<string, string>, key: string) =>
-    after.resolve(map.get(key) ?? '').page?.id
-
-  it('the arrival’s collision re-spells the live page it took a key from', () => {
-    expect(holder(names, 'alpha')).toBe('A')
-  })
-
-  it('a key only the returning page answered follows it', () => {
-    expect(holder(own, 'daily/alpha')).toBe('B')
-    expect(live.resolve('daily/alpha').status).toBe('phantom')
-    expect(holder(names, 'daily/alpha')).toBe('B')
-  })
-
-  it('a key the live world still resolves stays out of the cascade', () => {
-    expect(holder(own, 'alpha')).toBe('B')
-    expect(holder(names, 'alpha')).toBe('A')
-  })
-})
-
 describe('a re-spell on the notes', () => {
   const failing: string[] = []
   const linker = (): string => abs('Notes', 'L.md')
@@ -1388,6 +1360,28 @@ describe('a re-spell on the notes', () => {
     await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).not.toContain('See [[X]].')
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a restore re-spells a key only its returning page answered', async () => {
+    await mkdir(abs('Notes', 'Deep'))
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_deep' }))
+    await writeFile(abs('Notes', 'Deep', 'X.md'), `---\nID: ${ULID_D}\n---\n\nx\n`)
+    await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[Deep/X]].\n`)
+    await refreshTree(root)
+    const bundle = bundleOf(
+      await settledMutate(root, { op: 'delete', path: 'Notes/Deep/X.md', kind: 'page' }),
+    )
+    const moved = await settledMutate(root, {
+      op: 'rename',
+      path: 'Notes/Deep',
+      kind: 'set',
+      newName: 'Moved',
+    })
+    if (!moved.ok) throw new Error(moved.error.message)
+    expect(await readFile(linker(), 'utf8')).toContain('See [[Deep/X]].')
+    expect((await settledMutate(root, { op: 'restore', bundlePath: bundle })).ok).toBe(true)
+    expect(await pathExists(abs('Notes', 'Moved', 'X.md'))).toBe(true)
+    expect(await readFile(linker(), 'utf8')).not.toContain('[[Deep/X]]')
   })
 
   // A Set whose page links its sibling by path, trashed and restored beside a new Set under its name.

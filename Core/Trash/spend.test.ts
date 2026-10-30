@@ -704,7 +704,7 @@ describe('restore — the record spends, headless', () => {
     expect('<Projects>' in fm).toBe(false)
   })
 
-  it('a tag that can’t go back is named, and the record stays', async () => {
+  it('a tag that can’t go back is named, and the bundle is spent', async () => {
     await settledMutate(root, {
       op: 'delete',
       path: '.nexus/contexts/Projects/Pommora',
@@ -715,10 +715,10 @@ describe('restore — the record spends, headless', () => {
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(r).toEqual({ ok: true, value: { unrestored: ['Alpha'] } })
-    expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
+    expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
   })
 
-  it('a tag neither of two pages claiming one id takes back is named, and the record stays', async () => {
+  it('a tag neither of two pages claiming one id takes back is named, and the bundle is spent', async () => {
     await settledMutate(root, {
       op: 'delete',
       path: '.nexus/contexts/Projects/Pommora',
@@ -730,7 +730,7 @@ describe('restore — the record spends, headless', () => {
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
     expect(r).toEqual({ ok: true, value: { unrestored: ['Alpha copy'] } })
-    expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
+    expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
     for (const file of [join(root, 'Notes', 'Daily', 'Alpha.md'), copy])
       expect(splitFrontmatter(await readFile(file, 'utf8'))).not.toHaveProperty('<Projects>')
   })

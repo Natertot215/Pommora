@@ -74,7 +74,7 @@ describe('ArchiveView', () => {
       root.render(
         <>
           <ContentHostContext.Provider value={{ tabId: 't1', key: `archive:${owner.id}`, parked }}>
-            <ArchiveView owner={owner} />
+            <ArchiveView owner={owner} archiveId={collection.id} />
           </ContentHostContext.Provider>
           <ActionLabel />
           <PageReaderWindow />

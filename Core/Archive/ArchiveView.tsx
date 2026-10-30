@@ -12,7 +12,6 @@ import { type ActionBar, useDeclareActions } from '../Interface/Notifications/no
 import { usePublishCount } from '../Interface/Subfield/publish'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { containerOwner } from '../Nexus/treeIndex'
-import { owningCollection } from '../Nexus/treePatch'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession } from '../Session/store'
@@ -21,13 +20,18 @@ import { ARCHIVE_TITLE } from './archivePlace'
 import './archive-view.css'
 
 /** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
-export function ArchiveView({ owner }: { owner: CollectionNode | SetNode }): React.JSX.Element {
+export function ArchiveView({
+  owner,
+  archiveId,
+}: {
+  owner: CollectionNode | SetNode
+  archiveId: string
+}): React.JSX.Element {
   const host = useContentHost()
   const shown = useHostShown()
   const query = useSession((s) => (host ? s.viewSearch[host.tabId]?.query : undefined)) ?? ''
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const openReader = useSession((s) => s.openReader)
-  const archiveId = useSession((s) => owningCollection(s.tree, owner)?.id) ?? owner.id
   const open = (row: BundleRow): void => {
     const stored = row.stored
     if (!stored) return

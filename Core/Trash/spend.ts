@@ -293,8 +293,7 @@ export async function restoreTrashed(
     withUnswept(joinCascades(arrived.cascade, owed), title, scrubbed.unread),
     recordedPartly(stored, title),
   )
-  // The record outlives a partial re-tag, so what didn't come back stays written down.
-  if (!unspent.length) await spendBundle(root, bundle)
+  await spendBundle(root, bundle)
   const left = originOf(stored)
   if (!into) await refileLanded(root, record, left && collectionOf(left), dir)
   return ok({

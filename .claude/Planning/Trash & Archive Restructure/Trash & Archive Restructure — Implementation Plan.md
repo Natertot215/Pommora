@@ -264,7 +264,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
   - [x] Task 2-2 · The content record's `partial` leaves
   - [x] Task 2-3 · Records from the tree, and a Context's place
-  - [ ] Task 2-4 · The rest of the residue
+  - [x] Task 2-4 · The rest of the residue
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
@@ -2715,7 +2715,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 - [ ] The two rewritten L-5 cases are green, and red with the `unspent` gate restored.
 - [ ] *"a restore re-spells a key only its returning page answered"* is green, and red with `returningCascade`'s `own`-into-`names` join removed.
 - [ ] `ArchiveView.test.tsx`'s Set-owner case (`:341`, listing `{ kind: 'archive', id: 'c1' }` within `s1`) passes.
-- [ ] `git grep -nP "undoTo\?|export function returningNames|\?\? owner\.id|outlives a partial re-tag" -- Core` prints nothing.
+- [ ] `git grep -nP "undoTo\?|export function returningNames|\?\? owner\.id|outlives a partial re-tag" -- Core` prints only `offerDeleted`'s own `undoTo?` parameter (`confirmations.ts`), which Task 5-2 removes.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 

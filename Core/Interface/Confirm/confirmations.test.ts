@@ -254,16 +254,6 @@ describe('a delete through the confirmation', () => {
     expect(await del('page')).toBe(false)
   })
 
-  it('an Undo given a destination restores its bundle there', async () => {
-    await confirmDelete({ path: 'Notes/A', kind: 'page', title: 'A', undoTo: { kind: 'archive' } })
-    await currentNotification()?.action?.run()
-    expect(mutate).toHaveBeenLastCalledWith({
-      op: 'restore',
-      bundlePath: '.trash/b1',
-      destination: { kind: 'archive' },
-    })
-  })
-
   it('offers an Undo that restores the bundle the delete answered with', async () => {
     await del('page')
     await currentNotification()?.action?.run()
