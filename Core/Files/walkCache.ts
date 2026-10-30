@@ -1,6 +1,6 @@
 import { type FileStat, sameFile, statOrNull } from '../Platform/machine'
 
-// A hit is refused while the parse happened within this window of the file's own mtime — a same-tick edit on a coarse-mtime volume (exFAT/SMB) is invisible to (mtime, size). git's racy-index rule.
+// A hit is refused while the parse happened within this window of the file's own mtime — a same-tick edit on a coarse-mtime volume (exFAT/SMB) is invisible to its identity (`sameFile`). git's racy-index rule.
 const RACY_WINDOW_MS = 2000
 
 type Entry = { stat: FileStat; verifiedAt: number; gen: number; value: unknown }

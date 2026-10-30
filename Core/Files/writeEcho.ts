@@ -2,8 +2,8 @@
 
 import { type FileStat, sameFile, statOrNull } from '../Platform/machine'
 
-// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume whose change time is coarse or absent, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
-type Echo = { at: number; landing: boolean; stat?: FileStat }
+// A landing is an echo while its file still holds the stat it answered (`sameFile`), however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes. While the file's next landing is in flight, its record keeps the stat the last one answered. A move or rename is an echo for the whole window.
+type Echo = { kind: 'move'; at: number } | { kind: 'landing'; stat?: FileStat }
 const recent = new Map<string, Echo>()
 const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
@@ -22,10 +22,12 @@ export function setWriteTap(next: WriteTap | null): void {
 
 // Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
 export function recordWrite(absPath: string, landing = false): void {
-  recent.set(absPath, { at: Date.now(), landing })
+  const last = recent.get(absPath)
+  const stat = last?.kind === 'landing' ? last.stat : undefined
+  recent.set(absPath, landing ? { kind: 'landing', stat } : { kind: 'move', at: Date.now() })
   if (recent.size > sweepAbove) {
     const cutoff = Date.now() - WINDOW_MS
-    for (const [p, r] of recent) if (!r.landing && r.at < cutoff) recent.delete(p)
+    for (const [p, r] of recent) if (r.kind === 'move' && r.at < cutoff) recent.delete(p)
     sweepAbove = Math.max(256, 2 * recent.size)
   }
   tap?.wrote(absPath)
@@ -33,7 +35,7 @@ export function recordWrite(absPath: string, landing = false): void {
 
 /** Gives the landing recorded at `absPath` the stat it answered, so its echo is told by that stat. */
 export function recordLanding(absPath: string, stat: FileStat): void {
-  recent.set(absPath, { at: Date.now(), landing: true, stat })
+  recent.set(absPath, { kind: 'landing', stat })
 }
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
@@ -74,7 +76,7 @@ export function emitWatch(event: ChangeEvent, absPath: string): void {
 
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
-  if (r === undefined || r.landing || Date.now() - r.at <= WINDOW_MS) return r
+  if (r?.kind !== 'move' || Date.now() - r.at <= WINDOW_MS) return r
   recent.delete(absPath)
   return undefined
 }
@@ -82,7 +84,7 @@ const held = (absPath: string): Echo | undefined => {
 /** An echo known without a stat: a move's or rename's record, or a descendant of a folder just moved. */
 export function isRecentWrite(absPath: string): boolean {
   const r = held(absPath)
-  if (r !== undefined) return !r.landing
+  if (r !== undefined) return r.kind === 'move'
   // Only an exact ancestor can prefix-match, so walk absPath's parent directories instead of scanning every record: O(depth) lookups replace the O(N) scan.
   for (
     let slash = absPath.lastIndexOf('/');
@@ -90,7 +92,7 @@ export function isRecentWrite(absPath: string): boolean {
     slash = absPath.lastIndexOf('/', slash - 1)
   ) {
     const tp = recent.get(absPath.slice(0, slash))
-    if (tp !== undefined && Date.now() - tp.at <= PREFIX_WINDOW_MS) return true
+    if (tp?.kind === 'move' && Date.now() - tp.at <= PREFIX_WINDOW_MS) return true
   }
   return false
 }
@@ -100,7 +102,7 @@ export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
       const r = held(e.absPath)
-      if (!r?.stat) return true
+      if (r?.kind !== 'landing' || !r.stat) return true
       if (sameFile(r.stat, await statOrNull(e.absPath))) return false
       if (recent.get(e.absPath) === r) recent.delete(e.absPath)
       return true

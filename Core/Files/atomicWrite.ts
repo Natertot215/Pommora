@@ -10,7 +10,7 @@ import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
 
-/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and takes the stat its landing answered, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume whose change time is coarse or absent (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
+/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and takes the stat its landing answered, a file kept at its time drops the walk cache's parse, which its identity (`sameFile`) would still vouch for, and the files that landed are noted as one batch carrying the stat each now holds. Text reports 'change' for a new file too, since the tree and the index take an add and a change alike; bytes are an asset's and report 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed. */
 async function landOwn(
   files: readonly Landing[],
   bodyOnly?: boolean,
