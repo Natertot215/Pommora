@@ -1,6 +1,7 @@
 import { mintBundle } from '../Bundles/bundle'
 import { assignedIds } from '../Nexus/containerFields'
-import { stashedBlock, patchStashBlock, type StashBlock } from './propertyStash'
+import { stashedBlock, patchStashBlock } from './propertyStash'
+import type { StashBlock } from './properties'
 import {
   readRegistry,
   type PropertyRegistry,

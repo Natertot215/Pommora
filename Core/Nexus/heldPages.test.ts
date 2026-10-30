@@ -156,3 +156,92 @@ describe('nexusPages — the tree and the Archive by id', () => {
     expect(await nexusPages(root, tree(root))).toEqual(indexed)
   })
 })
+
+describe('nexusPages — the Trash’s Spaces', () => {
+  let root: string
+  const AREAS = '.trash/.nexus/contexts/Areas/2026-10-20T12-00-00-000Z__Work.deleted'
+  const PROJECTS = '.trash/.nexus/contexts/2026-10-20T12-00-00-000Z__Projects.deleted'
+  const put = async (rel: string, json: unknown): Promise<void> => {
+    await mkdir(dirname(join(root, rel)), { recursive: true })
+    await writeFile(join(root, rel), JSON.stringify(json))
+  }
+  const trashSpace = async (id: string): Promise<void> => {
+    await put(`${AREAS}/_record.json`, {
+      entity: 'space',
+      id,
+      parent: { kind: 'context', id: 'ctx_areas' },
+      members: [],
+    })
+    await put(`${AREAS}/Work/_space.json`, { id })
+  }
+
+  beforeEach(async () => {
+    root = tempRoot('pom-nexuspages-trash-')
+    await mkdir(join(root, '.nexus'), { recursive: true })
+  })
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('holds a trashed Space at its bundle path, and a trashed Context’s Spaces under it', async () => {
+    await trashSpace('sp_work')
+    await put(`${PROJECTS}/_record.json`, {
+      entity: 'context',
+      registry: { id: 'ctx_projects', title: 'Projects' },
+      membership: [],
+    })
+    await put(`${PROJECTS}/Projects/Pom/_space.json`, { id: 'sp_pom' })
+    const { byId, stored } = await nexusPages(root, tree(root))
+    expect(byId.get('sp_work')).toEqual({
+      id: 'sp_work',
+      kind: 'space',
+      title: 'Work',
+      path: `${AREAS}/Work`,
+    })
+    expect(byId.get('sp_pom')).toEqual({
+      id: 'sp_pom',
+      kind: 'space',
+      title: 'Pom',
+      path: `${PROJECTS}/Projects/Pom`,
+    })
+    expect(stored.map((s) => [s.id, s.contextId]).sort()).toEqual([
+      ['sp_pom', 'ctx_projects'],
+      ['sp_work', 'ctx_areas'],
+    ])
+  })
+
+  it('a live Space sharing a trashed Space’s id keeps its entry, and the trashed one fills no null', async () => {
+    const t = tree(root)
+    const live = {
+      kind: 'space',
+      id: 'sp_work',
+      title: 'Work',
+      path: '.nexus/contexts/Areas/Work',
+      contextId: 'ctx_areas',
+    }
+    t.contexts.push({ def: { id: 'ctx_areas', title: 'Areas' }, spaces: [live] } as never)
+    t.collections[0].pages.push({
+      kind: 'page',
+      id: 'pA',
+      title: 'A copy',
+      path: 'Notes/A copy.md',
+    })
+    await trashSpace('sp_work')
+    await put('.trash/.nexus/contexts/Areas/2026-10-20T12-00-01-000Z__Home.deleted/_record.json', {
+      entity: 'space',
+      id: 'pA',
+      parent: { kind: 'context', id: 'ctx_areas' },
+      members: [],
+    })
+    await put(
+      '.trash/.nexus/contexts/Areas/2026-10-20T12-00-01-000Z__Home.deleted/Home/_space.json',
+      {
+        id: 'pA',
+      },
+    )
+    const { byId, stored } = await nexusPages(root, t)
+    expect(byId.get('sp_work')?.path).toBe('.nexus/contexts/Areas/Work')
+    expect(byId.get('pA')).toBeNull()
+    expect(stored.map((s) => s.id).sort()).toEqual(['pA', 'sp_work'])
+  })
+})

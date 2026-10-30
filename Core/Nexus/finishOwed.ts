@@ -313,7 +313,7 @@ async function finishContext(
         await leave(root, dir, e.bundle!, { kind: 'context', id })
         oweWalk(root)
       } else await dropDeparture(root, { kind: 'context', id })
-      return unlinkContextKey(root, old, id, dir)
+      return unlinkContextKey(root, old, id, [dir, join(root, e.bundle!)])
     },
     reach,
     () => reachConfig(root, { kind: 'property', propertyId: id }),
@@ -363,7 +363,7 @@ async function finishSpace(
   const strip = await sweepEach(
     e.strip,
     (old) => group.spaces.some(rivalTitled(old, id)),
-    (old) => unlinkSpaceValue(root, group.def.title, old, under(old)),
+    (old) => unlinkSpaceValue(root, group.def.title, old, [under(old), join(root, e.bundle!)]),
     reach,
     () => reachConfig(root, { kind: 'gone', propertyId: e.contextId, ids: [id] }),
   )

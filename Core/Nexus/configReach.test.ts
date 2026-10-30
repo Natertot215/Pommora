@@ -11,10 +11,7 @@ import { goneContainers, goneEdit, propertyClear, reachConfig, reachReport } fro
 import { forgetLastReads } from '../Files/atomicWrite'
 import { unsweptLine } from './entities'
 
-vi.mock('./liveTree', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('./liveTree')>()
-  return { ...mod, liveTreeOf: vi.fn(mod.liveTreeOf) }
-})
+vi.mock('./liveTree', { spy: true })
 
 type Raw = Record<string, unknown>
 

@@ -430,6 +430,36 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['hi'])
   })
 
+  it('a property deleted while a Space sat in the Trash leaves the trashed Space and returns to it with its restore', async () => {
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
+    const groupId = newId()
+    if (!(await createContextGroup(root, 'Projects', groupId)).ok) throw new Error('context failed')
+    const spaceId = newId()
+    const space = await createSpace(root, groupId, 'Pommora', spaceId)
+    if (!space.ok) throw new Error('space failed')
+    const id = await seedPriority()
+    await patchSidecar(join(root, space.value.path), 'space', (raw) => ({ ...raw, Priority: 'hi' }))
+    await refreshTree(root)
+    expect(
+      (await settledMutate(root, { op: 'delete', path: space.value.path, kind: 'space' })).ok,
+    ).toBe(true)
+    const trashed = (await listBundles(root, { kind: 'trash' }))[0]
+    const trashedSidecar = join(root, trashed.bundlePath, trashed.artifactName ?? '', '_space.json')
+    expect((await readJsonAt(trashedSidecar)).Priority).toBe('hi')
+
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    expect(await readJsonAt(trashedSidecar)).not.toHaveProperty('Priority')
+    const property = (await listBundles(root, { kind: 'trash' })).find(
+      (b) => b.record.entity === 'property',
+    )
+    expect(property?.record).toMatchObject({ values: { [spaceId]: 'hi' } })
+
+    await settledMutate(root, { op: 'restore', bundlePath: property?.bundlePath ?? '' })
+    await settledMutate(root, { op: 'restore', bundlePath: trashed.bundlePath })
+    expect((await readJsonAt(join(root, space.value.path, '_space.json'))).Priority).toBe('hi')
+  })
+
   it.skipIf(noModeBits)(
     'a restore that can’t refill a page from its stash says so with Try Again',
     async () => {

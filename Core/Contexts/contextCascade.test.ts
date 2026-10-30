@@ -118,11 +118,11 @@ describe('the cascades open only the members the index names', () => {
   })
 
   it('the unlinks open the holders alone', async () => {
-    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toMatchObject({
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', [pomDir()])).toMatchObject({
       skipped: 0,
     })
     expect(sweepSpy.mock.calls[0]?.[0]).toEqual([page(), csSidecar()])
-    expect(await unlinkContextKey(root, 'Classes', 'ctxC', classesDir())).toMatchObject({
+    expect(await unlinkContextKey(root, 'Classes', 'ctxC', [classesDir()])).toMatchObject({
       skipped: 0,
     })
     expect(sweepSpy.mock.calls[1]?.[0]).toEqual([classes()])
@@ -242,9 +242,11 @@ describe('renames and casing', () => {
       other(),
       '---\nid: p2\n<projects>:\n  - Pommora\n<Projects>: Sapphire\n---\nbody',
     )
-    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toMatchObject({
-      skipped: 0,
-    })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', [projectsDir()])).toMatchObject(
+      {
+        skipped: 0,
+      },
+    )
     expect(await fmOf(other())).toEqual({ id: 'p2', '<projects>': ['Pommora'] })
   })
 })
@@ -645,9 +647,11 @@ describe('renames on the notes', () => {
 describe('unlink cascades', () => {
   it('unlinkContextKey strips the wrapped key from both scopes', async () => {
     const { unlinkContextKey } = await import('./contextCascade')
-    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toMatchObject({
-      skipped: 0,
-    })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', [projectsDir()])).toMatchObject(
+      {
+        skipped: 0,
+      },
+    )
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
@@ -655,7 +659,7 @@ describe('unlink cascades', () => {
   it('unlinkSpaceValue strips the title, dropping an emptied key', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody')
     const { unlinkSpaceValue } = await import('./contextCascade')
-    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toMatchObject({
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', [pomDir()])).toMatchObject({
       skipped: 0,
     })
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
@@ -665,14 +669,14 @@ describe('unlink cascades', () => {
   it('unlinkSpaceValue strips a member written as a number', async () => {
     await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
     expect(
-      await unlinkSpaceValue(root, 'Classes', '2024', join(contextsDir(root), 'Classes', '2024')),
+      await unlinkSpaceValue(root, 'Classes', '2024', [join(contextsDir(root), 'Classes', '2024')]),
     ).toMatchObject({ skipped: 0 })
     expect((await fmOf(other()))['<Classes>']).toEqual(['CS 161'])
   })
 
   it('unlinkSpaceValue strips a tag written as a single value', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
-    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toMatchObject({
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', [pomDir()])).toMatchObject({
       skipped: 0,
     })
     expect('<Projects>' in (await fmOf(other()))).toBe(false)
@@ -687,10 +691,12 @@ describe('the sweep tells the truth about what it did', () => {
     )
     const { unlinkContextKey } = await import('./contextCascade')
     const alien = join(root, 'Notes', 'Alien.md')
-    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toMatchObject({
-      skipped: 1,
-      refused: [alien],
-    })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', [projectsDir()])).toMatchObject(
+      {
+        skipped: 1,
+        refused: [alien],
+      },
+    )
     expect((await fmOf(alien))['<Projects>']).toEqual(['Pommora'])
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
   })
@@ -702,7 +708,7 @@ describe('the sweep tells the truth about what it did', () => {
       return { ...swept, skipped: [join(root, 'Notes', 'Gone.md')] }
     })
     const { unlinkSpaceValue } = await import('./contextCascade')
-    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toMatchObject({
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', [pomDir()])).toMatchObject({
       skipped: 1,
     })
     expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
@@ -722,9 +728,11 @@ describe('the Context cascades and $order', () => {
 
   it('a delete drops the id from a Space that only listed it', async () => {
     await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', $order: ['ctx_projects'] }))
-    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toMatchObject({
-      skipped: 0,
-    })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', [projectsDir()])).toMatchObject(
+      {
+        skipped: 0,
+      },
+    )
     expect('$order' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 })
@@ -735,9 +743,11 @@ describe('a delete sweep never strips a passenger', () => {
   it('roots under the deleted Context keep their keys; outside roots still lose them', async () => {
     await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }))
     const { unlinkContextKey } = await import('./contextCascade')
-    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', projectsDir())).toMatchObject({
-      skipped: 0,
-    })
+    expect(await unlinkContextKey(root, 'Projects', 'ctx_projects', [projectsDir()])).toMatchObject(
+      {
+        skipped: 0,
+      },
+    )
     const pom = await readJsonAt(pomSidecar())
     expect(pom['<Projects>']).toEqual(['Sapphire'])
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
@@ -811,7 +821,7 @@ describe('the finish’s Context and Space arms', () => {
 describe('neither clearing a value nor renaming a key writes a modified_at', () => {
   it('unlinkSpaceValue strips the value and nothing else', async () => {
     const { unlinkSpaceValue } = await import('./contextCascade')
-    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', pomDir())).toMatchObject({
+    expect(await unlinkSpaceValue(root, 'Projects', 'Pommora', [pomDir()])).toMatchObject({
       skipped: 0,
     })
     const fm = await fmOf(page())

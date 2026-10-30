@@ -143,6 +143,36 @@ describe('a page delete', () => {
     expect((await recordOf(r.value.bundled.bundlePath)).links).toBeUndefined()
   })
 
+  it('a trashed Space sharing a live Space’s id is passed over by the strip silently, neither skipped nor owed', async () => {
+    await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
+    const work = join(contextsDir(root), 'Areas', 'Work')
+    await putJson(join(work, SIDECAR_FILENAME.space), { id: 'sp_work', Related: '[[Target]]' })
+    const bundle = await mintBundle(root, { kind: 'trash' }, work, {
+      entity: 'space',
+      id: 'sp_work',
+      parent: { kind: 'context', id: 'ctx_areas' },
+      members: [],
+    })
+    const copy = join(bundle, 'Work', SIDECAR_FILENAME.space)
+    await mkdir(join(bundle, 'Work'))
+    await copyFile(join(work, SIDECAR_FILENAME.space), copy)
+    const copied = await readFile(copy, 'utf8')
+    await refreshTree(root)
+    const r = await del('Notes/Target.md', 'page')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    expect(r.value.cascade).toEqual({
+      pages: ['.nexus/contexts/Areas/Work/_space.json'],
+      hosts: [],
+    })
+    expect(await readJsonAt(join(work, SIDECAR_FILENAME.space))).not.toHaveProperty('Related')
+    expect(await readFile(copy, 'utf8')).toBe(copied)
+    expect((await recordOf(r.value.bundled.bundlePath)).links).toEqual([
+      { page: 'sp_work', property: RELATED.id, value: '[[Target]]' },
+    ])
+    await finishOwed(root)
+    expect(await readNotes(root)).toEqual({})
+  })
+
   it('replies with an empty report when nothing links it', async () => {
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
@@ -633,6 +663,22 @@ describe('a Context or Space delete on the notes', () => {
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.cascade?.owed).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Context delete leaves its own Spaces’ tags of each other in its bundle', async () => {
+    const home = join(root, AREAS, 'Home', SIDECAR_FILENAME.space)
+    await putJson(home, { id: 'sp_home', '<Areas>': ['Work'] })
+    const written = await readFile(home, 'utf8')
+    await refreshTree(root)
+    const r = await del(AREAS, 'context')
+    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    const { bundlePath } = r.value.bundled
+    await finishOwed(root)
+    expect(
+      await readFile(join(root, bundlePath, 'Areas', 'Home', SIDECAR_FILENAME.space), 'utf8'),
+    ).toBe(written)
+    expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
+    expect((await readJsonAt(home))['<Areas>']).toEqual(['Work'])
   })
 
   it("a Space deleted while its Context owes a rename strips the holders under the Context's new title and stays owed", async () => {

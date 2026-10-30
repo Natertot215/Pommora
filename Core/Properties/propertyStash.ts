@@ -1,20 +1,12 @@
 // A Collection sidecar's `property_stash`: per property, the values a Remove set aside, keyed by page id, and when it set them aside.
 
-import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { patchSidecar } from '../Files/sidecar'
 import { heldTreeOf } from '../Nexus/liveTree'
 import { readFileHistoryConfig } from '../Settings/settings'
 import type { CollectionNode } from '../Nexus/tree'
-
-/** One property's stashed values by page id, when they were removed, and, per page, the key its line stood above; a malformed `above` reads as none. */
-export const stashBlock = z.object({
-  removed_at: z.string(),
-  values: z.record(z.string(), z.unknown()),
-  above: z.record(z.string(), z.string()).optional().catch(undefined),
-})
-export type StashBlock = z.infer<typeof stashBlock>
+import { stashBlock, type StashBlock } from './properties'
 
 export function stashedBlock(
   sidecar: Record<string, unknown> | null,

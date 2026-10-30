@@ -279,7 +279,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 4** — Reach-In
   - [x] Task 4-1 · The store-of-path rule
-  - [ ] Task 4-2 · Trashed Spaces become holders
+  - [x] Task 4-2 · Trashed Spaces become holders
   - [ ] Task 4-3 · The Trash is admitted and watched
   - [ ] Task 4-4 · A cascade reaches the Trash by the record's Collection
   - [ ] Task 4-5 · The returning side of the frozen model leaves
@@ -5206,6 +5206,7 @@ The stash schema moves into the property model, the one module a Collection side
 
 - [ ] The four new cases are green, and each is watched red with its hunk reverted.
 - [ ] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`. `contextCascade.test.ts`'s twelve unlink calls change as CHANGE names, every expectation holding.
+- [ ] **Flips Found in Execution:** `setSpaceProperty.test.ts`' "a restored Space keeps an option word deleted while it sat in the Trash" becomes "a trashed Space loses an option word deleted meanwhile, as a live one does", expecting `['alpha']` (Decision D-4); `configReach.test.ts` mocks `./liveTree` with `{ spy: true }`, since the new edge puts `configReach.ts` inside `liveTree`'s import loop, where an `importOriginal` factory binds it to the original `liveTreeOf`. `RootsById` moves from `governedSweep.ts` into `heldPages.ts`, beside `addressable`, which reads it.
 - [ ] `git grep -n "skipUnder" -- Core` prints nothing, and `git grep -n "stashBlock\|StashBlock" -- Core` shows the schema defined in `properties.ts` alone, with no file importing it from `propertyStash`.
 - [ ] Run the gates (`npm run typecheck`, `npm run test`, `npm run lint`). `assignment.test.ts`, `governedWorldWrite.test.ts`, `repairSweep.test.ts`, and `deleteOrder.test.ts` are the suites that break without the move: each enters the cycle through `propertyStash.ts` (`deleteOrder.test.ts` by way of `mutate.ts` and `assignment.ts`), so `record.ts` evaluates before it finishes. Native module evaluation throws a ReferenceError at that read; vitest's module runner answers it `undefined`, and `recordFile` then refuses every property record holding `stashes`.
 - [ ] Check for unnecessary code or mistakes.
@@ -9396,7 +9397,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `Core/Nexus/settle.ts:323` — "through `landed.repair`" — Task 4-5
 - `Core/Trash/trashedCopies.ts:1` — "and a returning value refilled into a trashed copy" — Task 4-6
 - `Core/Nexus/governedRoot.ts:59` — `Frozen`, "a frozen copy" — Task 4-6
-- `Core/Nexus/governedSweep.ts:92` — "so a trashed copy joins the live tree's records" — Task 4-6
+- `Core/Nexus/heldPages.ts` (`RootsById`'s doc, moved from `governedSweep.ts:92` in Task 4-2) — "so a trashed copy joins the live tree's records" — Task 4-6
 - `Core/Properties/assignment.ts:25,48,63` — "into the Trash copies"; the Trash listing — Task 4-6
 - `Core/Nexus/owed.ts:47,95` — `values`, "what it worked out" — Task 4-6
 - `Core/Nexus/cascade.ts:296` — "what a restore worked out landed first" — Task 4-6

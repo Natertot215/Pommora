@@ -9,7 +9,7 @@ import { parseContextKey } from '../Contexts/contexts'
 import { isBlankRaw } from '../Files/rootValues'
 import { collectionFolders, rootId } from '../Nexus/governedSweep'
 import { storeOf } from '../Paths/bundleLayout'
-import { addressable, type NexusPages, nexusPages } from '../Nexus/heldPages'
+import { addressable, type NexusPages, nexusPages, storedSpaces } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { archiveReach } from '../Nexus/treePatch'
@@ -67,14 +67,17 @@ export const movedTo = (rel: string, moved?: FolderMove): string =>
 const sidecarAt = (root: string, rel: string, moved?: FolderMove): string =>
   join(root, movedTo(rel, moved), SPACE_SIDECAR)
 
-/** The sidecar of each Space the tree holds that `holds` answers for, at the folder `moved` sent it to when the tree still lists the one it left. */
+/** The sidecar of each Space the tree or `stored` holds that `holds` answers for, a tree Space at the folder `moved` sent it to when the tree still lists the one it left. */
 export const spaceFiles = (
   root: string,
   tree: NexusTree,
+  stored: readonly SpaceNode[],
   holds: (space: SpaceNode) => boolean,
   moved?: FolderMove,
 ): string[] =>
-  tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
+  [...tree.contexts.flatMap((g) => g.spaces), ...stored]
+    .filter(holds)
+    .map((s) => sidecarAt(root, s.path, moved))
 
 /** The pages and Spaces holding any of `keys`: pages from the content index (the corpus before it's ready), Spaces from the tree. A property's key means something only where a schema governs it, so `governed` reaches the pages of Collections and the Archive, and `{ collection }` one Collection's and its Archive's; a Context tag means something on any page, so `anywhere` reaches every one. Both of those reach every Space holding the key, every Space whose row order lists `id`, and every Space the tree couldn't read, which may hold anything. `title` narrows a Context key's pages to those naming that Space, and `moved` points a Space under a folder the op moved ahead of the tree. `every` passes over a page the index lists without every key while its row still describes its file, as a rename's clash check counts them, and reads no stored page. */
 export async function findHolders(root: string, q: HolderQuery, read?: 'values'): Promise<Holders> {
@@ -96,18 +99,19 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
       Object.hasOwn(s[parseContextKey(key) === null ? 'values' : 'contextKeys'] ?? {}, key),
     ) ||
     (q.id !== undefined && !!s.rowOrder?.includes(q.id))
+  const known = read ? await nexusPages(root, tree) : null
   const spaces =
     typeof q.reach === 'string'
       ? [
-          ...spaceFiles(root, tree, holds, q.moved),
+          ...spaceFiles(root, tree, known?.stored ?? (await storedSpaces(root)), holds, q.moved),
           ...(tree.unreadable ?? []).flatMap((u) =>
             u.kind === 'space' ? [sidecarAt(root, u.path, q.moved)] : [],
           ),
         ]
       : []
   const files = [...pages, ...spaces]
-  if (!read) return { files, held: [] }
-  return readHolders(root, files, q.keys, (await nexusPages(root, tree)).byId, listed)
+  if (!known) return { files, held: [] }
+  return readHolders(root, files, q.keys, known.byId, listed)
 }
 
 /** Each of `files` read once: `held` lists each one holding any of `keys`, or that couldn't be read, with the keys `listed`, the index's members of each key in turn, last read it holding, and `files` leaves out a holder no id addresses, which a strip passes over since no restore could put its value back. */
@@ -136,7 +140,7 @@ export async function readHolders(
     const holding = keys.filter((k, i) => (raw ? Object.hasOwn(raw, k) : !!listed[i]?.has(rel)))
     if (raw && !holding.length) continue
     const id = raw ? rootId(file, raw) : undefined
-    const addressed = addressable(byId, id) ? id : null
+    const addressed = addressable(root, byId, id, file) ? id : null
     if (raw && addressed === null) heldOut.add(file)
     held.push({
       file,

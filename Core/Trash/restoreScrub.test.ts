@@ -536,7 +536,7 @@ describe('a Space sidecar is a context root too', () => {
   const sidecar = async (rel: string): Promise<Record<string, unknown>> =>
     await readJsonAt(join(contextsDir(root), rel, '_space.json'))
 
-  it('keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does', async () => {
+  it('a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space’s restore', async () => {
     await seedPassenger()
     expect(
       (
@@ -556,12 +556,19 @@ describe('a Space sidecar is a context root too', () => {
         })
       ).ok,
     ).toBe(true)
-    const projects = (await listBundles(root, { kind: 'trash' })).find(
+    const trashed = await listBundles(root, { kind: 'trash' })
+    const projects = trashed.find(
       (b) => b.record.entity === 'context' && b.bundlePath.includes('Projects'),
     )
+    const work = trashed.find((b) => b.record.entity === 'space' && b.bundlePath.includes('Work'))
     expect(projects).toBeDefined()
+    expect(work).toBeDefined()
     const r = await settledMutate(root, { op: 'restore', bundlePath: projects?.bundlePath ?? '' })
     expect(r.ok).toBe(true)
+    expect((await sidecar('Projects/Sapphire'))['<Areas>']).toBeUndefined()
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: work?.bundlePath ?? '' })).ok,
+    ).toBe(true)
 
     const sap = await sidecar('Projects/Sapphire')
     expect(sap['<Areas>']).toEqual(['Work'])

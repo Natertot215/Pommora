@@ -195,14 +195,14 @@ describe('a value write reconciles the Space it lands on', () => {
     expect(options).toEqual(['alpha', 'beta'])
   })
 
-  it('a restored Space keeps an option word deleted while it sat in the Trash', async () => {
+  it('a trashed Space loses an option word deleted meanwhile, as a live one does', async () => {
     await seed({ Tags: ['alpha', 'beta'] })
     const deleted = await settledMutate(root, { op: 'delete', path: spaceRel, kind: 'space' })
     if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
     expect((await deleteOption(root, tagsId, 'opt_beta')).ok).toBe(true)
     const { bundlePath } = deleted.value.bundled
     expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
-    expect((await sidecar()).Tags).toEqual(['alpha', 'beta'])
+    expect((await sidecar()).Tags).toEqual(['alpha'])
   })
 
   it('writes the exact key, leaving another casing of it as written', async () => {
