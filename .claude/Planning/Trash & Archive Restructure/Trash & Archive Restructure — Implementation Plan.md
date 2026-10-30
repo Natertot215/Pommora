@@ -14,7 +14,7 @@
 
 | Phase | Estimate | Measured |
 |---|---|---|
-| 1 · The Landing | about +46 | |
+| 1 · The Landing | about +46 | +68 (+198 / −130); +45 outside `Core/Testing` |
 | 2 · Residue | about −136 | |
 | 3 · Delete, Journal, and Carry | about −46 | |
 | 4 · Reach-In | about −360 | |
@@ -252,14 +252,14 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Process Overview
 
-- [ ] **Phase 1** — The Landing
+- [x] **Phase 1** — The Landing
   - [x] Task 1-1 · One flush per drive, and the stat after the rename
   - [x] Task 1-2 · The thread-pool line, measured and removed
   - [x] Task 1-3 · The change time identifies a file
   - [x] Task 1-4 · The echo by stat
   - [x] Task 1-5 · The clash check and the option edit pass over vouched rows
   - [x] Task 1-6 · A metadata copy writes each month once
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 2** — Residue
   - [ ] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
   - [ ] Task 2-2 · The content record's `partial` leaves
@@ -332,9 +332,9 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Write the four `nodeMachine landing` cases below and watch each fail: the T-N19 rewrite, "flushes a group once, before renaming any of its files" (one `synced`; it fails with three); "opens each temp to write through to its drive" (it fails while the temp opens `'wx'`); "a failed flush rejects every file it would have made durable and leaves no temp" (it fails without the commit's `await flushed`); "answers its own stat when an outside write lands between the rename and the stat" (the mocked `rename` writes the file from outside once it lands; it fails while the commit answers the post-rename stat unchecked).
-- [ ] Apply the AFTER, `TEMP_FLAGS` wrapped as Biome formats it.
-- [ ] In `.claude/Features/CorePM.md:105`, "each file in a group is written to a dotted temp beside it, and every temp is flushed before any is renamed into place" becomes "each file in a group is written through to the drive in a dotted temp beside it, and each drive the group's temps sit on is flushed once before any of them is renamed into place".
+- [x] Write the four `nodeMachine landing` cases below and watch each fail: the T-N19 rewrite, "flushes a group once, before renaming any of its files" (one `synced`; it fails with three); "opens each temp to write through to its drive" (it fails while the temp opens `'wx'`); "a failed flush rejects every file it would have made durable and leaves no temp" (it fails without the commit's `await flushed`); "answers its own stat when an outside write lands between the rename and the stat" (the mocked `rename` writes the file from outside once it lands; it fails while the commit answers the post-rename stat unchecked).
+- [x] Apply the AFTER, `TEMP_FLAGS` wrapped as Biome formats it.
+- [x] In `.claude/Features/CorePM.md:105`, "each file in a group is written to a dotted temp beside it, and every temp is flushed before any is renamed into place" becomes "each file in a group is written through to the drive in a dotted temp beside it, and each drive the group's temps sit on is flushed once before any of them is renamed into place".
 
 **AFTER**
 
@@ -528,10 +528,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] The four cases are green, and T-N35 ("a file rewritten while its group flushes is left as its writer left it") and the `describeMachine('nodeMachine')` contract still pass.
-- [ ] `git grep -n "handle.sync()" -- Core Desktop` prints `nodeMachine.ts`'s `flush` alone.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The four cases are green, and T-N35 ("a file rewritten while its group flushes is left as its writer left it") and the `describeMachine('nodeMachine')` contract still pass.
+- [x] `git grep -n "handle.sync()" -- Core Desktop` prints `nodeMachine.ts`'s `flush` alone.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-2
 
@@ -581,11 +581,11 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] Both medians are in the commit message and beneath the Net Ledger, and the line exists exactly when the difference is at least 0.5 ms a file.
-- [ ] Under AFTER A, `git grep -n "UV_THREADPOOL_SIZE\|availableParallelism" -- Core Desktop` prints nothing.
-- [ ] `git worktree list` shows what it showed before step 1, and `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`, `ls -d ~/Benchmark-* 2>/dev/null`, and `git status --short .claude/Benchmarks` print nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Both medians are in the commit message and beneath the Net Ledger, and the line exists exactly when the difference is at least 0.5 ms a file.
+- [x] Under AFTER A, `git grep -n "UV_THREADPOOL_SIZE\|availableParallelism" -- Core Desktop` prints nothing.
+- [x] `git worktree list` shows what it showed before step 1, and `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`, `ls -d ~/Benchmark-* 2>/dev/null`, and `git status --short .claude/Benchmarks` print nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-3
 
@@ -599,12 +599,12 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Write the contract case "a rename moves the change time and keeps the modification time" (`Core/Testing/machineContract.ts`, run on all three machines) and the T-N40 rewrite, and watch each fail. Both rest on the change time moving between two calls microseconds apart, which ships unverified on Windows (*§Open Items · Windows and exFAT*), so each skips there through `it.skipIf(windows)`, as the suites' other platform guards spell it; Biome wraps T-N40's title.
-- [ ] Apply the AFTER.
-- [ ] Add `ctimeMs` to every `IndexedStat` literal the suites build: `Core/Index/contentIndex.test.ts:24,98,105`; `Core/Matrix/matrixGraph.test.ts:36,43,50,83,110,127,142,154`; `Core/Pages/fileHistory.test.ts:397`; `Core/Testing/storesContract.ts:64,155,160,238`; `Desktop/Store/open.test.ts:268`; `Desktop/Store/stores.test.ts:68,78,122`; and `open.test.ts`'s two raw `INSERT INTO indexed_files` fixtures (the stale-generation and generation-6 rebuild cases) take the `ctime_ms` column. In `Core/Platform/machine.test.ts`, the three seeded entries (`:25-27`) take `ctimeMs: 500`, and the sweep case (`:54`) reads `expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })`.
-- [ ] Extend T-N11: `const { mtimeMs, size, ctimeMs } = await stat(files[i])` and `toMatchObject({ mtimeMs, size, ctimeMs })`, which fails without the row's change time.
-- [ ] Make Task 1-1's commit answer the temp's `fileStat(own)` alone, watch T-N4 ("a landing keeps the time it is given and answers the stat the file then holds") go red on `nodeMachine`, and restore it: T-N4 is LD-1's pin from here.
-- [ ] Docs: in `.claude/Features/CorePM.md:113`, "reading only files whose mtime or size moved since they were last indexed" becomes "reading only files whose modification time, size, or change time moved since they were last indexed"; in `CorePM.md:160`, "the mtime and size it was read at" becomes "the modification time, size, and change time it was read at" and "re-indexes any file whose mtime or size moved" becomes "re-indexes any file whose modification time, size, or change time moved"; in `.claude/Features/DesktopPM.md:22`, "whose modification time, size, and birth time are unchanged" becomes "whose modification time, size, and change time are unchanged".
+- [x] Write the contract case "a rename moves the change time and keeps the modification time" (`Core/Testing/machineContract.ts`, run on all three machines) and the T-N40 rewrite, and watch each fail. Both rest on the change time moving between two calls microseconds apart, which ships unverified on Windows (*§Open Items · Windows and exFAT*), so each skips there through `it.skipIf(windows)`, as the suites' other platform guards spell it; Biome wraps T-N40's title.
+- [x] Apply the AFTER.
+- [x] Add `ctimeMs` to every `IndexedStat` literal the suites build: `Core/Index/contentIndex.test.ts:24,98,105`; `Core/Matrix/matrixGraph.test.ts:36,43,50,83,110,127,142,154`; `Core/Pages/fileHistory.test.ts:397`; `Core/Testing/storesContract.ts:64,155,160,238`; `Desktop/Store/open.test.ts:268`; `Desktop/Store/stores.test.ts:68,78,122`; and `open.test.ts`'s two raw `INSERT INTO indexed_files` fixtures (the stale-generation and generation-6 rebuild cases) take the `ctime_ms` column. In `Core/Platform/machine.test.ts`, the three seeded entries (`:25-27`) take `ctimeMs: 500`, and the sweep case (`:54`) reads `expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })`.
+- [x] Extend T-N11: `const { mtimeMs, size, ctimeMs } = await stat(files[i])` and `toMatchObject({ mtimeMs, size, ctimeMs })`, which fails without the row's change time.
+- [x] Make Task 1-1's commit answer the temp's `fileStat(own)` alone, watch T-N4 ("a landing keeps the time it is given and answers the stat the file then holds") go red on `nodeMachine`, and restore it: T-N4 is LD-1's pin from here.
+- [x] Docs: in `.claude/Features/CorePM.md:113`, "reading only files whose mtime or size moved since they were last indexed" becomes "reading only files whose modification time, size, or change time moved since they were last indexed"; in `CorePM.md:160`, "the mtime and size it was read at" becomes "the modification time, size, and change time it was read at" and "re-indexes any file whose mtime or size moved" becomes "re-indexes any file whose modification time, size, or change time moved"; in `.claude/Features/DesktopPM.md:22`, "whose modification time, size, and birth time are unchanged" becomes "whose modification time, size, and change time are unchanged".
 
 **AFTER**
 
@@ -837,10 +837,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] The contract case is green on `memoryMachine`, `diskMachine`, and `nodeMachine`; T-N40 is green and went red with `sameFile` comparing birth, T-N11 is green and went red without the row's change time; T-N4 went red with a pre-rename answer.
-- [ ] `git grep -nP "describes\(|birthtimeMs === " -- Core Desktop` prints nothing, and `git grep -n "skipIf(process.platform !== 'darwin')" -- Core/Files/walkCache.test.ts` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The contract case is green on `memoryMachine`, `diskMachine`, and `nodeMachine`; T-N40 is green and went red with `sameFile` comparing birth, T-N11 is green and went red without the row's change time; T-N4 went red with a pre-rename answer.
+- [x] `git grep -nP "describes\(|birthtimeMs === " -- Core Desktop` prints nothing, and `git grep -n "skipIf(process.platform !== 'darwin')" -- Core/Files/walkCache.test.ts` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-4
 
@@ -850,11 +850,11 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time; it rests on the change time moving between two calls microseconds apart, so it skips on Windows through `it.skipIf(windows)`, `windows` imported from `../Testing/hostFs`, *§Open Items · Windows and exFAT*), "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task), and "is still dropped while the next landing of its file is in flight" (landed, then `recordWrite(p, true)`, and `dropOwnEchoes([watched(p)])` equals `[]`; it fails while an in-flight record drops its predecessor's stat).
-- [ ] Rewrite T-N36 as "a rejected landing leaves no echo, so an outside write of the same bytes is heard": after the rejection, `isRecentWrite(p)` is false and `dropOwnEchoes` keeps an event carrying no `written`; it fails while an in-flight record reads as a move's.
-- [ ] In `Desktop/FileWatch/watcher.test.ts:539,596,604`, each `recordWrite(path, bytes)` becomes, once the file holds its bytes, `recordLanding(path, (await machine().stat(path))!)`.
-- [ ] Watch the added cases and T-N36 fail, then apply the AFTER.
-- [ ] In `.claude/Features/DesktopPM.md:22`, "a write is recognized by the bytes it left, while the file still holds them" becomes "a write is recognized by the stat its landing answered, while the file still holds it".
+- [x] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time; it rests on the change time moving between two calls microseconds apart, so it skips on Windows through `it.skipIf(windows)`, `windows` imported from `../Testing/hostFs`, *§Open Items · Windows and exFAT*), "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task), and "is still dropped while the next landing of its file is in flight" (landed, then `recordWrite(p, true)`, and `dropOwnEchoes([watched(p)])` equals `[]`; it fails while an in-flight record drops its predecessor's stat).
+- [x] Rewrite T-N36 as "a rejected landing leaves no echo, so an outside write of the same bytes is heard": after the rejection, `isRecentWrite(p)` is false and `dropOwnEchoes` keeps an event carrying no `written`; it fails while an in-flight record reads as a move's.
+- [x] In `Desktop/FileWatch/watcher.test.ts:539,596,604`, each `recordWrite(path, bytes)` becomes, once the file holds its bytes, `recordLanding(path, (await machine().stat(path))!)`.
+- [x] Watch the added cases and T-N36 fail, then apply the AFTER.
+- [x] In `.claude/Features/DesktopPM.md:22`, "a write is recognized by the bytes it left, while the file still holds them" becomes "a write is recognized by the stat its landing answered, while the file still holds it".
 
 **AFTER**
 
@@ -980,11 +980,11 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] The rewritten and added `writeEcho.test.ts` cases, T-N36, and the three watcher cases are green, and the added cases and T-N36 went red against HEAD's echo.
-- [ ] `git grep -nP "writtenHash|forgetWrite|sha256Hex\(data\)|\.written\b" -- Core/Files Desktop/FileWatch` prints nothing.
-- [ ] `git diff HEAD~1 -- Core/Files/writeEcho.ts` shows `tap?.wrote(absPath)` unmoved inside `recordWrite`, and `Core/Sync/Client/tap.test.ts` passes unchanged.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The rewritten and added `writeEcho.test.ts` cases, T-N36, and the three watcher cases are green, and the added cases and T-N36 went red against HEAD's echo.
+- [x] `git grep -nP "writtenHash|forgetWrite|sha256Hex\(data\)|\.written\b" -- Core/Files Desktop/FileWatch` prints nothing.
+- [x] `git diff HEAD~1 -- Core/Files/writeEcho.ts` shows `tap?.wrote(absPath)` unmoved inside `recordWrite`, and `Core/Sync/Client/tap.test.ts` passes unchanged.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-5
 
@@ -994,11 +994,11 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] T-N15 (`registryProperty.test.ts`, "a rename's clash check with the index warm") keeps its two cases and gains three: "refuses a page whose file took the new key at the time and size the index read it at" (a page holding `Priority: hi` and `Urgenzy: no`, dated to a whole second before the seed, rewritten in place to `Urgency: no` and dated back; it fails without `unlessVouched`'s change time); "reads no page the index vouches for holding the old key alone" (`findHolders(root, { keys: ['Priority', 'Urgency'], reach: 'governed', every: true }, 'values')` with `machine().readText` spied, no read of either page; it fails without `every`'s pass-over); and "an archived page holding both keys refuses nothing and isn't read" (a page holding both keys written under `.nexus/archive/<Collection ID>/Col/` before the seed: the same `findHolders` call names it in no `files` and reads it with no `readText` from its own loop (a read by `nexusPages` isn't this case's), and the rename succeeds; it fails with the hide after the read).
-- [ ] T-N16 (`optionOps.test.ts`, "an option rename with the index warm") keeps its case and gains two: "rewrites a page whose file took the word at the time and size the index read it at" (options `Urgent` and `Normal`, the page holding `Normal` at a whole second, rewritten in place to `Urgent` and dated back, then `Urgent` renamed to `Critical`; it fails without the change time); and "reads no page whose indexed value the edit leaves alone" (the page holding `Normal`, `machine().readText` spied through the rename, no read of it; it fails without the pass-over).
-- [ ] The two cases a rewrite in place drives ("refuses a page whose file took the new key…" and "rewrites a page whose file took the word…") rest on the change time moving between two calls microseconds apart, so each skips on Windows through `it.skipIf(windows)`, as the suites' other platform guards spell it, `windows` joining each suite's `../Testing/hostFs` import (*§Open Items · Windows and exFAT*); the pass-over and archive cases read a change time that holds still, and run everywhere.
-- [ ] Watch the five fail, then apply the AFTER.
-- [ ] In `.claude/Features/CorePM.md:113`, "A cascade reaches every page the index lists as holding its key and reads each from its file, so no row decides what a cascade passes over." becomes "A cascade reaches every page the index lists as holding its key and reads each from its file, a rename's clash check and an option edit passing over a page whose row still describes its file."
+- [x] T-N15 (`registryProperty.test.ts`, "a rename's clash check with the index warm") keeps its two cases and gains three: "refuses a page whose file took the new key at the time and size the index read it at" (a page holding `Priority: hi` and `Urgenzy: no`, dated to a whole second before the seed, rewritten in place to `Urgency: no` and dated back; it fails without `unlessVouched`'s change time); "reads no page the index vouches for holding the old key alone" (`findHolders(root, { keys: ['Priority', 'Urgency'], reach: 'governed', every: true }, 'values')` with `machine().readText` spied, no read of either page; it fails without `every`'s pass-over); and "an archived page holding both keys refuses nothing and isn't read" (a page holding both keys written under `.nexus/archive/<Collection ID>/Col/` before the seed: the same `findHolders` call names it in no `files` and reads it with no `readText` from its own loop (a read by `nexusPages` isn't this case's), and the rename succeeds; it fails with the hide after the read).
+- [x] T-N16 (`optionOps.test.ts`, "an option rename with the index warm") keeps its case and gains two: "rewrites a page whose file took the word at the time and size the index read it at" (options `Urgent` and `Normal`, the page holding `Normal` at a whole second, rewritten in place to `Urgent` and dated back, then `Urgent` renamed to `Critical`; it fails without the change time); and "reads no page whose indexed value the edit leaves alone" (the page holding `Normal`, `machine().readText` spied through the rename, no read of it; it fails without the pass-over).
+- [x] The two cases a rewrite in place drives ("refuses a page whose file took the new key…" and "rewrites a page whose file took the word…") rest on the change time moving between two calls microseconds apart, so each skips on Windows through `it.skipIf(windows)`, as the suites' other platform guards spell it, `windows` joining each suite's `../Testing/hostFs` import (*§Open Items · Windows and exFAT*); the pass-over and archive cases read a change time that holds still, and run everywhere.
+- [x] Watch the five fail, then apply the AFTER.
+- [x] In `.claude/Features/CorePM.md:113`, "A cascade reaches every page the index lists as holding its key and reads each from its file, so no row decides what a cascade passes over." becomes "A cascade reaches every page the index lists as holding its key and reads each from its file, a rename's clash check and an option edit passing over a page whose row still describes its file."
 
 **AFTER**
 
@@ -1106,10 +1106,10 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] T-N15 and T-N16 are green, all their cases, and the five added cases went red without the change; "refuses a rename onto a key a file holds beside the old one, and writes no note" (`registryProperty.test.ts:418`) still passes.
-- [ ] `git grep -n "outsideArchive" -- Core/Properties` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] T-N15 and T-N16 are green, all their cases, and the five added cases went red without the change; "refuses a rename onto a key a file holds beside the old one, and writes no note" (`registryProperty.test.ts:418`) still passes.
+- [x] `git grep -n "outsideArchive" -- Core/Properties` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 1-6
 
@@ -1119,8 +1119,8 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Write "copyPageMetadata writes each month it copies into once" (`pageMetadata.test.ts`: an August entry copied to `SEP_A` and `SEP_B`, with `machine().land` spied, one landing of `09-2026.json` holding both) and watch it fail.
-- [ ] Apply the AFTER.
+- [x] Write "copyPageMetadata writes each month it copies into once" (`pageMetadata.test.ts`: an August entry copied to `SEP_A` and `SEP_B`, with `machine().land` spied, one landing of `09-2026.json` holding both) and watch it fail.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -1205,15 +1205,15 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **VERIFY**
 
-- [ ] The added case is green, and "copyPageMetadata carries fields this build does not model", "copyPageMetadata lands an August entry under a September ID in its own month", `dropPageMetadata`'s cases (`pageMetadata.test.ts:173,202`), and `remint.test.ts`' "a reminted copy carries its metadata entry under the fresh ID's month" still pass.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The added case is green, and "copyPageMetadata carries fields this build does not model", "copyPageMetadata lands an August entry under a September ID in its own month", `dropPageMetadata`'s cases (`pageMetadata.test.ts:173,202`), and `remint.test.ts`' "a reminted copy carries its metadata entry under the fresh ID's month" still pass.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp written through, each drive flushed once before any of its temps is renamed, a failed flush discarding every temp on its drive, the handle closed before the rename on Windows); the post-rename stat, answered only while its time and size are still the temp's, feeding the index row, the walk cache, and the echo record; the reseed touching no `sync_base` row; the pass-over vouching only through `sameFile` with the change time; the in-flight landing reading as no echo; Sync's write tap firing where it did; and anything that reads as an odd one out beside the code around it.
-- [ ] One CDP drive on a scratch copy of `~/Test` from a worktree build with its own userData and debug port (*Development-Environment*): a property rename across Collection A lands and the window shows the values under the new key; one of those pages, rewritten from outside at the same length with its time set back, reaches the window; a reopen shows the same tree.
-- [ ] Run the gates and `npm run build` from a clean state, and record Phase 1's Actionable in its Net Ledger row beside that row's estimate, with Task 1-2's medians on the line beneath.
+- [x] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp written through, each drive flushed once before any of its temps is renamed, a failed flush discarding every temp on its drive, the handle closed before the rename on Windows); the post-rename stat, answered only while its time and size are still the temp's, feeding the index row, the walk cache, and the echo record; the reseed touching no `sync_base` row; the pass-over vouching only through `sameFile` with the change time; the in-flight landing reading as no echo; Sync's write tap firing where it did; and anything that reads as an odd one out beside the code around it.
+- [x] One CDP drive on a scratch copy of `~/Test` from a worktree build with its own userData and debug port (*Development-Environment*): a property rename across Collection A lands and the window shows the values under the new key; one of those pages, rewritten from outside at the same length with its time set back, reaches the window; a reopen shows the same tree.
+- [x] Run the gates and `npm run build` from a clean state, and record Phase 1's Actionable in its Net Ledger row beside that row's estimate, with Task 1-2's medians on the line beneath.
 
 ---
 
