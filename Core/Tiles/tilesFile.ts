@@ -35,6 +35,7 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath } from '../Paths/paths'
 import { tileHostsOf } from './tileHosts'
 import type { BodyWrite } from '../Pages/pageDetail'
+import type { StoredNodes } from '../Nexus/heldPages'
 
 // The entry and its leaf land in one write, so a board no window holds still shows the tile; a layout this build can't read seats as the empty board a window shows for it.
 const seatTile = (
@@ -264,9 +265,9 @@ export const dropTileLinks = (): void => {
 }
 
 /** Every key a markdown tile links, and every `key\0heading` where it names a heading: what no index holds, read once per tree. */
-async function readTileLinks(root: string): Promise<Set<string>> {
+async function readTileLinks(root: string, stored: StoredNodes): Promise<Set<string>> {
   const keys = new Set<string>()
-  for (const { dir } of tileHostsOf(root, await liveTreeOf(root)).hosts)
+  for (const { dir } of tileHostsOf(root, await liveTreeOf(root), stored).hosts)
     for (const id of (await markdownTileIds(dir)) ?? [])
       for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), ''))) {
         keys.add(hit.target)
@@ -277,10 +278,11 @@ async function readTileLinks(root: string): Promise<Set<string>> {
 
 export function tilesLink(
   root: string,
+  stored: StoredNodes,
   normalizedKeys: Iterable<string>,
   normalizedHeading?: string,
 ): Promise<boolean> {
-  if (tileLinks?.root !== root) tileLinks = { root, keys: readTileLinks(root) }
+  if (tileLinks?.root !== root) tileLinks = { root, keys: readTileLinks(root, stored) }
   return tileLinks.keys.then((keys) => {
     for (const k of normalizedKeys)
       if (keys.has(normalizedHeading === undefined ? k : `${k}\0${normalizedHeading}`)) return true
@@ -290,9 +292,10 @@ export function tilesLink(
 
 export async function rewriteTileConnections(
   root: string,
+  stored: StoredNodes,
   rewrite: (body: string) => string,
 ): Promise<{ hosts: TilesChanged[]; failed: number }> {
-  const found = tileHostsOf(root, await liveTreeOf(root))
+  const found = tileHostsOf(root, await liveTreeOf(root), stored)
   let failed = found.unreadable
   const boards: { host?: TileHostRef; dir: string; ids: string[] }[] = []
   for (const { host, dir } of found.hosts) {

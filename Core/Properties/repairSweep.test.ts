@@ -110,6 +110,22 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open\n---')
   })
 
+  it('canonicalizes a page inside a trashed Collection against its own definitions', async () => {
+    await openSession(root)
+    try {
+      expect((await handleMutate(root, { op: 'delete', path: 'Col', kind: 'collection' })).ok).toBe(
+        true,
+      )
+    } finally {
+      closeSession()
+    }
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    page = join(root, bundle.bundlePath, 'Col', 'One.md')
+    await frontmatter('Status:\n  - Open\n  - Open')
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(page, 'utf8')).toContain('Status:\n  - Open\n---')
+  })
+
   it('walks the tree once however many re-read pages it checks', async () => {
     for (const title of ['Two', 'Three']) {
       const p = await createTestPage(join(root, 'Col'), title, { body: 'b' })

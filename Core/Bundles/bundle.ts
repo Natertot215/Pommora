@@ -25,9 +25,7 @@ import { resolveOrder } from '../Nexus/order'
 import { isContainerKind } from '../Nexus/entities'
 import { releaseStrip } from '../Nexus/owed'
 import type { NexusTree } from '../Nexus/tree'
-import { owningCollection } from '../Nexus/treePatch'
 import {
-  collectionOf,
   type ContainerRecord,
   type InnerRecord,
   currentOrigin,
@@ -198,27 +196,6 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
     record.entity === 'collection' && record.id ? record.id : [],
   )
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
-}
-
-/** Each Trash bundle's Collection, by the bundle's root-relative path: a trashed Collection's own, or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it. */
-export async function trashedOwners(root: string, tree: NexusTree): Promise<Map<string, string>> {
-  const owners = new Map<string, string>()
-  for (const { bundlePath, record } of await listBundles(root, { kind: 'trash' })) {
-    const origin = originOf(record)
-    const owner =
-      record.entity === 'collection'
-        ? record.id
-        : origin && collectionOf(currentOrigin(tree, origin) ?? origin)
-    if (owner) owners.set(bundlePath, owner)
-  }
-  return owners
-}
-
-export async function trashReach(root: string, tree: NexusTree, rel?: string): Promise<string[]> {
-  const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
-  return [...(await trashedOwners(root, tree))].flatMap(([bundle, id]) =>
-    rel === undefined || id === owner ? [bundle] : [],
-  )
 }
 
 /** Whether the Collection an Archive is filed under still answers for it: live, outside the tree, or possibly behind a root sidecar that reads unreadable, which could be any Collection. */

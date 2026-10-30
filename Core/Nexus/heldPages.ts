@@ -1,16 +1,18 @@
-// The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write and every link world.
+// The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write, every link world, and every enumerator of the tree's Collections and Spaces.
 // Relinks (create, rename, move) resolve against the live index; strips and refills resolve against the tree plus the Archive, `linkWorld`.
 
 import { heldTreeOf } from './liveTree'
 import { dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
-import { entityMemo, type NexusTree, type SpaceNode } from './tree'
+import { type CollectionNode, entityMemo, type NexusTree, type SpaceNode } from './tree'
 import { indexReady, readIndexedStats } from '../Index/contentIndex'
-import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { listBundles } from '../Bundles/bundle'
+import { collectionOf, currentOrigin, originOf } from '../Bundles/record'
+import { containerNodeFrom } from './containerFields'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
 import { scopeOf } from '../Settings/codec'
@@ -55,11 +57,11 @@ export const idHeld = (root: string, id: string): boolean => {
   return tree ? writablePathsOf(tree).has(id) : false
 }
 
-/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. `stored` lists the Trash's Spaces, read from their own sidecars since the index holds pages alone, so a reach reads them once. */
+/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. `stored` is what the Trash holds beside the tree, so a reach reads it once. */
 export interface NexusPages {
   byId: ReadonlyMap<string, EntityRecord | null>
   archived: readonly ConnPage[]
-  stored: readonly SpaceNode[]
+  stored: StoredNodes
 }
 
 /** What a by-id sweep reads of each root: where its file is and what kind it is. */
@@ -106,11 +108,11 @@ export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPa
     claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
     archived.push(connPage(id, at.origin))
   }
-  const stored = await storedSpaces(root)
+  const stored = await storedNodes(root, tree)
   const trashed = [...(await storedPageIds(root, tree, TRASH_DIR))].flatMap(([path, { id }]) =>
     id ? [{ id, kind: 'page' as const, title: titleFromPath(path), path }] : [],
   )
-  for (const { id, kind, title, path } of [...trashed, ...stored])
+  for (const { id, kind, title, path } of [...trashed, ...stored.spaces])
     if (!byId.has(id)) byId.set(id, { id, kind, title, path })
   return { byId, archived, stored }
 }
@@ -122,12 +124,28 @@ export const linkWorld = (
   more: readonly ConnPage[] = [],
 ): PageIndex => buildPageIndex([...pagesOf(tree), ...archived, ...more])
 
-export async function storedSpaces(root: string): Promise<SpaceNode[]> {
+/** What the Trash holds of the tree's entities, from one listing of `chain` within it: each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; and the Collections and Spaces it holds, read from their own sidecars, since the index holds pages alone. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
+export async function storedNodes(root: string, tree: NexusTree, chain?: string) {
+  const owners = new Map<string, string>()
+  const collections: CollectionNode[] = []
   const spaces: SpaceNode[] = []
-  const trashed = await listBundles(root, { kind: 'trash' }, CONTEXTS_DIR_REL)
-  for (const { bundlePath, record, artifactName } of trashed) {
+  const listed = await listBundles(root, { kind: 'trash' }, chain)
+  for (const { bundlePath, record, artifactName } of listed) {
+    const origin = originOf(record)
+    const owner =
+      record.entity === 'collection'
+        ? record.id
+        : origin && collectionOf(currentOrigin(tree, origin) ?? origin)
+    if (owner) owners.set(bundlePath, owner)
     if (!artifactName) continue
     const artifact = join(root, bundlePath, artifactName)
+    if (record.entity === 'collection') {
+      const sc = await readJsonObject(sidecarPath(artifact, 'collection'))
+      const at = { title: artifactName, path: relative(root, artifact) }
+      const node = sc && containerNodeFrom('collection', at, sc, [], [])
+      if (node?.kind === 'collection') collections.push(node)
+      continue
+    }
     const held =
       record.entity === 'context'
         ? (await spaceSidecarsIn(artifact)).map((s) => ({ ...s, contextId: record.registry.id }))
@@ -147,8 +165,10 @@ export async function storedSpaces(root: string): Promise<SpaceNode[]> {
       if (space) spaces.push(space)
     }
   }
-  return spaces
+  return { owners, collections, spaces }
 }
+
+export type StoredNodes = Awaited<ReturnType<typeof storedNodes>>
 
 export async function storedPageIds(
   root: string,

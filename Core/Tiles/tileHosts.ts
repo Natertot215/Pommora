@@ -2,6 +2,7 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 import { pathExists } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
+import type { StoredNodes } from '../Nexus/heldPages'
 import { CONTEXTS_REGISTRY_REL, HOMEPAGE_DIR_REL } from '../Paths/nexusPaths'
 import { homepageDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
@@ -44,10 +45,14 @@ export const hostDir = (root: string, host: TileHostRef): Promise<string | null>
 export const tileHostsOf = (
   root: string,
   tree: NexusTree,
+  stored: StoredNodes,
 ): { hosts: { host?: TileHostRef; dir: string }[]; unreadable: number } => ({
-  hosts: ARMS.flatMap((arm) =>
-    arm.boards(tree).map((b) => ({ host: b.host, dir: join(root, b.rel) })),
-  ),
+  hosts: [
+    ...ARMS.flatMap((arm) =>
+      arm.boards(tree).map((b) => ({ host: b.host, dir: join(root, b.rel) })),
+    ),
+    ...stored.spaces.map((s) => ({ dir: join(root, s.path) })),
+  ],
   unreadable: tree.unreadable?.some(
     (u) => u.kind === 'registry' && u.path === CONTEXTS_REGISTRY_REL && u.reason === 'unreadable',
   )

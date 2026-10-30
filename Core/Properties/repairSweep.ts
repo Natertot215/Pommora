@@ -3,7 +3,7 @@ import { governedWorld, reconcileGovernedRoot, type GovernedWorld } from '../Nex
 import type { PropertyDefinition } from './properties'
 import { errText } from '../Contract/result'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { trashedOwners } from '../Bundles/bundle'
+import { storedNodes } from '../Nexus/heldPages'
 import { containerSchema } from '../Nexus/treePatch'
 import { type Rewrite, sweepGovernedRoots } from '../Nexus/governedSweep'
 import type { SeedReread } from '../Index/indexSeed'
@@ -17,9 +17,9 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
   try {
     const worlds = new Map<readonly PropertyDefinition[], GovernedWorld>()
     const tree = await liveTreeOf(root)
-    const trashed = await trashedOwners(root, tree)
+    const stored = await storedNodes(root, tree)
     const raw: Rewrite = (fm, file) => {
-      const schema = containerSchema(tree, relative(root, file), trashed)
+      const schema = containerSchema(tree, relative(root, file), stored)
       const world = worlds.get(schema) ?? governedWorld(tree, schema)
       worlds.set(schema, world)
       return live() ? reconcileGovernedRoot(fm, world) : null

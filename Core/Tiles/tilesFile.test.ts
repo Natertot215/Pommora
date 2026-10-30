@@ -22,8 +22,10 @@ import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
 import { dropLiveTree } from '../Nexus/liveTree'
+import type { StoredNodes } from '../Nexus/heldPages'
 
 const append = { kind: 'append' } as const
+const NOTHING_TRASHED: StoredNodes = { owners: new Map(), collections: [], spaces: [] }
 
 let root: string
 const home = (): string => homepageDir(root)
@@ -158,7 +160,7 @@ describe('the document', () => {
       expect(await readTileDocAt(home())).toMatchObject(refused)
       expect(await createTile(root, home(), append)).toMatchObject(refused)
       expect((await readdir(home())).filter((f) => f.endsWith('.md'))).toEqual([])
-      expect((await rewriteTileConnections(root, (body) => body)).failed).toBe(1)
+      expect((await rewriteTileConnections(root, NOTHING_TRASHED, (body) => body)).failed).toBe(1)
       await chmod(tileDocPath(home()), 0o644)
       expect(await entries()).toEqual([{ id: tileId('a') }])
     },
@@ -319,11 +321,11 @@ describe('markdown tile lifecycle', () => {
   it('lists every key a tile links, and every key with the heading it names', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'see [[Notes]] and [[Plan#Setup]]')
-    expect(await tilesLink(root, ['notes'])).toBe(true)
-    expect(await tilesLink(root, ['plan'], 'setup')).toBe(true)
-    expect(await tilesLink(root, ['notes'], 'setup')).toBe(false)
-    expect(await tilesLink(root, ['other', 'plan'])).toBe(true)
-    expect(await tilesLink(root, ['other'])).toBe(false)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['notes'])).toBe(true)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['plan'], 'setup')).toBe(true)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['notes'], 'setup')).toBe(false)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['other', 'plan'])).toBe(true)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['other'])).toBe(false)
   })
 
   it('a restored tile’s links count again for a heading renamed outside the app', async () => {
@@ -331,9 +333,9 @@ describe('markdown tile lifecycle', () => {
     await write(home(), id, 'see [[A#Keep]]')
     const removed = await removeTile(root, home(), id)
     if (!removed.ok) throw new Error('remove refused')
-    expect(await tilesLink(root, ['a'], 'keep')).toBe(false)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['a'], 'keep')).toBe(false)
     await restoreTile(home(), removed.value.removed)
-    expect(await tilesLink(root, ['a'], 'keep')).toBe(true)
+    expect(await tilesLink(root, NOTHING_TRASHED, ['a'], 'keep')).toBe(true)
   })
 
   it('a restore seats the tile in its band on disk, and leaves a board already holding it alone', async () => {
@@ -505,7 +507,7 @@ describe('rewriteTileConnections', () => {
   it('rewrites [[oldTitle]] → [[newTitle]] in tile bodies, leaving non-matches untouched', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'see [[Target]] and [[Other]]')
-    expect(await rewriteTileConnections(root, rename)).toEqual({
+    expect(await rewriteTileConnections(root, NOTHING_TRASHED, rename)).toEqual({
       hosts: [{ host: { kind: 'homepage' }, ids: [id] }],
       failed: 0,
     })
@@ -515,7 +517,10 @@ describe('rewriteTileConnections', () => {
   it('leaves a body without the old title byte-identical (no needless write)', async () => {
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'see [[Other]]')
-    expect(await rewriteTileConnections(root, rename)).toEqual({ hosts: [], failed: 0 })
+    expect(await rewriteTileConnections(root, NOTHING_TRASHED, rename)).toEqual({
+      hosts: [],
+      failed: 0,
+    })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Other]]'))
   })
 
@@ -526,7 +531,7 @@ describe('rewriteTileConnections', () => {
     await write(spaceDir(), open, 'see [[Target]]')
     await chmod(home(), 0o555)
     try {
-      expect(await rewriteTileConnections(root, rename)).toEqual({
+      expect(await rewriteTileConnections(root, NOTHING_TRASHED, rename)).toEqual({
         hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [open] }],
         failed: 1,
       })
@@ -544,7 +549,7 @@ describe('rewriteTileConnections', () => {
     await writeFile(join(broken, '_space.json'), '{ corrupt')
     const id = await landedId(createTile(root, spaceDir(), append))
     await write(spaceDir(), id, 'see [[Target]]')
-    expect(await rewriteTileConnections(root, rename)).toEqual({
+    expect(await rewriteTileConnections(root, NOTHING_TRASHED, rename)).toEqual({
       hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [id] }],
       failed: 0,
     })
@@ -560,7 +565,7 @@ describe('rewriteTileConnections', () => {
     await write(home(), lost, 'see [[Target]]')
     await write(spaceDir(), away, 'see [[Target]]')
     const lands = failLandings((file) => file === tileFilePath(home(), lost))
-    expect(await rewriteTileConnections(root, rename)).toEqual({
+    expect(await rewriteTileConnections(root, NOTHING_TRASHED, rename)).toEqual({
       hosts: [
         { host: { kind: 'homepage' }, ids: [kept] },
         { host: { kind: 'space', id: 'sp1' }, ids: [away] },

@@ -9,6 +9,7 @@ import { dropLiveTree, patchLiveTree, seedLiveTree } from '../Nexus/liveTree'
 import { readNexus } from '../Nexus/readNexus'
 import { sidecarPath } from '../Paths/paths'
 import { patchStashBlock, stashedBlock, sweepStashes } from './propertyStash'
+import { fileInto } from '../Bundles/bundle'
 
 describe('the stash block', () => {
   it('reads a stamped block, and none without a stamp', () => {
@@ -98,6 +99,27 @@ describe('sweepStashes', () => {
     expect((await readJsonAt(sidecarPath(notes, 'collection'))).property_stash).toEqual({
       q: stamped('2026-10-16T09:00:00.000Z'),
     })
+  })
+
+  it('a trashed Collection’s stash ages out with a live one’s', async () => {
+    const id = newId()
+    const old = await createFolderEntity(root, 'collection', 'Old', id)
+    if (!old.ok) throw new Error('setup failed')
+    await seed(old.value.path, {
+      p: stamped('2026-10-01T08:00:00.000Z'),
+      q: stamped('2026-10-16T09:00:00.000Z'),
+    })
+    const { landed } = await fileInto(root, { kind: 'trash' }, old.value.path, old.value.path, {
+      entity: 'collection',
+      id,
+      parent: { kind: 'root' },
+    })
+    seedLiveTree(await readNexus(root))
+    await sweepStashes(root)
+    expect((await readJsonAt(sidecarPath(landed, 'collection'))).property_stash).toEqual({
+      q: stamped('2026-10-16T09:00:00.000Z'),
+    })
+    expect((await readJsonAt(sidecarPath(tasks, 'collection'))).property_stash).toBeUndefined()
   })
 
   it('opens no sidecar the tree doesn’t list as stashing', async () => {

@@ -22,6 +22,7 @@ import { contextsDir, contextsRegistryFile, tileFilePath, homepageDir } from '..
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { titled } from '../Testing/fixtures'
+import { mintBundle } from '../Bundles/bundle'
 
 vi.mock('./governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./governedSweep')>()
@@ -102,6 +103,42 @@ describe('renameCascade', () => {
     expect(rewriteSpy.mock.calls.flatMap(([files]) => files)).not.toContain(
       tileFilePath(homepageDir(root), tile),
     )
+  })
+
+  const trashedBoard = async (): Promise<{ board: string; tile: string }> => {
+    const bundle = await mintBundle(
+      root,
+      { kind: 'trash' },
+      join(contextsDir(root), 'Projects', 'Gone'),
+      {
+        entity: 'space',
+        id: 'sp-gone',
+        parent: { kind: 'context', id: 'ctx_projects' },
+        members: [],
+      },
+    )
+    const board = join(bundle, 'Gone')
+    await mkdir(board)
+    await writeFile(join(board, '_space.json'), JSON.stringify({ id: 'sp-gone' }))
+    const tile = await landedId(createTile(root, board, { kind: 'append' }))
+    await writeMarkdownTile(board, tile, 'see [[Target]]', machine().sha256Hex(''))
+    await refreshTree(root)
+    return { board, tile }
+  }
+
+  it('a trashed Space’s markdown tile follows a page rename', async () => {
+    const { board, tile } = await trashedBoard()
+    await renameCascade(root, titled('Target', 'Omega'))
+    expect(await readMarkdownTile(board, tile)).toEqual(ok('see [[Omega]]'))
+  })
+
+  it('a trashed Space’s tiles push no TilesChanged', async () => {
+    const { board, tile } = await trashedBoard()
+    const home = await landedId(createTile(root, homepageDir(root), { kind: 'append' }))
+    await writeMarkdownTile(homepageDir(root), home, 'see [[Target]]', machine().sha256Hex(''))
+    const r = await renameCascade(root, titled('Target', 'Omega'))
+    expect(await readMarkdownTile(board, tile)).toEqual(ok('see [[Omega]]'))
+    expect(r.hosts).toEqual([{ host: { kind: 'homepage' }, ids: [home] }])
   })
 
   it.skipIf(noModeBits)(

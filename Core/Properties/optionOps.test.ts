@@ -58,6 +58,8 @@ import { machine } from '../Platform/machine'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import { settledMutate } from '../Testing/settledMutate'
+import { listBundles } from '../Bundles/bundle'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -1154,6 +1156,21 @@ describe('the option cascades reach the Collection stashes', () => {
     const [p1, p2, p3] = pages.map((p) => p.id)
     expect((await renameOption(root, id, 'opt_A', 'Z')).ok).toBe(true)
     expect(await stash()).toEqual(block(id, { [p1]: ['Z'], [p2]: ['Z', 'B'], [p3]: 'B' }))
+  })
+
+  it('a trashed Collection’s stash follows an option rename', async () => {
+    const { id, pages } = await stashed()
+    const [p1, p2, p3] = pages.map((p) => p.id)
+    await refreshTree(root)
+    expect((await settledMutate(root, { op: 'delete', path: 'Col', kind: 'collection' })).ok).toBe(
+      true,
+    )
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    expect((await renameOption(root, id, 'opt_A', 'Z')).ok).toBe(true)
+    const trashed = sidecarPath(join(root, bundle.bundlePath, 'Col'), 'collection')
+    expect((await readJsonAt(trashed)).property_stash).toEqual(
+      block(id, { [p1]: ['Z'], [p2]: ['Z', 'B'], [p3]: 'B' }),
+    )
   })
 
   it('a removal strips the option from every stashed list', async () => {

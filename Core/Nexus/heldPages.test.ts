@@ -260,7 +260,7 @@ describe('nexusPages — the Trash’s Spaces', () => {
       title: 'Pom',
       path: `${PROJECTS}/Projects/Pom`,
     })
-    expect(stored.map((s) => [s.id, s.contextId]).sort()).toEqual([
+    expect(stored.spaces.map((s) => [s.id, s.contextId]).sort()).toEqual([
       ['sp_pom', 'ctx_projects'],
       ['sp_work', 'ctx_areas'],
     ])
@@ -298,6 +298,6 @@ describe('nexusPages — the Trash’s Spaces', () => {
     const { byId, stored } = await nexusPages(root, t)
     expect(byId.get('sp_work')?.path).toBe('.nexus/contexts/Areas/Work')
     expect(byId.get('pA')).toBeNull()
-    expect(stored.map((s) => s.id).sort()).toEqual(['pA', 'sp_work'])
+    expect(stored.spaces.map((s) => s.id).sort()).toEqual(['pA', 'sp_work'])
   })
 })
