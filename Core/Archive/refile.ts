@@ -89,17 +89,10 @@ export async function refileMoved(
     const was = containerTrailById(prev, node.id)
     if (was?.at(-1)?.path !== node.path) for (const set of node.sets ?? []) await landed(set)
     if (!was || node.kind !== 'set') return
-    const now = containerTrailById(next, node.id)
-    if (was.at(-2)?.id === now?.at(-2)?.id) return
+    const now = containerTrailById(next, node.id)?.map((n) => n.id)
+    if (was.at(-2)?.id === now?.at(-2)) return
     const from = owningCollection(prev, was[was.length - 1])
-    if (from && now)
-      await refileArchived(
-        root,
-        node.id,
-        now.map((n) => n.id),
-        from.id,
-        next,
-      )
+    if (from && now) await refileArchived(root, node.id, now, from.id, next)
   }
   const walk = async (d: Delta): Promise<void> => {
     if ('set' in d) for (const v of [d.set].flat()) if (isContainerNode(v)) await landed(v)

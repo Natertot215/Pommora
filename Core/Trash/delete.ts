@@ -55,7 +55,6 @@ const deleteNote =
   (kind: { kind: 'context' } | { kind: 'space'; contextId: string }, title: string) =>
   (e: Entry | undefined): Entry => ({ ...kind, strip: owedDelete(e ?? {}, title).strip })
 
-/** What one kind's delete takes, gathered before anything is minted: the id its note is keyed by, its record, its note, the order entry its `leave` drops, and a Context's list step with the step that puts its entry back. */
 interface DeletePlan {
   id: string
   record: RecordFile

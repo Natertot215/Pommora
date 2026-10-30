@@ -6,7 +6,7 @@ import { dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
-import type { CollectionNode, PageNode, SetNode, SpaceNode } from './tree'
+import type { CollectionNode, PageNode, SetNode } from './tree'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -64,12 +64,12 @@ const dropFromChildOrder = (
   id: string,
 ): Promise<Result<unknown>> => patchContainer(absFolder, (cur) => withoutId(cur, key, id))
 
-/** What leaves an order: a node of the tree it left, or a Context by its id, since its finish may move its folder after its registry entry is gone. */
+/** What leaves an order: a node of the tree it left, or a Context or Space by its id, since its finish may run after its folder moved and its entry is gone. */
 export type Departing =
   | PageNode
   | SetNode
   | CollectionNode
-  | SpaceNode
+  | { kind: 'space'; contextId: string; id: string }
   | { kind: 'context'; id: string }
 
 /** A departing item leaves the order it sat in; a Context takes its own Space order with it, which its record keeps. */

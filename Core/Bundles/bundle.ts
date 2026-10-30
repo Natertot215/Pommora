@@ -28,14 +28,13 @@ import type { NexusTree } from '../Nexus/tree'
 import {
   type ContainerRecord,
   type InnerRecord,
+  currentOrigin,
   originOf,
-  originWithin,
   type RawRecord,
   type RecordFile,
   readRawRecord,
   readRecord,
   removeLinks,
-  trailAbove,
   writeRecord,
 } from './record'
 import {
@@ -144,15 +143,15 @@ export interface ListedBundle {
   artifactName?: string
 }
 
-/** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail the tree gives the origin now, or on the one its record stored once the tree no longer holds it. */
+/** The bundles in `from`'s Archive archived from within the Set `setId`, by ids rather than by the folder names their chains were spelled with: each origin is the Set or lies beneath it, on the trail it stands on now, or on the one its record stored once the tree holds nothing on its chain. */
 export async function archivedWithin(root: string, setId: string, from: string, tree: NexusTree) {
   const store = archiveStoreOf(from)
   if (!store) return []
   return (await listBundles(root, store)).flatMap((listed) => {
     const origin = originOf(listed.record)
     if (!origin) return []
-    const held = trailAbove(tree, origin.parent)
-    return originWithin(origin, setId, held) ? [{ ...listed, origin, held }] : []
+    const { parent, trail } = currentOrigin(tree, origin) ?? origin
+    return parent === setId || trail.includes(setId) ? [{ ...listed, origin }] : []
   })
 }
 
@@ -208,7 +207,6 @@ export async function archiveOwned(
   )
 }
 
-/** Each Archive by its Collection's id, and whether that Collection still answers for it, the Collections outside the tree read once at most. */
 export async function ownedArchives(
   root: string,
   tree: NexusTree,

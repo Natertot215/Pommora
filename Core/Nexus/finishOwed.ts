@@ -49,6 +49,7 @@ import {
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
 import { contentPages, listBundles, ownedArchives } from '../Bundles/bundle'
+import { appendLinks } from '../Bundles/record'
 import { refillStash } from '../Properties/assignment'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
@@ -250,7 +251,6 @@ async function finishOptions(
   return Object.keys(left).length ? left : undefined
 }
 
-/** A deleted item into the bundle its delete noted, `bundle` root-relative, then out of the order it sat in. */
 export async function leave(
   root: string,
   abs: string,
@@ -339,7 +339,8 @@ async function finishSpace(
   if (deleted && (await heldName(join(root, space.path))) === space.title) {
     await leave(root, join(root, space.path), e.bundle!, space)
     oweWalk(root)
-  } else if (deleted) await dropDeparture(root, space)
+  } else if (!space && e.bundle && e.strip?.length)
+    await dropDeparture(root, { kind: 'space', contextId: e.contextId, id })
   const title = deleted ? undefined : space?.title
   const rename =
     title === undefined
@@ -389,8 +390,10 @@ async function finishContainer(
   }
   const edit = await owedEdit()
   const strip = back ? undefined : e.strip
-  // An emptying's links park, before its strip takes them, with a trashed page that still answers them; a delete's are in its record already.
-  if (strip && !e.bundle) await parkLinks(root, await gatherLinks(root, join(root, e.at), strip))
+  if (strip) {
+    const links = await gatherLinks(root, join(root, e.at), strip)
+    await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
+  }
   const stripped = !!strip && add(reach, await deleteCascade(root, join(root, e.at), strip))
   const viewed = !!edit && add(reach, await reachConfig(root, edit))
   return {
