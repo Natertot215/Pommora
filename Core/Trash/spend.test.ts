@@ -289,31 +289,47 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
     })
 
-    it('a Context in the Trash keeps its order, and its restore returns to its sidebar place', async () => {
+    it('a Context’s delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders', async () => {
       const r = await deleteProjects()
-      expect(r.ok).toBe(true)
-      expect(await stateOrder()).toEqual(seeded)
-      const listed = r.ok ? r.value.bundled : undefined
-      expect(
-        (await settledMutate(root, { op: 'restore', bundlePath: listed!.bundlePath })).ok,
-      ).toBe(true)
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      const { bundlePath } = r.value.bundled
+      expect(await stateOrder()).toEqual({
+        spaces: { ctx_areas: ['sp-home'] },
+        contexts: ['ctx_areas'],
+      })
+      expect(await readRecord(join(root, bundlePath))).toMatchObject({
+        place: { above: 'ctx_zeta', below: 'ctx_areas' },
+        panel: { above: 'ctx_areas' },
+        spaceOrder: ['sp-sap', 'sp-pom'],
+      })
+      expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
       expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
       const tree = await readNexus(root)
       expect(tree.contexts[1].spaces.map((sp) => sp.id)).toEqual(['sp-sap', 'sp-pom'])
       expect(tree.config.order.contexts).toEqual(['ctx_projects', 'ctx_areas'])
+      expect(await stateOrder()).toEqual(seeded)
     })
 
-    it('a record from before the place was kept restores its Context at the end', async () => {
+    it('a Context returns beside the neighbor its record names, wherever that neighbor has moved', async () => {
       const r = await deleteProjects()
-      const bundlePath = r.ok ? r.value.bundled!.bundlePath : ''
-      const recordFile = join(root, bundlePath, '_record.json')
-      const { at: _, ...older } = await readJsonAt(recordFile)
-      await writeFile(recordFile, JSON.stringify(older))
-      expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
-      expect(await registryIds()).toEqual(['ctx_areas', 'ctx_zeta', 'ctx_projects'])
+      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      await writeFile(
+        contextsRegistryFile(root),
+        JSON.stringify({
+          contexts: [
+            { id: 'ctx_zeta', title: 'Zeta' },
+            { id: 'ctx_areas', title: 'Areas' },
+          ],
+        }),
+      )
+      await refreshTree(root)
+      expect(
+        (await settledMutate(root, { op: 'restore', bundlePath: r.value.bundled.bundlePath })).ok,
+      ).toBe(true)
+      expect(await registryIds()).toEqual(['ctx_projects', 'ctx_zeta', 'ctx_areas'])
     })
 
-    it('emptying a Context’s bundle drops its panel id and its Space order', async () => {
+    it('emptying a Context’s bundle leaves the orders as its delete left them', async () => {
       const r = await deleteProjects()
       const listed = r.ok ? r.value.bundled : undefined
       expect(

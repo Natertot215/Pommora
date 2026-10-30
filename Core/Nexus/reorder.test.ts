@@ -3,7 +3,7 @@ import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
-  dropContextOrder,
+  dropDeparture,
   setCollectionOrder,
   setSpaceOrder,
   setChildOrder,
@@ -14,6 +14,7 @@ import { createFolderEntity } from './folderEntity'
 import { newId } from './ids'
 import { nexusDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { makeTree } from '../Testing/testTree'
 
 let root: string
 beforeEach(async () => {
@@ -74,19 +75,19 @@ describe('setCollectionOrder', () => {
     })
   })
 
-  it('dropContextOrder removes the Context’s panel id and its Space order, leaving the rest', async () => {
-    await setSpaceOrder(root, 'ctx_areas', ['x'])
-    await setSpaceOrder(root, 'ctx_projects', ['y'])
-    await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
-    await dropContextOrder(root, 'ctx_projects')
+  it('a departing Context takes its panel id and its Space order, leaving the rest', async () => {
+    await setSpaceOrder(root, 'g1', ['y'])
+    await setSpaceOrder(root, 'other', ['x'])
+    await setPanelContextOrder(root, ['g1', 'other'])
+    await dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')
     expect((await readState()).order).toEqual({
-      spaces: { ctx_areas: ['x'] },
-      contexts: ['ctx_areas'],
+      spaces: { other: ['x'] },
+      contexts: ['other'],
     })
   })
 
-  it('dropContextOrder writes nothing when the Context has no order', async () => {
-    await dropContextOrder(root, 'ctx_projects')
+  it('a departing Context with no order writes nothing', async () => {
+    await dropDeparture(root, makeTree(), 'context', '.nexus/contexts/Realms')
     expect(await pathExists(nexusConfig(root, NEXUS_CONFIG_FILES.state))).toBe(false)
   })
 

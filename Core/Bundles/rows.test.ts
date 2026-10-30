@@ -299,7 +299,7 @@ describe('bundleRows — a container’s and a Space’s own icons', () => {
     )
     await writeFile(
       join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
-      JSON.stringify({ id: 'sp-pom', icon: 'rocket' }),
+      JSON.stringify({ id: 'sp-pom', $icon: 'rocket' }),
     )
     await del('Notes/Daily/Alpha.md', 'page')
     await del('Notes', 'collection')

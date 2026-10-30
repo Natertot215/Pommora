@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
-import { placeRecord, resolveRecord, slotOf } from './placement'
+import { placeAmong, placeRecord, resolveRecord } from './placement'
 import { nexusPages } from '../Nexus/heldPages'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 
@@ -23,7 +23,7 @@ const treeOf = (
   ({
     contexts,
     collections,
-    config: { excluded: [], assetDirectory: ASSETS_DIR_REL },
+    config: { excluded: [], assetDirectory: ASSETS_DIR_REL, order: { spaces: {} } },
   }) as unknown as import('../Nexus/tree').NexusTree
 
 const journal = (over: Partial<import('../Nexus/tree').SetNode> = {}) =>
@@ -268,25 +268,22 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
   })
 })
 
-describe('slotOf', () => {
+describe('placeAmong', () => {
   it('lands above the sibling it sat above while that one is live', () => {
-    expect(slotOf({ above: 'b', below: 'a' }, ['a', 'b'])).toEqual({ anchor: 'b', where: 'above' })
+    expect(placeAmong(['a', 'b'], 'x', { above: 'b', below: 'a' })).toEqual(['a', 'x', 'b'])
   })
 
   it('lands below the sibling it sat below once the one after it is gone', () => {
-    expect(slotOf({ above: 'gone', below: 'a' }, ['a', 'b'])).toEqual({
-      anchor: 'a',
-      where: 'below',
-    })
+    expect(placeAmong(['a', 'b'], 'x', { above: 'gone', below: 'a' })).toEqual(['a', 'x', 'b'])
   })
 
   it('lands first when nothing preceded it and its follower is gone', () => {
-    expect(slotOf({ above: 'gone' }, ['a', 'b'])).toEqual({ anchor: null, where: 'first' })
+    expect(placeAmong(['a', 'b'], 'x', { above: 'gone' })).toEqual(['x', 'a', 'b'])
   })
 
   it('lands last when neither neighbour is live, or the record holds no place', () => {
-    expect(slotOf({ above: 'gone', below: 'lost' }, ['a'])).toEqual({ anchor: null, where: 'last' })
-    expect(slotOf(undefined, ['a'])).toEqual({ anchor: null, where: 'last' })
+    expect(placeAmong(['a'], 'x', { above: 'gone', below: 'lost' })).toEqual(['a', 'x'])
+    expect(placeAmong(['a'], 'x', undefined)).toEqual(['a', 'x'])
   })
 })
 

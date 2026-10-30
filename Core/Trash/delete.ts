@@ -24,12 +24,7 @@ import type { CascadeReport } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
 import { originPathOf } from '../Bundles/layout'
-import {
-  buildContextRecord,
-  gatherContextEvidence,
-  gatherLinkTargets,
-  gatherSpaceRecord,
-} from './gather'
+import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
 import { gatherContentRecord, type RecordFile, writeRecord } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
@@ -94,13 +89,8 @@ export async function deleteOp(
     const under =
       from?.under ?? pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
     const targets = await gatherLinkTargets(root, before, rel, under)
-    const write = async (record: RecordFile | null): Promise<void> => {
-      if (record)
-        await writeRecord(bundle, {
-          ...record,
-          ...(Object.keys(targets).length ? { targets } : {}),
-        })
-    }
+    const write = (record: RecordFile): Promise<void> =>
+      writeRecord(bundle, { ...record, ...(Object.keys(targets).length ? { targets } : {}) })
     // A refused note or list step leaves nothing deleted, so its bundle goes and a lifted set-aside comes back.
     const unminted = async <R extends { ok: false }>(r: R): Promise<R> => {
       await removeOwn(bundle)
@@ -143,21 +133,14 @@ export async function deleteOp(
       })
     let stripped: CascadeReport | null = null
     if (req.kind === 'space') {
-      const registry = await readRegistryStrict(root)
-      const space = spaceAt(before, rel)
-      if (!space) return fail('not-found', 'Unknown Space.')
+      const space = spaceAt(before, rel)!
       const query = {
         keys: [contextKey(basename(dirname(abs)))],
         reach: 'anywhere' as const,
         title: space.title,
       }
       await write(
-        await gatherSpaceRecord(
-          before,
-          abs,
-          registry,
-          outside(await findHolders(root, query, 'values')),
-        ),
+        gatherSpaceRecord(before, space, outside(await findHolders(root, query, 'values'))),
       )
       const ran = await deleted(
         space.id,
@@ -171,9 +154,15 @@ export async function deleteOp(
       const at = registry.contexts.findIndex((c) => c.title === title)
       const entry = registry.contexts[at]
       if (!entry) return fail('not-found', 'Unknown Context.')
-      const evidence = await gatherContextEvidence(abs, entry, at)
       const query = { keys: [contextKey(title)], reach: 'anywhere' as const }
-      await write(buildContextRecord(evidence, outside(await findHolders(root, query, 'values'))))
+      await write(
+        await gatherContextRecord(
+          before,
+          abs,
+          entry,
+          outside(await findHolders(root, query, 'values')),
+        ),
+      )
       const ran = await deleted(
         entry.id,
         deleteNote(root, { kind: 'context' }, title, bundle),
@@ -183,9 +172,10 @@ export async function deleteOp(
       if (!ran.ok) return unminted(ran)
       stripped = ran.value.cascade
     } else {
-      await write(from?.record ?? (await gatherContentRecord(root, before, req.kind, abs)))
+      const node = req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel)
+      await write(from?.record ?? gatherContentRecord(before, node!))
       // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
-      const id = (req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel))?.id ?? rel
+      const id = node?.id ?? rel
       const ran = await deleted(id, () => ({
         kind: 'container',
         at: rel,

@@ -263,7 +263,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 2** — Residue
   - [x] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
   - [x] Task 2-2 · The content record's `partial` leaves
-  - [ ] Task 2-3 · Records from the tree, and a Context's place
+  - [x] Task 2-3 · Records from the tree, and a Context's place
   - [ ] Task 2-4 · The rest of the residue
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
@@ -2214,7 +2214,7 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 +    registry: entry,
 +    ...(place ? { place } : {}),
 +    ...(panel ? { panel } : {}),
-+    ...(spaceOrder.length ? { spaceOrder } : {}),
++    ...(spaceOrder?.length ? { spaceOrder } : {}),
      membership,
 -    ...(partial ? { partial: true as const } : {}),
 +    ...(unread || partly(held) ? { partial: true as const } : {}),
@@ -2581,8 +2581,8 @@ The second case discriminates the neighbor from the index: by `at`, the Context 
 - [ ] *"a Context returns beside the neighbor its record names, wherever that neighbor has moved"* and *"a Context's delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders"* are green, and red against the code before this task.
 - [ ] *"a Context delete whose move fails keeps its order"* (`deleteReach.test.ts:608`) stays green: the delete's order drop runs only after its folder has moved.
 - [ ] The rewritten `reorder.test.ts` and `placement.test.ts` cases are green.
-- [ ] M-4 changes no behavior, and the record-shape pins still pass unchanged: `spend.test.ts:164-208` (a Space's and a Context's records), `spend.test.ts:209-268` (`place` between neighbors, a Space's included), `deleteOrder.test.ts:148-216`, and `archive.test.ts:945-951`.
-- [ ] `git grep -nP "\bslotOf\b|dropContextOrder|identityOf\(entity|identityOf\(kind|ContextEvidence|gatherContextEvidence|buildContextRecord|record\.at\b" -- Core` prints nothing.
+- [ ] M-4 changes no behavior beyond a Space's icon, which the tree reads from `$icon` where the old sidecar read looked for `icon` (so `rows.test.ts`' Space fixture writes `$icon`), and the record-shape pins still pass unchanged: `spend.test.ts:164-208` (a Space's and a Context's records), `spend.test.ts:209-268` (`place` between neighbors, a Space's included), `deleteOrder.test.ts:148-216`, and `archive.test.ts:945-951`.
+- [ ] `git grep -nP "\bslotOf\b|dropContextOrder|identityOf\(entity|identityOf\(kind|ContextEvidence|gatherContextEvidence|buildContextRecord|record\.at\b" -- Core ':!Core/Interface/Sidebar'` prints nothing (the sidebar's drag model keeps a test-local `slotOf` of its own).
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -9447,6 +9447,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Task 5-2 · A Batch Undo Names Its Refusals:** an Undo over several bundles counts the rows it couldn't restore ("N Pages couldn’t be undone.") among its lines, where a refusal's own message used to be replaced by the next row's notice.
 - **Task 5-5 · One Missing-Artifact Refusal:** both stores answer "That item is no longer there." for a bundle whose artifact has left, in place of the Trash's "That deletion never finished; there is nothing to restore." and the Archive's own refusal.
 - **Task 5-6 · A Hand-Moved Item's Misses Go Unnamed:** a page or Set moved out of a store by hand takes its stripped values back where they still resolve, and what doesn't resolve stays as it is, since no window is open to name it.
+- **Task 2-3 · A Deleted Space's Row Shows Its Icon:** the record takes a Space's icon from the tree, which reads the `$icon` the app writes, so its Trash row shows the icon it had, where the old sidecar read looked for `icon` and found none.
 - **Task 6-9 · The Spend Refusal's Copy:** "Only a trash or archive record can be spent." becomes "That path is in neither the Trash nor an Archive.", which is what it answers.
 
 **Cautionary Code (Nathan, 10-30-2026):**

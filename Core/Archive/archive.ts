@@ -8,7 +8,7 @@ import { listMarkdownFiles } from '../Files/walk'
 import { type ArchiveStore, archiveDirRel } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
-import { owningCollection } from '../Nexus/treePatch'
+import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
 import { archivedSetIds } from '../Nexus/configReach'
 import { nexusPages } from '../Nexus/heldPages'
@@ -68,7 +68,7 @@ export async function archiveOp(
 async function filingOf(
   root: string,
   tree: NexusTree,
-  { kind, back }: Extract<MutateRequest, { op: 'archive' }>,
+  { kind, path, back }: Extract<MutateRequest, { op: 'archive' }>,
   abs: string,
   store: ArchiveStore,
 ): Promise<{ to: ArchiveStore; origin: string; record: RecordFile; at?: string }> {
@@ -82,7 +82,8 @@ async function filingOf(
     const name = holdsName(back.name) ? back.name : basename(abs)
     return { to: into, at, origin: join(root, folder, name), record }
   }
-  return { to: store, origin: abs, record: await gatherContentRecord(root, tree, kind, abs) }
+  const node = kind === 'page' ? pageAt(tree, path) : containerAt(tree, path)
+  return { to: store, origin: abs, record: gatherContentRecord(tree, node!) }
 }
 
 /** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */

@@ -1,14 +1,10 @@
-import { dirname, join, relative } from '../Paths/posix'
+import { join, relDirname } from '../Paths/posix'
 import { z } from 'zod'
 import type { CascadeReport } from '../Nexus/cascade'
 import { stashBlock } from '../Properties/propertyStash'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
-import { index } from '../Files/decoders'
-import { stampedIdOf } from '../Files/pageFile'
-import { sidecarIdentity } from '../Files/sidecar'
 import { contextEntry } from '../Contexts/contexts'
-import type { ContainerKind } from '../Nexus/entities'
-import type { NexusTree } from '../Nexus/tree'
+import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { containerAt, containerTrailById } from '../Nexus/treePatch'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. */
@@ -89,7 +85,10 @@ const recordFile = z.discriminatedUnion('entity', [
   z.object({
     entity: z.literal('context'),
     registry: contextEntry,
-    at: index.optional(),
+    place,
+    /** Its place in the Property Panel's Context order, which moves apart from the registry's. */
+    panel: place,
+    spaceOrder: z.array(z.string()).optional(),
     membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
     targets: linkTargets,
     partial: z.literal(true).optional(),
@@ -173,42 +172,28 @@ export function retrailed(origin: Origin, held: readonly string[]): string[] {
   return [...held, ...chain.slice(chain.indexOf(held[held.length - 1]) + 1)].slice(0, -1)
 }
 
-/** A page's stamped id, or a container's sidecar id and icon. */
-export async function identityOf(
-  kind: 'page' | ContainerKind,
-  abs: string,
-): Promise<{ id?: string; icon?: string }> {
-  return kind === 'page'
-    ? { id: (await stampedIdOf(abs)) ?? undefined }
-    : sidecarIdentity(abs, kind)
-}
-
-export async function gatherContentRecord(
-  root: string,
+export function gatherContentRecord(
   tree: NexusTree,
-  kind: 'page' | ContainerKind,
-  abs: string,
-): Promise<RecordFile> {
-  const { id, icon } = await identityOf(kind, abs)
-  const atRoot = dirname(abs) === root
-  const container = atRoot ? null : containerAt(tree, relative(root, dirname(abs)))
+  node: PageNode | CollectionNode | SetNode,
+): RecordFile {
+  const atRoot = node.kind === 'collection'
+  const container = atRoot ? null : containerAt(tree, relDirname(node.path))
   const siblings: readonly { id: string }[] | undefined = atRoot
     ? tree.collections
-    : kind === 'page'
+    : node.kind === 'page'
       ? container?.pages
       : container?.sets
   const placed =
-    id && siblings
-      ? placeOf(
-          siblings.map((n) => n.id),
-          id,
-        )
-      : undefined
+    siblings &&
+    placeOf(
+      siblings.map((n) => n.id),
+      node.id,
+    )
   const trail = container ? trailAbove(tree, container.id) : null
   return {
-    entity: kind,
-    ...(id ? { id } : {}),
-    ...(icon ? { icon } : {}),
+    entity: node.kind,
+    id: node.id,
+    ...(node.kind !== 'page' && node.icon ? { icon: node.icon } : {}),
     parent: atRoot
       ? { kind: 'root' }
       : container
