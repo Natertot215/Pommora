@@ -58,7 +58,6 @@ const contentRecord = <E extends string>(entity: E) =>
     /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
     links: z.array(strippedLink).optional(),
     targets: linkTargets,
-    partial: z.literal(true).optional(),
   })
 
 // The record itself is never rewritten from its decode; `def` and `registry` decode loose because a restore writes them back. A page's or Set's record decodes whole, so a delete from the Archive and its Undo each write the other store's record from it.
@@ -100,7 +99,7 @@ const recordFile = z.discriminatedUnion('entity', [
 export type RecordFile = z.infer<typeof recordFile>
 /** A partly recorded entry's restore says so, since some of what it held may not have been written down. */
 export const recordedPartly = (record: RecordFile, title: string): CascadeReport | undefined =>
-  record.partial
+  'partial' in record && record.partial
     ? {
         pages: [],
         hosts: [],

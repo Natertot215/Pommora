@@ -15,7 +15,6 @@ import { nexusPages } from '../Nexus/heldPages'
 import { closeSession, openSession } from '../Nexus/session'
 import { bundleRowOf, bundleRows, innerRows } from './rows'
 import { storedAtOf } from './layout'
-import { patchRecord } from './record'
 import { scopeOf } from '../Settings/codec'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
@@ -186,7 +185,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
     ).toBe('prop_x')
   })
 
-  it('a partly recorded entry’s row carries the mark, a property’s and a page’s alike', async () => {
+  it('a partly recorded entry’s row carries the mark, a property’s and a Space’s alike', async () => {
     const tree = { collections: [], contexts: [] } as unknown as NexusTree
     const rowOf = (partial: boolean) =>
       [
@@ -201,11 +200,13 @@ describe('bundleRows — a bundle as the browser reads it', () => {
           },
         },
         {
-          bundlePath: '.trash/Notes/s__Alpha.md.deleted',
-          artifactName: 'Alpha.md',
+          bundlePath: '.trash/.nexus/contexts/Areas/s__Work.deleted',
+          artifactName: 'Work',
           record: {
-            entity: 'page' as const,
-            parent: { kind: 'container' as const, id: 'set-daily' },
+            entity: 'space' as const,
+            id: 'sp_work',
+            parent: { kind: 'context' as const, id: 'ctx_areas' },
+            members: [],
             ...(partial ? { partial: true as const } : {}),
           },
         },
@@ -390,7 +391,6 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
     })
     expect(row.storedAt).toEqual(expect.any(Number))
     expect(row).not.toHaveProperty('historical')
-    expect(row).not.toHaveProperty('partial')
   })
 
   it('a Set row carries its sidecar’s icon and its stored id at its own path', async () => {
@@ -442,11 +442,5 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
         homeResolves: false,
       },
     ])
-  })
-
-  it('a row inside a partly recorded bundle carries the mark', async () => {
-    const bundlePath = await trashedNotes()
-    await patchRecord(join(root, bundlePath), () => ({ partial: true }))
-    expect(await innerOf(`${bundlePath}/Notes/Daily`)).toMatchObject([{ partial: true }])
   })
 })

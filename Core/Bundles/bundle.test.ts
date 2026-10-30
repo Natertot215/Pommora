@@ -196,13 +196,6 @@ describe('openBundle', () => {
     const read = await openBundle(root, join(space, 'Work', 'Notes.md'))
     expect(!read.ok && read.error.code).toBe('not-found')
   })
-
-  it('marks an inner item of a partly recorded bundle partial, and one of a whole record not', async () => {
-    await seedTrashedCollection({ partial: true })
-    expect((await opened(inBundle('A', 'S', 'T', 'P.md'))).record.partial).toBe(true)
-    await seedTrashedCollection()
-    expect((await opened(inBundle('A', 'S', 'T', 'P.md'))).record.partial).toBeUndefined()
-  })
 })
 
 describe('listInner', () => {

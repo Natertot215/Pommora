@@ -154,13 +154,11 @@ describe('the record is written before the destruction it describes', () => {
     const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page' })
-    expect(atSettle).not.toHaveProperty('partial')
     const after = await anyRecord()
     expect(after).toMatchObject({
       entity: 'page',
       links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],
     })
-    expect(after).not.toHaveProperty('partial')
   })
 
   it('a Space delete records what its holders held before the move strips a single tag', async () => {
@@ -202,7 +200,6 @@ describe('the record is written before the destruction it describes', () => {
     const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', archive })
-    expect(atSettle).not.toHaveProperty('partial')
   })
 })
 

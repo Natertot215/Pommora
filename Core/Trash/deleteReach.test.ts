@@ -139,7 +139,6 @@ describe('a page delete', () => {
       owed: true,
     })
     expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
-    expect(await recordOf(r.value.bundled.bundlePath)).not.toHaveProperty('partial')
     expect((await recordOf(r.value.bundled.bundlePath)).links).toBeUndefined()
   })
 
@@ -371,7 +370,6 @@ describe('a Set delete', () => {
       const r = await del('Notes/Gone', 'set')
       if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
       expect(r.value.cascade).toMatchObject({ warning: unsweptLine(2), owed: true })
-      expect(await recordOf(r.value.bundled.bundlePath)).not.toHaveProperty('partial')
     } finally {
       await chmod(locked.path, 0o755)
     }
@@ -716,14 +714,6 @@ describe('a content delete on the notes', () => {
       expect(await readNotes(root)).toEqual({})
     },
   )
-
-  it("a clean delete's record carries no partial", async () => {
-    await page(notes, 'Target')
-    await refreshTree(root)
-    const clean = await del('Notes/Target.md', 'page')
-    if (!clean.ok || !clean.value.bundled) throw new Error('the delete did not trash')
-    expect(await recordOf(clean.value.bundled.bundlePath)).not.toHaveProperty('partial')
-  })
 
   it('a crash between the note and the strip finishes at the open', async () => {
     const target = await page(notes, 'Target')

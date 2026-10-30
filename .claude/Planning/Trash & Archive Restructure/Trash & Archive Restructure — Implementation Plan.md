@@ -262,7 +262,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Review Checkpoint
 - [ ] **Phase 2** — Residue
   - [x] Task 2-1 · System Trash Mode and the `TrashDeps` seam leave
-  - [ ] Task 2-2 · The content record's `partial` leaves
+  - [x] Task 2-2 · The content record's `partial` leaves
   - [ ] Task 2-3 · Records from the tree, and a Context's place
   - [ ] Task 2-4 · The rest of the residue
   - [ ] Review Checkpoint
@@ -2022,7 +2022,8 @@ The case sits in the suite's describe for emptying a page's bundle, after the su
 
 - [ ] Apply the AFTER.
 - [ ] Remove `expect(atSettle).not.toHaveProperty('partial')` and `expect(after).not.toHaveProperty('partial')` (`Core/Trash/deleteOrder.test.ts:167,173`) and `expect(atSettle).not.toHaveProperty('partial')` (`:215`); the Space and Context cases' `not.toMatchObject({ partial: true })` (`:184,200`) stay.
-- [ ] Remove `Core/Trash/deleteReach.test.ts:800-806`, *"a clean delete's record carries no partial"*.
+- [ ] Remove `Core/Trash/deleteReach.test.ts:800-806`, *"a clean delete's record carries no partial"*, and the content records' `not.toHaveProperty('partial')` assertions at `:142` and `:374`, which nothing can make fail once content records carry no mark.
+- [ ] `Core/Trash/spend.test.ts`'s *"a partly recorded page's restore says so"* becomes *"a partly recorded Space's restore says so"*, deleting and restoring `.nexus/contexts/Projects/Pommora` in place of `Notes/Daily/Alpha.md`; it's red with `recordedPartly`'s `'partial' in record` guard removed.
 - [ ] Remove `Core/Trash/spend.test.ts:685-699`, *"old-format trash entries are invisible"*.
 - [ ] Remove `Core/Bundles/bundle.test.ts:200-205`, *"marks an inner item of a partly recorded bundle partial, and one of a whole record not"*, and `Core/Bundles/rows.test.ts:463-468`, *"a row inside a partly recorded bundle carries the mark"*, which pin the copy into an inner record; and the absence assertions at `rows.test.ts:406` and `Core/Archive/archive.test.ts:1120`, whose case drops *", and its record stays whole"* from its title.
 - [ ] `rows.test.ts:190-216` becomes *"a partly recorded entry's row carries the mark, a property's and a Space's alike"*: its page element becomes `{ bundlePath: '.trash/.nexus/contexts/Areas/s__Work.deleted', artifactName: 'Work', record: { entity: 'space' as const, id: 'sp_work', parent: { kind: 'context' as const, id: 'ctx_areas' }, members: [], ...(partial ? { partial: true as const } : {}) } }`, so the artifact row's reading of the mark stays pinned.

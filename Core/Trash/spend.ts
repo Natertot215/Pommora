@@ -191,7 +191,7 @@ export async function restoreTrashed(
     // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
     if (into && (record.entity === 'page' || record.entity === 'set')) {
       const origin = join(root, originPathOf(root, store, artifactAbs))
-      const { archive, links, targets, partial, ...filed } = record
+      const { archive, links, targets, ...filed } = record
       targetAbs = (await fileInto(root, into, origin, artifactAbs, filed, dir)).landed
     } else {
       await machine().mkdir(dirname(targetAbs))

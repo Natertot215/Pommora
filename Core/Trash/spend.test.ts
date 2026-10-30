@@ -603,22 +603,6 @@ describe('listBundles — what the trash offers', () => {
     expect(listed).toHaveLength(1)
     expect(listed[0].record).toMatchObject({ entity: 'page' })
   })
-
-  it('old-format trash entries are invisible', async () => {
-    // Both shapes the retired primitive left: a stamped file with a sibling pair, and a stamped FOLDER for a container delete.
-    const old = join(root, '.trash', 'Notes')
-    await mkdir(join(old, '2026-01-01T00-00-00-000Z__Journal'), { recursive: true })
-    await writeFile(join(old, '2026-01-01T00-00-00-000Z__Old.md'), 'body')
-    await writeFile(
-      join(old, '2026-01-01T00-00-00-000Z__Old.md.provenance.json'),
-      JSON.stringify({ entity: 'page', id: 'old', parent: { kind: 'root' } }),
-    )
-    await writeFile(
-      join(old, '2026-01-01T00-00-00-000Z__Journal.provenance.json'),
-      JSON.stringify({ entity: 'set', id: 'old-set', parent: { kind: 'root' } }),
-    )
-    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
-  })
 })
 
 describe('restore — the record spends, headless', () => {
@@ -2220,9 +2204,13 @@ describe('a Context or Space restore', () => {
 })
 
 describe('a partly recorded entry', () => {
-  it('a partly recorded page’s restore says so', async () => {
+  it('a partly recorded Space’s restore says so', async () => {
     const restore = async (partial: boolean): Promise<string | undefined> => {
-      await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+      await settledMutate(root, {
+        op: 'delete',
+        path: '.nexus/contexts/Projects/Pommora',
+        kind: 'space',
+      })
       const [listed] = await listBundles(root, { kind: 'trash' })
       if (partial)
         await patchRecord(join(root, listed.bundlePath), (raw) => ({ ...raw, partial: true }))
@@ -2232,7 +2220,7 @@ describe('a partly recorded entry', () => {
     }
     expect(await restore(false)).toBeUndefined()
     expect(await restore(true)).toContain(
-      '“Alpha” was recorded partly, so some of what it held may not come back.',
+      '“Pommora” was recorded partly, so some of what it held may not come back.',
     )
   })
 })

@@ -1088,7 +1088,7 @@ describe('a delete from the Archive', () => {
     expect(await related()).toBe('[[Beta]]')
   })
 
-  it('a live page’s delete owes an archived linker whose strip failed, and its record stays whole', async () => {
+  it('a live page’s delete owes an archived linker whose strip failed', async () => {
     const linker = await archive('Notes/Linker.md')
     failLandings((file) => file.startsWith(at(linker)))
     const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
@@ -1096,8 +1096,6 @@ describe('a delete from the Archive', () => {
       warning: 'Couldn’t update 1 Item.',
       owed: true,
     })
-    const bundlePath = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
-    expect(await readRecord(at(bundlePath))).not.toHaveProperty('partial')
     expect(splitFrontmatter(await text(linker, 'Linker.md')).Related).toBe('[[Beta]]')
   })
 
