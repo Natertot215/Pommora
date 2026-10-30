@@ -308,7 +308,7 @@ async function respell(
 }
 
 /** A restore's re-spell, two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `own` reads the returning pages' own keys against themselves and joins `names` only where the live world names nothing, so a title-only link that found a namesake meanwhile stays with it. */
-export function returningNames(
+function returningNames(
   live: PageIndex,
   after: PageIndex,
   back: readonly ConnPage[],

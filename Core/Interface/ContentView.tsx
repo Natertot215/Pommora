@@ -14,7 +14,7 @@ import { useRevealNear } from '@pommora/uix/Interactions/hoverReveal'
 import { slideIn } from '@pommora/uix/Animations/motion'
 import { FooterToggle } from '@pommora/uix/Interactions/FooterToggle'
 import { findCollection, findSet } from '../Nexus/treeIndex'
-import { topContainerOf } from '../Nexus/treePatch'
+import { owningCollection, topContainerOf } from '../Nexus/treePatch'
 import { ContainerView } from '../Views/ContainerView'
 import { ArchiveView } from '../Archive/ArchiveView'
 import { HomepageView } from './Homepage/HomepageView'
@@ -91,7 +91,11 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       return <MatrixView />
     case 'archive': {
       const owner = topContainerOf(tree, target.id)
-      return owner ? <ArchiveView owner={owner} /> : <div className="detail interface-inset" />
+      return owner ? (
+        <ArchiveView owner={owner} archiveId={owningCollection(tree, owner)!.id} />
+      ) : (
+        <div className="detail interface-inset" />
+      )
     }
   }
 })

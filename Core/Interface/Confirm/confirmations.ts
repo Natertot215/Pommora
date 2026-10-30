@@ -77,12 +77,9 @@ export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> =
   })
 }
 
-/** A held item asks the Trash's question and a property its own, counting what holds it. `undoTo` returns a held item where the delete took it from rather than to its origin, and a property, which a restore lands only in the registry, takes none. */
+/** A held item asks the Trash's question and a property its own, counting what holds it. */
 export const confirmDelete = async (
-  target: { title: string } & (
-    | { path: string; kind: HeldKind; undoTo?: RestoreDestination }
-    | { propertyId: string; undoTo?: never }
-  ),
+  target: { title: string } & ({ path: string; kind: HeldKind } | { propertyId: string }),
 ): Promise<boolean> => {
   const asked =
     'propertyId' in target
@@ -97,7 +94,7 @@ export const confirmDelete = async (
         : { op: 'delete', path: target.path, kind: target.kind },
     )
   if (!done) return false
-  offerDeleted(target.title, done, target.undoTo)
+  offerDeleted(target.title, done)
   return true
 }
 
