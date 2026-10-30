@@ -14,13 +14,13 @@
 
 | Phase | Estimate | Measured |
 |---|---|---|
-| 1 · The Landing | about +37 | |
-| 2 · Residue | about −135 | |
-| 3 · Delete, Journal, and Carry | about −35 | |
-| 4 · Reach-In | about −450 | |
-| 5 · One Restore, Recognition, and the Interface | about −15 | |
+| 1 · The Landing | about +46 | |
+| 2 · Residue | about −136 | |
+| 3 · Delete, Journal, and Carry | about −46 | |
+| 4 · Reach-In | about −360 | |
+| 5 · One Restore, Recognition, and the Interface | about +80 | |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | |
-| **Total** | **about −600** | |
+| **Total** | **about −415** | |
 
 ### Context
 
@@ -32,7 +32,7 @@ Every cascade lands its writes through `Machine.land` (`Core/Platform/machine.ts
 
 Six phases move the Trash onto the Archive's model and fold everything the two models duplicated into one design, removal first. Phase 1 lands each group of files with one flush and identifies every file by its change time, so a property rename falls to roughly 6–7 s and the index can trust what it holds. Phase 2 removes System Trash Mode, the `TrashDeps` seam, compatibility-only decodes, and dead code. Phase 3 gives every delete one mint, one record written ahead of its strip, one note, and one tail, and the Archive one carry. Phase 4 admits the Trash into the index and every cascade, watched as the Archive is, with one store-of-path rule, and removes the frozen model whole. Phase 5 makes one restore serve both stores and every item moved out of a store by hand, with one Undo shape and one notice owner. Phase 6 puts tests where their behavior lives, measures the property rename again, and removes the measurement harness.
 
-User-facing behavior stays as it is, except that a restored page returns current, items moved out of a store by hand finish as restores, and trashed pages follow live pages' rules (Decisions D-4, D-5, E-1–E-4). The plan ends about 600 production lines and about 850 test lines lighter, recognition's roughly 95 added lines and the landing's 37 included, and what leaves beyond lines is listed under *Investigation · §The Net*: the scrub and `targets`' frozen identity, the trashed refill and its owed work, System Trash Mode, the `TrashDeps` seam, the content-hash echo, the flush per file, two stat identities, two watch policies, two restores, and two notice owners.
+User-facing behavior stays as it is, except that a restored page returns current, items moved out of a store by hand finish as restores, and trashed pages follow live pages' rules (Decisions D-4, D-5, E-1–E-4). The plan ends about 415 production lines and about 850 test lines lighter, recognition's roughly 110 added lines and the landing's 46 included, and what leaves beyond lines is listed under *Investigation · §The Net*: the scrub and `targets`' frozen identity, the trashed refill and its owed work, System Trash Mode, the `TrashDeps` seam, the content-hash echo, the flush per file, two stat identities, two watch policies, two restores, and two notice owners.
 
 #### Concepts
 
@@ -42,7 +42,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 |---|---|---|
 | `TEMP_FLAGS` • Constant | `Desktop/Platform/nodeMachine.ts` | 1 |
 | `FileStat.ctimeMs` • Field | `Core/Platform/machine.ts` | 1 |
-| `Identity` • Type (module-private) | `Core/Platform/machine.ts` | 1 |
+| `Identity` • Type | `Core/Platform/machine.ts` | 1 |
 | `IndexedStat.ctimeMs` • Field | `Core/Platform/stores.ts` | 1 |
 | `indexed_files.ctime_ms` • Column | `Desktop/Store/ddl.ts` | 1 |
 | `MemoryFile` • Type (module-private) | `Core/Testing/machines.ts` | 1 |
@@ -51,30 +51,31 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `unlessVouched` • Function | `Core/Index/indexSeed.ts` | 1 |
 | `HolderQuery.every` • Field | `Core/Index/keyHolders.ts` | 1 |
 | "metadata: `<month>` refused its copies:" • String | `Core/Nexus/pageMetadata.ts` | 1 |
+| `editShards` (private, both month writes) • Function | `Core/Nexus/pageMetadata.ts` | 1 |
 | `gatherContextRecord` (in place of the three Context gather pieces) | `Core/Trash/gather.ts` | 2 |
 | The Context record's `place`, `panel`, and `spaceOrder` | `Core/Bundles/record.ts` | 2 |
 | `placeAmong` (in place of `slotOf` and its caller's splice) | `Core/Bundles/placement.ts` | 2 |
 | `dropDeparture`'s Context arm (in place of `dropContextOrder`) | `Core/Nexus/reorder.ts` | 2 |
 | `placeRecord`'s Context order write | `Core/Bundles/placement.ts` | 2 |
 | `ArchiveView`'s `archiveId` prop | `Core/Archive/ArchiveView.tsx` | 2 |
-| `bundleFolder` (private, `mintBundle`'s naming loop) and `mintBundle`'s `record` parameter | `Core/Bundles/bundle.ts` | 3 |
-| `DeletePlan`, `planOf`, `ArchivedDelete` (private) | `Core/Trash/delete.ts` | 3 |
+| `mintBundle`'s `record` parameter | `Core/Bundles/bundle.ts` | 3 |
+| `DeletePlan`, `planOf` (private) | `Core/Trash/delete.ts` | 3 |
 | `Departing` | `Core/Nexus/reorder.ts` | 3 |
 | `leave` (exported, one for the delete and both finish arms) | `Core/Nexus/finishOwed.ts` | 3 |
 | `linkStrip` | `Core/Nexus/cascade.ts` | 3 |
 | `readHolders` (`findHolders`' read half) | `Core/Index/keyHolders.ts` | 3 |
 | `gatherLinks` | `Core/Trash/gather.ts` | 3 |
-| `ContentRecord`, `appendLinks` (from `trashedCopies.ts`), `removeLinks`, `patchLinks` and `sameLink` (private) | `Core/Bundles/record.ts` | 3 |
+| `ContentRecord`, `ContainerRecord`, `InnerRecord`, and `PropertyRecord` (the arm types, named once), `appendLinks` (from `trashedCopies.ts`), `removeLinks`, `patchLinks` and `sameLink` (private) | `Core/Bundles/record.ts` | 3 |
 | `currentOrigin` | `Core/Bundles/record.ts` | 3 |
 | `MoveEntry` and the `move` kind, `containerNote`, `releaseStrip` (from `spendBundle`) | `Core/Nexus/owed.ts` | 3 |
 | `finishMove` | `Core/Nexus/finishOwed.ts` | 3 |
 | `collectionArchive` (moved, now private) | `Core/Trash/spend.ts` | 3 |
 | `ownedArchives` | `Core/Bundles/bundle.ts` | 3 |
 | `Core/Paths/bundleLayout.ts` (moved from `Core/Bundles/layout.ts`) | Placements | 4 |
-| `storeOf`, `Stored`, `located` (private) | `Core/Paths/bundleLayout.ts` | 4 |
+| `storeOf`, `Stored` | `Core/Paths/bundleLayout.ts` | 4 |
 | `hiddenName`, `hiddenFolder` (moved from `Core/Paths/exclusion.ts`) | `Core/Paths/nexusPaths.ts` | 4 |
 | `stashBlock`, `StashBlock` (moved from `Core/Properties/propertyStash.ts`) | `Core/Properties/properties.ts` | 4 |
-| `storedSpaces`, `storedPageIds` (renamed from `archivedPageIds`), `rootFile` | `Core/Nexus/heldPages.ts` | 4 |
+| `storedSpaces`, `storedPageIds` (renamed from `archivedPageIds`), `rootFile`; `NexusPages.stored` | `Core/Nexus/heldPages.ts` | 4 |
 | `trashedOwners`, `trashReach` | `Core/Bundles/bundle.ts` | 4 |
 | `owningCollection`'s and `containerSchema`'s `trashed` parameter; `listBundles`' `chain` parameter | `treePatch.ts`; `bundle.ts` | 4 |
 | `storedContainers` (from `archivedSets`), `containerSidecarsUnder` (from `setSidecarsUnder`) | `Core/Nexus/configReach.ts` | 4 |
@@ -87,21 +88,20 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `Core/Trash/TrashFrame.tsx`, `Core/Trash/trash-frame.css` (moved from `Core/Settings/`) | Placements | 5 |
 | `'bundles:permanentDelete'` (in place of `delete:facts`) | `Core/Bundles/handlers.ts`, `Core/Contract/bridge.ts` | 5 |
 | `restoreDestination`'s archive arm's `at` | `Core/Nexus/mutateRequest.ts` | 5 |
-| `isBundleOp` | `Core/Nexus/mutateRequest.ts` | 5 |
 | `livePath` (in place of `livePagePath`) | `Core/Nexus/record.ts` | 5 |
-| `atItemNow` (private), `runBundled`, `Acted` | `Core/Interface/Confirm/confirmations.ts` | 5 |
-| `notifyBundled`, `Bundled` | `Core/Interface/Notifications/notifications.ts` | 5 |
+| `runBundled`; `atItemNow` and `Acted` (private) | `Core/Interface/Confirm/confirmations.ts` | 5 |
+| `notifyBundled`, `Bundled`, `Titled` (in place of `Asked`); "N Pages couldn’t be undone." | `Core/Interface/Notifications/notifications.ts` | 5 |
 | `BundleFooting`; `useDateColumn`, `widestDate`, `WIDEST_AT`, `DAY_MS` (moved); `DateColumn` | `Core/Bundles/BundleTable.tsx` | 5 |
 | `Listing`'s export | `Core/Bundles/browser.ts` | 5 |
 | `respell` (moved from `settle.ts`) | `Core/Nexus/cascade.ts` | 5 |
 | `parkLinks` (moved from `trashedCopies.ts`) | `Core/Bundles/record.ts` | 5 |
-| `openBundle`'s, `readBundleAt`'s, `innerRecord`'s, and `keptLinksUnder`'s `left`; `listBundles`' `artifactLeft` | `Core/Bundles/bundle.ts` | 5 |
-| `arrive`'s `filed` | `Core/Nexus/arrival.ts` | 5 |
+| `openBundle`'s and `innerRecord`'s `left`; `readBundleAt`'s and `keptLinksUnder`'s `movedOut`; `listBundles`' `recordOnly` | `Core/Bundles/bundle.ts` | 5 |
+| `arrive`'s `filed`; `Departed` | `Core/Nexus/arrival.ts` | 5 |
 | `moveIndexPaths`' `reads`; `applyMove`'s `given` | `Core/Index/indexSeed.ts`, `Core/Nexus/fileEvents.ts` | 5 |
 | `sweepRootsById`'s per-key `above` | `Core/Nexus/governedSweep.ts` | 5 |
 | `settle`'s `spaces` | `Core/Nexus/settle.ts` | 5 |
 | `bundleOf` (test support) | `Core/Testing/settledMutate.ts` | 5 |
-| `Core/Testing/bundles.ts`: `bundleNexusEachTest`, `bundleDirs` (from `spend.test.ts`), `onlyBundle`, `stateOrder`, `PAGE_A`–`PAGE_C`, `BrowserChannels` (module-private), `stubBrowserEachTest`, `rowOf`, `boxOf`, `press`, `indentOf` | Placements | 6 |
+| `Core/Testing/bundles.ts`: `bundleNexusEachTest`, `bundleDirs` (from `spend.test.ts`), `onlyBundle`, `stateOrder`, `PAGE_A`–`PAGE_C`, `BrowserChannels` (module-private), `stubBrowserEachTest`, `rowOf`, `boxOf`, `press`; `bundleRow` and `seedPropertyBundle` (from `fixtures.ts`) | Placements | 6 |
 | `Core/Trash/gather.test.ts`, `Core/Trash/empty.test.ts`, `Core/Trash/discard.test.ts` | Tests (created) | 6 |
 | `Core/Bundles/restore.test.ts`, `Core/Nexus/arrival.test.ts`, `Core/Paths/bundleLayout.test.ts`, `Core/Trash/TrashFrame.test.tsx` | Tests (moved) | 6 |
 | "That path is in neither the Trash nor an Archive." | `Core/Bundles/bundle.ts` | 6 |
@@ -149,7 +149,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `appendLinks` (moved), `spendBundle`'s inline link filter and journal edit | `Core/Trash/trashedCopies.ts`, `Core/Bundles/bundle.ts` | 3 |
 | `ContainerEntry.park`, `ContainerEntry.within` | `Core/Nexus/owed.ts` | 3 |
 | `collectionArchive` | `Core/Archive/archive.ts` | 3 |
-| `refileFiled`; `refileArchived`'s `to` and `above`; `refileLanded`'s `dir` | `Core/Archive/refile.ts` | 3 |
+| `refileFiled`; `refileArchived`'s `to` and `above`; `refileLanded`'s `dir` (its `chain` in place) | `Core/Archive/refile.ts` | 3 |
 | `archiveFiling`'s own deepest-live computation | `Core/Bundles/placement.ts` | 3 |
 | The hand-written `elsewhere` memos in `settleArchives` and `owedEdit` | `Core/Archive/refile.ts`, `Core/Nexus/finishOwed.ts` | 3 |
 | `Core/Bundles/layout.ts` (moved), `stampedSegment` | Bundles | 4 |
@@ -170,6 +170,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `Worked`, `workedOut`, `oweWorked`, `RelinkEntry.values` | `Core/Nexus/owed.ts` | 4 |
 | `Frozen` | `Core/Nexus/governedRoot.ts` | 4 |
 | `returningCascade`'s `repair` parameter; `deleteCascade`'s `abs`; `unlinkMembers`' `skipUnder` | `settle.ts`; `cascade.ts`; `contextCascade.ts` | 4 |
+| `originPathOf`'s, `originPagesOf`'s, and `keptLinksUnder`'s `store`; `moveIntoStore`'s address guard | `Core/Paths/bundleLayout.ts`; `Core/Bundles/bundle.ts` | 4 |
 | `Core/Trash/trashedCopies.test.ts` | Tests | 4 |
 | `restoreTrashed`, `Restored`, `restored`, `reapply` (moved) | `Core/Trash/spend.ts` | 5 |
 | `restoreArchived` | `Core/Archive/archive.ts` | 5 |
@@ -177,7 +178,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `MutateOutcome.bundled` | `Core/Nexus/mutateRequest.ts` | 5 |
 | The record's `archive` field; `appendLinks`' export | `Core/Bundles/record.ts` | 5 |
 | `ARCHIVE_UNDO`, `Undone`, `undoneOf`, `rearchive`, `DateKey`, `rulesOf`'s `restoreUndo`, `deleteUndo`, and `dateKey`, `steppedTo` (moved), `restoreOne`, `deleteOne`, `many`, `restoreBatch`, `deleteBatch`, the hook's `date` | `Core/Bundles/browser.ts` | 5 |
-| `offerDeleted`, `DELETE_FACTS_FALLBACK`, `offerUndo`'s destination | `Core/Interface/Confirm/confirmations.ts` | 5 |
+| `offerDeleted`, `DELETE_FACTS_FALLBACK`, `offerUndo`'s destination, `Asked` (into `Titled`) | `Core/Interface/Confirm/confirmations.ts` | 5 |
 | `notifyDeleted`'s cascade and retry parameters | `Core/Interface/Notifications/notifications.ts` | 5 |
 | The slice's `unrestoredLine` post | `Core/Session/nexusSlice.ts` | 5 |
 | `returningNames`, `returningCascade`, `respell` (moved) | `Core/Nexus/settle.ts` | 5 |
@@ -187,7 +188,8 @@ User-facing behavior stays as it is, except that a restored page returns current
 | The copy "That deletion never finished; there is nothing to restore." | `Core/Trash/spend.ts` | 5 |
 | `Core/Trash/spend.test.ts`, `Core/Trash/restoreScrub.test.ts`, `Core/Bundles/layout.test.ts`, `Core/Settings/TrashFrame.test.tsx` (moved) | Tests | 6 |
 | `onlyBundle`, `bundleDirs`, the seed; `onlyBundlePath`; two `stateOrder`s | `spend.test.ts`; `restoreProperty.test.ts`; `spend.test.ts`, `trashRecovery.test.ts` | 6 |
-| The three skin harnesses' channel stubs and their `rowOf`, `boxOf`, `press`, `indentOf` | `TrashFrame.test.tsx`, `ArchiveView.test.tsx`, `browser.test.ts` | 6 |
+| The three skin harnesses' channel stubs and their `rowOf`, `boxOf`, `press`, `indentOf`; `BundleTable.test.tsx`'s `rowOf` and `boxOf` | `TrashFrame.test.tsx`, `ArchiveView.test.tsx`, `browser.test.ts`, `BundleTable.test.tsx` | 6 |
+| `bundleRow`, `seedPropertyBundle` (moved) | `Core/Testing/fixtures.ts` | 6 |
 | Nineteen duplicated cases; `describe('a Trash row')` | Tasks 6-1 and 6-7 | 6 |
 | "Only a trash or archive record can be spent." | `Core/Bundles/bundle.ts` | 6 |
 | `.claude/Benchmarks/Reach-In/` | Harness | 6 |
@@ -283,8 +285,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [ ] Compaction Checkpoint
 - [ ] `[After any compaction: reread §Constraints and c/plan-execution from the files before the next task opens; no stop]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
-  - [ ] Task 5-1 · Every reversible reply carries its own Undo
-  - [ ] Task 5-2 · One notice through one builder
+  - [ ] Task 5-1 · Following an id covers a Set
+  - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [ ] Task 5-3 · The table owns its date column and footing
   - [ ] Task 5-4 · The arrival's one home
   - [ ] Task 5-5 · One restore for both stores
@@ -322,13 +324,13 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Task 1-1
 
-**TASK:** Every temp a landing writes goes through to its drive as it's written, so one flush of each drive the group's temps sit on makes the group durable before any of its files is renamed, which keeps Decision F-3's guarantee (LD-3, with Decision G-4's flag); and each commit answers a stat of the file taken after its rename (LD-1). The temp's stat moves from the commit into `stage`, where it also names the drive. **Departures:** each commit waits on its own drive's flush rather than every flush answering before any commit (*Investigation · §The Group Flush*), since Decision F-3's guarantee is each file's, and waiting on every drive would hold one drive's renames behind another's flush for nothing; `CHUNK`'s docstring changes here, where it turns false, rather than with LD-6. `land`'s comment leaves, since `stage`'s states the order, so the flag's comment leaves the count level.
+**TASK:** Every temp a landing writes goes through to its drive as it's written, so one flush of each drive the group's temps sit on makes the group durable before any of its files is renamed, which keeps Decision F-3's guarantee (LD-3, with Decision G-4's flag); and each commit answers a stat of the file taken after its rename (LD-1). The temp's stat moves from the commit into `stage`, where it also names the drive. **Cautionary (Its Reason, for Nathan at Ratification):** a rename keeps a file's modification time and size, so the commit answers the post-rename stat only while those are still the temp's, and the temp's own otherwise, so an outside writer (Obsidian on NexusOS, a sync arrival) landing between the rename and the stat is heard and re-read rather than vouched for as the app's own write by the echo record, the index row, and the walk cache. **Departures:** each commit waits on its own drive's flush rather than every flush answering before any commit (*Investigation · §The Group Flush*), since Decision F-3's guarantee is each file's, and waiting on every drive would hold one drive's renames behind another's flush for nothing; `CHUNK`'s docstring changes here, where it turns false, rather than with LD-6. `land`'s comment leaves, since `stage`'s states the order, so the flag's comment leaves the count level.
 
 **NOW:** `stage` (`Desktop/Platform/nodeMachine.ts:50-89`) opens each temp `'wx'` (`:60`), writes it, dates it (`:69`), and flushes it with its own `handle.sync()` (`:70`), the only production flush. Its commit checks `expect` against a fresh stat (`:76-78`), takes the temp's `handle.stat()` (`:79`), restores the file's mode (`:81`), closes (`:82`), renames (`:83`), and answers that pre-rename stat (`:84`); `land` (`:95-103`) stages the whole group, then commits it, one full drive flush per file. T-N19 (`Desktop/Platform/nodeMachine.test.ts:74-81`) pins three `synced` for three files, and `CHUNK`'s docstring (`Core/Files/atomicWrite.ts:50`) and `CorePM.md:105` describe a flush per file. The disk double already answers a stat taken after its rename (`Core/Testing/machines.ts:170`). A rename keeps a file's modification time, size, and birth, so the post-rename answer changes nothing `sameFile` reads until Task 1-3 gives it the change time, where T-N4 starts pinning it.
 
 **CHANGE**
 
-- [ ] Write the three `nodeMachine landing` cases below and watch each fail: the T-N19 rewrite, "flushes a group once, before renaming any of its files" (one `synced`; it fails with three); "opens each temp to write through to its drive" (it fails while the temp opens `'wx'`); "a failed flush rejects every file it would have made durable and leaves no temp" (it fails without the commit's `await flushed`).
+- [ ] Write the four `nodeMachine landing` cases below and watch each fail: the T-N19 rewrite, "flushes a group once, before renaming any of its files" (one `synced`; it fails with three); "opens each temp to write through to its drive" (it fails while the temp opens `'wx'`); "a failed flush rejects every file it would have made durable and leaves no temp" (it fails without the commit's `await flushed`); "answers its own stat when an outside write lands between the rename and the stat" (the mocked `rename` writes the file from outside once it lands; it fails while the commit answers the post-rename stat unchecked).
 - [ ] Apply the AFTER, `TEMP_FLAGS` wrapped as Biome formats it.
 - [ ] In `.claude/Features/CorePM.md:105`, "each file in a group is written to a dotted temp beside it, and every temp is flushed before any is renamed into place" becomes "each file in a group is written through to the drive in a dotted temp beside it, and each drive the group's temps sit on is flushed once before any of them is renamed into place".
 
@@ -349,7 +351,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 +  constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | (isWindows ? 0x04000000 : constants.O_DSYNC)
 +
 -// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the file's commit, which lands it once its group has flushed.
-+// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the drive the temp sits on, the flush that empties that drive's cache, and the file's commit, which lands it once that flush answers and answers the stat the file then holds.
++// Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the drive the temp sits on, the flush that empties that drive's cache, and the file's commit, which lands it once that flush answers and answers the stat the file then holds while its time and size are still the temp's, which a rename keeps, and the temp's own otherwise, so an outside write landing between the rename and the stat is heard.
  async function stage({
    path: named,
    data,
@@ -408,7 +410,8 @@ User-facing behavior stays as it is, except that a restored page returns current
 +        if (held && held.mode !== own.mode) await handle.chmod(held.mode).catch(() => {})
 +        await handle.close()
 +        await outlastHolder(path, () => rename(temp, path))
-+        return fileStat(await stat(path))
++        const now = fileStat(await stat(path))
++        return now.mtimeMs === own.mtimeMs && now.size === own.size ? now : fileStat(own)
 +      } catch (e) {
 +        return discard(e)
 +      }
@@ -448,10 +451,20 @@ User-facing behavior stays as it is, except that a restored page returns current
 @@ imports @@
 -import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
 +import { noModeBits, tempRoot, windows } from '@pommora/core/Testing/hostFs'
+@@ hoisted @@
+ const synced = vi.hoisted(() => ({ hook: async (): Promise<void> => {} }))
++const afterRename = vi.hoisted(() => ({ hook: async (_to: string): Promise<void> => {} }))
 @@ vi.mock('node:fs/promises') @@
      open: async (...args: Parameters<typeof real.open>) => {
 +      log.push(`open ${args[1]}`)
        const handle = await real.open(...args)
+@@ vi.mock('node:fs/promises') @@
+     rename: async (from: string, to: string) => {
+       log.push(`rename ${from}`)
+-      return real.rename(from, to)
++      await real.rename(from, to)
++      await afterRename.hook(to)
+     },
 @@ describe 'nodeMachine landing' @@
 -  it('flushes every file of a group before renaming any', async () => {
 +  it('flushes a group once, before renaming any of its files', async () => {
@@ -484,12 +497,24 @@ User-facing behavior stays as it is, except that a restored page returns current
 +    expect(await readdir(root)).toEqual(['a.md'])
 +  })
 +
++  it('answers its own stat when an outside write lands between the rename and the stat', async () => {
++    afterRename.hook = async (to) => {
++      afterRename.hook = async () => {}
++      await writeFile(to, 'theirs, longer')
++    }
++    const [landed] = await host.land([{ path: at('a.md'), data: 'mine', mtimeMs: 1_700_000_000_000 }])
++    expect(landed.status === 'fulfilled' && landed.value).toMatchObject({
++      size: 4,
++      mtimeMs: 1_700_000_000_000,
++    })
++  })
++
    it('a file rewritten while its group flushes is left as its writer left it', async () => {
 ```
 
 **VERIFY**
 
-- [ ] The three cases are green, and T-N35 ("a file rewritten while its group flushes is left as its writer left it") and the `describeMachine('nodeMachine')` contract still pass.
+- [ ] The four cases are green, and T-N35 ("a file rewritten while its group flushes is left as its writer left it") and the `describeMachine('nodeMachine')` contract still pass.
 - [ ] `git grep -n "handle.sync()" -- Core Desktop` prints `nodeMachine.ts`'s `flush` alone.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
@@ -550,7 +575,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Task 1-3
 
-**TASK:** `FileStat` gains the change time, and `sameFile` compares it in place of birth, so a rewrite that keeps a file's modification time and size still reads as another file; the seed's skip, `describes`, converges into `sameFile`, one identity of a file instead of two, and the index rows carry the change time, which reseeds every Nexus once (LD-2, Decision G-1). The memory machine gains a change-time counter set on every landing and rename. **The Kept-Time Guards Stay (*§Approaches* 5):** `fileEvents.ts:395-396`, `atomicWrite.ts:27`, and `atomicWrite.ts:134` forget a parse a kept-time write would leave looking current; the change time removes that cause on APFS (probed) and NTFS (documented), but exFAT's directory entry records only creation, modification, and access times, so on an exFAT Nexus the forgets are the only protection. `sameFile`'s docstring states the limit once, and each guard's comment names it. **Fold:** the memory machine's entry shape, written three times, becomes one `MemoryFile` type. **Departure:** the rows take the landing's `FileStat` whole as their `IndexedStat` (`stat: st`) rather than a copied literal, since the stores pick their own columns and the literal would be a third spelling of the identity.
+**TASK:** `FileStat` gains the change time, and `sameFile` compares it in place of birth, so a rewrite that keeps a file's modification time and size still reads as another file; the seed's skip, `describes`, converges into `sameFile`, one identity of a file instead of two, and the index rows carry the change time, which reseeds every Nexus once (LD-2, Decision G-1). The memory machine gains a change-time counter set on every landing and rename. **The Kept-Time Guards Stay (*§Approaches* 5):** `fileEvents.ts:395-396`, `atomicWrite.ts:27`, and `atomicWrite.ts:134` forget a parse a kept-time write would leave looking current; the change time removes that cause on APFS (probed) and NTFS (documented), but exFAT's directory entry records only creation, modification, and access times, so on an exFAT Nexus the forgets are the only protection. `sameFile`'s docstring states the limit once, and each guard's comment names it. **Fold:** the memory machine's entry shape, written three times, becomes one `MemoryFile` type; `sameFile`'s `Identity` is exported and `IndexedStat` extends it, so a file's identity fields are declared once and the memory index stores and answers them without spelling them out. **Departure:** the rows take the landing's `FileStat` whole as their `IndexedStat` (`stat: st`) rather than a copied literal, since the stores pick their own columns and the literal would be a third spelling of the identity.
 
 **NOW:**
 - **The Seam:** `FileStat` (`Core/Platform/machine.ts:2-7`) holds size, modification time, birth, and kind; `sameFile` (`:22-29`) compares time, size, and birth under an APFS caveat; `fileStat` (`:31-42`) maps a host stat. `birthtimeMs` also feeds `adopt.ts:79` and `remintLedger.ts:77`, which keep it.
@@ -560,11 +585,11 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 **CHANGE**
 
-- [ ] Write the contract case "a rename moves the change time and keeps the modification time" (`Core/Testing/machineContract.ts`, run on all three machines) and the T-N40 rewrite, and watch each fail.
+- [ ] Write the contract case "a rename moves the change time and keeps the modification time" (`Core/Testing/machineContract.ts`, run on all three machines) and the T-N40 rewrite, and watch each fail. Both rest on the change time moving between two calls microseconds apart, which ships unverified on Windows (*§Open Items · Windows and exFAT*), so each skips there through `it.skipIf(windows)`, as the suites' other platform guards spell it; Biome wraps T-N40's title.
 - [ ] Apply the AFTER.
 - [ ] Add `ctimeMs` to every `IndexedStat` literal the suites build: `Core/Index/contentIndex.test.ts:24,98,105`; `Core/Matrix/matrixGraph.test.ts:36,43,50,83,110,127,142,154`; `Core/Pages/fileHistory.test.ts:397`; `Core/Testing/storesContract.ts:64,155,160,238`; `Desktop/Store/open.test.ts:268`; `Desktop/Store/stores.test.ts:68,78`. In `Core/Platform/machine.test.ts`, the three seeded entries (`:25-27`) take `ctimeMs: 500`, and the sweep case (`:54`) reads `expect(fs.files.get(page)).toMatchObject({ text: 'swept\n', mtimeMs: 500 })`.
 - [ ] Extend T-N11: `const { mtimeMs, size, ctimeMs } = await stat(files[i])` and `toMatchObject({ mtimeMs, size, ctimeMs })`, which fails without the row's change time.
-- [ ] Revert Task 1-1's `fileStat(await stat(path))` to the temp's `fileStat(own)`, watch T-N4 ("a landing keeps the time it is given and answers the stat the file then holds") go red on `nodeMachine`, and restore it: T-N4 is LD-1's pin from here.
+- [ ] Make Task 1-1's commit answer the temp's `fileStat(own)` alone, watch T-N4 ("a landing keeps the time it is given and answers the stat the file then holds") go red on `nodeMachine`, and restore it: T-N4 is LD-1's pin from here.
 - [ ] Docs: in `.claude/Features/CorePM.md:113`, "reading only files whose mtime or size moved since they were last indexed" becomes "reading only files whose modification time, size, or change time moved since they were last indexed"; in `CorePM.md:160`, "the mtime and size it was read at" becomes "the modification time, size, and change time it was read at" and "re-indexes any file whose mtime or size moved" becomes "re-indexes any file whose modification time, size, or change time moved"; in `.claude/Features/DesktopPM.md:22`, "whose modification time, size, and birth time are unchanged" becomes "whose modification time, size, and change time are unchanged".
 
 **AFTER**
@@ -581,9 +606,9 @@ User-facing behavior stays as it is, except that a restored page returns current
 @@ sameFile @@
 -/** Whether `now` is still the file `was` describes: the same time, size, and birth, a `was` of null describing no file. Birth tells a file replaced whole apart only where the new file keeps a birth of its own, since on APFS a time set earlier than a file's birth moves its birth back to it. */
 -export const sameFile = (was: FileStat | null, now: FileStat | null): boolean =>
-+type Identity = Pick<FileStat, 'mtimeMs' | 'size' | 'ctimeMs'>
++export type Identity = Pick<FileStat, 'mtimeMs' | 'size' | 'ctimeMs'>
 +
-+/** Whether `now` is still the file `was` describes: the same modification time, size, and change time, which no program can set, so a rewrite that keeps a file's time and size still reads as another file; a `was` of null describes no file. A volume that records no change time, as exFAT doesn't, can't tell such a rewrite apart, so a write that keeps a file's time also forgets the walk cache's parse of it. */
++/** Whether `now` is still the file `was` describes: the same modification time, size, and change time, which no program can set, so a rewrite that keeps a file's time and size still reads as another file; a `was` of null describes no file. A volume whose change time is coarse or absent, as HFS+'s one-second times and exFAT's missing one are, can't always tell such a rewrite apart, so a write that keeps a file's time also forgets the walk cache's parse of it. */
 +export const sameFile = (was: Identity | null, now: Identity | null): boolean =>
    was === null
      ? now === null
@@ -639,11 +664,14 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```
 
 ```Core/Testing/machineContract.ts diff
+@@ imports @@
+ import type { Machine } from '../Platform/machine'
++import { windows } from './hostFs'
 @@ it 'renames a file' @@
      expect(await machine.readText(at('x.txt'))).toBeNull()
    })
  
-+  it('a rename moves the change time and keeps the modification time', async () => {
++  it.skipIf(windows)('a rename moves the change time and keeps the modification time', async () => {
 +    await machine.land([{ path: at('x.txt'), data: 'v', mtimeMs: 2_000_000_000_000 }])
 +    const was = await machine.stat(at('x.txt'))
 +    await machine.rename(at('x.txt'), at('y.txt'))
@@ -682,11 +710,16 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```
 
 ```Core/Platform/stores.ts diff
+@@ imports @@
++import type { Identity } from './machine'
++
+ export interface KeyValueStore {
 @@ IndexedStat @@
- export interface IndexedStat {
-   mtimeMs: number
-   size: number
-+  ctimeMs: number
+-export interface IndexedStat {
+-  mtimeMs: number
+-  size: number
++export interface IndexedStat extends Identity {
+   /** The ID the page's frontmatter carries, when one is written: what pairs its rows' removal with where the tree holds it next. */
 ```
 
 ```Desktop/Store/ddl.ts diff
@@ -721,11 +754,16 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```
 
 ```Core/Testing/memoryStores.ts diff
+@@ imports @@
+ import { asString } from '../Nexus/coerce'
++import type { Identity } from '../Platform/machine'
+@@ MemoryIndex @@
+~  stats: Map<string, Identity>
 @@ statOf @@
-~  const statOf = (path: string, { mtimeMs, size, ctimeMs }: IndexedStat): IndexedStat => {
+~  const statOf = (path: string, identity: Identity): IndexedStat => {
      const row = index.values.get(k(path, ID_KEY))
      const id = row && asString(JSON.parse(row.value))
-~    return id === undefined ? { mtimeMs, size, ctimeMs } : { mtimeMs, size, ctimeMs, id }
+~    return id === undefined ? identity : { ...identity, id }
    }
 @@ upsertPageIndexes @@
 ~        index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size, ctimeMs: stat.ctimeMs })
@@ -734,14 +772,14 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```Core/Nexus/fileEvents.ts diff
 @@ applyPage @@
 -  // An outside edit can keep the time, size, and birth the walk cache's hit test reads, so its parse leaves the cache.
-+  // An outside edit can keep the time and size the walk cache's hit test reads, and on a volume with no change time its whole identity (`sameFile`), so its parse leaves the cache.
++  // An outside edit can keep the time and size the walk cache's hit test reads, and on a volume whose change time is coarse or absent its whole identity (`sameFile`), so its parse leaves the cache.
    if (ev.origin === 'watched') forgetParse(abs)
 ```
 
 ```Core/Files/atomicWrite.ts diff
 @@ landOwn @@
 -/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse that time would otherwise vouch for, and the files that landed are noted as one batch carrying the stat each now holds. …
-+/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume with no change time (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. …
++/** Lands the app's own writes as one group: each echo is recorded before its name points at the new bytes and forgotten where its landing rejects, a file kept at its time drops the walk cache's parse, which its identity would still vouch for on a volume whose change time is coarse or absent (`sameFile`), and the files that landed are noted as one batch carrying the stat each now holds. …
 @@ landBytes @@
 -// Sync's landing records no echo, notes no event, and checks no stat its read saw: an arrival replaces what the file holds by Sync's own rules, which capture what it would lose, so the watcher reports it like any outside write and the tree and index take it from that event.
 +// Sync's landing records no echo, notes no event, and checks no stat its read saw: an arrival replaces what the file holds by Sync's own rules, which capture what it would lose, so the watcher reports it like any outside write and the tree and index take it from that event. Its kept time drops the walk cache's parse, as an own kept-time landing does.
@@ -754,6 +792,9 @@ User-facing behavior stays as it is, except that a restored page returns current
 ```
 
 ```Core/Files/walkCache.test.ts diff
+@@ imports @@
+-import { tempRoot } from '../Testing/hostFs'
++import { tempRoot, windows } from '../Testing/hostFs'
 @@ T-N40 @@
 -  it.skipIf(process.platform !== 'darwin')(
 -    're-parses a file replaced whole by a twin of the same time and size, the original born before that time',
@@ -761,7 +802,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 -      …
 -    },
 -  )
-+  it('re-parses a file rewritten in place or replaced whole at the time and size it was cached at', async () => {
++  it.skipIf(windows)('re-parses a file rewritten in place or replaced whole at the time and size it was cached at', async () => {
 +    const file = join(root, 'a.md')
 +    const twin = join(root, 'b.md')
 +    const at = Math.floor(Date.now() / 1000) - 10
@@ -789,13 +830,13 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Task 1-4
 
-**TASK:** The echo record a landing makes before it lands takes the stat the landing answered, and the watcher's drain drops an event while a fresh stat of its file is still that one by `sameFile`, so the index and the watcher share one own-write identity, and the content hash, the byte read and two hashes per own write, and `writtenHash` leave (LD-5). The record is still made before the landing, so Sync's write tap fires exactly when it does today; and a landing still in flight is no echo, as a hashed record is today, so an outside write the landing loses to is heard. The drain looks the record up as it runs rather than at the event's arrival: it drops an event only while the file still holds a stat an own landing answered, whose bytes the own tap has applied, so applying the event would read back what the tree and index already hold. On a volume with no change time, an outside write keeping a landing's time and size reads as its echo, which the record's comment states. **Departure:** `forgetWrite` leaves whole rather than losing only its hash argument (*Investigation · §Removal & Consolidation Ledger*, LD-5): a landing that rejects keeps an in-flight record, which is no echo, so nothing needs forgetting; the drain's mismatch retires a record by its identity in place of the hash.
+**TASK:** The echo record a landing makes before it lands takes the stat the landing answered, and the watcher's drain drops an event while a fresh stat of its file is still that one by `sameFile`, so the index and the watcher share one own-write identity, and the content hash, the byte read and two hashes per own write, and `writtenHash` leave (LD-5). The record is still made before the landing, so Sync's write tap fires exactly when it does today; and a landing still in flight is no echo, where today a drain that finds the landing's bytes already in place drops its event, so an outside write the landing loses to is heard, and an own event drained mid-landing re-reads bytes the own tap applies anyway. The drain looks the record up as it runs rather than at the event's arrival: it drops an event only while the file still holds a stat an own landing answered, whose bytes the own tap has applied, so applying the event would read back what the tree and index already hold. On a volume whose change time is coarse or absent (HFS+'s one-second times, FAT, exFAT), an outside write keeping a landing's time and size reads as its echo, which the record's comment states. **Departure:** `forgetWrite` leaves whole rather than losing only its hash argument (*Investigation · §Removal & Consolidation Ledger*, LD-5): a landing that rejects keeps an in-flight record, which is no echo, so nothing needs forgetting; the drain's mismatch retires a record by its identity in place of the hash.
 
 **NOW:** `landOwn` records each file with its bytes before the landing (`Core/Files/atomicWrite.ts:18`), and `recordWrite` hashes them into the record (`Core/Files/writeEcho.ts:23-33`) and fires Sync's write tap (`:32`); a hashed record is no early stop (`isRecentWrite`, `:84-86`), so every own write's event enters the watcher's batch carrying `writtenHash` (`Desktop/FileWatch/watcher.ts:119`), and `dropOwnEchoes` reads the file back and hashes it (`writeEcho.ts:103-114`), 6,959 reads and hashes in a Medium property rename. A rejected landing forgets its record by hash (`atomicWrite.ts:23-25`, `forgetWrite`, `writeEcho.ts:35-38`). `Changed.written` carries the arrival's hash (`writeEcho.ts:46-47`). The hashed cases are `writeEcho.test.ts:72-152`, T-N36 (`atomicWrite.test.ts:55-69`), and `watcher.test.ts:539,596,604`.
 
 **CHANGE**
 
-- [ ] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time), and "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task).
+- [ ] Rewrite `Core/Files/writeEcho.test.ts`' "an echo recorded with its bytes" as "a landing's echo", each case landing through a helper that records the write, writes the file, and records the landing with `machine().stat`, its events carrying no `written`: "is dropped while the file still holds the stat its landing answered, and kept once it doesn't" (own, theirs, and gone, as today); "is still told apart however late its events arrive"; "stops being an echo once an event finds the file changed, so an outside write restoring the app's bytes still reaches the watcher"; "keeps a newer landing's record when an older event finds the file it left". Add "is heard when an outside write keeps the landing's time and size" (landed at a whole second, rewritten in place at the same length and dated back; it fails without `sameFile`'s change time; it rests on the change time moving between two calls microseconds apart, so it skips on Windows through `it.skipIf(windows)`, `windows` imported from `../Testing/hostFs`, *§Open Items · Windows and exFAT*), and "drops a landing's echo without reading the file" (`machine().readBytes` and `readText` spied, no call; it fails without this task).
 - [ ] Rewrite T-N36 as "a rejected landing leaves no echo, so an outside write of the same bytes is heard": after the rejection, `isRecentWrite(p)` is false and `dropOwnEchoes` keeps an event carrying no `written`; it fails while an in-flight record reads as a move's.
 - [ ] In `Desktop/FileWatch/watcher.test.ts:539,596,604`, each `recordWrite(path, bytes)` becomes `recordWrite(path, true)` followed, once the file holds its bytes, by `recordLanding(path, (await machine().stat(path))!)`.
 - [ ] Watch the added cases and T-N36 fail, then apply the AFTER.
@@ -812,7 +853,7 @@ User-facing behavior stays as it is, except that a restored page returns current
  
 -// A write recorded with its bytes is an echo while the file still holds them, however late its event arrives, until an event finds other bytes there, so an outside write reaches the watcher even when it restores the app's bytes; a move or rename, recorded without bytes, is an echo for the whole window.
 -type Echo = { at: number; hash?: string }
-+// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume with no change time, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
++// A landing is no echo until it lands, then an echo while the file still holds the stat it answered, however late its event arrives, until an event finds the file changed, so an outside write reaches the watcher even when it restores the app's bytes; on a volume whose change time is coarse or absent, an outside write keeping the landing's time and size reads as its echo. A move or rename is an echo for the whole window.
 +type Echo = { at: number; landing: boolean; stat?: FileStat }
 @@ recordWrite @@
  // Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
@@ -933,6 +974,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 - [ ] T-N15 (`registryProperty.test.ts`, "a rename's clash check with the index warm") keeps its two cases and gains three: "refuses a page whose file took the new key at the time and size the index read it at" (a page holding `Priority: hi` and `Urgenzy: no`, dated to a whole second before the seed, rewritten in place to `Urgency: no` and dated back; it fails without `unlessVouched`'s change time); "reads no page the index vouches for holding the old key alone" (`findHolders(root, { keys: ['Priority', 'Urgency'], reach: 'governed', every: true }, 'values')` with `machine().readText` spied, no read of either page; it fails without `every`'s pass-over); and "an archived page holding both keys refuses nothing and isn't read" (a page holding both keys written under `.nexus/archive/<Collection ID>/Col/` before the seed: the same `findHolders` call names it in no `files` and reads it with no `readText` from its own loop (a read by `nexusPages` isn't this case's), and the rename succeeds; it fails with the hide after the read).
 - [ ] T-N16 (`optionOps.test.ts`, "an option rename with the index warm") keeps its case and gains two: "rewrites a page whose file took the word at the time and size the index read it at" (options `Urgent` and `Normal`, the page holding `Normal` at a whole second, rewritten in place to `Urgent` and dated back, then `Urgent` renamed to `Critical`; it fails without the change time); and "reads no page whose indexed value the edit leaves alone" (the page holding `Normal`, `machine().readText` spied through the rename, no read of it; it fails without the pass-over).
+- [ ] The two cases a rewrite in place drives ("refuses a page whose file took the new key…" and "rewrites a page whose file took the word…") rest on the change time moving between two calls microseconds apart, so each skips on Windows through `it.skipIf(windows)`, as the suites' other platform guards spell it, `windows` joining each suite's `../Testing/hostFs` import (*§Open Items · Windows and exFAT*); the pass-over and archive cases read a change time that holds still, and run everywhere.
 - [ ] Watch the five fail, then apply the AFTER.
 - [ ] In `.claude/Features/CorePM.md:113`, "A cascade reaches every page the index lists as holding its key and reads each from its file, so no row decides what a cascade passes over." becomes "A cascade reaches every page the index lists as holding its key and reads each from its file, a rename's clash check and an option edit passing over a page whose row still describes its file."
 
@@ -1049,7 +1091,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 
 #### Task 1-6
 
-**TASK:** `copyPageMetadata` writes each month file it lands copies in once, as `dropPageMetadata` writes each month it drops from (LD-7). **Departure:** a copy carries its source entry whole into the target's month rather than merging it as a patch through `updatePageMetadata`, since a remint's fresh ID holds no entry to merge onto and a copy that keeps every field is the one the existing cases already ask for.
+**TASK:** `copyPageMetadata` writes each month file it lands copies in once, as `dropPageMetadata` writes each month it drops from (LD-7). **Fold:** the two month-by-month writes become one private `editShards`, which hands each month's ids and a copy of its pages to the caller's edit, writes nothing when the edit answers null, and logs a month it couldn't write; the copy's sources are read by month as they are now. **Departure:** a copy carries its source entry whole into the target's month rather than merging it as a patch through `updatePageMetadata`, since a remint's fresh ID holds no entry to merge onto and a copy that keeps every field is the one the existing cases already ask for.
 
 **NOW:** `copyPageMetadata` (`Core/Nexus/pageMetadata.ts:136-155`) reads its sources by month (`:140-148`) and then writes once per pair through `updatePageMetadata` (`:149-154`), the same month file rewritten for each pair; `dropPageMetadata` (`:119-134`) writes each month once. Its only caller is the remint pass (`Core/Nexus/remint.ts:59`), whose targets take freshly minted IDs. Its cases are `pageMetadata.test.ts:215-235`.
 
@@ -1061,54 +1103,95 @@ User-facing behavior stays as it is, except that a restored page returns current
 **AFTER**
 
 ```Core/Nexus/pageMetadata.ts diff
+@@ byShard @@
+   return out
+ }
++
++async function editShards(
++  root: string,
++  ids: readonly string[],
++  refused: string,
++  edit: (pages: Record<string, unknown>, ids: string[]) => Record<string, unknown> | null,
++): Promise<void> {
++  for (const [shard, held] of byShard(ids)) {
++    const written = await updateNexusFile(
++      metadataShardPath(root, shard),
++      (cur) => {
++        const pages = edit({ ...rawPages(cur) }, held)
++        return pages && { ...cur, pages }
++      },
++      false,
++    ).catch(fault)
++    if (!written.ok) console.error(`metadata: ${shard} ${refused}:`, written.error.message)
++  }
++}
+@@ dropPageMetadata @@
+-export async function dropPageMetadata(root: string, ids: readonly string[]): Promise<void> {
+-  for (const [shard, gone] of byShard(ids.filter((id) => !idHeld(root, id)))) {
+-    const written = await updateNexusFile(
+-      metadataShardPath(root, shard),
+-      (cur) => {
+-        const pages = { ...rawPages(cur) }
+-        if (!gone.some((id) => id in pages)) return null
+-        for (const id of gone) delete pages[id]
+-        return { ...cur, pages }
+-      },
+-      false,
+-    ).catch(fault)
+-    if (!written.ok)
+-      console.error(`metadata: ${shard} kept dropped entries:`, written.error.message)
+-  }
+-}
++export function dropPageMetadata(root: string, ids: readonly string[]): Promise<void> {
++  const unheld = ids.filter((id) => !idHeld(root, id))
++  return editShards(root, unheld, 'kept dropped entries', (pages, gone) => {
++    if (!gone.some((id) => id in pages)) return null
++    for (const id of gone) delete pages[id]
++    return pages
++  })
++}
 @@ copyPageMetadata @@
  export async function copyPageMetadata(
    root: string,
    pairs: readonly (readonly [string, string])[],
  ): Promise<void> {
--  const sources = new Map<string, Record<string, unknown>>()
-+  const copies = new Map<string, Record<string, unknown>>()
+   const sources = new Map<string, Record<string, unknown>>()
    for (const [shard, froms] of byShard(pairs.map(([from]) => from))) {
      const read = await readJsonStrict(metadataShardPath(root, shard))
      if (!read.ok) continue
--    for (const from of froms) {
-+    for (const [from, to] of pairs) {
+     for (const from of froms) {
        const entry = rawPages(read.value)[from]
--      if (isPlainObject(entry)) sources.set(from, entry)
-+      if (froms.includes(from) && isPlainObject(entry)) copies.set(to, entry)
+       if (isPlainObject(entry)) sources.set(from, entry)
      }
    }
--  for (const [from, to] of pairs) {
--    const entry = sources.get(from)
++  const copies = new Map<string, Record<string, unknown>>()
+   for (const [from, to] of pairs) {
+     const entry = sources.get(from)
 -    if (!entry) continue
 -    const copied = await updatePageMetadata(root, to, entry as PageMetaPatch).catch(fault)
 -    if (!copied.ok) console.error(`metadata: the copy to ${to} refused:`, copied.error.message)
--  }
-+  for (const [shard, tos] of byShard([...copies.keys()])) {
-+    const written = await updateNexusFile(
-+      metadataShardPath(root, shard),
-+      (cur) => ({
-+        ...cur,
-+        pages: { ...rawPages(cur), ...Object.fromEntries(tos.map((to) => [to, copies.get(to)])) },
-+      }),
-+      false,
-+    ).catch(fault)
-+    if (!written.ok) console.error(`metadata: ${shard} refused its copies:`, written.error.message)
-+  }
++    if (entry) copies.set(to, entry)
+   }
++  await editShards(root, [...copies.keys()], 'refused its copies', (pages, tos) => {
++    for (const to of tos) pages[to] = copies.get(to)
++    return pages
++  })
  }
 ```
 
+`PageMetaPatch` stays imported for `updatePageMetadata`, which keeps its own one-entry write, since its edit stabilizes against the entry it patches.
+
 **VERIFY**
 
-- [ ] The added case is green, and "copyPageMetadata carries fields this build does not model", "copyPageMetadata lands an August entry under a September ID in its own month", and `remint.test.ts`' "a reminted copy carries its metadata entry under the fresh ID's month" still pass.
+- [ ] The added case is green, and "copyPageMetadata carries fields this build does not model", "copyPageMetadata lands an August entry under a September ID in its own month", `dropPageMetadata`'s cases (`pageMetadata.test.ts:173,202`), and `remint.test.ts`' "a reminted copy carries its metadata entry under the fresh ID's month" still pass.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
-- [ ] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp written through, each drive flushed once before any of its temps is renamed, a failed flush discarding every temp on its drive, the handle closed before the rename on Windows); the post-rename stat feeding the index row, the walk cache, and the echo record; the reseed touching no `sync_base` row; the pass-over vouching only through `sameFile` with the change time; the in-flight landing reading as no echo; Sync's write tap firing where it did; and anything that reads as an odd one out beside the code around it.
+- [ ] Two read-only agents, one under `code-simplification` and one under `adversarial-review`, read Phase 1's range outward against Core, Desktop, and UIX: the landing's durability (every temp written through, each drive flushed once before any of its temps is renamed, a failed flush discarding every temp on its drive, the handle closed before the rename on Windows); the post-rename stat, answered only while its time and size are still the temp's, feeding the index row, the walk cache, and the echo record; the reseed touching no `sync_base` row; the pass-over vouching only through `sameFile` with the change time; the in-flight landing reading as no echo; Sync's write tap firing where it did; and anything that reads as an odd one out beside the code around it.
 - [ ] One CDP drive on a scratch copy of `~/Test` from a worktree build with its own userData and debug port (*Development-Environment*): a property rename across Collection A lands and the window shows the values under the new key; one of those pages, rewritten from outside at the same length with its time set back, reaches the window; a reopen shows the same tree.
-- [ ] Run the gates and `npm run build` from a clean state, and record Phase 1's Actionable in the Net Ledger beside its estimate, with Task 1-2's medians on the line beneath.
+- [ ] Run the gates and `npm run build` from a clean state, and record Phase 1's Actionable in its Net Ledger row beside that row's estimate, with Task 1-2's medians on the line beneath.
 
 ---
 
@@ -1163,7 +1246,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] Remove every `TrashDeps` literal and its import (35 files, 32 of them stubbing `trashToSystem`), and drop the argument at each call site: `settledMutate(root, req, X)` → `settledMutate(root, req)`; `handleMutate(root, req, X)` → `handleMutate(root, req)`; `finishOwed(root, X)` → `finishOwed(root)`; `migrateAssets(root, X)`, `removeTile(…, X)`, `convertTile(…, X)` lose their last argument; `{ root, deps: X }` → `{ root }`; `discardFile(dir, p, { … })` → `discardFile(dir, p)` (`Core/Files/atomicWrite.test.ts:521`). Typecheck finds every one.
 - [ ] Helpers typed to forward the literal lose the parameter as well as the argument: `spend.test.ts:280`'s `deleteProjects(deps)` becomes `deleteProjects()`, and `setSpaceProperty.test.ts:137`'s `settled` leaves.
 - [ ] Suites that empty a bundle with Permanently Delete off install the machine their literal stubbed, in a `beforeEach`, and `afterEach(() => installMachine(diskMachine()))`: `Core/Trash/spend.test.ts` (`trashToSystem: async () => {}`), `Core/Trash/trashRecovery.test.ts` (`trashToSystem: async (p) => void handed.push(p)`), and `Core/Archive/archive.test.ts` (`trashToSystem: async () => {}`).
-- [ ] `Core/Files/atomicWrite.test.ts:390-430`'s describe *"trashFileFlat"* becomes *"discardFile"*, each case calling `discardFile(dir, p)`, assertions unchanged.
+- [ ] `Core/Files/atomicWrite.test.ts:390-430`'s describe *"trashFileFlat"* becomes *"discardFile"*: `discardFile` keeps HEAD's `void`, since only these cases read the destination `trashFileFlat` answered, so each case calls `discardFile(dir, p)` and lists `.trash` for what it left, its assertions otherwise unchanged (the AFTER's test hunk).
 - [ ] Apply the doc lines under the AFTER.
 
 **AFTER**
@@ -1181,7 +1264,7 @@ User-facing behavior stays as it is, except that a restored page returns current
  
 -export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
 +/** A file the Trash can't list, a tile's text or an image sweep's leftover, moves into `.trash` under the chain it left from, stamped, with no record. */
-+export async function discardFile(nexusRoot: string, absPath: string): Promise<string> {
++export async function discardFile(nexusRoot: string, absPath: string): Promise<void> {
    recordWrite(absPath)
    const dir = await chainDir(nexusRoot, { kind: 'trash' }, absPath)
    const stamp = fileStamp()
@@ -1190,8 +1273,8 @@ User-facing behavior stays as it is, except that a restored page returns current
    for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
    recordWrite(dest)
    await machine().rename(absPath, dest)
+-  return dest
 +  await noteOwn({ event: 'unlink', absPath, origin: 'own' })
-   return dest
  }
 -
 -export interface TrashDeps {
@@ -1220,6 +1303,56 @@ User-facing behavior stays as it is, except that a restored page returns current
 -  }
 -  await noteOwn({ event: 'unlink', absPath, origin: 'own' })
 -}
+```
+
+```Core/Files/atomicWrite.test.ts diff
+@@ imports @@
+-import { discardFile, trashFileFlat } from '../Trash/discard'
++import { discardFile } from '../Trash/discard'
+@@ describe 'trashFileFlat' @@
+-describe('trashFileFlat', () => {
++describe('discardFile', () => {
++  const trashed = async (...chain: string[]): Promise<string[]> => {
++    const at = join(dir, '.trash', ...chain)
++    return (await readdir(at)).map((leaf) => join(at, leaf))
++  }
++
+   it('moves a file into .trash under a stamped leaf and removes the original', async () => {
+     const p = join(dir, 'doomed.md')
+     await atomicWriteFile(p, 'bye')
+-    const dest = await trashFileFlat(dir, p)
+-    expect(dest).toContain('.trash')
++    await discardFile(dir, p)
++    const [dest] = await trashed()
++    expect(basename(dest).endsWith('__doomed.md')).toBe(true)
+     expect(await readFile(dest, 'utf8')).toBe('bye')
+     await expect(stat(p)).rejects.toThrow()
+   })
+@@ it 'records both ends of the move' @@
+-    const dest = await trashFileFlat(dir, p)
++    await discardFile(dir, p)
+     setWriteTap(null)
+-    expect(seen).toEqual([p, dest])
++    expect(seen).toEqual([p, ...(await trashed())])
+   })
+@@ it 'mirrors the folder chain the file was deleted from' @@
+-    const dest = await trashFileFlat(dir, p)
+-    expect(dest.startsWith(join(dir, '.trash', 'Notes', 'Daily'))).toBe(true)
++    await discardFile(dir, p)
++    const [dest] = await trashed('Notes', 'Daily')
+     expect(basename(dest).endsWith('__Beta.md')).toBe(true)
+@@ it 'de-collides two trashes of the same name from the same folder' @@
+-    const first = await trashFileFlat(dir, p)
++    await discardFile(dir, p)
+     await atomicWriteFile(p, 'two')
+-    const second = await trashFileFlat(dir, p)
+-    expect(second).not.toBe(first)
+-    expect(await readFile(first, 'utf8')).toBe('one')
+-    expect(await readFile(second, 'utf8')).toBe('two')
++    await discardFile(dir, p)
++    const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
++    expect(kept.sort()).toEqual(['one', 'two'])
+   })
 ```
 
 ```Core/Trash/handlers.ts diff
@@ -1568,7 +1701,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 +    await leave(root, join(root, space.path), e.bundle!)
 ```
 
-`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional (`Core/Nexus/owed.ts:21-22`): a rename's entry carries none, and `finishSpace:342` writes one without it. Every strip a finish meets comes from a delete, which now always notes its bundle, so the two strip-path callers assert it; restructuring the entries is M-6's.
+`ContextEntry.bundle` and `SpaceEntry.bundle` stay optional (`Core/Nexus/owed.ts:21-22`): a rename's entry carries none, and `finishSpace:342` writes one without it. Every strip a finish meets comes from a delete, which now always notes its bundle, so `bundle` is present exactly when `strip` is, and the two strip-path callers' `!`s assert that pairing.
 
 ```Core/Trash/spend.ts diff
 @@ imports @@
@@ -2568,7 +2701,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 - [ ] Every delete mints a bundle in the Nexus's own Trash, and the system trash is reached only through `machine().trashToSystem`, by the empty and by `setAside`.
 - [ ] Every kind names its siblings through `place`, a Context in both of its orders, and no departed item's id sits in `state.json` once its delete's folder has moved.
 - [ ] The records a delete and an archive write are built from the tree, with no second read of a sidecar, the registry, or a page's id.
-- [ ] *Reconciliation (Phase 2)* is walked; the Net Ledger's Phase 2 row is filled from `view-delta`, additions and removals apart, and any drift past about −155 is reported in chat with what it buys.
+- [ ] *Reconciliation (Phase 2)* is walked; the Net Ledger's Phase 2 row is filled from `view-delta`, additions and removals apart, and any drift past that row's estimate is reported in chat with what it buys.
 - [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 3's starting point, reading outward; what holds is folded before Phase 3 opens, and the compaction checkpoint follows.
 
 ---
@@ -2583,7 +2716,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Task 3-1
 
-**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes eleven and adds ten.
+**TASK:** One mint, one tail, one `leave` (M-1, M-2, M-8; closes B-1). `mintBundle` takes the record and takes its bundle back when the write throws; `deleteOp` gathers each kind's plan before it mints, so the Context guard refuses with nothing to take back, and one cleanup covers a refusal and a throw alike, a throw from the note's own `editNote` included. One `leave` moves the artifact into its bundle and drops its departure for the delete and for both finish arms, so a delete cut short and finished later leaves no id in `state.json`. **Departure (from M-8's "one step"):** the finish's `oweWalk` stays at the two finish arms, since a delete running it would owe a whole-Nexus walk on every delete. **Departure (from M-2's plan shape):** a plan carries `departing` beside `{ id, record, note, unlist, relist }`, the order entry its `leave` drops, since a Context's finish holds its id and no node (its registry entry is gone once its list step lands), which also makes `dropDeparture` read what each caller already holds instead of looking it up by path. **Comments:** the AFTER removes eleven and adds nine.
 
 **NOW:**
 - **Mint, Then Record:** every `mintBundle` caller writes a record right after it (`Core/Bundles/bundle.ts:64-79`): `deleteOp` (`Core/Trash/delete.ts:99`, its write at `:112-118`), `snapshot` (`Core/Properties/deleteProperty.ts:63-73`), `fileInto` (`bundle.ts:103-115`, which removes the bundle on a throw), and `seedPropertyBundle` (`Core/Testing/fixtures.ts:52-53`).
@@ -2610,35 +2743,26 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 ```Core/Bundles/bundle.ts diff
 @@ mintBundle @@
 -/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
--export async function mintBundle(
--  root: string,
--  store: BundleStore,
--  absSource: string,
--  leaf?: string,
--): Promise<string> {
--  const dir = await chainDir(root, store, absSource)
--  const base = `${basename(absSource)}${layoutOf(store).suffix}`
-+/** `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
-+async function bundleFolder(dir: string, base: string, leaf?: string): Promise<string> {
-   const own = leaf !== undefined && holdsName(leaf) && leaf.endsWith(`__${base}`)
-   if (own && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
-   const stamp = fileStamp()
-   for (let n = 0; ; n++) {
-     const bundle = join(dir, stampedLeaf(stamp, n, base))
-     if ((await machine().mkdir(bundle)) === 'created') return bundle
-   }
- }
-+
-+/** A bundle for `absSource` in `store` holding `record`, under `bundleFolder`'s name; a record that can't be written takes its bundle back, so no bundle stands without one. */
-+export async function mintBundle(
-+  root: string,
-+  store: BundleStore,
-+  absSource: string,
++/** A bundle for `absSource` in `store` holding `record`, which takes its bundle back when it can't be written, so no bundle stands without one; `leaf` asks for one bundle name back, tried only when the source could have been minted under it: one name ending in the source's own; a fresh stamp answers anything else, and a leaf something holds. */
+ export async function mintBundle(
+   root: string,
+   store: BundleStore,
+   absSource: string,
 +  record: RecordFile | RawRecord,
-+  leaf?: string,
-+): Promise<string> {
-+  const dir = await chainDir(root, store, absSource)
-+  const bundle = await bundleFolder(dir, `${basename(absSource)}${layoutOf(store).suffix}`, leaf)
+   leaf?: string,
+ ): Promise<string> {
+   const dir = await chainDir(root, store, absSource)
+   const base = `${basename(absSource)}${layoutOf(store).suffix}`
+   const own = leaf !== undefined && holdsName(leaf) && leaf.endsWith(`__${base}`)
+-  if (own && (await machine().mkdir(join(dir, leaf))) === 'created') return join(dir, leaf)
+   const stamp = fileStamp()
+-  for (let n = 0; ; n++) {
+-    const bundle = join(dir, stampedLeaf(stamp, n, base))
+-    if ((await machine().mkdir(bundle)) === 'created') return bundle
+-  }
++  let bundle = join(dir, own ? leaf : stampedLeaf(stamp, 0, base))
++  for (let n = own ? 0 : 1; (await machine().mkdir(bundle)) !== 'created'; n++)
++    bundle = join(dir, stampedLeaf(stamp, n, base))
 +  try {
 +    await writeRecord(bundle, record)
 +  } catch (e) {
@@ -2646,7 +2770,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +    throw e
 +  }
 +  return bundle
-+}
+ }
 @@ fileInto @@
    const bundle = await mintBundle(
      root,
@@ -2661,7 +2785,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
    } catch (e) {
 ```
 
-`fileInto`'s doc ("its record written ahead") stays true.
+`fileInto`'s doc ("its record written ahead") stays true. The naming loop stays inside `mintBundle` rather than splitting into a helper of its own: the source's own leaf is tried first and the stamps after it in one loop, as `discardFile`'s naming loop runs, so one function and one docstring hold the mint.
 
 ```Core/Properties/deleteProperty.ts diff
 @@ imports @@
@@ -2873,7 +2997,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +  req: Extract<MutateRequest, { op: 'delete' }>,
 +  abs: string,
 +  before: NexusTree,
-+  from: ArchivedDelete | undefined,
++  from: { record: RecordFile; keys: string[]; edit: ConfigEdit | null } | undefined,
 +  under: string[],
 +): Promise<Result<DeletePlan>> {
 +  const rel = relative(root, abs)
@@ -2929,7 +3053,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +          strip: distinct(from?.keys ?? under),
 +          ...(edit ? { edit } : {}),
 +        }),
-+        departing: node,
++        departing: node ?? undefined,
 +      })
 +    }
 +  }
@@ -3100,17 +3224,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
  }
 ```
 
-`NexusTree` joins the imports (`import type { NexusTree } from '../Nexus/tree'`), and `fromArchive` gains a named answer for `planOf`'s parameter, with no other change:
-
-```Core/Trash/delete.ts diff
-@@ fromArchive @@
-     record: { ...held, archive: relative(root, resolved.value) },
-   })
- }
-+
-+type ArchivedDelete = Extract<NonNullable<Awaited<ReturnType<typeof fromArchive>>>, { ok: true }>['value']
-```
- The Context's registry read moves into its own arm, ahead of the lift, which only a container takes. Whether the artifact still stands where it was decides the cleanup, as `moved` did: `relocate` is the only step that moves it, and a throw after it (the departure, the Archive bundle's spend) leaves the bundle holding the artifact.
+`NexusTree` joins the imports (`import type { NexusTree } from '../Nexus/tree'`), and `type ConfigEdit` joins the `../Nexus/configReach` import: `planOf` takes the three fields of `fromArchive`'s answer it reads, which `deleteOp` hands it whole, and `fromArchive` stays as it is. `departing` takes `node ?? undefined`, since `pageAt` and `containerAt` answer null for a path they don't hold (`Core/Nexus/treePatch.ts:162,168`), an archived item's. The Context's registry read moves into its own arm, ahead of the lift, which only a container takes. Whether the artifact still stands where it was decides the cleanup, as `moved` did: `relocate` is the only step that moves it, and a throw after it (the departure, the Archive bundle's spend) leaves the bundle holding the artifact.
 
 ```Core/Archive/archive.ts diff
 @@ imports @@
@@ -3171,7 +3285,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Task 3-2
 
-**TASK:** A content delete records the Link values its strip will take before the artifact moves (M-17; closes B-10), as a Space's or Context's delete records its holders' values, read through the same holder reader with the same index fallback. The strip's rule becomes one `linkStrip` in `Core/Nexus/cascade.ts` that the gatherer in `Core/Trash/gather.ts` (*§Placements*) and `deleteCascade` share; `deleteCascade` strips and reports and no longer reads what it took, so the finish's append for a delete leaves, with the post-sweep parse and `DeleteCascade.links` (Write Path's OP-4). The record's link edits become one pair beside `patchRecord` (M-5). **Fold:** the empty gathers through the same `gatherLinks` and parks before its strip rather than after it, closing the empty's own crash window (a strip landed, its park not yet), so no strip anywhere reads what it took; `appendLinks` adds a link once, since a finish run again re-gathers what its strip missed. **Departure, Disclosed:** the Ledger's M-17 kept "the empty's parking reads the strip's links"; with the gatherer serving both, that read leaves too. **Comments:** the AFTER removes eight and adds eight.
+**TASK:** A content delete records the Link values its strip will take before the artifact moves (M-17; closes B-10), as a Space's or Context's delete records its holders' values, read through the same holder reader with the same index fallback. The strip's rule becomes one `linkStrip` in `Core/Nexus/cascade.ts` that the gatherer in `Core/Trash/gather.ts` (*§Placements*) and `deleteCascade` share; `deleteCascade` strips and reports and no longer reads what it took, so the finish's append for a delete leaves, with the post-sweep parse and `DeleteCascade.links` (Write Path's OP-4). The record's link edits become one pair beside `patchRecord` (M-5), and the record's arm types are named once there beside `ContentRecord`, where `bundle.ts` and `restoreProperty.ts` each declared their own and `fixtures.ts` spelled one inline. **Fold:** the empty gathers through the same `gatherLinks` and parks before its strip rather than after it, closing the empty's own crash window (a strip landed, its park not yet), so no strip anywhere reads what it took; `appendLinks` adds a link once, since a finish run again re-gathers what its strip missed. **Departure, Disclosed:** the Ledger's M-17 kept "the empty's parking reads the strip's links"; with the gatherer serving both, that read leaves too. **Comments:** the AFTER removes eight and adds eight.
 
 **NOW:**
 - **B-10:** a content delete's record lands without `links` (`Core/Trash/delete.ts:114` at HEAD); `finishContainer` appends the strip's values afterward through `patchRecord` with a cast (`Core/Nexus/finishOwed.ts:403-407`). A crash after a strip group lands and before the patch loses the values, and Try Again finds nothing left to strip. `patchRecord` discards `rmwJsonStrict`'s `Result` (`Core/Bundles/record.ts:141`).
@@ -3440,6 +3554,9 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 @@ RecordFile @@
  export type RecordFile = z.infer<typeof recordFile>
 +export type ContentRecord = Extract<RecordFile, { entity: 'page' | 'collection' | 'set' }>
++export type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
++export type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
++export type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 @@ patchRecord @@
    await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({ ...raw, ...patch(raw) }))
  }
@@ -3486,6 +3603,11 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 @@ imports @@
 -import { isPlainObject } from '../Contract/validators'
 @@ imports @@
+ import {
++  type ContainerRecord,
++  type InnerRecord,
+   originOf,
+@@ imports @@
    type RawRecord,
 -  patchRecord,
    type RecordFile,
@@ -3495,6 +3617,15 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
    trailAbove,
    writeRecord,
  } from './record'
+@@ ContainerRecord, InnerRecord @@
+-type ContainerRecord = Extract<RecordFile, { entity: 'collection' | 'set' }>
+-
+ const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
+   isContainerKind(record.entity)
+ 
+-type InnerRecord = Extract<RecordFile, { entity: 'page' | 'set' }>
+-
+ /** An address read once: …
 @@ keptLinksUnder @@
 -/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`, read from the record as it stands at the op, so a value its delete's finish appends later stays with the bundle; a title two of its pages share stays with the bundle. */
 +/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
@@ -3515,6 +3646,31 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 (`spendBundle`'s filter was `isPlainObject`'s one reader in `bundle.ts`.)
 
+```Core/Trash/restoreProperty.ts diff
+@@ imports @@
+-import { type RecordFile, recordedPartly } from '../Bundles/record'
++import { type PropertyRecord, recordedPartly } from '../Bundles/record'
+@@ PropertyRecord @@
+-type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
+-
+ /** A property restore's answer, …
+```
+
+```Core/Testing/fixtures.ts diff
+@@ imports @@
+-import type { RecordFile } from '../Bundles/record'
++import type { PropertyRecord } from '../Bundles/record'
+@@ seedPropertyBundle @@
+-export const seedPropertyBundle = (
+-  root: string,
+-  record: Extract<RecordFile, { entity: 'property' }>,
+-): Promise<string> => mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
++export const seedPropertyBundle = (root: string, record: PropertyRecord): Promise<string> =>
++  mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
+```
+
+(The record's arms are named once, beside `ContentRecord`: `bundle.ts`' two private arm types, `restoreProperty.ts`' own, and the fixture's inline spelling read them from `record.ts`.)
+
 ```Core/Trash/delete.ts diff
 @@ imports @@
 -import { gatherContextRecord, gatherLinkTargets, gatherSpaceRecord } from './gather'
@@ -3522,11 +3678,13 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +import { gatherContextRecord, gatherLinks, gatherLinkTargets, gatherSpaceRecord } from './gather'
 +import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 @@ planOf @@
+~  from: { record: ContentRecord; keys: string[]; edit: ConfigEdit | null } | undefined,
+@@ planOf @@
      default: {
        const node = req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel)
 +      const strip = from?.keys ?? under
        const edit = from ? from.edit : goneEdit(before, req.kind, req.path)
-+      const record: ContentRecord = from?.record ?? gatherContentRecord(before, node!)
++      const record = from?.record ?? gatherContentRecord(before, node!)
 +      const links = await gatherLinks(root, abs, strip)
        return ok({
          // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
@@ -3790,7 +3948,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 #### Task 3-4
 
-**TASK:** The empty is the gone-for-good step's one home (M-7): `collectionArchive` moves into it out of `Core/Archive/archive.ts` (P-3, *§Placements*), and a Collection's Archive is given up before its artifact, so a failed disposal leaves the Collection listed and owning its Archive (closes B-5). **Fold:** the empty runs through `runNoted` as the delete does, so a first disposal that fails takes its note back, nothing having gone for good; with the Archive first, an owed note left behind would otherwise strip the links and views of a Collection still whole in the Trash at its Try Again. **Comments:** the AFTER removes two and adds one.
+**TASK:** The empty is the gone-for-good step's one home (M-7): `collectionArchive` moves into it out of `Core/Archive/archive.ts` (P-3, *§Placements*), and a Collection's Archive is given up before its artifact, so a failed disposal leaves the Collection listed and owning its Archive (closes B-5). **Fold:** the empty runs through `runNoted` as the delete does, so a first disposal that fails takes its note back, nothing having gone for good; with the Archive first, an owed note left behind would otherwise strip the links and views of a Collection still whole in the Trash at its Try Again. The record's links also park before its bundle is spent, where today a process dying between the spend and the park loses them. **Comments:** the AFTER removes two and adds one.
 
 **NOW:**
 - **The Order:** `emptyBundle` disposes the artifact, then a Collection's Archive (`Core/Trash/spend.ts:106-107`). If the Archive's disposal throws, the bundle holds its record alone, `listBundles` stops listing it (`Core/Bundles/bundle.ts:165-166`), `collectionsElsewhere` stops counting the Collection (`bundle.ts:186-188`), and the next open's `settleArchives` reads the Archive as orphaned and moves its bundles into the Trash (`Core/Archive/refile.ts:145-148`).
@@ -3801,6 +3959,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 
 - [ ] Rewrite `trashRecovery.test.ts:1051` from *"a Collection emptied for good whose Archive refuses to go still takes the views naming that Archive's Sets at its Try Again"* to "a Collection whose Archive refuses to go stays whole in the Trash, owning its Archive, and nothing is taken" (B-5): after the refused empty, `listBundles(root, { kind: 'trash' })` lists the Journal bundle, `readNotes(root)` is `{}`, `finish()` leaves the sidecar's views as written, and `settleArchives(root, await readNexus(root))` leaves `listBundles(root, { kind: 'archive', id: 'col-journal' })` at length 1. Watch it fail.
 - [ ] `spend.test.ts:2059`, *"a system-trash handoff that rejects leaves the bundle whole"*, becomes "…leaves the bundle whole and owes nothing", adding `expect(await readNotes(root)).toEqual({})`. Watch it fail.
+- [ ] Write `trashRecovery.test.ts`' "an emptying that can't spend its bundle has already handed its record's links on" beside `:701`: its setup, with `vi.spyOn(bundle, 'spendBundle').mockRejectedValueOnce(new Error('the disk is gone'))` (`import * as bundle from '../Bundles/bundle'` where the suite has none), then the empty of the first namesake and the other's record holding its links. Watch it fail with the park after the spend.
 - [ ] Apply the AFTER.
 
 **AFTER**
@@ -3857,8 +4016,8 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +      }
 +      if (archive) await dispose(artifactAbs)
 +      await dropPageMetadata(root, pageIds)
-+      await spendBundle(root, opened.value)
 +      await parkLinks(root, 'links' in record ? (record.links ?? []) : [])
++      await spendBundle(root, opened.value)
 +      return ok(null)
 +    },
 +    sweep: () => finishEntry(root, id),
@@ -3885,7 +4044,7 @@ The Set's rename leaves the linker's key alone, since no page the index holds an
 +}
 ```
 
-The comment inside the noted block (*"Permanent now, a Collection's Archive with it: … Noted first, keyed by what it empties, so what the strip misses is owed and parked as a finish strips it."*) stays, reading "parked before a finish strips it" for its last clause. `owedReport` stays imported for the property arm.
+The comment inside the noted block (*"Permanent now, a Collection's Archive with it: … Noted first, keyed by what it empties, so what the strip misses is owed and parked as a finish strips it."*) stays, reading "parked before a finish strips it" for its last clause. `owedReport` stays imported for the property arm. The record's links park before its bundle is spent, so a process dying between the two loses none of them; by then the artifact is gone, and `parkLinks` reads only bundles still holding one (`listBundles`, `bundle.ts:165-166`, under `originPagesIn`), so the bundle being spent can't take its own links back.
 
 ```Core/Archive/archive.ts diff
 @@ imports @@
@@ -3903,7 +4062,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **VERIFY**
 
-- [ ] The two rewritten cases are green, each watched red against the code before this task.
+- [ ] The two rewritten cases and the new one are green, each watched red against the code before this task.
 - [ ] The empty's cases stay green: `spend.test.ts:1705-2077` (a Collection emptied for good empties its Archive and takes its Sets' views, `permanentDelete` both ways), `trashRecovery.test.ts:701-791` (parking on empty), and Phase 2's *"emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle"*, which now also owes nothing.
 - [ ] `git grep -n "collectionArchive" -- Core` prints only `Core/Trash/spend.ts`.
 - [ ] Run the gates.
@@ -3911,7 +4070,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 #### Task 3-5
 
-**TASK:** One current-trail resolver and one carry (M-10; closes B-6). `archiveFiling`'s deepest-live-container rule lifts into `Core/Bundles/record.ts` as `currentOrigin`, the one answer to "where does a record stand now", which the open pass, the Undo's filing, and the Trash restore's carry source read. `refileLanded` and `refileFiled` become one trigger taking the Set's record (a restore's chain from the tree, as `refileLanded`'s `trailAbove` read it; an Undo's from the record it was filed with, as `refileFiled`'s `above` was, since the held tree may still list the Set where it stood until the settle), and `refileArchived` carries each record within the Set onto the trail the Set's chain gives it, taking its Archive from that trail. **Departure, Disclosed:** the Ledger's M-10 has `currentTrail` replace all three formulas; the carry keeps its own, the Set's chain retrailed below it, since an Undo files a Set back that the tree no longer holds, and the deepest-live rule would read each record's own chain, which its restore re-trailed to where the Set landed (`archive.test.ts:352-400` pin that case). **Behavior, Decided:** the open pass now re-files a record whose own parent is gone by the deepest container on its chain the tree holds, as the live carry already does, where it left such a record misfiled. **Comments:** the AFTER removes six and adds four.
+**TASK:** One current-trail resolver and one carry (M-10; closes B-6). `archiveFiling`'s deepest-live-container rule lifts into `Core/Bundles/record.ts` as `currentOrigin`, the one answer to "where does a record stand now", which the open pass, the Undo's filing, and the Trash restore's carry source read. `refileLanded` and `refileFiled` become one trigger taking the Set's record and the chain it carries along, a Set's landing in either place (a restore reads its chain from the tree, as `refileLanded`'s `trailAbove` did; an Undo passes the chain of the record it was filed with, as `refileFiled`'s `above` was, since the held tree may still list the Set where it stood until the settle), and `refileArchived` carries each record within the Set onto the trail the Set's chain gives it, taking its Archive from that trail. **Departure, Disclosed:** the Ledger's M-10 has `currentTrail` replace all three formulas; the carry keeps its own, the Set's chain retrailed below it, since an Undo files a Set back that the tree no longer holds, and the deepest-live rule would read each record's own chain, which its restore re-trailed to where the Set landed (`archive.test.ts:352-400` pin that case). **Behavior, Decided:** the open pass now re-files a record whose own parent is gone by the deepest container on its chain the tree holds, as the live carry already does, where it left such a record misfiled. **Comments:** the AFTER removes six and adds four.
 
 **NOW:**
 - **Three Formulas:** `settleArchives` re-files a record only while its parent is live, by `trailAbove` (`Core/Archive/refile.ts:131-141`); `refileArchived` takes `held ?? retrailed(origin, [...above, setId])` (`refile.ts:50-63`); `archiveFiling` takes the deepest live container on the record's chain, then `retrailed` (`Core/Bundles/placement.ts:197-225`).
@@ -4052,21 +4211,18 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 -  to: string,
 -): Promise<void> =>
 -  carried(async () => refileArchived(root, setId, from, to, await liveTreeOf(root), above))
-+/** A Set a restore landed, its chain read from the tree, or one an Undo `filed` back into the Archive, its chain read from the record it was filed with, which the tree may still hold at its old place until the settle, carries what was archived from within it out of `from`, the Archive those records sit in. */
++/** A Set that landed, in the tree by a restore or back in the Archive by an Undo, carries what was archived from within it out of `from`, the Archive those records sit in, along `chain`: an Undo's from the record it was filed with, since the tree may still hold the Set at its old place until the settle, and a restore's read from the tree. */
 +export const refileLanded = (
 +  root: string,
 +  record: RecordFile,
 +  from: string | null,
-+  filed = false,
++  chain?: string[],
 +): Promise<void> =>
 +  carried(async () => {
 +    if (record.entity !== 'set' || !record.id || !from) return
 +    const tree = await liveTreeOf(root)
-+    const origin = originOf(record)
-+    const chain = filed
-+      ? origin && [...origin.trail, origin.parent, record.id]
-+      : containerTrailById(tree, record.id)?.map((n) => n.id)
-+    if (chain) await refileArchived(root, record.id, chain, from, tree)
++    const along = chain ?? containerTrailById(tree, record.id)?.map((n) => n.id)
++    if (along) await refileArchived(root, record.id, along, from, tree)
 +  })
 @@ refileMoved @@
      if (!was || node.kind !== 'set') return
@@ -4103,17 +4259,15 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 ```Core/Archive/archive.ts diff
 @@ imports @@
--import { decodeRecord, gatherContentRecord, originOf, type RecordFile } from '../Bundles/record'
-+import { decodeRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
-@@
 -import { refileFiled, refileLanded } from './refile'
 +import { refileLanded } from './refile'
 @@ archiveOp @@
    await dropDeparture(root, node)
--  const left = at === undefined ? null : originOf(record)
+   const left = at === undefined ? null : originOf(record)
 -  if (record.entity === 'set' && record.id && left)
 -    await refileFiled(root, record.id, [...left.trail, left.parent], store.id, to.id)
-+  if (at !== undefined) await refileLanded(root, record, store.id, true)
++  if (left && record.id)
++    await refileLanded(root, record, store.id, [...left.trail, left.parent, record.id])
 @@ restoreArchived @@
 -  await refileLanded(root, record, store.id, dir)
 +  await refileLanded(root, record, store.id)
@@ -4250,7 +4404,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
   1. Give a page in Collection B a Link value naming a page in Collection A, delete the A page, and read its bundle's `_record.json` on disk: it holds the value.
   2. Restore it: the value is back.
   3. Archive a Set holding a page, delete the Collection, and empty it from the Trash: its Archive folder is gone and nothing from it lists in the Trash.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded beside the Net Ledger's about −115; the phase estimates about −35 (*Delta (Phase 3)*), and the gap is reported in chat with what it buys before Phase 4 opens.
+- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in its Net Ledger row beside that row's estimate, additions and removals apart, and the gap is reported in chat with what it buys before Phase 4 opens.
 - [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, weigh the phase against *§Constraints* and Phase 4's starting point, reading outward; what holds is folded before Phase 4 opens.
 
 ---
@@ -4270,7 +4424,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 #### Task 4-1
 
-**TASK:** The store-of-path rule lands. `Core/Bundles/layout.ts` moves to `Core/Paths/bundleLayout.ts` and takes in `ArchiveStore`, `archiveDirRel`, and `archiveStoreOf`. `storeOf(rel)` answers where a path inside either store sits, and replaces `archivedCollectionIdOf`, `isArchived`, `outsideArchive`, `stampedSegment`, `bundleAddressOf`'s store derivation, `nexusPages`' Archive parse, and the six display hides. `hiddenName` and `hiddenFolder` move from `Core/Paths/exclusion.ts` into `Core/Paths/nexusPaths.ts`, which imports only `urlPath`, so `bundleLayout.ts` and `names.ts` read them without a loop through `exclusion.ts`, which reads `storeOf` from Task 4-3. Behavior doesn't change, and the existing suite proves it.
+**TASK:** The store-of-path rule lands. `Core/Bundles/layout.ts` moves to `Core/Paths/bundleLayout.ts` and takes in `ArchiveStore`, `archiveDirRel`, and `archiveStoreOf`. `storeOf(rel)` answers where a path inside either store sits, and replaces `archivedCollectionIdOf`, `isArchived`, `outsideArchive`, `stampedSegment`, `bundleAddressOf`'s store derivation, `nexusPages`' Archive parse, and the six display hides. `originPathOf` reads its answer, so it takes no store: every caller passes a path inside the store it named, which the path already says, and `originPagesOf` and `keptLinksUnder`, which carried a store only to hand it on, drop theirs. `hiddenName` and `hiddenFolder` move from `Core/Paths/exclusion.ts` into `Core/Paths/nexusPaths.ts`, which imports only `urlPath`, so `bundleLayout.ts` and `names.ts` read them without a loop through `exclusion.ts`, which reads `storeOf` from Task 4-3. Behavior doesn't change, and the existing suite proves it.
 
 **NOW:**
 - `layoutOf`, the stamp, `stampedSegment`, `bundleAddressOf`, and `originPathOf` live in `Core/Bundles/layout.ts:10-64`.
@@ -4278,6 +4432,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 - "Is this path stored" is asked through `isArchived` (`matrixGraph.ts:26`, `Nexus/handlers.ts:169`, `delete.ts:42`), through `outsideArchive` (`governedSweep.ts:79-81`, read at `:88`, `cascade.ts:156,276`, and `findHolders`' `every` filter in `keyHolders.ts`, where Task 1-5 moved the clash check's hide ahead of the read), through `archivedCollectionIdOf` (`heldPages.ts:78`, `treePatch.ts:116`, and `layout.ts:45`), and through `originPathOf`'s own segment search (`layout.ts:59-64`).
 - `hiddenName` and `hiddenFolder` live in `Core/Paths/exclusion.ts:8-15`, beside `neverWatched` and `outsideContent`, their two readers there; `nexusPaths.ts` imports only `urlPath` (`:1`).
 - `storeOf` collides with nothing: `git grep -nw storeOf` prints nothing. The rows' `storedAt` field and `storedAtOf` keep their names.
+- `originPathOf`'s fourteen production calls and `originPagesOf`'s three each pass a file inside the store they name: the archive op's landing (`archive.ts:56,60`) and the Archive restore's artifact (`:111`); `moveIntoStore`'s artifact, under the store its bundle's address answers (`bundle.ts:127-130`); `keptLinksUnder`'s bundle pages (`:285`), `listInner`'s entries (`:334`), `spendBundle`'s artifact (`:387`), and `originPagesIn`'s and `originPagesOf`'s stored pages (`:423,436`); `archiveFiling`'s address (`placement.ts:208`); `fromArchive`'s artifact and pages (`delete.ts:55,57`); and the empty's pages, `restoreTrashed`'s artifact (`spend.ts:99,153,196`), and the Archive files of `collectionArchive`, which Phase 3 moved there from `archive.ts:151`. `moveIntoStore` reads its bundle's store only to hand it on, and `spendBundle` destructures `store` only for it.
 
 **CHANGE**
 
@@ -4285,6 +4440,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 - [ ] Re-point every importer of `Bundles/layout` to `Paths/bundleLayout`: `archive.ts`, `bundle.ts`, `browser.ts`, `Bundles/handlers.ts`, `placement.ts`, `rows.ts`, `heldPages.ts`, `mutate.ts`, `delete.ts`, `discard.ts`, `spend.ts`, `Core/Contract/bridge.ts`, and `Desktop/Store/driver.ts`, plus the tests `archive.test.ts`, `refile.test.ts`, `layout.test.ts`, and `rows.test.ts`.
 - [ ] Take `ArchiveStore` and `archiveDirRel` from `Paths/bundleLayout` instead of `nexusPaths` (`archive.ts:8`, which imports `ArchiveStore` alone after Phase 3, `refile.ts:30`, `placement.ts:3`, `finishOwed.ts:23`, `spend.ts`, and `treePatch.ts:16`), and take `archiveStoreOf` from it instead of `names` (`archive.ts:4`, `refile.ts:8`, `bundle.ts:13`, `Bundles/handlers.ts:6`, `placement.ts:5`, `spend.ts`, and `treePatch.ts:25`).
 - [ ] Take `hiddenName` and `hiddenFolder` from `nexusPaths` instead of `exclusion`, joining each file's `nexusPaths` import where it has one: `walk.ts:1-2` (`{ ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS }`), `bundle.ts:12,14` (`{ ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR }`, Phase 3 having added `ARCHIVE_DIR_REL`), `names.ts:4` (shown below), `fileEvents.ts:12`, `assetRoots.ts:5`, `assetDirValidate.ts:5`, `exclusionScan.ts:13`, and `restoreScrub.ts:39-40` (`{ hiddenFolder, SPACE_SIDECAR }`).
+- [ ] Drop `originPathOf`'s `store` argument at every call, and `originPagesOf`'s and `keptLinksUnder`'s parameter with it (the `archive.ts`, `bundle.ts`, `placement.ts`, `delete.ts`, and `spend.ts` hunks below); `layout.test.ts`'s five `originPathOf` calls (`:74,76,81,86,92`) drop their `TRASH` or `ARCHIVE` argument, their expectations unchanged.
 - [ ] Remove `archivedCollectionIdOf`'s case from `exclusion.test.ts` (`:181-189`) and its import (`:6`).
 - [ ] In `ConnectionsPM.md:30`, "the pages and Spaces outside the Archive it reached" becomes "the pages and Spaces outside both stores it reached".
 - [ ] Write `bundleLayout.test.ts`'s cases in `Core/Bundles/layout.test.ts`, which stays put until Phase 6 (Placements). Add a `describe('storeOf')` with:
@@ -4325,13 +4481,6 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 -/** The bundle is the folder wearing its mint's stamp, so a chain or artifact folder that only wears the suffix is never taken for it. */
 -const stampedSegment = (segs: readonly string[], suffix: string): number =>
 -  segs.findIndex((seg) => seg.endsWith(suffix) && storedAtOf(seg) !== null)
-+/** A path's segments below `store`'s folder, read for its bundle: the folder wearing its mint's stamp, so a chain or artifact folder that only wears the suffix is never taken for it, by its index (-1 for none), and where the path lived, that one segment taken out. */
-+function located(store: BundleStore, below: readonly string[]): { at: number; origin: string } {
-+  const { suffix } = layoutOf(store)
-+  const at = below.findIndex((seg) => seg.endsWith(suffix) && storedAtOf(seg) !== null)
-+  return { at, origin: below.filter((_, i) => i !== at).join('/') }
-+}
-+
 +export interface Stored {
 +  store: BundleStore
 +  bundle: string | null
@@ -4339,7 +4488,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 +  origin: string
 +}
 +
-+/** Where a path inside a store sits, from the path alone, so the walk, the index, every reach, and every display read one rule: its store, the stamped bundle holding it (root-relative, null for a chain folder or anything left beside the bundles), its segments below the bundle, and where it lived. Null outside both stores, their roots included. */
++/** Where a path inside a store sits, from the path alone, so the walk, the index, every reach, and every display read one rule: its store; the bundle holding it, the folder wearing its mint's stamp so a chain or artifact folder that only wears the suffix is never taken for it (root-relative, null for a chain folder or anything left beside the bundles); its segments below the bundle; and where it lived, that one folder taken out. Null outside both stores, their roots included. */
 +export function storeOf(rel: string): Stored | null {
 +  const segs = rel.split('/')
 +  const store: BundleStore | null =
@@ -4349,13 +4498,15 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 +        ? { kind: 'archive', id: segs[2] }
 +        : null
 +  if (!store) return null
-+  const depth = layoutOf(store).dir.split('/').length
-+  const { at, origin } = located(store, segs.slice(depth))
++  const { dir, suffix } = layoutOf(store)
++  const depth = dir.split('/').length
++  const below = segs.slice(depth)
++  const at = below.findIndex((seg) => seg.endsWith(suffix) && storedAtOf(seg) !== null)
 +  return {
 +    store,
 +    bundle: at === -1 ? null : segs.slice(0, depth + at + 1).join('/'),
-+    inner: at === -1 ? [] : segs.slice(depth + at + 1),
-+    origin,
++    inner: at === -1 ? [] : below.slice(at + 1),
++    origin: below.filter((_, i) => i !== at).join('/'),
 +  }
 +}
  
@@ -4390,8 +4541,98 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 -  const bundle = stampedSegment(segs, suffix)
 -  return segs.filter((_, i) => i !== bundle).join('/')
 -}
-+export const originPathOf = (root: string, store: BundleStore, file: string): string =>
-+  located(store, relative(join(root, layoutOf(store).dir), file).split('/')).origin
++export const originPathOf = (root: string, file: string): string =>
++  storeOf(relative(root, file))!.origin
+```
+
+▸ Phases 2 and 3 also edit `archive.ts`, `bundle.ts`, `spend.ts`, and `delete.ts`; these hunks drop the store argument alone, at the lines Phase 3 leaves.
+
+```Core/Archive/archive.ts diff
+@@ archiveOp @@
+   const cascade =
+-    originPathOf(root, to, filed.landed) !== relative(root, abs)
++    originPathOf(root, filed.landed) !== relative(root, abs)
+       ? await departingCascade(
+           root,
+           tree,
+-          await originPagesOf(root, to, await contentPages(req.kind, filed.landed)),
++          await originPagesOf(root, await contentPages(req.kind, filed.landed)),
+@@ restoreArchived @@
+-  const back = await originPagesOf(root, store, await contentPages(record.entity, artifact))
++  const back = await originPagesOf(root, await contentPages(record.entity, artifact))
+```
+
+```Core/Bundles/bundle.ts diff
+@@ moveIntoStore @@
+-  const from = bundleAddressOf(root, fromBundle)?.store
+   const artifact = await bundleArtifact(fromBundle)
+   const raw = await readRawRecord(fromBundle)
+-  if (!from || !artifact || !raw) return
+-  const origin = join(root, originPathOf(root, from, artifact))
++  if (!artifact || !raw) return
++  const origin = join(root, originPathOf(root, artifact))
+@@ keptLinksUnder @@
+-async function keptLinksUnder(
+-  root: string,
+-  store: BundleStore,
+-  held: ContainerRecord,
+-  artifact: string,
+-  item: string,
+-) {
++async function keptLinksUnder(root: string, held: ContainerRecord, artifact: string, item: string) {
+   if (!held.links?.length) return []
+   const files = await listMarkdownFiles(artifact)
+-  const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, store, f))))
++  const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, f))))
+@@ openBundle @@
+-  const links = await keptLinksUnder(root, store, held, inner.artifact, item)
++  const links = await keptLinksUnder(root, held, inner.artifact, item)
+@@ listInner @@
+-      !outsideContent(originPathOf(root, store, join(folder, e.name)), scope),
++      !outsideContent(originPathOf(root, join(folder, e.name)), scope),
+@@ spendBundle @@
+-  const { abs, store, record, artifact, inner } = opened
++  const { abs, record, artifact, inner } = opened
+@@
+-  await releaseStrip(root, relative(root, abs), originPathOf(root, store, artifact))
++  await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
+@@ originPagesIn @@
+-      out.push(connPage(bundle, originPathOf(root, store, file)))
++      out.push(connPage(bundle, originPathOf(root, file)))
+@@ originPagesOf @@
+-export async function originPagesOf(
+-  root: string,
+-  store: BundleStore,
+-  files: readonly string[],
+-): Promise<ConnPage[]> {
++export async function originPagesOf(root: string, files: readonly string[]): Promise<ConnPage[]> {
+   const out: ConnPage[] = []
+   for (const file of files)
+-    out.push(connPage((await stampedIdOf(file)) ?? file, originPathOf(root, store, file)))
++    out.push(connPage((await stampedIdOf(file)) ?? file, originPathOf(root, file)))
+```
+
+`moveIntoStore`'s address check leaves with its store: every caller hands it a bundle `listBundles` listed, and the artifact and record reads still answer nothing for anything else.
+
+```Core/Bundles/placement.ts diff
+@@ archiveFiling @@
+-  const left = originPathOf(root, named.store, named.item ?? named.bundle)
++  const left = originPathOf(root, named.item ?? named.bundle)
+```
+
+```Core/Trash/spend.ts diff
+@@ emptyBundle @@
+-        [...pages.map((file) => originPathOf(root, store, file)), ...(archive?.origins ?? [])],
++        [...pages.map((file) => originPathOf(root, file)), ...(archive?.origins ?? [])],
+@@ restoreTrashed @@
+-  const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
++  const back = await originPagesOf(root, await contentPages(record.entity, artifactAbs))
+@@
+-      const origin = join(root, originPathOf(root, store, artifactAbs))
++      const origin = join(root, originPathOf(root, artifactAbs))
+@@ collectionArchive @@
+-    origins: files.map((f) => originPathOf(root, store, f)),
++    origins: files.map((f) => originPathOf(root, f)),
 ```
 
 ```Core/Paths/nexusPaths.ts diff
@@ -4583,7 +4824,7 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
  }
 ```
 
-▸ Phases 2 and 3 also rewrite `deleteOp` and `fromArchive`. This hunk touches the store test alone.
+▸ Phases 2 and 3 also rewrite `deleteOp` and `fromArchive`. This hunk touches the store test and the origin reads alone.
 
 ```Core/Trash/delete.ts diff
 @@ imports @@
@@ -4593,25 +4834,33 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 @@ fromArchive @@
 -  if (!isArchived(req.path)) return null
 +  if (storeOf(req.path)?.store.kind !== 'archive') return null
+@@
+-    origin: join(root, originPathOf(root, store, abs)),
++    origin: join(root, originPathOf(root, abs)),
+     under: pages.map((file) => relative(root, file)),
+-    keys: pages.map((file) => originPathOf(root, store, file)),
++    keys: pages.map((file) => originPathOf(root, file)),
 ```
 
 **VERIFY**
 
 - [ ] The four new `storeOf` cases are green.
-- [ ] `git grep -nwE "archivedCollectionIdOf|isArchived|outsideArchive|stampedSegment" -- Core Desktop` prints nothing, and neither does `git grep -n "Bundles/layout" -- Core Desktop`.
+- [ ] `git grep -nwE "archivedCollectionIdOf|isArchived|outsideArchive|stampedSegment" -- Core Desktop` prints nothing, and neither does `git grep -n "Bundles/layout" -- Core Desktop`; `git grep -nE "originPa(thOf|gesOf)\(root, (store|to|from|named\.store)," -- Core` prints nothing.
 - [ ] `git grep -nw archiveSegs -- Core ':!*.test.ts'` prints only `nexusPaths.ts` and `exclusion.ts`.
 - [ ] `git grep -nE "function hidden(Name|Folder)" -- Core` prints only `nexusPaths.ts`; the typecheck proves no importer still reads them from `exclusion`.
-- [ ] **Flips:** none.
+- [ ] **Flips:** none; `layout.test.ts`'s `originPathOf` cases change their calls alone, as CHANGE names.
 - [ ] Run the gates.
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 4-2
 
-**TASK:** Trashed Spaces become holders. A stored-Space source in `heldPages.ts` reads the Spaces the Trash holds, a trashed Context's included, from their own sidecars. It feeds `byId` under the claim rule and feeds `spaceFiles`, so every holder query, Space strip, and by-id write reaches them. The pass-over keeps a trashed copy that shares a live root's id out of the strip, and the Context and Space finishes leave the bundle their folder moved into. This closes B-3. The stash schema moves into the property model first: the stored-Space source's import of `bundle.ts` pulls `bundle.ts` and `record.ts` into the import cycle around `liveTree.ts`, where `record.ts`'s schema would read `stashBlock` from a `propertyStash.ts` still evaluating.
+**TASK:** Trashed Spaces become holders. A stored-Space source in `heldPages.ts` reads the Spaces the Trash holds, a trashed Context's included, from their own sidecars. It feeds `byId` under the claim rule and, through the `stored` list `nexusPages` hands back with `byId`, feeds `spaceFiles`, so every holder query, Space strip, and by-id write reaches them, listing the Trash once each. The pass-over keeps a trashed copy that shares a live root's id out of the strip, silently, since the live twin holds what the strip takes and nothing is left to owe, and the Context and Space finishes leave the bundle their folder moved into. This closes B-3. The stash schema moves into the property model first: the stored-Space source's import of `bundle.ts` pulls `bundle.ts` and `record.ts` into the import cycle around `liveTree.ts`, where `record.ts`'s schema would read `stashBlock` from a `propertyStash.ts` still evaluating.
 
 **NOW:**
 - `stashBlock` and `StashBlock` live in `propertyStash.ts:11-17`, beside the stash's functions. That file reaches `liveTree.ts` twice, through `heldTreeOf` (`:7`) and through `settings.ts` (`:8`), which `liveTree.ts`'s cycle already holds. `recordFile`'s property arm reads `stashBlock` at the top level (`record.ts:4`, read in `stashes`); `deleteProperty.ts:4`, `assignment.test.ts:2`, and `unassignProperty.test.ts:29` import the type. `properties.ts`, the property model, imports `zod`, `decoders`, `linkValue`, `ids`, and `keyFormat` (`:3-8`), and its imports' closure reaches nothing in the cycle.
-- `spaceFiles` lists the tree's Spaces alone (`keyHolders.ts:69-75`), which its three holder sites read (`keyHolders.ts:97`, `cascade.ts:128,263`).
+- `spaceFiles` lists the tree's Spaces alone (`keyHolders.ts:69-75`), which its three holder sites read (`keyHolders.ts:97`, `cascade.ts:128,263`). Two of them already read `nexusPages`: `linkStrip` always (Phase 3's, from `cascade.ts:107`), `findHolders` with `read` (`keyHolders.ts:106`); `renameCascade` reads none.
+- `deleteCascade` counts every holder `addressable` refuses as held out and owed (`cascade.ts:133-136`, Phase 3's `heldOut`), which is right for a root carrying no ID or one of two claiming it, the cases no restore could put a value back on.
+- `contextCascade.test.ts` calls `unlinkContextKey` and `unlinkSpaceValue` with a folder string as the last argument twelve times (`:123,127,247,652,662,672,679,694,709,729,742,818`); `deleteOrder.test.ts:49,53` spread their arguments through.
 - Trashed Spaces are read only by `trashedHolders`' Space and Context arms (`trashedCopies.ts:70-76`), from `refillTrashed` and `refillStash`'s splice.
 - `addressable` asks only that an id is held and not null (`heldPages.ts:61-64`). It's read by the strip (`cascade.ts:133`), by the holder capture (`keyHolders.ts:125`), and by `sweepRootsById` (`governedSweep.ts:112`), which builds its file list from the root by hand (`:104-108`).
 - `unlinkMembers` skips only the live folder (`contextCascade.ts:100-110`), called with `dir` and `under(old)` from `finishOwed.ts:319,369` after `leave` moved the folder into `e.bundle`.
@@ -4624,11 +4873,12 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 - [ ] Write these and watch each fail:
   - **`restoreProperty.test.ts`, "a property deleted while a Space sat in the Trash leaves the trashed Space and returns to it with its restore" (B-3, B-2 for Spaces):** a Space holding `Priority: hi` is trashed. Deleting the property leaves the trashed sidecar without `Priority`, and the property's record holds `{ [spaceId]: 'hi' }`. Restoring the property, then the Space, returns `Priority: hi`. It fails today because the trashed sidecar keeps the key.
   - **`deleteReach.test.ts`, "a Context delete leaves its own Spaces' tags of each other in its bundle":** Space `Areas/Home` holds `<Areas>: [Work]` beside `Areas/Work`. Deleting `Areas` leaves the bundle's `Home/_space.json` byte-identical, and restoring it returns the tag. It fails without `unlinkMembers`' bundle in `left`.
-  - **`deleteReach.test.ts`, beside `:133`, "a trashed Space sharing a live Space's id is passed over by the strip, and counted held out":** copy a live Space's sidecar into a hand-made Space bundle (`mintBundle` plus a Space record), both holding `Related: "[[Target]]"`. Deleting `Target` strips the live sidecar, leaves the trashed copy as it was, and warns `unsweptLine(1)` owed. It fails without the pass-over, because the copy is stripped under the live id.
+  - **`deleteReach.test.ts`, beside `:133`, "a trashed Space sharing a live Space's id is passed over by the strip silently, neither skipped nor owed":** copy a live Space's sidecar into a hand-made Space bundle (`mintBundle` plus a Space record), both holding `Related: "[[Target]]"`. Deleting `Target` strips the live sidecar and leaves the trashed copy byte-identical; the reply carries no warning, the bundle's `links` hold the live Space's value alone, and after `finishOwed` the notes are empty. It fails without the pass-over, because the copy is stripped under the live id, and with the twin counted, because the reply warns `unsweptLine(1)` and Try Again stays owed.
   - **`heldPages.test.ts`, "nexusPages — the Trash's Spaces":**
     - "holds a trashed Space at its bundle path, and a trashed Context's Spaces under it."
     - "a live Space sharing a trashed Space's id keeps its entry, and the trashed one fills no null."
 - [ ] Apply the AFTER.
+- [ ] `contextCascade.test.ts`'s twelve unlink calls wrap their folder in a list, their expectations unchanged: `pomDir()` → `[pomDir()]`, `classesDir()` → `[classesDir()]`, `projectsDir()` → `[projectsDir()]`, and `:672`'s `join(contextsDir(root), 'Classes', '2024')` → `[join(contextsDir(root), 'Classes', '2024')]`.
 - [ ] In `NexusRecordPM.md:12`, "the Spaces the tree shows naming them" (in Task 3-2's sentence) becomes "the Spaces the tree and the Trash hold naming them".
 
 **AFTER**
@@ -4706,6 +4956,12 @@ The stash schema moves into the property model, the one module a Collection side
 +import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 +import { listBundles } from '../Bundles/bundle'
 +import type { SpaceNode } from './tree'
+@@ NexusPages @@
+ export interface NexusPages {
+   byId: ReadonlyMap<string, EntityRecord | null>
+   archived: readonly ConnPage[]
++  stored: readonly SpaceNode[]
+ }
 @@ addressable @@
 -/** Whether `byId` addresses the one file carrying `id`: not where the file carries no ID, nor where two files claim it, so no strip files a value under it and no refill writes it. */
 -export const addressable = (
@@ -4728,9 +4984,11 @@ The stash schema moves into the property model, the one module a Collection side
 @@ nexusPages @@
      archived.push(connPage(id, at.origin))
    }
-+  for (const { id, kind, title, path } of await storedSpaces(root))
+-  return { byId, archived }
++  const stored = await storedSpaces(root)
++  for (const { id, kind, title, path } of stored)
 +    if (!byId.has(id)) byId.set(id, { id, kind, title, path })
-   return { byId, archived }
++  return { byId, archived, stored }
  }
 @@ linkWorld @@
 +export async function storedSpaces(root: string): Promise<SpaceNode[]> {
@@ -4756,7 +5014,7 @@ The stash schema moves into the property model, the one module a Collection side
 +}
 ```
 
-`NexusPages`' doc gains, after "an archived one at the path a writer opens", the clause "and every Space the Trash holds, a trashed Context's among them, read from its own sidecar, since the index holds pages alone; a trashed one fills only an id nothing else claims". Task 4-3 gives the doc its full text. The AFTER adds no comment: `storedSpaces` and `rootFile` read by their names beside that doc.
+`NexusPages`' doc gains, after "an archived one at the path a writer opens", the clause "and every Space the Trash holds, a trashed Context's among them, read from its own sidecar, since the index holds pages alone; a trashed one fills only an id nothing else claims, and `stored` lists them, so a reach reads the Trash's Spaces once". Task 4-3 gives the doc its full text. The AFTER adds no comment: `storedSpaces` and `rootFile` read by their names beside that doc.
 
 **Departure, Disclosed:** *§The Rules*, 2 reads strictly ("address a file only when `byId.get(id)?.path` is that file"). `addressable` keeps an id `byId` doesn't hold yet addressable, as a page the tree hasn't patched in is today, and passes over only a root `byId` holds elsewhere. The strict reading would newly hold out every page whose tree patch lags its index row. The pass-over's purpose is met by the lenient reading. The trashed refill's Space and Context arms (`trashedHolders`, `trashedCopies.ts:70-76`) go dead here, since trashed Spaces now sit in `byId`. Task 4-6 removes the function whole.
 
@@ -4783,38 +5041,67 @@ The stash schema moves into the property model, the one module a Collection side
 +import { addressable, type NexusPages, nexusPages, storedSpaces } from '../Nexus/heldPages'
 @@ spaceFiles @@
 -/** The sidecar of each Space the tree holds that `holds` answers for, at the folder `moved` sent it to when the tree still lists the one it left. */
--export const spaceFiles = (
-+/** The sidecar of each Space the tree or the Trash holds that `holds` answers for, a tree Space at the folder `moved` sent it to when the tree still lists the one it left. */
-+export const spaceFiles = async (
++/** The sidecar of each Space the tree or `stored` holds that `holds` answers for, a tree Space at the folder `moved` sent it to when the tree still lists the one it left. */
+ export const spaceFiles = (
    root: string,
    tree: NexusTree,
++  stored: readonly SpaceNode[],
    holds: (space: SpaceNode) => boolean,
    moved?: FolderMove,
--): string[] =>
+ ): string[] =>
 -  tree.contexts.flatMap((g) => g.spaces.filter(holds).map((s) => sidecarAt(root, s.path, moved)))
-+): Promise<string[]> =>
-+  [...tree.contexts.flatMap((g) => g.spaces), ...(await storedSpaces(root))]
++  [...tree.contexts.flatMap((g) => g.spaces), ...stored]
 +    .filter(holds)
 +    .map((s) => sidecarAt(root, s.path, moved))
 @@ findHolders @@
++  const known = read ? await nexusPages(root, tree) : null
+   const spaces =
+     typeof q.reach === 'string'
+       ? [
 -          ...spaceFiles(root, tree, holds, q.moved),
-+          ...(await spaceFiles(root, tree, holds, q.moved)),
++          ...spaceFiles(root, tree, known?.stored ?? (await storedSpaces(root)), holds, q.moved),
+@@
+   const files = [...pages, ...spaces]
+-  if (!read) return { files, held: [] }
+-  return readHolders(root, files, q.keys, (await nexusPages(root, tree)).byId, listed)
++  if (!known) return { files, held: [] }
++  return readHolders(root, files, q.keys, known.byId, listed)
 @@ readHolders @@
 -    const addressed = addressable(byId, id) ? id : null
 +    const addressed = addressable(root, byId, id, file) ? id : null
 ```
 
 ```Core/Nexus/cascade.ts diff
+@@ imports @@
+-import { addressable, nexusPages } from './heldPages'
++import { addressable, nexusPages, storedSpaces } from './heldPages'
 @@ linkStrip @@
+-  const { byId, archived } = await nexusPages(root, tree)
++  const { byId, archived, stored } = await nexusPages(root, tree)
+@@
 -    ...spaceFiles(root, tree, (s) => !!s.values && named(s.values).length > 0),
-+    ...(await spaceFiles(root, tree, (s) => !!s.values && named(s.values).length > 0)),
++    ...spaceFiles(root, tree, stored, (s) => !!s.values && named(s.values).length > 0),
 @@ deleteCascade @@
+       raw: (raw, file) => {
+         const named = strip.named(raw)
 -        if (named.length && !addressable(strip.byId, rootId(file, raw))) {
-+        if (named.length && !addressable(root, strip.byId, rootId(file, raw), file)) {
+-          heldOut++
++        const id = rootId(file, raw)
++        if (named.length && !addressable(root, strip.byId, id, file)) {
++          if (id === undefined || strip.byId.get(id) === null) heldOut++
+           return null
+         }
 @@ renameCascade @@
 -      ...spaceFiles(root, tree, (s) => !!s.values && spaceMoved(s.values, '') !== null),
-+      ...(await spaceFiles(root, tree, (s) => !!s.values && spaceMoved(s.values, '') !== null)),
++      ...spaceFiles(
++        root,
++        tree,
++        await storedSpaces(root),
++        (s) => !!s.values && spaceMoved(s.values, '') !== null,
++      ),
 ```
+
+`findHolders` reads the Trash's Spaces once: with `read`, from the `nexusPages` its pass-over reads anyway, and without it, only when its reach takes Spaces. `deleteCascade`'s docstring (Phase 3's) gains, after "since no restore could put it back", the clause "; a stored copy of a root `byId` addresses elsewhere is passed over unreported, since its live twin holds what the strip takes", so the second count reads where a reader meets it.
 
 `sweepRootsById` is folded onto `rootFile`, the one spelling of "the file a root's writer opens":
 
@@ -4883,7 +5170,7 @@ The stash schema moves into the property model, the one module a Collection side
 **VERIFY**
 
 - [ ] The four new cases are green, and each is watched red with its hunk reverted.
-- [ ] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`.
+- [ ] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`. `contextCascade.test.ts`'s twelve unlink calls change as CHANGE names, every expectation holding.
 - [ ] `git grep -n "skipUnder" -- Core` prints nothing, and `git grep -n "stashBlock\|StashBlock" -- Core` shows the schema defined in `properties.ts` alone, with no file importing it from `propertyStash`.
 - [ ] Run the gates (`npm run typecheck`, `npm run test`, `npm run lint`). `assignment.test.ts`, `governedWorldWrite.test.ts`, `repairSweep.test.ts`, and `deleteOrder.test.ts` are the suites that break without the move: each enters the cycle through `propertyStash.ts` (`deleteOrder.test.ts` by way of `mutate.ts` and `assignment.ts`), so `record.ts` evaluates before it finishes. Native module evaluation throws a ReferenceError at that read; vitest's module runner answers it `undefined`, and `recordFile` then refuses every property record holding `stashes`.
 - [ ] Check for unnecessary code or mistakes.
@@ -4990,7 +5277,7 @@ The stash schema moves into the property model, the one module a Collection side
    const entries = (await listEntries(folder)).filter(
      (e) =>
        (e.kind === 'dir' || isContentFile(e)) &&
--      !outsideContent(originPathOf(root, store, join(folder, e.name)), scope),
+-      !outsideContent(originPathOf(root, join(folder, e.name)), scope),
 +      !outsideContent(relative(root, join(folder, e.name)), scope),
    )
 ```
@@ -5004,7 +5291,7 @@ The stash schema moves into the property model, the one module a Collection side
 +import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 @@ NexusPages @@
 -/** `byId` holds every entity the tree holds and every page the Archive holds, an archived one at the path a writer opens, and null where two files claim one id, so neither is addressed by it; `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them. */
-+/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. */
++/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. `stored` lists the Trash's Spaces, read from their own sidecars since the index holds pages alone, so a reach reads them once. */
  export interface NexusPages {
 @@ nexusPages @@
  export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
@@ -5018,13 +5305,14 @@ The stash schema moves into the property model, the one module a Collection side
      claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
      archived.push(connPage(id, at.origin))
    }
--  for (const { id, kind, title, path } of await storedSpaces(root))
+   const stored = await storedSpaces(root)
+-  for (const { id, kind, title, path } of stored)
 +  const trashed = [...(await storedPageIds(root, tree, TRASH_DIR))].flatMap(([path, { id }]) =>
 +    id ? [{ id, kind: 'page' as const, title: titleFromPath(path), path }] : [],
 +  )
-+  for (const { id, kind, title, path } of [...trashed, ...(await storedSpaces(root))])
++  for (const { id, kind, title, path } of [...trashed, ...stored])
      if (!byId.has(id)) byId.set(id, { id, kind, title, path })
-   return { byId, archived }
+   return { byId, archived, stored }
  }
 @@ archivedPageIds @@
 -export async function archivedPageIds(
@@ -5217,7 +5505,7 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +  const inside = (rel: string): boolean => left.some((at) => isAtOrUnder(rel, at))
 @@
 -  // The held tree may still list the deleted pages, since its patch can fall to a walk, and the index an archived one's rows until its artifact leaves the Archive, so each is left out by where it's held.
-   const { byId, archived } = await nexusPages(root, tree)
+   const { byId, archived, stored } = await nexusPages(root, tree)
 @@ deleteCascade @@
  export async function deleteCascade(
    root: string,
@@ -5329,24 +5617,32 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 ```Core/Nexus/configReach.ts diff
 @@ imports @@
 -import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
-+import { ARCHIVE_DIR_REL, SIDECAR_FILENAME, TRASH_DIR } from '../Paths/nexusPaths'
++import { SIDECAR_FILENAME, TRASH_DIR } from '../Paths/nexusPaths'
 +import { trashReach } from '../Bundles/bundle'
 +import { storedSpaces } from './heldPages'
 @@ setSidecarsUnder @@
 -const setSidecarsUnder = async (root: string, scope: WatchScope, abs: string): Promise<string[]> =>
 -  (await sidecarsUnder(root, scope, abs)).filter((file) => basename(file) === SIDECAR_FILENAME.set)
-+const containerSidecarsUnder = async (root: string, scope: WatchScope, abs: string) =>
-+  (await sidecarsUnder(root, scope, abs)).filter(
-+    (file) => basename(file) === SIDECAR_FILENAME.set || basename(file) === SIDECAR_FILENAME.collection,
++const containerSidecarsUnder = async (
++  root: string,
++  scope: WatchScope,
++  abs: string,
++): Promise<Container[]> =>
++  (await sidecarsUnder(root, scope, abs)).flatMap((file) =>
++    (['collection', 'set'] as const).flatMap((kind) =>
++      basename(file) === SIDECAR_FILENAME[kind] ? [{ kind, dir: dirname(file) }] : [],
++    ),
 +  )
  
  /** The ids of the Sets an archived folder holds, read from their sidecars. */
  export async function archivedSetIds(root: string, abs: string): Promise<string[]> {
    const ids = await Promise.all(
 -    (await setSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
-+    (await containerSidecarsUnder(root, await readWatchScope(root), abs)).map((file) =>
-       sidecarId(dirname(file), 'set'),
-     ),
+-      sidecarId(dirname(file), 'set'),
+-    ),
++    (await containerSidecarsUnder(root, await readWatchScope(root), abs)).flatMap(({ kind, dir }) =>
++      kind === 'set' ? [sidecarId(dir, 'set')] : [],
++    ),
    )
    return ids.flatMap((id) => id ?? [])
  }
@@ -5366,16 +5662,17 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +    ...(rel === undefined ? [TRASH_DIR] : await trashReach(root, tree, rel)),
 +  ]
 +  const scope = scopeOf(tree.config)
-+  const files = (await Promise.all(dirs.map((d) => containerSidecarsUnder(root, scope, join(root, d))))).flat()
-+  return files.map((file) => ({
-+    kind: basename(file) === SIDECAR_FILENAME.collection ? 'collection' : 'set',
-+    dir: dirname(file),
-+  }))
++  const found = await Promise.all(
++    dirs.map((d) => containerSidecarsUnder(root, scope, join(root, d))),
++  )
++  return found.flat()
  }
 @@ reachConfig @@
--  const tiles = tileHostsOf(root, tree)
-+  const tiles = tileHostsOf(root, tree)
-+  const boards = [...tiles.hosts, ...(await storedSpaces(root)).map((s) => ({ dir: join(root, s.path) }))]
+   const tiles = tileHostsOf(root, tree)
++  const boards = [
++    ...tiles.hosts,
++    ...(await storedSpaces(root)).map((s) => ({ dir: join(root, s.path) })),
++  ]
 @@
 -  for (const { kind, dir } of await archivedSets(tree, root, under)) {
 +  for (const { kind, dir } of await storedContainers(tree, root, under)) {
@@ -5395,7 +5692,7 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 +    // Gone for good once its bundle goes, so its delete's finish takes its assignment from the Collections the Trash holds too; what it misses stays owed, so Try Again reaches it.
 ```
 
-`ARCHIVE_DIR_REL` isn't needed once `archiveReach` answers the unscoped root, so don't import it. `goneContainers`' doc ("read from the tree, or from an archived Set's sidecars on disk") becomes "read from the tree, or from a stored container's sidecars on disk". Every `archivedSetIds` caller reads an Archive, which holds no Collection sidecar, and a Collection's folder read as a Set answers no id (`sidecarId(dir, 'set')` reads its absent `_pageset.json`), so it still answers Sets alone; its doc stays true.
+`goneContainers`' doc ("read from the tree, or from an archived Set's sidecars on disk") becomes "read from the tree, or from a stored container's sidecars on disk". `containerSidecarsUnder` answers each sidecar's kind with its folder, so `storedContainers` takes its answer whole and `archivedSetIds` reads its Sets by kind. The configuration pass reads the Trash twice, once for its containers and once for its Spaces' tile docs: two different walks (the store's sidecars, or its scoped bundles' records, against the Contexts chain's Space sidecars), on a pass that deletes and Set moves run, never a rename or an edit.
 
 **VERIFY**
 
@@ -5497,7 +5794,7 @@ A restore now moves the item's bytes, as the Archive's restore does (*§The Rule
 +/** … and its record keeps the address it left for the Undo. Link values name its pages where they lived. */
 @@ fromArchive @@
 -    under: pages.map((file) => relative(root, file)),
-     keys: pages.map((file) => originPathOf(root, store, file)),
+     keys: pages.map((file) => originPathOf(root, file)),
 @@ deleteOp @@
 -  const under =
 -    from?.under ?? pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
@@ -5609,7 +5906,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 -import { assignedIds } from '../Nexus/containerFields'
 -import { sidecarPath } from '../Paths/paths'
 @@ restoreTrashed @@
-   const back = await originPagesOf(root, store, await contentPages(record.entity, artifactAbs))
+   const back = await originPagesOf(root, await contentPages(record.entity, artifactAbs))
 -  const targets = new Map(Object.entries(record.targets ?? {}))
    const world = linkWorld(tree, archived, back)
 -  const frozen = frozenWorld(world, targets)
@@ -5633,7 +5930,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 -    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, reconciled as any Trash restore, and nothing lands in the tree.
 +    // The Undo of a delete from the Archive files back at the address its record keeps, in the Archive that holds it now, and nothing lands in the tree.
      if (into && (record.entity === 'page' || record.entity === 'set')) {
-       const origin = join(root, originPathOf(root, store, artifactAbs))
+       const origin = join(root, originPathOf(root, artifactAbs))
 -      const { archive, links, targets, ...filed } = record
 +      const { archive, links, ...filed } = record
 @@ returningCascade call @@
@@ -5706,13 +6003,15 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **CHANGE**
 
-**Departure, Disclosed:** `parkLinks` reads the indexed Trash (`storedPageIds(TRASH_DIR)`) rather than listing every bundle's artifact. This is *§The Trash's Model · §Leaves*' "becomes an index read". Its one difference is a trashed page whose origin lies under an excluded folder, which the index doesn't hold and `listMarkdownFiles` did. Parking now reads the one admission rule the index and `listInner` read.
+**Departure, Disclosed:** `parkLinks` reads the indexed Trash (`storedPageIds(TRASH_DIR)`) rather than listing every bundle's artifact. This is *§The Trash's Model · §Leaves*' "becomes an index read". Its one difference is a trashed page whose origin lies under an excluded folder, which the index doesn't hold and `listMarkdownFiles` did. Parking now reads the one admission rule the index and `listInner` read. The empty's park (Task 3-4) runs after its artifact's disposal, and that disposal's own unlink deindexes the artifact before the park reads the index: `dispose` awaits `noteOwn`, the own tap is `applyOwn` (`settle.ts:52-63`), and its `applyEvents` awaits `indexEvents`' `deindexPath` (`fileEvents.ts:294-298`, `indexSeed.ts:215-223`). So an emptied bundle's own pages answer none of its links, as the listing's skip of an artifactless bundle kept them from answering before.
 
 - [ ] Write **`assignment.test.ts`, "a re-assign refills a trashed page's stashed value into its copy, which returns with it",** and watch it pass at Task 4-4's head and stay green here. It's the splice's behavior, now carried by `byId`.
+- [ ] Write **`trashRecovery.test.ts`, beside `:701`, "emptying a Set holding one of two namesakes hands its record's links to the other"**, `:701`'s twin for a container: a Set `Plain/Box` (`_pageset.json` with id `set-box`) holds `Alpha.md` (`linker` with a fresh page id and no keys); `del('Journal/Daily/Alpha.md', 'page')`, then `del('Plain/Box', 'set')`, after which Beta holds no `Related`; empty Box's bundle, restore the Journal Alpha's row, and Beta reads `Related: '[[Alpha]]'`. It passes before and after the AFTER, since the listing skipped the emptied bundle too; it pins the order, so watch it red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, where Box's own Alpha still answers the link and it parks with neither namesake.
 - [ ] Apply the AFTER.
 - [ ] Remove the tests of removed code:
   - `trashedCopies.test.ts`, the whole file: it tested `frozenWorld` alone (Placements name `trashedCopies.ts` for deletion in Phase 5, and its test file has nothing left to test).
   - `spend.test.ts:1005`, "a Link value refilled into a trashed copy is reconciled as a live refill is", which drove `refillTrashed` directly.
+- [ ] Re-point the tests of the narrowed signatures, their expectations unchanged: `governedRoot.test.ts:261`'s `const gone = { holds: () => false }` becomes `const gone = () => false`, and `:271`'s `{ holds: (t) => t === 'Alpha' }` becomes `(t) => t === 'Alpha'`; `governedSweep.test.ts:352`'s `refillOf(tags, { holds: () => true })` becomes `refillOf(tags, buildPageIndex([]))`, importing `buildPageIndex` from `'../Connections/pageIndex'`, since a Multi-Select reads no world.
 - [ ] Rewrite `NexusRecordPM.md:14`'s "— into its copy in the Trash when it sits there —" as "— in the Trash as live —", and `NexusRecordPM.md:33`'s "a bundle's frozen content" as "a bundle's content".
 - [ ] Close I-065 in `.claude/IssuesPM.md` through `batch-issues` as intended (Decision B-4): its index row, its section, its footnote, and its count in TOTALS.
 
@@ -6027,7 +6326,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  const owed = new Set([...members.keys()].filter((id) => !taken.has(id)).concat(unfound))
 ```
 
-(`PROPERTY_TYPES` stays only if `refillStash`'s other half reads it. Drop it from the import if `git grep` shows no other reader in the file.)
+(`PROPERTY_TYPES` leaves `assignment.ts`'s `./properties` import, the removed partition its one reader: `import type { PropertyDraft } from './properties'`.)
 
 ```Core/Trash/restoreProperty.ts diff
 @@ imports @@
@@ -6071,7 +6370,8 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 **VERIFY**
 
 - [ ] The new `assignment.test.ts` case is green, and Task 4-4's B-7 case still is.
-- [ ] **Flips:** none beyond the removed `trashedCopies.test.ts` and `spend.test.ts:1005`.
+- [ ] *"emptying a Set holding one of two namesakes hands its record's links to the other"* is green, and watched red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, then put back.
+- [ ] **Flips:** none beyond the removed `trashedCopies.test.ts` and `spend.test.ts:1005`; `governedRoot.test.ts:261,271` and `governedSweep.test.ts:352` change their arguments alone, as CHANGE names.
 - [ ] These print nothing:
   - `git grep -nwE "frozenWorld|Frozen|trashedHolders|refillTrashed|originPagesIn|Worked|workedOut|oweWorked|landWorked" -- Core`;
   - `git grep -n "values: undefined" -- Core/Nexus/finishOwed.ts`;
@@ -6099,7 +6399,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
   3. Read the trashed file on disk: it holds the new names.
   4. Restore it: it lands holding them, with no notice beyond the restore's own.
   5. Remove another page's bundle in Finder, then rename a property it held: no "Couldn't update" notice.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase sits near −450, and anything above it is reported with what it buys.
+- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 4 row beside its estimate, and anything above the estimate is reported with what it buys.
 - [ ] The two read-only reviewers (`code-simplification`, `adversarial-review`) read the phase outward against Phases 3 and 5's shared files, and the compaction checkpoint follows.
 
 ---
@@ -6120,18 +6420,56 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 - **The One Missing-Artifact Refusal's Copy:** the Trash's "That deletion never finished; there is nothing to restore." (`spend.ts:136-137`) and the Archive's `NOT_HELD` (`archive.ts:95-96`) become `readBundleAt`'s own "That item is no longer there." (`bundle.ts:230`), which reads right for either store. The case arises only for a bundle whose artifact has left.
 - **`archivedKind` Stays (L-7, Handed On by Phase 2):** it builds the Archive's delete request's `kind` (`browser.ts:59-60,119`) because `BundleRow.kind` spans both stores and includes `'property'`; typing the row per store to drop one coercing line would cost more than the line. It stays, read only by `requestOf`'s delete arm, which only the Archive's `rulesOf` reaches.
 - **An Archive Restore's Undo Whose Item Has Left the Tree:** `rearchive` skipped such an item without a word (`browser.ts:156-159`); the one Undo owner sends it at the path it stood at, and the host refuses it with its own message.
+- **An Undo Over Several Bundles Counts Its Refusals:** the old Undo sent each restore non-quiet, so a refusal posted the host's message until a later row's line replaced it; the one run counts what it couldn't do as a batch does, in one new line, "N Pages couldn’t be undone.", and a lone Undo's refusal keeps the host's message.
 
 #### Task 5-1
 
-**TASK:** Every reversible bundle reply carries its own `undo` (M-13): a delete's, a property delete's, and an archive's is the restore of the bundle it minted, and a delete from the Archive's returns it to the Archive address it left, carried in the request rather than in the record (L-9). `MutateOutcome.bundled`, the record's `archive` field, the renderer-chosen destination, and `rearchive`'s lookup leave, and one Undo owner sends each request at its item's place now (*Approaches* 3).
+**TASK:** Following an item by its id covers a Set as well as a page (*Approaches* 3): `livePagePath` widens to `livePath`, through `findContainerById`, which the tree already answers. The reader and `assignValue` read it now, and from Task 5-2 the one Undo owner reads it in place of `rearchive`'s own lookup over `nodesByIdOf`. **Comments:** none added or removed.
 
-**Comments:** the AFTER adds two (`atItemNow`'s and `livePath`'s) and removes five (`bundled`'s, the record's `archive`, `Undone`'s, `undoneOf`'s, and `rearchive`'s); `bundleOf`'s is test support.
+**NOW:** `livePagePath` follows a page alone (`Core/Nexus/record.ts:63-66`), for `PageReaderWindow.tsx:48,140` and `Core/Properties/assignValue.ts:97`; a Set followed by id has only `rearchive`'s lookup (`Core/Bundles/browser.ts:152-168`).
+
+**CHANGE**
+
+- [ ] Write **`treeIndex.test.ts`, `describe('livePath')`, "follows a page or a Set by its id across a rename, else answers where it stood"**: over a `makeTree()` whose first Set is renamed, the Set's id answers its new path, a page's id answers its path through the page index, and an unknown id answers the path given. Watch it fail: today it fails at import, since `livePagePath` follows pages alone.
+- [ ] Apply the AFTER.
+- [ ] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`.
+
+**AFTER**
+
+```Core/Nexus/record.ts diff
+@@ imports @@
+ import { entityMemo, type NexusTree, type SetNode } from './tree'
++import { findContainerById } from './treePatch'
+@@ livePagePath @@
+-export const livePagePath = (
+-  tree: NexusTree | null,
+-  target: { id: string; path: string },
+-): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
++export const livePath = (tree: NexusTree | null, target: { id: string; path: string }): string =>
++  (tree && (pagesByIdOf(tree).get(target.id) ?? findContainerById(tree, target.id))?.path) ??
++  target.path
+```
+
+`treePatch.ts` imports nothing from `record.ts`, so the import adds no cycle.
+
+**VERIFY**
+
+- [ ] The case is green, and red with the hunk reverted.
+- [ ] **Flips:** none.
+- [ ] `git grep -n "livePagePath" -- Core` prints nothing.
+- [ ] Run the gates.
+- [ ] Check for unnecessary code or mistakes.
+
+#### Task 5-2
+
+**TASK:** Every reversible bundle reply carries its own `undo` (M-13), and bundle ops post one notice through one builder (M-14). A delete's, a property delete's, and an archive's `undo` is the restore of the bundle it minted, and a delete from the Archive's returns it to the Archive address it left, carried in the request rather than in the record (L-9). `notifyBundled` in `Core/Interface/Notifications/notifications.ts` (*§Placements*) builds the one notice from what the rows' replies said; `runBundled` in `confirmations.ts` sends the rows, gathers the replies for it, and hands their Undo requests to `offerUndo`, which sends each at its item's place now (*Approaches* 3). A single row runs as a batch of one, so a delete, a property delete, an archive, a browser's restore or delete, and an Undo's own run all go through it, and the slice posts nothing for a bundle op but a lone row's refusal, which keeps the host's message. This closes B-4. `MutateOutcome.bundled`, the record's `archive` field, the renderer-chosen destination, `rearchive`'s lookup, `offerDeleted`, and the browser's `restoreOne`, `deleteOne`, `many`, `restoreBatch`, and `deleteBatch` leave. It's one task because the replies' shape and every renderer reader of it change together: once `bundled` leaves and the archive destination needs its `at`, any renderer form short of the final one would be rewritten a commit later. **Fold:** `notifyDeleted`'s cascade and retry parameters lose their only caller, `offerDeleted`, so the views' two callers keep the title and Undo alone; `confirmations.ts`'s `Asked` is the notice's `Titled`, which `Acted` extends, so the shape is written once. **Comments:** the AFTER adds three (`atItemNow`'s, `notifyBundled`'s, and `runBundled`'s) and removes ten (`bundled`'s, the record's `archive`, `Undone`'s, `undoneOf`'s, `rearchive`'s, `offerDeleted`'s, `restoreOne`'s doc and inline, `many`'s, and `deleteBatch`'s inline); `bundleOf`'s is test support.
 
 **NOW:**
 - **Replies:** `deleteOp` replies `bundled` (`Core/Trash/delete.ts:222`, unconditional after Phase 2), as do `deleteInner` (`Core/Properties/deleteProperty.ts:113`) and `archiveOp` (`Core/Archive/archive.ts:64`); `restoreArchived` replies a composed `undo` (`archive.ts:125-133`). `MutateOutcome.bundled` is documented at `Core/Nexus/mutateRequest.ts:20-21`.
 - **The Archive Address:** `fromArchive` writes it into the record as `archive` (`delete.ts:59`, decoded at `Core/Bundles/record.ts:56-57`), which only `placeRecord`'s archive arm reads (`Core/Bundles/placement.ts:247-250`); the renderer chooses the destination with `ARCHIVE_UNDO` (`Core/Bundles/browser.ts:108,256`). `restoreDestination`'s archive arm carries no address (`mutateRequest.ts:48-52`).
-- **The Renderer:** `offerUndo` restores bundle paths to a passed destination (`Core/Interface/Confirm/confirmations.ts:54-70`), `offerDeleted` forwards one (`:113-124`), `confirmArchive` reads `bundled` (`:143-146`). The browser re-sends an Archive restore's `undo` through `Undone`, `undoneOf`, and `rearchive`, finding the item over `nodesByIdOf` by the row's `stored.id` (`browser.ts:144-168`), and collects `bundled` and `undone` in `many` (`:420-421,429-430,444-445`).
-- **Following by ID:** `livePagePath` follows a page alone (`Core/Nexus/record.ts:63-66`), for `PageReaderWindow.tsx:48,140` and `Core/Properties/assignValue.ts:97`.
+- **The Undo:** `offerUndo` restores bundle paths to a passed destination (`Core/Interface/Confirm/confirmations.ts:54-70`), each non-quiet (`:64`), so the slice posts its lines and, when a restore answers both an unrestored line and a warning, the warning replaces the line. The browser re-sends an Archive restore's `undo` through `Undone`, `undoneOf`, and `rearchive`, finding the item over `nodesByIdOf` by the row's `stored.id` (`browser.ts:144-168`).
+- **Four Notices:** `restoreOne` (`browser.ts:383-399`) and `deleteOne` (`:401-407`) beside `many`, `restoreBatch`, and `deleteBatch` (`:410-497`), which collect `bundled` and `undone`; `offerDeleted` through `notifyDeleted` (`confirmations.ts:113-124`, `notifications.ts:130-140`); and `confirmArchive`'s `notifyUndoable` (`confirmations.ts:143-146`), which carries no warning: an archive whose re-spell can't settle has its `warnCascade` and Try Again replaced (B-4, `post` keeping one notice, `notifications.ts:56-59`). `confirmations.ts:27`'s `Asked` and `notifyBundled`'s rows are one shape.
+- **The Slice:** a non-quiet `mutate` posts `unrestoredLine` and, for every op but `delete` and `deleteProperty`, `warnCascade` (`Core/Session/nexusSlice.ts:267-279`); `quiet` (`:68,259-260`) has one caller (`browser.ts:436`), and a quiet refusal answers `null` with nothing posted.
 
 **CHANGE**
 
@@ -6139,15 +6477,21 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
   - **`archive.test.ts`, beside `:818`, "a delete from the Archive answers the Undo that files it back at the address it left, and its record keeps none":** the reply's `undo` equals `{ op: 'restore', bundlePath: trashed, destination: { kind: 'archive', at: archived } }`, and `readRecord(at(trashed))` has no `archive` key. Fails today on `undo` being absent.
   - **`deleteProperty.test.ts`, "a property delete answers the Undo that restores its bundle":** the reply's `undo` is `{ op: 'restore', bundlePath }` for the bundle `listBundles` finds.
   - **`browser.test.ts:351`, rewritten in place as "an Archive restore's Undo sends each reply's own request at the item's place now, followed by the id its record carries":** `record` gains `id: 'p1'` for Alpha and `id: 'p2'` for Beta (one `recordOf(id)` helper in the describe), and the expectation keeps its shape. Fails today because `rearchive` reads `row.stored.id`, which the rewrite drops from both rows.
-  - **`treeIndex.test.ts`, `describe('livePath')`, "follows a page or a Set by its id across a rename, else answers where it stood":** over a `makeTree()` whose first Set is renamed, the Set's id answers its new path, a page's id answers its path through the page index, and an unknown id answers the path given. Fails today at import, since `livePagePath` follows pages alone.
+  - **`confirmations.test.ts`, `describe('an archive through the confirmation')`, "an archive whose re-spell couldn't settle posts Archived “A” with its warning and Try Again" (B-4):** `mutate` answers `{ cascade: { pages: [], hosts: [], warning: 'Links weren’t updated.', owed: true }, undo: { op: 'restore', bundlePath: BUNDLE } }`; the notice is `{ message: 'Archived “A”. Links weren’t updated.', tone: 'error', action: { label: 'Try Again' } }`. Fails today: the notice reads `Archived “A”` alone.
+  - **`confirmations.test.ts`, `describe('an Undo over several bundles')`, "an Undo's own run posts every line its replies carry in one notice":** two restore requests whose replies carry `unrestored: ['Beta']` and a warning; after the Undo runs (`vi.waitFor`, as `:380` does), one notice reads `Beta didn’t get its value back. <warning>`. Fails today: the old `offerUndo` posts nothing of its own.
+  - **`confirmations.test.ts`, `describe('an Undo over several bundles')`, "an Undo over several bundles counts a refusal among its lines":** two restore requests, `mutate` answering `null` for the first and `{ cascade: { pages: [], hosts: [], warning: 'W' } }` for the second; after the Undo runs, the one notice reads `1 Page couldn’t be undone. W`. Red with `notifyBundled`'s refused line kept to a verb (`verb && !lone && …`): the notice reads `W` alone, the refusal lost.
+  - **`confirmations.test.ts`, "a bundle op's success posts nothing from the slice":** with the real `mutate` and a dialer whose `mutate` answers `{ unrestored: ['Beta'], cascade: { pages: [], hosts: [], warning: 'W' } }`, `useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b1' })` leaves `currentNotification()` null. Fails today: the slice posts the warning over the unrestored line.
+  - **`TrashFrame.test.tsx`, "a lone restore's refusal is the host's message, with no count":** `mutate` answers `fault('That item is no longer there.')`; the notice reads exactly that. Passes today and must stay green: it pins the batch of one.
 - [ ] Apply the AFTER.
-- [ ] Rewrite every test read of a reply's `bundled` (94 lines across 19 files, `git grep -n "bundled" -- 'Core/**/*.test.ts' 'Core/**/*.test.tsx'`) through `bundleOf(reply)` from `Core/Testing/settledMutate.ts`. Remove `settle.test.ts:1329`'s local `bundleOf` and `refile.test.ts:45`'s `bundled` in its favor. Stubs that answer `bundled: { bundlePath: X }` answer `undo: { op: 'restore', bundlePath: X }`.
+- [ ] Rewrite every test read of a reply's `bundled` (94 lines across 19 files, `git grep -n "bundled" -- 'Core/**/*.test.ts' 'Core/**/*.test.tsx'`) through `bundleOf(reply)` from `Core/Testing/settledMutate.ts`. Remove `settle.test.ts:1329`'s local `bundleOf` and `refile.test.ts:45`'s `bundled` in its favor. Stubs that answer `bundled: { bundlePath: X }` answer `undo: { op: 'restore', bundlePath: X }`, apart from `ArchiveView.test.tsx:388,441`, whose Archive deletes answer `undo: { op: 'restore', bundlePath: X, destination: { kind: 'archive', at: <the row's address> } }`, as the host now composes it, and whose `:398,458` expect that request.
 - [ ] Rewrite `archive.test.ts:807`'s `UNDO` constant as `const undoTo = (archived: string): RestoreDestination => ({ kind: 'archive', at: archived })`, and each `restore(trashed, UNDO)` (`:941-1219`) as `restore(trashed, undoTo(archived))` for the address its case archived; `:1225`'s `restore(archived, UNDO)` becomes `restore(archived, undoTo(archived))`. Drop `archive: archived` from `:827`'s expectation.
 - [ ] Rewrite `spend.test.ts:2229-2244`, "refuses an Undo whose record names a path outside the Archive", as "refuses an Undo whose address lies outside the Archive": the record write drops `archive`, and the restore sends `destination: { kind: 'archive', at: '../Notes/Beta.md.archived' }`. Its expectations hold. `:2216`'s destination becomes `{ kind: 'archive', at: '.nexus/archive/c1/x' }`, and its expectation holds.
 - [ ] Rewrite `mutateRequest.test.ts:55-66` so the archive arm keeps `at` and drops a stray `id`: `destination: { kind: 'archive', at: 'a', id: 'x' }` reads back as `{ kind: 'archive', at: 'a' }`.
-- [ ] Rewrite `confirmations.test.ts:380`, "offers one Undo returning every bundle it was handed to the destination given", as "offers one Undo sending every request it was handed", over `[{ op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } }, { op: 'restore', bundlePath: '.trash/b2' }]`, and `:392` passes requests. `ArchiveView.test.tsx:398,458` expect `destination: { kind: 'archive', at: <the row's address> }`.
+- [ ] Rewrite `confirmations.test.ts:380`, "offers one Undo returning every bundle it was handed to the destination given", as "offers one Undo running every request it was handed", over `[{ title: 'A', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } } }, { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } }]`: a run of two sends each quietly, so `mutate.mock.calls` equal each request beside `{ quiet: true }`. `:392` passes the same two rows.
+- [ ] Rewrite `TrashFrame.test.tsx:272,288,307`'s `offerUndo([bundlePath], …)` as `offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], …)` (`listed[0].bundlePath` at `:307`); their expectations hold.
+- [ ] Move the cases that pass `notifyDeleted` a cascade or a retry to the builder that now owns their behavior, each keeping its expectations: `notifications.test.ts:44` (*"carries a note beside its Undo"*) and `:86` (*"offers Try Again beside its note, and keeps Undo on the chord"*) call `notifyOutcome('Deleted “X”', undefined, ['Couldn’t update 1 Item.'], undo)`, `:86` passing `retry` after it; `:55,62` (*"counts the pages whose links it stripped behind a segment"*), `:67` (*"joins a warning to the count"*), and `:79` (*"keeps Undo on the label when a count arrives without a warning"*) call `notifyBundled('Deleted', lone('Ideas', 2), undo)` and its like, through one describe-local `lone = (title: string, links: number, warnings: string[] = []): Bundled => ({ done: [{ title, kind: 'page' }], refused: [], unrestored: [], warnings, renamed: [], links })`, `:79` passing `vi.fn()` as its retry; and `ActionLabel.test.tsx:60` draws through `notifyOutcome('Deleted “Ideas”', '2 Internal Links', [], vi.fn())`. Every other `notifyDeleted` call in both suites passes the title and an Undo alone and holds.
+- [ ] `notifyDeleted`'s two view callers (`Core/Tiles/Surfaces/ViewTile.tsx:398`, `Core/Views/deleteViewWithUndo.ts:14`) keep `notifyDeleted(name, undo)` unchanged.
 - [ ] Rewrite `NexusRecordPM.md:16`'s "the delete answers with the bundle it minted, and **Undo** restores from that path without the frame being opened" as "the delete answers the Undo that restores the bundle it minted, which **Undo** sends without the frame being opened".
-- [ ] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`.
 
 **AFTER**
 
@@ -6241,27 +6585,135 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +      const { links, ...filed } = record
 ```
 
-```Core/Nexus/record.ts diff
-@@ imports @@
- import { entityMemo, type NexusTree, type SetNode } from './tree'
-+import { findContainerById } from './treePatch'
-@@ livePagePath @@
--export const livePagePath = (
--  tree: NexusTree | null,
--  target: { id: string; path: string },
--): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
-+/** Where the page or container `target` names stands now, followed by its id across a rename or move, else where it stood. */
-+export const livePath = (tree: NexusTree | null, target: { id: string; path: string }): string =>
-+  (tree && (pagesByIdOf(tree).get(target.id) ?? findContainerById(tree, target.id))?.path) ??
-+  target.path
+```Core/Bundles/rows.ts diff
+@@ BundleRow.stored @@
+-  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens and a restore's Undo finds again. */
++  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens. */
+   stored?: { id: string; path: string }
 ```
+
+```Core/Testing/settledMutate.ts diff
+@@ settledMutate @@
+   return reply
+ }
++
++/** The bundle a removal's reply filed what it took in, read from the Undo that restores it; empty for a refusal. */
++export const bundleOf = (reply: MutateReply): string =>
++  reply.ok && reply.value.undo?.op === 'restore' ? reply.value.undo.bundlePath : ''
+```
+
+```Core/Session/nexusSlice.ts diff
+@@ imports @@
+   notifyUnreadable,
+   reportRefusal,
+-  unrestoredLine,
+ } from '../Interface/Notifications/notifications'
+@@ NexusSlice.mutate doc @@
+-  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `retry` is a value write's Try Again. */
++  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; a bundle op's caller posts its own notice from the reply (`runBundled`), so for one the slice posts only a refusal; `retry` is a value write's Try Again. */
+@@ mutate @@
+       if (!quiet) {
+-        if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
+         const { cascade, missed } = res.value
+-        if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
++        const bundleOp =
++          req.op === 'delete' ||
++          req.op === 'deleteProperty' ||
++          req.op === 'archive' ||
++          req.op === 'restore' ||
++          req.op === 'emptyBundle'
++        if (cascade && !bundleOp)
+           warnCascade(
+```
+
+The bundle ops are named where the slice reads them, their one reader; `changesSettled` and `changesStores` beside them each answer a set of their own.
+
+```Core/Interface/Notifications/notifications.ts diff
+@@ imports @@
+-import type { CascadeReport } from '../../Nexus/cascade'
++import { type Counted, countPhrase } from '../../Nexus/entities'
+ import type { Unreadable } from '../../Nexus/tree'
+@@ notifyDeleted @@
+-export function notifyDeleted(
+-  title: string,
+-  undo?: () => void | Promise<void>,
+-  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
+-  retry?: () => void,
+-): () => void {
+-  const links = pages.length
+-    ? `${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`
+-    : undefined
+-  return notifyOutcome(`Deleted “${title}”`, links, [warning], undo, retry)
+-}
++export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
++  notifyOutcome(`Deleted “${title}”`, undefined, [], undo)
++
++export type Titled = Counted & { title: string }
++
++export interface Bundled {
++  done: Titled[]
++  refused: Titled[]
++  unrestored: string[]
++  warnings: string[]
++  renamed: string[]
++  links: number
++}
++
++/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, posts only its lines. */
++export function notifyBundled(
++  verb: 'Restored' | 'Deleted' | 'Archived' | null,
++  { done, refused, unrestored, warnings, renamed, links }: Bundled,
++  undo?: () => void | Promise<void>,
++  retry?: () => void,
++): () => void {
++  const lone = done.length + refused.length === 1
++  const unmet = [
++    !lone &&
++      refused.length > 0 &&
++      `${countPhrase(refused)} couldn’t be ${verb?.toLowerCase() ?? 'undone'}.`,
++    unrestored.length > 0 && unrestoredLine(unrestored),
++    ...warnings,
++  ].filter((line): line is string => typeof line === 'string')
++  if (!verb || (lone && !done.length))
++    return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
++  const head = lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)
++  const segment = lone
++    ? verb === 'Deleted' && links > 0
++      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
++      : undefined
++    : renamed.length > 1
++      ? `${renamed.length} Renamed`
++      : renamed[0]
++  return notifyOutcome(`${verb} ${head}`, segment, unmet, undo, retry)
++}
+```
+
+`notifyBundled` is the one place a bundle op's head, segment, and lines are composed; `notifyOutcome` stays the shape every notice with a head and lines takes, which the views and the slice share.
 
 ```Core/Interface/Confirm/confirmations.ts diff
 @@ imports @@
 -import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
-+import type { MutateOutcome, MutateRequest } from '../../Nexus/mutateRequest'
++import type { MutateRequest } from '../../Nexus/mutateRequest'
 +import { livePath } from '../../Nexus/record'
 +import { basename } from '../../Paths/posix'
+ import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
+@@
+ import { useSession } from '../../Session/store'
++import { storesChanged } from '../../Session/nexusSlice'
+@@
+-import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
++import {
++  type Bundled,
++  notifyBundled,
++  reportRefusal,
++  type Titled,
++} from '../Notifications/notifications'
+@@ Asked @@
+-type Asked = Counted & { title: string }
+-
+ /** What a delete asks of what it acts on: one by its title, more by their count. */
+-const deleteQuestion = (targets: readonly Asked[]): string =>
++const deleteQuestion = (targets: readonly Titled[]): string =>
 @@ offerUndo @@
 -/** Posts through `post` with the one Undo that restores every bundle an act minted, to `destination` when given, arming each so a restore of any one from elsewhere spends it; an act that minted none offers none. */
 -export function offerUndo(
@@ -6291,363 +6743,27 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +    : { ...req, path, back: { ...req.back, name: basename(path) } }
 +}
 +
-+/** Posts through `post` with the one Undo that sends each request an act's replies carried, each at its item's place now, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
++/** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
 +export function offerUndo(
-+  undos: readonly MutateRequest[],
++  undos: readonly Acted[],
 +  post: (undo?: () => Promise<void>) => () => void,
 +): void {
 +  const spend = post(
 +    undos.length > 0
 +      ? async () => {
-+          for (const req of undos) {
-+            if (req.op === 'restore') spendUndo(req.bundlePath)
-+            await useSession.getState().mutate(atItemNow(req))
-+          }
++          for (const { req } of undos) if (req.op === 'restore') spendUndo(req.bundlePath)
++          await runBundled(null, undos.map((u) => ({ ...u, req: atItemNow(u.req) })))
 +        }
 +      : undefined,
 +  )
-+  for (const req of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
-+}
-@@ offerDeleted @@
--/** A delete's one notice, by `title`: the Undo for the bundle it minted, to `undoTo` when given, and the cascade's links, warning, and Try Again. */
--export function offerDeleted(
--  title: string,
--  { bundled, cascade }: MutateOutcome,
--  undoTo?: RestoreDestination,
--): void {
-+/** A delete's one notice, by `title`: the Undo its reply carries, and the cascade's links, warning, and Try Again. */
-+export function offerDeleted(title: string, { undo, cascade }: MutateOutcome): void {
-   const { finishOwed } = useSession.getState()
--  offerUndo(
--    bundled ? [bundled.bundlePath] : [],
--    (undo) => notifyDeleted(title, undo, cascade, cascade?.owed ? finishOwed : undefined),
--    undoTo,
-+  offerUndo(undo ? [undo] : [], (offered) =>
-+    notifyDeleted(title, offered, cascade, cascade?.owed ? finishOwed : undefined),
-   )
- }
-@@ confirmArchive @@
-   if (done)
--    offerUndo(done.bundled ? [done.bundled.bundlePath] : [], (undo) =>
-+    offerUndo(done.undo ? [done.undo] : [], (undo) =>
-       notifyUndoable(`Archived “${target.title}”`, undo),
-     )
-```
-
-```Core/Bundles/browser.ts diff
-@@ imports @@
--import type { MutateOutcome, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
--import { nodesByIdOf } from '../Nexus/treeIndex'
-+import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
- import { matches, matchQuery } from '../Paths/caseFold'
--import { basename, isAtOrUnder, relDirname } from '../Paths/posix'
-+import { isAtOrUnder, relDirname } from '../Paths/posix'
-@@ ARCHIVE_UNDO @@
--const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
--
- type BundleOp = 'restore' | 'emptyBundle' | 'delete'
-@@ Undone, undoneOf, rearchive @@
--/** A restored row and the archive request its reply says takes the restore back. */
--type Undone = { row: BundleRow; undo: Extract<MutateRequest, { op: 'archive' }> }
--
--/** The row with the archive request its reply carries, when it carries one. */
--const undoneOf = (row: BundleRow, { undo }: MutateOutcome): Undone[] =>
--  undo?.op === 'archive' ? [{ row, undo }] : []
--
--/** A restore from the Archive undoes by sending each reply's own request, the item found by id so it follows a rename made since, under that new name once it has one. */
--const rearchive = (undone: Undone[]) => async (): Promise<void> => {
--  …                                                    (lines 152-168, removed)
--}
--
-@@ rulesOf @@
--/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, and what a restore's and a delete's Undo do. */
-+/** What the Trash and the Archive do differently under one browser: the date column's setting, and what a delete sends and how it asks. */
- function rulesOf(kind: BundleStore['kind']): {
-   dateKey: DateKey
-   deleteOp: 'emptyBundle' | 'delete'
-   askDelete: (targets: BundleRow[]) => Promise<boolean>
--  restoreUndo?: (undone: Undone[]) => () => Promise<void>
--  deleteUndo?: RestoreDestination
- } {
-@@ rulesOf's archive arm @@
-         askDelete: askTrashing,
--        restoreUndo: rearchive,
--        deleteUndo: ARCHIVE_UNDO,
-       }
-@@ restoreOne @@
-     spendUndo(row.bundlePath)
--    const undone = undoneOf(row, done)
-     // The notice replaces the slice's, so it carries the reply's lines and its Try Again.
--    notifyOutcome(
--      `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
--      undefined,
--      [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
--      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
--      done.cascade?.owed ? finishOwed : undefined,
--    )
-+    offerUndo(done.undo ? [done.undo] : [], (undo) =>
-+      notifyOutcome(
-+        `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
-+        undefined,
-+        [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
-+        undo,
-+        done.cascade?.owed ? finishOwed : undefined,
-+      ),
-+    )
-@@ deleteOne @@
--    offerDeleted(row.title, done, rules.deleteUndo)
-+    offerDeleted(row.title, done)
-@@ many @@
-     renamed: string[]
--    bundled: string[]
--    undone: Undone[]
-+    undos: MutateRequest[]
-     owed: boolean
-@@
-     const renamed: string[] = []
--    const bundled: string[] = []
--    const undone: Undone[] = []
-+    const undos: MutateRequest[] = []
-@@
-       if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
--      if (res.bundled) bundled.push(res.bundled.bundlePath)
--      undone.push(...undoneOf(row, res))
-+      if (res.undo) undos.push(res.undo)
-     }
-@@
--      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled, undone, owed }
-+      : { done, refused, unrestored, warnings: [...warnings], renamed, undos, owed }
-@@ restoreBatch @@
--    const { done, refused, unrestored, warnings, renamed, undone, owed } = ran
--    notifyOutcome(
--      `Restored ${countPhrase(done)}`,
--      …
--      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
--      owed ? finishOwed : undefined,
--    )
-+    const { done, refused, unrestored, warnings, renamed, undos, owed } = ran
-+    offerUndo(undos, (undo) =>
-+      notifyOutcome(
-+        `Restored ${countPhrase(done)}`,
-+        renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
-+        [
-+          refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
-+          unrestored.length > 0 && unrestoredLine(unrestored),
-+          ...warnings,
-+        ],
-+        undo,
-+        owed ? finishOwed : undefined,
-+      ),
-+    )
-@@ deleteBatch @@
--    const { done, refused, warnings, bundled, owed } = ran
-+    const { done, refused, warnings, undos, owed } = ran
-     // An empty mints no bundle, so only a batch the Archive moved into the Trash offers its Undo.
--    offerUndo(
--      bundled,
--      (undo) =>
--        notifyOutcome(…),
--      rules.deleteUndo,
--    )
-+    offerUndo(undos, (undo) =>
-+      notifyOutcome(
-+        `Deleted ${countPhrase(done)}`,
-+        undefined,
-+        [refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`, ...warnings],
-+        undo,
-+        owed ? finishOwed : undefined,
-+      ),
-+    )
-```
-
-```Core/Bundles/rows.ts diff
-@@ BundleRow.stored @@
--  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens and a restore's Undo finds again. */
-+  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens. */
-   stored?: { id: string; path: string }
-```
-
-```Core/Testing/settledMutate.ts diff
-@@ settledMutate @@
-   return reply
- }
-+
-+/** The bundle a removal's reply filed what it took in, read from the Undo that restores it; empty for a refusal. */
-+export const bundleOf = (reply: MutateReply): string =>
-+  reply.ok && reply.value.undo?.op === 'restore' ? reply.value.undo.bundlePath : ''
-```
-
-**VERIFY**
-
-- [ ] The four new cases are green, and each is red with its hunk reverted.
-- [ ] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `ArchiveView.test.tsx:398,458`), and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green.
-- [ ] These print nothing:
-  - `git grep -nE "\.bundled\b|bundled\??:|ARCHIVE_UNDO|\bUndone\b|undoneOf|rearchive|restoreUndo|deleteUndo|livePagePath" -- Core ':!*.test.ts' ':!*.test.tsx'`;
-  - `git grep -n "stored.archive\|archive: z.string" -- Core`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
-
-#### Task 5-2
-
-**TASK:** Bundle ops post one notice through one builder (M-14): `notifyBundled` in `Core/Interface/Notifications/notifications.ts` (*§Placements*) builds it from what the rows' replies said, and `runBundled` in `confirmations.ts` sends the rows and gathers the replies for it. A single row runs as a batch of one, so `restoreOne` and `deleteOne` leave. A delete, a property delete, an archive, a browser's restore or delete, and an Undo's own restore all run through it, so the slice posts nothing for a bundle op but a lone row's refusal, which keeps the host's message. This closes B-4. **Fold:** `notifyDeleted`'s cascade and retry parameters lose their only caller, `offerDeleted`, so the views' two callers keep the title and Undo alone. **Comments:** the AFTER adds two (`notifyBundled`'s and `runBundled`'s) and removes two (`offerDeleted`'s and `restoreOne`'s inline).
-
-**NOW:**
-- **The Slice:** a non-quiet `mutate` posts `unrestoredLine` and, for every op but `delete` and `deleteProperty`, `warnCascade` (`Core/Session/nexusSlice.ts:267-279`); `quiet` (`:68,259-260`) has one caller (`Core/Bundles/browser.ts:436`), and a quiet refusal answers `null` with nothing posted.
-- **Four Notices:** `restoreOne` (`browser.ts:383-399`) and `deleteOne` (`:401-407`) beside `many`, `restoreBatch`, and `deleteBatch` (`:410-497`); `offerDeleted` through `notifyDeleted` (`confirmations.ts:113-124`, `notifications.ts:130-140`); and `confirmArchive`'s `notifyUndoable` (`confirmations.ts:143-146`), which carries no warning: an archive whose re-spell can't settle has its `warnCascade` and Try Again replaced (B-4, `post` keeping one notice, `notifications.ts:56-59`).
-- **The Undo's Own Restore:** non-quiet (`confirmations.ts:64`), so the slice posts its lines; when a restore answers both an unrestored line and a warning, the warning replaces the line.
-
-**CHANGE**
-
-- [ ] Write these and watch each fail:
-  - **`confirmations.test.ts`, `describe('an archive through the confirmation')`, "an archive whose re-spell couldn't settle posts Archived “A” with its warning and Try Again" (B-4):** `mutate` answers `{ cascade: { pages: [], hosts: [], warning: 'Links weren’t updated.', owed: true }, undo: { op: 'restore', bundlePath: BUNDLE } }`; the notice is `{ message: 'Archived “A”. Links weren’t updated.', tone: 'error', action: { label: 'Try Again' } }`. Fails today: the notice reads `Archived “A”` alone.
-  - **`confirmations.test.ts`, `describe('an Undo over several bundles')`, "an Undo's own restore posts every line its replies carry in one notice":** two restore requests whose replies carry `unrestored: ['Beta']` and a warning; after the Undo runs, one notice reads `Beta didn’t get its value back. <warning>`. Fails today: the slice's warning replaces the line.
-  - **`confirmations.test.ts`, "a bundle op's success posts nothing from the slice":** with the real `mutate` and a dialer whose `mutate` answers `{ unrestored: ['Beta'], cascade: { pages: [], hosts: [], warning: 'W' } }`, `useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b1' })` leaves `currentNotification()` null. Fails today: the slice posts the warning over the unrestored line.
-  - **`TrashFrame.test.tsx`, "a lone restore's refusal is the host's message, with no count":** `mutate` answers `fault('That item is no longer there.')`; the notice reads exactly that. Passes today and must stay green: it pins the batch of one.
-- [ ] Apply the AFTER.
-- [ ] Rewrite the stubs answering `bundled` (Task 5-1 already moved them to `undo`) and the cases that call `restoreOne`/`deleteOne` through the hook by name: none call them directly, so only notice expectations move, and each keeps its text: `TrashFrame.test.tsx:354-498` and `ArchiveView.test.tsx:385-475`.
-- [ ] `notifyDeleted`'s two view callers (`Core/Tiles/Surfaces/ViewTile.tsx:398`, `Core/Views/deleteViewWithUndo.ts:14`) keep `notifyDeleted(name, undo)` unchanged.
-
-**AFTER**
-
-```Core/Nexus/mutateRequest.ts diff
-@@ changesStores @@
-   (req.op === 'rename' && req.kind !== 'page')
-+
-+export const isBundleOp = (op: MutateRequest['op']): boolean =>
-+  op === 'delete' ||
-+  op === 'deleteProperty' ||
-+  op === 'archive' ||
-+  op === 'restore' ||
-+  op === 'emptyBundle'
-```
-
-```Core/Session/nexusSlice.ts diff
-@@ imports @@
- import {
-   notifyReport,
-   notifyRetry,
-   reportRefusal,
--  unrestoredLine,
-   warnCascade,
- } from '../Interface/Notifications/notifications'
- import {
-   changesSettled,
-   changesStores,
-+  isBundleOp,
-   …
-@@ NexusSlice.mutate doc @@
--  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `retry` is a value write's Try Again. */
-+  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; a bundle op's caller posts its own notice from the reply (`runBundled`), so for one the slice posts only a refusal; `retry` is a value write's Try Again. */
-@@ mutate @@
-       if (!quiet) {
--        if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
-         const { cascade, missed } = res.value
--        if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
-+        if (cascade && !isBundleOp(req.op))
-           warnCascade(
-```
-
-```Core/Interface/Notifications/notifications.ts diff
-@@ imports @@
- import type { CascadeReport } from '../../Nexus/cascade'
-+import { type Counted, countPhrase } from '../../Nexus/entities'
- import type { Unreadable } from '../../Nexus/tree'
-@@ notifyDeleted @@
--export function notifyDeleted(
--  title: string,
--  undo?: () => void | Promise<void>,
--  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
--  retry?: () => void,
--): () => void {
--  const links = pages.length
--    ? `${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`
--    : undefined
--  return notifyOutcome(`Deleted “${title}”`, links, [warning], undo, retry)
--}
-+export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
-+  notifyOutcome(`Deleted “${title}”`, undefined, [], undo)
-+
-+type Acted = Counted & { title: string }
-+
-+export interface Bundled {
-+  done: Acted[]
-+  refused: Acted[]
-+  unrestored: string[]
-+  warnings: string[]
-+  renamed: string[]
-+  links: number
-+}
-+
-+/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, posts only its lines. */
-+export function notifyBundled(
-+  verb: 'Restored' | 'Deleted' | 'Archived' | null,
-+  { done, refused, unrestored, warnings, renamed, links }: Bundled,
-+  undo?: () => void | Promise<void>,
-+  retry?: () => void,
-+): () => void {
-+  const lone = done.length + refused.length === 1
-+  const unmet = [
-+    verb && !lone && refused.length > 0 && `${countPhrase(refused)} couldn’t be ${verb.toLowerCase()}.`,
-+    unrestored.length > 0 && unrestoredLine(unrestored),
-+    ...warnings,
-+  ].filter((line): line is string => typeof line === 'string')
-+  if (!verb || (lone && !done.length))
-+    return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
-+  const head = lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)
-+  const segment = lone
-+    ? verb === 'Deleted' && links > 0
-+      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
-+      : undefined
-+    : renamed.length > 1
-+      ? `${renamed.length} Renamed`
-+      : renamed[0]
-+  return notifyOutcome(`${verb} ${head}`, segment, unmet, undo, retry)
-+}
-```
-
-`notifyBundled` is the one place a bundle op's head, segment, and lines are composed; `notifyOutcome` stays the shape every notice with a head and lines takes, which the views and the slice share.
-
-```Core/Interface/Confirm/confirmations.ts diff
-@@ imports @@
--import type { MutateOutcome, MutateRequest } from '../../Nexus/mutateRequest'
-+import type { MutateRequest } from '../../Nexus/mutateRequest'
-@@
--import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
-+import { type Bundled, notifyBundled, reportRefusal } from '../Notifications/notifications'
-+import { storesChanged } from '../../Session/nexusSlice'
-@@ offerUndo @@
--/** Posts through `post` with the one Undo that sends each request an act's replies carried, each at its item's place now, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
-+/** Posts through `post` with the one Undo that runs each request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
- export function offerUndo(
--  undos: readonly MutateRequest[],
-+  undos: readonly Acted[],
-   post: (undo?: () => Promise<void>) => () => void,
- ): void {
-   const spend = post(
-     undos.length > 0
-       ? async () => {
--          for (const req of undos) {
--            if (req.op === 'restore') spendUndo(req.bundlePath)
--            await useSession.getState().mutate(atItemNow(req))
--          }
-+          for (const { req } of undos) if (req.op === 'restore') spendUndo(req.bundlePath)
-+          await runBundled(
-+            null,
-+            undos.map((u) => ({ ...u, req: atItemNow(u.req) })),
-+          )
-         }
-       : undefined,
-   )
--  for (const req of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
 +  for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
- }
++}
 +
-+/** A row a bundle op acts on: its title and kind, the request it sends, and a browser row's store address, whose armed Undo its success spends. */
-+export type Acted = Counted & { title: string; req: MutateRequest; address?: string }
++type Acted = Titled & { req: MutateRequest; address?: string }
 +
 +const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 +
-+/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row, or an Undo's own run, posts its refusals through the slice, a batch counts them, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
++/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `address`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
 +export async function runBundled(
 +  verb: 'Restored' | 'Deleted' | 'Archived' | null,
 +  rows: readonly Acted[],
@@ -6655,8 +6771,15 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +): Promise<boolean> {
 +  const { mutate, finishOwed } = useSession.getState()
 +  const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
-+  const counted = verb !== null && rows.length > 1
-+  const run: Bundled = { done: [], refused: [], unrestored: [], warnings: [], renamed: [], links: 0 }
++  const counted = rows.length > 1
++  const run: Bundled = {
++    done: [],
++    refused: [],
++    unrestored: [],
++    warnings: [],
++    renamed: [],
++    links: 0,
++  }
 +  const undos: Acted[] = []
 +  let owed = false
 +  for (const row of rows) {
@@ -6678,6 +6801,12 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  offerUndo(undos, (undo) => notifyBundled(verb, run, undo, owed ? finishOwed : undefined))
 +  return run.done.length > 0
 +}
+@@ askTrashing @@
+-export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> => {
++export const askTrashing = async (targets: readonly Titled[]): Promise<boolean> => {
+@@ askEmptyTrash @@
+-export const askEmptyTrash = async (targets: readonly Asked[]): Promise<boolean> => {
++export const askEmptyTrash = async (targets: readonly Titled[]): Promise<boolean> => {
 @@ confirmDelete @@
  ): Promise<boolean> => {
 -  const asked =
@@ -6706,16 +6835,21 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  return runBundled('Deleted', [{ title, kind: target.kind, req }])
  }
 @@ offerDeleted @@
--/** A delete's one notice, by `title`: the Undo its reply carries, and the cascade's links, warning, and Try Again. */
--export function offerDeleted(title: string, { undo, cascade }: MutateOutcome): void {
--  …                                                    (removed)
+-/** A delete's one notice, by `title`: the Undo for the bundle it minted, to `undoTo` when given, and the cascade's links, warning, and Try Again. */
+-export function offerDeleted(
+-  title: string,
+-  { bundled, cascade }: MutateOutcome,
+-  undoTo?: RestoreDestination,
+-): void {
+-  …                                                    (lines 118-123, removed)
 -}
+-
 @@ confirmArchive @@
 -  const done = await useSession
 -    .getState()
 -    .mutate({ op: 'archive', path: target.path, kind: target.kind })
 -  if (done)
--    offerUndo(done.undo ? [done.undo] : [], (undo) =>
+-    offerUndo(done.bundled ? [done.bundled.bundlePath] : [], (undo) =>
 -      notifyUndoable(`Archived “${target.title}”`, undo),
 -    )
 +  const req = { op: 'archive', path: target.path, kind: target.kind } as const
@@ -6723,7 +6857,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
  }
 ```
 
-`Counted` joins `confirmations.ts`'s import from `../../Nexus/entities` beside `countPhrase` and `itemCount`.
+`Acted` stays private: the browser hands its rows inline, and a test types them as `Parameters<typeof runBundled>[1]`.
 
 ```Core/Bundles/browser.ts diff
 @@ imports @@
@@ -6736,11 +6870,49 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 -} from '../Interface/Confirm/confirmations'
 -import { countPhrase, isContainerKind } from '../Nexus/entities'
 -import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
+-import type { MutateOutcome, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
+-import { nodesByIdOf } from '../Nexus/treeIndex'
 +import { askEmptyTrash, askTrashing, runBundled } from '../Interface/Confirm/confirmations'
 +import { isContainerKind } from '../Nexus/entities'
++import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
+ import { matches, matchQuery } from '../Paths/caseFold'
+-import { basename, isAtOrUnder, relDirname } from '../Paths/posix'
++import { isAtOrUnder, relDirname } from '../Paths/posix'
 @@ steppedTo @@
 -const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 -
+@@ ARCHIVE_UNDO @@
+-const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
+-
+ type BundleOp = 'restore' | 'emptyBundle' | 'delete'
+@@ Undone, undoneOf, rearchive @@
+-/** A restored row and the archive request its reply says takes the restore back. */
+-type Undone = { row: BundleRow; undo: Extract<MutateRequest, { op: 'archive' }> }
+-
+-/** The row with the archive request its reply carries, when it carries one. */
+-const undoneOf = (row: BundleRow, { undo }: MutateOutcome): Undone[] =>
+-  undo?.op === 'archive' ? [{ row, undo }] : []
+-
+-/** A restore from the Archive undoes by sending each reply's own request, the item found by id so it follows a rename made since, under that new name once it has one. */
+-const rearchive = (undone: Undone[]) => async (): Promise<void> => {
+-  …                                                    (lines 153-167, removed)
+-}
+-
+@@ rulesOf @@
+-/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, and what a restore's and a delete's Undo do. */
++/** What the Trash and the Archive do differently under one browser: the date column's setting, and what a delete sends and how it asks. */
+ function rulesOf(kind: BundleStore['kind']): {
+   dateKey: DateKey
+   deleteOp: 'emptyBundle' | 'delete'
+   askDelete: (targets: BundleRow[]) => Promise<boolean>
+-  restoreUndo?: (undone: Undone[]) => () => Promise<void>
+-  deleteUndo?: RestoreDestination
+ } {
+@@ rulesOf's archive arm @@
+         askDelete: askTrashing,
+-        restoreUndo: rearchive,
+-        deleteUndo: ARCHIVE_UNDO,
+       }
 @@ useBundleBrowser's answer @@
 -  restore: (targets: BundleRow[]) => Promise<void>
 +  restore: (targets: BundleRow[], destination?: RestoreDestination) => Promise<void>
@@ -6751,11 +6923,11 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
    const [listing, setListing] = useState<Listing>({ status: 'loading' })
 @@ restoreOne, deleteOne, many, restoreBatch, deleteBatch, restore, remove @@
 -  /** A row whose place is gone asks where to go first, unless the menu's submenu already chose. */
--  const restoreOne = async (…) => { … }                (lines 382-399, removed)
+-  const restoreOne = async (…) => { … }                (lines 383-399, removed)
 -  const deleteOne = async (…) => { … }                 (lines 401-407, removed)
 -  /** Answers null when a Nexus switch stopped it, … */
--  const many = async (…) => { … }                      (lines 409-451, removed)
--  const restoreBatch = async (…) => { … }              (lines 453-477, removed)
+-  const many = async (…) => { … }                      (lines 410-451, removed)
+-  const restoreBatch = async (…) => { … }              (lines 453-477, removed; its ask's comment moves into `restore`)
 -  const deleteBatch = async (…) => { … }               (lines 479-497, removed)
 -
    // A re-list can drop the checked rows a frame before the bar withdraws, so a press may name none.
@@ -6777,11 +6949,12 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +      }
 +      const toOf = (row: BundleRow): RestoreDestination | undefined =>
 +        destination ?? (row.homeResolves ? undefined : to.get(destinationKind(row)))
-+      await runBundled(
-+        'Restored',
-+        targets.map((row) => ({ ...row, address: row.bundlePath, req: requestOf(row, 'restore', toOf(row)) })),
-+        nexusId,
-+      )
++      const rows = targets.map((row) => ({
++        ...row,
++        address: row.bundlePath,
++        req: requestOf(row, 'restore', toOf(row)),
++      }))
++      await runBundled('Restored', rows, nexusId)
 +    })
  
 -  const remove = (targets: BundleRow[]): Promise<void> =>
@@ -6792,11 +6965,12 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  const remove = (targets: BundleRow[]): Promise<void> =>
 +    flight(async () => {
 +      if (!targets.length || !(await rules.askDelete(targets))) return
-+      await runBundled(
-+        'Deleted',
-+        targets.map((row) => ({ ...row, address: row.bundlePath, req: requestOf(row, rules.deleteOp) })),
-+        nexusId,
-+      )
++      const rows = targets.map((row) => ({
++        ...row,
++        address: row.bundlePath,
++        req: requestOf(row, rules.deleteOp),
++      }))
++      await runBundled('Deleted', rows, nexusId)
 +    })
 @@ openMenu @@
      if (action.startsWith('restoreTo:') && kind) {
@@ -6811,8 +6985,10 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 **VERIFY**
 
 - [ ] The failing cases are green, each red with its hunk reverted, and the lone-refusal pin stays green.
-- [ ] **Flips:** none beyond the rewrites CHANGE routes. Every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
+- [ ] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `TrashFrame.test.tsx:272,288,307`, `ArchiveView.test.tsx:388-398,441-458`, `notifications.test.ts:44-93`, `ActionLabel.test.tsx:60`), and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green, and every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
 - [ ] These print nothing:
+  - `git grep -nE "\.bundled\b|bundled\??:|ARCHIVE_UNDO|\bUndone\b|undoneOf|rearchive|restoreUndo|deleteUndo|\bAsked\b" -- Core ':!*.test.ts' ':!*.test.tsx'`;
+  - `git grep -n "stored.archive\|archive: z.string" -- Core`;
   - `git grep -nwE "restoreOne|deleteOne|restoreBatch|deleteBatch|offerDeleted" -- Core ':!*.test.ts' ':!*.test.tsx'`;
   - `git grep -n "unrestoredLine" -- Core/Session`;
   - `git grep -n "quiet: true" -- Core ':!*.test.ts' ':!*.test.tsx' | grep -v confirmations.ts`.
@@ -6834,6 +7010,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 - [ ] Write **`confirmations.test.ts`, "an empty from the Trash asks with Confirm Before Deletion off" (I-079):** `switchOff()`, then `askEmptyTrash([row({ title: 'A' })])` asks once. It passes before the change: it pins the behavior the caption now states, which is copy alone.
 - [ ] `git mv Core/Settings/TrashFrame.tsx Core/Trash/TrashFrame.tsx`, `git mv Core/Settings/trash-frame.css Core/Trash/trash-frame.css`, `git mv Core/Archive/archivePlace.ts Core/Archive/archiveLabel.ts`, then `git rm Core/Trash/handlers.ts`, and apply the AFTER.
 - [ ] Re-point `frames.ts:42` to `'../Trash/TrashFrame'`, `Core/Settings/TrashFrame.test.tsx:6` to `'../Trash/TrashFrame'` (the test stays in place until Phase 6), the four `archivePlace` importers to `archiveLabel`, and `browser.test.ts:5`'s `widestDate` to `'./BundleTable'`.
+- [ ] Move `BundleTable.test.tsx:51-57`'s `date` object out of the `browser` prop into a sibling `date={…}` on `<BundleRows>`, which now takes it beside `browser`; its cases hold.
 - [ ] Rename every `'delete:facts'` stub to `'bundles:permanentDelete'` answering the boolean alone: `TrashFrame.test.tsx:157`, `ArchiveView.test.tsx:145`, and `confirmations.test.ts`'s stubs (`ok({ permanentDelete: false })` becomes `ok(false)`).
 - [ ] Rewrite `ConfigurationPM.md:115`'s row: "… Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Delete, which name the Items holding what they reach, and a delete from the Trash, which is for good."
 
@@ -7116,7 +7293,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 -const DELETE_FACTS_FALLBACK = { permanentDelete: SETTING_DEFAULTS.permanentDelete }
 -
 @@ askEmptyTrash @@
- export const askEmptyTrash = async (targets: readonly Asked[]): Promise<boolean> => {
+ export const askEmptyTrash = async (targets: readonly Titled[]): Promise<boolean> => {
 -  const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
 +  const permanentDelete = valueOr(
 +    await dialer().ask('bundles:permanentDelete'),
@@ -7139,7 +7316,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 **VERIFY**
 
 - [ ] The I-079 pin is green.
-- [ ] **Flips:** none. `TrashFrame.test.tsx:195` (the footing's parent and class order), `:234,249` (the date column through the Trash skin), `ArchiveView.test.tsx:331-364` (each footing line), and `browser.test.ts:58-79` (`widestDate`) hold as they are.
+- [ ] **Flips:** `BundleTable.test.tsx:46-62`'s `date` prop, as CHANGE routes it, and nothing else. `TrashFrame.test.tsx:195` (the footing's parent and class order), `:234,249` (the date column through the Trash skin), `ArchiveView.test.tsx:331-364` (each footing line), and `browser.test.ts:58-79` (`widestDate`) hold as they are.
 - [ ] These print nothing:
   - `git grep -nwE "DateKey|dateKey|DELETE_FACTS_FALLBACK|trashHandlers" -- Core`;
   - `git grep -n "delete:facts\|archivePlace\|Settings/TrashFrame" -- Core Desktop`;
@@ -7423,7 +7600,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  const { record, placement, writeOrder, landedAs, into } = placed.value
 +  const { dir, finalName, finalTitle } = placement
 +  const title = finalTitle ?? finalName
-+  const back = await originPagesOf(root, store, await contentPages(record.entity, artifact))
++  const back = await originPagesOf(root, await contentPages(record.entity, artifact))
 +  // A Context's or Space's own owed titles never refuse it; another's do, since the work still due would land on it. Placement lands a Space only under the live Context its record's `parent` names.
 +  const landing =
 +    record.entity === 'context'
@@ -7456,7 +7633,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +    // The Undo of a delete from the Archive files back at the address it left, in the Archive that holds it now, and nothing lands in the tree.
 +    if (into && (record.entity === 'page' || record.entity === 'set')) {
 +      const { links, ...filed } = record
-+      const origin = join(root, originPathOf(root, store, artifact))
++      const origin = join(root, originPathOf(root, artifact))
 +      landed = (await fileInto(root, into, origin, artifact, filed, dir)).landed
 +    } else {
 +      await machine().mkdir(dirname(landed))
@@ -7895,8 +8072,8 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 ```Core/Nexus/settle.ts diff
 @@ imports @@
  import { refileMoved } from '../Archive/refile'
-+import { recognize } from './arrival'
-+import { type Stored, storeOf } from '../Paths/bundleLayout'
++import { type Departed, recognize } from './arrival'
++import { storeOf } from '../Paths/bundleLayout'
 @@ payOutsideMoves @@
 -// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
 +// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. One that left a store's bundle came back by hand and finishes as that store's restore, the unlink proving a move, since a copy leaves the bundle whole and arrives as a page of its own; after an index rebuild nothing pairs, so such a page stays live and current without its delete's Link values, its bundle unlisted. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival and each page back from a store absent.
@@ -7905,7 +8082,7 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
    const tree = heldTreeOf(root)
    if (!tree || (!owed.vanished.size && !owed.landed.size)) return
    const left = new Map<string, ConnPage>()
-+  const back = new Map<string, { id: string; from: string; to: string; at: Stored }[]>()
++  const back = new Map<string, Departed[]>()
    let label = ''
    for (const [id, from] of owed.vanished) {
      const to = livePathOf(root, id)
@@ -7940,7 +8117,11 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 -  )
 +  const after = pageIndexOf(tree)
 +  if (moved.length || arriving.length)
-+    paid(root, await relink(root, before, after, label, moved, [...moved, ...arriving]), 'outside move')
++    paid(
++      root,
++      await relink(root, before, after, label, moved, [...moved, ...arriving]),
++      'outside move',
++    )
 +  for (const [bundle, pages] of back)
 +    paid(root, await recognize(root, before, after, bundle, pages), 'outside restore')
  }
@@ -7954,15 +8135,23 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 -import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 +import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 -import { contentPages, type OpenBundle, spendBundle } from '../Bundles/bundle'
-+import { bundleArtifact, contentPages, type OpenBundle, openBundle, spendBundle } from '../Bundles/bundle'
++import {
++  bundleArtifact,
++  contentPages,
++  type OpenBundle,
++  openBundle,
++  spendBundle,
++} from '../Bundles/bundle'
 @@ after arrive @@
++
++export type Departed = { id: string; from: string; to: string; at: Stored }
 +
 +export async function recognize(
 +  root: string,
 +  before: PageIndex,
 +  after: PageIndex,
 +  bundle: string,
-+  departed: readonly { id: string; from: string; to: string; at: Stored }[],
++  departed: readonly Departed[],
 +): Promise<CascadeReport | undefined> {
 +  const abs = join(root, bundle)
 +  const whole = (await bundleArtifact(abs)) === null
@@ -7999,12 +8188,12 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 @@ readBundleAt @@
 -/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more. */
 -async function readBundleAt(root: string, abs: string) {
-+/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more unless it `left` by hand, which an outside move proved. */
-+async function readBundleAt(root: string, abs: string, left = false) {
++/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more unless it was `movedOut` by hand, which an outside move proved. */
++async function readBundleAt(root: string, abs: string, movedOut = false) {
 @@
      !isAtOrUnder(item, artifact) ||
 -    !(await pathExists(item))
-+    !(left || (await pathExists(item)))
++    !(movedOut || (await pathExists(item)))
    )
 @@ innerRecord @@
  async function innerRecord(
@@ -8021,18 +8210,18 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
        : await sidecarIdentity(item, 'set')
 @@ keptLinksUnder @@
 -/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
-+/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, `item` among them once it `left` by hand, lies at or under `item`; a title two of its pages share stays with the bundle. */
- async function keptLinksUnder(
-   root: string,
-   store: BundleStore,
-   held: ContainerRecord,
-   artifact: string,
-   item: string,
-+  left: boolean,
- ) {
++/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, `item` among them once it was `movedOut` by hand, lies at or under `item`; a title two of its pages share stays with the bundle. */
+-async function keptLinksUnder(root: string, held: ContainerRecord, artifact: string, item: string) {
++async function keptLinksUnder(
++  root: string,
++  held: ContainerRecord,
++  artifact: string,
++  item: string,
++  movedOut: boolean,
++) {
    if (!held.links?.length) return []
 -  const files = await listMarkdownFiles(artifact)
-+  const files = [...(await listMarkdownFiles(artifact)), ...(left ? [item] : [])]
++  const files = [...(await listMarkdownFiles(artifact)), ...(movedOut ? [item] : [])]
 @@ openBundle @@
 -export async function openBundle(root: string, abs: string): Promise<Result<OpenBundle>> {
 -  const read = await readBundleAt(root, abs)
@@ -8041,13 +8230,14 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 +  abs: string,
 +  left?: string,
 +): Promise<Result<OpenBundle>> {
-+  const read = await readBundleAt(root, abs, left !== undefined)
++  const movedOut = left !== undefined
++  const read = await readBundleAt(root, abs, movedOut)
 @@
 -  const own = await innerRecord(held, await trailWithin(held, inner.artifact, dirname(item)), item)
--  const links = await keptLinksUnder(root, store, held, inner.artifact, item)
+-  const links = await keptLinksUnder(root, held, inner.artifact, item)
 +  const trail = await trailWithin(held, inner.artifact, dirname(item))
 +  const own = await innerRecord(held, trail, item, left)
-+  const links = await keptLinksUnder(root, store, held, inner.artifact, item, left !== undefined)
++  const links = await keptLinksUnder(root, held, inner.artifact, item, movedOut)
 ```
 
 **VERIFY**
@@ -8060,12 +8250,12 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 
 #### Task 5-7
 
-**TASK:** A Space moved back into its registered Context's folder by hand finishes with the Space restore's own steps (Decision E-4): its bundle opens, its delete's owed note settles, then the shared tail spends its bundle and tags its members again. The page lane never sees a Space, so the settle reads its tree difference for a Space whose id the tree it handed the window lacked, and matches it to a trashed Space record whose artifact has left and whose parent is the Context it landed under. Tagging members takes the Contexts lock, which is taken outside the settle's turn (`inContextsTurn`, `settle.ts:268-269`), so the finish runs in a turn of its own once the settle returns, and the settle runs again to push what it wrote. A Context moved back by hand stays a plain arrival: a Context exists only through its registry entry, and Restore stays its way back. **Comments:** none added; `settleNow`'s comment carries the Space's turn.
+**TASK:** A Space moved back into its registered Context's folder by hand finishes with the Space restore's own steps (Decision E-4): its bundle opens, its delete's owed note settles, then the shared tail spends its bundle and tags its members again. The page lane never sees a Space, so the settle reads the tree it pushes for a Space whose id the tree it handed the window lacked, and matches it to a trashed Space record whose artifact has left and whose parent is the Context it landed under. Tagging members takes the Contexts lock, which is taken outside the settle's turn (`inContextsTurn`, `settle.ts:268-269`), so the finish runs in a turn of its own once the settle returns, and the settle runs again to push what it wrote. A Context moved back by hand stays a plain arrival: a Context exists only through its registry entry, and Restore stays its way back. **Comments:** none added; `settleNow`'s comment carries the Space's turn.
 
 **NOW:**
 - **What a Space Arrival Raises:** a Space sidecar arriving under a registered Context's folder walks in (`classifyEvent` answers `space`, `Core/Nexus/fileEvents.ts:254`; `applySpace` returns null for an arrival the tree doesn't hold, `:462-485`), and its unlink under `.trash` reads as ignored. `owed.vanished` and `owed.landed` hold page ids alone (`fileEvents.ts:318-322`), so the page lane never pairs a Space.
-- **The Difference:** `settle` takes `deltaOf(handed, tree)` (`settle.ts:182`), keyed by path (`Core/Nexus/treeDelta.ts:13-17`), so a Space at a path the window never held arrives as `{ set: SpaceNode }`, and `refileMoved` already walks the same difference for containers (`settle.ts:192`, `Core/Archive/refile.ts:102-122`). `contextWorldOf(prev.contexts).spaceById` is memoized per groups array (`Core/Contexts/contextResolve.ts:17-29`).
-- **Finding the Bundle:** `listBundles` skips a bundle whose artifact has left (`Core/Bundles/bundle.ts:165-166`), the one a hand move leaves; Phase 4 gave it a `chain` to list `.trash/.nexus/contexts` alone.
+- **The Two Trees:** `settle` holds the tree it last handed the window and the one it pushes (`settle.ts:180-183`). `contextWorldOf(tree.contexts).spaceById` maps every Space's id to its node, memoized per groups array (`Core/Contexts/contextResolve.ts:17-29`), so the Spaces a settle brought in are the pushed tree's whose ids the handed tree's map lacks.
+- **Finding the Bundle:** `listBundles` skips a bundle whose artifact has left (`Core/Bundles/bundle.ts:165-166`), the one a hand move leaves, and has no way to list those alone; Phase 4 gave it a `chain` to list `.trash/.nexus/contexts` alone.
 - **A Context Moved Back:** `readContextGroups` maps `registry.contexts` (`Core/Nexus/readNexus.ts:246-262`), and `applySpace` answers `'ok'` for a Space under a folder no entry names (`fileEvents.ts:467`), so such a folder stays invisible.
 
 **CHANGE**
@@ -8087,48 +8277,38 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
    root: string,
    store: BundleStore,
    chain = '',
-+  artifactLeft = false,
++  { recordOnly }: { recordOnly?: true } = {},
  ): Promise<ListedBundle[]> {
 @@
        const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
 -      if (record.entity !== 'property' && !artifact) continue
-+      if ((record.entity !== 'property' && !artifact) !== artifactLeft) continue
++      const bare = record.entity !== 'property' && !artifact
++      if (recordOnly ? !bare : bare) continue
 ```
 
-With `artifactLeft`, the listing answers the bundles whose artifact has left by hand, a record alone, and never a property's, which holds none to begin with.
+A listing skips a bundle whose artifact has left by hand, a record alone; with `recordOnly`, it answers those alone, and never a property's, which holds no artifact to begin with. The walk stays one, and every other caller keeps the call it has.
 
 ```Core/Nexus/arrival.ts diff
 @@ imports @@
-+import { isPlainObject } from '../Contract/validators'
 +import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
--import { bundleArtifact, contentPages, type OpenBundle, openBundle, spendBundle } from '../Bundles/bundle'
-+import {
-+  bundleArtifact,
-+  contentPages,
+ import {
+   bundleArtifact,
+   contentPages,
 +  listBundles,
-+  type OpenBundle,
-+  openBundle,
-+  spendBundle,
-+} from '../Bundles/bundle'
+   type OpenBundle,
+   openBundle,
+   spendBundle,
+ } from '../Bundles/bundle'
 +import { restoreNote } from './owed'
 +import { pageIndexOf } from './record'
-+import type { Delta } from './treeDelta'
 -import type { NexusTree } from './tree'
 +import type { NexusTree, SpaceNode } from './tree'
 @@ after recognize @@
 +
-+export function arrivedSpaces(prev: NexusTree, delta: Delta): SpaceNode[] {
-+  const { spaceById } = contextWorldOf(prev.contexts)
-+  const out: SpaceNode[] = []
-+  const walk = (d: Delta): void => {
-+    if ('set' in d)
-+      for (const v of [d.set].flat())
-+        if (isPlainObject(v) && v.kind === 'space' && !spaceById.has(String(v.id)))
-+          out.push(v as SpaceNode)
-+    if ('at' in d) for (const sub of Object.values(d.at)) walk(sub)
-+  }
-+  walk(delta)
-+  return out
++export function arrivedSpaces(handed: NexusTree, tree: NexusTree): SpaceNode[] {
++  if (handed.contexts === tree.contexts) return []
++  const { spaceById } = contextWorldOf(handed.contexts)
++  return [...contextWorldOf(tree.contexts).spaceById.values()].filter((s) => !spaceById.has(s.id))
 +}
 +
 +export async function recognizeSpaces(
@@ -8136,12 +8316,8 @@ With `artifactLeft`, the listing answers the bundles whose artifact has left by 
 +  spaces: readonly SpaceNode[],
 +): Promise<CascadeReport | undefined> {
 +  let cascade: CascadeReport | undefined
-+  for (const { bundlePath, record } of await listBundles(
-+    root,
-+    { kind: 'trash' },
-+    CONTEXTS_DIR_REL,
-+    true,
-+  )) {
++  const records = await listBundles(root, { kind: 'trash' }, CONTEXTS_DIR_REL, { recordOnly: true })
++  for (const { bundlePath, record } of records) {
 +    if (record.entity !== 'space' || record.parent.kind !== 'context') continue
 +    const contextId = record.parent.id
 +    const space = spaces.find((s) => s.id === record.id && s.contextId === contextId)
@@ -8163,7 +8339,7 @@ With `artifactLeft`, the listing answers the bundles whose artifact has left by 
 +}
 ```
 
-`v as SpaceNode` reads a value the difference carries whole from the tree it was taken against, as `refileMoved`'s `isContainerNode` reads a container (`refile.ts:98-99`).
+`arrivedSpaces` reads the Spaces whose ids the window's tree lacked from `contextWorldOf`'s `spaceById`, memoized per groups array (`Core/Contexts/contextResolve.ts:17-29`); `shown` keeps `contexts` by reference (`settle.ts:83-91`), so a settle that changed no Space compares one reference.
 
 ```Core/Nexus/settle.ts diff
 @@ imports @@
@@ -8182,7 +8358,7 @@ With `artifactLeft`, the listing answers the bundles whose artifact has left by 
 -  return corpus || rescope ? { rescope } : null
 +  return {
 +    moved: corpus || rescope ? { rescope } : null,
-+    spaces: handed && delta ? arrivedSpaces(handed, delta) : [],
++    spaces: handed && tree ? arrivedSpaces(handed, tree) : [],
 +  }
  }
 @@ settleNow @@
@@ -8233,7 +8409,7 @@ With `artifactLeft`, the listing answers the bundles whose artifact has left by 
   - Every bundle op's notice comes from `notifyBundled`: `git grep -n "notifyOutcome(" -- Core/Bundles Core/Interface/Confirm` prints nothing.
   - B-4's case is green.
 - [ ] **The Live Drive** under Task 5-7's VERIFY ran, and its result is written there.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded beside the Ledger's about −95, additions and removals apart, and the gap (*§Delta (Phase 5)*) is reported in chat with what it buys before Phase 6 opens.
+- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded beside the Net Ledger's Phase 5 row, additions and removals apart, and anything above it is reported in chat with what it buys before Phase 6 opens.
 - [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 3 and 4's shared files, `bundle.ts`, `record.ts`, `owed.ts`, and `refile.ts` above all, and what holds is folded before Phase 6 opens.
 
 ---
@@ -8262,7 +8438,7 @@ With `artifactLeft`, the listing answers the bundles whose artifact has left by 
 | `Core/Archive/refile.test.ts`, `Core/Archive/archive.test.ts` | Rewritten in place | `refile.test.ts:132,151` become one case; `archive.test.ts:352-415` one `it.each`; `archive.test.ts:227` leaves for `deleteOrder.test.ts` | 6-1, 6-6 |
 | `Core/Trash/restoreProperty.test.ts` | Rewritten in place (Tasks 4-6, 5-5) | Adopts the fixture's `onlyBundle` | 6-2 |
 | `Core/Files/atomicWrite.test.ts` | Its *"discardFile"* describe renamed (Task 2-1) | Loses that describe to `discard.test.ts` | 6-6 |
-| `Core/Bundles/browser.test.ts`, `Core/Archive/ArchiveView.test.tsx`, `Core/Bundles/BundleTable.test.tsx` | Rewritten in place (Tasks 5-1, 5-2, 5-3) | Adopt the browser harness; the skins' duplicated cases collapse; `BundleTable.test.tsx` and `Core/Interface/Confirm/confirmations.test.ts` gain the Trash skin's shared-behavior cases | 6-7, 6-8 |
+| `Core/Bundles/browser.test.ts`, `Core/Archive/ArchiveView.test.tsx`, `Core/Bundles/BundleTable.test.tsx` | Rewritten in place (Tasks 5-2, 5-3) | Adopt the browser harness; the skins' duplicated cases collapse; `BundleTable.test.tsx` and `Core/Interface/Confirm/confirmations.test.ts` gain the Trash skin's shared-behavior cases | 6-7, 6-8 |
 
 No test file is deleted in Phase 6. *§Placements* gains the seven test-file entries above (four moved, three created), each following its module.
 
@@ -8343,7 +8519,7 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 #### Task 6-2
 
-**TASK:** `Core/Testing/bundles.ts` holds the on-disk bundle fixture: the seeded Nexus the delete, restore, and empty suites stand on, the Trash's bundle folders and its one listed bundle, and the orders `state.json` keeps. It replaces `spend.test.ts`'s seed and finders, `restoreProperty.test.ts`'s `onlyBundlePath`, and the two `stateOrder`s, before Tasks 6-4 and 6-5 split `spend.test.ts` into suites that each need the seed.
+**TASK:** `Core/Testing/bundles.ts` holds the on-disk bundle fixture: the seeded Nexus the delete, restore, and empty suites stand on, the Trash's bundle folders and its one listed bundle, the orders `state.json` keeps, and the two bundle fixtures `Core/Testing/fixtures.ts` holds, a listed row and a seeded property bundle. It replaces `spend.test.ts`'s seed and finders, `restoreProperty.test.ts`'s `onlyBundlePath`, and the two `stateOrder`s, before Tasks 6-4 and 6-5 split `spend.test.ts` into suites that each need the seed, so the bundle suites' fixtures have one home.
 
 **NOW:**
 - `spend.test.ts:57-79` define `bundleDirs` (every `.deleted` folder under `.trash`, a recordless one included) and `onlyBundle` (`{ dir, record }`, failing unless one); `:81-123` seed and tear down the Nexus (Projects with Pommora and Sapphire, `Notes/Daily/Alpha.md` tagged Pommora) and `:49-51` declare `PAGE_A`–`PAGE_C`.
@@ -8351,6 +8527,7 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 - `stateOrder` is defined at `spend.test.ts:272` (inside *"a Context's place"*) and `trashRecovery.test.ts:63`.
 - `trashRecovery.test.ts:39-70`'s `rows`, `find`, `del`, and `restoreRow`, and `archive.test.ts:71,799`'s `archive` and `trash` (one-liners over Phase 5's `bundleOf`), serve their own suites alone and stay.
 - `Core/Testing/viewHarness.tsx`'s `mountEachTest(onMount)` is the folder's pattern for a fixture registered once per suite.
+- `Core/Testing/fixtures.ts` holds `bundleRow` (`:35-46`) and, after Task 3-2, `seedPropertyBundle` (`:48-55`) beside the page, device, and cascade fixtures; only bundle suites read the two: `bundleRow` in `ArchiveView.test.tsx`, `BundleTable.test.tsx`, `browser.test.ts`, `confirmations.test.ts`, `entities.test.ts` (`countPhrase` over bundle rows), and `TrashFrame.test.tsx`; `seedPropertyBundle` in `bundle.test.ts`, `Bundles/handlers.test.ts`, `rows.test.ts`, `finishOwed.test.ts`, and `spend.test.ts`. They're its only readers of `Bundles/rows`, `Bundles/bundle`, `Bundles/record`, and `posix`.
 
 **CHANGE**
 
@@ -8358,16 +8535,19 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 - [ ] `spend.test.ts`: remove `bundleDirs`, `onlyBundle`, the `PAGE_` constants, the top-level `let root`, `beforeEach`, and `afterEach`; open the suite with `let root: string` and `bundleNexusEachTest('pom-prov-', (r) => (root = r))`; call `bundleDirs(root)` for `bundleDirs(join(root, '.trash'))`, `onlyBundle(root)` for `onlyBundle()` (its four `dir` reads become `join(root, bundlePath)`), and `stateOrder(root)` for `:272`'s local, which leaves.
 - [ ] `trashRecovery.test.ts`: remove `:63-64`'s `stateOrder`; its calls read `stateOrder(root)`.
 - [ ] `restoreProperty.test.ts`: remove `:80-84`; its 24 calls read `(await onlyBundle(root)).bundlePath`.
+- [ ] Move `bundleRow` and `seedPropertyBundle` from `fixtures.ts` into `bundles.ts`, bodies unchanged, with the imports only they read (`fixtures.ts` keeps `pageKey`, `CascadeChange`, `PageDetail`, `machine`, and `DeviceRecord`), and re-point the eleven importers above from `'../Testing/fixtures'` (or `'../../Testing/fixtures'`) to `bundles`, each keeping its local name (`bundleRow as row` in four).
 
 **AFTER**
 
 ```Core/Testing/bundles.ts diff
-+// The bundle suites' shared fixtures: the seeded Nexus their deletes, restores, and empties run on, its bundles found on disk, and the channels and row queries every bundle browser mounts through.
++// The bundle suites' shared fixtures: the seeded Nexus their deletes, restores, and empties run on, its bundles found on disk or seeded, the rows a browser lists, and the channels and row queries every bundle browser mounts through.
 +
 +import type { Dirent } from 'node:fs'
 +import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 +import { afterEach, beforeEach, expect, vi } from 'vitest'
-+import { type ListedBundle, listBundles } from '../Bundles/bundle'
++import { type ListedBundle, listBundles, mintBundle } from '../Bundles/bundle'
++import type { PropertyRecord } from '../Bundles/record'
++import { type BundleRow, matched } from '../Bundles/rows'
 +import { dropLiveTree } from '../Nexus/liveTree'
 +import { closeSession, openSession } from '../Nexus/session'
 +import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -8441,11 +8621,47 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 +
 +export const stateOrder = async (root: string): Promise<Record<string, unknown>> =>
 +  (await readJsonAt<{ order: Record<string, unknown> }>(join(root, '.nexus', 'state.json'))).order
++
++export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
++  …                                                  (fixtures.ts:36-45, unchanged)
++}
++
++export const seedPropertyBundle = (root: string, record: PropertyRecord): Promise<string> =>
++  mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
+```
+
+```Core/Testing/fixtures.ts diff
+@@ imports @@
+ import { pageKey } from '../Connections/pageIndex'
+-import { type BundleRow, matched } from '../Bundles/rows'
+-import { mintBundle } from '../Bundles/bundle'
+-import type { PropertyRecord } from '../Bundles/record'
+-import { join } from '../Paths/posix'
+ import type { CascadeChange } from '../Nexus/cascade'
+@@ bundleRow, seedPropertyBundle @@
+-export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
+-  …                                                  (lines 35-46, moved)
+-}
+-
+-export const seedPropertyBundle = (root: string, record: PropertyRecord): Promise<string> =>
+-  mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
+-
+ export function titled(title: string, to: string): CascadeChange {
 ```
 
 ```Core/Trash/spend.test.ts diff
 @@ imports @@
-+import { bundleDirs, bundleNexusEachTest, onlyBundle, PAGE_A, PAGE_B, PAGE_C, stateOrder } from '../Testing/bundles'
+-import { seedPropertyBundle } from '../Testing/fixtures'
++import {
++  bundleDirs,
++  bundleNexusEachTest,
++  onlyBundle,
++  PAGE_A,
++  PAGE_B,
++  PAGE_C,
++  seedPropertyBundle,
++  stateOrder,
++} from '../Testing/bundles'
 @@ :49-123 @@
 -const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 -const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -8483,8 +8699,8 @@ The seed's `mkdir(contextsDir(root))` makes `.nexus` too, so `spend.test.ts:82`'
 **VERIFY**
 
 - [ ] `npm run test -- Core/Trash/spend.test.ts Core/Trash/trashRecovery.test.ts Core/Trash/restoreProperty.test.ts` is green with the same case count as before.
-- [ ] `git grep -nE "const (onlyBundlePath|stateOrder|onlyBundle)\b|function bundleDirs" -- Core ':!Core/Testing/bundles.ts'` prints nothing.
-- [ ] Run the gates. Tests: about −5 lines (the fixture about +75 against the seed, finders, and ids about −80).
+- [ ] `git grep -nE "const (onlyBundlePath|stateOrder|onlyBundle)\b|function bundleDirs" -- Core ':!Core/Testing/bundles.ts'` prints nothing, and `git grep -nE "bundleRow|seedPropertyBundle" -- Core/Testing/fixtures.ts` prints nothing.
+- [ ] Run the gates. Tests: about −5 lines (the fixture about +75 against the seed, finders, and ids about −80; the two moved fixtures ±0).
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 6-3
@@ -8621,18 +8837,19 @@ The other two files' import blocks change the same way, line for line.
 **TASK:** Two misfiled pieces go home: `discardFile`'s cases leave `Core/Files/atomicWrite.test.ts` for `Core/Trash/discard.test.ts`, beside `discard.ts`, and the Archive suite's delete case joins the delete's write-ahead failures in `deleteOrder.test.ts` (P-9).
 
 **NOW:**
-- `atomicWrite.test.ts:390-431`'s describe, renamed *"discardFile"* by Task 2-1, holds four cases (a stamped leaf, both ends recorded, the chain mirrored, two trashes de-collided) reading the suite's `dir` (`:37-44`), `atomicWriteFile`, and `setWriteTap`; nothing else in the file reads `discardFile`.
+- `atomicWrite.test.ts:390-431`'s describe, renamed *"discardFile"* by Task 2-1, holds four cases (a stamped leaf, both ends recorded, the chain mirrored, two trashes de-collided) and the local `trashed` helper they list `.trash` through, since `discardFile` answers nothing (Task 2-1), reading the suite's `dir` (`:37-44`), `atomicWriteFile`, and `setWriteTap`.
+- *"the own tap"*'s *"notes a discard as an unlink"* (`atomicWrite.test.ts:518`) also calls `discardFile`, beside the tap's note of every other own write, and stays: it pins the tap.
 - `archive.test.ts:227`, rewritten by Task 3-1 as *"a Set delete whose record write throws leaves no bundle and puts the lifted folder back"*, sits in the archive op's describe (`:120`) and pins a delete's rollback, the subject of `deleteOrder.test.ts`'s describe *"a delete whose move fails deletes nothing"* (`:289`), which holds a content delete whose move throws.
 
 **CHANGE**
 
-- [ ] Create `Core/Trash/discard.test.ts` (`git add` it) with its own `dir` under `tempRoot('pom-discard-')`, created and removed around each case, and move the describe into it, bodies unchanged; drop `discardFile` from `atomicWrite.test.ts`'s imports.
+- [ ] Create `Core/Trash/discard.test.ts` (`git add` it) with its own `dir` under `tempRoot('pom-discard-')`, created and removed around each case, and move the describe into it, its `trashed` helper and bodies unchanged; `atomicWrite.test.ts` keeps its `discardFile` import for the own tap's case, and drops any other name only the describe read.
 - [ ] Move `archive.test.ts:227`'s case into `deleteOrder.test.ts`'s *"a delete whose move fails deletes nothing"*, opening with `await putJson(join(root, 'Notes', 'Daily', '_pageset.json'), { id: 'set-daily' })`, since `deleteOrder.test.ts`'s seed holds no Set; its `at` and `text` reads become `join(root, …)` and `readFile(join(root, …), 'utf8')`, and its spy keeps Task 3-1's target.
 
 **AFTER**
 
 ```Core/Trash/discard.test.ts diff
-+import { mkdir, readFile, rm, stat } from 'node:fs/promises'
++import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
 +import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 +import { atomicWriteFile } from '../Files/atomicWrite'
 +import { setWriteTap } from '../Files/writeEcho'
@@ -8649,6 +8866,8 @@ The other two files' import blocks change the same way, line for line.
 +})
 +
 +describe('discardFile', () => {
++  const trashed = async (...chain: string[]): Promise<string[]> => {
++  …                                                  (Task 2-1's helper, unchanged)
 +  it('moves a file into .trash under a stamped leaf and removes the original', async () => {
 +  …
 +})
@@ -8656,7 +8875,7 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -n "discardFile" -- Core/Files/atomicWrite.test.ts` prints nothing, and `npm run test -- Core/Trash/discard.test.ts Core/Trash/deleteOrder.test.ts Core/Archive/archive.test.ts Core/Files/atomicWrite.test.ts` is green with the same total case count as before.
+- [ ] `git grep -n "describe('discardFile'" -- Core/Files/atomicWrite.test.ts` prints nothing, `git grep -n "discardFile(" -- Core/Files/atomicWrite.test.ts` prints the own tap's one call, and `npm run test -- Core/Trash/discard.test.ts Core/Trash/deleteOrder.test.ts Core/Archive/archive.test.ts Core/Files/atomicWrite.test.ts` is green with the same total case count as before.
 - [ ] Run the gates. Tests: about +17 lines.
 - [ ] Check for unnecessary code or mistakes.
 
@@ -8688,7 +8907,8 @@ The other two files' import blocks change the same way, line for line.
 
 - [ ] `git mv Core/Settings/TrashFrame.test.tsx Core/Trash/TrashFrame.test.tsx`; its `'../Trash/TrashFrame'` import reads `'./TrashFrame'`.
 - [ ] Add the browser half to `Core/Testing/bundles.ts` as the AFTER.
-- [ ] `TrashFrame.test.tsx` and `ArchiveView.test.tsx`: replace each describe's `listed`, `children`, `picked`, `list`, `menu`, and `mutated` declarations and their dialer stub with `const channels = stubBrowserEachTest()` (`ArchiveView.test.tsx` passing `() => ({ 'page:open': … })` for its reader), read `channels.listed` and the rest where the cases read the locals, and replace the local `rowOf`, `boxOf`, `press`, and `indentOf` with the harness's, passing `host`. `ArchiveView.test.tsx`'s `titles` and `rowEls` read `.bundle-rows .data-row` and stay.
+- [ ] `TrashFrame.test.tsx` and `ArchiveView.test.tsx`: replace each describe's `listed`, `children`, `picked`, `list`, `menu`, and `mutated` declarations and their dialer stub with `const channels = stubBrowserEachTest()` (`ArchiveView.test.tsx` passing `() => ({ 'page:open': … })` for its reader), read `channels.listed` and the rest where the cases read the locals, and replace the local `rowOf`, `boxOf`, and `press` with the harness's, passing `host`; each skin's `indentOf` leaves with the cases reading it (`TrashFrame.test.tsx:524`, `ArchiveView.test.tsx:258`, both under *Leaves*). `ArchiveView.test.tsx`'s `titles` and `rowEls` read `.bundle-rows .data-row` and stay.
+- [ ] `BundleTable.test.tsx` replaces its local `rowOf` and `boxOf` (`:67-72`) with the harness's, passing `host` (every row draws its box with `aria-label` "Select <title>", `BundleTable.tsx:190`), and defines `indentOf` locally beside `chevronOf`, its one reader being `:88`'s folded indent: `const indentOf = (title: string): string => (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft`, with `rowIndent` imported for the fold's expectation as the skins import it. Its `rowEls`, `chevronOf`, and `key` stay.
 - [ ] `browser.test.ts`'s *"a browser's remembered checks"*: `const channels = stubBrowserEachTest(() => ({ 'bundles:children': children }))`, its deferred `children` staying its own.
 - [ ] Fold each cluster's expectations into its kept case, as the table's last column names, then remove each case under *Leaves* — thirteen cases, and the whole `describe('a Trash row')` (`TrashFrame.test.tsx:28-80`) once `:44` and `:57` leave.
 
@@ -8699,7 +8919,6 @@ The other two files' import blocks change the same way, line for line.
 +import { act } from 'react'
 -import { afterEach, beforeEach, expect, vi } from 'vitest'
 +import { afterEach, beforeEach, expect, type Mock, vi } from 'vitest'
-+import type { BundleRow } from '../Bundles/rows'
 +import { stubDialer } from '../vitest.setup'
 @@ after stateOrder @@
 +interface BrowserChannels {
@@ -8743,9 +8962,6 @@ The other two files' import blocks change the same way, line for line.
 +  act(async () => {
 +    rowOf(host, title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
 +  })
-+
-+export const indentOf = (host: ParentNode, title: string): string =>
-+  (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
 ```
 
 ```Core/Trash/TrashFrame.test.tsx diff
@@ -8781,10 +8997,10 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -nE "const (rowOf|boxOf|indentOf|press) =" -- Core/Trash Core/Archive Core/Bundles` prints nothing, and `test ! -e Core/Settings/TrashFrame.test.tsx` succeeds.
+- [ ] `git grep -nE "const (rowOf|boxOf|press) =" -- Core/Trash Core/Archive Core/Bundles` prints nothing, `git grep -n "const indentOf =" -- Core` prints `BundleTable.test.tsx` alone, and `test ! -e Core/Settings/TrashFrame.test.tsx` succeeds; the skins' imports only their removed cases read (`rowIndent` among them) leave with them.
 - [ ] Each folded expectation fails with its behavior broken: `browser.test.ts:256`'s homed row with `requestOf`'s destination spread unconditionally; `:236`'s second click with `toggle`'s close removed; `BundleTable.test.tsx:217`'s hidden check with the reveal reading `checked.size` alone.
 - [ ] The jsdom suites' case count fell by exactly thirteen.
-- [ ] Run the gates. Tests: about −215 lines (the three harnesses about −120 for the fixture's +40; the thirteen cases about −150; the folds about +15).
+- [ ] Run the gates. Tests: about −215 lines (the three harnesses about −120 for the fixture's +37; the thirteen cases about −150; the folds about +15).
 - [ ] Check for unnecessary code or mistakes.
 
 #### Task 6-8
@@ -8794,7 +9010,7 @@ The other two files' import blocks change the same way, line for line.
 **NOW:**
 - `TrashFrame.test.tsx`'s *"the Trash pane"* drives the browser through the Trash skin: the date menu (`:225-283`: `pickFromDateMenu`, `:234`, `:249`), the Undo a restore or delete spends (the `it.each` at `:264`, `:285`, `:301`), a batch landing pending saves first (`:335`, the slice's `mutate` flushing before each bundle op, `Core/Session/nexusSlice.ts:251`), the batches' notices (`:354`, `:364`, `:375`, `:387`, `:430`, `:443`, `:449`, `:456`, `:465`), and a Nexus switch mid-batch (`:498`). What stays the Trash's own: its line in the frame (`:195`), the opened Nexus's listing (`:217`), an inner row's Restore and Delete (`:548`), a delete made elsewhere (`:591`), and Task 5-2's lone refusal.
 - After Task 5-2, `runBundled(verb, rows, nexusId)` (`Core/Interface/Confirm/confirmations.ts`) sends each row's request through the slice's `mutate`, spends each restored row's Undo, stops at a Nexus switch, tells the stores once, and posts one notice through `notifyBundled`; the hook composes the rows and their destinations and hands its render-time Nexus id.
-- `confirmations.test.ts` holds the chord's own spend (`:291`, *"gives up its Undo and the chord once the Trash spends its bundle"*, through `spendUndo` directly) and Task 5-2's three notice cases (B-4's archive, an Undo's own restore, the slice posting nothing); none repeats a Trash skin case, each pinning another facet.
+- `confirmations.test.ts` holds the chord's own spend (`:291`, *"gives up its Undo and the chord once the Trash spends its bundle"*, through `spendUndo` directly) and Task 5-2's four notice cases (B-4's archive, an Undo's own run, an Undo's refusal among its lines, the slice posting nothing); none repeats a Trash skin case, each pinning another facet.
 
 **CHANGE**
 
@@ -8807,7 +9023,7 @@ The other two files' import blocks change the same way, line for line.
 ```Core/Interface/Confirm/confirmations.test.ts diff
 +describe('a batch through runBundled', () => {
 +  const channels = stubBrowserEachTest()
-+  const both = (): Acted[] => …the two rows `pickForBoth` checked, as the hook hands them
++  const both = (): Parameters<typeof runBundled>[1] => …the two rows `pickForBoth` checked, as the hook hands them
 +
 +  it.each([
 +    ['Restored', 'restore'],
@@ -8985,10 +9201,10 @@ The other two files' import blocks change the same way, line for line.
 
 #### Review Checkpoint
 
-- [ ] **No Coverage Dropped:** before Task 6-1, `npm run test -- --reporter=json --outputFile="$TMPDIR/p6-before.json"`; after Task 6-8, the same into `p6-after.json`. `numTotalTests` fell by exactly nineteen, the six of Task 6-1 and the thirteen of Task 6-7, and every case title the before-run lists is in the after-run, but for those nineteen and the four `archive.test.ts` titles the `it.each` replaced. Both JSON files are removed afterward.
+- [ ] **No Coverage Dropped:** before Task 6-1, `npm run test -- --reporter=json --outputFile="$TMPDIR/p6-before.json"`; after Task 6-8, the same into `p6-after.json`. `numTotalTests` fell by exactly nineteen, the six of Task 6-1 and the thirteen of Task 6-7, and every case title the before-run lists is in the after-run, compared by each assertion result's leaf `title` rather than its `fullName`, since Tasks 6-4, 6-7, and 6-8 move cases between describes, but for those nineteen and these retitles: the four `archive.test.ts` titles the `it.each` replaced; whichever of `refile.test.ts`'s *"a Collection whose id would not make a folder name takes nothing outside the Archive"* and *"… reaches no sidecar outside the Archive"* isn't counted among the nineteen, both giving way to Task 6-1's merged title; `TrashFrame.test.tsx`'s *"a restore here spends the bundle’s Undo, so the chord reaches the entry beneath"* and *"a delete here spends the bundle’s Undo, so the chord reaches the entry beneath"*, which read *"a batch Restored spends …"* and *"a batch Deleted spends …"* in `confirmations.test.ts`; and its *"a Nexus switch during a batch stops it, posting no notice and telling the stores once"*, which Task 6-8 widens with `ArchiveView.test.tsx:475`'s fold. Both JSON files are removed afterward.
 - [ ] **Tests Where Their Behavior Lives:** every file in the GOAL's ledger stands where it names, `git ls-files 'Core/**/*.test.ts' 'Core/**/*.test.tsx' | xargs -n1 basename | sort | uniq -d` names no Trash or Archive suite twice, and each moved or created suite's base name is a module beside it.
 - [ ] **One Fixture:** `Core/Testing/bundles.ts` holds only what two or more suites read: `git grep -l` of each export across `Core`, `bundles.ts` aside, names at least two files.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is about ±0, Task 6-9's three rewritten comments and one refusal alone; it's recorded in the Net Ledger, with Task 6-11's medians beneath it.
+- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 6 row beside its ±0 production estimate, Task 6-9's three rewritten comments and one refusal alone, with Task 6-11's medians beneath the Ledger.
 - [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 4 and 5's moves; what holds is folded before *§Final Verification* opens.
 
 ---
@@ -9147,12 +9363,12 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
   - `restoreScrub.test.ts:516` and `spend.test.ts:2638,2660` — Task 4-4
   - `archive.test.ts:1135`, `spend.test.ts:460-566,1160,1217,1391,2443`, the scrub's cases and `restoreScrub.test.ts:1`'s header, and `renameFrontmatterKey`'s tests — Task 4-5
   - `spend.test.ts:1005` and `trashedCopies.test.ts` — Task 4-6
-- `Core/Nexus/mutateRequest.ts:20` — "Where a removal filed what it took" (`bundled`) — Task 5-1
-- `Core/Nexus/mutateRequest.ts:48` — "returning the item to the address its record names" — Task 5-1
-- `Core/Bundles/record.ts:56` — "A Trash record's only: the Archive address a delete took the item from" — Task 5-1
-- `Core/Trash/delete.ts:40` — "its record keeps the address it left for the Undo" — Task 5-1
-- `Core/Bundles/rows.ts:41` — "what the reader opens and a restore's Undo finds again" — Task 5-1
-- `Core/Bundles/browser.ts:235` — `rulesOf`'s "what a restore's and a delete's Undo do" — Task 5-1; "the date column's setting" — Task 5-3
+- `Core/Nexus/mutateRequest.ts:20` — "Where a removal filed what it took" (`bundled`) — Task 5-2
+- `Core/Nexus/mutateRequest.ts:48` — "returning the item to the address its record names" — Task 5-2
+- `Core/Bundles/record.ts:56` — "A Trash record's only: the Archive address a delete took the item from" — Task 5-2
+- `Core/Trash/delete.ts:40` — "its record keeps the address it left for the Undo" — Task 5-2
+- `Core/Bundles/rows.ts:41` — "what the reader opens and a restore's Undo finds again" — Task 5-2
+- `Core/Bundles/browser.ts:235` — `rulesOf`'s "what a restore's and a delete's Undo do" — Task 5-2; "the date column's setting" — Task 5-3
 - `Core/Interface/Confirm/confirmations.ts:53,112` — `offerUndo`'s "restores every bundle an act minted, to `destination`"; `offerDeleted`'s doc — Tasks 5-1, 5-2
 - `Core/Session/nexusSlice.ts:68` — `quiet`'s doc, the slice's notices for every op — Task 5-2
 - `Core/Bundles/browser.ts:263` — `useBundleBrowser`'s "and its date column" — Task 5-3
@@ -9165,13 +9381,13 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `Core/Nexus/settle.ts:389` — `payOutsideMoves`' doc, which reads every paired move as a move — Task 5-6
 - `Core/Bundles/bundle.ts:218,275` — `readBundleAt`'s and `keptLinksUnder`'s docs — Task 5-6
 - `Core/Nexus/settle.ts:426` — `settleNow`'s comment — Task 5-7
-- `.claude/Features/NexusRecordPM.md:16` — "the delete answers with the bundle it minted" — Task 5-1
+- `.claude/Features/NexusRecordPM.md:16` — "the delete answers with the bundle it minted" — Task 5-2
 - `.claude/Features/ConfigurationPM.md:115` — what always asks — Task 5-3 (I-079)
 - `.claude/Features/NexusRecordPM.md:14` — the Restore paragraph, silent on an item moved out by hand — Tasks 5-6, 5-7
 - `Core/Bundles/bundle.ts:369` — `spendBundle`'s doc, silent on a container emptied of its last item (Decision C-6) — Task 5-5
 - `.claude/IssuesPM.md` — I-064 closes — Task 5-6; I-079 closes — Task 5-3; I-077 closes as intended — Task 5-5
 - Tests, as each task's VERIFY routes them:
-  - every test read of `bundled`, `archive.test.ts:807` (`UNDO`), `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `ArchiveView.test.tsx:398,458`, `browser.test.ts:351` — Task 5-1
+  - every test read of `bundled`, `archive.test.ts:807` (`UNDO`), `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `ArchiveView.test.tsx:398,458`, `browser.test.ts:351` — Task 5-2
   - the `delete:facts` stubs (`TrashFrame.test.tsx:157`, `ArchiveView.test.tsx:145`, `confirmations.test.ts`), `browser.test.ts:5` — Task 5-3
   - `bundle.test.ts`'s "appendLinks adds each link once" (Task 3-2's) — Task 5-4
   - `archive.test.ts:735` — Task 5-5
@@ -9200,15 +9416,19 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 
 **What a User Sees (Nathan's Word at Ratification):**
 - **Task 3-5 · An Orphaned Archive Record Re-Files Upward:** the open pass files a record whose parent has gone under the deepest container its chain still holds, where it used to leave it misfiled.
-- **Task 5-1 · An Archive Restore's Undo Whose Item Has Left:** the Undo is sent at the path the item stood at and refused with the host's message, where it used to do nothing without a word.
+- **Task 5-2 · An Archive Restore's Undo Whose Item Has Left:** the Undo is sent at the path the item stood at and refused with the host's message, where it used to do nothing without a word.
+- **Task 5-2 · A Batch Undo Names Its Refusals:** an Undo over several bundles counts the rows it couldn't restore ("N Pages couldn’t be undone.") among its lines, where a refusal's own message used to be replaced by the next row's notice.
 - **Task 5-5 · One Missing-Artifact Refusal:** both stores answer "That item is no longer there." for a bundle whose artifact has left, in place of the Trash's "That deletion never finished; there is nothing to restore." and the Archive's own refusal.
 - **Task 5-6 · A Hand-Moved Item's Misses Go Unnamed:** a page or Set moved out of a store by hand takes its stripped values back where they still resolve, and what doesn't resolve stays as it is, since no window is open to name it.
 - **Task 6-9 · The Spend Refusal's Copy:** "Only a trash or archive record can be spent." becomes "That path is in neither the Trash nor an Archive.", which is what it answers.
+
+**Cautionary Code (Nathan's Word at Ratification):**
+- **Task 1-1 · The Landing Hears an Outside Write:** the landing answers the stat taken after its rename only while its modified time and size still match its own temp's, so another program writing the file in that instant (Obsidian on NexusOS, a sync arrival) is heard and re-read rather than mistaken for the app's own write; one line.
 
 **Inside the Code:**
 - **Phase 1:** LD-8 isn't taken, so the remint stays serial; LD-9's strict edit stays. Task 1-1's commits each wait on their own drive's flush, and `CHUNK`'s docstring changes there; Task 1-2 runs right after Task 1-1; Task 1-3's index rows take the landing's `FileStat` whole; Task 1-4 removes `forgetWrite` whole; Task 1-6's copy carries its source entry whole rather than merging it.
 - **Phase 2:** Task 2-2's `withContextAt` keeps its index parameter.
 - **Phase 3:** M-18 is dropped, its premise false; Task 3-1 keeps `oweWalk` at the two finish arms and carries `departing` on the delete plan; Task 3-2's empty no longer reads the strip's links; Task 3-5's carry keeps its own formula beside `currentOrigin`.
-- **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash.
-- **Phase 5:** Task 5-1 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
+- **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks.
+- **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.
