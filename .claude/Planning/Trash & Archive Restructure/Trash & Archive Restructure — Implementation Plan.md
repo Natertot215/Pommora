@@ -272,7 +272,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 3-3 · One container note, and the Set move's own kind
   - [x] Task 3-4 · The empty is the one gone-for-good step
   - [x] Task 3-5 · One trail resolver and one carry
-  - [ ] Task 3-6 · One owned-Archives iterator
+  - [x] Task 3-6 · One owned-Archives iterator
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`

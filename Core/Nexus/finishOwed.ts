@@ -18,7 +18,7 @@ import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig, retries } from
 import { oweWalk } from './fileEvents'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
-import { ARCHIVE_DIR_REL, archiveDirRel, contextDirRel } from '../Paths/nexusPaths'
+import { archiveDirRel, contextDirRel } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
 import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -48,8 +48,7 @@ import {
   type SpaceEntry,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
-import { archiveOwned, collectionsElsewhere, contentPages, listBundles } from '../Bundles/bundle'
-import { listEntries } from '../Files/walk'
+import { contentPages, listBundles, ownedArchives } from '../Bundles/bundle'
 import { refillStash } from '../Properties/assignment'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
@@ -382,14 +381,9 @@ async function finishContainer(
     if (e.edit?.kind !== 'gone') return back ? undefined : e.edit
     const unheld = e.edit.ids.filter((x) => !findContainerById(tree, x))
     if (!unheld.length) return undefined
-    let elsewhere: Promise<Set<string>> | undefined
     const archived: string[] = []
-    for (const { name, kind } of await listEntries(join(root, ARCHIVE_DIR_REL)))
-      if (
-        kind === 'dir' &&
-        (await archiveOwned(tree, name, () => (elsewhere ??= collectionsElsewhere(root, tree))))
-      )
-        archived.push(...(await archivedSetIds(root, join(root, archiveDirRel(name)))))
+    for (const { id: owner, owned } of await ownedArchives(root, tree))
+      if (owned) archived.push(...(await archivedSetIds(root, join(root, archiveDirRel(owner)))))
     const ids = unheld.filter((x) => !archived.includes(x))
     return ids.length ? { ...e.edit, ids } : undefined
   }
