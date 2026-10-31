@@ -5,12 +5,10 @@ import { createRoot, type Root } from 'react-dom/client'
 import { ActionLabel } from './ActionLabel'
 import {
   type ActionBar,
-  ActionSeatContext,
   clearNotification,
   notifyDeleted,
   notifyBundled,
   useDeclareActions,
-  windowSeat,
 } from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { DWELL_MS } from './action-label.css'
@@ -186,6 +184,27 @@ describe('the bar a shown view declares', () => {
     expect(inert()).toBe(true)
   })
 
+  it('a bar declared over another shows, and withdrawing it reveals the one beneath', () => {
+    const under = { count: '1 Page', restore: vi.fn(), remove: vi.fn() }
+    const over = { count: '2 Pages', restore: vi.fn(), remove: vi.fn() }
+    const stack = (top: boolean): void =>
+      act(() =>
+        root.render(
+          <>
+            <Declarer bar={under} />
+            {top && <Declarer bar={over} />}
+            <ActionLabel />
+          </>,
+        ),
+      )
+    stack(false)
+    stack(true)
+    expect(face()?.textContent).toBe('Restore2 Pages')
+    stack(false)
+    expect(inert()).toBe(false)
+    expect(face()?.textContent).toBe('Restore1 Page')
+  })
+
   it('keeps the hidden face out of reach: inert and aria-hidden, its buttons unfocusable', () => {
     declare()
     act(() => notifyDeleted('Ideas', vi.fn()))
@@ -217,65 +236,5 @@ describe('the bar a shown view declares', () => {
     } finally {
       vi.useRealTimers()
     }
-  })
-})
-
-describe('action seats', () => {
-  const frameBar = { count: '1 Page', restore: vi.fn(), remove: vi.fn() }
-  const windowBar = { count: '2 Pages', restore: vi.fn(), remove: vi.fn() }
-  function Declarer({ bar }: { bar: ActionBar }): null {
-    useDeclareActions(bar, true)
-    return null
-  }
-  const mount = (
-    seat: ReturnType<typeof windowSeat>,
-    inner: ActionBar | null,
-    frame = false,
-    open = true,
-  ): void =>
-    act(() =>
-      root.render(
-        <>
-          {frame && <Declarer bar={frameBar} />}
-          <div className="frame">
-            <ActionLabel />
-          </div>
-          {open && (
-            <ActionSeatContext.Provider value={seat}>
-              {inner && <Declarer bar={inner} />}
-              <div className="window">
-                <ActionLabel />
-              </div>
-            </ActionSeatContext.Provider>
-          )}
-        </>,
-      ),
-    )
-  const at = (where: string): Element | null => host.querySelector(`.${where} [role=status]`)
-  const faceAt = (where: string): string | null | undefined =>
-    at(where)?.querySelector('[data-face="shown"]')?.textContent
-  const inertAt = (where: string): boolean => at(where)?.hasAttribute('inert') ?? false
-
-  it("a window's seat draws only the bar declared inside it", () => {
-    mount(windowSeat(), windowBar)
-    expect(inertAt('window')).toBe(false)
-    expect(faceAt('window')).toBe('Restore2 Pages')
-    expect(inertAt('frame')).toBe(true)
-  })
-
-  it("a window's seat draws no notice", () => {
-    mount(windowSeat(), null)
-    act(() => notifyDeleted('Ideas', vi.fn()))
-    expect(inertAt('window')).toBe(true)
-    expect(faceAt('frame')).toBe('Deleted “Ideas”Undo')
-  })
-
-  it("closing a window's seat leaves the frame's bar standing", () => {
-    const seat = windowSeat()
-    mount(seat, windowBar, true)
-    expect(faceAt('frame')).toBe('Restore1 Page')
-    mount(seat, windowBar, true, false)
-    expect(inertAt('frame')).toBe(false)
-    expect(faceAt('frame')).toBe('Restore1 Page')
   })
 })

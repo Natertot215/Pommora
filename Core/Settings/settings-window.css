@@ -19,11 +19,6 @@
   padding-bottom: 0;
 }
 
-.settings-action-label.settings-action-label {
-  position: absolute;
-  top: calc(var(--app-inset) + var(--settings-close-clear) + var(--app-inset));
-}
-
 .settings-body {
   padding: var(--surface-inset);
   padding-top: var(--settings-close-clear);
