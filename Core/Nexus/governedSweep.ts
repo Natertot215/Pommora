@@ -10,7 +10,7 @@ import { type Place, type SweptPage, sweepParse } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { gonePageEntry, liveLanding, reencode, rewriteRoot } from './governedRoot'
 import type { PageIndex } from '../Connections/pageIndex'
-import type { StrippedLink } from './cascade'
+import type { StrippedLink } from '../Bundles/record'
 import { type PropertyDefinition, PROPERTY_TYPES } from '../Properties/properties'
 import { isBlankRaw, type KeyCollision, landValue, rekeyHeld } from '../Files/rootValues'
 

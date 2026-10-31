@@ -7,11 +7,10 @@ import { landValue } from '../Files/rootValues'
 import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
 import { adoptImageSource, UNREADABLE } from '../Assets/adoptFile'
 import { ok, type Result } from '../Contract/result'
-import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setBannerOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'setBanner' }>,
 ): Promise<MutateReply> {
   const adopt = async (): Promise<Result<string | null>> =>

@@ -1,6 +1,6 @@
 import { join, relDirname } from '../Paths/posix'
 import { z } from 'zod'
-import type { CascadeReport, StrippedLink } from '../Nexus/cascade'
+import type { CascadeReport } from '../Nexus/cascade'
 import { isPlainObject } from '../Contract/validators'
 import type { Result } from '../Contract/result'
 import { stashBlock } from '../Properties/properties'
@@ -26,13 +26,15 @@ const memberRoot = z.object({
 })
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
-/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above; `StrippedLink` is its type. */
+/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above. */
 export const strippedLink = z.object({
   page: z.string(),
   property: z.string(),
   value: z.string(),
   above: z.string().optional(),
 })
+
+export type StrippedLink = z.infer<typeof strippedLink>
 
 /** The ids of the siblings it sat above and below in its origin's order as it left, so a restore lands it back between them. */
 const place = z.object({ above: z.string().optional(), below: z.string().optional() }).optional()

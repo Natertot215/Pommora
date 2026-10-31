@@ -2,7 +2,6 @@ import { basename, dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
-import type { MutateContext } from './mutate'
 import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
@@ -25,7 +24,7 @@ async function ends(
 }
 
 export async function movePageOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'movePage' }>,
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'page')
@@ -41,7 +40,7 @@ export async function movePageOp(
 }
 
 export async function moveSetOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'moveSet' }>,
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'set')

@@ -1,4 +1,4 @@
-// The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write, every link world, and every enumerator of the tree's Collections and Spaces.
+// The held tree's pages by path and by id, for the host's writers, and the one projection that adds what both stores hold to the tree's entities, for every by-id write, every link world, and the cascades' enumerators of the tree's Collections and Spaces.
 // Relinks (create, rename, move) resolve against the live index; strips and refills resolve against the tree plus the Archive, `linkWorld`.
 
 import { heldTreeOf } from './liveTree'
@@ -121,7 +121,7 @@ export async function nexusPages(
 export const linkWorld = (tree: NexusTree, archived: readonly ConnPage[]): PageIndex =>
   buildPageIndex([...pagesOf(tree), ...archived])
 
-/** What the Trash holds of the tree's entities, read where it sits so no listing grows with the pages and Sets it holds: the Collections at its root level, where each one's bundle mints, and the Spaces under its Contexts, read from their own sidecars, since the index holds pages alone. `owners` names each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; `readOwners` reads it from the record of each bundle holding one of `rels` that it hasn't read, so a cascade reads only the bundles it reaches. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
+/** What the Trash holds of the tree's entities, read where it sits so no listing grows with the pages and Sets it holds: the Collections at its root level, where each one's bundle mints, and the Spaces under its Contexts, read from their own sidecars, since the index holds pages alone. `owners` names each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; `readOwners` reads it from the record of each bundle holding one of `rels` that it hasn't read, so a cascade reads only the bundles it reaches. The cascades' enumerators of the tree's Collections or Spaces take it beside the tree. */
 export async function storedNodes(root: string, tree: NexusTree) {
   const owners = new Map<string, string | undefined>()
   const ownerOf = (record: RecordFile): string | undefined => {

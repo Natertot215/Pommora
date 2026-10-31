@@ -21,7 +21,7 @@ import {
   retrailed,
 } from '../Bundles/record'
 import { archiveDirRel, archiveStoreOf } from '../Paths/bundleLayout'
-import { listFilesRecursive } from '../Files/walk'
+import { holdsOnlyHidden } from '../Files/walk'
 
 /** Writes `trail` onto an archived record, moving its bundle into `to`'s Archive when its origin now sits in another Collection; the bundle keeps its name, since its stamp is the archived time. */
 async function refile(
@@ -64,11 +64,11 @@ async function carried(carry: () => Promise<void>): Promise<void> {
 export const refileLanded = (
   root: string,
   record: RecordFile,
-  from: string | null,
+  from: string,
   chain?: string[],
 ): Promise<void> =>
   carried(async () => {
-    if (record.entity !== 'set' || !record.id || !from) return
+    if (record.entity !== 'set' || !record.id) return
     const tree = await liveTreeOf(root)
     const along = chain ?? containerTrailById(tree, record.id)?.map((n) => n.id)
     if (along) await refileArchived(root, record.id, along, from, tree)
@@ -118,8 +118,8 @@ export async function settleArchives(root: string, tree: NexusTree): Promise<voi
     }
     for (const { bundlePath } of await listBundles(root, { kind: 'archive', id }))
       await moveIntoStore(root, join(root, bundlePath), { kind: 'trash' }, {})
-    // A bundle that won't parse stays as evidence; the folder goes once nothing is left beneath it.
+    // A bundle that won't parse stays as evidence; the folder goes once it holds nothing but hidden entries.
     const archive = join(root, archiveDirRel(id))
-    if (!(await listFilesRecursive(archive)).length) await removeOwn(archive)
+    if (await holdsOnlyHidden(archive)) await removeOwn(archive)
   }
 }

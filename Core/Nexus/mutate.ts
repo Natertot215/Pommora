@@ -67,20 +67,15 @@ import { inContextsTurn, inSettleTurn, relink, settledIndex, underContexts } fro
 import { pageMoves } from './record'
 import { putBackEntries } from './governedRoot'
 
-export interface MutateContext {
-  root: string
-}
-
 export async function handleMutate(root: string, req: MutateRequest): Promise<MutateReply> {
   try {
-    return await dispatch({ root }, req)
+    return await dispatch(root, req)
   } catch (e) {
     return fault(e)
   }
 }
 
-async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
-  const { root } = ctx
+async function dispatch(root: string, req: MutateRequest): Promise<MutateReply> {
   // A write that moves, adds, or removes a page, re-spells its links, or renames a Context or Space runs in the settle's turn. One that can move or add a page re-spells by the index's difference across it: a first commit's rename arrives without moving, so a stale link to the name the page was born with never follows it, and a page created under the default name is no arrival, since its first commit is where it arrives.
   const addressed = (
     req: Extract<MutateRequest, { op: 'createPage' | 'rename' | 'movePage' | 'moveSet' }>,
@@ -112,15 +107,15 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'createPage':
       return addressed(
         req,
-        () => createPageOp(ctx, req),
+        () => createPageOp(root, req),
         seedsContext(req) ? inContextsTurn : inSettleTurn,
       )
 
     case 'createContainer':
-      return createContainerOp(ctx, req)
+      return createContainerOp(root, req)
 
     case 'rename':
-      return addressed(req, () => renameOp(ctx, req))
+      return addressed(req, () => renameOp(root, req))
 
     case 'renameHeading':
       return inSettleTurn(root, async () => {
@@ -130,11 +125,11 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'delete':
       return req.kind === 'space' || req.kind === 'context'
-        ? inContextsTurn(root, () => deleteOp(ctx, req))
-        : inSettleTurn(root, () => deleteOp(ctx, req))
+        ? inContextsTurn(root, () => deleteOp(root, req))
+        : inSettleTurn(root, () => deleteOp(root, req))
 
     case 'archive':
-      return inSettleTurn(root, () => archiveOp(ctx, req))
+      return inSettleTurn(root, () => archiveOp(root, req))
 
     // Only a Context's or a Space's bundle, which sits under the Trash's `.nexus/contexts` since its chain mirrors where it lived, restores something that changes which Contexts and Spaces exist, so only its restore takes the Contexts lock; every other restore writes a Space's sidecar by id alone, as a delete's strip does.
     case 'restore': {
@@ -156,7 +151,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProfileImage':
-      return setProfileImageOp(ctx, req)
+      return setProfileImageOp(root, req)
 
     case 'setProfileIcon': {
       await updateSettings(root, (cur) => setOrDrop(cur, 'profile_icon', req.icon))
@@ -164,16 +159,16 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setCrop':
-      return setCropOp(ctx, req)
+      return setCropOp(root, req)
 
     case 'setBanner':
-      return setBannerOp(ctx, req)
+      return setBannerOp(root, req)
 
     case 'setHeadingIconHidden':
-      return setHeadingIconHiddenOp(ctx, req)
+      return setHeadingIconHiddenOp(root, req)
 
     case 'setIcon':
-      return setIconOp(ctx, req)
+      return setIconOp(root, req)
 
     case 'setDisclosureLock': {
       const folder = await mutableTarget(root, req.path, [req.kind])
@@ -193,8 +188,8 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setProperty':
       return isMarkdownFile(req.path)
-        ? setPropertyOp(ctx, req)
-        : underContexts(root, () => setPropertyOp(ctx, req))
+        ? setPropertyOp(root, req)
+        : underContexts(root, () => setPropertyOp(root, req))
 
     // A put-back resolves a Context's key as a tag write does, so one reaching a Space or naming a Context holds the Contexts lock; a page property's takes only its page's lock.
     case 'putBack': {
@@ -216,10 +211,10 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return editPageAliases(root, req.path, req.edit)
 
     case 'movePage':
-      return addressed(req, () => movePageOp(ctx, req))
+      return addressed(req, () => movePageOp(root, req))
 
     case 'moveSet':
-      return addressed(req, () => moveSetOp(ctx, req))
+      return addressed(req, () => moveSetOp(root, req))
 
     case 'reorderChildren': {
       const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
@@ -236,10 +231,10 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       })
 
     case 'createSpace':
-      return underContexts(root, () => createSpaceOp(ctx, req))
+      return underContexts(root, () => createSpaceOp(root, req))
 
     case 'setContext':
-      return underContexts(root, () => setContextOp(ctx, req))
+      return underContexts(root, () => setContextOp(root, req))
 
     case 'setSpaceColor':
       return done(await underContexts(root, () => setSpaceColor(root, req.spaceId, req.color)))
@@ -251,7 +246,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return inContextsTurn(root, () => renameSpaceOp(root, req.spaceId, req.newName))
 
     case 'reorderContexts':
-      return reorderContextsOp(ctx, req)
+      return reorderContextsOp(root, req)
 
     case 'reorderPanelContexts':
       return done(await setPanelContextOrder(root, req.ids))

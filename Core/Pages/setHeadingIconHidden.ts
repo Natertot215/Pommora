@@ -2,11 +2,10 @@ import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { fault } from '../Contract/result'
 import { mutableTarget } from '../Nexus/liveTree'
-import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setHeadingIconHiddenOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'setHeadingIconHidden' }>,
 ): Promise<MutateReply> {
   if (req.kind === 'navview') return fault('The NavView has no heading icon.')

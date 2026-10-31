@@ -18,7 +18,7 @@ import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageInde
 import { linkedPage } from '../Connections/linkValue'
 import { stampedIdOf } from '../Files/pageFile'
 import { sidecarId, sidecarIdentity } from '../Files/sidecar'
-import { isContentFile, listEntries, listMarkdownFiles } from '../Files/walk'
+import { holdsOnlyHidden, isContentFile, listEntries, listMarkdownFiles } from '../Files/walk'
 import { pathExists, readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
 import { asStringArray } from '../Nexus/coerce'
 import { resolveOrder } from '../Nexus/order'
@@ -92,7 +92,7 @@ export async function removeBundle(root: string, abs: string): Promise<void> {
   const stop = join(root, layoutOf(storeOf(relative(root, abs))!.store).dir)
   await removeOwn(abs)
   for (let dir = dirname(abs); dir.startsWith(`${stop}/`); dir = dirname(dir)) {
-    if ((await machine().readDir(dir)).some((e) => !hiddenName(e.name))) return
+    if (!(await holdsOnlyHidden(dir))) return
     await removeOwn(dir)
   }
 }
@@ -207,8 +207,8 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
       kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
   )
   const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
-  const trashed = (await listBundles(root, { kind: 'trash' })).flatMap(({ record }) =>
-    record.entity === 'collection' && record.id ? record.id : [],
+  const trashed = (await listBundles(root, { kind: 'trash' }, '', { shallow: true })).flatMap(
+    ({ record }) => (record.entity === 'collection' && record.id ? record.id : []),
   )
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
 }

@@ -9,7 +9,6 @@ import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { spaceAt } from '../Nexus/treePatch'
-import type { MutateContext } from '../Nexus/mutate'
 import { type MutateReply, type MutateRequest, type PutBack, undoOf } from '../Nexus/mutateRequest'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
@@ -101,7 +100,7 @@ async function setSpaceContext(
 }
 
 export async function setContextOp(
-  { root }: MutateContext,
+  root: string,
   { path, contextId, spaceIds }: Extract<MutateRequest, { op: 'setContext' }>,
 ): Promise<MutateReply> {
   const target = await mutableTarget(root, path, ['page', 'space'])

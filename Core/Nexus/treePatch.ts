@@ -158,7 +158,7 @@ const schemas = new WeakMap<
 >()
 
 /** The definitions `ids` names, in its order, against the tree's registry; an id the registry lacks reads as nothing. One answer is held per id list and kept whole while the definitions it names stay the same, so a render keyed on a schema reruns only when its definitions change. */
-export function schemaOf(tree: NexusTree, ids: readonly string[]): PropertyDefinition[] {
+function schemaOf(tree: NexusTree, ids: readonly string[]): PropertyDefinition[] {
   const { registry } = tree.config
   const held = schemas.get(ids)
   if (held?.registry === registry) return held.schema
