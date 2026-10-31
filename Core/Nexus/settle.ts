@@ -36,6 +36,8 @@ import { type CascadeReport, linksNotUpdated, renameCascade, respell } from './c
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
+import { type Departed, recognize } from './arrival'
+import { storeOf } from '../Paths/bundleLayout'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 
@@ -315,12 +317,13 @@ function paid(root: string, c: CascadeReport | undefined, what: string): void {
   oweCascade(root, c.pages, c.hosts)
 }
 
-// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival absent.
+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. One that left a store's bundle came back by hand and finishes as that store's restore, the unlink proving a move, since a copy leaves the bundle whole and arrives as a page of its own; after an index rebuild nothing pairs, so such a page stays live and current without its delete's Link values, its bundle unlisted. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival and each page back from a store absent.
 async function payOutsideMoves(root: string): Promise<void> {
   const owed = owedFor(root)
   const tree = heldTreeOf(root)
   if (!tree || (!owed.vanished.size && !owed.landed.size)) return
   const left = new Map<string, ConnPage>()
+  const back = new Map<string, Departed[]>()
   let label = ''
   for (const [id, from] of owed.vanished) {
     const to = livePathOf(root, id)
@@ -328,6 +331,11 @@ async function payOutsideMoves(root: string): Promise<void> {
     owed.vanished.delete(id)
     if (!owed.landed.delete(id) && readIndexedStat(to)?.id !== id) owed.paired.add(id)
     if (to === from.path) continue
+    const at = storeOf(from.path)
+    if (at?.bundle) {
+      back.set(at.bundle, [...(back.get(at.bundle) ?? []), { id, from: from.path, to, at }])
+      continue
+    }
     left.set(id, from)
     label ||= titleFromPath(to)
   }
@@ -339,17 +347,21 @@ async function payOutsideMoves(root: string): Promise<void> {
     return true
   })
   owed.landed.clear()
-  if (!left.size && !arriving.length) return
-  const absent = new Set(arriving)
+  if (!left.size && !arriving.length && !back.size) return
+  const absent = new Set([...arriving, ...[...back.values()].flat().map((p) => p.id)])
   const before = buildPageIndex(
     pagesOf(tree).flatMap((p) => (absent.has(p.id) ? [] : [left.get(p.id) ?? p])),
   )
   const moved = [...left.keys()]
-  paid(
-    root,
-    await relink(root, before, pageIndexOf(tree), label, moved, [...moved, ...arriving]),
-    'outside move',
-  )
+  const after = pageIndexOf(tree)
+  if (moved.length || arriving.length)
+    paid(
+      root,
+      await relink(root, before, after, label, moved, [...moved, ...arriving]),
+      'outside move',
+    )
+  for (const [bundle, pages] of back)
+    paid(root, await recognize(root, before, after, bundle, pages), 'outside restore')
 }
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply.
