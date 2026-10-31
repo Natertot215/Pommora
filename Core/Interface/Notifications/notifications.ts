@@ -1,13 +1,12 @@
 // Store-free, since the slices report through these writers: the notice on screen and the bar the shown view declares live here, beside them.
-import { useEffect, useSyncExternalStore } from 'react'
+import { createContext, useContext, useEffect, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
 import { type Counted, countPhrase } from '../../Nexus/entities'
 import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
-import { channel } from '@pommora/uix/Utilities/subscribable'
-import { useHostShown } from '../contentHost'
+import { type Channel, channel } from '@pommora/uix/Utilities/subscribable'
 
 export interface Notification {
   message: string
@@ -32,19 +31,35 @@ export interface ActionBar {
   remove: () => void
 }
 
-const declared = channel<ActionBar | null>(null)
+export interface ActionSeat {
+  bar: Channel<ActionBar | null>
+  notices: boolean
+}
 
-export const useActionBar = (): ActionBar | null =>
-  useSyncExternalStore(declared.subscribe, declared.get)
+/** Where a view's bar is drawn: a window seats its own label, and the main frame's alone draws notices. */
+export const ActionSeatContext = createContext<ActionSeat>({
+  bar: channel<ActionBar | null>(null),
+  notices: true,
+})
 
-/** Declared only while its view shows, as the count publishes: a parked view's bar would stand over another tab's view. */
-export function useDeclareActions(bar: ActionBar | null): void {
-  const shown = useHostShown()
+export const windowSeat = (): ActionSeat => ({
+  bar: channel<ActionBar | null>(null),
+  notices: false,
+})
+
+export const useActionBar = (): ActionBar | null => {
+  const { bar } = useContext(ActionSeatContext)
+  return useSyncExternalStore(bar.subscribe, bar.get)
+}
+
+/** Declared into the nearest seat only while its view is `shown`, as the count publishes: a parked view's bar would stand over another tab's view. */
+export function useDeclareActions(bar: ActionBar | null, shown: boolean): void {
+  const seat = useContext(ActionSeatContext)
   useEffect(() => {
     if (!shown) return
-    declared.set(bar)
-    return () => declared.set(null)
-  }, [shown, bar])
+    seat.bar.set(bar)
+    return () => seat.bar.set(null)
+  }, [seat, shown, bar])
 }
 
 export function dismissNotification(id: number): void {

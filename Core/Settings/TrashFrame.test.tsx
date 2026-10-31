@@ -10,7 +10,13 @@ import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { runBundled } from '../Interface/Confirm/confirmations'
-import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
+import {
+  ActionSeatContext,
+  clearNotification,
+  currentNotification,
+  windowSeat,
+} from '../Interface/Notifications/notifications'
+import { ActionLabel } from '../Interface/Notifications/ActionLabel'
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
@@ -597,6 +603,39 @@ describe('the Trash pane', () => {
     await press('Notes', 1)
     await press('Ideas', 1)
     expect(rowOf('P').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
+  })
+
+  const seated = async (): Promise<void> => {
+    const seat = windowSeat()
+    await act(async () =>
+      root?.render(
+        <ActionSeatContext.Provider value={seat}>
+          <TrashFrame />
+          <ActionLabel />
+        </ActionSeatContext.Provider>,
+      ),
+    )
+  }
+  const seatLabel = (): Element | null | undefined => host?.querySelector('[role=status]')
+
+  it("checking a row declares Restore and Delete to its seat's label", async () => {
+    await seated()
+    await act(async () => boxOf('Alpha').click())
+    const face = seatLabel()?.querySelector('[data-face="shown"]')
+    expect(face?.textContent).toBe('Restore1 Page')
+    const restore = [...(face?.querySelectorAll('button') ?? [])].find(
+      (b) => b.textContent === 'Restore',
+    )
+    await act(async () => (restore as HTMLElement).click())
+    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: listed[0].bundlePath }]])
+  })
+
+  it('unchecking withdraws the bar', async () => {
+    await seated()
+    await act(async () => boxOf('Alpha').click())
+    expect(seatLabel()?.hasAttribute('inert')).toBe(false)
+    await act(async () => boxOf('Alpha').click())
+    expect(seatLabel()?.hasAttribute('inert')).toBe(true)
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

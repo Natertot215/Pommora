@@ -30,6 +30,8 @@ import { PreviewRulesRow } from './PreviewRulesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { NexusRows } from './NexusRows'
 import { useWindowGeometry } from '../Interface/Windows/useWindowGeometry'
+import { ActionLabel } from '../Interface/Notifications/ActionLabel'
+import { ActionSeatContext, windowSeat } from '../Interface/Notifications/notifications'
 import {
   type CategoryKey,
   FRAMES,
@@ -56,6 +58,7 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
   const [category, setCategory] = useState<CategoryKey>('general')
   const geometry = useWindowGeometry('settings')
   const experimental = useExperimental()
+  const [seat] = useState(windowSeat)
   const shown = FRAMES.filter((l) => experimental || !l.experimental)
   // The gate can close from a sync merge or a hand-edited settings file while this window sits on a frame it hides.
   const active = shown.some((l) => l.key === category) ? category : 'general'
@@ -95,7 +98,10 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         ),
       }}
     >
-      <FrameBody category={active} />
+      <ActionSeatContext.Provider value={seat}>
+        <FrameBody category={active} />
+        <ActionLabel className="settings-action-label" />
+      </ActionSeatContext.Provider>
     </WindowBase>
   )
 }
