@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 78 | 0 | 3 | 13 | 37 | 25 |
+| 77 | 0 | 3 | 13 | 37 | 24 |
 
 #### A1 • Sync & Devices
 
@@ -74,7 +74,6 @@
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
-| [I-079](#I-079 • Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so.) | Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so. | Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
 
 #### A4 • Architecture
 
@@ -963,20 +962,6 @@ Chokidar's `awaitWriteFinish` holds a path until it has been quiet for about 200
 
 Drop `awaitWriteFinish`, since the event batch already debounces 200 ms, at the cost of one unreadable read of a half-written outside page; or re-stat a held path once its hold ends.
 
-#### I-079 • Confirm Before Deletion never spares a delete from the Trash, and its caption doesn't say so.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Mini (±0) | Drift | `1028ed405` | **Created:** 10-26-2026<br>**Updated:** 10-26-2026 |
-
-**Description**
-
-Turning off Confirm Before Deletion lets a page, a tile, or a folder that carries no schema go without a question, and its caption lists what always asks: Collections, Sets, Contexts, Spaces, views, and properties. A Delete in the Trash empties for good and always asks whatever the setting, since `askEmptyTrash` never reads the waiver, but the caption says nothing of the Trash, so a reader of the setting expects a page emptied from the Trash to go unasked.[^79]
-
-**Solution** [Proposed]
-
-The caption names the Trash among what always asks, which keeps an empty for good behind its question.
-
 ### A4 • Architecture
 
 #### I-042 • Every call site chooses for itself whether an error is shown, logged, or dropped, and about forty host-side failures reach no one.
@@ -1421,6 +1406,5 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^76]: **I-076:** `Core/Session/nexusSlice.ts:248-265` (`mutate`, the cleanup's discarded reply at `:256` and the notice's Try Again at `:261`), `Core/Session/nexusSlice.ts:290` (`finishOwed`), `Core/Nexus/owed.ts:63` (`OWED`), `Core/Nexus/owed.ts:255` (`runNoted`'s landing check), `Core/Nexus/finishOwed.ts:62-70` (`add`, the let-go files), `Core/Nexus/finishOwed.ts:72-93` (`finishOwed`), `Core/Contexts/contextWrite.ts:153,174` (`createContextGroup`, `createSpace`), `Core/Trash/spend.ts:185` (the Context and Space restore), `Core/Properties/registryProperty.ts:122`, `Core/Properties/optionOps.ts:99`, `Core/Bundles/browser.ts:402-443` (`many`, its `quiet: true` call at `:428`), `.claude/Planning/Disclosable Bundles/Disclosable Bundles — Plan.md`
 [^77]: **I-077:** `Core/Bundles/bundle.ts:~369-393` (`spendBundle`), `Core/Bundles/bundle.ts:~81-84` (`bundleArtifact`), `Core/Bundles/bundle.ts:~153-176` (`listBundles`), `Core/Trash/spend.ts:~110` (`emptyBundle`), `Core/Trash/spend.ts:~133,~295` (`restoreTrashed`), `Core/Archive/archive.ts:~119` (`restoreArchived`), `Core/Trash/delete.ts:~136` (`deleteOp`)
 [^78]: **I-078:** `UIX/Interactions/engine.tsx:~1287-1318` (`useDragItem`), `UIX/Interactions/engine.tsx:~1337-1372` (`useLineRow`), `UIX/Interactions/engine.tsx:~1120,~1174-1180,~1234` (`ZoneValue`, `useZoneSeat`, the zone's Tab stop), `UIX/Interactions/engine.tsx:~682-685` (the line lift refused on a null `snap`), `UIX/Interactions/a11y.ts:~1,~57-60` (`INSTRUCTIONS_ID`), `UIX/Interactions/lineList.ts:~20-35` (`locked`), `Core/Bundles/BundleTable.tsx:~106`, `Core/Navigation/NavList.tsx:~161`
-[^79]: **I-079:** `Core/Settings/frames.ts:~642` (the caption), `Core/Interface/Confirm/confirmations.ts:~41-44` (`waived`), `Core/Interface/Confirm/confirmations.ts:~229-240` (`askEmptyTrash`)
-[^80]: **I-080:** `Core/Bundles/BundleTable.tsx:~177` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Settings/TrashFrame.tsx` (no bar)
+[^80]: **I-080:** `Core/Bundles/BundleTable.tsx:~273` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys), `Core/Trash/TrashFrame.tsx` (no bar)
 [^81]: **I-081:** `Desktop/FileWatch/watcher.ts:~102-107` (`chokidar.watch`), `node_modules/chokidar/handler.js:~115-124` (`createFsWatchInstance`), `node_modules/chokidar/handler.js:~531-557` (`_handleDir`), `node_modules/chokidar/handler.js:~449-519` (`_handleRead`), `node_modules/chokidar/index.js:~569-596` (`_throttle`), `node_modules/chokidar/index.js:~790-806` (`_readdirp`), `node_modules/chokidar/index.js:~204-211` (`filterPath`), `node_modules/chokidar/index.js:~608-638` (`_awaitWriteFinish`), `node_modules/readdirp/index.js:~105-159,~170-182` (`_read`, `_formatEntry`), `Core/Nexus/fileEvents.ts:~270,~295-301` (the folder and unlink arms), `Core/Files/writeEcho.ts:~9-10` (`PREFIX_WINDOW_MS`), `.claude/Benchmarks/Reach-In/profiles/profile.json` and `profile-15fe7422a.json` (the `lstat` counts)

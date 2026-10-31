@@ -181,6 +181,15 @@ describe('what the Confirm Before Deletion switch governs', () => {
     expect(asked).toHaveLength(2)
   })
 
+  it('an empty from the Trash asks with Confirm Before Deletion off', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'bundles:permanentDelete': async () => ok(false),
+    })
+    switchOff()
+    await askEmptyTrash([row({ title: 'A' })])
+    expect(asked).toHaveLength(1)
+  })
+
   it('names the surface a view is leaving', async () => {
     switchOn()
     useSession.setState({
@@ -299,7 +308,7 @@ describe('an Undo over several bundles', () => {
 
   beforeEach(() => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'delete:facts': async () => ok({ permanentDelete: false }),
+      'bundles:permanentDelete': async () => ok(false),
     })
     mutate.mockReset()
     mutate.mockResolvedValue({})

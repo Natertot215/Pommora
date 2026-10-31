@@ -295,7 +295,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
   - [x] Task 5-1 · Following an id covers a Set
   - [x] Task 5-2 · Every reversible reply carries its own Undo, through one notice
-  - [ ] Task 5-3 · The table owns its date column and footing
+  - [x] Task 5-3 · The table owns its date column and footing
   - [ ] Task 5-4 · The arrival's one home
   - [ ] Task 5-5 · One restore for both stores
   - [ ] Task 5-6 · Pages and Sets moved out by hand
@@ -7442,7 +7442,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 - [ ] `git mv Core/Settings/TrashFrame.tsx Core/Trash/TrashFrame.tsx`, `git mv Core/Settings/trash-frame.css Core/Trash/trash-frame.css`, `git mv Core/Archive/archivePlace.ts Core/Archive/archiveLabel.ts`, then `git rm Core/Trash/handlers.ts`, and apply the AFTER.
 - [ ] Re-point `frames.ts:42` to `'../Trash/TrashFrame'`, `Core/Settings/TrashFrame.test.tsx:6` to `'../Trash/TrashFrame'` (the test stays in place until Phase 6), the four `archivePlace` importers to `archiveLabel`, and `browser.test.ts:5`'s `widestDate` to `'./BundleTable'`.
 - [ ] Move `BundleTable.test.tsx:51-57`'s `date` object out of the `browser` prop into a sibling `date={…}` on `<BundleRows>`, which now takes it beside `browser`; its cases hold.
-- [ ] Rename every `'delete:facts'` stub to `'bundles:permanentDelete'` answering the boolean alone: `TrashFrame.test.tsx:157`, `ArchiveView.test.tsx:145`, and `confirmations.test.ts`'s stubs (`ok({ permanentDelete: false })` becomes `ok(false)`).
+- [ ] Rename every `'delete:facts'` stub to `'bundles:permanentDelete'` answering the boolean alone: `TrashFrame.test.tsx:157` and `confirmations.test.ts`'s stubs (`ok({ permanentDelete: false })` becomes `ok(false)`); the I-079 pin sits in *"what the Confirm Before Deletion switch governs"* with its own stub.
 - [ ] Rewrite `ConfigurationPM.md:115`'s row: "… Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Delete, which name the Items holding what they reach, and a delete from the Trash, which is for good."
 
 **AFTER**
@@ -9316,7 +9316,7 @@ The other two files' import blocks change the same way, line for line.
 **TASK:** The shared browser harness joins `Core/Testing/bundles.ts`: the stubbed channels every bundle browser asks and the row queries its suites read, replacing the three skin harnesses' copies (*Scouts/4-Interface.md · §Tests*, 1). The Trash skin's suite follows `TrashFrame.tsx` to `Core/Trash/`, and each cluster of cases the skins and the shared suites repeat becomes one case in the suite that owns the behavior, the skins keeping only what's theirs.
 
 **NOW:**
-- `browser.test.ts:119-170`, `TrashFrame.test.tsx:107-175`, and `ArchiveView.test.tsx:58-166` each stub `bundles:list`, `bundles:children`, `menu`, and `mutate`, and the two skins `bundles:permanentDelete` (Task 5-3), in their own `beforeEach`; each skin defines `rowOf`, `boxOf`, `press`, and `indentOf`, the two `indentOf`s reading one element by two paths (`TrashFrame.test.tsx:131`, `.bundle-title`; `ArchiveView.test.tsx:111`, `.cell-title`'s parent, which `BundleRows` draws as `.bundle-title`, `Core/Bundles/BundleTable.tsx:193`). Every row's box carries `aria-label` "Select <title>" (`BundleTable.tsx:190`).
+- `browser.test.ts:119-170`, `TrashFrame.test.tsx:107-175`, and `ArchiveView.test.tsx:58-166` each stub `bundles:list`, `bundles:children`, `menu`, and `mutate`, and the Trash skin `bundles:permanentDelete` (Task 5-3), in their own `beforeEach`; each skin defines `rowOf`, `boxOf`, `press`, and `indentOf`, the two `indentOf`s reading one element by two paths (`TrashFrame.test.tsx:131`, `.bundle-title`; `ArchiveView.test.tsx:111`, `.cell-title`'s parent, which `BundleRows` draws as `.bundle-title`, `Core/Bundles/BundleTable.tsx:193`). Every row's box carries `aria-label` "Select <title>" (`BundleTable.tsx:190`).
 - `vi.mock('@pommora/uix/Interactions/virtualRows', …)` repeats in each skin (`TrashFrame.test.tsx:24`, `ArchiveView.test.tsx:22`); vitest hoists a mock per module, so it stays in each suite.
 - The clusters (*Scouts/4-Interface.md · §Tests*, 2), as each case reads after Phase 5:
 

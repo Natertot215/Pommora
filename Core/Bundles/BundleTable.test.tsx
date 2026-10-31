@@ -48,16 +48,16 @@ describe('BundleRows', () => {
             visible,
             checked: new Set(checked),
             picked: visible.filter((t) => checked.includes(t.row.bundlePath)).map((t) => t.row),
-            date: {
-              when: () => 'Today',
-              onContextMenu: vi.fn(),
-              sample: '',
-              measureRef: vi.fn(),
-              width: null,
-            },
             toggle,
             rowClick,
             openMenu,
+          }}
+          date={{
+            when: () => 'Today',
+            onContextMenu: vi.fn(),
+            sample: '',
+            measureRef: vi.fn(),
+            width: null,
           }}
           scrollEl={null}
         />,

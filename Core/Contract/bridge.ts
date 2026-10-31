@@ -198,8 +198,8 @@ export interface Asks {
   'bundles:list': { args: [store: BundleStore, within?: string]; reply: Result<BundleRow[]> }
   // One level of inner items per row a browser holds open, asked on opening and again on each refresh, since `bundles:list` walks no artifact.
   'bundles:children': { args: [addresses: string[]]; reply: Result<BundleRow[][]> }
-  // Read at the moment of asking, never from the renderer's cache, so the confirmation can't promise the system trash while main erases outright.
-  'delete:facts': { args: []; reply: Result<{ permanentDelete: boolean }> }
+  // A setting that decides what the host does to a file is read where it acts, at the moment of asking, so the empty's question can't promise the system trash while main erases outright; one that decides only whether the window asks reads the window's cache (`waived`).
+  'bundles:permanentDelete': { args: []; reply: Result<boolean> }
 
   mutate: { args: [req: MutateRequest]; reply: MutateReply }
   'link:open': { args: [url: string]; reply: Result<null> }

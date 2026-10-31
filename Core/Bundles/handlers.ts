@@ -4,6 +4,7 @@ import { isPlainObject, isString } from '../Contract/validators'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { nexusPages } from '../Nexus/heldPages'
 import { scopeOf } from '../Settings/codec'
+import { readLiveSetting } from '../Settings/settings'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { archivedWithin, listBundles, listInner } from './bundle'
 import { archiveStoreOf, type BundleStore } from '../Paths/bundleLayout'
@@ -45,4 +46,7 @@ export const bundlesHandlers = {
       ),
     )
   }),
+  'bundles:permanentDelete': withRoot(async (root) =>
+    ok(await readLiveSetting(root, 'permanentDelete')),
+  ),
 } satisfies Partial<Handlers>

@@ -1,5 +1,5 @@
 // The renderer's half of the bundle owner: what a store's browser does with the rows `rows.ts` builds host-side.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -8,22 +8,11 @@ import { isContainerKind } from '../Nexus/entities'
 import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { isAtOrUnder, relDirname } from '../Paths/posix'
-import { formatDate } from '../Properties/formatValue'
-import {
-  type DateStyle,
-  dateDefaults,
-  holdsStyle,
-  resolveStyle,
-  storedPick,
-} from '../Properties/columnStyles'
-import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { popMenu } from '../Actions/menuActions'
 import { destinationRows, type MoveTarget } from '../Actions/pageMenu'
 import { restoreMenuItems } from '../Actions/restoreMenu'
-import { useNexusForms } from '../Views/Host/useColumnStyles'
 import { useSession } from '../Session/store'
-import { personalizationOf } from '../Session/configSlice'
 import { storesChanged } from '../Session/nexusSlice'
 import { dialer } from '../Platform/dialer'
 import type { Personalization } from '../Settings/personalization'
@@ -129,96 +118,25 @@ async function askDestination(kind: DestinationKind): Promise<RestoreDestination
   return id ? { kind, id } : null
 }
 
-type DateKey = 'trashColumnStyle' | 'archiveColumnStyle'
-
-const WIDEST_AT = new Date(2026, 8, 30, 12, 0)
-const DAY_MS = 86_400_000
-
-/** The widest a style writes: September, a Wednesday, the 30th, and a two-digit hour, each where the style shows it; a relative style's widest is a week ago with its clock, else a year's last month. */
-export function widestDate(style: DateStyle): string {
-  const now = new Date(WIDEST_AT.getTime() + (style.time_format === 'none' ? 350 : 7) * DAY_MS)
-  return formatDate(
-    WIDEST_AT.toISOString(),
-    style.date_format,
-    style.time_format,
-    style.weekday,
-    now,
-  )
-}
-
-/** A store's date column: its stored style over the Nexus's date form, the heading's right-click, which picks one, and its width: the wider of the heading and its widest date, the hidden `sample`, as the host the view draws under `measureRef` measures them. */
-function useDateColumn(key: DateKey): {
-  when: (storedAt: number | null) => string
-  onContextMenu: (e: React.MouseEvent) => Promise<void>
-  sample: string
-  measureRef: (el: HTMLElement | null) => void
-  width: number | null
-} {
-  const nexus = useNexusForms()
-  const stored = useSession((s) => personalizationOf(s)[key])
-  const setPersonalization = useSession((s) => s.setPersonalization)
-  // A store shows when each item entered it, where a view's date column leaves the time hidden.
-  const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
-  const style = resolveStyle(stored, defaults, nexus.clock)
-  const sample = widestDate(style)
-  const [measured, measureRef] = useState<HTMLElement | null>(null)
-  const [width, setWidth] = useState<number | null>(null)
-  useLayoutEffect(() => {
-    // A whole pixel over, since `offsetWidth` rounds and a cell's ellipsis engages on a fraction.
-    if (measured) setWidth(measured.offsetWidth + 1)
-  }, [measured, sample])
-  return {
-    when: (storedAt) =>
-      storedAt === null
-        ? ''
-        : formatDate(
-            new Date(storedAt).toISOString(),
-            style.date_format,
-            style.time_format,
-            style.weekday,
-          ),
-    onContextMenu: async (e) => {
-      e.preventDefault()
-      const action = await popMenu(styleMenuItems({ type: 'dateTime', current: style }))
-      const pick = action ? parseStyleAction(action) : null
-      if (!pick) return
-      const next = {
-        ...stored,
-        [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock),
-      }
-      setPersonalization(key, holdsStyle(next) ? next : undefined)
-    },
-    sample,
-    measureRef,
-    width,
-  }
-}
-
-/** What the Trash and the Archive do differently under one browser: the date column's setting, and what a delete sends and how it asks. */
+/** What the Trash and the Archive do differently under one browser: what a delete sends and how it asks. */
 function rulesOf(kind: BundleStore['kind']): {
-  dateKey: DateKey
   deleteOp: 'emptyBundle' | 'delete'
   askDelete: (targets: BundleRow[]) => Promise<boolean>
 } {
   switch (kind) {
     case 'trash':
-      return {
-        dateKey: 'trashColumnStyle',
-        deleteOp: 'emptyBundle',
-        askDelete: askEmptyTrash,
-      }
+      return { deleteOp: 'emptyBundle', askDelete: askEmptyTrash }
     case 'archive':
-      return {
-        dateKey: 'archiveColumnStyle',
-        deleteOp: 'delete',
-        askDelete: askTrashing,
-      }
+      return { deleteOp: 'delete', askDelete: askTrashing }
   }
 }
 
-type Listing = { status: 'loading' } | { status: 'failed' } | { status: 'ready'; rows: BundleRow[] }
+export type Listing =
+  | { status: 'loading' }
+  | { status: 'failed' }
+  | { status: 'ready'; rows: BundleRow[] }
 
-/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows; and its date column. */
+/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; and Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows. */
 export function useBundleBrowser(
   store: BundleStore,
   {
@@ -236,12 +154,10 @@ export function useBundleBrowser(
   toggle: (bundlePath: string) => void
   rowClick: (row: BundleRow, detail: number) => void
   openMenu: (row: BundleRow) => Promise<void>
-  date: ReturnType<typeof useDateColumn>
   restore: (targets: BundleRow[], destination?: RestoreDestination) => Promise<void>
   remove: (targets: BundleRow[]) => Promise<void>
 } {
   const rules = rulesOf(store.kind)
-  const date = useDateColumn(rules.dateKey)
   const nexusId = useSession((s) => s.tree?.nexus.id)
   const [listing, setListing] = useState<Listing>({ status: 'loading' })
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
@@ -398,7 +314,6 @@ export function useBundleBrowser(
     toggle,
     rowClick,
     openMenu,
-    date,
     restore,
     remove,
   }

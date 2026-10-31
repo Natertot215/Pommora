@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useMemo, useState } from 'react'
+import { memo, type ReactNode, useLayoutEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { historical } from '@pommora/uix/Elements/nav-trail.css'
@@ -15,16 +15,94 @@ import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { entityIcon } from '../Assets/entityIconPolicy'
+import { formatDate } from '../Properties/formatValue'
+import {
+  type DateStyle,
+  dateDefaults,
+  holdsStyle,
+  resolveStyle,
+  storedPick,
+} from '../Properties/columnStyles'
+import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
+import { popMenu } from '../Actions/menuActions'
+import { useNexusForms } from '../Views/Host/useColumnStyles'
+import type { BundleStore } from '../Paths/bundleLayout'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession } from '../Session/store'
 import type { Personalization } from '../Settings/personalization'
 import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
-import { crumbSegments, type useBundleBrowser } from './browser'
+import { crumbSegments, type Listing, type useBundleBrowser } from './browser'
 import type { BundleRow } from './rows'
 import './bundle-table.css'
 
 type Browser = ReturnType<typeof useBundleBrowser>
+
+const WIDEST_AT = new Date(2026, 8, 30, 12, 0)
+const DAY_MS = 86_400_000
+
+/** The widest a style writes: September, a Wednesday, the 30th, and a two-digit hour, each where the style shows it; a relative style's widest is a week ago with its clock, else a year's last month. */
+export function widestDate(style: DateStyle): string {
+  const now = new Date(WIDEST_AT.getTime() + (style.time_format === 'none' ? 350 : 7) * DAY_MS)
+  return formatDate(
+    WIDEST_AT.toISOString(),
+    style.date_format,
+    style.time_format,
+    style.weekday,
+    now,
+  )
+}
+
+/** A store's date column: its stored style over the Nexus's date form, the heading's right-click, which picks one, and its width: the wider of the heading and its widest date, the hidden `sample`, as the host the view draws under `measureRef` measures them. */
+export function useDateColumn(kind: BundleStore['kind']): {
+  when: (storedAt: number | null) => string
+  onContextMenu: (e: React.MouseEvent) => Promise<void>
+  sample: string
+  measureRef: (el: HTMLElement | null) => void
+  width: number | null
+} {
+  const key = `${kind}ColumnStyle` as const
+  const nexus = useNexusForms()
+  const stored = useSession((s) => personalizationOf(s)[key])
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  // A store shows when each item entered it, where a view's date column leaves the time hidden.
+  const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
+  const style = resolveStyle(stored, defaults, nexus.clock)
+  const sample = widestDate(style)
+  const [measured, measureRef] = useState<HTMLElement | null>(null)
+  const [width, setWidth] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    // A whole pixel over, since `offsetWidth` rounds and a cell's ellipsis engages on a fraction.
+    if (measured) setWidth(measured.offsetWidth + 1)
+  }, [measured, sample])
+  return {
+    when: (storedAt) =>
+      storedAt === null
+        ? ''
+        : formatDate(
+            new Date(storedAt).toISOString(),
+            style.date_format,
+            style.time_format,
+            style.weekday,
+          ),
+    onContextMenu: async (e) => {
+      e.preventDefault()
+      const action = await popMenu(styleMenuItems({ type: 'dateTime', current: style }))
+      const pick = action ? parseStyleAction(action) : null
+      if (!pick) return
+      const next = {
+        ...stored,
+        [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock),
+      }
+      setPersonalization(key, holdsStyle(next) ? next : undefined)
+    },
+    sample,
+    measureRef,
+    width,
+  }
+}
+
+type DateColumn = ReturnType<typeof useDateColumn>
 
 /** TableView's row as it draws, measured live: the cell's padding around a body line its inline title stands a little taller than, and the hairline between rows. */
 const ROW_H = 29.75
@@ -34,7 +112,7 @@ export function BundleTable({
   date: { width },
   children,
 }: {
-  date: Browser['date']
+  date: DateColumn
   children: ReactNode
 }): React.JSX.Element {
   const track =
@@ -58,7 +136,7 @@ export function DateHeading({
   label,
   className,
 }: {
-  date: Browser['date']
+  date: DateColumn
   label: ReactNode
   className: string
 }): React.JSX.Element {
@@ -81,13 +159,12 @@ type RowApi = Pick<Browser, 'toggle' | 'rowClick' | 'openMenu'> & {
 
 /** A store's rows under its skin's heading, drawn in a window of `scrollEl` that keeps the row focus last stood on: one Tab stop whose arrows step between rows, whose Space toggles a row's check and whose Enter acts as a keyboard's click, each row a tree item that discloses, checks, and opens through the browser. */
 export function BundleRows({
-  browser: { visible, checked, picked, date, toggle, rowClick, openMenu },
+  browser: { visible, checked, picked, toggle, rowClick, openMenu },
+  date,
   scrollEl,
 }: {
-  browser: Pick<
-    Browser,
-    'visible' | 'checked' | 'picked' | 'date' | 'toggle' | 'rowClick' | 'openMenu'
-  >
+  browser: Pick<Browser, 'visible' | 'checked' | 'picked' | 'toggle' | 'rowClick' | 'openMenu'>
+  date: DateColumn
   scrollEl: HTMLElement | null
 }): React.JSX.Element {
   const icons = useSession((s) => personalizationOf(s).defaultIcons)
@@ -126,6 +203,25 @@ export function BundleRows({
       </div>
     </LineZone>
   )
+}
+
+export function BundleFooting({
+  listing,
+  shown,
+  className,
+  failed,
+  empty,
+}: {
+  listing: Listing
+  shown: number
+  className: string
+  failed: string
+  empty: string
+}): React.JSX.Element | null {
+  if (listing.status === 'loading' || shown > 0) return null
+  const line =
+    listing.status === 'failed' ? failed : listing.rows.length === 0 ? empty : 'Nothing matches.'
+  return <div className={className}>{line}</div>
 }
 
 /** A row's glyph: a property's by its type, any other item's own ahead of its kind's. */

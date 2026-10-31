@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { BundleRow } from '../Bundles/rows'
-import { TrashFrame } from './TrashFrame'
+import { TrashFrame } from '../Trash/TrashFrame'
 import { bundleRow as row } from '../Testing/fixtures'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
@@ -155,10 +155,7 @@ describe('the Trash pane', () => {
       menu,
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: mutated,
-      'delete:facts': vi.fn(async () => ({
-        ok: true,
-        value: { permanentDelete: false },
-      })),
+      'bundles:permanentDelete': vi.fn(async () => ({ ok: true, value: false })),
     })
     nexus('A')
     host = document.createElement('div')

@@ -39,7 +39,7 @@ import {
   LINK_DISPLAY_OPTIONS,
   TIME_FORMAT_LABELS,
 } from '../Properties/displayLabels'
-import { TrashFrame } from './TrashFrame'
+import { TrashFrame } from '../Trash/TrashFrame'
 import type { MenuRow, Trailing } from '@pommora/uix/Menus'
 import type { ReactNode } from 'react'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
@@ -640,7 +640,7 @@ export const FRAMES = roster([
             key: 'confirmDeletion',
             label: 'Confirm Before Deletion',
             caption:
-              'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views and properties always ask.',
+              'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views, properties, and a delete from the Trash always ask.',
           },
           {
             kind: 'toggle',
