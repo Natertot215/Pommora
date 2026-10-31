@@ -17,7 +17,7 @@ import {
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive, sidecarsUnder } from '../Files/walk'
 import { reachingExcluded } from '../Paths/exclusion'
-import { discardFile } from '../Trash/discard'
+import { discard } from '../Trash/discard'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
 import {
@@ -35,7 +35,7 @@ interface AssetMigration {
   moved: { from: string; to: string }[]
   rewritten: number
   skipped: { store: string; why: string }[]
-  trashed: number
+  discarded: number
 }
 
 interface StoreRef {
@@ -161,7 +161,7 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
 
   const legacy = await buildAssetMap(root, ASSETS_DIR_REL)
   if (!Object.keys(legacy.files).length) return null
-  const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], trashed: 0 }
+  const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], discarded: 0 }
   const landed = new Map<string, string>()
 
   for (const ref of await collectRefs(root, result.skipped)) {
@@ -215,17 +215,17 @@ export async function migrateAssets(root: string): Promise<AssetMigration | null
   }
   if (rekeys.size) await rekeyCrops(root, (key) => rekeys.get(key))
   // Last, so a discard that fails leaves the move itself whole.
-  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root)
+  if (!result.skipped.length) result.discarded = await sweepLegacyRoot(root)
   return result
 }
 
 async function sweepLegacyRoot(root: string): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
-  // Every file the move left behind goes to the trash, the ones the map never indexed included.
+  // Every file the move left behind is discarded, the ones the map never indexed included.
   const files = (await listFilesRecursive(dir)).filter(
     (abs) => !legacyBookkeeping(relative(root, abs)),
   )
-  for (const abs of files) await discardFile(root, abs)
+  for (const abs of files) await discard(root, abs)
   for (const entry of await listEntries(dir)) {
     if (entry.kind === 'dir') await machine().remove(join(dir, entry.name))
   }

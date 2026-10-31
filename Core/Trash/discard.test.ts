@@ -1,68 +1,78 @@
-import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { atomicWriteFile } from '../Files/atomicWrite'
-import { setWriteTap } from '../Files/writeEcho'
-import { basename, join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
-import { discardFile } from './discard'
+import { mkdir, readFile, rm } from 'node:fs/promises'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
+import { type FileEvent, setOwnTap, setWriteTap } from '../Files/writeEcho'
+import { join } from '../Paths/posix'
+import { installMachine } from '../Platform/machine'
+import { putJson, tempRoot } from '../Testing/hostFs'
+import { diskMachine } from '../Testing/machines'
+import { discard } from './discard'
 
 let dir: string
+let handed: string[]
 beforeEach(async () => {
   dir = tempRoot('pom-discard-')
+  handed = []
+  installMachine({
+    ...diskMachine(),
+    trashToSystem: async (p) => {
+      handed.push(await readFile(p, 'utf8'))
+      await rm(p)
+    },
+  })
 })
 afterEach(async () => {
+  installMachine(diskMachine())
   await rm(dir, { recursive: true, force: true })
 })
 
-describe('discardFile', () => {
-  const trashed = async (...chain: string[]): Promise<string[]> => {
-    const at = join(dir, '.trash', ...chain)
-    return (await readdir(at)).map((leaf) => join(at, leaf))
+describe('discard', () => {
+  const doomed = async (): Promise<string> => {
+    await mkdir(join(dir, 'Notes'), { recursive: true })
+    const p = join(dir, 'Notes', 'doomed.md')
+    await atomicWriteFile(p, 'bye')
+    return p
   }
 
-  it('moves a file into .trash under a stamped leaf and removes the original', async () => {
-    const p = join(dir, 'doomed.md')
-    await atomicWriteFile(p, 'bye')
-    await discardFile(dir, p)
-    const [dest] = await trashed()
-    expect(basename(dest).endsWith('__doomed.md')).toBe(true)
-    expect(await readFile(dest, 'utf8')).toBe('bye')
-    await expect(stat(p)).rejects.toThrow()
+  it('hands the file to the system trash and leaves .trash unmade', async () => {
+    const p = await doomed()
+    await discard(dir, p)
+    expect(handed).toEqual(['bye'])
+    expect(await pathExists(p)).toBe(false)
+    expect(await pathExists(join(dir, '.trash'))).toBe(false)
   })
 
-  it('records both ends of the move', async () => {
-    const p = join(dir, 'reported.md')
-    await atomicWriteFile(p, 'bye')
-    const seen: string[] = []
-    setWriteTap({ wrote: (w) => seen.push(w), renamed: () => {} })
-    await discardFile(dir, p)
-    setWriteTap(null)
-    expect(seen).toEqual([p, ...(await trashed())])
+  it('erases the file while Permanently Delete Files is on', async () => {
+    await putJson(join(dir, '.nexus', 'settings.json'), {
+      personalization: { permanentDelete: true },
+    })
+    const p = await doomed()
+    await discard(dir, p)
+    expect(handed).toEqual([])
+    expect(await pathExists(p)).toBe(false)
+    expect(await pathExists(join(dir, '.trash'))).toBe(false)
   })
 
-  it('mirrors the folder chain the file was deleted from', async () => {
-    await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
-    const p = join(dir, 'Notes', 'Daily', 'Beta.md')
-    await atomicWriteFile(p, 'bye')
-    await discardFile(dir, p)
-    const [dest] = await trashed('Notes', 'Daily')
-    expect(basename(dest).endsWith('__Beta.md')).toBe(true)
-    expect(await readFile(dest, 'utf8')).toBe('bye')
+  it('refuses on a host with no system trash and leaves the file', async () => {
+    installMachine(diskMachine())
+    const p = await doomed()
+    await expect(discard(dir, p)).rejects.toThrow('This host has no system trash.')
+    expect(await readFile(p, 'utf8')).toBe('bye')
   })
 
-  it('de-collides two trashes of the same name from the same folder', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+  it('records the write and notes its own unlink', async () => {
+    const p = await doomed()
+    const wrote: string[] = []
+    const noted: FileEvent[] = []
+    setWriteTap({ wrote: (w) => wrote.push(w), renamed: () => {} })
+    setOwnTap(async (evs) => void noted.push(...evs))
     try {
-      const p = join(dir, 'twice.md')
-      await atomicWriteFile(p, 'one')
-      await discardFile(dir, p)
-      await atomicWriteFile(p, 'two')
-      await discardFile(dir, p)
-      const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
-      expect(kept.sort()).toEqual(['one', 'two'])
+      await discard(dir, p)
     } finally {
-      vi.useRealTimers()
+      setWriteTap(null)
+      setOwnTap(null)
     }
+    expect(wrote).toEqual([p])
+    expect(noted).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
   })
 })

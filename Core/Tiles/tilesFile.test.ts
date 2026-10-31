@@ -1,5 +1,5 @@
 import { ok } from '../Contract/result'
-import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { failLandings, tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { landedId, tileId } from '../Testing/tileLayouts'
@@ -19,7 +19,8 @@ import {
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import type { TileDoc } from './tiles'
 import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
-import { machine } from '../Platform/machine'
+import { installMachine, machine } from '../Platform/machine'
+import { diskMachine } from '../Testing/machines'
 import { rewriteConnections } from '../Connections/rewrite'
 import { dropLiveTree } from '../Nexus/liveTree'
 import type { StoredNodes } from '../Nexus/heldPages'
@@ -183,6 +184,19 @@ describe('the document', () => {
 })
 
 describe('markdown tile lifecycle', () => {
+  let handed: string[]
+  beforeEach(() => {
+    handed = []
+    installMachine({
+      ...diskMachine(),
+      trashToSystem: async (p) => {
+        handed.push(p)
+        await rm(p)
+      },
+    })
+  })
+  afterEach(() => installMachine(diskMachine()))
+
   it.skipIf(noModeBits)(
     'an absent body is not-found; a body the read fails on is not an empty one',
     async () => {
@@ -264,7 +278,7 @@ describe('markdown tile lifecycle', () => {
     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('body'))
   })
 
-  it('remove drops the entry and trashes the file; foreign entries survive', async () => {
+  it('remove drops the entry and hands the file to the system trash; foreign entries survive', async () => {
     await seed(home(), [{ id: tileId('a'), type: 'widget', keep: true }])
     const id = await landedId(createTile(root, home(), append))
     await write(home(), id, 'kept text')
@@ -277,8 +291,8 @@ describe('markdown tile lifecycle', () => {
     )
     expect(await entries()).toEqual([{ id: tileId('a'), type: 'widget', keep: true }])
     expect(await pathExists(tileFilePath(home(), id))).toBe(false)
-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
-    expect(trashed.some((f) => f.includes(id))).toBe(true)
+    expect(handed).toEqual([tileFilePath(home(), id)])
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
   })
 
   it('remove takes an entry this build doesn’t know, or none, with any file its id names', async () => {
@@ -500,7 +514,7 @@ describe('markdown tile lifecycle', () => {
     await seed(home(), [{ id: tileId('p'), type: 'page', page_id: 'x' }])
     await removeTile(root, home(), tileId('p'))
     expect(await entries()).toEqual([])
-    expect(await pathExists(join(root, '.trash'))).toBe(false)
+    expect(handed).toEqual([])
   })
 })
 

@@ -22,7 +22,6 @@ import {
   updateNexusFile,
 } from './atomicWrite'
 import { mintBundle } from '../Bundles/bundle'
-import { discardFile } from '../Trash/discard'
 import { dropOwnEchoes, type FileEvent, isRecentWrite, setOwnTap } from './writeEcho'
 import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
@@ -460,14 +459,6 @@ describe('the own tap', () => {
     await relocate(from, to)
     expect(locked).toEqual([from])
     expect(await readFile(to, 'utf8')).toBe('moving')
-  })
-
-  it('notes a discard as an unlink', async () => {
-    const p = join(dir, 'gone.md')
-    await writeFile(p, 'bye')
-    await discardFile(dir, p)
-    expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
-    expect(noted[0].text).toBeNull()
   })
 
   it('with no tap set, a write lands as before', async () => {

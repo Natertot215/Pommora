@@ -13,8 +13,11 @@ import { wikiTitle } from '../Connections/linkValue'
 import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { installMachine } from '../Platform/machine'
+import { diskMachine } from '../Testing/machines'
 
 let root: string
+let handed: string[]
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 const readJson = <T = Record<string, unknown>>(rel: string): Promise<T> =>
   readJsonAt<T>(join(root, rel))
@@ -35,8 +38,17 @@ beforeEach(async () => {
   )
   await mkdir(join(root, 'file-assets'), { recursive: true })
   await openSession(root)
+  handed = []
+  installMachine({
+    ...diskMachine(),
+    trashToSystem: async (p) => {
+      handed.push(p)
+      await rm(p)
+    },
+  })
 })
 afterEach(async () => {
+  installMachine(diskMachine())
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
@@ -80,7 +92,7 @@ describe('migrateAssets', () => {
     await writeFile(join(root, 'Vault', 'Old.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
     const r = await migrateAssets(root)
     expect(r?.rewritten).toBe(2)
-    expect(r?.trashed).toBe(1)
+    expect(r?.discarded).toBe(1)
     expect((await readJson('Vault/_pagecollection.json')).banner).toBe('[[Cover.png]]')
     expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
   })
@@ -99,7 +111,7 @@ describe('migrateAssets', () => {
     await writeFile(join(root, page, 'Gone.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
     const r = await migrateAssets(root)
     expect(r?.rewritten).toBe(2)
-    expect(r?.trashed).toBe(1)
+    expect(r?.discarded).toBe(1)
     expect((await readJson(`${set}/_pageset.json`)).banner).toBe('[[Cover.png]]')
     expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
   })
@@ -111,7 +123,7 @@ describe('migrateAssets', () => {
     expect(r?.skipped).toEqual([
       { store: 'Notes/_pagecollection.json', why: 'it could not be read' },
     ])
-    expect(r?.trashed).toBe(0)
+    expect(r?.discarded).toBe(0)
     expect(await pathExists(join(root, '.nexus/assets/a/Cover.png'))).toBe(true)
   })
 
@@ -198,11 +210,11 @@ describe('migrateAssets', () => {
     await migrateAssets(root)
     expect(await readdir(join(root, 'file-assets'))).toEqual(['kept.png'])
     expect(await pathExists(join(root, 'file-assets/orphan.png'))).toBe(false)
-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
-    expect(trashed.some((n) => String(n).includes('orphan.png'))).toBe(true)
+    expect(handed).toContain(join(root, '.nexus/assets/dead/orphan.png'))
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
   })
 
-  it('trashes a leftover the map never indexed rather than deleting it', async () => {
+  it('hands a leftover the map never indexed to the system trash', async () => {
     await asset('_private/contract.pdf', 'contract-bytes')
     await asset('live/kept.png', 'kept')
     await writeFile(
@@ -210,8 +222,8 @@ describe('migrateAssets', () => {
       JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
     )
     await migrateAssets(root)
-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
-    expect(trashed.some((n) => String(n).includes('contract.pdf'))).toBe(true)
+    expect(handed).toContain(join(root, '.nexus/assets/_private/contract.pdf'))
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
   })
 
   it('empties .nexus/assets of images and thumbnails, keeping only its own crops config', async () => {
@@ -330,7 +342,7 @@ describe('migrateAssets', () => {
     const r = await migrateAssets(root)
     expect(r?.skipped.map((s) => s.store)).toEqual(['homepage.json'])
     expect((await readJson('Notes/_pagecollection.json')).banner).toBe('[[kept.png]]')
-    expect(r?.trashed).toBe(0)
+    expect(r?.discarded).toBe(0)
     expect(await pathExists(join(root, '.nexus/assets/live/kept.png'))).toBe(true)
   })
 
@@ -366,7 +378,7 @@ describe('migrateAssets', () => {
         const r = await migrateAssets(root)
         expect(r?.rewritten).toBe(1)
         expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
-        expect(r?.trashed).toBe(0)
+        expect(r?.discarded).toBe(0)
         expect((await readJson('.nexus/interface/homepage/homepage.json')).banner).toBe(
           '[[kept.png]]',
         )

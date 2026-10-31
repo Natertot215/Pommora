@@ -29,7 +29,7 @@ import { findContainerById } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewriteHeld } from '../Files/atomicWrite'
 import { linksIn } from '../Connections/scan'
-import { discardFile } from '../Trash/discard'
+import { discard } from '../Trash/discard'
 import { machine, statOrNull } from '../Platform/machine'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { tileFilePath } from '../Paths/paths'
@@ -149,7 +149,7 @@ function discardTileFile(root: string, dir: string, tileId: string): Promise<str
     const body = await machine().readText(file)
     // The entry is already gone, so a discard that fails leaves the file behind rather than the removal half-done.
     if (body !== null)
-      await discardFile(root, file).catch((e) =>
+      await discard(root, file).catch((e) =>
         console.error('tiles: a removed tile’s file stayed:', e),
       )
     return body
