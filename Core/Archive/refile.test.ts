@@ -510,6 +510,14 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
     expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
   })
 
+  it('an Archive whose Collection sits in the Trash beside a conflict copy is kept', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes', kind: 'collection' }))
+    await mkdir(at(trashed, 'Notes 2'))
+    await settleArchives(root, await reread())
+    expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
+  })
+
   it('no Archive is taken for orphaned while a root folder’s sidecar reads unreadable', async () => {
     await mkdir(at('Broken'))
     await writeFile(at('Broken', '_pagecollection.json'), '{ not json')

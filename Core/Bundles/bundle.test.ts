@@ -567,6 +567,16 @@ describe('a Trash a delete fills', () => {
     expect(await listBundles(trashRoot, { kind: 'trash' })).toHaveLength(1)
   })
 
+  it('a conflict copy beside the artifact lists the bundle without an artifact, and out of the record-only listing', async () => {
+    await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+    const [dir] = await bundleDirs(trashRoot)
+    await writeFile(join(dir, 'Alpha 2.md'), 'conflict copy')
+    const listed = await listBundles(trashRoot, TRASH)
+    expect(listed).toHaveLength(1)
+    expect(listed[0]).not.toHaveProperty('artifactName')
+    expect(await listBundles(trashRoot, TRASH, '', { recordOnly: true })).toEqual([])
+  })
+
   it('a bundle’s interior is trashed content, never trash structure', async () => {
     await settledMutate(trashRoot, { op: 'delete', path: 'Notes', kind: 'collection' })
     const [dir] = await bundleDirs(trashRoot)

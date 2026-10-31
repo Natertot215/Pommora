@@ -10,7 +10,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { joinValues, landValue } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
 import {
-  bundleArtifact,
+  bundleHold,
   contentPages,
   listBundles,
   type OpenBundle,
@@ -191,20 +191,21 @@ async function unitsOf(
   return units
 }
 
-/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, re-spelling a page of it that landed elsewhere too, or, from a bundle still standing, each unit `unitsOf` lands. */
+/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, re-spelling a page of it that landed elsewhere too, or, from a bundle still standing, each unit `unitsOf` lands. Answers the departures no arrival finished. */
 export async function recognize(
   root: string,
   tree: NexusTree,
   before: PageIndex,
   bundle: string,
   departed: readonly Departed[],
-): Promise<CascadeReport | undefined> {
+): Promise<{ cascade?: CascadeReport; unfinished: Departed[] }> {
   const after = pageIndexOf(tree)
-  const whole = (await bundleArtifact(join(root, bundle))) === null
+  const whole = (await bundleHold(join(root, bundle))).kind === 'emptied'
   const units = whole
     ? new Map<string, string | undefined>([[bundle, undefined]])
     : await unitsOf(root, tree, bundle, departed)
   let cascade: CascadeReport | undefined
+  const reached: string[] = []
   for (const [address, movedTo] of units) {
     const at = await openBundle(root, join(root, address), movedTo && join(root, movedTo))
     if (!at.ok || at.value.record.entity === 'property') continue
@@ -231,8 +232,10 @@ export async function recognize(
       after,
     })
     cascade = joinCascades(cascade, arrived.cascade)
+    reached.push(rel, ...strays.map((d) => d.to))
   }
-  return cascade
+  const unfinished = departed.filter((d) => !reached.some((rel) => isAtOrUnder(d.to, rel)))
+  return { unfinished, ...(cascade ? { cascade } : {}) }
 }
 
 export function arrivedSpaces(handed: NexusTree, tree: NexusTree): SpaceNode[] {

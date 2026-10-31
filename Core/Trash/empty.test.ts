@@ -366,7 +366,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
-    // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
+    // A sync client's conflict copy beside the artifact leaves the bundle ambiguous, holding no one artifact to empty. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const [listed] = await listBundles(root, { kind: 'trash' })
     const bundlePath = listed.bundlePath

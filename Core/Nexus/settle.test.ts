@@ -27,6 +27,8 @@ import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweSeen, oweWalk } from './fileEvents'
+import * as arrival from './arrival'
+import { recognizeSpacesAtOpen } from './arrival'
 import { settleNow, recordHanded, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
@@ -1763,6 +1765,64 @@ describe('an item moved out of a store by hand', () => {
     expect((await keys()).Related).toBeUndefined()
   })
 
+  it('a page moved out of a Trash bundle holding a conflict copy arrives outright, re-spelling the name it now shares', async () => {
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    await mkdir(abs('Other'))
+    await writeFile(abs('Other', 'Alpha.md'), `---\nID: ${ULID_A}\n---\n\nother\n`)
+    await writeFile(
+      abs('Notes', 'Ref.md'),
+      `---\nID: 01EX5ZZKBKPCTAV9WEVGEMMVRE\n---\n\n[[Alpha]]\n`,
+    )
+    await applyEvents(root, [
+      ev('addDir', 'Other'),
+      ev('add', 'Other', 'Alpha.md'),
+      ev('add', 'Notes', 'Ref.md'),
+    ])
+    await settleNow(pusher, root)
+    await writeFile(abs(bundle, 'Alpha 2.md'), 'conflict copy')
+    await dragged(`${bundle}/Alpha.md`, 'Notes', 'Alpha.md')
+    expect(splitEnvelope(await readFile(abs('Notes', 'Ref.md'), 'utf8')).body).toBe(
+      '[[Other/Alpha|Alpha]]\n',
+    )
+  })
+
+  it('a page whose restore by hand throws still arrives outright, re-spelling the name it now shares', async () => {
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    await mkdir(abs('Other'))
+    await writeFile(abs('Other', 'Alpha.md'), `---\nID: ${ULID_A}\n---\n\nother\n`)
+    await writeFile(
+      abs('Notes', 'Ref.md'),
+      `---\nID: 01EX5ZZKBKPCTAV9WEVGEMMVRE\n---\n\n[[Alpha]]\n`,
+    )
+    await applyEvents(root, [
+      ev('addDir', 'Other'),
+      ev('add', 'Other', 'Alpha.md'),
+      ev('add', 'Notes', 'Ref.md'),
+    ])
+    await settleNow(pusher, root)
+    vi.spyOn(arrival, 'recognize').mockRejectedValueOnce(new Error('refused'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await dragged(`${bundle}/Alpha.md`, 'Notes', 'Alpha.md')
+    expect(splitEnvelope(await readFile(abs('Notes', 'Ref.md'), 'utf8')).body).toBe(
+      '[[Other/Alpha|Alpha]]\n',
+    )
+  })
+
+  it('a page moved out of a trashed Set’s bundle holding a conflict copy leaves the bundle whole while a twin of the Set stands live', async () => {
+    const bundle = await removed('Notes/Daily', 'set', 'delete')
+    await mkdir(abs(bundle, 'Daily 2'))
+    await mkdir(abs('Notes', 'Daily'))
+    await copyFile(abs(bundle, 'Daily', '_pageset.json'), abs('Notes', 'Daily', '_pageset.json'))
+    await applyEvents(root, [
+      ev('addDir', 'Notes', 'Daily'),
+      ev('add', 'Notes', 'Daily', '_pageset.json'),
+    ])
+    await settleNow(pusher, root)
+    await dragged(`${bundle}/Daily/Alpha.md`, 'Notes', 'Alpha.md')
+    expect(await pathExists(abs(bundle, 'Daily', 'Beta.md'))).toBe(true)
+    expect(await pathExists(abs(bundle, 'Daily 2'))).toBe(true)
+  })
+
   it('after an index rebuild, a page moved out while the app was closed returns live and current without its delete’s Link values, its bundle unlisted', async () => {
     await writeFile(
       abs('Notes', 'Daily', 'Alpha.md'),
@@ -1838,6 +1898,16 @@ describe('an item moved out of a store by hand', () => {
       await settleNow(pusher, root)
       expect((await trashed()).map((b) => b.bundlePath)).toEqual([bundle])
       expect((await alpha())['<Areas>']).toBeUndefined()
+    })
+
+    it('a Space bundle holding a conflict copy stays whole at open while a twin of the Space stands live', async () => {
+      const bundle = await deleted('space', ...work())
+      await mkdir(abs(...work()))
+      await copyFile(abs(bundle, 'Work', '_space.json'), abs(...work('_space.json')))
+      await mkdir(abs(bundle, 'Work 2'))
+      await refreshTree(root)
+      expect((await recognizeSpacesAtOpen(root)).finished).toBe(false)
+      expect(await pathExists(abs(bundle, 'Work', '_space.json'))).toBe(true)
     })
 
     it('a Context moved back by hand stays a plain arrival', async () => {
