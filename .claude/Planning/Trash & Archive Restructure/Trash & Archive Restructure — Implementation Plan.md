@@ -293,7 +293,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Compaction Checkpoint
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
-  - [ ] Task 5-1 · Following an id covers a Set
+  - [x] Task 5-1 · Following an id covers a Set
   - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [ ] Task 5-3 · The table owns its date column and footing
   - [ ] Task 5-4 · The arrival's one home
@@ -6862,7 +6862,7 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 
 - [ ] Write **`treeIndex.test.ts`, `describe('livePath')`, "follows a page or a Set by its id across a rename, else answers where it stood"**: over a `makeTree()` whose first Set is renamed, the Set's id answers its new path, a page's id answers its path through the page index, and an unknown id answers the path given.
 - [ ] Apply the AFTER.
-- [ ] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`.
+- [ ] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`; `HistoryReader`'s local `livePath` (`PageReaderWindow.tsx:140`) becomes `path`, as `ArchiveReader`'s is, so it doesn't shadow the import.
 
 **AFTER**
 
