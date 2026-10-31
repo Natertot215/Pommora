@@ -9,7 +9,9 @@ import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
 import { nexusPages } from '../Nexus/heldPages'
-import { departingCascade, returningCascade } from '../Nexus/settle'
+import { departingCascade, settledIndex } from '../Nexus/settle'
+import { returningCascade } from '../Nexus/arrival'
+import { pageIndexOf } from '../Nexus/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import type { MutateContext } from '../Nexus/mutate'
@@ -116,10 +118,14 @@ export async function restoreArchived(
   await writeOrder?.()
   await spendBundle(root, bundle)
   const title = finalTitle ?? finalName
-  const { cascade } = await returningCascade(root, tree, back, title, {
-    entity: record.entity,
-    abs: targetAbs,
-  })
+  const { cascade } = await returningCascade(
+    root,
+    pageIndexOf(tree),
+    await settledIndex(root),
+    back,
+    title,
+    { entity: record.entity, abs: targetAbs },
+  )
   await refileLanded(root, record, store.id)
   return ok({
     ...(cascade ? { cascade } : {}),

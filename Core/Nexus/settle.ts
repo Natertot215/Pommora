@@ -32,19 +32,10 @@ import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex, livePathOf } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
-import {
-  type CascadeReport,
-  joinCascades,
-  linksNotUpdated,
-  noteRelink,
-  renameCascade,
-} from './cascade'
-import { followRelinks, relinkNote } from './owed'
+import { type CascadeReport, linksNotUpdated, renameCascade, respell } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
-import { repairLanded } from '../Trash/restoreScrub'
-import type { RecordFile } from '../Bundles/record'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 
@@ -293,67 +284,6 @@ export async function relink(
     }),
   )
   return respell(root, [...moved, ...arriving], names, label, (f) => paths.get(f) ?? f)
-}
-
-/** Re-spells `names` under the relink entry of the first page it re-spells for, which every caller passes since only a page re-spells; every other relink entry follows the pages `names` moves and the files `paths` moves. */
-async function respell(
-  root: string,
-  ids: readonly string[],
-  names: Map<string, string>,
-  label: string,
-  paths?: (file: string) => string,
-): Promise<CascadeReport> {
-  await followRelinks(root, names, paths, ids[0])
-  return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
-}
-
-/** A restore's re-spell, two maps rather than one `relink`: the arrival's collisions read against the live world alone, since beside the returning pages a twin's bare link reads ambiguous and a returning `Notes/Alpha` would take `notes/alpha` from a live `X/Notes/Alpha`. `own` reads the returning pages' own keys against themselves and joins `names` only where the live world names nothing, so a title-only link that found a namesake meanwhile stays with it. */
-function returningNames(
-  live: PageIndex,
-  after: PageIndex,
-  back: readonly ConnPage[],
-): { names: Map<string, string>; own: Map<string, string> } {
-  const ids = back.map((p) => p.id)
-  const own = respellings(buildPageIndex(back), after, ids, [])
-  const names = respellings(live, after, [], ids)
-  for (const [k, v] of own) if (live.resolve(k).status === 'phantom') names.set(k, v)
-  return { names, own }
-}
-
-/** A restore's arrival under `title`: the index settled with `back` landed, the returning files' own links re-spelled at `landed.abs`, then the live world's collisions swept, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index can't settle. */
-export async function returningCascade(
-  root: string,
-  tree: NexusTree,
-  back: readonly ConnPage[],
-  title: string,
-  landed: {
-    entity: RecordFile['entity']
-    abs: string
-    rekey?: [from: string, to: string]
-  },
-): Promise<{
-  after: PageIndex | null
-  own: Map<string, string>
-  cascade?: CascadeReport
-}> {
-  const after = await settledIndex(root)
-  if (!after) return { after, own: new Map(), cascade: linksNotUpdated(title) }
-  const { names, own } = returningNames(pageIndexOf(tree), after, back)
-  const repaired = await repairLanded(root, landed, title, own)
-  if (!names.size) return { after, own, cascade: repaired }
-  return {
-    after,
-    own,
-    cascade: joinCascades(
-      repaired,
-      await respell(
-        root,
-        back.map((p) => p.id),
-        names,
-        title,
-      ),
-    ),
-  }
 }
 
 /** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there, and to a page's whole path where a live page holds the shorter name. */

@@ -30,10 +30,12 @@ import { noteOwn, recordWrite } from '../Files/writeEcho'
 import { archivedSetIds, goneContainers } from '../Nexus/configReach'
 import { refileLanded } from '../Archive/refile'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import { returningCascade } from '../Nexus/settle'
+import { settledIndex } from '../Nexus/settle'
+import { returningCascade } from '../Nexus/arrival'
+import { pageIndexOf } from '../Nexus/record'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from '../Nexus/heldPages'
 import { joinCascades } from '../Nexus/cascade'
-import { parkLinks } from './trashedCopies'
+import { parkLinks } from './gather'
 import { NO_DESTINATION, placeAmong, placeRecord } from '../Bundles/placement'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import {
@@ -213,7 +215,8 @@ export async function restoreTrashed(
     if (!converted.ok) return converted
   }
   await writeOrder?.()
-  const arrived = await returningCascade(root, tree, back, title, {
+  const after = await settledIndex(root)
+  const arrived = await returningCascade(root, pageIndexOf(tree), after, back, title, {
     entity: record.entity,
     abs: targetAbs,
     rekey:
@@ -221,7 +224,7 @@ export async function restoreTrashed(
         ? [record.registry.title, title]
         : undefined,
   })
-  const { after, own } = arrived
+  const { own } = arrived
   const settled = after && heldTreeOf(root)
   const untagged: string[] = []
   const unlinked = new Set<string>()

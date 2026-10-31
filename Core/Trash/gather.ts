@@ -1,16 +1,21 @@
-import { isMarkdownFile } from '../Paths/posix'
+import { isMarkdownFile, join } from '../Paths/posix'
 import type { ContextDef } from '../Contexts/contexts'
 import { type Holders, readHolders } from '../Index/keyHolders'
 import type { LinkStrip, StrippedLink } from '../Nexus/cascade'
 import type { Json } from '../Files/stableJson'
 import { scalarMembers } from '../Contract/validators'
 import { contextKey } from '../Contexts/contexts'
-import { contextDirRel } from '../Paths/nexusPaths'
+import { contextDirRel, TRASH_DIR } from '../Paths/nexusPaths'
 import { exactTitle } from '../Paths/caseFold'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { asStringArray } from '../Nexus/coerce'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { placeOf, type RecordFile } from '../Bundles/record'
+import { appendLinks, placeOf, type RecordFile } from '../Bundles/record'
+import { linkedPage } from '../Connections/linkValue'
+import { buildPageIndex, connPage } from '../Connections/pageIndex'
+import { storeOf } from '../Paths/bundleLayout'
+import { storedPageIds } from '../Nexus/heldPages'
+import { liveTreeOf } from '../Nexus/liveTree'
 
 /** The Link values a delete's strip will take, read from each holder as a Space's or Context's capture reads it, so they're written down before anything is stripped. */
 export async function gatherLinks(root: string, strip: LinkStrip): Promise<StrippedLink[]> {
@@ -25,6 +30,24 @@ export async function gatherLinks(root: string, strip: LinkStrip): Promise<Strip
         }))
       : [],
   )
+}
+
+/** A Link value dropped for naming a page the Trash holds joins that page's bundle, so its restore writes it back; a key two trashed pages answer names neither. */
+export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
+  if (!links.length) return
+  const rows = await storedPageIds(root, await liveTreeOf(root), TRASH_DIR)
+  const index = buildPageIndex(
+    [...rows.keys()].flatMap((rel) => {
+      const at = storeOf(rel)
+      return at?.bundle ? [connPage(join(root, at.bundle), at.origin)] : []
+    }),
+  )
+  const parked = new Map<string, StrippedLink[]>()
+  for (const link of links) {
+    const bundle = linkedPage(link.value, index)?.id
+    if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
+  }
+  for (const [bundle, held] of parked) await appendLinks(bundle, held)
 }
 
 /** Each holder the capture filed by id, as a record names it, a page with the key its line stood above. */
