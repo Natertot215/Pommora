@@ -11,7 +11,9 @@ import {
   confirmDelete,
   runBundled,
 } from './confirmations'
-import { resetUndo, undoValue } from '../../Session/undo'
+import { pushUndo, resetUndo, undoValue } from '../../Session/undo'
+import { pageIO, scheduleBodySave } from '../../Session/saveScheduler'
+import { storesChanged } from '../../Session/nexusSlice'
 import { useSession } from '../../Session/store'
 import { makeTree } from '../../Testing/testTree'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
@@ -20,7 +22,8 @@ import type { MutateRequest } from '../../Nexus/mutateRequest'
 import type { CountedChange } from '../../Properties/properties'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
-import { bundleRow as row } from '../../Testing/bundles'
+import type { BundleRow } from '../../Bundles/rows'
+import { bundleRow as row, stubBrowserEachTest } from '../../Testing/bundles'
 
 const asked: string[] = []
 
@@ -502,6 +505,226 @@ describe('a bundle op through the slice', () => {
     })
     clearNotification()
     await useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b1' })
+    expect(currentNotification()).toBeNull()
+  })
+})
+
+describe('a batch through runBundled', () => {
+  const channels = stubBrowserEachTest()
+  const alpha = row({ title: 'Alpha' })
+  const handed = (
+    rows: BundleRow[],
+    op: 'restore' | 'emptyBundle' = 'restore',
+  ): Parameters<typeof runBundled>[1] =>
+    rows.map((r) => ({ ...r, req: { op, bundlePath: r.bundlePath } }))
+  const both = (op?: 'restore' | 'emptyBundle'): Parameters<typeof runBundled>[1] =>
+    handed([alpha, row({ title: 'Beta' })], op)
+  const nexus = (id: string): void => {
+    const tree = makeTree()
+    useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
+  }
+  const armed = async (bundlePath: string): Promise<void> => {
+    channels.mutated.mockResolvedValueOnce({
+      ok: true,
+      value: { undo: { op: 'restore', bundlePath } },
+    })
+    const req = { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' } as const
+    await runBundled('Deleted', [{ title: 'Alpha', kind: 'page', req }])
+  }
+
+  beforeEach(() => {
+    useSession.setState({ mutate: useSession.getInitialState().mutate })
+    nexus('A')
+  })
+
+  it.each([
+    ['Restored', 'restore'],
+    ['Deleted', 'emptyBundle'],
+  ] as const)('a batch %s spends the bundle’s Undo, so the chord reaches the entry beneath', async (verb, op) => {
+    resetUndo()
+    const older = vi.fn(() => true)
+    pushUndo(older)
+    await armed(alpha.bundlePath)
+    channels.mutated.mockClear()
+    await runBundled(verb, handed([alpha], op))
+    expect(channels.mutated.mock.calls).toEqual([[{ op, bundlePath: alpha.bundlePath }]])
+    expect(undoValue(null)).toBe(true)
+    expect(older).toHaveBeenCalledTimes(1)
+  })
+
+  it('a refused restore leaves the bundle’s Undo on the chord', async () => {
+    resetUndo()
+    await armed(alpha.bundlePath)
+    channels.mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
+    await runBundled('Restored', handed([alpha]))
+    channels.mutated.mockClear()
+    expect(undoValue(null)).toBe(true)
+    await vi.waitFor(() =>
+      expect(channels.mutated).toHaveBeenCalledWith({
+        op: 'restore',
+        bundlePath: alpha.bundlePath,
+      }),
+    )
+  })
+
+  it('a batch restore spends each bundle’s Undo', async () => {
+    resetUndo()
+    const older = vi.fn(() => true)
+    pushUndo(older)
+    await armed(alpha.bundlePath)
+    channels.mutated.mockClear()
+    await runBundled('Restored', both())
+    expect(channels.mutated).toHaveBeenCalledTimes(2)
+    expect(undoValue(null)).toBe(true)
+    expect(older).toHaveBeenCalledTimes(1)
+  })
+
+  it('a batch restore lands every pending save before its first restore', async () => {
+    const order: string[] = []
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'page:updateBody': vi.fn(async (path: string) => {
+        order.push(`save ${path}`)
+        return { ok: true, value: { hash: 'h', stale: false } }
+      }),
+      mutate: vi.fn(async () => {
+        order.push('mutate')
+        return { ok: true, value: {} }
+      }),
+    })
+    scheduleBodySave('Notes/A.md', 'typed', pageIO)
+    await runBundled('Restored', both())
+    expect(order).toEqual(['save Notes/A.md', 'mutate', 'mutate'])
+  })
+
+  it('carries what a batch restore couldn’t re-spell into its notice', async () => {
+    const warning = 'Couldn’t update links in “Alpha” across 1 Item.'
+    channels.mutated.mockResolvedValue({
+      ok: true,
+      value: { cascade: { pages: [], hosts: [], warning } },
+    })
+    await runBundled('Restored', both())
+    expect(currentNotification()).toMatchObject({
+      message: `Restored 2 Pages. ${warning}`,
+      tone: 'error',
+    })
+  })
+
+  it('carries what a batch empty couldn’t strip into its notice', async () => {
+    const warning = 'Couldn’t update links in 1 Item.'
+    channels.mutated.mockResolvedValue({
+      ok: true,
+      value: { cascade: { pages: [], hosts: [], warning } },
+    })
+    await runBundled('Deleted', both('emptyBundle'))
+    expect(currentNotification()).toMatchObject({
+      message: `Deleted 2 Pages. ${warning}`,
+      tone: 'error',
+    })
+  })
+
+  it('counts the rows a batch empty couldn’t empty in its notice', async () => {
+    channels.mutated
+      .mockResolvedValueOnce({ ok: true, value: {} })
+      .mockResolvedValueOnce({ ok: false, error: { code: 'io', message: 'No.' } })
+    await runBundled('Deleted', both('emptyBundle'))
+    expect(currentNotification()).toMatchObject({
+      message: 'Deleted 1 Page. 1 Page couldn’t be deleted.',
+      tone: 'error',
+    })
+  })
+
+  it('names the title a restore stepped to', async () => {
+    channels.mutated.mockResolvedValue({ ok: true, value: { landedAs: 'Alpha (2)' } })
+    await runBundled('Restored', handed([alpha]))
+    expect(currentNotification()).toMatchObject({
+      message: 'Restored “Alpha” as “Alpha (2)”',
+      tone: 'normal',
+    })
+  })
+
+  it.each([
+    ['Restored', 'restore', 'Restored “Alpha”'],
+    ['Deleted', 'emptyBundle', 'Deleted “Alpha”'],
+  ] as const)('a single row %s posts its title', async (verb, op, message) => {
+    clearNotification()
+    await runBundled(verb, handed([alpha], op))
+    expect(currentNotification()).toMatchObject({ message, tone: 'normal' })
+    expect(currentNotification()?.action).toBeUndefined()
+  })
+
+  const OWED = {
+    ok: true,
+    value: { cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true } },
+  }
+  const triesAgain = async (): Promise<void> => {
+    expect(currentNotification()).toMatchObject({
+      message: expect.stringContaining('Couldn’t update 1 Item.'),
+      tone: 'error',
+      action: { label: 'Try Again' },
+    })
+    channels.mutated.mockClear()
+    await currentNotification()?.action?.run()
+    await vi.waitFor(() => expect(channels.mutated).toHaveBeenCalledWith({ op: 'finishOwed' }))
+  }
+
+  it('a restore that stepped aside and owes work keeps Try Again on its notice', async () => {
+    channels.mutated.mockResolvedValue({
+      ok: true,
+      value: { ...OWED.value, landedAs: 'Alpha (2)' },
+    })
+    await runBundled('Restored', handed([alpha]))
+    await triesAgain()
+  })
+
+  it('a batch restore with one owed reply offers Try Again on its notice', async () => {
+    channels.mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
+    await runBundled('Restored', both())
+    await triesAgain()
+  })
+
+  it('a batch empty with one owed reply offers Try Again', async () => {
+    channels.mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
+    await runBundled('Deleted', both('emptyBundle'))
+    await triesAgain()
+  })
+
+  it('a batch restore with one renamed names it in the segment', async () => {
+    channels.mutated.mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
+    await runBundled('Restored', both())
+    expect(currentNotification()).toMatchObject({
+      message: 'Restored 2 Pages',
+      segment: '“Alpha” as “Alpha (2)”',
+    })
+  })
+
+  it('a batch restore with several renamed counts them', async () => {
+    channels.mutated
+      .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Alpha (2)' } })
+      .mockResolvedValueOnce({ ok: true, value: { landedAs: 'Beta (2)' } })
+    await runBundled('Restored', both())
+    expect(currentNotification()).toMatchObject({ segment: '2 Renamed' })
+  })
+
+  it('a Nexus switch during a batch stops it, posting no notice and telling the stores once, and one during its last row posts nothing', async () => {
+    clearNotification()
+    const heard = vi.fn()
+    const unsubscribe = storesChanged.subscribe(heard)
+    channels.mutated.mockImplementationOnce(async () => {
+      nexus('C')
+      return { ok: true, value: {} }
+    })
+    await runBundled('Restored', both())
+    unsubscribe()
+    expect(channels.mutated).toHaveBeenCalledTimes(1)
+    expect(currentNotification()).toBeNull()
+    expect(heard).toHaveBeenCalledTimes(1)
+    channels.mutated.mockClear()
+    channels.mutated.mockImplementation(async () => {
+      if (channels.mutated.mock.calls.length === 2) nexus('D')
+      return { ok: true, value: {} }
+    })
+    await runBundled('Restored', both())
+    expect(channels.mutated).toHaveBeenCalledTimes(2)
     expect(currentNotification()).toBeNull()
   })
 })

@@ -11,8 +11,12 @@ import { text } from '@pommora/uix/Theme'
 import { size } from '@pommora/uix/Theme/theme-vars.css'
 import { DEFAULT_ENTITY_ICONS } from '../Assets/entityIconPolicy'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
-import { boxOf, bundleRow, rowOf } from '../Testing/bundles'
-import { BundleRows } from './BundleTable'
+import { boxOf, bundleRow, rowOf, stubBrowserEachTest } from '../Testing/bundles'
+import { makeTree } from '../Testing/testTree'
+import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
+import type { Personalization } from '../Settings/personalization'
+import { BundleRows, BundleTable, DateHeading, useDateColumn } from './BundleTable'
 import type { TreeRow } from './browser'
 import type { BundleRow } from './rows'
 
@@ -231,5 +235,60 @@ describe('BundleRows', () => {
     expect(rowEls().map((r) => r.dataset.revealHost)).toEqual(['on', 'on', 'on'])
     await render(nested(), ['.trash/Hidden.deleted'])
     expect(rowEls().map((r) => r.dataset.revealHost)).toEqual(['', '', ''])
+  })
+})
+
+describe('the date column', () => {
+  let host: HTMLDivElement
+  let root: Root
+  const channels = stubBrowserEachTest(() => ({
+    'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
+  }))
+  const DateTable = (): React.JSX.Element => {
+    const date = useDateColumn('trash')
+    return (
+      <BundleTable date={date}>
+        <DateHeading date={date} className="date-head" label="Time Deleted" />
+      </BundleTable>
+    )
+  }
+  const pickFromDateMenu = async (action: string): Promise<unknown> => {
+    channels.picked = action
+    const head = host.querySelector('.date-head') as HTMLElement
+    await act(async () => {
+      head.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    return personalizationOf(useSession.getState()).trashColumnStyle
+  }
+  const personalize = (personalization: Personalization): Promise<void> =>
+    act(async () =>
+      useSession.setState(({ tree }) => ({
+        tree: tree && { ...tree, config: { ...tree.config, personalization } },
+      })),
+    )
+
+  beforeEach(async () => {
+    useSession.setState({ tree: makeTree() })
+    host = document.body.appendChild(document.createElement('div'))
+    root = createRoot(host)
+    await act(async () => root.render(<DateTable />))
+  })
+  afterEach(async () => {
+    await act(async () => root.unmount())
+    host.remove()
+    useSession.setState({ tree: null })
+  })
+
+  it("goes back to following the Nexus when its date menu picks the Nexus's own form", async () => {
+    await personalize({ dateFormat: 'relative', trashColumnStyle: { date_format: 'full' } })
+    expect(await pickFromDateMenu('style:date_format:relative')).toBeUndefined()
+  })
+
+  it('stores a hidden time, and nothing once the time is back on the Nexus clock', async () => {
+    await personalize({ timeFormat: 'twentyFourHour' })
+    expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
+    expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()
+    expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
+    expect(await pickFromDateMenu('style:time_format:shown')).toBeUndefined()
   })
 })

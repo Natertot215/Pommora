@@ -6,7 +6,6 @@ import { filterRows, outermostOf, treeRows, useBundleBrowser } from './browser'
 import { widestDate } from './BundleTable'
 import type { BundleRow } from './rows'
 import { bundleRow as row, stubBrowserEachTest } from '../Testing/bundles'
-import { stubDialer } from '../vitest.setup'
 import { storesChanged } from '../Session/nexusSlice'
 import { currentNotification } from '../Interface/Notifications/notifications'
 import type { MutateRequest } from '../Nexus/mutateRequest'
@@ -329,7 +328,7 @@ describe('an Archive restore’s Undo', () => {
   let host: HTMLDivElement
   let root: Root
   let browser: ReturnType<typeof useBundleBrowser>
-  let mutated: ReturnType<typeof vi.fn>
+  const channels = stubBrowserEachTest()
 
   const Harness = (): null => {
     browser = useBundleBrowser({ kind: 'archive', id: 'c1' }, { query: '', shown: true })
@@ -337,18 +336,15 @@ describe('an Archive restore’s Undo', () => {
   }
 
   beforeEach(async () => {
-    mutated = vi.fn(async (req: MutateRequest) => {
+    channels.listed = [alpha, beta]
+    channels.picked = 'restore'
+    channels.mutated.mockImplementation(async (req: MutateRequest) => {
       const undo =
         req.op === 'restore' &&
         (req.bundlePath === alpha.bundlePath
           ? alphaUndo
           : req.bundlePath === beta.bundlePath && betaUndo)
       return { ok: true, value: undo ? { undo } : {} }
-    })
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      menu: vi.fn(async () => ({ ok: true, value: 'restore' })),
-      mutate: mutated,
-      'bundles:list': vi.fn(async () => ({ ok: true, value: [alpha, beta] })),
     })
     useSession.setState({ tree: makeTree() })
     host = document.createElement('div')
@@ -374,9 +370,9 @@ describe('an Archive restore’s Undo', () => {
       path: 'Notes/Alpha 2.md',
     }
     useSession.setState({ tree: renamed })
-    mutated.mockClear()
+    channels.mutated.mockClear()
     await act(async () => currentNotification()?.action?.run())
-    expect(mutated.mock.calls.map(([req]) => req)).toEqual([
+    expect(channels.mutated.mock.calls.map(([req]) => req)).toEqual([
       {
         ...alphaUndo,
         path: 'Notes/Alpha 2.md',
@@ -386,8 +382,8 @@ describe('an Archive restore’s Undo', () => {
     ])
     await act(async () => browser.toggle(alpha.bundlePath))
     await act(async () => browser.openMenu(beta))
-    mutated.mockClear()
+    channels.mutated.mockClear()
     await act(async () => currentNotification()?.action?.run())
-    expect(mutated.mock.calls.map(([req]) => req)).toEqual([betaUndo])
+    expect(channels.mutated.mock.calls.map(([req]) => req)).toEqual([betaUndo])
   })
 })
