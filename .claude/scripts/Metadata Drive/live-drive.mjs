@@ -1242,7 +1242,7 @@ async function group7(cdp) {
   await checkWrites(G, cdp, shades)
 }
 
-// ── Group 8 — The restore re-spell (Phase 8) ───────────────────────────────
+// ── Group 8 — A restore moves the page back as the cascades left it (Phase 8) ───
 
 async function group8(cdp) {
   const G = 8
@@ -1297,38 +1297,38 @@ async function group8(cdp) {
   await sleep(1500)
 
   const wrong = []
-  for (const [i, rel] of spelled.entries()) if (!(await wrote(rel, `Value One: s${i + 1}`, 3000))) wrong.push(`${SPELLINGS[i]} → ${show(blockOf(rel))}`)
-  pin(G, 'G-1', 'a restored page takes back each of the eight spellings G-1 names under the current key', wrong.length === 0, wrong.join('\n      '))
+  for (const [i, rel] of spelled.entries()) if (!(await wrote(rel, `${SPELLINGS[i]}: s${i + 1}`, 3000))) wrong.push(`${SPELLINGS[i]} → ${show(blockOf(rel))}`)
+  pin(G, 'D-4', 'a restored page keeps each of the eight spellings G-1 names as written', wrong.length === 0, wrong.join('\n      '))
   const fm = (t) => fmOf(P[t])
-  pin(G, 'G-1', 'a Key Format change made while the page sat in the Trash reaches it at restore',
+  pin(G, 'D-4', 'a Key Format change made while the page sat in the Trash reaches it at restore',
     await settles(async () => fm('Key Format').priority === 'hi' && !('Priority' in fm('Key Format'))), show(fm('Key Format')))
-  pin(G, 'G-1', 'a Value Format change made while the page sat in the Trash reaches it at restore',
+  pin(G, 'D-4', 'a Value Format change made while the page sat in the Trash reaches it at restore',
     await settles(async () => same(fm('Value Format').Severity, ['HI'])), show(fm('Value Format')))
-  pin(G, 'G-1', 'a held exact key keeps its value, and a variant beside it stays foreign',
+  pin(G, 'D-4', 'a held exact key keeps its value, and a variant beside it stays foreign',
     await settles(async () => fm('Both').Urgency === 'hi' && fm('Both').urgency === 'lo'), show(fm('Both')))
-  pin(G, 'G-1 G-2', 'a spelling two current keys share returns as foreign data', blockOf(P.Shared) === 'arrive-date: x', show(blockOf(P.Shared)))
-  pin(G, 'G-1 G-2', 'a key left from before a label rename made in the Trash returns as foreign data', blockOf(P.Renamed) === 'Rank: first', show(blockOf(P.Renamed)))
-  pin(G, 'G-1', 'a Select word in another format takes back its option', await settles(async () => same(fm('Grade').Grade, ['Top Tier'])), show(fm('Grade')))
-  pin(G, 'G-1', 'Multi-Select words in other casings and formats take back their options',
-    await settles(async () => same(fm('Marks').Marks, ['Top Tier', 'Low Tier'])), show(fm('Marks')))
-  pin(G, 'G-1', 'a Space title in another casing takes back the current title', await settles(async () => same(fm('Areas 1')['<Areas>'], ['Area One'])), show(fm('Areas 1')))
-  pin(G, 'G-1', 'a Context key in another casing takes back the current key',
-    await settles(async () => same(fm('Areas 2')['<Areas>'], ['Area One']) && !('<areas>' in fm('Areas 2'))), show(fm('Areas 2')))
-  pin(G, 'G-1 D-1', "a restored page keeps its ID beside a property whose format would write it",
+  pin(G, 'D-4 G-2', 'a spelling two current keys share returns as foreign data', blockOf(P.Shared) === 'arrive-date: x', show(blockOf(P.Shared)))
+  pin(G, 'D-4 G-2', 'a label rename made in the Trash reaches its key at restore', await settles(async () => blockOf(P.Renamed) === 'Standing: first'), show(blockOf(P.Renamed)))
+  pin(G, 'D-4', 'a Select word in another format returns as written', fm('Grade').Grade === 'top-tier', show(fm('Grade')))
+  pin(G, 'D-4', 'Multi-Select words in other casings and formats return as written',
+    same(fm('Marks').Marks, ['TOP TIER', 'low_tier']), show(fm('Marks')))
+  pin(G, 'D-4', 'a Space title in another casing returns as written', same(fm('Areas 1')['<Areas>'], ['area one']), show(fm('Areas 1')))
+  pin(G, 'D-4', 'a Context key in another casing returns as written',
+    same(fm('Areas 2')['<areas>'], ['Area One']) && !('<Areas>' in fm('Areas 2')), show(fm('Areas 2')))
+  pin(G, 'D-4 D-1', "a restored page keeps its ID beside a property whose format would write it",
     parse(frontOf(P.ID)).ID === originalId && !('I-D' in fm('ID')), show(frontOf(P.ID)))
-  pin(G, 'G-1 A-3', 'a Link key in another casing takes back the current key with its connection as written',
-    fm('Link')['Source Link'] === '[[Page A]]' && !('source link' in fm('Link')), show(blockOf(P.Link)))
-  pin(G, 'G-1', 'a foreign key a format could have written takes back its Date property',
-    String(fm('Deadline')['Deadline Date'] ?? '').startsWith('2026-01-05') && !('deadline_date' in fm('Deadline')), show(fm('Deadline')))
-  pin(G, 'G-1 G-2 RULING', 'a foreign key re-spelled onto a Date keeps a value the Date reads as text',
-    fm('Deadline Unread')['Deadline Date'] === 'soon' && !('deadline_date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
+  pin(G, 'D-4 A-3', 'a Link key in another casing returns as written with its connection',
+    fm('Link')['source link'] === '[[Page A]]' && !('Source Link' in fm('Link')), show(blockOf(P.Link)))
+  pin(G, 'D-4', 'a foreign key a format could have written returns as written',
+    String(fm('Deadline').deadline_date ?? '').startsWith('2026-01-05') && !('Deadline Date' in fm('Deadline')), show(fm('Deadline')))
+  pin(G, 'D-4 G-2 RULING', 'a foreign key a Date could have written keeps its text as written',
+    fm('Deadline Unread').deadline_date === 'soon' && !('Deadline Date' in fm('Deadline Unread')), show(fm('Deadline Unread')))
   pin(G, 'G-2 RULING', 'a restored Multi-Select keeps a word no current option names', await settles(async () => same(fm('Dropped').Marks, ['Top Tier', 'zzz'])), show(fm('Dropped')))
-  pin(G, 'G-1', 'a Context and a Space retitled while the page sat in the Trash reach it at restore',
+  pin(G, 'D-4', 'a Context and a Space retitled while the page sat in the Trash reach it at restore',
     await settles(async () => same(fm('Retitled')['<M8 Kind>'], ['M8 Spot']) && !('<M8-Kind>' in fm('Retitled'))), show(fm('Retitled')))
   const returning = sidecar('Topics', 'M8 Returning')
-  pin(G, 'G-1', "a restored Space's sidecar takes back the current keys, words, and titles",
-    same(returning['<Projects>'], ['Project One']) && same(returning.Grade, ['Top Tier']) && !('<projects>' in returning) && !('grade' in returning), show(returning))
-  pin(G, 'G-1 D-1', "a restored Space keeps heading_icon_hidden beside a property whose format would write it",
+  pin(G, 'D-4', "a restored Space's sidecar keeps its keys, words, and titles as written",
+    same(returning['<projects>'], ['project one']) && same(returning.grade, ['top-tier']) && !('<Projects>' in returning) && !('Grade' in returning), show(returning))
+  pin(G, 'D-4 D-1', "a restored Space keeps heading_icon_hidden beside a property whose format would write it",
     read(sidecarAt('Topics', 'M8 Hidden')) === hiddenBefore, show(read(sidecarAt('Topics', 'M8 Hidden'))))
 }
 
@@ -1497,7 +1497,7 @@ async function group9(cdp) {
   // The Trash: a page restored through the Trash browser returns in the current spelling.
   await openSettings(cdp, 'Trash')
   const { rows: menu } = await chooseNative(cdp, trashRowEl('M9 Trashed'), 'Restore')
-  pin(G, 'G-1', "a page restored from the Trash browser returns under the Label Format set while it was away",
+  pin(G, 'D-4', "a page restored from the Trash browser returns under the Label Format set while it was away",
     menu.includes('Restore') && (await wrote(trashed, 'm9 words: back')), show([menu, blockOf(trashed)]))
   await closeSettings(cdp)
 

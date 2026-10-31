@@ -1,6 +1,6 @@
 ## Metadata Drive — Matrix
 
-The drive's cases, derived from *MetadataV3 — Decisions & Intention* and written to the end-state contract of the *MetadataV3 — Implementation Plan*'s AFTER blocks. Groups 1 to 8 each land with the plan phase of their number and drive the host channels the interface calls, except undo, which lives only in the interface and drives by gesture; group 9 drives each surface by real gesture. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. A decision column marked **RULING** is written to the decision and waits on the orchestrator (*§Rulings*).
+The drive's cases, derived from *MetadataV3 — Decisions & Intention* and written to the end-state contract of the *MetadataV3 — Implementation Plan*'s AFTER blocks. Groups 1 to 8 each land with the plan phase of their number and drive the host channels the interface calls, except undo, which lives only in the interface and drives by gesture; group 9 drives each surface by real gesture. Every check prints as `[g<group> <decisions>] <name>`, so a run reads against the tables below line for line. A decision column marked **RULING** is written to the decision and waits on the orchestrator (*§Rulings*). `D-4` names the *Trash & Archive Restructure*'s decision that a trashed page follows a live page's rules, which every cascade now carries into the Trash.
 
 #### Dimensions
 
@@ -136,22 +136,22 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Adoption under lowercase | page | settle, picks | `green` adopts; `PURPLE` and `Red` stay foreign through a pick | E-1, E-3 |
 | A Value Format change owes adoption | page | `setValueFormat` lowercase | `green`, refused under UPPERCASE, adopts | E-1 |
 
-#### Group 8 — The Restore Re-Spell
+#### Group 8 — A Restore Moves the Page Back as the Cascades Left It
 
 | Case | Holders | Operation | Expected | Decisions |
 | --- | --- | --- | --- | --- |
-| The eight spellings | eight pages | trash, restore | each returns under `Value One` | G-1 |
-| A Key Format and a Value Format change in the Trash | pages | trash, change, restore | `priority: hi`; `Severity: [HI]` | G-1 |
-| Exact key beside a variant | page | trash, restore | `Urgency` keeps its value, `urgency` stays foreign | G-1 **RULING** |
-| A shared spelling; a label renamed in the Trash | pages | trash, restore | each returns as written | G-1, G-2 |
-| Option words | pages | trash, restore | `top-tier` and `TOP TIER`, `low_tier` take back their options | G-1 |
-| Context keys and Space titles | pages | trash, restore | `[area one]` and `<areas>` take back `Area One` and `<Areas>` | G-1 |
-| Reserved keys | a page, a Space | trash, restore | the page's `ID` and the Space's `heading_icon_hidden` stay | G-1, D-1 |
-| A Link key | page | trash, restore | `source link` returns as `Source Link`, its connection as written | G-1, A-3 |
-| A foreign key a format could have written | pages | trash, restore | `deadline_date` returns as `Deadline Date`; a value the Date can't read keeps its text | G-1, G-2 **RULING** |
-| A Space sidecar | M8 Returning | trash, restore | `<projects>`, its title, and `grade` return current | G-1 |
+| The eight spellings | eight pages | trash, restore | each returns as written | D-4 |
+| A Key Format and a Value Format change in the Trash | pages | trash, change, restore | `priority: hi`; `Severity: [HI]` | D-4 |
+| Exact key beside a variant | page | trash, restore | `Urgency` keeps its value, `urgency` stays foreign | D-4 **RULING** |
+| A shared spelling; a label renamed in the Trash | pages | trash, restore | `arrive-date` returns as written; `Rank` returns as `Standing` | D-4, G-2 |
+| Option words | pages | trash, restore | `top-tier` and `TOP TIER`, `low_tier` return as written | D-4 |
+| Context keys and Space titles | pages | trash, restore | `[area one]` and `<areas>` return as written | D-4 |
+| Reserved keys | a page, a Space | trash, restore | the page's `ID` and the Space's `heading_icon_hidden` stay | D-4, D-1 |
+| A Link key | page | trash, restore | `source link` returns as written, its connection with it | D-4, A-3 |
+| A foreign key a format could have written | pages | trash, restore | `deadline_date` returns as written, `soon` with it | D-4, G-2 **RULING** |
+| A Space sidecar | M8 Returning | trash, restore | `<projects>`, its title, and `grade` return as written | D-4 |
 | A word no option names | page | trash, restore | `[Top Tier, zzz]` returns as written | G-2 **RULING** |
-| A Context and a Space retitled in the Trash | page | trash, retitle `M8-Kind` and `m8-spot`, restore | `<M8-Kind>: [m8-spot]` returns as `<M8 Kind>: [M8 Spot]` | G-1 |
+| A Context and a Space retitled in the Trash | page | trash, retitle `M8-Kind` and `m8-spot`, restore | `<M8-Kind>: [m8-spot]` returns as `<M8 Kind>: [M8 Spot]` | D-4 |
 
 #### Group 9 — The Gesture Pass
 
@@ -165,7 +165,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 | Its title | the table's column header, a page's Properties panel | a Label Format change to lowercase | both read `M9 Words` | C-1 |
 | Clear at zero | the option editor's row menu | Clear an option nothing holds | the row is chosen and asks nothing | F-4 |
 | Delete at zero | the Property Menu | Delete a property nothing holds, cancel | asks without a count; the cancel keeps the property | F-4 |
-| The Trash | the Trash browser | right-click, Restore | the page returns under the Key Format set while it was away | G-1 |
+| The Trash | the Trash browser | right-click, Restore | the page returns under the Key Format set while it was away | D-4 |
 | Row order on a Space | the Property Panel | drag a row, then rename a property | `$order` lists ids in the dragged order; the rename leaves the order and the panel | F-5 |
 
 #### Rulings
@@ -173,7 +173,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **Undo puts back what the file held** (group 3's undo cases, `Undo`): Nathan's ruling, recorded in the plan's *§Deviations*; each case cites it beside the decisions its gesture exercises.
 - **A Context pick drops a foreign Space title** (group 3, `area one`): E-3 carries foreign words for a Multi-Select alone, and A-2 makes `area one` foreign data, so the pick writes the picked Spaces only; *§Open Items* lists it to read once.
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
-- **A re-spelled Date keeps its text** (group 8, `deadline_date: soon`): G-1 re-spells the key, and a trashed page's Date keeps any text it holds, as a live page's does, since every cascade reaches the Trash; *§Open Items* lists it to read once.
+- **A foreign Date key keeps its text** (group 8, `deadline_date: soon`): the restore leaves the key as written, so its text stays foreign data beside the Date, as a live page's would; *§Open Items* lists it to read once.
 - **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the page's `low_tier` foreign; under `Match Title` adoption registers it as its own option when the property is created.
 - **A restore keeps a word no option names** (group 8, `zzz`): Nathan's ruling B-7 in *Properties Restructure — Decisions & Intention*; the restore moves the page back as it stands, so nothing drops the word.
 - **A restored Collection's stash** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.

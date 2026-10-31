@@ -1,7 +1,7 @@
 ## Properties
 
 
-Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A Space holds values for any registry property as bare keys on its sidecar, reconciled on write and on restore as a page's are. A definition, including its options, is a shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property.
+Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A Space holds values for any registry property as bare keys on its sidecar, reconciled on write as a page's are. A definition, including its options, is a shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property.
 
 ### The Type Catalog
 

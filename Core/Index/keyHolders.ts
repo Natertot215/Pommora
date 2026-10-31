@@ -102,7 +102,13 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
   const stored = await storedNodes(root, tree)
   const known = read ? await nexusPages(root, tree, stored) : null
-  const reached = await pagesInReach(root, tree, stored, named, q.reach)
+  const reached = await pagesInReach(
+    root,
+    tree,
+    stored,
+    q.every ? (named?.filter((rel) => !storeOf(rel)) ?? null) : named,
+    q.reach,
+  )
   const pages = q.every
     ? await unlessVouched(
         root,

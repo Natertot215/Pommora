@@ -913,6 +913,19 @@ describe('a delete from the Archive', () => {
     expect(daily?.pages.map((p) => p.title)).toEqual(['Alpha', 'Gamma'])
   })
 
+  it('a delete from the Archive that owed Try Again, then undone, leaves no note', async () => {
+    const archived = await archive('Notes/Daily/Beta.md')
+    const failing = failLandings((file) => file === at('Notes', 'Linker.md'))
+    const trashed = await trash(archived)
+    expect(Object.keys(await readNotes(root))).toHaveLength(1)
+    failing.mockRestore()
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(true)
+    const finished = await mutate({ op: 'finishOwed' })
+    expect(finished.ok && finished.value.cascade?.warning).toBeUndefined()
+    expect(await readNotes(root)).toEqual({})
+    expect(await related()).toBe('[[Beta]]')
+  })
+
   it('an inner item’s Undo returns it inside its Set’s bundle, its Link values back', async () => {
     const archived = await archive('Notes/Daily', 'set')
     const inner = join(archived, 'Daily', 'Beta.md')

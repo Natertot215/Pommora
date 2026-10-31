@@ -25,7 +25,7 @@ import type { TilesChanged } from '../Tiles/tiles'
 import { linkEntry } from '../Connections/linkValue'
 import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
-import { addressable, nexusPages, storedNodes, twinned } from './heldPages'
+import { addressable, nexusPages, type StoredNodes, storedNodes, twinned } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
 import { rekeyContext } from '../Contexts/contextCascade'
 import type { ConfigReach } from './configReach'
@@ -192,6 +192,7 @@ export async function renameCascade(
   root: string,
   change: CascadeChange,
   settled = false,
+  storedOf = (tree: NexusTree): Promise<StoredNodes> => storedNodes(root, tree),
 ): Promise<CascadeReport & { missed: Pick<ConfigReach, 'skipped' | 'refused'> }> {
   const headingKey = 'names' in change ? undefined : normalizeTitle(change.heading)
   const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
@@ -222,7 +223,7 @@ export async function renameCascade(
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
-    const stored = await storedNodes(root, tree)
+    const stored = await storedOf(tree)
     const files = [
       ...[...new Set(rels)].map((rel) => join(root, rel)),
       ...spaceFiles(root, tree, stored, (s) => !!s.values && spaceMoved(s.values, '') !== null),

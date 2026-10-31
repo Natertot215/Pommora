@@ -18,8 +18,8 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { closeSession, openSession } from '../Nexus/session'
 import { settledMutate } from '../Testing/settledMutate'
 import type { MutateRequest } from '../Nexus/mutateRequest'
-import { listBundles } from '../Bundles/bundle'
-import { writeRecord } from '../Bundles/record'
+import { listBundles, mintBundle } from '../Bundles/bundle'
+import * as record from '../Bundles/record'
 
 vi.mock('../Nexus/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Nexus/governedSweep')>()
@@ -310,7 +310,7 @@ describe('findHolders', () => {
     const rootLeft = abs('.trash', '2026-10-20T12-00-00-000Z__Note.md.deleted')
     await mkdir(rootLeft, { recursive: true })
     await writeFile(join(rootLeft, 'Note.md'), pageText('N', 'Stage: Draft\n'))
-    await writeRecord(rootLeft, { entity: 'page', parent: { kind: 'root' } })
+    await record.writeRecord(rootLeft, { entity: 'page', parent: { kind: 'root' } })
     await openSession(root)
     try {
       const reqs: MutateRequest[] = [
@@ -333,6 +333,26 @@ describe('findHolders', () => {
       reach: { collection: abs('Journal') },
     })
     expect(trashOnly(journal.files)).toEqual([at('HolderA.md')])
+  })
+
+  it('a clash check over trashed holders reads no bundle record', async () => {
+    const bundles: string[] = []
+    for (const n of ['T1', 'T2', 'T3']) {
+      const bundle = await mintBundle(root, { kind: 'trash' }, abs('Notes', `${n}.md`), {
+        entity: 'page',
+        parent: { kind: 'container', id: 'c1' },
+      })
+      await writeFile(join(bundle, `${n}.md`), pageText(n, 'Stage: Draft\n'))
+      bundles.push(bundle)
+    }
+    await seedContentIndex(root)
+    const reads = vi.spyOn(record, 'readRecord')
+    try {
+      await findHolders(root, { keys: ['Stage'], reach: 'governed', every: true })
+      expect(reads.mock.calls.filter(([at]) => bundles.includes(at))).toEqual([])
+    } finally {
+      reads.mockRestore()
+    }
   })
 
   it('collectionFolders lists every collection folder from the live tree', async () => {
