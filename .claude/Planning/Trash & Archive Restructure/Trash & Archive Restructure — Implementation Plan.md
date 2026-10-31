@@ -307,7 +307,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-3 · The suites follow their modules
   - [x] Task 6-4 · The delete records' and the listing's cases
   - [x] Task 6-5 · The empty's cases
-  - [ ] Task 6-6 · `discardFile`'s cases and the Archive's delete case
+  - [x] Task 6-6 · `discardFile`'s cases and the Archive's delete case
   - [ ] Task 6-7 · The browser harness and the skins' duplicates
   - [ ] Task 6-8 · The Trash skin's shared cases to their owners
   - [ ] Task 6-9 · The docs and comments no earlier phase takes

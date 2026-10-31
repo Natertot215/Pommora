@@ -11,7 +11,6 @@ import {
 } from '../Testing/hostFs'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
-import * as record from '../Bundles/record'
 import * as settings from '../Settings/settings'
 import { fail } from '../Contract/result'
 import { pathExists } from '../Files/atomicWrite'
@@ -223,25 +222,6 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
         .excluded_folders,
     ).toEqual(['Notes/Daily/Private', 'Notes/Daily/Raw'])
-  })
-
-  it('a Set delete whose record write throws leaves no bundle and puts the lifted folder back', async () => {
-    await mkdir(at('Notes', 'Daily', 'Private'), { recursive: true })
-    await writeFile(at('Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
-    await writeFile(
-      at('.nexus', 'settings.json'),
-      JSON.stringify({ excluded_folders: ['Notes/Daily/Private'] }),
-    )
-    await refreshTree(root)
-    vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
-    expect((await mutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(false)
-    expect(await text('Notes', 'Daily', 'Private', 'Secret.md')).toBe('secret\n')
-    expect(await pathExists(at('Notes', 'Private'))).toBe(false)
-    expect(
-      (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
-        .excluded_folders,
-    ).toEqual(['Notes/Daily/Private'])
-    expect(await pathExists(at('.trash', 'Notes'))).toBe(false)
   })
 
   it('an Undo filing back under a name other than its bundle’s takes a fresh stamp in that chain', async () => {

@@ -15,6 +15,8 @@ import { closeSession, openSession } from '../Nexus/session'
 import { readNotes } from '../Nexus/owed'
 import { bundleOf } from '../Testing/settledMutate'
 import { fail } from '../Contract/result'
+import * as record from '../Bundles/record'
+import { refreshTree } from '../Nexus/liveTree'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -141,6 +143,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  vi.restoreAllMocks()
   closeSession()
   await rm(root, { recursive: true, force: true })
 })
@@ -285,6 +288,29 @@ describe('a delete whose move fails deletes nothing', () => {
     expect(await anyRecord()).toBeUndefined()
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('a Set delete whose record write throws leaves no bundle and puts the lifted folder back', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Daily', 'Private', 'Secret.md'), 'secret\n')
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Notes/Daily/Private'] }),
+    )
+    await refreshTree(root)
+    vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
+    expect((await handleMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(
+      false,
+    )
+    expect(await readFile(join(root, 'Notes', 'Daily', 'Private', 'Secret.md'), 'utf8')).toBe(
+      'secret\n',
+    )
+    expect(await pathExists(join(root, 'Notes', 'Private'))).toBe(false)
+    expect(
+      (await readJsonAt<{ excluded_folders: string[] }>(join(root, '.nexus', 'settings.json')))
+        .excluded_folders,
+    ).toEqual(['Notes/Daily/Private'])
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
   })
 })
 
