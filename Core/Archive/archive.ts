@@ -59,7 +59,10 @@ export async function archiveOp(
           titleFromPath(origin),
         )
       : undefined
-  return ok({ ...(cascade ? { cascade } : {}), bundled: { bundlePath: filed.address } })
+  return ok({
+    ...(cascade ? { cascade } : {}),
+    undo: { op: 'restore', bundlePath: filed.address },
+  })
 }
 
 /** Where an archive files the item: back at the address `back` carries, as `archiveFiling` re-roots it, under the name and with the record it carries; else its own Collection's Archive from where it stands, recorded afresh. */

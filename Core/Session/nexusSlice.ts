@@ -5,7 +5,6 @@ import {
   warnCascade,
   notifyUnreadable,
   reportRefusal,
-  unrestoredLine,
 } from '../Interface/Notifications/notifications'
 import {
   changesSettled,
@@ -65,7 +64,7 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; `retry` is a value write's Try Again. */
+  /** `quiet` posts nothing — no refusal, report, warning, or store change — for a batch that reports once for all its rows; a bundle op's caller posts its own notice from the reply (`runBundled`), so for one the slice posts only a refusal; `retry` is a value write's Try Again. */
   mutate: (
     req: MutateRequest,
     opts?: { quiet?: true; retry?: () => void },
@@ -265,9 +264,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         return null
       }
       if (!quiet) {
-        if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
         const { cascade, missed } = res.value
-        if (req.op !== 'delete' && req.op !== 'deleteProperty' && cascade)
+        const bundleOp =
+          req.op === 'delete' ||
+          req.op === 'deleteProperty' ||
+          req.op === 'archive' ||
+          req.op === 'restore' ||
+          req.op === 'emptyBundle'
+        if (cascade && !bundleOp)
           warnCascade(
             cascade,
             cascade.owed

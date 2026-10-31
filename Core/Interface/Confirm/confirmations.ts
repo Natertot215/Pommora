@@ -1,10 +1,18 @@
-import type { MutateOutcome, RestoreDestination } from '../../Nexus/mutateRequest'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
+import { livePath } from '../../Nexus/record'
+import { basename } from '../../Paths/posix'
 import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { useSession } from '../../Session/store'
+import { storesChanged } from '../../Session/nexusSlice'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
-import { notifyDeleted, notifyUndoable, reportRefusal } from '../Notifications/notifications'
+import {
+  type Bundled,
+  notifyBundled,
+  reportRefusal,
+  type Titled,
+} from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import type { CountedChange, SelectOption } from '../../Properties/properties'
 
@@ -20,10 +28,8 @@ export interface ConfirmRequest {
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
-type Asked = Counted & { title: string }
-
 /** What a delete asks of what it acts on: one by its title, more by their count. */
-const deleteQuestion = (targets: readonly Asked[]): string =>
+const deleteQuestion = (targets: readonly Titled[]): string =>
   targets.length === 1 ? `Delete “${targets[0].title}”?` : `Delete these ${countPhrase(targets)}?`
 
 /** A container, a Context, and a Space each carry everything filed under them, so deleting one asks regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a tile, a folder that carries no schema. An archive removes nothing, so it asks under its own switch alone. */
@@ -46,27 +52,80 @@ export function spendUndo(bundlePath: string): void {
   armed.delete(bundlePath)
 }
 
-/** Posts through `post` with the one Undo that restores every bundle an act minted, to `destination` when given, arming each so a restore of any one from elsewhere spends it; an act that minted none offers none. */
+/** An Archive restore's Undo at the place its item stands now, followed by the id its record carries, under its new name once a rename has given it one. */
+const atItemNow = (req: MutateRequest): MutateRequest => {
+  const id = req.op === 'archive' ? req.back?.record.id : undefined
+  if (req.op !== 'archive' || !req.back || typeof id !== 'string') return req
+  const path = livePath(useSession.getState().tree, { id, path: req.path })
+  return basename(path) === basename(req.path)
+    ? { ...req, path }
+    : { ...req, path, back: { ...req.back, name: basename(path) } }
+}
+
+/** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
 export function offerUndo(
-  bundlePaths: readonly string[],
+  undos: readonly Acted[],
   post: (undo?: () => Promise<void>) => () => void,
-  destination?: RestoreDestination,
 ): void {
   const spend = post(
-    bundlePaths.length > 0
+    undos.length > 0
       ? async () => {
-          for (const bundlePath of bundlePaths) {
-            spendUndo(bundlePath)
-            await useSession.getState().mutate({ op: 'restore', bundlePath, destination })
-          }
+          for (const { req } of undos) if (req.op === 'restore') spendUndo(req.bundlePath)
+          await runBundled(
+            null,
+            undos.map((u) => ({ ...u, req: atItemNow(u.req) })),
+          )
         }
       : undefined,
   )
-  for (const bundlePath of bundlePaths) armed.set(bundlePath, spend)
+  for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
+}
+
+type Acted = Titled & { req: MutateRequest; address?: string }
+
+const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
+
+/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `address`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
+export async function runBundled(
+  verb: 'Restored' | 'Deleted' | 'Archived' | null,
+  rows: readonly Acted[],
+  nexusId = useSession.getState().tree?.nexus.id,
+): Promise<boolean> {
+  const { mutate, finishOwed } = useSession.getState()
+  const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
+  const counted = rows.length > 1
+  const run: Bundled = {
+    done: [],
+    refused: [],
+    unrestored: [],
+    warnings: [],
+    renamed: [],
+    links: 0,
+  }
+  const undos: Acted[] = []
+  let owed = false
+  for (const row of rows) {
+    if (switched()) break
+    const res = counted ? await mutate(row.req, { quiet: true }) : await mutate(row.req)
+    ;(res ? run.done : run.refused).push(row)
+    if (!res) continue
+    if (row.address) spendUndo(row.address)
+    run.unrestored.push(...(res.unrestored ?? []))
+    const warning = res.cascade?.warning
+    if (warning && !run.warnings.includes(warning)) run.warnings.push(warning)
+    run.links += res.cascade?.pages.length ?? 0
+    owed ||= !!res.cascade?.owed
+    if (res.landedAs) run.renamed.push(steppedTo(row.title, res.landedAs))
+    if (res.undo) undos.push({ title: row.title, kind: row.kind, req: res.undo })
+  }
+  if (counted) storesChanged.emit()
+  if (switched()) return false
+  offerUndo(undos, (undo) => notifyBundled(verb, run, undo, owed ? finishOwed : undefined))
+  return run.done.length > 0
 }
 
 /** The one question a move into the Trash asks, put once for a batch: unasked only while Confirm Before Deletion is off and nothing in it always asks. */
-export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> => {
+export const askTrashing = async (targets: readonly Titled[]): Promise<boolean> => {
   if (targets.every(({ kind }) => waived('confirmDeletion', kind))) return true
   const it = targets.length > 1 ? 'They' : 'It'
   return ask({
@@ -81,35 +140,15 @@ export const askTrashing = async (targets: readonly Asked[]): Promise<boolean> =
 export const confirmDelete = async (
   target: { title: string } & ({ path: string; kind: HeldKind } | { propertyId: string }),
 ): Promise<boolean> => {
-  const asked =
-    'propertyId' in target
-      ? askDestroyProperty(target.propertyId, target.title)
-      : askTrashing([target])
-  if (!(await asked)) return false
-  const done = await useSession
-    .getState()
-    .mutate(
-      'propertyId' in target
-        ? { op: 'deleteProperty', propertyId: target.propertyId }
-        : { op: 'delete', path: target.path, kind: target.kind },
-    )
-  if (!done) return false
-  offerDeleted(target.title, done)
-  return true
-}
-
-/** A delete's one notice, by `title`: the Undo for the bundle it minted, to `undoTo` when given, and the cascade's links, warning, and Try Again. */
-export function offerDeleted(
-  title: string,
-  { bundled, cascade }: MutateOutcome,
-  undoTo?: RestoreDestination,
-): void {
-  const { finishOwed } = useSession.getState()
-  offerUndo(
-    bundled ? [bundled.bundlePath] : [],
-    (undo) => notifyDeleted(title, undo, cascade, cascade?.owed ? finishOwed : undefined),
-    undoTo,
-  )
+  const { title } = target
+  if ('propertyId' in target) {
+    if (!(await askDestroyProperty(target.propertyId, title))) return false
+    const req = { op: 'deleteProperty', propertyId: target.propertyId } as const
+    return runBundled('Deleted', [{ title, kind: 'property', req }])
+  }
+  if (!(await askTrashing([target]))) return false
+  const req = { op: 'delete', path: target.path, kind: target.kind } as const
+  return runBundled('Deleted', [{ title, kind: target.kind, req }])
 }
 
 export const confirmArchive = async (target: {
@@ -126,13 +165,8 @@ export const confirmArchive = async (target: {
     })
     if (!yes) return
   }
-  const done = await useSession
-    .getState()
-    .mutate({ op: 'archive', path: target.path, kind: target.kind })
-  if (done)
-    offerUndo(done.bundled ? [done.bundled.bundlePath] : [], (undo) =>
-      notifyUndoable(`Archived “${target.title}”`, undo),
-    )
+  const req = { op: 'archive', path: target.path, kind: target.kind } as const
+  await runBundled('Archived', [{ title: target.title, kind: target.kind, req }])
 }
 
 export const askRemoveTile = (): Promise<boolean> =>
@@ -215,7 +249,7 @@ export const askRewrite = (
     true,
   )
 
-export const askEmptyTrash = async (targets: readonly Asked[]): Promise<boolean> => {
+export const askEmptyTrash = async (targets: readonly Titled[]): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
   const [it, back] = targets.length > 1 ? ['They', 'them'] : ['It', 'it']
   return ask({

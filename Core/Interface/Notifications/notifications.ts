@@ -2,7 +2,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
-import type { CascadeReport } from '../../Nexus/cascade'
+import { type Counted, countPhrase } from '../../Nexus/entities'
 import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
@@ -103,11 +103,11 @@ export const persist = (
     else notifyReport(line, true)
   })
 
-export const unrestoredLine = (titles: string[]): string =>
+const unrestoredLine = (titles: string[]): string =>
   `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
 
 /** One notice for what an action did: its head, an optional segment, and whatever didn't go as asked, which marks it failed and offers the retry. */
-export function notifyOutcome(
+function notifyOutcome(
   head: string,
   segment: string | undefined,
   unmet: (string | false | undefined)[],
@@ -127,16 +127,46 @@ export function notifyOutcome(
   )
 }
 
-export function notifyDeleted(
-  title: string,
+export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
+  notifyOutcome(`Deleted “${title}”`, undefined, [], undo)
+
+export type Titled = Counted & { title: string }
+
+export interface Bundled {
+  done: Titled[]
+  refused: Titled[]
+  unrestored: string[]
+  warnings: string[]
+  renamed: string[]
+  links: number
+}
+
+/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, posts only its lines. */
+export function notifyBundled(
+  verb: 'Restored' | 'Deleted' | 'Archived' | null,
+  { done, refused, unrestored, warnings, renamed, links }: Bundled,
   undo?: () => void | Promise<void>,
-  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
   retry?: () => void,
 ): () => void {
-  const links = pages.length
-    ? `${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`
-    : undefined
-  return notifyOutcome(`Deleted “${title}”`, links, [warning], undo, retry)
+  const lone = done.length + refused.length === 1
+  const unmet = [
+    !lone &&
+      refused.length > 0 &&
+      `${countPhrase(refused)} couldn’t be ${verb?.toLowerCase() ?? 'undone'}.`,
+    unrestored.length > 0 && unrestoredLine(unrestored),
+    ...warnings,
+  ].filter((line): line is string => typeof line === 'string')
+  if (!verb || (lone && !done.length))
+    return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
+  const head = lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)
+  const segment = lone
+    ? verb === 'Deleted' && links > 0
+      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
+      : undefined
+    : renamed.length > 1
+      ? `${renamed.length} Renamed`
+      : renamed[0]
+  return notifyOutcome(`${verb} ${head}`, segment, unmet, undo, retry)
 }
 
 const undoing = inTurns()

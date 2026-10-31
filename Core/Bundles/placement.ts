@@ -28,6 +28,7 @@ import {
   bundleAddressOf,
   layoutOf,
   originPathOf,
+  storeOf,
 } from '../Paths/bundleLayout'
 
 interface Placement {
@@ -241,9 +242,12 @@ export async function placeRecord(
   const baseName = basename(bundle.artifact)
   const restoring = relative(root, bundle.abs)
   if (destination?.kind === 'archive') {
-    if ((stored.entity !== 'page' && stored.entity !== 'set') || !stored.archive)
+    if (
+      (stored.entity !== 'page' && stored.entity !== 'set') ||
+      storeOf(restoring)?.store.kind !== 'trash'
+    )
       return fault(NO_DESTINATION)
-    const filing = await archiveFiling(root, tree, stored, stored.archive)
+    const filing = await archiveFiling(root, tree, stored, destination.at)
     if (!filing.ok) return filing
     if (stored.id && heldElsewhere(byId.get(stored.id), restoring))
       return fault(REFUSAL_TEXT['id-live'])

@@ -17,8 +17,6 @@ export interface MutateOutcome {
   created?: { path: string } | { propertyId: string }
   cascade?: CascadeReport
   adopted?: string
-  /** Where a removal filed what it took, in the Trash or an Archive. */
-  bundled?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
   /** The title a restore stepped aside to, when it couldn't land under its own. */
@@ -45,10 +43,10 @@ export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
 const containerKind = z.enum(CONTAINER_KINDS)
 
-/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. `archive` is a delete from the Archive's Undo, returning the item to the address its record names. */
+/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. `archive` is a delete from the Archive's Undo, returning the item to the Archive address `at` it left. */
 const restoreDestination = z.discriminatedUnion('kind', [
   z.object({ kind: z.enum(['container', 'context']), id: z.string() }),
-  z.object({ kind: z.literal('archive') }),
+  z.object({ kind: z.literal('archive'), at: z.string() }),
 ])
 export type RestoreDestination = z.infer<typeof restoreDestination>
 
