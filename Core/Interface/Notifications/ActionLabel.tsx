@@ -1,5 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { dismissNotification, useActionBar, useNotification } from './notifications'
+import { useContext, useEffect, useRef, useState } from 'react'
+import {
+  ActionSeatContext,
+  dismissNotification,
+  useActionBar,
+  useNotification,
+} from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { Swap } from '@pommora/uix/Animations/Swap'
@@ -15,8 +20,9 @@ import { trackNear, withinBox } from '@pommora/uix/Interactions/hoverReveal'
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
 
-export function ActionLabel(): React.JSX.Element {
-  const note = useNotification()
+export function ActionLabel({ className }: { className?: string }): React.JSX.Element {
+  const posted = useNotification()
+  const note = useContext(ActionSeatContext).notices ? posted : null
   const bar = useActionBar()
   const hostRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<HTMLSpanElement>(null)
@@ -90,7 +96,12 @@ export function ActionLabel(): React.JSX.Element {
   return (
     <div
       ref={hostRef}
-      className={cx(s.host, paneSlide({ side: 'right', mode: 'overlay', open }), error && s.error)}
+      className={cx(
+        s.host,
+        className,
+        paneSlide({ side: 'right', mode: 'overlay', open }),
+        error && s.error,
+      )}
       role={error ? 'alert' : 'status'}
       inert={!open}
     >

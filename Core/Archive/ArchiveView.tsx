@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { useStableApi } from '@pommora/uix/Utilities/stableApi'
+import { useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
@@ -10,11 +9,9 @@ import {
   DateHeading,
   useDateColumn,
 } from '../Bundles/BundleTable'
-import { countPhrase } from '../Nexus/entities'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { useContentHost, useHostShown } from '../Interface/contentHost'
-import { type ActionBar, useDeclareActions } from '../Interface/Notifications/notifications'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { containerOwner } from '../Nexus/treeIndex'
@@ -57,16 +54,6 @@ export function ArchiveView({
   const { listing, visible } = browser
   const date = useDateColumn('archive')
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
-  const api = useStableApi({
-    restore: () => void browser.restore(browser.picked),
-    remove: () => void browser.remove(browser.picked),
-  })
-  const count = browser.picked.length > 0 ? countPhrase(browser.picked) : null
-  const bar = useMemo<ActionBar | null>(
-    () => (count === null ? null : { count, restore: api.restore, remove: api.remove }),
-    [count, api],
-  )
-  useDeclareActions(bar)
   usePublishCount(listing.status === 'ready' ? browser.found : null)
 
   return (

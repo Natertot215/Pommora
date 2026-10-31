@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
+import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { askEmptyTrash, askTrashing, runBundled } from '../Interface/Confirm/confirmations'
-import { isContainerKind } from '../Nexus/entities'
+import { type ActionBar, useDeclareActions } from '../Interface/Notifications/notifications'
+import { countPhrase, isContainerKind } from '../Nexus/entities'
 import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { matches, matchQuery } from '../Paths/caseFold'
 import { isAtOrUnder, relDirname } from '../Paths/posix'
@@ -136,7 +138,7 @@ export type Listing =
   | { status: 'failed' }
   | { status: 'ready'; rows: BundleRow[] }
 
-/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; and Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar over the checked rows. */
+/** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; and Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar it declares over the checked rows. */
 export function useBundleBrowser(
   store: BundleStore,
   {
@@ -304,6 +306,17 @@ export function useBundleBrowser(
         return remove(targets)
     }
   }
+
+  const api = useStableApi({
+    restore: () => void restore(picked),
+    remove: () => void remove(picked),
+  })
+  const count = picked.length > 0 ? countPhrase(picked) : null
+  const bar = useMemo<ActionBar | null>(
+    () => (count === null ? null : { count, restore: api.restore, remove: api.remove }),
+    [count, api],
+  )
+  useDeclareActions(bar, shown)
 
   return {
     listing,
