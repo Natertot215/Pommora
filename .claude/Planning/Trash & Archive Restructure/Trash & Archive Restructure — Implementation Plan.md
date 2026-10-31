@@ -303,7 +303,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Review Checkpoint
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
   - [x] Task 6-1 · The duplicated cases
-  - [ ] Task 6-2 · The on-disk bundle fixture
+  - [x] Task 6-2 · The on-disk bundle fixture
   - [ ] Task 6-3 · The suites follow their modules
   - [ ] Task 6-4 · The delete records' and the listing's cases
   - [ ] Task 6-5 · The empty's cases
@@ -8940,7 +8940,7 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 #### Task 6-2
 
-**TASK:** `Core/Testing/bundles.ts` holds the on-disk bundle fixture: the seeded Nexus the delete, restore, and empty suites stand on, the Trash's bundle folders and its one listed bundle, the orders `state.json` keeps, and the two bundle fixtures `Core/Testing/fixtures.ts` holds, a listed row and a seeded property bundle. It replaces `spend.test.ts`'s seed and finders, `restoreProperty.test.ts`'s `onlyBundlePath`, and the two `stateOrder`s, before Tasks 6-4 and 6-5 split `spend.test.ts` into suites that each need the seed, so the bundle suites' fixtures have one home.
+**TASK:** `Core/Testing/bundles.ts` holds the on-disk bundle fixture: the seeded Nexus the delete, restore, and empty suites stand on, the Trash's bundle folders and its one listed bundle, the orders `state.json` keeps, and the two bundle fixtures `Core/Testing/fixtures.ts` holds, a listed row and a seeded property bundle. It replaces `spend.test.ts`'s seed, finders, and machine install, `restoreProperty.test.ts`'s `onlyBundlePath`, and the three `stateOrder`s (`mutate.test.ts`' among them), before Tasks 6-4 and 6-5 split `spend.test.ts` into suites that each need the seed, so the bundle suites' fixtures have one home.
 
 **NOW:**
 - `spend.test.ts:57-79` define `bundleDirs` (every `.deleted` folder under `.trash`, a recordless one included) and `onlyBundle` (`{ dir, record }`, failing unless one); `:81-123` seed and tear down the Nexus (Projects with Pommora and Sapphire, `Notes/Daily/Alpha.md` tagged Pommora) and `:49-51` declare `PAGE_A`–`PAGE_C`.

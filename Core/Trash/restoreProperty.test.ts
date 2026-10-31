@@ -15,6 +15,7 @@ import { handleMutate } from '../Nexus/mutate'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from '../Bundles/bundle'
+import { onlyBundle } from '../Testing/bundles'
 import { patchRecord } from '../Bundles/record'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -74,12 +75,6 @@ const archivedPage = async (fm: string): Promise<string> => {
   return file
 }
 
-const onlyBundlePath = async (): Promise<string> => {
-  const listed = await listBundles(root, { kind: 'trash' })
-  expect(listed).toHaveLength(1)
-  return listed[0].bundlePath
-}
-
 beforeEach(async () => {
   root = tempRoot('pom-restoreprop-')
   const a = await createFolderEntity(root, 'collection', 'Notes', newId())
@@ -104,7 +99,8 @@ describe('restoring a deleted property', () => {
       { id: 'view_x', name: 'X', type: 'table', sort: [{ property_id: 'p', direction: 'random' }] },
     ]
     await writeFile(file, JSON.stringify(raw))
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect((await readJsonAt(file)).properties).toEqual([id])
   })
@@ -131,7 +127,8 @@ describe('restoring a deleted property', () => {
     const then = new Date('2020-01-01T00:00:00Z')
     for (const page of [p1.value.path, p2.value.path]) await utimes(page, then, then)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toMatchObject({ ok: true, value: { unrestored: ['B'] } })
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(p2.value.path, 'Priority')).toBe('hi')
@@ -159,7 +156,8 @@ describe('restoring a deleted property', () => {
     expect(await assigns(notes, id)).toBe(false)
     expect(await valueOn(p1.value.path, 'Priority')).toBeUndefined()
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
 
     const def = (await readRegistry(root)).defs[id]
@@ -195,7 +193,8 @@ describe('restoring a deleted property', () => {
     }
     expect(await readNotes(root)).toEqual({ [id]: { kind: 'property', strip: ['Priority'] } })
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     // The re-assigns' refills settle once the rename they sit under does.
     const ids = await Promise.all(
@@ -229,7 +228,8 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect((await liveDef(c.value.id)).select_options).toEqual([
       { id: 'opt_wip', key: 'wip', label: 'In Progress' },
@@ -258,7 +258,8 @@ describe('restoring a deleted property', () => {
       rewriteRoot((raw) => landValue(raw, key, '   ')),
     )
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect(await valueOn(page.value.path, 'Phase')).toEqual(['wip'])
   })
@@ -272,7 +273,8 @@ describe('restoring a deleted property', () => {
     })
     expect(impostor.ok).toBe(true)
 
-    const r = await settledMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await settledMutate(root, { op: 'restore', bundlePath })
     expect(r.ok && r.value.landedAs).toBe('Priority (2)')
     expect((await readRegistry(root)).defs[id]).toMatchObject({
       label: 'Priority (2)',
@@ -292,7 +294,8 @@ describe('restoring a deleted property', () => {
     })
     expect(back.ok).toBe(true)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(false)
     expect((await readRegistry(root)).defs[id]).toMatchObject({ label: 'Urgency', key: 'Urgency' })
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
@@ -316,7 +319,8 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(good.value.path, 'Priority')).toEqual(['hi'])
     expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
@@ -338,8 +342,9 @@ describe('restoring a deleted property', () => {
 
       vi.setSystemTime(new Date('2026-10-15T08:00:00.000Z'))
       const deleted = await deleteProperty(root, id)
-      expect(bundleOf(deleted)).toBe(await onlyBundlePath())
-      await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+      const { bundlePath } = await onlyBundle(root)
+      expect(bundleOf(deleted)).toBe(bundlePath)
+      await handleMutate(root, { op: 'restore', bundlePath })
     } finally {
       vi.useRealTimers()
     }
@@ -370,7 +375,8 @@ describe('restoring a deleted property', () => {
     await assignProperty(root, notes, id)
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok && r.value.unrestored).toBeUndefined()
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['lo'])
     const stash = (await readJsonObject(sidecarPath(notes, 'collection')))?.property_stash as
@@ -397,7 +403,8 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     await writeFile(moved.value.path, bytes(moved.value.id, ''))
 
-    await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    await handleMutate(root, { op: 'restore', bundlePath })
     expect(await readFile(kept.value.path, 'utf8')).toBe(
       bytes(kept.value.id, 'Stage:\n  - x\nZed: z\n'),
     )
@@ -509,10 +516,10 @@ describe('restoring a deleted property', () => {
       expect((await deleteProperty(root, id)).ok).toBe(true)
       await refreshTree(root)
       await chmod(page.value.path, 0o000)
-      const r = await handleMutate(root, {
-        op: 'restore',
-        bundlePath: await onlyBundlePath(),
-      }).finally(() => chmod(page.value.path, 0o644))
+      const { bundlePath } = await onlyBundle(root)
+      const r = await handleMutate(root, { op: 'restore', bundlePath }).finally(() =>
+        chmod(page.value.path, 0o644),
+      )
       expect(r.ok && r.value.cascade).toEqual({
         pages: [],
         hosts: [],
@@ -526,7 +533,7 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     const restore = async (partial: boolean): Promise<string | undefined> => {
       expect((await deleteProperty(root, id)).ok).toBe(true)
-      const bundlePath = await onlyBundlePath()
+      const { bundlePath } = await onlyBundle(root)
       if (partial) await patchRecord(join(root, bundlePath), (raw) => ({ ...raw, partial: true }))
       const r = await handleMutate(root, { op: 'restore', bundlePath })
       if (!r.ok) throw new Error('restore refused')
@@ -547,7 +554,8 @@ describe('restoring a deleted property', () => {
       (await readFile(blank.value.path, 'utf8')).replace(/^---\n/, '---\nPriority:\n'),
     )
     expect((await deleteProperty(root, id)).ok).toBe(true)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
   })
 
@@ -569,7 +577,8 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     await rm(tasks, { recursive: true, force: true })
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect(await assigns(notes, id)).toBe(true)
     expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
@@ -601,7 +610,8 @@ describe('restoring a deleted property', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
     expect('Priority' in (await sidecar())).toBe(false)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect((await sidecar()).Priority).toEqual(['hi'])
   })
@@ -622,7 +632,8 @@ describe('restoring a deleted property', () => {
     await patchSidecar(join(root, space.value.path), 'space', (raw) => landValue(raw, key, ['hi']))
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
     expect((await readJsonAt(sidecarFile)).Priority).toEqual(['hi'])
   })
@@ -648,7 +659,8 @@ describe('restoring a deleted property', () => {
       rewriteRoot((raw) => landValue(raw, def.key, '[[Gone]]')),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
     expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
@@ -667,7 +679,8 @@ describe('restoring a deleted property', () => {
     const copy = join(notes, 'A copy.md')
     await writeFile(copy, await readFile(page.value.path, 'utf8'))
     await refreshTree(root)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: { unrestored: ['A copy'] } })
     for (const file of [page.value.path, copy])
       expect(await valueOn(file, 'Priority')).toBeUndefined()
@@ -678,7 +691,8 @@ describe('restoring a deleted property', () => {
     const old = await archivedPage('Priority: hi\n')
     expect((await deleteProperty(root, id)).ok).toBe(true)
     expect(await valueOn(old, 'Priority')).toBeUndefined()
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(old, 'Priority')).toBe('hi')
   })
@@ -699,7 +713,8 @@ describe('restoring a deleted property', () => {
       rewriteRoot((raw) => landValue(raw, key, '[[Old]]')),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r).toEqual({ ok: true, value: {} })
     expect(await valueOn(live.value.path, 'Related')).toBe('[[Old]]')
   })
@@ -746,7 +761,8 @@ describe('restoring a deleted property', () => {
       rewriteRoot((raw) => landValue(raw, key, ['alpha', 'zeta'])),
     )
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
+    const { bundlePath } = await onlyBundle(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath })
     expect(r.ok).toBe(true)
     expect(await valueOn(page.value.path, 'Tags')).toEqual(['alpha', 'zeta'])
     expect((await liveDef(c.value.id)).select_options?.map((o) => o.label)).toEqual(['alpha'])

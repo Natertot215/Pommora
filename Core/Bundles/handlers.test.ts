@@ -6,7 +6,7 @@ import { fault } from '../Contract/result'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { putJson, tempRoot } from '../Testing/hostFs'
 import { sidecarPath } from '../Paths/paths'
-import { seedPropertyBundle } from '../Testing/fixtures'
+import { seedPropertyBundle } from '../Testing/bundles'
 import { mintBundle } from './bundle'
 import { writeRecord } from './record'
 

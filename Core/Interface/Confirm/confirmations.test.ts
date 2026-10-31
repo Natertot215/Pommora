@@ -20,7 +20,7 @@ import type { MutateRequest } from '../../Nexus/mutateRequest'
 import type { CountedChange } from '../../Properties/properties'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
-import { bundleRow as row } from '../../Testing/fixtures'
+import { bundleRow as row } from '../../Testing/bundles'
 
 const asked: string[] = []
 

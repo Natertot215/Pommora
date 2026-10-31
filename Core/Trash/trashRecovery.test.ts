@@ -41,6 +41,7 @@ import type { RestoreDestination } from '../Nexus/mutateRequest'
 import { readNotes } from '../Nexus/owed'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import { stateOrder } from '../Testing/bundles'
 import { seedContentIndex } from '../Index/indexSeed'
 
 let root: string
@@ -68,8 +69,6 @@ const ALEPH_ID = '01KVGMT8BFP350FZZXAMG1QDV0'
 const page = (rel: string, id: string) => writeFile(join(root, rel), `---\nID: ${id}\n---\nbody\n`)
 const sidecarOrder = async (rel: string, key: string): Promise<unknown> =>
   JSON.parse(await readFile(join(root, rel), 'utf8'))[key]
-const stateOrder = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(join(root, '.nexus', 'state.json'), 'utf8')).order
 const restoreRow = async (title: string) => {
   const row = await find(title)
   const r = await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath })
@@ -199,7 +198,7 @@ describe('end to end — deleted, listed, restored', () => {
     await setCollectionOrder(root, order)
     await del('Journal', 'collection')
     await restoreRow('Journal')
-    expect((await stateOrder()).collections).toEqual(order)
+    expect((await stateOrder(root)).collections).toEqual(order)
   })
 
   it('a Space restored returns to its slot in its Context’s Space order', async () => {
@@ -217,7 +216,7 @@ describe('end to end — deleted, listed, restored', () => {
     await setSpaceOrder(root, 'ctx_projects', order)
     await del('.nexus/contexts/Projects/Pommora', 'space')
     await restoreRow('Pommora')
-    expect((await stateOrder()).spaces).toMatchObject({ ctx_projects: order })
+    expect((await stateOrder(root)).spaces).toMatchObject({ ctx_projects: order })
   })
 
   it('a restore into a folder with no written order writes the order the folder showed, with the page in its slot', async () => {

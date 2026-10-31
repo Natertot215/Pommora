@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { countPhrase, unsweptLine } from './entities'
-import { bundleRow as row } from '../Testing/fixtures'
+import { bundleRow as row } from '../Testing/bundles'
 
 describe('countPhrase', () => {
   it('names the kind when every row shares one', () => {

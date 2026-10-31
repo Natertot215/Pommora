@@ -76,6 +76,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { nexusHandlers } from './handlers'
 import { setCollectionOrder, setSpaceOrder } from './reorder'
 import { updatePageMetadata } from './pageMetadata'
+import { stateOrder } from '../Testing/bundles'
 
 let root: string
 
@@ -696,9 +697,6 @@ describe('handleMutate — delete', () => {
     expect(await readdir(join(root, '.trash', 'Notes', 'Daily', bundle ?? ''))).toContain('Beta.md')
   })
 
-  const stateOrder = async (): Promise<Record<string, unknown>> =>
-    (await readJson('.nexus/state.json')).order as Record<string, unknown>
-
   it('a page delete drops its id from the source folder’s page_order', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', '_pageset.json'),
@@ -727,7 +725,7 @@ describe('handleMutate — delete', () => {
     await setCollectionOrder(root, ['oth', 'pt'])
     await refreshTree(root)
     await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
-    expect((await stateOrder()).collections).toEqual(['oth'])
+    expect((await stateOrder(root)).collections).toEqual(['oth'])
   })
 
   it('a Space delete drops its id from its Context’s order in state.json', async () => {
@@ -740,7 +738,7 @@ describe('handleMutate — delete', () => {
       path: '.nexus/contexts/Projects/Pommora',
       kind: 'space',
     })
-    expect((await stateOrder()).spaces).toEqual({ ctxP: ['sp-atlas'] })
+    expect((await stateOrder(root)).spaces).toEqual({ ctxP: ['sp-atlas'] })
   })
 })
 
