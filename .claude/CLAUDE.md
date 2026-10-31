@@ -68,9 +68,9 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ```
 // Core              | • Pommora itself — every interface and its logic
 ├── // Actions       | • Context-menu commands and their row builders
-├── // Archive       | • Archiving, restoring, and ArchiveView
+├── // Archive       | • Archiving, re-filing, and ArchiveView
 ├── // Assets        | • Images, icons, and file adoption
-├── // Bundles       | • The bundle format, record, placement, rows, and browser both stores share
+├── // Bundles       | • The bundle format, record, placement, restore, rows, and browser both stores share
 ├── // Connections   | • Content ↔ content links and their rewriting
 ├── // Contexts      | • The Context registry, cascade, and resolution
 ├── // Contract      | • The interface ↔ host channel declaration
@@ -83,15 +83,15 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Navigation    | • Nav views, the tab bar, and recents
 ├── // Nexus         | • Nexus admission, adoption, and cascade
 ├── // Pages         | • The page view, its header, and file history
-├── // Paths         | • Path safety, exclusion, and disambiguation
+├── // Paths         | • Path safety, exclusion, disambiguation, and the stores' layout
 ├── // Platform      | • The only seam Core uses to reach the host
 ├── // Properties    | • Typed attributes and their editors
 ├── // Session       | • Store slices and per-tab state
 ├── // Settings      | • The settings window and its rows
 ├── // Sync          | • The wire contract, the signing string, and the device client
-├── // Testing       | • The shared test tree builder
+├── // Testing       | • The shared test builders, fixtures, and harnesses
 ├── // Tiles         | • The homepage and Space tile surfaces
-├── // Trash         | • Item deletion and restoration
+├── // Trash         | • Item deletion, emptying, and the Trash frame
 ├── // Views         | • Collections rendered as views
 └── // Web           | • The web guest element, link opening, and guest partitions
 
