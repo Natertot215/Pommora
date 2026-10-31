@@ -163,7 +163,7 @@ export function writtenRoot(
 export const governedRoot = (file: string, text: string): Json =>
   isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
 
-export const changedKeys = (root: Json, next: Json): string[] =>
+const changedKeys = (root: Json, next: Json): string[] =>
   [...new Set([...Object.keys(root), ...Object.keys(next)])].filter(
     (k) => JSON.stringify(root[k]) !== JSON.stringify(next[k]),
   )

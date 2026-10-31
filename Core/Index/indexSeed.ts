@@ -39,7 +39,7 @@ import { readWatchScope } from '../Settings/settings'
 const NO_ROWS: PageIndexEntry = { relations: [], headings: [], values: {} }
 export const INDEX_BATCH = 200
 
-export function extractPageIndex(content: string, page = parsePage(content)): PageIndexEntry {
+function extractPageIndex(content: string, page = parsePage(content)): PageIndexEntry {
   const { frontmatter: values, admission } = page
   if (admission.state === 'unknown') return NO_ROWS
   const { body } = splitEnvelope(content)

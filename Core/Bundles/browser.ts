@@ -133,10 +133,7 @@ function rulesOf(kind: BundleStore['kind']): {
   }
 }
 
-export type Listing =
-  | { status: 'loading' }
-  | { status: 'failed' }
-  | { status: 'ready'; rows: BundleRow[] }
+type Listing = { status: 'loading' } | { status: 'failed' } | { status: 'ready'; rows: BundleRow[] }
 
 /** A store's browser, narrowed `within` a top-level Set when given: its rows, listed again on each change while shown and on each showing, as a tree whose open map holds each open container's inner rows, asked for on opening and again on each listing; the checked set, kept across a container's collapsing, and the outermost checked rows in view; `rowClick`, a row's one click intent, opening a page through `open` when given; and Restore and Delete, run by the right-click menu over a row or the checked rows in view and by the bar it declares over the checked rows. */
 export function useBundleBrowser(
@@ -156,8 +153,6 @@ export function useBundleBrowser(
   toggle: (bundlePath: string) => void
   rowClick: (row: BundleRow, detail: number) => void
   openMenu: (row: BundleRow) => Promise<void>
-  restore: (targets: BundleRow[], destination?: RestoreDestination) => Promise<void>
-  remove: (targets: BundleRow[]) => Promise<void>
 } {
   const rules = rulesOf(store.kind)
   const nexusId = useSession((s) => s.tree?.nexus.id)
@@ -267,22 +262,14 @@ export function useBundleBrowser(
       }
       const toOf = (row: BundleRow): RestoreDestination | undefined =>
         destination ?? (row.homeResolves ? undefined : to.get(destinationKind(row)))
-      const rows = targets.map((row) => ({
-        ...row,
-        address: row.bundlePath,
-        req: requestOf(row, 'restore', toOf(row)),
-      }))
+      const rows = targets.map((row) => ({ ...row, req: requestOf(row, 'restore', toOf(row)) }))
       await runBundled('Restored', rows, nexusId)
     })
 
   const remove = (targets: BundleRow[]): Promise<void> =>
     flight(async () => {
       if (!targets.length || !(await rules.askDelete(targets))) return
-      const rows = targets.map((row) => ({
-        ...row,
-        address: row.bundlePath,
-        req: requestOf(row, rules.deleteOp),
-      }))
+      const rows = targets.map((row) => ({ ...row, req: requestOf(row, rules.deleteOp) }))
       await runBundled('Deleted', rows, nexusId)
     })
 
@@ -327,7 +314,5 @@ export function useBundleBrowser(
     toggle,
     rowClick,
     openMenu,
-    restore,
-    remove,
   }
 }

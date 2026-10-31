@@ -61,9 +61,11 @@ export const pagesByPathOf = entityMemo(
   (tree): ReadonlyMap<string, string> => new Map(pagesOf(tree).map((p) => [p.path, p.id])),
 )
 
+export const pathOfId = (tree: NexusTree, id: string): string | undefined =>
+  (pagesByIdOf(tree).get(id) ?? findContainerById(tree, id))?.path
+
 export const livePath = (tree: NexusTree | null, target: { id: string; path: string }): string =>
-  (tree && (pagesByIdOf(tree).get(target.id) ?? findContainerById(tree, target.id))?.path) ??
-  target.path
+  (tree && pathOfId(tree, target.id)) ?? target.path
 
 export const pageIndexOf = entityMemo([], (tree): PageIndex => buildPageIndex(pagesOf(tree)))
 

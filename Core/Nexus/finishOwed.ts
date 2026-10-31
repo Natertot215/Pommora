@@ -52,6 +52,7 @@ import { stashAndStrip } from '../Properties/unassignProperty'
 import { listBundles, ownedArchives } from '../Bundles/bundle'
 import { appendLinks } from '../Bundles/record'
 import { refillStash } from '../Properties/assignment'
+import { everyCollection, storedNodes } from './heldPages'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
 
@@ -161,7 +162,7 @@ async function finishProperty(
   if (!def) {
     const strip = (e.strip ?? []).filter((key) => !held(key))
     // With no Trash entry left for the property it can't come back, so the Collections the Trash holds lose its assignment as the live ones do; every page lost its values at the delete.
-    const bundles = await listBundles(root, { kind: 'trash' })
+    const bundles = await listBundles(root, { kind: 'trash' }, '', { shallow: true })
     const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
     const folders = [
       ...collectionFolders(root, await liveTreeOf(root)),
@@ -185,7 +186,9 @@ async function finishProperty(
   )
   const options = await finishOptions(root, def, e.options ?? {}, reach)
   // A Collection gone owes nothing more; one assigning the property refills its pages from the stash, and one that doesn't stashes and strips them.
-  const byId = new Map((await liveTreeOf(root)).collections.map((c) => [c.id, c] as const))
+  const tree = await liveTreeOf(root)
+  const stored = await storedNodes(root, tree)
+  const byId = new Map(everyCollection(tree, stored).map((c) => [c.id, c] as const))
   const collections = await sweepEach(
     e.collections,
     (cid) => !byId.has(cid),

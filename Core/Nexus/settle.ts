@@ -346,7 +346,7 @@ async function payOutsideMoves(root: string): Promise<void> {
     )
   for (const [bundle, pages] of back)
     try {
-      paid(root, await recognize(root, tree, before, after, bundle, pages), 'outside restore')
+      paid(root, await recognize(root, tree, before, bundle, pages), 'outside restore')
     } catch (e) {
       console.error('outside restore failed:', errText(e))
     }

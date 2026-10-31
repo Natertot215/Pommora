@@ -32,7 +32,7 @@ import { personalizationOf } from '../Session/configSlice'
 import { useSession } from '../Session/store'
 import type { Personalization } from '../Settings/personalization'
 import { COLUMN_LAYOUT } from '../Views/Table/useColumns'
-import { crumbSegments, type Listing, type useBundleBrowser } from './browser'
+import { crumbSegments, type useBundleBrowser } from './browser'
 import type { BundleRow } from './rows'
 import './bundle-table.css'
 
@@ -206,19 +206,17 @@ export function BundleRows({
 }
 
 export function BundleFooting({
-  listing,
-  shown,
+  browser: { listing, visible },
   className,
   failed,
   empty,
 }: {
-  listing: Listing
-  shown: number
+  browser: Pick<Browser, 'listing' | 'visible'>
   className: string
   failed: string
   empty: string
 }): React.JSX.Element | null {
-  if (listing.status === 'loading' || shown > 0) return null
+  if (listing.status === 'loading' || visible.length > 0) return null
   const line =
     listing.status === 'failed' ? failed : listing.rows.length === 0 ? empty : 'Nothing matches.'
   return <div className={className}>{line}</div>

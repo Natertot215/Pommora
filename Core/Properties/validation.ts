@@ -35,7 +35,7 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
 )
 
 /** Why a word can't be a property's label or key — empty, a key Pommora manages in any casing, or a name every object already answers to — or null when it can. */
-export function keyRefusal(word: string): string | null {
+function keyRefusal(word: string): string | null {
   if (!word) return KEY_REFUSAL.empty
   if (word.startsWith(RESERVED_NAME_PREFIX) || word.startsWith('<'))
     return KEY_REFUSAL.reservedPrefix

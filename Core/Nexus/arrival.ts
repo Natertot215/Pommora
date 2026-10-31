@@ -27,10 +27,9 @@ import {
 } from '../Bundles/bundle'
 import {
   type ArtifactRecord,
-  collectionOf,
-  currentOrigin,
   originOf,
   type RecordFile,
+  standingCollection,
 } from '../Bundles/record'
 import { refileLanded } from '../Archive/refile'
 import { contextKey } from '../Contexts/contexts'
@@ -41,10 +40,10 @@ import { readLiveSetting } from '../Settings/settings'
 import { refillOf, sweepRootsById } from './governedSweep'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from './heldPages'
 import { liveTreeOf } from './liveTree'
-import { restoreNote } from './owed'
-import { pageIndexOf } from './record'
+import { readNotes, restoreNote } from './owed'
+import { pageIndexOf, pathOfId } from './record'
 import type { NexusTree, SpaceNode } from './tree'
-import { containerAt, findContainerById } from './treePatch'
+import { containerAt } from './treePatch'
 import { CONTEXTS_DIR_REL, hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 type Landed = { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] }
@@ -126,7 +125,7 @@ export async function arrive(
     opened: OpenBundle
     record: ArtifactRecord
     title: string
-    landed: Landed
+    landed: Omit<Landed, 'entity'>
     filed?: boolean
     back: readonly ConnPage[]
     live: PageIndex
@@ -135,7 +134,8 @@ export async function arrive(
 ): Promise<{ unrestored: string[]; cascade?: CascadeReport }> {
   const { record, title } = a
   await spendBundle(root, a.opened)
-  const { own, cascade } = await returningCascade(root, a.live, a.after, a.back, title, a.landed)
+  const landed = { ...a.landed, entity: record.entity }
+  const { own, cascade } = await returningCascade(root, a.live, a.after, a.back, title, landed)
   const tree = await liveTreeOf(root)
   const { byId, archived } = await nexusPages(root, tree)
   const missed =
@@ -145,7 +145,7 @@ export async function arrive(
         ? await refill(root, tree, byId, linkWorld(tree, archived), record.links, own)
         : []
   const left = a.filed ? null : originOf(a.opened.record)
-  if (left) await refileLanded(root, record, collectionOf(currentOrigin(tree, left) ?? left))
+  if (left) await refileLanded(root, record, standingCollection(tree, left))
   const unrestored = missed.flatMap((id) => shownTitle(tree, byId, id) ?? [])
   return { unrestored, ...(cascade ? { cascade } : {}) }
 }
@@ -157,10 +157,10 @@ export async function recognize(
   root: string,
   tree: NexusTree,
   before: PageIndex,
-  after: PageIndex,
   bundle: string,
   departed: readonly Departed[],
 ): Promise<CascadeReport | undefined> {
+  const after = pageIndexOf(tree)
   const whole = (await bundleArtifact(join(root, bundle))) === null
   const units = new Map<string, { stored: string; movedTo?: string }>()
   const landings = new Map<string, Map<string | undefined, Departed[]>>()
@@ -194,7 +194,7 @@ export async function recognize(
     if (!at.ok || at.value.record.entity === 'property') continue
     const { record } = at.value
     const id = 'id' in record ? record.id : undefined
-    const rel = movedTo ?? (id && (after.byId.get(id) ?? findContainerById(tree, id))?.path)
+    const rel = movedTo ?? (id && pathOfId(tree, id))
     if (!rel) continue
     const landed = join(root, rel)
     const origin = originPathOf(root, join(root, stored))
@@ -203,7 +203,7 @@ export async function recognize(
       opened: at.value,
       record,
       title: titleFromPath(landed),
-      landed: { entity: record.entity, abs: landed },
+      landed: { abs: landed },
       back: [
         ...(await originPagesOf(root, await contentPages(record.entity, landed), (f) =>
           join(origin, relative(landed, f)),
@@ -232,18 +232,18 @@ export async function recognizeSpaces(
   let cascade: CascadeReport | undefined
   let finished = false
   const records = await listBundles(root, { kind: 'trash' }, CONTEXTS_DIR_REL, { recordOnly: true })
+  const index = pageIndexOf(await liveTreeOf(root))
   for (const { bundlePath, record } of records) {
     if (record.entity !== 'space' || record.parent.kind !== 'context') continue
     const contextId = record.parent.id
     const space = spaces.find((s) => s.id === record.id && s.contextId === contextId)
     const opened = space && (await openBundle(root, join(root, bundlePath)))
     if (!space || !opened?.ok || !(await restoreNote(root, record.id)).ok) continue
-    const index = pageIndexOf(await liveTreeOf(root))
     const arrived = await arrive(root, {
       opened: opened.value,
       record,
       title: space.title,
-      landed: { entity: 'space', abs: join(root, space.path) },
+      landed: { abs: join(root, space.path) },
       back: [],
       live: index,
       after: index,
@@ -252,6 +252,16 @@ export async function recognizeSpaces(
     finished = true
   }
   return { finished, ...(cascade ? { cascade } : {}) }
+}
+
+/** The open pass over every Space the tree holds but one whose delete still owes its strip: at open, that Space can't be told from a delete cut short mid-move, so the finish completes the delete. */
+export async function recognizeSpacesAtOpen(root: string) {
+  const notes = await readNotes(root)
+  const { spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
+  return recognizeSpaces(
+    root,
+    [...spaceById.values()].filter((s) => !notes[s.id]?.strip),
+  )
 }
 
 async function retag(

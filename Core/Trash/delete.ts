@@ -21,7 +21,14 @@ import type { MutateContext } from '../Nexus/mutate'
 import type { Departing } from '../Nexus/reorder'
 import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
-import { contentPages, mintBundle, openBundle, removeBundle, spendBundle } from '../Bundles/bundle'
+import {
+  contentPages,
+  ITEM_GONE,
+  mintBundle,
+  openBundle,
+  removeBundle,
+  spendBundle,
+} from '../Bundles/bundle'
 import { originPathOf, storeOf } from '../Paths/bundleLayout'
 import { gatherContextRecord, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
@@ -33,9 +40,10 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
   const resolved = await resolveUnderRoot(root, req.path)
   if (!resolved.ok) return NOT_HELD
   const opened = await openBundle(root, resolved.value)
-  if (!opened.ok) return NOT_HELD
+  if (!opened.ok) return opened
   const { store, record: held, artifact: abs } = opened.value
-  if (store.kind !== 'archive' || !abs) return NOT_HELD
+  if (store.kind !== 'archive') return NOT_HELD
+  if (!abs) return ITEM_GONE
   if ((held.entity !== 'page' && held.entity !== 'set') || held.entity !== req.kind) return NOT_HELD
   const pages = await contentPages(held.entity, abs)
   const sets = held.entity === 'set' ? await archivedSetIds(root, abs) : []

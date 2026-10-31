@@ -53,8 +53,8 @@ function spendUndo(bundlePath: string): void {
 
 /** An Archive restore's Undo at the place its item stands now, followed by the id its record carries, under its new name once a rename has given it one. */
 const atItemNow = (req: MutateRequest): MutateRequest => {
-  const id = req.op === 'archive' ? req.back?.record.id : undefined
-  if (req.op !== 'archive' || !req.back || typeof id !== 'string') return req
+  if (req.op !== 'archive' || typeof req.back?.record.id !== 'string') return req
+  const id = req.back.record.id
   const path = livePath(useSession.getState().tree, { id, path: req.path })
   return basename(path) === basename(req.path)
     ? { ...req, path }
@@ -80,11 +80,11 @@ function offerUndo(
   for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
 }
 
-type Acted = Titled & { req: MutateRequest; address?: string }
+type Acted = Titled & { req: MutateRequest; bundlePath?: string }
 
 const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 
-/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `address`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
+/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `bundlePath`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
 export async function runBundled(
   verb: BundleVerb,
   rows: readonly Acted[],
@@ -108,7 +108,7 @@ export async function runBundled(
     const res = counted ? await mutate(row.req, { quiet: true }) : await mutate(row.req)
     ;(res ? run.done : run.refused).push(row)
     if (!res) continue
-    if (row.address) spendUndo(row.address)
+    if (row.bundlePath) spendUndo(row.bundlePath)
     run.unrestored.push(...(res.unrestored ?? []))
     const warning = res.cascade?.warning
     if (warning && !run.warnings.includes(warning)) run.warnings.push(warning)

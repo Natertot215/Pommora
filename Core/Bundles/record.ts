@@ -204,6 +204,9 @@ export function currentOrigin(tree: NexusTree, origin: Origin): Origin | null {
   return { ...origin, trail: retrailed(origin, ids) }
 }
 
+export const standingCollection = (tree: NexusTree, origin: Origin): string =>
+  collectionOf(currentOrigin(tree, origin) ?? origin)
+
 export function gatherContentRecord(
   tree: NexusTree,
   node: PageNode | CollectionNode | SetNode,

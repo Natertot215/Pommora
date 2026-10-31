@@ -114,7 +114,6 @@ export async function restoreBundle(
     record,
     title,
     landed: {
-      entity: record.entity,
       abs: landed,
       rekey:
         record.entity === 'context' && title !== record.registry.title

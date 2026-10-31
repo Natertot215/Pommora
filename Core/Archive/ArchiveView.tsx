@@ -89,8 +89,7 @@ export function ArchiveView({
           {visible.length > 0 && <BundleRows browser={browser} date={date} scrollEl={scrollEl} />}
         </BundleTable>
         <BundleFooting
-          listing={listing}
-          shown={visible.length}
+          browser={browser}
           className="archive-empty"
           failed="The archive couldn't be read."
           empty={`This ${owner.kind === 'set' ? 'Set' : 'Collection'}'s archive is empty.`}
