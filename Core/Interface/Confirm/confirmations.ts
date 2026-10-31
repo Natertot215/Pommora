@@ -16,8 +16,6 @@ import {
 import { dialer } from '../../Platform/dialer'
 import type { CountedChange, SelectOption } from '../../Properties/properties'
 
-const DELETE_FACTS_FALLBACK = { permanentDelete: SETTING_DEFAULTS.permanentDelete }
-
 export interface ConfirmRequest {
   message: string
   detail: string
@@ -250,7 +248,10 @@ export const askRewrite = (
   )
 
 export const askEmptyTrash = async (targets: readonly Titled[]): Promise<boolean> => {
-  const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
+  const permanentDelete = valueOr(
+    await dialer().ask('bundles:permanentDelete'),
+    SETTING_DEFAULTS.permanentDelete,
+  )
   const [it, back] = targets.length > 1 ? ['They', 'them'] : ['It', 'it']
   return ask({
     message: deleteQuestion(targets),

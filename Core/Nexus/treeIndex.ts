@@ -4,7 +4,7 @@ import { type EntityRecord, pagesByIdOf, pagesByPathOf, recordsOf } from './reco
 import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
-import { ARCHIVE_ICON } from '../Archive/archivePlace'
+import { ARCHIVE_ICON } from '../Archive/archiveLabel'
 import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import { entityMemo } from './tree'
 import { findContainerById, isTopContainer, withheldIn } from './treePatch'

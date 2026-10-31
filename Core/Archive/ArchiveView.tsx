@@ -3,7 +3,13 @@ import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { crumbSegments, useBundleBrowser } from '../Bundles/browser'
-import { BundleRows, BundleTable, DateHeading } from '../Bundles/BundleTable'
+import {
+  BundleFooting,
+  BundleRows,
+  BundleTable,
+  DateHeading,
+  useDateColumn,
+} from '../Bundles/BundleTable'
 import { countPhrase } from '../Nexus/entities'
 import type { BundleRow } from '../Bundles/rows'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
@@ -16,7 +22,7 @@ import { propertyTypeIconName } from '../Properties/typeDisplay'
 import { personalizationOf } from '../Session/configSlice'
 import { useSession } from '../Session/store'
 import '../Views/Table/table-view.css'
-import { ARCHIVE_TITLE } from './archivePlace'
+import { ARCHIVE_TITLE } from './archiveLabel'
 import './archive-view.css'
 
 /** A Collection's or a top-level Set's archived items on TableView's sheet: checked for Restore and Delete. A Set discloses what it holds, and a page opens in the reader on a double-click. */
@@ -49,6 +55,7 @@ export function ArchiveView({
     { query, shown, within: owner.kind === 'set' ? owner.id : undefined, open },
   )
   const { listing, visible } = browser
+  const date = useDateColumn('archive')
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
   const api = useStableApi({
     restore: () => void browser.restore(browser.picked),
@@ -62,24 +69,6 @@ export function ArchiveView({
   useDeclareActions(bar)
   usePublishCount(listing.status === 'ready' ? browser.found : null)
 
-  const footing = (): React.JSX.Element | null => {
-    switch (listing.status) {
-      case 'loading':
-        return null
-      case 'failed':
-        return <div className="archive-empty">The archive couldn't be read.</div>
-      case 'ready':
-        if (visible.length > 0) return null
-        return (
-          <div className="archive-empty">
-            {listing.rows.length === 0
-              ? `This ${owner.kind === 'set' ? 'Set' : 'Collection'}'s archive is empty.`
-              : 'Nothing matches.'}
-          </div>
-        )
-    }
-  }
-
   return (
     <InterfaceScaffold
       owner={containerOwner(owner)}
@@ -89,7 +78,7 @@ export function ArchiveView({
       scrollRef={setScrollEl}
     >
       <div className="table table-view">
-        <BundleTable date={browser.date}>
+        <BundleTable date={date}>
           <div className="table-head">
             <div className="col-header">
               <span className="col-header-icon">
@@ -98,7 +87,7 @@ export function ArchiveView({
               Title
             </div>
             <DateHeading
-              date={browser.date}
+              date={date}
               className="archive-date"
               label={
                 <span>
@@ -110,9 +99,15 @@ export function ArchiveView({
               }
             />
           </div>
-          {visible.length > 0 && <BundleRows browser={browser} scrollEl={scrollEl} />}
+          {visible.length > 0 && <BundleRows browser={browser} date={date} scrollEl={scrollEl} />}
         </BundleTable>
-        {footing()}
+        <BundleFooting
+          listing={listing}
+          shown={visible.length}
+          className="archive-empty"
+          failed="The archive couldn't be read."
+          empty={`This ${owner.kind === 'set' ? 'Set' : 'Collection'}'s archive is empty.`}
+        />
       </div>
     </InterfaceScaffold>
   )

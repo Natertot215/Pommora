@@ -5,7 +5,7 @@ import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
 import { titleFromPath } from '../../Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, type TrailNode, findSpace, nodesByIdOf } from '../../Nexus/treeIndex'
-import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archivePlace'
+import { ARCHIVE_ICON, ARCHIVE_TITLE } from '../../Archive/archiveLabel'
 import { isTopContainer } from '../../Nexus/treePatch'
 
 type SpineTarget = Extract<SelectTarget, { kind: ContainerKind | 'page' }>
