@@ -6,7 +6,7 @@ import { dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { type EntityRecord, pagesByIdOf, pagesByPathOf, pagesOf, recordsOf } from './record'
 import { type CollectionNode, entityMemo, type NexusTree, type SpaceNode } from './tree'
 import { indexReady, readIndexedStats } from '../Index/contentIndex'
-import { ARCHIVE_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
+import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
@@ -57,11 +57,10 @@ export const idHeld = (root: string, id: string): boolean => {
   return tree ? writablePathsOf(tree).has(id) : false
 }
 
-/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. `stored` is what the Trash holds beside the tree, so a reach reads it once. */
+/** `byId` holds every entity the tree holds and every page and Space a store holds, a stored one at the path a writer opens, and null where two files of the tree or the Archive claim one id, so neither is addressed by it; a trashed one fills only an id nothing else claims, so a live or archived root sharing it stays addressable. `archived` holds the Archive's pages at the paths they left, where a link written before they left still names them; the Trash's stay out, so a link naming a trashed page reads gone. */
 export interface NexusPages {
   byId: ReadonlyMap<string, EntityRecord | null>
   archived: readonly ConnPage[]
-  stored: StoredNodes
 }
 
 /** What a by-id sweep reads of each root: where its file is and what kind it is. */
@@ -99,7 +98,11 @@ export const shownTitle = (
   id: string,
 ): string | undefined => byId.get(id)?.title ?? pagesByIdOf(tree).get(id)?.title
 
-export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
+export async function nexusPages(
+  root: string,
+  tree: NexusTree,
+  stored?: StoredNodes,
+): Promise<NexusPages> {
   const byId: ById = new Map(entitiesById(tree))
   const archived: ConnPage[] = []
   for (const [path, { id }] of await storedPageIds(root, tree, ARCHIVE_DIR_REL)) {
@@ -108,13 +111,13 @@ export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPa
     claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
     archived.push(connPage(id, at.origin))
   }
-  const stored = await storedNodes(root, tree)
+  const { spaces } = stored ?? (await storedNodes(root, tree, CONTEXTS_DIR_REL))
   const trashed = [...(await storedPageIds(root, tree, TRASH_DIR))].flatMap(([path, { id }]) =>
     id ? [{ id, kind: 'page' as const, title: titleFromPath(path), path }] : [],
   )
-  for (const { id, kind, title, path } of [...trashed, ...stored.spaces])
+  for (const { id, kind, title, path } of [...trashed, ...spaces])
     if (!byId.has(id)) byId.set(id, { id, kind, title, path })
-  return { byId, archived, stored }
+  return { byId, archived }
 }
 
 /** The tree's pages and the Archive's at the paths they left, with `more` beside them. */

@@ -72,7 +72,8 @@ export async function linkStrip(root: string, left: readonly string[], paths: re
   if (!tree) return null
   const defs = byKey(linkDefsOf(tree.config.registry))
   if (!defs.size) return null
-  const { byId, archived, stored } = await nexusPages(root, tree)
+  const stored = await storedNodes(root, tree)
+  const { byId, archived } = await nexusPages(root, tree, stored)
   const after = buildPageIndex(
     [...pagesOf(tree), ...archived].filter((p) => !inside(byId.get(p.id)?.path ?? p.path)),
   )
