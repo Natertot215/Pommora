@@ -266,6 +266,10 @@ describe('the date column', () => {
         tree: tree && { ...tree, config: { ...tree.config, personalization } },
       })),
     )
+  const sampleOf = async (trashColumnStyle: Personalization['trashColumnStyle']) => {
+    await personalize({ trashColumnStyle })
+    return host.querySelector('.date-head [aria-hidden]')?.textContent ?? ''
+  }
 
   beforeEach(async () => {
     useSession.setState({ tree: makeTree() })
@@ -290,5 +294,30 @@ describe('the date column', () => {
     expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()
     expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
     expect(await pickFromDateMenu('style:time_format:shown')).toBeUndefined()
+  })
+
+  it('a style showing the weekday and the time measures September’s Wednesday the 30th at 12:00 PM', async () => {
+    const sample = await sampleOf({
+      date_format: 'full',
+      time_format: 'twelveHour',
+      weekday: 'long',
+    })
+    for (const part of ['Wednesday', 'September', '30th', '12:00 PM'])
+      expect(sample).toContain(part)
+  })
+
+  it('a style without them leaves the weekday and the time out', async () => {
+    const sample = await sampleOf({ date_format: 'full', time_format: 'none', weekday: 'none' })
+    expect(sample).toContain('September 30th')
+    for (const part of ['Wednesday', '12:00']) expect(sample).not.toContain(part)
+  })
+
+  it('a relative style measures a week ago with its clock, else a year’s last month', async () => {
+    expect(
+      await sampleOf({ date_format: 'relative', time_format: 'twelveHour', weekday: 'none' }),
+    ).toBe('7 Days Ago at 12:00 PM')
+    expect(await sampleOf({ date_format: 'relative', time_format: 'none', weekday: 'none' })).toBe(
+      '12 Months Ago',
+    )
   })
 })

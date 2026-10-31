@@ -144,13 +144,12 @@ export function notifyBundled(
   if (!verb || !done.length)
     return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
   const head = `${verb} ${lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)}`
-  const segment = lone
-    ? verb === 'Deleted' && links > 0
+  const stripped =
+    verb === 'Deleted' && links > 0
       ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
       : undefined
-    : renamed.length > 1
-      ? `${renamed.length} Renamed`
-      : renamed[0]
+  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0]
+  const segment = lone ? stripped : renames
   const said = unmet.length ? `. ${unmet.join(' ')}` : ''
   return notifyUndoable(
     segment ? head : head + said,

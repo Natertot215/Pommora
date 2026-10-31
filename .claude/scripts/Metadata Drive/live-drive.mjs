@@ -535,7 +535,7 @@ async function group2(cdp) {
   const deleted = await must('delete M2 Gone', ask(cdp, 'mutate', { op: 'deleteProperty', propertyId: ids['M2 Gone'] }))
   pin(G, 'A-1', 'a property delete strips the exact key and leaves the variant',
     (await wrote(gone, 'm2 gone: y')) && !('M2 Gone' in sidecar('Areas', 'Area Two')), show([blockOf(gone), sidecar('Areas', 'Area Two')]))
-  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.bundled.bundlePath }))
+  await must('restore M2 Gone', ask(cdp, 'mutate', { op: 'restore', bundlePath: deleted.undo.bundlePath }))
   pin(G, 'A-1', 'a property restore refills the exact key on the page and the Space',
     await settles(async () => fmOf(gone)['M2 Gone'] === 'x' && fmOf(gone)['m2 gone'] === 'y' && sidecar('Areas', 'Area Two')['M2 Gone'] === 'x'),
     show([fmOf(gone), sidecar('Areas', 'Area Two')]))
@@ -1282,11 +1282,11 @@ async function group8(cdp) {
 
   const originalId = pageIds[P.ID]
   const bundles = {}
-  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).bundled.bundlePath
+  for (const [rel] of seeds) bundles[rel] = (await must(`trash ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).undo.bundlePath
   const hiddenBefore = read(sidecarAt('Topics', 'M8 Hidden'))
   const spaceBundles = {}
   for (const title of ['M8 Returning', 'M8 Hidden'])
-    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).bundled.bundlePath
+    spaceBundles[title] = (await must(`trash ${title}`, ask(cdp, 'mutate', { op: 'delete', path: spacePath('Topics', title), kind: 'space' }))).undo.bundlePath
   await must('Key Format lowercase on Priority', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Priority, change: { key_format: 'lowercase' } }))
   await must('Value Format UPPERCASE on Severity', ask(cdp, 'mutate', { op: 'setFormat', propertyId: ids.Severity, change: { value_format: 'UPPERCASE' } }))
   await must('rename Rank', ask(cdp, 'mutate', { op: 'renameProperty', propertyId: ids.Rank, label: 'Standing' }))

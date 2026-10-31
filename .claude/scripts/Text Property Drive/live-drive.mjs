@@ -467,7 +467,7 @@ async function group3(cdp) {
   check("group 3: a delete leaves Drive Prose's sentence and shows a phantom",
     (await holds(async () => frontmatter('Drive Prose')[NOTES] === before)) && (await settles(() => cdp.evaluate(`!!${connection(cell('Drive Prose'), 'phantom', 'Drive Target')}`))))
   await shot(cdp, 'phantom-after-delete')
-  await must('restore Drive Target', ask(cdp, 'mutate', { op: 'restore', bundlePath: trashed.bundled.bundlePath }))
+  await must('restore Drive Target', ask(cdp, 'mutate', { op: 'restore', bundlePath: trashed.undo.bundlePath }))
   check('group 3: a restore resolves it again', await settles(() => cdp.evaluate(`!!${connection(cell('Drive Prose'), 'resolved', 'Drive Target')}`)))
   await shot(cdp, 'resolved-after-restore')
 }
@@ -625,7 +625,7 @@ async function group4(cdp) {
   await openPane(cdp, cell('Drive Raw'))
   const gone = await must('delete Drive Raw', ask(cdp, 'mutate', { op: 'delete', path: pagePath('Drive Raw'), kind: 'page' }))
   const unmounted = await settles(() => cdp.evaluate(`!document.querySelector('${PANE}')`))
-  await must('restore Drive Raw', ask(cdp, 'mutate', { op: 'restore', bundlePath: gone.bundled.bundlePath }))
+  await must('restore Drive Raw', ask(cdp, 'mutate', { op: 'restore', bundlePath: gone.undo.bundlePath }))
   check('group 4: a row deleted under an untouched pane unmounts it, writes nothing, and raises no refusal', unmounted && (await settles(async () => pageFile('Drive Raw') === rawBytes)) && !(await refusal(cdp)), keyLines('Drive Raw', NOTES))
   await until("Drive Raw's row back", () => cdp.evaluate(`!!${row('Drive Raw')}`))
 

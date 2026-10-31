@@ -2,12 +2,11 @@ import { setOrDrop } from '../Files/atomicWrite'
 import { cropKeyFor } from '../Paths/nexusPaths'
 import { updateCrops } from '../Settings/settings'
 import { fault, ok } from '../Contract/result'
-import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { assetFilePath } from './assetRoots'
 
 export async function setCropOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'setCrop' }>,
 ): Promise<MutateReply> {
   const key = cropKeyFor(await assetFilePath(root, req.image), req.image)

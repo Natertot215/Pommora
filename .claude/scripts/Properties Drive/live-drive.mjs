@@ -572,7 +572,7 @@ async function group10() {
       Date.parse(block?.removed_at) >= removedFrom - 1000 && Date.parse(block?.removed_at) <= Date.now(),
     show(block))
 
-  const trashed = (await op('trash Drive Trashed', { op: 'delete', path: pagePath('Drive Trashed'), kind: 'page' })).bundled.bundlePath
+  const trashed = (await op('trash Drive Trashed', { op: 'delete', path: pagePath('Drive Trashed'), kind: 'page' })).undo.bundlePath
   await op('re-add Drive Kept', { op: 'assignProperty', containerPath: 'Collection A', propertyId })
   item(10, 'C-2', 're-adding refills the page still in the Collection and the trashed page’s Trash copy, and spends the stash',
     frontmatter('Drive Stays')['Drive Kept'] === 'Drive Stays value' &&
@@ -633,9 +633,9 @@ async function group10() {
   // The group leaves as it found them: both properties deleted and emptied, both pages emptied, the settings as they were.
   await must('permanentDelete on', ask(cdp, 'personalization:set', 'permanentDelete', true))
   for (const id of [propertyId, 'prop_drive_partial'])
-    await op(`empty ${id}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${id}`, { op: 'deleteProperty', propertyId: id })).bundled.bundlePath })
+    await op(`empty ${id}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${id}`, { op: 'deleteProperty', propertyId: id })).undo.bundlePath })
   for (const title of ['Drive Stays', 'Drive Trashed'])
-    await op(`empty ${title}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${title}`, { op: 'delete', path: pagePath(title), kind: 'page' })).bundled.bundlePath })
+    await op(`empty ${title}`, { op: 'emptyBundle', bundlePath: (await op(`delete ${title}`, { op: 'delete', path: pagePath(title), kind: 'page' })).undo.bundlePath })
   writeFileSync(join(NEXUS, '.nexus/settings.json'), before.settings)
   await settles(async () => (await ask(cdp, 'nexus:state')).value.tree.config.personalization.permanentDelete === before.permanentDelete)
   const after = {

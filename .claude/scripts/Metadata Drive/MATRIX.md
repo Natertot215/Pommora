@@ -18,7 +18,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **Date, Checkbox, Link, and File for exact keys:** after Phase 2B every type's read is `root[key]` and its write one set-or-delete; Number, Select, and Multi-Select cover the scalar, the governed list of one, and the list arms the spelling machinery used to split.
 - **Every type but Text and Multi-Select for the Key Format:** `rekeyProperty` moves a key without reading its type (B-4); one scalar and one list prove the move keeps its line.
 - **Sorts, groups, and collapsed and hidden bands:** every view operand rides the one configuration pass a filter rides (F-2); the filter, the View Tile, and the Matrix filter cover the three holder kinds.
-- **Sets and Collections at restore:** their pages pass through the same page closure in `scrubReturning` a page restore uses; the page and the Space sidecar cover both closures.
+- **Sets and Collections at restore:** their pages take every cascade a trashed page takes, and their restore moves them back as they stand; the page and the Space sidecar cover both.
 - **Contexts and Spaces through a format:** B-4 gives them none, and no channel exists to drive.
 - **Damaged frontmatter:** no decision names it, and the sweep's handling of it is unchanged.
 - **An ID-less page and a page copying another's ID in the delete count:** the live app stamps both on admission, so only `deleteProperty.test.ts` can hold them as they are.
@@ -174,7 +174,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **A Context pick drops a foreign Space title** (group 3, `area one`): E-3 carries foreign words for a Multi-Select alone, and A-2 makes `area one` foreign data, so the pick writes the picked Spaces only; *§Open Items* lists it to read once.
 - **An exact current key beside a variant** (group 8, `Urgency`): G-1's INFERRED entry gives an exact key its property and says nothing of the variant; the case follows the plan's Phase 8 GOAL, where the variant stays foreign.
 - **A re-spelled Date keeps its text** (group 8, `deadline_date: soon`): G-1 re-spells the key, and a trashed page's Date keeps any text it holds, as a live page's does, since every cascade reaches the Trash; *§Open Items* lists it to read once.
-- **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the trashed page's `low_tier` foreign for the restore to re-spell; under `Match Title` adoption registers it as its own option when the property is created.
+- **Marks' Value Format** (group 8): `Train-Case`, so adoption (E-1) leaves the page's `low_tier` foreign; under `Match Title` adoption registers it as its own option when the property is created.
 - **A restore keeps a word no option names** (group 8, `zzz`): Nathan's ruling B-7 in *Properties Restructure — Decisions & Intention*; the restore moves the page back as it stands, so nothing drops the word.
 - **A restored Collection's stash** keeps its old keys (*§Open Items*); no decision names it, so the drive doesn't pin it either way.
 - **"The value picker (foreign words, captions)":** the format rows carry no hints (the plan's *§Deviations*), so the drive asserts foreign words in the value picker alone.

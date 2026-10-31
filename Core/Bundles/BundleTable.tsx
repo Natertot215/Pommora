@@ -42,7 +42,7 @@ const WIDEST_AT = new Date(2026, 8, 30, 12, 0)
 const DAY_MS = 86_400_000
 
 /** The widest a style writes: September, a Wednesday, the 30th, and a two-digit hour, each where the style shows it; a relative style's widest is a week ago with its clock, else a year's last month. */
-export function widestDate(style: DateStyle): string {
+function widestDate(style: DateStyle): string {
   const now = new Date(WIDEST_AT.getTime() + (style.time_format === 'none' ? 350 : 7) * DAY_MS)
   return formatDate(
     WIDEST_AT.toISOString(),

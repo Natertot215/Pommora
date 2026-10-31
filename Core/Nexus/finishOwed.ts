@@ -308,9 +308,10 @@ async function finishContext(
     async (old) => {
       const dir = join(contextsDir(root), old)
       if ((await heldName(dir)) === old) {
-        await leave(root, dir, e.bundle!, { kind: 'context', id })
+        await leave(root, dir, e.bundle!)
         oweWalk(root)
-      } else await dropDeparture(root, { kind: 'context', id })
+      }
+      await dropDeparture(root, { kind: 'context', id })
       return unlinkContextKey(root, old, id, [dir, join(root, e.bundle!)])
     },
     reach,
@@ -338,7 +339,7 @@ async function finishSpace(
   if (deleted && (await heldName(join(root, space.path))) === space.title) {
     await leave(root, join(root, space.path), e.bundle!, space)
     oweWalk(root)
-  } else if (!space && e.bundle && e.strip?.length)
+  } else if (!space && e.strip?.length)
     await dropDeparture(root, { kind: 'space', contextId: e.contextId, id })
   const title = deleted ? undefined : space?.title
   const rename =
@@ -390,12 +391,13 @@ async function finishContainer(
   const edit = await owedEdit()
   const strip = back ? undefined : e.strip
   const taken = strip ? await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip) : null
+  let stripped = false
   if (taken) {
     const links = await gatherLinks(root, taken)
     if (!e.bundle) await parkLinks(root, links)
     else if (!(await appendLinks(join(root, e.bundle), links)).ok) return stuck(e)
+    stripped = add(reach, await deleteCascade(root, taken))
   }
-  const stripped = !!strip && add(reach, await deleteCascade(root, taken))
   const viewed = !!edit && add(reach, await reachConfig(root, edit))
   return {
     left: { ...e, strip: stripped ? e.strip : undefined, edit: viewed ? e.edit : undefined },

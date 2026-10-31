@@ -29,8 +29,8 @@ on debug port 9353.
 `Metadata Drive/live-drive.mjs` drives MetadataV3's exact metadata identity against the real app as a matrix of
 every behavior the decisions guarantee, in nine groups: groups 1 to 8 follow the plan phase of their number through
 the host channels the interface calls (Space order by id, exact keys and their renames, exact words and filters,
-counts, the label and key registry, owed work and its cascades, the Label and Value Formats with adoption, and the
-restore re-spell), asserting page bytes, Space sidecars, `properties.json`, the views, View Tiles, Matrix filter, and
+counts, the label and key registry, owed work and its cascades, the Label and Value Formats with adoption, and what a
+restored page and Space hold), asserting page bytes, Space sidecars, `properties.json`, the views, View Tiles, Matrix filter, and
 Collection stashes, the notes file of owed work, and what the table draws and filters; group 9 drives each surface by real
 gesture (the Metadata leaf, the value picker, the format rows and their counted confirmation, the Trash browser, and
 a Space's Properties panel). `MATRIX.md` beside it holds the dimensions it crosses, what it prunes and why, and the

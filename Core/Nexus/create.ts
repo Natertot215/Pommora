@@ -10,7 +10,6 @@ import { valueToWrite } from '../Properties/propertyValue'
 import type { Json } from '../Files/stableJson'
 import { contextSeeds, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
-import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
 import { appendCollection, setChildOrder, setSpaceOrder } from './reorder'
@@ -24,7 +23,7 @@ export const landedAs = (asked: string, path: string): { landedAs?: string } =>
   basename(path) === asked ? {} : { landedAs: basename(path) }
 
 export async function createPageOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'createPage' }>,
 ): Promise<MutateReply> {
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
@@ -55,7 +54,7 @@ export async function createPageOp(
 }
 
 export async function createContainerOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'createContainer' }>,
 ): Promise<MutateReply> {
   if (req.kind === 'collection' && req.parentPath)
@@ -82,7 +81,7 @@ export async function createContainerOp(
 }
 
 export async function createSpaceOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'createSpace' }>,
 ): Promise<MutateReply> {
   const r = await createSpace(root, req.contextId, req.name, req.id)

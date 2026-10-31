@@ -14,7 +14,6 @@ import {
   owningCollection,
   placeNode,
   removeNodeInTree,
-  schemaOf,
 } from './treePatch'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -265,21 +264,22 @@ describe('archiveReach', () => {
   })
 })
 
-describe('schemaOf', () => {
+describe('containerSchema', () => {
   const def = (id: string): PropertyDefinition => ({ id, label: id, key: id, type: 'text' })
+  const base = tree()
+  base.collections[0].propertyIds = ['prop_b', 'prop_gone', 'prop_a']
   const withRegistry = (registry: PropertyDefinition[]): NexusTree => ({
-    ...tree(),
-    config: { ...tree().config, registry },
+    ...base,
+    config: { ...base.config, registry },
   })
 
   it('resolves ids in their order against the registry, an id it lacks reading as nothing, and holds one answer while the definitions it names stay the same', () => {
     const [a, b, c] = [def('prop_a'), def('prop_b'), def('prop_c')]
-    const ids = ['prop_b', 'prop_gone', 'prop_a']
-    const schema = schemaOf(withRegistry([a, b]), ids)
+    const schema = containerSchema(withRegistry([a, b]), 'Notes/A.md')
     expect(schema).toEqual([b, a])
-    expect(schemaOf(withRegistry([a, b, c]), ids)).toBe(schema)
+    expect(containerSchema(withRegistry([a, b, c]), 'Notes/A.md')).toBe(schema)
     const renamed = { ...a, label: 'Renamed' }
-    expect(schemaOf(withRegistry([renamed, b]), ids)).toEqual([b, renamed])
+    expect(containerSchema(withRegistry([renamed, b]), 'Notes/A.md')).toEqual([b, renamed])
   })
 })
 

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { filterRows, outermostOf, treeRows, useBundleBrowser } from './browser'
-import { widestDate } from './BundleTable'
 import type { BundleRow } from './rows'
 import { bundleRow as row, stubBrowserEachTest } from '../Testing/bundles'
 import { storesChanged } from '../Session/nexusSlice'
@@ -59,29 +58,6 @@ describe('filterRows', () => {
       row({ title: 'Notes', crumbs: [] }),
     ]
     expect(filterRows(listed, 'notes').map((r) => r.title)).toEqual(['Notes Archive', 'Notes'])
-  })
-})
-
-describe('widestDate', () => {
-  it('a style showing the weekday and the time runs September’s Wednesday the 30th at 12:00 PM', () => {
-    const sample = widestDate({ date_format: 'full', time_format: 'twelveHour', weekday: 'long' })
-    for (const part of ['Wednesday', 'September', '30th', '12:00 PM'])
-      expect(sample).toContain(part)
-  })
-
-  it('a style without them leaves the weekday and the time out', () => {
-    const sample = widestDate({ date_format: 'full', time_format: 'none', weekday: 'none' })
-    expect(sample).toContain('September 30th')
-    for (const part of ['Wednesday', '12:00']) expect(sample).not.toContain(part)
-  })
-
-  it('a relative style runs a week ago with its clock, else a year’s last month', () => {
-    expect(
-      widestDate({ date_format: 'relative', time_format: 'twelveHour', weekday: 'none' }),
-    ).toBe('7 Days Ago at 12:00 PM')
-    expect(widestDate({ date_format: 'relative', time_format: 'none', weekday: 'none' })).toBe(
-      '12 Months Ago',
-    )
   })
 })
 

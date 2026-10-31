@@ -7,11 +7,10 @@ import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { ICON_KEY } from '../Contexts/spaceSidecar'
 import { mutableTarget } from '../Nexus/liveTree'
 import { writePageMeta } from '../Nexus/pageMetadata'
-import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setIconOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'setIcon' }>,
 ): Promise<MutateReply> {
   if (req.kind === 'page') return writePageMeta(root, req.path, { icon: req.icon })

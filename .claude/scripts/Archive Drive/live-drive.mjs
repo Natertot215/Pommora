@@ -398,7 +398,7 @@ const heldIds = async () => {
   return out
 }
 const op = (what, req) => must(what, ask(cdp, 'mutate', req))
-const bundledBy = async (what, req) => (await op(what, req)).bundled?.bundlePath
+const bundledBy = async (what, req) => (await op(what, req)).undo?.bundlePath
 const emptyAt = (bundlePath) => op(`empty ${bundlePath}`, { op: 'emptyBundle', bundlePath })
 const leafOf = (bundlePath) => bundlePath.split('/').at(-1)
 const sidecarIdOf = (rel) => JSON.parse(readRel(rel)).id
@@ -462,15 +462,16 @@ async function group4() {
     show({ back, pageOrder: orderIn(A_SIDECAR, 'page_order') }))
 
   const again = await bundledBy('archive Drive Arc again', { op: 'archive', path: arc, kind: 'page' })
-  const T1 = await bundledBy('delete from the Archive', { op: 'delete', path: again, kind: 'page' })
+  const { undo: U1 } = await op('delete from the Archive', { op: 'delete', path: again, kind: 'page' })
+  const T1 = U1?.bundlePath
   item(4, 'E-3', 'a delete from the Archive goes to the Trash keeping the bundle it left',
-    stamped(`.trash/${A_ALPHA}`, 'Drive Arc', '.deleted').test(T1) && recordAt(T1).archive === again && !exists(again),
-    show({ again, T1, record: T1 && exists(T1) ? recordAt(T1) : null }))
+    stamped(`.trash/${A_ALPHA}`, 'Drive Arc', '.deleted').test(T1) && U1.destination?.at === again && !exists(again),
+    show({ again, undo: U1 }))
 
   await op('Undo to the Archive', { op: 'restore', bundlePath: T1, destination: { kind: 'archive' } })
   const undone = exists(`${again}/_record.json`) ? recordAt(again) : null
   item(4, 'E-3', 'its Undo returns it to the Archive under the same name',
-    exists(`${again}/Drive Arc.md`) && !!undone && !('archive' in undone) && !('links' in undone) && !('targets' in undone) && !exists(T1) && !(await heldIds()).has(arcId),
+    exists(`${again}/Drive Arc.md`) && !!undone && !('links' in undone) && !exists(T1) && !(await heldIds()).has(arcId),
     show({ again, undone }))
 
   const T2 = await bundledBy('delete from the Archive again', { op: 'delete', path: again, kind: 'page' })
@@ -1131,7 +1132,7 @@ async function group6B() {
   if (asked) await pressDialog(cdp, 'Delete')
   const deletedSaid = await noticeUp(cdp, 'Deleted “Drive Arc 1”Undo')
   const trashBundle = (await trashed(cdp, 'Drive Arc 1'))?.bundlePath
-  const intoTrash = !!trashBundle && stamped(`.trash/${A_ALPHA}`, 'Drive Arc 1', '.deleted').test(trashBundle) && recordAt(trashBundle).archive === before['Drive Arc 1'] && !exists(before['Drive Arc 1'])
+  const intoTrash = !!trashBundle && stamped(`.trash/${A_ALPHA}`, 'Drive Arc 1', '.deleted').test(trashBundle) && !exists(before['Drive Arc 1'])
   if (deletedSaid) await pressUndo(cdp)
   await pointerAway(cdp)
   const deleteBack = await settles(async () => exists(before['Drive Arc 1']) && !!trashBundle && !exists(trashBundle))
@@ -1528,7 +1529,7 @@ async function group7(cdp) {
   if (goneAsked) await pressDialog(cdp, 'Delete')
   const goneSaid = await noticeUp(cdp, 'Deleted “Shelf Gone”Undo')
   const goneBundle = (await trashed(cdp, 'Shelf Gone'))?.bundlePath
-  const intoTrash = !!goneBundle && exists(`${goneBundle}/Shelf Gone.md`) && !!recordAt(goneBundle).archive && !exists(inner.gone)
+  const intoTrash = !!goneBundle && exists(`${goneBundle}/Shelf Gone.md`) && !exists(inner.gone)
   if (goneSaid) await pressUndo(cdp)
   await pointerAway(cdp)
   const goneBack = await settles(async () => exists(inner.gone) && !exists(goneBundle) && !archivedBundle('Shelf Gone'))

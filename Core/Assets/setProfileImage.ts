@@ -1,12 +1,11 @@
 import { setOrDrop } from '../Files/atomicWrite'
 import { updateSettings } from '../Settings/settings'
 import { ok } from '../Contract/result'
-import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { adoptImageSource } from './adoptFile'
 
 export async function setProfileImageOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'setProfileImage' }>,
 ): Promise<MutateReply> {
   const adopted = req.source ? await adoptImageSource(root, req.source) : ok(null)

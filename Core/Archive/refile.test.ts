@@ -473,6 +473,13 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
     expect(await pathExists(at('.nexus', 'archive', GONE))).toBe(false)
   })
 
+  it('an orphaned Archive left holding only Finder’s litter goes', async () => {
+    await seedArchived(ORPHAN)
+    await writeFile(at('.nexus', 'archive', GONE, '.DS_Store'), '')
+    await settleArchives(root, await reread())
+    expect(await pathExists(at('.nexus', 'archive', GONE))).toBe(false)
+  })
+
   it('an Archive whose Collection sits in an excluded root folder is kept', async () => {
     await mkdir(at('Private'))
     await writeFile(at('Private', '_pagecollection.json'), JSON.stringify({ id: GONE }))

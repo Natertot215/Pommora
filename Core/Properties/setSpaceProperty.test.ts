@@ -10,7 +10,6 @@ import { lockContention } from '../Testing/machines'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
 import { setPropertyOp } from './setProperty'
-import type { MutateContext } from '../Nexus/mutate'
 import type { PropertyDraft } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { closeSession, openSession } from '../Nexus/session'
@@ -21,8 +20,6 @@ import { deleteOption } from './optionOps'
 let root: string
 let spaceRel: string
 let statusId: string
-
-const ctx = (): MutateContext => ({ root })
 
 const def = (over: Partial<PropertyDraft> & { label: string; type: PropertyDraft['type'] }) =>
   over as PropertyDraft
@@ -62,7 +59,7 @@ const sidecarFile = (): string => join(root, spaceRel, '_space.json')
 const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile())
 
 const write = (value: PropertyValue | null) =>
-  setPropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
+  setPropertyOp(root, { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
 
 describe('setProperty on a Space path', () => {
   it('lands a bare root key and moves nothing else', async () => {

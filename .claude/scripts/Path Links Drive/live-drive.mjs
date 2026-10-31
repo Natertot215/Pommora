@@ -1033,7 +1033,7 @@ async function group8(cdp) {
   setBody(H_ORPHAN, 'p01 [[Set G8/G8 Orphan]]\n')
   await sleep(2000)
   const V = (rel) => frontOf(rel)[LINK]
-  const del = async (rel) => (await must(`delete ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).bundled.bundlePath
+  const del = async (rel) => (await must(`delete ${rel}`, ask(cdp, 'mutate', { op: 'delete', path: rel, kind: 'page' }))).undo.bundlePath
 
   const twinBytes = bodyOf(H_TWIN)
   const twinBundle = await del(page(A_ALPHA, 'G8 Twin'))

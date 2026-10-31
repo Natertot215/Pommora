@@ -17,7 +17,6 @@ import {
   unlistContext,
   withContextAt,
 } from '../Contexts/contextsRegistry'
-import type { MutateContext } from '../Nexus/mutate'
 import type { Departing } from '../Nexus/reorder'
 import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
@@ -77,7 +76,6 @@ async function planOf(
   abs: string,
   before: NexusTree,
   from: { record: ContentRecord; keys: string[]; edit: ConfigEdit | null } | undefined,
-  under: string[],
 ): Promise<Result<DeletePlan>> {
   const rel = relative(root, abs)
   // What sits under the deleted folder leaves and comes back with it, so its files are neither members to restore nor holders to strip.
@@ -121,7 +119,8 @@ async function planOf(
     }
     default: {
       const node = req.kind === 'page' ? pageAt(before, rel) : containerAt(before, rel)
-      const strip = from?.keys ?? under
+      const strip =
+        from?.keys ?? pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
       const edit = from ? from.edit : goneEdit(before, req.kind, req.path)
       const record = from?.record ?? gatherContentRecord(before, node!)
       return ok({
@@ -136,7 +135,7 @@ async function planOf(
 }
 
 export async function deleteOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'delete' }>,
 ): Promise<MutateReply> {
   const archived = await fromArchive(root, req)
@@ -145,11 +144,9 @@ export async function deleteOp(
   const resolved = from ? ok(from.abs) : await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const abs = resolved.value
-  const rel = relative(root, abs)
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   const before = await liveTreeOf(root)
-  const under = pagesOf(before).flatMap((p) => (isAtOrUnder(p.path, rel) ? p.path : []))
-  const planned = await planOf(root, req, abs, before, from, under)
+  const planned = await planOf(root, req, abs, before, from)
   if (!planned.ok) return planned
   const plan = planned.value
   const lifted = !from && isContainer(req) ? await liftSetAside(root, abs) : null

@@ -13,7 +13,6 @@ import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
 import { pageIndexOf } from '../Nexus/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
-import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { contentPages, fileInto, originPagesOf } from '../Bundles/bundle'
 import { type ArchiveStore, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
@@ -23,7 +22,7 @@ import { refileLanded } from './refile'
 
 /** Link values and saved views naming what leaves stay where they are and resolve again on its restore, so nothing is stripped and no configuration pass runs; filed under another path than it stood under, what names it re-spells to that path. */
 export async function archiveOp(
-  { root }: MutateContext,
+  root: string,
   req: Extract<MutateRequest, { op: 'archive' }>,
 ): Promise<MutateReply> {
   const resolved = await mutableTarget(root, req.path, [req.kind])

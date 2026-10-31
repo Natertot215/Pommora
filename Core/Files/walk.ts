@@ -19,6 +19,10 @@ export async function listEntries(dir: string): Promise<DirEntry[]> {
   }
 }
 
+export async function holdsOnlyHidden(dir: string): Promise<boolean> {
+  return (await listEntries(dir)).every((e) => hiddenName(e.name))
+}
+
 export async function listFilesRecursive(dir: string): Promise<string[]> {
   const out: string[] = []
   for (const e of await listEntries(dir)) {

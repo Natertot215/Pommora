@@ -1,13 +1,6 @@
 // What an item back from a store does once it lands, a restore's and a hand move's alike: its arrival re-spelled into the world it rejoins, and its own links and keys repaired where it landed.
 
-import {
-  type CascadeReport,
-  joinCascades,
-  linksNotUpdated,
-  noteRelink,
-  respell,
-  type StrippedLink,
-} from './cascade'
+import { type CascadeReport, joinCascades, linksNotUpdated, noteRelink, respell } from './cascade'
 import { basename, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
 import { originPathOf, type Stored } from '../Paths/bundleLayout'
 import { respellings, rewriteConnections } from '../Connections/rewrite'
@@ -30,6 +23,7 @@ import {
   originOf,
   type RecordFile,
   standingCollection,
+  type StrippedLink,
 } from '../Bundles/record'
 import { refileLanded } from '../Archive/refile'
 import { contextKey } from '../Contexts/contexts'
@@ -40,13 +34,13 @@ import { readLiveSetting } from '../Settings/settings'
 import { refillOf, sweepRootsById } from './governedSweep'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from './heldPages'
 import { liveTreeOf } from './liveTree'
-import { readNotes, restoreNote } from './owed'
+import { readNotes, type RelinkEntry, restoreNote } from './owed'
 import { pageIndexOf, pathOfId } from './record'
 import type { NexusTree, SpaceNode } from './tree'
 import { containerAt } from './treePatch'
 import { CONTEXTS_DIR_REL, hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
-type Landed = { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] }
+type Landed = { entity: RecordFile['entity']; abs: string; rekey?: RelinkEntry['rekey'] }
 
 /** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
 async function artifactFiles(
@@ -162,9 +156,9 @@ export async function recognize(
 ): Promise<CascadeReport | undefined> {
   const after = pageIndexOf(tree)
   const whole = (await bundleArtifact(join(root, bundle))) === null
-  const units = new Map<string, { stored: string; movedTo?: string }>()
+  const units = new Map<string, string | undefined>()
   const landings = new Map<string, Map<string | undefined, Departed[]>>()
-  if (whole) units.set(bundle, { stored: join(bundle, departed[0].at.inner[0]) })
+  if (whole) units.set(bundle, undefined)
   else
     for (const d of departed) {
       const last = d.at.inner.length - 1
@@ -180,16 +174,16 @@ export async function recognize(
     const [movedTo] = [...unit.keys()]
       .filter((to) => to !== undefined)
       .sort((a, b) => (unit.get(b)?.length ?? 0) - (unit.get(a)?.length ?? 0))
-    if (movedTo) units.set(stored, { stored, movedTo })
+    if (movedTo) units.set(stored, movedTo)
     for (const [to, members] of unit)
       if (to !== movedTo)
         for (const { to: page, at } of members) {
           const own = join(bundle, ...at.inner)
-          units.set(own, { stored: own, movedTo: page })
+          units.set(own, page)
         }
   }
   let cascade: CascadeReport | undefined
-  for (const [address, { stored, movedTo }] of units) {
+  for (const [address, movedTo] of units) {
     const at = await openBundle(root, join(root, address), movedTo && join(root, movedTo))
     if (!at.ok || at.value.record.entity === 'property') continue
     const { record } = at.value
@@ -197,6 +191,7 @@ export async function recognize(
     const rel = movedTo ?? (id && pathOfId(tree, id))
     if (!rel) continue
     const landed = join(root, rel)
+    const stored = whole ? join(address, departed[0].at.inner[0]) : address
     const origin = originPathOf(root, join(root, stored))
     const strays = whole ? departed.filter((d) => !isAtOrUnder(d.to, rel)) : []
     const arrived = await arrive(root, {
