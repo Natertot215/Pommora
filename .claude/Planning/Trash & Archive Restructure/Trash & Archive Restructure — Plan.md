@@ -1,14 +1,14 @@
 ## Trash & Archive Restructure — Implementation Plan
 
 **DATE:** 10-29-2026
-**STATUS:** Complete 10-31-2026 — `de297a9ee..e8db664bc`
+**STATUS:** Complete 10-31-2026 — `de297a9ee..11d69c0f0`
 **SOURCE:** *Trash & Archive Restructure — Decisions & Intention* (ratified 10-29-2026, Decisions A-1–G-4 and its *§Rejected*), *Trash & Archive Restructure — Investigation* and its `Scouts/`, *Trash & Archive Restructure — Reach-In Measurement*, and the planning session's placements (10-29-2026), which *§Constraints · Placements* records.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | 10-31-2026 12:50 PM · `e8db664bc` · 9,058 passed · 2 skipped |
+| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | 10-31-2026 02:59 PM · `11d69c0f0` · 9,060 passed · 2 skipped |
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude Core/Testing`, since the script's test rule doesn't count `Core/Testing` as tests, per phase, cumulative from the BASELINE head; estimates from each phase's tasks; Task 1-2's and Task 6-11's measurements go beneath it):
 
@@ -20,7 +20,7 @@
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | ±0 (+1 / −1) in production, a rewritten comment and the refusal; tests −430 (+1,887 / −2,317), `Core/Testing` +213 (+234 / −21) for the shared bundle fixture and browser harness |
-| **Total** | **about −415** | **−228 (+2,582 / −2,810) outside `Core/Testing` at `e8db664bc`, comment lines −29 and tests +119; −231 at Phase 6's close, the final verification's folds adding +14 and the discards' disposal with the second round's folds −11 (*§Deviations*)** |
+| **Total** | **about −415** | **−224 (+2,589 / −2,813) outside `Core/Testing` at `11d69c0f0`, comment lines −29 and tests +159; −231 at Phase 6's close, the final verification's folds adding +14, the discards' disposal with the second round's folds −11, Permanently Delete Files' caption −1, and the closing review's folds +5 (*§Deviations*)** |
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 
@@ -119,6 +119,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `APP_DIRS` | `Core/Paths/nexusPaths.ts` | FV |
 | `discard` (the empty's disposal, hoisted from `emptyBundle`) | `Core/Trash/discard.ts` | FV |
 | `systemTrashMachine` | `Core/Testing/machines.ts` | FV |
+| `relinkKey` | `Core/Nexus/owed.ts` | FV |
 
 **REMOVED**
 
@@ -9659,6 +9660,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - [x] **Wave One:** two read-only reviewers briefed with `code-simplification`, one `opus-xhigh` reading inward at the diff and one `fable-xhigh` reading outward against the rest of Core, Desktop, and UIX (mixed models, Nathan, 10-30-2026); one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
 - [x] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one `fable-xhigh` reading inward and one `opus-xhigh` reading outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
 - [x] **The Second Round (Nathan, 10-31-2026, after the close):** Wave One under `code-simplification` (`fable-xhigh` inward, `opus-xhigh` outward) and Wave Two under `adversarial-review` (`opus-xhigh` inward, `fable-xhigh` outward) over `de297a9ee..HEAD`, each given what earlier rounds declined, folded, and committed.
+- [x] **The Closing Review (Nathan, 10-31-2026: no loose ends):** two `opus-xhigh` reviewers, one holding the plan against the tree with every loose end inventoried and one reading the surface at HEAD; folded and committed; then the Archive, Metadata, Path Links, Text Property, and Properties drives at `11d69c0f0`, every group, from a worktree build: 159, 261, 817, 115, and 78 checks, none failing.
 - [x] **The Dashboard Map:** in each wave, one more read-only agent (one per lens: `code-simplification` in Wave One, `adversarial-review` in Wave Two) maps how the Studio dashboard's Pommora line count (`~/The Studio/.claude/dashboard/projects/pommora.mjs`, read with its `README.md` and `line-count.mjs`) would divide so Trash & Archive becomes its own section: which paths it takes from which areas, what the other areas keep, and what the history rebuild costs. The second reconciles the first's map; the result goes to Nathan in the report, and nothing in the dashboard changes.
 - [x] **The Neutral Gate:** one `fable-xhigh` agent given only `<BASELINE>..HEAD`, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
 - [x] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; *§Completion Criteria* ticked.
@@ -9877,6 +9879,7 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 4 · Tasks 4-3 and 4-4 Land as One Commit:** Task 4-3 alone left a trashed page's stashed value unreached (`refillStash`'s `members` needs `owningCollection`'s Trash arm, which Task 4-4 adds), so the two commit together; Task 4-3 also writes the watcher's and Sync's manifest's shared watch rule once (`watchedUnder`) and has `deindexPath` prune a removed path's rows whether or not it's content.
 - **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
 - **Final Verification · The Neutral Gate (three runs, the last "Yes, qualified"):** the Trash's root level is listed once (`topTrashBundles`); `stored.reach(rels)` answers the owners map the owner lookups take, so none can read an unprimed one; `recognize`'s grouping became `unitsOf`; a holder query filters stored paths once before its reach; the renderer's path follower became `pathNow`; a landing's pre-record moved onto `recordLanding`; the Windows write-through flag cites libuv's `uv/win.h`; and the undefined `(H-n)` tags left.
+- **Final Verification · The Closing Review (Nathan, 10-31-2026):** a re-spell note takes its own key (`relinkKey`), so a delete of a moved page keeps what the move owes the others; a Set's second move finishes, or refuses on, the first move's owed view edit; the Archive suite takes the recording system trash; the Trash's no-reader row is stated in NexusRecordPM; property restoration joins `.claude/CLAUDE.md`'s Trash line; and the drives pin today's shapes: the delete's own Undo, the rewritten hints, index generation 20, the partial mark on a Space, and Collection A's Set order written back as found.
 - **Final Verification · The Second Round (Nathan, 10-31-2026):** a retried Collection empty owes its first attempt's whole entry and drops its Archive's pages' metadata once the Archive's disposal lands; the property empty runs through `runNoted`; a whole bundle's spend releases the strip its delete still owes, and a finish whose bundle was removed by hand parks what it gathered, so neither leaves a note owed forever; the prune keeps a chain folder whose read fails, where it erased every bundle under it; the sidecar walk skips what a store holds beside its bundles; `readBundleAt` answers one shape; `notifyBundled` spells the rename line; the Trash's root-level read is named for what it answers (`topTrashBundles`); the app's top folders are named once (`APP_DIRS`); and the shared fixture's system trash records and removes what it's handed.
 - **Final Verification · Wave Two:** an Archive delete's note is keyed by its record's id, and the finish reads an owned Archive as standing when the note is the Archive's, so an Undo of a delete that owed Try Again leaves no note; a rename's clash check reads no trashed record it drops; the settle's heading renames share one stored read; and the Metadata Drive's group 8 pins a restore that moves the page back as the cascades left it (Decision D-4), where it pinned the removed re-spell.
 - **Final Verification · Wave One:** the live drives and their matrices read the reply's `undo` and the Undo's address, both stores' prunes read one `holdsOnlyHidden`, the Trash's Collections list shallow everywhere, `MutateContext` left for a plain `root` (Phase 2 had kept it as the dispatch's one context shape, which half the ops never took), and `schemaOf` and `widestDate` lost their test-only exports.

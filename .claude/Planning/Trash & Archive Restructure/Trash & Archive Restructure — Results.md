@@ -2,10 +2,10 @@
 
 | Actionable | All-Inclusive | Comments | Documentation | Tests | Files |
 |------------|---------------|----------|---------------|-------|-------|
-| =🔴-228=(=🟢+2582=/=🔴-2810=) | =🔴-138=(=🟢+10274=/=🔴-10412=) | =🔴-29=(=🟢+153=/=🔴-182=) | ±0(+0/-0) | =🟢+119=(=🟢+7539=/=🔴-7420=) | ±0(=🟢+10=/=🔴-10=) |
+| =🔴-224=(=🟢+2589=/=🔴-2813=) | =🔴-94=(=🟢+10331=/=🔴-10425=) | =🔴-29=(=🟢+155=/=🔴-184=) | ±0(+0/-0) | =🟢+159=(=🟢+7587=/=🔴-7428=) | ±0(=🟢+10=/=🔴-10=) |
 
-- **FILES:** =🔴-257=(=🟢+2735=/=🔴-2992=)
-- **TESTS:** =🟢+119=(=🟢+7539=/=🔴-7420=)
+- **FILES:** =🔴-253=(=🟢+2744=/=🔴-2997=)
+- **TESTS:** =🟢+159=(=🟢+7587=/=🔴-7428=)
 
 ---
 
@@ -3813,7 +3813,7 @@
 +import { refillOf, sweepRootsById } from './governedSweep'
 +import { linkWorld, type NexusPages, nexusPages, shownTitle } from './heldPages'
 +import { liveTreeOf } from './liveTree'
-+import { readNotes, type RelinkEntry, restoreNote } from './owed'
++import { readNotes, type RelinkEntry, relinkKey, restoreNote } from './owed'
 +import { pageIndexOf, pathOfId } from './record'
 +import type { NexusTree, SpaceNode } from './tree'
 +import { containerAt } from './treePatch'
@@ -3833,7 +3833,7 @@
 +  return [...(await contentPages(entity, abs)), ...sidecars.map((rel) => join(root, rel))]
 +}
 +
-+/** A returning artifact's own links and keys, repaired where it landed under the relink entry keyed by its path: each key in `own` re-spells, in the landed files alone, to how it names its returning page now, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
++/** A returning artifact's own links and keys, repaired where it landed under its path's relink entry: each key in `own` re-spells, in the landed files alone, to how it names its returning page now, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
 +async function repairLanded(
 +  root: string,
 +  landed: Landed,
@@ -3842,7 +3842,7 @@
 +): Promise<CascadeReport | undefined> {
 +  if (!own.size && !landed.rekey) return undefined
 +  const files = (await artifactFiles(root, landed.entity, landed.abs)).map((f) => relative(root, f))
-+  return noteRelink(root, relative(root, landed.abs), () => ({
++  return noteRelink(root, relinkKey(relative(root, landed.abs)), () => ({
 +    kind: 'relink',
 +    names: Object.fromEntries(own),
 +    label,
@@ -4192,6 +4192,7 @@
 +  followRelinks,
 +  type RelinkEntry,
 +  reachReport,
++  relinkKey,
 +  relinkNote,
 +  runNoted,
 +} from './owed'
@@ -4202,7 +4203,7 @@
    pages: string[]
    hosts: TilesChanged[]
    warning?: string
-@@ -54 +54 @@ export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
+@@ -54 +55 @@ export const linksNotUpdated = (label: string, e?: unknown): CascadeReport => ({
    warning: `Links to “${label}” weren't updated${e === undefined ? '.' : `: ${errText(e)}`}`,
  })
  
@@ -4218,7 +4219,7 @@
  export function joinCascades(
    a: CascadeReport | null | undefined,
    b: CascadeReport | null | undefined,
-@@ -76 +67 @@ export function joinCascades(
+@@ -76 +68 @@ export function joinCascades(
    }
  }
  
@@ -4357,7 +4358,7 @@
    }
  }
  
-@@ -228 +193 @@ export async function renameCascade(
+@@ -228 +194 @@ export async function renameCascade(
    root: string,
    change: CascadeChange,
    settled = false,
@@ -4365,7 +4366,7 @@
  ): Promise<CascadeReport & { missed: Pick<ConfigReach, 'skipped' | 'refused'> }> {
    const headingKey = 'names' in change ? undefined : normalizeTitle(change.heading)
    const named = 'names' in change ? change.label : `${titleFromPath(change.path)}#${change.heading}`
-@@ -258 +224 @@ export async function renameCascade(
+@@ -258 +225 @@ export async function renameCascade(
        ownRel: 'names' in change ? undefined : change.path,
        settled,
      })
@@ -4396,7 +4397,7 @@
        hosts: tiles.hosts,
        warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
        missed: { skipped: unmoved, refused: swept.refused },
-@@ -284 +251 @@ export async function renameCascade(
+@@ -284 +252 @@ export async function renameCascade(
    }
  }
  
@@ -4414,7 +4415,7 @@
  export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigReach> {
    const names = new Map(Object.entries(e.names))
    if (e.files) {
-@@ -303 +261 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
+@@ -303 +262 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
            files.map(async (f) => ((await pathExists(join(root, f))) ? [join(root, f)] : [])),
          )
        ).flat()
@@ -4424,7 +4425,7 @@
      const { text, spaceMoved } = fileRewrites(root, await liveTreeOf(root), (t) =>
        rewriteConnections(t, names),
      )
-@@ -314 +269 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
+@@ -314 +270 @@ export async function relinkReach(root: string, e: RelinkEntry): Promise<ConfigR
        ? (r, f) => rekey(spaceMoved(r, f) ?? r, f) ?? spaceMoved(r, f)
        : spaceMoved
      const swept = await sweepGovernedRoots(await here(e.files), { text, raw })
@@ -4434,7 +4435,7 @@
    }
    const { missed, hosts, pages } = await renameCascade(root, { names, label: e.label })
    return { ...missed, hosts, pages }
-@@ -335 +289 @@ export async function noteRelink(
+@@ -335 +290 @@ export async function noteRelink(
    })
    return ran.ok ? ran.value.cascade : reachReport(await relinkReach(root, note(undefined)))
  }
@@ -4447,8 +4448,8 @@
 +  label: string,
 +  paths?: (file: string) => string,
 +): Promise<CascadeReport> {
-+  await followRelinks(root, names, paths, ids[0])
-+  return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
++  await followRelinks(root, names, paths, relinkKey(ids[0]))
++  return noteRelink(root, relinkKey(ids[0]), (e) => relinkNote(e, names, label))
 +}
 ```
 
@@ -5494,13 +5495,15 @@
  import { landingRefusal, moveFolderEntity } from './folderEntity'
  import { liveTreeOf, mutableTarget } from './liveTree'
  import { archivedSetIds, goneEdit, reachConfig } from './configReach'
- import { runNoted } from './owed'
+-import { runNoted } from './owed'
 -import { containerAt, owningCollection } from './treePatch'
++import { OWED, retries, runNoted } from './owed'
++import { finishEntry } from './finishOwed'
 +import { containerAt, owningCollection, pageAt } from './treePatch'
  import { dropDeparture, setChildOrder } from './reorder'
  import { archivedWithin } from '../Bundles/bundle'
  
-@@ -25 +24 @@ async function ends(
+@@ -25 +25 @@ async function ends(
  }
  
  export async function movePageOp(
@@ -5509,7 +5512,7 @@
    req: Extract<MutateRequest, { op: 'movePage' }>,
  ): Promise<MutateReply> {
    const at = await ends(root, req, 'page')
-@@ -35 +34 @@ export async function movePageOp(
+@@ -35 +35 @@ export async function movePageOp(
    const tree = await liveTreeOf(root)
    const r = await movePage(at.value.src, at.value.dst)
    if (!r.ok) return r
@@ -5525,7 +5528,7 @@
    req: Extract<MutateRequest, { op: 'moveSet' }>,
  ): Promise<MutateReply> {
    const at = await ends(root, req, 'set')
-@@ -56 +55 @@ export async function moveSetOp(
+@@ -56 +56 @@ export async function moveSetOp(
    const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
    const held = await liveTreeOf(root)
    const owner = owningCollection(held, req.path)?.id
@@ -5538,7 +5541,7 @@
    const archived = await Promise.all(
      within.map(({ bundlePath, record }) =>
        record.entity === 'set' ? archivedSetIds(root, join(root, bundlePath)) : [],
-@@ -69 +67 @@ export async function moveSetOp(
+@@ -69 +68 @@ export async function moveSetOp(
    const move = async (): Promise<Result<null>> => {
      const r = await moveFolderEntity(root, at.value.src, at.value.dst)
      if (!r.ok) return r
@@ -5548,10 +5551,12 @@
      return ok(null)
    }
 -  if (left === null || !edit || !setId) return done(await move())
-+  if (left === null || !edit) return done(await move())
-   // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
+-  // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
 -  return runNoted(root, setId, {
 -    note: () => ({ kind: 'container', at: req.path, edit, within: left }),
++  if (left === null || !edit) return done(await move())
++  // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach; an earlier move's entry, holding the Collection that one left, finishes first, and refuses this one while it still owes.
++  if (retries(await finishEntry(root, set.id))) return OWED
 +  return runNoted(root, set.id, {
 +    note: () => ({ kind: 'move', at: req.path, edit, within: left }),
      list: move,
@@ -5828,7 +5833,10 @@
 ##### Core/Nexus/owed.ts
 
 ```/Core/Nexus/owed.ts diff
-@@ -3 +3 @@
+@@ -1 +1 @@
+-// The notes file: one entry per item or many-file change that still owes work, keyed by its id or path, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
++// The notes file: one entry per item or many-file change that still owes work, keyed by its id or path, a re-spell's under `relinkKey`, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
+ 
  import { fail, ok, type Result } from '../Contract/result'
  import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'
  import { memberKey } from '../Files/rootValues'
@@ -5953,6 +5961,8 @@
    )
  }
  
++export const relinkKey = (of: string): string => `relink:${of}`
++
 +export const containerNote = (
 +  at: string,
 +  strip: readonly string[],
@@ -5999,7 +6009,7 @@
  /** A many-file change's report, marked owed while an entry still owes work, which Try Again finishes; a pass's total is owed while it missed a file. The lost-work line joins it once, after a write set a damaged notes file aside. */
  export function owedReport(root: string, reach: ConfigReach, owed = retries(reach) > 0) {
    const report = reachReport(reach)
-@@ -221 +258 @@ export function owedReport(root: string, reach: ConfigReach, owed = retries(reac
+@@ -221 +260 @@ export function owedReport(root: string, reach: ConfigReach, owed = retries(reac
    return report
  }
  
@@ -7596,6 +7606,16 @@
              caption:
 -              'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views and properties always ask.',
 +              'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, Contexts, Spaces, views, properties, and a delete from the Trash always ask.',
+           },
+           {
+             kind: 'toggle',
+@@ -652 +652 @@ export const FRAMES = roster([
+             kind: 'toggle',
+             key: 'permanentDelete',
+             label: 'Permanently Delete Files',
+-            caption:
+-              'Erase items emptied from the Trash instead of moving them to the system trash.',
++            caption: 'Erase files instead of moving them to the system trash.',
            },
            {
              kind: 'toggle',
@@ -10474,7 +10494,7 @@
  import { seedContentIndex } from '../Index/indexSeed'
 -import { machine } from '../Platform/machine'
 +import { installMachine, machine } from '../Platform/machine'
-+import { diskMachine } from '../Testing/machines'
++import { diskMachine, systemTrashMachine } from '../Testing/machines'
  import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
  import { closeSession, openSession } from '../Nexus/session'
 -import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
@@ -10507,7 +10527,12 @@
  const ARCHIVE: BundleStore = { kind: 'archive', id: NOTES }
  const BETA = `---\nID: ${PAGE_B}\n---\nbeta\n`
  
-@@ -66 +64 @@ const reseed = async (): Promise<void> => {
+ let root: string
++let handed: string[]
+ const at = (...segs: string[]): string => join(root, ...segs)
+ const text = (...segs: string[]): Promise<string> => readFile(at(...segs), 'utf8')
+ const pageOrder = async (): Promise<unknown> =>
+@@ -66 +65 @@ const reseed = async (): Promise<void> => {
    await seedContentIndex(root)
  }
  const mutate = (req: Parameters<typeof settledMutate>[1]): Promise<MutateReply> =>
@@ -10522,11 +10547,12 @@
  }
  const restore = (bundlePath: string, destination?: RestoreDestination): Promise<MutateReply> =>
    mutate({ op: 'restore', bundlePath, ...(destination ? { destination } : {}) })
-@@ -107 +105 @@ beforeEach(async () => {
+@@ -107 +106 @@ beforeEach(async () => {
    await writeFile(at('Notes', 'Linker.md'), `---\nID: ${PAGE_K}\n---\n[[Notes/Daily/Beta]]`)
    await openSession(root)
    await reseed()
-+  installMachine({ ...diskMachine(), trashToSystem: async () => {} })
++  handed = []
++  installMachine(systemTrashMachine(handed))
  })
  
  afterEach(async () => {
@@ -10534,7 +10560,7 @@
    vi.restoreAllMocks()
    dropLiveTree()
    closeSession()
-@@ -224 +224 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
+@@ -224 +226 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
      ).toEqual(['Notes/Daily/Private', 'Notes/Daily/Raw'])
    })
  
@@ -10559,7 +10585,7 @@
    it('an Undo filing back under a name other than its bundle’s takes a fresh stamp in that chain', async () => {
      const first = await archive('Notes/Daily/Beta.md')
      const request = archiveUndo(await restore(first))
-@@ -257 +239 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
+@@ -257 +241 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
        path: 'Notes/Daily/Beta 2.md',
        back: { ...request.back, name: 'Beta 2.md' },
      })
@@ -10568,7 +10594,7 @@
      expect(filed).toMatch(
        new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta 2\\.md\\.archived$`),
      )
-@@ -286 +268 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
+@@ -286 +270 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
        false,
      )
      expect(await listBundles(root, ARCHIVE)).toEqual([])
@@ -10577,7 +10603,7 @@
      expect(await text('Notes', 'Daily', 'Beta.md')).toBe(BETA)
    })
  })
-@@ -325 +307 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -325 +309 @@ describe('restore — an archived item comes back by a plain move', () => {
    it('a nested Set pulled from an archived Set lands with its pages, and carries what was archived from within it into the landing Collection’s Archive', async () => {
      await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
      await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
@@ -10585,7 +10611,7 @@
      await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
      await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
      await reseed()
-@@ -349 +330 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -349 +332 @@ describe('restore — an archived item comes back by a plain move', () => {
      })
    })
  
@@ -10683,7 +10709,7 @@
    })
  
    it('a page pulled from an archived Set and restored is put back by its Undo inside the Set’s bundle, at its folder', async () => {
-@@ -418 +370 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -418 +372 @@ describe('restore — an archived item comes back by a plain move', () => {
      const inner = join(bundlePath, 'Daily', 'Beta.md')
      const before = await bytesUnder(at(bundlePath))
      const r = await undo(await restore(inner, INTO_NOTES))
@@ -10692,7 +10718,7 @@
      expect(await pathExists(at('Notes', 'Beta.md'))).toBe(false)
      expect(await bytesUnder(at(bundlePath))).toEqual(before)
      expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)).toEqual([bundlePath])
-@@ -431 +383 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -431 +385 @@ describe('restore — an archived item comes back by a plain move', () => {
      const inner = join(bundlePath, 'Daily', 'Beta.md')
      const before = await bytesUnder(at(bundlePath))
      const r = await undo(await restore(inner, { kind: 'container', id: OTHER }))
@@ -10701,7 +10727,7 @@
      expect(await bytesUnder(at(bundlePath))).toEqual(before)
      expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
    })
-@@ -444 +396 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -444 +398 @@ describe('restore — an archived item comes back by a plain move', () => {
      const inner = join(bundlePath, 'Daily', 'Sub')
      const before = await bytesUnder(at(bundlePath))
      const r = await undo(await restore(inner, INTO_NOTES))
@@ -10710,7 +10736,7 @@
      expect(await pathExists(at('Notes', 'Sub'))).toBe(false)
      expect(await bytesUnder(at(bundlePath))).toEqual(before)
    })
-@@ -465 +417 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -465 +419 @@ describe('restore — an archived item comes back by a plain move', () => {
        path: 'Notes/Beta 2.md',
        back: { ...request.back, name: 'Beta 2.md' },
      })
@@ -10719,7 +10745,7 @@
      expect(await text(bundlePath, 'Daily', 'Beta 2.md')).toBe(BETA)
      expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
    })
-@@ -505 +457 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -505 +459 @@ describe('restore — an archived item comes back by a plain move', () => {
      const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
      expect((await mutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(true)
      const r = await undo(await restore(bundlePath, INTO_NOTES))
@@ -10728,7 +10754,7 @@
      expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
      expect(message(await restore(bundlePath))).toBe('The place this belonged to no longer exists.')
    })
-@@ -517 +469 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -517 +471 @@ describe('restore — an archived item comes back by a plain move', () => {
      const restored = await restore(bundlePath)
      expect(restored.ok && restored.value.landedAs).toBe('Beta (2)')
      const r = await undo(restored)
@@ -10737,7 +10763,7 @@
      expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
      expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
    })
-@@ -538 +490 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -538 +492 @@ describe('restore — an archived item comes back by a plain move', () => {
      await reseed()
      const bundlePath = await archive('Notes/Daily/Beta.md')
      const r = await undo(await restore(bundlePath, { kind: 'container', id: OTHER }))
@@ -10746,7 +10772,7 @@
      expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
      expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
    })
-@@ -642 +594 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -642 +596 @@ describe('restore — an archived item comes back by a plain move', () => {
      const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
      await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))
      const restored = await restore(bundlePath)
@@ -10758,7 +10784,7 @@
      expect(filed).not.toBe(bundlePath)
      expect(filed).toMatch(
        new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta\\.md\\.archived$`),
-@@ -669 +621 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -669 +623 @@ describe('restore — an archived item comes back by a plain move', () => {
      expect(moved.ok).toBe(true)
      const r = await mutate({ ...restored.value.undo, path: 'Other/Daily/Beta.md' })
      const carried = bundlePath.replace(`/${NOTES}/`, `/${OTHER}/`)
@@ -10767,7 +10793,7 @@
      expect(await text(carried, 'Beta.md')).toBe(BETA)
      expect(await readRawRecord(at(carried))).toEqual({ ...raw, trail: [OTHER] })
      expect(await listBundles(root, ARCHIVE)).toEqual([])
-@@ -688 +640 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -688 +642 @@ describe('restore — an archived item comes back by a plain move', () => {
          record: { ...raw, parent: { kind: 'container', id: SUB }, trail: [GONE] },
        },
      })
@@ -10776,7 +10802,7 @@
      expect(filed).toMatch(
        new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta\\.md\\.archived$`),
      )
-@@ -719 +671 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -719 +673 @@ describe('restore — an archived item comes back by a plain move', () => {
    it('its own identity in the Archive doesn’t refuse its restore, and a twin elsewhere does', async () => {
      expect((await restore(await archive('Notes/Daily/Beta.md'))).ok).toBe(true)
      const bundlePath = await archive('Notes/Daily/Beta.md')
@@ -10786,7 +10812,7 @@
        entity: 'page',
        id: PAGE_B,
        parent: { kind: 'container', id: NOTES },
-@@ -732 +683 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -732 +685 @@ describe('restore — an archived item comes back by a plain move', () => {
      )
    })
  
@@ -10819,7 +10845,7 @@
    })
  
    it('an item archived out of a Set since trashed returns into that Set once the Set is restored, and with the Set still in the Trash its row reads homeless and its restore takes a destination', async () => {
-@@ -753 +707 @@ describe('restore — an archived item comes back by a plain move', () => {
+@@ -753 +709 @@ describe('restore — an archived item comes back by a plain move', () => {
      const homes = async (): Promise<Record<string, boolean>> => {
        const tree = await readNexus(root)
        const { byId } = await nexusPages(root, tree)
@@ -10828,7 +10854,7 @@
        return Object.fromEntries(rows.map((r) => [r.bundlePath, r.homeResolves]))
      }
      expect(await homes()).toEqual({ [beta]: false, [gamma]: false })
-@@ -802 +756 @@ describe('a delete from the Archive', () => {
+@@ -802 +758 @@ describe('a delete from the Archive', () => {
    ): Promise<string> => {
      const r = await mutate({ op: 'delete', path: archived, kind })
      expect(r.ok).toBe(true)
@@ -10840,7 +10866,7 @@
  
    beforeEach(async () => {
      await writeFile(at('Notes', 'Linker.md'), LINKER)
-@@ -822 +776 @@ describe('a delete from the Archive', () => {
+@@ -822 +778 @@ describe('a delete from the Archive', () => {
        parent: { kind: 'container', id: DAILY },
        place: { above: PAGE_G, below: PAGE_A },
        trail: [NOTES],
@@ -10864,7 +10890,7 @@
    it('strips the Link values naming it, and records them', async () => {
      const trashed = await trash(await archive('Notes/Daily/Beta.md'))
      expect(await related()).toBeUndefined()
-@@ -866 +831 @@ describe('a delete from the Archive', () => {
+@@ -866 +833 @@ describe('a delete from the Archive', () => {
      )
    })
  
@@ -10890,7 +10916,7 @@
      expect((await readdir(at(archived, 'Daily'))).sort()).toEqual([
        'Alpha.md',
        'Gamma.md',
-@@ -916 +886 @@ describe('a delete from the Archive', () => {
+@@ -916 +888 @@ describe('a delete from the Archive', () => {
      expect(await text(archived, 'Beta.md')).toBe(BETA)
    })
  
@@ -10925,7 +10951,7 @@
      expect(r.ok).toBe(true)
      expect(r.ok && r.value).not.toHaveProperty('landedAs')
      expect(await text(archived, 'Beta.md')).toBe(BETA)
-@@ -955 +913 @@ describe('a delete from the Archive', () => {
+@@ -955 +915 @@ describe('a delete from the Archive', () => {
      expect(daily?.pages.map((p) => p.title)).toEqual(['Alpha', 'Gamma'])
    })
  
@@ -10953,7 +10979,7 @@
      expect(await bytesUnder(at(archived))).toEqual(before)
      expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)).toEqual([archived])
      expect(await related()).toBe('[[Beta]]')
-@@ -970 +941 @@ describe('a delete from the Archive', () => {
+@@ -970 +943 @@ describe('a delete from the Archive', () => {
  
    it('an inner item’s Undo after its Set’s restore returns it as its own Archive row', async () => {
      const archived = await archive('Notes/Daily', 'set')
@@ -10966,7 +10992,7 @@
      const [own, ...rest] = await listBundles(root, ARCHIVE)
      expect(rest).toEqual([])
      expect(own.bundlePath).toMatch(
-@@ -994 +966 @@ describe('a delete from the Archive', () => {
+@@ -994 +968 @@ describe('a delete from the Archive', () => {
    describe('once a live Set above its archived Set moves into another Collection', () => {
      const IN_OTHER: BundleStore = { kind: 'archive', id: OTHER }
      /** `Notes/Daily/Sub` archived, its `Deep.md` deleted out of it, and `Daily` moved into Other, carrying `Sub`'s bundle into Other's Archive. */
@@ -10987,7 +11013,7 @@
        const moved = await mutate({
          op: 'moveSet',
          path: 'Notes/Daily',
-@@ -1010 +987 @@ describe('a delete from the Archive', () => {
+@@ -1010 +989 @@ describe('a delete from the Archive', () => {
        expect(moved.ok).toBe(true)
        const carried = archived.replace(`/${NOTES}/`, `/${OTHER}/`)
        expect((await listBundles(root, IN_OTHER)).map((b) => b.bundlePath)).toEqual([carried])
@@ -11004,7 +11030,7 @@
        expect(await bytesUnder(at(carried))).toEqual({
          ...before,
          [at(carried, 'Sub', 'Deep.md')]: DEEP,
-@@ -1026 +1003 @@ describe('a delete from the Archive', () => {
+@@ -1026 +1005 @@ describe('a delete from the Archive', () => {
      })
  
      it('an inner item’s Undo after its Set’s restore returns it as its own row in that Collection’s Archive', async () => {
@@ -11016,7 +11042,7 @@
        expect(await listBundles(root, ARCHIVE)).toEqual([])
        const [own, ...rest] = await listBundles(root, IN_OTHER)
        expect(rest).toEqual([])
-@@ -1052 +1029 @@ describe('a delete from the Archive', () => {
+@@ -1052 +1031 @@ describe('a delete from the Archive', () => {
        order: [DAILY],
      })
      expect(moved.ok).toBe(true)
@@ -11025,7 +11051,7 @@
      const carried = archived.replace(`/${NOTES}/`, `/${OTHER}/`)
      expect(await readRecord(at(carried))).toEqual({
        entity: 'page',
-@@ -1068 +1045 @@ describe('a delete from the Archive', () => {
+@@ -1068 +1047 @@ describe('a delete from the Archive', () => {
      const archived = await archive('Notes/Daily/Beta.md')
      const trashed = await trash(archived)
      await mkdir(at(archived), { recursive: true })
@@ -11034,7 +11060,7 @@
      const [other, ...rest] = (await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)
      expect(rest).toEqual([])
      expect(other).not.toBe(archived)
-@@ -1083 +1060 @@ describe('a delete from the Archive', () => {
+@@ -1083 +1062 @@ describe('a delete from the Archive', () => {
      const archived = await archive('Notes/Daily/Beta.md')
      const trashed = await trash(archived)
      vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('the move failed'))
@@ -11048,7 +11074,7 @@
      expect(await text(archived, 'Beta.md')).toBe(BETA)
    })
  
-@@ -1108 +1085 @@ describe('a delete from the Archive', () => {
+@@ -1108 +1087 @@ describe('a delete from the Archive', () => {
      expect(await related()).toBe('[[Beta]]')
    })
  
@@ -11057,7 +11083,7 @@
      const linker = await archive('Notes/Linker.md')
      failLandings((file) => file.startsWith(at(linker)))
      const r = await mutate({ op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
-@@ -1116 +1093 @@ describe('a delete from the Archive', () => {
+@@ -1116 +1095 @@ describe('a delete from the Archive', () => {
        warning: 'Couldn’t update 1 Item.',
        owed: true,
      })
@@ -11066,7 +11092,7 @@
      expect(splitFrontmatter(await text(linker, 'Linker.md')).Related).toBe('[[Beta]]')
    })
  
-@@ -1132 +1107 @@ describe('a delete from the Archive', () => {
+@@ -1132 +1109 @@ describe('a delete from the Archive', () => {
      expect(await related()).toBe('[[Beta]]')
    })
  
@@ -11087,7 +11113,7 @@
    it('a trashed page’s link a live page and an archived page both answer names the live one', async () => {
      await writeFile(at('Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\n[[Alpha]]\n`)
      await reseed()
-@@ -1164 +1125 @@ describe('a delete from the Archive', () => {
+@@ -1164 +1127 @@ describe('a delete from the Archive', () => {
          })
        ).ok,
      ).toBe(true)
@@ -11096,7 +11122,7 @@
      expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha 2]]')
    })
  
-@@ -1188 +1149 @@ describe('a delete from the Archive', () => {
+@@ -1188 +1151 @@ describe('a delete from the Archive', () => {
      const archived = await archive('Notes/Daily/Beta.md')
      const trashed = await trash(archived)
      await trash('Notes', 'collection')
@@ -11125,7 +11151,7 @@
        'The place this belonged to no longer exists.',
      )
      expect(await text(trashed, 'Beta.md')).toContain('Score: 3')
-@@ -1216 +1176 @@ describe('a delete from the Archive', () => {
+@@ -1216 +1178 @@ describe('a delete from the Archive', () => {
      const trashed = await trash(archived)
      await writeFile(at('Notes', '_pagecollection.json'), '{ not json')
      await refreshTree(root)
@@ -11141,6 +11167,15 @@
      expect(await text(archived, 'Beta.md')).toBe(BETA)
    })
  
+@@ -1230 +1192 @@ describe('a delete from the Archive', () => {
+     const archived = await archive('Notes/Daily/Beta.md')
+     const trashed = await trash(archived)
+     expect((await mutate({ op: 'emptyBundle', bundlePath: trashed })).ok).toBe(true)
++    expect(handed).toEqual([at(trashed, 'Beta.md')])
+     expect(await pathExists(at(trashed))).toBe(false)
+-    expect(await pathExists(at(archived))).toBe(false)
+   })
+ })
 ```
 
 ##### Core/Archive/refile.test.ts
@@ -18597,8 +18632,29 @@
  
  let root: string
  
-@@ -50 +47 @@ describe('moveSetOp', () => {
+@@ -36 +33 @@ afterEach(async () => {
+ })
+ 
+ describe('moveSetOp', () => {
+-  it.skipIf(noModeBits)('a Set move that misses a view settings file owes it', async () => {
++  const seedKeep = async () => {
+     const notes = await entity(root, 'collection', 'Notes')
+     await entity(root, 'collection', 'Other')
++    await entity(root, 'collection', 'Third')
+     const deep = await entity(notes.path, 'set', 'Deep')
+     const keep = await entity(notes.path, 'set', 'Keep')
+     const file = sidecarPath(keep.path, 'set')
+@@ -48 +46 @@ describe('moveSetOp', () => {
+       views: [{ id: 'v', name: 'V', type: 'table', filter: { match: 'all', rules } }],
+     })
      await refreshTree(root)
++    const moved = (path: string, newParentPath: string) =>
++      handleMutate(root, { op: 'moveSet', path, newParentPath, order: [deep.id] })
++    return { deep, file, moved }
++  }
++
++  it.skipIf(noModeBits)('a Set move that misses a view settings file owes it', async () => {
++    const { deep, file, moved } = await seedKeep()
      await chmod(file, 0o000)
      try {
 -      const r = await handleMutate(
@@ -18606,12 +18662,7 @@
 -        { op: 'moveSet', path: 'Notes/Deep', newParentPath: 'Other', order: [deep.id] },
 -        deps,
 -      )
-+      const r = await handleMutate(root, {
-+        op: 'moveSet',
-+        path: 'Notes/Deep',
-+        newParentPath: 'Other',
-+        order: [deep.id],
-+      })
++      const r = await moved('Notes/Deep', 'Other')
        expect(r.ok && r.value.cascade?.owed).toBe(true)
        expect(await readNotes(root)).toMatchObject({
 -        [deep.id]: { kind: 'container', at: 'Notes/Deep', within: 'Notes' },
@@ -18625,6 +18676,28 @@
      expect(JSON.stringify(await readJsonAt(file))).not.toContain(deep.id)
      expect(await readNotes(root)).toEqual({})
    })
++
++  it.skipIf(noModeBits)(
++    'a Set’s second move is refused while its first still owes a view settings file',
++    async () => {
++      const { deep, file, moved } = await seedKeep()
++      await chmod(file, 0o000)
++      try {
++        await moved('Notes/Deep', 'Other')
++        const r = await moved('Other/Deep', 'Third')
++        expect(r.ok ? '' : r.error.code).toBe('owed')
++        expect(await readNotes(root)).toMatchObject({
++          [deep.id]: { kind: 'move', within: 'Notes' },
++        })
++      } finally {
++        await chmod(file, 0o644)
++      }
++      await finishOwed(root)
++      expect(JSON.stringify(await readJsonAt(file))).not.toContain(deep.id)
++      expect(await readNotes(root)).toEqual({})
++    },
++  )
+ })
 ```
 
 ##### Core/Nexus/mutate.test.ts
@@ -21763,11 +21836,12 @@
 @@ -1 +1 @@
  import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 -import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
-+import { copyFile, mkdir, open, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
- import { join } from '../Paths/posix'
+-import { join } from '../Paths/posix'
 -import { putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
 -import { settledMutate } from '../Testing/settledMutate'
 -import type { TrashDeps } from '../Trash/discard'
++import { copyFile, mkdir, open, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
++import { dirname, join } from '../Paths/posix'
 +import { putJson, readJsonAt, failLandings, seedNexus, tempRoot } from '../Testing/hostFs'
 +import { bundleOf, settledMutate } from '../Testing/settledMutate'
  import { assignProperty } from '../Properties/assignment'
@@ -21778,8 +21852,9 @@
  import { readNexus } from './readNexus'
  import * as adopt from './adopt'
 -import { atomicWriteFile } from '../Files/atomicWrite'
+-import { readNotes } from './owed'
 +import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
- import { readNotes } from './owed'
++import { readNotes, relinkKey } from './owed'
  import { updatePageBody } from './page'
  import * as pageFile from '../Files/pageFile'
  import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
@@ -21935,9 +22010,12 @@
  
    const seedLinked = async (): Promise<void> => {
      await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-@@ -1354 +1314 @@ describe('a re-spell on the notes', () => {
+@@ -1352 +1312 @@ describe('a re-spell on the notes', () => {
+     await seedLinked()
+     const r = await renamed('B', 'C')
      expect(r.ok && r.value.cascade?.owed).toBe(true)
-     expect((await readNotes(root))[ULID_B]).toMatchObject({ kind: 'relink' })
+-    expect((await readNotes(root))[ULID_B]).toMatchObject({ kind: 'relink' })
++    expect((await readNotes(root))[relinkKey(ULID_B)]).toMatchObject({ kind: 'relink' })
      failing.length = 0
 -    await finishOwed(root, deps)
 +    await finishOwed(root)
@@ -21953,7 +22031,32 @@
      expect(await readFile(linker(), 'utf8')).toContain('See [[D]].')
      expect(await readNotes(root)).toEqual({})
    })
-@@ -1386 +1346 @@ describe('a re-spell on the notes', () => {
+ 
++  it('deleting a moved page keeps the re-spell its move owes the others', async () => {
++    await mkdir(abs('Notes', 'Daily'))
++    await writeFile(abs('Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set_daily' }))
++    await writeFile(abs('Notes', 'Daily', 'Alpha.md'), `---\nID: ${ULID_B}\n---\n\nalpha\n`)
++    await writeFile(abs('Notes', 'Daily', 'Beta.md'), `---\nID: ${ULID_D}\n---\n\nbeta\n`)
++    await mkdir(abs('Other'))
++    await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
++    await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[Notes/Daily/Beta]].\n`)
++    await refreshTree(root)
++    failing.push('Notes/L.md')
++    await settledMutate(root, {
++      op: 'moveSet',
++      path: 'Notes/Daily',
++      newParentPath: 'Other',
++      order: [],
++    })
++    await settledMutate(root, { op: 'delete', path: 'Other/Daily/Alpha.md', kind: 'page' })
++    failing.length = 0
++    await finishOwed(root)
++    expect(await readFile(linker(), 'utf8')).toContain('See [[Other/Daily/Beta|Beta]].')
++  })
++
+   it('a restore’s re-spell owes what it missed', async () => {
+     await mkdir(abs('Notes', 'Deep'))
+     await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 'set_deep' }))
      await writeFile(abs('Notes', 'Deep', 'X.md'), `---\nID: ${ULID_D}\n---\n\nx\n`)
      await refreshTree(root)
      const bundle = bundleOf(
@@ -21999,7 +22102,7 @@
    // A Set whose page links its sibling by path, trashed and restored beside a new Set under its name.
    const repairMissed = async (): Promise<{ landed: string; p: string }> => {
      await mkdir(abs('Notes', 'Deep'))
-@@ -1408 +1390 @@ describe('a re-spell on the notes', () => {
+@@ -1408 +1412 @@ describe('a re-spell on the notes', () => {
      await writeFile(abs('Notes', 'Deep', 'Q.md'), `---\nID: ${ULID_C}\n---\n\nq\n`)
      await refreshTree(root)
      const bundle = bundleOf(
@@ -22015,8 +22118,16 @@
 +    const r = await settledMutate(root, { op: 'restore', bundlePath: bundle })
      if (!r.ok) throw new Error(r.error.message)
      expect(r.value.cascade?.owed).toBe(true)
-     const [landed = '', entry] =
-@@ -1428 +1410 @@ describe('a re-spell on the notes', () => {
+-    const [landed = '', entry] =
+-      Object.entries(await readNotes(root)).find(([, e]) => e.kind === 'relink' && e.files) ?? []
++    const notes = await readNotes(root)
++    const entry = Object.values(notes).find((e) => e.kind === 'relink' && e.files)
++    const landed = entry?.kind === 'relink' ? dirname(entry.files?.[0] ?? '') : ''
++    expect(notes[relinkKey(landed)]).toEqual(entry)
+     expect(entry).toMatchObject({ kind: 'relink', files: [`${landed}/P.md`, `${landed}/Q.md`] })
+     return { landed, p: abs(landed, 'P.md') }
+   }
+@@ -1428 +1434 @@ describe('a re-spell on the notes', () => {
      const { landed, p } = await repairMissed()
      expect(landed).not.toBe('Notes/Deep')
      failing.length = 0
@@ -22046,7 +22157,7 @@
      expect(await readFile(abs('Notes', 'Moved', 'P.md'), 'utf8')).toContain('See [[Moved/Q|Q]].')
      expect(await readNotes(root)).toEqual({})
    })
-@@ -1451 +1434 @@ describe('a re-spell on the notes', () => {
+@@ -1451 +1458 @@ describe('a re-spell on the notes', () => {
      const { p } = await repairMissed()
      await rm(p)
      await refreshTree(root)
@@ -22055,7 +22166,7 @@
      expect(await readNotes(root)).toEqual({})
    })
  
-@@ -1465 +1448 @@ describe('a re-spell on the notes', () => {
+@@ -1465 +1472 @@ describe('a re-spell on the notes', () => {
      await putJson(abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'), { id: 'sp_h' })
      await refreshTree(root)
      const bundle = bundleOf(
@@ -22068,7 +22179,7 @@
      )
      await putJson(abs('.nexus', 'contexts', 'contexts.json'), {
        contexts: [{ id: 'ctx_new', title: 'Areas' }],
-@@ -1477 +1456 @@ describe('a re-spell on the notes', () => {
+@@ -1477 +1480 @@ describe('a re-spell on the notes', () => {
      await mkdir(abs('.nexus', 'contexts', 'Areas'))
      await refreshTree(root)
      failing.push('Areas (2)/Work/_space.json')
@@ -22077,7 +22188,7 @@
      if (!r.ok) throw new Error(r.error.message)
      expect(r.value.cascade?.owed).toBe(true)
      expect(Object.values(await readNotes(root))).toContainEqual(
-@@ -1488 +1467 @@ describe('a re-spell on the notes', () => {
+@@ -1488 +1491 @@ describe('a re-spell on the notes', () => {
    it('a Context restored under a new title owes the re-key a Space sidecar missed', async () => {
      await rekeyMissed()
      failing.length = 0
@@ -22086,7 +22197,7 @@
      const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Work', '_space.json')
      expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
      expect(await readNotes(root)).toEqual({})
-@@ -1496 +1475 @@ describe('a re-spell on the notes', () => {
+@@ -1496 +1499 @@ describe('a re-spell on the notes', () => {
  
    it('a restored Context’s owed re-key follows its Space through a rename', async () => {
      await rekeyMissed()
@@ -22103,7 +22214,7 @@
      const rekeyed = abs('.nexus', 'contexts', 'Areas (2)', 'Job', '_space.json')
      expect(await readJsonAt(rekeyed)).toMatchObject({ '<Areas (2)>': ['Home'] })
      expect(await readNotes(root)).toEqual({})
-@@ -1511 +1486 @@ describe('a re-spell on the notes', () => {
+@@ -1511 +1510 @@ describe('a re-spell on the notes', () => {
  
    it('a restored Context’s owed re-key follows it through a rename', async () => {
      await rekeyMissed()
@@ -24514,6 +24625,20 @@
 -})
 ```
 
+##### Core/Settings/settings.test.ts
+
+```/Core/Settings/settings.test.ts diff
+@@ -144 +144 @@ describe('an unreadable settings.json is never replaced', () => {
+   })
+ })
+ 
+-describe('the permanent-delete switch — what emptying the trash means', () => {
++describe('the permanent-delete switch — how it reads', () => {
+   it('an absent file, an absent key, and a non-boolean all read as off', async () => {
+     expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
+     await write({})
+```
+
 ##### Core/Tiles/tilesFile.test.ts
 
 ```/Core/Tiles/tilesFile.test.ts diff
@@ -25934,7 +26059,7 @@
 +import { join } from '../Paths/posix'
 +import { installMachine } from '../Platform/machine'
 +import { putJson, tempRoot } from '../Testing/hostFs'
-+import { diskMachine } from '../Testing/machines'
++import { diskMachine, systemTrashMachine } from '../Testing/machines'
 +import { discard } from './discard'
 +
 +let dir: string
@@ -25942,13 +26067,7 @@
 +beforeEach(async () => {
 +  dir = tempRoot('pom-discard-')
 +  handed = []
-+  installMachine({
-+    ...diskMachine(),
-+    trashToSystem: async (p) => {
-+      handed.push(await readFile(p, 'utf8'))
-+      await rm(p)
-+    },
-+  })
++  installMachine(systemTrashMachine(handed))
 +})
 +afterEach(async () => {
 +  installMachine(diskMachine())
@@ -25966,7 +26085,7 @@
 +  it('hands the file to the system trash and leaves .trash unmade', async () => {
 +    const p = await doomed()
 +    await discard(dir, p)
-+    expect(handed).toEqual(['bye'])
++    expect(handed).toEqual([p])
 +    expect(await pathExists(p)).toBe(false)
 +    expect(await pathExists(join(dir, '.trash'))).toBe(false)
 +  })
@@ -26044,6 +26163,12 @@
 +
 +let root: string
 +const handed = bundleNexusEachTest('pom-empty-', (r) => (root = r))
++const refusingTrash = () => ({
++  ...diskMachine(),
++  trashToSystem: async () => {
++    throw new Error('nope')
++  },
++})
 +
 +describe('emptyBundle — giving a bundle up for good', () => {
 +  it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
@@ -26385,12 +26510,7 @@
 +  })
 +
 +  it('a system-trash handoff that rejects leaves the bundle whole and owes nothing', async () => {
-+    installMachine({
-+      ...diskMachine(),
-+      trashToSystem: async () => {
-+        throw new Error('nope')
-+      },
-+    })
++    installMachine(refusingTrash())
 +    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
 +    const [listed] = await listBundles(root, { kind: 'trash' })
 +    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
@@ -26468,12 +26588,7 @@
 +
 +  it('a property’s Trash entry whose disposal fails leaves the note as it stood', async () => {
 +    const before = await readNotes(root)
-+    installMachine({
-+      ...diskMachine(),
-+      trashToSystem: async () => {
-+        throw new Error('nope')
-+      },
-+    })
++    installMachine(refusingTrash())
 +    const r = await handleMutate(root, {
 +      op: 'emptyBundle',
 +      bundlePath: await trashedBundle(root, 'property'),
