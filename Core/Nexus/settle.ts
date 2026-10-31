@@ -30,7 +30,7 @@ import { diskMoved, dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, SpaceNode, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
-import { liveIdIndex, livePathOf } from './heldPages'
+import { liveIdIndex, livePathOf, type StoredNodes, storedNodes } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
 import { type CascadeReport, renameCascade, respell } from './cascade'
 import { respellings } from '../Connections/rewrite'
@@ -139,12 +139,20 @@ async function settle(
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   const away = (): boolean => sessionRoot() !== root || adopting()
   // A heading rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken. Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
+  let stored: StoredNodes | undefined
+  const storedOf = async (tree: NexusTree): Promise<StoredNodes> =>
+    (stored ??= await storedNodes(root, tree))
   while (!away()) {
     const seen = owedFor(root).renames.shift()
     if (!seen) break
     paid(
       root,
-      await renameCascade(root, { path: seen.path, heading: seen.old, to: seen.next }),
+      await renameCascade(
+        root,
+        { path: seen.path, heading: seen.old, to: seen.next },
+        false,
+        storedOf,
+      ),
       'heading rename',
     )
   }

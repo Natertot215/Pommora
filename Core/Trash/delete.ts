@@ -124,8 +124,8 @@ async function planOf(
       const edit = from ? from.edit : goneEdit(before, req.kind, req.path)
       const record = from?.record ?? gatherContentRecord(before, node!)
       return ok({
-        // Keyed by the live item's id, or by its path for an archived one; noted before the move, so a delete cut short finishes its strip and views at the next open.
-        id: node?.id ?? rel,
+        // Keyed by the item's id, or by its path where it has none; noted before the move, so a delete cut short finishes its strip and views at the next open.
+        id: node?.id ?? from?.record.id ?? rel,
         record,
         note: () => containerNote(rel, strip, edit),
         departing: node ?? undefined,

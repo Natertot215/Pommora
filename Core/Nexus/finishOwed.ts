@@ -17,8 +17,8 @@ import { archivedSetIds, type ConfigReach, NO_REACH, reachConfig } from './confi
 import { oweWalk } from './fileEvents'
 import { heldName, relocate, targetTaken } from '../Files/atomicWrite'
 import { contextsDir } from '../Paths/paths'
-import { contextDirRel } from '../Paths/nexusPaths'
-import { archiveDirRel } from '../Paths/bundleLayout'
+import { ARCHIVE_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { archiveDirRel, storeOf } from '../Paths/bundleLayout'
 import { basename, join } from '../Paths/posix'
 import { readRegistryStrict, unlistContext } from '../Contexts/contextsRegistry'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -52,7 +52,7 @@ import { stashAndStrip } from '../Properties/unassignProperty'
 import { listBundles, ownedArchives } from '../Bundles/bundle'
 import { appendLinks } from '../Bundles/record'
 import { refillStash } from '../Properties/assignment'
-import { everyCollection, storedNodes } from './heldPages'
+import { everyCollection, storedNodes, storedPageIds } from './heldPages'
 
 type Finished<E extends Entry> = { left: E; reach: ConfigReach }
 
@@ -375,17 +375,29 @@ async function finishContainer(
   e: ContainerEntry,
 ): Promise<Finished<ContainerEntry>> {
   const reach: ConfigReach = { skipped: 0, hosts: [] }
-  // A deleted page, Collection, or Set live again holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds.
+  // A deleted page, Collection, or Set standing in the tree, or back in the Archive its delete left, holds its links and views, so its delete owes them nothing, and its `gone` view edit keeps only the Sets neither the tree nor an Archive its Collection still owns holds; only an Archive delete's Undo lands an item back there, so only its note reads the Archive.
   const tree = await liveTreeOf(root)
-  const back = pagesByIdOf(tree).has(id) || !!findContainerById(tree, id)
+  let held: Promise<Set<string>> | undefined
+  const archived = (): Promise<Set<string>> =>
+    (held ??= (async () => {
+      const owned = (await ownedArchives(root, tree)).flatMap((a) => (a.owned ? [a.id] : []))
+      const ids = new Set<string>()
+      for (const [path, { id: page }] of await storedPageIds(root, tree, ARCHIVE_DIR_REL)) {
+        const at = storeOf(path)?.store
+        if (page && at?.kind === 'archive' && owned.includes(at.id)) ids.add(page)
+      }
+      for (const owner of owned)
+        for (const set of await archivedSetIds(root, join(root, archiveDirRel(owner)))) ids.add(set)
+      return ids
+    })())
+  const inTree = (x: string): boolean => pagesByIdOf(tree).has(x) || !!findContainerById(tree, x)
+  const back = inTree(id) || (storeOf(e.at)?.store.kind === 'archive' && (await archived()).has(id))
   const owedEdit = async (): Promise<ContainerEntry['edit']> => {
     if (e.edit?.kind !== 'gone') return back ? undefined : e.edit
-    const unheld = e.edit.ids.filter((x) => !findContainerById(tree, x))
+    const unheld = e.edit.ids.filter((x) => !inTree(x))
     if (!unheld.length) return undefined
-    const archived: string[] = []
-    for (const { id: owner, owned } of await ownedArchives(root, tree))
-      if (owned) archived.push(...(await archivedSetIds(root, join(root, archiveDirRel(owner)))))
-    const ids = unheld.filter((x) => !archived.includes(x))
+    const stored = await archived()
+    const ids = unheld.filter((x) => !stored.has(x))
     return ids.length ? { ...e.edit, ids } : undefined
   }
   const edit = await owedEdit()
