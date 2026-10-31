@@ -1,18 +1,27 @@
 // The bundle suites' shared fixtures: the seeded Nexus their deletes, restores, and empties run on, its bundles found on disk or seeded, the rows a browser lists, and the channels and row queries every bundle browser mounts through.
 
 import type { Dirent } from 'node:fs'
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, expect, vi } from 'vitest'
 import { type ListedBundle, listBundles, mintBundle } from '../Bundles/bundle'
 import type { PropertyRecord } from '../Bundles/record'
 import { type BundleRow, matched } from '../Bundles/rows'
-import { dropLiveTree } from '../Nexus/liveTree'
+import { splitFrontmatter } from '../Files/pageFile'
+import { landValue } from '../Files/rootValues'
+import { createFolderEntity } from '../Nexus/folderEntity'
+import { rewriteRoot, rewriteRootAt } from '../Nexus/governedRoot'
+import { newId } from '../Nexus/ids'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { assignProperty } from '../Properties/assignment'
+import { createProperty } from '../Properties/registryProperty'
 import { installMachine } from '../Platform/machine'
 import { join } from '../Paths/posix'
+import { createTestPage } from './createTestPage'
 import { readJsonAt, tempRoot } from './hostFs'
 import { diskMachine } from './machines'
+import { settledMutate } from './settledMutate'
 
 export const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 export const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -114,3 +123,52 @@ export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
 
 export const seedPropertyBundle = (root: string, record: PropertyRecord): Promise<string> =>
   mintBundle(root, { kind: 'trash' }, join(root, `property-${record.id}`), record)
+
+export const trashedBundle = async (
+  root: string,
+  entity: string,
+  artifact?: string,
+): Promise<string> => {
+  const found = (await listBundles(root, { kind: 'trash' })).find(
+    (b) => b.record.entity === entity && (!artifact || b.artifactName === artifact),
+  )
+  if (!found) throw new Error(`no ${entity} bundle`)
+  return found.bundlePath
+}
+export const trashedNotes = async (root: string): Promise<string> =>
+  join(root, await trashedBundle(root, 'collection', 'Notes'), 'Notes')
+export const priorityOn = async (file: string): Promise<unknown> =>
+  splitFrontmatter(await readFile(file, 'utf8')).Priority
+export const restoreTasks = async (root: string): Promise<unknown> =>
+  settledMutate(root, {
+    op: 'restore',
+    bundlePath: await trashedBundle(root, 'collection', 'Tasks'),
+  })
+
+export async function seedPriority(
+  root: string,
+): Promise<{ tasks: string; tasksPage: string; propertyId: string }> {
+  const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
+  const created = await createProperty(root, {
+    label: 'Priority',
+    type: 'select',
+    select_options: [{ id: 'opt_hi', key: 'hi', label: 'hi', color: 'red' }],
+  })
+  if (!made.ok || !created.ok) throw new Error('setup failed')
+  const tasks = made.value.path
+  const propertyId = created.value.id
+  await assignProperty(root, tasks, propertyId)
+  await assignProperty(root, join(root, 'Notes'), propertyId)
+  const page = await createTestPage(tasks, 'Task', { body: 'b' })
+  if (!page.ok) throw new Error('setup failed')
+  const tasksPage = page.value.path
+  for (const file of [tasksPage, join(root, 'Notes', 'Daily', 'Alpha.md')])
+    await rewriteRootAt(
+      file,
+      rewriteRoot((raw) => landValue(raw, 'Priority', ['hi'])),
+    )
+  await refreshTree(root)
+  for (const path of ['Tasks', 'Notes'])
+    await settledMutate(root, { op: 'delete', path, kind: 'collection' })
+  return { tasks, tasksPage, propertyId }
+}

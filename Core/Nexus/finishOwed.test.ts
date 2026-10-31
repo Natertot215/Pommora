@@ -1,10 +1,24 @@
 // The crash-window suite: each window is the exact on-disk state a killed op leaves with its note, and the finish must land the same disk an uninterrupted op lands.
 
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits, putJson, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
-import { seedPropertyBundle } from '../Testing/bundles'
+import {
+  tempRoot,
+  noModeBits,
+  putJson,
+  seedNexus,
+  seedSpaceSidecar,
+  readJsonAt,
+} from '../Testing/hostFs'
+import {
+  bundleNexusEachTest,
+  priorityOn,
+  restoreTasks,
+  seedPriority,
+  seedPropertyBundle,
+  trashedNotes,
+} from '../Testing/bundles'
 import { STASHED_AT } from '../Testing/definitions'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -920,4 +934,56 @@ describe('a page only a fix by hand reaches', () => {
       }
     },
   )
+})
+
+describe('a property delete’s strip', () => {
+  let root: string
+  let tasksPage: string
+  let propertyId: string
+  bundleNexusEachTest('pom-strip-', (r) => (root = r))
+  beforeEach(async () => {
+    ;({ tasksPage, propertyId } = await seedPriority(root))
+    await restoreTasks(root)
+  })
+
+  it.skipIf(noModeBits).each(['the live page', 'the trashed page'])(
+    'a property delete that misses %s offers Try Again',
+    async (which) => {
+      const file =
+        which === 'the live page' ? tasksPage : join(await trashedNotes(root), 'Daily', 'Alpha.md')
+      const { chmod } = await import('node:fs/promises')
+      await chmod(file, 0o000)
+      try {
+        const r = await handleMutate(root, { op: 'deleteProperty', propertyId })
+        expect(r.ok && r.value.cascade?.owed).toBe(true)
+        expect(await readNotes(root)).toEqual({
+          [propertyId]: expect.objectContaining({ strip: ['Priority'] }),
+        })
+      } finally {
+        await chmod(file, 0o644)
+      }
+      await finishOwed(root)
+      expect(await priorityOn(file)).toBeUndefined()
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
+
+  it.skipIf(noModeBits)('an owed strip leaves a key a later property took', async () => {
+    const { chmod } = await import('node:fs/promises')
+    await chmod(tasksPage, 0o000)
+    try {
+      await handleMutate(root, { op: 'deleteProperty', propertyId })
+      await seedNexus(root, {
+        defs: [{ id: 'prop_again', label: 'Priority', key: 'Priority', type: 'text' }],
+      })
+    } finally {
+      await chmod(tasksPage, 0o644)
+    }
+    expect(await readNotes(root)).toEqual({
+      [propertyId]: expect.objectContaining({ strip: ['Priority'] }),
+    })
+    await finishOwed(root)
+    expect(await priorityOn(tasksPage)).toEqual(['hi'])
+    expect(await readNotes(root)).toEqual({})
+  })
 })

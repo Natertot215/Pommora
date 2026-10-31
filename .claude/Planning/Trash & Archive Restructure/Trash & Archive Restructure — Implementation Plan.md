@@ -306,7 +306,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-2 · The on-disk bundle fixture
   - [x] Task 6-3 · The suites follow their modules
   - [x] Task 6-4 · The delete records' and the listing's cases
-  - [ ] Task 6-5 · The empty's cases
+  - [x] Task 6-5 · The empty's cases
   - [ ] Task 6-6 · `discardFile`'s cases and the Archive's delete case
   - [ ] Task 6-7 · The browser harness and the skins' duplicates
   - [ ] Task 6-8 · The Trash skin's shared cases to their owners
@@ -9220,7 +9220,7 @@ The other two files' import blocks change the same way, line for line.
 
 #### Task 6-5
 
-**TASK:** The empty's cases leave the restore suite for `Core/Trash/empty.test.ts`, beside `empty.ts` (Placements, Task 5-5), so `restore.test.ts` holds the restore alone.
+**TASK:** The empty's cases leave the restore suite for `Core/Trash/empty.test.ts`, beside `empty.ts` (Placements, Task 5-5), so `restore.test.ts` holds the restore alone; *"a property delete's strip"*, which shares their property seed, goes to `finishOwed.test.ts` beside the finish's property arm, and the seed both suites read becomes `seedPriority` in `Core/Testing/bundles.ts`.
 
 **NOW:** `restore.test.ts` holds *"emptyBundle — giving a bundle up for good"* (`spend.test.ts:1705-2077`, after Task 2-1 removed `:1877` and `:2059` and moved `:1706` and `:1724` onto an installed machine) and *"emptying a property's Trash entry"* (`:2571-2670`, which Task 4-4 narrowed to the trashed Collection's purge and its `:2660` inverted under Decision D-4). Both read the seed Task 6-2 shared.
 
