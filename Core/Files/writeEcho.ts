@@ -21,10 +21,8 @@ export function setWriteTap(next: WriteTap | null): void {
 }
 
 // Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
-export function recordWrite(absPath: string, landing = false): void {
-  const last = recent.get(absPath)
-  const stat = last?.kind === 'landing' ? last.stat : undefined
-  recent.set(absPath, landing ? { kind: 'landing', stat } : { kind: 'move', at: Date.now() })
+function record(absPath: string, echo: Echo): void {
+  recent.set(absPath, echo)
   if (recent.size > sweepAbove) {
     const cutoff = Date.now() - WINDOW_MS
     for (const [p, r] of recent) if (r.kind === 'move' && r.at < cutoff) recent.delete(p)
@@ -33,9 +31,14 @@ export function recordWrite(absPath: string, landing = false): void {
   tap?.wrote(absPath)
 }
 
-/** Gives the landing recorded at `absPath` the stat it answered, so its echo is told by that stat. */
-export function recordLanding(absPath: string, stat: FileStat): void {
-  recent.set(absPath, { kind: 'landing', stat })
+export const recordWrite = (absPath: string): void =>
+  record(absPath, { kind: 'move', at: Date.now() })
+
+/** Records a landing at `absPath` ahead of its bytes, keeping the stat the last one answered, or, given the `stat` it answered, gives it that stat, so its echo is told by that stat. */
+export function recordLanding(absPath: string, stat?: FileStat): void {
+  const last = recent.get(absPath)
+  if (stat) recent.set(absPath, { kind: 'landing', stat })
+  else record(absPath, { kind: 'landing', stat: last?.kind === 'landing' ? last.stat : undefined })
 }
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)

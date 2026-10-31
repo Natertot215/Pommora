@@ -17,7 +17,7 @@ import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
 import { pageWriter } from '../../Session/saveScheduler'
 import { storesChanged } from '../../Session/nexusSlice'
-import { livePath } from '../../Nexus/record'
+import { pathNow } from '../../Nexus/record'
 import { trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
 import { useSession, useSetting } from '../../Session/store'
@@ -45,7 +45,7 @@ type Branch<K extends Reader['kind']> = { reader: Extract<Reader, { kind: K }>; 
 
 async function restoreFromHistory(target: PageTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
-  await pageWriter.flush(livePath(tree, target))
+  await pageWriter.flush(pathNow(tree, target))
   const r = await dialer().ask('history:restore', target.id, ts)
   if (!r.ok) return r
   return (await replaceBody(r.value.path))
@@ -137,7 +137,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
   const [shown, setShown] = useState<number | null>(null)
   // Bumped by a restore: the file's stamp and its body re-read under the same highlight.
   const [reload, setReload] = useState(0)
-  const path = livePath(tree, target)
+  const path = pathNow(tree, target)
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {

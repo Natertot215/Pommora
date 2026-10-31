@@ -46,12 +46,13 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
   }
 }
 
-// Each temp writes through to its drive, so one flush of the drive's cache makes a whole group durable. Node names no write-through flag on Windows, where libuv maps its own value to FILE_FLAG_WRITE_THROUGH; that mapping ships unverified there.
+// Each temp writes through to its drive, so one flush of the drive's cache makes a whole group durable. Node names no write-through flag on Windows, so this mirrors libuv's value there, unverified.
+const UV_FS_O_DSYNC = 0x04000000
 const TEMP_FLAGS =
   constants.O_WRONLY |
   constants.O_CREAT |
   constants.O_EXCL |
-  (isWindows ? 0x04000000 : constants.O_DSYNC)
+  (isWindows ? UV_FS_O_DSYNC : constants.O_DSYNC)
 
 // Beside its file, or a symlink's target, which it lands at (a link to nothing is landed over), so the rename stays on one volume; dotted, so the walk, the watcher, and sync never admit it, which is also why a temp a crash or a folder moved mid-flush strands is left where it lies; and fixed-length, so a file named to the length limit still has room for it. Answers the drive the temp sits on, the flush that empties that drive's cache, and the file's commit, which lands it once that flush answers and answers the stat the file then holds while its time and size are still the temp's, which a rename keeps, and the temp's own otherwise, so an outside write landing between the rename and the stat is heard.
 async function stage({ path: named, data, mtimeMs, expect }: Landing): Promise<{

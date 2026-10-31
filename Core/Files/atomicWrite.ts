@@ -15,7 +15,7 @@ async function landOwn(
   files: readonly Landing[],
   bodyOnly?: boolean,
 ): Promise<PromiseSettledResult<FileStat>[]> {
-  for (const { path } of files) recordWrite(path, true)
+  for (const { path } of files) recordLanding(path)
   const landed = await machine().land(files)
   const events: FileEvent[] = []
   files.forEach(({ path, data, mtimeMs }, i) => {

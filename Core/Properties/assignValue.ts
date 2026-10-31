@@ -5,7 +5,7 @@ import { patchOverride, type SetOverrides } from './valueOverride'
 import type { Picked, ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './fieldValue'
 import { shownAlias } from '../Connections/linkValue'
-import { livePath, pageIndexOf } from '../Nexus/record'
+import { pathNow, pageIndexOf } from '../Nexus/record'
 import type { ConnPage } from '../Connections/pageIndex'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
@@ -94,7 +94,7 @@ function rememberedAlias(
 /** An alias's undo lands where its page stands now, since a rename may have moved it since the write. */
 const atPageNow = (req: MutateRequest, page: ConnPage | undefined): MutateRequest =>
   req.op === 'editAliases' && page
-    ? { ...req, path: livePath(useSession.getState().tree, page) }
+    ? { ...req, path: pathNow(useSession.getState().tree, page) }
     : req
 
 export function assignValue(
