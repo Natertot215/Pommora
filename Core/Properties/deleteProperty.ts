@@ -1,4 +1,4 @@
-import { mintBundle } from '../Bundles/bundle'
+import { mintBundle, removeBundle } from '../Bundles/bundle'
 import { assignedIds } from '../Nexus/containerFields'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import type { StashBlock } from './properties'
@@ -27,7 +27,7 @@ import {
 } from '../Nexus/governedSweep'
 import { stripKeys } from '../Files/rootValues'
 import { patchSidecar } from '../Files/sidecar'
-import { readJsonObject, removeOwn } from '../Files/atomicWrite'
+import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import { withoutOrderId } from '../Contexts/spaceSidecar'
 import { ok, type Result } from '../Contract/result'
@@ -105,7 +105,7 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
     settle: () => undefined,
   })
   if (!ran.ok) {
-    await removeOwn(bundle)
+    await removeBundle(root, bundle)
     return ran
   }
   return ok({

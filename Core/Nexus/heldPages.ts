@@ -120,12 +120,9 @@ export async function nexusPages(
   return { byId, archived }
 }
 
-/** The tree's pages and the Archive's at the paths they left, with `more` beside them. */
-export const linkWorld = (
-  tree: NexusTree,
-  archived: readonly ConnPage[],
-  more: readonly ConnPage[] = [],
-): PageIndex => buildPageIndex([...pagesOf(tree), ...archived, ...more])
+/** The tree's pages and the Archive's at the paths they left. */
+export const linkWorld = (tree: NexusTree, archived: readonly ConnPage[]): PageIndex =>
+  buildPageIndex([...pagesOf(tree), ...archived])
 
 /** What the Trash holds of the tree's entities, from one listing of `chain` within it: each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; and the Collections and Spaces it holds, read from their own sidecars, since the index holds pages alone. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
 export async function storedNodes(root: string, tree: NexusTree, chain?: string) {

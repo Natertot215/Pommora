@@ -85,12 +85,12 @@ export async function sweepCount(root: string, files: string[], plan: SweepPlan)
   return (await sweepGovernedRoots(shown, plan, true)).touched.size
 }
 
-/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID, and last without one. */
+/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries, and left alone where two files claim it — and answers the IDs whose root now holds what its rewrite asked for, and how many files it couldn't read or write; a null rewrite leaves its root as it is. A key a page's rewrite adds lands above the key `above` names for its ID and that key, and last without one. */
 export async function sweepRootsById<T>(
   root: string,
   roots: RootsById,
   values: Record<string, T>,
-  above: Record<string, string | undefined>,
+  above: (id: string, key: string) => string | undefined,
   rewrite: (root: Json, value: T) => Json | null,
 ): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
   const asked = new Map<string, string>()
@@ -106,7 +106,7 @@ export async function sweepRootsById<T>(
       if (next !== null) asked.set(file, id)
       return next
     },
-    above: (raw, file) => () => above[rootId(file, raw) ?? ''],
+    above: (raw, file) => (key) => above(rootId(file, raw) ?? '', key),
   })
   for (const file of swept.skipped) asked.delete(file)
   return { taken: new Set(asked.values()), skipped: swept.skipped.length }
@@ -157,5 +157,5 @@ export async function refillValues(
   world: PageIndex,
   above: Record<string, string | undefined> = {},
 ): Promise<{ taken: ReadonlySet<string>; skipped: number }> {
-  return sweepRootsById(root, roots, values, above, refillOf(def, world))
+  return sweepRootsById(root, roots, values, (id) => above[id], refillOf(def, world))
 }

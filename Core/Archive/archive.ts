@@ -1,31 +1,20 @@
-// The Archive's own ops: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back by a plain move to its exact place, with nothing to reconcile.
+// The Archive's own op: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back through the one restore both stores share (`Core/Bundles/restore.ts`).
 
-import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { holdsName } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
-import { relocate } from '../Files/atomicWrite'
-import { machine } from '../Platform/machine'
-import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
+import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
-import { nexusPages } from '../Nexus/heldPages'
-import { departingCascade, settledIndex } from '../Nexus/settle'
-import { returningCascade } from '../Nexus/arrival'
-import { pageIndexOf } from '../Nexus/record'
+import { departingCascade } from '../Nexus/settle'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
-import {
-  contentPages,
-  fileInto,
-  originPagesOf,
-  type OpenBundle,
-  spendBundle,
-} from '../Bundles/bundle'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { contentPages, fileInto, originPagesOf } from '../Bundles/bundle'
 import { type ArchiveStore, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import { decodeRecord, gatherContentRecord, originOf, type RecordFile } from '../Bundles/record'
-import { archiveFiling, placeRecord } from '../Bundles/placement'
+import { archiveFiling } from '../Bundles/placement'
 import { refileLanded } from './refile'
 
 /** Link values and saved views naming what leaves stay where they are and resolve again on its restore, so nothing is stripped and no configuration pass runs; filed under another path than it stood under, what names it re-spells to that path. */
@@ -87,58 +76,4 @@ async function filingOf(
     return { to: into, at, origin: join(root, folder, name), record }
   }
   return { to: store, origin: abs, record: gatherContentRecord(tree, node) }
-}
-
-/** An archived page or Set returns by a plain move to the place it left, or to `destination`, with nothing reconciled or refilled, since every cascade kept it current; its own links keep naming its own pages, and path links naming where it lived follow it. */
-export async function restoreArchived(
-  root: string,
-  bundle: OpenBundle,
-  destination?: RestoreDestination,
-): Promise<MutateReply> {
-  const { store, record: held, artifact } = bundle
-  if (store.kind !== 'archive' || (held.entity !== 'page' && held.entity !== 'set') || !artifact)
-    return NOT_HELD
-  const tree = await liveTreeOf(root)
-  const { byId } = await nexusPages(root, tree)
-  const placed = await placeRecord(
-    root,
-    held,
-    destination,
-    { abs: bundle.abs, artifact },
-    tree,
-    byId,
-  )
-  if (!placed.ok) return placed
-  const { record, placement, writeOrder, landedAs } = placed.value
-  const { dir, finalName, finalTitle } = placement
-  const targetAbs = join(root, dir, finalName)
-  const back = await originPagesOf(root, await contentPages(record.entity, artifact))
-  await machine().mkdir(dirname(targetAbs))
-  await relocate(artifact, targetAbs)
-  await writeOrder?.()
-  await spendBundle(root, bundle)
-  const title = finalTitle ?? finalName
-  const { cascade } = await returningCascade(
-    root,
-    pageIndexOf(tree),
-    await settledIndex(root),
-    back,
-    title,
-    { entity: record.entity, abs: targetAbs },
-  )
-  await refileLanded(root, record, store.id)
-  return ok({
-    ...(cascade ? { cascade } : {}),
-    ...(landedAs ? { landedAs } : {}),
-    undo: {
-      op: 'archive',
-      path: relative(root, targetAbs),
-      kind: held.entity,
-      back: {
-        at: relative(root, bundle.inner ? artifact : bundle.abs),
-        name: basename(artifact),
-        record: held,
-      },
-    },
-  })
 }
