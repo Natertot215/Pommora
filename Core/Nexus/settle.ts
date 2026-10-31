@@ -309,7 +309,7 @@ function paid(root: string, c: CascadeReport | undefined, what: string): void {
   oweCascade(root, c.pages, c.hosts)
 }
 
-// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. One that left a store's bundle came back by hand and finishes as that store's restore, the unlink proving a move, since a copy leaves the bundle whole and arrives as a page of its own; after an index rebuild nothing pairs, so such a page stays live and current without its delete's Link values, its bundle unlisted. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival and each page back from a store absent.
+// An outside move: a page whose rows left one path and whose id the tree now holds at another, paired whichever order its two events came in and however many settles apart; a vanish nothing holds yet waits for its id. One that left a store's bundle came back by hand and finishes as that store's restore, or arrives outright when that restore can't finish, the unlink proving a move, since a copy leaves the bundle whole and arrives as a page of its own; after an index rebuild nothing pairs, so such a page stays live and current without its delete's Link values, its bundle unlisted. Every other landed id the tree holds arrived outright, so only its collisions re-spell; a paired move's own row, landing a batch after its folder, is remembered as the move's and is no arrival. The world before is the tree's pages with each paired page back where it left and each arrival and each page back from a store absent.
 async function payOutsideMoves(root: string): Promise<void> {
   const owed = owedFor(root)
   const tree = heldTreeOf(root)
@@ -346,18 +346,26 @@ async function payOutsideMoves(root: string): Promise<void> {
   )
   const moved = [...left.keys()]
   const after = pageIndexOf(tree)
+  for (const [bundle, pages] of back) {
+    let unfinished = pages
+    try {
+      const recognized = await recognize(root, tree, before, bundle, pages)
+      paid(root, recognized.cascade, 'outside restore')
+      unfinished = recognized.unfinished
+    } catch (e) {
+      console.error('outside restore failed:', errText(e))
+    }
+    for (const { id, to } of unfinished) {
+      arriving.push(id)
+      label ||= titleFromPath(to)
+    }
+  }
   if (moved.length || arriving.length)
     paid(
       root,
       await relink(root, before, after, label, moved, [...moved, ...arriving]),
       'outside move',
     )
-  for (const [bundle, pages] of back)
-    try {
-      paid(root, await recognize(root, tree, before, bundle, pages), 'outside restore')
-    } catch (e) {
-      console.error('outside restore failed:', errText(e))
-    }
 }
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply. A Space the settle found moved back from the Trash by hand tags its members again under the Contexts lock, taken outside the settle's turn, so it finishes in a turn of its own once the settle returns, and settles again.

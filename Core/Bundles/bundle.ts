@@ -93,9 +93,19 @@ export async function removeBundle(root: string, abs: string): Promise<void> {
   }
 }
 
-export async function bundleArtifact(bundleDir: string): Promise<string | null> {
+type BundleHold = { kind: 'emptied' } | { kind: 'held'; artifact: string } | { kind: 'ambiguous' }
+
+export async function bundleHold(bundleDir: string): Promise<BundleHold> {
   const found = (await listEntries(bundleDir)).filter((e) => !hiddenName(e.name))
-  return found.length === 1 ? join(bundleDir, found[0].name) : null
+  if (found.length === 0) return { kind: 'emptied' }
+  return found.length === 1
+    ? { kind: 'held', artifact: join(bundleDir, found[0].name) }
+    : { kind: 'ambiguous' }
+}
+
+export async function bundleArtifact(bundleDir: string): Promise<string | null> {
+  const hold = await bundleHold(bundleDir)
+  return hold.kind === 'held' ? hold.artifact : null
 }
 
 /** Files `artifact` back at `at`, the address it held, under its origin's name: into the folder it sat in while that folder still stands, in a store of `to`'s kind since `at` arrives from the interface, and holds nothing of its name, else into a bundle minted in `to` for `origin`, its record written ahead, asking back the bundle name `at` names when it names a whole bundle. A failed move takes the bundle back, since a ghost bundle would take the name a retry asks for. Answers the address it now holds and where it landed. */
@@ -181,13 +191,12 @@ export async function listBundles(
         if (!shallow) await walk(abs)
         continue
       }
-      const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
-      const bare = record.entity !== 'property' && !artifact
-      if (bare !== !!recordOnly) continue
+      const hold = record.entity === 'property' ? null : await bundleHold(abs)
+      if ((hold?.kind === 'emptied') !== !!recordOnly) continue
       out.push({
         bundlePath: relative(root, abs),
         record,
-        ...(artifact ? { artifactName: basename(artifact) } : {}),
+        ...(hold?.kind === 'held' ? { artifactName: basename(hold.artifact) } : {}),
       })
     }
   }
