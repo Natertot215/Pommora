@@ -97,8 +97,8 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const rels = q.keys.map((key) => queryMembers(key, title))
   const listed = rels.map((r) => r && new Set(r))
   const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
-  const known = read ? await nexusPages(root, tree) : null
-  const stored = known?.stored ?? (await storedNodes(root, tree))
+  const stored = await storedNodes(root, tree)
+  const known = read ? await nexusPages(root, tree, stored) : null
   const reached = await pagesInReach(root, tree, stored, named, q.reach)
   const pages = q.every
     ? await unlessVouched(

@@ -7,7 +7,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { stashedBlock, patchStashBlock } from './propertyStash'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { assignedIds } from '../Nexus/containerFields'
-import { linkWorld, nexusPages } from '../Nexus/heldPages'
+import { linkWorld, nexusPages, storedNodes } from '../Nexus/heldPages'
 import type { CascadeReport } from '../Nexus/cascade'
 import { distinct, propertyNote, runNoted } from '../Nexus/owed'
 import { containerAt, owningCollection } from '../Nexus/treePatch'
@@ -34,7 +34,8 @@ export async function refillStash(
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return 0
   const { values } = stash
-  const { byId, archived, stored } = await nexusPages(root, tree)
+  const stored = await storedNodes(root, tree)
+  const { byId, archived } = await nexusPages(root, tree, stored)
   const members = new Map(
     Object.keys(values).flatMap((id) => {
       const r = byId.get(id)

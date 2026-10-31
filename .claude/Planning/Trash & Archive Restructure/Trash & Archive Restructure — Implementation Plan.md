@@ -77,7 +77,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `storeOf`, `Stored` | `Core/Paths/bundleLayout.ts` | 4 |
 | `hiddenName`, `hiddenFolder` (moved from `Core/Paths/exclusion.ts`) | `Core/Paths/nexusPaths.ts` | 4 |
 | `stashBlock`, `StashBlock` (moved from `Core/Properties/propertyStash.ts`) | `Core/Properties/properties.ts` | 4 |
-| `storedSpaces`, `storedPageIds` (renamed from `archivedPageIds`), `rootFile`; `NexusPages.stored` | `Core/Nexus/heldPages.ts` | 4 |
+| `storedPageIds` (renamed from `archivedPageIds`), `rootFile` | `Core/Nexus/heldPages.ts` | 4 |
 | `trashedOwners`, `trashReach` | `Core/Bundles/bundle.ts` | 4 |
 | `LinkStrip` • Type | `Core/Nexus/cascade.ts` | 4 |
 | `watchedUnder` (the watcher's and Sync manifest's one watch rule) | `Core/Paths/exclusion.ts` | 4 |
@@ -6474,7 +6474,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 #### Task 4-7
 
-**TASK:** The Trash's side of the tree becomes one projection. `storedNodes(root, tree, chain?)` in `Core/Nexus/heldPages.ts` lists the Trash once and answers `{ owners, collections, spaces }`: each bundle's owning Collection as `trashedOwners` computed it, `currentOrigin` included; each trashed Collection read from its sidecar through `containerNodeFrom`; and each trashed Space as `storedSpaces` read it. `NexusPages.stored` holds it. Every enumerator of the tree's Collections or Spaces takes it beside the tree and unions it inside (`spaceFiles`, `tileHostsOf`, `editStashes`, `owningCollection`, `containerSchema`), so a trashed Collection's stash follows an option or page rename and ages out with a live one's, a trashed Space's markdown tiles follow a page rename, and the repair sweep reads a page inside a trashed Collection, and an archived page of one, whose Archive is kept while the Collection sits in the Trash, against that Collection's own definitions. `trashedOwners`, `storedSpaces`, `configReach`'s hand-patched boards, and the three direct `storedSpaces` listings leave; `trashReach` moves beside `archiveReach` in `treePatch.ts`, reading the projection's owners. **Comments:** `trashedOwners`' docstring becomes `storedNodes`', and the docs naming `trashed` or a Spaces-only `stored` are rewritten in place; the count doesn't change.
+**TASK:** The Trash's side of the tree becomes one projection. `storedNodes(root, tree, chain?)` in `Core/Nexus/heldPages.ts` lists the Trash once and answers `{ owners, collections, spaces }`: each bundle's owning Collection as `trashedOwners` computed it, `currentOrigin` included; each trashed Collection read from its sidecar through `containerNodeFrom`; and each trashed Space as `storedSpaces` read it. `nexusPages` takes it from a caller that holds it, and otherwise lists the Trash's Contexts alone, since its `byId` reads only the Spaces. Every enumerator of the tree's Collections or Spaces takes it beside the tree and unions it inside (`spaceFiles`, `tileHostsOf`, `editStashes`, `owningCollection`, `containerSchema`), so a trashed Collection's stash follows an option or page rename and ages out with a live one's, a trashed Space's markdown tiles follow a page rename, and the repair sweep reads a page inside a trashed Collection, and an archived page of one, whose Archive is kept while the Collection sits in the Trash, against that Collection's own definitions. `trashedOwners`, `storedSpaces`, `configReach`'s hand-patched boards, and the three direct `storedSpaces` listings leave; `trashReach` moves beside `archiveReach` in `treePatch.ts`, reading the projection's owners. **Comments:** `trashedOwners`' docstring becomes `storedNodes`', and the docs naming `trashed` or a Spaces-only `stored` are rewritten in place; the count doesn't change.
 
 **NOW:**
 - One enumeration holds both stores for pages: the content index and the `contentRoots` walk. Collections, Sets, Spaces, stashes, and tile boards come from the live tree alone, and each cascade bolts a Trash read beside it: `storedSpaces` (`heldPages.ts:125-151`, listing `CONTEXTS_DIR_REL`) at `nexusPages` (`:109`), `findHolders` (`keyHolders.ts:112`), `renameCascade` (`cascade.ts:224-229`), and `reachConfig`'s boards (`configReach.ts:312-316`); `trashedOwners` and `trashReach` (`bundle.ts:203-222`) at `pagesInReach` (`keyHolders.ts:58-60`), `storedContainers` (`configReach.ts:292`), `refillStash` (`assignment.ts:40-44`), and the repair sweep (`repairSweep.ts:20`).
@@ -6486,18 +6486,20 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **Departure, Disclosed:** `sweepStashes` calls `storedNodes` itself. Its two callers, the open (`Nexus/handlers.ts:106`) and the History Timeframe's write (`Settings/handlers.ts:48`), hold no projection to pass and fire it unawaited, and the edge `propertyStash.ts → heldPages.ts` closes no loop (*§NOW*), so the stash's one age-out entry point lists for itself and both callers stay as they are. Every other enumerator takes the projection from a caller that already reads it once.
 
-**Departure, Disclosed:** `refillStash` no longer gates its Trash read on a stashed id sitting in the Trash, since `nexusPages`, which it already calls, now lists the whole Trash; it reads `stored` from that reply.
+**Departure, Disclosed:** `refillStash` no longer gates its Trash read on a stashed id sitting in the Trash, since it now reads the whole projection once and passes it to `nexusPages`.
 
 **Departure, Disclosed:** `finishProperty`'s listing (`finishOwed.ts:163-173`) and `collectionsElsewhere`' Trash arm (`bundle.ts:190-200`) stay. The first answers whether the property's own bundle is kept, which no holder projection carries, so folding its Collection union alone would list twice; the second sits in `bundle.ts`, which `heldPages.ts` imports, and its callers (`ownedArchives`, `placeRecord`) hold no projection.
 
-- [ ] Write these and watch each fail at HEAD:
+- [ ] Write these and watch each fail as quoted:
   - **`optionOps.test.ts`, "a trashed Collection’s stash follows an option rename":** `stashed()`'s Collection is deleted, then its option renamed; the trashed sidecar's stash reads the new word. Fails at HEAD: `AssertionError: expected { …(1) } to deeply equal { …(1) }`, the block keeping `A`.
   - **`propertyStash.test.ts`, "a trashed Collection’s stash ages out with a live one’s":** a Collection `Old` stashing one block before the History Timeframe and one inside it is filed into the Trash; `sweepStashes` keeps the second alone, and `Tasks`' live block leaves with it. Fails at HEAD: `AssertionError: expected { p: { …(2) }, q: { …(2) } } to deeply equal { q: { …(2) } }`.
   - **`repairSweep.test.ts`, "canonicalizes a page inside a trashed Collection against its own definitions":** delete `Col`, drift `One.md` inside its bundle to a doubled `Status`, and the sweep folds it to one. Fails at HEAD: `AssertionError: expected '---\nID: …' to contain 'Status:\n  - Open\n---'`.
   - **`cascade.test.ts`, "a trashed Space’s markdown tile follows a page rename":** a trashed Space's board (`trashedBoard`, shared with the next case) holds a tile linking `[[Target]]`; a rename to `Omega` rewrites it. Fails at HEAD: `AssertionError: expected { ok: true, value: 'see [[Target]]' } to deeply equal { ok: true, value: 'see [[Omega]]' }`.
   - **`cascade.test.ts`, "a trashed Space’s tiles push no TilesChanged":** the same board beside a homepage tile linking `[[Target]]`; both rewrite, and `hosts` names the homepage alone. Fails at HEAD on the trashed tile, as above, and with the stored boards given a `{ kind: 'space', id }` host: `AssertionError: expected [ { …(2) }, { host: { …(2) }, …(1) } ] to deeply equal [ Array(1) ]`.
+  - **`repairSweep.test.ts`, "canonicalizes an archived page of a trashed Collection against that Collection’s own definitions":** archive `One.md`, delete `Col`, drift the archived page to a doubled `Status`, and the sweep folds it to one. Fails at HEAD, and with `owningCollection`'s stored fallback skipping the Archive arm: `AssertionError: expected '---\nID: …' to contain 'Status:\n  - Open\n---'`.
+  - **`heldPages.test.ts`, "lists the Trash’s Contexts alone for its by-id read":** a spy on `listBundles` reads the chain `nexusPages` lists without a projection. Fails with `nexusPages` listing the whole projection: `AssertionError: expected [ undefined ] to deeply equal [ '.nexus/contexts' ]`.
 - [ ] Apply the AFTER.
-- [ ] Re-point the tests of the widened signatures, their expectations unchanged: `heldPages.test.ts:263,301`'s `stored.map` reads `stored.spaces.map`; `tilesFile.test.ts`' seven `tilesLink` and six `rewriteTileConnections` calls pass a local `NOTHING_TRASHED` projection after `root`.
+- [ ] Re-point the tests of the widened signatures, their expectations unchanged: `heldPages.test.ts:263,301`'s `stored.map` reads `storedNodes`' `.spaces.map`; `tilesFile.test.ts`' seven `tilesLink` and six `rewriteTileConnections` calls pass a local `NOTHING_TRASHED` projection after `root`.
 
 **AFTER**
 
@@ -6505,21 +6507,26 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 @@ imports @@
 -import { entityMemo, type NexusTree, type SpaceNode } from './tree'
 +import { type CollectionNode, entityMemo, type NexusTree, type SpaceNode } from './tree'
--import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
-+import { ARCHIVE_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
  import { listBundles } from '../Bundles/bundle'
 +import { collectionOf, currentOrigin, originOf } from '../Bundles/record'
 +import { containerNodeFrom } from './containerFields'
 @@ NexusPages @@
--… `stored` lists the Trash's Spaces, read from their own sidecars since the index holds pages alone, so a reach reads them once. */
-+… `stored` is what the Trash holds beside the tree, so a reach reads it once. */
+-… the Trash's stay out, so a link naming a trashed page reads gone. `stored` lists the Trash's Spaces, read from their own sidecars since the index holds pages alone, so a reach reads them once. */
++… the Trash's stay out, so a link naming a trashed page reads gone. */
 -  stored: readonly SpaceNode[]
-+  stored: StoredNodes
 @@ nexusPages @@
+-export async function nexusPages(root: string, tree: NexusTree): Promise<NexusPages> {
++export async function nexusPages(
++  root: string,
++  tree: NexusTree,
++  stored?: StoredNodes,
++): Promise<NexusPages> {
 -  const stored = await storedSpaces(root)
-+  const stored = await storedNodes(root, tree)
++  const { spaces } = stored ?? (await storedNodes(root, tree, CONTEXTS_DIR_REL))
 -  for (const { id, kind, title, path } of [...trashed, ...stored])
-+  for (const { id, kind, title, path } of [...trashed, ...stored.spaces])
++  for (const { id, kind, title, path } of [...trashed, ...spaces])
+-  return { byId, archived, stored }
++  return { byId, archived }
 @@ storedSpaces → storedNodes @@
 -export async function storedSpaces(root: string): Promise<SpaceNode[]> {
 +/** What the Trash holds of the tree's entities, from one listing of `chain` within it: each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; and the Collections and Spaces it holds, read from their own sidecars, since the index holds pages alone. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
@@ -6618,8 +6625,8 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +  [...tree.contexts.flatMap((g) => g.spaces), ...stored.spaces]
 @@ findHolders @@
 -  const reached = await pagesInReach(root, tree, named, q.reach)
-+  const known = read ? await nexusPages(root, tree) : null
-+  const stored = known?.stored ?? (await storedNodes(root, tree))
++  const stored = await storedNodes(root, tree)
++  const known = read ? await nexusPages(root, tree, stored) : null
 +  const reached = await pagesInReach(root, tree, stored, named, q.reach)
 @@
 -  const known = read ? await nexusPages(root, tree) : null
@@ -6633,6 +6640,9 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 +import { addressable, nexusPages, storedNodes, twinned } from './heldPages'
 +import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 @@ linkStrip @@
+-  const { byId, archived, stored } = await nexusPages(root, tree)
++  const stored = await storedNodes(root, tree)
++  const { byId, archived } = await nexusPages(root, tree, stored)
 -    ...(await pagesInReach(root, tree, queryMentions([...gone]), 'governed')),
 +    ...(await pagesInReach(root, tree, stored, queryMentions([...gone]), 'governed')),
 @@ renameCascade @@
@@ -6761,6 +6771,8 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 ```Core/Properties/assignment.ts diff
 -import { trashedOwners } from '../Bundles/bundle'
 -import { storeOf } from '../Paths/bundleLayout'
+-import { linkWorld, nexusPages } from '../Nexus/heldPages'
++import { linkWorld, nexusPages, storedNodes } from '../Nexus/heldPages'
 @@ refillStash @@
 -  const { byId, archived } = await nexusPages(root, tree)
 -  const trashed = Object.keys(values).some(
@@ -6768,7 +6780,8 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 -  )
 -    ? await trashedOwners(root, tree)
 -    : undefined
-+  const { byId, archived, stored } = await nexusPages(root, tree)
++  const stored = await storedNodes(root, tree)
++  const { byId, archived } = await nexusPages(root, tree, stored)
 @@
 -      return r?.kind === 'page' && owningCollection(tree, r.path, trashed)?.id === collectionId
 +      return r?.kind === 'page' && owningCollection(tree, r.path, stored)?.id === collectionId
@@ -6783,11 +6796,11 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 +      const schema = containerSchema(tree, relative(root, file), stored)
 ```
 
-**Cost:** a heading rename lists the Trash's Contexts alone, as `storedSpaces` did. A names rename, a holder find (governed, scoped, or anywhere), a configuration pass, a strip, `nexusPages`, the stash sweeps, and the repair sweep each list the whole Trash once, where they listed the Contexts and listed the rest only when a trashed holder was among the candidates; an option delete lists it three times (its holders, its stashes, its configuration pass), a property rename twice (its clash check and its sweep). A listing costs one record read per bundle, about 50–100 µs each (Approach 1).
+**Cost:** a heading rename and a byId-only caller of `nexusPages` (`bundles:list`, `bundles:children`, the two restores, and the property restore) list the Trash's Contexts alone, as `storedSpaces` did. A names rename, a holder find (governed, scoped, or anywhere), a configuration pass, a strip, the stash refill, the stash sweeps, and the repair sweep each list the whole Trash once, where they listed the Contexts and listed the rest only when a trashed holder was among the candidates, and a strip, the refill, and a holder read hand that one listing to `nexusPages`; an option delete lists it three times (its holders, its stashes, its configuration pass), a property rename twice (its clash check and its sweep). A listing costs one record read per bundle, about 50–100 µs each (Approach 1).
 
 **VERIFY**
 
-- [ ] The five new cases are green, each watched red at HEAD with the failure CHANGE quotes, and *"a trashed Space’s tiles push no TilesChanged"* red again with the stored boards given a host, then put back.
+- [ ] The seven new cases are green, each watched red with the failure CHANGE quotes, and *"a trashed Space’s tiles push no TilesChanged"* red again with the stored boards given a host, then put back.
 - [ ] **Flips:** none; `heldPages.test.ts` and `tilesFile.test.ts` change their reads and arguments alone, as CHANGE names.
 - [ ] These print nothing:
   - `git grep -nwE "trashedOwners|storedSpaces" -- Core`;
@@ -7744,7 +7757,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 #### Task 5-4
 
-**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins the record helpers in `Core/Bundles/record.ts` (P-2), taking its Trash rows or scope from its caller rather than calling `storedPageIds` or `liveTreeOf`, so `record.ts` stays outside the import loop around `liveTree.ts`; the one restore and the arrival read what the Trash holds from the `NexusPages.stored` they already hold rather than calling `storedNodes` again. `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
+**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins the record helpers in `Core/Bundles/record.ts` (P-2), taking its Trash rows or scope from its caller rather than calling `storedPageIds` or `liveTreeOf`, so `record.ts` stays outside the import loop around `liveTree.ts`; the one restore reads `nexusPages` over the Trash's Contexts alone, as both restores do now, and a step of the restore or the arrival that needs the whole projection reads `storedNodes` once and passes it down rather than listing again. `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
 
 **NOW:**
 - `Core/Trash/restoreScrub.ts` holds `artifactFiles` and `repairLanded` alone after Phase 4, `repairLanded`'s one caller being `returningCascade` (`Core/Nexus/settle.ts:343`, imported at `:46`).

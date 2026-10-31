@@ -2,14 +2,15 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
-import { liveIdIndex, liveIdOf, livePathOf, nexusPages } from './heldPages'
+import { liveIdIndex, liveIdOf, livePathOf, nexusPages, storedNodes } from './heldPages'
 import { pagesOf } from './record'
 import { buildPageIndex } from '../Connections/pageIndex'
 import { tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { indexWrittenPages, seedContentIndex } from '../Index/indexSeed'
-import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
+import * as bundle from '../Bundles/bundle'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', async (importOriginal) => ({
@@ -247,7 +248,7 @@ describe('nexusPages — the Trash’s Spaces', () => {
       membership: [],
     })
     await put(`${PROJECTS}/Projects/Pom/_space.json`, { id: 'sp_pom' })
-    const { byId, stored } = await nexusPages(root, tree(root))
+    const { byId } = await nexusPages(root, tree(root))
     expect(byId.get('sp_work')).toEqual({
       id: 'sp_work',
       kind: 'space',
@@ -260,10 +261,19 @@ describe('nexusPages — the Trash’s Spaces', () => {
       title: 'Pom',
       path: `${PROJECTS}/Projects/Pom`,
     })
-    expect(stored.spaces.map((s) => [s.id, s.contextId]).sort()).toEqual([
+    expect(
+      (await storedNodes(root, tree(root))).spaces.map((s) => [s.id, s.contextId]).sort(),
+    ).toEqual([
       ['sp_pom', 'ctx_projects'],
       ['sp_work', 'ctx_areas'],
     ])
+  })
+
+  it('lists the Trash’s Contexts alone for its by-id read', async () => {
+    const listed = vi.spyOn(bundle, 'listBundles')
+    await nexusPages(root, tree(root))
+    expect(listed.mock.calls.map((c) => c[2])).toEqual([CONTEXTS_DIR_REL])
+    listed.mockRestore()
   })
 
   it('a live Space sharing a trashed Space’s id keeps its entry, and the trashed one fills no null', async () => {
@@ -295,9 +305,9 @@ describe('nexusPages — the Trash’s Spaces', () => {
         id: 'pA',
       },
     )
-    const { byId, stored } = await nexusPages(root, t)
+    const { byId } = await nexusPages(root, t)
     expect(byId.get('sp_work')?.path).toBe('.nexus/contexts/Areas/Work')
     expect(byId.get('pA')).toBeNull()
-    expect(stored.spaces.map((s) => s.id).sort()).toEqual(['pA', 'sp_work'])
+    expect((await storedNodes(root, t)).spaces.map((s) => s.id).sort()).toEqual(['pA', 'sp_work'])
   })
 })
