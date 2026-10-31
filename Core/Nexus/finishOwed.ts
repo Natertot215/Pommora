@@ -406,8 +406,9 @@ async function finishContainer(
   let stripped = false
   if (taken) {
     const links = await gatherLinks(root, taken)
-    if (!e.bundle) await parkLinks(root, links)
-    else if (!(await appendLinks(join(root, e.bundle), links)).ok) return stuck(e)
+    const kept = e.bundle ? await appendLinks(join(root, e.bundle), links) : null
+    if (kept && !kept.ok && kept.error.code !== 'not-found') return stuck(e)
+    if (!kept?.ok) await parkLinks(root, links)
     stripped = add(reach, await deleteCascade(root, taken))
   }
   const viewed = !!edit && add(reach, await reachConfig(root, edit))
