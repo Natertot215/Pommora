@@ -18,7 +18,7 @@
 | 2 · Residue | about −136 | −157 (+215 / −372); −152 outside `Core/Testing` |
 | 3 · Delete, Journal, and Carry | about −46 | +19 (+469 / −450); +25 outside `Core/Testing`, the estimate not having priced Task 3-2's second holder read (about +32) or the journal's `move` kind (about +10) |
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
-| 5 · One Restore, Recognition, and the Interface | about +80 | |
+| 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | |
 | **Total** | **about −415** | |
 
@@ -292,7 +292,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
-- [ ] **Phase 5** — One Restore, Recognition, and the Interface
+- [x] **Phase 5** — One Restore, Recognition, and the Interface
   - [x] Task 5-1 · Following an id covers a Set
   - [x] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [x] Task 5-3 · The table owns its date column and footing
@@ -300,7 +300,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-5 · One restore for both stores
   - [x] Task 5-6 · Pages and Sets moved out by hand
   - [x] Task 5-7 · Spaces moved back by hand
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
   - [ ] Task 6-1 · The duplicated cases
   - [ ] Task 6-2 · The on-disk bundle fixture
@@ -8820,18 +8820,18 @@ A listing skips a bundle whose artifact has left by hand, a record alone; with `
 
 #### Review Checkpoint
 
-- [ ] **One Restore, One Arrival:**
+- [x] **One Restore, One Arrival:**
   - `restoreBundle` is the only restore, and every restore case in `spend.test.ts`, `trashRecovery.test.ts`, `restoreProperty.test.ts`, `restoreScrub.test.ts`, and `archive.test.ts` passes through it.
   - `arrive` is the only tail, run by the restore, `recognize`, and `recognizeSpaces`; `git grep -nE "from '\./settle'" -- Core/Nexus/arrival.ts` prints nothing.
   - The only store branch the restore keeps is the reply's Undo.
-- [ ] **Recognition Holds the Decided Behavior:** the page cases (app open, app closed, a Set's share), the Archive case (B-11), and the Space case each went red at their own task's head; the copy, rebuild (Decision E-2), Space-copy, and Context pins are green.
-- [ ] **One Undo Shape, One Notice Owner:**
+- [x] **Recognition Holds the Decided Behavior:** the page cases (app open, app closed, a Set's share), the Archive case (B-11), and the Space case each went red at their own task's head; the copy, rebuild (Decision E-2), Space-copy, and Context pins are green.
+- [x] **One Undo Shape, One Notice Owner:**
   - Every reversible bundle reply carries `undo`, and `git grep -nE "\.bundled\b|ARCHIVE_UNDO|rearchive|undoTo|livePagePath" -- Core ':!*.test.ts' ':!*.test.tsx'` prints nothing.
   - Every bundle op's notice comes from `notifyBundled`: `git grep -n "notifyOutcome(" -- Core/Bundles Core/Interface/Confirm` prints nothing.
   - B-4's case is green.
-- [ ] **The Live Drive** under Task 5-7's VERIFY ran, and its result is written there.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded beside the Net Ledger's Phase 5 row, additions and removals apart, and anything above it is reported in chat with what it buys before Phase 6 opens.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 3 and 4's shared files, `bundle.ts`, `record.ts`, `owed.ts`, and `refile.ts` above all, and what holds is folded before Phase 6 opens.
+- [x] **The Live Drive** under Task 5-7's VERIFY ran, and its result is written there.
+- [x] **The Number:** `view-delta`'s Actionable column for the phase is recorded beside the Net Ledger's Phase 5 row, additions and removals apart, and anything above it is reported in chat with what it buys before Phase 6 opens.
+- [x] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 3 and 4's shared files, `bundle.ts`, `record.ts`, `owed.ts`, and `refile.ts` above all, and what holds is folded before Phase 6 opens.
 
 ---
 
