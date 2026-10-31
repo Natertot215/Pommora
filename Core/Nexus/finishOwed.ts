@@ -389,7 +389,8 @@ async function finishContainer(
   const taken = strip ? await linkStrip(root, [e.at, ...(e.bundle ? [e.bundle] : [])], strip) : null
   if (taken) {
     const links = await gatherLinks(root, taken)
-    await (e.bundle ? appendLinks(join(root, e.bundle), links) : parkLinks(root, links))
+    if (!e.bundle) await parkLinks(root, links)
+    else if (!(await appendLinks(join(root, e.bundle), links)).ok) return stuck(e)
   }
   const stripped = !!strip && add(reach, await deleteCascade(root, taken))
   const viewed = !!edit && add(reach, await reachConfig(root, edit))

@@ -87,12 +87,12 @@ export async function mintBundle(
   return bundle
 }
 
-/** Removes a bundle and each folder above it that it leaves empty, up to its store's own folder. */
+/** Removes a bundle and each folder above it that it leaves holding nothing but hidden entries, such as Finder's, up to its store's own folder. */
 export async function removeBundle(root: string, abs: string): Promise<void> {
   const stop = join(root, layoutOf(storeOf(relative(root, abs))!.store).dir)
   await removeOwn(abs)
   for (let dir = dirname(abs); dir.startsWith(`${stop}/`); dir = dirname(dir)) {
-    if ((await machine().readDir(dir)).length) return
+    if ((await machine().readDir(dir)).some((e) => !hiddenName(e.name))) return
     await removeOwn(dir)
   }
 }
@@ -172,7 +172,7 @@ export async function listBundles(
   root: string,
   store: BundleStore,
   chain = '',
-  { recordOnly }: { recordOnly?: true } = {},
+  { recordOnly, shallow }: { recordOnly?: true; shallow?: true } = {},
 ): Promise<ListedBundle[]> {
   const { dir, suffix } = layoutOf(store)
   const out: ListedBundle[] = []
@@ -182,7 +182,7 @@ export async function listBundles(
       const abs = join(at, e.name)
       const record = e.name.endsWith(suffix) ? await readRecord(abs) : null
       if (!record) {
-        await walk(abs)
+        if (!shallow) await walk(abs)
         continue
       }
       const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)

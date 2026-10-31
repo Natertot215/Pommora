@@ -1,5 +1,5 @@
 // Store-free, since the slices report through these writers: the notice on screen and the bar the shown view declares live here, beside them.
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
 import { type Counted, countPhrase } from '../../Nexus/entities'
@@ -31,18 +31,24 @@ export interface ActionBar {
   remove: () => void
 }
 
-const declared = channel<ActionBar[]>([])
+const declared = channel<ReadonlyMap<object, ActionBar>>(new Map())
+
+const withdraw = (declarer: object): void => {
+  const next = new Map(declared.get())
+  if (next.delete(declarer)) declared.set(next)
+}
 
 export const useActionBar = (): ActionBar | null =>
-  useSyncExternalStore(declared.subscribe, () => declared.get().at(-1) ?? null)
+  useSyncExternalStore(declared.subscribe, () => [...declared.get().values()].at(-1) ?? null)
 
-/** Declared over every standing bar only while its view is `shown`, as the count publishes: a parked view's bar would stand over another tab's view. */
+/** Declared over every standing bar only while its view is `shown`, as the count publishes: a parked view's bar would stand over another tab's view. A bar its declarer replaces keeps its place in the stack. */
 export function useDeclareActions(bar: ActionBar | null, shown: boolean): void {
+  const declarer = useRef({}).current
   useEffect(() => {
-    if (!shown || !bar) return
-    declared.set([...declared.get(), bar])
-    return () => declared.set(declared.get().filter((b) => b !== bar))
-  }, [shown, bar])
+    if (shown && bar) declared.set(new Map(declared.get()).set(declarer, bar))
+    else withdraw(declarer)
+  }, [declarer, shown, bar])
+  useEffect(() => () => withdraw(declarer), [declarer])
 }
 
 export function dismissNotification(id: number): void {

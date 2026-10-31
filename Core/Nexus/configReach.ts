@@ -287,15 +287,17 @@ async function storedContainers(
 ): Promise<Container[]> {
   const rel = under && relative(root, under)
   const archive = archiveReach(tree, rel)
-  const dirs = [
-    ...(archive === null ? [] : [archive]),
-    ...(rel === undefined ? [TRASH_DIR] : trashReach(tree, stored, rel)),
-  ]
   const scope = scopeOf(tree.config)
-  const found = await Promise.all(
-    dirs.map((d) => containerSidecarsUnder(root, scope, join(root, d))),
-  )
-  return found.flat()
+  const sidecars = (d: string) => containerSidecarsUnder(root, scope, join(root, d))
+  const [archived, trashed] = await Promise.all([
+    archive === null ? [] : sidecars(archive),
+    sidecars(TRASH_DIR),
+  ])
+  if (rel === undefined) return [...archived, ...trashed]
+  const at = trashed.map(({ dir }) => relative(root, dir))
+  await stored.readOwners(at)
+  const reached = trashReach(tree, stored, rel)
+  return [...archived, ...trashed.filter((_, i) => reached(at[i]))]
 }
 
 export async function reachConfig(

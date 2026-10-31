@@ -124,11 +124,13 @@ export function archiveReach(tree: NexusTree, rel?: string): string | null {
   return store ? archiveDirRel(store.id) : null
 }
 
-export const trashReach = (tree: NexusTree, stored: StoredNodes, rel?: string): string[] => {
+export const trashReach = (tree: NexusTree, stored: StoredNodes, rel?: string) => {
   const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
-  return [...stored.owners].flatMap(([bundle, id]) =>
-    rel === undefined || id === owner ? [bundle] : [],
-  )
+  return (path: string): boolean => {
+    const bundle = storeOf(path)?.bundle
+    const id = bundle ? stored.owners.get(bundle) : undefined
+    return id !== undefined && (rel === undefined || id === owner)
+  }
 }
 
 export const NO_SCHEMA: PropertyDefinition[] = []

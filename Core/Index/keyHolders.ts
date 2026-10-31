@@ -57,18 +57,21 @@ export async function pagesInReach(
   rels: readonly string[] | null,
   reach: Reach,
 ): Promise<string[]> {
-  const files = (rels ?? (await nexusCorpus(root))).map((rel) => join(root, rel))
+  const candidates = rels ?? (await nexusCorpus(root))
+  const files = candidates.map((rel) => join(root, rel))
   if (reach === 'anywhere') return files
   const only = reach === 'governed' ? undefined : reach.collection
   const scoped = only && relative(root, only)
   const archive = archiveReach(tree, scoped)
+  await stored.readOwners(candidates)
   const trashed = trashReach(tree, stored, scoped)
   const folders = [
     ...(only === undefined ? collectionFolders(root, tree) : [only]),
     ...(archive === null ? [] : [join(root, archive)]),
-    ...trashed.map((bundle) => join(root, bundle)),
   ]
-  return files.filter((abs) => folders.some((folder) => abs.startsWith(`${folder}/`)))
+  return files.filter(
+    (abs, i) => folders.some((folder) => abs.startsWith(`${folder}/`)) || trashed(candidates[i]),
+  )
 }
 
 /** Where `rel` sits once `moved` has moved the folder holding it. */
