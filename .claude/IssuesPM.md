@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 76 | 0 | 3 | 13 | 36 | 24 |
+| 75 | 0 | 3 | 13 | 36 | 23 |
 
 #### A1 • Sync & Devices
 
@@ -69,7 +69,6 @@
 | [I-038](#I-038 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-29-2026 |
 | [I-062](#I-062 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-063](#I-063 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
-| [I-064](#I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.) | A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them. | Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
 | [I-070](#I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-071](#I-071 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
 | [I-072](#I-072 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
@@ -891,20 +890,6 @@ A page whose heading is renamed and which is moved in one outside batch, such as
 
 The heading arm resolves `seen.path` to the page's live path through `livePathOf` by the page's id, or runs after the move arm so the held tree and the recorded path agree.
 
-#### I-064 • A page dragged out of the Trash in Finder is read as an arrival, so its own stale links aren't repaired as a restore repairs them.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Medium (=🟢+25=) | Parallel Build | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-29-2026 |
-
-**Description**
-
-A page dragged out of `.trash` in Finder reaches the settle as a page arriving, like any file added outside, so the outside lane re-spells only the bare links its title now collides with. The Trash's restore does more: it reads the bundle's record, repairs the returning page's own links against the targets the delete recorded, and hands back the Link values parked with the bundle. A page returned by hand gets none of that, so links inside it that went stale while it sat in the Trash stay as they are. `payOutsideMoves` pairs a vanish with a landing and reads every other landed id as an arrival, and reaches neither the record, `repairLanded`, nor `parkLinks`.[^64]
-
-**Solution** [Proposed]
-
-Under the Trash & Archive Restructure's reach-in Trash, a trashed page stays current through every cascade, so a page moved out by hand misses only the Link values its delete stripped from other pages and the clearing of its bundle. The page is recognized by the ID it already carries, which its bundle's record holds and the index tracks: a page arriving outside the Trash under an ID whose page has left its bundle finishes as a restore where it landed (*Trash & Archive Restructure — Decisions & Intention*, Decision E-1).
-
 #### I-070 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.
 
 | Concern | Scale | Origin | Base | Date |
@@ -1378,7 +1363,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^61]: **I-061:** `UIX/Menus/MenuRows.tsx:163` (`MenuItem`'s caption), `UIX/Menus/menu-row.css.ts:214` (`caption`), `UIX/Menus/FrameSlide.tsx:83` (`slotBox`), `Core/Properties/Schema/PropertyFrame.tsx:399-405` (the editor's `FrameSlide`), `Core/Properties/Schema/formatRows.ts:12-39` (`formatRows`), `Core/Settings/frames.ts:83-89` (`settingsRow`)
 [^62]: **I-062:** `Core/Nexus/settle.ts:~204-213` (`missedEvents`), `Core/Nexus/settle.ts:~229-246` (`settleBatch`), `Core/Nexus/settle.ts:~383-387` (`paid`), `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Index/indexSeed.ts:~259-310` (`seedContentIndex`, `landed` at `:~268`), `Core/Contract/handlers.ts:73` (the restart's catch-up)
 [^63]: **I-063:** `Core/Nexus/settle.ts:~145-154` (the renames loop before `walkWhileOwed`), `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Nexus/cascade.ts:~227-285` (`renameCascade`), `Core/Connections/pageIndex.ts:111` (`namesOf`), `Core/Nexus/heldPages.ts:~44-47` (`livePathOf`), `Core/Index/indexSeed.ts:~84-88,~192-213` (`HeadingRenameSeen`, `reindex`)
-[^64]: **I-064:** `Core/Nexus/settle.ts:~390-424` (`payOutsideMoves`), `Core/Trash/spend.ts:~120-303` (`restoreTrashed`, `parkLinks` at `:~171`), `Core/Nexus/settle.ts:~323-358` (`returningCascade`, `repairLanded` at `:~343`)
 [^66]: **I-066:** `Core/Tiles/tileHosts.ts:~22-36` (the Space arm's `boards`), `Core/Tiles/tileHosts.ts:~44-54` (`tileHostsOf`), `Core/Nexus/tree.ts:111`, `Core/Nexus/readNexus.ts:~314-322` (the registry's `unreadable` entry), `Core/Nexus/configReach.ts:~306` (`reachConfig`), `Core/Tiles/tilesFile.ts:~286-327` (`tilesLink`, `rewriteTileConnections`), `Core/Nexus/cascade.ts:~246-257`
 [^67]: **I-067:** `Core/Connections/rewrite.ts:~76-110` (`follower`), `Core/Connections/connections.ts:~19-22` (`pageLinkPattern`), `Core/Connections/connections.ts:~132-143` (`expressibleInLink`, `spellsAsWiki`), `Core/MarkdownPM/Engine/detect.ts:~406-411` (`loneEmbedRe`, `loneEmbedTitle`)
 [^68]: **I-068:** `Core/MarkdownPM/Links/connectionsApi.ts:~24-33` (`headingMissing`), `Core/MarkdownPM/Autocomplete/useConnectionAutocomplete.ts:~138-151` (`commit`, `keptHeading`)

@@ -298,7 +298,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-3 · The table owns its date column and footing
   - [x] Task 5-4 · The arrival's one home
   - [x] Task 5-5 · One restore for both stores
-  - [ ] Task 5-6 · Pages and Sets moved out by hand
+  - [x] Task 5-6 · Pages and Sets moved out by hand
   - [ ] Task 5-7 · Spaces moved back by hand
   - [ ] Review Checkpoint
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
@@ -8478,6 +8478,7 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
   - **"a page moved out of the Trash while the app was closed finishes as its restore at the next open":** the same, with `closeSession` before the move, then `openSession`, `seedContentIndex` with `oweSeen`, and `settleNow`. Fails today.
   - **"a page moved out of a trashed Set's bundle takes back its own share, the Set's row staying":** delete Set `Daily` holding `Alpha` and `Beta`, `Linker` holding `Related: "[[Alpha]]"` and `See: "[[Beta]]"` under two Link definitions, so each stripped value names one page; move `Alpha` out. `Linker` holds `[[Alpha]]` again and not `[[Beta]]`, `listBundles` still lists `Daily`, and its record's `links` hold `Beta`'s value alone. Fails today.
   - **"a page moved out of an Archive by hand finishes as the Archive's restore" (B-11, Decision E-3):** archive `Beta`; move it out to `Notes/Daily/Beta.md`. The Archive's bundle is gone, and a linker naming `Notes/Daily/Beta` keeps its key, since the lane's world never held `Beta` at its store path. Fails today on the bundle.
+  - **"a page of a moved-out Set whose events land a settle after its bundle was spent keeps the Link values naming it":** delete Set `Daily` holding `Alpha` and `Beta`, `Linker` holding `See: "[[Notes/Daily/Beta]]"`; move the Set out to `Notes/Weekly` and settle Alpha's events alone, then Beta's. `See` reads `[[Notes/Weekly/Beta|Beta]]`: a whole bundle's arrival reads every page of the landed artifact through `originPagesOf`, as the restore does, not only the pages paired so far. Fails with `back` built from the paired pages.
 - [ ] Write these and watch them pass, then stay green: they pin what the change keeps.
   - **"a copy out of the Trash stays a page of its own, its bundle whole":** copy `Alpha`'s file out (an `add` alone). The bundle still lists, and `Linker` stays stripped.
   - **"after an index rebuild, a page moved out while the app was closed returns live and current without its delete's Link values, its bundle unlisted" (Decision E-2):** install fresh `memoryStores` before reopening; `Alpha` is live and holds a property renamed while it sat in the Trash, `Linker` stays stripped, and `listBundles` lists nothing for it.

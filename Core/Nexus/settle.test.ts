@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, open, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, failLandings, seedNexus, tempRoot } from '../Testing/hostFs'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
@@ -26,7 +26,7 @@ import * as pageFile from '../Files/pageFile'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
-import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
+import { applyEvents, oweCascade, owedFor, oweSeen, oweWalk } from './fileEvents'
 import { settleNow, recordHanded, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
@@ -37,6 +37,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { machine } from '../Platform/machine'
 import * as bundles from '../Bundles/bundle'
+import { readRecord } from '../Bundles/record'
 import { handleMutate } from './mutate'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
@@ -1495,5 +1496,148 @@ describe('a re-spell on the notes', () => {
     const rekeyed = abs('.nexus', 'contexts', 'Life', 'Work', '_space.json')
     expect(await readJsonAt(rekeyed)).toMatchObject({ '<Life>': ['Home'] })
     expect(await readNotes(root)).toEqual({})
+  })
+})
+
+describe('an item moved out of a store by hand', () => {
+  const LINKER = ULID_C
+  const linker = (): string => abs('Notes', 'Linker.md')
+  const keys = async () => splitFrontmatter(await readFile(linker(), 'utf8'))
+  const trashed = async () => bundles.listBundles(root, { kind: 'trash' })
+  const removed = async (path: string, kind: 'page' | 'set', op: 'delete' | 'archive') => {
+    const r = await settledMutate(root, { op, path, kind })
+    expect(r.ok, `${op} ${path}`).toBe(true)
+    return op === 'delete'
+      ? bundleOf(r)
+      : (await bundles.listBundles(root, { kind: 'archive', id: 'c1' }))[0].bundlePath
+  }
+  const movedOut = async (from: string, ...to: string[]): Promise<void> => {
+    await mkdir(abs(...to.slice(0, -1)), { recursive: true })
+    await rename(abs(from), abs(...to))
+  }
+  const dragged = async (from: string, ...to: string[]): Promise<void> => {
+    await movedOut(from, ...to)
+    await applyEvents(root, [ev('unlink', from), ev('add', ...to)])
+    await settleNow(pusher, root)
+  }
+  const relinkNotes = async (): Promise<string> =>
+    JSON.stringify(Object.entries(await readNotes(root)).filter(([, e]) => e.kind === 'relink'))
+
+  beforeEach(async () => {
+    installStores(memoryStores().stores)
+    await seedNexus(root, {
+      defs: [
+        { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        { id: 'prop_see', label: 'See', key: 'See', type: 'link' },
+      ],
+    })
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['prop_related', 'prop_see'] }),
+    )
+    await mkdir(abs('Notes', 'Daily'))
+    await writeFile(abs('Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's-daily' }))
+    await writeFile(abs('Notes', 'Daily', 'Alpha.md'), `---\nID: ${ULID_B}\n---\n\nalpha\n`)
+    await writeFile(abs('Notes', 'Daily', 'Beta.md'), `---\nID: ${ULID_D}\n---\n\nbeta\n`)
+    await writeFile(
+      linker(),
+      `---\nID: ${LINKER}\nRelated: "[[Alpha]]"\nSee: "[[Beta]]"\n---\n\n[[Notes/Daily/Beta]]\n`,
+    )
+    recordHanded(await refreshTree(root))
+    await indexSeed.seedContentIndex(root)
+  })
+  afterEach(() => installStores(NO_STORES))
+
+  it('a page moved out of the Trash while the app runs finishes as its restore', async () => {
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    expect((await keys()).Related).toBeUndefined()
+    await dragged(`${bundle}/Alpha.md`, 'Notes', 'Alpha.md')
+    expect((await keys()).Related).toBe('[[Alpha]]')
+    expect(await pathExists(abs(bundle))).toBe(false)
+    expect(await relinkNotes()).not.toContain('.trash')
+  })
+
+  it('a page moved out of the Trash while the app was closed finishes as its restore at the next open', async () => {
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    dropLiveTree()
+    closeSession()
+    await movedOut(`${bundle}/Alpha.md`, 'Notes', 'Alpha.md')
+    await openSession(root)
+    recordHanded(await refreshTree(root))
+    oweSeen(root, await indexSeed.seedContentIndex(root))
+    await settleNow(pusher, root)
+    expect((await keys()).Related).toBe('[[Alpha]]')
+    expect(await pathExists(abs(bundle))).toBe(false)
+  })
+
+  it('a page moved out of a trashed Set’s bundle takes back its own share, the Set’s row staying', async () => {
+    const bundle = await removed('Notes/Daily', 'set', 'delete')
+    await dragged(`${bundle}/Daily/Alpha.md`, 'Notes', 'Alpha.md')
+    expect((await keys()).Related).toBe('[[Alpha]]')
+    expect((await keys()).See).toBeUndefined()
+    expect((await trashed()).map((b) => b.bundlePath)).toEqual([bundle])
+    expect(await readRecord(abs(bundle))).toMatchObject({
+      links: [{ page: LINKER, property: 'prop_see', value: '[[Beta]]' }],
+    })
+  })
+
+  it('a page moved out of an Archive by hand finishes as the Archive’s restore', async () => {
+    const bundle = await removed('Notes/Daily/Beta.md', 'page', 'archive')
+    await dragged(`${bundle}/Beta.md`, 'Notes', 'Daily', 'Beta.md')
+    expect(await pathExists(abs(bundle))).toBe(false)
+    expect(splitEnvelope(await readFile(linker(), 'utf8')).body).toBe('[[Notes/Daily/Beta]]\n')
+  })
+
+  it('a page of a moved-out Set whose events land a settle after its bundle was spent keeps the Link values naming it', async () => {
+    await writeFile(linker(), `---\nID: ${LINKER}\nSee: "[[Notes/Daily/Beta]]"\n---\n\nlinker\n`)
+    recordHanded(await refreshTree(root))
+    const bundle = await removed('Notes/Daily', 'set', 'delete')
+    await movedOut(`${bundle}/Daily`, 'Notes', 'Weekly')
+    await applyEvents(root, [
+      ev('addDir', 'Notes', 'Weekly'),
+      ev('add', 'Notes', 'Weekly', '_pageset.json'),
+      ev('unlink', bundle, 'Daily', 'Alpha.md'),
+      ev('add', 'Notes', 'Weekly', 'Alpha.md'),
+    ])
+    await settleNow(pusher, root)
+    expect(await pathExists(abs(bundle))).toBe(false)
+    await applyEvents(root, [
+      ev('unlink', bundle, 'Daily', 'Beta.md'),
+      ev('add', 'Notes', 'Weekly', 'Beta.md'),
+    ])
+    await settleNow(pusher, root)
+    expect((await keys()).See).toBe('[[Notes/Weekly/Beta|Beta]]')
+  })
+
+  it('a copy out of the Trash stays a page of its own, its bundle whole', async () => {
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    await copyFile(abs(bundle, 'Alpha.md'), abs('Notes', 'Alpha.md'))
+    await applyEvents(root, [ev('add', 'Notes', 'Alpha.md')])
+    await settleNow(pusher, root)
+    expect((await trashed()).map((b) => b.bundlePath)).toEqual([bundle])
+    expect((await keys()).Related).toBeUndefined()
+  })
+
+  it('after an index rebuild, a page moved out while the app was closed returns live and current without its delete’s Link values, its bundle unlisted', async () => {
+    await writeFile(
+      abs('Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${ULID_B}\nSee: "[[Beta]]"\n---\n\nalpha\n`,
+    )
+    recordHanded(await refreshTree(root))
+    const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
+    expect((await renameProperty(root, 'prop_see', 'Seen')).ok).toBe(true)
+    await settleNow(pusher, root)
+    dropLiveTree()
+    closeSession()
+    await movedOut(`${bundle}/Alpha.md`, 'Notes', 'Alpha.md')
+    installStores(memoryStores().stores)
+    await openSession(root)
+    recordHanded(await refreshTree(root))
+    oweSeen(root, await indexSeed.seedContentIndex(root))
+    await settleNow(pusher, root)
+    expect(heldTreeOf(root)?.collections[0].pages.map((p) => p.title)).toContain('Alpha')
+    expect(splitFrontmatter(await readFile(abs('Notes', 'Alpha.md'), 'utf8')).Seen).toBe('[[Beta]]')
+    expect((await keys()).Related).toBeUndefined()
+    expect(await trashed()).toEqual([])
   })
 })

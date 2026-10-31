@@ -8,13 +8,21 @@ import {
   respell,
   type StrippedLink,
 } from './cascade'
-import { basename, join, relative } from '../Paths/posix'
+import { basename, join, relative, titleFromPath } from '../Paths/posix'
+import type { Stored } from '../Paths/bundleLayout'
 import { respellings, rewriteConnections } from '../Connections/rewrite'
-import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 import { listPathsUnder } from '../Files/walk'
 import { joinValues, landValue } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
-import { contentPages, type OpenBundle, spendBundle } from '../Bundles/bundle'
+import {
+  bundleArtifact,
+  contentPages,
+  type OpenBundle,
+  openBundle,
+  originPagesOf,
+  spendBundle,
+} from '../Bundles/bundle'
 import {
   type ArtifactRecord,
   collectionOf,
@@ -134,6 +142,48 @@ export async function arrive(
   if (now) await refileLanded(root, record, collectionOf(now))
   const unrestored = missed.flatMap((id) => shownTitle(tree, byId, id) ?? [])
   return { unrestored, ...(cascade ? { cascade } : {}) }
+}
+
+export type Departed = { id: string; from: string; to: string; at: Stored }
+
+export async function recognize(
+  root: string,
+  before: PageIndex,
+  after: PageIndex,
+  bundle: string,
+  departed: readonly Departed[],
+): Promise<CascadeReport | undefined> {
+  const abs = join(root, bundle)
+  const whole = (await bundleArtifact(abs)) === null
+  const opened = whole
+    ? [await openBundle(root, abs)]
+    : await Promise.all(departed.map((p) => openBundle(root, join(root, p.from), p.id)))
+  let cascade: CascadeReport | undefined
+  for (const [i, at] of opened.entries()) {
+    if (!at.ok || at.value.record.entity === 'property') continue
+    const { entity } = at.value.record
+    const { id, to, at: stored } = departed[whole ? 0 : i]
+    const up = (path: string): string => {
+      const segs = path.split('/')
+      return segs.slice(0, segs.length - stored.inner.length + 1).join('/')
+    }
+    const landed = join(root, whole ? up(to) : to)
+    const arrived = await arrive(root, {
+      opened: at.value,
+      record: at.value.record,
+      title: titleFromPath(landed),
+      landed: { entity, abs: landed },
+      back: whole
+        ? await originPagesOf(root, await contentPages(entity, landed), (f) =>
+            join(up(stored.origin), relative(landed, f)),
+          )
+        : [connPage(id, stored.origin)],
+      live: before,
+      after,
+    })
+    cascade = joinCascades(cascade, arrived.cascade)
+  }
+  return cascade
 }
 
 async function retag(

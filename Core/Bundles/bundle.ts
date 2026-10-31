@@ -248,8 +248,8 @@ export type OpenBundle = { abs: string; store: BundleStore; record: RecordFile }
 const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
   isContainerKind(record.entity)
 
-/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more. */
-async function readBundleAt(root: string, abs: string) {
+/** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more unless it was `movedOut` by hand, which an outside move proved. */
+async function readBundleAt(root: string, abs: string, movedOut = false) {
   const at = bundleAddressOf(root, abs)
   if (!at) return fault('Only a trash or archive record can be spent.')
   const record = await readRecord(at.bundle)
@@ -261,7 +261,7 @@ async function readBundleAt(root: string, abs: string) {
     !isContainerRecord(record) ||
     !artifact ||
     !isAtOrUnder(item, artifact) ||
-    !(await pathExists(item))
+    !(movedOut || (await pathExists(item)))
   )
     return ITEM_GONE
   return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
@@ -287,11 +287,15 @@ async function trailWithin(
 }
 
 /** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one; no place, since the siblings it left are gone with it. */
-async function innerRecord(trail: readonly string[] | null, item: string): Promise<InnerRecord> {
+async function innerRecord(
+  trail: readonly string[] | null,
+  item: string,
+  left?: string,
+): Promise<InnerRecord> {
   const entity = isMarkdownFile(item) ? 'page' : 'set'
   const { id, icon } =
     entity === 'page'
-      ? { id: (await stampedIdOf(item)) ?? undefined, icon: undefined }
+      ? { id: left ?? (await stampedIdOf(item)) ?? undefined, icon: undefined }
       : await sidecarIdentity(item, 'set')
   return {
     entity,
@@ -302,10 +306,16 @@ async function innerRecord(trail: readonly string[] | null, item: string): Promi
   }
 }
 
-/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, lies at or under `item`; a title two of its pages share stays with the bundle. */
-async function keptLinksUnder(root: string, held: ContainerRecord, artifact: string, item: string) {
+/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, `item` among them once it was `movedOut` by hand, lies at or under `item`; a title two of its pages share stays with the bundle. */
+async function keptLinksUnder(
+  root: string,
+  held: ContainerRecord,
+  artifact: string,
+  item: string,
+  movedOut: boolean,
+) {
   if (!held.links?.length) return []
-  const files = await listMarkdownFiles(artifact)
+  const files = [...(await listMarkdownFiles(artifact)), ...(movedOut ? [item] : [])]
   const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, f))))
   return held.links.filter((link) => {
     const page = linkedPage(link.value, index)
@@ -313,14 +323,20 @@ async function keptLinksUnder(root: string, held: ContainerRecord, artifact: str
   })
 }
 
-export async function openBundle(root: string, abs: string): Promise<Result<OpenBundle>> {
-  const read = await readBundleAt(root, abs)
+export async function openBundle(
+  root: string,
+  abs: string,
+  left?: string,
+): Promise<Result<OpenBundle>> {
+  const movedOut = left !== undefined
+  const read = await readBundleAt(root, abs, movedOut)
   if (!read.ok) return read
   const { bundle, store, record, artifact, inner } = read.value
   if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
   const { item, held } = inner
-  const own = await innerRecord(await trailWithin(held, inner.artifact, dirname(item)), item)
-  const links = await keptLinksUnder(root, held, inner.artifact, item)
+  const trail = await trailWithin(held, inner.artifact, dirname(item))
+  const own = await innerRecord(trail, item, left)
+  const links = await keptLinksUnder(root, held, inner.artifact, item, movedOut)
   return ok({
     abs: bundle,
     store,
@@ -420,10 +436,13 @@ export async function pageIdsOf(pages: string[]): Promise<string[]> {
   return ids.flatMap((id) => id ?? [])
 }
 
-/** One bundle's pages at the paths they left, with the ids their files carry; an ID-less one answers to its file, which no index holds as an id. */
-export async function originPagesOf(root: string, files: readonly string[]): Promise<ConnPage[]> {
+/** One bundle's pages at the paths they left, read from their stored files or from where they landed by `origin`, with the ids their files carry; an ID-less one answers to its file, which no index holds as an id. */
+export async function originPagesOf(
+  root: string,
+  files: readonly string[],
+  origin = (file: string) => originPathOf(root, file),
+): Promise<ConnPage[]> {
   const out: ConnPage[] = []
-  for (const file of files)
-    out.push(connPage((await stampedIdOf(file)) ?? file, originPathOf(root, file)))
+  for (const file of files) out.push(connPage((await stampedIdOf(file)) ?? file, origin(file)))
   return out
 }
