@@ -24,6 +24,8 @@
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 
+**Task 6-11 (Closing Measurement):** Decision G-2, Property Rename at `b7813cd30` (median of three, `settleMs / calls.land`): Medium-0 4,418 over 7,027 (0.63 ms), against 14,708 over 7,027 (2.09, profiled) at `9b9c0d630`; Medium-50 6,577 over 10,553 (0.62 ms), against the baseline's 14,785 over 6,961 (2.12) and the prototype's 22,270 over 10,553 (2.11).
+
 ### Context
 
 Pommora keeps every departed item as a bundle: a stamped folder holding the item beside a `_record.json` saying where it belonged and what it carried. The Trash keeps deleted pages, Sets, Collections, Spaces, Contexts, and properties in `.trash`; each Collection's Archive keeps archived pages and Sets in `.nexus/archive/<Collection ID>`. The two stores run two models. The Archive is reach-in: its pages are indexed and every cascade rewrites them as it rewrites live pages, so its restore is a move. The Trash is resolve-on-restore: a trashed copy is frozen, and its restore re-spells keys and option words, repairs its links against a frozen snapshot of their targets, and refills what its delete stripped. The scrub can't follow a rename, so a page restored after one returns holding the old names (*Investigation*, B-9), and three paths reach into trashed copies regardless. Around the two models sit a second delete mode that bypasses the Trash, two restores, two Undo shapes, two notice owners, six hand-written Archive hides, and compatibility-only decodes.
@@ -312,7 +314,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-8 · The Trash skin's shared cases to their owners
   - [x] Task 6-9 · The docs and comments no earlier phase takes
   - [x] Task 6-10 · `.claude/CLAUDE.md`'s structure lines
-  - [ ] Task 6-11 · The closing measurement
+  - [x] Task 6-11 · The closing measurement
   - [ ] Task 6-12 · The harness's removal
   - [ ] Review Checkpoint
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
