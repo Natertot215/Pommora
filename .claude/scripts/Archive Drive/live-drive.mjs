@@ -468,7 +468,7 @@ async function group4() {
     stamped(`.trash/${A_ALPHA}`, 'Drive Arc', '.deleted').test(T1) && U1.destination?.at === again && !exists(again),
     show({ again, undo: U1 }))
 
-  await op('Undo to the Archive', { op: 'restore', bundlePath: T1, destination: { kind: 'archive' } })
+  await op('Undo to the Archive', U1)
   const undone = exists(`${again}/_record.json`) ? recordAt(again) : null
   item(4, 'E-3', 'its Undo returns it to the Archive under the same name',
     exists(`${again}/Drive Arc.md`) && !!undone && !('links' in undone) && !exists(T1) && !(await heldIds()).has(arcId),
@@ -747,8 +747,8 @@ async function group5(cdp) {
   const permanentHint = await captionOf(cdp, 'Permanently Delete Files')
   const confirmHint = await captionOf(cdp, 'Confirm Before Deletion')
   item(5, 'K-5', "Settings › Files & Links' Trash & Archive section reads its rewritten hints",
-    permanentHint === 'Erase items emptied from the Trash instead of moving them to the system trash.' &&
-      !!confirmHint?.endsWith('Collections, Sets, Contexts, Spaces, views and properties always ask.'),
+    permanentHint === 'Erase files instead of moving them to the system trash.' &&
+      !!confirmHint?.endsWith('Collections, Sets, Contexts, Spaces, views, properties, and a delete from the Trash always ask.'),
     show({ permanentHint, confirmHint }))
   await closeSettings(cdp)
 
@@ -986,6 +986,7 @@ async function group6A(cdp) {
     await deleteAt(cdp, rel, kind)
     await must(`empty ${title}`, ask(cdp, 'mutate', { op: 'emptyBundle', bundlePath: (await trashed(cdp, title))?.bundlePath }))
   }
+  await must('set_order as it was', ask(cdp, 'mutate', { op: 'reorderChildren', parentPath: COLLECTION, key: 'set_order', order: start.setOrder }))
   for (const key of ['historyDays', 'archiveHistoryDays', 'confirmArchiving', 'permanentDelete']) await must(`${key} as it was`, ask(cdp, 'personalization:set', key, kept[key] ?? null))
   // The watcher holds a folder the app just wrote until it's still for 200 ms, so the empty chain folders the archives and Undos left leave once those writes are still.
   await sleep(400)
@@ -2198,11 +2199,8 @@ async function group7D(cdp) {
   const strays = [await createAt(cdp, `${COLLECTION}/Stray Set`, 'Stray Page'), await createAt(cdp, `${COLLECTION}/Stray Set`, 'Stray Two')]
   const ctxId = containerId()
   await op('create Drive Ctx', { op: 'createContextGroup', id: ctxId, name: 'Drive Ctx' })
-  for (const s of ['Drive Spc', 'Drive Spc Two']) await op(`create ${s}`, { op: 'createSpace', id: containerId(), contextId: ctxId, name: s })
+  for (const s of ['Drive Spc', 'Drive Spc Two', 'Drive Spc Part']) await op(`create ${s}`, { op: 'createSpace', id: containerId(), contextId: ctxId, name: s })
   const { created: { propertyId: propId } } = await op('add Drive Prop', { op: 'addProperty', containerPath: COLLECTION, draft: { label: 'Drive Prop', type: 'select', select_options: [{ key: 'One', label: 'One' }] } })
-  const partId = containerId()
-  await op('create Part Coll', { op: 'createContainer', id: partId, parentPath: '', kind: 'collection', name: 'Part Coll' })
-  await createAt(cdp, 'Part Coll', 'Part Page')
   await makeSet(cdp, 'Arc Gone Set')
   const arcLost = await createAt(cdp, `${COLLECTION}/Arc Gone Set`, 'Arc Lost')
   const squats = ['Squat One', 'Squat Two', 'Squat Arc'].map((t) => page(A_ALPHA, t))
@@ -2217,9 +2215,9 @@ async function group7D(cdp) {
   for (const rel of strays) await deleteAt(cdp, rel, 'page')
   await deleteAt(cdp, `${COLLECTION}/Stray Set`, 'set')
   for (const s of ['Drive Spc', 'Drive Spc Two']) await deleteAt(cdp, `.nexus/contexts/Drive Ctx/${s}`, 'space')
+  const part = await bundledBy('delete Drive Spc Part', { op: 'delete', path: '.nexus/contexts/Drive Ctx/Drive Spc Part', kind: 'space' })
   await deleteAt(cdp, '.nexus/contexts/Drive Ctx', 'context')
   await op('delete Drive Prop', { op: 'deleteProperty', propertyId: propId })
-  const part = await bundledBy('delete Part Coll', { op: 'delete', path: 'Part Coll', kind: 'collection' })
   await op('archive Arc Lost', { op: 'archive', path: arcLost, kind: 'page' })
   await deleteAt(cdp, `${COLLECTION}/Arc Gone Set`, 'set')
   for (const rel of squats.slice(0, 2)) await deleteAt(cdp, rel, 'page')
@@ -2235,7 +2233,7 @@ async function group7D(cdp) {
   await openSettings(cdp, 'Trash')
   await chooseNative(cdp, await trashRowShown(cdp, 'Whole Coll'), 'Restore')
   const wholeSaid = await postedPlain(cdp, 'Restored “Whole Coll”')
-  const wholeBack = await settles(async () => exists(wholePage) && frontOf(wholePage).ID === ids[wholePage] && same(stateOrder().collections ?? [], collectionsBefore.filter((id) => id !== partId)) && !(await listedTitles(cdp)).includes('Whole Coll'))
+  const wholeBack = await settles(async () => exists(wholePage) && frontOf(wholePage).ID === ids[wholePage] && same(stateOrder().collections ?? [], collectionsBefore) && !(await listedTitles(cdp)).includes('Whole Coll'))
   item('7D', 'E-2, A-3', "a trashed Collection's Restore returns it whole and posts its title", wholeSaid && wholeBack, show({ wholeSaid, wholeBack, notice: await notice(cdp), order: stateOrder().collections }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
@@ -2334,16 +2332,12 @@ async function group7D(cdp) {
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
   const PARTIAL = '[aria-label="Recorded Partly"]'
-  const partMarked = await cdp.evaluate(`!!(${await trashRowShown(cdp, 'Part Coll')}).querySelector('${PARTIAL}')`)
-  await mouseClick(cdp, titleIn(trashRowEl('Part Coll')))
-  await settles(async () => same(titlesAfter(await listedTitles(cdp), 'Part Coll', 1), ['Part Page']))
-  const innerMarked = await cdp.evaluate(`!!(${await trashRowShown(cdp, 'Part Page')}).querySelector('${PARTIAL}')`)
-  const partMenu = await popAt(cdp, trashRowEl('Part Page'))
-  await pickNative(restoreInto(partMenu, 'Collection B'))
-  const partLanded = await settles(async () => exists('Collection B/Part Page.md'))
-  const warned = await settles(async () => (await refusal(cdp)).includes('“Part Page” was recorded partly, so some of what it held may not come back.'))
-  item('7D', 'Partial Mark', "a partly recorded bundle marks its row and its inner rows, and an inner restore warns under the page's own title",
-    partMarked && innerMarked && partLanded && warned, show({ partMarked, innerMarked, partLanded, warned, refusal: await refusal(cdp) }))
+  const partMarked = await cdp.evaluate(`!!(${await trashRowShown(cdp, 'Drive Spc Part')}).querySelector('${PARTIAL}')`)
+  const { chosen: partChosen } = await chooseNative(cdp, trashRowEl('Drive Spc Part'), 'Restore')
+  const partLanded = await settles(async () => exists('.nexus/contexts/Drive Ctx/Drive Spc Part/_space.json'))
+  const warned = await settles(async () => (await refusal(cdp)).includes('“Drive Spc Part” was recorded partly, so some of what it held may not come back.'))
+  item('7D', 'Partial Mark', "a partly recorded Space marks its row, and its restore warns under its title",
+    partMarked && partChosen && partLanded && warned, show({ partMarked, partChosen, partLanded, warned, refusal: await refusal(cdp) }))
 
   await until('the notice drained', () => drained(cdp)).catch(() => {})
   for (const t of ['Dup Page', 'Dup Fine']) await checkTrash(cdp, t)
@@ -2406,13 +2400,12 @@ async function group7D(cdp) {
   for (const t of ['Live Page', 'Stray Set', 'Arc Gone Set', 'Dup Page']) await emptyAt(await trashOf(t))
   for (const rel of squats) rmSync(abs(rel), { force: true })
   await sleep(600)
-  for (const rel of [page(A_ALPHA, 'Dup Twin'), 'Collection B/Stray Two.md', 'Collection B/Stray Page.md', 'Collection B/Part Page.md', fine, page(A_ALPHA, 'Squat One (2)'), page(A_ALPHA, 'Squat Two (2)')]) {
+  for (const rel of [page(A_ALPHA, 'Dup Twin'), 'Collection B/Stray Two.md', 'Collection B/Stray Page.md', fine, page(A_ALPHA, 'Squat One (2)'), page(A_ALPHA, 'Squat Two (2)')]) {
     await deleteAt(cdp, rel, 'page')
     await emptyAt(await trashOf(rel.split('/').at(-1).replace(/\.md$/, '')))
   }
-  for (const [path, kind] of [[await archivedAs(arcLost), 'page'], [await archivedAs(squats[2]), 'page'], ['.nexus/contexts/Drive Ctx', 'context'], ['.nexus/contexts/Areas/Drive Spc', 'space'], ['.nexus/contexts/Areas/Drive Spc Two', 'space']])
+  for (const [path, kind] of [[await archivedAs(arcLost), 'page'], [await archivedAs(squats[2]), 'page'], ['.nexus/contexts/Drive Ctx/Drive Spc Part', 'space'], ['.nexus/contexts/Drive Ctx', 'context'], ['.nexus/contexts/Areas/Drive Spc', 'space'], ['.nexus/contexts/Areas/Drive Spc Two', 'space']])
     await emptyAt(await bundledBy(`delete ${path}`, { op: 'delete', path, kind }))
-  await emptyAt(part)
   await must('permanentDelete as it was', ask(cdp, 'personalization:set', 'permanentDelete', kept.permanentDelete ?? null))
   // The watcher holds a folder the app just wrote until it's still for 200 ms, so the empty chain folders leave once those writes are still.
   await sleep(400)
