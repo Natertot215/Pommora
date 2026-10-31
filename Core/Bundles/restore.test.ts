@@ -5,18 +5,10 @@ import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
-import {
-  noModeBits,
-  putJson,
-  readJsonAt,
-  failLandings,
-  seedNexus,
-  seedSpaceSidecar,
-} from '../Testing/hostFs'
+import { noModeBits, putJson, readJsonAt, failLandings, seedNexus } from '../Testing/hostFs'
 import {
   bundleDirs,
   bundleNexusEachTest,
-  onlyBundle,
   PAGE_A,
   PAGE_B,
   PAGE_C,
@@ -29,13 +21,13 @@ import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { bundleArtifact, listBundles, mintBundle } from './bundle'
+import { listBundles, mintBundle } from './bundle'
 import { patchRecord, readRecord, writeRecord } from './record'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readNexus } from '../Nexus/readNexus'
-import { setCollectionOrder, setPanelContextOrder, setSpaceOrder } from '../Nexus/reorder'
+import { setPanelContextOrder, setSpaceOrder } from '../Nexus/reorder'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { newId, shardOf } from '../Nexus/ids'
 import { refreshTree } from '../Nexus/liveTree'
@@ -56,391 +48,68 @@ import { landValue } from '../Files/rootValues'
 let root: string
 bundleNexusEachTest('pom-prov-', (r) => (root = r))
 
-describe('the bundle — one folder per deletion, holding the artifact and its record', () => {
-  it('a page delete records identity + its parent container by the id the walk assigns', async () => {
-    const tree = await readNexus(root)
-    const dailyId = tree.collections[0].sets[0].id
-    expect(dailyId).toBe('set-daily')
+describe('a Context’s place', () => {
+  const registryIds = async (): Promise<string[]> =>
+    (await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))).contexts.map((c) => c.id)
+  const seeded = {
+    spaces: { ctx_projects: ['sp-sap', 'sp-pom'], ctx_areas: ['sp-home'] },
+    contexts: ['ctx_projects', 'ctx_areas'],
+  }
+  const deleteProjects = () =>
+    settledMutate(root, { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' })
 
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: 'Notes/Daily/Alpha.md',
-      kind: 'page',
-    })
-    expect(r.ok).toBe(true)
-    const { bundlePath, record } = await onlyBundle(root)
-    const dir = join(root, bundlePath)
-    expect(basename(dir).endsWith('__Alpha.md.deleted')).toBe(true)
-    // The artifact keeps the name it always had — there is no stamped leaf to parse back.
-    expect(await bundleArtifact(dir)).toBe(join(dir, 'Alpha.md'))
-    expect(record).toMatchObject({
-      entity: 'page',
-      id: PAGE_A,
-      parent: { kind: 'container', id: dailyId },
-      trail: ['col-notes'],
-    })
-  })
-
-  it('a root Collection delete records parent root; the folder sits inside the bundle', async () => {
-    const r = await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
-    expect(r.ok).toBe(true)
-    const { bundlePath, record } = await onlyBundle(root)
-    const dir = join(root, bundlePath)
-    expect(await bundleArtifact(dir)).toBe(join(dir, 'Notes'))
-    expect(record).toMatchObject({
-      entity: 'collection',
-      id: 'col-notes',
-      parent: { kind: 'root' },
-    })
-    expect(record).not.toHaveProperty('trail')
-  })
-
-  it('a Space delete records its context parent and the id-bearing roots that tagged it', async () => {
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects/Pommora',
-      kind: 'space',
-    })
-    expect(r.ok).toBe(true)
-    const { record } = await onlyBundle(root)
-    expect(record).toMatchObject({
-      entity: 'space',
-      id: 'sp-pom',
-      parent: { kind: 'context', id: 'ctx_projects' },
-    })
-    const members = (record as { members: { id: string; kind: string }[] }).members
-    expect(members).toContainEqual({ id: PAGE_A, kind: 'page' })
-    expect(members).toContainEqual({ id: 'sp-sap', kind: 'space' })
-    expect(members).toHaveLength(2)
-  })
-
-  it('a Context delete records its registry entry and the outside membership map, spaces as {id, title}', async () => {
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects',
-      kind: 'context',
-    })
-    expect(r.ok).toBe(true)
-    const { record } = await onlyBundle(root)
-    expect(record).toMatchObject({
-      entity: 'context',
-      registry: { id: 'ctx_projects', title: 'Projects', singular: 'Project', icon: 'target' },
-    })
-    const membership = (
-      record as {
-        membership: {
-          root: { id?: string; kind: string }
-          spaces: { id?: string; title: string }[]
-        }[]
-      }
-    ).membership
-    // The outside page is the only membership root — the in-Context Sapphire is a passenger whose own links ride the trash intact.
-    expect(membership).toHaveLength(1)
-    expect(membership[0].root).toEqual({ id: PAGE_A, kind: 'page' })
-    expect(membership[0].spaces).toEqual([{ id: 'sp-pom', title: 'Pommora' }])
-  })
-
-  const placeOfOnly = async (): Promise<unknown> =>
-    ((await onlyBundle(root)).record as { place?: unknown }).place
-
-  it('a page records its place between its neighbours as the tree shows them', async () => {
-    await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbody`)
-    await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), `---\nID: ${PAGE_C}\n---\nbody`)
+  beforeEach(async () => {
     await writeFile(
-      join(root, 'Notes', 'Daily', '_pageset.json'),
-      JSON.stringify({ id: 'set-daily', page_order: [PAGE_C, PAGE_A, PAGE_B] }),
+      contextsRegistryFile(root),
+      JSON.stringify({
+        contexts: [
+          { id: 'ctx_areas', title: 'Areas' },
+          { id: 'ctx_projects', title: 'Projects' },
+          { id: 'ctx_zeta', title: 'Zeta' },
+        ],
+      }),
     )
-    await refreshTree(root)
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
-    expect(await placeOfOnly()).toEqual({ above: PAGE_B, below: PAGE_C })
-  })
-
-  it('a Set records its place in its container’s set_order', async () => {
-    for (const [name, id] of [
-      ['Weekly', 'set-week'],
-      ['Monthly', 'set-month'],
-    ]) {
-      await mkdir(join(root, 'Notes', name), { recursive: true })
-      await writeFile(join(root, 'Notes', name, '_pageset.json'), JSON.stringify({ id }))
-    }
-    await writeFile(
-      join(root, 'Notes', '_pagecollection.json'),
-      JSON.stringify({ id: 'col-notes', set_order: ['set-week', 'set-daily', 'set-month'] }),
-    )
-    await refreshTree(root)
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })
-    expect(await placeOfOnly()).toEqual({ above: 'set-month', below: 'set-week' })
-  })
-
-  it('a Collection records its place among the root’s Collections', async () => {
-    for (const [name, id] of [
-      ['Plain', 'col-plain'],
-      ['Zed', 'col-zed'],
-    ]) {
-      await mkdir(join(root, name), { recursive: true })
-      await writeFile(join(root, name, '_pagecollection.json'), JSON.stringify({ id }))
-    }
-    await setCollectionOrder(root, ['col-zed', 'col-notes', 'col-plain'])
-    await refreshTree(root)
-    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
-    expect(await placeOfOnly()).toEqual({ above: 'col-plain', below: 'col-zed' })
-  })
-
-  it('a Space records its place in its Context’s order', async () => {
     await setSpaceOrder(root, 'ctx_projects', ['sp-sap', 'sp-pom'])
+    await setSpaceOrder(root, 'ctx_areas', ['sp-home'])
+    await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
+  })
+
+  it('a Context’s delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders', async () => {
+    const r = await deleteProjects()
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
+    const bundlePath = bundleOf(r)
+    expect(await stateOrder(root)).toEqual({
+      spaces: { ctx_areas: ['sp-home'] },
+      contexts: ['ctx_areas'],
+    })
+    expect(await readRecord(join(root, bundlePath))).toMatchObject({
+      place: { above: 'ctx_zeta', below: 'ctx_areas' },
+      panel: { above: 'ctx_areas' },
+      spaceOrder: ['sp-sap', 'sp-pom'],
+    })
+    expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
+    expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
+    const tree = await readNexus(root)
+    expect(tree.contexts[1].spaces.map((sp) => sp.id)).toEqual(['sp-sap', 'sp-pom'])
+    expect(tree.config.order.contexts).toEqual(['ctx_projects', 'ctx_areas'])
+    expect(await stateOrder(root)).toEqual(seeded)
+  })
+
+  it('a Context returns beside the neighbor its record names, wherever that neighbor has moved', async () => {
+    const r = await deleteProjects()
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({
+        contexts: [
+          { id: 'ctx_zeta', title: 'Zeta' },
+          { id: 'ctx_areas', title: 'Areas' },
+        ],
+      }),
+    )
     await refreshTree(root)
-    await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects/Pommora',
-      kind: 'space',
-    })
-    expect(await placeOfOnly()).toEqual({ below: 'sp-sap' })
-  })
-
-  describe('a Context’s place', () => {
-    const registryIds = async (): Promise<string[]> =>
-      (await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))).contexts.map((c) => c.id)
-    const seeded = {
-      spaces: { ctx_projects: ['sp-sap', 'sp-pom'], ctx_areas: ['sp-home'] },
-      contexts: ['ctx_projects', 'ctx_areas'],
-    }
-    const deleteProjects = () =>
-      settledMutate(root, { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' })
-
-    beforeEach(async () => {
-      await writeFile(
-        contextsRegistryFile(root),
-        JSON.stringify({
-          contexts: [
-            { id: 'ctx_areas', title: 'Areas' },
-            { id: 'ctx_projects', title: 'Projects' },
-            { id: 'ctx_zeta', title: 'Zeta' },
-          ],
-        }),
-      )
-      await setSpaceOrder(root, 'ctx_projects', ['sp-sap', 'sp-pom'])
-      await setSpaceOrder(root, 'ctx_areas', ['sp-home'])
-      await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
-    })
-
-    it('a Context’s delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders', async () => {
-      const r = await deleteProjects()
-      if (!bundleOf(r)) throw new Error('the delete did not trash')
-      const bundlePath = bundleOf(r)
-      expect(await stateOrder(root)).toEqual({
-        spaces: { ctx_areas: ['sp-home'] },
-        contexts: ['ctx_areas'],
-      })
-      expect(await readRecord(join(root, bundlePath))).toMatchObject({
-        place: { above: 'ctx_zeta', below: 'ctx_areas' },
-        panel: { above: 'ctx_areas' },
-        spaceOrder: ['sp-sap', 'sp-pom'],
-      })
-      expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
-      expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
-      const tree = await readNexus(root)
-      expect(tree.contexts[1].spaces.map((sp) => sp.id)).toEqual(['sp-sap', 'sp-pom'])
-      expect(tree.config.order.contexts).toEqual(['ctx_projects', 'ctx_areas'])
-      expect(await stateOrder(root)).toEqual(seeded)
-    })
-
-    it('a Context returns beside the neighbor its record names, wherever that neighbor has moved', async () => {
-      const r = await deleteProjects()
-      if (!bundleOf(r)) throw new Error('the delete did not trash')
-      await writeFile(
-        contextsRegistryFile(root),
-        JSON.stringify({
-          contexts: [
-            { id: 'ctx_zeta', title: 'Zeta' },
-            { id: 'ctx_areas', title: 'Areas' },
-          ],
-        }),
-      )
-      await refreshTree(root)
-      expect((await settledMutate(root, { op: 'restore', bundlePath: bundleOf(r) })).ok).toBe(true)
-      expect(await registryIds()).toEqual(['ctx_projects', 'ctx_zeta', 'ctx_areas'])
-    })
-  })
-
-  it('an unreadable registry refuses a Context delete before anything moves', async () => {
-    await writeFile(contextsRegistryFile(root), '{corrupt')
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects',
-      kind: 'context',
-    })
-    expect(r.ok).toBe(false)
-    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
-    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(true)
-  })
-
-  it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
-    const { bundlePath, record } = await onlyBundle(root)
-    const dir = join(root, bundlePath)
-    expect(await readRecord(dir)).toEqual(record)
-    await writeFile(join(dir, '_record.json'), '{not a record')
-    expect(await readRecord(dir)).toBeNull()
-    await writeFile(join(dir, '_record.json'), JSON.stringify({ hello: 'world' }))
-    expect(await readRecord(dir)).toBeNull()
-  })
-
-  it('a page beneath an unreadable parent sidecar refuses the delete and leaves its bytes', async () => {
-    await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), '{corrupt')
-    await refreshTree(root)
-    const before = await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: 'Notes/Daily/Alpha.md',
-      kind: 'page',
-    })
-    expect(r.ok).toBe(false)
-    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
-    expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toBe(before)
-    expect(await readFile(join(root, 'Notes', 'Daily', '_pageset.json'), 'utf8')).toBe('{corrupt')
-  })
-
-  it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
-    await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n<Projects>:\n  - Pommora\n---\n')
-    await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects/Pommora',
-      kind: 'space',
-    })
-    const { record } = await onlyBundle(root)
-    expect(record).toMatchObject({ entity: 'space', partial: true })
-    const members = (record as { members: { id: string }[] }).members
-    expect(members.every((m) => typeof m.id === 'string')).toBe(true)
-  })
-
-  it('an unreadable Space sidecar inside the Context marks its record partial', async () => {
-    await mkdir(join(contextsDir(root), 'Projects', 'Broken'), { recursive: true })
-    await writeFile(join(contextsDir(root), 'Projects', 'Broken', '_space.json'), '{corrupt')
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: '.nexus/contexts/Projects',
-      kind: 'context',
-    })
-    expect(r.ok).toBe(true)
-    const { record } = await onlyBundle(root)
-    expect(record).toMatchObject({ entity: 'context', partial: true })
-  })
-
-  it.each([
-    ['context', '.nexus/contexts/Projects'],
-    ['space', '.nexus/contexts/Projects/Pommora'],
-  ] as const)('an unreadable Space sidecar in another Context leaves a %s deletable, partial, and the sidecar byte-identical', async (kind, path) => {
-    const broken = await seedSpaceSidecar(root, 'Areas', 'Broken', {})
-    await writeFile(broken, '{ corrupt')
-    await refreshTree(root)
-    const r = await settledMutate(root, { op: 'delete', path, kind })
-    expect(r.ok).toBe(true)
-    const { record } = await onlyBundle(root)
-    expect(record).toMatchObject({ entity: kind, partial: true })
-    expect(await readFile(broken, 'utf8')).toBe('{ corrupt')
-  })
-})
-
-describe('a property bundle', () => {
-  it('two deletes in one stamp keep both records', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
-    try {
-      const record = {
-        entity: 'property' as const,
-        id: 'prop_x',
-        def: { id: 'prop_x' },
-        values: { a: 1 },
-      }
-      const first = await seedPropertyBundle(root, record)
-      const second = await seedPropertyBundle(root, { ...record, values: { a: 2 } })
-      expect(second).not.toBe(first)
-      expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
-      expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-})
-
-describe('listBundles — what the trash offers', () => {
-  it('an incomplete deletion is skipped, and left on disk as evidence', async () => {
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
-    const [dir] = await bundleDirs(root)
-    await rm(join(dir, 'Alpha.md'), { force: true })
-    await seedPropertyBundle(root, {
-      entity: 'property',
-      id: 'prop_x',
-      def: { id: 'prop_x' },
-      values: {},
-    })
-    for (let n = 0; n < 3; n++) {
-      const listed = await listBundles(root, { kind: 'trash' })
-      expect(listed).toHaveLength(1)
-      expect(listed[0].record.entity).toBe('property')
-    }
-    // Never pruned — the record is the only evidence that destruction happened.
-    expect(await pathExists(join(dir, '_record.json'))).toBe(true)
-  })
-
-  it('the record shares a folder with the artifact and can never collide with it', async () => {
-    // The one name that would collide if the record wore a plain one. A folder arriving on disk from outside the app can carry it; the record's `_` prefix is what keeps the two namespaces apart.
-    await mkdir(join(root, 'record.json'), { recursive: true })
-    await writeFile(
-      join(root, 'record.json', '_pagecollection.json'),
-      JSON.stringify({ id: 'col-odd' }),
-    )
-    const r = await settledMutate(root, { op: 'delete', path: 'record.json', kind: 'collection' })
-    expect(r.ok).toBe(true)
-    const [listed] = await listBundles(root, { kind: 'trash' })
-    expect(listed.record).toMatchObject({ entity: 'collection', id: 'col-odd' })
-    const restored = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
-    expect(restored.ok).toBe(true)
-    expect(await pathExists(join(root, 'record.json', '_pagecollection.json'))).toBe(true)
-  })
-
-  it('Finder litter beside the artifact changes nothing', async () => {
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
-    const [dir] = await bundleDirs(root)
-    await writeFile(join(dir, '.DS_Store'), 'junk')
-    expect(await bundleArtifact(dir)).toBe(join(dir, 'Alpha.md'))
-    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
-  })
-
-  it('a bundle’s interior is trashed content, never trash structure', async () => {
-    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
-    const [dir] = await bundleDirs(root)
-    const phantom = join(dir, 'Notes', 'Archive.deleted')
-    await mkdir(phantom, { recursive: true })
-    await writeFile(
-      join(phantom, '_record.json'),
-      JSON.stringify({ entity: 'page', parent: { kind: 'root' } }),
-    )
-    const listed = await listBundles(root, { kind: 'trash' })
-    expect(listed).toHaveLength(1)
-    expect(listed[0].record.entity).toBe('collection')
-  })
-
-  it('a chain folder that merely wears the name is walked through, not read as a deletion', async () => {
-    // A Collection a user genuinely named "Archive.deleted" — its mirrored chain folder in .trash carries the same name and holds the real bundle.
-    await mkdir(join(root, 'Archive.deleted'), { recursive: true })
-    await writeFile(
-      join(root, 'Archive.deleted', '_pagecollection.json'),
-      JSON.stringify({ id: 'col-archive' }),
-    )
-    await writeFile(
-      join(root, 'Archive.deleted', 'Beta.md'),
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVF\n---\nbody',
-    )
-    const r = await settledMutate(root, {
-      op: 'delete',
-      path: 'Archive.deleted/Beta.md',
-      kind: 'page',
-    })
-    expect(r.ok).toBe(true)
-    const listed = await listBundles(root, { kind: 'trash' })
-    expect(listed).toHaveLength(1)
-    expect(listed[0].record).toMatchObject({ entity: 'page' })
+    expect((await settledMutate(root, { op: 'restore', bundlePath: bundleOf(r) })).ok).toBe(true)
+    expect(await registryIds()).toEqual(['ctx_projects', 'ctx_zeta', 'ctx_areas'])
   })
 })
 

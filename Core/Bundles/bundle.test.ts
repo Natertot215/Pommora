@@ -3,12 +3,14 @@ import { pathExists } from '../Files/atomicWrite'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
-import { seedPropertyBundle } from '../Testing/bundles'
+import { bundleDirs, bundleNexusEachTest, onlyBundle, seedPropertyBundle } from '../Testing/bundles'
+import { settledMutate } from '../Testing/settledMutate'
 import { newContentId } from '../Nexus/ids'
 import { OWED_REL } from '../Paths/nexusPaths'
 import { sidecarPath } from '../Paths/paths'
 import type { WatchScope } from '../Paths/exclusion'
 import {
+  bundleArtifact,
   fileInto,
   listBundles,
   listInner,
@@ -19,7 +21,7 @@ import {
   spendBundle,
 } from './bundle'
 import * as record from './record'
-import { appendLinks, patchRecord, readRawRecord, writeRecord } from './record'
+import { appendLinks, patchRecord, readRawRecord, readRecord, writeRecord } from './record'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
 const TRASH = { kind: 'trash' } as const
@@ -470,5 +472,126 @@ describe('fileInto', () => {
     const whole = `.trash/Live/${STAMPED}__P.md.deleted`
     expect(await fileAs(whole)).toEqual({ address: whole, landed: join(root, whole, 'P.md') })
     expect(await readFile(join(root, whole, 'P.md'), 'utf8')).toBe('back')
+  })
+})
+
+describe('a Trash a delete fills', () => {
+  let trashRoot: string
+  bundleNexusEachTest('pom-bundle-', (r) => (trashRoot = r))
+
+  it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {
+    await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+    const { bundlePath, record } = await onlyBundle(trashRoot)
+    const dir = join(trashRoot, bundlePath)
+    expect(await readRecord(dir)).toEqual(record)
+    await writeFile(join(dir, '_record.json'), '{not a record')
+    expect(await readRecord(dir)).toBeNull()
+    await writeFile(join(dir, '_record.json'), JSON.stringify({ hello: 'world' }))
+    expect(await readRecord(dir)).toBeNull()
+  })
+
+  it('two deletes in one stamp keep both records', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
+    try {
+      const record = {
+        entity: 'property' as const,
+        id: 'prop_x',
+        def: { id: 'prop_x' },
+        values: { a: 1 },
+      }
+      const first = await seedPropertyBundle(trashRoot, record)
+      const second = await seedPropertyBundle(trashRoot, { ...record, values: { a: 2 } })
+      expect(second).not.toBe(first)
+      expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
+      expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+  it('an incomplete deletion is skipped, and left on disk as evidence', async () => {
+    await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+    const [dir] = await bundleDirs(trashRoot)
+    await rm(join(dir, 'Alpha.md'), { force: true })
+    await seedPropertyBundle(trashRoot, {
+      entity: 'property',
+      id: 'prop_x',
+      def: { id: 'prop_x' },
+      values: {},
+    })
+    for (let n = 0; n < 3; n++) {
+      const listed = await listBundles(trashRoot, { kind: 'trash' })
+      expect(listed).toHaveLength(1)
+      expect(listed[0].record.entity).toBe('property')
+    }
+    // Never pruned — the record is the only evidence that destruction happened.
+    expect(await pathExists(join(dir, '_record.json'))).toBe(true)
+  })
+
+  it('the record shares a folder with the artifact and can never collide with it', async () => {
+    // The one name that would collide if the record wore a plain one. A folder arriving on disk from outside the app can carry it; the record's `_` prefix is what keeps the two namespaces apart.
+    await mkdir(join(trashRoot, 'record.json'), { recursive: true })
+    await writeFile(
+      join(trashRoot, 'record.json', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-odd' }),
+    )
+    const r = await settledMutate(trashRoot, {
+      op: 'delete',
+      path: 'record.json',
+      kind: 'collection',
+    })
+    expect(r.ok).toBe(true)
+    const [listed] = await listBundles(trashRoot, { kind: 'trash' })
+    expect(listed.record).toMatchObject({ entity: 'collection', id: 'col-odd' })
+    const restored = await settledMutate(trashRoot, {
+      op: 'restore',
+      bundlePath: listed.bundlePath,
+    })
+    expect(restored.ok).toBe(true)
+    expect(await pathExists(join(trashRoot, 'record.json', '_pagecollection.json'))).toBe(true)
+  })
+
+  it('Finder litter beside the artifact changes nothing', async () => {
+    await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+    const [dir] = await bundleDirs(trashRoot)
+    await writeFile(join(dir, '.DS_Store'), 'junk')
+    expect(await bundleArtifact(dir)).toBe(join(dir, 'Alpha.md'))
+    expect(await listBundles(trashRoot, { kind: 'trash' })).toHaveLength(1)
+  })
+
+  it('a bundle’s interior is trashed content, never trash structure', async () => {
+    await settledMutate(trashRoot, { op: 'delete', path: 'Notes', kind: 'collection' })
+    const [dir] = await bundleDirs(trashRoot)
+    const phantom = join(dir, 'Notes', 'Archive.deleted')
+    await mkdir(phantom, { recursive: true })
+    await writeFile(
+      join(phantom, '_record.json'),
+      JSON.stringify({ entity: 'page', parent: { kind: 'root' } }),
+    )
+    const listed = await listBundles(trashRoot, { kind: 'trash' })
+    expect(listed).toHaveLength(1)
+    expect(listed[0].record.entity).toBe('collection')
+  })
+
+  it('a chain folder that merely wears the name is walked through, not read as a deletion', async () => {
+    // A Collection a user genuinely named "Archive.deleted" — its mirrored chain folder in .trash carries the same name and holds the real bundle.
+    await mkdir(join(trashRoot, 'Archive.deleted'), { recursive: true })
+    await writeFile(
+      join(trashRoot, 'Archive.deleted', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-archive' }),
+    )
+    await writeFile(
+      join(trashRoot, 'Archive.deleted', 'Beta.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVF\n---\nbody',
+    )
+    const r = await settledMutate(trashRoot, {
+      op: 'delete',
+      path: 'Archive.deleted/Beta.md',
+      kind: 'page',
+    })
+    expect(r.ok).toBe(true)
+    const listed = await listBundles(trashRoot, { kind: 'trash' })
+    expect(listed).toHaveLength(1)
+    expect(listed[0].record).toMatchObject({ entity: 'page' })
   })
 })

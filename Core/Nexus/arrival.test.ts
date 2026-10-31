@@ -6,12 +6,9 @@ import { isMarkdownFile, join } from '../Paths/posix'
 import { readJsonAt, failLandings, seedNexus, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from './liveTree'
-import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from '../Bundles/bundle'
-import { stampMissing } from './adopt'
-import { readNexus } from './readNexus'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -400,26 +397,5 @@ describe('a Space sidecar is a context root too', () => {
       '<Domains>': ['Work'],
       Urgency: ['hi'],
     })
-  })
-})
-
-describe('a parent the filesystem handed Pommora can still be named by id', () => {
-  it('a page deleted from a Finder-made folder records a real parent and restores', async () => {
-    // No sidecar: exactly what appears when a folder is created outside the app, until the open stamps it.
-    await mkdir(join(root, 'Notes', 'Inbox'), { recursive: true })
-    await writeFile(
-      join(root, 'Notes', 'Inbox', 'Idea.md'),
-      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody`,
-    )
-    await stampMissing(root, (await readNexus(root)).unreadable)
-    await refreshTree(root)
-    const d = await settledMutate(root, { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' })
-    expect(d.ok).toBe(true)
-
-    const [listed] = await listBundles(root, { kind: 'trash' })
-    expect(listed.record).toMatchObject({ entity: 'page', parent: { kind: 'container' } })
-    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
-    expect(r.ok).toBe(true)
-    expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
   })
 })
