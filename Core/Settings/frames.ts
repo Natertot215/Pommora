@@ -652,8 +652,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'permanentDelete',
             label: 'Permanently Delete Files',
-            caption:
-              'Erase items emptied from the Trash instead of moving them to the system trash.',
+            caption: 'Erase files instead of moving them to the system trash.',
           },
           {
             kind: 'toggle',
