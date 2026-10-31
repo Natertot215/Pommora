@@ -9843,7 +9843,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **Discards in the Trash (Nathan's call):** a removed Markdown tile's file and an image-folder change's leftovers land in `.trash` as recordless stamped files that no listing shows and nothing empties (`Core/Trash/discard.ts`), as before this plan; they could go straight to the system trash or be removed by Permanently Delete Files as the empty disposes, or be minted as bundles the Trash lists.
 - **The Property Restore's Home (Nathan's call):** `Core/Trash/restoreProperty.ts` is the one restore's property arm and `Core/Trash/gather.ts` holds `parkLinks`, which `Core/Bundles/restore.ts` imports, so Bundles and Trash import each other; `.claude/CLAUDE.md`'s Trash line names neither. Either the line names them or `restoreProperty.ts` moves beside `restore.ts`.
 - **A Trashed Page's Double-Click (Nathan's call):** the Archive opens a page's reader on a double-click and the Trash opens nothing, as before this plan; the Trash's rows carry the `stored` the reader would need.
-
+- **`views:save` Takes an Empty Id:** the views channel accepts a save whose view id is empty, outside this plan's surface; it's for its own pass.
 
 #### Deviations
 
