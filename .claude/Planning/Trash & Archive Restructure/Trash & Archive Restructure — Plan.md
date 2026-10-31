@@ -1,14 +1,14 @@
 ## Trash & Archive Restructure — Implementation Plan
 
 **DATE:** 10-29-2026
-**STATUS:** Complete 10-31-2026 — `de297a9ee..fa6ae7499`
+**STATUS:** Complete 10-31-2026 — `de297a9ee..e8db664bc`
 **SOURCE:** *Trash & Archive Restructure — Decisions & Intention* (ratified 10-29-2026, Decisions A-1–G-4 and its *§Rejected*), *Trash & Archive Restructure — Investigation* and its `Scouts/`, *Trash & Archive Restructure — Reach-In Measurement*, and the planning session's placements (10-29-2026), which *§Constraints · Placements* records.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | 10-31-2026 07:10 AM · `fa6ae7499` · 9,055 passed · 2 skipped |
+| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | 10-31-2026 12:50 PM · `e8db664bc` · 9,058 passed · 2 skipped |
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; estimates from each phase's tasks; Task 1-2's and Task 6-11's measurements go beneath it):
 
@@ -20,7 +20,7 @@
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | ±0 (+1 / −1) in production, a rewritten comment and the refusal; tests −430 (+1,887 / −2,317), `Core/Testing` +213 (+234 / −21) for the shared bundle fixture and browser harness |
-| **Total** | **about −415** | **−217 (+2,557 / −2,774) outside `Core/Testing` at `fa6ae7499`, comment lines −29 and tests +39; −231 at Phase 6's close, the final verification's folds adding +14 (*§Deviations · Final Verification*)** |
+| **Total** | **about −415** | **−228 (+2,583 / −2,811) outside `Core/Testing` at `e8db664bc`, comment lines −29 and tests +119; −231 at Phase 6's close, the final verification's folds adding +14 and the discards' disposal with the second round's folds −11 (*§Deviations*)** |
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 

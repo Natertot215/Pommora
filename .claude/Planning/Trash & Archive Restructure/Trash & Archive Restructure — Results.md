@@ -2,10 +2,10 @@
 
 | Actionable | All-Inclusive | Comments | Documentation | Tests | Files |
 |------------|---------------|----------|---------------|-------|-------|
-| =🔴-217=(=🟢+2557=/=🔴-2774=) | =🔴-207=(=🟢+10150=/=🔴-10357=) | =🔴-29=(=🟢+152=/=🔴-181=) | ±0(+0/-0) | =🟢+39=(=🟢+7441=/=🔴-7402=) | ±0(=🟢+10=/=🔴-10=) |
+| =🔴-228=(=🟢+2582=/=🔴-2810=) | =🔴-138=(=🟢+10274=/=🔴-10412=) | =🔴-29=(=🟢+153=/=🔴-182=) | ±0(+0/-0) | =🟢+119=(=🟢+7539=/=🔴-7420=) | ±0(=🟢+10=/=🔴-10=) |
 
-- **FILES:** =🔴-246=(=🟢+2709=/=🔴-2955=)
-- **TESTS:** =🟢+39=(=🟢+7441=/=🔴-7402=)
+- **FILES:** =🔴-257=(=🟢+2735=/=🔴-2992=)
+- **TESTS:** =🟢+119=(=🟢+7539=/=🔴-7420=)
 
 ---
 
@@ -522,10 +522,19 @@
  import { corpusFiles, listEntries, listFilesRecursive, sidecarsUnder } from '../Files/walk'
  import { reachingExcluded } from '../Paths/exclusion'
 -import { discardFile, type TrashDeps } from '../Trash/discard'
-+import { discardFile } from '../Trash/discard'
++import { discard } from '../Trash/discard'
  import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
  import { readWatchScope, rekeyCrops, updateSettings } from '../Settings/settings'
  import {
+@@ -35 +35 @@ interface AssetMigration {
+   moved: { from: string; to: string }[]
+   rewritten: number
+   skipped: { store: string; why: string }[]
+-  trashed: number
++  discarded: number
+ }
+ 
+ interface StoreRef {
 @@ -155 +155 @@ async function collectRefs(root: string, skipped: AssetMigration['skipped']): Pr
    return refs
  }
@@ -535,6 +544,13 @@
    const { assetDir } = await readWatchScope(root)
    if (assetDir === ASSETS_DIR_REL) return null
  
+   const legacy = await buildAssetMap(root, ASSETS_DIR_REL)
+   if (!Object.keys(legacy.files).length) return null
+-  const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], trashed: 0 }
++  const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], discarded: 0 }
+   const landed = new Map<string, string>()
+ 
+   for (const ref of await collectRefs(root, result.skipped)) {
 @@ -214 +214 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
      if (toRel) rekeys.set(from, toRel)
    }
@@ -542,19 +558,20 @@
 -  // Last, so a discard the system trash refuses leaves the move itself whole.
 -  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root, deps)
 +  // Last, so a discard that fails leaves the move itself whole.
-+  if (!result.skipped.length) result.trashed = await sweepLegacyRoot(root)
++  if (!result.skipped.length) result.discarded = await sweepLegacyRoot(root)
    return result
  }
  
 -async function sweepLegacyRoot(root: string, deps: TrashDeps): Promise<number> {
 +async function sweepLegacyRoot(root: string): Promise<number> {
    const dir = assetsDir(root, ASSETS_DIR_REL)
-   // Every file the move left behind goes to the trash, the ones the map never indexed included.
+-  // Every file the move left behind goes to the trash, the ones the map never indexed included.
++  // Every file the move left behind is discarded, the ones the map never indexed included.
    const files = (await listFilesRecursive(dir)).filter(
      (abs) => !legacyBookkeeping(relative(root, abs)),
    )
 -  for (const abs of files) await discardFile(root, abs, deps)
-+  for (const abs of files) await discardFile(root, abs)
++  for (const abs of files) await discard(root, abs)
    for (const entry of await listEntries(dir)) {
      if (entry.kind === 'dir') await machine().remove(join(dir, entry.name))
    }
@@ -1222,7 +1239,7 @@
 -import { NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
 +import { outsideContent, type WatchScope } from '../Paths/exclusion'
 +import { holdsName } from '../Paths/names'
-+import { ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
++import { APP_DIRS, ARCHIVE_DIR_REL, hiddenName } from '../Paths/nexusPaths'
  import { machine } from '../Platform/machine'
  import { fail, fault, ok, type Result } from '../Contract/result'
 -import { isPlainObject } from '../Contract/validators'
@@ -1269,13 +1286,19 @@
 +} from '../Paths/bundleLayout'
  
 -/** A store reads as a shadow of the nexus, so a stored item shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
+-export async function chainDir(
+-  root: string,
+-  store: BundleStore,
+-  absSource: string,
+-): Promise<string> {
 +export const ITEM_GONE = fail('not-found', 'That item is no longer there.')
 +
 +/** A bundle mints under the folder chain its item leaves from, so a stored item shows where it lived when it left. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
- export async function chainDir(
-   root: string,
-   store: BundleStore,
-@@ -60 +63 @@ export async function chainDir(
++async function chainDir(root: string, store: BundleStore, absSource: string): Promise<string> {
+   const rel = relative(root, absSource)
+   const chain = rel && !escapes(rel) ? dirname(rel) : '.'
+   const dir = join(root, layoutOf(store).dir, chain)
+@@ -60 +59 @@ export async function chainDir(
    return dir
  }
  
@@ -1318,7 +1341,7 @@
    }
  }
  
-@@ -104 +123 @@ export async function fileInto(
+@@ -104 +119 @@ export async function fileInto(
      root,
      to,
      origin,
@@ -1334,7 +1357,7 @@
      throw e
    }
    return { address: relative(root, bundle), landed: join(bundle, basename(origin)) }
-@@ -123 +142 @@ export async function moveIntoStore(
+@@ -123 +138 @@ export async function moveIntoStore(
    to: BundleStore,
    extra: RawRecord,
  ): Promise<void> {
@@ -1351,7 +1374,7 @@
  }
  
  export interface ListedBundle {
-@@ -138 +156 @@ export interface ListedBundle {
+@@ -138 +152 @@ export interface ListedBundle {
    artifactName?: string
  }
  
@@ -1380,7 +1403,7 @@
    const { dir, suffix } = layoutOf(store)
    const out: ListedBundle[] = []
    const walk = async (at: string): Promise<void> => {
-@@ -159 +182 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
+@@ -159 +178 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
        const abs = join(at, e.name)
        const record = e.name.endsWith(suffix) ? await readRecord(abs) : null
        if (!record) {
@@ -1395,7 +1418,7 @@
        out.push({
          bundlePath: relative(root, abs),
          record,
-@@ -171 +195 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
+@@ -171 +191 @@ export async function listBundles(root: string, store: BundleStore): Promise<Lis
        })
      }
    }
@@ -1404,22 +1427,24 @@
    return out
  }
  
-+export const trashRoot = (root: string): Promise<ListedBundle[]> =>
++export const topTrashBundles = (root: string): Promise<ListedBundle[]> =>
 +  listBundles(root, { kind: 'trash' }, '', { shallow: true })
 +
  /** The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash. */
  export async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
    const held = new Set(tree.collections.map((c) => c.path))
-@@ -183 +210 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
-       kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
+   const unheld = (await listEntries(root)).filter(
+-    ({ name, kind }) =>
+-      kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
++    ({ name, kind }) => kind === 'dir' && !APP_DIRS.includes(name) && !held.has(name),
    )
    const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
 -  const trashed = (await listBundles(root, { kind: 'trash' })).flatMap(({ record }) =>
-+  const trashed = (await trashRoot(root)).flatMap(({ record }) =>
++  const trashed = (await topTrashBundles(root)).flatMap(({ record }) =>
      record.entity === 'collection' && record.id ? record.id : [],
    )
    return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
-@@ -202 +229 @@ export async function archiveOwned(
+@@ -202 +224 @@ export async function archiveOwned(
    )
  }
  
@@ -1461,7 +1486,10 @@
    const record = await readRecord(at.bundle)
    if (!record) return fault('That record is unreadable.')
    const artifact = await bundleArtifact(at.bundle)
-@@ -228 +266 @@ async function readBundleAt(root: string, abs: string) {
+   const { bundle, store, item } = at
+-  if (!item) return ok({ bundle, store, record, artifact, inner: null })
++  if (!item) return ok({ bundle, store, record, artifact, item: null })
+   if (
      !isContainerRecord(record) ||
      !artifact ||
      !isAtOrUnder(item, artifact) ||
@@ -1469,11 +1497,13 @@
 +    !(movedOut || (await pathExists(item)))
    )
 -    return fail('not-found', 'That item is no longer there.')
+-  return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
 +    return ITEM_GONE
-   return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
++  return ok({ bundle, store, record, artifact, item })
  }
  
-@@ -253 +291 @@ async function trailWithin(
+ /** The container ids above `folder` inside a container's bundle, outermost first: the bundle's own trail and parent, the bundled container, and each folder down to `folder`; null when one of them has no id. */
+@@ -253 +286 @@ async function trailWithin(
    return ids.every((id): id is string => id !== undefined) ? ids : null
  }
  
@@ -1537,18 +1567,20 @@
 +): Promise<Result<OpenBundle>> {
 +  const read = await readBundleAt(root, abs, movedTo !== undefined)
    if (!read.ok) return read
-   const { bundle, store, record, artifact, inner } = read.value
-   if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
-   const { item, held } = inner
+-  const { bundle, store, record, artifact, inner } = read.value
+-  if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
+-  const { item, held } = inner
 -  const own = await innerRecord(held, await trailWithin(held, inner.artifact, dirname(item)), item)
 -  const links = await keptLinksUnder(root, store, held, inner.artifact, item)
-+  const trail = await trailWithin(held, inner.artifact, dirname(item))
++  const { bundle, store, record, artifact, item } = read.value
++  if (item === null) return ok({ abs: bundle, store, record, artifact, inner: false })
++  const trail = await trailWithin(record, artifact, dirname(item))
 +  const own = await innerRecord(trail, item, movedTo)
-+  const links = await keptLinksUnder(root, held, inner.artifact, item, own.entity, movedTo)
++  const links = await keptLinksUnder(root, record, artifact, item, own.entity, movedTo)
    return ok({
      abs: bundle,
      store,
-@@ -306 +355 @@ export async function openBundle(root: string, abs: string): Promise<Result<Open
+@@ -306 +349 @@ export async function openBundle(root: string, abs: string): Promise<Result<Open
    })
  }
  
@@ -1560,16 +1592,17 @@
    record: ContainerRecord
    folder: string
    items: { address: string; record: InnerRecord }[]
-@@ -323 +371 @@ export async function listInner(
+@@ -323 +365 @@ export async function listInner(
  ): Promise<Result<InnerListing>> {
    const read = await readBundleAt(root, abs)
    if (!read.ok) return read
 -  const { bundle, store, record, artifact, inner } = read.value
-+  const { bundle, record, artifact, inner } = read.value
++  const { bundle, record, artifact, item } = read.value
    if (!isContainerRecord(record) || !artifact)
      return fail('not-found', 'That holds no inner items.')
-   const folder = inner?.item ?? artifact
-@@ -331 +379 @@ export async function listInner(
+-  const folder = inner?.item ?? artifact
++  const folder = item ?? artifact
+   const trail = await trailWithin(record, artifact, folder)
    const entries = (await listEntries(folder)).filter(
      (e) =>
        (e.kind === 'dir' || isContentFile(e)) &&
@@ -1584,7 +1617,7 @@
        return {
          address: relative(root, at),
          record: own,
-@@ -359 +407 @@ export async function listInner(
+@@ -359 +401 @@ export async function listInner(
    ]
    return ok({
      bundle: relative(root, bundle),
@@ -1596,13 +1629,11 @@
  }
  
 -/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
-+/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share (a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views) — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
++/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share (a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views), the Link values it carried away; either way its pages leave the strip the bundle's delete still owes, so the bundle's own restore never writes them twice and a later finish neither strips a link to what came back nor reaches into a bundle that's gone. */
  export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
 -  const { abs, store, record, artifact, inner } = opened
 -  if (!inner) return void (await removeOwn(abs))
-+  const { abs, record, artifact, inner } = opened
-+  if (!inner) return void (await removeBundle(root, abs))
-   const gone = 'links' in record ? (record.links ?? []) : []
+-  const gone = 'links' in record ? (record.links ?? []) : []
 -  const same = (l: unknown): boolean =>
 -    isPlainObject(l) &&
 -    gone.some((g) => g.page === l.page && g.property === l.property && g.value === l.value)
@@ -1622,12 +1653,14 @@
 -      ? { ...e, strip: distinct(e.strip?.filter((path) => !isAtOrUnder(path, from))) }
 -      : e,
 -  )
-+  if (gone.length) await removeLinks(abs, gone)
-+  await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
++  const { abs, record, artifact, inner } = opened
++  if (!inner) await removeBundle(root, abs)
++  else if ('links' in record && record.links?.length) await removeLinks(abs, record.links)
++  if (artifact) await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
  }
  
  export async function contentPages(
-@@ -413 +443 @@ export async function pageIdsOf(pages: string[]): Promise<string[]> {
+@@ -413 +436 @@ export async function pageIdsOf(pages: string[]): Promise<string[]> {
    return ids.flatMap((id) => id ?? [])
  }
  
@@ -1954,11 +1987,12 @@
  const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
  
 -/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above; `StrippedLink` is its type. */
+-export const strippedLink = z.object({
 +/** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above. */
- export const strippedLink = z.object({
++const strippedLink = z.object({
    page: z.string(),
    property: z.string(),
-@@ -36 +34 @@ export const strippedLink = z.object({
+   value: z.string(),
    above: z.string().optional(),
  })
  
@@ -2666,22 +2700,26 @@
 -import { hiddenFolder, hiddenName, outsideContent, type WatchScope } from '../Paths/exclusion'
 -import { ARCHIVE_DIR_REL, SIDECARS } from '../Paths/nexusPaths'
 +import { outsideContent, type WatchScope } from '../Paths/exclusion'
++import { storeOf } from '../Paths/bundleLayout'
 +import { ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS, TRASH_DIR } from '../Paths/nexusPaths'
  import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
  import { type DirEntry, machine } from '../Platform/machine'
  
-@@ -19 +19 @@ export async function listEntries(dir: string): Promise<DirEntry[]> {
+@@ -19 +20 @@ export async function listEntries(dir: string): Promise<DirEntry[]> {
    }
  }
  
 +export async function holdsOnlyHidden(dir: string): Promise<boolean> {
-+  return (await listEntries(dir)).every((e) => hiddenName(e.name))
++  const entries = await machine()
++    .readDir(dir)
++    .catch(() => null)
++  return !!entries?.every((e) => hiddenName(e.name))
 +}
 +
  export async function listFilesRecursive(dir: string): Promise<string[]> {
    const out: string[] = []
    for (const e of await listEntries(dir)) {
-@@ -39 +43 @@ export async function listMarkdownFiles(dir: string): Promise<string[]> {
+@@ -39 +47 @@ export async function listMarkdownFiles(dir: string): Promise<string[]> {
    return rels.map((rel) => join(dir, rel))
  }
  
@@ -2696,6 +2734,17 @@
  
  export async function corpusFiles(root: string, scope: WatchScope): Promise<string[]> {
    const files: string[] = []
+@@ -96 +108 @@ export async function sidecarsUnder(
+   const files: string[] = []
+   for (const dir of under === undefined ? contentRoots(root) : [under]) {
+     const rels = await listPathsUnder(root, dir, (rel, kind) =>
+-      kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
++      kind === 'dir'
++        ? !outsideContent(rel, scope)
++        : SIDECARS.has(basename(rel)) && storeOf(rel)?.bundle !== null,
+     )
+     files.push(...rels.map((rel) => join(root, rel)))
+   }
 ```
 
 ##### Core/Files/walkCache.ts
@@ -3242,6 +3291,8 @@
 +    : { ...req, path, back: { ...req.back, name: basename(path) } }
 +}
 +
++type Acted = Titled & { req: MutateRequest; bundlePath?: string }
++
 +/** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
 +function offerUndo(
 +  undos: readonly Acted[],
@@ -3267,10 +3318,6 @@
 -  for (const bundlePath of bundlePaths) armed.set(bundlePath, spend)
 +  for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
 +}
-+
-+type Acted = Titled & { req: MutateRequest; bundlePath?: string }
-+
-+const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 +
 +/** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `bundlePath`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
 +export async function runBundled(
@@ -3302,7 +3349,7 @@
 +    if (warning && !run.warnings.includes(warning)) run.warnings.push(warning)
 +    run.links += res.cascade?.pages.length ?? 0
 +    owed ||= !!res.cascade?.owed
-+    if (res.landedAs) run.renamed.push(steppedTo(row.title, res.landedAs))
++    if (res.landedAs) run.renamed.push({ title: row.title, landedAs: res.landedAs })
 +    if (res.undo) undos.push({ title: row.title, kind: row.kind, req: res.undo })
 +  }
 +  if (counted) storesChanged.emit()
@@ -3379,7 +3426,7 @@
  }
  
  export const confirmArchive = async (target: {
-@@ -137 +164 @@ export const confirmArchive = async (target: {
+@@ -137 +162 @@ export const confirmArchive = async (target: {
      })
      if (!yes) return
    }
@@ -3395,7 +3442,7 @@
  }
  
  export const askRemoveTile = (): Promise<boolean> =>
-@@ -226 +248 @@ export const askRewrite = (
+@@ -226 +246 @@ export const askRewrite = (
      true,
    )
  
@@ -3490,7 +3537,7 @@
 +  refused: Titled[]
 +  unrestored: string[]
 +  warnings: string[]
-+  renamed: string[]
++  renamed: { title: string; landedAs: string }[]
 +  links: number
 +}
 +
@@ -3515,12 +3562,13 @@
 +  ].filter((line): line is string => typeof line === 'string')
 +  if (!verb || !done.length)
 +    return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
-+  const head = `${verb} ${lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)}`
++  const stepped = renamed[0] && `“${renamed[0].title}” as “${renamed[0].landedAs}”`
++  const head = `${verb} ${lone ? (stepped ?? `“${done[0].title}”`) : countPhrase(done)}`
 +  const stripped =
 +    verb === 'Deleted' && links > 0
 +      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
 +      : undefined
-+  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0]
++  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : stepped
 +  const segment = lone ? stripped : renames
 +  const said = unmet.length ? `. ${unmet.join(' ')}` : ''
    return notifyUndoable(
@@ -3846,7 +3894,16 @@
 +/** The tail every item back from a store runs, a restore's and a hand move's alike, `opened` the bundle or the share of one it left and `record` its record as placed: the bundle spent first, since everything after reads the record from memory; the arrival re-spelled from `live`, the world before it, to `after`, the index once it landed; a Context's membership or a Space's members tagged again, or the Link values its delete stripped put back under Restore Links On Deletion in one sweep across every Link definition, over the world read once it landed; and, unless it `filed` back into a store, a Set's archived records carried out of the Archive of the Collection its stored chain stands in now, or the one it stored while the tree holds none of it. Answers the titles of what didn't take its tag or value back, and the cascade. */
 +export async function arrive(
 +  root: string,
-+  a: {
++  {
++    opened,
++    record,
++    title,
++    landed,
++    filed,
++    back,
++    live,
++    after,
++  }: {
 +    opened: OpenBundle
 +    record: ArtifactRecord
 +    title: string
@@ -3857,19 +3914,20 @@
 +    after: PageIndex | null
 +  },
 +): Promise<{ unrestored: string[]; cascade?: CascadeReport }> {
-+  const { record, title } = a
-+  await spendBundle(root, a.opened)
-+  const landed = { ...a.landed, entity: record.entity }
-+  const { own, cascade } = await returningCascade(root, a.live, a.after, a.back, title, landed)
++  await spendBundle(root, opened)
++  const { own, cascade } = await returningCascade(root, live, after, back, title, {
++    ...landed,
++    entity: record.entity,
++  })
 +  const tree = await liveTreeOf(root)
 +  const { byId, archived } = await nexusPages(root, tree)
 +  const missed =
 +    record.entity === 'context' || record.entity === 'space'
-+      ? await retag(root, tree, byId, record, title, a.landed.abs)
++      ? await retag(root, tree, byId, record, title, landed.abs)
 +      : record.links && (await readLiveSetting(root, 'restoreLinksOnDeletion'))
 +        ? await refill(root, tree, byId, linkWorld(tree, archived), record.links, own)
 +        : []
-+  const left = a.filed ? null : originOf(a.opened.record)
++  const left = filed ? null : originOf(opened.record)
 +  if (left) await refileLanded(root, record, standingCollection(tree, left))
 +  const unrestored = missed.flatMap((id) => shownTitle(tree, byId, id) ?? [])
 +  return { unrestored, ...(cascade ? { cascade } : {}) }
@@ -4714,7 +4772,7 @@
  import { stashAndStrip } from '../Properties/unassignProperty'
 -import { archiveOwned, collectionsElsewhere, contentPages, listBundles } from '../Bundles/bundle'
 -import { listEntries } from '../Files/walk'
-+import { ownedArchives, trashRoot } from '../Bundles/bundle'
++import { ownedArchives, topTrashBundles } from '../Bundles/bundle'
 +import { appendLinks } from '../Bundles/record'
  import { refillStash } from '../Properties/assignment'
 +import { everyCollection, storedNodes, storedPageIds } from './heldPages'
@@ -4794,7 +4852,7 @@
 -    // With no Trash entry left for the property it can't come back, so the Collections and pages the Trash holds lose it as the live ones do.
 -    const bundles = await listBundles(root, { kind: 'trash' })
 +    // With no Trash entry left for the property it can't come back, so the Collections the Trash holds lose its assignment as the live ones do; every page lost its values at the delete.
-+    const bundles = await trashRoot(root)
++    const bundles = await topTrashBundles(root)
      const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
 -    const trashed = kept
 -      ? []
@@ -4974,8 +5032,9 @@
 +  let stripped = false
 +  if (taken) {
 +    const links = await gatherLinks(root, taken)
-+    if (!e.bundle) await parkLinks(root, links)
-+    else if (!(await appendLinks(join(root, e.bundle), links)).ok) return stuck(e)
++    const kept = e.bundle ? await appendLinks(join(root, e.bundle), links) : null
++    if (kept && !kept.ok && kept.error.code !== 'not-found') return stuck(e)
++    if (!kept?.ok) await parkLinks(root, links)
 +    stripped = add(reach, await deleteCascade(root, taken))
    }
 -  const stripped = !!gone && add(reach, gone.reach)
@@ -5247,7 +5306,7 @@
 +import { sidecarPath } from '../Paths/paths'
 +import { readJsonObject } from '../Files/atomicWrite'
 +import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
-+import { listBundles, trashRoot } from '../Bundles/bundle'
++import { listBundles, topTrashBundles } from '../Bundles/bundle'
 +import { originOf, standingCollection, type RecordFile, readRecord } from '../Bundles/record'
 +import { containerNodeFrom } from './containerFields'
  import { corpusFilesUnder } from '../Files/walk'
@@ -5361,7 +5420,7 @@
 +    return { owners, collections }
 +  }
 +  const spaces: SpaceNode[] = []
-+  for (const { bundlePath, record, artifactName } of await trashRoot(root)) {
++  for (const { bundlePath, record, artifactName } of await topTrashBundles(root)) {
 +    if (record.entity !== 'collection' || !artifactName) continue
 +    owners.set(bundlePath, record.id)
 +    const artifact = join(root, bundlePath, artifactName)
@@ -6842,17 +6901,21 @@
 ##### Core/Paths/nexusPaths.ts
 
 ```/Core/Paths/nexusPaths.ts diff
-@@ -6 +6 @@ export const TRASH_DIR = '.trash'
+@@ -4 +4 @@ export const NEXUS_DIR = '.nexus'
  
- export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
+ export const TRASH_DIR = '.trash'
  
+-export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
+-
 -export type ArchiveStore = { kind: 'archive'; id: string }
 -
 -export const archiveDirRel = (collectionId: string): string => `${ARCHIVE_DIR_REL}/${collectionId}`
--
++export const APP_DIRS: readonly string[] = [NEXUS_DIR, TRASH_DIR]
+ 
 -export const archiveSegs = (segs: string[]): string[] | null =>
 -  `${segs[0]}/${segs[1]}` === ARCHIVE_DIR_REL ? segs.slice(2) : null
--
++export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
+ 
 -export const archivedCollectionIdOf = (rel: string): string | null =>
 -  archiveSegs(rel.split('/'))?.[0] ?? null
 +export function hiddenName(name: string): boolean {
@@ -7465,6 +7528,29 @@
    const rel = relative(root, abs)
 ```
 
+##### Core/Settings/codec.ts
+
+```/Core/Settings/codec.ts diff
+@@ -1 +1 @@
+ import { isPlainObject } from '../Contract/validators'
+ import { COMMAND_IDS, type Commands, chordOf, DEFAULT_COMMANDS } from '../Actions/commands'
+ import { asString } from '../Nexus/coerce'
+-import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
++import { APP_DIRS, ASSETS_DIR_REL, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+ import { foldKey } from '../Paths/caseFold'
+ import { rootSegs, type WatchScope } from '../Paths/exclusion'
+ import { nexusConfig } from '../Paths/paths'
+@@ -48 +48 @@ export function nexusFolderRefusal(raw: string): string | null {
+     segs.some((s) => s === '.' || s === '..')
+   )
+     return 'That folder’s name can’t be written as a nexus path.'
+-  if ([NEXUS_DIR, TRASH_DIR].includes(foldKey(segs[0]))) return 'That folder belongs to the app.'
++  if (APP_DIRS.includes(foldKey(segs[0]))) return 'That folder belongs to the app.'
+   return null
+ }
+ 
+```
+
 ##### Core/Settings/exclusionScan.ts
 
 ```/Core/Settings/exclusionScan.ts diff
@@ -7621,7 +7707,7 @@
  import { atomicWriteFile, pathExists, rewriteHeld } from '../Files/atomicWrite'
  import { linksIn } from '../Connections/scan'
 -import { discardFile, type TrashDeps } from '../Trash/discard'
-+import { discardFile } from '../Trash/discard'
++import { discard } from '../Trash/discard'
  import { machine, statOrNull } from '../Platform/machine'
  import { liveTreeOf } from '../Nexus/liveTree'
  import { tileFilePath } from '../Paths/paths'
@@ -7662,7 +7748,7 @@
      // The entry is already gone, so a discard that fails leaves the file behind rather than the removal half-done.
      if (body !== null)
 -      await discardFile(root, file, deps).catch((e) =>
-+      await discardFile(root, file).catch((e) =>
++      await discard(root, file).catch((e) =>
          console.error('tiles: a removed tile’s file stayed:', e),
        )
      return body
@@ -8175,26 +8261,26 @@
 ##### Core/Trash/discard.ts
 
 ```/Core/Trash/discard.ts diff
-@@ -2 +2 @@ import { basename, join } from '../Paths/posix'
+@@ -1 +1 @@
+-import { basename, join } from '../Paths/posix'
  import { machine } from '../Platform/machine'
- import { pathExists } from '../Files/atomicWrite'
+-import { pathExists } from '../Files/atomicWrite'
++import { readLiveSetting } from '../Settings/settings'
  import { noteOwn, recordWrite } from '../Files/writeEcho'
 -import type { HostContext } from '../Contract/handlers'
- import { chainDir } from '../Bundles/bundle'
+-import { chainDir } from '../Bundles/bundle'
 -import { fileStamp, stampedLeaf } from '../Bundles/layout'
 -import type { TrashMode } from './trashMode'
-+import { fileStamp, stampedLeaf } from '../Paths/bundleLayout'
  
 -export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
-+/** A file the Trash can't list, a tile's text or an image sweep's leftover, moves into `.trash` under the chain it left from, stamped, with no record. */
-+export async function discardFile(nexusRoot: string, absPath: string): Promise<void> {
-   recordWrite(absPath)
-   const dir = await chainDir(nexusRoot, { kind: 'trash' }, absPath)
-   const stamp = fileStamp()
-@@ -16 +15 @@ export async function trashFileFlat(nexusRoot: string, absPath: string): Promise
-   for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
-   recordWrite(dest)
-   await machine().rename(absPath, dest)
+-  recordWrite(absPath)
+-  const dir = await chainDir(nexusRoot, { kind: 'trash' }, absPath)
+-  const stamp = fileStamp()
+-  const base = basename(absPath)
+-  let dest = join(dir, stampedLeaf(stamp, 0, base))
+-  for (let n = 1; await pathExists(dest); n++) dest = join(dir, stampedLeaf(stamp, n, base))
+-  recordWrite(dest)
+-  await machine().rename(absPath, dest)
 -  return dest
 -}
 -
@@ -8222,7 +8308,15 @@
 -    recordWrite(absPath)
 -    await deps.trashToSystem(absPath)
 -  }
-   await noteOwn({ event: 'unlink', absPath, origin: 'own' })
+-  await noteOwn({ event: 'unlink', absPath, origin: 'own' })
++/** Gives a file or folder up for good: to the system trash, or erased while Permanently Delete Files is on. */
++export async function discard(root: string, abs: string): Promise<void> {
++  recordWrite(abs)
++  if (await readLiveSetting(root, 'permanentDelete')) await machine().remove(abs)
++  else
++    await (machine().trashToSystem?.(abs) ??
++      Promise.reject(new Error('This host has no system trash.')))
++  await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
  }
 ```
 
@@ -8234,7 +8328,6 @@
 +import { archiveDirRel, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 +import type { MutateReply } from '../Nexus/mutateRequest'
 +import { fault, ok } from '../Contract/result'
-+import { readLiveSetting } from '../Settings/settings'
 +import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 +import { asString } from '../Nexus/coerce'
 +import { contentPages, ITEM_GONE, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
@@ -8242,17 +8335,9 @@
 +import { pathExists } from '../Files/atomicWrite'
 +import { listMarkdownFiles } from '../Files/walk'
 +import { dropPageMetadata } from '../Nexus/pageMetadata'
-+import { machine } from '../Platform/machine'
-+import { noteOwn, recordWrite } from '../Files/writeEcho'
++import { discard } from './discard'
 +import { archivedSetIds, goneContainers } from '../Nexus/configReach'
-+import {
-+  containerNote,
-+  distinct,
-+  editNote,
-+  owedReport,
-+  propertyNote,
-+  runNoted,
-+} from '../Nexus/owed'
++import { containerNote, distinct, propertyNote, runNoted } from '../Nexus/owed'
 +import { finishEntry } from '../Nexus/finishOwed'
 +import { refileArchive } from '../Archive/refile'
 +import { liveTreeOf } from '../Nexus/liveTree'
@@ -8263,47 +8348,44 @@
 +  if (!opened.ok) return opened
 +  const { store, record, artifact: artifactAbs } = opened.value
 +  if (store.kind !== 'trash') return fault('Only a trash record can be emptied.')
-+  const permanent = await readLiveSetting(root, 'permanentDelete')
-+  const dispose = async (abs: string): Promise<void> => {
-+    recordWrite(abs)
-+    if (permanent) await machine().remove(abs)
-+    else
-+      await (machine().trashToSystem?.(abs) ??
-+        Promise.reject(new Error('This host has no system trash.')))
-+    await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
-+  }
 +  if (record.entity === 'property') {
 +    // Gone for good once its bundle goes, so its delete's finish takes its assignment from the Collections the Trash holds too; what it misses stays owed, so Try Again reaches it.
 +    const key = asString(record.def.key)
-+    const noted = await editNote(root, record.id, (e) => ({
-+      ...propertyNote(e),
-+      strip: distinct(propertyNote(e).strip, key ? [key] : []),
-+    }))
-+    if (!noted.ok) return noted
-+    await dispose(bundleAbs)
-+    const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id))
-+    return ok({ cascade: owedReport(root, reach) })
++    return runNoted(root, record.id, {
++      note: (e) => {
++        const held = propertyNote(e)
++        return { ...held, strip: distinct(held.strip, key ? [key] : []) }
++      },
++      list: () => discard(root, bundleAbs).then(() => ok(null), fault),
++      sweep: () => serializeSchemaOp(root, () => finishEntry(root, record.id)),
++    })
 +  }
 +  if (!artifactAbs) return ITEM_GONE
 +  const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
 +  const pages = await contentPages(record.entity, artifactAbs)
-+  const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
++  const pageIds = await pageIdsOf(pages)
 +  // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked before a finish strips it.
 +  const id = relative(root, bundleAbs)
 +  return runNoted(root, id, {
-+    note: () =>
++    note: (e) =>
 +      containerNote(
 +        relative(root, artifactAbs),
-+        [...pages.map((file) => originPathOf(root, file)), ...(archive?.origins ?? [])],
-+        archive?.sets.length ? goneContainers(archive.sets) : null,
++        [
++          ...(e?.strip ?? []),
++          ...pages.map((file) => originPathOf(root, file)),
++          ...(archive?.origins ?? []),
++        ],
++        archive?.sets.length
++          ? goneContainers(archive.sets)
++          : (e?.kind === 'container' && e.edit) || null,
 +      ),
 +    list: async () => {
-+      try {
-+        await dispose(archive?.abs ?? artifactAbs)
-+      } catch (e) {
-+        return fault(e)
++      const disposed = await discard(root, archive?.abs ?? artifactAbs).then(() => ok(null), fault)
++      if (!disposed.ok) return disposed
++      if (archive) {
++        await dropPageMetadata(root, archive.ids)
++        await discard(root, artifactAbs)
 +      }
-+      if (archive) await dispose(artifactAbs)
 +      await dropPageMetadata(root, pageIds)
 +      await parkLinks(root, 'links' in record ? (record.links ?? []) : [])
 +      await spendBundle(root, opened.value)
@@ -8313,11 +8395,11 @@
 +  })
 +}
 +
-+/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good, a record whose Set stands live elsewhere re-filed into that Set's Archive first; null when it has none. */
++/** A Collection's Archive, its pages' ids and the paths they lived at, and its Sets, which leave with the Collection once it leaves for good, a record whose Set stands live elsewhere re-filed into that Set's Archive first; null when it has none. */
 +async function collectionArchive(
 +  root: string,
 +  id: string | undefined,
-+): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
++): Promise<{ abs: string; ids: string[]; origins: string[]; sets: string[] } | null> {
 +  const store = archiveStoreOf(id)
 +  if (!store) return null
 +  const abs = join(root, archiveDirRel(store.id))
@@ -8326,7 +8408,7 @@
 +  const files = await listMarkdownFiles(abs)
 +  return {
 +    abs,
-+    files,
++    ids: await pageIdsOf(files),
 +    origins: files.map((f) => originPathOf(root, f)),
 +    sets: await archivedSetIds(root, abs),
 +  }
@@ -8342,15 +8424,15 @@
 -import type { Result } from '../Contract/result'
 -import type { Holders } from '../Index/keyHolders'
 +import { isMarkdownFile, join } from '../Paths/posix'
-+import type { ContextDef } from '../Contexts/contexts'
 +import { type Holders, readHolders } from '../Index/keyHolders'
 +import type { LinkStrip } from '../Nexus/cascade'
  import type { Json } from '../Files/stableJson'
  import { scalarMembers } from '../Contract/validators'
- import { contextKey } from '../Contexts/contexts'
+-import { contextKey } from '../Contexts/contexts'
 -import { readTextOrNull } from '../Files/atomicWrite'
 -import { spaceIdsIn } from '../Contexts/spaceSidecar'
 -import { sidecarIdentity } from '../Files/sidecar'
++import { type ContextDef, contextKey } from '../Contexts/contexts'
 +import { contextDirRel, TRASH_DIR } from '../Paths/nexusPaths'
  import { exactTitle } from '../Paths/caseFold'
 -import { readPageRelations } from '../Index/contentIndex'
@@ -8437,7 +8519,7 @@
  }
  
  /** Each holder the capture filed by id, as a record names it, a page with the key its line stood above. */
-@@ -69 +62 @@ const rootsOf = (
+@@ -69 +61 @@ const rootsOf = (
  /** A capture missing a holder: one neither its file nor the index could answer, or one no id files. */
  const partly = (holders: Holders): boolean => holders.held.some((h) => !h.id || !h.values)
  
@@ -9223,6 +9305,19 @@
 
 ##### Core/Trash/trash-frame.css
 
+```/Core/Trash/trash-frame.css diff
+@@ -51 +51 @@
+   display: flex;
+   margin-right: 8px;
+ }
+-.trash-frame .trash-head svg {
+-  color: var(--label-secondary);
+-}
+ .trash-head-label {
+   display: flex;
+   align-items: center;
+```
+
 ##### Core/Trash/trashMode.ts
 
 ```/Core/Trash/trashMode.ts diff
@@ -9484,7 +9579,7 @@
  }
  
 -// We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
-+// We DO watch .nexus/, where Contexts and settings/state live, and the Trash, indexed content judged by what's below it as Sync's manifest judges it, though Sync learns it from the write tap alone (`tap.ts`). Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
++// We DO watch .nexus/, where Contexts and settings/state live, and the Trash, whose bundles are indexed content, judged by what's below it as Sync's manifest judges it, though Sync learns it from the write tap alone (`tap.ts`). Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
  // Exported for tests alone.
  export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
 -  const isExcluded = excludedMatcher(scope.excluded)
@@ -11305,10 +11400,27 @@
 -import type { TrashDeps } from '../Trash/discard'
 -
 -const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
++import { installMachine } from '../Platform/machine'
++import { diskMachine, systemTrashMachine } from '../Testing/machines'
  
  let root: string
++let handed: string[]
  const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
-@@ -52 +49 @@ describe('migrateAssets', () => {
+ const readJson = <T = Record<string, unknown>>(rel: string): Promise<T> =>
+   readJsonAt<T>(join(root, rel))
+@@ -38 +38 @@ beforeEach(async () => {
+   )
+   await mkdir(join(root, 'file-assets'), { recursive: true })
+   await openSession(root)
++  handed = []
++  installMachine(systemTrashMachine(handed))
+ })
+ afterEach(async () => {
++  installMachine(diskMachine())
+   closeSession()
+   await rm(root, { recursive: true, force: true })
+ })
+@@ -52 +55 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/a/banner-abcdef12.png' }),
      )
@@ -11317,7 +11429,7 @@
      expect(await pathExists(join(root, '.nexus/assets/a/banner-abcdef12.png'))).toBe(true)
    })
  
-@@ -65 +62 @@ describe('migrateAssets', () => {
+@@ -65 +68 @@ describe('migrateAssets', () => {
      )
      await refreshTree(root)
      await writeAssetDirectory(root, 'file-assets')
@@ -11326,25 +11438,31 @@
      expect((await readJson('Notes/_pagecollection.json')).banner).toBe('[[Notes Banner.png]]')
    })
  
-@@ -81 +78 @@ describe('migrateAssets', () => {
+@@ -81 +84 @@ describe('migrateAssets', () => {
        JSON.stringify({ id: 'vt', banner: '.nexus/assets/a/Cover.png' }),
      )
      await writeFile(join(root, 'Vault', 'Old.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
 -    const r = await migrateAssets(root, nexusDeps)
 +    const r = await migrateAssets(root)
      expect(r?.rewritten).toBe(2)
-     expect(r?.trashed).toBe(1)
+-    expect(r?.trashed).toBe(1)
++    expect(r?.discarded).toBe(1)
      expect((await readJson('Vault/_pagecollection.json')).banner).toBe('[[Cover.png]]')
-@@ -100 +97 @@ describe('migrateAssets', () => {
+     expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
+   })
+@@ -100 +103 @@ describe('migrateAssets', () => {
        JSON.stringify({ id: 'old', banner: '.nexus/assets/a/Cover.png' }),
      )
      await writeFile(join(root, page, 'Gone.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
 -    const r = await migrateAssets(root, nexusDeps)
 +    const r = await migrateAssets(root)
      expect(r?.rewritten).toBe(2)
-     expect(r?.trashed).toBe(1)
+-    expect(r?.trashed).toBe(1)
++    expect(r?.discarded).toBe(1)
      expect((await readJson(`${set}/_pageset.json`)).banner).toBe('[[Cover.png]]')
-@@ -110 +107 @@ describe('migrateAssets', () => {
+     expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
+   })
+@@ -110 +113 @@ describe('migrateAssets', () => {
    it('holds the sweep when a store can’t be read', async () => {
      await asset('a/Cover.png', 'cover')
      await writeFile(join(root, 'Notes', '_pagecollection.json'), '{ not json')
@@ -11353,7 +11471,12 @@
      expect(r?.skipped).toEqual([
        { store: 'Notes/_pagecollection.json', why: 'it could not be read' },
      ])
-@@ -131 +128 @@ describe('migrateAssets', () => {
+-    expect(r?.trashed).toBe(0)
++    expect(r?.discarded).toBe(0)
+     expect(await pathExists(join(root, '.nexus/assets/a/Cover.png'))).toBe(true)
+   })
+ 
+@@ -131 +134 @@ describe('migrateAssets', () => {
          JSON.stringify({ id: dir, banner: `.nexus/assets/${key}/IMG_0073.jpeg` }),
        )
      }
@@ -11362,7 +11485,7 @@
      expect(r?.moved).toHaveLength(1)
      expect(r?.rewritten).toBe(3)
      expect(await readdir(join(root, 'file-assets'))).toEqual(['IMG_0073.jpeg'])
-@@ -150 +147 @@ describe('migrateAssets', () => {
+@@ -150 +153 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-mxplrbde.jpg' }),
      )
@@ -11371,7 +11494,7 @@
      expect((await readJson('.nexus/interface/homepage/homepage.json')).banner).toBe(
        '[[Purplish Dark Sky.png]]',
      )
-@@ -164 +161 @@ describe('migrateAssets', () => {
+@@ -164 +167 @@ describe('migrateAssets', () => {
        join(root, 'C#', '_pagecollection.json'),
        JSON.stringify({ id: 'pc', banner: '.nexus/assets/two/banner-mxplrbde.jpg' }),
      )
@@ -11380,7 +11503,7 @@
      expect(r?.skipped).toEqual([])
      expect((await readJson('C#/_pagecollection.json')).banner).toBe('[[banner-mxplrbde.jpg]]')
    })
-@@ -183 +180 @@ describe('migrateAssets', () => {
+@@ -183 +186 @@ describe('migrateAssets', () => {
          profile_image: '.nexus/assets/id/profile-bbbbbb22.png',
        }),
      )
@@ -11389,7 +11512,7 @@
      expect(
        (await readJson<{ navigation?: { banner?: string } }>('.nexus/state.json')).navigation
          ?.banner,
-@@ -198 +195 @@ describe('migrateAssets', () => {
+@@ -198 +201 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
      )
@@ -11397,17 +11520,25 @@
 +    await migrateAssets(root)
      expect(await readdir(join(root, 'file-assets'))).toEqual(['kept.png'])
      expect(await pathExists(join(root, 'file-assets/orphan.png'))).toBe(false)
-     const trashed = await readdir(join(root, '.trash'), { recursive: true })
-@@ -212 +209 @@ describe('migrateAssets', () => {
+-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
+-    expect(trashed.some((n) => String(n).includes('orphan.png'))).toBe(true)
++    expect(handed).toContain(join(root, '.nexus/assets/dead/orphan.png'))
++    expect(await pathExists(join(root, '.trash'))).toBe(false)
+   })
+ 
+-  it('trashes a leftover the map never indexed rather than deleting it', async () => {
++  it('hands a leftover the map never indexed to the system trash', async () => {
+     await asset('_private/contract.pdf', 'contract-bytes')
+     await asset('live/kept.png', 'kept')
+     await writeFile(
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
      )
 -    await migrateAssets(root, nexusDeps)
-+    await migrateAssets(root)
-     const trashed = await readdir(join(root, '.trash'), { recursive: true })
-     expect(trashed.some((n) => String(n).includes('contract.pdf'))).toBe(true)
-   })
- 
+-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
+-    expect(trashed.some((n) => String(n).includes('contract.pdf'))).toBe(true)
+-  })
+-
 -  it('sends swept leftovers to the system trash in System mode', async () => {
 -    await asset('dead/orphan.png', 'orphan-bytes')
 -    const sent: string[] = []
@@ -11419,13 +11550,12 @@
 -      },
 -    })
 -    expect(sent).toEqual([join(root, '.nexus/assets/dead/orphan.png')])
--    expect(await pathExists(join(root, '.trash'))).toBe(false)
--  })
--
-   it('empties .nexus/assets of images and thumbnails, keeping only its own crops config', async () => {
-     await asset('thumbnails/abc.jpg', 'thumb')
-     await asset('live/kept.png', 'kept')
-@@ -238 +221 @@ describe('migrateAssets', () => {
++    await migrateAssets(root)
++    expect(handed).toContain(join(root, '.nexus/assets/_private/contract.pdf'))
+     expect(await pathExists(join(root, '.trash'))).toBe(false)
+   })
+ 
+@@ -238 +227 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
      )
@@ -11434,7 +11564,7 @@
      expect(await readdir(join(root, '.nexus/assets')).catch(() => [])).toEqual(['crops.json'])
    })
  
-@@ -249 +232 @@ describe('migrateAssets', () => {
+@@ -249 +238 @@ describe('migrateAssets', () => {
        join(root, 'Notes', 'Alpha.md'),
        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\nbanner: .nexus/assets/p/banner-cccccc33.png\n<Areas>:\n  - Work\n---\n\nthe body',
      )
@@ -11443,7 +11573,7 @@
      const after = await read('Notes/Alpha.md')
      expect(after).toMatch(/banner: ["']\[\[Alpha Banner\.png\]\]["']/)
      expect(after).toContain('the body')
-@@ -270 +253 @@ describe('migrateAssets', () => {
+@@ -270 +259 @@ describe('migrateAssets', () => {
        join(space, SPACE_SIDECAR),
        JSON.stringify({ id: 'sp', Attachment: '[[Spec.pdf]]' }),
      )
@@ -11452,7 +11582,7 @@
      expect(r?.skipped).toEqual([])
      expect((await readdir(join(root, 'file-assets'))).sort()).toEqual(['Plan.pdf', 'Spec.pdf'])
      const fm = splitFrontmatter(await read('Notes/Alpha.md'))
-@@ -291 +274 @@ describe('migrateAssets', () => {
+@@ -291 +280 @@ describe('migrateAssets', () => {
        join(root, '.nexus', 'assets', 'crops.json'),
        JSON.stringify({ byImage: { '.nexus/assets/a/Photo.png': { x: 0.3, y: 0.4, zoom: 2 } } }),
      )
@@ -11461,7 +11591,7 @@
      expect((await readJson('.nexus/assets/crops.json')).byImage).toEqual({
        'file-assets/Photo.png': { x: 0.3, y: 0.4, zoom: 2 },
      })
-@@ -308 +291 @@ describe('migrateAssets', () => {
+@@ -308 +297 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/two/banner-dddddd44.jpg' }),
      )
@@ -11470,7 +11600,7 @@
      const map = await liveAssetMap(root)
      for (const value of [
        (await readJson<{ banner: string }>('.nexus/interface/homepage/homepage.json')).banner,
-@@ -328 +311 @@ describe('migrateAssets', () => {
+@@ -328 +317 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '.nexus/assets/one/Solo.png' }),
      )
@@ -11481,7 +11611,7 @@
      expect((await readJson('Notes/_pagecollection.json')).banner).toBe('[[Solo.png]]')
      expect(await readdir(join(root, 'file-assets'))).toEqual(['Solo.png'])
    })
-@@ -344 +327 @@ describe('migrateAssets', () => {
+@@ -344 +333 @@ describe('migrateAssets', () => {
        join(root, '.nexus', 'interface', 'homepage', 'homepage.json'),
        JSON.stringify({ banner: '.nexus/assets/gone/missing.png' }),
      )
@@ -11489,8 +11619,12 @@
 +    const r = await migrateAssets(root)
      expect(r?.skipped.map((s) => s.store)).toEqual(['homepage.json'])
      expect((await readJson('Notes/_pagecollection.json')).banner).toBe('[[kept.png]]')
-     expect(r?.trashed).toBe(0)
-@@ -358 +341 @@ describe('migrateAssets', () => {
+-    expect(r?.trashed).toBe(0)
++    expect(r?.discarded).toBe(0)
+     expect(await pathExists(join(root, '.nexus/assets/live/kept.png'))).toBe(true)
+   })
+ 
+@@ -358 +347 @@ describe('migrateAssets', () => {
        join(root, 'Notes', '_pagecollection.json'),
        JSON.stringify({ id: 'pt', banner: '[[Twin.png]]' }),
      )
@@ -11499,7 +11633,7 @@
      expect(r?.skipped).toHaveLength(1)
      expect(r?.moved).toEqual([])
      expect(await pathExists(join(root, '.nexus/assets/a/Twin.png'))).toBe(true)
-@@ -380 +363 @@ describe('migrateAssets', () => {
+@@ -380 +369 @@ describe('migrateAssets', () => {
        )
        await chmod(join(root, 'Locked'), 0o555)
        try {
@@ -11507,7 +11641,11 @@
 +        const r = await migrateAssets(root)
          expect(r?.rewritten).toBe(1)
          expect(r?.skipped.map((x) => x.store)).toEqual(['Locked/_pagecollection.json'])
-         expect(r?.trashed).toBe(0)
+-        expect(r?.trashed).toBe(0)
++        expect(r?.discarded).toBe(0)
+         expect((await readJson('.nexus/interface/homepage/homepage.json')).banner).toBe(
+           '[[kept.png]]',
+         )
 ```
 
 ##### Core/Bundles/BundleTable.test.tsx
@@ -12116,6 +12254,7 @@
 +import { settledMutate } from '../Testing/settledMutate'
  import { newContentId } from '../Nexus/ids'
  import { OWED_REL } from '../Paths/nexusPaths'
++import { machine } from '../Platform/machine'
  import { sidecarPath } from '../Paths/paths'
  import type { WatchScope } from '../Paths/exclusion'
  import {
@@ -12135,7 +12274,7 @@
  
  const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
  const TRASH = { kind: 'trash' } as const
-@@ -36 +41 @@ describe('mintBundle', () => {
+@@ -36 +42 @@ describe('mintBundle', () => {
      await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
      const p = join(root, 'Notes', 'Daily', 'Beta.md')
      await writeFile(p, 'bye')
@@ -12144,7 +12283,7 @@
      expect(dirname(bundle)).toBe(join(root, '.trash', 'Notes', 'Daily'))
      expect(basename(bundle).endsWith('__Beta.md.deleted')).toBe(true)
      expect((await stat(bundle)).isDirectory()).toBe(true)
-@@ -48 +53 @@ describe('mintBundle', () => {
+@@ -48 +54 @@ describe('mintBundle', () => {
      vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
      try {
        const p = join(root, 'twice.md')
@@ -12165,7 +12304,7 @@
      } finally {
        vi.useRealTimers()
      }
-@@ -60 +73 @@ describe('mintBundle', () => {
+@@ -60 +74 @@ describe('mintBundle', () => {
    it('lands flat when the source is not under the root', async () => {
      const outside = tempRoot('pom-out-')
      try {
@@ -12174,7 +12313,7 @@
        expect(dirname(bundle)).toBe(join(root, '.trash'))
      } finally {
        await rm(outside, { recursive: true, force: true })
-@@ -69 +82 @@ describe('mintBundle', () => {
+@@ -69 +83 @@ describe('mintBundle', () => {
  
    it('mirrors the chain under an Archive with its suffix', async () => {
      await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
@@ -12200,11 +12339,6 @@
 -      const bundle = await mintBundle(root, store, join(root, 'Notes', name))
 -      await writeFile(join(bundle, name), 'body')
 -      await writeRecord(bundle, { entity: 'page', parent: { kind: 'container', id: 'col' } })
--    }
--    await seed(ARCHIVE, 'Alpha.md')
--    await seed(TRASH, 'Beta.md')
--    expect((await listBundles(root, ARCHIVE)).map((b) => b.artifactName)).toEqual(['Alpha.md'])
--    expect((await listBundles(root, TRASH)).map((b) => b.artifactName)).toEqual(['Beta.md'])
 +describe('removeBundle', () => {
 +  it('a .DS_Store doesn’t keep an emptied chain folder', async () => {
 +    const bundle = await mintBundle(root, TRASH, join(root, 'Notes', 'Daily', 'Beta.md'), {})
@@ -12213,10 +12347,32 @@
 +    await removeBundle(root, bundle)
 +    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
 +    expect(await pathExists(join(root, '.trash'))).toBe(true)
++  })
++
++  it('keeps a chain folder whose read fails, with every other bundle under it', async () => {
++    const bundle = await mintBundle(root, TRASH, join(root, 'Notes', 'Beta.md'), {})
++    const sibling = await mintBundle(root, TRASH, join(root, 'Notes', 'Gamma.md'), {})
++    const chain = join(root, '.trash', 'Notes')
++    const m = machine()
++    const read = m.readDir.bind(m)
++    const reads = vi
++      .spyOn(m, 'readDir')
++      .mockImplementation((p) => (p === chain ? Promise.reject(new Error('EMFILE')) : read(p)))
++    try {
++      await removeBundle(root, bundle)
++    } finally {
++      reads.mockRestore()
+     }
+-    await seed(ARCHIVE, 'Alpha.md')
+-    await seed(TRASH, 'Beta.md')
+-    expect((await listBundles(root, ARCHIVE)).map((b) => b.artifactName)).toEqual(['Alpha.md'])
+-    expect((await listBundles(root, TRASH)).map((b) => b.artifactName)).toEqual(['Beta.md'])
++    expect(await pathExists(bundle)).toBe(false)
++    expect(await pathExists(sibling)).toBe(true)
    })
  })
  
-@@ -95 +113 @@ const S = 'setS'
+@@ -95 +132 @@ const S = 'setS'
  const T = 'setT'
  const OUT = newContentId('page')
  const P_ID = newContentId('page')
@@ -12224,7 +12380,7 @@
  const P_LINK = { page: OUT, property: 'Rel', value: '[[P]]' }
  const Q_LINK = { page: OUT, property: 'Rel', value: '[[Q]]' }
  const BUNDLE_REL = `.trash/${STAMPED}__A.deleted`
-@@ -112 +129 @@ const seedTrashedCollection = async (record: Record<string, unknown> = {}): Prom
+@@ -112 +148 @@ const seedTrashedCollection = async (record: Record<string, unknown> = {}): Prom
      entity: 'collection',
      id: A,
      parent: { kind: 'root' },
@@ -12232,7 +12388,7 @@
      links: [P_LINK, Q_LINK],
      ...record,
    })
-@@ -137 +153 @@ describe('openBundle', () => {
+@@ -137 +172 @@ describe('openBundle', () => {
      expect('trail' in record).toBe(false)
    })
  
@@ -12248,7 +12404,7 @@
        links: [P_LINK],
      })
    })
-@@ -196 +211 @@ describe('openBundle', () => {
+@@ -196 +230 @@ describe('openBundle', () => {
      const read = await openBundle(root, join(space, 'Work', 'Notes.md'))
      expect(!read.ok && read.error.code).toBe('not-found')
    })
@@ -12262,7 +12418,7 @@
  })
  
  describe('listInner', () => {
-@@ -342 +350 @@ describe('spendBundle', () => {
+@@ -342 +369 @@ describe('spendBundle', () => {
      seedTrashedCollection({ links: [P_LINK, { ...P_LINK, property: 'Other' }, Q_LINK] }),
    )
  
@@ -12271,7 +12427,7 @@
      const item = await opened(inBundle('A', 'S', 'T', 'P.md'))
      const appended = [
        { ...P_LINK, page: newContentId('page') },
-@@ -353 +361 @@ describe('spendBundle', () => {
+@@ -353 +380 @@ describe('spendBundle', () => {
      expect((await readRawRecord(inBundle()))?.links).toEqual([Q_LINK, ...appended])
    })
  
@@ -12284,7 +12440,20 @@
    it('takes the inner item’s pages off the strip its bundle’s delete still owes, leaving the rest of the note', async () => {
      await owing({ strip: ['A/S/T/P.md', 'A/Q.md'], edit: EDIT })
      await spendBundle(root, await opened(inBundle('A', 'S')))
-@@ -452 +466 @@ describe('fileInto', () => {
+@@ -365 +398 @@ describe('spendBundle', () => {
+     expect(await owed()).toBeNull()
+   })
+ 
+-  it('removes a whole bundle', async () => {
++  it('removes a whole bundle, taking its pages off the strip its delete still owes and leaving the rest of the note', async () => {
++    await owing({ strip: ['A/S/T/P.md', 'A/Q.md'], edit: EDIT })
+     await spendBundle(root, await opened(inBundle()))
+     expect(await stat(inBundle()).catch(() => null)).toBeNull()
++    expect(await owed()).toEqual(note({ edit: EDIT }))
+   })
+ })
+ 
+@@ -452 +487 @@ describe('fileInto', () => {
      expect(await readFile(join(root, whole, 'P.md'), 'utf8')).toBe('back')
    })
  })
@@ -14555,12 +14724,11 @@
 -  setWriteTap,
 -  writtenHash,
 -} from './writeEcho'
-+import { discardFile } from '../Trash/discard'
 +import { dropOwnEchoes, type FileEvent, isRecentWrite, setOwnTap } from './writeEcho'
  import { installMachine, machine } from '../Platform/machine'
  import { diskMachine } from '../Testing/machines'
  
-@@ -52 +45 @@ describe('atomicWriteFile', () => {
+@@ -52 +44 @@ describe('atomicWriteFile', () => {
      expect(await readFile(p, 'utf8')).toBe('second')
    })
  
@@ -14583,7 +14751,7 @@
      expect(await dropOwnEchoes([heard])).toEqual([heard])
    })
  })
-@@ -364 +353 @@ describe('relocate', () => {
+@@ -364 +352 @@ describe('relocate', () => {
    it('moves the artifact in under its original basename and clears the original', async () => {
      const p = join(dir, '12__Notes.md')
      await atomicWriteFile(p, 'bye')
@@ -14592,7 +14760,7 @@
      const dest = join(bundle, '12__Notes.md')
      await relocate(p, dest)
      expect(await readFile(dest, 'utf8')).toBe('bye')
-@@ -373 +362 @@ describe('relocate', () => {
+@@ -373 +361 @@ describe('relocate', () => {
  
    it('rejects when the source vanished — the caller surfaces it', async () => {
      const p = join(dir, 'ghost.md')
@@ -14601,7 +14769,7 @@
      await expect(relocate(p, join(bundle, 'ghost.md'))).rejects.toThrow()
    })
  })
-@@ -387 +376 @@ describe('heldName', () => {
+@@ -387 +375 @@ describe('heldName', () => {
    })
  })
  
@@ -14650,15 +14818,21 @@
  describe('landBytes', () => {
    it('records no echo and stamps the given mtime', async () => {
      const p = join(dir, 'landed.md')
-@@ -518 +465 @@ describe('the own tap', () => {
-   it('notes a discard as an unlink', async () => {
-     const p = join(dir, 'gone.md')
-     await writeFile(p, 'bye')
--    await discardFile(dir, p, { trashMode: 'nexus', trashToSystem: async () => {} })
-+    await discardFile(dir, p)
-     expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
-     expect(noted[0].text).toBeNull()
+@@ -515 +461 @@ describe('the own tap', () => {
+     expect(await readFile(to, 'utf8')).toBe('moving')
    })
+ 
+-  it('notes a discard as an unlink', async () => {
+-    const p = join(dir, 'gone.md')
+-    await writeFile(p, 'bye')
+-    await discardFile(dir, p, { trashMode: 'nexus', trashToSystem: async () => {} })
+-    expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
+-    expect(noted[0].text).toBeNull()
+-  })
+-
+   it('with no tap set, a write lands as before', async () => {
+     setOwnTap(null)
+     const p = join(dir, 'quiet.md')
 ```
 
 ##### Core/Files/pageFile.test.ts
@@ -14881,10 +15055,28 @@
  
  describe('sidecarsUnder', () => {
 -  it('lists every container sidecar under both content roots, or under one folder, and never inside a hidden folder', async () => {
-+  it('lists every container sidecar under every content root, or under one folder, and never inside a hidden folder', async () => {
++  it('lists every container sidecar under every content root, or under one folder, and never inside a hidden folder or beside a store’s bundles', async () => {
      const archived =
        '.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json'
++    const trashed = '.trash/2026-10-20T12-00-00-000Z__Gone.deleted/Gone/_pageset.json'
      for (const rel of [
+       'Notes/_pagecollection.json',
+       'Notes/Deep/_pageset.json',
+       'Notes/_Drafts/_pageset.json',
++      '.trash/Loose/_pageset.json',
++      '.nexus/archive/C1/Notes/_pageset.json',
+       archived,
++      trashed,
+     ]) {
+       await mkdir(dirname(join(root, rel)), { recursive: true })
+       await writeFile(join(root, rel), '{}', 'utf8')
+     }
+     expect(rels(await sidecarsUnder(root, scope()))).toEqual([
+       archived,
++      trashed,
+       'Notes/Deep/_pageset.json',
+       'Notes/_pagecollection.json',
+     ])
 ```
 
 ##### Core/Files/walkCache.test.ts
@@ -18346,7 +18538,7 @@
 +  })
 +
 +  it('lists the Trash’s root level and its Contexts alone for its by-id read', async () => {
-+    const top = vi.spyOn(bundle, 'trashRoot')
++    const top = vi.spyOn(bundle, 'topTrashBundles')
 +    const listed = vi.spyOn(bundle, 'listBundles')
 +    await nexusPages(root, tree(root))
 +    expect(top.mock.calls).toEqual([[root]])
@@ -24325,9 +24517,13 @@
 ##### Core/Tiles/tilesFile.test.ts
 
 ```/Core/Tiles/tilesFile.test.ts diff
-@@ -21 +21 @@ import type { TileDoc } from './tiles'
+@@ -19 +19 @@ import {
+ import { readTileDocAt, writeTileDocAt } from './tileDoc'
+ import type { TileDoc } from './tiles'
  import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
- import { machine } from '../Platform/machine'
+-import { machine } from '../Platform/machine'
++import { installMachine, machine } from '../Platform/machine'
++import { diskMachine, systemTrashMachine } from '../Testing/machines'
  import { rewriteConnections } from '../Connections/rewrite'
 -import type { TrashDeps } from '../Trash/discard'
  import { dropLiveTree } from '../Nexus/liveTree'
@@ -24343,7 +24539,7 @@
  
  let root: string
  const home = (): string => homepageDir(root)
-@@ -160 +164 @@ describe('the document', () => {
+@@ -160 +165 @@ describe('the document', () => {
        expect(await readTileDocAt(home())).toMatchObject(refused)
        expect(await createTile(root, home(), append)).toMatchObject(refused)
        expect((await readdir(home())).filter((f) => f.endsWith('.md'))).toEqual([])
@@ -24352,7 +24548,26 @@
        await chmod(tileDocPath(home()), 0o644)
        expect(await entries()).toEqual([{ id: tileId('a') }])
      },
-@@ -264 +268 @@ describe('markdown tile lifecycle', () => {
+@@ -179 +184 @@ describe('the document', () => {
+ })
+ 
+ describe('markdown tile lifecycle', () => {
++  let handed: string[]
++  beforeEach(() => {
++    handed = []
++    installMachine(systemTrashMachine(handed))
++  })
++  afterEach(() => installMachine(diskMachine()))
++
+   it.skipIf(noModeBits)(
+     'an absent body is not-found; a body the read fails on is not an empty one',
+     async () => {
+@@ -260 +272 @@ describe('markdown tile lifecycle', () => {
+     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('body'))
+   })
+ 
+-  it('remove drops the entry and trashes the file; foreign entries survive', async () => {
++  it('remove drops the entry and hands the file to the system trash; foreign entries survive', async () => {
      await seed(home(), [{ id: tileId('a'), type: 'widget', keep: true }])
      const id = await landedId(createTile(root, home(), append))
      await write(home(), id, 'kept text')
@@ -24361,7 +24576,17 @@
      expect(removed).toEqual(
        ok({
          removed: { entry: { id, type: 'markdown' }, body: 'kept text' },
-@@ -281 +285 @@ describe('markdown tile lifecycle', () => {
+@@ -273 +285 @@ describe('markdown tile lifecycle', () => {
+     )
+     expect(await entries()).toEqual([{ id: tileId('a'), type: 'widget', keep: true }])
+     expect(await pathExists(tileFilePath(home(), id))).toBe(false)
+-    const trashed = await readdir(join(root, '.trash'), { recursive: true })
+-    expect(trashed.some((f) => f.includes(id))).toBe(true)
++    expect(handed).toEqual([tileFilePath(home(), id)])
++    expect(await pathExists(join(root, '.trash'))).toBe(false)
+   })
+ 
+   it('remove takes an entry this build doesn’t know, or none, with any file its id names', async () => {
      const [w, gone] = [tileId('w'), tileId('g')]
      await seed(home(), [{ id: w, type: 'widget' }])
      await write(home(), gone, 'orphaned')
@@ -24375,7 +24600,7 @@
        ok({ removed: { entry: null, body: 'orphaned' } }),
      )
      expect(await pathExists(tileFilePath(home(), gone))).toBe(false)
-@@ -299 +303 @@ describe('markdown tile lifecycle', () => {
+@@ -299 +311 @@ describe('markdown tile lifecycle', () => {
    it('convert refuses an entry this build doesn’t know and leaves it alone', async () => {
      await seed(home(), [{ id: tileId('w'), type: 'widget' }])
      const pick = { kind: 'page', value: 'page-1' } as const
@@ -24384,7 +24609,7 @@
        error: { code: 'not-found' },
      })
      expect(await entries()).toEqual([{ id: tileId('w'), type: 'widget' }])
-@@ -308 +312 @@ describe('markdown tile lifecycle', () => {
+@@ -308 +320 @@ describe('markdown tile lifecycle', () => {
    it('a removed tile restores with its text, once, and never over a file already there', async () => {
      const id = await landedId(createTile(root, home(), append))
      await write(home(), id, 'kept text')
@@ -24393,7 +24618,7 @@
      if (!removed.ok) throw new Error('remove refused')
      expect(await restoreTile(home(), removed.value.removed)).toEqual(ok({ landed: await docAt() }))
      expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
-@@ -321 +325 @@ describe('markdown tile lifecycle', () => {
+@@ -321 +333 @@ describe('markdown tile lifecycle', () => {
    it('lists every key a tile links, and every key with the heading it names', async () => {
      const id = await landedId(createTile(root, home(), append))
      await write(home(), id, 'see [[Notes]] and [[Plan#Setup]]')
@@ -24431,7 +24656,7 @@
      if (!removed.ok) throw new Error('remove refused')
      await restoreTile(home(), { ...removed.value.removed, at: { band: 1, h: 120 } })
      expect((await docAt()).layout).toEqual({
-@@ -351 +355 @@ describe('markdown tile lifecycle', () => {
+@@ -351 +363 @@ describe('markdown tile lifecycle', () => {
      expect((await restoreTile(home(), { entry: { id: '../x', type: 'markdown' } })).ok).toBe(false)
    })
  
@@ -24457,7 +24682,7 @@
      const doc = await docAt()
      expect(doc.layout).toEqual({ bands: [] })
      expect(doc.locked).toBe(true)
-@@ -393 +383 @@ describe('markdown tile lifecycle', () => {
+@@ -393 +391 @@ describe('markdown tile lifecycle', () => {
      const id = await landedId(createTile(root, home(), append))
      await seed(home(), [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }])
      const pick = { kind: 'view', value: { source_id: 'col-notes', view_id: 'view_src' } } as const
@@ -24466,7 +24691,7 @@
      const entry = (await entries())[0]
      expect(entry).toMatchObject({ type: 'view', style: 'borderless', outside_key: 1, active: 0 })
      const view = (entry.views as Array<Record<string, unknown>>)[0]
-@@ -413 +403 @@ describe('markdown tile lifecycle', () => {
+@@ -413 +411 @@ describe('markdown tile lifecycle', () => {
      dropLiveTree()
      const id = await landedId(createTile(root, home(), append))
      const pick = { kind: 'view', value: { source_id: 'col-notes' } } as const
@@ -24475,7 +24700,7 @@
      const view = ((await entries())[0].views as Array<Record<string, unknown>>)[0]
      expect(view.config).toMatchObject({ name: 'Table', type: 'table' })
      expect((view.config as { id: string }).id).toMatch(/^view_/)
-@@ -422 +412 @@ describe('markdown tile lifecycle', () => {
+@@ -422 +420 @@ describe('markdown tile lifecycle', () => {
    it('convert to page points the tile at the page and refuses a pick it cannot read', async () => {
      const id = await landedId(createTile(root, home(), append))
      await seed(home(), [{ id, type: 'markdown', style: 'borderless' }])
@@ -24490,16 +24715,19 @@
      expect((await entries())[0]).toMatchObject({
        type: 'page',
        page_id: 'page-1',
-@@ -510 +498 @@ describe('markdown tile lifecycle', () => {
+@@ -510 +506 @@ describe('markdown tile lifecycle', () => {
  
    it('removing a non-markdown tile touches no files', async () => {
      await seed(home(), [{ id: tileId('p'), type: 'page', page_id: 'x' }])
 -    await removeTile(root, home(), tileId('p'), nexusDeps)
 +    await removeTile(root, home(), tileId('p'))
      expect(await entries()).toEqual([])
-     expect(await pathExists(join(root, '.trash'))).toBe(false)
+-    expect(await pathExists(join(root, '.trash'))).toBe(false)
++    expect(handed).toEqual([])
    })
-@@ -523 +511 @@ describe('rewriteTileConnections', () => {
+ })
+ 
+@@ -523 +519 @@ describe('rewriteTileConnections', () => {
    it('rewrites [[oldTitle]] → [[newTitle]] in tile bodies, leaving non-matches untouched', async () => {
      const id = await landedId(createTile(root, home(), append))
      await write(home(), id, 'see [[Target]] and [[Other]]')
@@ -24508,7 +24736,7 @@
        hosts: [{ host: { kind: 'homepage' }, ids: [id] }],
        failed: 0,
      })
-@@ -533 +521 @@ describe('rewriteTileConnections', () => {
+@@ -533 +529 @@ describe('rewriteTileConnections', () => {
    it('leaves a body without the old title byte-identical (no needless write)', async () => {
      const id = await landedId(createTile(root, home(), append))
      await write(home(), id, 'see [[Other]]')
@@ -24520,7 +24748,7 @@
      expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Other]]'))
    })
  
-@@ -544 +535 @@ describe('rewriteTileConnections', () => {
+@@ -544 +543 @@ describe('rewriteTileConnections', () => {
      await write(spaceDir(), open, 'see [[Target]]')
      await chmod(home(), 0o555)
      try {
@@ -24529,7 +24757,7 @@
          hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [open] }],
          failed: 1,
        })
-@@ -562 +553 @@ describe('rewriteTileConnections', () => {
+@@ -562 +561 @@ describe('rewriteTileConnections', () => {
      await writeFile(join(broken, '_space.json'), '{ corrupt')
      const id = await landedId(createTile(root, spaceDir(), append))
      await write(spaceDir(), id, 'see [[Target]]')
@@ -24538,7 +24766,7 @@
        hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [id] }],
        failed: 0,
      })
-@@ -578 +569 @@ describe('rewriteTileConnections', () => {
+@@ -578 +577 @@ describe('rewriteTileConnections', () => {
      await write(home(), lost, 'see [[Target]]')
      await write(spaceDir(), away, 'see [[Target]]')
      const lands = failLandings((file) => file === tileFilePath(home(), lost))
@@ -25699,72 +25927,82 @@
 
 ```/Core/Trash/discard.test.ts diff
 @@ -0 +1 @@
-+import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
-+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-+import { atomicWriteFile } from '../Files/atomicWrite'
-+import { setWriteTap } from '../Files/writeEcho'
-+import { basename, join } from '../Paths/posix'
-+import { tempRoot } from '../Testing/hostFs'
-+import { discardFile } from './discard'
++import { mkdir, readFile, rm } from 'node:fs/promises'
++import { afterEach, beforeEach, describe, expect, it } from 'vitest'
++import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
++import { type FileEvent, setOwnTap, setWriteTap } from '../Files/writeEcho'
++import { join } from '../Paths/posix'
++import { installMachine } from '../Platform/machine'
++import { putJson, tempRoot } from '../Testing/hostFs'
++import { diskMachine } from '../Testing/machines'
++import { discard } from './discard'
 +
 +let dir: string
++let handed: string[]
 +beforeEach(async () => {
 +  dir = tempRoot('pom-discard-')
++  handed = []
++  installMachine({
++    ...diskMachine(),
++    trashToSystem: async (p) => {
++      handed.push(await readFile(p, 'utf8'))
++      await rm(p)
++    },
++  })
 +})
 +afterEach(async () => {
++  installMachine(diskMachine())
 +  await rm(dir, { recursive: true, force: true })
 +})
 +
-+describe('discardFile', () => {
-+  const trashed = async (...chain: string[]): Promise<string[]> => {
-+    const at = join(dir, '.trash', ...chain)
-+    return (await readdir(at)).map((leaf) => join(at, leaf))
++describe('discard', () => {
++  const doomed = async (): Promise<string> => {
++    await mkdir(join(dir, 'Notes'), { recursive: true })
++    const p = join(dir, 'Notes', 'doomed.md')
++    await atomicWriteFile(p, 'bye')
++    return p
 +  }
 +
-+  it('moves a file into .trash under a stamped leaf and removes the original', async () => {
-+    const p = join(dir, 'doomed.md')
-+    await atomicWriteFile(p, 'bye')
-+    await discardFile(dir, p)
-+    const [dest] = await trashed()
-+    expect(basename(dest).endsWith('__doomed.md')).toBe(true)
-+    expect(await readFile(dest, 'utf8')).toBe('bye')
-+    await expect(stat(p)).rejects.toThrow()
++  it('hands the file to the system trash and leaves .trash unmade', async () => {
++    const p = await doomed()
++    await discard(dir, p)
++    expect(handed).toEqual(['bye'])
++    expect(await pathExists(p)).toBe(false)
++    expect(await pathExists(join(dir, '.trash'))).toBe(false)
 +  })
 +
-+  it('records both ends of the move', async () => {
-+    const p = join(dir, 'reported.md')
-+    await atomicWriteFile(p, 'bye')
-+    const seen: string[] = []
-+    setWriteTap({ wrote: (w) => seen.push(w), renamed: () => {} })
-+    await discardFile(dir, p)
-+    setWriteTap(null)
-+    expect(seen).toEqual([p, ...(await trashed())])
++  it('erases the file while Permanently Delete Files is on', async () => {
++    await putJson(join(dir, '.nexus', 'settings.json'), {
++      personalization: { permanentDelete: true },
++    })
++    const p = await doomed()
++    await discard(dir, p)
++    expect(handed).toEqual([])
++    expect(await pathExists(p)).toBe(false)
++    expect(await pathExists(join(dir, '.trash'))).toBe(false)
 +  })
 +
-+  it('mirrors the folder chain the file was deleted from', async () => {
-+    await mkdir(join(dir, 'Notes', 'Daily'), { recursive: true })
-+    const p = join(dir, 'Notes', 'Daily', 'Beta.md')
-+    await atomicWriteFile(p, 'bye')
-+    await discardFile(dir, p)
-+    const [dest] = await trashed('Notes', 'Daily')
-+    expect(basename(dest).endsWith('__Beta.md')).toBe(true)
-+    expect(await readFile(dest, 'utf8')).toBe('bye')
++  it('refuses on a host with no system trash and leaves the file', async () => {
++    installMachine(diskMachine())
++    const p = await doomed()
++    await expect(discard(dir, p)).rejects.toThrow('This host has no system trash.')
++    expect(await readFile(p, 'utf8')).toBe('bye')
 +  })
 +
-+  it('de-collides two trashes of the same name from the same folder', async () => {
-+    vi.useFakeTimers({ toFake: ['Date'] })
-+    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
++  it('records the write and notes its own unlink', async () => {
++    const p = await doomed()
++    const wrote: string[] = []
++    const noted: FileEvent[] = []
++    setWriteTap({ wrote: (w) => wrote.push(w), renamed: () => {} })
++    setOwnTap(async (evs) => void noted.push(...evs))
 +    try {
-+      const p = join(dir, 'twice.md')
-+      await atomicWriteFile(p, 'one')
-+      await discardFile(dir, p)
-+      await atomicWriteFile(p, 'two')
-+      await discardFile(dir, p)
-+      const kept = await Promise.all((await trashed()).map((f) => readFile(f, 'utf8')))
-+      expect(kept.sort()).toEqual(['one', 'two'])
++      await discard(dir, p)
 +    } finally {
-+      vi.useRealTimers()
++      setWriteTap(null)
++      setOwnTap(null)
 +    }
++    expect(wrote).toEqual([p])
++    expect(noted).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
 +  })
 +})
 ```
@@ -25805,12 +26043,10 @@
 +import { createProperty } from '../Properties/registryProperty'
 +
 +let root: string
-+bundleNexusEachTest('pom-empty-', (r) => (root = r))
++const handed = bundleNexusEachTest('pom-empty-', (r) => (root = r))
 +
 +describe('emptyBundle — giving a bundle up for good', () => {
 +  it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
-+    const handed: string[] = []
-+    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
 +    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
 +    const [listed] = await listBundles(root, { kind: 'trash' })
 +    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
@@ -25823,8 +26059,6 @@
 +  })
 +
 +  it('with the switch on the artifact never reaches the system trash at all', async () => {
-+    const handed: string[] = []
-+    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
 +    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
 +    await writeFile(
 +      join(root, '.nexus', 'settings.json'),
@@ -25923,14 +26157,6 @@
 +      const taker = join(root, 'Other', 'Taker.md')
 +      await writeFile(taker, `---\nID: ${PAGE_D}\nRelated: "[[Alpha]]"\n---\ntaker`)
 +      await refreshTree(root)
-+      const handed: string[] = []
-+      installMachine({
-+        ...diskMachine(),
-+        trashToSystem: async (p) => {
-+          handed.push(p)
-+          await rm(p, { recursive: true })
-+        },
-+      })
 +      failLandings((file) => file === taker)
 +      const item = join(bundle, 'Daily', 'Alpha.md')
 +      const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: relative(root, item) })
@@ -25959,7 +26185,6 @@
 +    it('an inner Set emptied before its bundle comes back whole still takes the views naming it and its sub-Set, and keeps those naming what came back', async () => {
 +      const bundle = await owingViews(['set-sub', 'set-deeper', 'set-daily', 'col-other'])
 +      const sub = join(bundle, 'Notes', 'Daily', 'Sub')
-+      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
 +      expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: sub })).ok).toBe(true)
 +      expect(await pathExists(join(root, sub))).toBe(false)
 +      expect((await settledMutate(root, { op: 'restore', bundlePath: bundle })).ok).toBe(true)
@@ -26004,14 +26229,6 @@
 +        JSON.stringify({ personalization: { permanentDelete: permanentDelete } }),
 +      )
 +      await refreshTree(root)
-+      const handed: string[] = []
-+      installMachine({
-+        ...diskMachine(),
-+        trashToSystem: async (p) => {
-+          handed.push(p)
-+          await rm(p, { recursive: true })
-+        },
-+      })
 +      const r = await emptyNotes()
 +      expect(r.ok).toBe(true)
 +      if (permanentDelete) expect(await pathExists(join(root, ARCHIVED))).toBe(false)
@@ -26019,6 +26236,46 @@
 +      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
 +      const month = await readShard(root, shardOf(PAGE_B)!)
 +      expect(month.kind === 'ok' && month.pages).toEqual({})
++    })
++
++    it('a retried empty whose artifact’s disposal threw still owes its Archive’s pages and Sets, whose pages’ metadata left with the Archive', async () => {
++      await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
++      const linker = join(root, 'Other', 'Linker.md')
++      await writeFile(linker, `---\nID: ${PAGE_C}\nRelated: "[[Beta]]"\n---\nlinker`)
++      const sidecar = join(root, 'Other', '_pagecollection.json')
++      const located = (values: string[]) => [
++        {
++          id: 'view_1',
++          name: 'V',
++          type: 'table',
++          filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values }] },
++        },
++      ]
++      await putJson(sidecar, { id: 'col-other', views: located(['set-daily', 'col-other']) })
++      await refreshTree(root)
++      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
++      await updatePageMetadata(root, PAGE_B, { icon: 'star' })
++      let calls = 0
++      installMachine({
++        ...diskMachine(),
++        trashToSystem: async (p) => {
++          if (calls++ === 1) throw new Error('nope')
++          await rm(p, { recursive: true })
++        },
++      })
++      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
++      const [listed] = await listBundles(root, { kind: 'trash' })
++      const metadata = async () => {
++        const month = await readShard(root, shardOf(PAGE_B)!)
++        return month.kind === 'ok' && month.pages
++      }
++      const empty = () => settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
++      expect((await empty()).ok).toBe(false)
++      expect(await metadata()).toEqual({})
++      expect((await empty()).ok).toBe(true)
++      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
++      expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
++      expect(await readNotes(root)).toEqual({})
 +    })
 +
 +    it('emptying a trashed Collection keeps the archived records of a Set that stands live elsewhere', async () => {
@@ -26029,7 +26286,6 @@
 +      const [listed] = await listBundles(root, { kind: 'trash' })
 +      await rename(join(root, listed.bundlePath, 'Notes', 'Daily'), join(root, 'Other', 'Daily'))
 +      await refreshTree(root)
-+      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
 +      const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
 +      expect(r.ok).toBe(true)
 +      const kept = await listBundles(root, { kind: 'archive', id: 'col-other' })
@@ -26053,7 +26309,6 @@
 +      )
 +      await refreshTree(root)
 +      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
-+      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
 +      expect((await emptyNotes()).ok).toBe(true)
 +      expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
 +    })
@@ -26119,8 +26374,6 @@
 +
 +  it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
 +    // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
-+    const handed: string[] = []
-+    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
 +    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
 +    const [listed] = await listBundles(root, { kind: 'trash' })
 +    const bundlePath = listed.bundlePath
@@ -26193,16 +26446,11 @@
 +  })
 +
 +  // The system trash takes the bundle away, so no Trash entry for the property remains.
-+  const empty = async (): Promise<MutateReply> => {
-+    installMachine({
-+      ...diskMachine(),
-+      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
-+    })
-+    return handleMutate(root, {
++  const empty = async (): Promise<MutateReply> =>
++    handleMutate(root, {
 +      op: 'emptyBundle',
 +      bundlePath: await trashedBundle(root, 'property'),
 +    })
-+  }
 +
 +  it('emptying a property’s Trash entry drops it from every Collection still listing it', async () => {
 +    expect((await empty()).ok).toBe(true)
@@ -26216,6 +26464,22 @@
 +      propertyId,
 +    )
 +    expect(await priorityOn(join(notes, 'Daily', 'Alpha.md'))).toBeUndefined()
++  })
++
++  it('a property’s Trash entry whose disposal fails leaves the note as it stood', async () => {
++    const before = await readNotes(root)
++    installMachine({
++      ...diskMachine(),
++      trashToSystem: async () => {
++        throw new Error('nope')
++      },
++    })
++    const r = await handleMutate(root, {
++      op: 'emptyBundle',
++      bundlePath: await trashedBundle(root, 'property'),
++    })
++    expect(r.ok).toBe(false)
++    expect(await readNotes(root)).toEqual(before)
 +  })
 +
 +  it('a later property reusing a deleted property’s key inherits nothing', async () => {
@@ -30383,7 +30647,7 @@
  import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 -import { machine } from '../Platform/machine'
 +import { installMachine, machine } from '../Platform/machine'
-+import { diskMachine } from '../Testing/machines'
++import { diskMachine, systemTrashMachine } from '../Testing/machines'
  import { pathExists } from '../Files/atomicWrite'
  import { settledMutate } from '../Testing/settledMutate'
 -import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -30451,7 +30715,7 @@
  
  beforeEach(async () => {
 -  handed.length = 0
-+  installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
++  installMachine(systemTrashMachine())
    root = tempRoot('pom-e2e-')
    await mkdir(join(root, '.nexus'), { recursive: true })
    await mkdir(contextsDir(root), { recursive: true })
@@ -30676,9 +30940,13 @@
 +      expect((await settledMutate(root, { op: 'restore', bundlePath: r.bundlePath })).ok).toBe(true)
      expect((await rows()).map((r) => r.title)).toEqual(['Alpha'])
    })
--
++})
+ 
 -  it('emptying hands the artifact over, and the switch decides whether it goes at all', async () => {
--    await del('Journal/Daily/Alpha.md', 'page')
++describe('a bundle removed by hand', () => {
++  it('while its delete still owes its strip, the finish strips the link it missed and settles', async () => {
++    const refusal = failLandings((file) => file === join(root, beta))
+     await del('Journal/Daily/Alpha.md', 'page')
 -    let row = await find('Alpha')
 -    expect(
 -      (await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
@@ -30703,7 +30971,13 @@
 -    ).toBe(true)
 -    expect(handed).toHaveLength(1)
 -    expect(await rows()).toHaveLength(0)
--  })
++    refusal.mockRestore()
++    const [{ bundlePath }] = await listBundles(root, { kind: 'trash' })
++    await rm(join(root, bundlePath), { recursive: true })
++    expect((await settledMutate(root, { op: 'finishOwed' })).ok).toBe(true)
++    expect(await readNotes(root)).toEqual({})
++    expect((await frontmatter()).Related).toBeUndefined()
+   })
  })
  
  describe('links come back with the page', () => {
@@ -30729,7 +31003,7 @@
  
    it('a restored page writes its Link values back onto the pages they came from', async () => {
      await del('Journal/Daily/Alpha.md', 'page')
-@@ -485 +440 @@ describe('links come back with the page', () => {
+@@ -485 +453 @@ describe('links come back with the page', () => {
    ])('a page landing beside a new namesake rebuilds %s as %s', async (held, rebuilt) => {
      await linker(beta, BETA_ID, `Related: "${held}"`)
      await del('Journal/Daily/Alpha.md', 'page')
@@ -30747,7 +31021,7 @@
      expect(created.ok).toBe(true)
      expect(await restore('Alpha')).toBeUndefined()
      expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha (2).md'))).toBe(true)
-@@ -543 +499 @@ describe('links come back with the page', () => {
+@@ -543 +512 @@ describe('links come back with the page', () => {
      await linker(join('Journal', 'Daily', 'Daily.md'), '01KVGMT8BFP350FZZXAMG1QDVE', '')
      await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Parent: "[[Daily]]"')
      await del('Journal/Daily', 'set')
@@ -30766,7 +31040,7 @@
      expect(created.ok).toBe(true)
      expect(await restore('Daily')).toBeUndefined()
      expect(await pathExists(join(root, 'Journal', 'Daily (2)', 'Daily.md'))).toBe(true)
-@@ -557 +515 @@ describe('links come back with the page', () => {
+@@ -557 +528 @@ describe('links come back with the page', () => {
    const recordOf = async (title: string) => readRecord(join(root, (await find(title)).bundlePath))
    const empty = async (title: string) => {
      const { bundlePath } = await find(title)
@@ -30812,7 +31086,7 @@
    it('a page restored while its link’s page sits in the Trash comes back without it, and that page’s restore puts it back', async () => {
      await del(beta, 'page')
      await del('Journal/Daily/Alpha.md', 'page')
-@@ -637 +630 @@ describe('links come back with the page', () => {
+@@ -637 +643 @@ describe('links come back with the page', () => {
      const content = '---\nRelated: "[[Alpha]]"\n---\ng\n'
      await writeFile(join(root, gamma), content)
      await refreshTree(root)
@@ -30821,7 +31095,7 @@
      expect(r.ok).toBe(false)
      expect(await listBundles(root, { kind: 'trash' })).toEqual([])
      expect(await readFile(join(root, gamma), 'utf8')).toBe(content)
-@@ -687 +680 @@ describe('links come back with the page', () => {
+@@ -687 +693 @@ describe('links come back with the page', () => {
      if (!inPlain || !inJournal) throw new Error('setup failed')
      const bare = { page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }
      const pathed = { page: BETA_ID, property: 'prop_parent', value: '[[Plain/Alpha]]' }
@@ -30837,7 +31111,7 @@
      }
      expect(await readRecord(join(root, inPlain.bundlePath))).toMatchObject({ links: [pathed] })
      expect(await readRecord(join(root, inJournal.bundlePath))).not.toHaveProperty('links')
-@@ -708 +704 @@ describe('links come back with the page', () => {
+@@ -708 +717 @@ describe('links come back with the page', () => {
      const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
      const kept = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
      if (!daily || !kept) throw new Error('setup failed')
@@ -30887,7 +31161,7 @@
    it('a Set restore reports the values of every page it lands, so the window rereads what the restore dropped', async () => {
      const box = join('Plain', 'Box')
      const gamma = join(box, 'Gamma.md')
-@@ -728 +750 @@ describe('links come back with the page', () => {
+@@ -728 +763 @@ describe('links come back with the page', () => {
      await del(box, 'set')
      await del('Journal/Daily/Alpha.md', 'page')
      const { bundlePath } = await find('Box')
@@ -30896,7 +31170,7 @@
      expect(r.ok && r.value.unrestored).toBeUndefined()
      const changed: string[] = []
      const push = (channel: keyof Pushes, value: unknown): void => {
-@@ -756 +778 @@ describe('links come back with the page', () => {
+@@ -756 +791 @@ describe('links come back with the page', () => {
      const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
      const plain = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
      if (!daily || !plain) throw new Error('setup failed')
@@ -30955,7 +31229,7 @@
      expect(created.ok).toBe(true)
      await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
      await empty('Alpha')
-@@ -857 +893 @@ describe('links come back with the page', () => {
+@@ -857 +906 @@ describe('links come back with the page', () => {
        expect(await frontmatter()).not.toHaveProperty('Related')
        expect(await restore('Alpha')).toBeUndefined()
        expect(await frontmatter()).not.toHaveProperty('Related')
@@ -30963,7 +31237,7 @@
      })
  
      it('re-assigning drops a stashed link whose page sits in the Trash, as it drops one naming nothing', async () => {
-@@ -870 +907 @@ describe('links come back with the page', () => {
+@@ -870 +920 @@ describe('links come back with the page', () => {
        expect(await frontmatter()).not.toHaveProperty('Parent')
      })
    })
@@ -30981,7 +31255,7 @@
  })
  
  describe('an item pulled out of a trashed bundle', () => {
-@@ -889 +915 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -889 +928 @@ describe('an item pulled out of a trashed bundle', () => {
    const INTO_JOURNAL: RestoreDestination = { kind: 'container', id: 'col-journal' }
    const INTO_PLAIN: RestoreDestination = { kind: 'container', id: 'col-plain' }
    const pull = (bundlePath: string, destination?: RestoreDestination) =>
@@ -30994,7 +31268,7 @@
    const bundleOf = async (title: string) => (await find(title)).bundlePath
    const listed = async (...segs: string[]) => (await readdir(join(root, ...segs))).sort()
    const owed = async () =>
-@@ -915 +937 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -915 +950 @@ describe('an item pulled out of a trashed bundle', () => {
      refusal.mockRestore()
      return { sidecar, views, bundle: await bundleOf('Daily') }
    }
@@ -31004,7 +31278,7 @@
  
    it('a page pulled from a trashed Set restores to a given container, and the bundle still holds its sibling', async () => {
      await del('Journal/Daily', 'set')
-@@ -964 +985 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -964 +998 @@ describe('an item pulled out of a trashed bundle', () => {
      await page(join('Journal', 'Daily', 'Sub', 'Deep.md'), GAMMA_ID)
      await page(join('Journal', 'Daily', 'Sub', 'Kept.md'), ALEPH_ID)
      await refreshTree(root)
@@ -31021,7 +31295,7 @@
      expect(archived.ok).toBe(true)
      await del('Journal/Daily', 'set')
      const bundle = await bundleOf('Daily')
-@@ -984 +1005 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -984 +1018 @@ describe('an item pulled out of a trashed bundle', () => {
      })
    })
  
@@ -31097,7 +31371,7 @@
    it.each([
      [false, true],
      [false, false],
-@@ -1002 +1092 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -1002 +1105 @@ describe('an item pulled out of a trashed bundle', () => {
      expect(r.ok && r.value.landedAs).toBe(aside ? 'Alpha (2)' : undefined)
      expect(await owed()).not.toContain('Journal/Daily/Alpha.md')
      refusal.mockRestore()
@@ -31106,7 +31380,7 @@
      expect((await frontmatter(gamma)).Related).toBe(
        aside ? '[[Journal/Alpha (2)|Alpha (2)]]' : '[[Journal/Alpha|Alpha]]',
      )
-@@ -1024 +1114 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -1024 +1127 @@ describe('an item pulled out of a trashed bundle', () => {
      })
      const bundle = await bundleOf('Journal')
      expect((await pull(join(bundle, 'Journal', 'Daily'), INTO_PLAIN)).ok).toBe(true)
@@ -31115,7 +31389,7 @@
      const { filter, ...unfiltered } = views[2]
      expect((await readJsonAt(sidecar)).views).toEqual([views[0], views[1], unfiltered])
    })
-@@ -1033 +1123 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -1033 +1136 @@ describe('an item pulled out of a trashed bundle', () => {
      const { sidecar, views, bundle } = await owingSetViews()
      expect((await pull(bundle)).ok).toBe(true)
      const archived = { op: 'archive', path: 'Journal/Daily/Sub', kind: 'set' } as const
@@ -31124,7 +31398,7 @@
      await finish()
      expect((await readJsonAt(sidecar)).views).toEqual(views)
    })
-@@ -1042 +1132 @@ describe('an item pulled out of a trashed bundle', () => {
+@@ -1042 +1145 @@ describe('an item pulled out of a trashed bundle', () => {
      const { sidecar, views, bundle } = await owingSetViews()
      expect((await pull(join(bundle, 'Daily', 'Sub'), INTO_PLAIN)).ok).toBe(true)
      const archived = { op: 'archive', path: 'Plain/Sub', kind: 'set' } as const
