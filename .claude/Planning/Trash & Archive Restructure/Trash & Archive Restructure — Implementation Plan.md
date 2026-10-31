@@ -17,7 +17,7 @@
 | 1 · The Landing | about +46 | +68 (+198 / −130); +45 outside `Core/Testing` |
 | 2 · Residue | about −136 | −157 (+215 / −372); −152 outside `Core/Testing` |
 | 3 · Delete, Journal, and Carry | about −46 | +19 (+469 / −450); +25 outside `Core/Testing`, the estimate not having priced Task 3-2's second holder read (about +32) or the journal's `move` kind (about +10) |
-| 4 · Reach-In | about −360 | |
+| 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | |
 | **Total** | **about −415** | |
@@ -281,7 +281,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
-- [ ] **Phase 4** — Reach-In
+- [x] **Phase 4** — Reach-In
   - [x] Task 4-1 · The store-of-path rule
   - [x] Task 4-2 · Trashed Spaces become holders
   - [x] Task 4-3 · The Trash is admitted and watched
@@ -290,8 +290,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 4-6 · The holders' side of the frozen model leaves
   - [x] Task 4-7 · One stored projection
   - [x] Review Checkpoint
-  - [ ] Compaction Checkpoint
-- [ ] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
+  - [x] Compaction Checkpoint
+- [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
   - [ ] Task 5-1 · Following an id covers a Set
   - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
@@ -4474,14 +4474,14 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **CHANGE**
 
-- [ ] `git mv Core/Bundles/layout.ts Core/Paths/bundleLayout.ts`, then apply the AFTER.
-- [ ] Re-point every importer of `Bundles/layout` to `Paths/bundleLayout`: `archive.ts`, `bundle.ts`, `browser.ts`, `Bundles/handlers.ts`, `placement.ts`, `rows.ts`, `heldPages.ts`, `mutate.ts`, `delete.ts`, `discard.ts`, `spend.ts`, `Core/Contract/bridge.ts`, and `Desktop/Store/driver.ts`, plus the tests `archive.test.ts`, `refile.test.ts`, `layout.test.ts`, and `rows.test.ts`.
-- [ ] Take `ArchiveStore` and `archiveDirRel` from `Paths/bundleLayout` instead of `nexusPaths` (`archive.ts:8`, which imports `ArchiveStore` alone after Phase 3, `refile.ts:30`, `placement.ts:3`, `finishOwed.ts:23`, `spend.ts`, and `treePatch.ts:16`), and take `archiveStoreOf` from it instead of `names` (`archive.ts:4`, `refile.ts:8`, `bundle.ts:13`, `Bundles/handlers.ts:6`, `placement.ts:5`, `spend.ts`, and `treePatch.ts:25`).
-- [ ] Take `hiddenName` and `hiddenFolder` from `nexusPaths` instead of `exclusion`, joining each file's `nexusPaths` import where it has one: `walk.ts:1-2` (`{ ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS }`), `bundle.ts:12,14` (`{ ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR }`, Phase 3 having added `ARCHIVE_DIR_REL`), `names.ts:4` (shown below), `fileEvents.ts:12`, `assetRoots.ts:5`, `assetDirValidate.ts:5`, `exclusionScan.ts:13`, and `restoreScrub.ts:39-40` (`{ hiddenFolder, SPACE_SIDECAR }`).
-- [ ] Drop `originPathOf`'s `store` argument at every call, and `originPagesOf`'s and `keptLinksUnder`'s parameter with it (the `archive.ts`, `bundle.ts`, `placement.ts`, `delete.ts`, and `spend.ts` hunks below); `layout.test.ts`'s five `originPathOf` calls (`:74,76,81,86,92`) drop their `TRASH` or `ARCHIVE` argument, their expectations unchanged.
-- [ ] Remove `archivedCollectionIdOf`'s case from `exclusion.test.ts` (`:181-189`) and its import (`:6`).
-- [ ] In `ConnectionsPM.md:30`, "the pages and Spaces outside the Archive it reached" becomes "the pages and Spaces outside both stores it reached".
-- [ ] Write `bundleLayout.test.ts`'s cases in `Core/Bundles/layout.test.ts`, which stays put until Phase 6 (Placements). Add a `describe('storeOf')` with:
+- [x] `git mv Core/Bundles/layout.ts Core/Paths/bundleLayout.ts`, then apply the AFTER.
+- [x] Re-point every importer of `Bundles/layout` to `Paths/bundleLayout`: `archive.ts`, `bundle.ts`, `browser.ts`, `Bundles/handlers.ts`, `placement.ts`, `rows.ts`, `heldPages.ts`, `mutate.ts`, `delete.ts`, `discard.ts`, `spend.ts`, `Core/Contract/bridge.ts`, and `Desktop/Store/driver.ts`, plus the tests `archive.test.ts`, `refile.test.ts`, `layout.test.ts`, and `rows.test.ts`.
+- [x] Take `ArchiveStore` and `archiveDirRel` from `Paths/bundleLayout` instead of `nexusPaths` (`archive.ts:8`, which imports `ArchiveStore` alone after Phase 3, `refile.ts:30`, `placement.ts:3`, `finishOwed.ts:23`, `spend.ts`, and `treePatch.ts:16`), and take `archiveStoreOf` from it instead of `names` (`archive.ts:4`, `refile.ts:8`, `bundle.ts:13`, `Bundles/handlers.ts:6`, `placement.ts:5`, `spend.ts`, and `treePatch.ts:25`).
+- [x] Take `hiddenName` and `hiddenFolder` from `nexusPaths` instead of `exclusion`, joining each file's `nexusPaths` import where it has one: `walk.ts:1-2` (`{ ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS }`), `bundle.ts:12,14` (`{ ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR }`, Phase 3 having added `ARCHIVE_DIR_REL`), `names.ts:4` (shown below), `fileEvents.ts:12`, `assetRoots.ts:5`, `assetDirValidate.ts:5`, `exclusionScan.ts:13`, and `restoreScrub.ts:39-40` (`{ hiddenFolder, SPACE_SIDECAR }`).
+- [x] Drop `originPathOf`'s `store` argument at every call, and `originPagesOf`'s and `keptLinksUnder`'s parameter with it (the `archive.ts`, `bundle.ts`, `placement.ts`, `delete.ts`, and `spend.ts` hunks below); `layout.test.ts`'s five `originPathOf` calls (`:74,76,81,86,92`) drop their `TRASH` or `ARCHIVE` argument, their expectations unchanged.
+- [x] Remove `archivedCollectionIdOf`'s case from `exclusion.test.ts` (`:181-189`) and its import (`:6`).
+- [x] In `ConnectionsPM.md:30`, "the pages and Spaces outside the Archive it reached" becomes "the pages and Spaces outside both stores it reached".
+- [x] Write `bundleLayout.test.ts`'s cases in `Core/Bundles/layout.test.ts`, which stays put until Phase 6 (Placements). Add a `describe('storeOf')` with:
   - **"answers a Trash page's bundle, inner segments, and origin":** `.trash/Notes/<stamp>__A.md.deleted/A.md` answers `{ store: { kind: 'trash' }, bundle: '.trash/Notes/<stamp>__A.md.deleted', inner: ['A.md'], origin: 'Notes/A.md' }`.
   - **"answers an Archive path's Collection, its origin under the Collection's own folder":** `.nexus/archive/C1/Notes/<stamp>__S.archived/S/P.md` answers `{ store: { kind: 'archive', id: 'C1' }, bundle: '.nexus/archive/C1/Notes/<stamp>__S.archived', inner: ['S', 'P.md'], origin: 'Notes/S/P.md' }`.
   - **"answers a chain folder and a leftover beside the bundles with no bundle":** `.trash/Notes` and `.trash/Notes/<stamp>__x.md` (a flat leftover) each answer `bundle: null`.
@@ -4882,13 +4882,13 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **VERIFY**
 
-- [ ] The four new `storeOf` cases are green.
-- [ ] `git grep -nwE "archivedCollectionIdOf|isArchived|outsideArchive|stampedSegment" -- Core Desktop` prints nothing, and neither does `git grep -n "Bundles/layout" -- Core Desktop`; `git grep -nE "originPa(thOf|gesOf)\(root, (store|to|from|named\.store)," -- Core` prints nothing.
-- [ ] `git grep -nw archiveSegs -- Core ':!*.test.ts'` prints only `nexusPaths.ts` and `exclusion.ts`.
-- [ ] `git grep -nE "function hidden(Name|Folder)" -- Core` prints only `nexusPaths.ts`; the typecheck proves no importer still reads them from `exclusion`.
-- [ ] **Flips:** none; `layout.test.ts`'s `originPathOf` cases change their calls alone, as CHANGE names.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The four new `storeOf` cases are green.
+- [x] `git grep -nwE "archivedCollectionIdOf|isArchived|outsideArchive|stampedSegment" -- Core Desktop` prints nothing, and neither does `git grep -n "Bundles/layout" -- Core Desktop`; `git grep -nE "originPa(thOf|gesOf)\(root, (store|to|from|named\.store)," -- Core` prints nothing.
+- [x] `git grep -nw archiveSegs -- Core ':!*.test.ts'` prints only `nexusPaths.ts` and `exclusion.ts`.
+- [x] `git grep -nE "function hidden(Name|Folder)" -- Core` prints only `nexusPaths.ts`; the typecheck proves no importer still reads them from `exclusion`.
+- [x] **Flips:** none; `layout.test.ts`'s `originPathOf` cases change their calls alone, as CHANGE names.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-2
 
@@ -4907,17 +4907,17 @@ The comment inside the noted block (*"Permanent now, a Collection's Archive with
 
 **CHANGE**
 
-- [ ] Move `stashBlock` and `StashBlock` from `propertyStash.ts` into `properties.ts`, ahead of the stored-Space source's import of `bundle.ts`, and re-point `record.ts`, `deleteProperty.ts`, `assignment.test.ts`, and `unassignProperty.test.ts` (the first six hunks below). `propertyStash.ts` keeps `stashedBlock`, `patchStashBlock`, and `sweepStashes`, and imports the schema it reads.
-- [ ] Write these and watch each fail:
+- [x] Move `stashBlock` and `StashBlock` from `propertyStash.ts` into `properties.ts`, ahead of the stored-Space source's import of `bundle.ts`, and re-point `record.ts`, `deleteProperty.ts`, `assignment.test.ts`, and `unassignProperty.test.ts` (the first six hunks below). `propertyStash.ts` keeps `stashedBlock`, `patchStashBlock`, and `sweepStashes`, and imports the schema it reads.
+- [x] Write these and watch each fail:
   - **`restoreProperty.test.ts`, "a property deleted while a Space sat in the Trash leaves the trashed Space and returns to it with its restore" (B-3, B-2 for Spaces):** a Space holding `Priority: hi` is trashed. Deleting the property leaves the trashed sidecar without `Priority`, and the property's record holds `{ [spaceId]: 'hi' }`. Restoring the property, then the Space, returns `Priority: hi`. It fails today because the trashed sidecar keeps the key.
   - **`deleteReach.test.ts`, "a Context delete leaves its own Spaces' tags of each other in its bundle":** Space `Areas/Home` holds `<Areas>: [Work]` beside `Areas/Work`. Deleting `Areas` leaves the bundle's `Home/_space.json` byte-identical, and restoring it returns the tag. It fails without `unlinkMembers`' bundle in `left`.
   - **`deleteReach.test.ts`, beside `:133`, "a trashed Space sharing a live Space's id is passed over by the strip silently, neither skipped nor owed":** copy a live Space's sidecar into a hand-made Space bundle (`mintBundle` plus a Space record), both holding `Related: "[[Target]]"`. Deleting `Target` strips the live sidecar and leaves the trashed copy byte-identical; the reply carries no warning, the bundle's `links` hold the live Space's value alone, and after `finishOwed` the notes are empty. It fails without the pass-over, because the copy is stripped under the live id, and with the twin counted, because the reply warns `unsweptLine(1)` and Try Again stays owed.
   - **`heldPages.test.ts`, "nexusPages — the Trash's Spaces":**
     - "holds a trashed Space at its bundle path, and a trashed Context's Spaces under it."
     - "a live Space sharing a trashed Space's id keeps its entry, and the trashed one fills no null."
-- [ ] Apply the AFTER.
-- [ ] `contextCascade.test.ts`'s twelve unlink calls wrap their folder in a list, their expectations unchanged: `pomDir()` → `[pomDir()]`, `classesDir()` → `[classesDir()]`, `projectsDir()` → `[projectsDir()]`, and `:672`'s `join(contextsDir(root), 'Classes', '2024')` → `[join(contextsDir(root), 'Classes', '2024')]`.
-- [ ] In `NexusRecordPM.md:12`, "the Spaces the tree shows naming them" (in Task 3-2's sentence) becomes "the Spaces the tree and the Trash hold naming them".
+- [x] Apply the AFTER.
+- [x] `contextCascade.test.ts`'s twelve unlink calls wrap their folder in a list, their expectations unchanged: `pomDir()` → `[pomDir()]`, `classesDir()` → `[classesDir()]`, `projectsDir()` → `[projectsDir()]`, and `:672`'s `join(contextsDir(root), 'Classes', '2024')` → `[join(contextsDir(root), 'Classes', '2024')]`.
+- [x] In `NexusRecordPM.md:12`, "the Spaces the tree shows naming them" (in Task 3-2's sentence) becomes "the Spaces the tree and the Trash hold naming them".
 
 **AFTER**
 
@@ -5220,12 +5220,12 @@ The stash schema moves into the property model, the one module a Collection side
 
 **VERIFY**
 
-- [ ] The four new cases are green, and each is watched red with its hunk reverted.
-- [ ] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`. `contextCascade.test.ts`'s twelve unlink calls change as CHANGE names, every expectation holding.
-- [ ] **Flips Found in Execution:** `setSpaceProperty.test.ts`' "a restored Space keeps an option word deleted while it sat in the Trash" becomes "a trashed Space loses an option word deleted meanwhile, as a live one does", expecting `['alpha']` (Decision D-4); `configReach.test.ts` mocks `./liveTree` with `{ spy: true }`, since this task's edges put `configReach.ts` inside `liveTree`'s import loop, where an `importOriginal` factory bound it to the original `liveTreeOf` (Phase 4's checkpoint moved `retries` and `reachReport` into `owed.ts`, which took it back out; the spy mock stays correct either way). `RootsById` moves from `governedSweep.ts` into `heldPages.ts`, beside `addressable`, which reads it.
-- [ ] `git grep -n "skipUnder" -- Core` prints nothing, and `git grep -n "stashBlock\|StashBlock" -- Core` shows the schema defined in `properties.ts` alone, with no file importing it from `propertyStash`.
-- [ ] Run the gates (`npm run typecheck`, `npm run test`, `npm run lint`). `assignment.test.ts`, `governedWorldWrite.test.ts`, `repairSweep.test.ts`, and `deleteOrder.test.ts` are the suites that break without the move: each enters the cycle through `propertyStash.ts` (`deleteOrder.test.ts` by way of `mutate.ts` and `assignment.ts`), so `record.ts` evaluates before it finishes. Native module evaluation throws a ReferenceError at that read; vitest's module runner answers it `undefined`, and `recordFile` then refuses every property record holding `stashes`.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The four new cases are green, and each is watched red with its hunk reverted.
+- [x] **Flips:** `restoreScrub.test.ts:553`, "keeps a passenger tag whose Space died while the subtree sat in the trash, as a live write does". Work's delete now strips trashed Sapphire's `<Areas>` and records Sapphire among its `members`. Rewrite it as "a trashed Space loses a tag of a Space deleted meanwhile and takes it back with that Space's restore": after the Projects restore, `sap['<Areas>']` is undefined; after Work's restore, it's `['Work']`. `contextCascade.test.ts`'s twelve unlink calls change as CHANGE names, every expectation holding.
+- [x] **Flips Found in Execution:** `setSpaceProperty.test.ts`' "a restored Space keeps an option word deleted while it sat in the Trash" becomes "a trashed Space loses an option word deleted meanwhile, as a live one does", expecting `['alpha']` (Decision D-4); `configReach.test.ts` mocks `./liveTree` with `{ spy: true }`, since this task's edges put `configReach.ts` inside `liveTree`'s import loop, where an `importOriginal` factory bound it to the original `liveTreeOf` (Phase 4's checkpoint moved `retries` and `reachReport` into `owed.ts`, which took it back out; the spy mock stays correct either way). `RootsById` moves from `governedSweep.ts` into `heldPages.ts`, beside `addressable`, which reads it.
+- [x] `git grep -n "skipUnder" -- Core` prints nothing, and `git grep -n "stashBlock\|StashBlock" -- Core` shows the schema defined in `properties.ts` alone, with no file importing it from `propertyStash`.
+- [x] Run the gates (`npm run typecheck`, `npm run test`, `npm run lint`). `assignment.test.ts`, `governedWorldWrite.test.ts`, `repairSweep.test.ts`, and `deleteOrder.test.ts` are the suites that break without the move: each enters the cycle through `propertyStash.ts` (`deleteOrder.test.ts` by way of `mutate.ts` and `assignment.ts`), so `record.ts` evaluates before it finishes. Native module evaluation throws a ReferenceError at that read; vitest's module runner answers it `undefined`, and `recordFile` then refuses every property record holding `stashes`.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-3
 
@@ -5241,7 +5241,7 @@ The stash schema moves into the property model, the one module a Collection side
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`exclusion.test.ts`, `describe('outsideContent')`, "admits a page inside either store's bundle, hides one beside the bundles, and judges a stored page where it lived" (B-8):**
     - `.trash/Notes/<stamp>__A.md.deleted/A.md` → null.
     - `.trash/Notes` → null.
@@ -5264,8 +5264,8 @@ The stash schema moves into the property model, the one module a Collection side
     - `/nexus/.trash/Notes/<stamp>__A.md.deleted/A.md` → false.
     - `/nexus/.trash/Notes/.DS_Store` → true.
     - `/nexus/.trash/Hidden/x.md` under `excluded: ['Hidden']` → true.
-- [ ] Apply the AFTER.
-- [ ] Rewrite `CorePM.md:74`'s clause "and `.nexus/archive` is a hidden folder the content index and every cascade reach into while the tree leaves it out" as "and `.nexus/archive` and `.trash` are hidden folders whose bundles the content index and every cascade reach into while the tree leaves them out". In the same paragraph, change "a property sweep reaches only Collections and the Archive" to "a property sweep reaches only Collections and what both stores hold of them".
+- [x] Apply the AFTER.
+- [x] Rewrite `CorePM.md:74`'s clause "and `.nexus/archive` is a hidden folder the content index and every cascade reach into while the tree leaves it out" as "and `.nexus/archive` and `.trash` are hidden folders whose bundles the content index and every cascade reach into while the tree leaves them out". In the same paragraph, change "a property sweep reaches only Collections and the Archive" to "a property sweep reaches only Collections and what both stores hold of them".
 
 **AFTER**
 
@@ -5415,8 +5415,8 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 
 **VERIFY**
 
-- [ ] The new cases are green, and each is watched red with its hunk reverted.
-- [ ] **Flips:**
+- [x] The new cases are green, and each is watched red with its hunk reverted.
+- [x] **Flips:**
   - `exclusion.test.ts:37`: `outsideContent('.nexus/archive')` now answers `'hidden'`, its store root. The expectation changes; `:38-44` hold.
   - `exclusion.test.ts:173-179`, `archiveSegs`' case, leaves with the function.
   - `walk.test.ts:77`, "never reads inside `.trash`, …", becomes "reads the Trash's bundles alone, never a leftover beside them, `.nexus` outside its Archive, or an excluded folder". It adds a page in `.trash/Notes/<stamp>__k.md.deleted/k.md` to the listing, and `opened` becomes `['', 'sub', '.nexus/archive', '.trash', '.trash/deep']`.
@@ -5424,13 +5424,13 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
   - `indexMaintenance.test.ts:197`, "a delete clears the rows", is retitled "a delete moves its rows under its bundle", and its expectations hold.
   - `indexMaintenance.test.ts:218`'s title becomes "a Set delete moves every row beneath it under its bundle; its restore moves each back", and its first `queryMentions(['beta'])` expects the trashed `Alpha.md`'s `.trash/…` path.
   - `restoreScrub.test.ts:194`, "a trashed copy the restore's refill couldn't write owes its value", becomes "a trashed holder the restore's refill couldn't write is named" (Decision D-5). The reply's `unrestored` is `['Beta']`, no relink entry holds `values`, and the `finishOwed` half leaves.
-- [ ] **Flips Found in Execution:**
+- [x] **Flips Found in Execution:**
   - `indexSeed.test.ts`, "a removal of the Archive itself prunes every row beneath it", failed once the store root read `'hidden'`, since `deindexPath` gated on the corpus admission. A removal now prunes a path's rows whether or not it's admitted, and "a removal of the Trash itself prunes every row beneath it" joins it.
   - `spend.test.ts:1217`, "a bundle without targets restores by the name", leaves here rather than in Task 4-5: the rename now reaches the trashed copy, so the frozen model it pins is already gone.
   - `deleteReach.test.ts`'s new case gains `readIndexedStats(<bundle>)?.size` at 0, the one assertion that fails without the change.
-- [ ] `git grep -nw archiveSegs -- Core` and `git grep -n archivedPageIds -- Core` print nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nw archiveSegs -- Core` and `git grep -n archivedPageIds -- Core` print nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-4
 
@@ -5452,7 +5452,7 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`restoreScrub.test.ts:516`**, rewritten from "leaves a key whose property was renamed while it sat in the Trash as written" to "a page that sat in the Trash through a property, option, Space, and Context rename returns holding the new names" (B-9). It runs `renameProperty`, `renameOption`, `renameSpace`, and `renameContext` through `settledMutate` while Alpha sits in the Trash. Before the restore, the trashed copy reads `Urgency: high` and `<Ventures>: [Pommora 2]`; after it, `Notes/Alpha.md` reads the same, and none of `Priority`, `hi`, `<Projects>`, or `Pommora` remains.
   - **`keyHolders.test.ts`, "a governed reach takes a trashed page and a trashed Collection's pages by their record, a Collection renamed since included, and leaves one that left no Collection":**
     - One page is trashed from `Notes`, and `Notes` is then renamed `Journal`.
@@ -5466,8 +5466,8 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
   - **`trashRecovery.test.ts`, beside `:1012`, "a property deleted while a Collection sat in the Trash leaves its saved views, as a live Collection's" (Decision D-3):** the restored Collection's view holds no column, hidden id, or rule naming the property.
   - **`trashRecovery.test.ts`, "a trashed Space's tile docs lose a deleted Collection's sources, as a live Space's do":** a trashed Space's `_tiles.json` view sourced from a Set that is then deleted loses it.
   - **`trashRecovery.test.ts`, "a Set moved to another Collection takes its location from the views a Set trashed from the Collection it left holds" (scoped reach).**
-- [ ] Apply the AFTER.
-- [ ] Rewrite `CollectionsPM.md:49`'s second sentence to "Pages placed in the archive, like pages in the Trash, are indexed and receive reach-in changes …". Rewrite `ContextsPM.md:25`'s "and on a Trash restore, as a page's is" to "in the Trash as live, as a page's is". In `NexusRecordPM.md:12`, "the Archive's pages included" becomes "both stores' pages included".
+- [x] Apply the AFTER.
+- [x] Rewrite `CollectionsPM.md:49`'s second sentence to "Pages placed in the archive, like pages in the Trash, are indexed and receive reach-in changes …". Rewrite `ContextsPM.md:25`'s "and on a Trash restore, as a page's is" to "in the Trash as live, as a page's is". In `NexusRecordPM.md:12`, "the Archive's pages included" becomes "both stores' pages included".
 
 **AFTER**
 
@@ -5782,15 +5782,15 @@ The watcher's comment above `syncIgnoredUnder` ("We DO watch .nexus/ — Context
 
 **VERIFY**
 
-- [ ] The new cases are green, and each is watched red with its hunk reverted.
-- [ ] **Flips:**
+- [x] The new cases are green, and each is watched red with its hunk reverted.
+- [x] **Flips:**
   - `spend.test.ts:2638`, "an empty that misses %s offers Try Again", moves to the delete, as "a property delete that misses %s offers Try Again". In a sibling `describe` with the same seed and no delete in `beforeEach`, it `chmod`s the file to `000` before `deleteProperty`, then expects the owed `strip: ['Priority']` and `finishOwed` to clear the file.
   - `spend.test.ts:2624`'s expectations hold: the delete stripped both pages, and the empty purges both Collections.
   - `spend.test.ts:2660`, "a live property holding the key keeps it", inverts to "a later property reusing a deleted property's key inherits nothing" (Decision D-4): after the new `Priority` and the empty, `priorityOn(tasksPage)` is undefined. It gains the `held(key)` case it pinned, re-expressed: "an owed strip leaves a key a later property took": a property delete misses a page (`chmod 000`), a property reusing the key is created, the page is restored to `644`, and `finishOwed` leaves its value and drops the strip.
   - `deleteReach.test.ts:346`, "strips the Link values naming its pages outside it, and leaves the pages inside as they were", now fails with `finishContainer`'s `left` reverted, so it pins the own-bundle exclusion. Watch it red.
-- [ ] `git grep -nw "archivedSets\|setSidecarsUnder\|inTrash" -- Core` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nw "archivedSets\|setSidecarsUnder\|inTrash" -- Core` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-5
 
@@ -5810,8 +5810,8 @@ A restore now moves the item's bytes, as the Archive's restore does (*§The Rule
 
 **CHANGE**
 
-- [ ] Apply the AFTER.
-- [ ] Rewrite the cases that pinned the removed behavior, by name. Each one listed as leaving asserted what only the scrub or `targets` did.
+- [x] Apply the AFTER.
+- [x] Rewrite the cases that pinned the removed behavior, by name. Each one listed as leaving asserted what only the scrub or `targets` did.
   - **`restoreScrub.test.ts`, the cases that leave:**
     - `:109-140`: "keeps every governed key that still stands", "keeps a value whose property was deleted …", "keeps a value whose property is no longer assigned …", and "keeps a tag whose Context was erased …".
     - `:164`, "a returning page the scrub can't write owes what it worked out", and `:182`, "an edit made after the restore keeps it through Try Again", with the `missedScrub` helper.
@@ -5833,7 +5833,7 @@ A restore now moves the item's bytes, as the Archive's restore does (*§The Rule
     - `:1073-1113` and `:1376` hold, now by reach.
   - **`archive.test.ts:1135`**, "a trashed page's link to an archived page follows it to where it lands on restore", leaves as covered by `:1149`. Its old expectation came from `targets`' frozen identity, and its reach-in outcome is `:1149`'s.
   - **`renameFrontmatterKey`'s tests** move onto `sweepParse(content)?.rekey(from, to, collision) ?? null`, behind one local `rekey` helper in each file: `pageFile.test.ts:215-340`, with the two `describe`s retitled "`rekey` — …"; `rootValues.test.ts:42-57`, "the twin of the page parse's `rekey`"; and `finishOwed.test.ts:121`.
-- [ ] Rewrite these docs:
+- [x] Rewrite these docs:
   - `NexusRecordPM.md:10`: drop the clause "every record carries the page each outbound link under its artifact named at the delete, its id and its path then, by the name the link was written with;".
   - `NexusRecordPM.md:14`: replace the passage from "An artifact returning from the Trash is reconciled …" through "… re-spelled for its arrival and for the names that named only it," with "An artifact returns from either store by a move, current since every cascade reached it; once it lands, its own links re-spell to the pages beside it they named, the live world is re-spelled for its arrival and for the names that named only it,". Drop the sentence beginning "A Link value naming a page the tree doesn't hold and the restore doesn't land …".
   - `CorePM.md:98`: drop "; a Trash restore alone rewrites a key a property's label spells into that property's key".
@@ -6060,16 +6060,16 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **VERIFY**
 
-- [ ] **Flips:** exactly the cases CHANGE routes, and nothing else.
-- [ ] **Flips Found in Execution:**
+- [x] **Flips:** exactly the cases CHANGE routes, and nothing else.
+- [x] **Flips Found in Execution:**
   - `bundle.test.ts`, "opens a page under its own Set, with the containers above as its trail, its id, the bundle's targets, and only the kept values naming it", pinned `innerRecord`'s `targets`: its fixture and expectation drop `TARGETS`, and it's retitled "opens a page under its own Set, with the containers above as its trail, its id, and only the kept values naming it".
   - `innerRecord`'s `held` parameter, unused once its `targets` spread left, goes with both call sites' argument, as lint requires.
-- [ ] `restoreScrub.test.ts:516`'s B-9 case stays green with the scrub gone.
-- [ ] `git grep -nwE "gatherLinkTargets|pageRelationsOf|linkTargets|scrubReturning|currentKeys|matchOf|withUnswept|renameFrontmatterKey" -- Core` prints nothing, and `git grep -nw targets -- Core ':!*.test.ts' | grep -iE "record|bundle|spend|delete|gather"` prints nothing.
-- [ ] `restoreScrub.ts` exports `repairLanded` alone, with `artifactFiles` beside it.
-- [ ] `git grep -n "the bundle records the page each outbound link named" -- Core` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `restoreScrub.test.ts:516`'s B-9 case stays green with the scrub gone.
+- [x] `git grep -nwE "gatherLinkTargets|pageRelationsOf|linkTargets|scrubReturning|currentKeys|matchOf|withUnswept|renameFrontmatterKey" -- Core` prints nothing, and `git grep -nw targets -- Core ':!*.test.ts' | grep -iE "record|bundle|spend|delete|gather"` prints nothing.
+- [x] `restoreScrub.ts` exports `repairLanded` alone, with `artifactFiles` beside it.
+- [x] `git grep -n "the bundle records the page each outbound link named" -- Core` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-6
 
@@ -6093,15 +6093,15 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **Departure, Disclosed:** `parkLinks` reads the indexed Trash (`storedPageIds(TRASH_DIR)`) rather than listing every bundle's artifact. This is *§The Trash's Model · §Leaves*' "becomes an index read". Its one difference is a trashed page whose origin lies under an excluded folder, which the index doesn't hold and `listMarkdownFiles` did. Parking now reads the one admission rule the index and `listInner` read. The empty's park (Task 3-4) runs after its artifact's disposal, and that disposal's own unlink deindexes the artifact before the park reads the index: `dispose` awaits `noteOwn`, the own tap is `applyOwn` (`settle.ts:52-63`), and its `applyEvents` awaits `indexEvents`' `deindexPath` (`fileEvents.ts:294-298`, `indexSeed.ts:215-223`). So an emptied bundle's own pages answer none of its links, as the listing's skip of an artifactless bundle kept them from answering before.
 
-- [ ] Write **`assignment.test.ts`, "a re-assign refills a trashed page's stashed value into its copy, which returns with it",** and watch it pass at Task 4-4's head and stay green here. It's the splice's behavior, now carried by `byId`.
-- [ ] Write **`trashRecovery.test.ts`, beside `:701`, "emptying a Set holding one of two namesakes hands its record's links to the other"**, `:701`'s twin for a container: a Set `Plain/Box` (`_pageset.json` with id `set-box`) holds `Alpha.md` (`linker` with a fresh page id and no keys); `del('Journal/Daily/Alpha.md', 'page')`, then `del('Plain/Box', 'set')`, after which Beta holds no `Related`; empty Box's bundle, restore the Journal Alpha's row, and Beta reads `Related: '[[Alpha]]'`. It passes before and after the AFTER, since the listing skipped the emptied bundle too; it pins the order, so watch it red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, where Box's own Alpha still answers the link and it parks with neither namesake.
-- [ ] Apply the AFTER.
-- [ ] Remove the tests of removed code:
+- [x] Write **`assignment.test.ts`, "a re-assign refills a trashed page's stashed value into its copy, which returns with it",** and watch it pass at Task 4-4's head and stay green here. It's the splice's behavior, now carried by `byId`.
+- [x] Write **`trashRecovery.test.ts`, beside `:701`, "emptying a Set holding one of two namesakes hands its record's links to the other"**, `:701`'s twin for a container: a Set `Plain/Box` (`_pageset.json` with id `set-box`) holds `Alpha.md` (`linker` with a fresh page id and no keys); `del('Journal/Daily/Alpha.md', 'page')`, then `del('Plain/Box', 'set')`, after which Beta holds no `Related`; empty Box's bundle, restore the Journal Alpha's row, and Beta reads `Related: '[[Alpha]]'`. It passes before and after the AFTER, since the listing skipped the emptied bundle too; it pins the order, so watch it red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, where Box's own Alpha still answers the link and it parks with neither namesake.
+- [x] Apply the AFTER.
+- [x] Remove the tests of removed code:
   - `trashedCopies.test.ts`, the whole file: it tested `frozenWorld` alone (Placements name `trashedCopies.ts` for deletion in Phase 5, and its test file has nothing left to test).
   - `spend.test.ts:1005`, "a Link value refilled into a trashed copy is reconciled as a live refill is", which drove `refillTrashed` directly.
-- [ ] Re-point the tests of the narrowed signatures, their expectations unchanged: `governedRoot.test.ts:261`'s `const gone = { holds: () => false }` becomes `const gone = () => false`, and `:271`'s `{ holds: (t) => t === 'Alpha' }` becomes `(t) => t === 'Alpha'`; `governedSweep.test.ts:352`'s `refillOf(tags, { holds: () => true })` becomes `refillOf(tags, buildPageIndex([]))`, importing `buildPageIndex` from `'../Connections/pageIndex'`, since a Multi-Select reads no world.
-- [ ] Rewrite `NexusRecordPM.md:14`'s "— into its copy in the Trash when it sits there —" as "— in the Trash as live —", and `NexusRecordPM.md:33`'s "a bundle's frozen content" as "a bundle's content".
-- [ ] Close I-065 in `.claude/IssuesPM.md` through `batch-issues` as intended (Decision B-4): its index row, its section, its footnote, and its count in TOTALS.
+- [x] Re-point the tests of the narrowed signatures, their expectations unchanged: `governedRoot.test.ts:261`'s `const gone = { holds: () => false }` becomes `const gone = () => false`, and `:271`'s `{ holds: (t) => t === 'Alpha' }` becomes `(t) => t === 'Alpha'`; `governedSweep.test.ts:352`'s `refillOf(tags, { holds: () => true })` becomes `refillOf(tags, buildPageIndex([]))`, importing `buildPageIndex` from `'../Connections/pageIndex'`, since a Multi-Select reads no world.
+- [x] Rewrite `NexusRecordPM.md:14`'s "— into its copy in the Trash when it sits there —" as "— in the Trash as live —", and `NexusRecordPM.md:33`'s "a bundle's frozen content" as "a bundle's content".
+- [x] Close I-065 in `.claude/IssuesPM.md` through `batch-issues` as intended (Decision B-4): its index row, its section, its footnote, and its count in TOTALS.
 
 **AFTER**
 
@@ -6460,17 +6460,17 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **VERIFY**
 
-- [ ] The new `assignment.test.ts` case is green, and Task 4-4's B-7 case still is.
-- [ ] *"emptying a Set holding one of two namesakes hands its record's links to the other"* is green, and watched red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, then put back.
-- [ ] **Flips:** none beyond the removed `trashedCopies.test.ts` and `spend.test.ts:1005`; `governedRoot.test.ts:261,271` and `governedSweep.test.ts:352` change their arguments alone, as CHANGE names.
-- [ ] **Flips Found in Execution:** `trashRecovery.test.ts`, "a link parks with the trashed page its path names, and with neither of two namesakes its bare title names", installs `memoryStores` and seeds the content index before its read spy, and installs `NO_STORES` in its `finally`, so its no-read assertion pins the indexed park rather than `storedPageIds`' unindexed fallback; I-033 and I-065 are closed by hand in `IssuesPM.md`.
-- [ ] These print nothing:
+- [x] The new `assignment.test.ts` case is green, and Task 4-4's B-7 case still is.
+- [x] *"emptying a Set holding one of two namesakes hands its record's links to the other"* is green, and watched red with `emptyBundle`'s `parkLinks` hoisted above its first `dispose`, then put back.
+- [x] **Flips:** none beyond the removed `trashedCopies.test.ts` and `spend.test.ts:1005`; `governedRoot.test.ts:261,271` and `governedSweep.test.ts:352` change their arguments alone, as CHANGE names.
+- [x] **Flips Found in Execution:** `trashRecovery.test.ts`, "a link parks with the trashed page its path names, and with neither of two namesakes its bare title names", installs `memoryStores` and seeds the content index before its read spy, and installs `NO_STORES` in its `finally`, so its no-read assertion pins the indexed park rather than `storedPageIds`' unindexed fallback; I-033 and I-065 are closed by hand in `IssuesPM.md`.
+- [x] These print nothing:
   - `git grep -nwE "frozenWorld|Frozen|trashedHolders|refillTrashed|originPagesIn|Worked|workedOut|oweWorked|landWorked" -- Core`;
   - `git grep -n "values: undefined" -- Core/Nexus/finishOwed.ts`;
   - `git grep -n "gonePageEntry" -- Core ':!*.test.ts' | grep -v "governedRoot.ts\|governedSweep.ts\|cascade.ts"`.
-- [ ] `trashedCopies.ts` exports `parkLinks` alone.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `trashedCopies.ts` exports `parkLinks` alone.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 4-7
 
@@ -6490,7 +6490,7 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
 
 **Departure, Disclosed:** `finishProperty`'s listing (`finishOwed.ts:163-173`) and `collectionsElsewhere`' Trash arm (`bundle.ts:190-200`) stay. The first answers whether the property's own bundle is kept, which no holder projection carries, so folding its Collection union alone would list twice; the second sits in `bundle.ts`, which `heldPages.ts` imports, and its callers (`ownedArchives`, `placeRecord`) hold no projection.
 
-- [ ] Write these and watch each fail as quoted:
+- [x] Write these and watch each fail as quoted:
   - **`optionOps.test.ts`, "a trashed Collection’s stash follows an option rename":** `stashed()`'s Collection is deleted, then its option renamed; the trashed sidecar's stash reads the new word. Fails at HEAD: `AssertionError: expected { …(1) } to deeply equal { …(1) }`, the block keeping `A`.
   - **`propertyStash.test.ts`, "a trashed Collection’s stash ages out with a live one’s":** a Collection `Old` stashing one block before the History Timeframe and one inside it is filed into the Trash; `sweepStashes` keeps the second alone, and `Tasks`' live block leaves with it. Fails at HEAD: `AssertionError: expected { p: { …(2) }, q: { …(2) } } to deeply equal { q: { …(2) } }`.
   - **`repairSweep.test.ts`, "canonicalizes a page inside a trashed Collection against its own definitions":** delete `Col`, drift `One.md` inside its bundle to a doubled `Status`, and the sweep folds it to one. Fails at HEAD: `AssertionError: expected '---\nID: …' to contain 'Status:\n  - Open\n---'`.
@@ -6498,8 +6498,8 @@ An archived item's own pages sit in no tree, so `under` answers none for it, and
   - **`cascade.test.ts`, "a trashed Space’s tiles push no TilesChanged":** the same board beside a homepage tile linking `[[Target]]`; both rewrite, and `hosts` names the homepage alone. Fails at HEAD on the trashed tile, as above, and with the stored boards given a `{ kind: 'space', id }` host: `AssertionError: expected [ { …(2) }, { host: { …(2) }, …(1) } ] to deeply equal [ Array(1) ]`.
   - **`repairSweep.test.ts`, "canonicalizes an archived page of a trashed Collection against that Collection’s own definitions":** archive `One.md`, delete `Col`, drift the archived page to a doubled `Status`, and the sweep folds it to one. Fails at HEAD, and with `owningCollection`'s stored fallback skipping the Archive arm: `AssertionError: expected '---\nID: …' to contain 'Status:\n  - Open\n---'`.
   - **`heldPages.test.ts`, "lists the Trash’s Contexts alone for its by-id read":** a spy on `listBundles` reads the chain `nexusPages` lists without a projection. Fails with `nexusPages` listing the whole projection: `AssertionError: expected [ undefined ] to deeply equal [ '.nexus/contexts' ]`.
-- [ ] Apply the AFTER.
-- [ ] Re-point the tests of the widened signatures, their expectations unchanged: `heldPages.test.ts:263,301`'s `stored.map` reads `storedNodes`' `.spaces.map`; `tilesFile.test.ts`' seven `tilesLink` and six `rewriteTileConnections` calls pass a local `NOTHING_TRASHED` projection after `root`.
+- [x] Apply the AFTER.
+- [x] Re-point the tests of the widened signatures, their expectations unchanged: `heldPages.test.ts:263,301`'s `stored.map` reads `storedNodes`' `.spaces.map`; `tilesFile.test.ts`' seven `tilesLink` and six `rewriteTileConnections` calls pass a local `NOTHING_TRASHED` projection after `root`.
 
 **AFTER**
 
@@ -6800,15 +6800,15 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 
 **VERIFY**
 
-- [ ] The seven new cases are green, each watched red with the failure CHANGE quotes, and *"a trashed Space’s tiles push no TilesChanged"* red again with the stored boards given a host, then put back.
-- [ ] **Flips:** none; `heldPages.test.ts` and `tilesFile.test.ts` change their reads and arguments alone, as CHANGE names.
-- [ ] These print nothing:
+- [x] The seven new cases are green, each watched red with the failure CHANGE quotes, and *"a trashed Space’s tiles push no TilesChanged"* red again with the stored boards given a host, then put back.
+- [x] **Flips:** none; `heldPages.test.ts` and `tilesFile.test.ts` change their reads and arguments alone, as CHANGE names.
+- [x] These print nothing:
   - `git grep -nwE "trashedOwners|storedSpaces" -- Core`;
   - `git grep -n "trashReach" -- Core/Bundles`;
   - `git grep -n "listBundles(root, { kind: 'trash' }" -- Core ':!*.test.ts' | grep -v "heldPages.ts\|finishOwed.ts\|bundle.ts"`.
-- [ ] The strongly connected component over value imports around `liveTree.ts` is still seven modules: `folderEntity`, `heldPages`, `identity`, `liveTree`, `pageMetadata`, `readNexus`, `settings`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The strongly connected component over value imports around `liveTree.ts` is still seven modules: `folderEntity`, `heldPages`, `identity`, `liveTree`, `pageMetadata`, `readNexus`, `settings`.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
