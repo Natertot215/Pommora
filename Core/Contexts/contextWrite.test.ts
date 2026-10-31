@@ -126,7 +126,7 @@ describe('setPageContext', () => {
     await mkdir(join(root, 'Notes'), { recursive: true })
   })
 
-  it('writes the wrapped key with titles resolved from ids (H-1)', async () => {
+  it('writes the wrapped key with titles resolved from ids', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
     const r = await setPageContext(page(), root, 'ctx_projects', ['sp-pom'])
     expect(r.ok).toBe(true)

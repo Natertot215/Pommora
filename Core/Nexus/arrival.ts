@@ -146,7 +146,42 @@ export async function arrive(
 
 export type Departed = { id: string; to: string; at: Stored }
 
-/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, re-spelling a page of it that landed elsewhere too, or, from a bundle still standing, each topmost item under its artifact the bundle no longer holds, a page moved alone or the Set it moved with, landed where most of its pages did, a page moved on from there arriving as its own. */
+type Landings = Map<string | undefined, Departed[]>
+
+/** Each departed item's unit, the topmost item under the artifact the bundle no longer holds, a page moved alone or the Set it moved with, landed where most of its pages did, a page moved on from there arriving as its own. */
+async function unitsOf(
+  root: string,
+  tree: NexusTree,
+  bundle: string,
+  departed: readonly Departed[],
+): Promise<Map<string, string | undefined>> {
+  const byUnit = new Map<string, Landings>()
+  for (const d of departed) {
+    const last = d.at.inner.length - 1
+    const held = (n: number) => pathExists(join(root, bundle, ...d.at.inner.slice(0, n + 1)))
+    let depth = 1
+    while (depth < last && (await held(depth))) depth++
+    const unit = join(bundle, ...d.at.inner.slice(0, depth + 1))
+    const segs = d.to.split('/')
+    const movedTo =
+      depth === last ? d.to : containerAt(tree, segs.slice(0, depth - last).join('/'))?.path
+    const landings: Landings = byUnit.get(unit) ?? new Map()
+    byUnit.set(unit, landings.set(movedTo, [...(landings.get(movedTo) ?? []), d]))
+  }
+  const units = new Map<string, string | undefined>()
+  for (const [unit, landings] of byUnit) {
+    const [movedTo] = [...landings.keys()]
+      .filter((to) => to !== undefined)
+      .sort((a, b) => (landings.get(b)?.length ?? 0) - (landings.get(a)?.length ?? 0))
+    if (movedTo) units.set(unit, movedTo)
+    for (const [to, members] of landings)
+      if (to !== movedTo)
+        for (const { to: page, at } of members) units.set(join(bundle, ...at.inner), page)
+  }
+  return units
+}
+
+/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, re-spelling a page of it that landed elsewhere too, or, from a bundle still standing, each unit `unitsOf` lands. */
 export async function recognize(
   root: string,
   tree: NexusTree,
@@ -156,32 +191,9 @@ export async function recognize(
 ): Promise<CascadeReport | undefined> {
   const after = pageIndexOf(tree)
   const whole = (await bundleArtifact(join(root, bundle))) === null
-  const units = new Map<string, string | undefined>()
-  const landings = new Map<string, Map<string | undefined, Departed[]>>()
-  if (whole) units.set(bundle, undefined)
-  else
-    for (const d of departed) {
-      const last = d.at.inner.length - 1
-      let k = 1
-      while (k < last && (await pathExists(join(root, bundle, ...d.at.inner.slice(0, k + 1))))) k++
-      const stored = join(bundle, ...d.at.inner.slice(0, k + 1))
-      const segs = d.to.split('/')
-      const movedTo = k === last ? d.to : containerAt(tree, segs.slice(0, k - last).join('/'))?.path
-      const unit = landings.get(stored) ?? new Map<string | undefined, Departed[]>()
-      landings.set(stored, unit.set(movedTo, [...(unit.get(movedTo) ?? []), d]))
-    }
-  for (const [stored, unit] of landings) {
-    const [movedTo] = [...unit.keys()]
-      .filter((to) => to !== undefined)
-      .sort((a, b) => (unit.get(b)?.length ?? 0) - (unit.get(a)?.length ?? 0))
-    if (movedTo) units.set(stored, movedTo)
-    for (const [to, members] of unit)
-      if (to !== movedTo)
-        for (const { to: page, at } of members) {
-          const own = join(bundle, ...at.inner)
-          units.set(own, page)
-        }
-  }
+  const units = whole
+    ? new Map<string, string | undefined>([[bundle, undefined]])
+    : await unitsOf(root, tree, bundle, departed)
   let cascade: CascadeReport | undefined
   for (const [address, movedTo] of units) {
     const at = await openBundle(root, join(root, address), movedTo && join(root, movedTo))

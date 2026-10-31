@@ -31,7 +31,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   ├── properties.json                      | • The nexus-wide property registry
 │   ├── settings.json                        | • Personalization, accent, excluded folders, the profile
 │   └── state.json                           | • Pins and the NavView banner; Collection, Space, and panel Context order
-├── // .trash                                | • Deleted entities, mirroring the chain they came from
+├── // .trash                                | • Deleted entities, mirroring the chain they came from, and the recordless files no listing shows, kept until removed by hand
 │   └── // <Collection>
 │       └── // <stamp>__<Item>.deleted       | • A deletion bundle — the artifact beside its record
 │           ├── [<Page>.md]

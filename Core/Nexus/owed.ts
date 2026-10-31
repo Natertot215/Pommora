@@ -119,7 +119,7 @@ export async function followRelinks(
       await editNote(root, id, (x) => x && relinkNote(x, names, undefined, paths))
 }
 
-/** Whether `e` still owes a rename. Pages under its old name weren't candidates for any sweep since, so an option part, a Remove's Collection, or a Space under it settles only once the rename lands (H-1). */
+/** Whether `e` still owes a rename. Pages under its old name weren't candidates for any sweep since, so an option part, a Remove's Collection, or a Space under it settles only once the rename lands. */
 export const owesRename = (e: Entry | undefined): boolean => !!e?.rename?.length
 
 /** Edits `id`'s entry under the file's own lock, dropping one that owes nothing and the file once no entry is left; answers the entry as it stood, or the refusal naming the file. */
@@ -153,7 +153,7 @@ export const owedRename = <O extends Owed>(o: O, from: string, to: string): O =>
   ...o,
   rename: distinct([...(o.rename ?? []), from].filter((n) => n !== to)),
 })
-/** Every owed name and the current one move into `strip`, for a delete and a Clear alike (H-2, H-3). */
+/** Every owed name and the current one move into `strip`, for a delete and a Clear alike. */
 export const owedDelete = (o: Owed, current: string): Owed => ({
   rename: undefined,
   strip: distinct(o.strip, o.rename, [current]),
@@ -194,7 +194,7 @@ export function owedName(notes: Notes, { owner, name, except }: NameLanding): bo
   )
 }
 
-/** A restore turns what its delete never reached back into renames to the restored name, so those files keep their values (H-4); an item that owes no strip writes nothing. */
+/** A restore turns what its delete never reached back into renames to the restored name, so those files keep their values; an item that owes no strip writes nothing. */
 export async function restoreNote(root: string, id: string): Promise<Result<unknown>> {
   if (!(await readNotes(root))[id]?.strip) return ok(undefined)
   return editNote(
@@ -258,7 +258,7 @@ export function owedReport(root: string, reach: ConfigReach, owed = retries(reac
   return report
 }
 
-/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename (H-1), and a sweep that is the finish's own arm writes back its entry itself. The report is owed while the entry still stands, whatever left it owing. */
+/** A many-file change on `id`, in its one order: refused while another item owes a name it lands on, then its note, its list step, and its sweep. A refused note or list step changes nothing, the entry put back as it stood; a sweep that missed nothing settles the entry, unless the entry `under` names still owes a rename, and a sweep that is the finish's own arm writes back its entry itself. The report is owed while the entry still stands, whatever left it owing. */
 export async function runNoted<T>(
   root: string,
   id: string,

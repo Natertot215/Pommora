@@ -295,8 +295,7 @@ async function storedContainers(
   ])
   if (rel === undefined) return [...archived, ...trashed]
   const at = trashed.map(({ dir }) => relative(root, dir))
-  await stored.readOwners(at)
-  const reached = trashReach(tree, stored, rel)
+  const reached = trashReach(tree, await stored.readOwners(at), rel)
   return [...archived, ...trashed.filter((_, i) => reached(at[i]))]
 }
 

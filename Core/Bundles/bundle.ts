@@ -199,6 +199,9 @@ export async function listBundles(
   return out
 }
 
+export const trashRoot = (root: string): Promise<ListedBundle[]> =>
+  listBundles(root, { kind: 'trash' }, '', { shallow: true })
+
 /** The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash. */
 export async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
   const held = new Set(tree.collections.map((c) => c.path))
@@ -207,8 +210,8 @@ export async function collectionsElsewhere(root: string, tree: NexusTree): Promi
       kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
   )
   const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
-  const trashed = (await listBundles(root, { kind: 'trash' }, '', { shallow: true })).flatMap(
-    ({ record }) => (record.entity === 'collection' && record.id ? record.id : []),
+  const trashed = (await trashRoot(root)).flatMap(({ record }) =>
+    record.entity === 'collection' && record.id ? record.id : [],
   )
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
 }

@@ -26,8 +26,7 @@ import type { StoredNodes } from '../Nexus/heldPages'
 
 const append = { kind: 'append' } as const
 const NOTHING_TRASHED: StoredNodes = {
-  owners: new Map(),
-  readOwners: async () => {},
+  readOwners: async () => ({ owners: new Map(), collections: [] }),
   collections: [],
   spaces: [],
 }
