@@ -27,7 +27,6 @@ import { buildPageIndex, pageKey, pathKeys } from '../Connections/pageIndex'
 import { gonePageEntry } from './governedRoot'
 import { addressable, nexusPages, storedNodes, twinned } from './heldPages'
 import { pathExists } from '../Files/atomicWrite'
-import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { rekeyContext } from '../Contexts/contextCascade'
 import { type ConfigReach, NO_REACH } from './configReach'
 import {
@@ -228,7 +227,7 @@ export async function renameCascade(
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
-    const stored = await storedNodes(root, tree, 'names' in change ? undefined : CONTEXTS_DIR_REL)
+    const stored = await storedNodes(root, tree, 'names' in change ? undefined : 'spaces')
     const files = [
       ...[...new Set(rels)].map((rel) => join(root, rel)),
       ...spaceFiles(root, tree, stored, (s) => !!s.values && spaceMoved(s.values, '') !== null),

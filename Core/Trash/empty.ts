@@ -22,6 +22,8 @@ import {
   runNoted,
 } from '../Nexus/owed'
 import { finishEntry } from '../Nexus/finishOwed'
+import { refileArchive } from '../Archive/refile'
+import { liveTreeOf } from '../Nexus/liveTree'
 
 // Nothing is gone for good until the first disposal lands, so one that fails takes the note back and leaves the bundle whole; a Collection's Archive goes first, so the Collection stays listed while it can still lose anything, and the bundle goes last, so a failed removal leaves a record with no artifact, litter the listing skips.
 export async function emptyBundle(root: string, bundleAbs: string): Promise<MutateReply> {
@@ -79,7 +81,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   })
 }
 
-/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good; null when it has none. */
+/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good, a record whose Set stands live elsewhere re-filed into that Set's Archive first; null when it has none. */
 async function collectionArchive(
   root: string,
   id: string | undefined,
@@ -88,6 +90,7 @@ async function collectionArchive(
   if (!store) return null
   const abs = join(root, archiveDirRel(store.id))
   if (!(await pathExists(abs))) return null
+  await refileArchive(root, await liveTreeOf(root), store.id)
   const files = await listMarkdownFiles(abs)
   return {
     abs,

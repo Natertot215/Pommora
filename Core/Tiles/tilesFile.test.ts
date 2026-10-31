@@ -25,7 +25,12 @@ import { dropLiveTree } from '../Nexus/liveTree'
 import type { StoredNodes } from '../Nexus/heldPages'
 
 const append = { kind: 'append' } as const
-const NOTHING_TRASHED: StoredNodes = { owners: new Map(), collections: [], spaces: [] }
+const NOTHING_TRASHED: StoredNodes = {
+  owners: new Map(),
+  readOwners: async () => {},
+  collections: [],
+  spaces: [],
+}
 
 let root: string
 const home = (): string => homepageDir(root)

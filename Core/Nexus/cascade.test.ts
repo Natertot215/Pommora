@@ -23,6 +23,7 @@ import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesF
 import { landedId } from '../Testing/tileLayouts'
 import { titled } from '../Testing/fixtures'
 import { mintBundle } from '../Bundles/bundle'
+import * as record from '../Bundles/record'
 
 vi.mock('./governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./governedSweep')>()
@@ -139,6 +140,30 @@ describe('renameCascade', () => {
     const r = await renameCascade(root, titled('Target', 'Omega'))
     expect(await readMarkdownTile(board, tile)).toEqual(ok('see [[Omega]]'))
     expect(r.hosts).toEqual([{ host: { kind: 'homepage' }, ids: [home] }])
+  })
+
+  it('a page rename reads no bundle record outside the Trash’s root level and its Contexts chain', async () => {
+    await trashedBoard()
+    for (const n of [1, 2, 3]) {
+      const page = join(dir, `P${n}.md`)
+      const bundle = await mintBundle(root, { kind: 'trash' }, page, {
+        entity: 'page',
+        id: `pg-${n}`,
+        parent: { kind: 'container', id: 'notes' },
+      })
+      await writeFile(join(bundle, `P${n}.md`), `---\nID: pg-${n}\n---\nsee [[Target]]\n`)
+    }
+    await refreshTree(root)
+    const reads = vi.spyOn(record, 'readRecord')
+    try {
+      await renameCascade(root, titled('Target', 'Omega'))
+      const outside = reads.mock.calls
+        .map(([at]) => relative(root, at))
+        .filter((at) => at.split('/').length > 2 && !at.startsWith('.trash/.nexus/contexts/'))
+      expect(outside).toEqual([])
+    } finally {
+      reads.mockRestore()
+    }
   })
 
   it.skipIf(noModeBits)(

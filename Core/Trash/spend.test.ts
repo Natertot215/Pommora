@@ -1628,6 +1628,22 @@ describe('emptyBundle — giving a bundle up for good', () => {
       expect(month.kind === 'ok' && month.pages).toEqual({})
     })
 
+    it('emptying a trashed Collection keeps the archived records of a Set that stands live elsewhere', async () => {
+      await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+      await refreshTree(root)
+      await settledMutate(root, { op: 'archive', path: 'Notes/Daily/Beta.md', kind: 'page' })
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      await rename(join(root, listed.bundlePath, 'Notes', 'Daily'), join(root, 'Other', 'Daily'))
+      await refreshTree(root)
+      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
+      const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
+      expect(r.ok).toBe(true)
+      const kept = await listBundles(root, { kind: 'archive', id: 'col-other' })
+      expect(kept.map(({ record }) => 'id' in record && record.id)).toEqual([PAGE_B])
+      expect(await pathExists(join(root, ARCHIVED))).toBe(false)
+    })
+
     it('a Collection emptied for good takes the saved views naming the Sets in its Archive', async () => {
       const sidecar = join(root, 'Other', '_pagecollection.json')
       const located = (values: string[]) => [

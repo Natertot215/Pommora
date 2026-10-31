@@ -2,6 +2,7 @@ import { join, relDirname } from '../Paths/posix'
 import { z } from 'zod'
 import type { CascadeReport, StrippedLink } from '../Nexus/cascade'
 import { isPlainObject } from '../Contract/validators'
+import type { Result } from '../Contract/result'
 import { stashBlock } from '../Properties/properties'
 import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { contextEntry } from '../Contexts/contexts'
@@ -128,31 +129,39 @@ export async function readRecord(bundleDir: string): Promise<RecordFile | null> 
   return decodeRecord(await readRawRecord(bundleDir))
 }
 
-/** Merges what `patch` answers into the record in place, raw. */
-export async function patchRecord(
+/** Merges what `patch` answers into the record in place, raw, answering whether it could. */
+export const patchRecord = (
   bundleDir: string,
   patch: (raw: RawRecord) => RawRecord,
-): Promise<void> {
-  await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({ ...raw, ...patch(raw) }))
-}
+): Promise<Result<RawRecord>> =>
+  rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({ ...raw, ...patch(raw) }))
 
 const sameLink = (a: StrippedLink, b: unknown): boolean =>
   isPlainObject(b) && a.page === b.page && a.property === b.property && a.value === b.value
 
-const patchLinks = (bundleDir: string, edit: (held: unknown[]) => unknown[]): Promise<void> =>
+const patchLinks = (
+  bundleDir: string,
+  edit: (held: unknown[]) => unknown[],
+): Promise<Result<RawRecord>> =>
   patchRecord(bundleDir, (raw) => {
     const links = edit(Array.isArray(raw.links) ? raw.links : [])
     return { links: links.length ? links : undefined }
   })
 
 /** Each of `links` the record doesn't already hold joins its `links`, so a finish run again over what its strip missed parks nothing twice. */
-export const appendLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
+export const appendLinks = (
+  bundleDir: string,
+  links: readonly StrippedLink[],
+): Promise<Result<RawRecord>> =>
   patchLinks(bundleDir, (held) => [
     ...held,
     ...links.filter((l) => !held.some((h) => sameLink(l, h))),
   ])
 
-export const removeLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
+export const removeLinks = (
+  bundleDir: string,
+  links: readonly StrippedLink[],
+): Promise<Result<RawRecord>> =>
   patchLinks(bundleDir, (held) => held.filter((h) => !links.some((l) => sameLink(l, h))))
 
 export function placeOf(ids: readonly string[], id: string): Place | undefined {

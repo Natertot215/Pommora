@@ -14,6 +14,7 @@ import { machine } from '../Platform/machine'
 import { closeSession, openSession } from '../Nexus/session'
 import { readNotes } from '../Nexus/owed'
 import { bundleOf } from '../Testing/settledMutate'
+import { fail } from '../Contract/result'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -24,6 +25,7 @@ let atSettle: unknown
 let atReach: unknown
 let deleting = ''
 let settleFails = false
+let recordFails = false
 
 async function firstRecordUnder(dir: string): Promise<unknown> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
@@ -77,6 +79,10 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
       }
       return actual.relocate(...args)
     },
+    rmwJsonStrict: async (...args: Parameters<typeof actual.rmwJsonStrict>) =>
+      recordFails && args[0].endsWith('_record.json')
+        ? fail('operation-failed', 'Unreadable file: _record.json')
+        : actual.rmwJsonStrict(...args),
   }
 })
 
@@ -96,6 +102,7 @@ beforeEach(async () => {
   atSettle = undefined
   atReach = undefined
   settleFails = false
+  recordFails = false
   root = tempRoot('pom-order-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
@@ -160,6 +167,16 @@ describe('the record is written before the destruction it describes', () => {
       links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],
     })
     expect(await anyRecord()).toEqual(atSweep)
+  })
+
+  it('a finish whose bundle record can’t be written strips nothing and stays owed', async () => {
+    recordFails = true
+    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
+    expect(r.ok).toBe(true)
+    expect(await relatedOf()).toBe('[[Alpha]]')
+    expect(Object.values(await readNotes(root))).toMatchObject([
+      { kind: 'container', strip: ['Notes/Alpha.md'] },
+    ])
   })
 
   it('a Space delete records what its holders held before the move strips a single tag', async () => {

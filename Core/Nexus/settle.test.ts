@@ -1660,6 +1660,76 @@ describe('an item moved out of a store by hand', () => {
     expect(await pathExists(abs(bundle))).toBe(false)
   })
 
+  it('a page dragged out alone in the same settle as its Set re-spells', async () => {
+    await writeFile(
+      linker(),
+      `---\nID: ${LINKER}\n---\n\n[[Notes/Daily/Alpha]] [[Notes/Daily/Beta]]\n`,
+    )
+    recordHanded(await refreshTree(root))
+    const bundle = await removed('Notes/Daily', 'set', 'delete')
+    await movedOut(`${bundle}/Daily/Alpha.md`, 'Notes', 'Alpha.md')
+    await movedOut(`${bundle}/Daily`, 'Notes', 'Weekly')
+    await applyEvents(root, [
+      ev('unlink', bundle, 'Daily', 'Alpha.md'),
+      ev('add', 'Notes', 'Alpha.md'),
+      ev('addDir', 'Notes', 'Weekly'),
+      ev('add', 'Notes', 'Weekly', '_pageset.json'),
+      ev('unlink', bundle, 'Daily', 'Beta.md'),
+      ev('add', 'Notes', 'Weekly', 'Beta.md'),
+    ])
+    await settleNow(pusher, root)
+    expect(splitEnvelope(await readFile(linker(), 'utf8')).body).toBe(
+      '[[Notes/Alpha|Alpha]] [[Notes/Weekly/Beta|Beta]]\n',
+    )
+  })
+
+  it.each([
+    ['first', true],
+    ['last', false],
+  ])('a Set dragged out of a standing bundle lands where most of its pages went, and a page moved on arrives as its own (its events %s)', async (_, first) => {
+    const ref = abs('Other', 'Ref.md')
+    await mkdir(abs('Other'))
+    await writeFile(
+      abs('Other', '_pagecollection.json'),
+      JSON.stringify({ id: 'c2', properties: ['prop_related', 'prop_see'] }),
+    )
+    await writeFile(
+      ref,
+      `---\nID: 01EX5ZZKBKPCTAV9WEVGEMMVRE\nRelated: "[[Alpha]]"\nSee: "[[Beta]]"\n---\n\n[[Notes/Daily/Alpha]] [[Notes/Daily/Beta]]\n`,
+    )
+    await writeFile(abs('Notes', 'Daily', 'Gamma.md'), `---\nID: ${ULID_A}\n---\n\ngamma\n`)
+    recordHanded(await refreshTree(root))
+    await indexSeed.seedContentIndex(root)
+    const bundle = bundleOf(
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }),
+    )
+    expect(splitFrontmatter(await readFile(ref, 'utf8'))).not.toHaveProperty('Related')
+    await movedOut(`${bundle}/Notes/Daily`, 'Other', 'Daily')
+    await movedOut('Other/Daily/Alpha.md', 'Other', 'Alpha.md')
+    const alpha = [
+      ev('unlink', bundle, 'Notes', 'Daily', 'Alpha.md'),
+      ev('add', 'Other', 'Alpha.md'),
+    ]
+    const set = [
+      ev('addDir', 'Other', 'Daily'),
+      ev('add', 'Other', 'Daily', '_pageset.json'),
+      ev('unlink', bundle, 'Notes', 'Daily', 'Beta.md'),
+      ev('add', 'Other', 'Daily', 'Beta.md'),
+      ev('unlink', bundle, 'Notes', 'Daily', 'Gamma.md'),
+      ev('add', 'Other', 'Daily', 'Gamma.md'),
+    ]
+    await applyEvents(root, first ? [...alpha, ...set] : [...set, ...alpha])
+    await settleNow(pusher, root)
+    expect(splitFrontmatter(await readFile(ref, 'utf8'))).toMatchObject({
+      Related: '[[Alpha]]',
+      See: '[[Beta]]',
+    })
+    expect(splitEnvelope(await readFile(ref, 'utf8')).body).toBe(
+      '[[Other/Alpha|Alpha]] [[Other/Daily/Beta|Beta]]\n',
+    )
+    expect(await readRecord(abs(bundle))).not.toHaveProperty('links')
+  })
+
   it('a copy out of the Trash stays a page of its own, its bundle whole', async () => {
     const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
     await copyFile(abs(bundle, 'Alpha.md'), abs('Notes', 'Alpha.md'))

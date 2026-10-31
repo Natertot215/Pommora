@@ -345,7 +345,11 @@ async function payOutsideMoves(root: string): Promise<void> {
       'outside move',
     )
   for (const [bundle, pages] of back)
-    paid(root, await recognize(root, tree, before, after, bundle, pages), 'outside restore')
+    try {
+      paid(root, await recognize(root, tree, before, after, bundle, pages), 'outside restore')
+    } catch (e) {
+      console.error('outside restore failed:', errText(e))
+    }
 }
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply. A Space the settle found moved back from the Trash by hand tags its members again under the Contexts lock, taken outside the settle's turn, so it finishes in a turn of its own once the settle returns, and settles again.

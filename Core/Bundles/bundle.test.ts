@@ -15,6 +15,7 @@ import {
   mintBundle,
   type OpenBundle,
   openBundle,
+  removeBundle,
   spendBundle,
 } from './bundle'
 import * as record from './record'
@@ -83,6 +84,17 @@ describe('mintBundle', () => {
     vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
     await expect(mintBundle(root, TRASH, p, {})).rejects.toThrow('the write failed')
     expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
+  })
+})
+
+describe('removeBundle', () => {
+  it('a .DS_Store doesn’t keep an emptied chain folder', async () => {
+    const bundle = await mintBundle(root, TRASH, join(root, 'Notes', 'Daily', 'Beta.md'), {})
+    await writeFile(join(root, '.trash', 'Notes', 'Daily', '.DS_Store'), 'junk')
+    await writeFile(join(root, '.trash', 'Notes', '.DS_Store'), 'junk')
+    await removeBundle(root, bundle)
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
+    expect(await pathExists(join(root, '.trash'))).toBe(true)
   })
 })
 

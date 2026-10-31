@@ -11,7 +11,13 @@ import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { listBundles } from '../Bundles/bundle'
-import { collectionOf, currentOrigin, originOf } from '../Bundles/record'
+import {
+  collectionOf,
+  currentOrigin,
+  originOf,
+  type RecordFile,
+  readRecord,
+} from '../Bundles/record'
 import { containerNodeFrom } from './containerFields'
 import { corpusFilesUnder } from '../Files/walk'
 import { stampedIdOf } from '../Files/pageFile'
@@ -111,7 +117,7 @@ export async function nexusPages(
     claim(byId, { id, kind: 'page', title: titleFromPath(path), path })
     archived.push(connPage(id, at.origin))
   }
-  const { spaces } = stored ?? (await storedNodes(root, tree, CONTEXTS_DIR_REL))
+  const { spaces } = stored ?? (await storedNodes(root, tree, 'spaces'))
   const trashed = [...(await storedPageIds(root, tree, TRASH_DIR))].flatMap(([path, { id }]) =>
     id ? [{ id, kind: 'page' as const, title: titleFromPath(path), path }] : [],
   )
@@ -124,28 +130,41 @@ export async function nexusPages(
 export const linkWorld = (tree: NexusTree, archived: readonly ConnPage[]): PageIndex =>
   buildPageIndex([...pagesOf(tree), ...archived])
 
-/** What the Trash holds of the tree's entities, from one listing of `chain` within it: each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; and the Collections and Spaces it holds, read from their own sidecars, since the index holds pages alone. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
-export async function storedNodes(root: string, tree: NexusTree, chain?: string) {
-  const owners = new Map<string, string>()
+/** What the Trash holds of the tree's entities, read where it sits so no listing grows with the pages and Sets it holds: the Collections at its root level, where each one's bundle mints, and the Spaces under its Contexts, read from their own sidecars, since the index holds pages alone; `only` reads the Spaces alone. `owners` names each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; `readOwners` reads it from the record of each bundle holding one of `rels` that it hasn't read, so a cascade reads only the bundles it reaches. Every enumerator of the tree's Collections or Spaces takes it beside the tree. */
+export async function storedNodes(root: string, tree: NexusTree, only?: 'spaces') {
+  const owners = new Map<string, string | undefined>()
+  const ownerOf = (record: RecordFile): string | undefined => {
+    if (record.entity === 'collection') return record.id
+    const origin = originOf(record)
+    return origin ? collectionOf(currentOrigin(tree, origin) ?? origin) : undefined
+  }
+  const readOwners = async (rels: Iterable<string>): Promise<void> => {
+    for (const rel of rels) {
+      const at = storeOf(rel)
+      if (at?.store.kind !== 'trash' || !at.bundle || owners.has(at.bundle)) continue
+      const record = await readRecord(join(root, at.bundle))
+      owners.set(at.bundle, record ? ownerOf(record) : undefined)
+    }
+  }
   const collections: CollectionNode[] = []
   const spaces: SpaceNode[] = []
-  const listed = await listBundles(root, { kind: 'trash' }, chain)
-  for (const { bundlePath, record, artifactName } of listed) {
-    const origin = originOf(record)
-    const owner =
-      record.entity === 'collection'
-        ? record.id
-        : origin && collectionOf(currentOrigin(tree, origin) ?? origin)
-    if (owner) owners.set(bundlePath, owner)
+  const top = only ? [] : await listBundles(root, { kind: 'trash' }, '', { shallow: true })
+  for (const { bundlePath, record, artifactName } of top) {
+    if (record.entity !== 'collection' || !artifactName) continue
+    owners.set(bundlePath, record.id)
+    const artifact = join(root, bundlePath, artifactName)
+    const sc = await readJsonObject(sidecarPath(artifact, 'collection'))
+    const at = { title: artifactName, path: relative(root, artifact) }
+    const node = sc && containerNodeFrom('collection', at, sc, [], [])
+    if (node?.kind === 'collection') collections.push(node)
+  }
+  for (const { bundlePath, record, artifactName } of await listBundles(
+    root,
+    { kind: 'trash' },
+    CONTEXTS_DIR_REL,
+  )) {
     if (!artifactName) continue
     const artifact = join(root, bundlePath, artifactName)
-    if (record.entity === 'collection') {
-      const sc = await readJsonObject(sidecarPath(artifact, 'collection'))
-      const at = { title: artifactName, path: relative(root, artifact) }
-      const node = sc && containerNodeFrom('collection', at, sc, [], [])
-      if (node?.kind === 'collection') collections.push(node)
-      continue
-    }
     const held =
       record.entity === 'context'
         ? (await spaceSidecarsIn(artifact)).map((s) => ({ ...s, contextId: record.registry.id }))
@@ -165,7 +184,7 @@ export async function storedNodes(root: string, tree: NexusTree, chain?: string)
       if (space) spaces.push(space)
     }
   }
-  return { owners, collections, spaces }
+  return { owners, readOwners, collections, spaces }
 }
 
 export type StoredNodes = Awaited<ReturnType<typeof storedNodes>>

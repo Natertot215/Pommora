@@ -541,6 +541,23 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
     expect(await pathExists(at('.trash', 'Gone'))).toBe(false)
   })
 
+  it('a page-less Set dragged out of a trashed Collection takes its archived records at the next open', async () => {
+    const note = await archive('Notes/Daily/Sub/Note.md')
+    const kept = await archive('Notes/Daily/Sub/Kept.md')
+    const low = await archive('Notes/Daily/Sub/Deep/Low.md')
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes', kind: 'collection' }))
+    await rename(at(trashed, 'Notes', 'Daily', 'Sub'), at('Other', 'Sub'))
+    await settleArchives(root, await reread())
+    const into = (bundlePath: string) => bundlePath.replace(NOTES, OTHER)
+    const byId = Object.fromEntries((await filed(IN_OTHER)).map((b) => [b.id, b]))
+    expect(byId).toEqual({
+      [PAGE_N]: { bundlePath: into(note), id: PAGE_N, trail: [OTHER] },
+      [PAGE_K]: { bundlePath: into(kept), id: PAGE_K, trail: [OTHER] },
+      [PAGE_W]: { bundlePath: into(low), id: PAGE_W, trail: [OTHER, SUB] },
+    })
+    expect(await filed(IN_NOTES)).toEqual([])
+  })
+
   it('a record whose origin now sits in another Collection is carried there under its own name, its trail rewritten', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
     await rename(at('Notes', 'Daily', 'Sub'), at('Other', 'Sub'))

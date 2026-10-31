@@ -100,19 +100,22 @@ export async function refileMoved(
   await carried(() => walk(delta))
 }
 
-/** The open pass, once per open before the index seed: an Archive filed under a live Collection re-files each record by the deepest container on its chain the tree holds, which a container moved while Pommora was closed leaves misfiled; one whose id names no Collection the tree holds, none in a root folder it doesn't hold, and none in the Trash is orphaned, and its bundles move into `.trash` with their records whole. A root folder whose sidecar reads unreadable could be any Collection, so while one does, that open takes no Archive for orphaned. */
+export async function refileArchive(root: string, tree: NexusTree, id: string): Promise<void> {
+  for (const { bundlePath, record } of await listBundles(root, { kind: 'archive', id })) {
+    const origin = originOf(record)
+    const now = origin && currentOrigin(tree, origin)
+    if (origin && now)
+      await refile(root, bundlePath, origin.trail, now.trail, id, collectionOf(now))
+  }
+}
+
+/** The open pass, once per open before the index seed: an Archive whose Collection still answers for it, live, outside the tree, or in the Trash, re-files its records, which a container moved while Pommora was closed, or a Set taken out of a trashed Collection by any path, leaves misfiled; one whose id names no Collection the tree holds, none in a root folder it doesn't hold, and none in the Trash is orphaned, and its bundles move into `.trash` with their records whole. A root folder whose sidecar reads unreadable could be any Collection, so while one does, that open takes no Archive for orphaned. */
 export async function settleArchives(root: string, tree: NexusTree): Promise<void> {
   for (const { id, owned } of await ownedArchives(root, tree)) {
-    if (tree.collections.some((c) => c.id === id)) {
-      for (const { bundlePath, record } of await listBundles(root, { kind: 'archive', id })) {
-        const origin = originOf(record)
-        const now = origin && currentOrigin(tree, origin)
-        if (origin && now)
-          await refile(root, bundlePath, origin.trail, now.trail, id, collectionOf(now))
-      }
+    if (owned) {
+      await refileArchive(root, tree, id)
       continue
     }
-    if (owned) continue
     for (const { bundlePath } of await listBundles(root, { kind: 'archive', id }))
       await moveIntoStore(root, join(root, bundlePath), { kind: 'trash' }, {})
     // A bundle that won't parse stays as evidence; the folder goes once nothing is left beneath it.

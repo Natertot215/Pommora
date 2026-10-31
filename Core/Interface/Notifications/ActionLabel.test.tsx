@@ -205,6 +205,23 @@ describe('the bar a shown view declares', () => {
     expect(face()?.textContent).toBe('Restore1 Page')
   })
 
+  it('a covered bar that re-declares stays beneath the bar over it', () => {
+    const over = { count: '2 Pages', restore: vi.fn(), remove: vi.fn() }
+    const stack = (under: ActionBar): void =>
+      act(() =>
+        root.render(
+          <>
+            <Declarer bar={under} />
+            <Declarer bar={over} />
+            <ActionLabel />
+          </>,
+        ),
+      )
+    stack({ count: '1 Page', restore: vi.fn(), remove: vi.fn() })
+    stack({ count: '3 Pages', restore: vi.fn(), remove: vi.fn() })
+    expect(face()?.textContent).toBe('Restore2 Pages')
+  })
+
   it('keeps the hidden face out of reach: inert and aria-hidden, its buttons unfocusable', () => {
     declare()
     act(() => notifyDeleted('Ideas', vi.fn()))

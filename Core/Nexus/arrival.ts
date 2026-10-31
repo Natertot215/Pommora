@@ -8,10 +8,10 @@ import {
   respell,
   type StrippedLink,
 } from './cascade'
-import { basename, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, isAtOrUnder, join, relative, titleFromPath } from '../Paths/posix'
 import { originPathOf, type Stored } from '../Paths/bundleLayout'
 import { respellings, rewriteConnections } from '../Connections/rewrite'
-import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
 import { listPathsUnder } from '../Files/walk'
 import { pathExists } from '../Files/atomicWrite'
 import { joinValues, landValue } from '../Files/rootValues'
@@ -152,7 +152,7 @@ export async function arrive(
 
 export type Departed = { id: string; to: string; at: Stored }
 
-/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, or, from a bundle still standing, each topmost item under its artifact the bundle no longer holds, a page moved alone or the Set it moved with, landed where its pages did. */
+/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, re-spelling a page of it that landed elsewhere too, or, from a bundle still standing, each topmost item under its artifact the bundle no longer holds, a page moved alone or the Set it moved with, landed where most of its pages did, a page moved on from there arriving as its own. */
 export async function recognize(
   root: string,
   tree: NexusTree,
@@ -163,17 +163,31 @@ export async function recognize(
 ): Promise<CascadeReport | undefined> {
   const whole = (await bundleArtifact(join(root, bundle))) === null
   const units = new Map<string, { stored: string; movedTo?: string }>()
+  const landings = new Map<string, Map<string | undefined, Departed[]>>()
   if (whole) units.set(bundle, { stored: join(bundle, departed[0].at.inner[0]) })
   else
-    for (const { to, at } of departed) {
-      const last = at.inner.length - 1
+    for (const d of departed) {
+      const last = d.at.inner.length - 1
       let k = 1
-      while (k < last && (await pathExists(join(root, bundle, ...at.inner.slice(0, k + 1))))) k++
-      const stored = join(bundle, ...at.inner.slice(0, k + 1))
-      const segs = to.split('/')
-      const movedTo = k === last ? to : containerAt(tree, segs.slice(0, k - last).join('/'))?.path
-      if (movedTo && !units.has(stored)) units.set(stored, { stored, movedTo })
+      while (k < last && (await pathExists(join(root, bundle, ...d.at.inner.slice(0, k + 1))))) k++
+      const stored = join(bundle, ...d.at.inner.slice(0, k + 1))
+      const segs = d.to.split('/')
+      const movedTo = k === last ? d.to : containerAt(tree, segs.slice(0, k - last).join('/'))?.path
+      const unit = landings.get(stored) ?? new Map<string | undefined, Departed[]>()
+      landings.set(stored, unit.set(movedTo, [...(unit.get(movedTo) ?? []), d]))
     }
+  for (const [stored, unit] of landings) {
+    const [movedTo] = [...unit.keys()]
+      .filter((to) => to !== undefined)
+      .sort((a, b) => (unit.get(b)?.length ?? 0) - (unit.get(a)?.length ?? 0))
+    if (movedTo) units.set(stored, { stored, movedTo })
+    for (const [to, members] of unit)
+      if (to !== movedTo)
+        for (const { to: page, at } of members) {
+          const own = join(bundle, ...at.inner)
+          units.set(own, { stored: own, movedTo: page })
+        }
+  }
   let cascade: CascadeReport | undefined
   for (const [address, { stored, movedTo }] of units) {
     const at = await openBundle(root, join(root, address), movedTo && join(root, movedTo))
@@ -184,14 +198,18 @@ export async function recognize(
     if (!rel) continue
     const landed = join(root, rel)
     const origin = originPathOf(root, join(root, stored))
+    const strays = whole ? departed.filter((d) => !isAtOrUnder(d.to, rel)) : []
     const arrived = await arrive(root, {
       opened: at.value,
       record,
       title: titleFromPath(landed),
       landed: { entity: record.entity, abs: landed },
-      back: await originPagesOf(root, await contentPages(record.entity, landed), (f) =>
-        join(origin, relative(landed, f)),
-      ),
+      back: [
+        ...(await originPagesOf(root, await contentPages(record.entity, landed), (f) =>
+          join(origin, relative(landed, f)),
+        )),
+        ...strays.map((d) => connPage(d.id, d.at.origin)),
+      ],
       live: before,
       after,
     })
