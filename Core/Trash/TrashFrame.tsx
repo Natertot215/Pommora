@@ -27,7 +27,7 @@ function TrashBody(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const browser = useBundleBrowser({ kind: 'trash' }, { query, shown: true })
   const date = useDateColumn('trash')
-  const { listing, visible } = browser
+  const { visible } = browser
   const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
 
   return (
@@ -63,8 +63,7 @@ function TrashBody(): React.JSX.Element {
         </BundleTable>
       </div>
       <BundleFooting
-        listing={listing}
-        shown={visible.length}
+        browser={browser}
         className={cx('trash-empty', text.body.standard)}
         failed="The trash couldn't be read."
         empty="Trash is empty."

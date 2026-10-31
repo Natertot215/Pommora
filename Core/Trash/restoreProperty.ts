@@ -4,7 +4,7 @@ import { ok, type Result, fault } from '../Contract/result'
 import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 import { exactTitle } from '../Paths/caseFold'
 import { type PropertyRecord, recordedPartly } from '../Bundles/record'
-import { linkWorld, nexusPages, shownTitle } from '../Nexus/heldPages'
+import { everyCollection, linkWorld, nexusPages, shownTitle, storedNodes } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { join } from '../Paths/posix'
 import { assignInner } from '../Properties/assignment'
@@ -44,7 +44,8 @@ async function restoreInner(
   if (!converted.ok) return converted
   const def = created.value
   const tree = await liveTreeOf(root)
-  const byId = new Map(tree.collections.map((c) => [c.id, join(root, c.path)]))
+  const stored = await storedNodes(root, tree)
+  const byId = new Map(everyCollection(tree, stored).map((c) => [c.id, join(root, c.path)]))
   // The stash comes back first, so the re-assign refills from it, and without the pages the record holds a delete-time value for, which supersedes an older leftover.
   for (const [collectionId, block] of Object.entries(record.stashes ?? {})) {
     const folder = byId.get(collectionId)
@@ -59,10 +60,10 @@ async function restoreInner(
   let refilled: CascadeReport | undefined
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
-    const a = folder ? await assignInner(root, folder, record.id) : null
+    const a = folder ? await assignInner(root, folder, collectionId, record.id) : null
     if (a?.ok) refilled = joinCascades(refilled, a.value)
   }
-  const { byId: roots, archived } = await nexusPages(root, tree)
+  const { byId: roots, archived } = await nexusPages(root, tree, stored)
   const world = linkWorld(tree, archived)
   const held = Object.entries(record.values).filter(([id, raw]) => {
     const at = roots.get(id)

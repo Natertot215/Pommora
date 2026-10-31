@@ -29,7 +29,7 @@ export const bundlesHandlers = {
       store.kind === 'archive' && within !== undefined
         ? await archivedWithin(root, within, store.id, tree)
         : await listBundles(root, store)
-    return ok(bundleRows(listed, store, tree, byId))
+    return ok(bundleRows(listed, tree, byId))
   }),
   'bundles:children': withRoot(async (root, _ctx, raw: unknown) => {
     if (!Array.isArray(raw) || !raw.every(isString)) return fault('Addresses are required.')

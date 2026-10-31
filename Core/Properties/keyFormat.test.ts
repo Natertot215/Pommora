@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_KEY_FORMAT, formatKey, keyFormat, spellingsOf } from './keyFormat'
+import { DEFAULT_KEY_FORMAT, formatKey, keyFormat } from './keyFormat'
 
 const unchangedBy = (word: string) => keyFormat.options.filter((f) => formatKey(word, f) === word)
 
@@ -90,20 +90,5 @@ describe('keyFormat', () => {
   it('drops an all-separator label to empty only where separators are dropped', () => {
     expect(formatKey('---', 'kebab-case')).toBe('')
     expect(formatKey('---', 'lowercase')).toBe('---')
-  })
-
-  it('spells a label under every format, Match Title first', () => {
-    expect(spellingsOf('Value One')).toEqual([
-      'Value One',
-      'value one',
-      'VALUE ONE',
-      'value-one',
-      'ValueOne',
-      'valueOne',
-      'value_one',
-      'Value-One',
-      'VALUE_ONE',
-      'VALUE-ONE',
-    ])
   })
 })

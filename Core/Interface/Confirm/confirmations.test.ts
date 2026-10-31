@@ -274,7 +274,7 @@ describe('a delete through the confirmation', () => {
         title: 'A',
         kind: 'page',
         req: { op: 'emptyBundle', bundlePath: '.trash/b1' },
-        address: '.trash/b1',
+        bundlePath: '.trash/b1',
       },
     ])
     expect(currentNotification()).toBeNull()
@@ -381,7 +381,7 @@ describe('an Undo over several bundles', () => {
 
   it('gives up that Undo once one of its bundles is restored from elsewhere', async () => {
     await offered()
-    await runBundled(null, [{ title: 'B', kind: 'page', req: undos[1], address: '.trash/b2' }])
+    await runBundled(null, [{ title: 'B', kind: 'page', req: undos[1], bundlePath: '.trash/b2' }])
     expect(currentNotification()).toBeNull()
     expect(mutate).not.toHaveBeenCalledWith(undos[0], { quiet: true })
   })

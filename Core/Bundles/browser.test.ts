@@ -262,13 +262,23 @@ describe('a browser’s remembered checks', () => {
       bundlePath: '.trash/W.deleted',
       homeResolves: false,
     })
+    listed = [space, set]
+    await relist()
+    await reply([page])
+    await act(async () => browser.toggle(space.bundlePath))
     const answer = (value: string | null) => ({ ok: true, value })
-    menu.mockResolvedValueOnce(answer('g1')).mockResolvedValueOnce(answer(null))
-    await act(async () => browser.restore([space, page]))
-    expect(menu).toHaveBeenCalledTimes(2)
+    menu
+      .mockResolvedValueOnce(answer('restore'))
+      .mockResolvedValueOnce(answer('g1'))
+      .mockResolvedValueOnce(answer(null))
+    await act(async () => browser.openMenu(page))
+    expect(menu).toHaveBeenCalledTimes(3)
     expect(mutated).not.toHaveBeenCalled()
-    menu.mockResolvedValueOnce(answer('g1')).mockResolvedValueOnce(answer('c1'))
-    await act(async () => browser.restore([space, page]))
+    menu
+      .mockResolvedValueOnce(answer('restore'))
+      .mockResolvedValueOnce(answer('g1'))
+      .mockResolvedValueOnce(answer('c1'))
+    await act(async () => browser.openMenu(page))
     expect(mutated.mock.calls.map(([req]) => req)).toEqual([
       { op: 'restore', bundlePath: space.bundlePath, destination: { kind: 'context', id: 'g1' } },
       { op: 'restore', bundlePath: page.bundlePath, destination: { kind: 'container', id: 'c1' } },
@@ -337,6 +347,7 @@ describe('an Archive restore’s Undo', () => {
       return { ok: true, value: undo ? { undo } : {} }
     })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      menu: vi.fn(async () => ({ ok: true, value: 'restore' })),
       mutate: mutated,
       'bundles:list': vi.fn(async () => ({ ok: true, value: [alpha, beta] })),
     })
@@ -353,7 +364,9 @@ describe('an Archive restore’s Undo', () => {
   })
 
   it('an Archive restore’s Undo sends each reply’s own request at the item’s place now, followed by the id its record carries', async () => {
-    await act(async () => browser.restore([alpha, beta]))
+    await act(async () => browser.toggle(alpha.bundlePath))
+    await act(async () => browser.toggle(beta.bundlePath))
+    await act(async () => browser.openMenu(alpha))
     const renamed = makeTree()
     renamed.collections[0].pages[0] = {
       kind: 'page',
@@ -372,7 +385,8 @@ describe('an Archive restore’s Undo', () => {
       },
       betaUndo,
     ])
-    await act(async () => browser.restore([beta]))
+    await act(async () => browser.toggle(alpha.bundlePath))
+    await act(async () => browser.openMenu(beta))
     mutated.mockClear()
     await act(async () => currentNotification()?.action?.run())
     expect(mutated.mock.calls.map(([req]) => req)).toEqual([betaUndo])

@@ -269,10 +269,13 @@ describe('nexusPages — the Trash’s Spaces', () => {
     ])
   })
 
-  it('lists the Trash’s Contexts alone for its by-id read', async () => {
+  it('lists the Trash’s root level and its Contexts alone for its by-id read', async () => {
     const listed = vi.spyOn(bundle, 'listBundles')
     await nexusPages(root, tree(root))
-    expect(listed.mock.calls.map((c) => c[2])).toEqual([CONTEXTS_DIR_REL])
+    expect(listed.mock.calls.map((c) => [c[2], c[3]])).toEqual([
+      ['', { shallow: true }],
+      [CONTEXTS_DIR_REL, undefined],
+    ])
     listed.mockRestore()
   })
 

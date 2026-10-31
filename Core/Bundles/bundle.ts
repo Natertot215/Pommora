@@ -187,7 +187,7 @@ export async function listBundles(
       }
       const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
       const bare = record.entity !== 'property' && !artifact
-      if (recordOnly ? !bare : bare) continue
+      if (bare !== !!recordOnly) continue
       out.push({
         bundlePath: relative(root, abs),
         record,
@@ -315,13 +315,12 @@ async function keptLinksUnder(
   held: ContainerRecord,
   artifact: string,
   item: string,
+  entity: InnerRecord['entity'],
   movedTo?: string,
 ) {
   if (!held.links?.length) return []
   const moved = movedTo
-    ? (await contentPages(isMarkdownFile(item) ? 'page' : 'set', movedTo)).map((f) =>
-        join(item, relative(movedTo, f)),
-      )
+    ? (await contentPages(entity, movedTo)).map((f) => join(item, relative(movedTo, f)))
     : []
   const files = [...(await listMarkdownFiles(artifact)), ...moved]
   const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, f))))
@@ -343,7 +342,7 @@ export async function openBundle(
   const { item, held } = inner
   const trail = await trailWithin(held, inner.artifact, dirname(item))
   const own = await innerRecord(trail, item, movedTo)
-  const links = await keptLinksUnder(root, held, inner.artifact, item, movedTo)
+  const links = await keptLinksUnder(root, held, inner.artifact, item, own.entity, movedTo)
   return ok({
     abs: bundle,
     store,
@@ -353,10 +352,9 @@ export async function openBundle(
   })
 }
 
-/** One level of a container address's inner items under the bundle they sit in, its record and store, and the folder they share. */
+/** One level of a container address's inner items under the bundle they sit in, its record, and the folder they share. */
 export interface InnerListing {
   bundle: string
-  store: BundleStore
   record: ContainerRecord
   folder: string
   items: { address: string; record: InnerRecord }[]
@@ -370,7 +368,7 @@ export async function listInner(
 ): Promise<Result<InnerListing>> {
   const read = await readBundleAt(root, abs)
   if (!read.ok) return read
-  const { bundle, store, record, artifact, inner } = read.value
+  const { bundle, record, artifact, inner } = read.value
   if (!isContainerRecord(record) || !artifact)
     return fail('not-found', 'That holds no inner items.')
   const folder = inner?.item ?? artifact
@@ -406,7 +404,6 @@ export async function listInner(
   ]
   return ok({
     bundle: relative(root, bundle),
-    store,
     record,
     folder: relative(root, folder),
     items: ordered.map(({ address, record }) => ({ address, record })),

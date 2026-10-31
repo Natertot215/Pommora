@@ -1,4 +1,4 @@
-// Store-free, since the slices report through these writers: the notice on screen and the bar the shown view declares live here, beside them.
+// Store-free, since the slices report through these writers: the notice on screen and the stack of declared bars, the newest showing, live here, beside them.
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
@@ -110,29 +110,8 @@ export const persist = (
 const unrestoredLine = (titles: string[]): string =>
   `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
 
-/** One notice for what an action did: its head, an optional segment, and whatever didn't go as asked, which marks it failed and offers the retry. */
-function notifyOutcome(
-  head: string,
-  segment: string | undefined,
-  unmet: (string | false | undefined)[],
-  undo?: () => void | Promise<void>,
-  retry?: () => void,
-): () => void {
-  const lines = unmet.filter(Boolean)
-  const parts = segment ? [head, segment] : [head]
-  if (lines.length) parts[parts.length - 1] += `. ${lines.join(' ')}`
-  const failed = lines.length > 0
-  return notifyUndoable(
-    parts[0],
-    undo,
-    failed ? 'error' : 'normal',
-    failed ? retry : undefined,
-    parts[1],
-  )
-}
-
 export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
-  notifyOutcome(`Deleted “${title}”`, undefined, [], undo)
+  notifyUndoable(`Deleted “${title}”`, undo)
 
 export type Titled = Counted & { title: string }
 
@@ -164,7 +143,7 @@ export function notifyBundled(
   ].filter((line): line is string => typeof line === 'string')
   if (!verb || !done.length)
     return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
-  const head = lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)
+  const head = `${verb} ${lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)}`
   const segment = lone
     ? verb === 'Deleted' && links > 0
       ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
@@ -172,7 +151,14 @@ export function notifyBundled(
     : renamed.length > 1
       ? `${renamed.length} Renamed`
       : renamed[0]
-  return notifyOutcome(`${verb} ${head}`, segment, unmet, undo, retry)
+  const said = unmet.length ? `. ${unmet.join(' ')}` : ''
+  return notifyUndoable(
+    segment ? head : head + said,
+    undo,
+    said ? 'error' : 'normal',
+    said ? retry : undefined,
+    segment && segment + said,
+  )
 }
 
 const undoing = inTurns()

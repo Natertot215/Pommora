@@ -192,7 +192,7 @@ export type CascadeChange =
   | { names: ReadonlyMap<string, string>; label: string }
   | { path: string; heading: string; to: string }
 
-/** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost, as a listing of the whole Trash would be, so it lists only the Trash's Contexts, where every stored Space and board sits. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
+/** A re-spell sweeps the files the index names under the map's keys, or the whole corpus before there is one; a heading rename sweeps what a ready index names under the page's keys and the page itself always, since its own bare fragments are keyed to no page, and a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so a cached list of what they link gates their read. `settled` says the page's editor already rewrote its own body; its frontmatter still takes the patch. */
 export async function renameCascade(
   root: string,
   change: CascadeChange,
@@ -227,7 +227,7 @@ export async function renameCascade(
       ownRel: 'names' in change ? undefined : change.path,
       settled,
     })
-    const stored = await storedNodes(root, tree, 'names' in change ? undefined : 'spaces')
+    const stored = await storedNodes(root, tree)
     const files = [
       ...[...new Set(rels)].map((rel) => join(root, rel)),
       ...spaceFiles(root, tree, stored, (s) => !!s.values && spaceMoved(s.values, '') !== null),

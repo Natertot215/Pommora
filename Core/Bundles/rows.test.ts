@@ -25,7 +25,7 @@ let root: string
 const rows = async (): Promise<BundleRow[]> => {
   const tree = await readNexus(root)
   const { byId } = await nexusPages(root, tree)
-  return bundleRows(await listBundles(root, { kind: 'trash' }), { kind: 'trash' }, tree, byId)
+  return bundleRows(await listBundles(root, { kind: 'trash' }), tree, byId)
 }
 const del = (
   path: string,
@@ -140,7 +140,6 @@ describe('bundleRows — a bundle as the browser reads it', () => {
         artifactName: 'Alpha.md',
         record: { entity: 'page', id: PAGE_A, parent: { kind: 'container', id: 'set-daily' } },
       },
-      { kind: 'archive', id: ARCHIVE_ID },
       await readNexus(root),
       new Map(),
     )
@@ -178,7 +177,6 @@ describe('bundleRows — a bundle as the browser reads it', () => {
           bundlePath: '.trash/s__property-prop_x.deleted',
           record: { entity: 'property', id: 'prop_x', def: { id: 'prop_x' }, values: {} },
         },
-        { kind: 'trash' },
         { collections: [], contexts: [] } as unknown as NexusTree,
         new Map(),
       )?.title,
@@ -210,7 +208,7 @@ describe('bundleRows — a bundle as the browser reads it', () => {
             ...(partial ? { partial: true as const } : {}),
           },
         },
-      ].map((b) => bundleRowOf(b, { kind: 'trash' }, tree, new Map()))
+      ].map((b) => bundleRowOf(b, tree, new Map()))
     for (const row of rowOf(true)) expect(row).toMatchObject({ partial: true })
     for (const row of rowOf(false)) expect(row).not.toHaveProperty('partial')
   })
@@ -250,7 +248,6 @@ describe('bundleRows — a bundle as the browser reads it', () => {
         artifactName: 'Alpha.md',
         record: { entity: 'page', parent: { kind: 'container', id: 'set-daily' } },
       },
-      { kind: 'trash' },
       { collections: [], contexts: [] } as unknown as NexusTree,
       new Map(),
     )
@@ -265,7 +262,6 @@ describe('bundleRows — a bundle as the browser reads it', () => {
         artifactName: 'Alpha.md',
         record: { entity: 'page', id: PAGE_A, parent: { kind: 'container', id: 'set-daily' } },
       },
-      { kind: 'trash' },
       {
         collections: [],
         contexts: [],
@@ -319,7 +315,7 @@ describe('bundleRows — a container’s and a Space’s own icons', () => {
     await rm(join(root, bundlePath, 'Daily', '_pageset.json'))
     const store = { kind: 'archive' as const, id: 'col-notes' }
     const tree = await readNexus(root)
-    const [set] = bundleRows(await listBundles(root, store), store, tree, new Map())
+    const [set] = bundleRows(await listBundles(root, store), tree, new Map())
     expect(set).toMatchObject({ kind: 'set', icon: 'folder-heart' })
   })
 })

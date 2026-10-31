@@ -1,4 +1,4 @@
-import { basename, dirname, relative, relJoin, titleFromPath } from '../Paths/posix'
+import { basename, relative, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
@@ -8,7 +8,7 @@ import { containerTrailById } from '../Nexus/treePatch'
 import { type PropertyType, typeIds } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { InnerListing, ListedBundle } from './bundle'
-import { type BundleStore, layoutOf, storedAtOf } from '../Paths/bundleLayout'
+import { storedAtOf, storeOf } from '../Paths/bundleLayout'
 import { resolveRecord } from './placement'
 import type { ArtifactRecord } from './record'
 
@@ -45,8 +45,8 @@ export interface BundleRow {
 }
 
 /** The only surviving evidence of where something lived once its recorded parent is gone. A store mirrors the nexus faithfully, Contexts included, so a Space's chain arrives wearing the internal folders the live breadcrumb never shows — the store's root and the Contexts prefix both come back off. */
-function frozenCrumbs(store: BundleStore, bundlePath: string): BundleCrumb[] {
-  const segments = relative(layoutOf(store).dir, dirname(bundlePath)).split('/').filter(Boolean)
+function frozenCrumbs(bundlePath: string): BundleCrumb[] {
+  const segments = storeOf(bundlePath)!.origin.split('/').filter(Boolean)
   const contexts = CONTEXTS_DIR_REL.split('/')
   const inContexts = contexts.every((seg, i) => segments[i] === seg)
   return (inContexts ? segments.slice(contexts.length) : segments).map((title) => ({ title }))
@@ -75,7 +75,6 @@ export const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({
 /** A property record has no artifact to name it, so its title is its definition's own; it lived nowhere, so it always has a home to return to. */
 export function bundleRowOf(
   bundle: ListedBundle,
-  store: BundleStore,
   tree: NexusTree,
   byId: NexusPages['byId'],
 ): BundleRow | null {
@@ -97,7 +96,7 @@ export function bundleRowOf(
   return artifactRow(
     record,
     { bundlePath, path: relJoin(bundlePath, artifactName), storedAt: storedAtOf(bundlePath) },
-    bundleCrumbs(record, store, bundlePath, tree),
+    bundleCrumbs(record, bundlePath, tree),
     tree,
     byId,
   )
@@ -106,12 +105,11 @@ export function bundleRowOf(
 /** A bundle's trail: live from its recorded parent, else frozen from the chain it was filed under. */
 function bundleCrumbs(
   record: ArtifactRecord,
-  store: BundleStore,
   bundlePath: string,
   tree: NexusTree,
 ): { crumbs: BundleCrumb[]; historical: boolean } {
   const live = liveCrumbs(record, tree)
-  return { crumbs: live ?? frozenCrumbs(store, bundlePath), historical: !live }
+  return { crumbs: live ?? frozenCrumbs(bundlePath), historical: !live }
 }
 
 /** The one row an artifact reads as, a bundle's own or an inner item's: the place it shows, the date it entered, and whether its home still answers. */
@@ -154,8 +152,8 @@ export function innerRows(
   tree: NexusTree,
   byId: NexusPages['byId'],
 ): BundleRow[] {
-  const { bundle, store, record, folder, items } = listed
-  const { crumbs, historical } = bundleCrumbs(record, store, bundle, tree)
+  const { bundle, record, folder, items } = listed
+  const { crumbs, historical } = bundleCrumbs(record, bundle, tree)
   const [held, ...sets] = relative(bundle, folder).split('/')
   const place = {
     crumbs: [
@@ -173,12 +171,11 @@ export function innerRows(
 
 export function bundleRows(
   bundles: ListedBundle[],
-  store: BundleStore,
   tree: NexusTree,
   byId: NexusPages['byId'],
 ): BundleRow[] {
   return bundles
-    .map((b) => bundleRowOf(b, store, tree, byId))
+    .map((b) => bundleRowOf(b, tree, byId))
     .filter((row) => row !== null)
     .sort((a, b) => (b.storedAt ?? -1) - (a.storedAt ?? -1))
 }

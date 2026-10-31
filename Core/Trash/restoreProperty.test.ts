@@ -430,6 +430,19 @@ describe('restoring a deleted property', () => {
     expect(await valueOn(page.value.path, 'Priority')).toEqual(['hi'])
   })
 
+  it('a property restored while a Collection it was assigned to sits in the Trash takes its assignment back there', async () => {
+    const id = await seedPriority()
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    await refreshTree(root)
+    const deleted = await settledMutate(root, { op: 'delete', path: 'Tasks', kind: 'collection' })
+    const trashed = join(root, bundleOf(deleted), 'Tasks')
+    const property = (await listBundles(root, { kind: 'trash' })).find(
+      (b) => b.record.entity === 'property',
+    )
+    await settledMutate(root, { op: 'restore', bundlePath: property?.bundlePath ?? '' })
+    expect(await assigns(trashed, id)).toBe(true)
+  })
+
   it('a property deleted while a Space sat in the Trash leaves the trashed Space and returns to it with its restore', async () => {
     await mkdir(contextsDir(root), { recursive: true })
     await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))

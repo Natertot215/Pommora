@@ -6,7 +6,7 @@ Pommora carries a Nexus between devices itself. Every device holding a Nexus tal
 
 The whole Nexus travels, `.nexus/` included: its Contexts registry, `settings.json`, the identity file, orderings, page metadata, and the asset directory are as much a part of a Nexus as the Markdown beside them, and a copy missing them is a copy missing its organization.
 
-What travels is one rule, the manifest rule: every entry the watcher would watch, plus `.trash` at the top level. Any `.db` file and its journals stay home. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The owed-work file, `.nexus/.owed.json`, stays home as this device's crash-recovery record. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
+What travels is one rule, the manifest rule: every entry the watcher watches, less its thumbnail folders. Any `.db` file and its journals stay home. The navigation thumbnail folders stay home as a cache that regenerates from the images that do travel, while `crops.json` beside them is authored and travels. The owed-work file, `.nexus/.owed.json`, stays home as this device's crash-recovery record. Every other dot-entry, `.obsidian`, `.git`, and `.claude` among them, stays home as belonging to another application.
 
 Two files are admitted by the manifest and still refused at the push: one whose sealed bytes would pass the hub's fifty-megabyte cap, and one whose path is not in NFC form. A Markdown file carrying no `ID` key waits until adoption stamps it, and `excluded_folders` in `settings.json` is part of the manifest, so an exclusion change reaches every device at once.
 

@@ -4,7 +4,7 @@ import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { patchSidecar } from '../Files/sidecar'
 import { heldTreeOf } from '../Nexus/liveTree'
-import { type StoredNodes, storedNodes } from '../Nexus/heldPages'
+import { everyCollection, type StoredNodes, storedNodes } from '../Nexus/heldPages'
 import { readFileHistoryConfig } from '../Settings/settings'
 import type { NexusTree } from '../Nexus/tree'
 import { stashBlock, type StashBlock } from './properties'
@@ -50,7 +50,7 @@ export async function editStashes(
   ) => Record<string, unknown> | null,
 ): Promise<number> {
   let skipped = 0
-  for (const node of [...tree.collections, ...stored.collections]) {
+  for (const node of everyCollection(tree, stored)) {
     const ids = (node.stashed ?? []).filter((id) => propertyIds.has(id))
     if (!ids.length) continue
     // Each block the edit changes keeps its stamp, and one it empties leaves.
@@ -73,7 +73,7 @@ export async function sweepStashes(root: string): Promise<void> {
   const tree = heldTreeOf(root)
   if (!tree) return
   const stored = await storedNodes(root, tree)
-  const ids = new Set([...tree.collections, ...stored.collections].flatMap((c) => c.stashed ?? []))
+  const ids = new Set(everyCollection(tree, stored).flatMap((c) => c.stashed ?? []))
   if (!ids.size) return
   const cutoff = Date.now() - (await readFileHistoryConfig(root)).keepMs
   await editStashes(root, tree, stored, ids, (_values, _id, removedAt) =>

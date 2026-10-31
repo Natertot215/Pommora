@@ -756,7 +756,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const homes = async (): Promise<Record<string, boolean>> => {
       const tree = await readNexus(root)
       const { byId } = await nexusPages(root, tree)
-      const rows = bundleRows(await listBundles(root, ARCHIVE), ARCHIVE, tree, byId)
+      const rows = bundleRows(await listBundles(root, ARCHIVE), tree, byId)
       return Object.fromEntries(rows.map((r) => [r.bundlePath, r.homeResolves]))
     }
     expect(await homes()).toEqual({ [beta]: false, [gamma]: false })
@@ -933,6 +933,13 @@ describe('a delete from the Archive', () => {
     const r = await mutate({ op: 'delete', path: archived, kind: 'set' })
     expect(message(r)).toBe('That item can’t be changed.')
     expect(await text(archived, 'Beta.md')).toBe(BETA)
+  })
+
+  it('a delete of an Archive row whose item has left answers that the item is no longer there', async () => {
+    const archived = await archive('Notes/Daily/Beta.md')
+    await rm(at(archived, 'Beta.md'))
+    const r = await mutate({ op: 'delete', path: archived, kind: 'page' })
+    expect(message(r)).toBe('That item is no longer there.')
   })
 
   it('its Undo returns it to the Archive under the same name, its Link values back', async () => {

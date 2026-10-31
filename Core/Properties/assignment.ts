@@ -68,10 +68,9 @@ export async function refillStash(
 export async function assignInner(
   root: string,
   collectionFolder: string,
+  collectionId: string,
   propertyId: string,
 ): Promise<Result<CascadeReport | undefined>> {
-  const collectionId = containerAt(await liveTreeOf(root), relative(root, collectionFolder))?.id
-  if (collectionId === undefined) return fail('not-found', 'Unknown Collection.')
   // A re-add on the runner, as a Remove is: the Collection is noted before the assignment, so a refill a crash cuts short or a page it can't write is owed, and Try Again refills it from the stash. The refill stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
   let appended = false
   const ran = await runNoted(root, propertyId, {
@@ -97,6 +96,11 @@ export async function assignInner(
     under: propertyId,
   })
   return ran.ok ? ok(ran.value.cascade.warning ? ran.value.cascade : undefined) : ran
+}
+
+const liveCollectionId = async (root: string, folder: string): Promise<Result<string>> => {
+  const id = containerAt(await liveTreeOf(root), relative(root, folder))?.id
+  return id === undefined ? fail('not-found', 'Unknown Collection.') : ok(id)
 }
 
 /** `toIndex` counts the assigned ids the registry holds, as the pane lists them; an id it no longer holds stays where it sits. */
@@ -126,7 +130,9 @@ export function assignProperty(
   toIndex?: number,
 ): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
-    const a = await assignInner(root, collectionFolder, propertyId)
+    const cid = await liveCollectionId(root, collectionFolder)
+    if (!cid.ok) return cid
+    const a = await assignInner(root, collectionFolder, cid.value, propertyId)
     if (!a.ok) return a
     if (toIndex !== undefined) {
       const moved = await reorderInner(root, collectionFolder, propertyId, toIndex)
@@ -142,10 +148,12 @@ export function addProperty(
   draft: PropertyDraft,
 ): Promise<MutateReply> {
   return serializeSchemaOp(root, async () => {
+    const cid = await liveCollectionId(root, collectionFolder)
+    if (!cid.ok) return cid
     const created = await createProperty(root, draft)
     if (!created.ok) return created
     const { id } = created.value
-    const assigned = await assignInner(root, collectionFolder, id)
+    const assigned = await assignInner(root, collectionFolder, cid.value, id)
     if (!assigned.ok) {
       await removeFromRegistry(root, id)
       return assigned
