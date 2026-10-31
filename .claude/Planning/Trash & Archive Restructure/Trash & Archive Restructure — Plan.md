@@ -20,7 +20,7 @@
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | ±0 (+1 / −1) in production, a rewritten comment and the refusal; tests −430 (+1,887 / −2,317), `Core/Testing` +213 (+234 / −21) for the shared bundle fixture and browser harness |
-| **Total** | **about −415** | **−228 (+2,583 / −2,811) outside `Core/Testing` at `e8db664bc`, comment lines −29 and tests +119; −231 at Phase 6's close, the final verification's folds adding +14 and the discards' disposal with the second round's folds −11 (*§Deviations*)** |
+| **Total** | **about −415** | **−228 (+2,582 / −2,810) outside `Core/Testing` at `e8db664bc`, comment lines −29 and tests +119; −231 at Phase 6's close, the final verification's folds adding +14 and the discards' disposal with the second round's folds −11 (*§Deviations*)** |
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 
