@@ -144,7 +144,7 @@ describe('an unreadable settings.json is never replaced', () => {
   })
 })
 
-describe('the permanent-delete switch — what emptying the trash means', () => {
+describe('the permanent-delete switch — how it reads', () => {
   it('an absent file, an absent key, and a non-boolean all read as off', async () => {
     expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     await write({})

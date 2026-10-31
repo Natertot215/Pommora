@@ -5,7 +5,7 @@ import { type FileEvent, setOwnTap, setWriteTap } from '../Files/writeEcho'
 import { join } from '../Paths/posix'
 import { installMachine } from '../Platform/machine'
 import { putJson, tempRoot } from '../Testing/hostFs'
-import { diskMachine } from '../Testing/machines'
+import { diskMachine, systemTrashMachine } from '../Testing/machines'
 import { discard } from './discard'
 
 let dir: string
@@ -13,13 +13,7 @@ let handed: string[]
 beforeEach(async () => {
   dir = tempRoot('pom-discard-')
   handed = []
-  installMachine({
-    ...diskMachine(),
-    trashToSystem: async (p) => {
-      handed.push(await readFile(p, 'utf8'))
-      await rm(p)
-    },
-  })
+  installMachine(systemTrashMachine(handed))
 })
 afterEach(async () => {
   installMachine(diskMachine())
@@ -37,7 +31,7 @@ describe('discard', () => {
   it('hands the file to the system trash and leaves .trash unmade', async () => {
     const p = await doomed()
     await discard(dir, p)
-    expect(handed).toEqual(['bye'])
+    expect(handed).toEqual([p])
     expect(await pathExists(p)).toBe(false)
     expect(await pathExists(join(dir, '.trash'))).toBe(false)
   })

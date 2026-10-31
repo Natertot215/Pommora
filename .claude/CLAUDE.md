@@ -91,7 +91,7 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Sync          | • The wire contract, the signing string, and the device client
 ├── // Testing       | • The shared test builders, fixtures, and harnesses
 ├── // Tiles         | • The homepage and Space tile surfaces
-├── // Trash         | • Item deletion, emptying, and the Trash frame
+├── // Trash         | • Item deletion, emptying, property restoration, and the Trash frame
 ├── // Views         | • Collections rendered as views
 └── // Web           | • The web guest element, link opening, and guest partitions
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { copyFile, mkdir, open, readFile, rename, rm, utimes, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, failLandings, seedNexus, tempRoot } from '../Testing/hostFs'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { assignProperty } from '../Properties/assignment'
@@ -20,7 +20,7 @@ import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
 import { atomicWriteFile, pathExists } from '../Files/atomicWrite'
-import { readNotes } from './owed'
+import { readNotes, relinkKey } from './owed'
 import { updatePageBody } from './page'
 import * as pageFile from '../Files/pageFile'
 import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
@@ -1312,7 +1312,7 @@ describe('a re-spell on the notes', () => {
     await seedLinked()
     const r = await renamed('B', 'C')
     expect(r.ok && r.value.cascade?.owed).toBe(true)
-    expect((await readNotes(root))[ULID_B]).toMatchObject({ kind: 'relink' })
+    expect((await readNotes(root))[relinkKey(ULID_B)]).toMatchObject({ kind: 'relink' })
     failing.length = 0
     await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).toContain('See [[C]].')
@@ -1338,6 +1338,28 @@ describe('a re-spell on the notes', () => {
     await finishOwed(root)
     expect(await readFile(linker(), 'utf8')).toContain('See [[D]].')
     expect(await readNotes(root)).toEqual({})
+  })
+
+  it('deleting a moved page keeps the re-spell its move owes the others', async () => {
+    await mkdir(abs('Notes', 'Daily'))
+    await writeFile(abs('Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set_daily' }))
+    await writeFile(abs('Notes', 'Daily', 'Alpha.md'), `---\nID: ${ULID_B}\n---\n\nalpha\n`)
+    await writeFile(abs('Notes', 'Daily', 'Beta.md'), `---\nID: ${ULID_D}\n---\n\nbeta\n`)
+    await mkdir(abs('Other'))
+    await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+    await writeFile(linker(), `---\nID: ${ULID_C}\n---\n\nSee [[Notes/Daily/Beta]].\n`)
+    await refreshTree(root)
+    failing.push('Notes/L.md')
+    await settledMutate(root, {
+      op: 'moveSet',
+      path: 'Notes/Daily',
+      newParentPath: 'Other',
+      order: [],
+    })
+    await settledMutate(root, { op: 'delete', path: 'Other/Daily/Alpha.md', kind: 'page' })
+    failing.length = 0
+    await finishOwed(root)
+    expect(await readFile(linker(), 'utf8')).toContain('See [[Other/Daily/Beta|Beta]].')
   })
 
   it('a restore’s re-spell owes what it missed', async () => {
@@ -1400,8 +1422,10 @@ describe('a re-spell on the notes', () => {
     const r = await settledMutate(root, { op: 'restore', bundlePath: bundle })
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.cascade?.owed).toBe(true)
-    const [landed = '', entry] =
-      Object.entries(await readNotes(root)).find(([, e]) => e.kind === 'relink' && e.files) ?? []
+    const notes = await readNotes(root)
+    const entry = Object.values(notes).find((e) => e.kind === 'relink' && e.files)
+    const landed = entry?.kind === 'relink' ? dirname(entry.files?.[0] ?? '') : ''
+    expect(notes[relinkKey(landed)]).toEqual(entry)
     expect(entry).toMatchObject({ kind: 'relink', files: [`${landed}/P.md`, `${landed}/Q.md`] })
     return { landed, p: abs(landed, 'P.md') }
   }

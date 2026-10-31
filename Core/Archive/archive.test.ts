@@ -20,7 +20,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { installMachine, machine } from '../Platform/machine'
-import { diskMachine } from '../Testing/machines'
+import { diskMachine, systemTrashMachine } from '../Testing/machines'
 import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
 import { settleNow } from '../Nexus/settle'
@@ -55,6 +55,7 @@ const ARCHIVE: BundleStore = { kind: 'archive', id: NOTES }
 const BETA = `---\nID: ${PAGE_B}\n---\nbeta\n`
 
 let root: string
+let handed: string[]
 const at = (...segs: string[]): string => join(root, ...segs)
 const text = (...segs: string[]): Promise<string> => readFile(at(...segs), 'utf8')
 const pageOrder = async (): Promise<unknown> =>
@@ -105,7 +106,8 @@ beforeEach(async () => {
   await writeFile(at('Notes', 'Linker.md'), `---\nID: ${PAGE_K}\n---\n[[Notes/Daily/Beta]]`)
   await openSession(root)
   await reseed()
-  installMachine({ ...diskMachine(), trashToSystem: async () => {} })
+  handed = []
+  installMachine(systemTrashMachine(handed))
 })
 
 afterEach(async () => {
@@ -1190,7 +1192,7 @@ describe('a delete from the Archive', () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
     expect((await mutate({ op: 'emptyBundle', bundlePath: trashed })).ok).toBe(true)
+    expect(handed).toEqual([at(trashed, 'Beta.md')])
     expect(await pathExists(at(trashed))).toBe(false)
-    expect(await pathExists(at(archived))).toBe(false)
   })
 })

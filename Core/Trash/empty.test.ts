@@ -31,6 +31,12 @@ import { createProperty } from '../Properties/registryProperty'
 
 let root: string
 const handed = bundleNexusEachTest('pom-empty-', (r) => (root = r))
+const refusingTrash = () => ({
+  ...diskMachine(),
+  trashToSystem: async () => {
+    throw new Error('nope')
+  },
+})
 
 describe('emptyBundle — giving a bundle up for good', () => {
   it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
@@ -372,12 +378,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('a system-trash handoff that rejects leaves the bundle whole and owes nothing', async () => {
-    installMachine({
-      ...diskMachine(),
-      trashToSystem: async () => {
-        throw new Error('nope')
-      },
-    })
+    installMachine(refusingTrash())
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
@@ -455,12 +456,7 @@ describe('emptying a property’s Trash entry', () => {
 
   it('a property’s Trash entry whose disposal fails leaves the note as it stood', async () => {
     const before = await readNotes(root)
-    installMachine({
-      ...diskMachine(),
-      trashToSystem: async () => {
-        throw new Error('nope')
-      },
-    })
+    installMachine(refusingTrash())
     const r = await handleMutate(root, {
       op: 'emptyBundle',
       bundlePath: await trashedBundle(root, 'property'),

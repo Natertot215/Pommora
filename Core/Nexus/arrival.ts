@@ -34,7 +34,7 @@ import { readLiveSetting } from '../Settings/settings'
 import { refillOf, sweepRootsById } from './governedSweep'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from './heldPages'
 import { liveTreeOf } from './liveTree'
-import { readNotes, type RelinkEntry, restoreNote } from './owed'
+import { readNotes, type RelinkEntry, relinkKey, restoreNote } from './owed'
 import { pageIndexOf, pathOfId } from './record'
 import type { NexusTree, SpaceNode } from './tree'
 import { containerAt } from './treePatch'
@@ -54,7 +54,7 @@ async function artifactFiles(
   return [...(await contentPages(entity, abs)), ...sidecars.map((rel) => join(root, rel))]
 }
 
-/** A returning artifact's own links and keys, repaired where it landed under the relink entry keyed by its path: each key in `own` re-spells, in the landed files alone, to how it names its returning page now, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
+/** A returning artifact's own links and keys, repaired where it landed under its path's relink entry: each key in `own` re-spells, in the landed files alone, to how it names its returning page now, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
 async function repairLanded(
   root: string,
   landed: Landed,
@@ -63,7 +63,7 @@ async function repairLanded(
 ): Promise<CascadeReport | undefined> {
   if (!own.size && !landed.rekey) return undefined
   const files = (await artifactFiles(root, landed.entity, landed.abs)).map((f) => relative(root, f))
-  return noteRelink(root, relative(root, landed.abs), () => ({
+  return noteRelink(root, relinkKey(relative(root, landed.abs)), () => ({
     kind: 'relink',
     names: Object.fromEntries(own),
     label,

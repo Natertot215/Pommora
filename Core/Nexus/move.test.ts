@@ -33,9 +33,10 @@ afterEach(async () => {
 })
 
 describe('moveSetOp', () => {
-  it.skipIf(noModeBits)('a Set move that misses a view settings file owes it', async () => {
+  const seedKeep = async () => {
     const notes = await entity(root, 'collection', 'Notes')
     await entity(root, 'collection', 'Other')
+    await entity(root, 'collection', 'Third')
     const deep = await entity(notes.path, 'set', 'Deep')
     const keep = await entity(notes.path, 'set', 'Keep')
     const file = sidecarPath(keep.path, 'set')
@@ -45,14 +46,16 @@ describe('moveSetOp', () => {
       views: [{ id: 'v', name: 'V', type: 'table', filter: { match: 'all', rules } }],
     })
     await refreshTree(root)
+    const moved = (path: string, newParentPath: string) =>
+      handleMutate(root, { op: 'moveSet', path, newParentPath, order: [deep.id] })
+    return { deep, file, moved }
+  }
+
+  it.skipIf(noModeBits)('a Set move that misses a view settings file owes it', async () => {
+    const { deep, file, moved } = await seedKeep()
     await chmod(file, 0o000)
     try {
-      const r = await handleMutate(root, {
-        op: 'moveSet',
-        path: 'Notes/Deep',
-        newParentPath: 'Other',
-        order: [deep.id],
-      })
+      const r = await moved('Notes/Deep', 'Other')
       expect(r.ok && r.value.cascade?.owed).toBe(true)
       expect(await readNotes(root)).toMatchObject({
         [deep.id]: { kind: 'move', at: 'Notes/Deep', within: 'Notes' },
@@ -64,4 +67,25 @@ describe('moveSetOp', () => {
     expect(JSON.stringify(await readJsonAt(file))).not.toContain(deep.id)
     expect(await readNotes(root)).toEqual({})
   })
+
+  it.skipIf(noModeBits)(
+    'a Set’s second move is refused while its first still owes a view settings file',
+    async () => {
+      const { deep, file, moved } = await seedKeep()
+      await chmod(file, 0o000)
+      try {
+        await moved('Notes/Deep', 'Other')
+        const r = await moved('Other/Deep', 'Third')
+        expect(r.ok ? '' : r.error.code).toBe('owed')
+        expect(await readNotes(root)).toMatchObject({
+          [deep.id]: { kind: 'move', within: 'Notes' },
+        })
+      } finally {
+        await chmod(file, 0o644)
+      }
+      await finishOwed(root)
+      expect(JSON.stringify(await readJsonAt(file))).not.toContain(deep.id)
+      expect(await readNotes(root)).toEqual({})
+    },
+  )
 })
