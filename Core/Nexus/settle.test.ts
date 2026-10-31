@@ -1610,6 +1610,56 @@ describe('an item moved out of a store by hand', () => {
     expect((await keys()).See).toBe('[[Notes/Weekly/Beta|Beta]]')
   })
 
+  it('a Set dragged out of a trashed Collection’s bundle carries its archived records in one arrival', async () => {
+    const REF = '01EX5ZZKBKPCTAV9WEVGEMMVRE'
+    const ref = abs('Other', 'Ref.md')
+    await mkdir(abs('Other'))
+    await writeFile(
+      abs('Other', '_pagecollection.json'),
+      JSON.stringify({ id: 'c2', properties: ['prop_see'] }),
+    )
+    await writeFile(ref, `---\nID: ${REF}\nSee: "[[Notes/Daily/Beta]]"\n---\n\nref\n`)
+    recordHanded(await refreshTree(root))
+    await indexSeed.seedContentIndex(root)
+    await removed('Notes/Daily/Alpha.md', 'page', 'archive')
+    const bundle = bundleOf(
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }),
+    )
+    expect(splitFrontmatter(await readFile(ref, 'utf8')).See).toBeUndefined()
+    await movedOut(`${bundle}/Notes/Daily`, 'Other', 'Daily')
+    await applyEvents(root, [
+      ev('addDir', 'Other', 'Daily'),
+      ev('add', 'Other', 'Daily', '_pageset.json'),
+      ev('unlink', bundle, 'Notes', 'Daily', 'Beta.md'),
+      ev('add', 'Other', 'Daily', 'Beta.md'),
+    ])
+    await settleNow(pusher, root)
+    expect((await bundles.listBundles(root, { kind: 'archive', id: 'c2' })).length).toBe(1)
+    expect(await bundles.listBundles(root, { kind: 'archive', id: 'c1' })).toEqual([])
+    expect(splitFrontmatter(await readFile(ref, 'utf8')).See).toBe('[[Other/Daily/Beta|Beta]]')
+    expect((await trashed()).map((b) => b.bundlePath)).toEqual([bundle])
+  })
+
+  it('a page dragged out of a trashed Set’s bundle alone and the Set after, in one settle, re-spells to where the Set landed', async () => {
+    const bundle = await removed('Notes/Daily', 'set', 'delete')
+    await movedOut(`${bundle}/Daily/Alpha.md`, 'Notes', 'Alpha.md')
+    await movedOut(`${bundle}/Daily`, 'Notes', 'Weekly')
+    await applyEvents(root, [
+      ev('unlink', bundle, 'Daily', 'Alpha.md'),
+      ev('add', 'Notes', 'Alpha.md'),
+      ev('addDir', 'Notes', 'Weekly'),
+      ev('add', 'Notes', 'Weekly', '_pageset.json'),
+      ev('unlink', bundle, 'Daily', 'Beta.md'),
+      ev('add', 'Notes', 'Weekly', 'Beta.md'),
+    ])
+    await settleNow(pusher, root)
+    expect(splitEnvelope(await readFile(linker(), 'utf8')).body).toBe(
+      '[[Notes/Weekly/Beta|Beta]]\n',
+    )
+    expect((await keys()).Related).toBe('[[Alpha]]')
+    expect(await pathExists(abs(bundle))).toBe(false)
+  })
+
   it('a copy out of the Trash stays a page of its own, its bundle whole', async () => {
     const bundle = await removed('Notes/Daily/Alpha.md', 'page', 'delete')
     await copyFile(abs(bundle, 'Alpha.md'), abs('Notes', 'Alpha.md'))

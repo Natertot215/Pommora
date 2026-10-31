@@ -132,6 +132,8 @@ export const notifyDeleted = (title: string, undo?: () => void | Promise<void>):
 
 export type Titled = Counted & { title: string }
 
+export type BundleVerb = 'Restored' | 'Deleted' | 'Archived' | null
+
 export interface Bundled {
   done: Titled[]
   refused: Titled[]
@@ -141,9 +143,9 @@ export interface Bundled {
   links: number
 }
 
-/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, posts only its lines. */
+/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, or a batch whose every row was refused, posts only its lines. */
 export function notifyBundled(
-  verb: 'Restored' | 'Deleted' | 'Archived' | null,
+  verb: BundleVerb,
   { done, refused, unrestored, warnings, renamed, links }: Bundled,
   undo?: () => void | Promise<void>,
   retry?: () => void,
@@ -156,7 +158,7 @@ export function notifyBundled(
     unrestored.length > 0 && unrestoredLine(unrestored),
     ...warnings,
   ].filter((line): line is string => typeof line === 'string')
-  if (!verb || (lone && !done.length))
+  if (!verb || !done.length)
     return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
   const head = lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)
   const segment = lone

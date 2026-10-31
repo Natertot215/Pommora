@@ -83,6 +83,15 @@ describe('a delete notification', () => {
     })
   })
 
+  it('posts only its lines when every row of a batch was refused', () => {
+    const page = { title: 'X', kind: 'page' } as const
+    notifyBundled('Restored', { ...lone('X', 0), done: [], refused: [page, page] })
+    expect(currentNotification()).toMatchObject({
+      message: '2 Pages couldn’t be restored.',
+      tone: 'error',
+    })
+  })
+
   it('keeps Undo on the label when a count arrives without a warning', () => {
     notifyBundled('Deleted', lone('X', 1), vi.fn(), vi.fn())
     expect(currentNotification()?.action?.label).toBe('Undo')

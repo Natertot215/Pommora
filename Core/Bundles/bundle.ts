@@ -288,17 +288,18 @@ async function trailWithin(
   return ids.every((id): id is string => id !== undefined) ? ids : null
 }
 
-/** What an inner item carries as its own record: its identity, the trail above it as its parent and trail, unaddressable without one; no place, since the siblings it left are gone with it. */
+/** What an inner item carries as its own record: its identity, read where it was `movedTo` by hand when it was, the trail above it as its parent and trail, unaddressable without one; no place, since the siblings it left are gone with it. */
 async function innerRecord(
   trail: readonly string[] | null,
   item: string,
-  left?: string,
+  movedTo?: string,
 ): Promise<InnerRecord> {
   const entity = isMarkdownFile(item) ? 'page' : 'set'
+  const at = movedTo ?? item
   const { id, icon } =
     entity === 'page'
-      ? { id: left ?? (await stampedIdOf(item)) ?? undefined, icon: undefined }
-      : await sidecarIdentity(item, 'set')
+      ? { id: (await stampedIdOf(at)) ?? undefined, icon: undefined }
+      : await sidecarIdentity(at, 'set')
   return {
     entity,
     ...(id ? { id } : {}),
@@ -308,16 +309,21 @@ async function innerRecord(
   }
 }
 
-/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, `item` among them once it was `movedOut` by hand, lies at or under `item`; a title two of its pages share stays with the bundle. */
+/** The Link values the bundle keeps whose page, resolved over the bundle's own pages where they lived, `item`'s among them at their stored spelling once it was `movedTo` by hand, lies at or under `item`; a title two of its pages share stays with the bundle. */
 async function keptLinksUnder(
   root: string,
   held: ContainerRecord,
   artifact: string,
   item: string,
-  movedOut: boolean,
+  movedTo?: string,
 ) {
   if (!held.links?.length) return []
-  const files = [...(await listMarkdownFiles(artifact)), ...(movedOut ? [item] : [])]
+  const moved = movedTo
+    ? (await contentPages(isMarkdownFile(item) ? 'page' : 'set', movedTo)).map((f) =>
+        join(item, relative(movedTo, f)),
+      )
+    : []
+  const files = [...(await listMarkdownFiles(artifact)), ...moved]
   const index = buildPageIndex(files.map((f) => connPage(f, originPathOf(root, f))))
   return held.links.filter((link) => {
     const page = linkedPage(link.value, index)
@@ -328,17 +334,16 @@ async function keptLinksUnder(
 export async function openBundle(
   root: string,
   abs: string,
-  left?: string,
+  movedTo?: string,
 ): Promise<Result<OpenBundle>> {
-  const movedOut = left !== undefined
-  const read = await readBundleAt(root, abs, movedOut)
+  const read = await readBundleAt(root, abs, movedTo !== undefined)
   if (!read.ok) return read
   const { bundle, store, record, artifact, inner } = read.value
   if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
   const { item, held } = inner
   const trail = await trailWithin(held, inner.artifact, dirname(item))
-  const own = await innerRecord(trail, item, left)
-  const links = await keptLinksUnder(root, held, inner.artifact, item, movedOut)
+  const own = await innerRecord(trail, item, movedTo)
+  const links = await keptLinksUnder(root, held, inner.artifact, item, movedTo)
   return ok({
     abs: bundle,
     store,

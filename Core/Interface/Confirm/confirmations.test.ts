@@ -9,18 +9,14 @@ import {
   askTrashing,
   confirmArchive,
   confirmDelete,
-  offerUndo,
-  spendUndo,
+  runBundled,
 } from './confirmations'
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
 import { makeTree } from '../../Testing/testTree'
-import {
-  clearNotification,
-  currentNotification,
-  notifyUndoable,
-} from '../Notifications/notifications'
+import { clearNotification, currentNotification } from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
 import type { CountedChange } from '../../Properties/properties'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
@@ -272,7 +268,15 @@ describe('a delete through the confirmation', () => {
   it('gives up its Undo and the chord once the Trash spends its bundle', async () => {
     resetUndo()
     await del('page')
-    spendUndo('.trash/b1')
+    mutate.mockResolvedValueOnce({})
+    await runBundled(null, [
+      {
+        title: 'A',
+        kind: 'page',
+        req: { op: 'emptyBundle', bundlePath: '.trash/b1' },
+        address: '.trash/b1',
+      },
+    ])
     expect(currentNotification()).toBeNull()
     expect(undoValue(null)).toBe(false)
     expect(mutate).not.toHaveBeenCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
@@ -348,38 +352,46 @@ describe('an Undo over several bundles', () => {
     expect(details).toEqual(['They will be moved to the nexus’s .trash folder (recoverable).'])
   })
 
-  const undos: Parameters<typeof offerUndo>[0] = [
-    {
-      title: 'A',
-      kind: 'page',
-      req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } },
-    },
-    { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } },
+  const undos: MutateRequest[] = [
+    { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } },
+    { op: 'restore', bundlePath: '.trash/b2' },
   ]
+  const offered = async (): Promise<void> => {
+    mutate.mockResolvedValueOnce({ undo: undos[0] }).mockResolvedValueOnce({ undo: undos[1] })
+    await runBundled(
+      'Deleted',
+      ['A', 'B'].map((title) => ({
+        title,
+        kind: 'page' as const,
+        req: { op: 'delete' as const, path: title, kind: 'page' as const },
+      })),
+    )
+    mutate.mockClear()
+  }
 
   it('offers one Undo running every request it was handed', async () => {
-    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
+    await offered()
     await currentNotification()?.action?.run()
     await vi.waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
     expect(mutate.mock.calls).toEqual([
-      [undos[0].req, { quiet: true }],
-      [undos[1].req, { quiet: true }],
+      [undos[0], { quiet: true }],
+      [undos[1], { quiet: true }],
     ])
   })
 
   it('gives up that Undo once one of its bundles is restored from elsewhere', async () => {
-    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
-    spendUndo('.trash/b2')
+    await offered()
+    await runBundled(null, [{ title: 'B', kind: 'page', req: undos[1], address: '.trash/b2' }])
     expect(currentNotification()).toBeNull()
-    expect(mutate).not.toHaveBeenCalled()
+    expect(mutate).not.toHaveBeenCalledWith(undos[0], { quiet: true })
   })
 
   it('an Undo’s own run posts every line its replies carry in one notice', async () => {
     const warning = 'Couldn’t update 1 Item.'
+    await offered()
     mutate
       .mockResolvedValueOnce({ unrestored: ['Beta'] })
       .mockResolvedValueOnce({ cascade: { pages: [], hosts: [], warning } })
-    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
     await currentNotification()?.action?.run()
     await vi.waitFor(() =>
       expect(currentNotification()?.message).toBe(`Beta didn’t get its value back. ${warning}`),
@@ -387,10 +399,10 @@ describe('an Undo over several bundles', () => {
   })
 
   it('an Undo over several bundles counts a refusal among its lines', async () => {
+    await offered()
     mutate
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ cascade: { pages: [], hosts: [], warning: 'W' } })
-    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
     await currentNotification()?.action?.run()
     await vi.waitFor(() =>
       expect(currentNotification()?.message).toBe('1 Page couldn’t be undone. W'),

@@ -9,6 +9,7 @@ import {
 import {
   changesSettled,
   changesStores,
+  isBundleOp,
   type MutateOutcome,
   type MutateRequest,
 } from '../Nexus/mutateRequest'
@@ -265,13 +266,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       if (!quiet) {
         const { cascade, missed } = res.value
-        const bundleOp =
-          req.op === 'delete' ||
-          req.op === 'deleteProperty' ||
-          req.op === 'archive' ||
-          req.op === 'restore' ||
-          req.op === 'emptyBundle'
-        if (cascade && !bundleOp)
+        if (cascade && !isBundleOp(req))
           warnCascade(
             cascade,
             cascade.owed

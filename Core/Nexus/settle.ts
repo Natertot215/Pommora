@@ -1,6 +1,6 @@
 // The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the outside moves and arrivals the index saw re-spelled, the options the owed files hold registered, and one push of what moved.
 
-import { join, relDirname, relative, stripMarkdownExt, titleFromPath } from '../Paths/posix'
+import { join, relDirname, relative, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
@@ -32,7 +32,7 @@ import type { NexusTree, SpaceNode, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex, livePathOf } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
-import { type CascadeReport, linksNotUpdated, renameCascade, respell } from './cascade'
+import { type CascadeReport, renameCascade, respell } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
@@ -274,7 +274,7 @@ export async function settledIndex(root: string): Promise<PageIndex | null> {
   return tree && pageIndexOf(tree)
 }
 
-/** A move's re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. A restore's arrival re-spells through `returningCascade`. */
+/** A move's re-spell, run inside the settle's turn: the map `respellings` builds from `before` to `after`, swept under `label`; undefined when nothing needs re-spelling. A restore's arrival re-spells through `arrive`. */
 export async function relink(
   root: string,
   before: PageIndex,
@@ -292,28 +292,6 @@ export async function relink(
     }),
   )
   return respell(root, [...moved, ...arriving], names, label, (f) => paths.get(f) ?? f)
-}
-
-/** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there, and to a page's whole path where a live page holds the shorter name. */
-export async function departingCascade(
-  root: string,
-  tree: NexusTree,
-  back: readonly ConnPage[],
-  title: string,
-): Promise<CascadeReport | undefined> {
-  const after = await settledIndex(root)
-  if (!after) return linksNotUpdated(title)
-  const ids = back.map((p) => p.id)
-  const departing = buildPageIndex(back)
-  const names = respellings(pageIndexOf(tree), departing, ids, [])
-  for (const [key, name] of names) {
-    if (after.resolve(name).status === 'phantom') continue
-    const path = departing.resolve(name).page?.path
-    const whole = path && stripMarkdownExt(path)
-    if (whole && after.resolve(whole).status === 'phantom') names.set(key, whole)
-    else names.delete(key)
-  }
-  return names.size ? respell(root, ids, names, title) : undefined
 }
 
 // What an outside payment leaves: a warning logged, since no one is there to read a notice, and the files it wrote owed to the push.
@@ -339,7 +317,7 @@ async function payOutsideMoves(root: string): Promise<void> {
     if (to === from.path) continue
     const at = storeOf(from.path)
     if (at?.bundle) {
-      back.set(at.bundle, [...(back.get(at.bundle) ?? []), { id, from: from.path, to, at }])
+      back.set(at.bundle, [...(back.get(at.bundle) ?? []), { id, to, at }])
       continue
     }
     left.set(id, from)
@@ -367,7 +345,7 @@ async function payOutsideMoves(root: string): Promise<void> {
       'outside move',
     )
   for (const [bundle, pages] of back)
-    paid(root, await recognize(root, before, after, bundle, pages), 'outside restore')
+    paid(root, await recognize(root, tree, before, after, bundle, pages), 'outside restore')
 }
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply. A Space the settle found moved back from the Trash by hand tags its members again under the Contexts lock, taken outside the settle's turn, so it finishes in a turn of its own once the settle returns, and settles again.

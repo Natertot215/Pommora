@@ -28,6 +28,9 @@ import { stabilize } from './treeStabilize'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY, isUlidShaped } from './identityMark'
 import { registerHeldOptions } from '../Properties/optionOps'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
+import { readNotes } from './owed'
+import { recordHanded } from './settle'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
@@ -475,6 +478,53 @@ describe('openNexusSequence', () => {
     } finally {
       await rm(second, { recursive: true, force: true })
     }
+  })
+
+  describe('a Space moved back while the app was closed', () => {
+    const WORK = 'sp-work'
+    const work = (): string => join(root, spaceDirRel('Areas', 'Work'))
+    const notes = (): string => join(root, 'Library', 'Notes.md')
+    beforeEach(() => writeValue('sync', null))
+    const deletedWork = async (): Promise<string> => {
+      await mkdir(work(), { recursive: true })
+      await writeFile(join(work(), '_space.json'), JSON.stringify({ id: WORK }))
+      await writeFile(
+        contextsRegistryFile(root),
+        JSON.stringify({ contexts: [{ id: 'ctx_areas', title: 'Areas' }] }),
+      )
+      await writeFile(notes(), `---\nID: ${NOTES}\n<Areas>:\n  - Work\n---\nbody`)
+      await openNexusSequence(ctx, root, false)
+      const bundle = bundleOf(
+        await settledMutate(root, {
+          op: 'delete',
+          path: spaceDirRel('Areas', 'Work'),
+          kind: 'space',
+        }),
+      )
+      expect(splitFrontmatter(await readFile(notes(), 'utf8'))['<Areas>']).toBeUndefined()
+      dropLiveTree()
+      closeSession()
+      await rename(join(root, bundle, 'Work'), work())
+      recordHanded(await readNexus(root))
+      return bundle
+    }
+
+    it('finishes as its restore at the next open', async () => {
+      const bundle = await deletedWork()
+      expect(await readNotes(root)).toEqual({})
+      await openNexusSequence(ctx, root, false)
+      expect(splitFrontmatter(await readFile(notes(), 'utf8'))['<Areas>']).toEqual(['Work'])
+      expect(await pathExists(join(root, bundle))).toBe(false)
+    })
+
+    it('whose delete still owes a strip is left to the finishing pass', async () => {
+      const bundle = await deletedWork()
+      const owed = { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle }
+      await putJson(join(root, OWED_REL), { [WORK]: owed })
+      await openNexusSequence(ctx, root, false)
+      expect(splitFrontmatter(await readFile(notes(), 'utf8'))['<Areas>']).toBeUndefined()
+      expect(await pathExists(join(root, bundle))).toBe(true)
+    })
   })
 
   it('the open runs the one finishing pass', async () => {

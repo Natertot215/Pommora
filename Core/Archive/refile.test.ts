@@ -441,6 +441,23 @@ describe('the restore — a Set landing in another Collection carries what was a
     expect(await filed(IN_OTHER)).toEqual([])
   })
 
+  it('a Set restored out of a trashed Collection carries its archived records', async () => {
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes', kind: 'collection' }))
+    const inner = `${trashed}/Notes/Daily/Sub`
+    expect((await mutate({ op: 'restore', bundlePath: inner, destination: INTO_OTHER })).ok).toBe(
+      true,
+    )
+    expect(await filed(IN_OTHER)).toEqual([
+      {
+        bundlePath: `.nexus/archive/${OTHER}/Notes/Daily/Sub/${leafOf(bundlePath)}`,
+        id: PAGE_N,
+        trail: [OTHER],
+      },
+    ])
+    expect(await filed(IN_NOTES)).toEqual([])
+  })
+
   it.each([
     ['the Trash', 'delete'],
     ['the Archive', 'archive'],

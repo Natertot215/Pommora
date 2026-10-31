@@ -9,12 +9,8 @@ import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
-import { offerUndo } from '../Interface/Confirm/confirmations'
-import {
-  clearNotification,
-  currentNotification,
-  notifyDeleted,
-} from '../Interface/Notifications/notifications'
+import { runBundled } from '../Interface/Confirm/confirmations'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
@@ -134,6 +130,12 @@ describe('the Trash pane', () => {
     children = { [COLLECTION]: [innerSet()], [SET]: [innerPage()] }
     await act(async () => storesChanged.emit())
   }
+  const armed = (bundlePath: string): Promise<void> =>
+    act(async () => {
+      mutated.mockResolvedValueOnce({ ok: true, value: { undo: { op: 'restore', bundlePath } } })
+      const req = { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' } as const
+      await runBundled('Deleted', [{ title: 'Alpha', kind: 'page', req }])
+    })
   const nexus = (id: string): void => {
     const tree = makeTree()
     useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
@@ -267,9 +269,7 @@ describe('the Trash pane', () => {
     const older = vi.fn(() => true)
     pushUndo(older)
     const { bundlePath } = listed[0]
-    offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], (undo) =>
-      notifyDeleted('Alpha', undo),
-    )
+    await armed(bundlePath)
     useSession.setState({ askConfirm: async () => true })
     mutated.mockClear()
     picked = action
@@ -285,9 +285,7 @@ describe('the Trash pane', () => {
   it('a restore here that is refused leaves the bundle’s Undo on the chord', async () => {
     resetUndo()
     const { bundlePath } = listed[0]
-    offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], (undo) =>
-      notifyDeleted('Alpha', undo),
-    )
+    await armed(bundlePath)
     mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     picked = 'restore'
     const item = host?.querySelector('.data-row') as HTMLElement
@@ -316,10 +314,8 @@ describe('the Trash pane', () => {
     resetUndo()
     const older = vi.fn(() => true)
     pushUndo(older)
-    offerUndo(
-      [{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath: listed[0].bundlePath } }],
-      (undo) => notifyDeleted('Alpha', undo),
-    )
+    await armed(listed[0].bundlePath)
+    mutated.mockClear()
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
     picked = 'restore'

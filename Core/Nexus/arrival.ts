@@ -9,10 +9,11 @@ import {
   type StrippedLink,
 } from './cascade'
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
-import type { Stored } from '../Paths/bundleLayout'
+import { originPathOf, type Stored } from '../Paths/bundleLayout'
 import { respellings, rewriteConnections } from '../Connections/rewrite'
-import { buildPageIndex, type ConnPage, connPage, type PageIndex } from '../Connections/pageIndex'
+import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { listPathsUnder } from '../Files/walk'
+import { pathExists } from '../Files/atomicWrite'
 import { joinValues, landValue } from '../Files/rootValues'
 import type { Json } from '../Files/stableJson'
 import {
@@ -43,7 +44,10 @@ import { liveTreeOf } from './liveTree'
 import { restoreNote } from './owed'
 import { pageIndexOf } from './record'
 import type { NexusTree, SpaceNode } from './tree'
+import { containerAt, findContainerById } from './treePatch'
 import { CONTEXTS_DIR_REL, hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
+
+type Landed = { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] }
 
 /** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
 async function artifactFiles(
@@ -60,7 +64,7 @@ async function artifactFiles(
 /** A returning artifact's own links and keys, repaired where it landed under the relink entry keyed by its path: each key in `own` re-spells, in the landed files alone, to how it names its returning page now, a Context restored under a new title re-keys its Spaces' sidecars by `landed.rekey`, and a file either misses is owed with Try Again. A repair whose note can't be written still runs, owing nothing. */
 async function repairLanded(
   root: string,
-  landed: { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] },
+  landed: Landed,
   label: string,
   own: ReadonlyMap<string, string>,
 ): Promise<CascadeReport | undefined> {
@@ -89,13 +93,13 @@ function returningNames(
 }
 
 /** An arrival under `title` into `live`, the world before it: `after`, the index once it landed, re-spells the returning files' own links at `landed.abs`, then the live world's collisions, so live linkers that found a namesake meanwhile stay with it while the returning files keep their own targets; what either misses is owed with Try Again. Answers the notice that links weren't updated when the index couldn't settle, `after` null. */
-export async function returningCascade(
+async function returningCascade(
   root: string,
   live: PageIndex,
   after: PageIndex | null,
   back: readonly ConnPage[],
   title: string,
-  landed: { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] },
+  landed: Landed,
 ): Promise<{ own: Map<string, string>; cascade?: CascadeReport }> {
   if (!after) return { own: new Map(), cascade: linksNotUpdated(title) }
   const { names, own } = returningNames(live, after, back)
@@ -115,14 +119,14 @@ export async function returningCascade(
   }
 }
 
-/** The tail every item back from a store runs, a restore's and a hand move's alike, `opened` the bundle or the share of one it left and `record` its record as placed: the bundle spent first, since everything after reads the record from memory; the arrival re-spelled from `live`, the world before it, to `after`, the index once it landed; a Context's membership or a Space's members tagged again, or the Link values its delete stripped put back under Restore Links On Deletion in one sweep across every Link definition, over the world read once it landed; and, unless it `filed` back into a store, a Set's archived records carried out of the Archive of the Collection its stored chain stands in now. Answers the titles of what didn't take its tag or value back, and the cascade. */
+/** The tail every item back from a store runs, a restore's and a hand move's alike, `opened` the bundle or the share of one it left and `record` its record as placed: the bundle spent first, since everything after reads the record from memory; the arrival re-spelled from `live`, the world before it, to `after`, the index once it landed; a Context's membership or a Space's members tagged again, or the Link values its delete stripped put back under Restore Links On Deletion in one sweep across every Link definition, over the world read once it landed; and, unless it `filed` back into a store, a Set's archived records carried out of the Archive of the Collection its stored chain stands in now, or the one it stored while the tree holds none of it. Answers the titles of what didn't take its tag or value back, and the cascade. */
 export async function arrive(
   root: string,
   a: {
     opened: OpenBundle
     record: ArtifactRecord
     title: string
-    landed: { entity: RecordFile['entity']; abs: string; rekey?: [from: string, to: string] }
+    landed: Landed
     filed?: boolean
     back: readonly ConnPage[]
     live: PageIndex
@@ -141,46 +145,53 @@ export async function arrive(
         ? await refill(root, tree, byId, linkWorld(tree, archived), record.links, own)
         : []
   const left = a.filed ? null : originOf(a.opened.record)
-  const now = left && currentOrigin(tree, left)
-  if (now) await refileLanded(root, record, collectionOf(now))
+  if (left) await refileLanded(root, record, collectionOf(currentOrigin(tree, left) ?? left))
   const unrestored = missed.flatMap((id) => shownTitle(tree, byId, id) ?? [])
   return { unrestored, ...(cascade ? { cascade } : {}) }
 }
 
-export type Departed = { id: string; from: string; to: string; at: Stored }
+export type Departed = { id: string; to: string; at: Stored }
 
+/** Finishes the items that left `bundle` by hand as its restore, one arrival per item that moved: the whole artifact, landed where the tree holds its id, or, from a bundle still standing, each topmost item under its artifact the bundle no longer holds, a page moved alone or the Set it moved with, landed where its pages did. */
 export async function recognize(
   root: string,
+  tree: NexusTree,
   before: PageIndex,
   after: PageIndex,
   bundle: string,
   departed: readonly Departed[],
 ): Promise<CascadeReport | undefined> {
-  const abs = join(root, bundle)
-  const whole = (await bundleArtifact(abs)) === null
-  const opened = whole
-    ? [await openBundle(root, abs)]
-    : await Promise.all(departed.map((p) => openBundle(root, join(root, p.from), p.id)))
-  let cascade: CascadeReport | undefined
-  for (const [i, at] of opened.entries()) {
-    if (!at.ok || at.value.record.entity === 'property') continue
-    const { entity } = at.value.record
-    const { id, to, at: stored } = departed[whole ? 0 : i]
-    const up = (path: string): string => {
-      const segs = path.split('/')
-      return segs.slice(0, segs.length - stored.inner.length + 1).join('/')
+  const whole = (await bundleArtifact(join(root, bundle))) === null
+  const units = new Map<string, { stored: string; movedTo?: string }>()
+  if (whole) units.set(bundle, { stored: join(bundle, departed[0].at.inner[0]) })
+  else
+    for (const { to, at } of departed) {
+      const last = at.inner.length - 1
+      let k = 1
+      while (k < last && (await pathExists(join(root, bundle, ...at.inner.slice(0, k + 1))))) k++
+      const stored = join(bundle, ...at.inner.slice(0, k + 1))
+      const segs = to.split('/')
+      const movedTo = k === last ? to : containerAt(tree, segs.slice(0, k - last).join('/'))?.path
+      if (movedTo && !units.has(stored)) units.set(stored, { stored, movedTo })
     }
-    const landed = join(root, whole ? up(to) : to)
+  let cascade: CascadeReport | undefined
+  for (const [address, { stored, movedTo }] of units) {
+    const at = await openBundle(root, join(root, address), movedTo && join(root, movedTo))
+    if (!at.ok || at.value.record.entity === 'property') continue
+    const { record } = at.value
+    const id = 'id' in record ? record.id : undefined
+    const rel = movedTo ?? (id && (after.byId.get(id) ?? findContainerById(tree, id))?.path)
+    if (!rel) continue
+    const landed = join(root, rel)
+    const origin = originPathOf(root, join(root, stored))
     const arrived = await arrive(root, {
       opened: at.value,
-      record: at.value.record,
+      record,
       title: titleFromPath(landed),
-      landed: { entity, abs: landed },
-      back: whole
-        ? await originPagesOf(root, await contentPages(entity, landed), (f) =>
-            join(up(stored.origin), relative(landed, f)),
-          )
-        : [connPage(id, stored.origin)],
+      landed: { entity: record.entity, abs: landed },
+      back: await originPagesOf(root, await contentPages(record.entity, landed), (f) =>
+        join(origin, relative(landed, f)),
+      ),
       live: before,
       after,
     })
@@ -195,6 +206,7 @@ export function arrivedSpaces(handed: NexusTree, tree: NexusTree): SpaceNode[] {
   return [...contextWorldOf(tree.contexts).spaceById.values()].filter((s) => !spaceById.has(s.id))
 }
 
+/** Finishes each Space moved back by hand into its registered Context's folder as its restore, `spaces` the arrived Spaces to read against the Trash's record-only Space bundles. */
 export async function recognizeSpaces(
   root: string,
   spaces: readonly SpaceNode[],
