@@ -9,7 +9,7 @@ import {
   seedNexus,
   tempRoot,
 } from '../Testing/hostFs'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import * as atomicWrite from '../Files/atomicWrite'
 import * as record from '../Bundles/record'
 import * as settings from '../Settings/settings'
@@ -68,7 +68,7 @@ const message = (r: MutateReply): string => (r.ok ? '' : r.error.message)
 const archive = async (path: string, kind: 'page' | 'set' = 'page'): Promise<string> => {
   const r = await mutate({ op: 'archive', path, kind })
   expect(r.ok).toBe(true)
-  return r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+  return bundleOf(r)
 }
 const restore = (bundlePath: string, destination?: RestoreDestination): Promise<MutateReply> =>
   mutate({ op: 'restore', bundlePath, ...(destination ? { destination } : {}) })
@@ -257,7 +257,7 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       path: 'Notes/Daily/Beta 2.md',
       back: { ...request.back, name: 'Beta 2.md' },
     })
-    const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    const filed = bundleOf(r)
     expect(filed).toMatch(
       new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta 2\\.md\\.archived$`),
     )
@@ -418,7 +418,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const inner = join(bundlePath, 'Daily', 'Beta.md')
     const before = await bytesUnder(at(bundlePath))
     const r = await undo(await restore(inner, INTO_NOTES))
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath: inner })
+    expect(bundleOf(r)).toBe(inner)
     expect(await pathExists(at('Notes', 'Beta.md'))).toBe(false)
     expect(await bytesUnder(at(bundlePath))).toEqual(before)
     expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)).toEqual([bundlePath])
@@ -431,7 +431,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const inner = join(bundlePath, 'Daily', 'Beta.md')
     const before = await bytesUnder(at(bundlePath))
     const r = await undo(await restore(inner, { kind: 'container', id: OTHER }))
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath: inner })
+    expect(bundleOf(r)).toBe(inner)
     expect(await bytesUnder(at(bundlePath))).toEqual(before)
     expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
   })
@@ -444,7 +444,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const inner = join(bundlePath, 'Daily', 'Sub')
     const before = await bytesUnder(at(bundlePath))
     const r = await undo(await restore(inner, INTO_NOTES))
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath: inner })
+    expect(bundleOf(r)).toBe(inner)
     expect(await pathExists(at('Notes', 'Sub'))).toBe(false)
     expect(await bytesUnder(at(bundlePath))).toEqual(before)
   })
@@ -465,7 +465,7 @@ describe('restore — an archived item comes back by a plain move', () => {
       path: 'Notes/Beta 2.md',
       back: { ...request.back, name: 'Beta 2.md' },
     })
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath: join(bundlePath, 'Daily', 'Beta 2.md') })
+    expect(bundleOf(r)).toBe(join(bundlePath, 'Daily', 'Beta 2.md'))
     expect(await text(bundlePath, 'Daily', 'Beta 2.md')).toBe(BETA)
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
   })
@@ -505,7 +505,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
     expect((await mutate({ op: 'delete', path: 'Notes/Daily', kind: 'set' })).ok).toBe(true)
     const r = await undo(await restore(bundlePath, INTO_NOTES))
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(bundleOf(r)).toBe(bundlePath)
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
     expect(message(await restore(bundlePath))).toBe('The place this belonged to no longer exists.')
   })
@@ -517,7 +517,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const restored = await restore(bundlePath)
     expect(restored.ok && restored.value.landedAs).toBe('Beta (2)')
     const r = await undo(restored)
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(bundleOf(r)).toBe(bundlePath)
     expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
     expect(await readFile(at(bundlePath, '_record.json'), 'utf8')).toBe(record)
   })
@@ -538,7 +538,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     await reseed()
     const bundlePath = await archive('Notes/Daily/Beta.md')
     const r = await undo(await restore(bundlePath, { kind: 'container', id: OTHER }))
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath })
+    expect(bundleOf(r)).toBe(bundlePath)
     expect(await text(bundlePath, 'Beta.md')).toBe(BETA)
     expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
   })
@@ -644,7 +644,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const restored = await restore(bundlePath)
     await mkdir(at(bundlePath))
     const r = await undo(restored)
-    const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    const filed = bundleOf(r)
     expect(filed).not.toBe(bundlePath)
     expect(filed).toMatch(
       new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta\\.md\\.archived$`),
@@ -669,7 +669,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect(moved.ok).toBe(true)
     const r = await mutate({ ...restored.value.undo, path: 'Other/Daily/Beta.md' })
     const carried = bundlePath.replace(`/${NOTES}/`, `/${OTHER}/`)
-    expect(r.ok && r.value.bundled).toEqual({ bundlePath: carried })
+    expect(bundleOf(r)).toBe(carried)
     expect(await text(carried, 'Beta.md')).toBe(BETA)
     expect(await readRawRecord(at(carried))).toEqual({ ...raw, trail: [OTHER] })
     expect(await listBundles(root, ARCHIVE)).toEqual([])
@@ -688,7 +688,7 @@ describe('restore — an archived item comes back by a plain move', () => {
         record: { ...raw, parent: { kind: 'container', id: SUB }, trail: [GONE] },
       },
     })
-    const filed = r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    const filed = bundleOf(r)
     expect(filed).toMatch(
       new RegExp(`^\\.nexus/archive/${NOTES}/Notes/Daily/[^/]+__Beta\\.md\\.archived$`),
     )
@@ -739,7 +739,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     expect((await restore(archived)).ok).toBe(true)
     expect(locked()).toBe(false)
     const deleted = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
-    const trashed = deleted.ok ? (deleted.value.bundled?.bundlePath ?? '') : ''
+    const trashed = bundleOf(deleted)
     lock.mockClear()
     expect((await restore(trashed)).ok).toBe(true)
     expect(locked()).toBe(true)
@@ -801,9 +801,9 @@ describe('a delete from the Archive', () => {
   ): Promise<string> => {
     const r = await mutate({ op: 'delete', path: archived, kind })
     expect(r.ok).toBe(true)
-    return r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
+    return bundleOf(r)
   }
-  const UNDO: RestoreDestination = { kind: 'archive' }
+  const undoTo = (archived: string): RestoreDestination => ({ kind: 'archive', at: archived })
 
   beforeEach(async () => {
     await writeFile(at('Notes', 'Linker.md'), LINKER)
@@ -821,9 +821,20 @@ describe('a delete from the Archive', () => {
       parent: { kind: 'container', id: DAILY },
       place: { above: PAGE_G, below: PAGE_A },
       trail: [NOTES],
-      archive: archived,
     })
     expect(await pathExists(at(archived))).toBe(false)
+  })
+
+  it('a delete from the Archive answers the Undo that files it back at the address it left, and its record keeps none', async () => {
+    const archived = await archive('Notes/Daily/Beta.md')
+    const r = await mutate({ op: 'delete', path: archived, kind: 'page' })
+    const trashed = bundleOf(r)
+    expect(r.ok && r.value.undo).toEqual({
+      op: 'restore',
+      bundlePath: trashed,
+      destination: { kind: 'archive', at: archived },
+    })
+    expect(await readRecord(at(trashed))).not.toHaveProperty('archive')
   })
 
   it('strips the Link values naming it, and records them', async () => {
@@ -865,17 +876,22 @@ describe('a delete from the Archive', () => {
     )
   })
 
-  it('an inner item’s delete takes it to the Trash, its record naming the address it held', async () => {
+  it('an inner item’s delete takes it to the Trash, answering the address it held for its Undo', async () => {
     const archived = await archive('Notes/Daily', 'set')
     const inner = join(archived, 'Daily', 'Beta.md')
-    const trashed = await trash(inner)
+    const r = await mutate({ op: 'delete', path: inner, kind: 'page' })
+    const trashed = bundleOf(r)
+    expect(r.ok && r.value.undo?.op === 'restore' && r.value.undo.destination).toEqual({
+      kind: 'archive',
+      at: inner,
+    })
     expect(trashed).toMatch(/^\.trash\/Notes\/Daily\/[^/]+__Beta\.md\.deleted$/)
     expect(await text(trashed, 'Beta.md')).toBe(BETA)
     expect(await readRecord(at(trashed))).toMatchObject({
       entity: 'page',
       id: PAGE_B,
-      archive: inner,
     })
+    expect(await readRecord(at(trashed))).not.toHaveProperty('archive')
     expect((await readdir(at(archived, 'Daily'))).sort()).toEqual([
       'Alpha.md',
       'Gamma.md',
@@ -918,7 +934,7 @@ describe('a delete from the Archive', () => {
   it('its Undo returns it to the Archive under the same name, its Link values back', async () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
-    const r = await restore(trashed, UNDO)
+    const r = await restore(trashed, undoTo(archived))
     expect(r.ok).toBe(true)
     expect(r.ok && r.value).not.toHaveProperty('landedAs')
     expect(await text(archived, 'Beta.md')).toBe(BETA)
@@ -941,7 +957,7 @@ describe('a delete from the Archive', () => {
     const before = await bytesUnder(at(archived))
     const trashed = await trash(inner)
     expect(await related()).toBeUndefined()
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(inner))).ok).toBe(true)
     expect(await bytesUnder(at(archived))).toEqual(before)
     expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)).toEqual([archived])
     expect(await related()).toBe('[[Beta]]')
@@ -950,9 +966,10 @@ describe('a delete from the Archive', () => {
 
   it('an inner item’s Undo after its Set’s restore returns it as its own Archive row', async () => {
     const archived = await archive('Notes/Daily', 'set')
-    const trashed = await trash(join(archived, 'Daily', 'Beta.md'))
+    const inner = join(archived, 'Daily', 'Beta.md')
+    const trashed = await trash(inner)
     expect((await restore(archived)).ok).toBe(true)
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(inner))).ok).toBe(true)
     const [own, ...rest] = await listBundles(root, ARCHIVE)
     expect(rest).toEqual([])
     expect(own.bundlePath).toMatch(
@@ -974,13 +991,18 @@ describe('a delete from the Archive', () => {
   describe('once a live Set above its archived Set moves into another Collection', () => {
     const IN_OTHER: BundleStore = { kind: 'archive', id: OTHER }
     /** `Notes/Daily/Sub` archived, its `Deep.md` deleted out of it, and `Daily` moved into Other, carrying `Sub`'s bundle into Other's Archive. */
-    const deletedThenMoved = async (): Promise<{ trashed: string; carried: string }> => {
+    const deletedThenMoved = async (): Promise<{
+      inner: string
+      trashed: string
+      carried: string
+    }> => {
       await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
       await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
       await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
       await reseed()
       const archived = await archive('Notes/Daily/Sub', 'set')
-      const trashed = await trash(join(archived, 'Sub', 'Deep.md'))
+      const inner = join(archived, 'Sub', 'Deep.md')
+      const trashed = await trash(inner)
       const moved = await mutate({
         op: 'moveSet',
         path: 'Notes/Daily',
@@ -990,13 +1012,13 @@ describe('a delete from the Archive', () => {
       expect(moved.ok).toBe(true)
       const carried = archived.replace(`/${NOTES}/`, `/${OTHER}/`)
       expect((await listBundles(root, IN_OTHER)).map((b) => b.bundlePath)).toEqual([carried])
-      return { trashed, carried }
+      return { inner, trashed, carried }
     }
 
     it('an inner item’s Undo returns it inside its Set’s carried bundle', async () => {
-      const { trashed, carried } = await deletedThenMoved()
+      const { inner, trashed, carried } = await deletedThenMoved()
       const before = await bytesUnder(at(carried))
-      expect((await restore(trashed, UNDO)).ok).toBe(true)
+      expect((await restore(trashed, undoTo(inner))).ok).toBe(true)
       expect(await bytesUnder(at(carried))).toEqual({
         ...before,
         [at(carried, 'Sub', 'Deep.md')]: DEEP,
@@ -1006,9 +1028,9 @@ describe('a delete from the Archive', () => {
     })
 
     it('an inner item’s Undo after its Set’s restore returns it as its own row in that Collection’s Archive', async () => {
-      const { trashed, carried } = await deletedThenMoved()
+      const { inner, trashed, carried } = await deletedThenMoved()
       expect((await restore(carried)).ok).toBe(true)
-      expect((await restore(trashed, UNDO)).ok).toBe(true)
+      expect((await restore(trashed, undoTo(inner))).ok).toBe(true)
       expect(await listBundles(root, ARCHIVE)).toEqual([])
       const [own, ...rest] = await listBundles(root, IN_OTHER)
       expect(rest).toEqual([])
@@ -1032,7 +1054,7 @@ describe('a delete from the Archive', () => {
       order: [DAILY],
     })
     expect(moved.ok).toBe(true)
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(true)
     const carried = archived.replace(`/${NOTES}/`, `/${OTHER}/`)
     expect(await readRecord(at(carried))).toEqual({
       entity: 'page',
@@ -1048,7 +1070,7 @@ describe('a delete from the Archive', () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
     await mkdir(at(archived), { recursive: true })
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(true)
     const [other, ...rest] = (await listBundles(root, ARCHIVE)).map((b) => b.bundlePath)
     expect(rest).toEqual([])
     expect(other).not.toBe(archived)
@@ -1063,11 +1085,11 @@ describe('a delete from the Archive', () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
     vi.spyOn(atomicWrite, 'relocate').mockRejectedValueOnce(new Error('the move failed'))
-    expect((await restore(trashed, UNDO)).ok).toBe(false)
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(false)
     expect(await pathExists(at(archived))).toBe(false)
     expect(await listBundles(root, ARCHIVE)).toEqual([])
     expect(await text(trashed, 'Beta.md')).toBe(BETA)
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(true)
     expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 
@@ -1128,7 +1150,7 @@ describe('a delete from the Archive', () => {
         })
       ).ok,
     ).toBe(true)
-    expect((await restore(gamma.ok ? (gamma.value.bundled?.bundlePath ?? '') : '')).ok).toBe(true)
+    expect((await restore(bundleOf(gamma))).ok).toBe(true)
     expect(await text('Notes', 'Daily', 'Gamma.md')).toContain('[[Alpha 2]]')
   })
 
@@ -1152,13 +1174,14 @@ describe('a delete from the Archive', () => {
     const archived = await archive('Notes/Daily/Beta.md')
     const trashed = await trash(archived)
     await trash('Notes', 'collection')
-    expect((await restore(trashed, UNDO)).ok).toBe(true)
+    expect((await restore(trashed, undoTo(archived))).ok).toBe(true)
     expect(splitFrontmatter(await text(archived, 'Beta.md')).Score).toBe(3)
   })
 
   it('its Undo refuses once its Collection is gone for good, and the page stays in the Trash', async () => {
     await scoredBeta()
-    const trashed = await trash(await archive('Notes/Daily/Beta.md'))
+    const archived = await archive('Notes/Daily/Beta.md')
+    const trashed = await trash(archived)
     const notes = await trash('Notes', 'collection')
     await writeFile(
       join(root, '.nexus', 'settings.json'),
@@ -1166,7 +1189,7 @@ describe('a delete from the Archive', () => {
     )
     await refreshTree(root)
     expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: notes })).ok).toBe(true)
-    expect(message(await restore(trashed, UNDO))).toBe(
+    expect(message(await restore(trashed, undoTo(archived)))).toBe(
       'The place this belonged to no longer exists.',
     )
     expect(await text(trashed, 'Beta.md')).toContain('Score: 3')
@@ -1178,13 +1201,13 @@ describe('a delete from the Archive', () => {
     const trashed = await trash(archived)
     await writeFile(at('Notes', '_pagecollection.json'), '{ not json')
     await refreshTree(root)
-    expect(message(await restore(trashed, UNDO))).toBe('')
+    expect(message(await restore(trashed, undoTo(archived)))).toBe('')
     expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 
   it('refuses the Archive as a destination for an Archive bundle', async () => {
     const archived = await archive('Notes/Daily/Beta.md')
-    expect(message(await restore(archived, UNDO))).toBe(NO_DESTINATION)
+    expect(message(await restore(archived, undoTo(archived)))).toBe(NO_DESTINATION)
     expect(await text(archived, 'Beta.md')).toBe(BETA)
   })
 

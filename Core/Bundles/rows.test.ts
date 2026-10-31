@@ -7,7 +7,7 @@ import { dropLiveTree } from '../Nexus/liveTree'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import type { BundleRow } from './rows'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles, listInner } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
@@ -315,7 +315,7 @@ describe('bundleRows — a container’s and a Space’s own icons', () => {
       JSON.stringify({ id: 'set-daily', icon: 'folder-heart' }),
     )
     const archived = await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
-    const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
+    const bundlePath = bundleOf(archived)
     await rm(join(root, bundlePath, 'Daily', '_pageset.json'))
     const store = { kind: 'archive' as const, id: 'col-notes' }
     const tree = await readNexus(root)
@@ -429,7 +429,7 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
 
   it('an archived Set’s inner page row is homeless, addressed by its own path, and trailed from the Archive', async () => {
     const archived = await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
-    const bundlePath = archived.ok ? (archived.value.bundled?.bundlePath ?? '') : ''
+    const bundlePath = bundleOf(archived)
     const address = `${bundlePath}/Daily/Alpha.md`
     expect(await innerOf(bundlePath)).toMatchObject([
       {

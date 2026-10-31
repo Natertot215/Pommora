@@ -15,7 +15,7 @@ import type { PropertyDraft } from './properties'
 import type { PropertyValue } from './propertyValue'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { deleteOption } from './optionOps'
 
 let root: string
@@ -198,9 +198,9 @@ describe('a value write reconciles the Space it lands on', () => {
   it('a trashed Space loses an option word deleted meanwhile, as a live one does', async () => {
     await seed({ Tags: ['alpha', 'beta'] })
     const deleted = await settledMutate(root, { op: 'delete', path: spaceRel, kind: 'space' })
-    if (!deleted.ok || !deleted.value.bundled) throw new Error('delete failed')
+    if (!bundleOf(deleted)) throw new Error('delete failed')
     expect((await deleteOption(root, tagsId, 'opt_beta')).ok).toBe(true)
-    const { bundlePath } = deleted.value.bundled
+    const bundlePath = bundleOf(deleted)
     expect((await settledMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
     expect((await sidecar()).Tags).toEqual(['alpha'])
   })

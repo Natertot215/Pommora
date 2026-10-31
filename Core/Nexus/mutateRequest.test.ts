@@ -54,12 +54,12 @@ describe('mutateRequest — what the window sends is held to the shape before an
       mutateRequest.parse({
         op: 'restore',
         bundlePath: '.trash/A.md.deleted',
-        destination: { kind: 'archive', id: 'x' },
+        destination: { kind: 'archive', at: 'a', id: 'x' },
       }),
     ).toEqual({
       op: 'restore',
       bundlePath: '.trash/A.md.deleted',
-      destination: { kind: 'archive' },
+      destination: { kind: 'archive', at: 'a' },
     })
   })
 

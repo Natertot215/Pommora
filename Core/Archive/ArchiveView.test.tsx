@@ -381,7 +381,12 @@ describe('ArchiveView', () => {
   it('a right-click Delete moves the row into the Trash with an Undo that returns it to the Archive', async () => {
     const { bundlePath } = listed[0]
     const trashed = '.trash/Notes/2026-10-21T12-00-00-000Z__A.md.deleted'
-    mutated.mockResolvedValue({ ok: true, value: { bundled: { bundlePath: trashed } } })
+    const undoReq = {
+      op: 'restore',
+      bundlePath: trashed,
+      destination: { kind: 'archive', at: bundlePath },
+    }
+    mutated.mockResolvedValue({ ok: true, value: { undo: undoReq } })
     await render()
     picked = 'delete'
     await act(async () => {
@@ -390,9 +395,7 @@ describe('ArchiveView', () => {
     expect(mutated.mock.calls).toEqual([[{ op: 'delete', path: bundlePath, kind: 'page' }]])
     expect(currentNotification()?.message).toBe('Deleted “A”')
     await undo()
-    expect(mutated.mock.calls).toEqual([
-      [{ op: 'restore', bundlePath: trashed, destination: { kind: 'archive' } }],
-    ])
+    expect(mutated.mock.calls).toEqual([[undoReq]])
   })
 
   it('the bar’s Restore of one row posts Restored “A”, and of two Restored 2 Pages, whose Undo sends each reply’s own request where the tree now holds the item', async () => {
@@ -434,7 +437,13 @@ describe('ArchiveView', () => {
     mutated.mockImplementation(async (req: { path?: string }) => ({
       ok: true,
       value: req.path
-        ? { bundled: { bundlePath: `.trash/${req.path.split('/').at(-1)}.deleted` } }
+        ? {
+            undo: {
+              op: 'restore',
+              bundlePath: `.trash/${req.path.split('/').at(-1)}.deleted`,
+              destination: { kind: 'archive', at: req.path },
+            },
+          }
         : {},
     }))
     await render()
@@ -451,7 +460,7 @@ describe('ArchiveView', () => {
         {
           op: 'restore',
           bundlePath: `.trash/${r.bundlePath.split('/').at(-1)}.deleted`,
-          destination: { kind: 'archive' },
+          destination: { kind: 'archive', at: r.bundlePath },
         },
       ]),
     )

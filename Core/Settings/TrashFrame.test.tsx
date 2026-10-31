@@ -20,6 +20,7 @@ import { pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { storesChanged } from '../Session/nexusSlice'
 import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { rowIndent } from '@pommora/uix/Table/rowIndent'
+import { fault } from '../Contract/result'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 
@@ -269,7 +270,9 @@ describe('the Trash pane', () => {
     const older = vi.fn(() => true)
     pushUndo(older)
     const { bundlePath } = listed[0]
-    offerUndo([bundlePath], (undo) => notifyDeleted('Alpha', undo))
+    offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], (undo) =>
+      notifyDeleted('Alpha', undo),
+    )
     useSession.setState({ askConfirm: async () => true })
     mutated.mockClear()
     picked = action
@@ -285,7 +288,9 @@ describe('the Trash pane', () => {
   it('a restore here that is refused leaves the bundle’s Undo on the chord', async () => {
     resetUndo()
     const { bundlePath } = listed[0]
-    offerUndo([bundlePath], (undo) => notifyDeleted('Alpha', undo))
+    offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], (undo) =>
+      notifyDeleted('Alpha', undo),
+    )
     mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     picked = 'restore'
     const item = host?.querySelector('.data-row') as HTMLElement
@@ -298,13 +303,26 @@ describe('the Trash pane', () => {
     expect(mutated).toHaveBeenCalledWith({ op: 'restore', bundlePath })
   })
 
+  it('a lone restore’s refusal is the host’s message, with no count', async () => {
+    mutated.mockResolvedValue(fault('That item is no longer there.'))
+    picked = 'restore'
+    const item = host?.querySelector('.data-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(currentNotification()?.message).toBe('That item is no longer there.')
+  })
+
   it('a Restore All here spends each bundle’s Undo', async () => {
     listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
     await act(async () => nexus('B'))
     resetUndo()
     const older = vi.fn(() => true)
     pushUndo(older)
-    offerUndo([listed[0].bundlePath], (undo) => notifyDeleted('Alpha', undo))
+    offerUndo(
+      [{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath: listed[0].bundlePath } }],
+      (undo) => notifyDeleted('Alpha', undo),
+    )
     for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
       await act(async () => (box as HTMLButtonElement).click())
     picked = 'restore'

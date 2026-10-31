@@ -7,6 +7,7 @@ import {
   type ActionBar,
   clearNotification,
   notifyDeleted,
+  notifyBundled,
   useDeclareActions,
 } from './notifications'
 import { ContentHostContext } from '../contentHost'
@@ -57,7 +58,20 @@ const stubBox = (el: HTMLElement): void => {
 
 describe('ActionLabel', () => {
   it('draws the count after the title behind one hidden divider', () => {
-    act(() => notifyDeleted('Ideas', vi.fn(), { pages: ['A.md', 'B.md'] }))
+    act(() =>
+      notifyBundled(
+        'Deleted',
+        {
+          done: [{ title: 'Ideas', kind: 'page' }],
+          refused: [],
+          unrestored: [],
+          warnings: [],
+          renamed: [],
+          links: 2,
+        },
+        vi.fn(),
+      ),
+    )
     const dividers = face()?.querySelectorAll('[aria-hidden="true"]') ?? []
     expect(dividers).toHaveLength(1)
     expect([

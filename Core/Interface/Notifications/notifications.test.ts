@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  type Bundled,
   clearNotification,
   currentNotification,
+  notifyBundled,
   notifyDeleted,
   persist,
   reportRefusal,
@@ -14,6 +16,15 @@ beforeEach(resetUndo)
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('a delete notification', () => {
+  const lone = (title: string, links: number, warnings: string[] = []): Bundled => ({
+    done: [{ title, kind: 'page' }],
+    refused: [],
+    unrestored: [],
+    warnings,
+    renamed: [],
+    links,
+  })
+
   it('offers no Undo when the delete left nothing to restore', () => {
     notifyDeleted('Ideas')
     expect(currentNotification()?.action).toBeUndefined()
@@ -41,7 +52,7 @@ describe('a delete notification', () => {
 
   it('carries a note beside its Undo', async () => {
     const undo = vi.fn()
-    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 Item.' })
+    notifyBundled('Deleted', lone('X', 0, ['Couldn’t update 1 Item.']), undo)
     expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 Item.')
     expect(currentNotification()?.segment).toBeUndefined()
     expect(currentNotification()?.tone).toBe('error')
@@ -52,22 +63,19 @@ describe('a delete notification', () => {
 
   it('counts the pages whose links it stripped behind a segment', () => {
     const undo = vi.fn()
-    notifyDeleted('Ideas', undo, { pages: ['A.md', 'B.md'] })
+    notifyBundled('Deleted', lone('Ideas', 2), undo)
     expect(currentNotification()).toMatchObject({
       message: 'Deleted “Ideas”',
       segment: '2 Internal Links',
       tone: 'normal',
       action: { label: 'Undo' },
     })
-    notifyDeleted('Ideas', undo, { pages: ['A.md'] })
+    notifyBundled('Deleted', lone('Ideas', 1), undo)
     expect(currentNotification()?.segment).toBe('1 Internal Link')
   })
 
   it('joins a warning to the count', () => {
-    notifyDeleted('X', vi.fn(), {
-      pages: ['A.md', 'B.md'],
-      warning: 'Couldn’t update links in 1 Item.',
-    })
+    notifyBundled('Deleted', lone('X', 2, ['Couldn’t update links in 1 Item.']), vi.fn())
     expect(currentNotification()).toMatchObject({
       message: 'Deleted “X”',
       segment: '2 Internal Links. Couldn’t update links in 1 Item.',
@@ -76,14 +84,14 @@ describe('a delete notification', () => {
   })
 
   it('keeps Undo on the label when a count arrives without a warning', () => {
-    notifyDeleted('X', vi.fn(), { pages: ['A.md'] }, vi.fn())
+    notifyBundled('Deleted', lone('X', 1), vi.fn(), vi.fn())
     expect(currentNotification()?.action?.label).toBe('Undo')
   })
 
   it('offers Try Again beside its note, and keeps Undo on the chord', async () => {
     const undo = vi.fn()
     const retry = vi.fn()
-    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 Item.' }, retry)
+    notifyBundled('Deleted', lone('X', 0, ['Couldn’t update 1 Item.']), undo, retry)
     expect(currentNotification()?.action?.label).toBe('Try Again')
     void currentNotification()?.action?.run()
     expect(retry).toHaveBeenCalledTimes(1)

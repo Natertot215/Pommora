@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promise
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { jsonText, pathExists } from '../Files/atomicWrite'
 import type { ChangeEvent, FileEvent } from '../Files/writeEcho'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
@@ -40,13 +40,8 @@ let root: string
 const at = (...segs: string[]): string => join(root, ...segs)
 const mutate = (req: Parameters<typeof settledMutate>[1]): Promise<MutateReply> =>
   settledMutate(root, req)
-const bundled = async (req: Parameters<typeof settledMutate>[1]): Promise<string> => {
-  const r = await mutate(req)
-  expect(r.ok).toBe(true)
-  return r.ok ? (r.value.bundled?.bundlePath ?? '') : ''
-}
-const archive = (path: string, kind: 'page' | 'set' = 'page'): Promise<string> =>
-  bundled({ op: 'archive', path, kind })
+const archive = async (path: string, kind: 'page' | 'set' = 'page'): Promise<string> =>
+  bundleOf(await mutate({ op: 'archive', path, kind }))
 const leafOf = (bundlePath: string): string => bundlePath.split('/').at(-1) ?? ''
 const filed = async (store: BundleStore) =>
   (await listBundles(root, store)).map(({ bundlePath, record }) => ({
@@ -364,7 +359,7 @@ describe('the comparison — a Set the settle sees move carries what was archive
 describe('the restore — a Set landing in another Collection carries what was archived from within it', () => {
   it('a Set restored from the Trash into another Collection carries what was archived from within it before it left', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
-    const trashed = await bundled({ op: 'delete', path: 'Notes/Daily/Sub', kind: 'set' })
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes/Daily/Sub', kind: 'set' }))
     expect((await mutate({ op: 'restore', bundlePath: trashed, destination: INTO_OTHER })).ok).toBe(
       true,
     )
@@ -389,7 +384,7 @@ describe('the restore — a Set landing in another Collection carries what was a
       ).ok,
     ).toBe(true)
     const bundlePath = await archive('Notes/Sub/Note.md')
-    const trashed = await bundled({ op: 'delete', path: 'Notes/Sub', kind: 'set' })
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes/Sub', kind: 'set' }))
     const stored = await readRecord(at(trashed))
     expect(stored && 'trail' in stored ? stored.trail : undefined).toEqual([])
     expect((await mutate({ op: 'restore', bundlePath: trashed, destination: INTO_OTHER })).ok).toBe(
@@ -422,7 +417,7 @@ describe('the restore — a Set landing in another Collection carries what was a
 
   it('a Set restored from the Trash after its parent moved to another Collection carries what was archived from within it from where it sits now', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
-    const trashed = await bundled({ op: 'delete', path: 'Notes/Daily/Sub', kind: 'set' })
+    const trashed = bundleOf(await mutate({ op: 'delete', path: 'Notes/Daily/Sub', kind: 'set' }))
     expect(
       (await mutate({ op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [DAILY] }))
         .ok,
@@ -451,7 +446,7 @@ describe('the restore — a Set landing in another Collection carries what was a
     ['the Archive', 'archive'],
   ] as const)('a carry that throws leaves a restored Set restored, from %s', async (_, op) => {
     await archive('Notes/Daily/Sub/Note.md')
-    const stored = await bundled({ op, path: 'Notes/Daily/Sub', kind: 'set' })
+    const stored = bundleOf(await mutate({ op, path: 'Notes/Daily/Sub', kind: 'set' }))
     vi.spyOn(bundles, 'archivedWithin').mockRejectedValue(new Error('unreadable'))
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect((await mutate({ op: 'restore', bundlePath: stored, destination: INTO_OTHER })).ok).toBe(
@@ -506,7 +501,7 @@ describe('the open pass — an orphaned Archive moves into the Trash, and a live
 
   it('an Archive whose Collection sits in the Trash is kept', async () => {
     const bundlePath = await archive('Notes/Daily/Sub/Note.md')
-    await bundled({ op: 'delete', path: 'Notes', kind: 'collection' })
+    bundleOf(await mutate({ op: 'delete', path: 'Notes', kind: 'collection' }))
     await settleArchives(root, await reread())
     expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
   })

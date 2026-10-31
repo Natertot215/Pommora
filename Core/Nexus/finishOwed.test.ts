@@ -34,6 +34,7 @@ import { readNotes, type Notes } from './owed'
 import { ok } from '../Contract/result'
 import * as reorder from './reorder'
 import { setPanelContextOrder, setSpaceOrder } from './reorder'
+import { bundleOf } from '../Testing/settledMutate'
 
 vi.mock('../Properties/registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/registryProperty')>()
@@ -558,7 +559,7 @@ describe('unreadable holders keep the entry', () => {
       if (!deleted.ok) throw new Error('delete refused')
       expect(deleted.value.cascade).toMatchObject({ owed: true })
       expect(await readNotes(root)).toEqual(DELETED)
-      const record = await readRecord(join(root, deleted.value.bundled?.bundlePath ?? ''))
+      const record = await readRecord(join(root, bundleOf(deleted)))
       expect(record).toMatchObject({ values: { [PAGE_IDS[1]]: 'Draft' } })
       expect(record).not.toHaveProperty('partial')
       await indexWrittenPages(root, [{ absPath: b }])

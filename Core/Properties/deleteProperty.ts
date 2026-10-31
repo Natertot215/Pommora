@@ -108,7 +108,10 @@ async function deleteInner(root: string, propertyId: string): Promise<MutateRepl
     await removeOwn(bundle)
     return ran
   }
-  return ok({ bundled: { bundlePath: relative(root, bundle) }, cascade: ran.value.cascade })
+  return ok({
+    undo: { op: 'restore', bundlePath: relative(root, bundle) },
+    cascade: ran.value.cascade,
+  })
 }
 
 interface DeletePlan {

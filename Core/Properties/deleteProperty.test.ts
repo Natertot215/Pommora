@@ -23,6 +23,7 @@ import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readRegistry } from './propertiesRegistry'
 import { readRecord } from '../Bundles/record'
+import { listBundles } from '../Bundles/bundle'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
@@ -30,6 +31,7 @@ import { installMachine, machine } from '../Platform/machine'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import { bundleOf } from '../Testing/settledMutate'
 
 vi.mock('./registryProperty', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./registryProperty')>()
@@ -149,9 +151,17 @@ describe('deleteProperty', () => {
 
     const r = await deleteProperty(root, c.value.id)
     if (!r.ok) throw new Error('delete failed')
-    const record = await readRecord(join(root, r.value.bundled?.bundlePath ?? ''))
+    const record = await readRecord(join(root, bundleOf(r)))
     expect(record).toMatchObject({ entity: 'property', above: { [ids[0]]: 'Zed' } })
     expect((record as { above: Record<string, string> }).above).not.toHaveProperty(ids[1])
+  })
+
+  it('a property delete answers the Undo that restores its bundle', async () => {
+    const c = await createProperty(root, { label: 'Stage', type: 'text' })
+    if (!c.ok) throw new Error('setup failed')
+    const r = await deleteProperty(root, c.value.id)
+    const [bundle] = await listBundles(root, { kind: 'trash' })
+    expect(r.ok && r.value.undo).toEqual({ op: 'restore', bundlePath: bundle.bundlePath })
   })
 
   it('fails for an unknown property id', async () => {
@@ -614,7 +624,7 @@ describe('the delete’s list step and its keys', () => {
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.cascade?.owed).toBe(true)
     expect(await readFile(bare, 'utf8')).toContain('Priority: hi')
-    expect(await readRecord(join(root, r.value.bundled?.bundlePath ?? ''))).toMatchObject({
+    expect(await readRecord(join(root, bundleOf(r)))).toMatchObject({
       partial: true,
     })
     await writeFile(bare, `---\n${ID_KEY}: ${newContentId('page')}\nPriority: hi\n---\nb\n`)

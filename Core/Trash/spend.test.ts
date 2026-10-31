@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installMachine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, listBundles, mintBundle } from '../Bundles/bundle'
 import { patchRecord, readRecord, writeRecord } from '../Bundles/record'
@@ -291,8 +291,8 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
     it('a Context’s delete takes its panel id and Space order into its record, and its restore returns it to its place in both orders', async () => {
       const r = await deleteProjects()
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-      const { bundlePath } = r.value.bundled
+      if (!bundleOf(r)) throw new Error('the delete did not trash')
+      const bundlePath = bundleOf(r)
       expect(await stateOrder()).toEqual({
         spaces: { ctx_areas: ['sp-home'] },
         contexts: ['ctx_areas'],
@@ -312,7 +312,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
     it('a Context returns beside the neighbor its record names, wherever that neighbor has moved', async () => {
       const r = await deleteProjects()
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      if (!bundleOf(r)) throw new Error('the delete did not trash')
       await writeFile(
         contextsRegistryFile(root),
         JSON.stringify({
@@ -323,9 +323,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
         }),
       )
       await refreshTree(root)
-      expect(
-        (await settledMutate(root, { op: 'restore', bundlePath: r.value.bundled.bundlePath })).ok,
-      ).toBe(true)
+      expect((await settledMutate(root, { op: 'restore', bundlePath: bundleOf(r) })).ok).toBe(true)
       expect(await registryIds()).toEqual(['ctx_projects', 'ctx_zeta', 'ctx_areas'])
     })
   })
@@ -1781,7 +1779,7 @@ describe('restore — into a chosen destination', () => {
     expect(await pathExists(join(contextsDir(root), 'Areas', 'Pommora', '_space.json'))).toBe(true)
   })
 
-  it('refuses the Archive as a destination for a record that left none, a Space’s among them', async () => {
+  it('refuses an Archive destination naming no Archive bundle, or given to a Space', async () => {
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     await settledMutate(root, {
       op: 'delete',
@@ -1792,25 +1790,24 @@ describe('restore — into a chosen destination', () => {
       const r = await settledMutate(root, {
         op: 'restore',
         bundlePath: await lastBundle(name),
-        destination: { kind: 'archive' },
+        destination: { kind: 'archive', at: '.nexus/archive/c1/x' },
       })
       expect(r.ok ? '' : r.error.message).toBe('That kind cannot be given a destination.')
     }
   })
 
-  it('refuses an Undo whose record names a path outside the Archive', async () => {
+  it('refuses an Undo whose address lies outside the Archive', async () => {
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const bundlePath = await lastBundle('Alpha.md')
     await writeRecord(join(root, bundlePath), {
       entity: 'page',
       id: PAGE_A,
       parent: { kind: 'container', id: 'set-daily' },
-      archive: '../Notes/Beta.md.archived',
     })
     const r = await settledMutate(root, {
       op: 'restore',
       bundlePath,
-      destination: { kind: 'archive' },
+      destination: { kind: 'archive', at: '../Notes/Beta.md.archived' },
     })
     expect(r.ok ? '' : r.error.message).toBe('That kind cannot be given a destination.')
     expect(await pathExists(join(root, bundlePath, 'Alpha.md'))).toBe(true)
@@ -1995,8 +1992,8 @@ describe('a Context or Space restore', () => {
 
   const deleted = async (path: string, kind: 'context' | 'space'): Promise<string> => {
     const r = await settledMutate(root, { op: 'delete', path, kind })
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-    return r.value.bundled.bundlePath
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
+    return bundleOf(r)
   }
   const restored = (bundlePath: string) => settledMutate(root, { op: 'restore', bundlePath })
 
@@ -2078,7 +2075,7 @@ let tasks: string
 let tasksPage: string
 let propertyId: string
 const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
-const bundleOf = async (entity: string, artifact?: string): Promise<string> => {
+const trashedBundle = async (entity: string, artifact?: string): Promise<string> => {
   const found = (await listBundles(root, { kind: 'trash' })).find(
     (b) => b.record.entity === entity && (!artifact || b.artifactName === artifact),
   )
@@ -2086,11 +2083,11 @@ const bundleOf = async (entity: string, artifact?: string): Promise<string> => {
   return found.bundlePath
 }
 const trashedNotes = async (): Promise<string> =>
-  join(root, await bundleOf('collection', 'Notes'), 'Notes')
+  join(root, await trashedBundle('collection', 'Notes'), 'Notes')
 const priorityOn = async (file: string): Promise<unknown> =>
   splitFrontmatter(await readFile(file, 'utf8')).Priority
 const restoreTasks = async (): Promise<unknown> =>
-  settledMutate(root, { op: 'restore', bundlePath: await bundleOf('collection', 'Tasks') })
+  settledMutate(root, { op: 'restore', bundlePath: await trashedBundle('collection', 'Tasks') })
 
 async function seedPriority(): Promise<void> {
   const made = await createFolderEntity(root, 'collection', 'Tasks', newId())
@@ -2130,7 +2127,7 @@ describe('emptying a property’s Trash entry', () => {
       ...diskMachine(),
       trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
     })
-    return handleMutate(root, { op: 'emptyBundle', bundlePath: await bundleOf('property') })
+    return handleMutate(root, { op: 'emptyBundle', bundlePath: await trashedBundle('property') })
   }
 
   it('emptying a property’s Trash entry drops it from every Collection still listing it', async () => {

@@ -12,7 +12,7 @@ import { newContentId, newId } from '../Nexus/ids'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from '../Bundles/bundle'
 import { patchRecord } from '../Bundles/record'
@@ -338,7 +338,7 @@ describe('restoring a deleted property', () => {
 
       vi.setSystemTime(new Date('2026-10-15T08:00:00.000Z'))
       const deleted = await deleteProperty(root, id)
-      expect(deleted.ok && deleted.value.bundled?.bundlePath).toBe(await onlyBundlePath())
+      expect(bundleOf(deleted)).toBe(await onlyBundlePath())
       await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() })
     } finally {
       vi.useRealTimers()

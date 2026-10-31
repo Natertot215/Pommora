@@ -302,20 +302,20 @@ describe('an Archive restore’s Undo', () => {
   const alpha = row({
     title: 'Alpha',
     bundlePath: `${ARCHIVED}/2026-10-17T00-00-00-000Z__Alpha.md.archived`,
-    stored: { id: 'p1', path: 'Notes/Alpha.md' },
   })
   const beta = row({
     title: 'Beta',
     bundlePath: `${ARCHIVED}/Ideas/2026-10-17T00-00-00-000Z__Beta.md.archived`,
-    stored: { id: 'p2', path: 'Notes/Ideas/Beta.md' },
   })
-  const record = { entity: 'page', parent: { kind: 'container', id: 's1' } }
-  const undoOf = (target: BundleRow): MutateRequest => ({
+  const recordOf = (id: string) => ({ entity: 'page', id, parent: { kind: 'container', id: 's1' } })
+  const undoOf = (target: BundleRow, id: string, path: string): MutateRequest => ({
     op: 'archive',
-    path: target.stored?.path ?? '',
+    path,
     kind: 'page',
-    back: { at: target.bundlePath, name: `${target.title}.md`, record },
+    back: { at: target.bundlePath, name: `${target.title}.md`, record: recordOf(id) },
   })
+  const alphaUndo = undoOf(alpha, 'p1', 'Notes/Alpha.md')
+  const betaUndo = undoOf(beta, 'p2', 'Notes/Ideas/Beta.md')
   let host: HTMLDivElement
   let root: Root
   let browser: ReturnType<typeof useBundleBrowser>
@@ -328,9 +328,12 @@ describe('an Archive restore’s Undo', () => {
 
   beforeEach(async () => {
     mutated = vi.fn(async (req: MutateRequest) => {
-      const target =
-        req.op === 'restore' && [alpha, beta].find((r) => r.bundlePath === req.bundlePath)
-      return { ok: true, value: target ? { undo: undoOf(target) } : {} }
+      const undo =
+        req.op === 'restore' &&
+        (req.bundlePath === alpha.bundlePath
+          ? alphaUndo
+          : req.bundlePath === beta.bundlePath && betaUndo)
+      return { ok: true, value: undo ? { undo } : {} }
     })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       mutate: mutated,
@@ -348,7 +351,7 @@ describe('an Archive restore’s Undo', () => {
     useSession.setState({ tree: null })
   })
 
-  it('sends each reply’s own request at the item’s path now, under its new name once it’s been renamed since', async () => {
+  it('an Archive restore’s Undo sends each reply’s own request at the item’s place now, followed by the id its record carries', async () => {
     await act(async () => browser.restore([alpha, beta]))
     const renamed = makeTree()
     renamed.collections[0].pages[0] = {
@@ -362,15 +365,15 @@ describe('an Archive restore’s Undo', () => {
     await act(async () => currentNotification()?.action?.run())
     expect(mutated.mock.calls.map(([req]) => req)).toEqual([
       {
-        ...undoOf(alpha),
+        ...alphaUndo,
         path: 'Notes/Alpha 2.md',
-        back: { at: alpha.bundlePath, name: 'Alpha 2.md', record },
+        back: { at: alpha.bundlePath, name: 'Alpha 2.md', record: recordOf('p1') },
       },
-      undoOf(beta),
+      betaUndo,
     ])
     await act(async () => browser.restore([beta]))
     mutated.mockClear()
     await act(async () => currentNotification()?.action?.run())
-    expect(mutated.mock.calls.map(([req]) => req)).toEqual([undoOf(beta)])
+    expect(mutated.mock.calls.map(([req]) => req)).toEqual([betaUndo])
   })
 })

@@ -294,7 +294,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [x] `[Stop: c/pre-compaction's two blocks for Nathan; after the compaction, reread §Constraints and c/plan-execution from the files before the next task opens]`
 - [ ] **Phase 5** — One Restore, Recognition, and the Interface
   - [x] Task 5-1 · Following an id covers a Set
-  - [ ] Task 5-2 · Every reversible reply carries its own Undo, through one notice
+  - [x] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [ ] Task 5-3 · The table owns its date column and footing
   - [ ] Task 5-4 · The arrival's one home
   - [ ] Task 5-5 · One restore for both stores
@@ -6915,11 +6915,11 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 - [ ] Apply the AFTER.
 - [ ] Rewrite every test read of a reply's `bundled` (94 lines across 19 files, `git grep -n "bundled" -- 'Core/**/*.test.ts' 'Core/**/*.test.tsx'`) through `bundleOf(reply)` from `Core/Testing/settledMutate.ts`. Remove `settle.test.ts:1329`'s local `bundleOf` and `refile.test.ts:45`'s `bundled` in its favor. Stubs that answer `bundled: { bundlePath: X }` answer `undo: { op: 'restore', bundlePath: X }`, apart from `ArchiveView.test.tsx:388,441`, whose Archive deletes answer `undo: { op: 'restore', bundlePath: X, destination: { kind: 'archive', at: <the row's address> } }`, as the host now composes it, and whose `:398,458` expect that request.
 - [ ] Rewrite `archive.test.ts:807`'s `UNDO` constant as `const undoTo = (archived: string): RestoreDestination => ({ kind: 'archive', at: archived })`, and each `restore(trashed, UNDO)` (`:941-1219`) as `restore(trashed, undoTo(archived))` for the address its case archived; `:1225`'s `restore(archived, UNDO)` becomes `restore(archived, undoTo(archived))`. Drop `archive: archived` from `:827`'s expectation.
-- [ ] Rewrite `spend.test.ts:2229-2244`, "refuses an Undo whose record names a path outside the Archive", as "refuses an Undo whose address lies outside the Archive": the record write drops `archive`, and the restore sends `destination: { kind: 'archive', at: '../Notes/Beta.md.archived' }`. Its expectations hold. `:2216`'s destination becomes `{ kind: 'archive', at: '.nexus/archive/c1/x' }`, and its expectation holds.
+- [ ] Rewrite `spend.test.ts:2229-2244`, "refuses an Undo whose record names a path outside the Archive", as "refuses an Undo whose address lies outside the Archive": the record write drops `archive`, and the restore sends `destination: { kind: 'archive', at: '../Notes/Beta.md.archived' }`. Its expectations hold. `:2216`'s destination becomes `{ kind: 'archive', at: '.nexus/archive/c1/x' }`, and its expectation holds under the title "refuses an Archive destination naming no Archive bundle, or given to a Space".
 - [ ] Rewrite `mutateRequest.test.ts:55-66` so the archive arm keeps `at` and drops a stray `id`: `destination: { kind: 'archive', at: 'a', id: 'x' }` reads back as `{ kind: 'archive', at: 'a' }`.
 - [ ] Rewrite `confirmations.test.ts:380`, "offers one Undo returning every bundle it was handed to the destination given", as "offers one Undo running every request it was handed", over `[{ title: 'A', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } } }, { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } }]`: a run of two sends each quietly, so `mutate.mock.calls` equal each request beside `{ quiet: true }`. `:392` passes the same two rows.
 - [ ] Rewrite `TrashFrame.test.tsx:272,288,307`'s `offerUndo([bundlePath], …)` as `offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], …)` (`listed[0].bundlePath` at `:307`); their expectations hold.
-- [ ] Move the cases that pass `notifyDeleted` a cascade or a retry to the builder that now owns their behavior, each keeping its expectations: `notifications.test.ts:44` (*"carries a note beside its Undo"*) and `:86` (*"offers Try Again beside its note, and keeps Undo on the chord"*) call `notifyOutcome('Deleted “X”', undefined, ['Couldn’t update 1 Item.'], undo)`, `:86` passing `retry` after it; `:55,62` (*"counts the pages whose links it stripped behind a segment"*), `:67` (*"joins a warning to the count"*), and `:79` (*"keeps Undo on the label when a count arrives without a warning"*) call `notifyBundled('Deleted', lone('Ideas', 2), undo)` and its like, through one describe-local `lone = (title: string, links: number, warnings: string[] = []): Bundled => ({ done: [{ title, kind: 'page' }], refused: [], unrestored: [], warnings, renamed: [], links })`, `:79` passing `vi.fn()` as its retry; and `ActionLabel.test.tsx:60` draws through `notifyOutcome('Deleted “Ideas”', '2 Internal Links', [], vi.fn())`. Every other `notifyDeleted` call in both suites passes the title and an Undo alone and holds.
+- [ ] Move the cases that pass `notifyDeleted` a cascade or a retry to the builder that now owns their behavior, each keeping its expectations: `notifications.test.ts:44` (*"carries a note beside its Undo"*) and `:86` (*"offers Try Again beside its note, and keeps Undo on the chord"*) call `notifyBundled('Deleted', lone('X', 0, ['Couldn’t update 1 Item.']), undo)`, `:86` passing `retry` after it; `:55,62` (*"counts the pages whose links it stripped behind a segment"*), `:67` (*"joins a warning to the count"*), and `:79` (*"keeps Undo on the label when a count arrives without a warning"*) call `notifyBundled('Deleted', lone('Ideas', 2), undo)` and its like, through one describe-local `lone = (title: string, links: number, warnings: string[] = []): Bundled => ({ done: [{ title, kind: 'page' }], refused: [], unrestored: [], warnings, renamed: [], links })`, `:79` passing `vi.fn()` as its retry; and `ActionLabel.test.tsx:60` draws through `notifyBundled('Deleted', <a lone “Ideas” row with two links>, vi.fn())`. Every other `notifyDeleted` call in both suites passes the title and an Undo alone and holds.
 - [ ] `notifyDeleted`'s two view callers (`Core/Tiles/Surfaces/ViewTile.tsx:398`, `Core/Views/deleteViewWithUndo.ts:14`) keep `notifyDeleted(name, undo)` unchanged.
 - [ ] Rewrite `NexusRecordPM.md:16`'s "the delete answers with the bundle it minted, and **Undo** restores from that path without the frame being opened" as "the delete answers the Undo that restores the bundle it minted, which **Undo** sends without the frame being opened".
 
@@ -7002,12 +7002,13 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 -    if ((stored.entity !== 'page' && stored.entity !== 'set') || !stored.archive)
 -      return fault(NO_DESTINATION)
 -    const filing = await archiveFiling(root, tree, stored, stored.archive)
-+    if (stored.entity !== 'page' && stored.entity !== 'set') return fault(NO_DESTINATION)
++    if ((stored.entity !== 'page' && stored.entity !== 'set') || storeOf(restoring)?.store.kind !== 'trash')
++      return fault(NO_DESTINATION)
 +    const filing = await archiveFiling(root, tree, stored, destination.at)
      if (!filing.ok) return filing
 ```
 
-`archiveFiling` already refuses an address outside the Archive (`placement.ts:196-197`), which is what `spend.test.ts:2229`'s rewritten case pins.
+An Archive destination is a Trash bundle's Undo alone: the record's missing `archive` refused an Archive bundle given one, so `storeOf` refuses it now, or the item would file into its own bundle and leave with it (`archive.test.ts`, *"refuses the Archive as a destination for an Archive bundle"*). `archiveFiling` already refuses an address outside the Archive (`placement.ts:196-197`), which is what `spend.test.ts:2229`'s rewritten case pins.
 
 ```Core/Trash/spend.ts diff
 @@ restoreTrashed's Undo filing @@
@@ -7118,7 +7119,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +}
 ```
 
-`notifyBundled` is the one place a bundle op's head, segment, and lines are composed; `notifyOutcome` stays the shape every notice with a head and lines takes, which the views and the slice share.
+`notifyBundled` is the one place a bundle op's head, segment, and lines are composed; `notifyOutcome` stays the shape it and `notifyDeleted` share, and it and `unrestoredLine` lose their exports, since nothing outside the file reads either.
 
 ```Core/Interface/Confirm/confirmations.ts diff
 @@ imports @@
@@ -7415,7 +7416,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 **VERIFY**
 
 - [ ] The failing cases are green, each red with its hunk reverted, and the lone-refusal pin stays green.
-- [ ] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `TrashFrame.test.tsx:272,288,307`, `ArchiveView.test.tsx:388-398,441-458`, `notifications.test.ts:44-93`, `ActionLabel.test.tsx:60`), and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green, and every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
+- [ ] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `TrashFrame.test.tsx:272,288,307`, `ArchiveView.test.tsx:388-398,441-458`, `notifications.test.ts:44-93`, `ActionLabel.test.tsx:60`); `deleteOrder.test.ts`'s and `archive.test.ts`'s inner-item record expectations, which drop `archive` (the inner item's case asserting the reply's `undo.destination.at` instead); and `PropertyFrame.test.tsx`'s stub tree, which gains the `nexus` `runBundled` reads; and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green, and every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
 - [ ] These print nothing:
   - `git grep -nE "\.bundled\b|bundled\??:|ARCHIVE_UNDO|\bUndone\b|undoneOf|rearchive|restoreUndo|deleteUndo|\bAsked\b" -- Core ':!*.test.ts' ':!*.test.tsx'`;
   - `git grep -n "stored.archive\|archive: z.string" -- Core`;

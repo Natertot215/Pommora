@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { putJson, readJsonAt, failLandings, tempRoot } from '../Testing/hostFs'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { assignProperty } from '../Properties/assignment'
 import { createProperty, renameProperty } from '../Properties/registryProperty'
 import { renameOption, setValueFormat } from '../Properties/optionOps'
@@ -1288,10 +1288,6 @@ describe('an own write of a page', () => {
 describe('a re-spell on the notes', () => {
   const failing: string[] = []
   const linker = (): string => abs('Notes', 'L.md')
-  const bundleOf = (r: Awaited<ReturnType<typeof settledMutate>>): string => {
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-    return r.value.bundled.bundlePath
-  }
 
   beforeEach(() => {
     failLandings((file) => failing.some((f) => file.endsWith(f)))

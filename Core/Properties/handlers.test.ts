@@ -26,6 +26,7 @@ import { nexusHandlers } from '../Nexus/handlers'
 import type { MutateRequest } from '../Nexus/mutateRequest'
 import type { FormatChange } from './keyFormat'
 import { handleMutate } from '../Nexus/mutate'
+import { bundleOf } from '../Testing/settledMutate'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -178,11 +179,11 @@ describe('the property ops', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await send({ op: 'deleteProperty', propertyId: propId })
-    if (!r.ok || !r.value.bundled) throw new Error('setup failed')
+    if (!bundleOf(r)) throw new Error('setup failed')
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    const bundlePath = r.value.bundled.bundlePath
+    const bundlePath = bundleOf(r)
     expect((await handleMutate(root, { op: 'restore', bundlePath })).ok).toBe(true)
     // The re-assign's refill settles once the rename it sits under does.
     const collectionId = (await readJsonObject(sidecarPath(col, 'collection')))?.id

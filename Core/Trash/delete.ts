@@ -27,7 +27,7 @@ import { gatherContextRecord, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 
-/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and its record keeps the address it left for the Undo. Link values name its pages where they lived. */
+/** A delete naming an Archive bundle, or an inner item of one, takes it to the Trash under the chain it was archived from, so a Trash restore returns it there, and answers the address it left for the Undo. Link values name its pages where they lived. */
 async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'delete' }>) {
   if (storeOf(req.path)?.store.kind !== 'archive') return null
   const resolved = await resolveUnderRoot(root, req.path)
@@ -45,7 +45,8 @@ async function fromArchive(root: string, req: Extract<MutateRequest, { op: 'dele
     origin: join(root, originPathOf(root, abs)),
     keys: pages.map((file) => originPathOf(root, file)),
     edit: sets.length ? goneContainers(sets) : null,
-    record: { ...held, archive: relative(root, resolved.value) },
+    record: held,
+    at: relative(root, resolved.value),
   })
 }
 /** A Context's or Space's delete note: every title it still owed and the current one leave. */
@@ -173,8 +174,18 @@ export async function deleteOp(
       },
       sweep: async (left) => (left ? finishEntry(root, plan.id) : { skipped: 1, hosts: [] }),
     })
-    if (!ran.ok) await unmoved()
-    return ran.ok ? ok({ bundled: { bundlePath: into }, cascade: ran.value.cascade }) : ran
+    if (!ran.ok) {
+      await unmoved()
+      return ran
+    }
+    return ok({
+      undo: {
+        op: 'restore',
+        bundlePath: into,
+        ...(from ? { destination: { kind: 'archive', at: from.at } } : {}),
+      },
+      cascade: ran.value.cascade,
+    })
   } catch (e) {
     await unmoved()
     throw e

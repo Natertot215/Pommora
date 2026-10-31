@@ -204,7 +204,7 @@ describe('a delete through the confirmation', () => {
   beforeEach(() => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
     mutate.mockReset()
-    mutate.mockResolvedValue({ bundled: { bundlePath: '.trash/b1' } })
+    mutate.mockResolvedValue({ undo: { op: 'restore', bundlePath: '.trash/b1' } })
     useSession.setState({ mutate: mutate as never })
     clearNotification()
   })
@@ -221,7 +221,7 @@ describe('a delete through the confirmation', () => {
       },
     })
     mutate.mockResolvedValueOnce({
-      bundled: { bundlePath: '.trash/p1' },
+      undo: { op: 'restore', bundlePath: '.trash/p1' },
       cascade: { pages: [], hosts: [], warning: 'W', owed: true },
     })
     expect(await confirmDelete({ propertyId: 'p1', title: 'Status' })).toBe(true)
@@ -272,7 +272,7 @@ describe('a delete through the confirmation', () => {
   it('carries the configuration pass’s warning in the Deleted notice', async () => {
     const warning = 'Couldn’t update 1 Item.'
     mutate.mockResolvedValue({
-      bundled: { bundlePath: '.trash/b1' },
+      undo: { op: 'restore', bundlePath: '.trash/b1' },
       cascade: { pages: [], hosts: [], warning },
     })
     await del('set')
@@ -282,7 +282,7 @@ describe('a delete through the confirmation', () => {
 
   it('counts the strip’s linkers behind a segment in the Deleted notice', async () => {
     mutate.mockResolvedValue({
-      bundled: { bundlePath: '.trash/b1' },
+      undo: { op: 'restore', bundlePath: '.trash/b1' },
       cascade: { pages: ['A.md', 'B.md'], hosts: [] },
     })
     await del('page')
@@ -339,23 +339,53 @@ describe('an Undo over several bundles', () => {
     expect(details).toEqual(['They will be moved to the nexus’s .trash folder (recoverable).'])
   })
 
-  it('offers one Undo returning every bundle it was handed to the destination given', async () => {
-    offerUndo(['.trash/b1', '.trash/b2'], (undo) => notifyUndoable('Deleted 2 Pages', undo), {
-      kind: 'archive',
-    })
+  const undos: Parameters<typeof offerUndo>[0] = [
+    {
+      title: 'A',
+      kind: 'page',
+      req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } },
+    },
+    { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } },
+  ]
+
+  it('offers one Undo running every request it was handed', async () => {
+    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
     await currentNotification()?.action?.run()
     await vi.waitFor(() => expect(mutate).toHaveBeenCalledTimes(2))
     expect(mutate.mock.calls).toEqual([
-      [{ op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive' } }],
-      [{ op: 'restore', bundlePath: '.trash/b2', destination: { kind: 'archive' } }],
+      [undos[0].req, { quiet: true }],
+      [undos[1].req, { quiet: true }],
     ])
   })
 
   it('gives up that Undo once one of its bundles is restored from elsewhere', async () => {
-    offerUndo(['.trash/b1', '.trash/b2'], (undo) => notifyUndoable('Deleted 2 Pages', undo))
+    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
     spendUndo('.trash/b2')
     expect(currentNotification()).toBeNull()
     expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('an Undo’s own run posts every line its replies carry in one notice', async () => {
+    const warning = 'Couldn’t update 1 Item.'
+    mutate
+      .mockResolvedValueOnce({ unrestored: ['Beta'] })
+      .mockResolvedValueOnce({ cascade: { pages: [], hosts: [], warning } })
+    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
+    await currentNotification()?.action?.run()
+    await vi.waitFor(() =>
+      expect(currentNotification()?.message).toBe(`Beta didn’t get its value back. ${warning}`),
+    )
+  })
+
+  it('an Undo over several bundles counts a refusal among its lines', async () => {
+    mutate
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ cascade: { pages: [], hosts: [], warning: 'W' } })
+    offerUndo(undos, (undo) => notifyUndoable('Deleted 2 Pages', undo))
+    await currentNotification()?.action?.run()
+    await vi.waitFor(() =>
+      expect(currentNotification()?.message).toBe('1 Page couldn’t be undone. W'),
+    )
   })
 })
 
@@ -367,7 +397,7 @@ describe('an archive through the confirmation', () => {
 
   beforeEach(() => {
     mutate.mockReset()
-    mutate.mockResolvedValue({ bundled: { bundlePath: BUNDLE } })
+    mutate.mockResolvedValue({ undo: { op: 'restore', bundlePath: BUNDLE } })
     useSession.setState({ mutate: mutate as never })
     clearNotification()
   })
@@ -421,10 +451,37 @@ describe('an archive through the confirmation', () => {
     expect(asked).toEqual(['Archive “A”?'])
   })
 
+  it('an archive whose re-spell couldn’t settle posts Archived “A” with its warning and Try Again', async () => {
+    useSession.setState({ tree: makeTree() })
+    mutate.mockResolvedValue({
+      cascade: { pages: [], hosts: [], warning: 'Links weren’t updated.', owed: true },
+      undo: { op: 'restore', bundlePath: BUNDLE },
+    })
+    await archive('page')
+    expect(currentNotification()).toMatchObject({
+      message: 'Archived “A”. Links weren’t updated.',
+      tone: 'error',
+      action: { label: 'Try Again' },
+    })
+  })
+
   it('archives nothing when the question is declined', async () => {
     useSession.setState({ tree: makeTree(), askConfirm: async () => false })
     await archive('page')
     expect(mutate).not.toHaveBeenCalled()
+  })
+})
+
+describe('a bundle op through the slice', () => {
+  it('a bundle op’s success posts nothing from the slice', async () => {
+    useSession.setState({ mutate: useSession.getInitialState().mutate, tree: makeTree() })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      mutate: async () =>
+        ok({ unrestored: ['Beta'], cascade: { pages: [], hosts: [], warning: 'W' } }),
+    })
+    clearNotification()
+    await useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b1' })
+    expect(currentNotification()).toBeNull()
   })
 })
 

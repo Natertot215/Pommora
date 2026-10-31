@@ -17,3 +17,7 @@ export async function settledMutate(root: string, req: MutateRequest): Promise<M
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return reply
 }
+
+/** The bundle a removal's reply filed what it took in, read from the Undo that restores it; empty for a refusal. */
+export const bundleOf = (reply: MutateReply): string =>
+  reply.ok && reply.value.undo?.op === 'restore' ? reply.value.undo.bundlePath : ''

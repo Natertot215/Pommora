@@ -38,7 +38,7 @@ export interface BundleRow {
   match: MatchKey
   /** The item's own icon: a page's from the metadata the tree holds, a container's or a Space's from its record, which keeps the sidecar's. */
   icon?: string
-  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens and a restore's Undo finds again. */
+  /** A page or Set as stored, by its record's id and its path in the Nexus: what the reader opens. */
   stored?: { id: string; path: string }
   /** Set when the delete recorded only part of what the item held. */
   partial?: true

@@ -20,7 +20,7 @@ import { identityFor } from '../Testing/testTree'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readIndexedStats } from '../Index/contentIndex'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
-import { settledMutate } from '../Testing/settledMutate'
+import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -122,9 +122,9 @@ describe('a page delete', () => {
     await writeFile(loose, content)
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
     expect(r.value.cascade?.pages ?? []).toEqual([])
-    expect((await recordOf(r.value.bundled.bundlePath)).links ?? []).toEqual([])
+    expect((await recordOf(bundleOf(r))).links ?? []).toEqual([])
     expect(await readFile(loose, 'utf8')).toBe(content)
   })
 
@@ -133,7 +133,7 @@ describe('a page delete', () => {
     await copyFile(twin, join(notes, 'Twin copy.md'))
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
     expect(r.value.cascade).toEqual({
       pages: [],
       hosts: [],
@@ -141,7 +141,7 @@ describe('a page delete', () => {
       owed: true,
     })
     expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
-    expect((await recordOf(r.value.bundled.bundlePath)).links).toBeUndefined()
+    expect((await recordOf(bundleOf(r))).links).toBeUndefined()
   })
 
   it('a trashed Space sharing a live Space’s id is passed over by the strip silently, neither skipped nor owed', async () => {
@@ -160,14 +160,14 @@ describe('a page delete', () => {
     const copied = await readFile(copy, 'utf8')
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
     expect(r.value.cascade).toEqual({
       pages: ['.nexus/contexts/Areas/Work/_space.json'],
       hosts: [],
     })
     expect(await readJsonAt(join(work, SIDECAR_FILENAME.space))).not.toHaveProperty('Related')
     expect(await readFile(copy, 'utf8')).toBe(copied)
-    expect((await recordOf(r.value.bundled.bundlePath)).links).toEqual([
+    expect((await recordOf(bundleOf(r))).links).toEqual([
       { page: 'sp_work', property: RELATED.id, value: '[[Target]]' },
     ])
     await finishOwed(root)
@@ -180,12 +180,12 @@ describe('a page delete', () => {
     await page(notes, 'One', 'Target')
     await refreshTree(root)
     const trashed = await del('Notes/One.md', 'page')
-    if (!trashed.ok || !trashed.value.bundled) throw new Error('the delete did not trash')
-    const bundle = join(root, trashed.value.bundled.bundlePath)
+    if (!bundleOf(trashed)) throw new Error('the delete did not trash')
+    const bundle = join(root, bundleOf(trashed))
     await rm(bundle, { recursive: true })
     await applyEvents(root, [{ event: 'unlinkDir', absPath: bundle, origin: 'watched' }])
     await settleNow({ push: () => {}, watch: async () => {} }, root)
-    expect(readIndexedStats(trashed.value.bundled.bundlePath)?.size).toBe(0)
+    expect(readIndexedStats(bundleOf(trashed))?.size).toBe(0)
     const r = await del('Notes/Target.md', 'page')
     expect(r.ok && r.value.cascade?.warning).toBeUndefined()
     expect(await readNotes(root)).toEqual({})
@@ -310,7 +310,7 @@ describe('a Set delete', () => {
 
   const trashGone = async (): Promise<string> => {
     const r = await del('Notes/Gone', 'set')
-    const bundlePath = r.ok ? r.value.bundled?.bundlePath : undefined
+    const bundlePath = bundleOf(r)
     if (!bundlePath) throw new Error('the delete did not trash')
     return bundlePath
   }
@@ -382,16 +382,14 @@ describe('a Set delete', () => {
     const held = await readFile(inside, 'utf8')
     await refreshTree(root)
     const r = await del('Notes/Gone', 'set')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
     r.value.cascade?.pages.sort()
     expect(r.value.cascade).toEqual({
       pages: ['Notes/Far.md', 'Notes/Outside.md'],
       hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
     })
-    expect(
-      await readFile(join(root, r.value.bundled.bundlePath, 'Gone', 'Inside.md'), 'utf8'),
-    ).toBe(held)
-    expect((await recordOf(r.value.bundled.bundlePath)).links).toEqual(
+    expect(await readFile(join(root, bundleOf(r), 'Gone', 'Inside.md'), 'utf8')).toBe(held)
+    expect((await recordOf(bundleOf(r))).links).toEqual(
       expect.arrayContaining([
         { page: await idOf(outside), property: 'prop_related', value: '[[Inner]]' },
         { page: await idOf(far), property: 'prop_related', value: '[[Deep]]' },
@@ -417,7 +415,7 @@ describe('a Set delete', () => {
     await chmod(locked.path, 0o555)
     try {
       const r = await del('Notes/Gone', 'set')
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+      if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
       expect(r.value.cascade).toMatchObject({ warning: unsweptLine(2), owed: true })
     } finally {
       await chmod(locked.path, 0o755)
@@ -515,8 +513,8 @@ describe('a Context or Space delete on the notes', () => {
     'a Context delete that misses a page finishes and owes the rest',
     async () => {
       const r = await shut(b, () => del(AREAS, 'context'))
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-      const { bundlePath } = r.value.bundled
+      if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
+      const bundlePath = bundleOf(r)
       expect(r.value.cascade?.owed).toBe(true)
       expect((await readJsonAt(contextsRegistryFile(root))).contexts).not.toContainEqual(
         expect.objectContaining({ id: 'ctx_areas' }),
@@ -533,8 +531,8 @@ describe('a Context or Space delete on the notes', () => {
     'a Space delete that misses a page finishes and owes the rest',
     async () => {
       const r = await shut(b, () => del(WORK, 'space'))
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-      const { bundlePath } = r.value.bundled
+      if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
+      const bundlePath = bundleOf(r)
       expect(r.value.cascade?.owed).toBe(true)
       expect(await pathExists(join(root, WORK))).toBe(false)
       expect(await pathExists(join(root, bundlePath, 'Work'))).toBe(true)
@@ -601,8 +599,8 @@ describe('a Context or Space delete on the notes', () => {
       await seedContentIndex(root)
       const id = await idOf(b)
       const r = await shut(b, () => del(AREAS, 'context'))
-      if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-      expect((await recordOf(r.value.bundled.bundlePath)).membership).toContainEqual({
+      if (!bundleOf(r)) throw new Error('the delete did not trash')
+      expect((await recordOf(bundleOf(r))).membership).toContainEqual({
         root: { id, kind: 'page' },
         spaces: [{ id: 'sp_work', title: 'Work' }],
       })
@@ -617,10 +615,8 @@ describe('a Context or Space delete on the notes', () => {
     })
     await refreshTree(root)
     const r = await del(AREAS, 'context')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-    const roots = ((await recordOf(r.value.bundled.bundlePath)).membership as Raw[]).map(
-      (m) => (m.root as Raw).id,
-    )
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
+    const roots = ((await recordOf(bundleOf(r))).membership as Raw[]).map((m) => (m.root as Raw).id)
     expect(roots.sort()).toEqual([await idOf(a), await idOf(b)].sort())
   })
 
@@ -689,8 +685,8 @@ describe('a Context or Space delete on the notes', () => {
     const written = await readFile(home, 'utf8')
     await refreshTree(root)
     const r = await del(AREAS, 'context')
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-    const { bundlePath } = r.value.bundled
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
+    const bundlePath = bundleOf(r)
     await finishOwed(root)
     expect(
       await readFile(join(root, bundlePath, 'Areas', 'Home', SIDECAR_FILENAME.space), 'utf8'),
@@ -778,8 +774,8 @@ describe('a content delete on the notes', () => {
     const r = await shut(linker, () =>
       handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }),
     )
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
-    const { bundlePath } = r.value.bundled
+    if (!r.ok || !bundleOf(r)) throw new Error('the delete did not trash')
+    const bundlePath = bundleOf(r)
     const linkerId = await idOf(linker)
     expect(r.value.cascade?.owed).toBe(true)
     expect((await recordOf(bundlePath)).links).toContainEqual(
@@ -867,12 +863,12 @@ describe('a content delete on the notes', () => {
       const deleted = await shut(two, () =>
         handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' }),
       )
-      if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
+      if (!deleted.ok || !bundleOf(deleted)) throw new Error('the delete did not trash')
       expect(deleted.value.cascade?.owed).toBe(true)
       await refreshTree(root)
       const r = await settledMutate(root, {
         op: 'restore',
-        bundlePath: deleted.value.bundled.bundlePath,
+        bundlePath: bundleOf(deleted),
       })
       expect(r.ok).toBe(true)
       await finishOwed(root)
@@ -925,9 +921,9 @@ describe('a content delete on the notes', () => {
       const { old, tiles } = await tiled()
       const r = await shut(tiles, async () => {
         const deleted = await del('Old', 'collection')
-        if (!deleted.ok || !deleted.value.bundled) throw new Error('the delete did not trash')
+        if (!deleted.ok || !bundleOf(deleted)) throw new Error('the delete did not trash')
         expect(deleted.value.cascade?.owed).toBe(true)
-        return settledMutate(root, { op: 'restore', bundlePath: deleted.value.bundled.bundlePath })
+        return settledMutate(root, { op: 'restore', bundlePath: bundleOf(deleted) })
       })
       expect(r.ok).toBe(true)
       await finishOwed(root)

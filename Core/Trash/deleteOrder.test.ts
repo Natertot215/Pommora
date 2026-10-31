@@ -13,6 +13,7 @@ import { listBundles } from '../Bundles/bundle'
 import { machine } from '../Platform/machine'
 import { closeSession, openSession } from '../Nexus/session'
 import { readNotes } from '../Nexus/owed'
+import { bundleOf } from '../Testing/settledMutate'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -189,21 +190,20 @@ describe('the record is written before the destruction it describes', () => {
     expect(atSweep).toEqual(atSettle)
   })
 
-  it('a delete from the Archive records, with the bundle it left, before its strip', async () => {
+  it('a delete from the Archive records before its strip', async () => {
     const archived = await handleMutate(root, {
       op: 'archive',
       path: 'Notes/Alpha.md',
       kind: 'page',
     })
-    const archive = archived.ok ? archived.value.bundled?.bundlePath : undefined
+    const archive = bundleOf(archived)
     expect(archive).toBeDefined()
     const r = await handleMutate(root, { op: 'delete', path: archive!, kind: 'page' })
     expect(r.ok).toBe(true)
-    expect(atSettle).toMatchObject({ entity: 'page', archive })
+    expect(atSettle).toMatchObject({ entity: 'page' })
     expect(atSettle).not.toHaveProperty('links')
     expect(atSweep).toMatchObject({
       entity: 'page',
-      archive,
       links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],
     })
   })
@@ -294,8 +294,8 @@ describe('a page delete waits out a save in flight', () => {
     release()
     await save
     const r = await del
-    if (!r.ok || !r.value.bundled) throw new Error('the delete did not trash')
+    if (!bundleOf(r)) throw new Error('the delete did not trash')
     expect(await pathExists(file)).toBe(false)
-    expect(await readFile(join(root, r.value.bundled.bundlePath, 'Alpha.md'), 'utf8')).toBe('saved')
+    expect(await readFile(join(root, bundleOf(r), 'Alpha.md'), 'utf8')).toBe('saved')
   })
 })

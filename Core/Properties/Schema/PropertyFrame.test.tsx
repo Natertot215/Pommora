@@ -60,7 +60,7 @@ const answers: Partial<Record<MutateRequest['op'], MutateOutcome>> = {
   addProperty: { created: { propertyId: 'prop_new' } },
   renameProperty: SWEPT,
   setFormat: SWEPT,
-  deleteProperty: { bundled: { bundlePath: '.trash/s__property-prop_status.deleted' } },
+  deleteProperty: { undo: { op: 'restore', bundlePath: '.trash/s__property-prop_status.deleted' } },
 }
 
 beforeEach(() => {
@@ -80,7 +80,7 @@ beforeEach(() => {
   })
   useSession.setState({
     mutate: mutate as never,
-    tree: { config: { registry: [] } } as never,
+    tree: { nexus: { id: 'n' }, config: { registry: [] } } as never,
   })
 })
 afterEach(() => {

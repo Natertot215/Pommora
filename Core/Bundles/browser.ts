@@ -3,19 +3,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { actedOn, checkedIn, retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import {
-  askEmptyTrash,
-  askTrashing,
-  offerDeleted,
-  offerUndo,
-  spendUndo,
-} from '../Interface/Confirm/confirmations'
-import { countPhrase, isContainerKind } from '../Nexus/entities'
-import { notifyOutcome, unrestoredLine } from '../Interface/Notifications/notifications'
-import type { MutateOutcome, MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
-import { nodesByIdOf } from '../Nexus/treeIndex'
+import { askEmptyTrash, askTrashing, runBundled } from '../Interface/Confirm/confirmations'
+import { isContainerKind } from '../Nexus/entities'
+import type { MutateRequest, RestoreDestination } from '../Nexus/mutateRequest'
 import { matches, matchQuery } from '../Paths/caseFold'
-import { basename, isAtOrUnder, relDirname } from '../Paths/posix'
+import { isAtOrUnder, relDirname } from '../Paths/posix'
 import { formatDate } from '../Properties/formatValue'
 import {
   type DateStyle,
@@ -37,8 +29,6 @@ import { dialer } from '../Platform/dialer'
 import type { Personalization } from '../Settings/personalization'
 import type { BundleStore } from '../Paths/bundleLayout'
 import type { BundleCrumb, BundleRow } from './rows'
-
-const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 
 /** Typed search narrows in place, keeping the store's order, as a view's search does (`searchGroups`). */
 export function filterRows(rows: BundleRow[], query: string): BundleRow[] {
@@ -105,8 +95,6 @@ function keepsCheck(rows: readonly BundleRow[], open: OpenRows): (address: strin
   }
 }
 
-const ARCHIVE_UNDO: RestoreDestination = { kind: 'archive' }
-
 type BundleOp = 'restore' | 'emptyBundle' | 'delete'
 
 /** What an op sends for a row: an Archive delete its path and kind, a restore or an empty its bundle. */
@@ -139,32 +127,6 @@ const destinationTargets = (kind: DestinationKind): MoveTarget[] => {
 async function askDestination(kind: DestinationKind): Promise<RestoreDestination | null> {
   const id = await popMenu(destinationRows(destinationTargets(kind), (t) => t.id))
   return id ? { kind, id } : null
-}
-
-/** A restored row and the archive request its reply says takes the restore back. */
-type Undone = { row: BundleRow; undo: Extract<MutateRequest, { op: 'archive' }> }
-
-/** The row with the archive request its reply carries, when it carries one. */
-const undoneOf = (row: BundleRow, { undo }: MutateOutcome): Undone[] =>
-  undo?.op === 'archive' ? [{ row, undo }] : []
-
-/** A restore from the Archive undoes by sending each reply's own request, the item found by id so it follows a rename made since, under that new name once it has one. */
-const rearchive = (undone: Undone[]) => async (): Promise<void> => {
-  for (const { row, undo } of undone) {
-    const { tree, mutate } = useSession.getState()
-    const id = row.stored?.id
-    if (!id || !tree) continue
-    const path = nodesByIdOf(tree).get(id)?.path
-    const { back } = undo
-    if (path)
-      await mutate({
-        ...undo,
-        path,
-        ...(back && basename(path) !== basename(undo.path)
-          ? { back: { ...back, name: basename(path) } }
-          : {}),
-      })
-  }
 }
 
 type DateKey = 'trashColumnStyle' | 'archiveColumnStyle'
@@ -232,13 +194,11 @@ function useDateColumn(key: DateKey): {
   }
 }
 
-/** What the Trash and the Archive do differently under one browser: the date column's setting, what a delete sends and how it asks, and what a restore's and a delete's Undo do. */
+/** What the Trash and the Archive do differently under one browser: the date column's setting, and what a delete sends and how it asks. */
 function rulesOf(kind: BundleStore['kind']): {
   dateKey: DateKey
   deleteOp: 'emptyBundle' | 'delete'
   askDelete: (targets: BundleRow[]) => Promise<boolean>
-  restoreUndo?: (undone: Undone[]) => () => Promise<void>
-  deleteUndo?: RestoreDestination
 } {
   switch (kind) {
     case 'trash':
@@ -252,8 +212,6 @@ function rulesOf(kind: BundleStore['kind']): {
         dateKey: 'archiveColumnStyle',
         deleteOp: 'delete',
         askDelete: askTrashing,
-        restoreUndo: rearchive,
-        deleteUndo: ARCHIVE_UNDO,
       }
   }
 }
@@ -279,14 +237,12 @@ export function useBundleBrowser(
   rowClick: (row: BundleRow, detail: number) => void
   openMenu: (row: BundleRow) => Promise<void>
   date: ReturnType<typeof useDateColumn>
-  restore: (targets: BundleRow[]) => Promise<void>
+  restore: (targets: BundleRow[], destination?: RestoreDestination) => Promise<void>
   remove: (targets: BundleRow[]) => Promise<void>
 } {
   const rules = rulesOf(store.kind)
   const date = useDateColumn(rules.dateKey)
   const nexusId = useSession((s) => s.tree?.nexus.id)
-  const mutate = useSession((s) => s.mutate)
-  const finishOwed = useSession((s) => s.finishOwed)
   const [listing, setListing] = useState<Listing>({ status: 'loading' })
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
   const [open, setOpen] = useState<OpenRows>(new Map())
@@ -379,134 +335,37 @@ export function useBundleBrowser(
     }
   }
 
-  /** A row whose place is gone asks where to go first, unless the menu's submenu already chose. */
-  const restoreOne = async (row: BundleRow, destination?: RestoreDestination): Promise<void> => {
-    const to =
-      destination ?? (row.homeResolves ? undefined : await askDestination(destinationKind(row)))
-    if (to === null) return
-    const done = await mutate(requestOf(row, 'restore', to))
-    if (!done) return
-    spendUndo(row.bundlePath)
-    const undone = undoneOf(row, done)
-    // The notice replaces the slice's, so it carries the reply's lines and its Try Again.
-    notifyOutcome(
-      `Restored ${done.landedAs ? steppedTo(row.title, done.landedAs) : `“${row.title}”`}`,
-      undefined,
-      [done.unrestored !== undefined && unrestoredLine(done.unrestored), done.cascade?.warning],
-      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
-      done.cascade?.owed ? finishOwed : undefined,
-    )
-  }
-
-  const deleteOne = async (row: BundleRow): Promise<void> => {
-    if (!(await rules.askDelete([row]))) return
-    const done = await mutate(requestOf(row, rules.deleteOp))
-    if (!done) return
-    spendUndo(row.bundlePath)
-    offerDeleted(row.title, done, rules.deleteUndo)
-  }
-
-  /** Answers null when a Nexus switch stopped it, as the slice's `mutate` drops a held op: the paths left belong to the Nexus it left, so the batch reports nothing. */
-  const many = async (
-    targets: BundleRow[],
-    op: BundleOp,
-    destinationOf?: (row: BundleRow) => RestoreDestination | undefined,
-  ): Promise<{
-    done: BundleRow[]
-    refused: BundleRow[]
-    unrestored: string[]
-    warnings: string[]
-    renamed: string[]
-    bundled: string[]
-    undone: Undone[]
-    owed: boolean
-  } | null> => {
-    const done: BundleRow[] = []
-    const refused: BundleRow[] = []
-    const unrestored: string[] = []
-    const warnings = new Set<string>()
-    const renamed: string[] = []
-    const bundled: string[] = []
-    const undone: Undone[] = []
-    let owed = false
-    const switched = (): boolean => useSession.getState().tree?.nexus.id !== nexusId
-    for (const row of targets) {
-      if (switched()) break
-      const to = destinationOf?.(row)
-      const res = await mutate(requestOf(row, op, to), { quiet: true })
-      ;(res ? done : refused).push(row)
-      if (!res) continue
-      spendUndo(row.bundlePath)
-      unrestored.push(...(res.unrestored ?? []))
-      if (res.cascade?.warning) warnings.add(res.cascade.warning)
-      owed ||= !!res.cascade?.owed
-      if (res.landedAs) renamed.push(steppedTo(row.title, res.landedAs))
-      if (res.bundled) bundled.push(res.bundled.bundlePath)
-      undone.push(...undoneOf(row, res))
-    }
-    storesChanged.emit()
-    return switched()
-      ? null
-      : { done, refused, unrestored, warnings: [...warnings], renamed, bundled, undone, owed }
-  }
-
-  const restoreBatch = async (targets: BundleRow[]): Promise<void> => {
-    // What has no home left asks once where it goes, one ask per kind of destination, and a dismissed ask restores nothing.
-    const to = new Map<DestinationKind, RestoreDestination>()
-    for (const kind of new Set(targets.filter((r) => !r.homeResolves).map(destinationKind))) {
-      const destination = await askDestination(kind)
-      if (!destination) return
-      to.set(kind, destination)
-    }
-    const ran = await many(targets, 'restore', (row) =>
-      row.homeResolves ? undefined : to.get(destinationKind(row)),
-    )
-    if (!ran) return
-    const { done, refused, unrestored, warnings, renamed, undone, owed } = ran
-    notifyOutcome(
-      `Restored ${countPhrase(done)}`,
-      renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0],
-      [
-        refused.length > 0 && `${countPhrase(refused)} couldn’t be restored.`,
-        unrestored.length > 0 && unrestoredLine(unrestored),
-        ...warnings,
-      ],
-      undone.length > 0 ? rules.restoreUndo?.(undone) : undefined,
-      owed ? finishOwed : undefined,
-    )
-  }
-
-  const deleteBatch = async (targets: BundleRow[]): Promise<void> => {
-    if (!(await rules.askDelete(targets))) return
-    const ran = await many(targets, rules.deleteOp)
-    if (!ran) return
-    const { done, refused, warnings, bundled, owed } = ran
-    // An empty mints no bundle, so only a batch the Archive moved into the Trash offers its Undo.
-    offerUndo(
-      bundled,
-      (undo) =>
-        notifyOutcome(
-          `Deleted ${countPhrase(done)}`,
-          undefined,
-          [refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`, ...warnings],
-          undo,
-          owed ? finishOwed : undefined,
-        ),
-      rules.deleteUndo,
-    )
-  }
-
   // A re-list can drop the checked rows a frame before the bar withdraws, so a press may name none.
-  const restore = (targets: BundleRow[]): Promise<void> =>
+  const restore = (targets: BundleRow[], destination?: RestoreDestination): Promise<void> =>
     flight(async () => {
-      if (targets.length > 1) return restoreBatch(targets)
-      if (targets.length) return restoreOne(targets[0])
+      if (!targets.length) return
+      // What has no home left asks once where it goes, one ask per kind of destination, unless a menu's submenu chose, and a dismissed ask restores nothing.
+      const to = new Map<DestinationKind, RestoreDestination>()
+      const homeless = destination ? [] : targets.filter((r) => !r.homeResolves)
+      for (const kind of new Set(homeless.map(destinationKind))) {
+        const asked = await askDestination(kind)
+        if (!asked) return
+        to.set(kind, asked)
+      }
+      const toOf = (row: BundleRow): RestoreDestination | undefined =>
+        destination ?? (row.homeResolves ? undefined : to.get(destinationKind(row)))
+      const rows = targets.map((row) => ({
+        ...row,
+        address: row.bundlePath,
+        req: requestOf(row, 'restore', toOf(row)),
+      }))
+      await runBundled('Restored', rows, nexusId)
     })
 
   const remove = (targets: BundleRow[]): Promise<void> =>
     flight(async () => {
-      if (targets.length > 1) return deleteBatch(targets)
-      if (targets.length) return deleteOne(targets[0])
+      if (!targets.length || !(await rules.askDelete(targets))) return
+      const rows = targets.map((row) => ({
+        ...row,
+        address: row.bundlePath,
+        req: requestOf(row, rules.deleteOp),
+      }))
+      await runBundled('Deleted', rows, nexusId)
     })
 
   const openMenu = async (row: BundleRow): Promise<void> => {
@@ -520,7 +379,7 @@ export function useBundleBrowser(
     if (!action) return
     if (action.startsWith('restoreTo:') && kind) {
       const id = action.slice('restoreTo:'.length)
-      return flight(() => restoreOne(one, { kind, id }))
+      return restore([one], { kind, id })
     }
     switch (action) {
       case 'restore':
