@@ -1,4 +1,4 @@
-// The notes file: one entry per item or many-file change that still owes work, keyed by its id or path, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
+// The notes file: one entry per item or many-file change that still owes work, keyed by its id or path, a re-spell's under `relinkKey`, each holding the old names files may still carry. A change writes its entry before anything else and refuses when it can't; the entry clears once nothing is owed.
 
 import { fail, ok, type Result } from '../Contract/result'
 import { neverParsed, readAppFile, updateNexusFile } from '../Files/atomicWrite'
@@ -203,6 +203,8 @@ export async function restoreNote(root: string, id: string): Promise<Result<unkn
     (e) => e && { ...e, rename: distinct(e.rename, e.strip), strip: undefined, bundle: undefined },
   )
 }
+
+export const relinkKey = (of: string): string => `relink:${of}`
 
 export const containerNote = (
   at: string,

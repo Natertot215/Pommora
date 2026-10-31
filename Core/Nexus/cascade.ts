@@ -34,6 +34,7 @@ import {
   followRelinks,
   type RelinkEntry,
   reachReport,
+  relinkKey,
   relinkNote,
   runNoted,
 } from './owed'
@@ -298,6 +299,6 @@ export async function respell(
   label: string,
   paths?: (file: string) => string,
 ): Promise<CascadeReport> {
-  await followRelinks(root, names, paths, ids[0])
-  return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
+  await followRelinks(root, names, paths, relinkKey(ids[0]))
+  return noteRelink(root, relinkKey(ids[0]), (e) => relinkNote(e, names, label))
 }

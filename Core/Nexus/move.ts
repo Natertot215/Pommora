@@ -6,7 +6,8 @@ import { movePage } from './page'
 import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { archivedSetIds, goneEdit, reachConfig } from './configReach'
-import { runNoted } from './owed'
+import { OWED, retries, runNoted } from './owed'
+import { finishEntry } from './finishOwed'
 import { containerAt, owningCollection, pageAt } from './treePatch'
 import { dropDeparture, setChildOrder } from './reorder'
 import { archivedWithin } from '../Bundles/bundle'
@@ -72,7 +73,8 @@ export async function moveSetOp(
     return ok(null)
   }
   if (left === null || !edit) return done(await move())
-  // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach.
+  // The Set's rules leave the Collection it left, so the move notes them first and owes a view settings file it couldn't reach; an earlier move's entry, holding the Collection that one left, finishes first, and refuses this one while it still owes.
+  if (retries(await finishEntry(root, set.id))) return OWED
   return runNoted(root, set.id, {
     note: () => ({ kind: 'move', at: req.path, edit, within: left }),
     list: move,
