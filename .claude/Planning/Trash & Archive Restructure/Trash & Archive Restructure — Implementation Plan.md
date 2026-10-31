@@ -310,7 +310,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-6 · `discardFile`'s cases and the Archive's delete case
   - [x] Task 6-7 · The browser harness and the skins' duplicates
   - [x] Task 6-8 · The Trash skin's shared cases to their owners
-  - [ ] Task 6-9 · The docs and comments no earlier phase takes
+  - [x] Task 6-9 · The docs and comments no earlier phase takes
   - [ ] Task 6-10 · `.claude/CLAUDE.md`'s structure lines
   - [ ] Task 6-11 · The closing measurement
   - [ ] Task 6-12 · The harness's removal

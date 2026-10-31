@@ -50,7 +50,7 @@ import {
 
 export const ITEM_GONE = fail('not-found', 'That item is no longer there.')
 
-/** A store reads as a shadow of the nexus, so a stored item shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
+/** A bundle mints under the folder chain its item leaves from, so a stored item shows where it lived when it left. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
 export async function chainDir(
   root: string,
   store: BundleStore,
@@ -253,7 +253,7 @@ const isContainerRecord = (record: RecordFile): record is ContainerRecord =>
 /** An address read once: its bundle, store, record, and artifact, and the inner item it names with the container record and artifact holding it, refused when nothing holds that item any more unless it was `movedOut` by hand, which an outside move proved. */
 async function readBundleAt(root: string, abs: string, movedOut = false) {
   const at = bundleAddressOf(root, abs)
-  if (!at) return fault('Only a trash or archive record can be spent.')
+  if (!at) return fault('That path is in neither the Trash nor an Archive.')
   const record = await readRecord(at.bundle)
   if (!record) return fault('That record is unreadable.')
   const artifact = await bundleArtifact(at.bundle)

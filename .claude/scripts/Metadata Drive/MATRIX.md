@@ -22,7 +22,7 @@ The drive's cases, derived from *MetadataV3 — Decisions & Intention* and writt
 - **Contexts and Spaces through a format:** B-4 gives them none, and no channel exists to drive.
 - **Damaged frontmatter:** no decision names it, and the sweep's handling of it is unchanged.
 - **An ID-less page and a page copying another's ID in the delete count:** the live app stamps both on admission, so only `deleteProperty.test.ts` can hold them as they are.
-- **The old-shape `$order` and a refused Context delete putting the order back:** F-5 notes neither Nexus holds a `$order`, and the refusal needs a sweep failing mid-run; `spaceSidecar.test.ts` and `spend.test.ts` pin both.
+- **The old-shape `$order`:** F-5 notes neither Nexus holds a `$order`; `spaceSidecar.test.ts` pins it.
 - **The converter's edge cases** (`ß` beyond one create, final sigma, NFD labels, the `J. Crew` round trip): `keyFormat.test.ts`'s; the drive keeps one of each class the decisions quote.
 - **The index generation:** no channel reads it; the exact holder counts in group 4 are what generation 19 serves.
 

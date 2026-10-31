@@ -11,7 +11,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 ├── // .nexus                                | • App-internal config
 │   ├── // archive/<Collection ID>           | • Archived pages and Sets, mirroring the chain they came from
 │   │   └── // <Collection>
-│   │       └── // <stamp>__<Page>.archived  | • An archive bundle — the artifact beside its record
+│   │       └── // <stamp>__<Item>.archived  | • An archive bundle — the artifact beside its record
 │   │           ├── [<Page>.md]
 │   │           └── _record.json
 │   ├── // assets                            | • The default asset directory — banners, files, thumbnails
@@ -33,7 +33,7 @@ A Nexus is a single folder, opened through a picker and treated as canonical con
 │   └── state.json                           | • Pins and the NavView banner; Collection, Space, and panel Context order
 ├── // .trash                                | • Deleted entities, mirroring the chain they came from
 │   └── // <Collection>
-│       └── // <stamp>__<Page>.deleted       | • A deletion bundle — the artifact beside its record
+│       └── // <stamp>__<Item>.deleted       | • A deletion bundle — the artifact beside its record
 │           ├── [<Page>.md]
 │           └── _record.json
 ├── // <Collection>                          | • A Page Collection — identified by its sidecar, not its name
