@@ -46,7 +46,7 @@ async function outlastHolder<T>(p: string, op: () => Promise<T>): Promise<T> {
   }
 }
 
-// Each temp writes through to its drive, so one flush of the drive's cache makes a whole group durable. Node names no write-through flag on Windows, so this mirrors libuv's value there, unverified.
+// Each temp writes through to its drive, so one flush of the drive's cache makes a whole group durable. Node names no write-through flag on Windows, so this is libuv's own `UV_FS_O_DSYNC` (`uv/win.h`, `FILE_FLAG_WRITE_THROUGH`).
 const UV_FS_O_DSYNC = 0x04000000
 const TEMP_FLAGS =
   constants.O_WRONLY |
