@@ -172,6 +172,7 @@ export async function listBundles(
   root: string,
   store: BundleStore,
   chain = '',
+  { recordOnly }: { recordOnly?: true } = {},
 ): Promise<ListedBundle[]> {
   const { dir, suffix } = layoutOf(store)
   const out: ListedBundle[] = []
@@ -185,7 +186,8 @@ export async function listBundles(
         continue
       }
       const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
-      if (record.entity !== 'property' && !artifact) continue
+      const bare = record.entity !== 'property' && !artifact
+      if (recordOnly ? !bare : bare) continue
       out.push({
         bundlePath: relative(root, abs),
         record,

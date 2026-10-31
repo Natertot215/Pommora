@@ -28,7 +28,7 @@ import {
 import { scopeOf } from '../Settings/codec'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { adopting, sessionRoot } from './session'
-import type { NexusTree, Unreadable, ValueChange } from './tree'
+import type { NexusTree, SpaceNode, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
 import { liveIdIndex, livePathOf } from './heldPages'
 import { pageIndexOf, pagesOf } from './record'
@@ -36,7 +36,7 @@ import { type CascadeReport, linksNotUpdated, renameCascade, respell } from './c
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
-import { type Departed, recognize } from './arrival'
+import { arrivedSpaces, type Departed, recognize, recognizeSpaces } from './arrival'
 import { storeOf } from '../Paths/bundleLayout'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -132,7 +132,10 @@ async function walkWhileOwed(root: string): Promise<void> {
   }
 }
 
-async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
+async function settle(
+  pusher: Pusher,
+  root: string,
+): Promise<{ moved: { rescope: boolean } | null; spaces: SpaceNode[] } | null> {
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   const away = (): boolean => sessionRoot() !== root || adopting()
   // A heading rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken. Ahead of the walk, which a cascade's own writes may owe, and one at a time, so what an open begun meanwhile finds unpaid stays owed.
@@ -183,7 +186,10 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   if (assets && map) pusher.push('assets:changed', map)
   // A Set the window saw move carries what was archived from within it; its writes raise only events the tree ignores, and one that throws costs the settle nothing it pushed or owes. A first tree has no baseline, which the open pass covers.
   if (handed && tree && delta) await refileMoved(root, handed, tree, delta)
-  return corpus || rescope ? { rescope } : null
+  return {
+    moved: corpus || rescope ? { rescope } : null,
+    spaces: handed && tree ? arrivedSpaces(handed, tree) : [],
+  }
 }
 
 // The armed scope is spent state: chokidar's ignore filter would keep reading the stale capture. A rescope leaves the seed to the restarted watcher's catch-up, since a seed while the old watcher still holds an event its stop drops would take in that page and leave the catch-up nothing to find. What it saw goes unowed, since an own write whose indexing failed would read as a rename, a vanish, or an arrival.
@@ -364,12 +370,19 @@ async function payOutsideMoves(root: string): Promise<void> {
     paid(root, await recognize(root, before, after, bundle, pages), 'outside restore')
 }
 
-// One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply.
+// One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply. A Space the settle found moved back from the Trash by hand tags its members again under the Contexts lock, taken outside the settle's turn, so it finishes in a turn of its own once the settle returns, and settles again.
 export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
-  const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
+  const settled = await inTurn(() => settle(pusher, root)).catch(() => null)
   // The settle's walk may list more to stamp, which takes a settle of its own; while a batch applies, its turn takes them instead.
   if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
+  if (settled?.spaces.length) {
+    const { spaces } = settled
+    const { finished, cascade } = await inContextsTurn(root, () => recognizeSpaces(root, spaces))
+    paid(root, cascade, 'outside restore')
+    if (finished) await settleNow(pusher, root)
+  }
+  const moved = settled?.moved
   if (!moved) return
   await reseeding(() => reseed(pusher, root, moved.rescope)).catch(() => {})
 }
