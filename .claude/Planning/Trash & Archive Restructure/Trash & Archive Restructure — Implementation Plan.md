@@ -19,8 +19,8 @@
 | 3 · Delete, Journal, and Carry | about −46 | +19 (+469 / −450); +25 outside `Core/Testing`, the estimate not having priced Task 3-2's second holder read (about +32) or the journal's `move` kind (about +10) |
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
-| 6 · Tests, Docs, and the Closing Measurement | ±0 | |
-| **Total** | **about −415** | |
+| 6 · Tests, Docs, and the Closing Measurement | ±0 | ±0 (+1 / −1) in production, a rewritten comment and the refusal; tests −430 (+1,887 / −2,317), `Core/Testing` +213 (+234 / −21) for the shared bundle fixture and browser harness |
+| **Total** | **about −415** | **−231 (+2,478 / −2,709) outside `Core/Testing`; comment lines −30** |
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 
@@ -303,7 +303,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-6 · Pages and Sets moved out by hand
   - [x] Task 5-7 · Spaces moved back by hand
   - [x] Review Checkpoint
-- [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
+- [x] **Phase 6** — Tests, Docs, and the Closing Measurement
   - [x] Task 6-1 · The duplicated cases
   - [x] Task 6-2 · The on-disk bundle fixture
   - [x] Task 6-3 · The suites follow their modules
@@ -316,7 +316,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-10 · `.claude/CLAUDE.md`'s structure lines
   - [x] Task 6-11 · The closing measurement
   - [x] Task 6-12 · The harness's removal
-  - [ ] Review Checkpoint
+  - [x] Review Checkpoint
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
 
@@ -9624,11 +9624,11 @@ The other two files' import blocks change the same way, line for line.
 
 #### Review Checkpoint
 
-- [ ] **No Coverage Dropped:** before Task 6-1, `npm run test -- --reporter=json --outputFile="$TMPDIR/p6-before.json"`; after Task 6-8, the same into `p6-after.json`. `numTotalTests` fell by exactly eighteen, the six of Task 6-1 and the thirteen of Task 6-7 less the Trash's *"a double-click on a Trash page opens nothing"*, which Task 6-8 keeps as the Trash's own, and every case title the before-run lists is in the after-run, compared by each assertion result's leaf `title` rather than its `fullName`, since Tasks 6-4, 6-7, and 6-8 move cases between describes, but for those nineteen and these retitles: the four `archive.test.ts` titles the `it.each` replaced; whichever of `refile.test.ts`'s *"a Collection whose id would not make a folder name takes nothing outside the Archive"* and *"… reaches no sidecar outside the Archive"* isn't counted among the nineteen, both giving way to Task 6-1's merged title; `TrashFrame.test.tsx`'s *"a restore here spends the bundle’s Undo, so the chord reaches the entry beneath"* and *"a delete here spends the bundle’s Undo, so the chord reaches the entry beneath"*, which read *"a batch Restored spends …"* and *"a batch Deleted spends …"* in `confirmations.test.ts`; and its *"a Nexus switch during a batch stops it, posting no notice and telling the stores once"*, which Task 6-7 widens with `ArchiveView.test.tsx:475`'s fold (a switch during the last row posts nothing). Both JSON files are removed afterward.
-- [ ] **Tests Where Their Behavior Lives:** every file in the GOAL's ledger stands where it names, `git ls-files 'Core/**/*.test.ts' 'Core/**/*.test.tsx' | xargs -n1 basename | sort | uniq -d` names no Trash or Archive suite twice, and each moved or created suite's base name is a module beside it.
-- [ ] **One Fixture:** `Core/Testing/bundles.ts` holds only what two or more suites read: `git grep -l` of each export across `Core`, `bundles.ts` aside, names at least two files.
-- [ ] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 6 row beside its ±0 production estimate, Task 6-9's three rewritten comments and one refusal alone, with Task 6-11's medians beneath the Ledger.
-- [ ] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 4 and 5's moves; what holds is folded before *§Final Verification* opens.
+- [x] **No Coverage Dropped:** before Task 6-1, `npm run test -- --reporter=json --outputFile="$TMPDIR/p6-before.json"`; after Task 6-8, the same into `p6-after.json`. `numTotalTests` fell by exactly eighteen, the six of Task 6-1 and the thirteen of Task 6-7 less the Trash's *"a double-click on a Trash page opens nothing"*, which Task 6-8 keeps as the Trash's own, and every case title the before-run lists is in the after-run, compared by each assertion result's leaf `title` rather than its `fullName`, since Tasks 6-4, 6-7, and 6-8 move cases between describes, but for those nineteen and these retitles: the four `archive.test.ts` titles the `it.each` replaced; whichever of `refile.test.ts`'s *"a Collection whose id would not make a folder name takes nothing outside the Archive"* and *"… reaches no sidecar outside the Archive"* isn't counted among the nineteen, both giving way to Task 6-1's merged title; `TrashFrame.test.tsx`'s *"a restore here spends the bundle’s Undo, so the chord reaches the entry beneath"* and *"a delete here spends the bundle’s Undo, so the chord reaches the entry beneath"*, which read *"a batch Restored spends …"* and *"a batch Deleted spends …"* in `confirmations.test.ts`; and its *"a Nexus switch during a batch stops it, posting no notice and telling the stores once"*, which Task 6-7 widens with `ArchiveView.test.tsx:475`'s fold (a switch during the last row posts nothing). Both JSON files are removed afterward.
+- [x] **Tests Where Their Behavior Lives:** every file in the GOAL's ledger stands where it names, `git ls-files 'Core/**/*.test.ts' 'Core/**/*.test.tsx' | xargs -n1 basename | sort | uniq -d` names no Trash or Archive suite twice, and each moved or created suite's base name is a module beside it.
+- [x] **One Fixture:** `Core/Testing/bundles.ts` holds only what two or more suites read: `git grep -l` of each export across `Core`, `bundles.ts` aside, names at least two files.
+- [x] **The Number:** `view-delta`'s Actionable column for the phase is recorded in the Net Ledger's Phase 6 row beside its ±0 production estimate, Task 6-9's three rewritten comments and one refusal alone, with Task 6-11's medians beneath the Ledger.
+- [x] Two read-only reviewers, one under `code-simplification` and one under `adversarial-review`, read the phase outward against Phases 4 and 5's moves; what holds is folded before *§Final Verification* opens.
 
 ---
 
