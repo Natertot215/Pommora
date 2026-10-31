@@ -4,8 +4,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { BundleRow } from '../Bundles/rows'
 import { ArchiveView } from './ArchiveView'
-import { bundleRow } from '../Testing/bundles'
-import { stubDialer } from '../vitest.setup'
+import { boxOf, bundleRow, press, rowOf, stubBrowserEachTest } from '../Testing/bundles'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { ContentHostContext } from '../Interface/contentHost'
@@ -16,8 +15,6 @@ import { resetUndo } from '../Session/undo'
 import { storesChanged } from '../Session/nexusSlice'
 import { captureWarm, clearWarm } from '../Session/warmCache'
 import type { CollectionNode, SetNode } from '../Nexus/tree'
-import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
-import { rowIndent } from '@pommora/uix/Table/rowIndent'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 vi.mock('../MarkdownPM/MarkdownEditor', () => ({
@@ -58,13 +55,14 @@ const inner = (title: string, over: Partial<BundleRow> = {}): BundleRow => {
 describe('ArchiveView', () => {
   let host: HTMLDivElement
   let root: Root
-  let listed: BundleRow[]
-  let list: ReturnType<typeof vi.fn>
-  let mutated: ReturnType<typeof vi.fn>
-  let picked: string | null
-  let menu: ReturnType<typeof vi.fn>
   let readable: boolean
-  let children: Record<string, BundleRow[]>
+  const channels = stubBrowserEachTest(() => ({
+    'page:open': vi.fn(async () =>
+      readable
+        ? { ok: true, value: { body: 'Root body.' } }
+        : { ok: false, error: { code: 'not-found', message: 'gone' } },
+    ),
+  }))
   const tree = makeTree()
   const collection = tree.collections[0] as CollectionNode
   const set = collection.sets[0] as SetNode
@@ -86,9 +84,6 @@ describe('ArchiveView', () => {
   ]
   const titles = (): string[] =>
     rowEls().map((r) => r.querySelector('.cell-title-text')?.textContent ?? '')
-  const rowOf = (title: string): HTMLElement =>
-    rowEls().find((r) => r.querySelector('.cell-title-text')?.textContent === title) as HTMLElement
-  const boxOf = (title: string): Element | null => rowOf(title).querySelector('[role="checkbox"]')
   const empty = (): string | null => host.querySelector('.archive-empty')?.textContent ?? null
   const face = (): Element | null =>
     host.querySelector('[role=status] [data-face="shown"], [role=alert] [data-face="shown"]')
@@ -101,25 +96,17 @@ describe('ArchiveView', () => {
     await act(async () => button.click())
   }
   const check = async (...rows: string[]): Promise<void> => {
-    for (const title of rows) await act(async () => rowOf(title).click())
+    for (const title of rows) await act(async () => rowOf(host, title).click())
   }
-  const press = async (title: string, detail: number): Promise<void> =>
-    act(async () => {
-      rowOf(title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
-    })
   const doubleClick = async (title: string): Promise<void> => {
-    await press(title, 1)
-    await press(title, 2)
+    await press(host, title, 1)
+    await press(host, title, 2)
     await act(async () => {
-      rowOf(title).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+      rowOf(host, title).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     })
   }
-  const indentOf = (title: string): string =>
-    (rowOf(title).querySelector('.cell-title')?.parentElement as HTMLElement).style.marginLeft
-  const chevronOf = (title: string): Element | null =>
-    rowOf(title).querySelector('[data-drop-outline]')
   const undo = async (): Promise<void> => {
-    mutated.mockClear()
+    channels.mutated.mockClear()
     await act(async () => {
       currentNotification()?.action?.run()
       await new Promise((settle) => setTimeout(settle, 0))
@@ -127,27 +114,8 @@ describe('ArchiveView', () => {
   }
 
   beforeEach(async () => {
-    listed = [archived('A', { stored: { id: 'p1', path: 'x/A.md' } })]
-    picked = null
+    channels.listed = [archived('A', { stored: { id: 'p1', path: 'x/A.md' } })]
     readable = true
-    children = {}
-    mutated = vi.fn(async () => ({ ok: true, value: {} }))
-    list = vi.fn(async () => ({ ok: true, value: listed }))
-    menu = vi.fn(async () => ({ ok: true, value: picked }))
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'bundles:list': list,
-      'bundles:children': vi.fn(async (addresses: string[]) => ({
-        ok: true,
-        value: addresses.map((address) => children[address] ?? []),
-      })),
-      menu,
-      mutate: mutated,
-      'page:open': vi.fn(async () =>
-        readable
-          ? { ok: true, value: { body: 'Root body.' } }
-          : { ok: false, error: { code: 'not-found', message: 'gone' } },
-      ),
-    })
     useSession.setState({ tree, viewSearch: {}, reader: null, askConfirm: async () => true })
     host = document.body.appendChild(document.createElement('div'))
     root = createRoot(host)
@@ -161,7 +129,7 @@ describe('ArchiveView', () => {
   })
 
   it('lists each archived item with the trail it left under its title and its archived time, newest first', async () => {
-    listed = [
+    channels.listed = [
       archived('Newer', {
         storedAt: Date.UTC(2026, 9, 20),
         crumbs: [
@@ -172,9 +140,9 @@ describe('ArchiveView', () => {
       archived('Older', { storedAt: Date.UTC(2026, 9, 10) }),
     ]
     await render()
-    expect(list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, undefined)
+    expect(channels.list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, undefined)
     expect(titles()).toEqual(['Newer', 'Older'])
-    expect(rowOf('Newer').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
+    expect(rowOf(host, 'Newer').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
     const dates = rowEls().map((r) => r.querySelector('.bundle-date')?.textContent ?? '')
     expect(dates.every((d) => d !== '')).toBe(true)
     expect(dates[0]).not.toBe(dates[1])
@@ -188,13 +156,13 @@ describe('ArchiveView', () => {
 
   it('a page row’s click checks it, and its double-click opens the reader titled by its trail under the filled lock, leaving it checked whether or not it started checked', async () => {
     await render()
-    await press('A', 1)
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    await press(host, 'A', 1)
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader).toBeNull()
-    await press('A', 1)
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('false')
+    await press(host, 'A', 1)
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('false')
     await doubleClick('A')
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader).toEqual({
       kind: 'archive',
       page: { kind: 'page', id: 'p1', path: 'x/A.md' },
@@ -203,38 +171,33 @@ describe('ArchiveView', () => {
     expect(host.querySelector('.reader-lock svg rect[fill="currentColor"]')).not.toBeNull()
     await act(async () => useSession.setState({ reader: null }))
     await doubleClick('A')
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
   })
 
-  it('Space checks and unchecks any row, and Enter discloses a Set and opens a page’s reader, leaving it checked', async () => {
-    listed = [archivedSet(), archived('A')]
-    children = { [SET_BUNDLE]: [inner('P')] }
+  it('Enter discloses a Set and opens a page’s reader, leaving it checked', async () => {
+    channels.listed = [archivedSet(), archived('A')]
+    channels.children = { [SET_BUNDLE]: [inner('P')] }
     await render()
     const key = async (title: string, k: string): Promise<void> =>
       act(async () => {
-        rowOf(title).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
+        rowOf(host, title).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
       })
-    await key('Ideas', ' ')
-    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('true')
     expect(titles()).toEqual(['Ideas', 'A'])
     await key('Ideas', 'Enter')
     expect(titles()).toEqual(['Ideas', 'P', 'A'])
-    await key('A', ' ')
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
-    await key('A', ' ')
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('false')
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('false')
     expect(useSession.getState().reader).toBeNull()
     await key('A', 'Enter')
-    expect(boxOf('A')?.getAttribute('aria-checked')).toBe('true')
+    expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader?.page).toMatchObject({ kind: 'page', id: 'id-A' })
   })
 
   it('an inner page’s double-click opens the reader titled by its row’s trail, then the page', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
+    channels.listed = [archivedSet()]
+    channels.children = { [SET_BUNDLE]: [inner('P')] }
     await render()
-    await press('Ideas', 1)
+    await press(host, 'Ideas', 1)
     await doubleClick('P')
     expect(useSession.getState().reader).toEqual(
       expect.objectContaining({
@@ -243,31 +206,9 @@ describe('ArchiveView', () => {
     )
   })
 
-  it('a Set row’s click discloses its inner rows beneath it, indented, with its chevron open; a second click folds them, and a double-click leaves them open', async () => {
-    listed = [archivedSet(), archived('A')]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    await render()
-    expect(chevronOf('Ideas')?.classList.contains(dropOutlineOpen)).toBe(false)
-    expect(chevronOf('A')).toBeNull()
-    await press('Ideas', 1)
-    expect(titles()).toEqual(['Ideas', 'P', 'A'])
-    expect([indentOf('Ideas'), indentOf('P'), indentOf('A')]).toEqual([
-      rowIndent(0),
-      rowIndent(1),
-      rowIndent(0),
-    ])
-    expect(chevronOf('Ideas')?.classList.contains(dropOutlineOpen)).toBe(true)
-    expect(boxOf('Ideas')?.getAttribute('aria-checked')).toBe('false')
-    await press('Ideas', 1)
-    expect(titles()).toEqual(['Ideas', 'A'])
-    await doubleClick('Ideas')
-    expect(titles()).toEqual(['Ideas', 'P', 'A'])
-    expect(useSession.getState().reader).toBeNull()
-  })
-
   it('a double-click on a page’s box opens nothing', async () => {
     await render()
-    const box = boxOf('A') as HTMLElement
+    const box = boxOf(host, 'A')
     for (const detail of [1, 2])
       await act(async () => {
         box.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
@@ -278,32 +219,13 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader).toBeNull()
   })
 
-  it('an inner row shows its trail: its bundle’s trail, then the containers inside the bundle', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    await render()
-    await press('Ideas', 1)
-    expect(rowOf('P').querySelector('.bundle-trail')?.textContent).toBe('Notes›Ideas')
-  })
-
   it('publishes the count of top rows, whatever an open Set discloses', async () => {
-    listed = [archivedSet(), archived('A')]
-    children = { [SET_BUNDLE]: [inner('P'), inner('Q')] }
+    channels.listed = [archivedSet(), archived('A')]
+    channels.children = { [SET_BUNDLE]: [inner('P'), inner('Q')] }
     await render()
-    await press('Ideas', 1)
+    await press(host, 'Ideas', 1)
     expect(titles()).toEqual(['Ideas', 'P', 'Q', 'A'])
     expect(useSession.getState().detailCount).toBe(2)
-  })
-
-  it('a checked Set and its checked page restore once, as the Set', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    await render()
-    await press('Ideas', 1)
-    await act(async () => (boxOf('Ideas') as HTMLElement).click())
-    await press('P', 1)
-    await pressBar('Restore')
-    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: SET_BUNDLE }]])
   })
 
   it('the header names its owner with Archive in its trailing slot after the search’s clear button', async () => {
@@ -325,23 +247,23 @@ describe('ArchiveView', () => {
   })
 
   it('an empty archive reads its one line and leaves no Tab stop', async () => {
-    listed = []
+    channels.listed = []
     await render()
     expect(empty()).toBe("This Collection's archive is empty.")
     expect(host.querySelector('.line-zone')).toBeNull()
   })
 
   it('a top-level Set’s empty archive reads the Set’s line', async () => {
-    listed = []
+    channels.listed = []
     await render(set)
-    expect(list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, 's1')
+    expect(channels.list).toHaveBeenCalledWith({ kind: 'archive', id: 'c1' }, 's1')
     expect(empty()).toBe("This Set's archive is empty.")
   })
 
   it('a listing that fails reads its one line and draws no rows or Tab stop', async () => {
     await render()
     expect(titles()).toEqual(['A'])
-    list.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
+    channels.list.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
     await act(async () => storesChanged.emit())
     expect(titles()).toEqual([])
     expect(empty()).toBe("The archive couldn't be read.")
@@ -349,7 +271,7 @@ describe('ArchiveView', () => {
   })
 
   it('narrows in place by the tab’s search, keeping archived order', async () => {
-    listed = [archived('Beta Two'), archived('Alpha'), archived('Beta One')]
+    channels.listed = [archived('Beta Two'), archived('Alpha'), archived('Beta One')]
     await render()
     await act(async () =>
       useSession.setState({ viewSearch: { t1: { key: 'archive:c1', query: 'beta', summon: 0 } } }),
@@ -369,7 +291,7 @@ describe('ArchiveView', () => {
   })
 
   it('declares its bar while rows are checked, reading their count, and withdraws it when parked', async () => {
-    listed = [archived('A'), archived('B')]
+    channels.listed = [archived('A'), archived('B')]
     await render()
     expect(host.querySelector('[role=status]')?.hasAttribute('inert')).toBe(true)
     await check('A', 'B')
@@ -379,27 +301,29 @@ describe('ArchiveView', () => {
   })
 
   it('a right-click Delete moves the row into the Trash with an Undo that returns it to the Archive', async () => {
-    const { bundlePath } = listed[0]
+    const { bundlePath } = channels.listed[0]
     const trashed = '.trash/Notes/2026-10-21T12-00-00-000Z__A.md.deleted'
     const undoReq = {
       op: 'restore',
       bundlePath: trashed,
       destination: { kind: 'archive', at: bundlePath },
     }
-    mutated.mockResolvedValue({ ok: true, value: { undo: undoReq } })
+    channels.mutated.mockResolvedValue({ ok: true, value: { undo: undoReq } })
     await render()
-    picked = 'delete'
+    channels.picked = 'delete'
     await act(async () => {
-      rowOf('A').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+      rowOf(host, 'A').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    expect(mutated.mock.calls).toEqual([[{ op: 'delete', path: bundlePath, kind: 'page' }]])
+    expect(channels.mutated.mock.calls).toEqual([
+      [{ op: 'delete', path: bundlePath, kind: 'page' }],
+    ])
     expect(currentNotification()?.message).toBe('Deleted “A”')
     await undo()
-    expect(mutated.mock.calls).toEqual([[undoReq]])
+    expect(channels.mutated.mock.calls).toEqual([[undoReq]])
   })
 
   it('the bar’s Restore of one row posts Restored “A”, and of two Restored 2 Pages, whose Undo sends each reply’s own request where the tree now holds the item', async () => {
-    listed = [
+    channels.listed = [
       archived('A', { stored: { id: 'p1', path: 'x/A.md' } }),
       archived('B', { stored: { id: 'p2', path: 'x/B.md' } }),
     ]
@@ -410,31 +334,35 @@ describe('ArchiveView', () => {
       back: { at: bundlePath, name: path.split('/').at(-1), record: {} },
     })
     const landed = ['Notes/Alpha.md', 'Notes/Ideas/Beta.md']
-    mutated.mockImplementation(async ({ op, bundlePath }: { op: string; bundlePath: string }) => {
-      const at = listed.findIndex((r) => r.bundlePath === bundlePath)
-      return { ok: true, value: op === 'restore' ? { undo: undoOf(bundlePath, landed[at]) } : {} }
-    })
+    channels.mutated.mockImplementation(
+      async ({ op, bundlePath }: { op: string; bundlePath: string }) => {
+        const at = channels.listed.findIndex((r) => r.bundlePath === bundlePath)
+        return { ok: true, value: op === 'restore' ? { undo: undoOf(bundlePath, landed[at]) } : {} }
+      },
+    )
     await render()
     await check('A')
     await pressBar('Restore')
-    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: listed[0].bundlePath }]])
+    expect(channels.mutated.mock.calls).toEqual([
+      [{ op: 'restore', bundlePath: channels.listed[0].bundlePath }],
+    ])
     expect(currentNotification()?.message).toBe('Restored “A”')
     act(() => clearNotification())
     await check('B')
     await pressBar('Restore')
     expect(currentNotification()?.message).toBe('Restored 2 Pages')
     await undo()
-    expect(mutated.mock.calls).toEqual([
-      [undoOf(listed[0].bundlePath, 'Notes/Alpha.md')],
-      [undoOf(listed[1].bundlePath, 'Notes/Ideas/Beta.md')],
+    expect(channels.mutated.mock.calls).toEqual([
+      [undoOf(channels.listed[0].bundlePath, 'Notes/Alpha.md')],
+      [undoOf(channels.listed[1].bundlePath, 'Notes/Ideas/Beta.md')],
     ])
   })
 
   it('the bar’s Delete of two asks once and posts Deleted 2 Pages with one Undo returning both to the Archive', async () => {
-    listed = [archived('A'), archived('B')]
+    channels.listed = [archived('A'), archived('B')]
     const asked = vi.fn(async () => true)
     useSession.setState({ askConfirm: asked })
-    mutated.mockImplementation(async (req: { path?: string }) => ({
+    channels.mutated.mockImplementation(async (req: { path?: string }) => ({
       ok: true,
       value: req.path
         ? {
@@ -450,13 +378,13 @@ describe('ArchiveView', () => {
     await check('A', 'B')
     await pressBar('Delete')
     expect(asked).toHaveBeenCalledOnce()
-    expect(mutated.mock.calls).toEqual(
-      listed.map((r) => [{ op: 'delete', path: r.bundlePath, kind: 'page' }]),
+    expect(channels.mutated.mock.calls).toEqual(
+      channels.listed.map((r) => [{ op: 'delete', path: r.bundlePath, kind: 'page' }]),
     )
     expect(currentNotification()?.message).toBe('Deleted 2 Pages')
     await undo()
-    expect(mutated.mock.calls).toEqual(
-      listed.map((r) => [
+    expect(channels.mutated.mock.calls).toEqual(
+      channels.listed.map((r) => [
         {
           op: 'restore',
           bundlePath: `.trash/${r.bundlePath.split('/').at(-1)}.deleted`,
@@ -468,76 +396,23 @@ describe('ArchiveView', () => {
 
   it('a listing answered after a later one leaves the later one shown', async () => {
     let answerFirst: (value: unknown) => void = () => {}
-    list.mockImplementationOnce(() => new Promise((answer) => (answerFirst = answer)))
+    channels.list.mockImplementationOnce(() => new Promise((answer) => (answerFirst = answer)))
     await render()
-    listed = [archived('B')]
+    channels.listed = [archived('B')]
     await act(async () => storesChanged.emit())
     expect(titles()).toEqual(['B'])
     await act(async () => answerFirst({ ok: true, value: [archived('A')] }))
     expect(titles()).toEqual(['B'])
   })
 
-  it('a batch whose last ask lands after a Nexus switch posts nothing', async () => {
-    listed = [archived('A'), archived('B')]
-    await render()
-    await check('A', 'B')
-    mutated.mockImplementation(async () => {
-      if (mutated.mock.calls.length === 2)
-        useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id: 'elsewhere' } } })
-      return { ok: true, value: {} }
-    })
-    await pressBar('Delete')
-    expect(mutated).toHaveBeenCalledTimes(2)
-    expect(currentNotification()).toBeNull()
-  })
-
-  it('the bar’s Restore of a disclosed inner page whose place is gone asks where and restores there, and a mixed batch asks once, sending only that row there', async () => {
-    const gone = inner('Gone', { homeResolves: false })
-    listed = [archivedSet(), archived('Kept')]
-    children = { [SET_BUNDLE]: [gone] }
-    picked = collection.id
-    await render()
-    await press('Ideas', 1)
-    await check('Gone')
-    await pressBar('Restore')
-    expect(mutated.mock.calls).toEqual([
-      [
-        {
-          op: 'restore',
-          bundlePath: gone.bundlePath,
-          destination: { kind: 'container', id: collection.id },
-        },
-      ],
-    ])
-    expect(currentNotification()?.message).toBe('Restored “Gone”')
-    act(() => clearNotification())
-    await check('Kept')
-    mutated.mockClear()
-    menu.mockClear()
-    await pressBar('Restore')
-    expect(menu).toHaveBeenCalledTimes(1)
-    expect(mutated.mock.calls).toEqual([
-      [
-        {
-          op: 'restore',
-          bundlePath: gone.bundlePath,
-          destination: { kind: 'container', id: collection.id },
-        },
-      ],
-      [{ op: 'restore', bundlePath: listed[1].bundlePath }],
-    ])
-    expect(currentNotification()?.message).toBe('Restored 2 Pages')
-  })
-
-  it('a search that hides the checked row withdraws the bar and shows no box', async () => {
-    listed = [archived('A'), archived('B')]
+  it('a search that hides the checked row withdraws the bar', async () => {
+    channels.listed = [archived('A'), archived('B')]
     await render()
     await check('A')
     await act(async () =>
       useSession.setState({ viewSearch: { t1: { key: 'archive:c1', query: 'B', summon: 0 } } }),
     )
     expect(titles()).toEqual(['B'])
-    expect(host.querySelector('[data-reveal-host="on"]')).toBeNull()
     expect(host.querySelector('[role=status]')?.hasAttribute('inert')).toBe(true)
   })
 
@@ -546,13 +421,13 @@ describe('ArchiveView', () => {
     await check('A')
     const restore = barButton('Restore')
     const remove = barButton('Delete')
-    listed = []
+    channels.listed = []
     await act(async () => storesChanged.emit())
     await act(async () => {
       restore.click()
       remove.click()
     })
-    expect(mutated).not.toHaveBeenCalled()
+    expect(channels.mutated).not.toHaveBeenCalled()
     expect(currentNotification()).toBeNull()
   })
 
@@ -571,12 +446,12 @@ describe('ArchiveView', () => {
       },
     })
     try {
-      listed = Array.from({ length: 40 }, (_, i) => archived(`P${i}`))
+      channels.listed = Array.from({ length: 40 }, (_, i) => archived(`P${i}`))
       captureWarm('t1', 'archive:c1', { scrollTop: 900 })
       let answer: (r: unknown) => void = () => {}
-      list.mockImplementationOnce(() => new Promise((r) => (answer = r)))
+      channels.list.mockImplementationOnce(() => new Promise((r) => (answer = r)))
       await render()
-      await act(async () => answer({ ok: true, value: listed }))
+      await act(async () => answer({ ok: true, value: channels.listed }))
       expect(host.querySelector('.detail-scroll')?.scrollTop).toBe(900)
     } finally {
       Object.defineProperty(Element.prototype, 'scrollTop', real)
@@ -585,7 +460,7 @@ describe('ArchiveView', () => {
   })
 
   it('two presses of the bar’s Restore or Delete in one tick act once', async () => {
-    listed = [archived('A')]
+    channels.listed = [archived('A')]
     await render()
     await check('A')
     const twice = async (label: 'Restore' | 'Delete'): Promise<void> => {
@@ -596,16 +471,16 @@ describe('ArchiveView', () => {
       })
     }
     await twice('Restore')
-    expect(mutated).toHaveBeenCalledOnce()
+    expect(channels.mutated).toHaveBeenCalledOnce()
     act(() => clearNotification())
-    mutated.mockClear()
+    channels.mutated.mockClear()
     await twice('Delete')
-    expect(mutated).toHaveBeenCalledOnce()
+    expect(channels.mutated).toHaveBeenCalledOnce()
   })
 
   it('a batch restore closes an open reader of one of its pages', async () => {
-    listed = [archived('A'), archived('B')]
-    mutated.mockImplementation(async () => {
+    channels.listed = [archived('A'), archived('B')]
+    channels.mutated.mockImplementation(async () => {
       readable = false
       return { ok: true, value: {} }
     })
@@ -618,18 +493,20 @@ describe('ArchiveView', () => {
   })
 
   it('a batch restore closes an open reader of an inner page', async () => {
-    listed = [archivedSet()]
-    children = { [SET_BUNDLE]: [inner('P')] }
-    mutated.mockImplementation(async () => {
+    channels.listed = [archivedSet()]
+    channels.children = { [SET_BUNDLE]: [inner('P')] }
+    channels.mutated.mockImplementation(async () => {
       readable = false
       return { ok: true, value: {} }
     })
     await render()
-    await press('Ideas', 1)
+    await press(host, 'Ideas', 1)
     await doubleClick('P')
     expect(host.querySelector('[aria-label="Archived Page"]')).not.toBeNull()
     await pressBar('Restore')
-    expect(mutated.mock.calls).toEqual([[{ op: 'restore', bundlePath: inner('P').bundlePath }]])
+    expect(channels.mutated.mock.calls).toEqual([
+      [{ op: 'restore', bundlePath: inner('P').bundlePath }],
+    ])
     expect(useSession.getState().reader).toBeNull()
   })
 })

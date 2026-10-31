@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { filterRows, outermostOf, treeRows, useBundleBrowser } from './browser'
 import { widestDate } from './BundleTable'
 import type { BundleRow } from './rows'
-import { bundleRow as row } from '../Testing/bundles'
+import { bundleRow as row, stubBrowserEachTest } from '../Testing/bundles'
 import { stubDialer } from '../vitest.setup'
 import { storesChanged } from '../Session/nexusSlice'
 import { currentNotification } from '../Interface/Notifications/notifications'
@@ -126,10 +126,10 @@ describe('a browser’s remembered checks', () => {
   let root: Root
   let browser: ReturnType<typeof useBundleBrowser>
   let replies: ((lists: BundleRow[][]) => void)[]
-  let children: ReturnType<typeof vi.fn>
-  let listed: BundleRow[]
-  let menu: ReturnType<typeof vi.fn>
-  let mutated: ReturnType<typeof vi.fn>
+  const children = vi.fn(
+    () => new Promise((resolve) => replies.push((lists) => resolve({ ok: true, value: lists }))),
+  )
+  const channels = stubBrowserEachTest(() => ({ 'bundles:children': children }))
 
   const Harness = (): null => {
     browser = useBundleBrowser({ kind: 'trash' }, { query: '', shown: true })
@@ -143,18 +143,7 @@ describe('a browser’s remembered checks', () => {
 
   beforeEach(async () => {
     replies = []
-    listed = [set]
-    menu = vi.fn(async () => ({ ok: true, value: null }))
-    mutated = vi.fn(async () => ({ ok: true, value: {} }))
-    children = vi.fn(
-      () => new Promise((resolve) => replies.push((lists) => resolve({ ok: true, value: lists }))),
-    )
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      menu,
-      mutate: mutated,
-      'bundles:list': vi.fn(async () => ({ ok: true, value: listed })),
-      'bundles:children': children,
-    })
+    channels.listed = [set]
     host = document.createElement('div')
     document.body.appendChild(host)
     root = createRoot(host)
@@ -234,9 +223,14 @@ describe('a browser’s remembered checks', () => {
     expect(browser.visible.map((t) => t.open)).toEqual([true, true, false])
   })
 
-  it('a keyboard’s click, with no count, discloses a container and toggles a page', async () => {
+  it('a container’s click, a keyboard’s with no count among them, folds or discloses it without checking it, and a double-click’s second click leaves it open; a keyboard’s click toggles a page', async () => {
     await act(async () => browser.rowClick(set, 0))
-    expect(shown()).toEqual(['S'])
+    expect(browser.visible).toEqual([{ row: set, depth: 0, open: false }])
+    await click(set)
+    await reply([page])
+    await act(async () => browser.rowClick(set, 2))
+    expect(shown()).toEqual(['S', 'P'])
+    expect(browser.checked.has(set.bundlePath)).toBe(false)
     await act(async () => browser.rowClick(page, 0))
     expect(browser.checked.has(page.bundlePath)).toBe(false)
   })
@@ -254,7 +248,7 @@ describe('a browser’s remembered checks', () => {
     expect(browser.picked).toEqual([set])
   })
 
-  it('a batch of a homeless Space and a homeless page asks once per kind and sends each its own, and a dismissed second ask restores nothing', async () => {
+  it('a batch of a homeless Space, two homeless inner pages, and a homed page asks once per kind and sends each homeless row its own, the homed one going with none, and a dismissed second ask restores nothing', async () => {
     useSession.setState({ tree: makeTree() })
     const space = row({
       title: 'W',
@@ -262,39 +256,44 @@ describe('a browser’s remembered checks', () => {
       bundlePath: '.trash/W.deleted',
       homeResolves: false,
     })
-    listed = [space, set]
+    const stray = row({ title: 'R', bundlePath: '.trash/S.deleted/S/R.md', homeResolves: false })
+    const homed = row({ title: 'H', bundlePath: '.trash/H.deleted' })
+    channels.listed = [space, set, homed]
     await relist()
-    await reply([page])
-    await act(async () => browser.toggle(space.bundlePath))
+    await reply([page, stray])
+    for (const target of [space, stray, homed])
+      await act(async () => browser.toggle(target.bundlePath))
     const answer = (value: string | null) => ({ ok: true, value })
-    menu
+    channels.menu
       .mockResolvedValueOnce(answer('restore'))
       .mockResolvedValueOnce(answer('g1'))
       .mockResolvedValueOnce(answer(null))
     await act(async () => browser.openMenu(page))
-    expect(menu).toHaveBeenCalledTimes(3)
-    expect(mutated).not.toHaveBeenCalled()
-    menu
+    expect(channels.menu).toHaveBeenCalledTimes(3)
+    expect(channels.mutated).not.toHaveBeenCalled()
+    channels.menu
       .mockResolvedValueOnce(answer('restore'))
       .mockResolvedValueOnce(answer('g1'))
       .mockResolvedValueOnce(answer('c1'))
     await act(async () => browser.openMenu(page))
-    expect(mutated.mock.calls.map(([req]) => req)).toEqual([
+    expect(channels.mutated.mock.calls.map(([req]) => req)).toStrictEqual([
       { op: 'restore', bundlePath: space.bundlePath, destination: { kind: 'context', id: 'g1' } },
       { op: 'restore', bundlePath: page.bundlePath, destination: { kind: 'container', id: 'c1' } },
+      { op: 'restore', bundlePath: stray.bundlePath, destination: { kind: 'container', id: 'c1' } },
+      { op: 'restore', bundlePath: homed.bundlePath },
     ])
   })
 
   it('a right-click on a checked inner page under its checked parent offers the parent’s destinations and restores the parent', async () => {
     useSession.setState({ tree: makeTree() })
     await act(async () => browser.toggle(set.bundlePath))
-    menu.mockResolvedValueOnce({ ok: true, value: 'restoreTo:c1' })
+    channels.menu.mockResolvedValueOnce({ ok: true, value: 'restoreTo:c1' })
     await act(async () => browser.openMenu(page))
-    expect(menu.mock.calls[0][0].items[0]).toMatchObject({
+    expect(channels.menu.mock.calls[0][0].items[0]).toMatchObject({
       label: 'Restore',
       submenu: [{ label: 'Notes' }],
     })
-    expect(mutated.mock.calls.map(([req]) => req)).toEqual([
+    expect(channels.mutated.mock.calls.map(([req]) => req)).toEqual([
       { op: 'restore', bundlePath: set.bundlePath, destination: { kind: 'container', id: 'c1' } },
     ])
   })

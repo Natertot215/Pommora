@@ -4,12 +4,14 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { useVirtualRows } from '@pommora/uix/Interactions/virtualRows'
+import { dropOutlineOpen } from '@pommora/uix/Menus/listed-outline.css'
 import { Icon } from '@pommora/uix/Symbols'
+import { rowIndent } from '@pommora/uix/Table/rowIndent'
 import { text } from '@pommora/uix/Theme'
 import { size } from '@pommora/uix/Theme/theme-vars.css'
 import { DEFAULT_ENTITY_ICONS } from '../Assets/entityIconPolicy'
 import { propertyTypeIconName } from '../Properties/typeDisplay'
-import { bundleRow } from '../Testing/bundles'
+import { boxOf, bundleRow, rowOf } from '../Testing/bundles'
 import { BundleRows } from './BundleTable'
 import type { TreeRow } from './browser'
 import type { BundleRow } from './rows'
@@ -64,12 +66,10 @@ describe('BundleRows', () => {
       ),
     )
   const rowEls = (): HTMLElement[] => [...host.querySelectorAll<HTMLElement>('.data-row')]
-  const rowOf = (title: string): HTMLElement =>
-    rowEls().find((r) => r.querySelector('.cell-title-text')?.textContent === title) as HTMLElement
   const chevronOf = (title: string): Element | null =>
-    rowOf(title).querySelector('[data-drop-outline]')
-  const boxOf = (title: string): HTMLButtonElement =>
-    rowOf(title).querySelector('[role="checkbox"]') as HTMLButtonElement
+    rowOf(host, title).querySelector('[data-drop-outline]')
+  const indentOf = (title: string): string =>
+    (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft
   const key = async (el: HTMLElement, k: string): Promise<void> =>
     act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
@@ -85,7 +85,7 @@ describe('BundleRows', () => {
     host.remove()
   })
 
-  it('a top-level container’s chevron follows its title, a nested one’s sits in the rail slot before its icon, and a container’s title is emphasized where a page’s is not', async () => {
+  it('a top-level container’s chevron follows its title, a nested one’s sits in the rail slot before its icon, each open as its row is, a container’s title is emphasized where a page’s is not, and each row indents by its depth', async () => {
     await render(nested())
     expect(chevronOf('Notes')?.previousElementSibling?.classList.contains('cell-title')).toBe(true)
     const slot = chevronOf('Ideas')?.parentElement
@@ -93,8 +93,16 @@ describe('BundleRows', () => {
     expect(slot?.nextElementSibling?.classList.contains('cell-title')).toBe(true)
     expect(chevronOf('P')).toBeNull()
     const emphasized = (title: string): boolean | undefined =>
-      rowOf(title).querySelector('.cell-title-text')?.classList.contains(text.body.emphasized)
+      rowOf(host, title).querySelector('.cell-title-text')?.classList.contains(text.body.emphasized)
     expect([emphasized('Notes'), emphasized('Ideas'), emphasized('P')]).toEqual([true, true, false])
+    expect(
+      ['Notes', 'Ideas'].map((t) => chevronOf(t)?.classList.contains(dropOutlineOpen)),
+    ).toEqual([true, false])
+    expect([indentOf('Notes'), indentOf('Ideas'), indentOf('P')]).toEqual([
+      rowIndent(0),
+      rowIndent(1),
+      rowIndent(1),
+    ])
   })
 
   it('draws each row’s icon at TableView’s body size: an item’s own ahead of its kind’s, and a property’s by its type', async () => {
@@ -113,7 +121,7 @@ describe('BundleRows', () => {
       ),
     ])
     const iconOf = (title: string): SVGElement =>
-      rowOf(title).querySelector('.cell-title > svg') as SVGElement
+      rowOf(host, title).querySelector('.cell-title > svg') as SVGElement
     const glyph = (svg: Element): string[] => [svg.getAttribute('class') ?? '', svg.innerHTML]
     const drawn = (name: string): string[] => {
       const box = document.createElement('div')
@@ -134,16 +142,16 @@ describe('BundleRows', () => {
       tree(bundleRow({ title: 'Beta', bundlePath: '.trash/b' }), 0, null),
     ])
     expect(
-      rowOf('Alpha').querySelector('[role="img"][aria-label="Recorded Partly"]'),
+      rowOf(host, 'Alpha').querySelector('[role="img"][aria-label="Recorded Partly"]'),
     ).not.toBeNull()
-    expect(rowOf('Beta').querySelector('[role="img"]')).toBeNull()
+    expect(rowOf(host, 'Beta').querySelector('[role="img"]')).toBeNull()
   })
 
   it('a click anywhere on a row, its chevron included, hands rowClick its row and detail; a ctrl-click hands it nothing; a right-click opens its menu', async () => {
     const rows = nested()
     await render(rows)
     await act(async () => {
-      rowOf('P').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }))
+      rowOf(host, 'P').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 2 }))
       chevronOf('Notes')?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
     })
     expect(rowClick.mock.calls).toEqual([
@@ -152,11 +160,13 @@ describe('BundleRows', () => {
     ])
     rowClick.mockClear()
     await act(async () => {
-      rowOf('P').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1, ctrlKey: true }))
+      rowOf(host, 'P').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, detail: 1, ctrlKey: true }),
+      )
     })
     expect(rowClick).not.toHaveBeenCalled()
     await act(async () => {
-      rowOf('P').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+      rowOf(host, 'P').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(openMenu).toHaveBeenCalledExactlyOnceWith(rows[2].row)
   })
@@ -178,11 +188,11 @@ describe('BundleRows', () => {
     expect(zone.tabIndex).toBe(0)
     expect(rowEls().map((r) => r.tabIndex)).toEqual([-1, -1, -1])
     await act(async () => zone.focus())
-    expect(document.activeElement).toBe(rowOf('Notes'))
-    await key(rowOf('Notes'), 'ArrowDown')
-    expect(document.activeElement).toBe(rowOf('Ideas'))
-    await key(rowOf('Ideas'), 'Enter')
-    await key(rowOf('Ideas'), ' ')
+    expect(document.activeElement).toBe(rowOf(host, 'Notes'))
+    await key(rowOf(host, 'Notes'), 'ArrowDown')
+    expect(document.activeElement).toBe(rowOf(host, 'Ideas'))
+    await key(rowOf(host, 'Ideas'), 'Enter')
+    await key(rowOf(host, 'Ideas'), ' ')
     expect(rowClick.mock.calls).toEqual([[rows[1].row, 0]])
     expect(toggle).toHaveBeenCalledExactlyOnceWith(rows[1].row.bundlePath)
   })
@@ -191,21 +201,21 @@ describe('BundleRows', () => {
     await render(nested())
     const asked = (): unknown => vi.mocked(useVirtualRows).mock.lastCall?.[0].keep
     expect(asked()).toBeNull()
-    await act(async () => rowOf('P').focus())
+    await act(async () => rowOf(host, 'P').focus())
     expect(asked()).toBe(2)
   })
 
   it('a row’s box checks it without the row’s click, and stays out of the Tab order', async () => {
     await render(nested())
-    expect(boxOf('Notes').tabIndex).toBe(-1)
-    await act(async () => boxOf('Notes').click())
+    expect(boxOf(host, 'Notes').tabIndex).toBe(-1)
+    await act(async () => boxOf(host, 'Notes').click())
     expect(toggle).toHaveBeenCalledExactlyOnceWith(COLLECTION)
     expect(rowClick).not.toHaveBeenCalled()
   })
 
   it('a row’s lead cell holds the hidden rail, and a click on it reaches neither the row nor its box', async () => {
     await render(nested())
-    const rail = rowOf('P').querySelector('.cell-lead')?.firstElementChild as HTMLElement
+    const rail = rowOf(host, 'P').querySelector('.cell-lead')?.firstElementChild as HTMLElement
     expect(rail.getAttribute('aria-hidden')).toBe('true')
     await act(async () => {
       rail.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
@@ -214,10 +224,12 @@ describe('BundleRows', () => {
     expect(toggle).not.toHaveBeenCalled()
   })
 
-  it('every row’s box shows while any row is checked', async () => {
+  it('every row’s box shows while any row in view is checked, and none while the only checked row is out of view', async () => {
     await render(nested())
     expect(rowEls().map((r) => r.dataset.revealHost)).toEqual(['', '', ''])
     await render(nested(), [SET])
     expect(rowEls().map((r) => r.dataset.revealHost)).toEqual(['on', 'on', 'on'])
+    await render(nested(), ['.trash/Hidden.deleted'])
+    expect(rowEls().map((r) => r.dataset.revealHost)).toEqual(['', '', ''])
   })
 })

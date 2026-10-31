@@ -2,7 +2,9 @@
 
 import type { Dirent } from 'node:fs'
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { afterEach, beforeEach, expect, vi } from 'vitest'
+import { act } from 'react'
+import { afterEach, beforeEach, expect, type Mock, vi } from 'vitest'
+import { stubDialer } from '../vitest.setup'
 import { type ListedBundle, listBundles, mintBundle } from '../Bundles/bundle'
 import type { PropertyRecord } from '../Bundles/record'
 import { type BundleRow, matched } from '../Bundles/rows'
@@ -107,6 +109,50 @@ export async function onlyBundle(root: string): Promise<ListedBundle> {
 
 export const stateOrder = async (root: string): Promise<Record<string, unknown>> =>
   (await readJsonAt<{ order: Record<string, unknown> }>(join(root, '.nexus', 'state.json'))).order
+
+interface BrowserChannels {
+  listed: BundleRow[]
+  children: Record<string, BundleRow[]>
+  picked: string | null
+  list: Mock
+  menu: Mock
+  mutated: Mock
+}
+
+export function stubBrowserEachTest(
+  more: () => Record<string, unknown> = () => ({}),
+): BrowserChannels {
+  const channels = {} as BrowserChannels
+  beforeEach(() => {
+    Object.assign(channels, { listed: [], children: {}, picked: null })
+    channels.list = vi.fn(async () => ({ ok: true, value: channels.listed }))
+    channels.menu = vi.fn(async () => ({ ok: true, value: channels.picked }))
+    channels.mutated = vi.fn(async () => ({ ok: true, value: {} }))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'bundles:list': channels.list,
+      'bundles:children': vi.fn(async (addresses: string[]) => ({
+        ok: true,
+        value: addresses.map((address) => channels.children[address] ?? []),
+      })),
+      menu: channels.menu,
+      mutate: channels.mutated,
+      'bundles:permanentDelete': vi.fn(async () => ({ ok: true, value: false })),
+      ...more(),
+    })
+  })
+  return channels
+}
+
+export const boxOf = (host: ParentNode, title: string): HTMLElement =>
+  host.querySelector(`[aria-label="Select ${title}"]`) as HTMLElement
+
+export const rowOf = (host: ParentNode, title: string): HTMLElement =>
+  boxOf(host, title).closest('.data-row') as HTMLElement
+
+export const press = (host: ParentNode, title: string, detail: number): Promise<void> =>
+  act(async () => {
+    rowOf(host, title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+  })
 
 export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
   const { title = 'Alpha' } = over
