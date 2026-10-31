@@ -1,12 +1,16 @@
 // The Archive's own op: a page or Set leaves its Collection for the Collection's Archive, where every cascade still reaches it, and comes back through the one restore both stores share (`Core/Bundles/restore.ts`).
 
-import { basename, join, relative, titleFromPath } from '../Paths/posix'
+import { basename, join, relative, stripMarkdownExt, titleFromPath } from '../Paths/posix'
 import { holdsName } from '../Paths/names'
 import { fail, ok } from '../Contract/result'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { containerAt, owningCollection, pageAt } from '../Nexus/treePatch'
 import { dropDeparture } from '../Nexus/reorder'
-import { departingCascade } from '../Nexus/settle'
+import { settledIndex } from '../Nexus/settle'
+import { linksNotUpdated, respell, type CascadeReport } from '../Nexus/cascade'
+import { respellings } from '../Connections/rewrite'
+import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
+import { pageIndexOf } from '../Nexus/record'
 import { liftSetAside } from '../Nexus/folderEntity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import type { MutateContext } from '../Nexus/mutate'
@@ -54,6 +58,28 @@ export async function archiveOp(
     ...(cascade ? { cascade } : {}),
     undo: { op: 'restore', bundlePath: filed.address },
   })
+}
+
+/** An archive's re-spell when it files the item under another path than it stood under, its restore's in reverse: each key naming it where it stood re-spells to where `back` puts its pages, wherever the live world it left names nothing there, and to a page's whole path where a live page holds the shorter name. */
+async function departingCascade(
+  root: string,
+  tree: NexusTree,
+  back: readonly ConnPage[],
+  title: string,
+): Promise<CascadeReport | undefined> {
+  const after = await settledIndex(root)
+  if (!after) return linksNotUpdated(title)
+  const ids = back.map((p) => p.id)
+  const departing = buildPageIndex(back)
+  const names = respellings(pageIndexOf(tree), departing, ids, [])
+  for (const [key, name] of names) {
+    if (after.resolve(name).status === 'phantom') continue
+    const path = departing.resolve(name).page?.path
+    const whole = path && stripMarkdownExt(path)
+    if (whole && after.resolve(whole).status === 'phantom') names.set(key, whole)
+    else names.delete(key)
+  }
+  return names.size ? respell(root, ids, names, title) : undefined
 }
 
 /** Where an archive files the item: back at the address `back` carries, as `archiveFiling` re-roots it, under the name and with the record it carries; else its own Collection's Archive from where it stands, recorded afresh. */

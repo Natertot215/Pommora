@@ -195,13 +195,16 @@ export const changesSettled = (operation: MutateRequest['op']): boolean =>
   operation === 'restore' ||
   operation === 'emptyBundle'
 
-/** A moved Set carries what was archived from within it, and a container's or Context's new name, or a Set's new place, re-spells the rows' crumbs, so each re-lists an open browser too. */
-export const changesStores = (req: MutateRequest): boolean =>
+export const isBundleOp = (req: MutateRequest): boolean =>
   req.op === 'delete' ||
+  req.op === 'deleteProperty' ||
   req.op === 'archive' ||
   req.op === 'restore' ||
-  req.op === 'emptyBundle' ||
+  req.op === 'emptyBundle'
+
+/** A moved Set carries what was archived from within it, and a container's or Context's new name, or a Set's new place, re-spells the rows' crumbs, so each re-lists an open browser too. */
+export const changesStores = (req: MutateRequest): boolean =>
+  isBundleOp(req) ||
   req.op === 'moveSet' ||
   req.op === 'renameContext' ||
-  req.op === 'deleteProperty' ||
   (req.op === 'rename' && req.kind !== 'page')

@@ -28,7 +28,10 @@ import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
 import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
-import { settleNow, recordHanded } from './settle'
+import { inContextsTurn, settleNow, recordHanded } from './settle'
+import { recognizeSpaces } from './arrival'
+import { readNotes } from './owed'
+import { contextWorldOf } from '../Contexts/contextResolve'
 import type { NexusState } from './tree'
 import { settleArchives } from '../Archive/refile'
 import { sweepStashes } from '../Properties/propertyStash'
@@ -104,6 +107,14 @@ export async function openNexusSequence(
     oweSeen(root, reread)
     void sweepFileHistory(root)
     void sweepStashes(root)
+    await inContextsTurn(root, async () => {
+      const notes = await readNotes(root)
+      const { spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
+      return recognizeSpaces(
+        root,
+        [...spaceById.values()].filter((s) => !notes[s.id]?.strip),
+      )
+    }).catch((e) => console.error('outside restore: the open pass failed:', errText(e)))
     await finishOwed(root)
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)

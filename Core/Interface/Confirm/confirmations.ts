@@ -8,6 +8,7 @@ import { storesChanged } from '../../Session/nexusSlice'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import {
+  type BundleVerb,
   type Bundled,
   notifyBundled,
   reportRefusal,
@@ -45,7 +46,7 @@ const waived = (key: 'confirmDeletion' | 'confirmArchiving', kind?: Counted['kin
 const armed = new Map<string, () => void>()
 
 /** A bundle restored or deleted from anywhere spends the Undo its notice offered, a delete's or an archive's, so neither the label nor the chord retries it. */
-export function spendUndo(bundlePath: string): void {
+function spendUndo(bundlePath: string): void {
   armed.get(bundlePath)?.()
   armed.delete(bundlePath)
 }
@@ -61,7 +62,7 @@ const atItemNow = (req: MutateRequest): MutateRequest => {
 }
 
 /** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
-export function offerUndo(
+function offerUndo(
   undos: readonly Acted[],
   post: (undo?: () => Promise<void>) => () => void,
 ): void {
@@ -85,7 +86,7 @@ const steppedTo = (title: string, landedAs: string): string => `“${title}” a
 
 /** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `address`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
 export async function runBundled(
-  verb: 'Restored' | 'Deleted' | 'Archived' | null,
+  verb: BundleVerb,
   rows: readonly Acted[],
   nexusId = useSession.getState().tree?.nexus.id,
 ): Promise<boolean> {

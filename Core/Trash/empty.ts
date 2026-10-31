@@ -1,11 +1,11 @@
 import { join, relative } from '../Paths/posix'
 import { archiveDirRel, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import type { MutateReply } from '../Nexus/mutateRequest'
-import { fail, fault, ok } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { readLiveSetting } from '../Settings/settings'
 import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 import { asString } from '../Nexus/coerce'
-import { contentPages, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
+import { contentPages, ITEM_GONE, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
 import { parkLinks } from './gather'
 import { pathExists } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
@@ -50,8 +50,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
     const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id))
     return ok({ cascade: owedReport(root, reach) })
   }
-  if (!artifactAbs)
-    return fail('not-found', "That deletion didn't finish, or something else is in with it.")
+  if (!artifactAbs) return ITEM_GONE
   const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
   const pages = await contentPages(record.entity, artifactAbs)
   const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
