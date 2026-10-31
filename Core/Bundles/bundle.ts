@@ -45,7 +45,10 @@ import {
   layoutOf,
   originPathOf,
   stampedLeaf,
+  storeOf,
 } from '../Paths/bundleLayout'
+
+export const ITEM_GONE = fail('not-found', 'That item is no longer there.')
 
 /** A store reads as a shadow of the nexus, so a stored item shows where it lived. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
 export async function chainDir(
@@ -78,10 +81,20 @@ export async function mintBundle(
   try {
     await writeRecord(bundle, record)
   } catch (e) {
-    await removeOwn(bundle)
+    await removeBundle(root, bundle)
     throw e
   }
   return bundle
+}
+
+/** Removes a bundle and each folder above it that it leaves empty, up to its store's own folder. */
+export async function removeBundle(root: string, abs: string): Promise<void> {
+  const stop = join(root, layoutOf(storeOf(relative(root, abs))!.store).dir)
+  await removeOwn(abs)
+  for (let dir = dirname(abs); dir.startsWith(`${stop}/`); dir = dirname(dir)) {
+    if ((await machine().readDir(dir)).length) return
+    await removeOwn(dir)
+  }
 }
 
 export async function bundleArtifact(bundleDir: string): Promise<string | null> {
@@ -116,7 +129,7 @@ export async function fileInto(
   try {
     await relocate(artifact, join(bundle, basename(origin)))
   } catch (e) {
-    await removeOwn(bundle)
+    await removeBundle(root, bundle)
     throw e
   }
   return { address: relative(root, bundle), landed: join(bundle, basename(origin)) }
@@ -134,7 +147,7 @@ export async function moveIntoStore(
   if (!artifact || !raw) return
   const origin = join(root, originPathOf(root, artifact))
   await fileInto(root, to, origin, artifact, { ...raw, ...extra }, relative(root, fromBundle))
-  await removeOwn(fromBundle)
+  await removeBundle(root, fromBundle)
 }
 
 export interface ListedBundle {
@@ -250,7 +263,7 @@ async function readBundleAt(root: string, abs: string) {
     !isAtOrUnder(item, artifact) ||
     !(await pathExists(item))
   )
-    return fail('not-found', 'That item is no longer there.')
+    return ITEM_GONE
   return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
 }
 
@@ -377,10 +390,10 @@ export async function listInner(
   })
 }
 
-/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
+/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share (a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views) — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
 export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
   const { abs, record, artifact, inner } = opened
-  if (!inner) return void (await removeOwn(abs))
+  if (!inner) return void (await removeBundle(root, abs))
   const gone = 'links' in record ? (record.links ?? []) : []
   if (gone.length) await removeLinks(abs, gone)
   await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))

@@ -1,4 +1,5 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { pathExists } from '../Files/atomicWrite'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -81,7 +82,7 @@ describe('mintBundle', () => {
     const p = join(root, 'Notes', 'Daily', 'Beta.md')
     vi.spyOn(record, 'writeRecord').mockRejectedValueOnce(new Error('the write failed'))
     await expect(mintBundle(root, TRASH, p, {})).rejects.toThrow('the write failed')
-    expect(await readdir(join(root, '.trash', 'Notes', 'Daily'))).toEqual([])
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
   })
 })
 

@@ -289,7 +289,7 @@ export async function indexEvents(
           written.push(ev)
           break
         case 'move':
-          await moveIndexPaths(root, ev.from, ev.absPath)
+          await moveIndexPaths(root, ev.from, ev.absPath, reads)
           break
         case 'unlink':
         case 'unlinkDir': {
@@ -591,7 +591,7 @@ async function applyOrder(root: string, ev: Changed): Promise<Applied> {
   })
 }
 
-async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> {
+async function applyMove(root: string, ev: Moved, owed: Owed, given?: PageRead): Promise<Applied> {
   const from = relative(root, ev.from)
   const to = relative(root, ev.absPath)
   const tree = heldTreeOf(root)
@@ -609,7 +609,12 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   // Not a move the tree makes in place (one end is the Trash, or outside what it holds): what left and what arrived are two events.
   const left = await applyOne(root, { event: 'unlink', absPath: ev.from, origin: 'own' }, owed)
   const arrived = isMarkdownFile(to) ? 'add' : 'addDir'
-  const landed = await applyOne(root, { event: arrived, absPath: ev.absPath, origin: 'own' }, owed)
+  const landed = await applyOne(
+    root,
+    { event: arrived, absPath: ev.absPath, origin: 'own' },
+    owed,
+    given,
+  )
   return left === 'ok' ? landed : 'walk'
 }
 
@@ -619,7 +624,7 @@ async function applyOne(
   owed: Owed,
   given?: PageRead,
 ): Promise<Applied> {
-  if (ev.event === 'move') return applyMove(root, ev, owed)
+  if (ev.event === 'move') return applyMove(root, ev, owed, given)
   const tree = heldTreeOf(root)
   if (!tree) return 'walk'
   const c = classifyEvent(tree, root, ev)

@@ -2,7 +2,8 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile, titleFromPath } from '../Paths/posix'
+import { isAtOrUnder, isMarkdownFile, relative, titleFromPath } from '../Paths/posix'
+import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fault, ok } from '../Contract/result'
 import { addProperty, assignProperty, reorderAssignment } from '../Properties/assignment'
@@ -21,10 +22,11 @@ import {
   renameOption,
   setValueFormat,
 } from '../Properties/optionOps'
-import { emptyBundle, restoreTrashed } from '../Trash/spend'
-import { archiveOp, restoreArchived } from '../Archive/archive'
+import { emptyBundle } from '../Trash/empty'
+import { archiveOp } from '../Archive/archive'
+import { restoreBundle } from '../Bundles/restore'
 import { openBundle } from '../Bundles/bundle'
-import { bundleAddressOf } from '../Paths/bundleLayout'
+import { storeOf } from '../Paths/bundleLayout'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
 import { setProfileImageOp } from '../Assets/setProfileImage'
@@ -134,20 +136,18 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'archive':
       return inSettleTurn(root, () => archiveOp(ctx, req))
 
-    // An Archive bundle holds a page or Set alone, so its restore changes no Context and takes no Contexts lock.
+    // Only a Context's or a Space's bundle, which sits under the Trash's `.nexus/contexts` since its chain mirrors where it lived, restores something that changes which Contexts and Spaces exist, so only its restore takes the Contexts lock; every other restore writes a Space's sidecar by id alone, as a delete's strip does.
     case 'restore': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
       if (!resolved.ok) return resolved
       const restore = async (): Promise<MutateReply> => {
         const opened = await openBundle(root, resolved.value)
-        if (!opened.ok) return opened
-        return opened.value.store.kind === 'archive'
-          ? restoreArchived(root, opened.value, req.destination)
-          : restoreTrashed(root, opened.value, req.destination)
+        return opened.ok ? restoreBundle(root, opened.value, req.destination) : opened
       }
-      return bundleAddressOf(root, resolved.value)?.store.kind === 'archive'
-        ? inSettleTurn(root, restore)
-        : inContextsTurn(root, restore)
+      const origin = storeOf(relative(root, resolved.value))?.origin ?? ''
+      return isAtOrUnder(origin, CONTEXTS_DIR_REL)
+        ? inContextsTurn(root, restore)
+        : inSettleTurn(root, restore)
     }
 
     case 'emptyBundle': {

@@ -30,6 +30,7 @@ import { nexusPages } from '../Nexus/heldPages'
 import { minted, type MutateReply, type RestoreDestination } from '../Nexus/mutateRequest'
 import { writeExcludedFolders } from '../Settings/settings'
 import { readNotes } from '../Nexus/owed'
+import { newId } from '../Nexus/ids'
 import { listBundles, mintBundle } from '../Bundles/bundle'
 import type { BundleStore } from '../Paths/bundleLayout'
 import { readRawRecord, readRecord } from '../Bundles/record'
@@ -239,7 +240,7 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       (await readJsonAt<{ excluded_folders: string[] }>(at('.nexus', 'settings.json')))
         .excluded_folders,
     ).toEqual(['Notes/Daily/Private'])
-    expect(await readdir(at('.trash', 'Notes'))).toEqual([])
+    expect(await pathExists(at('.trash', 'Notes'))).toBe(false)
   })
 
   it('an Undo filing back under a name other than its bundle’s takes a fresh stamp in that chain', async () => {
@@ -286,7 +287,7 @@ describe('archive — a page or Set leaves for its Collection’s Archive', () =
       false,
     )
     expect(await listBundles(root, ARCHIVE)).toEqual([])
-    expect(await readdir(at('.nexus', 'archive', NOTES, 'Notes', 'Daily'))).toEqual([])
+    expect(await pathExists(at('.nexus', 'archive', NOTES, 'Notes'))).toBe(false)
     expect(await text('Notes', 'Daily', 'Beta.md')).toBe(BETA)
   })
 })
@@ -642,7 +643,7 @@ describe('restore — an archived item comes back by a plain move', () => {
     const record = await readFile(at(bundlePath, '_record.json'), 'utf8')
     await mutate(minted({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Beta' }))
     const restored = await restore(bundlePath)
-    await mkdir(at(bundlePath))
+    await mkdir(at(bundlePath), { recursive: true })
     const r = await undo(restored)
     const filed = bundleOf(r)
     expect(filed).not.toBe(bundlePath)
@@ -731,18 +732,21 @@ describe('restore — an archived item comes back by a plain move', () => {
     )
   })
 
-  it('an Archive restore takes no Contexts lock', async () => {
+  it('a restore takes the Contexts lock only for a Context’s or a Space’s bundle', async () => {
     const lock = vi.spyOn(machine(), 'lock')
-    const locked = (): boolean => lock.mock.calls.some(([key]) => key === contextsDir(root))
-    const archived = await archive('Notes/Daily/Beta.md')
-    lock.mockClear()
-    expect((await restore(archived)).ok).toBe(true)
-    expect(locked()).toBe(false)
-    const deleted = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
-    const trashed = bundleOf(deleted)
-    lock.mockClear()
-    expect((await restore(trashed)).ok).toBe(true)
-    expect(locked()).toBe(true)
+    const locked = async (bundlePath: string): Promise<boolean> => {
+      lock.mockClear()
+      expect((await restore(bundlePath)).ok).toBe(true)
+      return lock.mock.calls.some(([key]) => key === contextsDir(root))
+    }
+    expect(await locked(await archive('Notes/Daily/Beta.md'))).toBe(false)
+    const page = await mutate({ op: 'delete', path: 'Notes/Daily/Gamma.md', kind: 'page' })
+    expect(await locked(bundleOf(page))).toBe(false)
+    const contextId = newId()
+    await mutate({ op: 'createContextGroup', id: contextId, name: 'Realms' })
+    await mutate({ op: 'createSpace', id: newId(), contextId, name: 'Home' })
+    const space = await mutate({ op: 'delete', path: '.nexus/contexts/Realms/Home', kind: 'space' })
+    expect(await locked(bundleOf(space))).toBe(true)
   })
 
   it('an item archived out of a Set since trashed returns into that Set once the Set is restored, and with the Set still in the Trash its row reads homeless and its restore takes a destination', async () => {

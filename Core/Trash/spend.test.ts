@@ -16,7 +16,7 @@ import {
 } from '../Testing/hostFs'
 import { seedPropertyBundle } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installMachine } from '../Platform/machine'
+import { installMachine, machine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
@@ -520,6 +520,45 @@ describe('restore — the record spends, headless', () => {
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
+  it('a restore and an empty leave no folder their bundle emptied in the Trash', async () => {
+    const trashed = async (): Promise<string> =>
+      bundleOf(
+        await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' }),
+      )
+    const restored = await trashed()
+    expect(restored).toMatch(/^\.trash\/Notes\/Daily\/[^/]+__Alpha\.md\.deleted$/)
+    expect((await settledMutate(root, { op: 'restore', bundlePath: restored })).ok).toBe(true)
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
+    const emptied = await trashed()
+    expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: emptied })).ok).toBe(true)
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
+    expect(await pathExists(join(root, '.trash'))).toBe(true)
+  })
+
+  it('a bundle whose artifact has left refuses its restore in either store with one line', async () => {
+    const refused = async (bundlePath: string, artifact: string): Promise<MutateReply> => {
+      await rm(join(root, bundlePath, artifact))
+      return settledMutate(root, { op: 'restore', bundlePath })
+    }
+    await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+    await refreshTree(root)
+    const deleted = await settledMutate(root, {
+      op: 'delete',
+      path: 'Notes/Daily/Alpha.md',
+      kind: 'page',
+    })
+    const archived = await settledMutate(root, {
+      op: 'archive',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+    })
+    for (const r of [
+      await refused(bundleOf(deleted), 'Alpha.md'),
+      await refused(bundleOf(archived), 'Beta.md'),
+    ])
+      expect(r.ok ? '' : r.error.message).toBe('That item is no longer there.')
+  })
+
   it('a Space round-trips: the surviving roots carry its tag again', async () => {
     await settledMutate(root, {
       op: 'delete',
@@ -722,6 +761,26 @@ describe('a Link value refilled into a trashed copy', () => {
     expect(await readFile(beta(), 'utf8')).toBe(
       `---\nID: ${PAGE_B}\nNote: a\nRelated: "[[Alpha]]"\n---\nb\n`,
     )
+  })
+
+  it('a holder stripped under two Link properties takes both back in one landing', async () => {
+    await seedNexus(root, {
+      defs: [
+        { id: 'prop_related', label: 'Related', key: 'Related', type: 'link' },
+        { id: 'prop_see', label: 'See', key: 'See', type: 'link' },
+      ],
+    })
+    const held = `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\nMid: m\nSee: "[[Alpha]]"\nZed: z\n---\nb\n`
+    await writeFile(beta(), held)
+    await refreshTree(root)
+    await deleteAlpha()
+    expect(await readFile(beta(), 'utf8')).toBe(`---\nID: ${PAGE_B}\nMid: m\nZed: z\n---\nb\n`)
+    const land = vi.spyOn(machine(), 'land')
+    await restore('Alpha.md')
+    expect(await readFile(beta(), 'utf8')).toBe(held)
+    expect(
+      land.mock.calls.flatMap(([files]) => files).filter((f) => f.path === beta()),
+    ).toHaveLength(1)
   })
 
   it('a stripped Link key comes back where it stood in a Trash copy', async () => {

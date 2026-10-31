@@ -5,7 +5,7 @@ import { liveTreeOf, mutableTarget, NOT_HELD } from '../Nexus/liveTree'
 import { pagesOf } from '../Nexus/record'
 import { isContainer } from '../Nexus/entities'
 import { archivedSetIds, type ConfigEdit, goneContainers, goneEdit } from '../Nexus/configReach'
-import { pathExists, removeOwn } from '../Files/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { findHolders, type Holders } from '../Index/keyHolders'
 import { contextKey } from '../Contexts/contexts'
 import { finishEntry, leave } from '../Nexus/finishOwed'
@@ -21,7 +21,7 @@ import type { MutateContext } from '../Nexus/mutate'
 import type { Departing } from '../Nexus/reorder'
 import type { NexusTree } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
-import { contentPages, mintBundle, openBundle, spendBundle } from '../Bundles/bundle'
+import { contentPages, mintBundle, openBundle, removeBundle, spendBundle } from '../Bundles/bundle'
 import { originPathOf, storeOf } from '../Paths/bundleLayout'
 import { gatherContextRecord, gatherSpaceRecord } from './gather'
 import { type ContentRecord, gatherContentRecord, type RecordFile } from '../Bundles/record'
@@ -150,7 +150,7 @@ export async function deleteOp(
   // Nothing is deleted while the artifact stands where it was, so a delete refused or thrown by then takes its bundle back and puts a lifted set-aside back.
   const unmoved = async (): Promise<void> => {
     if (!(await pathExists(abs))) return
-    if (bundle) await removeOwn(bundle)
+    if (bundle) await removeBundle(root, bundle)
     await lifted?.value.rollback()
   }
   try {

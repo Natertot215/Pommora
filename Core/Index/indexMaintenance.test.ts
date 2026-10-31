@@ -16,7 +16,8 @@ import * as contentIndex from './contentIndex'
 import { queryKeyHolders, queryMembers, queryMentions, readIndexedStat } from './contentIndex'
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
-import { settleBatch } from '../Nexus/settle'
+import { settleBatch, settleNow } from '../Nexus/settle'
+import { handleMutate } from '../Nexus/mutate'
 import { homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -292,6 +293,18 @@ describe('the watcher maintains the rows', () => {
     ])
     expect(owedFor(root).walk).toBe(false)
     await expectMaintained()
+  })
+
+  it('a page’s restore from the Trash reads the landed page once', async () => {
+    const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+    const [listed] = await listBundles(root, { kind: 'trash' })
+    const reads = vi.spyOn(machine(), 'readText')
+    expect((await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath })).ok).toBe(
+      true,
+    )
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    expect(reads.mock.calls.filter(([p]) => p === alpha)).toHaveLength(1)
   })
 
   it('an external heading rename reports the pages and tile hosts its cascade rewrote', async () => {

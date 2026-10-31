@@ -297,7 +297,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [x] Task 5-3 · The table owns its date column and footing
   - [x] Task 5-4 · The arrival's one home
-  - [ ] Task 5-5 · One restore for both stores
+  - [x] Task 5-5 · One restore for both stores
   - [ ] Task 5-6 · Pages and Sets moved out by hand
   - [ ] Task 5-7 · Spaces moved back by hand
   - [ ] Review Checkpoint
@@ -7958,7 +7958,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 **CHANGE**
 
 - [ ] Write these and watch each fail:
-  - **`restore.test.ts` (or the suite the restore's cases sit in at this task), "a restore and an empty leave no folder their bundle emptied in the Trash":** a page deleted from `Notes/Daily/` mints `.trash/Notes/Daily/<stamp>__Alpha.md.deleted`; its restore, and an empty of a second such bundle, each leave no empty `Notes/Daily/` or `Notes/` under `.trash`. The BASELINE left them (Phase 3's live drive); the one restore and the empty remove each emptied folder above the bundle up to `.trash`, through one helper beside `removeOwn`.
+  - **`restore.test.ts` (or the suite the restore's cases sit in at this task), "a restore and an empty leave no folder their bundle emptied in the Trash":** a page deleted from `Notes/Daily/` mints `.trash/Notes/Daily/<stamp>__Alpha.md.deleted`; its restore, and an empty of a second such bundle, each leave no empty `Notes/Daily/` or `Notes/` under `.trash`. The BASELINE left them (Phase 3's live drive); every removal of a bundle, a restore's and an empty's spend, a mint's or a move's rollback, and a move between stores alike, goes through one `removeBundle(root, abs)` beside `mintBundle` in `Core/Bundles/bundle.ts`, which removes each folder above it that it leaves empty, up to its store's own folder (`layoutOf(storeOf(…).store).dir`), so an Archive's chain folders go as the Trash's do.
   - **`spend.test.ts`, "a holder stripped under two Link properties takes both back in one landing":** page `L` holds `Related: "[[A]]"` and `See: "[[A]]"` under two Link definitions; delete `A`, spy `machine().land`, restore `A`. `L` holds both values back, each above the key it stood above, and the spy's calls name `L`'s path once. Fails today with two landings.
   - **`archive.test.ts:735`, rewritten in place as "a restore takes the Contexts lock only for a Context's or a Space's bundle":** an Archive page's restore and a Trash page's restore take no Contexts lock, and a trashed Space's restore takes it. Fails today on the Trash page.
   - **`spend.test.ts`, "a bundle whose artifact has left refuses its restore in either store with one line":** remove a trashed page's artifact and an archived page's artifact by hand; each restore answers "That item is no longer there.". Fails today on both texts.
@@ -7973,7 +7973,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 @@ new file @@
 +import { basename, dirname, join, relative } from '../Paths/posix'
 +import { originPathOf } from '../Paths/bundleLayout'
-+import { fail, fault, ok } from '../Contract/result'
++import { fault, ok } from '../Contract/result'
 +import type { MutateReply, RestoreDestination } from '../Nexus/mutateRequest'
 +import { machine } from '../Platform/machine'
 +import { relocate } from '../Files/atomicWrite'
@@ -7986,7 +7986,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +import { OWED, owedName, readNotes, restoreNote } from '../Nexus/owed'
 +import { mutateRegistryFile, unlistContext, withContextAt } from '../Contexts/contextsRegistry'
 +import { restoreProperty } from '../Trash/restoreProperty'
-+import { contentPages, fileInto, type OpenBundle, originPagesOf, spendBundle } from './bundle'
++import { contentPages, fileInto, ITEM_GONE, type OpenBundle, originPagesOf, spendBundle } from './bundle'
 +import { NO_DESTINATION, placeAmong, placeRecord } from './placement'
 +import { recordedPartly } from './record'
 +import { parkLinks } from '../Trash/gather'
@@ -8010,7 +8010,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +    await spendBundle(root, bundle)
 +    return ok({ ...restored(unrestored), ...said })
 +  }
-+  if (!artifact) return fail('not-found', 'That item is no longer there.')
++  if (!artifact) return ITEM_GONE
 +  const tree = await liveTreeOf(root)
 +  const { byId } = await nexusPages(root, tree)
 +  const placed = await placeRecord(root, stored, destination, { abs: bundle.abs, artifact }, tree, byId)
@@ -8452,7 +8452,7 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 **VERIFY**
 
 - [ ] The four new or rewritten cases are green, each red with its hunk reverted.
-- [ ] **Flips:** `archive.test.ts:735`'s Trash half, as rewritten, and nothing else. Every restore case in the five suites CHANGE names passes through `restoreBundle`: the delete-from-Archive Undo (`archive.test.ts:938-1223`), the Archive restore's Undo (`:473-640`), the Context's registry write-ahead and rollback (`spend.test.ts:1413`), H-4's owed note (`:2533`), step-aside naming (`:1464-1557`), the twin linker (`:1149`), the refill with the setting off (`trashRecovery.test.ts:428-885`), and the inner item's share (`bundle.test.ts:333-372`).
+- [ ] **Flips:** `archive.test.ts:735`'s Trash half, as rewritten; the four rollback cases that read their emptied chain folder as `[]` (`archive.test.ts`'s Set-delete and archive-move rollbacks, `bundle.test.ts`'s record-write rollback, `deleteReach.test.ts`'s note-throw delete), which assert it gone; and `archive.test.ts`'s taken-address Undo fixture, which makes its chain with `recursive: true`; nothing else. Every restore case in the five suites CHANGE names passes through `restoreBundle`: the delete-from-Archive Undo (`archive.test.ts:938-1223`), the Archive restore's Undo (`:473-640`), the Context's registry write-ahead and rollback (`spend.test.ts:1413`), H-4's owed note (`:2533`), step-aside naming (`:1464-1557`), the twin linker (`:1149`), the refill with the setting off (`trashRecovery.test.ts:428-885`), and the inner item's share (`bundle.test.ts:333-372`).
 - [ ] The carry holds through `arrive`'s one source: `refile.test.ts`'s *"the restore"* describe, Task 3-5's B-6 case included, and `archive.test.ts:325-416` (a landed Set's carry) are green unchanged.
 - [ ] These print nothing:
   - `git grep -nwE "restoreTrashed|restoreArchived" -- Core ':!*.test.ts'`;
@@ -9854,5 +9854,5 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks. The checkpoint took a trashed item's owner from the trail its origin stands on now (`currentOrigin`), so a Set moved into another Collection carries its trashed pages' values with it; gave a trashed twin one pass-over, `twinned` beside `addressable`, which the holder read and the strip share; and moved `retries` and `reachReport` into `owed.ts` beside `owedReport`, which took `bundle.ts`, `configReach.ts`, `owed.ts`, and `tileHosts.ts` back out of the import loop around `liveTree.ts`, eleven modules to seven. Task 4-7 finished `heldPages.ts`' projection in place of the Investigation's add-ons, its "stored-Space source beside `tileHostsOf`'s live boards" among them: `storedNodes` lists the Trash once for its owners, Collections, and Spaces, and every enumerator of the tree's Collections or Spaces takes it beside the tree, so Approach 1's "a cascade with no trashed holder therefore pays nothing" becomes one listing per governed or anywhere cascade, which Task 6-11's Medium-50 measurement checks, while stored nodes inside the tree itself were rejected, since every renderer reads the tree.
 - **Phase 4 · Tasks 4-3 and 4-4 Land as One Commit:** Task 4-3 alone left a trashed page's stashed value unreached (`refillStash`'s `members` needs `owningCollection`'s Trash arm, which Task 4-4 adds), so the two commit together; Task 4-3 also writes the watcher's and Sync's manifest's shared watch rule once (`watchedUnder`) and has `deindexPath` prune a removed path's rows whether or not it's content.
 - **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
-- **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts`, passes the settled index into `returningCascade`, and puts `parkLinks` in `gather.ts` rather than `record.ts`, which can't read the Trash's rows outside the import loop around `liveTree.ts`; Task 5-5 takes both stores' carry source from the stored record's chain.
+- **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts`, passes the settled index into `returningCascade`, and puts `parkLinks` in `gather.ts` rather than `record.ts`, which can't read the Trash's rows outside the import loop around `liveTree.ts`; Task 5-5 takes both stores' carry source from the stored record's chain, writes the missing-item refusal once as `ITEM_GONE` in `bundle.ts`, and prunes a bundle's emptied chain folders in both stores through `removeBundle`, every bundle removal included, where the plan named the restore and the empty alone.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.

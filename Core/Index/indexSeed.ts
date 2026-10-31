@@ -233,7 +233,12 @@ export function deindexPath(root: string, abs: string): IndexSeen {
   return { ...NOTHING_SEEN, vanished: [...rows].flatMap(([path, stat]) => pageOf(path, stat)) }
 }
 
-export async function moveIndexPaths(root: string, oldAbs: string, newAbs: string): Promise<void> {
+export async function moveIndexPaths(
+  root: string,
+  oldAbs: string,
+  newAbs: string,
+  reads?: Map<string, PageRead>,
+): Promise<void> {
   const newRel = await relCorpusPath(root, newAbs)
   if (!newRel) return void deindexPath(root, oldAbs)
   const oldRel = await relCorpusPath(root, oldAbs)
@@ -242,7 +247,7 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
       ? [newRel]
       : await corpusFilesUnder(root, newAbs, await readWatchScope(root))
     const pages = landed.map((rel) => ({ absPath: join(root, rel) }))
-    await indexWrittenPages(root, pages)
+    await indexWrittenPages(root, pages, reads)
     return
   }
   if (isMarkdownFile(oldRel)) {
@@ -253,7 +258,7 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
     renamePathPrefixIndex(oldRel, newRel)
     commit(moved.flatMap((path) => [path, `${newRel}${path.slice(oldRel.length)}`]))
   }
-  await indexWrittenPages(root, [{ absPath: newAbs }])
+  await indexWrittenPages(root, [{ absPath: newAbs }], reads)
 }
 
 /** What a seed saw and the pages it re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */

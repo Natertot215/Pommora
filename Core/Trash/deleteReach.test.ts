@@ -1,6 +1,6 @@
 import { applyEvents } from '../Nexus/fileEvents'
 import { settleNow } from '../Nexus/settle'
-import { chmod, copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -837,7 +837,7 @@ describe('a content delete on the notes', () => {
     const r = await handleMutate(root, { op: 'delete', path: 'Notes/Target.md', kind: 'page' })
     expect(r.ok).toBe(false)
     expect(await pathExists(target)).toBe(true)
-    expect(await readdir(join(root, '.trash', 'Notes'))).toEqual([])
+    expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
   })
 
   it('a crash between the note and the move leaves the live page its links', async () => {
