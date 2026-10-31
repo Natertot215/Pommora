@@ -23,7 +23,7 @@ import type { CountedChange } from '../../Properties/properties'
 import { stubDialer } from '../../vitest.setup'
 import { fault, ok, type Result } from '../../Contract/result'
 import type { BundleRow } from '../../Bundles/rows'
-import { bundleRow as row, stubBrowserEachTest } from '../../Testing/bundles'
+import { bundleRow as row, nexus, stubBrowserEachTest } from '../../Testing/bundles'
 
 const asked: string[] = []
 
@@ -512,17 +512,14 @@ describe('a bundle op through the slice', () => {
 describe('a batch through runBundled', () => {
   const channels = stubBrowserEachTest()
   const alpha = row({ title: 'Alpha' })
+  const beta = row({ title: 'Beta' })
   const handed = (
     rows: BundleRow[],
     op: 'restore' | 'emptyBundle' = 'restore',
   ): Parameters<typeof runBundled>[1] =>
     rows.map((r) => ({ ...r, req: { op, bundlePath: r.bundlePath } }))
   const both = (op?: 'restore' | 'emptyBundle'): Parameters<typeof runBundled>[1] =>
-    handed([alpha, row({ title: 'Beta' })], op)
-  const nexus = (id: string): void => {
-    const tree = makeTree()
-    useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
-  }
+    handed([alpha, beta], op)
   const armed = async (bundlePath: string): Promise<void> => {
     channels.mutated.mockResolvedValueOnce({
       ok: true,
@@ -571,7 +568,7 @@ describe('a batch through runBundled', () => {
     resetUndo()
     const older = vi.fn(() => true)
     pushUndo(older)
-    await armed(alpha.bundlePath)
+    await armed(beta.bundlePath)
     channels.mutated.mockClear()
     await runBundled('Restored', both())
     expect(channels.mutated).toHaveBeenCalledTimes(2)
@@ -596,28 +593,17 @@ describe('a batch through runBundled', () => {
     expect(order).toEqual(['save Notes/A.md', 'mutate', 'mutate'])
   })
 
-  it('carries what a batch restore couldn’t re-spell into its notice', async () => {
-    const warning = 'Couldn’t update links in “Alpha” across 1 Item.'
+  it.each([
+    ['Restored', 'restore', 'Couldn’t update links in “Alpha” across 1 Item.'],
+    ['Deleted', 'emptyBundle', 'Couldn’t update links in 1 Item.'],
+  ] as const)('carries what a batch %s couldn’t update into its notice', async (verb, op, warning) => {
     channels.mutated.mockResolvedValue({
       ok: true,
       value: { cascade: { pages: [], hosts: [], warning } },
     })
-    await runBundled('Restored', both())
+    await runBundled(verb, both(op))
     expect(currentNotification()).toMatchObject({
-      message: `Restored 2 Pages. ${warning}`,
-      tone: 'error',
-    })
-  })
-
-  it('carries what a batch empty couldn’t strip into its notice', async () => {
-    const warning = 'Couldn’t update links in 1 Item.'
-    channels.mutated.mockResolvedValue({
-      ok: true,
-      value: { cascade: { pages: [], hosts: [], warning } },
-    })
-    await runBundled('Deleted', both('emptyBundle'))
-    expect(currentNotification()).toMatchObject({
-      message: `Deleted 2 Pages. ${warning}`,
+      message: `${verb} 2 Pages. ${warning}`,
       tone: 'error',
     })
   })
@@ -676,15 +662,12 @@ describe('a batch through runBundled', () => {
     await triesAgain()
   })
 
-  it('a batch restore with one owed reply offers Try Again on its notice', async () => {
+  it.each([
+    ['Restored', 'restore'],
+    ['Deleted', 'emptyBundle'],
+  ] as const)('a batch %s with one owed reply offers Try Again on its notice', async (verb, op) => {
     channels.mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
-    await runBundled('Restored', both())
-    await triesAgain()
-  })
-
-  it('a batch empty with one owed reply offers Try Again', async () => {
-    channels.mutated.mockResolvedValueOnce({ ok: true, value: {} }).mockResolvedValueOnce(OWED)
-    await runBundled('Deleted', both('emptyBundle'))
+    await runBundled(verb, both(op))
     await triesAgain()
   })
 
@@ -726,6 +709,9 @@ describe('a batch through runBundled', () => {
     await runBundled('Restored', both())
     expect(channels.mutated).toHaveBeenCalledTimes(2)
     expect(currentNotification()).toBeNull()
+    channels.mutated.mockClear()
+    expect(await runBundled('Restored', both(), 'gone')).toBe(false)
+    expect(channels.mutated).not.toHaveBeenCalled()
   })
 })
 

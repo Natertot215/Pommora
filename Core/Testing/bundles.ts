@@ -20,10 +20,12 @@ import { assignProperty } from '../Properties/assignment'
 import { createProperty } from '../Properties/registryProperty'
 import { installMachine } from '../Platform/machine'
 import { join } from '../Paths/posix'
+import { useSession } from '../Session/store'
 import { createTestPage } from './createTestPage'
 import { readJsonAt, tempRoot } from './hostFs'
 import { diskMachine } from './machines'
 import { settledMutate } from './settledMutate'
+import { makeTree } from './testTree'
 
 export const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 export const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -154,6 +156,19 @@ export const press = (host: ParentNode, title: string, detail: number): Promise<
     rowOf(host, title).dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
   })
 
+export const doubleClick = async (host: ParentNode, title: string): Promise<void> => {
+  await press(host, title, 1)
+  await press(host, title, 2)
+  await act(async () => {
+    rowOf(host, title).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+  })
+}
+
+export const nexus = (id: string): void => {
+  const tree = makeTree()
+  useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
+}
+
 export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
   const { title = 'Alpha' } = over
   return matched({
@@ -191,7 +206,7 @@ export const restoreTasks = async (root: string): Promise<unknown> =>
     bundlePath: await trashedBundle(root, 'collection', 'Tasks'),
   })
 
-export async function seedPriority(
+export async function trashPriorityCollections(
   root: string,
 ): Promise<{ tasks: string; tasksPage: string; propertyId: string }> {
   const made = await createFolderEntity(root, 'collection', 'Tasks', newId())

@@ -9,7 +9,7 @@
 }
 
 .table-head {
-  /* The one place a heading's type is set; every table's heading inherits it. */
+  /* The one place a heading's type is set; every `.table-head` inherits it. */
   font-size: var(--text-callout-size);
   line-height: var(--text-callout-line);
   font-weight: var(--weight-emphasized);

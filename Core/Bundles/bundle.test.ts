@@ -53,10 +53,18 @@ describe('mintBundle', () => {
     vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
     try {
       const p = join(root, 'twice.md')
-      const first = await mintBundle(root, TRASH, p, {})
-      const second = await mintBundle(root, TRASH, p, {})
+      const record = {
+        entity: 'property' as const,
+        id: 'prop_x',
+        def: { id: 'prop_x' },
+        values: { a: 1 },
+      }
+      const first = await mintBundle(root, TRASH, p, record)
+      const second = await mintBundle(root, TRASH, p, { ...record, values: { a: 2 } })
       expect(second).not.toBe(first)
       expect(basename(second)).toBe('2026-08-01T12-00-00-000Z__1__twice.md.deleted')
+      expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
+      expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
     } finally {
       vi.useRealTimers()
     }
@@ -97,22 +105,6 @@ describe('removeBundle', () => {
     await removeBundle(root, bundle)
     expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
     expect(await pathExists(join(root, '.trash'))).toBe(true)
-  })
-})
-
-describe('listBundles', () => {
-  it('lists an Archive’s bundles under its own root and suffix, and none of the Trash’s', async () => {
-    const seed = async (store: typeof TRASH | typeof ARCHIVE, name: string): Promise<void> => {
-      const bundle = await mintBundle(root, store, join(root, 'Notes', name), {
-        entity: 'page',
-        parent: { kind: 'container', id: 'col' },
-      })
-      await writeFile(join(bundle, name), 'body')
-    }
-    await seed(ARCHIVE, 'Alpha.md')
-    await seed(TRASH, 'Beta.md')
-    expect((await listBundles(root, ARCHIVE)).map((b) => b.artifactName)).toEqual(['Alpha.md'])
-    expect((await listBundles(root, TRASH)).map((b) => b.artifactName)).toEqual(['Beta.md'])
   })
 })
 
@@ -479,6 +471,20 @@ describe('a Trash a delete fills', () => {
   let trashRoot: string
   bundleNexusEachTest('pom-bundle-', (r) => (trashRoot = r))
 
+  it('listBundles lists an Archive’s bundles under its own root and suffix, and none of the Trash’s', async () => {
+    const seed = async (store: typeof TRASH | typeof ARCHIVE, name: string): Promise<void> => {
+      const bundle = await mintBundle(root, store, join(root, 'Notes', name), {
+        entity: 'page',
+        parent: { kind: 'container', id: 'col' },
+      })
+      await writeFile(join(bundle, name), 'body')
+    }
+    await seed(ARCHIVE, 'Alpha.md')
+    await seed(TRASH, 'Beta.md')
+    expect((await listBundles(root, ARCHIVE)).map((b) => b.artifactName)).toEqual(['Alpha.md'])
+    expect((await listBundles(root, TRASH)).map((b) => b.artifactName)).toEqual(['Beta.md'])
+  })
+
   it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {
     await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const { bundlePath, record } = await onlyBundle(trashRoot)
@@ -490,25 +496,6 @@ describe('a Trash a delete fills', () => {
     expect(await readRecord(dir)).toBeNull()
   })
 
-  it('two deletes in one stamp keep both records', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-08-01T12:00:00.000Z'))
-    try {
-      const record = {
-        entity: 'property' as const,
-        id: 'prop_x',
-        def: { id: 'prop_x' },
-        values: { a: 1 },
-      }
-      const first = await seedPropertyBundle(trashRoot, record)
-      const second = await seedPropertyBundle(trashRoot, { ...record, values: { a: 2 } })
-      expect(second).not.toBe(first)
-      expect(await readRecord(first)).toMatchObject({ values: { a: 1 } })
-      expect(await readRecord(second)).toMatchObject({ values: { a: 2 } })
-    } finally {
-      vi.useRealTimers()
-    }
-  })
   it('an incomplete deletion is skipped, and left on disk as evidence', async () => {
     await settledMutate(trashRoot, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const [dir] = await bundleDirs(trashRoot)

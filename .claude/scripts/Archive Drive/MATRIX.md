@@ -224,23 +224,21 @@ Seeds through `mutate` on `~/Test`: Collection `Whole Coll` holding `Whole Page`
 #### Pruned
 
 - **The write order, a case-only rename, the single watcher restart, nesting, an entry naming no folder, and the corrupt-settings refusals:** none is visible, and `mutate.test.ts` and `settings.test.ts` pin each.
-- **The system Trash Mode:** the drive would leave its Set in the macOS Trash; `mutate.test.ts` pins the lift under it.
 - **The Trash browser's Restore in group 1:** group 1 restores through `mutate`; group 2 drives today's browser through Restore and Restore All, and the groups after Phase 5 drive the rebuilt one.
 - **The NavView sidebar search in group 3:** it reads the same tree `nexus:state` answers and has no driven path in the harness (the Path Links Drive's `pending` at `:786`).
 - **Link suggestions in group 3:** they read the renderer's `pageIndexOf(tree)`, which the tree check covers.
 - **Context and Space cascades into the Archive in group 3:** they ride the content reach the link rename proves (`queryMembers ?? nexusCorpus`, `contextCascade.ts:72`), and vitest pins them.
 - **Sync Now riding the timed label in group 5:** the harness runs no sync hub; `NexusRows` reads the `useTimedLabel` the Clear History check proves.
 - **File History's batch offering Delete All alone in group 5:** two snapshots need two saves a Snapshot Interval apart; `restoreMenu.test.ts` pins the rows and `actedOn` the batch.
-- **A delete under the system Trash Mode naming the system trash in group 5:** the Trash Mode is device configuration the harness doesn't write; `confirmations.test.ts` pins the detail.
 - **The archive timeframe's sweep in group 6A:** the snapshot store is device-local and a snapshot's age can't be driven without faking time; `fileHistory.test.ts` and the store contract pin the sweep.
 - **The archive refusal in group 6A:** `Only pages and Sets inside a Collection can be archived.` needs an item no Collection owns, or a Collection whose id is missing or isn't a safe path segment, which no menu offers and nothing in-app writes; `archive.test.ts` pins its copy, and the menu reaches it through `mutate`'s `reportRefusal`.
 - **Emptying with Permanently Delete off in group 7C:** the bundle's artifact leaves for the macOS Trash, which the drive can't put back; 7C drives the question's off-copy and its Cancel, and `empty.test.ts` (`hands the artifact to the system trash and removes the spent bundle behind it`) pins the handoff.
-- **Try Again on an owed restore or empty in groups 7B to 7D:** it needs a host write that fails mid-op; `TrashFrame.test.tsx` pins Try Again on an owed restore, an owed batch restore, and an owed batch empty.
-- **`didn’t get its value back` in a restore's notice:** it needs a value the restore can't re-spell; `restore.test.ts` and `restoreProperty.test.ts` pin the reply's `unrestored` titles, and no test names the line the notice composes from them.
-- **`N couldn’t be deleted.` in group 7D:** an empty refuses only a bundle whose artifact is gone, which the listing already skips, so no listed row refuses; `TrashFrame.test.tsx` (`counts the rows a Delete All couldn’t empty in its notice`) pins the line.
+- **Try Again on an owed restore or empty in groups 7B to 7D:** it needs a host write that fails mid-op; `confirmations.test.ts` pins Try Again on an owed restore (`a restore that stepped aside and owes work keeps Try Again on its notice`), an owed batch restore, and an owed batch empty (`a batch %s with one owed reply offers Try Again on its notice`).
+- **`didn’t get its value back` in a restore's notice:** it needs a value the restore can't re-spell; `restore.test.ts` and `restoreProperty.test.ts` pin the reply's `unrestored` titles.
+- **`N couldn’t be deleted.` in group 7D:** an empty refuses only a bundle whose artifact is gone, which the listing already skips, so no listed row refuses; `confirmations.test.ts` (`counts the rows a batch empty couldn’t empty in its notice`) pins the line.
 - **`The trash couldn't be read.` and `The archive couldn't be read.`:** they need `bundles:list` to refuse; `TrashFrame.test.tsx` and `ArchiveView.test.tsx` pin each line.
 - **`Trash is empty.`:** emptying `~/Test`'s whole Trash spends bundles the group can't put back, so its closing check couldn't hold; `TrashFrame.test.tsx` pins the line.
-- **A Nexus switch mid-batch:** the harness opens one Nexus; `TrashFrame.test.tsx` and `ArchiveView.test.tsx` pin the stop.
+- **A Nexus switch mid-batch:** the harness opens one Nexus; `confirmations.test.ts` (`a Nexus switch during a batch stops it, posting no notice and telling the stores once, and one during its last row posts nothing`) pins the stop.
 - **A hand-made, dateless bundle sorting last with an empty date cell:** a bundle name the app never writes; `rows.test.ts` pins its order.
 - **Two bar presses in one tick act once:** two DevTools presses can't land inside one tick; `ArchiveView.test.tsx` pins the drop.
 - **A bar press after a re-list dropped its rows, and a reply landing after its container closed:** reply-order races the drive can't schedule; `ArchiveView.test.tsx` and `browser.test.ts` pin each.

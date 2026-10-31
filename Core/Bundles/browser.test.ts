@@ -7,7 +7,14 @@ import { widestDate } from './BundleTable'
 import type { BundleRow } from './rows'
 import { bundleRow as row, stubBrowserEachTest } from '../Testing/bundles'
 import { storesChanged } from '../Session/nexusSlice'
-import { currentNotification } from '../Interface/Notifications/notifications'
+import {
+  type ActionBar,
+  clearNotification,
+  currentNotification,
+  useActionBar,
+} from '../Interface/Notifications/notifications'
+import { runBundled } from '../Interface/Confirm/confirmations'
+import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 import type { MutateRequest } from '../Nexus/mutateRequest'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -124,6 +131,7 @@ describe('a browser’s remembered checks', () => {
   let host: HTMLDivElement
   let root: Root
   let browser: ReturnType<typeof useBundleBrowser>
+  let bar: ActionBar | null
   let replies: ((lists: BundleRow[][]) => void)[]
   const children = vi.fn(
     () => new Promise((resolve) => replies.push((lists) => resolve({ ok: true, value: lists }))),
@@ -132,6 +140,7 @@ describe('a browser’s remembered checks', () => {
 
   const Harness = (): null => {
     browser = useBundleBrowser({ kind: 'trash' }, { query: '', shown: true })
+    bar = useActionBar()
     return null
   }
   const click = (target: BundleRow): Promise<void> => act(async () => browser.rowClick(target, 1))
@@ -243,8 +252,39 @@ describe('a browser’s remembered checks', () => {
   })
 
   it('a checked Set and its checked page reach the bar once, as the Set', async () => {
+    useSession.setState({ tree: makeTree() })
+    channels.picked = 'c1'
+    clearNotification()
     await act(async () => browser.toggle(set.bundlePath))
     expect(browser.picked).toEqual([set])
+    await act(async () => bar?.restore())
+    await vi.waitFor(() => expect(currentNotification()?.message).toBe('Restored “S”'))
+    expect(channels.mutated.mock.calls).toEqual([
+      [{ op: 'restore', bundlePath: set.bundlePath, destination: { kind: 'container', id: 'c1' } }],
+    ])
+  })
+
+  it.each([
+    'restore',
+    'delete',
+  ])('a row’s %s hands its bundle to runBundled, spending the Undo armed on it', async (action) => {
+    const alpha = row({ title: 'Alpha' })
+    useSession.setState({ tree: makeTree(), askConfirm: async () => true })
+    resetUndo()
+    const older = vi.fn(() => true)
+    pushUndo(older)
+    channels.mutated.mockResolvedValueOnce({
+      ok: true,
+      value: { undo: { op: 'restore', bundlePath: alpha.bundlePath } },
+    })
+    const req = { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' } as const
+    await act(async () => {
+      await runBundled('Deleted', [{ title: 'Alpha', kind: 'page', req }])
+    })
+    channels.picked = action
+    await act(async () => browser.openMenu(alpha))
+    expect(undoValue(null)).toBe(true)
+    expect(older).toHaveBeenCalledTimes(1)
   })
 
   it('a batch of a homeless Space, two homeless inner pages, and a homed page asks once per kind and sends each homeless row its own, the homed one going with none, and a dismissed second ask restores nothing', async () => {

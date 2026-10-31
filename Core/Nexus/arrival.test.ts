@@ -48,7 +48,7 @@ async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promi
 }
 
 beforeEach(async () => {
-  root = tempRoot('pom-scrub-')
+  root = tempRoot('pom-arrival-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
   await writeFile(

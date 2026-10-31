@@ -4,7 +4,14 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { BundleRow } from '../Bundles/rows'
 import { ArchiveView } from './ArchiveView'
-import { boxOf, bundleRow, press, rowOf, stubBrowserEachTest } from '../Testing/bundles'
+import {
+  boxOf,
+  bundleRow,
+  doubleClick,
+  press,
+  rowOf,
+  stubBrowserEachTest,
+} from '../Testing/bundles'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { ContentHostContext } from '../Interface/contentHost'
@@ -98,13 +105,6 @@ describe('ArchiveView', () => {
   const check = async (...rows: string[]): Promise<void> => {
     for (const title of rows) await act(async () => rowOf(host, title).click())
   }
-  const doubleClick = async (title: string): Promise<void> => {
-    await press(host, title, 1)
-    await press(host, title, 2)
-    await act(async () => {
-      rowOf(host, title).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
-    })
-  }
   const undo = async (): Promise<void> => {
     channels.mutated.mockClear()
     await act(async () => {
@@ -161,7 +161,7 @@ describe('ArchiveView', () => {
     expect(useSession.getState().reader).toBeNull()
     await press(host, 'A', 1)
     expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('false')
-    await doubleClick('A')
+    await doubleClick(host, 'A')
     expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader).toEqual({
       kind: 'archive',
@@ -170,7 +170,7 @@ describe('ArchiveView', () => {
     })
     expect(host.querySelector('.reader-lock svg rect[fill="currentColor"]')).not.toBeNull()
     await act(async () => useSession.setState({ reader: null }))
-    await doubleClick('A')
+    await doubleClick(host, 'A')
     expect(boxOf(host, 'A').getAttribute('aria-checked')).toBe('true')
     expect(useSession.getState().reader?.page).toEqual({ kind: 'page', id: 'p1', path: 'x/A.md' })
   })
@@ -198,7 +198,7 @@ describe('ArchiveView', () => {
     channels.children = { [SET_BUNDLE]: [inner('P')] }
     await render()
     await press(host, 'Ideas', 1)
-    await doubleClick('P')
+    await doubleClick(host, 'P')
     expect(useSession.getState().reader).toEqual(
       expect.objectContaining({
         trail: ['Notes', 'Ideas', 'P'].map((title) => expect.objectContaining({ title })),
@@ -486,7 +486,7 @@ describe('ArchiveView', () => {
     })
     await render()
     await check('A', 'B')
-    await doubleClick('A')
+    await doubleClick(host, 'A')
     expect(host.querySelector('[aria-label="Archived Page"]')).not.toBeNull()
     await pressBar('Restore')
     expect(useSession.getState().reader).toBeNull()
@@ -501,7 +501,7 @@ describe('ArchiveView', () => {
     })
     await render()
     await press(host, 'Ideas', 1)
-    await doubleClick('P')
+    await doubleClick(host, 'P')
     expect(host.querySelector('[aria-label="Archived Page"]')).not.toBeNull()
     await pressBar('Restore')
     expect(channels.mutated.mock.calls).toEqual([

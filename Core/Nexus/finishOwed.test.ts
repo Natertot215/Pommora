@@ -15,7 +15,7 @@ import {
   bundleNexusEachTest,
   priorityOn,
   restoreTasks,
-  seedPriority,
+  trashPriorityCollections,
   seedPropertyBundle,
   trashedNotes,
 } from '../Testing/bundles'
@@ -942,7 +942,7 @@ describe('a property delete’s strip', () => {
   let propertyId: string
   bundleNexusEachTest('pom-strip-', (r) => (root = r))
   beforeEach(async () => {
-    ;({ tasksPage, propertyId } = await seedPriority(root))
+    ;({ tasksPage, propertyId } = await trashPriorityCollections(root))
     await restoreTasks(root)
   })
 

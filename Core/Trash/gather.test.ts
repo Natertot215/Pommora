@@ -226,10 +226,7 @@ describe('a delete’s record', () => {
   it('a page deleted from a Finder-made folder records a real parent and restores', async () => {
     // No sidecar: exactly what appears when a folder is created outside the app, until the open stamps it.
     await mkdir(join(root, 'Notes', 'Inbox'), { recursive: true })
-    await writeFile(
-      join(root, 'Notes', 'Inbox', 'Idea.md'),
-      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody`,
-    )
+    await writeFile(join(root, 'Notes', 'Inbox', 'Idea.md'), `---\nID: ${PAGE_C}\n---\nbody`)
     await stampMissing(root, (await readNexus(root)).unreadable)
     await refreshTree(root)
     const d = await settledMutate(root, { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' })

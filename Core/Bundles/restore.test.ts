@@ -20,12 +20,13 @@ import { machine } from '../Platform/machine'
 import { pathExists } from '../Files/atomicWrite'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles, mintBundle } from './bundle'
+import { listBundles } from './bundle'
 import { patchRecord, readRecord, writeRecord } from './record'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readNexus } from '../Nexus/readNexus'
+import { nexusPages } from '../Nexus/heldPages'
 import { setPanelContextOrder, setSpaceOrder } from '../Nexus/reorder'
 import { refreshTree } from '../Nexus/liveTree'
 import type { ContextsRegistry } from '../Contexts/contexts'
@@ -36,7 +37,7 @@ import { OWED_REL } from '../Paths/nexusPaths'
 import type { MutateReply } from '../Nexus/mutateRequest'
 
 let root: string
-bundleNexusEachTest('pom-prov-', (r) => (root = r))
+bundleNexusEachTest('pom-restore-', (r) => (root = r))
 
 describe('a Context’s place', () => {
   const registryIds = async (): Promise<string[]> =>
@@ -311,7 +312,7 @@ describe('restore — the record spends, headless', () => {
   })
 })
 
-describe('a Link value refilled into a trashed copy', () => {
+describe('a stripped Link value refilled where it stood', () => {
   const beta = (): string => join(root, 'Notes', 'Beta.md')
   const restore = async (name: string): Promise<void> => {
     const listed = (await listBundles(root, { kind: 'trash' })).find((b) => b.artifactName === name)
@@ -377,30 +378,6 @@ describe('a Link value refilled into a trashed copy', () => {
       (b) => b.artifactName === 'Beta.md',
     )
     expect(await readFile(join(root, listed?.bundlePath ?? '', 'Beta.md'), 'utf8')).toBe(placed)
-  })
-
-  it.skipIf(noModeBits)('emptying the Trash owes a linker it couldn’t strip', async () => {
-    await deleteAlpha()
-    const gamma = join(root, 'Notes', 'Gamma.md')
-    await writeFile(gamma, `---\nID: ${PAGE_C}\nRelated: "[[Alpha]]"\n---\nlinker`)
-    await refreshTree(root)
-    const listed = (await listBundles(root, { kind: 'trash' })).find(
-      (b) => b.artifactName === 'Alpha.md',
-    )
-    const { chmod } = await import('node:fs/promises')
-    await chmod(gamma, 0o000)
-    try {
-      const r = await handleMutate(root, {
-        op: 'emptyBundle',
-        bundlePath: listed?.bundlePath ?? '',
-      })
-      expect(r.ok && r.value.cascade?.owed).toBe(true)
-    } finally {
-      await chmod(gamma, 0o644)
-    }
-    await finishOwed(root)
-    expect(splitFrontmatter(await readFile(gamma, 'utf8'))).not.toHaveProperty('Related')
-    expect(await readNotes(root)).toEqual({})
   })
 
   it('fills the exact key, leaving another casing the copy holds blank', async () => {
@@ -762,7 +739,7 @@ describe('restore — the returning page’s links follow the pages they named',
   })
 })
 
-describe('restore — the gate-four pins', () => {
+describe('where a restore steps aside or refuses', () => {
   it('a corrupt registry refuses a Context restore with the bundle intact', async () => {
     await settledMutate(root, { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' })
     await writeFile(contextsRegistryFile(root), '{corrupt')
@@ -894,19 +871,23 @@ describe('restore — the gate-four pins', () => {
     expect(await pathExists(join(root, 'Notes', 'fake.deleted', '_record.json'))).toBe(true)
   })
 
-  it('an Archive bundle isn’t emptied as a Trash one', async () => {
-    const bundle = await mintBundle(
-      root,
-      { kind: 'archive', id: '01KVGMT8BFP350FZZXAMG1QDVC' },
-      join(root, 'Notes', 'Beta.md'),
-      { entity: 'page', parent: { kind: 'root' } },
-    )
-    await writeFile(join(bundle, 'Beta.md'), 'body')
-    const bundlePath = relative(root, bundle)
-    const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath })
-    expect(emptied.ok ? '' : emptied.error.message).toBe('Only a trash record can be emptied.')
-    expect(await pathExists(join(bundle, 'Beta.md'))).toBe(true)
-    expect(await readRecord(bundle)).toEqual({ entity: 'page', parent: { kind: 'root' } })
+  it('of two trashed copies of one id the first restores and the second is refused as live', async () => {
+    await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)
+    await refreshTree(root)
+    for (const path of ['Notes/Daily/Alpha copy.md', 'Notes/Daily/Alpha.md'])
+      expect((await settledMutate(root, { op: 'delete', path, kind: 'page' })).ok).toBe(true)
+    const claimed = (await nexusPages(root, await liveTree.liveTreeOf(root))).byId.get(PAGE_A)
+    const bundles = await listBundles(root, { kind: 'trash' })
+    const first = bundles.find((b) => claimed?.path.startsWith(`${b.bundlePath}/`))
+    const second = bundles.find((b) => b !== first)
+    const restore = (bundlePath = '') => settledMutate(root, { op: 'restore', bundlePath })
+    const live = {
+      ok: false,
+      error: { message: 'Something in the nexus already carries this identity.' },
+    }
+    expect(await restore(second?.bundlePath)).toMatchObject(live)
+    expect((await restore(first?.bundlePath)).ok).toBe(true)
+    expect(await restore(second?.bundlePath)).toMatchObject(live)
   })
 
   it('a property whose definition can no longer stand does not return, and its record stays', async () => {
@@ -924,7 +905,7 @@ describe('restore — the gate-four pins', () => {
   })
 })
 
-describe('restore — the attack folds', () => {
+describe('what a hostile path or record can’t reach, and what a restore keeps intact', () => {
   it('a bundle path that escapes the Nexus refuses before anything opens', async () => {
     const r = await settledMutate(root, { op: 'restore', bundlePath: '../x' })
     expect(r.ok ? '' : r.error.message).toBe('Path escapes the nexus root.')
@@ -1246,7 +1227,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
+      `---\nID: ${PAGE_B}\nStatus: live\n---\nbody`,
     )
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })
@@ -1285,7 +1266,7 @@ describe('restore — into a chosen destination', () => {
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Beta.md'),
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
+      `---\nID: ${PAGE_B}\nStatus: live\n---\nbody`,
     )
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' })
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' })

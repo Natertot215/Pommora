@@ -2,43 +2,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { BundleRow } from '../Bundles/rows'
 import { TrashFrame } from './TrashFrame'
-import { bundleRow as row, boxOf, press, rowOf, stubBrowserEachTest } from '../Testing/bundles'
+import {
+  bundleRow as row,
+  boxOf,
+  doubleClick,
+  nexus,
+  press,
+  rowOf,
+  stubBrowserEachTest,
+} from '../Testing/bundles'
 import { useSession } from '../Session/store'
-import { makeTree } from '../Testing/testTree'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 import { ActionLabel } from '../Interface/Notifications/ActionLabel'
 import { storesChanged } from '../Session/nexusSlice'
 import { fault } from '../Contract/result'
+import { personalizationOf } from '../Session/configSlice'
 
 vi.mock('@pommora/uix/Interactions/virtualRows', () => import('../Testing/virtualRows'))
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-const COLLECTION = '.trash/2026-10-20T12-00-00-000Z__Notes.deleted'
-const SET = `${COLLECTION}/Notes/Ideas`
-const PAGE = `${SET}/P.md`
-
-const trashedCollection = (): BundleRow =>
-  row({ title: 'Notes', kind: 'collection', bundlePath: COLLECTION, crumbs: [] })
-const innerSet = (): BundleRow =>
-  row({
-    title: 'Ideas',
-    kind: 'set',
-    bundlePath: SET,
-    crumbs: [{ kind: 'collection', title: 'Notes' }],
-  })
-const innerPage = (over: Partial<BundleRow> = {}): BundleRow =>
-  row({
-    title: 'P',
-    bundlePath: PAGE,
-    crumbs: [
-      { kind: 'collection', title: 'Notes' },
-      { kind: 'set', title: 'Ideas' },
-    ],
-    ...over,
-  })
 
 describe('the Trash pane', () => {
   let host: HTMLDivElement
@@ -51,15 +34,6 @@ describe('the Trash pane', () => {
     [...host.querySelectorAll('[role="checkbox"]')].map((n) =>
       (n.getAttribute('aria-label') ?? '').replace('Select ', ''),
     )
-  const showTree = async (): Promise<void> => {
-    channels.listed = [trashedCollection()]
-    channels.children = { [COLLECTION]: [innerSet()], [SET]: [innerPage()] }
-    await act(async () => storesChanged.emit())
-  }
-  const nexus = (id: string): void => {
-    const tree = makeTree()
-    useSession.setState({ tree: { ...tree, nexus: { ...tree.nexus, id } } })
-  }
 
   beforeEach(async () => {
     channels.listed = [row({ title: 'Alpha' })]
@@ -116,16 +90,53 @@ describe('the Trash pane', () => {
   })
 
   it('a double-click on a Trash page opens nothing', async () => {
-    for (const detail of [1, 2]) await press(host, 'Alpha', detail)
-    await act(async () => {
-      rowOf(host, 'Alpha').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
-    })
+    channels.listed = [row({ title: 'Alpha', stored: { id: 'p1', path: 'Notes/Alpha.md' } })]
+    await act(async () => storesChanged.emit())
+    await doubleClick(host, 'Alpha')
     expect(useSession.getState().reader).toBeNull()
   })
 
+  it('its date column keeps the Trash’s own style', async () => {
+    channels.picked = 'style:time_format:none'
+    await act(async () => {
+      host
+        .querySelector('.trash-head-date')
+        ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(personalizationOf(useSession.getState()).trashColumnStyle).toEqual({
+      time_format: 'none',
+    })
+  })
+
   it('an inner row’s right-click Restore lists destinations, and its Delete empties only that item', async () => {
-    await showTree()
-    channels.children[SET] = [innerPage({ homeResolves: false })]
+    const COLLECTION = '.trash/2026-10-20T12-00-00-000Z__Notes.deleted'
+    const SET = `${COLLECTION}/Notes/Ideas`
+    const PAGE = `${SET}/P.md`
+    channels.listed = [
+      row({ title: 'Notes', kind: 'collection', bundlePath: COLLECTION, crumbs: [] }),
+    ]
+    channels.children = {
+      [COLLECTION]: [
+        row({
+          title: 'Ideas',
+          kind: 'set',
+          bundlePath: SET,
+          crumbs: [{ kind: 'collection', title: 'Notes' }],
+        }),
+      ],
+      [SET]: [
+        row({
+          title: 'P',
+          bundlePath: PAGE,
+          crumbs: [
+            { kind: 'collection', title: 'Notes' },
+            { kind: 'set', title: 'Ideas' },
+          ],
+          homeResolves: false,
+        }),
+      ],
+    }
+    await act(async () => storesChanged.emit())
     await press(host, 'Notes', 1)
     await press(host, 'Ideas', 1)
     channels.picked = 'restoreTo:c1'

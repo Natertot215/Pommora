@@ -1,9 +1,8 @@
-import * as liveTree from '../Nexus/liveTree'
 import { handleMutate } from '../Nexus/mutate'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, join, relative } from '../Paths/posix'
-import { putJson, readJsonAt, failLandings, seedNexus } from '../Testing/hostFs'
+import { putJson, readJsonAt, failLandings, noModeBits, seedNexus } from '../Testing/hostFs'
 import {
   bundleNexusEachTest,
   PAGE_A,
@@ -11,7 +10,7 @@ import {
   PAGE_C,
   priorityOn,
   restoreTasks,
-  seedPriority,
+  trashPriorityCollections,
   trashedBundle,
   trashedNotes,
 } from '../Testing/bundles'
@@ -20,12 +19,11 @@ import { installMachine } from '../Platform/machine'
 import { diskMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
-import { listBundles } from '../Bundles/bundle'
+import { listBundles, mintBundle } from '../Bundles/bundle'
 import { readRecord } from '../Bundles/record'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { refreshTree } from '../Nexus/liveTree'
-import { nexusPages } from '../Nexus/heldPages'
 import { readNotes } from '../Nexus/owed'
 import { finishOwed } from '../Nexus/finishOwed'
 import type { MutateReply } from '../Nexus/mutateRequest'
@@ -298,25 +296,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_A]: { icon: 'star' } })
   })
 
-  it('of two trashed copies of one id the first restores and the second is refused as live', async () => {
-    await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)
-    await refreshTree(root)
-    for (const path of ['Notes/Daily/Alpha copy.md', 'Notes/Daily/Alpha.md'])
-      expect((await settledMutate(root, { op: 'delete', path, kind: 'page' })).ok).toBe(true)
-    const claimed = (await nexusPages(root, await liveTree.liveTreeOf(root))).byId.get(PAGE_A)
-    const bundles = await listBundles(root, { kind: 'trash' })
-    const first = bundles.find((b) => claimed?.path.startsWith(`${b.bundlePath}/`))
-    const second = bundles.find((b) => b !== first)
-    const restore = (bundlePath = '') => settledMutate(root, { op: 'restore', bundlePath })
-    const live = {
-      ok: false,
-      error: { message: 'Something in the nexus already carries this identity.' },
-    }
-    expect(await restore(second?.bundlePath)).toMatchObject(live)
-    expect((await restore(first?.bundlePath)).ok).toBe(true)
-    expect(await restore(second?.bundlePath)).toMatchObject(live)
-  })
-
   it('refuses a chain folder that merely wears the suffix, bundles and all', async () => {
     // `.trash` mirrors the nexus, so a user's own folder can wear the bundle name anywhere in the chain. Path, root and suffix all pass here; only the record test refuses it.
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
@@ -335,6 +314,21 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(await pathExists(join(root, 'Notes'))).toBe(true)
     const out = await settledMutate(root, { op: 'emptyBundle', bundlePath: '../escape' })
     expect(out.ok).toBe(false)
+  })
+
+  it('an Archive bundle isn’t emptied as a Trash one', async () => {
+    const bundle = await mintBundle(
+      root,
+      { kind: 'archive', id: '01KVGMT8BFP350FZZXAMG1QDVC' },
+      join(root, 'Notes', 'Beta.md'),
+      { entity: 'page', parent: { kind: 'root' } },
+    )
+    await writeFile(join(bundle, 'Beta.md'), 'body')
+    const bundlePath = relative(root, bundle)
+    const emptied = await settledMutate(root, { op: 'emptyBundle', bundlePath })
+    expect(emptied.ok ? '' : emptied.error.message).toBe('Only a trash record can be emptied.')
+    expect(await pathExists(join(bundle, 'Beta.md'))).toBe(true)
+    expect(await readRecord(bundle)).toEqual({ entity: 'page', parent: { kind: 'root' } })
   })
 
   it('a spent bundle refuses rather than reporting success twice', async () => {
@@ -376,6 +370,41 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(await listBundles(root, { kind: 'trash' })).toHaveLength(1)
     expect(await readNotes(root)).toEqual({})
   })
+
+  describe('a linker the empty couldn’t strip', () => {
+    beforeEach(async () => {
+      await seedNexus(root, {
+        defs: [{ id: 'prop_related', label: 'Related', key: 'Related', type: 'link' }],
+      })
+      await refreshTree(root)
+    })
+    const deleteAlpha = () =>
+      settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
+
+    it.skipIf(noModeBits)('emptying the Trash owes a linker it couldn’t strip', async () => {
+      await deleteAlpha()
+      const gamma = join(root, 'Notes', 'Gamma.md')
+      await writeFile(gamma, `---\nID: ${PAGE_C}\nRelated: "[[Alpha]]"\n---\nlinker`)
+      await refreshTree(root)
+      const listed = (await listBundles(root, { kind: 'trash' })).find(
+        (b) => b.artifactName === 'Alpha.md',
+      )
+      const { chmod } = await import('node:fs/promises')
+      await chmod(gamma, 0o000)
+      try {
+        const r = await handleMutate(root, {
+          op: 'emptyBundle',
+          bundlePath: listed?.bundlePath ?? '',
+        })
+        expect(r.ok && r.value.cascade?.owed).toBe(true)
+      } finally {
+        await chmod(gamma, 0o644)
+      }
+      await finishOwed(root)
+      expect(splitFrontmatter(await readFile(gamma, 'utf8'))).not.toHaveProperty('Related')
+      expect(await readNotes(root)).toEqual({})
+    })
+  })
 })
 
 describe('emptying a property’s Trash entry', () => {
@@ -383,7 +412,7 @@ describe('emptying a property’s Trash entry', () => {
   let tasksPage: string
   let propertyId: string
   beforeEach(async () => {
-    ;({ tasks, tasksPage, propertyId } = await seedPriority(root))
+    ;({ tasks, tasksPage, propertyId } = await trashPriorityCollections(root))
     await settledMutate(root, { op: 'deleteProperty', propertyId })
     await restoreTasks(root)
   })

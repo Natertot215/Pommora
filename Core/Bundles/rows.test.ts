@@ -1,23 +1,19 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
-import { seedPropertyBundle } from '../Testing/bundles'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { dropLiveTree } from '../Nexus/liveTree'
+import { bundleNexusEachTest, PAGE_A, PAGE_C, seedPropertyBundle } from '../Testing/bundles'
+import { describe, expect, it } from 'vitest'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import type { BundleRow } from './rows'
 import { bundleOf, settledMutate } from '../Testing/settledMutate'
-import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { contextsDir } from '../Paths/paths'
 import { listBundles, listInner } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
-import { closeSession, openSession } from '../Nexus/session'
 import { bundleRowOf, bundleRows, innerRows } from './rows'
 import { storedAtOf } from '../Paths/bundleLayout'
 import { scopeOf } from '../Settings/codec'
 
-const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const ARCHIVE_ID = '01KVGMT8BFP350FZZXAMG1QDVB'
 
 let root: string
@@ -32,38 +28,7 @@ const del = (
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
 ): Promise<MutateReply> => settledMutate(root, { op: 'delete', path, kind })
 
-beforeEach(async () => {
-  root = tempRoot('pom-rows-')
-  await mkdir(join(root, '.nexus'), { recursive: true })
-  await mkdir(contextsDir(root), { recursive: true })
-  await writeFile(
-    join(root, '.nexus', 'nexus.json'),
-    JSON.stringify({ id: 'nx', createdAt: '2026' }),
-  )
-  await writeFile(
-    contextsRegistryFile(root),
-    JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects', singular: 'Project' }] }),
-  )
-  await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
-  await writeFile(
-    join(contextsDir(root), 'Projects', 'Pommora', '_space.json'),
-    JSON.stringify({ id: 'sp-pom' }),
-  )
-  await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
-  await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
-  await writeFile(
-    join(root, 'Notes', 'Daily', '_pageset.json'),
-    JSON.stringify({ id: 'set-daily' }),
-  )
-  await writeFile(join(root, 'Notes', 'Daily', 'Alpha.md'), `---\nID: ${PAGE_A}\n---\nbody`)
-  await openSession(root)
-})
-
-afterEach(async () => {
-  dropLiveTree()
-  closeSession()
-  await rm(root, { recursive: true, force: true })
-})
+bundleNexusEachTest('pom-rows-', (r) => (root = r))
 
 describe('bundleRows — a bundle as the browser reads it', () => {
   it('a page keeps its title without the extension, and its live container chain', async () => {
@@ -341,8 +306,7 @@ describe('bundleRows — `homeResolves` agrees with the resolver', () => {
 })
 
 describe('innerRows — a bundle’s inner items as the browser reads them', () => {
-  const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVC'
-  const trashedNotes = async (): Promise<string> => {
+  const notesBundle = async (): Promise<string> => {
     await del('Notes', 'collection')
     const [bundle] = await listBundles(root, { kind: 'trash' })
     return bundle.bundlePath
@@ -362,21 +326,21 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
     )
     await writeFile(
       join(root, 'Notes', 'Daily', 'Week', 'Beta.md'),
-      `---\nID: ${PAGE_B}\n---\nbody`,
+      `---\nID: ${PAGE_C}\n---\nbody`,
     )
-    const bundlePath = await trashedNotes()
+    const bundlePath = await notesBundle()
     const address = `${bundlePath}/Notes/Daily/Week/Beta.md`
     const tree = await readNexus(root)
     const [row] = await innerOf(`${bundlePath}/Notes/Daily/Week`, {
       ...tree,
-      config: { ...tree.config, pageMetadata: { [PAGE_B]: { icon: 'hash' } } },
+      config: { ...tree.config, pageMetadata: { [PAGE_C]: { icon: 'hash' } } },
     })
     expect(row).toMatchObject({
       bundlePath: address,
       kind: 'page',
       title: 'Beta',
       icon: 'hash',
-      stored: { id: PAGE_B, path: address },
+      stored: { id: PAGE_C, path: address },
       crumbs: [
         { kind: 'collection', title: 'Notes' },
         { kind: 'set', title: 'Daily' },
@@ -394,7 +358,7 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
       join(root, 'Notes', 'Daily', '_pageset.json'),
       JSON.stringify({ id: 'set-daily', icon: 'folder-heart' }),
     )
-    const bundlePath = await trashedNotes()
+    const bundlePath = await notesBundle()
     const address = `${bundlePath}/Notes/Daily`
     expect(await innerOf(bundlePath)).toMatchObject([
       {
