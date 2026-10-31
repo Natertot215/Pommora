@@ -1,5 +1,5 @@
 import { ok } from '../Contract/result'
-import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { failLandings, tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { landedId, tileId } from '../Testing/tileLayouts'
@@ -20,7 +20,7 @@ import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import type { TileDoc } from './tiles'
 import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { installMachine, machine } from '../Platform/machine'
-import { diskMachine } from '../Testing/machines'
+import { diskMachine, systemTrashMachine } from '../Testing/machines'
 import { rewriteConnections } from '../Connections/rewrite'
 import { dropLiveTree } from '../Nexus/liveTree'
 import type { StoredNodes } from '../Nexus/heldPages'
@@ -187,13 +187,7 @@ describe('markdown tile lifecycle', () => {
   let handed: string[]
   beforeEach(() => {
     handed = []
-    installMachine({
-      ...diskMachine(),
-      trashToSystem: async (p) => {
-        handed.push(p)
-        await rm(p)
-      },
-    })
+    installMachine(systemTrashMachine(handed))
   })
   afterEach(() => installMachine(diskMachine()))
 

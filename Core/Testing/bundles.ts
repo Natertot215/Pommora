@@ -16,6 +16,7 @@ import { newId } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { layoutOf } from '../Paths/bundleLayout'
 import { assignProperty } from '../Properties/assignment'
 import { createProperty } from '../Properties/registryProperty'
 import { installMachine } from '../Platform/machine'
@@ -23,7 +24,7 @@ import { join } from '../Paths/posix'
 import { useSession } from '../Session/store'
 import { createTestPage } from './createTestPage'
 import { readJsonAt, tempRoot } from './hostFs'
-import { diskMachine } from './machines'
+import { diskMachine, systemTrashMachine } from './machines'
 import { settledMutate } from './settledMutate'
 import { makeTree } from './testTree'
 
@@ -31,9 +32,13 @@ export const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 export const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
 export const PAGE_C = '01KVGMT8BFP350FZZXAMG1QDVC'
 
-export function bundleNexusEachTest(prefix: string, onSeed: (root: string) => void): void {
+const TRASH = layoutOf({ kind: 'trash' })
+
+export function bundleNexusEachTest(prefix: string, onSeed: (root: string) => void): string[] {
   let root: string
+  const handed: string[] = []
   beforeEach(async () => {
+    handed.length = 0
     root = tempRoot(prefix)
     onSeed(root)
     await mkdir(contextsDir(root), { recursive: true })
@@ -71,7 +76,7 @@ export function bundleNexusEachTest(prefix: string, onSeed: (root: string) => vo
       `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
     )
     await openSession(root)
-    installMachine({ ...diskMachine(), trashToSystem: async () => {} })
+    installMachine(systemTrashMachine(handed))
   })
   afterEach(async () => {
     installMachine(diskMachine())
@@ -80,9 +85,10 @@ export function bundleNexusEachTest(prefix: string, onSeed: (root: string) => vo
     closeSession()
     await rm(root, { recursive: true, force: true })
   })
+  return handed
 }
 
-/** Every bundle folder under `.trash`, a recordless one included, never descending into one, exactly as the listing walks. */
+/** Every bundle folder under `.trash`, a recordless one included, never descending into one. */
 export async function bundleDirs(root: string): Promise<string[]> {
   const walk = async (dir: string): Promise<string[]> => {
     let entries: Dirent[]
@@ -95,12 +101,12 @@ export async function bundleDirs(root: string): Promise<string[]> {
     for (const e of entries) {
       if (!e.isDirectory()) continue
       const abs = join(dir, e.name)
-      if (e.name.endsWith('.deleted')) out.push(abs)
+      if (e.name.endsWith(TRASH.suffix)) out.push(abs)
       else out.push(...(await walk(abs)))
     }
     return out
   }
-  return walk(join(root, '.trash'))
+  return walk(join(root, TRASH.dir))
 }
 
 export async function onlyBundle(root: string): Promise<ListedBundle> {
@@ -172,7 +178,7 @@ export const nexus = (id: string): void => {
 export function bundleRow(over: Partial<BundleRow> = {}): BundleRow {
   const { title = 'Alpha' } = over
   return matched({
-    bundlePath: `.trash/${title}.deleted`,
+    bundlePath: `${TRASH.dir}/${title}${TRASH.suffix}`,
     kind: 'page',
     title,
     crumbs: [{ kind: 'collection', title: 'Notes' }],

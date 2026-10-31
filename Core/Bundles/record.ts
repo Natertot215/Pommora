@@ -27,7 +27,7 @@ const memberRoot = z.object({
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
 /** A Link value a delete stripped whole: its page's id, its property, its value, and the key its line stood above. */
-export const strippedLink = z.object({
+const strippedLink = z.object({
   page: z.string(),
   property: z.string(),
   value: z.string(),

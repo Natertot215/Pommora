@@ -14,7 +14,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { installMachine } from '../Platform/machine'
-import { diskMachine } from '../Testing/machines'
+import { diskMachine, systemTrashMachine } from '../Testing/machines'
 
 let root: string
 let handed: string[]
@@ -39,13 +39,7 @@ beforeEach(async () => {
   await mkdir(join(root, 'file-assets'), { recursive: true })
   await openSession(root)
   handed = []
-  installMachine({
-    ...diskMachine(),
-    trashToSystem: async (p) => {
-      handed.push(p)
-      await rm(p)
-    },
-  })
+  installMachine(systemTrashMachine(handed))
 })
 afterEach(async () => {
   installMachine(diskMachine())

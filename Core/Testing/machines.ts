@@ -200,3 +200,11 @@ export function diskMachine(): Machine {
     home: '/Users/test',
   }
 }
+
+export const systemTrashMachine = (handed: string[] = []): Machine => ({
+  ...diskMachine(),
+  trashToSystem: async (p) => {
+    handed.push(p)
+    await rm(p, { recursive: true })
+  },
+})

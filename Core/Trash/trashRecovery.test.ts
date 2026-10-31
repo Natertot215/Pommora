@@ -12,7 +12,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { installMachine, machine } from '../Platform/machine'
-import { diskMachine } from '../Testing/machines'
+import { diskMachine, systemTrashMachine } from '../Testing/machines'
 import { pathExists } from '../Files/atomicWrite'
 import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile, tileDocPath } from '../Paths/paths'
@@ -77,7 +77,7 @@ const restoreRow = async (title: string) => {
 const frontmatter = async (rel = beta) => splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
 beforeEach(async () => {
-  installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
+  installMachine(systemTrashMachine())
   root = tempRoot('pom-e2e-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })

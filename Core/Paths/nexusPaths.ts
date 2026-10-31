@@ -4,6 +4,8 @@ export const NEXUS_DIR = '.nexus'
 
 export const TRASH_DIR = '.trash'
 
+export const APP_DIRS: readonly string[] = [NEXUS_DIR, TRASH_DIR]
+
 export const ARCHIVE_DIR_REL = `${NEXUS_DIR}/archive`
 
 export function hiddenName(name: string): boolean {

@@ -11,14 +11,7 @@ import { listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { discard } from './discard'
 import { archivedSetIds, goneContainers } from '../Nexus/configReach'
-import {
-  containerNote,
-  distinct,
-  editNote,
-  owedReport,
-  propertyNote,
-  runNoted,
-} from '../Nexus/owed'
+import { containerNote, distinct, propertyNote, runNoted } from '../Nexus/owed'
 import { finishEntry } from '../Nexus/finishOwed'
 import { refileArchive } from '../Archive/refile'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -32,35 +25,41 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   if (record.entity === 'property') {
     // Gone for good once its bundle goes, so its delete's finish takes its assignment from the Collections the Trash holds too; what it misses stays owed, so Try Again reaches it.
     const key = asString(record.def.key)
-    const noted = await editNote(root, record.id, (e) => ({
-      ...propertyNote(e),
-      strip: distinct(propertyNote(e).strip, key ? [key] : []),
-    }))
-    if (!noted.ok) return noted
-    await discard(root, bundleAbs)
-    const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id))
-    return ok({ cascade: owedReport(root, reach) })
+    return runNoted(root, record.id, {
+      note: (e) => {
+        const held = propertyNote(e)
+        return { ...held, strip: distinct(held.strip, key ? [key] : []) }
+      },
+      list: () => discard(root, bundleAbs).then(() => ok(null), fault),
+      sweep: () => serializeSchemaOp(root, () => finishEntry(root, record.id)),
+    })
   }
   if (!artifactAbs) return ITEM_GONE
   const archive = record.entity === 'collection' ? await collectionArchive(root, record.id) : null
   const pages = await contentPages(record.entity, artifactAbs)
-  const pageIds = await pageIdsOf([...pages, ...(archive?.files ?? [])])
+  const pageIds = await pageIdsOf(pages)
   // Permanent now, a Collection's Archive with it: a Link value naming one of their pages, recorded by the delete or taken up since, names nothing any more unless another trashed page answers its key. Noted first, keyed by what it empties, so what the strip misses is owed and parked before a finish strips it.
   const id = relative(root, bundleAbs)
   return runNoted(root, id, {
-    note: () =>
+    note: (e) =>
       containerNote(
         relative(root, artifactAbs),
-        [...pages.map((file) => originPathOf(root, file)), ...(archive?.origins ?? [])],
-        archive?.sets.length ? goneContainers(archive.sets) : null,
+        [
+          ...(e?.strip ?? []),
+          ...pages.map((file) => originPathOf(root, file)),
+          ...(archive?.origins ?? []),
+        ],
+        archive?.sets.length
+          ? goneContainers(archive.sets)
+          : (e?.kind === 'container' && e.edit) || null,
       ),
     list: async () => {
-      try {
-        await discard(root, archive?.abs ?? artifactAbs)
-      } catch (e) {
-        return fault(e)
+      const disposed = await discard(root, archive?.abs ?? artifactAbs).then(() => ok(null), fault)
+      if (!disposed.ok) return disposed
+      if (archive) {
+        await dropPageMetadata(root, archive.ids)
+        await discard(root, artifactAbs)
       }
-      if (archive) await discard(root, artifactAbs)
       await dropPageMetadata(root, pageIds)
       await parkLinks(root, 'links' in record ? (record.links ?? []) : [])
       await spendBundle(root, opened.value)
@@ -70,11 +69,11 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   })
 }
 
-/** A Collection's Archive, its pages at the paths they lived, and its Sets, which leave with the Collection once it leaves for good, a record whose Set stands live elsewhere re-filed into that Set's Archive first; null when it has none. */
+/** A Collection's Archive, its pages' ids and the paths they lived at, and its Sets, which leave with the Collection once it leaves for good, a record whose Set stands live elsewhere re-filed into that Set's Archive first; null when it has none. */
 async function collectionArchive(
   root: string,
   id: string | undefined,
-): Promise<{ abs: string; files: string[]; origins: string[]; sets: string[] } | null> {
+): Promise<{ abs: string; ids: string[]; origins: string[]; sets: string[] } | null> {
   const store = archiveStoreOf(id)
   if (!store) return null
   const abs = join(root, archiveDirRel(store.id))
@@ -83,7 +82,7 @@ async function collectionArchive(
   const files = await listMarkdownFiles(abs)
   return {
     abs,
-    files,
+    ids: await pageIdsOf(files),
     origins: files.map((f) => originPathOf(root, f)),
     sets: await archivedSetIds(root, abs),
   }

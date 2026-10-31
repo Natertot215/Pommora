@@ -122,7 +122,7 @@ export interface Bundled {
   refused: Titled[]
   unrestored: string[]
   warnings: string[]
-  renamed: string[]
+  renamed: { title: string; landedAs: string }[]
   links: number
 }
 
@@ -143,12 +143,13 @@ export function notifyBundled(
   ].filter((line): line is string => typeof line === 'string')
   if (!verb || !done.length)
     return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
-  const head = `${verb} ${lone ? (renamed[0] ?? `“${done[0].title}”`) : countPhrase(done)}`
+  const stepped = renamed[0] && `“${renamed[0].title}” as “${renamed[0].landedAs}”`
+  const head = `${verb} ${lone ? (stepped ?? `“${done[0].title}”`) : countPhrase(done)}`
   const stripped =
     verb === 'Deleted' && links > 0
       ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
       : undefined
-  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : renamed[0]
+  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : stepped
   const segment = lone ? stripped : renames
   const said = unmet.length ? `. ${unmet.join(' ')}` : ''
   return notifyUndoable(

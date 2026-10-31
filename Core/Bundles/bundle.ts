@@ -11,7 +11,7 @@ import { sidecarPath } from '../Paths/paths'
 import { escapes } from '../Paths/pathSafety'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { holdsName } from '../Paths/names'
-import { ARCHIVE_DIR_REL, hiddenName, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
+import { APP_DIRS, ARCHIVE_DIR_REL, hiddenName } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import { buildPageIndex, type ConnPage, connPage } from '../Connections/pageIndex'
@@ -195,18 +195,17 @@ export async function listBundles(
   return out
 }
 
-export const trashRoot = (root: string): Promise<ListedBundle[]> =>
+export const topTrashBundles = (root: string): Promise<ListedBundle[]> =>
   listBundles(root, { kind: 'trash' }, '', { shallow: true })
 
 /** The Collections outside the tree: in a root folder it doesn't hold, hidden or excluded alike, or in the Trash. */
 export async function collectionsElsewhere(root: string, tree: NexusTree): Promise<Set<string>> {
   const held = new Set(tree.collections.map((c) => c.path))
   const unheld = (await listEntries(root)).filter(
-    ({ name, kind }) =>
-      kind === 'dir' && name !== NEXUS_DIR && name !== TRASH_DIR && !held.has(name),
+    ({ name, kind }) => kind === 'dir' && !APP_DIRS.includes(name) && !held.has(name),
   )
   const ids = await Promise.all(unheld.map(({ name }) => sidecarId(join(root, name), 'collection')))
-  const trashed = (await trashRoot(root)).flatMap(({ record }) =>
+  const trashed = (await topTrashBundles(root)).flatMap(({ record }) =>
     record.entity === 'collection' && record.id ? record.id : [],
   )
   return new Set([...ids.flatMap((id) => id ?? []), ...trashed])
@@ -257,7 +256,7 @@ async function readBundleAt(root: string, abs: string, movedOut = false) {
   if (!record) return fault('That record is unreadable.')
   const artifact = await bundleArtifact(at.bundle)
   const { bundle, store, item } = at
-  if (!item) return ok({ bundle, store, record, artifact, inner: null })
+  if (!item) return ok({ bundle, store, record, artifact, item: null })
   if (
     !isContainerRecord(record) ||
     !artifact ||
@@ -265,7 +264,7 @@ async function readBundleAt(root: string, abs: string, movedOut = false) {
     !(movedOut || (await pathExists(item)))
   )
     return ITEM_GONE
-  return ok({ bundle, store, record, artifact, inner: { item, held: record, artifact } })
+  return ok({ bundle, store, record, artifact, item })
 }
 
 /** The container ids above `folder` inside a container's bundle, outermost first: the bundle's own trail and parent, the bundled container, and each folder down to `folder`; null when one of them has no id. */
@@ -336,12 +335,11 @@ export async function openBundle(
 ): Promise<Result<OpenBundle>> {
   const read = await readBundleAt(root, abs, movedTo !== undefined)
   if (!read.ok) return read
-  const { bundle, store, record, artifact, inner } = read.value
-  if (!inner) return ok({ abs: bundle, store, record, artifact, inner: false })
-  const { item, held } = inner
-  const trail = await trailWithin(held, inner.artifact, dirname(item))
+  const { bundle, store, record, artifact, item } = read.value
+  if (item === null) return ok({ abs: bundle, store, record, artifact, inner: false })
+  const trail = await trailWithin(record, artifact, dirname(item))
   const own = await innerRecord(trail, item, movedTo)
-  const links = await keptLinksUnder(root, held, inner.artifact, item, own.entity, movedTo)
+  const links = await keptLinksUnder(root, record, artifact, item, own.entity, movedTo)
   return ok({
     abs: bundle,
     store,
@@ -367,10 +365,10 @@ export async function listInner(
 ): Promise<Result<InnerListing>> {
   const read = await readBundleAt(root, abs)
   if (!read.ok) return read
-  const { bundle, record, artifact, inner } = read.value
+  const { bundle, record, artifact, item } = read.value
   if (!isContainerRecord(record) || !artifact)
     return fail('not-found', 'That holds no inner items.')
-  const folder = inner?.item ?? artifact
+  const folder = item ?? artifact
   const trail = await trailWithin(record, artifact, folder)
   const entries = (await listEntries(folder)).filter(
     (e) =>

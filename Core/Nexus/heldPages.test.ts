@@ -270,7 +270,7 @@ describe('nexusPages — the Trash’s Spaces', () => {
   })
 
   it('lists the Trash’s root level and its Contexts alone for its by-id read', async () => {
-    const top = vi.spyOn(bundle, 'trashRoot')
+    const top = vi.spyOn(bundle, 'topTrashBundles')
     const listed = vi.spyOn(bundle, 'listBundles')
     await nexusPages(root, tree(root))
     expect(top.mock.calls).toEqual([[root]])

@@ -10,7 +10,7 @@ import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPath
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
-import { listBundles, trashRoot } from '../Bundles/bundle'
+import { listBundles, topTrashBundles } from '../Bundles/bundle'
 import { originOf, standingCollection, type RecordFile, readRecord } from '../Bundles/record'
 import { containerNodeFrom } from './containerFields'
 import { corpusFilesUnder } from '../Files/walk'
@@ -140,7 +140,7 @@ export async function storedNodes(root: string, tree: NexusTree) {
     return { owners, collections }
   }
   const spaces: SpaceNode[] = []
-  for (const { bundlePath, record, artifactName } of await trashRoot(root)) {
+  for (const { bundlePath, record, artifactName } of await topTrashBundles(root)) {
     if (record.entity !== 'collection' || !artifactName) continue
     owners.set(bundlePath, record.id)
     const artifact = join(root, bundlePath, artifactName)

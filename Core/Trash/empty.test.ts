@@ -30,12 +30,10 @@ import type { MutateReply } from '../Nexus/mutateRequest'
 import { createProperty } from '../Properties/registryProperty'
 
 let root: string
-bundleNexusEachTest('pom-empty-', (r) => (root = r))
+const handed = bundleNexusEachTest('pom-empty-', (r) => (root = r))
 
 describe('emptyBundle — giving a bundle up for good', () => {
   it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
-    const handed: string[] = []
-    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const [listed] = await listBundles(root, { kind: 'trash' })
     const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
@@ -48,8 +46,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
   })
 
   it('with the switch on the artifact never reaches the system trash at all', async () => {
-    const handed: string[] = []
-    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     await writeFile(
       join(root, '.nexus', 'settings.json'),
@@ -148,14 +144,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
       const taker = join(root, 'Other', 'Taker.md')
       await writeFile(taker, `---\nID: ${PAGE_D}\nRelated: "[[Alpha]]"\n---\ntaker`)
       await refreshTree(root)
-      const handed: string[] = []
-      installMachine({
-        ...diskMachine(),
-        trashToSystem: async (p) => {
-          handed.push(p)
-          await rm(p, { recursive: true })
-        },
-      })
       failLandings((file) => file === taker)
       const item = join(bundle, 'Daily', 'Alpha.md')
       const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: relative(root, item) })
@@ -184,7 +172,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
     it('an inner Set emptied before its bundle comes back whole still takes the views naming it and its sub-Set, and keeps those naming what came back', async () => {
       const bundle = await owingViews(['set-sub', 'set-deeper', 'set-daily', 'col-other'])
       const sub = join(bundle, 'Notes', 'Daily', 'Sub')
-      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
       expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: sub })).ok).toBe(true)
       expect(await pathExists(join(root, sub))).toBe(false)
       expect((await settledMutate(root, { op: 'restore', bundlePath: bundle })).ok).toBe(true)
@@ -229,14 +216,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
         JSON.stringify({ personalization: { permanentDelete: permanentDelete } }),
       )
       await refreshTree(root)
-      const handed: string[] = []
-      installMachine({
-        ...diskMachine(),
-        trashToSystem: async (p) => {
-          handed.push(p)
-          await rm(p, { recursive: true })
-        },
-      })
       const r = await emptyNotes()
       expect(r.ok).toBe(true)
       if (permanentDelete) expect(await pathExists(join(root, ARCHIVED))).toBe(false)
@@ -244,6 +223,46 @@ describe('emptyBundle — giving a bundle up for good', () => {
       expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
       const month = await readShard(root, shardOf(PAGE_B)!)
       expect(month.kind === 'ok' && month.pages).toEqual({})
+    })
+
+    it('a retried empty whose artifact’s disposal threw still owes its Archive’s pages and Sets, whose pages’ metadata left with the Archive', async () => {
+      await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+      const linker = join(root, 'Other', 'Linker.md')
+      await writeFile(linker, `---\nID: ${PAGE_C}\nRelated: "[[Beta]]"\n---\nlinker`)
+      const sidecar = join(root, 'Other', '_pagecollection.json')
+      const located = (values: string[]) => [
+        {
+          id: 'view_1',
+          name: 'V',
+          type: 'table',
+          filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values }] },
+        },
+      ]
+      await putJson(sidecar, { id: 'col-other', views: located(['set-daily', 'col-other']) })
+      await refreshTree(root)
+      await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
+      await updatePageMetadata(root, PAGE_B, { icon: 'star' })
+      let calls = 0
+      installMachine({
+        ...diskMachine(),
+        trashToSystem: async (p) => {
+          if (calls++ === 1) throw new Error('nope')
+          await rm(p, { recursive: true })
+        },
+      })
+      await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' })
+      const [listed] = await listBundles(root, { kind: 'trash' })
+      const metadata = async () => {
+        const month = await readShard(root, shardOf(PAGE_B)!)
+        return month.kind === 'ok' && month.pages
+      }
+      const empty = () => settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
+      expect((await empty()).ok).toBe(false)
+      expect(await metadata()).toEqual({})
+      expect((await empty()).ok).toBe(true)
+      expect(splitFrontmatter(await readFile(linker, 'utf8')).Related).toBeUndefined()
+      expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
+      expect(await readNotes(root)).toEqual({})
     })
 
     it('emptying a trashed Collection keeps the archived records of a Set that stands live elsewhere', async () => {
@@ -254,7 +273,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
       const [listed] = await listBundles(root, { kind: 'trash' })
       await rename(join(root, listed.bundlePath, 'Notes', 'Daily'), join(root, 'Other', 'Daily'))
       await refreshTree(root)
-      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
       const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath })
       expect(r.ok).toBe(true)
       const kept = await listBundles(root, { kind: 'archive', id: 'col-other' })
@@ -278,7 +296,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
       )
       await refreshTree(root)
       await settledMutate(root, { op: 'archive', path: 'Notes/Daily', kind: 'set' })
-      installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
       expect((await emptyNotes()).ok).toBe(true)
       expect((await readJsonAt(sidecar)).views).toEqual(located(['col-other']))
     })
@@ -344,8 +361,6 @@ describe('emptyBundle — giving a bundle up for good', () => {
 
   it('refuses when the bundle holds more than the artifact, rather than erasing it', async () => {
     // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
-    const handed: string[] = []
-    installMachine({ ...diskMachine(), trashToSystem: async (p) => void handed.push(p) })
     await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
     const [listed] = await listBundles(root, { kind: 'trash' })
     const bundlePath = listed.bundlePath
@@ -418,16 +433,11 @@ describe('emptying a property’s Trash entry', () => {
   })
 
   // The system trash takes the bundle away, so no Trash entry for the property remains.
-  const empty = async (): Promise<MutateReply> => {
-    installMachine({
-      ...diskMachine(),
-      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
-    })
-    return handleMutate(root, {
+  const empty = async (): Promise<MutateReply> =>
+    handleMutate(root, {
       op: 'emptyBundle',
       bundlePath: await trashedBundle(root, 'property'),
     })
-  }
 
   it('emptying a property’s Trash entry drops it from every Collection still listing it', async () => {
     expect((await empty()).ok).toBe(true)
@@ -441,6 +451,22 @@ describe('emptying a property’s Trash entry', () => {
       propertyId,
     )
     expect(await priorityOn(join(notes, 'Daily', 'Alpha.md'))).toBeUndefined()
+  })
+
+  it('a property’s Trash entry whose disposal fails leaves the note as it stood', async () => {
+    const before = await readNotes(root)
+    installMachine({
+      ...diskMachine(),
+      trashToSystem: async () => {
+        throw new Error('nope')
+      },
+    })
+    const r = await handleMutate(root, {
+      op: 'emptyBundle',
+      bundlePath: await trashedBundle(root, 'property'),
+    })
+    expect(r.ok).toBe(false)
+    expect(await readNotes(root)).toEqual(before)
   })
 
   it('a later property reusing a deleted property’s key inherits nothing', async () => {
