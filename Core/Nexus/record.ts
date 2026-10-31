@@ -4,6 +4,7 @@ import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pa
 import { contextDirRel } from '../Paths/nexusPaths'
 import type { HeldKind } from './entities'
 import { entityMemo, type NexusTree, type SetNode } from './tree'
+import { findContainerById } from './treePatch'
 
 export interface EntityRecord {
   id: string
@@ -60,10 +61,9 @@ export const pagesByPathOf = entityMemo(
   (tree): ReadonlyMap<string, string> => new Map(pagesOf(tree).map((p) => [p.path, p.id])),
 )
 
-export const livePagePath = (
-  tree: NexusTree | null,
-  target: { id: string; path: string },
-): string => (tree && pagesByIdOf(tree).get(target.id)?.path) ?? target.path
+export const livePath = (tree: NexusTree | null, target: { id: string; path: string }): string =>
+  (tree && (pagesByIdOf(tree).get(target.id) ?? findContainerById(tree, target.id))?.path) ??
+  target.path
 
 export const pageIndexOf = entityMemo([], (tree): PageIndex => buildPageIndex(pagesOf(tree)))
 

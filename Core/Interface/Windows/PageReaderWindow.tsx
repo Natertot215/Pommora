@@ -17,7 +17,7 @@ import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
 import { pageWriter } from '../../Session/saveScheduler'
 import { storesChanged } from '../../Session/nexusSlice'
-import { livePagePath } from '../../Nexus/record'
+import { livePath } from '../../Nexus/record'
 import { trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
 import { useSession, useSetting } from '../../Session/store'
@@ -45,7 +45,7 @@ type Branch<K extends Reader['kind']> = { reader: Extract<Reader, { kind: K }>; 
 
 async function restoreFromHistory(target: PageTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
-  await pageWriter.flush(livePagePath(tree, target))
+  await pageWriter.flush(livePath(tree, target))
   const r = await dialer().ask('history:restore', target.id, ts)
   if (!r.ok) return r
   return (await replaceBody(r.value.path))
@@ -137,7 +137,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
   const [shown, setShown] = useState<number | null>(null)
   // Bumped by a restore: the file's stamp and its body re-read under the same highlight.
   const [reload, setReload] = useState(0)
-  const livePath = livePagePath(tree, target)
+  const path = livePath(tree, target)
   const restoreTarget = checked.size === 1 ? [...checked][0] : null
 
   const refresh = useCallback(async (): Promise<void> => {
@@ -155,14 +155,14 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
   const [modifiedAt, setModifiedAt] = useState<number | null>(null)
   useEffect(() => {
     let live = true
-    void fetchPageValues(relDirname(livePath), [target.id]).then((values) => {
+    void fetchPageValues(relDirname(path), [target.id]).then((values) => {
       const stamp = values?.[target.id]?.modifiedAt ?? null
       if (live) setModifiedAt(stamp ? new Date(stamp).getTime() : null)
     })
     return () => {
       live = false
     }
-  }, [reload, target.id, livePath])
+  }, [reload, target.id, path])
 
   const [body, setBody] = useState<string | null>(null)
   useEffect(() => {
@@ -171,7 +171,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
     const read =
       shown === null
         ? dialer()
-            .ask('page:open', livePath)
+            .ask('page:open', path)
             .then((r) => valueOr(r, null)?.body ?? null)
         : dialer()
             .ask('history:read', target.id, shown)
@@ -182,7 +182,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
     return () => {
       live = false
     }
-  }, [shown, reload, target.id, livePath])
+  }, [shown, reload, target.id, path])
 
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 
@@ -294,7 +294,7 @@ function HistoryReader({ reader, closing }: Branch<'history'>): React.JSX.Elemen
       ariaLabel="File History"
       trail={trail}
       body={body}
-      embedPath={livePath}
+      embedPath={path}
       right={{
         windowId: 'page-history-list',
         bounds: WINDOW_BASE_PANEL,
