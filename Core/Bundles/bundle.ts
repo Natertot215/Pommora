@@ -407,13 +407,12 @@ export async function listInner(
   })
 }
 
-/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share (a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views) — the Link values it carried away, and its pages on the strip the bundle's delete still owes — so the bundle's own restore never writes them twice and a later finish never strips a link to what came back. */
+/** Spends what a restore, an empty, or an Archive delete took: the whole bundle, or from an inner item's bundle only the item's share (a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views), the Link values it carried away; either way its pages leave the strip the bundle's delete still owes, so the bundle's own restore never writes them twice and a later finish neither strips a link to what came back nor reaches into a bundle that's gone. */
 export async function spendBundle(root: string, opened: OpenBundle): Promise<void> {
   const { abs, record, artifact, inner } = opened
-  if (!inner) return void (await removeBundle(root, abs))
-  const gone = 'links' in record ? (record.links ?? []) : []
-  if (gone.length) await removeLinks(abs, gone)
-  await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
+  if (!inner) await removeBundle(root, abs)
+  else if ('links' in record && record.links?.length) await removeLinks(abs, record.links)
+  if (artifact) await releaseStrip(root, relative(root, abs), originPathOf(root, artifact))
 }
 
 export async function contentPages(

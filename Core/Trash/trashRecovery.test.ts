@@ -379,6 +379,19 @@ describe('end to end — deleted, listed, restored', () => {
   })
 })
 
+describe('a bundle removed by hand', () => {
+  it('while its delete still owes its strip, the finish strips the link it missed and settles', async () => {
+    const refusal = failLandings((file) => file === join(root, beta))
+    await del('Journal/Daily/Alpha.md', 'page')
+    refusal.mockRestore()
+    const [{ bundlePath }] = await listBundles(root, { kind: 'trash' })
+    await rm(join(root, bundlePath), { recursive: true })
+    expect((await settledMutate(root, { op: 'finishOwed' })).ok).toBe(true)
+    expect(await readNotes(root)).toEqual({})
+    expect((await frontmatter()).Related).toBeUndefined()
+  })
+})
+
 describe('links come back with the page', () => {
   const restore = async (title: string) => {
     const { bundlePath } = await find(title)

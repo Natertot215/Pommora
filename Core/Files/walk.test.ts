@@ -94,20 +94,25 @@ describe('corpusFiles', () => {
 })
 
 describe('sidecarsUnder', () => {
-  it('lists every container sidecar under every content root, or under one folder, and never inside a hidden folder', async () => {
+  it('lists every container sidecar under every content root, or under one folder, and never inside a hidden folder or beside a store’s bundles', async () => {
     const archived =
       '.nexus/archive/C1/Notes/2026-10-20T12-00-00-000Z__Old.archived/Old/_pageset.json'
+    const trashed = '.trash/2026-10-20T12-00-00-000Z__Gone.deleted/Gone/_pageset.json'
     for (const rel of [
       'Notes/_pagecollection.json',
       'Notes/Deep/_pageset.json',
       'Notes/_Drafts/_pageset.json',
+      '.trash/Loose/_pageset.json',
+      '.nexus/archive/C1/Notes/_pageset.json',
       archived,
+      trashed,
     ]) {
       await mkdir(dirname(join(root, rel)), { recursive: true })
       await writeFile(join(root, rel), '{}', 'utf8')
     }
     expect(rels(await sidecarsUnder(root, scope()))).toEqual([
       archived,
+      trashed,
       'Notes/Deep/_pageset.json',
       'Notes/_pagecollection.json',
     ])

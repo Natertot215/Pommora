@@ -43,7 +43,7 @@ export function isConfigPath(root: string, path: string, file: NexusConfigFile):
   return relative(root, path) === nexusConfigRel(file)
 }
 
-// We DO watch .nexus/, where Contexts and settings/state live, and the Trash, indexed content judged by what's below it as Sync's manifest judges it, though Sync learns it from the write tap alone (`tap.ts`). Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
+// We DO watch .nexus/, where Contexts and settings/state live, and the Trash, whose bundles are indexed content, judged by what's below it as Sync's manifest judges it, though Sync learns it from the write tap alone (`tap.ts`). Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
 // Exported for tests alone.
 export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const watched = watchedUnder(scope)

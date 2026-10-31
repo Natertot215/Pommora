@@ -7,6 +7,7 @@ import { bundleDirs, bundleNexusEachTest, onlyBundle, seedPropertyBundle } from 
 import { settledMutate } from '../Testing/settledMutate'
 import { newContentId } from '../Nexus/ids'
 import { OWED_REL } from '../Paths/nexusPaths'
+import { machine } from '../Platform/machine'
 import { sidecarPath } from '../Paths/paths'
 import type { WatchScope } from '../Paths/exclusion'
 import {
@@ -105,6 +106,24 @@ describe('removeBundle', () => {
     await removeBundle(root, bundle)
     expect(await pathExists(join(root, '.trash', 'Notes'))).toBe(false)
     expect(await pathExists(join(root, '.trash'))).toBe(true)
+  })
+
+  it('keeps a chain folder whose read fails, with every other bundle under it', async () => {
+    const bundle = await mintBundle(root, TRASH, join(root, 'Notes', 'Beta.md'), {})
+    const sibling = await mintBundle(root, TRASH, join(root, 'Notes', 'Gamma.md'), {})
+    const chain = join(root, '.trash', 'Notes')
+    const m = machine()
+    const read = m.readDir.bind(m)
+    const reads = vi
+      .spyOn(m, 'readDir')
+      .mockImplementation((p) => (p === chain ? Promise.reject(new Error('EMFILE')) : read(p)))
+    try {
+      await removeBundle(root, bundle)
+    } finally {
+      reads.mockRestore()
+    }
+    expect(await pathExists(bundle)).toBe(false)
+    expect(await pathExists(sibling)).toBe(true)
   })
 })
 
@@ -379,9 +398,11 @@ describe('spendBundle', () => {
     expect(await owed()).toBeNull()
   })
 
-  it('removes a whole bundle', async () => {
+  it('removes a whole bundle, taking its pages off the strip its delete still owes and leaving the rest of the note', async () => {
+    await owing({ strip: ['A/S/T/P.md', 'A/Q.md'], edit: EDIT })
     await spendBundle(root, await opened(inBundle()))
     expect(await stat(inBundle()).catch(() => null)).toBeNull()
+    expect(await owed()).toEqual(note({ edit: EDIT }))
   })
 })
 

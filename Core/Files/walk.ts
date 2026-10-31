@@ -1,4 +1,5 @@
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
+import { storeOf } from '../Paths/bundleLayout'
 import { ARCHIVE_DIR_REL, hiddenFolder, hiddenName, SIDECARS, TRASH_DIR } from '../Paths/nexusPaths'
 import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
 import { type DirEntry, machine } from '../Platform/machine'
@@ -20,7 +21,10 @@ export async function listEntries(dir: string): Promise<DirEntry[]> {
 }
 
 export async function holdsOnlyHidden(dir: string): Promise<boolean> {
-  return (await listEntries(dir)).every((e) => hiddenName(e.name))
+  const entries = await machine()
+    .readDir(dir)
+    .catch(() => null)
+  return !!entries?.every((e) => hiddenName(e.name))
 }
 
 export async function listFilesRecursive(dir: string): Promise<string[]> {
@@ -104,7 +108,9 @@ export async function sidecarsUnder(
   const files: string[] = []
   for (const dir of under === undefined ? contentRoots(root) : [under]) {
     const rels = await listPathsUnder(root, dir, (rel, kind) =>
-      kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
+      kind === 'dir'
+        ? !outsideContent(rel, scope)
+        : SIDECARS.has(basename(rel)) && storeOf(rel)?.bundle !== null,
     )
     files.push(...rels.map((rel) => join(root, rel)))
   }
