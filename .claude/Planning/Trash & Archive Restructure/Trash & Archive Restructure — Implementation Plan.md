@@ -315,7 +315,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-9 · The docs and comments no earlier phase takes
   - [x] Task 6-10 · `.claude/CLAUDE.md`'s structure lines
   - [x] Task 6-11 · The closing measurement
-  - [ ] Task 6-12 · The harness's removal
+  - [x] Task 6-12 · The harness's removal
   - [ ] Review Checkpoint
 - [ ] *§Final Verification* over `<BASELINE>..HEAD`
 - [ ] `[Stop: the final report, per §Final Verification]`
