@@ -49,7 +49,7 @@ import {
   type SpaceEntry,
 } from './owed'
 import { stashAndStrip } from '../Properties/unassignProperty'
-import { ownedArchives, trashRoot } from '../Bundles/bundle'
+import { ownedArchives, topTrashBundles } from '../Bundles/bundle'
 import { appendLinks } from '../Bundles/record'
 import { refillStash } from '../Properties/assignment'
 import { everyCollection, storedNodes, storedPageIds } from './heldPages'
@@ -162,7 +162,7 @@ async function finishProperty(
   if (!def) {
     const strip = (e.strip ?? []).filter((key) => !held(key))
     // With no Trash entry left for the property it can't come back, so the Collections the Trash holds lose its assignment as the live ones do; every page lost its values at the delete.
-    const bundles = await trashRoot(root)
+    const bundles = await topTrashBundles(root)
     const kept = bundles.some((b) => b.record.entity === 'property' && b.record.id === id)
     const folders = [
       ...collectionFolders(root, await liveTreeOf(root)),

@@ -1,7 +1,7 @@
 import { isPlainObject } from '../Contract/validators'
 import { COMMAND_IDS, type Commands, chordOf, DEFAULT_COMMANDS } from '../Actions/commands'
 import { asString } from '../Nexus/coerce'
-import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, NEXUS_DIR, TRASH_DIR } from '../Paths/nexusPaths'
+import { APP_DIRS, ASSETS_DIR_REL, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
 import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { nexusConfig } from '../Paths/paths'
@@ -48,7 +48,7 @@ export function nexusFolderRefusal(raw: string): string | null {
     segs.some((s) => s === '.' || s === '..')
   )
     return 'That folder’s name can’t be written as a nexus path.'
-  if ([NEXUS_DIR, TRASH_DIR].includes(foldKey(segs[0]))) return 'That folder belongs to the app.'
+  if (APP_DIRS.includes(foldKey(segs[0]))) return 'That folder belongs to the app.'
   return null
 }
 

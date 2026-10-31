@@ -115,7 +115,16 @@ async function returningCascade(
 /** The tail every item back from a store runs, a restore's and a hand move's alike, `opened` the bundle or the share of one it left and `record` its record as placed: the bundle spent first, since everything after reads the record from memory; the arrival re-spelled from `live`, the world before it, to `after`, the index once it landed; a Context's membership or a Space's members tagged again, or the Link values its delete stripped put back under Restore Links On Deletion in one sweep across every Link definition, over the world read once it landed; and, unless it `filed` back into a store, a Set's archived records carried out of the Archive of the Collection its stored chain stands in now, or the one it stored while the tree holds none of it. Answers the titles of what didn't take its tag or value back, and the cascade. */
 export async function arrive(
   root: string,
-  a: {
+  {
+    opened,
+    record,
+    title,
+    landed,
+    filed,
+    back,
+    live,
+    after,
+  }: {
     opened: OpenBundle
     record: ArtifactRecord
     title: string
@@ -126,19 +135,20 @@ export async function arrive(
     after: PageIndex | null
   },
 ): Promise<{ unrestored: string[]; cascade?: CascadeReport }> {
-  const { record, title } = a
-  await spendBundle(root, a.opened)
-  const landed = { ...a.landed, entity: record.entity }
-  const { own, cascade } = await returningCascade(root, a.live, a.after, a.back, title, landed)
+  await spendBundle(root, opened)
+  const { own, cascade } = await returningCascade(root, live, after, back, title, {
+    ...landed,
+    entity: record.entity,
+  })
   const tree = await liveTreeOf(root)
   const { byId, archived } = await nexusPages(root, tree)
   const missed =
     record.entity === 'context' || record.entity === 'space'
-      ? await retag(root, tree, byId, record, title, a.landed.abs)
+      ? await retag(root, tree, byId, record, title, landed.abs)
       : record.links && (await readLiveSetting(root, 'restoreLinksOnDeletion'))
         ? await refill(root, tree, byId, linkWorld(tree, archived), record.links, own)
         : []
-  const left = a.filed ? null : originOf(a.opened.record)
+  const left = filed ? null : originOf(opened.record)
   if (left) await refileLanded(root, record, standingCollection(tree, left))
   const unrestored = missed.flatMap((id) => shownTitle(tree, byId, id) ?? [])
   return { unrestored, ...(cascade ? { cascade } : {}) }

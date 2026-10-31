@@ -61,6 +61,8 @@ const atItemNow = (req: MutateRequest): MutateRequest => {
     : { ...req, path, back: { ...req.back, name: basename(path) } }
 }
 
+type Acted = Titled & { req: MutateRequest; bundlePath?: string }
+
 /** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
 function offerUndo(
   undos: readonly Acted[],
@@ -79,10 +81,6 @@ function offerUndo(
   )
   for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
 }
-
-type Acted = Titled & { req: MutateRequest; bundlePath?: string }
-
-const steppedTo = (title: string, landedAs: string): string => `“${title}” as “${landedAs}”`
 
 /** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `bundlePath`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
 export async function runBundled(
@@ -114,7 +112,7 @@ export async function runBundled(
     if (warning && !run.warnings.includes(warning)) run.warnings.push(warning)
     run.links += res.cascade?.pages.length ?? 0
     owed ||= !!res.cascade?.owed
-    if (res.landedAs) run.renamed.push(steppedTo(row.title, res.landedAs))
+    if (res.landedAs) run.renamed.push({ title: row.title, landedAs: res.landedAs })
     if (res.undo) undos.push({ title: row.title, kind: row.kind, req: res.undo })
   }
   if (counted) storesChanged.emit()

@@ -51,9 +51,6 @@
   display: flex;
   margin-right: 8px;
 }
-.trash-frame .trash-head svg {
-  color: var(--label-secondary);
-}
 .trash-head-label {
   display: flex;
   align-items: center;
