@@ -51,11 +51,7 @@ import {
 export const ITEM_GONE = fail('not-found', 'That item is no longer there.')
 
 /** A bundle mints under the folder chain its item leaves from, so a stored item shows where it lived when it left. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
-export async function chainDir(
-  root: string,
-  store: BundleStore,
-  absSource: string,
-): Promise<string> {
+async function chainDir(root: string, store: BundleStore, absSource: string): Promise<string> {
   const rel = relative(root, absSource)
   const chain = rel && !escapes(rel) ? dirname(rel) : '.'
   const dir = join(root, layoutOf(store).dir, chain)

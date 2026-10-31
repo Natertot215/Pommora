@@ -2,7 +2,6 @@ import { join, relative } from '../Paths/posix'
 import { archiveDirRel, archiveStoreOf, originPathOf } from '../Paths/bundleLayout'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import { fault, ok } from '../Contract/result'
-import { readLiveSetting } from '../Settings/settings'
 import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 import { asString } from '../Nexus/coerce'
 import { contentPages, ITEM_GONE, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
@@ -10,8 +9,7 @@ import { parkLinks } from './gather'
 import { pathExists } from '../Files/atomicWrite'
 import { listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
-import { machine } from '../Platform/machine'
-import { noteOwn, recordWrite } from '../Files/writeEcho'
+import { discard } from './discard'
 import { archivedSetIds, goneContainers } from '../Nexus/configReach'
 import {
   containerNote,
@@ -31,15 +29,6 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
   if (!opened.ok) return opened
   const { store, record, artifact: artifactAbs } = opened.value
   if (store.kind !== 'trash') return fault('Only a trash record can be emptied.')
-  const permanent = await readLiveSetting(root, 'permanentDelete')
-  const dispose = async (abs: string): Promise<void> => {
-    recordWrite(abs)
-    if (permanent) await machine().remove(abs)
-    else
-      await (machine().trashToSystem?.(abs) ??
-        Promise.reject(new Error('This host has no system trash.')))
-    await noteOwn({ event: 'unlink', absPath: abs, origin: 'own' })
-  }
   if (record.entity === 'property') {
     // Gone for good once its bundle goes, so its delete's finish takes its assignment from the Collections the Trash holds too; what it misses stays owed, so Try Again reaches it.
     const key = asString(record.def.key)
@@ -48,7 +37,7 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
       strip: distinct(propertyNote(e).strip, key ? [key] : []),
     }))
     if (!noted.ok) return noted
-    await dispose(bundleAbs)
+    await discard(root, bundleAbs)
     const reach = await serializeSchemaOp(root, () => finishEntry(root, record.id))
     return ok({ cascade: owedReport(root, reach) })
   }
@@ -67,11 +56,11 @@ export async function emptyBundle(root: string, bundleAbs: string): Promise<Muta
       ),
     list: async () => {
       try {
-        await dispose(archive?.abs ?? artifactAbs)
+        await discard(root, archive?.abs ?? artifactAbs)
       } catch (e) {
         return fault(e)
       }
-      if (archive) await dispose(artifactAbs)
+      if (archive) await discard(root, artifactAbs)
       await dropPageMetadata(root, pageIds)
       await parkLinks(root, 'links' in record ? (record.links ?? []) : [])
       await spendBundle(root, opened.value)
