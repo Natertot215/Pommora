@@ -304,7 +304,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
   - [x] Task 6-1 · The duplicated cases
   - [x] Task 6-2 · The on-disk bundle fixture
-  - [ ] Task 6-3 · The suites follow their modules
+  - [x] Task 6-3 · The suites follow their modules
   - [ ] Task 6-4 · The delete records' and the listing's cases
   - [ ] Task 6-5 · The empty's cases
   - [ ] Task 6-6 · `discardFile`'s cases and the Archive's delete case

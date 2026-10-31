@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bundleAddressOf, layoutOf, originPathOf, storeOf } from '../Paths/bundleLayout'
+import { bundleAddressOf, layoutOf, originPathOf, storeOf } from './bundleLayout'
 
 const ID = '01J9Z8X7W6V5T4S3R2Q1P0N9M8'
 const TRASH = { kind: 'trash' } as const
