@@ -36,11 +36,13 @@ export async function refillStash(
   const { values } = stash
   const stored = await storedNodes(root, tree)
   const { byId, archived } = await nexusPages(root, tree, stored)
-  await stored.readOwners(Object.keys(values).flatMap((id) => byId.get(id)?.path ?? []))
+  const owners = await stored.readOwners(
+    Object.keys(values).flatMap((id) => byId.get(id)?.path ?? []),
+  )
   const members = new Map(
     Object.keys(values).flatMap((id) => {
       const r = byId.get(id)
-      return r?.kind === 'page' && owningCollection(tree, r.path, stored)?.id === collectionId
+      return r?.kind === 'page' && owningCollection(tree, r.path, owners)?.id === collectionId
         ? [[id, r] as const]
         : []
     }),

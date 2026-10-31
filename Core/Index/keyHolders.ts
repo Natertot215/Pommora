@@ -63,8 +63,7 @@ export async function pagesInReach(
   const only = reach === 'governed' ? undefined : reach.collection
   const scoped = only && relative(root, only)
   const archive = archiveReach(tree, scoped)
-  await stored.readOwners(candidates)
-  const trashed = trashReach(tree, stored, scoped)
+  const trashed = trashReach(tree, await stored.readOwners(candidates), scoped)
   const folders = [
     ...(only === undefined ? collectionFolders(root, tree) : [only]),
     ...(archive === null ? [] : [join(root, archive)]),

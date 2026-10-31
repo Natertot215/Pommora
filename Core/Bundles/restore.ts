@@ -103,7 +103,7 @@ export async function restoreBundle(
     if (record.entity === 'context') await unlistContext(root, record.registry.id)
     return fault(e)
   }
-  // A conversion that can't land leaves the item live with its delete still owed: the next finish moves it back into its bundle, and the restore can be repeated (H-4).
+  // A conversion that can't land leaves the item live with its delete still owed: the next finish moves it back into its bundle, and the restore can be repeated.
   if (landing) {
     const converted = await restoreNote(root, landing.except)
     if (!converted.ok) return converted
