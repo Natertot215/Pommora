@@ -1,14 +1,14 @@
 ## Trash & Archive Restructure — Implementation Plan
 
 **DATE:** 10-29-2026
-**STATUS:** Ratified 10-30-2026
+**STATUS:** Complete 10-31-2026 — `de297a9ee..fa6ae7499`
 **SOURCE:** *Trash & Archive Restructure — Decisions & Intention* (ratified 10-29-2026, Decisions A-1–G-4 and its *§Rejected*), *Trash & Archive Restructure — Investigation* and its `Scouts/`, *Trash & Archive Restructure — Reach-In Measurement*, and the planning session's placements (10-29-2026), which *§Constraints · Placements* records.
 
 **BASELINE**
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | |
+| `de297a9ee` | 9,023 passed · 2 skipped | 10-30-2026 10:49 AM | 10-31-2026 07:10 AM · `fa6ae7499` · 9,055 passed · 2 skipped |
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`, per phase, cumulative from the BASELINE head; estimates from each phase's tasks; Task 1-2's and Task 6-11's measurements go beneath it):
 
@@ -20,7 +20,7 @@
 | 4 · Reach-In | about −360 | −323 (+616 / −939), the checkpoint's folds and Task 4-7's one stored projection included |
 | 5 · One Restore, Recognition, and the Interface | about +80 | +177 (+1,331 / −1,154); +174 outside `Core/Testing`, buying recognition of pages, Sets, and Spaces at the settle and at open (about +150 against +110), the Trash's action bar and the bar stack, and the joint review's correctness folds: the owner read on demand that took the whole-Trash listing off every edit, an owned Archive's re-file at the open and the empty, dispersed hand moves, and the write-ahead's surfaced failure |
 | 6 · Tests, Docs, and the Closing Measurement | ±0 | ±0 (+1 / −1) in production, a rewritten comment and the refusal; tests −430 (+1,887 / −2,317), `Core/Testing` +213 (+234 / −21) for the shared bundle fixture and browser harness |
-| **Total** | **about −415** | **−231 (+2,478 / −2,709) outside `Core/Testing`; comment lines −30** |
+| **Total** | **about −415** | **−217 (+2,557 / −2,774) outside `Core/Testing` at `fa6ae7499`, comment lines −29 and tests +39; −231 at Phase 6's close, the final verification's folds adding +14 (*§Deviations · Final Verification*)** |
 
 **Task 1-2 (Thread-Pool Line):** the Medium-0 property rename's median was 0.843 ms a file with the line (5,922 ms over 7,027 files) and 0.838 ms without it (5,888 ms), so the line left (AFTER A).
 
@@ -233,7 +233,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - **Real Purpose:** each added line is justified in its task against what it removes or the decided behavior it delivers; a phase that lands above its estimate reports what the increase buys.
   - **Reflected Everywhere:** trashed pages follow live pages' rules (Decision D-4), both stores are watched and recognized when moved by hand (Decisions E-1, E-3), and the restore's refill names a trashed page's miss as a live page's (Decision D-5).
 - **Briefs:** every agent brief on this plan — executors, checkpoint reviewers, the final waves, and every compaction continuation — carries the Mandate above in full and has its agent read *§Constraints* whole from this file before anything else. The neutral gate's brief carries the Mandate alone.
-- **Rulings (Not Re-Raised):** the decisions are the "what" and the rough "how", not a contract (Nathan, 10-29-2026): what each entry in *Trash & Archive Restructure — Decisions & Intention* and its *§Rejected* intends isn't re-raised, while a decision's "how" that isn't the core of the feature changes where another way produces the cleaner outcome, with the reason stated in the task that departs and the departure listed under *§Deviations*. Also not re-raised: the design calls *Investigation · §The Landing* and *§The Trash's Model · §The Rules* record (the watched Trash, the claim rule and its pass-over, the governed rule by the record's Collection ID, links recorded ahead of the strip, the post-rename stat ahead of the change time, a trashed Collection keeping a deleted property's assignment until the property is gone for good, Decision D-3's views through the configuration pass, the scrub removed whole); and these: the watcher swap (I-081) is its own plan; I-033 gets no batch channel; `assetMigrate.ts` stays, since it runs when the user changes the image folder.
+- **Rulings (Not Re-Raised):** the decisions are the "what" and the rough "how", not a contract (Nathan, 10-29-2026): what each entry in *Trash & Archive Restructure — Decisions & Intention* and its *§Rejected* intends isn't re-raised, while a decision's "how" that isn't the core of the feature changes where another way produces the cleaner outcome, with the reason stated in the task that departs and the departure listed under *§Deviations*. Also not re-raised: the design calls *Investigation · §The Landing* and *§The Trash's Model · §The Rules* record (the watched Trash, the claim rule and its pass-over, the governed rule by the record's Collection ID, links recorded ahead of the strip, the post-rename stat ahead of the change time, a trashed Collection keeping a deleted property's assignment until the property is gone for good, Decision D-3's views through the configuration pass, the scrub removed whole); and these: the watcher swap (I-075) is its own plan; I-033 gets no batch channel; `assetMigrate.ts` stays, since it runs when the user changes the image folder.
 - **Placements (Nathan, 10-29-2026):** every new, moved, renamed, or deleted file is one of these, and no other file is created:
   - **Moved:** `Core/Bundles/layout.ts` → `Core/Paths/bundleLayout.ts`, gaining the store-of-path rule, `ArchiveStore` and `archiveDirRel` (from `nexusPaths.ts`), and `archiveStoreOf` (from `names.ts`); `Core/Settings/TrashFrame.tsx` and `trash-frame.css` → `Core/Trash/`.
   - **New:** `Core/Bundles/restore.ts` (the one restore); `Core/Nexus/arrival.ts` (`returningCascade`, `repairLanded`, `artifactFiles`, and the shared arrival tail recognition runs); `Core/Testing/bundles.ts` (the shared bundle fixture and browser harness).
@@ -255,7 +255,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 - **Execution:** the plan runs end to end through `c/plan-execution`, headlessly once Nathan ratifies it, and no step waits on Nathan; a message from him during the run is input to fold in, not a stop. An ambiguity is taken at its simplest reading and recorded under *§Deviations*; anything that needs Nathan's word is recorded there for the final report. Each task goes to an `execution-agent` (`opus-medium`) informed of *§Context* and *§Overview*, which applies the task's AFTER as written and reports insights, concerns, and suggestions rather than diverging; the orchestrator checks its result against the task's AFTER and VERIFY. Every phase ends with its review checkpoint: two read-only agents, one under `code-simplification` and one under `adversarial-review` (from Phase 5's second round on, all `opus-xhigh`, two per lens, one reading inward and one outward, Phase 5's round reviewing Phases 4 and 5 as a whole; Nathan, 10-30-2026), each weighing the phase against these constraints and its place in the plan, reading outward rather than in isolation. Compaction checkpoints follow Phases 3 and 4 (Nathan, 10-30-2026), each a stop with `c/pre-compaction`'s two blocks for him; from Phase 5 on, the run goes to the report without one.
 - **Cold Machine:** when the run ends, no process, worktree, benchmark Nexus, scratch userData, test fixture, or temporary script it created remains; *§Final Verification · The Cold-Machine Check* proves it with commands, and the final report states the result. A Pommora instance launched from the main checkout before the run isn't the run's, and it's left alone.
 - **Neutral Gate:** the post-implementation neutral reviewer (`fable-xhigh`, Nathan, 10-30-2026) gets only the BASELINE head, HEAD, the Mandate, and this intention: *"Pommora kept departed items in two stores built on two models. The Archive kept its pages in the index and inside every cascade, so its restore was a move; the Trash froze each copy and repaired it on return through a scrub that couldn't follow a rename, while three paths reached into trashed copies anyway, a second delete mode bypassed the Trash, each restore, notice, and Undo was written twice, and every write waited for the drive one file at a time. This work moves the Trash onto the Archive's model so trashed pages stay current and one restore serves both stores and every item moved out of a store by hand, removes the frozen-copy machinery and the second delete mode, and lands each group of files with one flush, identified by the file's change time. User-facing behavior is unchanged except where trashed pages now follow live pages' rules."*
-- **Out of Scope Everywhere:** the watcher swap (I-081); Sync's code; a Context moved back by hand (Decision E-4); verifying the write-through flag and the change time on Windows and exFAT (*§Open Items*); merging the two stores or changing the Archive's layout (Decision C-1); merging a Context's two orders, which is feature-level; a keyboard path to a bundle row's menu (I-080), which is interaction-level and independent of either model.
+- **Out of Scope Everywhere:** the watcher swap (I-075); Sync's code; a Context moved back by hand (Decision E-4); verifying the write-through flag and the change time on Windows and exFAT (*§Open Items*); merging the two stores or changing the Archive's layout (Decision C-1); merging a Context's two orders, which is feature-level; a keyboard path to a bundle row's menu (I-074), which is interaction-level and independent of either model.
 
 #### Process Overview
 
@@ -317,8 +317,8 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 6-11 · The closing measurement
   - [x] Task 6-12 · The harness's removal
   - [x] Review Checkpoint
-- [ ] *§Final Verification* over `<BASELINE>..HEAD`
-- [ ] `[Stop: the final report, per §Final Verification]`
+- [x] *§Final Verification* over `<BASELINE>..HEAD`
+- [x] `[Stop: the final report, per §Final Verification]`
 
 ---
 
@@ -6862,9 +6862,9 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 
 **CHANGE**
 
-- [ ] Write **`treeIndex.test.ts`, `describe('livePath')`, "follows a page or a Set by its id across a rename, else answers where it stood"**: over a `makeTree()` whose first Set is renamed, the Set's id answers its new path, a page's id answers its path through the page index, and an unknown id answers the path given.
-- [ ] Apply the AFTER.
-- [ ] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`; `HistoryReader`'s local `livePath` (`PageReaderWindow.tsx:140`) becomes `path`, as `ArchiveReader`'s is, so it doesn't shadow the import.
+- [x] Write **`treeIndex.test.ts`, `describe('livePath')`, "follows a page or a Set by its id across a rename, else answers where it stood"**: over a `makeTree()` whose first Set is renamed, the Set's id answers its new path, a page's id answers its path through the page index, and an unknown id answers the path given.
+- [x] Apply the AFTER.
+- [x] Rename `livePagePath` to `livePath` at `PageReaderWindow.tsx:20,48,140` and `assignValue.ts:8,97`; `HistoryReader`'s local `livePath` (`PageReaderWindow.tsx:140`) becomes `path`, as `ArchiveReader`'s is, so it doesn't shadow the import.
 
 **AFTER**
 
@@ -6886,11 +6886,11 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 
 **VERIFY**
 
-- [ ] The case is green, and its Set assertion red with `livePath`'s `findContainerById` arm removed (the renamed Set's id then answers the path given).
-- [ ] **Flips:** none.
-- [ ] `git grep -n "livePagePath" -- Core` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The case is green, and its Set assertion red with `livePath`'s `findContainerById` arm removed (the renamed Set's id then answers the path given).
+- [x] **Flips:** none.
+- [x] `git grep -n "livePagePath" -- Core` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-2
 
@@ -6905,7 +6905,7 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`archive.test.ts`, beside `:818`, "a delete from the Archive answers the Undo that files it back at the address it left, and its record keeps none":** the reply's `undo` equals `{ op: 'restore', bundlePath: trashed, destination: { kind: 'archive', at: archived } }`, and `readRecord(at(trashed))` has no `archive` key. Fails today on `undo` being absent.
   - **`deleteProperty.test.ts`, "a property delete answers the Undo that restores its bundle":** the reply's `undo` is `{ op: 'restore', bundlePath }` for the bundle `listBundles` finds.
   - **`browser.test.ts:351`, rewritten in place as "an Archive restore's Undo sends each reply's own request at the item's place now, followed by the id its record carries":** `record` gains `id: 'p1'` for Alpha and `id: 'p2'` for Beta (one `recordOf(id)` helper in the describe), and the expectation keeps its shape. Fails today because `rearchive` reads `row.stored.id`, which the rewrite drops from both rows.
@@ -6914,16 +6914,16 @@ A stored board names no host: no window shows a trashed Space, so nothing pushes
   - **`confirmations.test.ts`, `describe('an Undo over several bundles')`, "an Undo over several bundles counts a refusal among its lines":** two restore requests, `mutate` answering `null` for the first and `{ cascade: { pages: [], hosts: [], warning: 'W' } }` for the second; after the Undo runs, the one notice reads `1 Page couldn’t be undone. W`. Red with `notifyBundled`'s refused line kept to a verb (`verb && !lone && …`): the notice reads `W` alone, the refusal lost.
   - **`confirmations.test.ts`, "a bundle op's success posts nothing from the slice":** with the real `mutate` and a dialer whose `mutate` answers `{ unrestored: ['Beta'], cascade: { pages: [], hosts: [], warning: 'W' } }`, `useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b1' })` leaves `currentNotification()` null. Fails today: the slice posts the warning over the unrestored line.
   - **`TrashFrame.test.tsx`, "a lone restore's refusal is the host's message, with no count":** `mutate` answers `fault('That item is no longer there.')`; the notice reads exactly that. Passes today and must stay green: it pins the batch of one.
-- [ ] Apply the AFTER.
-- [ ] Rewrite every test read of a reply's `bundled` (94 lines across 19 files, `git grep -n "bundled" -- 'Core/**/*.test.ts' 'Core/**/*.test.tsx'`) through `bundleOf(reply)` from `Core/Testing/settledMutate.ts`. Remove `settle.test.ts:1329`'s local `bundleOf` and `refile.test.ts:45`'s `bundled` in its favor. Stubs that answer `bundled: { bundlePath: X }` answer `undo: { op: 'restore', bundlePath: X }`, apart from `ArchiveView.test.tsx:388,441`, whose Archive deletes answer `undo: { op: 'restore', bundlePath: X, destination: { kind: 'archive', at: <the row's address> } }`, as the host now composes it, and whose `:398,458` expect that request.
-- [ ] Rewrite `archive.test.ts:807`'s `UNDO` constant as `const undoTo = (archived: string): RestoreDestination => ({ kind: 'archive', at: archived })`, and each `restore(trashed, UNDO)` (`:941-1219`) as `restore(trashed, undoTo(archived))` for the address its case archived; `:1225`'s `restore(archived, UNDO)` becomes `restore(archived, undoTo(archived))`. Drop `archive: archived` from `:827`'s expectation.
-- [ ] Rewrite `spend.test.ts:2229-2244`, "refuses an Undo whose record names a path outside the Archive", as "refuses an Undo whose address lies outside the Archive": the record write drops `archive`, and the restore sends `destination: { kind: 'archive', at: '../Notes/Beta.md.archived' }`. Its expectations hold. `:2216`'s destination becomes `{ kind: 'archive', at: '.nexus/archive/c1/x' }`, and its expectation holds under the title "refuses an Archive destination naming no Archive bundle, or given to a Space".
-- [ ] Rewrite `mutateRequest.test.ts:55-66` so the archive arm keeps `at` and drops a stray `id`: `destination: { kind: 'archive', at: 'a', id: 'x' }` reads back as `{ kind: 'archive', at: 'a' }`.
-- [ ] Rewrite `confirmations.test.ts:380`, "offers one Undo returning every bundle it was handed to the destination given", as "offers one Undo running every request it was handed", over `[{ title: 'A', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } } }, { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } }]`: a run of two sends each quietly, so `mutate.mock.calls` equal each request beside `{ quiet: true }`. `:392` passes the same two rows.
-- [ ] Rewrite `TrashFrame.test.tsx:272,288,307`'s `offerUndo([bundlePath], …)` as `offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], …)` (`listed[0].bundlePath` at `:307`); their expectations hold.
-- [ ] Move the cases that pass `notifyDeleted` a cascade or a retry to the builder that now owns their behavior, each keeping its expectations: `notifications.test.ts:44` (*"carries a note beside its Undo"*) and `:86` (*"offers Try Again beside its note, and keeps Undo on the chord"*) call `notifyBundled('Deleted', lone('X', 0, ['Couldn’t update 1 Item.']), undo)`, `:86` passing `retry` after it; `:55,62` (*"counts the pages whose links it stripped behind a segment"*), `:67` (*"joins a warning to the count"*), and `:79` (*"keeps Undo on the label when a count arrives without a warning"*) call `notifyBundled('Deleted', lone('Ideas', 2), undo)` and its like, through one describe-local `lone = (title: string, links: number, warnings: string[] = []): Bundled => ({ done: [{ title, kind: 'page' }], refused: [], unrestored: [], warnings, renamed: [], links })`, `:79` passing `vi.fn()` as its retry; and `ActionLabel.test.tsx:60` draws through `notifyBundled('Deleted', <a lone “Ideas” row with two links>, vi.fn())`. Every other `notifyDeleted` call in both suites passes the title and an Undo alone and holds.
-- [ ] `notifyDeleted`'s two view callers (`Core/Tiles/Surfaces/ViewTile.tsx:398`, `Core/Views/deleteViewWithUndo.ts:14`) keep `notifyDeleted(name, undo)` unchanged.
-- [ ] Rewrite `NexusRecordPM.md:16`'s "the delete answers with the bundle it minted, and **Undo** restores from that path without the frame being opened" as "the delete answers the Undo that restores the bundle it minted, which **Undo** sends without the frame being opened".
+- [x] Apply the AFTER.
+- [x] Rewrite every test read of a reply's `bundled` (94 lines across 19 files, `git grep -n "bundled" -- 'Core/**/*.test.ts' 'Core/**/*.test.tsx'`) through `bundleOf(reply)` from `Core/Testing/settledMutate.ts`. Remove `settle.test.ts:1329`'s local `bundleOf` and `refile.test.ts:45`'s `bundled` in its favor. Stubs that answer `bundled: { bundlePath: X }` answer `undo: { op: 'restore', bundlePath: X }`, apart from `ArchiveView.test.tsx:388,441`, whose Archive deletes answer `undo: { op: 'restore', bundlePath: X, destination: { kind: 'archive', at: <the row's address> } }`, as the host now composes it, and whose `:398,458` expect that request.
+- [x] Rewrite `archive.test.ts:807`'s `UNDO` constant as `const undoTo = (archived: string): RestoreDestination => ({ kind: 'archive', at: archived })`, and each `restore(trashed, UNDO)` (`:941-1219`) as `restore(trashed, undoTo(archived))` for the address its case archived; `:1225`'s `restore(archived, UNDO)` becomes `restore(archived, undoTo(archived))`. Drop `archive: archived` from `:827`'s expectation.
+- [x] Rewrite `spend.test.ts:2229-2244`, "refuses an Undo whose record names a path outside the Archive", as "refuses an Undo whose address lies outside the Archive": the record write drops `archive`, and the restore sends `destination: { kind: 'archive', at: '../Notes/Beta.md.archived' }`. Its expectations hold. `:2216`'s destination becomes `{ kind: 'archive', at: '.nexus/archive/c1/x' }`, and its expectation holds under the title "refuses an Archive destination naming no Archive bundle, or given to a Space".
+- [x] Rewrite `mutateRequest.test.ts:55-66` so the archive arm keeps `at` and drops a stray `id`: `destination: { kind: 'archive', at: 'a', id: 'x' }` reads back as `{ kind: 'archive', at: 'a' }`.
+- [x] Rewrite `confirmations.test.ts:380`, "offers one Undo returning every bundle it was handed to the destination given", as "offers one Undo running every request it was handed", over `[{ title: 'A', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b1', destination: { kind: 'archive', at: 'x' } } }, { title: 'B', kind: 'page', req: { op: 'restore', bundlePath: '.trash/b2' } }]`: a run of two sends each quietly, so `mutate.mock.calls` equal each request beside `{ quiet: true }`. `:392` passes the same two rows.
+- [x] Rewrite `TrashFrame.test.tsx:272,288,307`'s `offerUndo([bundlePath], …)` as `offerUndo([{ title: 'Alpha', kind: 'page', req: { op: 'restore', bundlePath } }], …)` (`listed[0].bundlePath` at `:307`); their expectations hold.
+- [x] Move the cases that pass `notifyDeleted` a cascade or a retry to the builder that now owns their behavior, each keeping its expectations: `notifications.test.ts:44` (*"carries a note beside its Undo"*) and `:86` (*"offers Try Again beside its note, and keeps Undo on the chord"*) call `notifyBundled('Deleted', lone('X', 0, ['Couldn’t update 1 Item.']), undo)`, `:86` passing `retry` after it; `:55,62` (*"counts the pages whose links it stripped behind a segment"*), `:67` (*"joins a warning to the count"*), and `:79` (*"keeps Undo on the label when a count arrives without a warning"*) call `notifyBundled('Deleted', lone('Ideas', 2), undo)` and its like, through one describe-local `lone = (title: string, links: number, warnings: string[] = []): Bundled => ({ done: [{ title, kind: 'page' }], refused: [], unrestored: [], warnings, renamed: [], links })`, `:79` passing `vi.fn()` as its retry; and `ActionLabel.test.tsx:60` draws through `notifyBundled('Deleted', <a lone “Ideas” row with two links>, vi.fn())`. Every other `notifyDeleted` call in both suites passes the title and an Undo alone and holds.
+- [x] `notifyDeleted`'s two view callers (`Core/Tiles/Surfaces/ViewTile.tsx:398`, `Core/Views/deleteViewWithUndo.ts:14`) keep `notifyDeleted(name, undo)` unchanged.
+- [x] Rewrite `NexusRecordPM.md:16`'s "the delete answers with the bundle it minted, and **Undo** restores from that path without the frame being opened" as "the delete answers the Undo that restores the bundle it minted, which **Undo** sends without the frame being opened".
 
 **AFTER**
 
@@ -7417,16 +7417,16 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **VERIFY**
 
-- [ ] The failing cases are green, each red with its hunk reverted, and the lone-refusal pin stays green.
-- [ ] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `TrashFrame.test.tsx:272,288,307`, `ArchiveView.test.tsx:388-398,441-458`, `notifications.test.ts:44-93`, `ActionLabel.test.tsx:60`); `deleteOrder.test.ts`'s and `archive.test.ts`'s inner-item record expectations, which drop `archive` (the inner item's case asserting the reply's `undo.destination.at` instead); and `PropertyFrame.test.tsx`'s stub tree, which gains the `nexus` `runBundled` reads; and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green, and every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
-- [ ] These print nothing:
+- [x] The failing cases are green, each red with its hunk reverted, and the lone-refusal pin stays green.
+- [x] **Flips:** exactly the rewrites CHANGE routes (the `bundled` reads, `archive.test.ts`'s `UNDO`, `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `TrashFrame.test.tsx:272,288,307`, `ArchiveView.test.tsx:388-398,441-458`, `notifications.test.ts:44-93`, `ActionLabel.test.tsx:60`); `deleteOrder.test.ts`'s and `archive.test.ts`'s inner-item record expectations, which drop `archive` (the inner item's case asserting the reply's `undo.destination.at` instead); and `PropertyFrame.test.tsx`'s stub tree, which gains the `nexus` `runBundled` reads; and nothing else. `archive.test.ts:938-1223`'s delete-from-Archive Undo cases and `:473-640`'s Archive restore Undo cases stay green, and every notice text in `TrashFrame.test.tsx:285-498`, `ArchiveView.test.tsx:385-489`, and `confirmations.test.ts:285-311,400-462` holds: Restored “T”, “T” as “L”, N Pages, N Renamed, the unrestored and warning lines, refused counts, Try Again when owed, and Deleted “T” with its Internal Links segment.
+- [x] These print nothing:
   - `git grep -nE "\.bundled\b|bundled\??:|ARCHIVE_UNDO|\bUndone\b|undoneOf|rearchive|restoreUndo|deleteUndo|\bAsked\b" -- Core ':!*.test.ts' ':!*.test.tsx'`;
   - `git grep -n "stored.archive\|archive: z.string" -- Core`;
   - `git grep -nwE "restoreOne|deleteOne|restoreBatch|deleteBatch|offerDeleted" -- Core ':!*.test.ts' ':!*.test.tsx'`;
   - `git grep -n "unrestoredLine" -- Core/Session`;
   - `git grep -n "quiet: true" -- Core ':!*.test.ts' ':!*.test.tsx' | grep -v confirmations.ts`.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-3
 
@@ -7440,12 +7440,12 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **CHANGE**
 
-- [ ] Write **`confirmations.test.ts`, "an empty from the Trash asks with Confirm Before Deletion off" (I-079):** `switchOff()`, then `askEmptyTrash([row({ title: 'A' })])` asks once. It passes before the change: it pins the behavior the caption now states, which is copy alone.
-- [ ] `git mv Core/Settings/TrashFrame.tsx Core/Trash/TrashFrame.tsx`, `git mv Core/Settings/trash-frame.css Core/Trash/trash-frame.css`, `git mv Core/Archive/archivePlace.ts Core/Archive/archiveLabel.ts`, then `git rm Core/Trash/handlers.ts`, and apply the AFTER.
-- [ ] Re-point `frames.ts:42` to `'../Trash/TrashFrame'`, `Core/Settings/TrashFrame.test.tsx:6` to `'../Trash/TrashFrame'` (the test stays in place until Phase 6), the four `archivePlace` importers to `archiveLabel`, and `browser.test.ts:5`'s `widestDate` to `'./BundleTable'`.
-- [ ] Move `BundleTable.test.tsx:51-57`'s `date` object out of the `browser` prop into a sibling `date={…}` on `<BundleRows>`, which now takes it beside `browser`; its cases hold.
-- [ ] Rename every `'delete:facts'` stub to `'bundles:permanentDelete'` answering the boolean alone: `TrashFrame.test.tsx:157` and `confirmations.test.ts`'s stubs (`ok({ permanentDelete: false })` becomes `ok(false)`); the I-079 pin sits in *"what the Confirm Before Deletion switch governs"* with its own stub.
-- [ ] Rewrite `ConfigurationPM.md:115`'s row: "… Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Delete, which name the Items holding what they reach, and a delete from the Trash, which is for good."
+- [x] Write **`confirmations.test.ts`, "an empty from the Trash asks with Confirm Before Deletion off" (I-079):** `switchOff()`, then `askEmptyTrash([row({ title: 'A' })])` asks once. It passes before the change: it pins the behavior the caption now states, which is copy alone.
+- [x] `git mv Core/Settings/TrashFrame.tsx Core/Trash/TrashFrame.tsx`, `git mv Core/Settings/trash-frame.css Core/Trash/trash-frame.css`, `git mv Core/Archive/archivePlace.ts Core/Archive/archiveLabel.ts`, then `git rm Core/Trash/handlers.ts`, and apply the AFTER.
+- [x] Re-point `frames.ts:42` to `'../Trash/TrashFrame'`, `Core/Settings/TrashFrame.test.tsx:6` to `'../Trash/TrashFrame'` (the test stays in place until Phase 6), the four `archivePlace` importers to `archiveLabel`, and `browser.test.ts:5`'s `widestDate` to `'./BundleTable'`.
+- [x] Move `BundleTable.test.tsx:51-57`'s `date` object out of the `browser` prop into a sibling `date={…}` on `<BundleRows>`, which now takes it beside `browser`; its cases hold.
+- [x] Rename every `'delete:facts'` stub to `'bundles:permanentDelete'` answering the boolean alone: `TrashFrame.test.tsx:157` and `confirmations.test.ts`'s stubs (`ok({ permanentDelete: false })` becomes `ok(false)`); the I-079 pin sits in *"what the Confirm Before Deletion switch governs"* with its own stub.
+- [x] Rewrite `ConfigurationPM.md:115`'s row: "… Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it, as do a property's delete and an option's Delete, which name the Items holding what they reach, and a delete from the Trash, which is for good."
 
 **AFTER**
 
@@ -7748,15 +7748,15 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **VERIFY**
 
-- [ ] The I-079 pin is green.
-- [ ] **Flips:** `BundleTable.test.tsx:46-62`'s `date` prop, as CHANGE routes it, and nothing else. `TrashFrame.test.tsx:195` (the footing's parent and class order), `:234,249` (the date column through the Trash skin), `ArchiveView.test.tsx:331-364` (each footing line), and `browser.test.ts:58-79` (`widestDate`) hold as they are.
-- [ ] These print nothing:
+- [x] The I-079 pin is green.
+- [x] **Flips:** `BundleTable.test.tsx:46-62`'s `date` prop, as CHANGE routes it, and nothing else. `TrashFrame.test.tsx:195` (the footing's parent and class order), `:234,249` (the date column through the Trash skin), `ArchiveView.test.tsx:331-364` (each footing line), and `browser.test.ts:58-79` (`widestDate`) hold as they are.
+- [x] These print nothing:
   - `git grep -nwE "DateKey|dateKey|DELETE_FACTS_FALLBACK|trashHandlers" -- Core`;
   - `git grep -n "delete:facts\|archivePlace\|Settings/TrashFrame" -- Core Desktop`;
   - `git grep -n "footing()" -- Core`.
-- [ ] `ls Core/Trash/handlers.ts Core/Settings/TrashFrame.tsx Core/Settings/trash-frame.css Core/Archive/archivePlace.ts 2>/dev/null` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `ls Core/Trash/handlers.ts Core/Settings/TrashFrame.tsx Core/Settings/trash-frame.css Core/Archive/archivePlace.ts 2>/dev/null` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-4
 
@@ -7770,8 +7770,8 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **CHANGE**
 
-- [ ] `git mv Core/Trash/restoreScrub.ts Core/Nexus/arrival.ts`, so the history follows the two functions that stay in it, apply the AFTER, and `git rm Core/Trash/trashedCopies.ts`.
-- [ ] Re-point `parkLinks`' importers to `Core/Trash/gather.ts`: `spend.ts`, `finishOwed.ts`, `assignment.ts`, and `trashRecovery.test.ts:12`. `ensurePageId` (`Core/Nexus/adopt.ts`), whose last caller left with Phase 4's scrub, leaves with its `adopt.test.ts` describe, and I-039 drops its mention. `restoreScrub.test.ts` stays in `Core/Trash/` until Phase 6; it imports nothing from the file that left.
+- [x] `git mv Core/Trash/restoreScrub.ts Core/Nexus/arrival.ts`, so the history follows the two functions that stay in it, apply the AFTER, and `git rm Core/Trash/trashedCopies.ts`.
+- [x] Re-point `parkLinks`' importers to `Core/Trash/gather.ts`: `spend.ts`, `finishOwed.ts`, `assignment.ts`, and `trashRecovery.test.ts:12`. `ensurePageId` (`Core/Nexus/adopt.ts`), whose last caller left with Phase 4's scrub, leaves with its `adopt.test.ts` describe, and I-038 drops its mention. `restoreScrub.test.ts` stays in `Core/Trash/` until Phase 6; it imports nothing from the file that left.
 
 **AFTER**
 
@@ -7937,14 +7937,14 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **VERIFY**
 
-- [ ] **Flips:** none. `spend.test.ts`, `trashRecovery.test.ts` (its parking cases at `:462-678` through the moved `parkLinks`), `archive.test.ts`, `settle.test.ts`'s re-spell describes, and `restoreScrub.test.ts`'s surviving cases are green unchanged.
-- [ ] These print nothing:
+- [x] **Flips:** none. `spend.test.ts`, `trashRecovery.test.ts` (its parking cases at `:462-678` through the moved `parkLinks`), `archive.test.ts`, `settle.test.ts`'s re-spell describes, and `restoreScrub.test.ts`'s surviving cases are green unchanged.
+- [x] These print nothing:
   - `git grep -n "restoreScrub\|trashedCopies" -- Core ':!*.test.ts'`;
   - `git grep -nwE "returningNames|returningCascade|repairLanded|artifactFiles" -- Core/Nexus/settle.ts Core/Trash`, apart from `spend.ts`'s `returningCascade` import and call;
   - `git grep -nE "from '\./settle'" -- Core/Nexus/arrival.ts`.
-- [ ] `ls Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts 2>/dev/null` prints nothing.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `ls Core/Trash/restoreScrub.ts Core/Trash/trashedCopies.ts 2>/dev/null` prints nothing.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-5
 
@@ -7959,15 +7959,15 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 **CHANGE**
 
-- [ ] Write these and watch each fail:
+- [x] Write these and watch each fail:
   - **`restore.test.ts` (or the suite the restore's cases sit in at this task), "a restore and an empty leave no folder their bundle emptied in the Trash":** a page deleted from `Notes/Daily/` mints `.trash/Notes/Daily/<stamp>__Alpha.md.deleted`; its restore, and an empty of a second such bundle, each leave no empty `Notes/Daily/` or `Notes/` under `.trash`. The BASELINE left them (Phase 3's live drive); every removal of a bundle, a restore's and an empty's spend, a mint's or a move's rollback, and a move between stores alike, goes through one `removeBundle(root, abs)` beside `mintBundle` in `Core/Bundles/bundle.ts`, which removes each folder above it that it leaves empty, up to its store's own folder (`layoutOf(storeOf(…).store).dir`), so an Archive's chain folders go as the Trash's do.
   - **`spend.test.ts`, "a holder stripped under two Link properties takes both back in one landing":** page `L` holds `Related: "[[A]]"` and `See: "[[A]]"` under two Link definitions; delete `A`, spy `machine().land`, restore `A`. `L` holds both values back, each above the key it stood above, and the spy's calls name `L`'s path once. Fails today with two landings.
   - **`archive.test.ts:735`, rewritten in place as "a restore takes the Contexts lock only for a Context's or a Space's bundle":** an Archive page's restore and a Trash page's restore take no Contexts lock, and a trashed Space's restore takes it. Fails today on the Trash page.
   - **`spend.test.ts`, "a bundle whose artifact has left refuses its restore in either store with one line":** remove a trashed page's artifact and an archived page's artifact by hand; each restore answers "That item is no longer there.". Fails today on both texts.
   - **`indexMaintenance.test.ts`, `describe('the watcher maintains the rows')`, "a page's restore from the Trash reads the landed page once":** delete `Notes/Daily/Alpha.md` through `settledMutate`, spy `machine().readText`, restore it; the spy's calls name the landed path once. Fails today with two.
-- [ ] `git mv Core/Trash/spend.ts Core/Trash/empty.ts`, then apply the AFTER.
-- [ ] `spendBundle`'s doc (`Core/Bundles/bundle.ts:369`) states Decision C-6 where a reader meets it: after "the whole bundle, or from an inner item's bundle only the item's share", add "(a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views)". Close I-077 in `.claude/IssuesPM.md` through `batch-issues` as intended: its index row, its section, its footnote, and its count in TOTALS.
-- [ ] Every restore case in `spend.test.ts`, `trashRecovery.test.ts`, `restoreProperty.test.ts`, `restoreScrub.test.ts`, and `archive.test.ts` runs through `restoreBundle` unchanged; none imports the restores.
+- [x] `git mv Core/Trash/spend.ts Core/Trash/empty.ts`, then apply the AFTER.
+- [x] `spendBundle`'s doc (`Core/Bundles/bundle.ts:369`) states Decision C-6 where a reader meets it: after "the whole bundle, or from an inner item's bundle only the item's share", add "(a container emptied of its last item stays a restorable row, since it still holds its schema, its nested Sets' settings, and its views)". Close I-077 in `.claude/IssuesPM.md` through `batch-issues` as intended: its index row, its section, its footnote, and its count in TOTALS.
+- [x] Every restore case in `spend.test.ts`, `trashRecovery.test.ts`, `restoreProperty.test.ts`, `restoreScrub.test.ts`, and `archive.test.ts` runs through `restoreBundle` unchanged; none imports the restores.
 
 **AFTER**
 
@@ -8453,16 +8453,16 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 
 **VERIFY**
 
-- [ ] The four new or rewritten cases are green, each red with its hunk reverted.
-- [ ] **Flips:** `archive.test.ts:735`'s Trash half, as rewritten; the four rollback cases that read their emptied chain folder as `[]` (`archive.test.ts`'s Set-delete and archive-move rollbacks, `bundle.test.ts`'s record-write rollback, `deleteReach.test.ts`'s note-throw delete), which assert it gone; and `archive.test.ts`'s taken-address Undo fixture, which makes its chain with `recursive: true`; nothing else. Every restore case in the five suites CHANGE names passes through `restoreBundle`: the delete-from-Archive Undo (`archive.test.ts:938-1223`), the Archive restore's Undo (`:473-640`), the Context's registry write-ahead and rollback (`spend.test.ts:1413`), H-4's owed note (`:2533`), step-aside naming (`:1464-1557`), the twin linker (`:1149`), the refill with the setting off (`trashRecovery.test.ts:428-885`), and the inner item's share (`bundle.test.ts:333-372`).
-- [ ] The carry holds through `arrive`'s one source: `refile.test.ts`'s *"the restore"* describe, Task 3-5's B-6 case included, and `archive.test.ts:325-416` (a landed Set's carry) are green unchanged.
-- [ ] These print nothing:
+- [x] The four new or rewritten cases are green, each red with its hunk reverted.
+- [x] **Flips:** `archive.test.ts:735`'s Trash half, as rewritten; the four rollback cases that read their emptied chain folder as `[]` (`archive.test.ts`'s Set-delete and archive-move rollbacks, `bundle.test.ts`'s record-write rollback, `deleteReach.test.ts`'s note-throw delete), which assert it gone; and `archive.test.ts`'s taken-address Undo fixture, which makes its chain with `recursive: true`; nothing else. Every restore case in the five suites CHANGE names passes through `restoreBundle`: the delete-from-Archive Undo (`archive.test.ts:938-1223`), the Archive restore's Undo (`:473-640`), the Context's registry write-ahead and rollback (`spend.test.ts:1413`), H-4's owed note (`:2533`), step-aside naming (`:1464-1557`), the twin linker (`:1149`), the refill with the setting off (`trashRecovery.test.ts:428-885`), and the inner item's share (`bundle.test.ts:333-372`).
+- [x] The carry holds through `arrive`'s one source: `refile.test.ts`'s *"the restore"* describe, Task 3-5's B-6 case included, and `archive.test.ts:325-416` (a landed Set's carry) are green unchanged.
+- [x] These print nothing:
   - `git grep -nwE "restoreTrashed|restoreArchived" -- Core ':!*.test.ts'`;
   - `git grep -nE "Trash/spend|settled && !into|linkWorld\([^)]*, back\)" -- Core ':!*.test.ts'`;
   - `git grep -nE "refillValues\(" -- Core/Nexus/arrival.ts Core/Bundles/restore.ts`.
-- [ ] `ls Core/Trash/spend.ts 2>/dev/null` prints nothing, and `Core/Trash/empty.ts` exports `emptyBundle` alone.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `ls Core/Trash/spend.ts 2>/dev/null` prints nothing, and `Core/Trash/empty.ts` exports `emptyBundle` alone.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-6
 
@@ -8475,18 +8475,18 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 
 **CHANGE**
 
-- [ ] Write these in `settle.test.ts`, `describe('an item moved out of a store by hand')`, each through `applyEvents` with the watched `unlink` and `add` a drag raises, then `settleNow`, and watch each fail:
+- [x] Write these in `settle.test.ts`, `describe('an item moved out of a store by hand')`, each through `applyEvents` with the watched `unlink` and `add` a drag raises, then `settleNow`, and watch each fail:
   - **"a page moved out of the Trash while the app runs finishes as its restore":** `Linker` holds `Related: "[[Alpha]]"`; delete `Alpha`; move its file out of the bundle to `Notes/Alpha.md`. `Linker` holds `[[Alpha]]` again, the bundle is gone, and no relink entry names a `.trash` path. Fails today: `Linker` stays stripped and the bundle's record stays.
   - **"a page moved out of the Trash while the app was closed finishes as its restore at the next open":** the same, with `closeSession` before the move, then `openSession`, `seedContentIndex` with `oweSeen`, and `settleNow`. Fails today.
   - **"a page moved out of a trashed Set's bundle takes back its own share, the Set's row staying":** delete Set `Daily` holding `Alpha` and `Beta`, `Linker` holding `Related: "[[Alpha]]"` and `See: "[[Beta]]"` under two Link definitions, so each stripped value names one page; move `Alpha` out. `Linker` holds `[[Alpha]]` again and not `[[Beta]]`, `listBundles` still lists `Daily`, and its record's `links` hold `Beta`'s value alone. Fails today.
   - **"a page moved out of an Archive by hand finishes as the Archive's restore" (B-11, Decision E-3):** archive `Beta`; move it out to `Notes/Daily/Beta.md`. The Archive's bundle is gone, and a linker naming `Notes/Daily/Beta` keeps its key, since the lane's world never held `Beta` at its store path. Fails today on the bundle.
   - **"a page of a moved-out Set whose events land a settle after its bundle was spent keeps the Link values naming it":** delete Set `Daily` holding `Alpha` and `Beta`, `Linker` holding `See: "[[Notes/Daily/Beta]]"`; move the Set out to `Notes/Weekly` and settle Alpha's events alone, then Beta's. `See` reads `[[Notes/Weekly/Beta|Beta]]`: a whole bundle's arrival reads every page of the landed artifact through `originPagesOf`, as the restore does, not only the pages paired so far. Fails with `back` built from the paired pages.
-- [ ] Write these and watch them pass, then stay green: they pin what the change keeps.
+- [x] Write these and watch them pass, then stay green: they pin what the change keeps.
   - **"a copy out of the Trash stays a page of its own, its bundle whole":** copy `Alpha`'s file out (an `add` alone). The bundle still lists, and `Linker` stays stripped.
   - **"after an index rebuild, a page moved out while the app was closed returns live and current without its delete's Link values, its bundle unlisted" (Decision E-2):** install fresh `memoryStores` before reopening; `Alpha` is live and holds a property renamed while it sat in the Trash, `Linker` stays stripped, and `listBundles` lists nothing for it.
-- [ ] Apply the AFTER.
-- [ ] Rewrite `NexusRecordPM.md:14`'s Restore paragraph, after its first sentence, with: "A page or Set moved out of either store by hand finishes as that store's restore where it landed, found by the id its bundle's record holds; a copy, which leaves the bundle whole, stays a page of its own, and after an index rebuild nothing pairs, so such a page returns current without its delete's Link values."
-- [ ] Close I-064 in `.claude/IssuesPM.md` through `batch-issues`: its index row, its section, its footnote, and its count in TOTALS.
+- [x] Apply the AFTER.
+- [x] Rewrite `NexusRecordPM.md:14`'s Restore paragraph, after its first sentence, with: "A page or Set moved out of either store by hand finishes as that store's restore where it landed, found by the id its bundle's record holds; a copy, which leaves the bundle whole, stays a page of its own, and after an index rebuild nothing pairs, so such a page returns current without its delete's Link values."
+- [x] Close I-064 in `.claude/IssuesPM.md` through `batch-issues`: its index row, its section, its footnote, and its count in TOTALS.
 
 **AFTER**
 
@@ -8663,11 +8663,11 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 
 **VERIFY**
 
-- [ ] The four failing cases are green, each red with its hunk reverted; the copy and rebuild pins are green.
-- [ ] **Flips:** none. `fileEvents.test.ts:605`'s describe *"an outside move or arrival re-spells as an in-app one does"* holds, its moves leaving no bundle.
-- [ ] `git grep -n "recognize" -- Core/Nexus/settle.ts` prints the import and the lane's one call.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The four failing cases are green, each red with its hunk reverted; the copy and rebuild pins are green.
+- [x] **Flips:** none. `fileEvents.test.ts:605`'s describe *"an outside move or arrival re-spells as an in-app one does"* holds, its moves leaving no bundle.
+- [x] `git grep -n "recognize" -- Core/Nexus/settle.ts` prints the import and the lane's one call.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 5-7
 
@@ -8681,12 +8681,12 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 
 **CHANGE**
 
-- [ ] Write these in `settle.test.ts`, `describe('an item moved out of a store by hand')`, and watch the first fail:
+- [x] Write these in `settle.test.ts`, `describe('an item moved out of a store by hand')`, and watch the first fail:
   - **"a Space moved back into its Context's folder by hand finishes as its restore, tagging its members again":** `Alpha` holds `Areas: [Work]`; delete the Space `Work`, which untags `Alpha`; move its folder from the bundle back to `.nexus/contexts/Areas/Work`, raising the watched `unlinkDir`, `addDir`, and `add` of its sidecar; `settleNow`. `Alpha` holds `Areas: [Work]` again, the bundle is gone, and a delete note planted as an unfinished strip leaves it, through `restoreNote`, as the restore leaves it: its strip turned to a rename, its bundle dropped. Fails today: `Alpha` stays untagged and the bundle's record stays.
   - **"a Space copied back stays a Space of its own, its bundle whole":** copy the folder instead. The bundle still lists, and `Alpha` stays untagged. A pin.
   - **"a Context moved back by hand stays a plain arrival":** delete `Areas`, move its folder back into `.nexus/contexts`. The registry holds no `Areas`, the tree holds no such Context, and the bundle's record stays. A pin.
-- [ ] Apply the AFTER.
-- [ ] Extend the sentence Task 5-6 wrote at `NexusRecordPM.md:14`: after "found by the id its bundle's record holds;", add "a Space moved back into its registered Context's folder finishes the same way, tagging its members again, while a Context moved back stays outside the registry until restored;".
+- [x] Apply the AFTER.
+- [x] Extend the sentence Task 5-6 wrote at `NexusRecordPM.md:14`: after "found by the id its bundle's record holds;", add "a Space moved back into its registered Context's folder finishes the same way, tagging its members again, while a Context moved back stays outside the registry until restored;".
 
 **AFTER**
 
@@ -8805,10 +8805,10 @@ A listing skips a bundle whose artifact has left by hand, a record alone; with `
 
 **VERIFY**
 
-- [ ] The Space case is green, and red with `settleNow`'s Space finish removed; the two pins are green.
-- [ ] **Flips:** none. Every settle and watcher suite holds, `settle`'s callers being `settleNow` alone.
-- [ ] Run the gates.
-- [ ] Check for unnecessary code or mistakes.
+- [x] The Space case is green, and red with `settleNow`'s Space finish removed; the two pins are green.
+- [x] **Flips:** none. Every settle and watcher suite holds, `settle`'s callers being `settleNow` alone.
+- [x] Run the gates.
+- [x] Check for unnecessary code or mistakes.
 - [x] **The Live Drive** (*§Constraints · Live Drives*), its result written beside this box:
   1. **Two builds:** `git worktree add "$TMPDIR/pommora-p5-before" <the commit before Task 5-1>` and `git worktree add "$TMPDIR/pommora-p5-after" HEAD`; in each, `npm ci`, `./node_modules/.bin/electron --version`, and `npm run build`.
   2. **Two Nexuses:** `node .claude/scripts/make-benchmark-nexus.mjs test`, then copy `~/Test` to `$TMPDIR/pommora-p5-drive/before` and `$TMPDIR/pommora-p5-drive/after`.
@@ -8885,12 +8885,12 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 **CHANGE**
 
-- [ ] `deleteOrder.test.ts`: remove `:149-157`, and `:159`'s `atSettle` gains `toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })` beside its own no-`links` check (the links land at the finish, Task 4-4), retitled *"a content delete records before the artifact moves, and the Link values its strip takes before its strip"*.
-- [ ] `trashRecovery.test.ts`: remove `:399-425` and `:874-883`.
-- [ ] `spend.test.ts`: remove `:703-716`.
-- [ ] `restoreScrub.test.ts`: remove `:804-819`.
-- [ ] `refile.test.ts`: merge `:132` into `:151` as *"a Collection whose id would not make a folder name takes and reaches nothing outside the Archive"*, `:151`'s setup with `:132`'s archived `Note.md` beside it, asserting both `:132`'s `readdir(at('Escape'))` and filed bundles and `:151`'s untouched outside sidecar.
-- [ ] `archive.test.ts`: replace `:352-415` with one `it.each` over the four arms, each row naming its title fragment, its extra sidecars, the archived item, the address it restores, and the destination.
+- [x] `deleteOrder.test.ts`: remove `:149-157`, and `:159`'s `atSettle` gains `toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })` beside its own no-`links` check (the links land at the finish, Task 4-4), retitled *"a content delete records before the artifact moves, and the Link values its strip takes before its strip"*.
+- [x] `trashRecovery.test.ts`: remove `:399-425` and `:874-883`.
+- [x] `spend.test.ts`: remove `:703-716`.
+- [x] `restoreScrub.test.ts`: remove `:804-819`.
+- [x] `refile.test.ts`: merge `:132` into `:151` as *"a Collection whose id would not make a folder name takes and reaches nothing outside the Archive"*, `:151`'s setup with `:132`'s archived `Note.md` beside it, asserting both `:132`'s `readdir(at('Escape'))` and filed bundles and `:151`'s untouched outside sidecar.
+- [x] `archive.test.ts`: replace `:352-415` with one `it.each` over the four arms, each row naming its title fragment, its extra sidecars, the archived item, the address it restores, and the destination.
 
 **AFTER**
 
@@ -8935,10 +8935,10 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Trash/deleteOrder.test.ts Core/Trash/trashRecovery.test.ts Core/Trash/spend.test.ts Core/Trash/restoreScrub.test.ts Core/Archive/refile.test.ts Core/Archive/archive.test.ts` is green, with six fewer cases than before and the `it.each` reporting four.
-- [ ] The widened `:159` fails with `id: PAGE_A` changed to `PAGE_B`, and the merged refile case fails with `archiveStoreOf`'s name guard removed.
-- [ ] Run the gates. Tests: about −140 lines.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npm run test -- Core/Trash/deleteOrder.test.ts Core/Trash/trashRecovery.test.ts Core/Trash/spend.test.ts Core/Trash/restoreScrub.test.ts Core/Archive/refile.test.ts Core/Archive/archive.test.ts` is green, with six fewer cases than before and the `it.each` reporting four.
+- [x] The widened `:159` fails with `id: PAGE_A` changed to `PAGE_B`, and the merged refile case fails with `archiveStoreOf`'s name guard removed.
+- [x] Run the gates. Tests: about −140 lines.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-2
 
@@ -8954,11 +8954,11 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 **CHANGE**
 
-- [ ] Create `Core/Testing/bundles.ts` as the AFTER (`git add` it).
-- [ ] `spend.test.ts`: remove `bundleDirs`, `onlyBundle`, the `PAGE_` constants, the top-level `let root`, `beforeEach`, and `afterEach`; open the suite with `let root: string` and `bundleNexusEachTest('pom-prov-', (r) => (root = r))`; call `bundleDirs(root)` for `bundleDirs(join(root, '.trash'))`, `onlyBundle(root)` for `onlyBundle()` (its four `dir` reads become `join(root, bundlePath)`), and `stateOrder(root)` for `:272`'s local, which leaves.
-- [ ] `trashRecovery.test.ts`: remove `:63-64`'s `stateOrder`; its calls read `stateOrder(root)`.
-- [ ] `restoreProperty.test.ts`: remove `:80-84`; its 24 calls read `(await onlyBundle(root)).bundlePath`.
-- [ ] Move `bundleRow` and `seedPropertyBundle` from `fixtures.ts` into `bundles.ts`, bodies unchanged, with the imports only they read (`fixtures.ts` keeps `pageKey`, `CascadeChange`, `PageDetail`, `machine`, and `DeviceRecord`), and re-point the eleven importers above from `'../Testing/fixtures'` (or `'../../Testing/fixtures'`) to `bundles`, each keeping its local name (`bundleRow as row` in four).
+- [x] Create `Core/Testing/bundles.ts` as the AFTER (`git add` it).
+- [x] `spend.test.ts`: remove `bundleDirs`, `onlyBundle`, the `PAGE_` constants, the top-level `let root`, `beforeEach`, and `afterEach`; open the suite with `let root: string` and `bundleNexusEachTest('pom-prov-', (r) => (root = r))`; call `bundleDirs(root)` for `bundleDirs(join(root, '.trash'))`, `onlyBundle(root)` for `onlyBundle()` (its four `dir` reads become `join(root, bundlePath)`), and `stateOrder(root)` for `:272`'s local, which leaves.
+- [x] `trashRecovery.test.ts`: remove `:63-64`'s `stateOrder`; its calls read `stateOrder(root)`.
+- [x] `restoreProperty.test.ts`: remove `:80-84`; its 24 calls read `(await onlyBundle(root)).bundlePath`.
+- [x] Move `bundleRow` and `seedPropertyBundle` from `fixtures.ts` into `bundles.ts`, bodies unchanged, with the imports only they read (`fixtures.ts` keeps `pageKey`, `CascadeChange`, `PageDetail`, `machine`, and `DeviceRecord`), and re-point the eleven importers above from `'../Testing/fixtures'` (or `'../../Testing/fixtures'`) to `bundles`, each keeping its local name (`bundleRow as row` in four).
 
 **AFTER**
 
@@ -9121,10 +9121,10 @@ The seed's `mkdir(contextsDir(root))` makes `.nexus` too, so `spend.test.ts:82`'
 
 **VERIFY**
 
-- [ ] `npm run test -- Core/Trash/spend.test.ts Core/Trash/trashRecovery.test.ts Core/Trash/restoreProperty.test.ts` is green with the same case count as before.
-- [ ] `git grep -nE "const (onlyBundlePath|stateOrder|onlyBundle)\b|function bundleDirs" -- Core ':!Core/Testing/bundles.ts'` prints nothing, and `git grep -nE "bundleRow|seedPropertyBundle" -- Core/Testing/fixtures.ts` prints nothing.
-- [ ] Run the gates. Tests: about −5 lines (the fixture about +75 against the seed, finders, and ids about −80; the two moved fixtures ±0).
-- [ ] Check for unnecessary code or mistakes.
+- [x] `npm run test -- Core/Trash/spend.test.ts Core/Trash/trashRecovery.test.ts Core/Trash/restoreProperty.test.ts` is green with the same case count as before.
+- [x] `git grep -nE "const (onlyBundlePath|stateOrder|onlyBundle)\b|function bundleDirs" -- Core ':!Core/Testing/bundles.ts'` prints nothing, and `git grep -nE "bundleRow|seedPropertyBundle" -- Core/Testing/fixtures.ts` prints nothing.
+- [x] Run the gates. Tests: about −5 lines (the fixture about +75 against the seed, finders, and ids about −80; the two moved fixtures ±0).
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-3
 
@@ -9137,8 +9137,8 @@ The seed's `mkdir(contextsDir(root))` makes `.nexus` too, so `spend.test.ts:82`'
 
 **CHANGE**
 
-- [ ] `git mv Core/Trash/spend.test.ts Core/Bundles/restore.test.ts`, `git mv Core/Trash/restoreScrub.test.ts Core/Nexus/arrival.test.ts`, `git mv Core/Bundles/layout.test.ts Core/Paths/bundleLayout.test.ts`.
-- [ ] Re-point each moved file's relative imports to its new folder (`'./bundle'` for `'../Bundles/bundle'`, `'../Trash/empty'` for `'./empty'`, `'./bundleLayout'` for `'../Paths/bundleLayout'`, and so on), changing nothing else.
+- [x] `git mv Core/Trash/spend.test.ts Core/Bundles/restore.test.ts`, `git mv Core/Trash/restoreScrub.test.ts Core/Nexus/arrival.test.ts`, `git mv Core/Bundles/layout.test.ts Core/Paths/bundleLayout.test.ts`.
+- [x] Re-point each moved file's relative imports to its new folder (`'./bundle'` for `'../Bundles/bundle'`, `'../Trash/empty'` for `'./empty'`, `'./bundleLayout'` for `'../Paths/bundleLayout'`, and so on), changing nothing else.
 
 **AFTER**
 
@@ -9152,10 +9152,10 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `test ! -e Core/Trash/spend.test.ts && test ! -e Core/Trash/restoreScrub.test.ts && test ! -e Core/Bundles/layout.test.ts` succeeds, and `git log --follow --oneline -- Core/Bundles/restore.test.ts | wc -l` counts more than one commit, as it does for the other two.
-- [ ] `npm run test -- Core/Bundles/restore.test.ts Core/Nexus/arrival.test.ts Core/Paths/bundleLayout.test.ts` is green with the case counts the three files had.
-- [ ] Run the gates. Tests: about ±0 lines.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `test ! -e Core/Trash/spend.test.ts && test ! -e Core/Trash/restoreScrub.test.ts && test ! -e Core/Bundles/layout.test.ts` succeeds, and `git log --follow --oneline -- Core/Bundles/restore.test.ts | wc -l` counts more than one commit, as it does for the other two.
+- [x] `npm run test -- Core/Bundles/restore.test.ts Core/Nexus/arrival.test.ts Core/Paths/bundleLayout.test.ts` is green with the case counts the three files had.
+- [x] Run the gates. Tests: about ±0 lines.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-4
 
@@ -9168,12 +9168,12 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Create `Core/Trash/gather.test.ts` (`git add` it), opening with `let root: string` and `bundleNexusEachTest('pom-gather-', (r) => (root = r))`, and move into it, bodies unchanged:
+- [x] Create `Core/Trash/gather.test.ts` (`git add` it), opening with `let root: string` and `bundleNexusEachTest('pom-gather-', (r) => (root = r))`, and move into it, bodies unchanged:
   - the describe *"the bundle — one folder per deletion, holding the artifact and its record"*, retitled *"a delete's record"*, without its nested *"a Context's place"* and without `:391`;
   - `arrival.test.ts`'s *"a page deleted from a Finder-made folder records a real parent and restores"*, as the describe's last case, its describe leaving `arrival.test.ts`; its seed lines (a folder without a sidecar under the Nexus root) move with it.
-- [ ] Move *"a Context's place"* to stand alone at the top of `restore.test.ts`, unchanged.
-- [ ] In `Core/Bundles/bundle.test.ts`, add a describe *"a Trash a delete fills"* calling `bundleNexusEachTest('pom-bundle-', (r) => (trashRoot = r))` inside it, and move into it, bodies unchanged except `root` reading `trashRoot`: `:391`; *"a property bundle"*'s case; and every case of *"listBundles — what the trash offers"*.
-- [ ] Remove the imports each file no longer reads; each moved case carries its own.
+- [x] Move *"a Context's place"* to stand alone at the top of `restore.test.ts`, unchanged.
+- [x] In `Core/Bundles/bundle.test.ts`, add a describe *"a Trash a delete fills"* calling `bundleNexusEachTest('pom-bundle-', (r) => (trashRoot = r))` inside it, and move into it, bodies unchanged except `root` reading `trashRoot`: `:391`; *"a property bundle"*'s case; and every case of *"listBundles — what the trash offers"*.
+- [x] Remove the imports each file no longer reads; each moved case carries its own.
 
 **AFTER**
 
@@ -9215,10 +9215,10 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -nE "describe\('(the bundle — one folder|listBundles — what the trash offers|a property bundle|a parent the filesystem)" -- Core` prints nothing, and `git grep -n "describe('a delete’s record'" -- Core/Trash/gather.test.ts` prints one line.
-- [ ] The three suites' case counts sum to what `restore.test.ts`, `arrival.test.ts`, and `bundle.test.ts` held before the task.
-- [ ] Run the gates. Tests: about +28 lines (two suites' openings and imports).
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "describe\('(the bundle — one folder|listBundles — what the trash offers|a property bundle|a parent the filesystem)" -- Core` prints nothing, and `git grep -n "describe('a delete’s record'" -- Core/Trash/gather.test.ts` prints one line.
+- [x] The three suites' case counts sum to what `restore.test.ts`, `arrival.test.ts`, and `bundle.test.ts` held before the task.
+- [x] Run the gates. Tests: about +28 lines (two suites' openings and imports).
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-5
 
@@ -9228,8 +9228,8 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Create `Core/Trash/empty.test.ts` (`git add` it), opening with `let root: string` and `bundleNexusEachTest('pom-empty-', (r) => (root = r))`, and move both describes into it, bodies unchanged, each with the suite-local helpers only it reads.
-- [ ] Remove the imports `restore.test.ts` no longer reads.
+- [x] Create `Core/Trash/empty.test.ts` (`git add` it), opening with `let root: string` and `bundleNexusEachTest('pom-empty-', (r) => (root = r))`, and move both describes into it, bodies unchanged, each with the suite-local helpers only it reads.
+- [x] Remove the imports `restore.test.ts` no longer reads.
 
 **AFTER**
 
@@ -9251,9 +9251,9 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -nE "describe\('(emptyBundle|emptying a property)" -- Core/Bundles/restore.test.ts` prints nothing, and the two suites' case counts sum to `restore.test.ts`'s before the task.
-- [ ] Run the gates. Tests: about +25 lines.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "describe\('(emptyBundle|emptying a property)" -- Core/Bundles/restore.test.ts` prints nothing, and the two suites' case counts sum to `restore.test.ts`'s before the task.
+- [x] Run the gates. Tests: about +25 lines.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-6
 
@@ -9266,8 +9266,8 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Create `Core/Trash/discard.test.ts` (`git add` it) with its own `dir` under `tempRoot('pom-discard-')`, created and removed around each case, and move the describe into it, its `trashed` helper and bodies unchanged; `atomicWrite.test.ts` keeps its `discardFile` import for the own tap's case, and drops any other name only the describe read.
-- [ ] Move `archive.test.ts:227`'s case into `deleteOrder.test.ts`'s *"a delete whose move fails deletes nothing"*, opening with `await putJson(join(root, 'Notes', 'Daily', '_pageset.json'), { id: 'set-daily' })`, since `deleteOrder.test.ts`'s seed holds no Set; its `at` and `text` reads become `join(root, …)` and `readFile(join(root, …), 'utf8')`, and its spy keeps Task 3-1's target.
+- [x] Create `Core/Trash/discard.test.ts` (`git add` it) with its own `dir` under `tempRoot('pom-discard-')`, created and removed around each case, and move the describe into it, its `trashed` helper and bodies unchanged; `atomicWrite.test.ts` keeps its `discardFile` import for the own tap's case, and drops any other name only the describe read.
+- [x] Move `archive.test.ts:227`'s case into `deleteOrder.test.ts`'s *"a delete whose move fails deletes nothing"*, opening with `await putJson(join(root, 'Notes', 'Daily', '_pageset.json'), { id: 'set-daily' })`, since `deleteOrder.test.ts`'s seed holds no Set; its `at` and `text` reads become `join(root, …)` and `readFile(join(root, …), 'utf8')`, and its spy keeps Task 3-1's target.
 
 **AFTER**
 
@@ -9298,9 +9298,9 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -n "describe('discardFile'" -- Core/Files/atomicWrite.test.ts` prints nothing, `git grep -n "discardFile(" -- Core/Files/atomicWrite.test.ts` prints the own tap's one call, and `npm run test -- Core/Trash/discard.test.ts Core/Trash/deleteOrder.test.ts Core/Archive/archive.test.ts Core/Files/atomicWrite.test.ts` is green with the same total case count as before.
-- [ ] Run the gates. Tests: about +17 lines.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "describe('discardFile'" -- Core/Files/atomicWrite.test.ts` prints nothing, `git grep -n "discardFile(" -- Core/Files/atomicWrite.test.ts` prints the own tap's one call, and `npm run test -- Core/Trash/discard.test.ts Core/Trash/deleteOrder.test.ts Core/Archive/archive.test.ts Core/Files/atomicWrite.test.ts` is green with the same total case count as before.
+- [x] Run the gates. Tests: about +17 lines.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-7
 
@@ -9328,12 +9328,12 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] `git mv Core/Settings/TrashFrame.test.tsx Core/Trash/TrashFrame.test.tsx`; its `'../Trash/TrashFrame'` import reads `'./TrashFrame'`.
-- [ ] Add the browser half to `Core/Testing/bundles.ts` as the AFTER.
-- [ ] `TrashFrame.test.tsx` and `ArchiveView.test.tsx`: replace each describe's `listed`, `children`, `picked`, `list`, `menu`, and `mutated` declarations and their dialer stub with `const channels = stubBrowserEachTest()` (`ArchiveView.test.tsx` passing `() => ({ 'page:open': … })` for its reader), read `channels.listed` and the rest where the cases read the locals, and replace the local `rowOf`, `boxOf`, and `press` with the harness's, passing `host`; each skin's `indentOf` leaves with the cases reading it (`TrashFrame.test.tsx:524`, `ArchiveView.test.tsx:258`, both under *Leaves*). `ArchiveView.test.tsx`'s `titles` and `rowEls` read `.bundle-rows .data-row` and stay.
-- [ ] `BundleTable.test.tsx` replaces its local `rowOf` and `boxOf` (`:67-72`) with the harness's, passing `host` (every row draws its box with `aria-label` "Select <title>", `BundleTable.tsx:190`), and defines `indentOf` locally beside `chevronOf`, its one reader being `:88`'s folded indent: `const indentOf = (title: string): string => (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft`, with `rowIndent` imported for the fold's expectation as the skins import it. Its `rowEls`, `chevronOf`, and `key` stay.
-- [ ] `browser.test.ts`'s *"a browser's remembered checks"*: `const channels = stubBrowserEachTest(() => ({ 'bundles:children': children }))`, its deferred `children` staying its own.
-- [ ] Fold each cluster's expectations into its kept case, as the table's last column names, then remove each case under *Leaves* — thirteen cases, and the whole `describe('a Trash row')` (`TrashFrame.test.tsx:28-80`) once `:44` and `:57` leave.
+- [x] `git mv Core/Settings/TrashFrame.test.tsx Core/Trash/TrashFrame.test.tsx`; its `'../Trash/TrashFrame'` import reads `'./TrashFrame'`.
+- [x] Add the browser half to `Core/Testing/bundles.ts` as the AFTER.
+- [x] `TrashFrame.test.tsx` and `ArchiveView.test.tsx`: replace each describe's `listed`, `children`, `picked`, `list`, `menu`, and `mutated` declarations and their dialer stub with `const channels = stubBrowserEachTest()` (`ArchiveView.test.tsx` passing `() => ({ 'page:open': … })` for its reader), read `channels.listed` and the rest where the cases read the locals, and replace the local `rowOf`, `boxOf`, and `press` with the harness's, passing `host`; each skin's `indentOf` leaves with the cases reading it (`TrashFrame.test.tsx:524`, `ArchiveView.test.tsx:258`, both under *Leaves*). `ArchiveView.test.tsx`'s `titles` and `rowEls` read `.bundle-rows .data-row` and stay.
+- [x] `BundleTable.test.tsx` replaces its local `rowOf` and `boxOf` (`:67-72`) with the harness's, passing `host` (every row draws its box with `aria-label` "Select <title>", `BundleTable.tsx:190`), and defines `indentOf` locally beside `chevronOf`, its one reader being `:88`'s folded indent: `const indentOf = (title: string): string => (rowOf(host, title).querySelector('.bundle-title') as HTMLElement).style.marginLeft`, with `rowIndent` imported for the fold's expectation as the skins import it. Its `rowEls`, `chevronOf`, and `key` stay.
+- [x] `browser.test.ts`'s *"a browser's remembered checks"*: `const channels = stubBrowserEachTest(() => ({ 'bundles:children': children }))`, its deferred `children` staying its own.
+- [x] Fold each cluster's expectations into its kept case, as the table's last column names, then remove each case under *Leaves* — thirteen cases, and the whole `describe('a Trash row')` (`TrashFrame.test.tsx:28-80`) once `:44` and `:57` leave.
 
 **AFTER**
 
@@ -9420,11 +9420,11 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -nE "const (rowOf|boxOf|press) =" -- Core/Trash Core/Archive Core/Bundles` prints nothing, `git grep -n "const indentOf =" -- Core` prints `BundleTable.test.tsx` alone, and `test ! -e Core/Settings/TrashFrame.test.tsx` succeeds; the skins' imports only their removed cases read (`rowIndent` among them) leave with them.
-- [ ] Each folded expectation fails with its behavior broken: `browser.test.ts:256`'s homed row with `requestOf`'s destination spread unconditionally; `:236`'s second click with `toggle`'s close removed; `BundleTable.test.tsx:217`'s hidden check with the reveal reading `checked.size` alone.
-- [ ] The jsdom suites' case count fell by exactly thirteen.
-- [ ] Run the gates. Tests: about −215 lines (the three harnesses about −120 for the fixture's +37; the thirteen cases about −150; the folds about +15).
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "const (rowOf|boxOf|press) =" -- Core/Trash Core/Archive Core/Bundles` prints nothing, `git grep -n "const indentOf =" -- Core` prints `BundleTable.test.tsx` alone, and `test ! -e Core/Settings/TrashFrame.test.tsx` succeeds; the skins' imports only their removed cases read (`rowIndent` among them) leave with them.
+- [x] Each folded expectation fails with its behavior broken: `browser.test.ts:256`'s homed row with `requestOf`'s destination spread unconditionally; `:236`'s second click with `toggle`'s close removed; `BundleTable.test.tsx:217`'s hidden check with the reveal reading `checked.size` alone.
+- [x] The jsdom suites' case count fell by exactly thirteen.
+- [x] Run the gates. Tests: about −215 lines (the three harnesses about −120 for the fixture's +37; the thirteen cases about −150; the folds about +15).
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-8
 
@@ -9437,9 +9437,9 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Move `:234` and `:249` into `BundleTable.test.tsx` as a describe *"the date column"*, mounting `useDateColumn('trash')` inside `BundleTable` (the date column reads no browser) with its `DateHeading`, over `stubBrowserEachTest(() => ({ 'personalization:set': … }))`; `pickFromDateMenu` moves with them, reading the heading `DateHeading` draws.
-- [ ] Move `:264`, `:285`, `:301`, `:335`, the notice cases, and `:498` into `confirmations.test.ts` as a describe *"a batch through runBundled"*, each case keeping its stubs and its assertions and running `runBundled('Restored' | 'Deleted', rows)` with the rows the skin's pick handed, where it right-clicked or picked for both. `:498` takes `ArchiveView.test.tsx:475`'s fold (Task 6-7): a batch handed a Nexus id the session no longer holds posts nothing.
-- [ ] Remove from `TrashFrame.test.tsx` every helper only the moved cases read (`pickFromDateMenu`, `pickForBoth`, `nexus`).
+- [x] Move `:234` and `:249` into `BundleTable.test.tsx` as a describe *"the date column"*, mounting `useDateColumn('trash')` inside `BundleTable` (the date column reads no browser) with its `DateHeading`, over `stubBrowserEachTest(() => ({ 'personalization:set': … }))`; `pickFromDateMenu` moves with them, reading the heading `DateHeading` draws.
+- [x] Move `:264`, `:285`, `:301`, `:335`, the notice cases, and `:498` into `confirmations.test.ts` as a describe *"a batch through runBundled"*, each case keeping its stubs and its assertions and running `runBundled('Restored' | 'Deleted', rows)` with the rows the skin's pick handed, where it right-clicked or picked for both. `:498` takes `ArchiveView.test.tsx:475`'s fold (Task 6-7): a batch handed a Nexus id the session no longer holds posts nothing.
+- [x] Remove from `TrashFrame.test.tsx` every helper only the moved cases read (`pickFromDateMenu`, `pickForBoth`, `nexus`).
 
 **AFTER**
 
@@ -9460,10 +9460,10 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -nE "Restore All|Delete All|pickFromDateMenu|pickForBoth|spends the bundle" -- Core/Trash/TrashFrame.test.tsx` prints nothing.
-- [ ] Every moved case is green with its assertions as they were, and the jsdom and node suites' case count is what Task 6-7 left.
-- [ ] Run the gates. Tests: about −20 lines.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -nE "Restore All|Delete All|pickFromDateMenu|pickForBoth|spends the bundle" -- Core/Trash/TrashFrame.test.tsx` prints nothing.
+- [x] Every moved case is green with its assertions as they were, and the jsdom and node suites' case count is what Task 6-7 left.
+- [x] Run the gates. Tests: about −20 lines.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-9
 
@@ -9476,7 +9476,7 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Apply the AFTER.
+- [x] Apply the AFTER.
 
 **AFTER**
 
@@ -9528,11 +9528,11 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git grep -n "still holds that title\|reads as a shadow\|can be spent\|today run per-file\|<Page>.archived\|<Page>.deleted\|ArchiveView's .col-header" -- .claude/Features Core UIX` prints nothing.
-- [ ] `git grep -n "resolves to nothing afterwards" -- .claude/Features` prints `ConnectionsPM.md` alone.
-- [ ] `git grep -n "can be spent" -- '*.test.ts' '*.test.tsx'` prints nothing, so no case pinned the old refusal.
-- [ ] Run the gates. Production: ±0 lines; three comments and one string rewritten, none added.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git grep -n "still holds that title\|reads as a shadow\|can be spent\|today run per-file\|<Page>.archived\|<Page>.deleted\|ArchiveView's .col-header" -- .claude/Features Core UIX` prints nothing.
+- [x] `git grep -n "resolves to nothing afterwards" -- .claude/Features` prints `ConnectionsPM.md` alone.
+- [x] `git grep -n "can be spent" -- '*.test.ts' '*.test.tsx'` prints nothing, so no case pinned the old refusal.
+- [x] Run the gates. Production: ±0 lines; three comments and one string rewritten, none added.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-10
 
@@ -9544,7 +9544,7 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] Apply the AFTER's wording, and commit.
+- [x] Apply the AFTER's wording, and commit.
 
 **AFTER**
 
@@ -9564,8 +9564,8 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `git diff HEAD~1 -- .claude/CLAUDE.md` changes those five lines and nothing else.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `git diff HEAD~1 -- .claude/CLAUDE.md` changes those five lines and nothing else.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-11
 
@@ -9579,19 +9579,19 @@ The other two files' import blocks change the same way, line for line.
 
 **CHANGE**
 
-- [ ] With nothing else heavy running and Nathan's instance left alone (ports 9391 and 9395 only), from `.claude/Benchmarks/Reach-In/` in the main checkout:
+- [x] With nothing else heavy running and Nathan's instance left alone (ports 9391 and 9395 only), from `.claude/Benchmarks/Reach-In/` in the main checkout:
   1. `BUILDS=baseline ./setup.sh HEAD`. Where `git apply` refuses a hunk, re-fit it onto HEAD in `instrumentation.patch` (in `openNexusSequence`: `openStartedAt` first, `treeAt` after `seedLiveTree(tree)`, `indexAt` after `seedContentIndex`, `openAt` after the open's `settleNow`, `repairAt` once the repair sweep's chain settles; in `nodeMachine.ts`, the counter after `stage` and the wrapping loop after the object), and run the setup again.
   2. `PCTS="0 50" ./fills.sh Medium`.
   3. `RUNS=3 node profile.mjs timing renameProperty`, then `python3 -c 'import json,statistics as s; r=list(json.load(open("profiles/timing.json")).values()); m=s.median(v["settleMs"] for v in r); f=s.median(v["calls"]["land"] for v in r); print(m, f, round(m/f, 2))'`.
   4. In `profile.mjs`, read the fill as `join(WORK, 'fills', process.env.FILL ?? 'Medium-0')`, then `FILL=Medium-50 RUNS=3 node profile.mjs timing renameProperty` and step 3's `python3` line again.
   5. `./teardown.sh`; then, from the repo root, `git restore -- .claude/Benchmarks/Reach-In/instrumentation.patch .claude/Benchmarks/Reach-In/profile.mjs` and `rm -f .claude/Benchmarks/Reach-In/profiles/timing.json`.
-- [ ] Record both on a line beneath the plan's Net Ledger, beside Task 1-2's: *"Decision G-2, Property Rename at `<HEAD>` (median of three, `settleMs / calls.land`): Medium-0 `<ms>` over `<files>` (`<per>` ms), against 14,708 over 7,027 (2.09, profiled) at `9b9c0d630`; Medium-50 `<ms>` over `<files>` (`<per>` ms), against the baseline's 14,785 over 6,961 (2.12) and the prototype's 22,270 over 10,553 (2.11)."* Commit the plan file alone, the medians in the message.
+- [x] Record both on a line beneath the plan's Net Ledger, beside Task 1-2's: *"Decision G-2, Property Rename at `<HEAD>` (median of three, `settleMs / calls.land`): Medium-0 `<ms>` over `<files>` (`<per>` ms), against 14,708 over 7,027 (2.09, profiled) at `9b9c0d630`; Medium-50 `<ms>` over `<files>` (`<per>` ms), against the baseline's 14,785 over 6,961 (2.12) and the prototype's 22,270 over 10,553 (2.11)."* Commit the plan file alone, the medians in the message.
 
 **VERIFY**
 
-- [ ] Both lines beneath the Net Ledger carry three-run medians, and every run's reply was `ok`.
-- [ ] `git worktree list` shows the main checkout alone; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`, `ls -d ~/Benchmark-* 2>/dev/null`, and `git status --short .claude/Benchmarks` print nothing.
-- [ ] Check for unnecessary code or mistakes.
+- [x] Both lines beneath the Net Ledger carry three-run medians, and every run's reply was `ok`.
+- [x] `git worktree list` shows the main checkout alone; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`, `ls -d ~/Benchmark-* 2>/dev/null`, and `git status --short .claude/Benchmarks` print nothing.
+- [x] Check for unnecessary code or mistakes.
 
 #### Task 6-12
 
@@ -9599,13 +9599,13 @@ The other two files' import blocks change the same way, line for line.
 
 **NOW:**
 - `.claude/Benchmarks/Reach-In/` holds 32 tracked files (`RERUN.md`, both patches, eleven scripts, `results/`, `profiles/`); `.claude/Benchmarks/`' other three files are unrelated and stay.
-- `git grep -n "Benchmarks/Reach-In"` finds, outside the harness, `.claude/IssuesPM.md:1474` (I-081's footnote, citing `profiles/profile.json` and `profile-15fe7422a.json` for the `lstat` counts), the plan's own *§Final Verification · The Cold-Machine Check* (`ls .claude/Benchmarks/Reach-In`, which proves the removal), and completed planning records (*Decisions & Intention · §Sources*, *Investigation · §The Measurement*, *Reach-In Measurement*'s header, and the Write Path plan, brief, and investigation), left as written.
-- The two profiles I-081 cites are in history at `e4256d93d`, the commit that re-ran the Medium-0 profile at `9b9c0d630`.
+- `git grep -n "Benchmarks/Reach-In"` finds, outside the harness, `.claude/IssuesPM.md:1474` (I-075's footnote, citing `profiles/profile.json` and `profile-15fe7422a.json` for the `lstat` counts), the plan's own *§Final Verification · The Cold-Machine Check* (`ls .claude/Benchmarks/Reach-In`, which proves the removal), and completed planning records (*Decisions & Intention · §Sources*, *Investigation · §The Measurement*, *Reach-In Measurement*'s header, and the Write Path plan, brief, and investigation), left as written.
+- The two profiles I-075 cites are in history at `e4256d93d`, the commit that re-ran the Medium-0 profile at `9b9c0d630`.
 
 **CHANGE**
 
-- [ ] `git rm -r .claude/Benchmarks/Reach-In`.
-- [ ] Rewrite I-081's footnote citation through `batch-issues` as the AFTER.
+- [x] `git rm -r .claude/Benchmarks/Reach-In`.
+- [x] Rewrite I-075's footnote citation through `batch-issues` as the AFTER.
 
 **AFTER**
 
@@ -9617,10 +9617,10 @@ The other two files' import blocks change the same way, line for line.
 
 **VERIFY**
 
-- [ ] `ls .claude/Benchmarks/Reach-In 2>/dev/null` prints nothing, and `git grep -n "Benchmarks/Reach-In" -- ':!.claude/Planning'` prints nothing.
-- [ ] `git show e4256d93d:.claude/Benchmarks/Reach-In/profiles/profile.json | head -c 1` prints `{`.
-- [ ] `git worktree list` shows the main checkout alone, and `ls -d ~/Benchmark-* 2>/dev/null` and `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null` print nothing.
-- [ ] Check for unnecessary code or mistakes.
+- [x] `ls .claude/Benchmarks/Reach-In 2>/dev/null` prints nothing, and `git grep -n "Benchmarks/Reach-In" -- ':!.claude/Planning'` prints nothing.
+- [x] `git show e4256d93d:.claude/Benchmarks/Reach-In/profiles/profile.json | head -c 1` prints `{`.
+- [x] `git worktree list` shows the main checkout alone, and `ls -d ~/Benchmark-* 2>/dev/null` and `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null` print nothing.
+- [x] Check for unnecessary code or mistakes.
 
 #### Review Checkpoint
 
@@ -9647,15 +9647,15 @@ The other two files' import blocks change the same way, line for line.
 
 The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens. Every reviewer brief carries the Mandate verbatim and has its agent read *§Constraints* whole, except the neutral gate's, which carries the Mandate alone.
 
-- [ ] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
-- [ ] **Wave One:** two read-only reviewers briefed with `code-simplification`, one `opus-xhigh` reading inward at the diff and one `fable-xhigh` reading outward against the rest of Core, Desktop, and UIX (mixed models, Nathan, 10-30-2026); one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
-- [ ] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one `fable-xhigh` reading inward and one `opus-xhigh` reading outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
-- [ ] **The Dashboard Map:** in each wave, one more read-only agent (one per lens: `code-simplification` in Wave One, `adversarial-review` in Wave Two) maps how the Studio dashboard's Pommora line count (`~/The Studio/.claude/dashboard/projects/pommora.mjs`, read with its `README.md` and `line-count.mjs`) would divide so Trash & Archive becomes its own section: which paths it takes from which areas, what the other areas keep, and what the history rebuild costs. The second reconciles the first's map; the result goes to Nathan in the report, and nothing in the dashboard changes.
-- [ ] **The Neutral Gate:** one `fable-xhigh` agent given only `<BASELINE>..HEAD`, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
-- [ ] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; *§Completion Criteria* ticked.
-- [ ] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `ls -d ~/Benchmark-* 2>/dev/null`; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`; `ls .claude/Benchmarks/Reach-In 2>/dev/null`; and a process listing for Electron or Node launched from a worktree or scratch folder.
-- [ ] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
-- [ ] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, the per-phase and total delta, the property rename's before-and-after, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim.
+- [x] Phase Review: Phase 1 · Phase 2 · Phase 3 · Phase 4 · Phase 5 · Phase 6
+- [x] **Wave One:** two read-only reviewers briefed with `code-simplification`, one `opus-xhigh` reading inward at the diff and one `fable-xhigh` reading outward against the rest of Core, Desktop, and UIX (mixed models, Nathan, 10-30-2026); one fix agent folds what holds as numbered fixes beside a Not Taken list with reasons, and the fold commits.
+- [x] **Wave Two:** two fresh reviewers briefed with `adversarial-review`, one `fable-xhigh` reading inward and one `opus-xhigh` reading outward, over the folded range and given the Not Taken list, so a fold left out returns only on new evidence; folded and committed the same way.
+- [x] **The Dashboard Map:** in each wave, one more read-only agent (one per lens: `code-simplification` in Wave One, `adversarial-review` in Wave Two) maps how the Studio dashboard's Pommora line count (`~/The Studio/.claude/dashboard/projects/pommora.mjs`, read with its `README.md` and `line-count.mjs`) would divide so Trash & Archive becomes its own section: which paths it takes from which areas, what the other areas keep, and what the history rebuild costs. The second reconciles the first's map; the result goes to Nathan in the report, and nothing in the dashboard changes.
+- [x] **The Neutral Gate:** one `fable-xhigh` agent given only `<BASELINE>..HEAD`, the Mandate, and the intention under *§Constraints · Neutral Gate*; a yes-or-no verdict, its corrections, and the strengths to keep, re-run after a fold.
+- [x] **The Own Pass:** the gates from a clean state and `npm run build`; the diff read once; *§Completion Criteria* ticked.
+- [x] **The Cold-Machine Check:** each of these prints nothing, or only what it names: `git worktree list` (the main checkout alone); `ls -d ~/Benchmark-* 2>/dev/null`; `ls "${TMPDIR}/pommora-reach-in" 2>/dev/null`; `ls .claude/Benchmarks/Reach-In 2>/dev/null`; and a process listing for Electron or Node launched from a worktree or scratch folder.
+- [x] **Reconciliation:** *§Reconciliation* walked; *§Deviations* ruled on; STATUS and BASELINE's End filled.
+- [x] **The Report:** in `closeout-review`'s closeout format, with the range presented through `view-delta`, the per-phase and total delta, the property rename's before-and-after, every deviation, the Cold-Machine Check's result, and the neutral gate's answer verbatim.
 
 #### Reconciliation
 
@@ -9775,7 +9775,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `ConnectionsPM.md:30` — "outside the Archive it reached" — Task 4-1; "every page the Archive holds"; "repairs the returning page's own links" — Task 4-5
 - `PommoraPRD.md:101` — the Trash restore's rewrite — Task 4-5
 - `IssuesPM.md` I-069 — dissolves with `targets` — Task 4-5
-- `IssuesPM.md` I-039 — "`nexusPages` `byId` … answers null" gains the claim rule's third answer — Task 4-3
+- `IssuesPM.md` I-038 — "`nexusPages` `byId` … answers null" gains the claim rule's third answer — Task 4-3
 - `IssuesPM.md` I-033 — its cause, `parkLinks`' walk through `originPagesIn`, dissolves; it closes with no batch channel — Task 4-6
 - `IssuesPM.md` I-065 — closes as intended (Decision B-4) — Task 4-6
 - Tests, as each task's VERIFY routes them:
@@ -9810,7 +9810,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `.claude/Features/NexusRecordPM.md:14` — the Restore paragraph, silent on an item moved out by hand — Tasks 5-6, 5-7
 - `Core/Bundles/bundle.ts:369` — `spendBundle`'s doc, silent on a container emptied of its last item (Decision C-6) — Task 5-5
 - `.claude/IssuesPM.md` — I-064 closes — Task 5-6; I-079 closes — Task 5-3; I-077 closes as intended — Task 5-5
-- `.claude/IssuesPM.md` footnotes of issues that stay open, each citation re-pointed through `batch-issues` to where its code stands: I-080's `Core/Settings/TrashFrame.tsx` — Task 5-3; I-039's `ensurePageId`, which leaves — Task 5-4; I-036's `Core/Trash/spend.ts:~120-303` (`restoreTrashed`) and I-076's `Core/Trash/spend.ts:185` (the Context and Space restore), both into `Core/Bundles/restore.ts` — Task 5-5
+- `.claude/IssuesPM.md` footnotes of issues that stay open, each citation re-pointed through `batch-issues` to where its code stands: I-074's `Core/Settings/TrashFrame.tsx` — Task 5-3; I-038's `ensurePageId`, which leaves — Task 5-4; I-035's `Core/Trash/spend.ts:~120-303` (`restoreTrashed`) and I-072's `Core/Trash/spend.ts:185` (the Context and Space restore), both into `Core/Bundles/restore.ts` — Task 5-5
 - Tests, as each task's VERIFY routes them:
   - every test read of `bundled`, `archive.test.ts:807` (`UNDO`), `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `ArchiveView.test.tsx:398,458`, `browser.test.ts:351` — Task 5-2
   - the `delete:facts` stubs (`TrashFrame.test.tsx:157`, `ArchiveView.test.tsx:145`, `confirmations.test.ts`), `browser.test.ts:5` — Task 5-3
@@ -9824,7 +9824,7 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `Core/Nexus/finishOwed.ts:1` — "then the content deletes' and moves' entries" — Task 6-9
 - `UIX/Table/table.css:11` — "TableView's and ArchiveView's .col-header and the Trash's head inherit it" — Task 6-9
 - `.claude/CLAUDE.md` — the `// Archive`, `// Bundles`, `// Paths`, `// Testing`, and `// Trash` lines — Task 6-10
-- `.claude/IssuesPM.md:1474` — I-081's footnote citing `.claude/Benchmarks/Reach-In/profiles/` — Task 6-12
+- `.claude/IssuesPM.md:1474` — I-075's footnote citing `.claude/Benchmarks/Reach-In/profiles/` — Task 6-12
 - `Core/Trash/trashRecovery.test.ts:1` — "Every restoration combination the surface can produce" stays true; its empties and stashes stay with it (*Departures*) — no edit
 - *Trash & Archive Restructure — Reach-In Measurement* `:5` ("HARNESS: this folder; `RERUN.md` has the steps") and *§7 Cleanup* ("What stays here is the harness") — a completed record, left as written — Task 6-12 (no edit)
 - *Trash & Archive Restructure — Implementation Plan · §Constraints · The Measurement* ("the harness in `.claude/Benchmarks/Reach-In/` … measures HEAD alone") — the plan's record of its own step, left as written — Task 6-11 (no edit)
@@ -9840,6 +9840,10 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - **The Prune Beside Sync:** `removeBundle` reads a chain folder empty and then removes it, so a store write landing in that folder from another process in that instant would go with it; every in-app writer of a chain folder runs in the settle turn (a property's bundle mints at the Trash's root, which no prune removes), and Sync's arrival into a store is the one other writer, the same window `Sync/Arrival/land.ts` accepts for its own removals.
 - **A Restore Heard on Another Device:** Sync pushes a restore's page rename at once and its bundle's removal through the write tap's debounce, so a receiving device hears the page leave a bundle that still stands and finishes it as a hand restore of its own; the writes converge byte for byte once the sender's arrive, leaving doubled linker writes and an extra Sync round. In the same window a rename cascade on the receiving device misses a page whose record hasn't landed. Pushing a bundle's removal with its rename belongs to Sync's own rework (Decision B-1).
 - **A Hand Move Keeps Its Place:** a page, Set, or Space moved out of a store by hand stays where the hand put it in its siblings' order; a restore puts it back between the siblings its record names.
+- **Discards in the Trash (Nathan's call):** a removed Markdown tile's file and an image-folder change's leftovers land in `.trash` as recordless stamped files that no listing shows and nothing empties (`Core/Trash/discard.ts`), as before this plan; they could go straight to the system trash or be removed by Permanently Delete Files as the empty disposes, or be minted as bundles the Trash lists.
+- **The Property Restore's Home (Nathan's call):** `Core/Trash/restoreProperty.ts` is the one restore's property arm and `Core/Trash/gather.ts` holds `parkLinks`, which `Core/Bundles/restore.ts` imports, so Bundles and Trash import each other; `.claude/CLAUDE.md`'s Trash line names neither. Either the line names them or `restoreProperty.ts` moves beside `restore.ts`.
+- **A Trashed Page's Double-Click (Nathan's call):** the Archive opens a page's reader on a double-click and the Trash opens nothing, as before this plan; the Trash's rows carry the `stored` the reader would need.
+
 
 #### Deviations
 
