@@ -1,5 +1,4 @@
 import { basename, join } from '../Paths/posix'
-import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
@@ -14,7 +13,6 @@ import type { Unreadable } from './tree'
 import {
   type HeldRewrite,
   readJsonStrict,
-  readTextOrNull,
   pathExists,
   relocate,
   rewriteHeld,
@@ -22,7 +20,7 @@ import {
   rmwJsonStrict,
 } from '../Files/atomicWrite'
 import { sidecarId } from '../Files/sidecar'
-import { mergeFrontmatter, NO_FILEABLE_ID, parsePage, splitEnvelope } from '../Files/pageFile'
+import { mergeFrontmatter, parsePage, splitEnvelope } from '../Files/pageFile'
 import { readIdentity } from './identity'
 import { idHeld } from './heldPages'
 import { asString } from './coerce'
@@ -85,22 +83,6 @@ export async function stampPage(absFile: string, kind: ContentKind): Promise<str
   const ids = new Map<string, string>()
   const landed = await rewritePageSerialized(absFile, stamping(kind, new Map(), ids))
   return landed ? (ids.get(absFile) ?? null) : null
-}
-
-async function pageAdmission(absFile: string) {
-  const content = await readTextOrNull(absFile)
-  return content === null ? null : parsePage(content).admission
-}
-
-export async function ensurePageId(absFile: string): Promise<Result<string>> {
-  let admission = await pageAdmission(absFile)
-  if (admission === null) return fault('That page could not be read.')
-  if (admission.state === 'missing') {
-    const stamped = await stampPage(absFile, 'page')
-    if (stamped !== null) return ok(stamped)
-    admission = await pageAdmission(absFile)
-  }
-  return admission?.state === 'member' ? ok(admission.id) : NO_FILEABLE_ID
 }
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>

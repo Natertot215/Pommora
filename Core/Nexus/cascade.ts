@@ -30,7 +30,14 @@ import { pathExists } from '../Files/atomicWrite'
 import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { rekeyContext } from '../Contexts/contextCascade'
 import { type ConfigReach, NO_REACH } from './configReach'
-import { type Entry, type RelinkEntry, reachReport, runNoted } from './owed'
+import {
+  type Entry,
+  followRelinks,
+  type RelinkEntry,
+  reachReport,
+  relinkNote,
+  runNoted,
+} from './owed'
 import type { z } from 'zod'
 import type { strippedLink } from '../Bundles/record'
 
@@ -285,4 +292,16 @@ export async function noteRelink(
     settle: () => undefined,
   })
   return ran.ok ? ran.value.cascade : reachReport(await relinkReach(root, note(undefined)))
+}
+
+/** Re-spells `names` under the relink entry of the first page it re-spells for, which every caller passes since only a page re-spells; every other relink entry follows the pages `names` moves and the files `paths` moves. */
+export async function respell(
+  root: string,
+  ids: readonly string[],
+  names: Map<string, string>,
+  label: string,
+  paths?: (file: string) => string,
+): Promise<CascadeReport> {
+  await followRelinks(root, names, paths, ids[0])
+  return noteRelink(root, ids[0], (e) => relinkNote(e, names, label))
 }

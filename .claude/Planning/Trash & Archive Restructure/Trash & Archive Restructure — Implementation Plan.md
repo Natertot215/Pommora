@@ -99,7 +99,7 @@ User-facing behavior stays as it is, except that a restored page returns current
 | `BundleFooting`; `useDateColumn`, `widestDate`, `WIDEST_AT`, `DAY_MS` (moved); `DateColumn` | `Core/Bundles/BundleTable.tsx` | 5 |
 | `Listing`'s export | `Core/Bundles/browser.ts` | 5 |
 | `respell` (moved from `settle.ts`) | `Core/Nexus/cascade.ts` | 5 |
-| `parkLinks` (moved from `trashedCopies.ts`) | `Core/Bundles/record.ts` | 5 |
+| `parkLinks` (moved from `trashedCopies.ts`) | `Core/Trash/gather.ts` | 5 |
 | `openBundle`'s and `innerRecord`'s `left`; `readBundleAt`'s and `keptLinksUnder`'s `movedOut`; `listBundles`' `recordOnly` | `Core/Bundles/bundle.ts` | 5 |
 | `arrive`'s `filed`; `Departed` | `Core/Nexus/arrival.ts` | 5 |
 | `moveIndexPaths`' `reads`; `applyMove`'s `given` | `Core/Index/indexSeed.ts`, `Core/Nexus/fileEvents.ts` | 5 |
@@ -237,7 +237,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - **New:** `Core/Bundles/restore.ts` (the one restore); `Core/Nexus/arrival.ts` (`returningCascade`, `repairLanded`, `artifactFiles`, and the shared arrival tail recognition runs); `Core/Testing/bundles.ts` (the shared bundle fixture and browser harness).
   - **Renamed:** `Core/Trash/spend.ts` → `Core/Trash/empty.ts`; `Core/Archive/archivePlace.ts` → `Core/Archive/archiveLabel.ts`.
   - **Deleted:** `Core/Trash/restoreScrub.ts`, `Core/Trash/trashedCopies.ts`, `Core/Trash/trashMode.ts`, `Core/Trash/handlers.ts` (its channel into `Core/Bundles/handlers.ts`).
-  - **Between Existing Files:** `parkLinks` into `Core/Bundles/record.ts`; `collectionArchive` into `empty.ts`; the journal's strip release into `Core/Nexus/owed.ts`; the links-ahead gatherer into `Core/Trash/gather.ts`; the one notice builder into `Core/Interface/Notifications/notifications.ts`; the flat discard's two functions into one in `Core/Trash/discard.ts`; the stored-Space source into `Core/Nexus/heldPages.ts`, which stays one file.
+  - **Between Existing Files:** `parkLinks` into `Core/Trash/gather.ts`, beside the links-ahead gatherer (Task 5-4); `collectionArchive` into `empty.ts`; the journal's strip release into `Core/Nexus/owed.ts`; the links-ahead gatherer into `Core/Trash/gather.ts`; the one notice builder into `Core/Interface/Notifications/notifications.ts`; the flat discard's two functions into one in `Core/Trash/discard.ts`; the stored-Space source into `Core/Nexus/heldPages.ts`, which stays one file.
 - **Placements Taken in Planning (Nathan, 10-30-2026):** a test file follows its module, so Task 6-3 moves `Core/Trash/spend.test.ts` → `Core/Bundles/restore.test.ts`, `Core/Trash/restoreScrub.test.ts` → `Core/Nexus/arrival.test.ts`, `Core/Bundles/layout.test.ts` → `Core/Paths/bundleLayout.test.ts`, and `Core/Settings/TrashFrame.test.tsx` → `Core/Trash/TrashFrame.test.tsx`, and Tasks 6-4 to 6-6 create `Core/Trash/gather.test.ts`, `empty.test.ts`, and `discard.test.ts` beside their modules; between existing files, `hiddenName` and `hiddenFolder` move into `Core/Paths/nexusPaths.ts` (Task 4-1), which keeps `exclusion.ts` and `bundleLayout.ts` from importing each other; `stashBlock` and `StashBlock` into `Core/Properties/properties.ts` (Task 4-2), so `record.ts` reads the schema from outside the import loop Phase 4 widens; and `respell` into `Core/Nexus/cascade.ts` (Task 5-4), which keeps `arrival.ts` from importing `settle.ts`, which imports it.
 - **Plan Rules:** removal comes first in every phase, Phase 4's reach landing with L-10's removals being the one inversion (*Investigation · §Order Constraints*, 7). Tasks are written to their result, so no executor reads an opening to do more than they say. A test that changes asserts the behavior the decisions name rather than being bent to pass. AFTER blocks leave fewer comments than they find, and add one only where the code would otherwise be misread. Any cautionary code has its reason asked of Nathan before it's written. Consolidation that's unambiguously right needs no separate sign-off, and dead or dormant code inside the surface leaves. Every *§Reconciliation* line lands in the commit of the task it names, read with that task's CHANGE, so each doc, comment, and issue turns true in the commit that makes it false. Issues closed during the run are closed by hand, leaving their numbers as gaps; `index-issues.py` renumbers once in the closing commit, which re-points the plan's own issue citations with it.
 - **Net-Less, for the Whole System (Nathan, 10-29-2026):** the Approach, the Principles, and net-less weigh every decision for the whole system, not the task in isolation; anything a task makes bigger is justified by them where a reader meets it. The codebase's comment count doesn't grow. Documentation changes are minimal, small re-wordings where a claim turns false, and net-less where possible: no new sections, since little here is user-facing.
@@ -296,7 +296,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-1 · Following an id covers a Set
   - [x] Task 5-2 · Every reversible reply carries its own Undo, through one notice
   - [x] Task 5-3 · The table owns its date column and footing
-  - [ ] Task 5-4 · The arrival's one home
+  - [x] Task 5-4 · The arrival's one home
   - [ ] Task 5-5 · One restore for both stores
   - [ ] Task 5-6 · Pages and Sets moved out by hand
   - [ ] Task 5-7 · Spaces moved back by hand
@@ -7758,7 +7758,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 
 #### Task 5-4
 
-**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins the record helpers in `Core/Bundles/record.ts` (P-2), taking its Trash rows or scope from its caller rather than calling `storedPageIds` or `liveTreeOf`, so `record.ts` stays outside the import loop around `liveTree.ts`; the one restore reads `nexusPages` over the Trash's Contexts alone, as both restores do now, and a step of the restore or the arrival that needs the whole projection reads `storedNodes` once and passes it down rather than listing again. `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
+**TASK:** What every item back from a store does once it lands gets its one home (P-1, P-11): `returningCascade`, `returningNames`, `repairLanded`, and `artifactFiles` move into `Core/Nexus/arrival.ts`, which the restores and, from Task 5-6, the settle's outside lane import, so `Core/Nexus` no longer imports `Core/Trash` for a step both stores run. `respell` moves beside `noteRelink` in `cascade.ts`, and `returningCascade` takes the settled index from its caller, so `arrival.ts` imports nothing from `settle.ts` (*§Departures*). `parkLinks` joins `gatherLinks` in `Core/Trash/gather.ts`, the stripped links' Trash-only home, keeping its own read of the Trash's rows: `record.ts`, which `heldPages.ts` imports, would join the import loop around `liveTree.ts` by reading them, and taking them from its callers would have each of the four fetch the same rows ahead of its early return; the one restore reads `nexusPages` over the Trash's Contexts alone, as both restores do now, and a step of the restore or the arrival that needs the whole projection reads `storedNodes` once and passes it down rather than listing again. `restoreScrub.ts` and `trashedCopies.ts` are deleted. Behavior doesn't change, and the existing suite proves it. **Comments:** the AFTER rewrites `restoreScrub.ts`'s header as `arrival.ts`'s and removes `trashedCopies.ts`'s; every other doc moves whole.
 
 **NOW:**
 - `Core/Trash/restoreScrub.ts` holds `artifactFiles` and `repairLanded` alone after Phase 4, `repairLanded`'s one caller being `returningCascade` (`Core/Nexus/settle.ts:343`, imported at `:46`).
@@ -7769,8 +7769,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 **CHANGE**
 
 - [ ] `git mv Core/Trash/restoreScrub.ts Core/Nexus/arrival.ts`, so the history follows the two functions that stay in it, apply the AFTER, and `git rm Core/Trash/trashedCopies.ts`.
-- [ ] Re-point `parkLinks`' importers to `'../Bundles/record'`: `spend.ts`, `finishOwed.ts`, `assignment.ts`, and `trashRecovery.test.ts:12`. `restoreScrub.test.ts` stays in `Core/Trash/` until Phase 6; it imports nothing from the file that left.
-- [ ] Task 3-2's `bundle.test.ts` case *"appendLinks adds each link once"* leaves with the export it called, and its behavior moves into `trashRecovery.test.ts`'s parking cases as "a link parked twice parks once": the setup of `:668`, `parkLinks(root, [link])` run twice, and the Notes record's `links` equal to `[link]`. It fails with `appendLinks`' filter removed.
+- [ ] Re-point `parkLinks`' importers to `Core/Trash/gather.ts`: `spend.ts`, `finishOwed.ts`, `assignment.ts`, and `trashRecovery.test.ts:12`. `ensurePageId` (`Core/Nexus/adopt.ts`), whose last caller left with Phase 4's scrub, leaves with its `adopt.test.ts` describe, and I-039 drops its mention. `restoreScrub.test.ts` stays in `Core/Trash/` until Phase 6; it imports nothing from the file that left.
 
 **AFTER**
 
@@ -7911,7 +7910,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +import { returningCascade } from '../Nexus/arrival'
 +import { pageIndexOf } from '../Nexus/record'
 -import { parkLinks } from './trashedCopies'
-+import { parkLinks } from '../Bundles/record'
++import { parkLinks } from './gather'
 @@ restoreTrashed @@
 -  const arrived = await returningCascade(root, tree, back, title, {
 +  const after = await settledIndex(root)
@@ -7923,24 +7922,10 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
    const settled = after && heldTreeOf(root)
 ```
 
-`parkLinks` joins `appendLinks`, its writer, which Task 3-2 put beside `patchRecord`; with no reader outside `record.ts` left, `appendLinks`' export leaves.
+`appendLinks` stays exported, since `finishContainer` writes a delete's links into its own bundle through it.
 
-```Core/Bundles/record.ts diff
-@@ imports @@
- import { join, relDirname } from '../Paths/posix'
- import { z } from 'zod'
- import type { CascadeReport, StrippedLink } from '../Nexus/cascade'
- import { isPlainObject } from '../Contract/validators'
-+import { TRASH_DIR } from '../Paths/nexusPaths'
-+import { storeOf } from '../Paths/bundleLayout'
-+import { linkedPage } from '../Connections/linkValue'
-+import { buildPageIndex, connPage } from '../Connections/pageIndex'
-+import { storedPageIds } from '../Nexus/heldPages'
-+import { liveTreeOf } from '../Nexus/liveTree'
-@@ appendLinks @@
--export const appendLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
-+const appendLinks = (bundleDir: string, links: readonly StrippedLink[]): Promise<void> =>
-@@ after removeLinks @@
+```Core/Trash/gather.ts diff
+@@ after gatherLinks @@
 +
 +/** A Link value dropped for naming a page the Trash holds joins that page's bundle, so its restore writes it back; a key two trashed pages answer names neither. */     (moved whole from trashedCopies.ts)
 +export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
@@ -8003,7 +7988,8 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +import { restoreProperty } from '../Trash/restoreProperty'
 +import { contentPages, fileInto, type OpenBundle, originPagesOf, spendBundle } from './bundle'
 +import { NO_DESTINATION, placeAmong, placeRecord } from './placement'
-+import { parkLinks, recordedPartly } from './record'
++import { recordedPartly } from './record'
++import { parkLinks } from '../Trash/gather'
 +
 +const restored = (unrestored: string[]) => (unrestored.length ? { unrestored } : {})
 +
@@ -8324,7 +8310,7 @@ The bundle ops are named where the slice reads them, their one reader; `changesS
 +import { serializeSchemaOp } from '../Properties/propertiesRegistry'
 +import { asString } from '../Nexus/coerce'
 +import { contentPages, openBundle, pageIdsOf, spendBundle } from '../Bundles/bundle'
-+import { parkLinks } from '../Bundles/record'
++import { parkLinks } from './gather'
 +import { pathExists } from '../Files/atomicWrite'
 +import { listMarkdownFiles } from '../Files/walk'
 +import { dropPageMetadata } from '../Nexus/pageMetadata'
@@ -9819,11 +9805,10 @@ The reviews run over `<BASELINE>..HEAD`, each wave closed before the next opens.
 - `.claude/Features/NexusRecordPM.md:14` — the Restore paragraph, silent on an item moved out by hand — Tasks 5-6, 5-7
 - `Core/Bundles/bundle.ts:369` — `spendBundle`'s doc, silent on a container emptied of its last item (Decision C-6) — Task 5-5
 - `.claude/IssuesPM.md` — I-064 closes — Task 5-6; I-079 closes — Task 5-3; I-077 closes as intended — Task 5-5
-- `.claude/IssuesPM.md` footnotes of issues that stay open, each citation re-pointed through `batch-issues` to where its code stands: I-080's `Core/Settings/TrashFrame.tsx` — Task 5-3; I-039's `Core/Trash/restoreScrub.ts:68` (`ensurePageId`) — Task 5-4; I-036's `Core/Trash/spend.ts:~120-303` (`restoreTrashed`) and I-076's `Core/Trash/spend.ts:185` (the Context and Space restore), both into `Core/Bundles/restore.ts` — Task 5-5
+- `.claude/IssuesPM.md` footnotes of issues that stay open, each citation re-pointed through `batch-issues` to where its code stands: I-080's `Core/Settings/TrashFrame.tsx` — Task 5-3; I-039's `ensurePageId`, which leaves — Task 5-4; I-036's `Core/Trash/spend.ts:~120-303` (`restoreTrashed`) and I-076's `Core/Trash/spend.ts:185` (the Context and Space restore), both into `Core/Bundles/restore.ts` — Task 5-5
 - Tests, as each task's VERIFY routes them:
   - every test read of `bundled`, `archive.test.ts:807` (`UNDO`), `spend.test.ts:2216,2229`, `mutateRequest.test.ts:55`, `confirmations.test.ts:380,392`, `ArchiveView.test.tsx:398,458`, `browser.test.ts:351` — Task 5-2
   - the `delete:facts` stubs (`TrashFrame.test.tsx:157`, `ArchiveView.test.tsx:145`, `confirmations.test.ts`), `browser.test.ts:5` — Task 5-3
-  - `bundle.test.ts`'s "appendLinks adds each link once" (Task 3-2's) — Task 5-4
   - `archive.test.ts:735` — Task 5-5
 - `.claude/Features/NexusRecordPM.md:12` — "unless a page outside it still holds that title" — Task 6-9
 - `.claude/Features/NexusRecordPM.md:28` — "A process dying between the sweep and the settle leaves the sweep done and the folder still live" — Task 6-9
@@ -9869,5 +9854,5 @@ Departures the plan takes from a decision's or the Investigation's "how", each w
 - **Phase 4:** Task 4-2's `addressable` takes the lenient reading; Task 4-3's tree patch needs no code for `.trash`; Task 4-4's Collection record owns itself, M-9 lands as `trashedOwners` rather than `archivedWithin`, and its views-rename test becomes a property-delete test; Task 4-6's `parkLinks` reads the indexed Trash; Task 4-2's pass-over leaves a trashed twin silently, neither skipped nor owed, since a copy made out of the Trash by hand would otherwise warn on every strip with a Try Again that can't succeed; Task 4-4's `reachConfig` keeps its two Trash reads, which are different walks. The checkpoint took a trashed item's owner from the trail its origin stands on now (`currentOrigin`), so a Set moved into another Collection carries its trashed pages' values with it; gave a trashed twin one pass-over, `twinned` beside `addressable`, which the holder read and the strip share; and moved `retries` and `reachReport` into `owed.ts` beside `owedReport`, which took `bundle.ts`, `configReach.ts`, `owed.ts`, and `tileHosts.ts` back out of the import loop around `liveTree.ts`, eleven modules to seven. Task 4-7 finished `heldPages.ts`' projection in place of the Investigation's add-ons, its "stored-Space source beside `tileHostsOf`'s live boards" among them: `storedNodes` lists the Trash once for its owners, Collections, and Spaces, and every enumerator of the tree's Collections or Spaces takes it beside the tree, so Approach 1's "a cascade with no trashed holder therefore pays nothing" becomes one listing per governed or anywhere cascade, which Task 6-11's Medium-50 measurement checks, while stored nodes inside the tree itself were rejected, since every renderer reads the tree.
 - **Phase 4 · Tasks 4-3 and 4-4 Land as One Commit:** Task 4-3 alone left a trashed page's stashed value unreached (`refillStash`'s `members` needs `owningCollection`'s Trash arm, which Task 4-4 adds), so the two commit together; Task 4-3 also writes the watcher's and Sync's manifest's shared watch rule once (`watchedUnder`) and has `deindexPath` prune a removed path's rows whether or not it's content.
 - **Phase 4 · One Strip, Recorded at the Finish:** Task 4-4 records a content delete's links at its finish, ahead of its strip, through one `linkStrip` the record and the strip share, where Task 3-2 recorded them at the move and Phase 3's checkpoint gathered again before the strip; one strip computation a delete in place of three, Decision M-17's write-ahead kept.
-- **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts` and passes the settled index into `returningCascade`; Task 5-5 takes both stores' carry source from the stored record's chain.
+- **Phase 5:** Task 5-2 keeps `archivedKind`; Task 5-4 moves `respell` into `cascade.ts`, passes the settled index into `returningCascade`, and puts `parkLinks` in `gather.ts` rather than `record.ts`, which can't read the Trash's rows outside the import loop around `liveTree.ts`; Task 5-5 takes both stores' carry source from the stored record's chain.
 - **Phase 6:** `gatherLinks`' cases stay in `cascade.test.ts`, the container arm's crash windows in `deleteReach.test.ts`, and `trashRecovery.test.ts` whole, each for the reason its GOAL gives.
