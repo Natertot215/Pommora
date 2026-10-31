@@ -302,7 +302,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-7 · Spaces moved back by hand
   - [x] Review Checkpoint
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
-  - [ ] Task 6-1 · The duplicated cases
+  - [x] Task 6-1 · The duplicated cases
   - [ ] Task 6-2 · The on-disk bundle fixture
   - [ ] Task 6-3 · The suites follow their modules
   - [ ] Task 6-4 · The delete records' and the listing's cases
@@ -8883,11 +8883,11 @@ No test file is deleted in Phase 6. *§Placements* gains the seven test-file ent
 
 **CHANGE**
 
-- [ ] `deleteOrder.test.ts`: remove `:149-157`, and widen `:159`'s match to `expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' }, links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }] })`.
+- [ ] `deleteOrder.test.ts`: remove `:149-157`, and `:159`'s `atSettle` gains `toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })` beside its own no-`links` check (the links land at the finish, Task 4-4), retitled *"a content delete records before the artifact moves, and the Link values its strip takes before its strip"*.
 - [ ] `trashRecovery.test.ts`: remove `:399-425` and `:874-883`.
 - [ ] `spend.test.ts`: remove `:703-716`.
 - [ ] `restoreScrub.test.ts`: remove `:804-819`.
-- [ ] `refile.test.ts`: merge `:132` into `:151` as *"a Collection whose id would not make a folder name takes and reaches nothing outside the Archive"*, `:151`'s setup with `:132`'s archived `Note.md` beside it, asserting both `:132`'s `pathExists(at('Escape'))` and filed bundles and `:151`'s untouched outside sidecar.
+- [ ] `refile.test.ts`: merge `:132` into `:151` as *"a Collection whose id would not make a folder name takes and reaches nothing outside the Archive"*, `:151`'s setup with `:132`'s archived `Note.md` beside it, asserting both `:132`'s `readdir(at('Escape'))` and filed bundles and `:151`'s untouched outside sidecar.
 - [ ] `archive.test.ts`: replace `:352-415` with one `it.each` over the four arms, each row naming its title fragment, its extra sidecars, the archived item, the address it restores, and the destination.
 
 **AFTER**

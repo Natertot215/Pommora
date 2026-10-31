@@ -152,15 +152,10 @@ const relatedOf = async (): Promise<unknown> =>
   splitFrontmatter(await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).Related
 
 describe('the record is written before the destruction it describes', () => {
-  it('a content delete records before the artifact moves', async () => {
+  it('a content delete records before the artifact moves, and the Link values its strip takes before its strip', async () => {
     const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
-  })
-
-  it('a content delete records the Link values its strip takes before its strip', async () => {
-    const r = await handleMutate(root, { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' })
-    expect(r.ok).toBe(true)
     expect(atSettle).not.toHaveProperty('links')
     expect(atSweep).toMatchObject({
       entity: 'page',

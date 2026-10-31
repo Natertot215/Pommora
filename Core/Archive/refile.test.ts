@@ -122,26 +122,7 @@ describe('the comparison — a Set the settle sees move carries what was archive
     expect(record && 'parent' in record && record.parent).toEqual({ kind: 'container', id: SUB })
   })
 
-  it('a Collection whose id would not make a folder name takes nothing outside the Archive', async () => {
-    await writeFile(at('Other', '_pagecollection.json'), JSON.stringify({ id: '../../Escape' }))
-    await reread()
-    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
-    expect(
-      (
-        await mutate({
-          op: 'moveSet',
-          path: 'Notes/Daily/Sub',
-          newParentPath: 'Other',
-          order: [SUB],
-        })
-      ).ok,
-    ).toBe(true)
-    await settleArchives(root, await reread())
-    expect(await pathExists(at('Escape'))).toBe(false)
-    expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
-  })
-
-  it('a Collection whose id would not make a folder name reaches no sidecar outside the Archive', async () => {
+  it('a Collection whose id would not make a folder name takes and reaches nothing outside the Archive', async () => {
     const INNER = '01KVGMT8BFP350FZZXAMG1QDJ0'
     await writeFile(at('Other', '_pagecollection.json'), JSON.stringify({ id: '../../Escape' }))
     await mkdir(at('Other', 'A', 'Inner'), { recursive: true })
@@ -166,17 +147,16 @@ describe('the comparison — a Set the settle sees move carries what was archive
     await mkdir(at('Escape', 'X'), { recursive: true })
     await writeFile(at('Escape', 'X', '_pageset.json'), outside)
     await reread()
-    expect(
-      (
-        await mutate({
-          op: 'moveSet',
-          path: 'Other/A/Inner',
-          newParentPath: 'Other/B',
-          order: [INNER],
-        })
-      ).ok,
-    ).toBe(true)
+    const bundlePath = await archive('Notes/Daily/Sub/Note.md')
+    for (const [path, newParentPath, id] of [
+      ['Notes/Daily/Sub', 'Other', SUB],
+      ['Other/A/Inner', 'Other/B', INNER],
+    ])
+      expect((await mutate({ op: 'moveSet', path, newParentPath, order: [id] })).ok).toBe(true)
+    await settleArchives(root, await reread())
+    expect(await readdir(at('Escape'))).toEqual(['X'])
     expect(await readFile(at('Escape', 'X', '_pageset.json'), 'utf8')).toBe(outside)
+    expect((await filed(IN_NOTES)).map((b) => b.bundlePath)).toEqual([bundlePath])
   })
 
   it('a Set moved out of its Collection takes the archived Sets within it from the views it left', async () => {

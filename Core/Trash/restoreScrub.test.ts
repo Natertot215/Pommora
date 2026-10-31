@@ -422,21 +422,4 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
   })
-
-  it('a page beneath a sidecar that cannot be read refuses the delete and leaves every byte', async () => {
-    await mkdir(join(root, 'Notes', 'Broken'), { recursive: true })
-    await writeFile(join(root, 'Notes', 'Broken', '_pageset.json'), '{corrupt')
-    const page = `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`
-    await writeFile(join(root, 'Notes', 'Broken', 'Idea.md'), page)
-    await refreshTree(root)
-    const d = await settledMutate(root, {
-      op: 'delete',
-      path: 'Notes/Broken/Idea.md',
-      kind: 'page',
-    })
-    expect(d.ok).toBe(false)
-    expect(await listBundles(root, { kind: 'trash' })).toEqual([])
-    expect(await readFile(join(root, 'Notes', 'Broken', 'Idea.md'), 'utf8')).toBe(page)
-    expect(await readFile(join(root, 'Notes', 'Broken', '_pageset.json'), 'utf8')).toBe('{corrupt')
-  })
 })

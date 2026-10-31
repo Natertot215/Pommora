@@ -44,7 +44,6 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 
 let root: string
-const handed: string[] = []
 const rows = async () => {
   const tree = await readNexus(root)
   const { byId } = await nexusPages(root, tree)
@@ -79,14 +78,7 @@ const restoreRow = async (title: string) => {
 const frontmatter = async (rel = beta) => splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
 beforeEach(async () => {
-  handed.length = 0
-  installMachine({
-    ...diskMachine(),
-    trashToSystem: async (p) => {
-      handed.push(p)
-      await rm(p, { recursive: true })
-    },
-  })
+  installMachine({ ...diskMachine(), trashToSystem: (p) => rm(p, { recursive: true }) })
   root = tempRoot('pom-e2e-')
   await mkdir(join(root, '.nexus'), { recursive: true })
   await mkdir(contextsDir(root), { recursive: true })
@@ -270,6 +262,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(row.crumbs.map((c) => c.title)).toEqual(['Logbook', 'Daily'])
     expect((await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath })).ok).toBe(true)
     expect(await pathExists(join(root, 'Logbook', 'Daily', 'Alpha.md'))).toBe(true)
+    expect(await rows()).toHaveLength(0)
   })
 
   it('a Space restores into a RENAMED Context, and its breadcrumb said so first', async () => {
@@ -384,34 +377,6 @@ describe('end to end — deleted, listed, restored', () => {
     for (const r of addressable)
       expect((await settledMutate(root, { op: 'restore', bundlePath: r.bundlePath })).ok).toBe(true)
     expect((await rows()).map((r) => r.title)).toEqual(['Alpha'])
-  })
-
-  it('emptying hands the artifact over, and the switch decides whether it goes at all', async () => {
-    await del('Journal/Daily/Alpha.md', 'page')
-    let row = await find('Alpha')
-    expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath })).ok).toBe(
-      true,
-    )
-    expect(handed).toHaveLength(1)
-    expect(handed[0].endsWith('Alpha.md')).toBe(true)
-    expect(await rows()).toHaveLength(0)
-
-    await writeFile(
-      join(root, 'Journal', 'Beta.md'),
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\n---\nb\n',
-    )
-    await del('Journal/Beta.md', 'page')
-    row = await find('Beta')
-    await writeFile(
-      join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ personalization: { permanentDelete: true } }),
-    )
-    await refreshTree(root)
-    expect((await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath })).ok).toBe(
-      true,
-    )
-    expect(handed).toHaveLength(1)
-    expect(await rows()).toHaveLength(0)
   })
 })
 
@@ -929,6 +894,7 @@ describe('links come back with the page', () => {
       expect(await frontmatter()).not.toHaveProperty('Related')
       expect(await restore('Alpha')).toBeUndefined()
       expect(await frontmatter()).not.toHaveProperty('Related')
+      expect(await rows()).toHaveLength(0)
     })
 
     it('re-assigning drops a stashed link whose page sits in the Trash, as it drops one naming nothing', async () => {
@@ -941,17 +907,6 @@ describe('links come back with the page', () => {
       expect(await frontmatter()).not.toHaveProperty('Related')
       expect(await frontmatter()).not.toHaveProperty('Parent')
     })
-  })
-
-  it('with Restore Links On Deletion off, the values stay removed', async () => {
-    await writeFile(
-      join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ personalization: { restoreLinksOnDeletion: false } }),
-    )
-    await del('Journal/Daily/Alpha.md', 'page')
-    expect(await restore('Alpha')).toBeUndefined()
-    expect((await frontmatter()).Related).toBeUndefined()
-    expect(await rows()).toHaveLength(0)
   })
 })
 

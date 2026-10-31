@@ -50,6 +50,7 @@ const PAGE_D = '01KVGMT8BFP350FZZXAMG1QDVD'
 const THIRD = '01KVGMT8BFP350FZZXAMG1QDT0'
 const THIRD_DAILY = '01KVGMT8BFP350FZZXAMG1QDY0'
 const PAGE_X = '01KVGMT8BFP350FZZXAMG1QDVX'
+const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
 const DEEP = `---\nID: ${PAGE_D}\n---\ndeep\n`
 const ARCHIVE: BundleStore = { kind: 'archive', id: NOTES }
 const BETA = `---\nID: ${PAGE_B}\n---\nbeta\n`
@@ -326,7 +327,6 @@ describe('restore — an archived item comes back by a plain move', () => {
   it('a nested Set pulled from an archived Set lands with its pages, and carries what was archived from within it into the landing Collection’s Archive', async () => {
     await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
     await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
-    const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
     await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
     await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
     await reseed()
@@ -350,68 +350,39 @@ describe('restore — an archived item comes back by a plain move', () => {
     })
   })
 
-  it('a Set restored into another Collection is put back by its Undo with what was archived from within it, each on the trail it was archived on', async () => {
-    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
-    await reseed()
-    const beta = await archive('Notes/Daily/Beta.md')
-    const record = await readFile(at(beta, '_record.json'), 'utf8')
-    const daily = await archive('Notes/Daily', 'set')
-    const restored = await restore(daily, { kind: 'container', id: OTHER })
-    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toHaveLength(1)
-    expect((await undo(restored)).ok).toBe(true)
-    expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath).sort()).toEqual(
-      [beta, daily].sort(),
+  it.each([
+    ['restored into another Collection', false, OTHER],
+    ['pulled from an archived Set into another Collection', true, OTHER],
+    ['restored under another Set in its Collection', false, SHELF],
+    ['pulled from an archived Set under another Set in its Collection', true, SHELF],
+  ])('a Set %s is put back by its Undo with what was archived from within it, on the trail it was archived on', async (_, pulled, to) => {
+    await putJson(
+      to === OTHER ? at('Other', '_pagecollection.json') : at('Notes', 'Shelf', '_pageset.json'),
+      { id: to },
     )
-    expect(await readFile(at(beta, '_record.json'), 'utf8')).toBe(record)
-    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
-  })
-
-  it('a Set pulled from an archived Set into another Collection is put back by its Undo with what was archived from within it', async () => {
-    await putJson(at('Other', '_pagecollection.json'), { id: OTHER })
-    await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
-    const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
-    await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
-    await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
+    if (pulled) {
+      await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
+      await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
+      await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
+    }
     await reseed()
-    const kept = await archive('Notes/Daily/Sub/Kept.md')
-    const record = await readFile(at(kept, '_record.json'), 'utf8')
+    const within = await archive(pulled ? 'Notes/Daily/Sub/Kept.md' : 'Notes/Daily/Beta.md')
+    const record = await readFile(at(within, '_record.json'), 'utf8')
     const daily = await archive('Notes/Daily', 'set')
-    const restored = await restore(join(daily, 'Daily', 'Sub'), { kind: 'container', id: OTHER })
-    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toHaveLength(1)
+    const restored = await restore(pulled ? join(daily, 'Daily', 'Sub') : daily, {
+      kind: 'container',
+      id: to,
+    })
+    if (to === SHELF)
+      expect(await readRawRecord(at(within))).toMatchObject({ trail: [NOTES, SHELF] })
     expect((await undo(restored)).ok).toBe(true)
-    expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath).sort()).toEqual(
-      [daily, kept].sort(),
-    )
-    expect(await readFile(at(kept, '_record.json'), 'utf8')).toBe(record)
-    expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
-  })
-
-  it('a Set restored under another Set in its Collection is put back by its Undo with what was archived from within it on the trail it was archived on', async () => {
-    await putJson(at('Notes', 'Shelf', '_pageset.json'), { id: SHELF })
-    await reseed()
-    const beta = await archive('Notes/Daily/Beta.md')
-    const record = await readFile(at(beta, '_record.json'), 'utf8')
-    const daily = await archive('Notes/Daily', 'set')
-    const restored = await restore(daily, { kind: 'container', id: SHELF })
-    expect(await readRawRecord(at(beta))).toMatchObject({ trail: [NOTES, SHELF] })
-    expect((await undo(restored)).ok).toBe(true)
-    expect(await readFile(at(beta, '_record.json'), 'utf8')).toBe(record)
-  })
-
-  it('a Set pulled from an archived Set under another Set in its Collection is put back by its Undo with what was archived from within it on the trail it was archived on', async () => {
-    await putJson(at('Notes', 'Shelf', '_pageset.json'), { id: SHELF })
-    await putJson(at('Notes', 'Daily', 'Sub', '_pageset.json'), { id: SUB })
-    const KEPT = '01KVGMT8BFP350FZZXAMG1QDVE'
-    await writeFile(at('Notes', 'Daily', 'Sub', 'Deep.md'), DEEP)
-    await writeFile(at('Notes', 'Daily', 'Sub', 'Kept.md'), `---\nID: ${KEPT}\n---\nkept\n`)
-    await reseed()
-    const kept = await archive('Notes/Daily/Sub/Kept.md')
-    const record = await readFile(at(kept, '_record.json'), 'utf8')
-    const daily = await archive('Notes/Daily', 'set')
-    const restored = await restore(join(daily, 'Daily', 'Sub'), { kind: 'container', id: SHELF })
-    expect(await readRawRecord(at(kept))).toMatchObject({ trail: [NOTES, SHELF] })
-    expect((await undo(restored)).ok).toBe(true)
-    expect(await readFile(at(kept, '_record.json'), 'utf8')).toBe(record)
+    expect(await readFile(at(within, '_record.json'), 'utf8')).toBe(record)
+    if (to === OTHER) {
+      expect((await listBundles(root, ARCHIVE)).map((b) => b.bundlePath).sort()).toEqual(
+        [within, daily].sort(),
+      )
+      expect(await listBundles(root, { kind: 'archive', id: OTHER })).toEqual([])
+    }
   })
 
   it('a page pulled from an archived Set and restored is put back by its Undo inside the Set’s bundle, at its folder', async () => {

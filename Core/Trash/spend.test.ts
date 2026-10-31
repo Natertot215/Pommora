@@ -362,6 +362,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(r.ok).toBe(false)
     expect(await listBundles(root, { kind: 'trash' })).toEqual([])
     expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toBe(before)
+    expect(await readFile(join(root, 'Notes', 'Daily', '_pageset.json'), 'utf8')).toBe('{corrupt')
   })
 
   it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
@@ -509,17 +510,6 @@ describe('listBundles — what the trash offers', () => {
 })
 
 describe('restore — the record spends, headless', () => {
-  it('a page returns into its since-renamed parent', async () => {
-    await settledMutate(root, { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' })
-    await rename(join(root, 'Notes', 'Daily'), join(root, 'Notes', 'Journal'))
-    await refreshTree(root)
-    const [listed] = await listBundles(root, { kind: 'trash' })
-    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath })
-    expect(r.ok).toBe(true)
-    expect(await readFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'utf8')).toContain(PAGE_A)
-    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
-  })
-
   it('a restore and an empty leave no folder their bundle emptied in the Trash', async () => {
     const trashed = async (): Promise<string> =>
       bundleOf(
@@ -1444,6 +1434,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(r.ok).toBe(true)
     expect(handed).toEqual([])
     expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
+    expect(await listBundles(root, { kind: 'trash' })).toHaveLength(0)
   })
 
   it('emptying with Permanently Delete off, on a host with no system trash, refuses and leaves the item in its bundle', async () => {
