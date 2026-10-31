@@ -74,7 +74,7 @@ describe('setWriteTap', () => {
 
 describe('a landing’s echo', () => {
   const land = async (p: string, data: string, at?: Date): Promise<void> => {
-    recordWrite(p, true)
+    recordLanding(p)
     writeFileSync(p, data)
     if (at) utimesSync(p, at, at)
     recordLanding(p, (await machine().stat(p))!)
@@ -135,7 +135,7 @@ describe('a landing’s echo', () => {
     vi.useRealTimers()
     const p = join(mkdtempSync(join(tmpdir(), 'pom-echo-')), 'next.md')
     await land(p, 'mine')
-    recordWrite(p, true)
+    recordLanding(p)
     expect(await dropOwnEchoes([watched(p)])).toEqual([])
   })
 

@@ -17,9 +17,9 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
   try {
     const worlds = new Map<readonly PropertyDefinition[], GovernedWorld>()
     const tree = await liveTreeOf(root)
-    const owners = await (await storedNodes(root, tree)).readOwners(reread.rels)
+    const reach = await (await storedNodes(root, tree)).reach(reread.rels)
     const raw: Rewrite = (fm, file) => {
-      const schema = containerSchema(tree, relative(root, file), owners)
+      const schema = containerSchema(tree, relative(root, file), reach)
       const world = worlds.get(schema) ?? governedWorld(tree, schema)
       worlds.set(schema, world)
       return live() ? reconcileGovernedRoot(fm, world) : null

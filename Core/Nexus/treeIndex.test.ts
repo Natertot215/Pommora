@@ -11,7 +11,7 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { livePath, pageIndexOf, pageMoves, pagesByIdOf, pagesOf, recordsOf } from './record'
+import { pathNow, pageIndexOf, pageMoves, pagesByIdOf, pagesOf, recordsOf } from './record'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -289,7 +289,7 @@ describe('pageMoves', () => {
   })
 })
 
-describe('livePath', () => {
+describe('pathNow', () => {
   it('follows a page or a Set by its id across a rename, else answers where it stood', () => {
     const t = makeTree()
     const set = t.collections[0].sets?.[0]
@@ -297,8 +297,8 @@ describe('livePath', () => {
     set.title = 'Thoughts'
     set.path = 'Notes/Thoughts'
     set.pages = [{ kind: 'page', id: 'p2', title: 'Nested Beta', path: 'Notes/Thoughts/Beta.md' }]
-    expect(livePath(t, { id: 's1', path: 'Notes/Ideas' })).toBe('Notes/Thoughts')
-    expect(livePath(t, { id: 'p2', path: 'Notes/Ideas/Beta.md' })).toBe('Notes/Thoughts/Beta.md')
-    expect(livePath(t, { id: 'gone', path: 'Notes/Gone.md' })).toBe('Notes/Gone.md')
+    expect(pathNow(t, { id: 's1', path: 'Notes/Ideas' })).toBe('Notes/Thoughts')
+    expect(pathNow(t, { id: 'p2', path: 'Notes/Ideas/Beta.md' })).toBe('Notes/Thoughts/Beta.md')
+    expect(pathNow(t, { id: 'gone', path: 'Notes/Gone.md' })).toBe('Notes/Gone.md')
   })
 })

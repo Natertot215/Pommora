@@ -1,5 +1,5 @@
 import type { MutateRequest } from '../../Nexus/mutateRequest'
-import { livePath } from '../../Nexus/record'
+import { pathNow } from '../../Nexus/record'
 import { basename } from '../../Paths/posix'
 import { type Counted, countPhrase, type HeldKind, itemCount } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
@@ -55,7 +55,7 @@ function spendUndo(bundlePath: string): void {
 const atItemNow = (req: MutateRequest): MutateRequest => {
   if (req.op !== 'archive' || typeof req.back?.record.id !== 'string') return req
   const id = req.back.record.id
-  const path = livePath(useSession.getState().tree, { id, path: req.path })
+  const path = pathNow(useSession.getState().tree, { id, path: req.path })
   return basename(path) === basename(req.path)
     ? { ...req, path }
     : { ...req, path, back: { ...req.back, name: basename(path) } }

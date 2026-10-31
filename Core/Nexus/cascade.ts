@@ -89,8 +89,9 @@ export async function linkStrip(root: string, left: readonly string[], paths: re
       const value = def && goneEntry(held)
       return def && value ? [{ key, def, value }] : []
     })
+  const mentions = queryMentions([...gone]) ?? (await nexusCorpus(root))
   const files = [
-    ...(await pagesInReach(root, tree, stored, queryMentions([...gone]), 'governed')),
+    ...(await pagesInReach(root, tree, stored, mentions, 'governed')),
     ...spaceFiles(root, tree, stored, (s) => !!s.values && named(s.values).length > 0),
   ].filter((file) => !inside(relative(root, file)))
   return { files, keys: [...defs.keys()], byId, named }

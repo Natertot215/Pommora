@@ -10,7 +10,7 @@ import type {
   Unreadable,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
-import type { StoredOwners } from './heldPages'
+import type { StoredReach } from './heldPages'
 import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
@@ -105,7 +105,7 @@ export function topContainerOf(
 export function owningCollection(
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
-  stored?: StoredOwners,
+  stored?: StoredReach,
 ): CollectionNode | undefined {
   if (typeof of !== 'string' && of.kind === 'collection') return of
   const path = typeof of === 'string' ? of : of.path
@@ -124,7 +124,7 @@ export function archiveReach(tree: NexusTree, rel?: string): string | null {
   return store ? archiveDirRel(store.id) : null
 }
 
-export const trashReach = (tree: NexusTree, stored: StoredOwners, rel?: string) => {
+export const trashReach = (tree: NexusTree, stored: StoredReach, rel?: string) => {
   const owner = rel === undefined ? undefined : owningCollection(tree, rel)?.id
   return (path: string): boolean => {
     const bundle = storeOf(path)?.bundle
@@ -139,7 +139,7 @@ export const NO_SCHEMA: PropertyDefinition[] = []
 export const containerSchema = (
   tree: NexusTree | null,
   of: string | CollectionNode | SetNode,
-  stored?: StoredOwners,
+  stored?: StoredReach,
 ): PropertyDefinition[] => {
   const owner = owningCollection(tree, of, stored)
   return tree && owner ? schemaOf(tree, owner.propertyIds) : NO_SCHEMA

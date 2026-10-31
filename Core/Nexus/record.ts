@@ -64,7 +64,7 @@ export const pagesByPathOf = entityMemo(
 export const pathOfId = (tree: NexusTree, id: string): string | undefined =>
   (pagesByIdOf(tree).get(id) ?? findContainerById(tree, id))?.path
 
-export const livePath = (tree: NexusTree | null, target: { id: string; path: string }): string =>
+export const pathNow = (tree: NexusTree | null, target: { id: string; path: string }): string =>
   (tree && pathOfId(tree, target.id)) ?? target.path
 
 export const pageIndexOf = entityMemo([], (tree): PageIndex => buildPageIndex(pagesOf(tree)))

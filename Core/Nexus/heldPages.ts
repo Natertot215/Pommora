@@ -121,7 +121,7 @@ export async function nexusPages(
 export const linkWorld = (tree: NexusTree, archived: readonly ConnPage[]): PageIndex =>
   buildPageIndex([...pagesOf(tree), ...archived])
 
-/** What the Trash holds of the tree's entities, read where it sits so no listing grows with the pages and Sets it holds: the Collections at its root level, where each one's bundle mints, and the Spaces under its Contexts, read from their own sidecars, since the index holds pages alone. `readOwners` answers each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; it reads the record of each bundle holding one of `rels` that it hasn't read, so a cascade reads only the bundles it reaches, and the owner lookups take its answer. The cascades' enumerators of the tree's Collections or Spaces take it beside the tree. */
+/** What the Trash holds of the tree's entities, read where it sits so no listing grows with the pages and Sets it holds: the Collections at its root level, where each one's bundle mints, and the Spaces under its Contexts, read from their own sidecars, since the index holds pages alone. `reach` answers what the owner lookups read for `rels`: each bundle's Collection by the bundle's root-relative path, a trashed Collection's own or the one a page or Set's origin stands in now, by its ids, so a Collection renamed or moved since, or a Set moved into another, keeps what the Trash holds of it; it reads the record of each bundle holding one of `rels` that it hasn't read, so a cascade reads only the bundles it reaches. The cascades' enumerators of the tree's Collections or Spaces take it beside the tree. */
 export async function storedNodes(root: string, tree: NexusTree) {
   const owners = new Map<string, string | undefined>()
   const ownerOf = (record: RecordFile): string | undefined => {
@@ -130,7 +130,7 @@ export async function storedNodes(root: string, tree: NexusTree) {
     return origin ? standingCollection(tree, origin) : undefined
   }
   const collections: CollectionNode[] = []
-  const readOwners = async (rels: Iterable<string>) => {
+  const reach = async (rels: Iterable<string>) => {
     for (const rel of rels) {
       const at = storeOf(rel)
       if (at?.store.kind !== 'trash' || !at.bundle || owners.has(at.bundle)) continue
@@ -175,11 +175,11 @@ export async function storedNodes(root: string, tree: NexusTree) {
       if (space) spaces.push(space)
     }
   }
-  return { readOwners, collections, spaces }
+  return { reach, collections, spaces }
 }
 
 export type StoredNodes = Awaited<ReturnType<typeof storedNodes>>
-export type StoredOwners = Awaited<ReturnType<StoredNodes['readOwners']>>
+export type StoredReach = Awaited<ReturnType<StoredNodes['reach']>>
 
 export const everyCollection = (tree: NexusTree, stored: StoredNodes): CollectionNode[] => [
   ...tree.collections,

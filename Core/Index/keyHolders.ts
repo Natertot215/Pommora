@@ -49,21 +49,20 @@ export type Held = {
 
 export type Holders = { files: string[]; held: Held[] }
 
-/** The pages among `rels`, or among the whole corpus before the index is ready, that `reach` holds, as absolute paths. */
+/** The pages among `candidates` that `reach` holds, as absolute paths. */
 export async function pagesInReach(
   root: string,
   tree: NexusTree,
   stored: StoredNodes,
-  rels: readonly string[] | null,
+  candidates: readonly string[],
   reach: Reach,
 ): Promise<string[]> {
-  const candidates = rels ?? (await nexusCorpus(root))
   const files = candidates.map((rel) => join(root, rel))
   if (reach === 'anywhere') return files
   const only = reach === 'governed' ? undefined : reach.collection
   const scoped = only && relative(root, only)
   const archive = archiveReach(tree, scoped)
-  const trashed = trashReach(tree, await stored.readOwners(candidates), scoped)
+  const trashed = trashReach(tree, await stored.reach(candidates), scoped)
   const folders = [
     ...(only === undefined ? collectionFolders(root, tree) : [only]),
     ...(archive === null ? [] : [join(root, archive)]),
@@ -101,19 +100,16 @@ export async function findHolders(root: string, q: HolderQuery, read?: 'values')
   const named = rels.includes(null) ? null : [...new Set(rels.flatMap((r) => r ?? []))]
   const stored = await storedNodes(root, tree)
   const known = read ? await nexusPages(root, tree, stored) : null
+  const candidates = named ?? (await nexusCorpus(root))
   const reached = await pagesInReach(
     root,
     tree,
     stored,
-    q.every ? (named?.filter((rel) => !storeOf(rel)) ?? null) : named,
+    q.every ? candidates.filter((rel) => !storeOf(rel)) : candidates,
     q.reach,
   )
   const pages = q.every
-    ? await unlessVouched(
-        root,
-        reached.filter((file) => !storeOf(relative(root, file))),
-        (rel) => !!named && !listed.every((l) => l?.has(rel)),
-      )
+    ? await unlessVouched(root, reached, (rel) => !!named && !listed.every((l) => l?.has(rel)))
     : reached
   const holds = (s: SpaceNode): boolean =>
     q.keys.some((key) =>
