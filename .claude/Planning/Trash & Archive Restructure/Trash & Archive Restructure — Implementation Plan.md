@@ -299,7 +299,7 @@ User-facing behavior stays as it is, except that a restored page returns current
   - [x] Task 5-4 · The arrival's one home
   - [x] Task 5-5 · One restore for both stores
   - [x] Task 5-6 · Pages and Sets moved out by hand
-  - [ ] Task 5-7 · Spaces moved back by hand
+  - [x] Task 5-7 · Spaces moved back by hand
   - [ ] Review Checkpoint
 - [ ] **Phase 6** — Tests, Docs, and the Closing Measurement
   - [ ] Task 6-1 · The duplicated cases
@@ -8680,7 +8680,7 @@ A Set's move hands its pages' reads on the same way, and its split's `addDir` re
 **CHANGE**
 
 - [ ] Write these in `settle.test.ts`, `describe('an item moved out of a store by hand')`, and watch the first fail:
-  - **"a Space moved back into its Context's folder by hand finishes as its restore, tagging its members again":** `Alpha` holds `Areas: [Work]`; delete the Space `Work`, which untags `Alpha`; move its folder from the bundle back to `.nexus/contexts/Areas/Work`, raising the watched `unlinkDir`, `addDir`, and `add` of its sidecar; `settleNow`. `Alpha` holds `Areas: [Work]` again, the bundle is gone, and the notes hold no entry for the Space. Fails today: `Alpha` stays untagged and the bundle's record stays.
+  - **"a Space moved back into its Context's folder by hand finishes as its restore, tagging its members again":** `Alpha` holds `Areas: [Work]`; delete the Space `Work`, which untags `Alpha`; move its folder from the bundle back to `.nexus/contexts/Areas/Work`, raising the watched `unlinkDir`, `addDir`, and `add` of its sidecar; `settleNow`. `Alpha` holds `Areas: [Work]` again, the bundle is gone, and a delete note planted as an unfinished strip leaves it, through `restoreNote`, as the restore leaves it: its strip turned to a rename, its bundle dropped. Fails today: `Alpha` stays untagged and the bundle's record stays.
   - **"a Space copied back stays a Space of its own, its bundle whole":** copy the folder instead. The bundle still lists, and `Alpha` stays untagged. A pin.
   - **"a Context moved back by hand stays a plain arrival":** delete `Areas`, move its folder back into `.nexus/contexts`. The registry holds no `Areas`, the tree holds no such Context, and the bundle's record stays. A pin.
 - [ ] Apply the AFTER.
@@ -8791,8 +8791,9 @@ A listing skips a bundle whose artifact has left by hand, a record alone; with `
    if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
 +  if (settled?.spaces.length) {
 +    const { spaces } = settled
-+    paid(root, await inContextsTurn(root, () => recognizeSpaces(root, spaces)), 'outside restore')
-+    await settleNow(pusher, root)
++    const { finished, cascade } = await inContextsTurn(root, () => recognizeSpaces(root, spaces))
++    paid(root, cascade, 'outside restore')
++    if (finished) await settleNow(pusher, root)
 +  }
 +  const moved = settled?.moved
    if (!moved) return

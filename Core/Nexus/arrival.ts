@@ -18,6 +18,7 @@ import type { Json } from '../Files/stableJson'
 import {
   bundleArtifact,
   contentPages,
+  listBundles,
   type OpenBundle,
   openBundle,
   originPagesOf,
@@ -39,8 +40,10 @@ import { readLiveSetting } from '../Settings/settings'
 import { refillOf, sweepRootsById } from './governedSweep'
 import { linkWorld, type NexusPages, nexusPages, shownTitle } from './heldPages'
 import { liveTreeOf } from './liveTree'
-import type { NexusTree } from './tree'
-import { hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { restoreNote } from './owed'
+import { pageIndexOf } from './record'
+import type { NexusTree, SpaceNode } from './tree'
+import { CONTEXTS_DIR_REL, hiddenFolder, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 /** A returning or landed artifact's governed files: its pages, and the Space sidecars under it. */
 async function artifactFiles(
@@ -184,6 +187,41 @@ export async function recognize(
     cascade = joinCascades(cascade, arrived.cascade)
   }
   return cascade
+}
+
+export function arrivedSpaces(handed: NexusTree, tree: NexusTree): SpaceNode[] {
+  if (handed.contexts === tree.contexts) return []
+  const { spaceById } = contextWorldOf(handed.contexts)
+  return [...contextWorldOf(tree.contexts).spaceById.values()].filter((s) => !spaceById.has(s.id))
+}
+
+export async function recognizeSpaces(
+  root: string,
+  spaces: readonly SpaceNode[],
+): Promise<{ finished: boolean; cascade?: CascadeReport }> {
+  let cascade: CascadeReport | undefined
+  let finished = false
+  const records = await listBundles(root, { kind: 'trash' }, CONTEXTS_DIR_REL, { recordOnly: true })
+  for (const { bundlePath, record } of records) {
+    if (record.entity !== 'space' || record.parent.kind !== 'context') continue
+    const contextId = record.parent.id
+    const space = spaces.find((s) => s.id === record.id && s.contextId === contextId)
+    const opened = space && (await openBundle(root, join(root, bundlePath)))
+    if (!space || !opened?.ok || !(await restoreNote(root, record.id)).ok) continue
+    const index = pageIndexOf(await liveTreeOf(root))
+    const arrived = await arrive(root, {
+      opened: opened.value,
+      record,
+      title: space.title,
+      landed: { entity: 'space', abs: join(root, space.path) },
+      back: [],
+      live: index,
+      after: index,
+    })
+    cascade = joinCascades(cascade, arrived.cascade)
+    finished = true
+  }
+  return { finished, ...(cascade ? { cascade } : {}) }
 }
 
 async function retag(

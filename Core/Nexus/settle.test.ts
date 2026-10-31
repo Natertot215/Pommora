@@ -38,6 +38,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { machine } from '../Platform/machine'
 import * as bundles from '../Bundles/bundle'
 import { readRecord } from '../Bundles/record'
+import { contextsRegistryFile } from '../Paths/paths'
 import { handleMutate } from './mutate'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
@@ -1639,5 +1640,78 @@ describe('an item moved out of a store by hand', () => {
     expect(splitFrontmatter(await readFile(abs('Notes', 'Alpha.md'), 'utf8')).Seen).toBe('[[Beta]]')
     expect((await keys()).Related).toBeUndefined()
     expect(await trashed()).toEqual([])
+  })
+
+  describe('a Space or Context moved back', () => {
+    const work = (...segs: string[]): string[] => ['.nexus', 'contexts', 'Areas', 'Work', ...segs]
+    const alpha = async () =>
+      splitFrontmatter(await readFile(abs('Notes', 'Daily', 'Alpha.md'), 'utf8'))
+    const deleted = async (kind: 'space' | 'context', ...segs: string[]): Promise<string> => {
+      const r = await settledMutate(root, { op: 'delete', path: join(...segs), kind })
+      expect(r.ok).toBe(true)
+      return bundleOf(r)
+    }
+
+    beforeEach(async () => {
+      await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
+      await mkdir(abs(...work()), { recursive: true })
+      await writeFile(abs(...work('_space.json')), JSON.stringify({ id: 'sp-work' }))
+      await writeFile(
+        abs('Notes', 'Daily', 'Alpha.md'),
+        `---\nID: ${ULID_B}\n<Areas>:\n  - Work\n---\n\nalpha\n`,
+      )
+      recordHanded(await refreshTree(root))
+      await indexSeed.seedContentIndex(root)
+    })
+
+    it('a Space moved back into its Context’s folder by hand finishes as its restore, tagging its members again', async () => {
+      const bundle = await deleted('space', ...work())
+      expect((await alpha())['<Areas>']).toBeUndefined()
+      await putJson(abs(OWED_REL), {
+        'sp-work': { kind: 'space', contextId: 'ctx_areas', strip: ['Work'], bundle },
+      })
+      await rename(abs(bundle, 'Work'), abs(...work()))
+      await applyEvents(root, [
+        ev('unlinkDir', bundle, 'Work'),
+        ev('addDir', ...work()),
+        ev('add', ...work('_space.json')),
+      ])
+      await settleNow(pusher, root)
+      expect((await alpha())['<Areas>']).toEqual(['Work'])
+      expect(await pathExists(abs(bundle))).toBe(false)
+      expect((await readNotes(root))['sp-work']).toEqual({
+        kind: 'space',
+        contextId: 'ctx_areas',
+        rename: ['Work'],
+      })
+    })
+
+    it('a Space copied back stays a Space of its own, its bundle whole', async () => {
+      const bundle = await deleted('space', ...work())
+      await mkdir(abs(...work()))
+      await copyFile(abs(bundle, 'Work', '_space.json'), abs(...work('_space.json')))
+      await applyEvents(root, [ev('addDir', ...work()), ev('add', ...work('_space.json'))])
+      await settleNow(pusher, root)
+      expect((await trashed()).map((b) => b.bundlePath)).toEqual([bundle])
+      expect((await alpha())['<Areas>']).toBeUndefined()
+    })
+
+    it('a Context moved back by hand stays a plain arrival', async () => {
+      const bundle = await deleted('context', '.nexus', 'contexts', 'Areas')
+      await rename(abs(bundle, 'Areas'), abs('.nexus', 'contexts', 'Areas'))
+      await applyEvents(root, [
+        ev('unlinkDir', bundle, 'Areas'),
+        ev('addDir', '.nexus', 'contexts', 'Areas'),
+        ev('addDir', ...work()),
+        ev('add', ...work('_space.json')),
+      ])
+      await settleNow(pusher, root)
+      const registry = await readJsonAt<{ contexts: { title: string }[] }>(
+        contextsRegistryFile(root),
+      )
+      expect(registry.contexts.map((c) => c.title)).not.toContain('Areas')
+      expect(heldTreeOf(root)?.contexts.map((g) => g.def.title)).not.toContain('Areas')
+      expect(await readRecord(abs(bundle))).toMatchObject({ entity: 'context' })
+    })
   })
 })
