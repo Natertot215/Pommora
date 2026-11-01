@@ -283,7 +283,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 ? () => void get().mutate({ op: 'putBack', entries: missed })
                 : undefined,
           )
-        if (res.value.created && res.value.landedAs) notify(`Created “${res.value.landedAs}”.`)
+        if (res.value.created && res.value.landedAs) notify(`Created “${res.value.landedAs}”`)
         if (changesStores(req)) storesChanged.emit()
       }
       // The host pushed what this write changed before it replied, so the tree already holds it.

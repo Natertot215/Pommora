@@ -358,7 +358,7 @@ async function group6(cdp) {
   const numbered = defNamed('New Text (2)')
   const opened = await cdp.evaluate(`[...document.querySelectorAll('[aria-label="Edit Icon"]')].some((e) => e.parentElement?.textContent === 'New Text (2)')`)
   item(6, 'O-4', "the pane's + says the numbered name it took",
-    created === 'Created “New Text (2)”.' && !!numbered && opened, show({ created, opened, numbered }))
+    created === 'Created “New Text (2)”' && !!numbered && opened, show({ created, opened, numbered }))
   await escapeAll(cdp)
   for (const id of [taken, numbered?.id].filter(Boolean)) await deleteProperty(cdp, id)
 

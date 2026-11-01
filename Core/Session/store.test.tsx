@@ -1229,7 +1229,7 @@ describe('store — the mutate rail', () => {
     clearNotification()
     await useSession.getState().mutate({ op: 'addProperty', containerPath: 'Notes', draft })
     expect(currentNotification()).toMatchObject({
-      message: 'Created “New Select (2)”.',
+      message: 'Created “New Select (2)”',
       tone: 'normal',
     })
     channels.mutate = vi.fn(async () => ok({ created: { propertyId: 'q' } }))
@@ -1247,7 +1247,7 @@ describe('store — the mutate rail', () => {
       .getState()
       .mutate({ op: 'createSpace', id: 'sp', contextId: 'c', name: 'New Space' })
     expect(currentNotification()).toMatchObject({
-      message: 'Created “New Space (2)”.',
+      message: 'Created “New Space (2)”',
       tone: 'normal',
     })
     channels.mutate = vi.fn(async () => ok({ landedAs: 'Notes (2)' }))
