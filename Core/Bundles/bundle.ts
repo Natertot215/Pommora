@@ -20,6 +20,7 @@ import { stampedIdOf } from '../Files/pageFile'
 import { sidecarId, sidecarIdentity } from '../Files/sidecar'
 import { holdsOnlyHidden, isContentFile, listEntries, listMarkdownFiles } from '../Files/walk'
 import { pathExists, readJsonObject, relocate, removeOwn } from '../Files/atomicWrite'
+import { recordWrite } from '../Files/writeEcho'
 import { asStringArray } from '../Nexus/coerce'
 import { resolveOrder } from '../Nexus/order'
 import { isContainerKind } from '../Nexus/entities'
@@ -50,12 +51,15 @@ import {
 
 export const ITEM_GONE = fail('not-found', 'That item is no longer there.')
 
-/** A bundle mints under the folder chain its item leaves from, so a stored item shows where it lived when it left. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. */
+/** A bundle mints under the folder chain its item leaves from, so a stored item shows where it lived when it left. A path that isn't under the root has no chain to mirror, and following its `..` would write outside the store entirely — it lands flat instead. Each folder the mint makes is recorded as the app's own, since a folder's addDir carries no landing's record and would otherwise read as an outside change to the store. */
 async function chainDir(root: string, store: BundleStore, absSource: string): Promise<string> {
   const rel = relative(root, absSource)
   const chain = rel && !escapes(rel) ? dirname(rel) : '.'
-  const dir = join(root, layoutOf(store).dir, chain)
-  await machine().mkdir(dir)
+  let dir = root
+  for (const seg of join(layoutOf(store).dir, chain).split('/')) {
+    dir = join(dir, seg)
+    if ((await machine().mkdir(dir)) === 'created') recordWrite(dir)
+  }
   return dir
 }
 
@@ -74,6 +78,7 @@ export async function mintBundle(
   let bundle = join(dir, own ? leaf : stampedLeaf(stamp, 0, base))
   for (let n = own ? 0 : 1; (await machine().mkdir(bundle)) !== 'created'; n++)
     bundle = join(dir, stampedLeaf(stamp, n, base))
+  recordWrite(bundle)
   try {
     await writeRecord(bundle, record)
   } catch (e) {

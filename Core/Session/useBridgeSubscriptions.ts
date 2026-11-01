@@ -7,7 +7,7 @@ import { EMPTY_ASSET_MAP } from '../Nexus/tree'
 import { pagesByIdOf } from '../Nexus/record'
 import { bodyHead, dropCacheDetail, readBodyBase, readPageDetail } from './pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
-import { flushAllSaves } from './nexusSlice'
+import { flushAllSaves, storesChanged } from './nexusSlice'
 import { pageIO, pageWriter, setSaveSinks } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
@@ -91,6 +91,8 @@ export function useBridgeSubscriptions(): void {
       setSaveSinks(null)
     }
   }, [replaceBody])
+
+  useEffect(() => dialer().on('stores:changed', () => storesChanged.emit()), [])
 
   useEffect(() => dialer().on('nav:changed', (nav) => applyNavChanged(nav)), [applyNavChanged])
 

@@ -15,7 +15,8 @@ import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Pa
 import { ARCHIVE_DIR_REL, CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
-import { type ContainerKind, isContainer } from './entities'
+import { type ContainerKind, isContainer, isContainerKind } from './entities'
+import { isPlainObject } from '../Contract/validators'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import { archiveDirRel, archiveStoreOf, storeOf } from '../Paths/bundleLayout'
 import { sameItems } from '@pommora/uix/Utilities/same'
@@ -84,6 +85,10 @@ export const containerTrailById = (
   tree: NexusTree,
   id: string,
 ): (CollectionNode | SetNode)[] | null => containerTrailWhere(tree, (n) => n.id === id)
+
+/** A value read off a tree difference that is a Collection or a Set. */
+export const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>
+  isPlainObject(v) && isContainerKind(v.kind)
 
 export const findContainerById = (tree: NexusTree, id: string): CollectionNode | SetNode | null =>
   containerTrailById(tree, id)?.at(-1) ?? null

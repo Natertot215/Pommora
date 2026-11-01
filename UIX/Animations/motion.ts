@@ -15,8 +15,16 @@ export const easing = {
 
 export const ms = (d: (typeof duration)[keyof typeof duration]): number => Number.parseInt(d, 10)
 
-/** An exit's beat plus slack for the frame that paints its last state. */
-export const exitWait = (exit: keyof typeof duration): number => ms(duration[exit]) + 30
+/** Milliseconds a wait adds past a transition's beat for the frame that paints its last state. */
+export const settleSlack = {
+  short: 25,
+  base: 50,
+  long: 75,
+} as const
+
+/** An exit's beat plus the short slack. */
+export const exitWait = (exit: keyof typeof duration): number =>
+  ms(duration[exit]) + settleSlack.short
 
 /** How long an acknowledgement (Copied, Cleared, Synced) holds its done face. */
 export const DONE_MS = 1500

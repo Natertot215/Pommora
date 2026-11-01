@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { duration, exitWait, ms } from './motion'
-import { SETTLE_FALLBACK } from '../Interactions/shared'
+import { duration, exitWait, ms, settleSlack } from './motion'
 import { useLatest } from '../Utilities/stableApi'
 
 type Exit = keyof typeof duration
@@ -37,7 +36,7 @@ export function useSettleFallback(pending: boolean, exit: Exit, settle: () => vo
   useEffect(() => {
     armed.current = pending
     if (!pending) return
-    const t = setTimeout(once, ms(duration[exit]) + SETTLE_FALLBACK)
+    const t = setTimeout(once, ms(duration[exit]) + settleSlack.long)
     return () => clearTimeout(t)
   }, [pending, exit, once])
   return once

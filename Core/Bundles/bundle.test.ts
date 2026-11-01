@@ -1,5 +1,6 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { pathExists } from '../Files/atomicWrite'
+import { isRecentWrite } from '../Files/writeEcho'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { basename, dirname, join } from '../Paths/posix'
 import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -69,6 +70,15 @@ describe('mintBundle', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('records each folder it makes as the app’s own, and none that already stood', async () => {
+    await mkdir(join(root, '.trash', 'Notes', 'Daily'), { recursive: true })
+    const bundle = await mintBundle(root, TRASH, join(root, 'Notes', 'Daily', 'Beta.md'), {})
+    await mintBundle(root, TRASH, join(root, 'Notes', 'Weekly', 'Gamma.md'), {})
+    expect(isRecentWrite(bundle)).toBe(true)
+    expect(isRecentWrite(join(root, '.trash', 'Notes', 'Weekly'))).toBe(true)
+    expect(isRecentWrite(join(root, '.trash', 'Notes', 'Daily'))).toBe(false)
   })
 
   it('lands flat when the source is not under the root', async () => {

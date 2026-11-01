@@ -16,9 +16,10 @@ import {
 } from './engine'
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Utilities/pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
+import { settleSlack } from '../Animations/motion'
 import { addSpring } from './dragDisclose'
 import type { Row } from './reorderModel'
-import { type CarryEntry, carries, type Family, SETTLE_FALLBACK } from './shared'
+import { type CarryEntry, carries, type Family } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
@@ -289,7 +290,7 @@ const dragTo = async (id: string, x: number, y: number): Promise<void> => {
 
 const settle = (): Promise<void> =>
   act(async () => {
-    await new Promise((r) => setTimeout(r, DEFAULT_FEEL.duration + SETTLE_FALLBACK + 20))
+    await new Promise((r) => setTimeout(r, DEFAULT_FEEL.duration + settleSlack.long + 20))
   })
 
 const dropAt = async (id: string, x: number, y: number): Promise<void> => {

@@ -64,7 +64,6 @@ const decimalsToPicker = (d: NumberConfig['number_decimals']): string =>
 const pickerToDecimals = (v: string): 'hidden' | number => (v === 'hidden' ? 'hidden' : Number(v))
 
 const ROW = { inert: true } as const
-const DATE_ROW = { ...ROW, iconSize: 'headline' } as const
 
 const item = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => ({
   kind: 'item',
@@ -101,7 +100,7 @@ function numberRows(
       def.number_currency ?? DEFAULT_CURRENCY,
       CURRENCY_OPTIONS,
       (v) => configure({ number_currency: v }),
-      { ...ROW, ariaLabel: 'Currency', reveal: family === 'currency' },
+      { ...ROW, reveal: family === 'currency' },
     ),
     item(
       'Separators',
@@ -155,25 +154,31 @@ function numberRows(
 }
 
 /** Time stays visible under Relative — it still gates the "at <clock>" rendering. */
-const dateRows = (def: PropertyDefinition, { style, setStyle }: RowContext): MenuRow[] => [
-  { kind: 'heading', label: styleLabel(def.type) },
+const dateRows = (_def: PropertyDefinition, { style, setStyle }: RowContext): MenuRow[] => [
   pickerRow(
-    'calendar-days',
-    'Date',
+    undefined,
+    'Date Format',
     style.date_format,
     DATE_FORMAT_OPTIONS,
     (v) => setStyle({ date_format: v }),
-    { ...DATE_ROW, ariaLabel: 'Date format' },
+    ROW,
   ),
-  pickerRow('calendar', 'Day', style.weekday, WEEKDAY_OPTIONS, (v) => setStyle({ weekday: v }), {
-    ...DATE_ROW,
-    ariaLabel: 'Weekday format',
-    reveal: showsWeekday(style.date_format),
-  }),
-  pickerRow('clock', 'Time', style.time_format, TIME_OPTIONS, (v) => setStyle({ time_format: v }), {
-    ...DATE_ROW,
-    ariaLabel: 'Time format',
-  }),
+  pickerRow(
+    undefined,
+    'Day Format',
+    style.weekday,
+    WEEKDAY_OPTIONS,
+    (v) => setStyle({ weekday: v }),
+    { ...ROW, reveal: showsWeekday(style.date_format) },
+  ),
+  pickerRow(
+    undefined,
+    'Time Format',
+    style.time_format,
+    TIME_OPTIONS,
+    (v) => setStyle({ time_format: v }),
+    ROW,
+  ),
 ]
 
 const linkRows = (def: PropertyDefinition, { configure }: RowContext): MenuRow[] => [

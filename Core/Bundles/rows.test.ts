@@ -10,7 +10,9 @@ import { contextsDir } from '../Paths/paths'
 import { listBundles, listInner } from './bundle'
 import { readNexus } from '../Nexus/readNexus'
 import { nexusPages } from '../Nexus/heldPages'
-import { bundleRowOf, bundleRows, innerRows } from './rows'
+import { bundleRowOf, bundleRows, innerRows, respellsRows } from './rows'
+import { deltaOf } from '../Nexus/treeDelta'
+import { makeTree } from '../Testing/testTree'
 import { storedAtOf } from '../Paths/bundleLayout'
 import { scopeOf } from '../Settings/codec'
 
@@ -402,5 +404,66 @@ describe('innerRows — a bundle’s inner items as the browser reads them', () 
         homeResolves: false,
       },
     ])
+  })
+})
+
+describe('respellsRows — a difference that re-spells the crumbs a row reads', () => {
+  const step = (edit: (t: NexusTree) => NexusTree): boolean => {
+    const prev = makeTree()
+    const next = edit(prev)
+    return respellsRows(prev, next, deltaOf(prev, next)!)
+  }
+  const withNotes = (
+    t: NexusTree,
+    notes: Partial<NexusTree['collections'][number]>,
+  ): NexusTree => ({
+    ...t,
+    collections: [{ ...t.collections[0], ...notes }],
+  })
+  const ideas = (t: NexusTree) => t.collections[0].sets![0]
+
+  it('a container renamed or moved re-spells, and one that arrived or a page that changed doesn’t', () => {
+    expect(step((t) => withNotes(t, { title: 'Notebook', path: 'Notebook' }))).toBe(true)
+    expect(
+      step((t) =>
+        withNotes(t, { sets: [{ ...ideas(t), title: 'Thoughts', path: 'Notes/Thoughts' }] }),
+      ),
+    ).toBe(true)
+    expect(
+      step((t) =>
+        withNotes(t, {
+          sets: [
+            ...t.collections[0].sets!,
+            { kind: 'set', id: 's2', title: 'New', path: 'Notes/New', pages: [], sets: [] },
+          ],
+        }),
+      ),
+    ).toBe(false)
+    expect(
+      step((t) =>
+        withNotes(t, {
+          pages: [{ kind: 'page', id: 'p1', title: 'Alpha 2', path: 'Notes/Alpha 2.md' }],
+        }),
+      ),
+    ).toBe(false)
+  })
+
+  it('a Context retitled re-spells, and one that arrived doesn’t', () => {
+    const realms = (t: NexusTree) => t.contexts[0]
+    expect(
+      step((t) => ({
+        ...t,
+        contexts: [{ ...realms(t), def: { ...realms(t).def, title: 'Domains' } }],
+      })),
+    ).toBe(true)
+    expect(
+      step((t) => ({
+        ...t,
+        contexts: [
+          ...t.contexts,
+          { def: { id: 'g2', title: 'Themes', singular: 'Theme' }, spaces: [] },
+        ],
+      })),
+    ).toBe(false)
   })
 })

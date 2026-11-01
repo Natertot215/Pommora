@@ -201,10 +201,3 @@ export const isBundleOp = (req: MutateRequest): boolean =>
   req.op === 'archive' ||
   req.op === 'restore' ||
   req.op === 'emptyBundle'
-
-/** A moved Set carries what was archived from within it, and a container's or Context's new name, or a Set's new place, re-spells the rows' crumbs, so each re-lists an open browser too. */
-export const changesStores = (req: MutateRequest): boolean =>
-  isBundleOp(req) ||
-  req.op === 'moveSet' ||
-  req.op === 'renameContext' ||
-  (req.op === 'rename' && req.kind !== 'page')

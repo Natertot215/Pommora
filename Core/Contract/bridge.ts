@@ -193,7 +193,7 @@ export interface Asks {
   }
   'nav:evictThumbs': { args: [liveKeys: string[]]; reply: Result<null> }
 
-  // No push carries what a store holds, so a browser asks again after every action and on `storesChanged`.
+  // A browser asks again on `storesChanged`, raised by the window's own bundle acts and by `stores:changed`.
   // `within` narrows a Collection's Archive to what left from within one of its top-level Sets.
   'bundles:list': { args: [store: BundleStore, within?: string]; reply: Result<BundleRow[]> }
   // One level of inner items per row a browser holds open, asked on opening and again on each refresh, since `bundles:list` walks no artifact.
@@ -239,6 +239,8 @@ export interface Pushes {
   'values:changed': ValueChange[]
   'tiles:changed': TilesChanged
   'pages:changed': string[]
+  // What a store holds, or the crumbs its rows read, changed outside the window's own bundle acts, which raise `storesChanged` themselves.
+  'stores:changed': null
   'sync:changed': SyncStatus
   'win:fullscreen': boolean
   'theme:systemAccent': string | null

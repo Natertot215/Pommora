@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { changesSettled, changesStores, mutateRequest } from './mutateRequest'
+import { changesSettled, isBundleOp, mutateRequest } from './mutateRequest'
 
 describe('mutateRequest — what the window sends is held to the shape before anything is written', () => {
   const read = (raw: unknown): boolean => mutateRequest.safeParse(raw).success
@@ -27,15 +27,14 @@ describe('mutateRequest — what the window sends is held to the shape before an
 
   it('an archive changes what the settle holds and what the stores list', () => {
     expect(changesSettled('archive')).toBe(true)
-    expect(changesStores({ op: 'archive', path: 'A/B.md', kind: 'page' })).toBe(true)
+    expect(isBundleOp({ op: 'archive', path: 'A/B.md', kind: 'page' })).toBe(true)
   })
 
-  it('a moved Set, a renamed container or Context, re-lists the stores, and a renamed page doesn’t', () => {
-    expect(changesStores({ op: 'moveSet', path: 'A/S', newParentPath: 'B', order: [] })).toBe(true)
-    expect(changesStores({ op: 'rename', path: 'A', kind: 'collection', newName: 'B' })).toBe(true)
-    expect(changesStores({ op: 'rename', path: 'A/S', kind: 'set', newName: 'T' })).toBe(true)
-    expect(changesStores({ op: 'renameContext', contextId: 'c', newName: 'D' })).toBe(true)
-    expect(changesStores({ op: 'rename', path: 'A/B.md', kind: 'page', newName: 'C' })).toBe(false)
+  it('the window re-lists the stores after a bundle act alone; a rename or a move reaches them through the settle', () => {
+    expect(isBundleOp({ op: 'deleteProperty', propertyId: 'p' })).toBe(true)
+    expect(isBundleOp({ op: 'renameContext', contextId: 'c', newName: 'D' })).toBe(false)
+    expect(isBundleOp({ op: 'moveSet', path: 'A/S', newParentPath: 'B', order: [] })).toBe(false)
+    expect(isBundleOp({ op: 'rename', path: 'A', kind: 'collection', newName: 'B' })).toBe(false)
   })
 
   it('drops a key the op does not name, so an extra field cannot steer the write', () => {
@@ -92,9 +91,5 @@ describe('mutateRequest — what the window sends is held to the shape before an
       false,
     )
     expect(read({ op: 'addProperty', containerPath: 'A', draft: { type: 'text' } })).toBe(false)
-  })
-
-  it('a property delete re-lists the stores', () => {
-    expect(changesStores({ op: 'deleteProperty', propertyId: 'p' })).toBe(true)
   })
 })

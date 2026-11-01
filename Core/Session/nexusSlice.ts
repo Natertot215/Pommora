@@ -6,7 +6,6 @@ import {
 } from '../Interface/Notifications/notifications'
 import {
   changesSettled,
-  changesStores,
   isBundleOp,
   type MutateOutcome,
   type MutateRequest,
@@ -78,7 +77,7 @@ export async function flushAllSaves(): Promise<void> {
   await Promise.all([flushAllWriters(), tileDocsSettled()])
 }
 
-/** What a store holds changed, so an open browser of it lists again. */
+/** What a store holds, or the crumbs its rows read, changed, so an open browser lists again: raised after the window's own bundle acts and on the host's `stores:changed`. */
 export const storesChanged = emitter()
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
@@ -284,7 +283,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
                 : undefined,
           )
         if (res.value.created && res.value.landedAs) notify(`Created “${res.value.landedAs}”`)
-        if (changesStores(req)) storesChanged.emit()
+        if (isBundleOp(req)) storesChanged.emit()
       }
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)

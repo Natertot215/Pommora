@@ -1,8 +1,8 @@
-import { duration, ms } from '../Animations/motion'
+import { duration, ms, settleSlack } from '../Animations/motion'
 
 const DWELL_MS = 500
 const CHECK_MS = 100
-const SETTLE_MS = ms(duration.fast) + 70
+const SETTLE_MS = ms(duration.fast) + settleSlack.long
 
 type Armed = { remeasure: () => void; within: Element; source: Element }
 

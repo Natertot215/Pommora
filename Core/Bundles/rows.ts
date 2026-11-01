@@ -4,7 +4,8 @@ import { type MatchKey, matchKey } from '../Paths/caseFold'
 import type { HeldKind } from '../Nexus/entities'
 import type { NexusTree } from '../Nexus/tree'
 import type { NexusPages } from '../Nexus/heldPages'
-import { containerTrailById } from '../Nexus/treePatch'
+import { containerTrailById, isContainerNode } from '../Nexus/treePatch'
+import type { Delta } from '../Nexus/treeDelta'
 import { type PropertyType, typeIds } from '../Properties/properties'
 import { contextWorldOf } from '../Contexts/contextResolve'
 import type { InnerListing, ListedBundle } from './bundle'
@@ -65,6 +66,21 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): BundleCrumb[] | nu
   // Walked structurally rather than split from a path, since a crumb chain built from names is what the record model refuses.
   const chain = containerTrailById(tree, record.parent.id)
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
+}
+
+/** Whether a tree's difference from `prev` re-spells the live crumbs a row reads: a container `prev` held now stands at another path, renamed or moved, or a Context it held carries another title. */
+export function respellsRows(prev: NexusTree, next: NexusTree, delta: Delta): boolean {
+  const relocated = (d: Delta): boolean =>
+    ('set' in d &&
+      [d.set].flat().some((v) => {
+        const was = isContainerNode(v) && containerTrailById(prev, v.id)?.at(-1)
+        return !!was && was.path !== v.path
+      })) ||
+    ('at' in d && Object.values(d.at).some(relocated))
+  if (relocated(delta)) return true
+  if (prev.contexts === next.contexts) return false
+  const titled = new Map(prev.contexts.map((g) => [g.def.id, g.def.title]))
+  return next.contexts.some((g) => titled.has(g.def.id) && titled.get(g.def.id) !== g.def.title)
 }
 
 export const matched = (row: Omit<BundleRow, 'match'>): BundleRow => ({

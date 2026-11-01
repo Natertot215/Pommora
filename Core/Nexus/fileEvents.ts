@@ -2,6 +2,7 @@
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
+import { storeOf } from '../Paths/bundleLayout'
 import type { ContextGroup, NexusConfig, NexusTree, Unreadable } from './tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
@@ -100,6 +101,8 @@ interface Owed {
   corpus: boolean
   rescope: boolean
   assets: boolean
+  // A store's contents changed by a hand outside the app; the window's own bundle acts re-list without it.
+  stores: boolean
   stamp: Stamp[]
   // Paths newly in reach, under which a listing stamps every page missing its ID.
   whole: string[]
@@ -122,6 +125,7 @@ export const nothingOwed = (root: string): Owed => ({
   corpus: false,
   rescope: false,
   assets: false,
+  stores: false,
   stamp: [],
   whole: [],
   pages: new Set(),
@@ -189,6 +193,7 @@ export function oweAgain(owed: Owed, drained: Owed): void {
   for (const [rel, bodyOnly] of drained.values) oweValue(owed, rel, bodyOnly)
   for (const { host, ids } of drained.tiles.values()) oweTiles(owed, host, ids)
   owed.assets ||= drained.assets
+  owed.stores ||= drained.stores
   owed.corpus ||= drained.corpus
   owed.rescope ||= drained.rescope
 }
@@ -211,6 +216,7 @@ type EventClass =
   | { kind: 'order-leaf' }
   | { kind: 'tiles-leaf'; host: TileHostRef; rel: string }
   | { kind: 'asset'; rel: string }
+  | { kind: 'stored' }
   | { kind: 'ignored' }
   | { kind: 'walk' }
 
@@ -228,6 +234,8 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
   // First of every arm, so `excluded_folders` means the content corpus and nothing more: a shared attachments folder is usually named there already, and every other arm below would otherwise claim it.
   if (assetMatcher(scope.assetDir)(segs)) return { kind: 'asset', rel }
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
+  // Ahead of the `.nexus` and hidden-folder arms, which would otherwise take a store's paths for inert ones; the index reads what a bundle holds, and the tree holds none of it.
+  if (storeOf(rel)) return { kind: 'stored' }
   if (segs[0] === NEXUS_DIR) {
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
     // A tile body is no part of the tree; a change to one names its host, like the host's own document.
@@ -635,6 +643,9 @@ async function applyOne(
       return 'walk'
     case 'asset':
       if (patchHeldAssetMap(root, c.rel, ev.event)) owed.assets = true
+      return 'ok'
+    case 'stored':
+      if (ev.origin === 'watched') owed.stores = true
       return 'ok'
     case 'page':
       return applyPage(root, tree, c.rel, ev, owed, given)

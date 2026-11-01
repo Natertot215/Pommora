@@ -4,7 +4,7 @@ import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { carries, DragGroup, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
-import { SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
+import { settleSlack } from '@pommora/uix/Animations/motion'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Utilities/pointerHarness'
 import { isWindowTarget, type SelectTarget, type TabTarget } from './navRef'
 import { TAB_FAMILY, TabStripZone, type TabRename, useTabClose, useTabRename } from './tabRows'
@@ -102,7 +102,7 @@ describe('the tab strips', () => {
       firePointer(window, 'pointerup', { x, y })
     })
     await act(async () => {
-      await new Promise((res) => setTimeout(res, DEFAULT_FEEL.duration + SETTLE_FALLBACK + 20))
+      await new Promise((res) => setTimeout(res, DEFAULT_FEEL.duration + settleSlack.long + 20))
     })
   }
 

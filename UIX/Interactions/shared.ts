@@ -44,7 +44,6 @@ export const carries = <T>(family: Family<T>, of: (id: string) => T | null): Car
   family,
   of,
 ]
-export const SETTLE_FALLBACK = 80 // ms slack past the transition, covering the paint-start delay
 
 export function boxAt(left: number, top: number, width: number, height: number): Box {
   return { left, top, width, height, cx: left + width / 2, cy: top + height / 2 }

@@ -932,6 +932,9 @@ describe('classifyEvent', () => {
       sidecar: true,
     })
     expect(kind(ev('change', 'Notes', 'photo.png'))).toBe('ignored')
+    expect(kind(ev('add', '.trash', 'Notes', 'A.md'))).toBe('stored')
+    expect(kind(ev('unlinkDir', '.nexus', 'archive', 'c1', 'Daily'))).toBe('stored')
+    expect(kind(ev('unlinkDir', '.trash'))).toBe('ignored')
     // A stray wrong-kind sidecar is not this container's meta — the walk ignores it.
     expect(kind(ev('change', 'Notes', '_pageset.json'))).toBe('walk')
   })

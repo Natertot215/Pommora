@@ -235,6 +235,17 @@ describe('what a settle pushes for a batch', () => {
     })
   })
 
+  it('pushes stores:changed for an outside change to a store, and nothing for the app’s own write into one', async () => {
+    await mkdir(abs('.trash'))
+    await writeFile(abs('.trash', 'X.md'), 'x')
+    await applyEvents(root, [{ event: 'add', absPath: abs('.trash', 'X.md'), origin: 'own' }])
+    await settleNow(pusher, root)
+    expect(pushes).toEqual([])
+    await applyEvents(root, [ev('unlinkDir', '.nexus', 'archive', 'c1', 'Daily')])
+    await settleNow(pusher, root)
+    expect(pushes).toEqual([['stores:changed', null]])
+  })
+
   it('pushes nothing for a batch that changed nothing', async () => {
     await applyEvents(root, [ev('change', '.nexus', 'interface', 'sidepane.json')])
     await settleNow(pusher, root)
@@ -682,7 +693,7 @@ describe('the settle', () => {
     expect(moved.ok).toBe(true)
     await settleNow(pusher, root)
     expect(carry).toHaveBeenCalledTimes(2)
-    expect(channels()).toEqual(['nexus:changed', 'values:changed'])
+    expect(channels()).toEqual(['nexus:changed', 'values:changed', 'stores:changed'])
     expect(logged).toHaveBeenCalledWith('archive: the carry failed:', 'boom')
   })
 })

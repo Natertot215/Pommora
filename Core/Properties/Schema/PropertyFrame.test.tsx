@@ -654,7 +654,7 @@ describe('the Date & Time Format editor writes the active view', () => {
   }
 
   it('picking Short Date saves column_styles on the source node, not the schema', async () => {
-    await pickIn('Date format', 'short')
+    await pickIn('Date Format', 'short')
     expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
       column_styles: { prop_due: { date_format: 'short' } },
     })
@@ -666,7 +666,7 @@ describe('the Date & Time Format editor writes the active view', () => {
         config: { registry: [], personalization: { timeFormat: 'twentyFourHour' } },
       } as never,
     })
-    await pickIn('Time format', 'twentyFourHour')
+    await pickIn('Time Format', 'twentyFourHour')
     expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
       column_styles: { prop_due: { time_format: 'shown' } },
     })

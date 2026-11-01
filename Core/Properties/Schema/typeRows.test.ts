@@ -85,17 +85,16 @@ describe('rowsFor', () => {
     expect(c.setStyle).toHaveBeenCalledWith({ look: 'bar' })
   })
 
-  it('a Date shows its Day row only for the worded formats, and each pick writes the view', () => {
+  it('a Date shows its Day Format row only for the worded formats, and each pick writes the view', () => {
     expect(shown(rowsFor(def('dateTime'), ctx({ style: dateDefaults('monthDayYear') })))).toEqual([
-      'Date',
-      'Time',
+      'Date Format',
+      'Time Format',
     ])
     const c = ctx({ style: { ...dateDefaults('full'), weekday: 'none' } })
     const rows = rowsFor(def('dateTime'), c)
-    expect(rows[0]).toEqual({ kind: 'heading', label: 'Format' })
-    expect(shown(rows)).toEqual(['Date', 'Day', 'Time'])
-    pick(rows, 'Date', 'short')
-    pick(rows, 'Day', 'long')
+    expect(shown(rows)).toEqual(['Date Format', 'Day Format', 'Time Format'])
+    pick(rows, 'Date Format', 'short')
+    pick(rows, 'Day Format', 'long')
     expect(c.setStyle).toHaveBeenCalledWith({ date_format: 'short' })
     expect(c.setStyle).toHaveBeenCalledWith({ weekday: 'long' })
   })
@@ -130,10 +129,9 @@ describe('rowsFor', () => {
     expect(trailing(rows, 'Directory').kind).toBe('field')
   })
 
-  it('only the Date rows carry glyphs, and the option types, Text, and Context answer none', () => {
-    for (const type of ['number', 'link', 'checkbox', 'file'] as const)
-      expect(items(rowsFor(def(type), ctx())).every((r) => r.icon === undefined)).toBe(true)
-    expect(items(rowsFor(def('dateTime'), ctx())).every((r) => r.icon !== undefined)).toBe(true)
+  it("no type's rows carry glyphs, and the option types, Text, and Context answer none", () => {
+    for (const type of ['number', 'dateTime', 'link', 'checkbox', 'file'] as const)
+      expect(rowsFor(def(type), ctx()).every((r) => r.kind === 'item' && !r.icon)).toBe(true)
     for (const type of ['select', 'multiSelect', 'status', 'text', 'context'] as const)
       expect(rowsFor(def(type), ctx())).toEqual([])
   })

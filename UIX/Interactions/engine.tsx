@@ -17,6 +17,7 @@ import {
 } from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import { DEFAULT_FEEL } from '../Animations/feel'
+import { settleSlack } from '../Animations/motion'
 import { stack } from '../Theme/stack'
 import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
@@ -71,7 +72,6 @@ import {
   HYSTERESIS,
   px,
   type Rect,
-  SETTLE_FALLBACK,
   intersect,
   toBox,
 } from './shared'
@@ -835,7 +835,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     pending = settled
     el.addEventListener('transitionend', onEnd)
-    timer = window.setTimeout(settled, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
+    timer = window.setTimeout(settled, DEFAULT_FEEL.duration + settleSlack.long)
   }
 
   const land = (

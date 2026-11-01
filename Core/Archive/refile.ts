@@ -2,15 +2,13 @@
 // The open pass, `settleArchives`, re-files each record a container moved while Pommora was closed left misfiled, and moves an Archive whose Collection exists nowhere into the Trash, recoverable.
 
 import { join } from '../Paths/posix'
-import { isPlainObject } from '../Contract/validators'
 import { errText } from '../Contract/result'
-import { isContainerKind } from '../Nexus/entities'
 import { removeOwn } from '../Files/atomicWrite'
 import { sameItems } from '@pommora/uix/Utilities/same'
 import { liveTreeOf } from '../Nexus/liveTree'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import type { Delta } from '../Nexus/treeDelta'
-import { containerTrailById, owningCollection } from '../Nexus/treePatch'
+import { containerTrailById, isContainerNode, owningCollection } from '../Nexus/treePatch'
 import { archivedWithin, listBundles, moveIntoStore, ownedArchives } from '../Bundles/bundle'
 import {
   collectionOf,
@@ -73,9 +71,6 @@ export const refileLanded = (
     const along = chain ?? containerTrailById(tree, record.id)?.map((n) => n.id)
     if (along) await refileArchived(root, record.id, along, from, tree)
   })
-
-const isContainerNode = (v: unknown): v is CollectionNode | SetNode =>
-  isPlainObject(v) && isContainerKind(v.kind)
 
 /** The comparison's trigger: a Set the difference sets in place, which `prev` held under another parent, moved, and carries what was archived from within it; a container `prev` never held arrived, or held at another path was renamed or moved, and its own Sets are read the same way. A Collection is left alone, since what it holds moves inside it and trails name ids. */
 export async function refileMoved(

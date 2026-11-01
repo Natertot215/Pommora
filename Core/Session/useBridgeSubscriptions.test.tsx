@@ -15,6 +15,7 @@ import {
   readPageDetail,
 } from './pageDetailCache'
 import { pageIO, pageWriter, scheduleBodySave } from './saveScheduler'
+import { storesChanged } from './nexusSlice'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
 import { stubDialer } from '../vitest.setup'
@@ -32,6 +33,7 @@ let root: Root
 let landed: (paths: string[]) => void
 let pushValues: (changes: ValueChange[]) => void
 let pushStatus: (status: SyncStatus) => void
+let pushStores: () => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
 let captured: ReturnType<typeof vi.fn<(path: string, text: string) => unknown>>
 let updateBody: ReturnType<typeof vi.fn<(path: string, body: string) => Promise<unknown>>>
@@ -74,6 +76,10 @@ beforeEach(() => {
     'sync:captureLocal': captured,
     'sync:changed': (cb: (status: SyncStatus) => void) => {
       pushStatus = cb
+      return () => undefined
+    },
+    'stores:changed': (cb: () => void) => {
+      pushStores = cb
       return () => undefined
     },
   })
@@ -200,6 +206,17 @@ describe('a sync status the client pushes', () => {
     await mount()
     await act(async () => pushStatus({ state: 'syncing' }))
     expect(useSession.getState().syncStatus).toEqual({ state: 'syncing' })
+  })
+})
+
+describe('a stores push', () => {
+  it('raises storesChanged, so every open browser and reader re-reads', async () => {
+    await mount()
+    const heard = vi.fn()
+    const off = storesChanged.subscribe(heard)
+    act(() => pushStores())
+    off()
+    expect(heard).toHaveBeenCalledOnce()
   })
 })
 

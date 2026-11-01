@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the outside moves and arrivals the index saw re-spelled, the options the owed files hold registered, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, assets, or stores reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the heading renames outside edits owed cascaded, the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the outside moves and arrivals the index saw re-spelled, the options the owed files hold registered, and one push of what moved.
 
 import { join, relDirname, relative, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -36,6 +36,7 @@ import { type CascadeReport, renameCascade, respell } from './cascade'
 import { respellings } from '../Connections/rewrite'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { refileMoved } from '../Archive/refile'
+import { respellsRows } from '../Bundles/rows'
 import { arrivedSpaces, type Departed, recognize, recognizeSpaces } from './arrival'
 import { storeOf } from '../Paths/bundleLayout'
 import { contextsDir } from '../Paths/paths'
@@ -166,7 +167,8 @@ async function settle(
   const owed = owedFor(root)
   // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk, the stamps, and the outside changes still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
   const drained = { ...owed }
-  const { pages, values, options, tiles, assets, corpus, rescope, stamp, walk, whole } = drained
+  const { pages, values, options, tiles, assets, stores, corpus, rescope, stamp, walk, whole } =
+    drained
   const { renames, vanished, landed, paired } = drained
   Object.assign(owed, nothingOwed(root), { stamp, walk, whole, renames, vanished, landed, paired })
   const released = !stamp.length && !stamping
@@ -194,6 +196,9 @@ async function settle(
   if (assets && map) pusher.push('assets:changed', map)
   // A Set the window saw move carries what was archived from within it; its writes raise only events the tree ignores, and one that throws costs the settle nothing it pushed or owes. A first tree has no baseline, which the open pass covers.
   if (handed && tree && delta) await refileMoved(root, handed, tree, delta)
+  // After the carry, so a browser lists what it re-filed; the window's own bundle acts re-list it themselves.
+  if (stores || (handed && tree && delta && respellsRows(handed, tree, delta)))
+    pusher.push('stores:changed', null)
   return {
     moved: corpus || rescope ? { rescope } : null,
     spaces: handed && tree ? arrivedSpaces(handed, tree) : [],
