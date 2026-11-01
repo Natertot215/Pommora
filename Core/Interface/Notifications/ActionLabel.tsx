@@ -13,6 +13,7 @@ import { dismissNotification, useActionBar, useNotification } from './notificati
 import * as s from './action-label.css'
 
 const DWELL_MS = 3000 // KNOB
+const NEAR_RADIUS = 100 // KNOB
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
 
@@ -70,7 +71,7 @@ export function ActionLabel(): React.JSX.Element {
       anchor: host,
       measure: () => {
         const box = host.getBoundingClientRect()
-        return (x, y) => withinBox(box, x, y, s.NEAR_RADIUS)
+        return (x, y) => withinBox(box, x, y, NEAR_RADIUS)
       },
       report: (at) => {
         if (at === 'held') return
@@ -87,6 +88,7 @@ export function ActionLabel(): React.JSX.Element {
   const heldBar = useHeld(bar, bar !== null)
   const heldFace = useHeld(face, open)
   const error = heldFace === 'notice' && held?.tone === 'error'
+  const action = held?.action
 
   return (
     <div
@@ -132,14 +134,13 @@ export function ActionLabel(): React.JSX.Element {
               <span className={s.message}>
                 {held?.segment ? <Segments parts={[held.message, held.segment]} /> : held?.message}
               </span>
-              {held?.action ? (
+              {action ? (
                 <Button
                   type="tinted"
                   size="button-inline"
-                  label={held.action.label}
+                  label={action.label}
                   onClick={() => {
-                    if (!shown) return
-                    void held.action?.run()
+                    void action.run()
                     setShown(false)
                   }}
                 />

@@ -1228,7 +1228,10 @@ describe('store — the mutate rail', () => {
     )
     clearNotification()
     await useSession.getState().mutate({ op: 'addProperty', containerPath: 'Notes', draft })
-    expect(currentNotification()?.message).toBe('Created “New Select (2)”.')
+    expect(currentNotification()).toMatchObject({
+      message: 'Created “New Select (2)”.',
+      tone: 'normal',
+    })
     channels.mutate = vi.fn(async () => ok({ created: { propertyId: 'q' } }))
     clearNotification()
     await useSession.getState().mutate({ op: 'addProperty', containerPath: 'Notes', draft })
@@ -1243,7 +1246,10 @@ describe('store — the mutate rail', () => {
     await useSession
       .getState()
       .mutate({ op: 'createSpace', id: 'sp', contextId: 'c', name: 'New Space' })
-    expect(currentNotification()?.message).toBe('Created “New Space (2)”.')
+    expect(currentNotification()).toMatchObject({
+      message: 'Created “New Space (2)”.',
+      tone: 'normal',
+    })
     channels.mutate = vi.fn(async () => ok({ landedAs: 'Notes (2)' }))
     clearNotification()
     await useSession.getState().mutate({ op: 'restore', bundlePath: '.trash/b' })
@@ -1292,6 +1298,14 @@ describe('store — the mutate rail', () => {
     expect(retry).toHaveBeenCalledTimes(1)
     clearNotification()
     await useSession.getState().mutate(req)
+    expect(currentNotification()?.action).toBeUndefined()
+    channels.mutate = vi.fn(async () => ({
+      ok: false as const,
+      error: { code: 'exists' as const, message: 'No.' },
+    }))
+    clearNotification()
+    await useSession.getState().mutate(req, { retry })
+    expect(currentNotification()).toMatchObject({ message: 'No.', tone: 'error' })
     expect(currentNotification()?.action).toBeUndefined()
   })
 })

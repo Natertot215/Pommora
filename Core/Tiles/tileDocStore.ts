@@ -15,7 +15,7 @@ import { decodeLayout } from './Layout/codec'
 import { emptyLayout, getTile, type TileLayout, tileIds } from './Layout/model'
 import { insertBand } from './Layout/ops'
 import { dialer } from '../Platform/dialer'
-import { notifyError, persist, reportRefusal } from '../Interface/Notifications/notifications'
+import { persist, reportRefusal } from '../Interface/Notifications/notifications'
 import { type BodyIO, createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 import { bodyHead, dropPageDetail, readBodyBase } from '../Session/pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
@@ -128,13 +128,13 @@ const layoutKey = (doc: HostDoc): string => `layout:${tileHostKey(doc.host)}`
 
 const flush = (doc: HostDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
 
-const notify = (doc: HostDoc): void => {
+const emit = (doc: HostDoc): void => {
   for (const fn of doc.listeners) fn()
 }
 
 const put = (doc: HostDoc, next: Partial<TileDocState>): void => {
   doc.state = { ...doc.state, ...next }
-  notify(doc)
+  emit(doc)
 }
 
 // An entry the disk holds as this window already does keeps its object, and a list that kept every entry keeps its array, so a write re-parses and redraws only what it changed.
@@ -217,7 +217,7 @@ const load = (doc: HostDoc): Promise<void> =>
     .then((r) => {
       if (r.ok) adopt(doc, r.value)
       else if (r.error.code === 'operation-failed' && at(doc.host) === doc)
-        notifyError(r.error.message, () => {
+        reportRefusal(r, () => {
           if (!doc.state.ready) void load(doc)
         })
     })
@@ -346,6 +346,6 @@ export function dropAllTileDocs(): void {
     doc.queued = []
     doc.off()
     doc.off = () => {}
-    notify(doc)
+    emit(doc)
   }
 }

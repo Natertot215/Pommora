@@ -2,7 +2,6 @@ import {
   clearNotification,
   notify,
   notifyError,
-  notifyUnreadable,
   reportRefusal,
 } from '../Interface/Notifications/notifications'
 import {
@@ -16,6 +15,7 @@ import { caught, type PommoraError, type Result, valueOr } from '../Contract/res
 import type { NexusChange, NexusTree } from '../Nexus/tree'
 import type { SyncStatus } from '../Sync/Contract/wire'
 import { applyDelta } from '../Nexus/treeDelta'
+import { titleFromPath } from '../Paths/posix'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { pageMoves, pagesByIdOf } from '../Nexus/record'
@@ -116,8 +116,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     const fresh =
       tree.unreadable !== prev?.unreadable &&
       tree.unreadable?.find((u) => !prev?.unreadable?.some((p) => p.path === u.path))
-    if (fresh)
-      notifyUnreadable(fresh, () => void get().mutate({ op: 'retryUnreadable', path: fresh.path }))
+    if (!fresh) return
+    const what =
+      fresh.reason === 'contradicting' || fresh.reason === 'unparsed' ? 'invalid' : 'unreadable'
+    notifyError(
+      `'${titleFromPath(fresh.path)}' contains ${what} metadata`,
+      () => void get().mutate({ op: 'retryUnreadable', path: fresh.path }),
+    )
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
@@ -257,8 +262,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       if (!res.ok) {
         if (quiet) return null
-        if (res.error.code === 'owed') notifyError(res.error.message, get().finishOwed)
-        else reportRefusal(res, res.error.code === 'operation-failed' ? retry : undefined)
+        reportRefusal(
+          res,
+          res.error.code === 'owed'
+            ? get().finishOwed
+            : res.error.code === 'operation-failed'
+              ? retry
+              : undefined,
+        )
         return null
       }
       if (!quiet) {

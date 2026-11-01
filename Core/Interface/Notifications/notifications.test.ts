@@ -15,8 +15,8 @@ beforeEach(resetUndo)
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('an undoable notice', () => {
-  it('offers no Undo when the delete left nothing to restore', () => {
-    notifyDeleted('Ideas')
+  it('offers no Undo when given none', () => {
+    notify('Deleted “Ideas”')
     expect(currentNotification()?.action).toBeUndefined()
     expect(undoValue(null)).toBe(false)
   })
@@ -43,7 +43,7 @@ describe('an undoable notice', () => {
   it('offers Try Again in place of its Undo, and keeps the Undo on the chord', async () => {
     const undo = vi.fn()
     const retry = vi.fn()
-    notify('Deleted “X”', undo, 'error', retry)
+    notify('Deleted “X”', undo, { tone: 'error', retry })
     expect(currentNotification()?.action?.label).toBe('Try Again')
     void currentNotification()?.action?.run()
     expect(retry).toHaveBeenCalledTimes(1)

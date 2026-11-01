@@ -1,9 +1,15 @@
-import { readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, posix, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+
+/** Every TypeScript file under Core, relative to it. */
+export const coreSources = (): string[] =>
+  readdirSync(join(REPO_ROOT, 'Core'), { recursive: true, encoding: 'utf8' }).filter(
+    (rel) => /\.tsx?$/.test(rel) && !rel.startsWith('node_modules'),
+  )
 
 interface EngineGraph {
   files: string[]

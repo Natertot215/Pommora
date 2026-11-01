@@ -7,7 +7,7 @@ const loading = new Set<string>()
 const landed = emitter()
 let queued = false
 
-function notify(): void {
+function emitLanded(): void {
   if (queued) return
   queued = true
   requestAnimationFrame(() => {
@@ -22,11 +22,11 @@ function begin(url: string): void {
   const img = new Image()
   img.onload = () => {
     aspects.set(url, img.naturalWidth > 0 ? img.naturalHeight / img.naturalWidth : null)
-    notify()
+    emitLanded()
   }
   img.onerror = () => {
     aspects.set(url, null)
-    notify()
+    emitLanded()
   }
   img.src = url
 }

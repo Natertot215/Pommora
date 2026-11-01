@@ -4,7 +4,7 @@ A starting point for a brainstorm on giving every error Pommora produces one sou
 
 ### Where Errors Surface Today
 
-- **The refusal reporter:** `Core/Interface/Notifications/notifications.ts` holds the renderer's reporting helpers. `reportRefusal` posts a refused reply as an in-app error notice, `persist` handles writes nothing waits on and either posts a notice naming what didn't save or logs it for quiet interface chrome, and `notifyReport` posts a one-line batch outcome.
+- **The refusal reporter:** `Core/Interface/Notifications/notifications.ts` holds the renderer's reporting helpers. `reportRefusal` posts a refused reply as an in-app error notice, `persist` handles writes nothing waits on and either posts a notice naming what didn't save or logs it for quiet interface chrome, and `notifyError` posts any other refusal, offering Try Again when it may pass on a second attempt.
 - **Call-site choices:** each caller picks its helper and, for `persist`, whether it's quiet. Settings, footnote visibility, and view options post a notice; folds, embed sizes, table heading columns, the glance size, navigation lists, the layout flags, and the session writer (tabs, windows, tile layouts, and the Matrix) log.
 - **Host-side logs:** about forty `console.error` lines across `Core` and `Desktop` record failures in background passes such as the index seed, the repair sweep, remint, and schema replay. None of them reach the user.
 - **Status surfaces:** sync carries its own failures in `SyncStatus` (`state: 'error'` with a `why`), which the Settings pane draws.

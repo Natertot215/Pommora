@@ -1,7 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { REPO_ROOT } from '../Testing/engineGraph'
+import { coreSources, REPO_ROOT } from '../Testing/engineGraph'
 import { ENTRIES, parseInfoIndex } from './infoIndex'
 
 const CORE = join(REPO_ROOT, 'Core')
@@ -30,9 +30,8 @@ describe('the InfoIndex format', () => {
 
 describe('citations', () => {
   it('cite an entry with wording by a literal ID', () => {
-    for (const rel of readdirSync(CORE, { recursive: true, encoding: 'utf8' })) {
-      if (!/\.tsx?$/.test(rel) || /\.test\.tsx?$/.test(rel) || rel.startsWith('node_modules'))
-        continue
+    for (const rel of coreSources()) {
+      if (/\.test\.tsx?$/.test(rel)) continue
       const text = readFileSync(join(CORE, rel), 'utf8')
       const ids = [...text.matchAll(CITATION)].map((m) => m[2])
       expect(ids.length, `${rel}: every infoFor call names a literal ID`).toBe(

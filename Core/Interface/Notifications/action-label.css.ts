@@ -5,8 +5,6 @@ import { SIZE } from '@pommora/uix/Labels/label-base.css'
 
 const c = vars.color
 
-export const NEAR_RADIUS = 100
-
 export const host = style({
   position: 'fixed',
   top: `calc(var(--app-inset) + var(--toolbar-h) + var(--app-inset))`,

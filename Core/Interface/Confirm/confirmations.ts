@@ -70,25 +70,6 @@ const atItemNow = (req: MutateRequest): MutateRequest => {
 
 type Acted = Titled & { req: MutateRequest; bundlePath?: string }
 
-/** Posts through `post` with the one Undo that runs every request an act's replies carried, each at its item's place now, as one run whose lines post together, arming each restore's bundle so a restore of it from elsewhere spends the Undo; an act that answered none offers none. */
-function offerUndo(
-  undos: readonly Acted[],
-  post: (undo?: () => Promise<void>) => () => void,
-): void {
-  const spend = post(
-    undos.length > 0
-      ? async () => {
-          for (const { req } of undos) if (req.op === 'restore') spendUndo(req.bundlePath)
-          await runBundled(
-            null,
-            undos.map((u) => ({ ...u, req: atItemNow(u.req) })),
-          )
-        }
-      : undefined,
-  )
-  for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
-}
-
 /** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, or a batch whose every row was refused, posts only its lines. */
 function notifyBundled(
   verb: BundleVerb,
@@ -115,13 +96,11 @@ function notifyBundled(
   const renames = renamed.length > 1 ? `${renamed.length} Renamed` : stepped
   const segment = lone ? stripped : renames
   const said = unmet.length ? `. ${unmet.join(' ')}` : ''
-  return notify(
-    segment ? head : head + said,
-    undo,
-    said ? 'error' : 'normal',
-    said ? retry : undefined,
-    segment && segment + said,
-  )
+  return notify(segment ? head : head + said, undo, {
+    segment: segment && segment + said,
+    tone: said ? 'error' : 'normal',
+    retry,
+  })
 }
 
 /** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `bundlePath`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */
@@ -159,7 +138,21 @@ export async function runBundled(
   }
   if (counted) storesChanged.emit()
   if (switched()) return false
-  offerUndo(undos, (undo) => notifyBundled(verb, run, undo, owed ? finishOwed : undefined))
+  const spend = notifyBundled(
+    verb,
+    run,
+    undos.length > 0
+      ? async () => {
+          for (const { req } of undos) if (req.op === 'restore') spendUndo(req.bundlePath)
+          await runBundled(
+            null,
+            undos.map((u) => ({ ...u, req: atItemNow(u.req) })),
+          )
+        }
+      : undefined,
+    owed ? finishOwed : undefined,
+  )
+  for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
   return run.done.length > 0
 }
 

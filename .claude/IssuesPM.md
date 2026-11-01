@@ -1029,7 +1029,7 @@ Drop `awaitWriteFinish`, since the event batch already debounces 200 ms, at the 
 
 | Concern | Scale | Origin | Base | Date |
 |---------|-------|--------|------|------|
-| Moderate | Large (±0) | Drift | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-08-2026 |
+| Moderate | Large (±0) | Drift | `03dde6468` | **Created:** 09-30-2026<br>**Updated:** 10-31-2026 |
 
 **Description**
 

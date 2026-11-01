@@ -1,8 +1,8 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
-import { importSpecifiers, packageName, REPO_ROOT } from './Testing/engineGraph'
+import { coreSources, importSpecifiers, packageName, REPO_ROOT } from './Testing/engineGraph'
 
 const CORE = join(REPO_ROOT, 'Core')
 
@@ -46,9 +46,9 @@ const unused = [...deps]
   .filter((pkg) => !imported.includes(pkg))
   .sort()
 
-const selfImporters = readdirSync(CORE, { recursive: true, encoding: 'utf8' })
-  .filter((rel) => /\.tsx?$/.test(rel) && !rel.startsWith('node_modules'))
-  .filter((rel) => readFileSync(join(CORE, rel), 'utf8').includes(`'${manifest.name}/`))
+const selfImporters = coreSources().filter((rel) =>
+  readFileSync(join(CORE, rel), 'utf8').includes(`'${manifest.name}/`),
+)
 
 describe('Core manifest', () => {
   it('declares what it imports and nothing else', () => {

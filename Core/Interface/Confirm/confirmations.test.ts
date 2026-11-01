@@ -292,8 +292,28 @@ describe('a delete through the confirmation', () => {
       cascade: { pages: [], hosts: [], warning },
     })
     await del('set')
-    expect(currentNotification()?.message).toBe(`Deleted “A”. ${warning}`)
-    expect(currentNotification()?.tone).toBe('error')
+    expect(currentNotification()).toMatchObject({
+      message: `Deleted “A”. ${warning}`,
+      tone: 'error',
+      action: { label: 'Undo' },
+    })
+    expect(currentNotification()?.segment).toBeUndefined()
+    await currentNotification()?.action?.run()
+    expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
+  })
+
+  it('offers Try Again for owed work in the Deleted notice, and keeps its Undo on the chord', async () => {
+    resetUndo()
+    mutate.mockResolvedValue({
+      undo: { op: 'restore', bundlePath: '.trash/b1' },
+      cascade: { pages: [], hosts: [], warning: 'Couldn’t update 1 Item.', owed: true },
+    })
+    await del('page')
+    expect(currentNotification()?.action?.label).toBe('Try Again')
+    expect(undoValue(null)).toBe(true)
+    await vi.waitFor(() =>
+      expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' }),
+    )
   })
 
   it('counts the strip’s linkers behind a segment in the Deleted notice', async () => {
@@ -326,15 +346,6 @@ describe('a delete through the confirmation', () => {
       segment: `2 Internal Links. ${warning}`,
       tone: 'error',
     })
-  })
-
-  it('keeps Undo on a notice whose owed work left no line unmet', async () => {
-    mutate.mockResolvedValue({
-      undo: { op: 'restore', bundlePath: '.trash/b1' },
-      cascade: { pages: ['A.md'], hosts: [], owed: true },
-    })
-    await del('page')
-    expect(currentNotification()?.action?.label).toBe('Undo')
   })
 })
 

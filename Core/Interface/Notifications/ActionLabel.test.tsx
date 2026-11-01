@@ -10,6 +10,7 @@ import {
   notifyDeleted,
   useDeclareActions,
 } from './notifications'
+import { duration, ms } from '@pommora/uix/Animations/motion'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let host: HTMLDivElement
@@ -61,7 +62,7 @@ const stubBox = (el: HTMLElement): void => {
 
 describe('ActionLabel', () => {
   it('draws the segment after the message behind one hidden divider', () => {
-    act(() => notify('Deleted “Ideas”', vi.fn(), 'normal', undefined, '2 Internal Links'))
+    act(() => notify('Deleted “Ideas”', vi.fn(), { segment: '2 Internal Links' }))
     const dividers = face()?.querySelectorAll('[aria-hidden="true"]') ?? []
     expect(dividers).toHaveLength(1)
     expect([
@@ -148,13 +149,15 @@ describe('the bar a shown view declares', () => {
     expect(bar.remove).toHaveBeenCalledOnce()
   })
 
-  it('yields the bar to a posted notice and takes it back once the notice drains', () => {
+  it('yields the bar to a posted notice and takes it back once its three seconds drain', () => {
     fakeTimers()
     declare()
     act(() => notifyDeleted('Ideas', vi.fn()))
     expect(face()?.textContent).toBe('Deleted “Ideas”Undo')
     expect(inert()).toBe(false)
-    run(10_000)
+    run(2_900)
+    expect(face()?.textContent).toBe('Deleted “Ideas”Undo')
+    run(200 + ms(duration.base))
     expect(face()?.textContent).toBe('Restore2 Pages')
     expect(inert()).toBe(false)
   })

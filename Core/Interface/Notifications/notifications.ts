@@ -2,8 +2,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
-import type { Unreadable } from '../../Nexus/tree'
-import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
 import { channel } from '@pommora/uix/Utilities/subscribable'
 
@@ -67,9 +65,11 @@ const undoing = inTurns()
 export function notify(
   message: string,
   undo?: () => void | Promise<void>,
-  tone: Notification['tone'] = 'normal',
-  retry?: () => void,
-  segment?: string,
+  {
+    tone = 'normal',
+    retry,
+    segment,
+  }: { tone?: Notification['tone']; retry?: () => void; segment?: string } = {},
 ): () => void {
   const retried = retry && { label: 'Try Again', run: retry }
   const note = { message, segment, tone }
@@ -99,18 +99,12 @@ export function notify(
 
 /** A refusal, offering Try Again when it may pass on a second attempt. */
 export const notifyError = (message: string, retry?: () => void): (() => void) =>
-  notify(message, undefined, 'error', retry)
+  notify(message, undefined, { tone: 'error', retry })
 
 /** Every refused Result of something the user did reaches them here, offering Try Again when a retry is given; the answer says whether it went through. */
 export function reportRefusal<T>(r: Result<T>, retry?: () => void): r is { ok: true; value: T } {
   if (!r.ok) notifyError(r.error.message, retry)
   return r.ok
-}
-
-export function notifyUnreadable(file: Unreadable, retry: () => void): void {
-  const what =
-    file.reason === 'contradicting' || file.reason === 'unparsed' ? 'invalid' : 'unreadable'
-  notifyError(`'${titleFromPath(file.path)}' contains ${what} metadata`, retry)
 }
 
 /** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */
@@ -126,5 +120,5 @@ export const persist = (
     else notifyError(line)
   })
 
-export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
+export const notifyDeleted = (title: string, undo: () => void | Promise<void>): (() => void) =>
   notify(`Deleted “${title}”`, undo)
