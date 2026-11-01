@@ -1,5 +1,6 @@
 import {
   indentWidth,
+  isBlank,
   isSequenced,
   nestedUnder,
   ordinalOf,
@@ -45,7 +46,7 @@ export function subBlockAt(scan: DocScan, pos: number): BlockSpan | null {
       const lm = scan.markers[k]
       const body = lines[k].slice(quotePrefixWidth(lines[k], depth))
       // A wrapped item's continuation body rides with its item — moving the marker line alone would strand it.
-      if (lm === null ? body.trim() === '' || !/^[ \t]/.test(body) : lm.level <= head.level) break
+      if (lm === null ? isBlank(body) || !/^[ \t]/.test(body) : lm.level <= head.level) break
     }
     last = k
   }
@@ -86,7 +87,7 @@ function rebuildMove(
   const lines = doc.split('\n')
   if (trailingNL) lines.pop()
   const starts = lineOffsetsOf(lines)
-  const isBlank = (i: number): boolean => i >= 0 && i < lines.length && lines[i].trim() === ''
+  const blankAt = (i: number): boolean => i >= 0 && i < lines.length && isBlank(lines[i])
 
   const bStart = starts.indexOf(range.from)
   if (bStart < 0) return null
@@ -95,18 +96,18 @@ function rebuildMove(
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
   if (tLine < 0) return null
-  while (fenced && tLine < lines.length && isBlank(tLine)) tLine++
+  while (fenced && tLine < lines.length && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
   const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)
   let cutStart = bStart
   let cutEnd = bEnd
-  if (fenced && isBlank(bEnd + 1)) cutEnd = bEnd + 1
-  else if (fenced && isBlank(bStart - 1)) cutStart = bStart - 1
+  if (fenced && blankAt(bEnd + 1)) cutEnd = bEnd + 1
+  else if (fenced && blankAt(bStart - 1)) cutStart = bStart - 1
 
   const out: string[] = []
   const sep = (): void => {
-    if (fenced && out.length && out[out.length - 1].trim() !== '') out.push('')
+    if (fenced && out.length && !isBlank(out[out.length - 1])) out.push('')
   }
   let destLine = 0
   let sourceLine = 0
@@ -165,7 +166,7 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
 
   // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list; inside a quote a blank line ends the quote, and the run with it.
   const quoted = quotePrefix(indent) !== ''
-  const carries = (t: string): boolean => (t.trim() === '' && !quoted) || nestedUnder(t, indent)
+  const carries = (t: string): boolean => (isBlank(t) && !quoted) || nestedUnder(t, indent)
   let runStart = ls
   for (let p = ls; p > 0; ) {
     const prevStart = lineStartAt(doc, p - 1)

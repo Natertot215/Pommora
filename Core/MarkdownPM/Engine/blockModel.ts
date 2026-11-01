@@ -1,5 +1,5 @@
 // `to` is EXCLUSIVE of the trailing newline, matching subBlockAt, headingSections, and TableRegion, which the drag's self-drop guard relies on.
-import type { BlockSpan, CalloutLine } from './detect'
+import { isBlank, type BlockSpan, type CalloutLine } from './detect'
 import { type DocScan, inJoinedMath, perScan, spanAt } from './docScan'
 import { lineEndOf, lineIndexAt } from './markdownCode'
 import { headingSections } from './headingScan'
@@ -42,7 +42,7 @@ function blockContext(scan: DocScan): BlockContext {
 
   // Only where a run actually holds a marker, so a bare indented paragraph isn't swept in. A math range whose opener joined the run rides it whole; one whose opener sits outside never gets pulled in.
   const isMarker = (i: number): boolean => markers[i] !== null
-  const isListCont = (i: number): boolean => lines[i].trim() !== '' && /^[ \t]/.test(lines[i])
+  const isListCont = (i: number): boolean => !isBlank(lines[i]) && /^[ \t]/.test(lines[i])
   const listMember = new Array<boolean>(n).fill(false)
   for (let i = 0; i < n; ) {
     if (!isMarker(i) && !isListCont(i)) {
@@ -70,7 +70,7 @@ function blockContext(scan: DocScan): BlockContext {
   // Box-first precedence: code/table/math beat heading/list so a `#` inside one isn't mis-read, and hr beats paragraph so it's never absorbed. The citations section owns no block, where a BlockKind of its own would span five sites the compiler wouldn't all check.
   const kindAt = (i: number): BlockKind | null => {
     if (i < 0 || i >= n) return null
-    if (lines[i].trim() === '' || i >= scan.citations.firstLine) return null
+    if (isBlank(lines[i]) || i >= scan.citations.firstLine) return null
     if (callout[i]) return 'callout'
     if (bq[i]) return 'blockquote'
     if (fences[i]) return 'code'

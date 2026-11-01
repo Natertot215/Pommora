@@ -1,5 +1,6 @@
 import { insideMark, type LinkKind, shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
 import {
+  isBlank,
   headingParts,
   calloutHeadPrefixLen,
   isCalloutHead,
@@ -272,7 +273,7 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
     const ls = p
     const le = lineEndAt(doc, p)
     const { prefix, body } = splitPrefix(doc.slice(ls, le))
-    if (body.trim() !== '' || from === to) {
+    if (!isBlank(body) || from === to) {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
       // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.

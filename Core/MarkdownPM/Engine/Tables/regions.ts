@@ -1,7 +1,7 @@
 import { perText } from '../perText'
 import { parse } from '../parser'
 import type { CodeMask } from '../markdownCode'
-import type { BlockSpan, DocLines } from '../detect'
+import { isBlank, LINE_CAP, type BlockSpan, type DocLines } from '../detect'
 import { normalize, type Column, type TableModel } from './model'
 import { splitRow, parseDelimiter } from './codec'
 
@@ -18,11 +18,18 @@ export interface TableRegion extends BlockSpan {
   columns: Column[]
 }
 
-// KNOB — distinct table sources remembered; a table being typed in mints one per keystroke.
+// KNOB — distinct header and delimiter pairs remembered.
 const isTable = perText((block) => {
   const tree = parse(block)
   return tree.children.length === 1 && tree.children[0].type === 'table'
 }, 256)
+
+// A code-deep indent, or a heading, quote, fence, HTML, reference, list marker, or rule after its indent; a match may still be a row.
+const MAY_OPEN =
+  /^(?: {4}|\t|[ \t]*(?:[#>`~<[]|\d{1,9}[.)]|[-*+](?:[ \t]|$)|([-*_])[ \t]*(?:\1[ \t]*){2,}$))/
+const opensBlock = perText((line) => parse(`| a |\n| - |\n${line}`).children.length > 1, LINE_CAP)
+const endsBody = (line: string): boolean =>
+  isBlank(line) || (MAY_OPEN.test(line) && opensBlock(line))
 
 /** Read per keystroke by the guard, the decoration build and `atomicRanges` — the caller holds the one derivation per doc version (`docCache.docScan`). */
 export function tableRegions(
@@ -42,7 +49,7 @@ export function tableRegions(
     const header = lines[i - 1]
     if (
       !columns ||
-      header.trim() === '' ||
+      isBlank(header) ||
       header.trimStart()[0] === '>' ||
       inCode(lineStarts[i - 1]) ||
       !isTable(text.slice(lineStarts[i - 1], lineTo(i)))
@@ -50,10 +57,8 @@ export function tableRegions(
       i++
       continue
     }
-    // Grab the contiguous non-blank block lexically, then confirm with a SINGLE parse — shrinking only if a non-table line is glued on without a blank separator. Keeps the common case to one micromark parse per table.
     let last = i
-    while (last + 1 < lines.length && lines[last + 1].trim() !== '') last++
-    while (last > i && !isTable(text.slice(lineStarts[i - 1], lineTo(last)))) last--
+    while (last + 1 < lines.length && !endsBody(lines[last + 1])) last++
     const rows: RowGeom[] = [geom(i - 1)]
     for (let k = i + 1; k <= last; k++) rows.push(geom(k))
     regions.push({

@@ -1,6 +1,7 @@
 import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
+import { isBlank } from '../Engine/detect'
 import { inSealedLine } from '../Engine/docScan'
 import { lineEndAt, lineStartAt, type TextEdit } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
@@ -14,11 +15,11 @@ export function embedInsertAfter(
 ): TextEdit & { caret: number } {
   const nextLineStart = blockTo + 1
   const nextLine = doc.slice(nextLineStart, lineEndAt(doc, nextLineStart))
-  const trail = nextLine.trim() === '' ? '' : '\n'
+  const trail = isBlank(nextLine) ? '' : '\n'
   const lineStart = lineStartAt(doc, blockTo)
-  const curBlank = doc.slice(lineStart, blockTo).trim() === ''
+  const curBlank = isBlank(doc.slice(lineStart, blockTo))
   const prevBlank =
-    lineStart === 0 || doc.slice(lineStartAt(doc, lineStart - 1), lineStart - 1).trim() === ''
+    lineStart === 0 || isBlank(doc.slice(lineStartAt(doc, lineStart - 1), lineStart - 1))
   const lead = curBlank ? (prevBlank ? '' : '\n') : '\n\n'
   const from = curBlank ? lineStart : blockTo
   return {
@@ -32,7 +33,7 @@ export function embedInsertAfter(
 /** Whether the caret already sits where a lone-line embed may be written. Read off the per-version scan, since it answers on every caret move. */
 export function embedSeatAt(state: EditorState, at = state.selection.main.from): boolean {
   const line = state.doc.lineAt(at)
-  if (line.text.trim() !== '') return false
+  if (!isBlank(line.text)) return false
   return !inSealedLine(docScan(state.doc), line.number - 1)
 }
 

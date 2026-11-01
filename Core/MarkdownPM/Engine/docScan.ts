@@ -18,6 +18,7 @@ import {
   fenceBodyStart,
   fenceOpeners,
   htmlBlocks,
+  isBlank,
   isHeadingLine,
   isThematicBreakLine,
   lineRefs,
@@ -111,7 +112,7 @@ function quietAt(s: LineScan, i: number): boolean {
   const at = s.lineStarts[k]
   if (spanAt(s.maths, at) !== undefined || spanAt(s.html, at) !== undefined) return false
   const line = s.lines[k]
-  return line.trim() === '' || s.headings[k] || s.breaks[k] || LIST_LINE.test(line)
+  return isBlank(line) || s.headings[k] || s.breaks[k] || LIST_LINE.test(line)
 }
 
 export function carriedFrom(was: DocScan, scan: DocScan): number {
@@ -252,7 +253,7 @@ function cutAt(s: LineScan, i: number): boolean {
   if (!quietAt(s, i) || !OPENS_FLUSH.test(s.lines[i])) return false
   const above = s.lines[i - 1]
   return (
-    above.trim() === '' ||
+    isBlank(above) ||
     s.headings[i - 1] ||
     s.breaks[i - 1] ||
     s.headings[i] ||

@@ -1,5 +1,5 @@
 // The citations section must reach the document's end — anything left standing after it literalizes every citation at once. Atomicity stops CM's own motion but never a programmatic dispatch, so this sits at the transaction layer.
-import { citationEntries, splitWithOffsets } from '../Engine/detect'
+import { citationEntries, isBlank, splitWithOffsets } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import type { CitationSlice } from '../Citations/citationEdits'
 import { docScan } from '../docCache'
@@ -39,7 +39,7 @@ export function citationTailVerdict(
     return entry ? { kind: 'rewrite', edits: [{ from, to, insert: inserted }] } : { kind: 'ok' }
 
   // Where the anchor holds prose, the body ends at that line's END — seating text at its start would land it above the paragraph it was written below.
-  const prose = c.anchorLine >= 0 && lines[c.anchorLine].trim() !== ''
+  const prose = c.anchorLine >= 0 && !isBlank(lines[c.anchorLine])
   const seat =
     c.anchorLine < 0 ? 0 : prose ? lineEndOf(scan, c.anchorLine) : lineStarts[c.anchorLine]
   // A sweep that began at or above the seat keeps its replacement where it was aimed; what broke the run is the head it joined, so the head gets its line back.

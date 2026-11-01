@@ -148,6 +148,9 @@ function readDiff(
 
 export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
 
+/** Blank as CommonMark reads it, where a non-breaking space is content that `trim` would drop. */
+export const isBlank = (text: string): boolean => /^[ \t\r\n]*$/.test(text)
+
 export function fenceBodyStart(line: string, f: FenceInfo): number {
   const quote = quotePrefixWidth(line, f.depth)
   return quote + Math.min(f.indent, indentWidth(line.slice(quote)))
@@ -199,7 +202,7 @@ export function htmlBlocks(d: DocLines, fences: readonly (FenceInfo | undefined)
   for (let i = 0; i < lines.length; i++) {
     if (fences[i] || !HTML_OPEN.test(lines[i])) continue
     let j = i
-    for (let k = i; k < lines.length && (k <= j || lines[k].trim() !== ''); k++) {
+    for (let k = i; k < lines.length && (k <= j || !isBlank(lines[k])); k++) {
       const end = HTML_RAW.find(([open]) => open.test(lines[k]))?.[1]
       let e = k
       if (end) while (e < lines.length - 1 && !end.test(lines[e])) e++
@@ -293,7 +296,7 @@ const CONTINUATION_INDENT = /^(?: {4}|\t)/
 
 export function citationEntries(d: DocLines, excluded: (line: number) => boolean): CitationEntry[] {
   const { lines, lineStarts } = d
-  const blank = (k: number): boolean => lines[k].trim() === ''
+  const blank = (k: number): boolean => isBlank(lines[k])
   const breaks = (k: number): boolean =>
     excluded(k) ||
     isHeadingLine(lines[k]) ||
@@ -560,7 +563,7 @@ export const ordinalText = (kind: SequencedKind, n: number): string =>
   kind === 'alphabetical' ? String.fromCharCode(65 + ((n - 1) % 26)) : String(n)
 
 export const nestedUnder = (line: string, indent: string): boolean =>
-  line.trim() !== '' && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
+  !isBlank(line) && line.startsWith(indent) && /^[ \t]/.test(line.slice(indent.length))
 
 export function parseListMarker(line: string, offset = 0): ListMarker | null {
   if (isThematicBreakLine(line)) return null
@@ -631,7 +634,7 @@ const headingPrefilter = /^[ ]{0,3}#{1,6}([ \t]|$)/
 const thematicBreakPrefilter = /^[ ]{0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$/
 
 // KNOB — distinct lines each predicate remembers.
-const LINE_CAP = 4096
+export const LINE_CAP = 4096
 const parsesTo = (type: string): ((line: string) => boolean) =>
   perText((line) => parse(line).children.some((n) => n.type === type), LINE_CAP)
 const parsesThematicBreak = parsesTo('thematicBreak')

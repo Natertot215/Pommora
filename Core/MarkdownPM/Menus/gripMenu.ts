@@ -4,7 +4,7 @@ import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/grip
 import type { PickItem } from '../../Actions/menuModel'
 import { COPY_LINK_ROW } from '../../Actions/pageMenu'
 import { listKindOf, setHeading, setListKind } from '../Input/format'
-import { type BlockSpan, headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
+import { type BlockSpan, headingParts, isBlank, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { HEADING_LINE } from '../folding'
@@ -39,12 +39,12 @@ export function embedPickTree(
 export function blockDeleteSpan(doc: string, r: BlockSpan): BlockSpan {
   const prevEnd = r.from - 1
   const prevStart = lineStartAt(doc, prevEnd)
-  const prevBlank = r.from >= 2 && doc.slice(prevStart, prevEnd).trim() === ''
+  const prevBlank = r.from >= 2 && isBlank(doc.slice(prevStart, prevEnd))
   const hasTrailingNewline = r.to < doc.length && doc[r.to] === '\n'
   if (!hasTrailingNewline) return { from: Math.max(0, r.from - 1), to: r.to }
   const nextStart = r.to + 1
   const nextEnd = lineEndAt(doc, nextStart)
-  const nextBlank = doc.slice(nextStart, nextEnd).trim() === ''
+  const nextBlank = isBlank(doc.slice(nextStart, nextEnd))
   if (prevBlank && nextBlank && nextEnd < doc.length) return { from: r.from, to: nextEnd + 1 }
   return { from: r.from, to: r.to + 1 }
 }

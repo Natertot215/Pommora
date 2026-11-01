@@ -1,14 +1,14 @@
 import { EditorState, type Text, Transaction } from '@codemirror/state'
 import { pageEmbedText } from '../../Connections/connections'
-import { type BlockSpan, loneEmbedTitle, loneWebpageEmbed } from '../Engine/detect'
+import { type BlockSpan, isBlank, loneEmbedTitle, loneWebpageEmbed } from '../Engine/detect'
 import { embedTileRanges } from '../Embeds/embedWidget'
 
 // Per tile, never a document-wide sum — a summed compare would let one tile's un-gluing pay for another's regression.
 function gluedOf(doc: Text, from: number): number {
   let glued = 0
   const n = doc.lineAt(Math.min(from, doc.length)).number
-  if (n > 1 && doc.line(n - 1).text.trim() !== '') glued++
-  if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
+  if (n > 1 && !isBlank(doc.line(n - 1).text)) glued++
+  if (n < doc.lines && !isBlank(doc.line(n + 1).text)) glued++
   return glued
 }
 

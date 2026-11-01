@@ -10,6 +10,7 @@ import {
 } from '@codemirror/state'
 import { exitWait } from '@pommora/uix/Animations/motion'
 import { docScan, perDoc } from './docCache'
+import { isBlank } from './Engine/detect'
 import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
 import { lineElementAt } from './lineDom'
@@ -305,7 +306,7 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
           attributes: HOVER_HOST,
         }).range(r.anchorLine),
       )
-    } else if (state.doc.lineAt(r.anchorLine).text.trim() === '') {
+    } else if (isBlank(state.doc.lineAt(r.anchorLine).text)) {
       ranges.push(
         Decoration.line({
           class: closed ? `${CITE_DIVIDER_LINE} md-citation-divider-off` : CITE_DIVIDER_LINE,

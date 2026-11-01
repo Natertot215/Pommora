@@ -28,6 +28,7 @@ import '../../Tiles/tile-base.css'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
+import { isBlank } from '../Engine/detect'
 import { expressibleInLink } from '../../Connections/connections'
 import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
@@ -440,14 +441,14 @@ function buildTiles(
     const tileLine = state.doc.lineAt(t.from)
     if (tileLine.number > 1) {
       const above = state.doc.line(tileLine.number - 1)
-      if (above.text.trim() === '' && above.from !== lastFence)
+      if (isBlank(above.text) && above.from !== lastFence)
         builder.add(above.from, above.from, fenceLine)
     }
     builder.add(tileLine.from, tileLine.from, embedLine)
     builder.add(t.from, t.to, Decoration.replace({ widget }))
     if (tileLine.number < state.doc.lines) {
       const below = state.doc.line(tileLine.number + 1)
-      if (below.text.trim() === '') {
+      if (isBlank(below.text)) {
         builder.add(below.from, below.from, fenceLine)
         lastFence = below.from
       }

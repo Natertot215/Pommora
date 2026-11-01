@@ -1,11 +1,11 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Run `batch-issues` on MarkdownPM's hot paths, the editor work that re-reads a whole page, block, or table on every keystroke, caret move, or selection change, starting from I-016.
+> **User Prompt:** Run `batch-issues` on MarkdownPM's hot paths, the editor work that re-reads a whole page, block, or table on every keystroke, caret move, or selection change, starting from I-014.
 
 #### Current Focus
 
 **Dates:** 10-31-2026
-**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-076 through I-082. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-016 the gravest.
+**State:** The Trash & Archive Restructure is complete and filed under `.claude/Planning/Completed/`, and its remaining limits are I-067 through I-071 and I-073. Pommora's open issues are the focus, gravest first; Sync's issues wait on its rework, which leaves I-014 the gravest.
 
 #### CONTEXT
 
@@ -22,11 +22,11 @@ Take A2's hot-path slice through `batch-issues`: re-verify each entry at HEAD, p
 
 #### The Batch
 
-- **Whole-Page Work:** I-016 (the footer's figures re-tokenize the page past about 8,000 lines), I-018 (those figures are a second reading of what the editor draws), I-017 (lands after I-016), and I-021 (each keystroke re-allocates everything carried below the edit).
-- **Block Work:** I-026 (an unclosed raw-HTML opener re-scans to the end; its estimate was typed together with I-027), I-040 (code-block coloring re-parses its block), I-023 (a caret move re-measures every visible language tag), and I-022 (a caret move rebuilds the tile ranges).
-- **Table Work:** I-013 (a cell's keystroke re-reads its table), I-015 (an entered cell parses twice), I-014 (a drag redraws the table per mouse move), and I-048 (lands with or after I-013, in the same loop).
+- **Whole-Page Work:** I-014 (the footer's figures re-tokenize the page past about 8,000 lines), I-016 (those figures are a second reading of what the editor draws), I-015 (lands after I-014), and I-019 (each keystroke re-allocates everything carried below the edit).
+- **Block Work:** I-024 (an unclosed raw-HTML opener re-scans to the end; its estimate was typed together with I-025), I-036 (code-block coloring re-parses its block), I-021 (a caret move re-measures every visible language tag), and I-020 (a caret move rebuilds the tile ranges).
+- **Table Work:** I-013 (a drag redraws the table per mouse move).
 
-Twelve entries is the upper bound. When re-verification shows the slice outgrowing one session, the presented batch takes the first two groups and leaves Table Work for the next.
+Nine entries is the upper bound. When re-verification shows the slice outgrowing one session, the presented batch takes the first two groups and leaves Table Work for the next.
 
 #### GUIDELINES
 

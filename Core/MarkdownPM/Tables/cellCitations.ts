@@ -7,21 +7,26 @@ import {
   type ViewUpdate,
 } from '@codemirror/view'
 import { RangeSetBuilder, type Extension } from '@codemirror/state'
-import { tokenize } from '../Engine/tokens'
+import { docScan } from '../docCache'
 import { CiteRefWidget } from '../decorations'
 import { redrawNudge } from '../api'
 
 type OrdinalOf = (label: string) => number | null
 
 function marks(view: EditorView, ordinalOf: OrdinalOf): DecorationSet {
-  const text = view.state.doc.toString()
   const builder = new RangeSetBuilder<Decoration>()
-  for (const tk of tokenize(text)) {
-    if (tk.kind !== 'citationRef') continue
-    const n = ordinalOf(text.slice(tk.contentRange[0], tk.contentRange[1]))
-    if (n !== null)
-      builder.add(tk.range[0], tk.range[1], Decoration.replace({ widget: new CiteRefWidget(n) }))
-  }
+  const { refs, lineStarts } = docScan(view.state.doc)
+  refs.forEach((line, i) => {
+    for (const r of line ?? []) {
+      const n = ordinalOf(r.label)
+      if (n !== null)
+        builder.add(
+          lineStarts[i] + r.col,
+          lineStarts[i] + r.end,
+          Decoration.replace({ widget: new CiteRefWidget(n) }),
+        )
+    }
+  })
   return builder.finish()
 }
 

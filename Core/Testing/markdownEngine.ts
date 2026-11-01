@@ -2,7 +2,7 @@ import type { EditorState } from '@codemirror/state'
 import { parse } from '../MarkdownPM/Engine/parser'
 import { parseDelimiter, splitRow } from '../MarkdownPM/Engine/Tables/codec'
 import { normalize, type TableModel } from '../MarkdownPM/Engine/Tables/model'
-import type { MarkdownScope } from '../MarkdownPM/Engine/detect'
+import { isBlank, type MarkdownScope } from '../MarkdownPM/Engine/detect'
 import { type DocScan, scanDoc } from '../MarkdownPM/Engine/docScan'
 import {
   type DecoIntent,
@@ -11,6 +11,18 @@ import {
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
 import type { Token } from '../MarkdownPM/Engine/tokens'
+
+/** A seeded generator, so a property's failing seed replays. */
+export function stream(seed: number): () => number {
+  let s = seed >>> 0
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0
+    let t = s
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 // The independent parse `modelFromRegion` is pinned against — a second derivation from the same source.
 export function parseTable(src: string): TableModel | null {
@@ -28,7 +40,7 @@ export function parseTable(src: string): TableModel | null {
   const header = splitRow(ls[0].text, ls[0].from).cells
   const rows = ls
     .slice(2)
-    .filter((l) => l.text.trim() !== '')
+    .filter((l) => !isBlank(l.text))
     .map((l) => splitRow(l.text, l.from).cells)
   return normalize({ columns, header, rows })
 }

@@ -104,6 +104,12 @@ describe('display math is the block model’s pairing', () => {
   })
 })
 
+describe('the parser leaves checkboxes to the scan', () => {
+  it('a `[ ]` line after an empty item tokenizes its marks', () => {
+    expect(tokenize('*\n[ ] *a*').map((t) => t.kind)).toEqual(['italic'])
+  })
+})
+
 describe('a code block needs both fences', () => {
   it('reads a fence nothing closes as prose, so the lines below keep their marks', () => {
     const doc = '```js\n**bold** and *em*'

@@ -1,5 +1,6 @@
 import type { LinkKind, Token, TokenKind, TokenOf } from './tokens'
 import {
+  isBlank,
   isThematicBreakLine,
   isHeadingLine,
   isSequenced,
@@ -224,7 +225,7 @@ function pageChrome(
       className: cx('md-blockquote', first && 'md-blockquote-first', last && 'md-blockquote-last'),
       attributes: first ? GRIP_HOST : undefined,
     })
-    base = line.slice(full.length).trim() === '' ? quotePrefixWidth(line, 1) : full.length
+    base = isBlank(line.slice(full.length)) ? quotePrefixWidth(line, 1) : full.length
   }
 
   if (fence) {
@@ -378,7 +379,7 @@ export function railIntents(
 ): RailIntent[][] {
   const n = listLevels.length
   const rails: RailIntent[][] = new Array(n)
-  const blank = (i: number): boolean => listLevels[i] < 0 && !/\S/.test(lines[i])
+  const blank = (i: number): boolean => listLevels[i] < 0 && isBlank(lines[i])
   const ahead: number[] = new Array(n)
   for (let i = n - 1, next = -1; i >= 0; i--) {
     ahead[i] = next

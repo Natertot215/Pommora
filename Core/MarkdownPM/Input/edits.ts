@@ -30,6 +30,7 @@ import {
   type TextEdit,
 } from '../Engine/markdownCode'
 import {
+  isBlank,
   parseListMarker,
   isSequenced,
   ordinalOf,
@@ -113,7 +114,7 @@ export function continueBlockquoteOnEnter(
   const pfx = blockPrefix(doc.slice(ls, lineEnd))
   if (pfx === '' || selStart < ls + pfx.length) return null
   // Callouts keep continuing — their documented exit is caret placement below the box, and stripping a body `> ` would split it.
-  if (doc.slice(ls + pfx.length, lineEnd).trim() === '' && !inCalloutAt(scan, selStart))
+  if (isBlank(doc.slice(ls + pfx.length, lineEnd)) && !inCalloutAt(scan, selStart))
     return { from: ls, to: lineEnd, insert: '', selection: ls }
   const insert = `\n${pfx.replace(/[ \t]+$/, '')} `
   return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
@@ -705,7 +706,7 @@ const lineBodyBefore = (doc: string, pos: number): string => {
 
 const opensLine = (doc: string, pos: number): boolean => {
   const before = doc.slice(lineStartAt(doc, pos), pos)
-  return before.slice(blockPrefix(before).length).trim() === ''
+  return isBlank(before.slice(blockPrefix(before).length))
 }
 
 export function ellipsis(
@@ -752,7 +753,7 @@ export function bullet(
   const doc = scan.text
   const c = selStart
   if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
-  if (literalOrBracketAt(scan, c) || !/\S/.test(lineBodyBefore(doc, c - 2))) return null
+  if (literalOrBracketAt(scan, c) || isBlank(lineBodyBefore(doc, c - 2))) return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
 }
 
@@ -783,7 +784,7 @@ export function punctuation(
   if (!glyph || PUNCTUATION[doc.slice(c - 2, c)] || isLiteralAt(scan, c)) return null
   if (glyph === '‖') {
     const before = lineBodyBefore(doc, c - 1)
-    if (!/\S/.test(before) || before.includes('|')) return null
+    if (isBlank(before) || before.includes('|')) return null
   }
   return { from: c - 1, to: c, insert: glyph, selection: c }
 }
@@ -847,7 +848,7 @@ export function dashArrow(
     if (arrows && doc[c - 1] === '←') return { from: c - 1, to: c, insert: '↔', selection: c }
     if (doc[c - 1] === '-' && doc[c - 2] !== '-' && (arrows || opensLine(doc, c - 1)))
       return { from: c - 1, to: c, insert: '→', selection: c }
-    if (arrows && doc[c - 1] === '>' && doc.slice(lineStartAt(doc, c - 1), c - 1).trim() !== '')
+    if (arrows && doc[c - 1] === '>' && !isBlank(doc.slice(lineStartAt(doc, c - 1), c - 1)))
       return { from: c - 1, to: c, insert: '»', selection: c }
   }
   if (arrows && inserted === '<' && doc[c - 1] === '<')
@@ -860,7 +861,7 @@ export function dashArrow(
     c >= 2 &&
     doc[c - 1] === '-' &&
     doc[c - 2] === ' ' &&
-    /\S/.test(lineBodyBefore(doc, c - 2))
+    !isBlank(lineBodyBefore(doc, c - 2))
   )
     return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
   return null

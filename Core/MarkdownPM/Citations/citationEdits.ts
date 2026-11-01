@@ -8,6 +8,7 @@ import {
   citationFor,
   citationsFor,
   foldLabel,
+  isBlank,
   isLastReference,
   markersFor,
 } from '../Engine/detect'
@@ -147,7 +148,7 @@ function citationSeat(scan: CitationSlice, at: number): { at: number; lead: stri
   if (last) return { at: lineEndOf(scan, last.lastLine), lead: '\n' }
   let body = 0
   for (let i = lines.length - 1; i >= 0; i--)
-    if (lines[i].trim() !== '') {
+    if (!isBlank(lines[i])) {
       body = lineEndOf(scan, i)
       break
     }
