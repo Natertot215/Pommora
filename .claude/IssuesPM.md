@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 76 | 0 | 3 | 13 | 37 | 23 |
+| 82 | 0 | 3 | 13 | 41 | 25 |
 
 #### A1 • Sync & Devices
 
@@ -23,6 +23,7 @@
 | [I-007](#I-007 • A revoked device that knows the Nexus password can still unlock the new key.)                                                                | A revoked device that knows the Nexus password can still unlock the new key.                                                                | Low      | Small (±0)       | Shortcut   | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-010](#I-010 • A device revoked while the app was closed thinks it's waiting for approval and never drops its keys.)                                        | A device revoked while the app was closed thinks it's waiting for approval and never drops its keys.                                        | Low      | Small (±0)       | Drift      | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-03-2026 |
 | [I-033](#I-033 • Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.)   | Resetting Sync's records loads every one and deletes them one at a time, and the index's path renames and removals commit table by table.   | Low      | Small (=🟢+6=)   | Drift      | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-16-2026 |
+| [I-081](#I-081 • A restore synced to another device runs again there as a hand restore, and a property cascade that device runs before a synced delete's record arrives passes the trashed page over for good.) | A restore synced to another device runs again there as a hand restore, and a property cascade that device runs before a synced delete's record arrives passes the trashed page over for good. | Low | Small (TBD) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
 
 #### A2 • MarkdownPM
 
@@ -70,8 +71,12 @@
 | [I-037](#I-037 • An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event.) | An outside edit to a page inside a folder the app just renamed or moved is lost until the page's next event. | Low | Small (=🟢+8=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-29-2026 |
 | [I-061](#I-061 • Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure.) | Un-excluding a folder re-spells the links to every page elsewhere that shares a title with one of its pages, with a console line only on failure. | Low | Small (=🟢+8=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
 | [I-062](#I-062 • A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path.) | A heading rename and a move of the same page in one outside batch aim the heading rename's sweep at the page's old path. | Low | Small (=🟢+6=) | Shortcut | `a0441edc9` | **Created:** 10-19-2026<br>**Updated:** 10-19-2026 |
+| [I-077](#I-077 • The file identity that tells the app's own writes from outside ones and the Windows landing's write-through are unprobed off APFS, and a sync client's attribute writes move the identity.) | The file identity that tells the app's own writes from outside ones and the Windows landing's write-through are unprobed off APFS, and a sync client's attribute writes move the identity. | Low | Small (TBD) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+| [I-078](#I-078 • An open Trash or Archive browser shows a change made outside the app, in Finder or by a Sync arrival, only once it's shown again.) | An open Trash or Archive browser shows a change made outside the app, in Finder or by a Sync arrival, only once it's shown again. | Low | Small (=🟢+10=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+| [I-080](#I-080 • A Trash or Archive folder the app prunes as empty is removed whole, so a Sync arrival landing in it at that moment goes with it.) | A Trash or Archive folder the app prunes as empty is removed whole, so a Sync arrival landing in it at that moment goes with it. | Low | Small (=🟢+6=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
 | [I-066](#I-066 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.) | A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title. | Minimal | Medium (=🟢+30=) | Shortcut | `213f95a3b` | **Created:** 10-19-2026<br>**Updated:** 10-21-2026 |
 | [I-067](#I-067 • Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included.) | Every write to the exclusion list re-reads the Nexus, restarts the watcher, and has sync re-check, carried entries included. | Minimal | Medium (TBD) | Shortcut | `d0e31804c` | **Created:** 10-20-2026<br>**Updated:** 10-21-2026 |
+| [I-079](#I-079 • A bundle folder dragged whole out of the Trash or an Archive lands as a Set named for its stamp, its item inside arriving as a plain item and its record riding along unread.) | A bundle folder dragged whole out of the Trash or an Archive lands as a Set named for its stamp, its item inside arriving as a plain item and its record riding along unread. | Minimal | Medium (=🟢+50=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
 | [I-068](#I-068 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.) | An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk. | Minimal | Mini (=🔴−1=) | Shortcut | `d0e31804c` | **Created:** 10-21-2026<br>**Updated:** 10-21-2026 |
 
 #### A4 • Architecture
@@ -112,6 +117,7 @@
 | [I-053](#I-053 • Dragging a Set to another band shows it at its old rank for the round trip.) | Dragging a Set to another band shows it at its old rank for the round trip. | Low | Small (=🟢+6=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
 | [I-054](#I-054 • A refused page create clears another new row's staged order until that row's own order lands.) | A refused page create clears another new row's staged order until that row's own order lands. | Low | Small (=🟢+6=) | Shortcut | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-03-2026 |
 | [I-052](#I-052 • A new item's rename field opens one frame after its row.) | A new item's rename field opens one frame after its row. | Minimal | Small (=🟢+5=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
+| [I-082](#I-082 • A view save whose id is empty, missing, or not a string appends a new view with an empty id rather than being refused.) | A view save whose id is empty, missing, or not a string appends a new view with an empty id rather than being refused. | Minimal | Mini (±0) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
 
 #### A8 • Navigation
 
@@ -352,6 +358,20 @@ The page index (`nexus.db`, the local database that answers link, heading, and v
 **Solution** [Proposed]
 
 Build the path methods' statements once per handle inside `contentIndexStore(db)` and wrap each method's body in `inTransaction` from `Desktop/Store/driver.ts`. Add a `clearBases()` (`DELETE FROM sync_base`) to `syncStore` and use it at both `Core/Sync/handlers.ts` sites.
+
+#### I-081 • A restore synced to another device runs again there as a hand restore, and a property cascade that device runs before a synced delete's record arrives passes the trashed page over for good.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+Sync's write tap pushes a rename at once and every other write and removal after a 2.5-second debounce. A restore moves its artifact out of the bundle and then removes the bundle, so a receiving device lands the rename first, through a plain rename its watcher hears as an outside move, while the bundle and its record still stand there; the page lane finishes it as a hand restore of its own, and the sender's own writes then land over identical bytes, leaving doubled linker writes and an extra Sync round. A delete runs the other way, writing its bundle's record before moving the artifact in, so a receiving device holds the artifact in a bundle with no record for the debounce: `storedNodes` reads no owning Collection for it, and a cascade reaching governed pages, such as a property rename or an option edit, passes the trashed page over, which keeps the old key or option once its record arrives. A sweep push orders deletes, then writes, then renames, the reverse of the live tap, so there a record lands ahead of its artifact's rename, the ordering behind I-076's Sync hazard.[^81]
+
+**Solution** [Deferred]
+
+Deferred by the owner until Sync's rework (Decision B-1 of the Trash & Archive Restructure's Decisions & Intention). The design: a rename either of whose ends lies in a bundle carries that bundle's pending writes and removals out of the debounce into the same push, a delete's record ahead of its rename and a restore's removal beside it, so a receiving device lands each as one change, in a live push and a sweep alike; it's the fix I-076 waits on.
 
 ### A2 • MarkdownPM
 
@@ -905,6 +925,48 @@ A page whose heading is renamed and which is moved in one outside batch, such as
 
 The heading arm resolves `seen.path` to the page's live path through `livePathOf` by the page's id, or runs after the move arm so the held tree and the recorded path agree.
 
+#### I-077 • The file identity that tells the app's own writes from outside ones and the Windows landing's write-through are unprobed off APFS, and a sync client's attribute writes move the identity.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (TBD) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+`sameFile` tells one file from another by its modification time, size, and change time, and that identity drops the app's own echoes, lets the index seed and a cascade pass over a page the index vouches for, and is what a landing's `expect` checks before its rename. The change time is probed on APFS alone: the machine contract's assertion that a rename moves it is skipped on Windows, so an NTFS rename-over is unverified, and exFAT's change time is unverified and may not be a real one. Where it isn't, an outside write that keeps a file's time and size reads as the app's own echo and is passed over by the seed and by cascades; the walk cache's own guards, the forgotten parse and its racy window, don't rest on it. The Windows landing passes libuv's write-through value raw (Decision G-4 of the Trash & Archive Restructure's Decisions & Intention), and if a drive ignores it, a group's one flush leaves its other files unflushed when their renames land. A sync client that writes extended attributes, as iCloud Drive and Dropbox do, moves a file's change time after the app lands it, so while the file's access time hasn't passed its modification time, chokidar's test for a change, the app hears its own save as an outside one and re-reads it, and each tagged file's index row stops vouching until its next indexed read; that errs toward re-reading and is unprobed.[^77]
+
+**Solution** [Proposed]
+
+Probe each case where it lives: the machine contract on the Windows PC with the change-time assertion unskipped, the same contract against an exFAT disk image on the Mac (`hdiutil create -fs ExFAT`), and an attribute write (`xattr -w`) on a landed file inside an iCloud Drive folder. A volume whose change time proves real drops the contract's skip; one without has `dropOwnEchoes` and `unlessVouched` take the walk cache's racy-window rule where the volume answers no change time, and the probe confirms or corrects `sameFile`'s note that exFAT has none. The write-through flag is confirmed by watching the temp's `CreateFile` carry `FILE_FLAG_WRITE_THROUGH` in Process Monitor; if it doesn't, the Windows landing flushes each file rather than one per group.
+
+#### I-078 • An open Trash or Archive browser shows a change made outside the app, in Finder or by a Sync arrival, only once it's shown again.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (=🟢+10=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+A store's browser lists its bundles when it's shown and again on each `storesChanged`, which only the app's own work raises: a mutate whose op `changesStores` names and a counted bundled confirmation. The watcher does hear both stores, the Trash and `.nexus/archive`: the tree's event classifier answers each such path `ignored`, the index takes only the pages a bundle holds, and no push carries what a store holds, so a bundle a Sync arrival lands or removes, or a page moved out of the Trash in Finder, reaches an open browser only when it's hidden and shown again, and an open Archive page reader, which re-reads on the same signal, stays open over a page that left. The Archive's browser behaved so before the Trash & Archive Restructure.[^78]
+
+**Solution** [Proposed]
+
+The settle pushes a `stores:changed` once per settle whose watched events touched a path `storeOf` places in a store or whose `refileMoved` re-filed an Archive, owed by the event intake as a flag beside the pages and values it already owes, and the renderer's bridge subscriptions raise `storesChanged` on it, so every surface already subscribed re-reads through the one path it has. The `bundles:list` comment that no push carries a store's contents changes with it.
+
+#### I-080 • A Trash or Archive folder the app prunes as empty is removed whole, so a Sync arrival landing in it at that moment goes with it.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Low | Small (=🟢+6=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+`removeBundle` removes a bundle and then each chain folder above it that `holdsOnlyHidden` reads as empty, up to its store's own folder, and each removal is the machine's recursive, forced remove, so whatever lands in a folder between its read and its removal goes with it. Every in-app writer of a chain folder but the open's `settleArchives` runs in the settle's turn, the Contexts lock nesting that turn rather than replacing it, and a property's bundle mints at the Trash's root, which the prune never reaches; `settleArchives` also prunes an orphaned Archive folder with the same read and recursive remove. Sync's arrival into a store is the one other writer: `landWrite` creates the file's folder and lands under the file's own lock, which the prune doesn't take, and `landDelete` prunes a parent it reads empty with the same window. The removal then pushes as a delete of every synced file under the folder, the arrival included, so the loss reaches every device.[^80]
+
+**Solution** [Proposed]
+
+The prune removes a folder's hidden entries one by one and then the folder itself without recursion, through a `removeEmpty` on the machine seam, so a folder something landed in refuses its removal and stays; one helper in `walk.ts` replaces `holdsOnlyHidden` and `removeOwn` at both prune sites. `landDelete`'s parent prune takes the same call with Sync's rework.
+
 #### I-066 • A restore that lands on a taken name always renames the item coming back, and nothing chooses which side keeps the title.
 
 | Concern | Scale | Origin | Base | Date |
@@ -932,6 +994,20 @@ Each write to the exclusion list rescopes the session whole. `applySettings` pat
 **Solution** [Proposed]
 
 An incremental rescope reaching every exclusion edit: `applySettings` patching the tree for the entries that changed, the watcher's captured filter taking a new scope without a restart, and Sync's `rescope` checking only the paths those entries name.
+
+#### I-079 • A bundle folder dragged whole out of the Trash or an Archive lands as a Set named for its stamp, its item inside arriving as a plain item and its record riding along unread.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Medium (=🟢+50=) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+Both stores sit under dotted folders, so a bundle folder, named `<stamp>__<name>.deleted` or `.archived`, can be dragged out in Finder only with hidden folders shown. Dropped into a Collection, it's read as a plain folder and lands as a Set under that name, holding the artifact and its hidden `_record.json`. The page lane hears each of the artifact's pages leave the bundle and hands them to `recognize`, whose bundle no longer stands: `bundleHold` reads the missing folder as emptied, `openBundle` finds no record, and each page arrives outright with only its collisions re-spelled, so the record's place, trail, and stripped Link values go unread, and the Trash's chain folders above the bundle stay. The same held before the Trash & Archive Restructure.[^79]
+
+**Solution** [Deferred]
+
+Deferred by the owner on 10-31-2026, since a restore here doesn't ride the one recognition lane cleanly. The design extends I-076's record lane to a record found outside a store: a shell rule the walk and adoption share recognizes a dropped folder that wears a bundle's stamped leaf and holds a record, matched to the departed rows by that leaf name; a copy's unwrap lifts the artifact out of the shell; and the import settles into a restore through `arrive`. A scout's draft of it as a lane of its own measured about +50 production lines.
 
 #### I-068 • An outside unlink within the watcher's write hold of the app's own write leaves a ghost until the next walk.
 
@@ -1239,6 +1315,20 @@ A page created from a view mounts its row from the host's push, keyed by the ID 
 
 Rename sessions are claimed by ID across creates: a create opens its rename with the minted ID as it asks, and the field binds to the row the push mounts under that ID, keeping the path for the rename it sends.
 
+#### I-082 • A view save whose id is empty, missing, or not a string appends a new view with an empty id rather than being refused.
+
+| Concern | Scale | Origin | Base | Date |
+|---------|-------|--------|------|------|
+| Minimal | Mini (±0) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
+
+**Description**
+
+`views:save` decodes its view through `savedView`, whose loose decode answers `''` for an id that's empty, missing, or not a string, as a stored file's read should. `saveView` then finds no view answering to `''`, since every write first mints an id for each view without one, so it appends the payload as a new view with an empty id and replies with that id; each further such save appends another, the next read gives each a positional id, and the next write mints it one. No in-app caller sends one, since a new view mints its id and a held view carries its own or a positional one.[^82]
+
+**Solution** [Proposed]
+
+The handler refuses an empty decoded id beside its existing payload check, leaving the loose decode as file reads need it.
+
 ### A8 • Navigation
 
 #### I-051 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.
@@ -1392,3 +1482,9 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^74]: **I-074:** `Core/Bundles/BundleTable.tsx:~273` (`onContextMenu`), `UIX/Interactions/engine.tsx:~1358-1372` (`useLineRow`'s keys)
 [^75]: **I-075:** `Desktop/FileWatch/watcher.ts:~102-107` (`chokidar.watch`), `node_modules/chokidar/handler.js:~115-124` (`createFsWatchInstance`), `node_modules/chokidar/handler.js:~531-557` (`_handleDir`), `node_modules/chokidar/handler.js:~449-519` (`_handleRead`), `node_modules/chokidar/index.js:~569-596` (`_throttle`), `node_modules/chokidar/index.js:~790-806` (`_readdirp`), `node_modules/chokidar/index.js:~204-211` (`filterPath`), `node_modules/chokidar/index.js:~608-638` (`_awaitWriteFinish`), `node_modules/readdirp/index.js:~105-159,~170-182` (`_read`, `_formatEntry`), `Core/Nexus/fileEvents.ts:~270,~295-301` (the folder and unlink arms), `Core/Files/writeEcho.ts:~9-10` (`PREFIX_WINDOW_MS`), `profiles/profile.json` and `profile-15fe7422a.json` of the Reach-In harness at `e4256d93d` (the `lstat` counts)
 [^76]: **I-076:** `Core/Nexus/settle.ts:~312-366` (`payOutsideMoves`), `Core/Nexus/arrival.ts:~194-239` (`recognize`), `Core/Nexus/arrival.ts:~241-285` (`arrivedSpaces`, `recognizeSpaces`, `recognizeSpacesAtOpen`), `Core/Nexus/handlers.ts:~108` (the open pass), `Core/Bundles/bundle.ts:~177-205` (`listBundles`' `recordOnly`), `Core/Sync/Client/push.ts:~219-230` (deletes, then writes, then renames), `Core/Sync/Client/pull.ts:~88-95` (`applyPull`), `Core/Nexus/owed.ts:~67` (the notes file never syncs)
+[^77]: **I-077:** `Core/Platform/machine.ts:~23-32` (`Identity`, `sameFile`), `Core/Testing/machineContract.ts:~87-97` (the change time's `skipIf(windows)`), `Desktop/Platform/nodeMachine.ts:~49-55` (`UV_FS_O_DSYNC`, `TEMP_FLAGS`), `Desktop/Platform/nodeMachine.ts:~84-96` (`flush`, `commit`'s `expect` and post-rename stat), `Desktop/Platform/nodeMachine.ts:~107-118` (`land`'s one flush per drive), `Core/Files/writeEcho.ts:~104-115` (`dropOwnEchoes`), `Core/Index/indexSeed.ts:~132-144` (`unlessVouched`), `Core/Index/indexSeed.ts:~295-301` (the seed's pass), `Desktop/Store/stores.ts:~46-51,~71-83` (`ctime_ms`), `Core/Files/atomicWrite.ts:~25` (the kept-time `forgetParse`), `Core/Nexus/fileEvents.ts:~395-396` (the watched `forgetParse`), `Core/Files/walkCache.ts:~3-4,~43` (`RACY_WINDOW_MS`), `.claude/Planning/Completed/Trash & Archive Restructure/Trash & Archive Restructure — Decisions & Intention.md:~87` (Decision G-4), `node_modules/chokidar/handler.js:~352-363` (`_handleFile`'s change test)
+[^78]: **I-078:** `Core/Bundles/browser.ts:~172-201` (`refresh`, the shown-only subscription), `Core/Session/nexusSlice.ts:~83,~280` (`storesChanged`, its emit after a mutate), `Core/Nexus/mutateRequest.ts:~205-210` (`changesStores`), `Core/Interface/Confirm/confirmations.ts:~118`, `Desktop/FileWatch/watcher.ts:~45-53` (`syncIgnoredUnder`, the Trash watched), `Core/Nexus/fileEvents.ts:~245,~256` (`classifyEvent`'s `ignored` arms for `.nexus/archive` and the Trash), `Core/Nexus/settle.ts:~186-191` (the settle's pushes), `Core/Contract/bridge.ts:~196` (no push carries a store), `Core/Session/useBridgeSubscriptions.ts:~84` (a push subscription's shape), `Core/Interface/Windows/PageReaderWindow.tsx:~325` (the reader's re-read), `Core/Paths/exclusion.ts:~34-43` (`watchedUnder`), `Core/Nexus/settle.ts:~196` (`refileMoved`)
+[^79]: **I-079:** `Core/Paths/nexusPaths.ts:~5-18` (`TRASH_DIR`, `hiddenName`, `hiddenFolder`), `Core/Paths/bundleLayout.ts:~15-36` (`layoutOf`'s suffixes, `stampedLeaf`), `Core/Bundles/bundle.ts:~63-75` (`mintBundle`'s leaf), `Core/Nexus/settle.ts:~312-366` (`payOutsideMoves`, the bundle's departures at `~326-330`), `Core/Nexus/arrival.ts:~195-239` (`recognize`), `Core/Bundles/bundle.ts:~98-104` (`bundleHold`), `Core/Bundles/bundle.ts:~340-345` (`openBundle`), `Core/Files/walk.ts:~15-21` (`listEntries` answers a missing folder empty), `Core/Bundles/record.ts:~13` (`RECORD_FILENAME`), `Core/Nexus/readNexus.ts:~158-170` (`readChildSets`), `Core/Nexus/folderKind.ts:~33-56` (`resolveFolderKind`, a nested plain folder is a Set)
+[^80]: **I-080:** `Core/Bundles/bundle.ts:~86-94` (`removeBundle`), `Core/Files/walk.ts:~23-28` (`holdsOnlyHidden`), `Core/Files/atomicWrite.ts:~151-154` (`removeOwn`), `Desktop/Platform/nodeMachine.ts:~132` (`remove`, recursive and forced), `Core/Nexus/mutate.ts:~120-150` (each store op's turn), `Core/Nexus/settle.ts:~274-276` (`inContextsTurn`), `Core/Properties/deleteProperty.ts:~63` (a property's bundle at the Trash's root), `Core/Sync/Arrival/land.ts:~83-104` (`landWrite`), `Core/Sync/Arrival/land.ts:~106-122` (`landDelete`'s parent prune), `Core/Archive/refile.ts:~113-124` (`settleArchives`' prune), `Core/Nexus/handlers.ts:~98` (`settleArchives` at open), `Core/Files/writeEcho.ts:~24-31` (`record`'s tap), `Core/Sync/Client/push.ts:~191-198` (a removed folder's deletes)
+[^81]: **I-081:** `Core/Sync/Client/tap.ts:~9,~29-39` (`DEBOUNCE_MS`, `schedule`), `Core/Sync/Client/tap.ts:~54-75` (`wrote`, `feedRename`), `Core/Sync/Client/session.ts:~124-140` (`onDirty`, `onRename`), `Core/Sync/Client/push.ts:~160-168,~191-198` (a removed folder's deletes), `Core/Files/atomicWrite.ts:~136-149` (`relocate`), `Core/Bundles/restore.ts:~96-99` (the restore's move), `Core/Nexus/arrival.ts:~138` (`spendBundle`), `Core/Trash/delete.ts:~161-172` (record, then move), `Core/Nexus/finishOwed.ts:~253-260` (`leave`'s `relocate`), `Core/Sync/Arrival/land.ts:~124-144` (`landRename`), `Core/Nexus/settle.ts:~312-366` (`payOutsideMoves`), `Core/Nexus/heldPages.ts:~125-140` (`storedNodes`' `reach`), `Core/Nexus/treePatch.ts:~127-134` (`trashReach`), `Core/Index/keyHolders.ts:~53-72` (`pagesInReach`), `Core/Sync/Client/push.ts:~224-229` (a sweep's order), `Core/Sync/Client/pull.ts:~88-95` (`applyPull`), `.claude/Planning/Completed/Trash & Archive Restructure/Trash & Archive Restructure — Decisions & Intention.md:~43` (Decision B-1)
+[^82]: **I-082:** `Core/Views/handlers.ts:~26-30` (`views:save`), `Core/Views/views.ts:~164-166` (`savedView`'s `id` catch), `Core/Views/viewsFile.ts:~32-91` (`answering`, `patchViews`, `saveView`), `Core/Views/views.ts:~355-383` (`ownViewId`, `viewIdsOf`, `containerViewIds`), `Core/Views/Settings/ViewFrame.tsx:~80`, `Core/Views/viewWrite.ts:~43`
