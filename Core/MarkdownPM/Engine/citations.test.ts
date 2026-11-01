@@ -20,6 +20,10 @@ describe('citationScan — the boundary', () => {
     expect(s.firstLine).toBe(2)
   })
 
+  it('takes a continuation indented by spaces then a tab, four columns deep', () => {
+    expect(scan('a[^1]\n\n[^1]: one\n\n \tmore text').entries[0].lastLine).toBe(4)
+  })
+
   it('takes a lazy (unindented) continuation into the citation above', () => {
     const s = scan('a[^1]\n\n[^1]: one\nlazy line')
     expect(s.entries).toHaveLength(1)

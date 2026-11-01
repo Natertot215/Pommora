@@ -6,14 +6,12 @@ import type { DocScan } from './docScan'
 import { applyEdits, fenceAt, quotePrefix, type TextEdit } from './markdownCode'
 
 // The scan reads checkboxes, and micromark's own `tasklistCheck` asserts on a `[ ]` line after an empty item.
-const options = {
-  extensions: [gfm(), { disable: { null: ['tasklistCheck'] } }],
+const reading = (...off: string[]) => ({
+  extensions: [gfm(), { disable: { null: ['tasklistCheck', ...off] } }],
   mdastExtensions: [gfmFromMarkdown()],
-}
-const throughHtml = {
-  ...options,
-  extensions: [...options.extensions, { disable: { null: ['htmlFlow'] } }],
-}
+})
+const options = reading()
+const throughHtml = reading('htmlFlow')
 
 /** An HTML block read as prose, so the Markdown inside it parses. */
 export const parseThroughHtml = (text: string): Root => fromMarkdown(text, throughHtml)

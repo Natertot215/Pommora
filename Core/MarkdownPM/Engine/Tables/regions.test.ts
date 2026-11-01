@@ -26,6 +26,10 @@ describe('regions', () => {
     expect(tableRegions('| a | b |\nnot a delimiter')).toEqual([])
   })
 
+  it('a quoted or blank header is no table', () => {
+    for (const doc of ['> | a |\n|---|', ' \n|---|']) expect(tableRegions(doc)).toEqual([])
+  })
+
   it('a pipe inside inline code still splits a cell under GFM, so an over-split header is no table', () => {
     expect(tableRegions('| `a|b` | c |\n|---|---|')).toEqual([])
   })
@@ -75,6 +79,7 @@ describe('regions', () => {
       '[^a]: note',
       '[a]: /url',
       '    code',
+      ' \tcode',
       '\tcode',
       '  - nested',
       '=== ',

@@ -183,7 +183,7 @@ export function editFor(
 function insertLinkEdit(doc: string, selFrom: number, selTo: number): FormatEdit | null {
   const [from, to] = trimmedRange(doc, selFrom, selTo)
   const text = doc.slice(from, to)
-  if (!text.trim() || !isValidLink(text)) return null
+  if (!isValidLink(text)) return null
   const insert = serializeLink(normalizeLinkUrl(text), text)
   return { changes: [{ from, to, insert }], selection: from + insert.length }
 }

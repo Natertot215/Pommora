@@ -96,7 +96,7 @@ function rebuildMove(
 
   let tLine = slot.at >= doc.length ? lines.length : starts.indexOf(slot.at)
   if (tLine < 0) return null
-  while (fenced && tLine < lines.length && blankAt(tLine)) tLine++
+  while (fenced && blankAt(tLine)) tLine++
   if (tLine >= bStart && tLine <= bEnd + 1) return null
 
   const blockLines = reindentBlock(lines.slice(bStart, bEnd + 1), slot.indent)

@@ -292,11 +292,10 @@ export function lineRefs(line: string, lineStart: number, inCode: CodeMask): Lin
   return out
 }
 
-const CONTINUATION_INDENT = /^(?: {4}|\t)/
+const CONTINUATION_INDENT = /^(?: {0,3}\t| {4})/
 
 export function citationEntries(d: DocLines, excluded: (line: number) => boolean): CitationEntry[] {
   const { lines, lineStarts } = d
-  const blank = (k: number): boolean => isBlank(lines[k])
   const breaks = (k: number): boolean =>
     excluded(k) ||
     isHeadingLine(lines[k]) ||
@@ -305,7 +304,7 @@ export function citationEntries(d: DocLines, excluded: (line: number) => boolean
     parseListMarker(lines[k]) !== null
   const aboveBlanks = (k: number): number => {
     let p = k
-    while (p >= 0 && blank(p)) p--
+    while (p >= 0 && isBlank(lines[p])) p--
     return p
   }
   const headOf = (end: number): number => {

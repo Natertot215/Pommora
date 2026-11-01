@@ -50,8 +50,8 @@ export function citationTailVerdict(
       caret: fromA + inserted.length,
     }
   // Whitespace alone isn't text to rescue (the space that turns a typed `-` into a list marker), so it is refused.
-  const body = inserted.trim() === '' ? '' : inserted.replace(/^\n+|\n+$/g, '')
-  if (body === '') return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
+  if (isBlank(inserted)) return { kind: 'rewrite', edits: [{ from: fromA, to: toA, insert: '' }] }
+  const body = inserted.replace(/^\n+|\n+$/g, '')
   return {
     kind: 'rewrite',
     edits: [

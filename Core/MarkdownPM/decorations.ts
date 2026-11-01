@@ -370,7 +370,9 @@ export const drawnLinkAt = <K extends LinkKind = LinkKind>(
   view: EditorView,
   pos: number,
   kind?: K,
-): TokenOf<K> | undefined => linkTokenAt(drawnTokens.get(view) ?? [], pos, kind)
+): TokenOf<K> | undefined => linkTokenAt(drawnTokensOf(view), pos, kind)
+
+export const drawnTokensOf = (view: EditorView): readonly Token[] => drawnTokens.get(view) ?? []
 
 // On-screen chunks only — the whole-document parse is what made long docs lag.
 function visibleInline(view: EditorView, scan: DocScan): ReturnType<typeof tokenizeChunk> {

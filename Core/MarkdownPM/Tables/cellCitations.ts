@@ -7,26 +7,20 @@ import {
   type ViewUpdate,
 } from '@codemirror/view'
 import { RangeSetBuilder, type Extension } from '@codemirror/state'
-import { docScan } from '../docCache'
-import { CiteRefWidget } from '../decorations'
+import { CiteRefWidget, drawnTokensOf } from '../decorations'
 import { redrawNudge } from '../api'
 
 type OrdinalOf = (label: string) => number | null
 
 function marks(view: EditorView, ordinalOf: OrdinalOf): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>()
-  const { refs, lineStarts } = docScan(view.state.doc)
-  refs.forEach((line, i) => {
-    for (const r of line ?? []) {
-      const n = ordinalOf(r.label)
-      if (n !== null)
-        builder.add(
-          lineStarts[i] + r.col,
-          lineStarts[i] + r.end,
-          Decoration.replace({ widget: new CiteRefWidget(n) }),
-        )
-    }
-  })
+  // The tokens the cell's own draw just read, since this plugin follows `editorBase` in the cell's extensions.
+  for (const tk of drawnTokensOf(view)) {
+    if (tk.kind !== 'citationRef') continue
+    const n = ordinalOf(view.state.sliceDoc(...tk.contentRange))
+    if (n !== null)
+      builder.add(tk.range[0], tk.range[1], Decoration.replace({ widget: new CiteRefWidget(n) }))
+  }
   return builder.finish()
 }
 
