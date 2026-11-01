@@ -30,7 +30,7 @@ import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
-import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
+import { notify, reportRefusal } from '../Interface/Notifications/notifications'
 import { ZOOM_STEPS } from './tileZoom'
 import { inertTile, type MutateEntry, TileBody, tileSourceInfo } from './tileKinds'
 import { insertMenuItems, menuPatch, pickOf, pickTreesOf, tileMenuItems } from './tileHandleMenu'
@@ -160,7 +160,7 @@ export function TileHost({
         // A box whose id can't name a tile has nothing on the host, so leaving the board is its whole removal.
         if (!isUlidShaped(id)) {
           unmarkTileRemoving(id)
-          return notifyUndoable('Deleted Tile')
+          return notify('Deleted Tile')
         }
         void landTileWrite(host, dialer().ask('tiles:removeTile', host, id)).then((r) => {
           if (!reportRefusal(r)) return putBack()
@@ -169,10 +169,10 @@ export function TileHost({
           const kind = knownTile(removed.entry)?.type
           const label = `Deleted ${kind ? TILE_KINDS[kind].label : 'Tile'}`
           // A box with no entry behind it has nothing to restore, so its removal is final.
-          if (tileIdOf(removed.entry) === null) return notifyUndoable(label)
+          if (tileIdOf(removed.entry) === null) return notify(label)
           const body = knownBody(id) ?? removed.body
           dropPageDetail(id)
-          notifyUndoable(label, async () => {
+          notify(label, async () => {
             const back = await landTileWrite(
               host,
               dialer().ask('tiles:restoreTile', host, {

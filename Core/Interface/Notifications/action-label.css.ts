@@ -5,7 +5,6 @@ import { SIZE } from '@pommora/uix/Labels/label-base.css'
 
 const c = vars.color
 
-export const DWELL_MS = 3000
 export const NEAR_RADIUS = 100
 
 export const host = style({
@@ -40,15 +39,3 @@ export const row = style({
 })
 
 export const message = style([text.callout.standard, { color: c.label.primary }])
-
-export const action = style([
-  text.footnote.semibold,
-  {
-    color: 'var(--accent)',
-    background: 'none',
-    border: 'none',
-    padding: 0,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-])

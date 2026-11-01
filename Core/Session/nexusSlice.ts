@@ -1,8 +1,7 @@
 import {
   clearNotification,
-  notifyReport,
-  notifyRetry,
-  warnCascade,
+  notify,
+  notifyError,
   notifyUnreadable,
   reportRefusal,
 } from '../Interface/Notifications/notifications'
@@ -258,25 +257,22 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       if (!res.ok) {
         if (quiet) return null
-        if (res.error.code === 'owed') notifyRetry(res.error.message, get().finishOwed)
-        else if (retry && res.error.code === 'operation-failed')
-          notifyRetry(res.error.message, retry)
-        else reportRefusal(res)
+        if (res.error.code === 'owed') notifyError(res.error.message, get().finishOwed)
+        else reportRefusal(res, res.error.code === 'operation-failed' ? retry : undefined)
         return null
       }
       if (!quiet) {
         const { cascade, missed } = res.value
-        if (cascade && !isBundleOp(req))
-          warnCascade(
-            cascade,
+        if (cascade?.warning && !isBundleOp(req))
+          notifyError(
+            cascade.warning,
             cascade.owed
               ? get().finishOwed
               : missed
                 ? () => void get().mutate({ op: 'putBack', entries: missed })
                 : undefined,
           )
-        if (res.value.created && res.value.landedAs)
-          notifyReport(`Created “${res.value.landedAs}”.`, false)
+        if (res.value.created && res.value.landedAs) notify(`Created “${res.value.landedAs}”.`)
         if (changesStores(req)) storesChanged.emit()
       }
       // The host pushed what this write changed before it replied, so the tree already holds it.

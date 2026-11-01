@@ -1,4 +1,4 @@
-import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import {
   type DEVICE_RANGES,
   type DeviceDefaultKey,
@@ -162,10 +162,8 @@ const clearExclusions = async (): Promise<boolean> => {
 // A clear that skipped a page refuses having cleared the rest, and clearing again is safe, so its Try Again sends it again without asking.
 const sendClear = async (): Promise<boolean> => {
   const r = await dialer().ask('exclusions:clear')
-  if (!r.ok && r.error.code === 'operation-failed')
-    notifyRetry(r.error.message, () => void sendClear())
-  else if (!reportRefusal(r)) return false
-  return r.ok && r.value !== null
+  const again = !r.ok && r.error.code === 'operation-failed' ? () => void sendClear() : undefined
+  return reportRefusal(r, again) && r.value !== null
 }
 
 const clearFileHistory = async (): Promise<boolean> => {

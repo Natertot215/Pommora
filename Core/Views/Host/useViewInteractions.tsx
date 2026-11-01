@@ -20,7 +20,7 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { columnLabel } from '../../Properties/columnDisplay'
 import { resolveColumn } from '../Pipeline/columns'
-import { notifyUndoable } from '../../Interface/Notifications/notifications'
+import { notify } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
@@ -119,7 +119,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return {
       ...dropIO(name, persistView),
       switched: ({ propertyId, prior }) =>
-        notifyUndoable(
+        notify(
           `Switched to custom ${columnLabel(resolveColumn(propertyId, schema, identity.contextIds)!, ctx.contexts)} order`,
           () =>
             void persistView(prior).then((r) => {

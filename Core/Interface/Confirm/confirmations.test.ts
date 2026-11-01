@@ -297,16 +297,44 @@ describe('a delete through the confirmation', () => {
   })
 
   it('counts the strip’s linkers behind a segment in the Deleted notice', async () => {
+    for (const [pages, segment] of [
+      [['A.md', 'B.md'], '2 Internal Links'],
+      [['A.md'], '1 Internal Link'],
+    ] as const) {
+      mutate.mockResolvedValue({
+        undo: { op: 'restore', bundlePath: '.trash/b1' },
+        cascade: { pages, hosts: [] },
+      })
+      await del('page')
+      expect(currentNotification()).toMatchObject({
+        message: 'Deleted “A”',
+        segment,
+        tone: 'normal',
+      })
+    }
+  })
+
+  it('joins a warning to the segment', async () => {
+    const warning = 'Couldn’t update links in 1 Item.'
     mutate.mockResolvedValue({
       undo: { op: 'restore', bundlePath: '.trash/b1' },
-      cascade: { pages: ['A.md', 'B.md'], hosts: [] },
+      cascade: { pages: ['A.md', 'B.md'], hosts: [], warning },
     })
     await del('page')
     expect(currentNotification()).toMatchObject({
       message: 'Deleted “A”',
-      segment: '2 Internal Links',
-      tone: 'normal',
+      segment: `2 Internal Links. ${warning}`,
+      tone: 'error',
     })
+  })
+
+  it('keeps Undo on a notice whose owed work left no line unmet', async () => {
+    mutate.mockResolvedValue({
+      undo: { op: 'restore', bundlePath: '.trash/b1' },
+      cascade: { pages: ['A.md'], hosts: [], owed: true },
+    })
+    await del('page')
+    expect(currentNotification()?.action?.label).toBe('Undo')
   })
 })
 
@@ -604,6 +632,15 @@ describe('a batch through runBundled', () => {
     await runBundled(verb, both(op))
     expect(currentNotification()).toMatchObject({
       message: `${verb} 2 Pages. ${warning}`,
+      tone: 'error',
+    })
+  })
+
+  it('a batch whose every row was refused posts only its lines', async () => {
+    channels.mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
+    await runBundled('Restored', both())
+    expect(currentNotification()).toMatchObject({
+      message: '2 Pages couldn’t be restored.',
       tone: 'error',
     })
   })

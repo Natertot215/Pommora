@@ -7,15 +7,22 @@ import { useSession } from '../../Session/store'
 import { storesChanged } from '../../Session/nexusSlice'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
-import {
-  type BundleVerb,
-  type Bundled,
-  notifyBundled,
-  reportRefusal,
-  type Titled,
-} from '../Notifications/notifications'
+import { notify, notifyError, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 import type { CountedChange, SelectOption } from '../../Properties/properties'
+
+type Titled = Counted & { title: string }
+
+type BundleVerb = 'Restored' | 'Deleted' | 'Archived' | null
+
+interface Bundled {
+  done: Titled[]
+  refused: Titled[]
+  unrestored: string[]
+  warnings: string[]
+  renamed: { title: string; landedAs: string }[]
+  links: number
+}
 
 export interface ConfirmRequest {
   message: string
@@ -80,6 +87,41 @@ function offerUndo(
       : undefined,
   )
   for (const { req } of undos) if (req.op === 'restore') armed.set(req.bundlePath, spend)
+}
+
+/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, or a batch whose every row was refused, posts only its lines. */
+function notifyBundled(
+  verb: BundleVerb,
+  { done, refused, unrestored, warnings, renamed, links }: Bundled,
+  undo?: () => void | Promise<void>,
+  retry?: () => void,
+): () => void {
+  const lone = done.length + refused.length === 1
+  const unmet = [
+    !lone &&
+      refused.length > 0 &&
+      `${countPhrase(refused)} couldn’t be ${verb?.toLowerCase() ?? 'undone'}.`,
+    unrestored.length > 0 &&
+      `${unrestored.join(', ')} didn’t get ${unrestored.length === 1 ? 'its' : 'their'} value back.`,
+    ...warnings,
+  ].filter((line): line is string => typeof line === 'string')
+  if (!verb || !done.length) return unmet.length ? notifyError(unmet.join(' '), retry) : () => {}
+  const stepped = renamed[0] && `“${renamed[0].title}” as “${renamed[0].landedAs}”`
+  const head = `${verb} ${lone ? (stepped ?? `“${done[0].title}”`) : countPhrase(done)}`
+  const stripped =
+    verb === 'Deleted' && links > 0
+      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
+      : undefined
+  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : stepped
+  const segment = lone ? stripped : renames
+  const said = unmet.length ? `. ${unmet.join(' ')}` : ''
+  return notify(
+    segment ? head : head + said,
+    undo,
+    said ? 'error' : 'normal',
+    said ? retry : undefined,
+    segment && segment + said,
+  )
 }
 
 /** Sends each row's request in turn and posts one notice through `notifyBundled` for what they did, with the one Undo their replies carry: a lone row posts its refusal through the slice, a batch counts its refusals, a row's success spends the Undo armed on its `bundlePath`, a browser row's bundle, and a switch away from `nexusId`, the Nexus the act began in, stops it with nothing posted. Answers whether any row went through. */

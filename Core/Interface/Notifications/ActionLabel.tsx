@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { dismissNotification, useActionBar, useNotification } from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { Swap } from '@pommora/uix/Animations/Swap'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { ProgressBar, paintProgress } from '@pommora/uix/Elements/ProgressBar'
-import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { cx } from '@pommora/uix/Utilities/cx'
 import { Segments } from '@pommora/uix/Elements/Segments'
-import * as s from './action-label.css'
-import { clamp } from '@pommora/uix/Utilities/clamp'
 import { trackNear, withinBox } from '@pommora/uix/Interactions/hoverReveal'
+import { clamp } from '@pommora/uix/Utilities/clamp'
+import { cx } from '@pommora/uix/Utilities/cx'
+import { dismissNotification, useActionBar, useNotification } from './notifications'
+import * as s from './action-label.css'
 
+const DWELL_MS = 3000 // KNOB
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
 
@@ -45,7 +46,7 @@ export function ActionLabel(): React.JSX.Element {
       last = now
       rate = clamp(rate + (nearRef.current ? -step : step) / BASE_MS, 0, 1)
       spent += step * rate
-      const remaining = 1 - spent / s.DWELL_MS
+      const remaining = 1 - spent / DWELL_MS
       if (progressRef.current) paintProgress(progressRef.current, remaining)
       if (remaining > 0) raf = requestAnimationFrame(tick)
       else setShown(false)
@@ -132,17 +133,16 @@ export function ActionLabel(): React.JSX.Element {
                 {held?.segment ? <Segments parts={[held.message, held.segment]} /> : held?.message}
               </span>
               {held?.action ? (
-                <button
-                  type="button"
-                  className={s.action}
+                <Button
+                  type="tinted"
+                  size="button-inline"
+                  label={held.action.label}
                   onClick={() => {
                     if (!shown) return
                     void held.action?.run()
                     setShown(false)
                   }}
-                >
-                  {held.action.label}
-                </button>
+                />
               ) : null}
             </span>
             <ProgressBar ref={progressRef} fill={1} />

@@ -2,13 +2,12 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
-import { type Counted, countPhrase } from '../../Nexus/entities'
 import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
 import { channel } from '@pommora/uix/Utilities/subscribable'
 
-export interface Notification {
+interface Notification {
   message: string
   segment?: string
   tone: 'normal' | 'error'
@@ -62,116 +61,17 @@ const post = (n: Notification): number => {
   return seq
 }
 
-/** An outcome in one line, drawn as a refusal when any of it failed. */
-export function notifyReport(message: string, failed: boolean): void {
-  post({ message, tone: failed ? 'error' : 'normal' })
-}
-
-/** Every refusal of something the user did reaches them here, offering Try Again when a retry is given; the answer says whether it went through. */
-export function reportRefusal<T>(r: Result<T>, retry?: () => void): r is { ok: true; value: T } {
-  if (r.ok) return true
-  if (retry) notifyRetry(r.error.message, retry)
-  else notifyReport(r.error.message, true)
-  return false
-}
-
-const tryAgain = (run: () => void): Notification['action'] => ({ label: 'Try Again', run })
-
-/** A refusal that may pass on a second attempt, which its label offers. */
-export function notifyRetry(message: string, retry: () => void): void {
-  post({ message, tone: 'error', action: tryAgain(retry) })
-}
-
-export function warnCascade(cascade: { warning?: string }, retry?: () => void): void {
-  if (!cascade.warning) return
-  if (retry) notifyRetry(cascade.warning, retry)
-  else notifyReport(cascade.warning, true)
-}
-
-export function notifyUnreadable(file: Unreadable, retry: () => void): void {
-  const what =
-    file.reason === 'contradicting' || file.reason === 'unparsed' ? 'invalid' : 'unreadable'
-  notifyRetry(`'${titleFromPath(file.path)}' contains ${what} metadata`, retry)
-}
-
-/** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */
-export const persist = (
-  what: string,
-  reply: Promise<Result<unknown>>,
-  quiet = false,
-): Promise<void> =>
-  reply.then((r) => {
-    if (r.ok) return
-    const line = `Couldn’t save ${what}: ${r.error.message}`
-    if (quiet) console.error(line)
-    else notifyReport(line, true)
-  })
-
-const unrestoredLine = (titles: string[]): string =>
-  `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
-
-export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
-  notifyUndoable(`Deleted “${title}”`, undo)
-
-export type Titled = Counted & { title: string }
-
-export type BundleVerb = 'Restored' | 'Deleted' | 'Archived' | null
-
-export interface Bundled {
-  done: Titled[]
-  refused: Titled[]
-  unrestored: string[]
-  warnings: string[]
-  renamed: { title: string; landedAs: string }[]
-  links: number
-}
-
-/** A bundle op's one notice: `verb` with its lone row's title, as it landed when stepped aside, or with its rows' count; then the links a lone delete stripped, or a batch's renames; then every line that didn't go as asked, a batch's refusals counted among them, offering `retry`. A lone row's refusal is the host's message, which the slice already posted, and an Undo's own run, with no verb, or a batch whose every row was refused, posts only its lines. */
-export function notifyBundled(
-  verb: BundleVerb,
-  { done, refused, unrestored, warnings, renamed, links }: Bundled,
-  undo?: () => void | Promise<void>,
-  retry?: () => void,
-): () => void {
-  const lone = done.length + refused.length === 1
-  const unmet = [
-    !lone &&
-      refused.length > 0 &&
-      `${countPhrase(refused)} couldn’t be ${verb?.toLowerCase() ?? 'undone'}.`,
-    unrestored.length > 0 && unrestoredLine(unrestored),
-    ...warnings,
-  ].filter((line): line is string => typeof line === 'string')
-  if (!verb || !done.length)
-    return unmet.length ? notifyUndoable(unmet.join(' '), undefined, 'error', retry) : () => {}
-  const stepped = renamed[0] && `“${renamed[0].title}” as “${renamed[0].landedAs}”`
-  const head = `${verb} ${lone ? (stepped ?? `“${done[0].title}”`) : countPhrase(done)}`
-  const stripped =
-    verb === 'Deleted' && links > 0
-      ? `${links} Internal ${links === 1 ? 'Link' : 'Links'}`
-      : undefined
-  const renames = renamed.length > 1 ? `${renamed.length} Renamed` : stepped
-  const segment = lone ? stripped : renames
-  const said = unmet.length ? `. ${unmet.join(' ')}` : ''
-  return notifyUndoable(
-    segment ? head : head + said,
-    undo,
-    said ? 'error' : 'normal',
-    said ? retry : undefined,
-    segment && segment + said,
-  )
-}
-
 const undoing = inTurns()
 
-/** Answers a spend: once what the undo would reverse is undone some other way, its label leaves and the chord passes it by. */
-export function notifyUndoable(
+/** A notice offering Undo when given, or Try Again in its place when a retry is given, which leaves any Undo to the chord. Answers a spend: once what the undo would reverse is undone some other way, its label leaves and the chord passes it by. */
+export function notify(
   message: string,
   undo?: () => void | Promise<void>,
   tone: Notification['tone'] = 'normal',
   retry?: () => void,
   segment?: string,
 ): () => void {
-  const retried = retry && tryAgain(retry)
+  const retried = retry && { label: 'Try Again', run: retry }
   const note = { message, segment, tone }
   if (!undo) {
     const id = post({ ...note, action: retried })
@@ -196,3 +96,35 @@ export function notifyUndoable(
     dismissNotification(id)
   }
 }
+
+/** A refusal, offering Try Again when it may pass on a second attempt. */
+export const notifyError = (message: string, retry?: () => void): (() => void) =>
+  notify(message, undefined, 'error', retry)
+
+/** Every refused Result of something the user did reaches them here, offering Try Again when a retry is given; the answer says whether it went through. */
+export function reportRefusal<T>(r: Result<T>, retry?: () => void): r is { ok: true; value: T } {
+  if (!r.ok) notifyError(r.error.message, retry)
+  return r.ok
+}
+
+export function notifyUnreadable(file: Unreadable, retry: () => void): void {
+  const what =
+    file.reason === 'contradicting' || file.reason === 'unparsed' ? 'invalid' : 'unreadable'
+  notifyError(`'${titleFromPath(file.path)}' contains ${what} metadata`, retry)
+}
+
+/** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */
+export const persist = (
+  what: string,
+  reply: Promise<Result<unknown>>,
+  quiet = false,
+): Promise<void> =>
+  reply.then((r) => {
+    if (r.ok) return
+    const line = `Couldn’t save ${what}: ${r.error.message}`
+    if (quiet) console.error(line)
+    else notifyError(line)
+  })
+
+export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): (() => void) =>
+  notify(`Deleted “${title}”`, undo)

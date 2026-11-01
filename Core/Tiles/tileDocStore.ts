@@ -15,7 +15,7 @@ import { decodeLayout } from './Layout/codec'
 import { emptyLayout, getTile, type TileLayout, tileIds } from './Layout/model'
 import { insertBand } from './Layout/ops'
 import { dialer } from '../Platform/dialer'
-import { notifyRetry, persist, reportRefusal } from '../Interface/Notifications/notifications'
+import { notifyError, persist, reportRefusal } from '../Interface/Notifications/notifications'
 import { type BodyIO, createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 import { bodyHead, dropPageDetail, readBodyBase } from '../Session/pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
@@ -217,7 +217,7 @@ const load = (doc: HostDoc): Promise<void> =>
     .then((r) => {
       if (r.ok) adopt(doc, r.value)
       else if (r.error.code === 'operation-failed' && at(doc.host) === doc)
-        notifyRetry(r.error.message, () => {
+        notifyError(r.error.message, () => {
           if (!doc.state.ready) void load(doc)
         })
     })
