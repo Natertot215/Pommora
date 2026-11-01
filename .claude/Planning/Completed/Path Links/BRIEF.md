@@ -71,11 +71,10 @@ What Nathan kept returning to while the decisions were made, verbatim.
 #### Working Rules
 
 1. **Look Outward First:** before designing any piece, name every function, field, file, or rule it would add, and scout what already exists for each.
-2. **Verify Nathan's Claims:** check every architectural claim he makes against the tree and report what contradicts it, plainly; he wants it. Many were wrong during the decisions, and each correction changed the design.
+2. **Verify Nathan's Claims:** check every architectural claim he makes against the tree and report what contradicts it, plainly; he wants it. Many previous plans had corrections that were  flagged against what went unnoticed during the brainstorming process, and each correction changed the design.
 3. **Ask, With a Read Attached:** where an answer reads more than one way, stop and ask, with what was found, what it implies, and the call put up for correction; Nathan isn't technical, so each question is explained in plain terms.
 4. **Disclose In-Flight Calls:** a judgment made during planning or execution is stated in chat when it's made, and recorded where it changes an outcome.
 5. **Write With Intent:** decisions and plans state intended behavior as intent ("should"), separate from statements of how the code works today, so a future reader never takes a decision for a fact or a fact for a decision.
-6. **Keep the Evidence:** every scout's brief and report is saved verbatim beside the plan, so a later session's scouts can return to its sources.
 
 ---
 

@@ -49,12 +49,12 @@ describe('computeStats — the counter agrees with what the editor draws', () =>
   })
 
   it('an inline page embed keeps its title, which the editor still shows', () => {
-    expect(computeStats('see ![[Page]] here').words).toBe(3)
+    expect(computeStats('see ![[Page]] here')).toMatchObject({ words: 3, characters: 14 })
   })
 
   it('a connection reads as its title, an aliased one as its alias', () => {
-    expect(computeStats('[[Page]]').words).toBe(1)
-    expect(computeStats('[[Page|the alias]]').words).toBe(2)
+    expect(computeStats('[[Page]]')).toMatchObject({ words: 1, characters: 4 })
+    expect(computeStats('[[Page|the alias]]')).toMatchObject({ words: 2, characters: 9 })
   })
 
   it('a checkbox item counts only its content', () => {
@@ -113,7 +113,10 @@ describe('computeStats — the contracts the source already stated', () => {
   })
 
   it('a markdown link reads as its label', () => {
-    expect(computeStats('[the label](https://example.com)').words).toBe(2)
+    expect(computeStats('[the label](https://example.com)')).toMatchObject({
+      words: 2,
+      characters: 9,
+    })
   })
 })
 
@@ -267,7 +270,10 @@ describe('computeStats — marks count as the tokenizer draws them', () => {
   })
 
   it('reads a link and a connection as their shown text', () => {
-    expect(computeStats('see [label](https://x.y) and [[Page|alias]]').words).toBe(4)
+    expect(computeStats('see [label](https://x.y) and [[Page|alias]]')).toMatchObject({
+      words: 4,
+      characters: 19,
+    })
   })
 
   it('keeps a tag whole and an HTML block as written', () => {

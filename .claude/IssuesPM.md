@@ -4,7 +4,7 @@
 
 | Total | Critical | High | Moderate | Low | Minimal |
 |-------|----------|------|----------|-----|---------|
-| 81 | 0 | 3 | 13 | 40 | 25 |
+| 78 | 0 | 3 | 13 | 39 | 23 |
 
 #### A1 • Sync & Devices
 
@@ -118,29 +118,11 @@
 | [I-051](#I-051 • A new item's rename field opens one frame after its row.) | A new item's rename field opens one frame after its row. | Minimal | Small (=🟢+5=) | Drift | `93baa6931` | **Created:** 10-01-2026<br>**Updated:** 10-16-2026 |
 | [I-080](#I-080 • A view save whose id is empty, missing, or not a string appends a new view with an empty id rather than being refused.) | A view save whose id is empty, missing, or not a string appends a new view with an empty id rather than being refused. | Minimal | Mini (±0) | Shortcut | `88a13422e` | **Created:** 10-31-2026<br>**Updated:** 10-31-2026 |
 
-#### A8 • Navigation
-
-| ID | Title | Concern | Scale | Origin | Base | Date |
-| ----- | ---------------------------------------------------- | ------ | ------- | -------- | --------- | ------------- |
-| [I-050](#I-050 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.) | Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing. | Low | Small (=🟢+1=) | Shortcut | `43d0a6d1e` | **Created:** 09-25-2026<br>**Updated:** 10-03-2026 |
-
 #### A9 • Matrix
 
 | ID | Title | Concern | Scale | Origin | Base | Date |
 | ------ | ---------------------------------------------------- | ------- | ------- | ------- | -------- | ------------- |
 | [I-054](#I-054 • The Matrix can't be pinch-zoomed on a touchscreen.) | The Matrix can't be pinch-zoomed on a touchscreen. | Low | Small (=🟢+12=) | Premature | `f6511401d` | **Created:** 09-23-2026<br>**Updated:** 10-05-2026 |
-
-#### A10 • Documentation
-
-| ID | Title | Concern | Scale | Origin | Base | Date |
-| ----- | ---------------------------------------------------- | ------- | -------- | ------ | --------- | ------------- |
-| [I-028](#I-028 • The editor's documentation says eight things the code doesn't do, and two more go false as this cleanup lands.) | The editor's documentation says eight things the code doesn't do, and two more go false as this cleanup lands. | Minimal | Small (±0) | Drift | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-
-#### A11 • Testing
-
-| ID | Title | Concern | Scale | Origin | Base | Date |
-| ------ | -------------------------------------------------- | ------- | -------- | ------- | --------- | ------------- |
-| [I-029](#I-029 • Four word-count tests pass whether or not the character figures they name are right.) | Four word-count tests pass whether or not the character figures they name are right. | Minimal | Small (±0) | Shortcut | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
 
 ---
 
@@ -1314,22 +1296,6 @@ Rename sessions are claimed by ID across creates: a create opens its rename with
 
 The handler refuses an empty decoded id beside its existing payload check, leaving the loose decode as file reads need it.
 
-### A8 • Navigation
-
-#### I-050 • Maximum Tab Width has no effect above a tab strip's preferred width, so most of its steps do nothing.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Low | Small (=🟢+1=) | Shortcut | `43d0a6d1e` | **Created:** 09-25-2026<br>**Updated:** 10-03-2026 |
-
-**Description**
-
-Settings offers Maximum Tab Width in steps from 150 to 350px, and `ConfigurationPM.md` calls it the widest a tab grows, but a tab never grows past its strip's preferred width, so the setting can only narrow a tab below it. A tab is `flex: 0 1 var(--tab-pref)`, which shrinks in a crowded strip and never grows, so `max-width: var(--tab-max-user, 250px)` takes effect only below `--tab-pref`: 180px on the main bar (`.tabs-standard`) and 150px in a window's strip (`.tabs-compact`). On the main bar the 150 and 175 steps narrow tabs and the other seven change nothing, and in a window's strip none of the nine changes anything; the trailing tab sizes to its label up to `--tab-max-absolute` and ignores the setting too. Measured over CDP against `~/Test`: main-bar tabs read 150, 175, then 180px at every step from 200 to 350, and window-strip tabs read 150px at every step.[^50]
-
-**Solution** [TBD]
-
-Give `.tab` `flex-grow: 1`, so tabs fill spare strip width up to the setting; the trailing tab keeps its own label-sized rule, and both strips' resting look changes. **Your call:** growing tabs, a ladder that stops at 180px (which still leaves the setting inert in window strips), or dropping the setting; `ConfigurationPM.md` follows the ruling.
-
 ### A9 • Matrix
 
 #### I-054 • The Matrix can't be pinch-zoomed on a touchscreen.
@@ -1345,49 +1311,6 @@ On a touchscreen, such as a Windows touch laptop, two fingers on the Matrix pan 
 **Solution** [Proposed]
 
 In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two are down, feed the change in their distance ratio to `matrixRuntime.zoom` at their midpoint (the same call the wheel makes, which already takes a focus point and factor) and suppress the one-pointer pan.
-
-### A10 • Documentation
-
-#### I-028 • The editor's documentation says eight things the code doesn't do, and two more go false as this cleanup lands.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (±0) | Drift | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-
-**Description**
-
-A reader of `MarkdownPM.md` is told things the editor doesn't do. Its folder map places the editor's menu models in `Menus/` when they live in `Core/Actions/`. It says a Text value reads the inline marks alone and that fences stay literal in a table cell, though both a cell and a Text value read a fence pair as code (`tokenizeChunk` suppresses every mark between the fences). It says a nested list run counts from its first number or letter, and that **Type ▸** does the same, where `renumberRuns` and `setListKind` count from 1 or A. It says a citation's number leads back to its first marker, though with no marker bound the press copies `[^label]`; its Plain grip row omits rules and math, which also take that grip; and one sentence reads "on disk;here". `Editor-Internals.md`'s cell-model entry lists fences among what a cell renders as literal text. Each was confirmed against the code.[^28]
-
-The taken fixes turn two more sentences false. I-026 adds a fourth intentional divergence from CommonMark to `Editor-Internals.md`'s fence entry; and I-024 has a landing from another mount re-take each fold's end from the live section, beside the fold entry's account of regions rewritten under a fold. This finding covers the taken work; the sentences that follow deferred work (I-042's scope threading, I-027's HTML sealing) stay with those findings.
-
-**Solution** [Literal]
-
-Each sentence takes the most surgical correction. In `MarkdownPM.md`: `Menus/` reads "the block handles, the editor's side of its menus, and the pane controls its pickers share, over the menu models in `Core/Actions/`"; the scope sentence ends "with a fence pair read as code in all three"; "on disk; there is no intermediate model"; both list clauses count "from 1 or A"; the cell list entry reads "Headings, quotes and rules stay literal text, and a pair of fences shows as typed while the lines between them read as code, their marks and connections left literal"; the citation number "leads back to its first marker, or, where no marker binds it, copies its `[^label]` reference"; and the Plain row reads "(paragraph, quote, callout, code, rule, math)". In `Editor-Internals.md`, the fence entry's list reads "Four divergences … and a raw-HTML block whose closer never arrives ends at the next blank line rather than at the end — the parser is handed both readings, the fence's marker masked and the unclosed opener handed over as a block the blank line ends"; the cell-model entry drops fences from what a cell renders literally ("a fence pair reads as code in a cell as on a page") and from its list of cell-side readers; and the fold entry adds "A body landing from another mount takes each fold's end from the live section instead." One `Editor-Internals.md` sentence still untrue needs no edit, since I-022 brings the code to it: the atomic set held once per version. This lands last, after I-026 and I-024, the code its new sentences describe.
-
-### A11 • Testing
-
-#### I-029 • Four word-count tests pass whether or not the character figures they name are right.
-
-| Concern | Scale | Origin | Base | Date |
-|---------|-------|--------|------|------|
-| Minimal | Small (±0) | Shortcut | `70fc6063c` | **Created:** 10-08-2026<br>**Updated:** 10-16-2026 |
-
-**Description**
-
-The tests for an inline page embed, a connection and its alias, a markdown link's label, and a link beside a connection each pin a word count and leave the character count the footer shows unchecked, so a regression in how a construct's shown text is counted passes them. The inline embed's figure moved since the first capture: an inline `![[Page]]` reads as a literal `!` beside the connection, so its line counts 14 characters, not 13.[^29]
-
-**Solution** [Literal]
-
-Tighten each to the exact figures below, captured by running `computeStats` at `6df5b11e2`, after I-016, which adds its own tests to `subfieldStats.test.ts` and may move these.
-
-Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift in its lines.
-
-| File | Lines | Tighten To |
-| --- | --- | --- |
-| `Engine/subfieldStats.test.ts` | :55-58 | `characters === 4` and `=== 9` |
-| `Engine/subfieldStats.test.ts` | :51-53 | `toMatchObject({ words: 3, characters: 14 })` |
-| `Engine/subfieldStats.test.ts` | :115-117 | `characters === 9` |
-| `Engine/subfieldStats.test.ts` | :269-271 | `toMatchObject({ words: 4, characters: 19 })` |
 
 ### Sources
 
@@ -1418,8 +1341,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^25]: **I-025:** `Core/Tiles/Surfaces/MarkdownTile.tsx:27` (`useEditorHost`), `Core/Pages/editorHost.tsx:78-83` (`citations`), `Core/MarkdownPM/folding.ts:406-415` (`dividerPress`), `Core/MarkdownPM/Citations/citationActions.ts:31,74` (`travelToCitation`, the marker press's reveal)
 [^26]: **I-026:** `Core/MarkdownPM/Engine/detect.ts:196-212` (`htmlBlocks`), `Core/MarkdownPM/Engine/docScan.ts:107-115,140-160,277-281` (`quietAt`, `loneAbove`, `pairsBelow`, `chunksOver`), `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Links/linkEdit.ts:93-94,97-98,109,113` (`liveSlotAt`, `shownEnd`, `commitAliasOnEnter`), `Core/MarkdownPM/api.ts:222-227` (`inRawHtml`), `Core/MarkdownPM/Engine/markdownCode.ts` (the fence grammar), `.claude/Guidelines/Editor-Internals.md:5` (the CommonMark divergences).
 [^27]: **I-027:** `Core/MarkdownPM/Engine/headingScan.ts:24-25` (`scanHeadings`), `Core/MarkdownPM/Engine/docScan.ts:43-61,95-101,383-390` (`withCitations`, `scanDoc`, `inSealedLine`), `Core/MarkdownPM/Engine/detect.ts:196-212` (`htmlBlocks`), `Core/MarkdownPM/Engine/blockModel.ts:78` (`kindAt`), `Core/MarkdownPM/Engine/intents.ts:589` (`pushConstruct`), `Core/MarkdownPM/api.ts:218-219` (`drawsRawHtml`), `Core/MarkdownPM/api.ts:222-227` (`inRawHtml`), `Core/MarkdownPM/Links/linkEdit.ts:93-94,97-98,109,113` (`liveSlotAt`, `shownEnd`, `commitAliasOnEnter`), `Core/MarkdownPM/docCache.ts:15-34,64-67` (`perDoc`, `docScan`), `Core/MarkdownPM/Input/htmlShortcuts.ts:3,9`, `Core/Settings/personalization.ts:153` (`htmlFormatting`), `Core/Index/indexSeed.ts:~39-47` (`extractPageIndex`), `Core/Nexus/cascade.ts:188`, `.claude/Features/MarkdownPM.md:27`.
-[^28]: **I-028:** `.claude/Features/MarkdownPM.md:8,10,12,24,105,126,136`, `.claude/Guidelines/Editor-Internals.md:5,18,30`, `Core/Actions/gripMenu.ts`, `Core/Actions/blockMenu.ts:72-75,82` (`EMBED_ROWS`, `BLOCK_MENU_SECTIONS`), `Core/MarkdownPM/Engine/tokens.ts:260-266` (`tokenizeChunk`), `Core/MarkdownPM/Tables/cellLists.test.tsx:81-83`, `Core/MarkdownPM/Engine/listDragModel.ts:197-200` (`renumberRuns`), `Core/MarkdownPM/Input/listRenumber.test.ts:62`, `Core/MarkdownPM/Input/format.ts:339-351` (`setListKind`), `Core/MarkdownPM/Citations/citationPointer.ts:99-111` (`citationRowPointer`), `Core/MarkdownPM/Citations/citationActions.ts:147-149`, `Core/MarkdownPM/Menus/gripMenu.ts:47-67` (`contextFor`), `Core/MarkdownPM/Menus/blockHandles.ts:15-23` (`GRIP_KINDS`)
-[^29]: **I-029:** `Core/MarkdownPM/Engine/subfieldStats.test.ts:51-58,115-117,269-271`, `Core/MarkdownPM/Engine/subfieldStats.ts:125` (`computeStats`), `Core/MarkdownPM/Engine/tokens.test.ts:56-59`
 [^30]: **I-030:** `UIX/Buttons/button-base.css.ts:68-93` (`button`), `UIX/Buttons/Button.tsx:54-77`, `UIX/Menus/menu-row.css.ts:24-37` (`rowFocus`, `rowShell`), `UIX/Fields/fieldRing.ts:11,19-33` (`fieldRing`)
 [^31]: **I-031:** `UIX/Interactions/dismissalStack.ts:68-83` (`onPointerDown`), `UIX/Interactions/dismissalStack.ts:122` (`shields`), `UIX/Pickers/PickerMenu.tsx:123-132,310,326` (`PickerMenu`), `UIX/Animations/useExitPresence.ts:8-24` (`useExitPresence`), `UIX/Pickers/PickerControl.tsx:91-114,144-148` (`PickerControl`), `Core/Actions/menuActions.ts:20-23` (`popMenu`), `Core/Session/chromeSlice.ts:62-70` (`presentMenu`), `Core/Interface/Menus/MenuPresenter.tsx:84-103` (`MenuPresenter`), `Core/Tiles/Surfaces/ViewTile.tsx:652-660`, `Core/Interface/Toolbar/Toolbar.tsx:29-33`, `Core/Views/Settings/GroupFrame.tsx:235`, `UIX/Interactions/shared.ts:26-34` (`suppressReleaseClick`)
 [^32]: **I-032:** `Core/Contract/bridge.ts:57-215` (`Asks`), `Core/Nexus/mutateRequest.ts:73-152` (`mutateRequest`), `Core/Nexus/mutate.ts:~166-201` (`setProfileImage`, `setProfileIcon`, `setDisclosureLock`, `setActiveView`), `Core/Nexus/mutate.ts:~237` (`reorderTop`), `Core/Nexus/reorder.ts:26-55`, `Core/Views/handlers.ts:26-64`, `Core/Settings/handlers.ts:20-53`, `Core/Assets/handlers.ts:41` (`assets:setDir`), `Core/Assets/handlers.ts:73` (`assets:adopt`), `Core/Assets/assetMigrate.ts:113`, `Core/Pages/setBanner.ts:49`, `Core/Nexus/configReach.ts:338,340`, `Core/Nexus/cascade.ts:267` (`rewriteTileConnections`), `Core/Navigation/handlers.ts:18` (`nav:write`), `Core/Matrix/handlers.ts:14` (`matrix:write`), `Core/Pages/handlers.ts:26` (`page:updateBody`), `Core/Pages/handlers.ts:45-47` (`history:restore`), `Core/Pages/fileHistory.ts:170-181` (`restoreSnapshot`), `Core/Nexus/handlers.ts:~154` (`nexus:rename`), `Core/Nexus/liveTree.ts:80` (`mutableTarget`), `Core/Tiles/handlers.ts:60-113`, `Core/Contract/handlers.ts:99-112` (`withWriteRoot`), `Desktop/FileWatch/watcher.ts:69-92,114-117` (`pushConfig`)
@@ -1440,7 +1361,6 @@ Paths are relative to `Core/MarkdownPM/`, and the test's name settles any drift 
 [^47]: **I-047:** `Core/MarkdownPM/Engine/parser.ts:17-36` (`parse`), `Core/MarkdownPM/Engine/tokens.ts:260-310` (`tokenizeChunk`, `tokenize`), `node_modules/mdast-util-gfm-task-list-item/lib/index.js:11` (`devlop`'s `ok`), `node_modules/devlop/package.json` (the `development` condition)
 [^48]: **I-048:** `Core/MarkdownPM/Engine/Tables/regions.ts:55` (`tableRegions`)
 [^49]: **I-049:** `UIX/Pickers/PickerMenu.tsx:184-277` (`measure`), `UIX/Pickers/PickerMenu.tsx:279-286`, `UIX/Pickers/PickerMenu.test.tsx:447-515`
-[^50]: **I-050:** `Core/Navigation/tab-base.css:8-10` (`.tab`), `Core/Navigation/tab-base.css:29-32` (`.tab:last-child`), `Core/Navigation/tab-base.css:143-155` (`.tabs-standard`, `.tabs-compact`), `Core/Settings/personalization.ts:45-48` (`TAB_MAX_WIDTH`), `Core/Settings/applyPersonalization.ts:50`, `.claude/Features/ConfigurationPM.md:66`
 [^51]: **I-051:** `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:46,135` (`rename`), `Core/Views/Cards/CardsView.tsx:196` (`beginRename`), `Core/Views/Table/TableView.tsx:120-128`, `Core/Session/editSlice.ts:16,31,108` (`beginRename`, `renamingPath`), `Core/Session/nexusSlice.ts:235-256` (`mutate`), `Core/Nexus/mutateRequest.ts:125-128` (`minted`)
 [^52]: **I-052:** `Core/Views/Bands/bandRouter.ts:74-109` (`routeSet`), `Core/Views/Bands/bandRouter.ts:134-146` (`runBandEffect`), `Core/Views/Host/pendingView.ts:172-186` (`mutateAhead`), `Core/Views/Host/pendingView.ts:109-121` (`stageView`, `unstageView`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/useViewInteractions.tsx:196-203`
 [^53]: **I-053:** `Core/Views/Host/useViewCreation.ts:125-139` (`orderPatch`), `Core/Views/Host/useViewCreation.ts:151-177` (`createPageIn`), `Core/Views/Host/pendingView.ts:116-121` (`unstageView`), `Core/Views/views.ts:337-345` (`slotsOf`)
