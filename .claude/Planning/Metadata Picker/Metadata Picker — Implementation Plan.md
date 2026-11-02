@@ -22,7 +22,7 @@
 | 1 · Kit Imports | about −54; −54 built for the barrel | −54 (+101 / −155) |
 | 2 · The Pane Shell | about +79 (+195 / −116); +72 built | +32 (+326 / −294) |
 | 3 · Small Folds | about −16; −4 built | +11 (+394 / −383) |
-| 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | |
+| 4 · The Two Pickers | about −95; −96 (+386 / −482) built, and the back bar's label +1 | −110 (+769 / −879) |
 | 5 · Settings Panes | about −70 (+46 / −116) | |
 | 6 · One Icon and Color Request | about −170 | |
 | 7 · Right-Click | about −140 (−125 to −155) | |
@@ -238,13 +238,13 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Task 3-4 · `connections` required
   - [x] Task 3-5 · The panel's commits
   - [x] Compaction Checkpoint
-- [ ] **Phase 4** — The Two Pickers
+- [x] **Phase 4** — The Two Pickers
   - [x] Task 4-1 · The two pickers, the seat, and the builder
   - [x] Task 4-2 · Tests beside their modules
   - [x] Task 4-3 · Group 16, group 18's slides, and the Option Picker steps
   - [x] Task 4-4 · Call 8's check
-  - [ ] Review Checkpoint
-  - [ ] Compaction Checkpoint
+  - [x] Review Checkpoint
+  - [x] Compaction Checkpoint
 - [ ] **Phase 5** — Settings Panes
   - [ ] Task 5-1 · One floor and ceiling
   - [ ] Task 5-2 · One back shape, the ⋮, and `LayoutFrame`'s flat form
