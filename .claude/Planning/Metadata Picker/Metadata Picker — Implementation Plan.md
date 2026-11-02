@@ -246,10 +246,10 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
   - [x] Review Checkpoint
   - [x] Compaction Checkpoint
 - [ ] **Phase 5** — Settings Panes
-  - [ ] Task 5-1 · One floor and ceiling
-  - [ ] Task 5-2 · One back shape, the ⋮, and `LayoutFrame`'s flat form
-  - [ ] Task 5-3 · `RuleField`
-  - [ ] Task 5-4 · Group 19 gains the panes
+  - [x] Task 5-1 · One floor and ceiling
+  - [x] Task 5-2 · One back shape, the ⋮, and `LayoutFrame`'s flat form
+  - [x] Task 5-3 · `RuleField`
+  - [x] Task 5-4 · Group 19 gains the panes
   - [ ] Review Checkpoint
   - [ ] Compaction Checkpoint
 - [ ] **Phase 6** — One Icon and Color Request
