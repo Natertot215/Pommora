@@ -115,7 +115,7 @@ export function ValueEditor({
                 }),
                 EditorView.domEventHandlers({
                   blur: (e) => {
-                    if (!inCaretPane(e.relatedTarget)) leave()
+                    if (viewRef.current && !inCaretPane(e.relatedTarget)) leave()
                     return false
                   },
                 }),
@@ -170,8 +170,8 @@ export function ValueEditor({
     portal?.addEventListener('animationend', remeasure)
     return () => {
       portal?.removeEventListener('animationend', remeasure)
-      view.destroy()
       viewRef.current = null
+      view.destroy()
     }
   }, [])
   // Saved in the mutation phase: a seat unmounting with the pane retires its writer in its own passive cleanup first, so a passive save here would be dropped.

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { act, StrictMode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { invalidInput } from '@pommora/uix/Fields/fields.css'
@@ -88,6 +88,27 @@ describe('ValueEditor in its one-line mode', () => {
     expect(view.contentDOM.getAttribute('spellcheck')).toBe('false')
     expect(view.contentDOM.classList.contains('cm-lineWrapping')).toBe(false)
     expect(container.querySelector('.value-field.mdpm-shell')).not.toBeNull()
+  })
+
+  it('stays open and focused through StrictMode’s remount', () => {
+    act(() =>
+      root.render(
+        <StrictMode>
+          <ValueEditor
+            initial="a"
+            holder={undefined}
+            host={host}
+            oneLine
+            onCommit={onCommit}
+            onClose={onClose}
+          />
+        </StrictMode>,
+      ),
+    )
+    const view = EditorView.findFromDOM(container.querySelector('.cm-editor') as HTMLElement)!
+    expect(document.activeElement).toBe(view.contentDOM)
+    expect(onClose).not.toHaveBeenCalled()
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('with no connections, a one-line link is no link to seat, and the caret rests at the end', () => {
