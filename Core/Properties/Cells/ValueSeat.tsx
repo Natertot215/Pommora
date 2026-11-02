@@ -1,9 +1,10 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
-import { propertyColumn } from '../../Views/Pipeline/columns'
+import { type ItemColumns, propertyColumn } from '../../Views/Pipeline/columns'
 import type { ConnPage } from '../../Connections/pageIndex'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { readLinkText, resolveLink } from '../../Connections/linkValue'
@@ -20,13 +21,16 @@ import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { previewConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
+import { groupUndo } from '../../Session/undo'
 import type { ColumnStyle } from '../columnStyles'
 import { numberBarCapable } from '../formatValue'
 import { resolveFieldValue } from '../fieldValue'
 import { pickKindOf } from '../properties'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../Pickers/filePick'
-import { type PickEntry, PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
+import { MetadataPicker } from '../Pickers/MetadataPicker'
+import type { PickCommit } from '../Pickers/pickModel'
+import { PropertyPicker, type PickTarget } from '../Pickers/PropertyPicker'
 import { PropertyValueInput } from '../Pickers/PropertyValueInput'
 import { type ValueIntent, valueClickIntent, valueMenuIntent } from '../Pickers/valueClick'
 
@@ -48,6 +52,12 @@ export type SeatHost = {
   centered?: true
   /** Keeps the surface's hover ghost down while a value's menu is open. */
   hold?: <T>(menu: () => Promise<T>) => Promise<T>
+  /** Present where a surface adds metadata from a list: what the list holds for a row, how a held value shows, and, with `inPlace`, that a typed value edits where the surface shows it. */
+  add?: {
+    columns: (row: ViewRow) => ItemColumns
+    show: (column: ResolvedColumn) => void
+    inPlace?: true
+  }
   /** Present where a value's menu offers Remove, naming what Remove takes the value out of. */
   hide?: { from: HideFrom; run: (row: ViewRow, column: ResolvedColumn) => void }
   /** The panel's Clear, which keeps its row shown. */
@@ -60,15 +70,18 @@ type Mode = 'picker' | 'editor' | 'popover'
 /** React events cross portals along the component tree, so a gesture inside a pane a value's field opened, such as its link suggestions, reaches the seat too. */
 const fromPane = (e: React.MouseEvent): boolean => !e.currentTarget.contains(e.target as Node)
 
-type SeatOpen = {
+type PaneOpen = {
   rowId: string
   columnId: string
   mode: Mode
   seat?: ConnEditAction
   x?: number
+  swept?: string[]
   /** Counts every open, so opening the same value again mounts a fresh popover. */
   nonce: number
 }
+
+type SeatOpen = PaneOpen | { mode: 'add'; rowId: string; group?: keyof ItemColumns; slid?: string }
 
 export type ValueSeatApi = ReturnType<typeof useValueSeat>
 
@@ -86,7 +99,9 @@ export function useValueSeat(host: SeatHost) {
   }
   // A pane whose anchor left the page closes: its row is gone, or a compact card dropped the value it just cleared. So does one whose column no longer resolves.
   useEffect(() => {
-    if (open && (!anchor.current?.isConnected || !host.columnOf(open.columnId))) close()
+    if (!open) return
+    if (!anchor.current?.isConnected || (open.mode !== 'add' && !host.columnOf(open.columnId)))
+      close()
   })
 
   const intentOf = (row: ViewRow, column: ResolvedColumn): ValueIntent | null =>
@@ -97,19 +112,19 @@ export function useValueSeat(host: SeatHost) {
       column.def,
     )
 
-  /** True when a handler ran. `from` is the element the gesture landed on, which picks a File chip; `x` centers an option picker. */
+  /** True when a handler ran. `from` is the element the gesture landed on, which picks a File chip; `at` carries the click's x, which centers an option picker, or a sweep's rows. */
   const run = (
     row: ViewRow,
     column: ResolvedColumn,
     intent: ValueIntent | null,
     el: HTMLElement | null,
     from: EventTarget | null = null,
-    x?: number,
+    at?: Pick<PaneOpen, 'x' | 'swept'>,
   ): boolean => {
-    const float = (mode: Mode, seat?: ConnEditAction, at?: number): true => {
+    const float = (mode: Mode, seat?: ConnEditAction): true => {
       anchor.current = el
       opens.current += 1
-      setOpen({ rowId: row.id, columnId: column.id, mode, seat, x: at, nonce: opens.current })
+      setOpen({ rowId: row.id, columnId: column.id, mode, seat, ...at, nonce: opens.current })
       return true
     }
     const { commit, clear, hide } = live.current
@@ -126,8 +141,6 @@ export function useValueSeat(host: SeatHost) {
           )
         return true
       case 'picker':
-        return float('picker', undefined, x)
-      case 'dateTime':
         return float('picker')
       case 'edit':
         return float('editor', intent.seat)
@@ -144,12 +157,47 @@ export function useValueSeat(host: SeatHost) {
     if (isSecondaryClick(e)) return
     const el = host.anchor(e.currentTarget as HTMLElement, column)
     const x = host.centered ? e.clientX : undefined
-    if (fromPane(e) || run(row, column, intentOf(row, column), el, e.target, x)) e.stopPropagation()
+    if (fromPane(e) || run(row, column, intentOf(row, column), el, e.target, { x }))
+      e.stopPropagation()
   }
 
   const pane = (row: ViewRow, column: ResolvedColumn, at: HTMLElement): void => {
     run(row, column, { kind: 'popover' }, host.anchor(at, column))
   }
+
+  const sweep = (
+    row: ViewRow,
+    column: ResolvedColumn,
+    rowIds: string[],
+    cell: HTMLElement,
+  ): void => {
+    run(row, column, { kind: 'picker' }, cell, null, { swept: rowIds })
+  }
+
+  const openAway = (row: ViewRow, column: ResolvedColumn, el: HTMLElement | null): void => {
+    const intent = intentOf(row, column)
+    if (intent?.kind !== 'edit') run(row, column, intent, el)
+    else if (!live.current.add?.inPlace) run(row, column, { kind: 'popover' }, el)
+    else {
+      flushSync(() => live.current.add?.show(column))
+      run(row, column, intent, el && host.anchor(el, column))
+    }
+  }
+
+  const openAdd = (row: ViewRow, el: HTMLElement | null, group?: keyof ItemColumns): void => {
+    const item = host.add?.columns(row)
+    if (!item || (group ? item[group] : [...item.contexts, ...item.properties]).length === 0) return
+    anchor.current = el
+    setOpen({ mode: 'add', rowId: row.id, group })
+  }
+
+  const slide = (columnId?: string): void =>
+    setOpen((at) => (at?.mode === 'add' ? { ...at, slid: columnId } : at))
+
+  const commitPicks = (rows: ViewRow[], column: ResolvedColumn, commits: PickCommit[]): void =>
+    groupUndo(() => {
+      for (const { index, next } of commits) live.current.commit(rows[index], column, next)
+    })
 
   /** `label` is the panel row's name, which offers the row menu even over a link the connection menu could open. */
   const menu = async (
@@ -196,7 +244,7 @@ export function useValueSeat(host: SeatHost) {
   }
 
   /** A typed value's field, inline or, with `popover`, floating; a popover mounts fresh for every open. */
-  const input = (row: ViewRow, at: SeatOpen, popover = false): React.ReactNode => {
+  const input = (row: ViewRow, at: PaneOpen, popover = false): React.ReactNode => {
     const column = host.columnOf(at.columnId)
     return column?.def ? (
       <PropertyValueInput
@@ -219,13 +267,12 @@ export function useValueSeat(host: SeatHost) {
       : null
 
   /** A row never lists itself among a Context's Spaces; a page row's id names no Space, so it excludes nothing. */
-  const target = (row: ViewRow, column: ResolvedColumn): PickTarget | null => {
-    const current = resolveFieldValue(row, column)
+  const target = (rows: ViewRow[], column: ResolvedColumn): PickTarget | null => {
     const style = host.style(column)
     if (column.type === 'dateTime')
       return {
         kind: 'dateTime',
-        current,
+        current: resolveFieldValue(rows[0], column),
         dateFormat: style?.date_format,
         timeFormat: style?.time_format,
       }
@@ -236,40 +283,44 @@ export function useValueSeat(host: SeatHost) {
       kind: 'options',
       column,
       pick,
-      current,
+      currents: rows.map((row) => resolveFieldValue(row, column)),
       style:
         setStyle && style
           ? { current: style, set: (key, value) => setStyle(column, key, value) }
           : undefined,
-      contextOptions: contextOptionsFor(column, tree, row.id),
+      contextOptions: contextOptionsFor(column, tree, rows[0].id),
     }
   }
 
-  return { open, anchor, host, close, intentOf, run, click, pane, menu, input, editor, target }
+  return {
+    open,
+    anchor,
+    host,
+    close,
+    click,
+    pane,
+    menu,
+    input,
+    editor,
+    target,
+    sweep,
+    openAway,
+    openAdd,
+    slide,
+    commitPicks,
+  }
 }
 
-/** A surface's add chooser on `row`, shown in the seat's picker so a drilled-in value opens in the same pane. */
-type SeatChooser = {
-  row: ViewRow
-  entries: PickEntry[]
-  onReveal: (entry: PickEntry) => void
-  onDismiss: () => void
-}
-
-/** The seat's floating panes: one picker, which a surface's add chooser shares, and one typed-value popover. Each holds the value it last opened on through its exit; the picker mounts fresh for another value and the popover for every open. */
-export function ValueSeat({
-  seat,
-  chooser,
-}: {
-  seat: ValueSeatApi
-  chooser?: SeatChooser | null
-}): React.JSX.Element {
+/** The seat's floating panes: a value's picker, the Add list where the surface has one, and one typed-value popover. Each holds the value it last opened on through its exit; the picker mounts fresh for another value and the popover for every open. */
+export function ValueSeat({ seat }: { seat: ValueSeatApi }): React.JSX.Element {
   const { open, host } = seat
-  const last = useRef<{ picker?: SeatOpen; popover?: SeatOpen }>({})
+  const last = useRef<{ picker?: PaneOpen; popover?: PaneOpen }>({})
   if (open?.mode === 'picker' || open?.mode === 'popover') last.current[open.mode] = open
   const picked = last.current.picker
-  const pickRow = picked && host.rowOf(picked.rowId)
   const pickColumn = picked && host.columnOf(picked.columnId)
+  const pickRows = picked
+    ? (picked.swept ?? [picked.rowId]).flatMap((id) => host.rowOf(id) ?? [])
+    : []
   const typed = last.current.popover
   const typedRow = typed && host.rowOf(typed.rowId)
   return (
@@ -277,33 +328,18 @@ export function ValueSeat({
       <PropertyPicker
         key={picked ? `${picked.rowId}:${picked.columnId}` : 'none'}
         target={
-          !chooser && open?.mode === 'picker' && pickRow && pickColumn
-            ? seat.target(pickRow, pickColumn)
+          open?.mode === 'picker' && pickRows.length > 0 && pickColumn
+            ? seat.target(pickRows, pickColumn)
             : null
         }
-        chooser={chooser?.entries}
-        resolveTarget={
-          chooser
-            ? (entry) => {
-                const column = host.columnOf(entry.id)
-                return column ? seat.target(chooser.row, column) : null
-              }
-            : undefined
-        }
-        open={open?.mode === 'picker' || chooser != null}
         triggerRef={seat.anchor}
         centerX={open?.mode === 'picker' ? open.x : undefined}
-        onCommit={(value, entry) => {
-          const column = entry ? host.columnOf(entry.id) : pickColumn
-          const row = entry ? chooser?.row : pickRow
-          if (row && column) host.commit(row, column, value)
+        onCommit={(commits) => {
+          if (pickColumn) seat.commitPicks(pickRows, pickColumn, commits)
         }}
-        onReveal={chooser?.onReveal}
-        onDismiss={() => {
-          seat.close()
-          chooser?.onDismiss()
-        }}
+        onDismiss={seat.close}
       />
+      {host.add && <MetadataPicker seat={seat} />}
       {typed && typedRow && seat.input(typedRow, typed, true)}
     </>
   )
@@ -339,15 +375,9 @@ export function MenuSeat(): React.JSX.Element {
     if (!pending) return
     const row = pending.rowOf()
     if (!row) return dismiss()
-    const intent = seat.intentOf(row, pending.column)
-    seat.run(
-      row,
-      pending.column,
-      intent?.kind === 'edit' ? { kind: 'popover' } : intent,
-      pending.trigger,
-    )
+    seat.openAway(row, pending.column, pending.trigger)
     // The file dialog opens no pane, so nothing is left to hold the menu's anchor.
-    if (intent?.kind === 'file') dismiss()
+    if (pending.column.type === 'file') dismiss()
   }, [pending])
   return <ValueSeat seat={seat} />
 }

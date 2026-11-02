@@ -3,7 +3,8 @@ import fixture from '../../Testing/fixtures/collection-with-status.json'
 import { FIXTURE_DEFS } from '../../Testing/definitions'
 import { savedView, type SavedView } from '../views'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
-import { resolveColumn, resolveColumns } from './columns'
+import { linkedSpacesTree } from '../../Testing/testTree'
+import { itemColumns, resolveColumn, resolveColumns } from './columns'
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_a', label: 'A', key: 'A', type: 'select' },
@@ -146,5 +147,29 @@ describe('resolveColumn', () => {
     expect(resolveColumn(FILEDATA.location.id, schema, CONTEXT_IDS)).toBeUndefined()
     expect(resolveColumn('prop_ghost', schema, CONTEXT_IDS)).toBeUndefined()
     expect(resolveColumn('ctx_areas', schema, [])).toBeUndefined()
+  })
+})
+
+describe('itemColumns', () => {
+  const tree = (rowOrder?: string[]) => {
+    const base = linkedSpacesTree()
+    const [first, ...rest] = base.contexts
+    return {
+      ...base,
+      contexts: [{ ...first, spaces: [{ ...first.spaces[0], rowOrder }] }, ...rest],
+      config: { ...base.config, order: { ...base.config.order, contexts: ['g2', 'g1'] } },
+    }
+  }
+
+  it("a page lists the Nexus's Context order and its schema's order, with no stamps", () => {
+    const item = itemColumns(tree(), schema, 'p1')
+    expect(ids(item.contexts)).toEqual(['g2', 'g1'])
+    expect(ids(item.properties)).toEqual(['prop_a', 'prop_b'])
+  })
+
+  it("a Space's own row order leads both groups", () => {
+    const item = itemColumns(tree(['prop_b', 'g1']), schema, 'a1')
+    expect(ids(item.contexts)).toEqual(['g1', 'g2'])
+    expect(ids(item.properties)).toEqual(['prop_b', 'prop_a'])
   })
 })

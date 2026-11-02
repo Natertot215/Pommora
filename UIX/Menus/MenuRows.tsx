@@ -32,13 +32,11 @@ export function MenuTopRow({
   onBack,
   trailing,
   current,
-  className,
 }: {
   label: string
   onBack: () => void
   trailing?: ReactNode
   current?: string
-  className?: string
 }): React.JSX.Element {
   const right = trailing ? (
     <span className={s.topBarTrailingSymbol}>{trailing}</span>
@@ -48,7 +46,7 @@ export function MenuTopRow({
   return (
     <>
       <MenuItem
-        className={cx(s.topRow, className)}
+        className={s.topRow}
         leading={
           <span className={s.topBarLeadingSymbol}>
             <Icon name="chevron-left" size={BAR_GLYPH} />

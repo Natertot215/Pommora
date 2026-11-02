@@ -464,7 +464,7 @@ describe('the Add row', () => {
     })
   }
 
-  it('a standing Add row holds while the chooser it opened is open', async () => {
+  it('a standing Add row holds while the Add list it opened is open', async () => {
     vi.useFakeTimers()
     cachePageDetail(detail({ path: 'Col/Page.md' }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
@@ -475,7 +475,7 @@ describe('the Add row', () => {
     expect(addRow('Add Property')?.hasAttribute('data-reveal-held')).toBe(false)
   })
 
-  it('a hovered Add row stays held through its chooser, then leaves', async () => {
+  it('a hovered Add row stays held through its Add list, then leaves', async () => {
     vi.useFakeTimers()
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
@@ -516,6 +516,10 @@ describe('picking from the Add list', () => {
     await press(add())
     await press(entry('Note'))
     expect(row('prop_note')?.querySelector('input')).not.toBeNull()
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 400))
+    })
+    expect(entry('Note')).toBeUndefined()
   })
 
   it('an option entry lands the picked option on the page and shows its row', async () => {
@@ -544,6 +548,88 @@ describe('picking from the Add list', () => {
     await press(add())
     expect(entry('Note')).toBeDefined()
     expect(entry('Done')).toBeUndefined()
+  })
+})
+
+describe('the Add list', () => {
+  const tagsDef: PropertyDefinition = {
+    id: 'prop_tags',
+    label: 'Tags',
+    key: 'Tags',
+    type: 'multiSelect',
+    select_options: [
+      { id: 'opt_a', key: 'A', label: 'A' },
+      { id: 'opt_b', key: 'B', label: 'B' },
+    ],
+  }
+  const settle = async (): Promise<void> => {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30))
+    })
+  }
+  const portalRow = (name: string): HTMLElement | undefined =>
+    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find((e) =>
+      e.textContent?.includes(name),
+    )
+  const press = async (el: HTMLElement | undefined | null): Promise<void> => {
+    await act(async () => {
+      el?.click()
+    })
+    await settle()
+  }
+  const open = async (frontmatter: Record<string, unknown>, ids: string[]): Promise<void> => {
+    const tree = useSession.getState().tree as never as {
+      config: { registry: PropertyDefinition[] }
+      collections: { propertyIds: string[] }[]
+    }
+    tree.config.registry = [stageDef, noteDef, rankDef, tagsDef]
+    tree.collections[0].propertyIds = ids
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await settle()
+  }
+  const plus = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
+  const row = (id: string): Element | null => host.querySelector(`[data-property-row="${id}"]`)
+  const fieldRow = (name: string): HTMLElement | undefined =>
+    [...host.querySelectorAll<HTMLElement>('[data-ghost-root] [role="button"]')].find(
+      (e) => e.textContent === name,
+    )
+
+  it('a Select entry slides under ‹ Properties · Stage, and cancelling leaves no row', async () => {
+    await open({ Note: 1 }, [noteDef.id, stageDef.id])
+    await press(plus())
+    expect(portalRow('Stage')?.querySelector('.lucide-chevron-right')).not.toBeNull()
+    await press(portalRow('Stage'))
+    expect(portalRow('Properties')?.textContent).toContain('Stage')
+    expect(row('prop_stage')).toBeNull()
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    await settle()
+    expect(row('prop_stage')).toBeNull()
+  })
+
+  it('the first pick from a group’s last entry shows its row and keeps its pane open', async () => {
+    await open({ Note: 1 }, [noteDef.id, tagsDef.id])
+    await press(plus())
+    await press(portalRow('Tags'))
+    await press(portalRow('A'))
+    expect(row('prop_tags')).not.toBeNull()
+    expect(plus()).not.toBeNull()
+    expect(portalRow('B')).toBeTruthy()
+    await press(portalRow('B'))
+    expect(portalRow('Properties')?.textContent).toContain('Tags')
+  })
+
+  it('a pick from a standing Add row keeps that row, and its pane, through the first row landing', async () => {
+    await open({}, [tagsDef.id])
+    const add = fieldRow('Add Property')
+    await press(add)
+    await press(portalRow('Tags'))
+    await press(portalRow('A'))
+    expect(row('prop_tags')).not.toBeNull()
+    expect(fieldRow('Add Property')).toBe(add)
+    expect(portalRow('B')).toBeTruthy()
   })
 })
 

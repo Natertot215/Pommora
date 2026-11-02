@@ -6,13 +6,12 @@ export type PickGroup = { id: string; options: PickOption[] }
 export type PickCommit = { index: number; next: PropertyValue | null }
 
 export const pickGroups = (column: ResolvedColumn, contextOptions?: PickOption[]): PickGroup[] =>
-  contextOptions
+  (contextOptions
     ? [{ id: column.id, options: contextOptions }]
     : column.def
-      ? optionGroupsOf(column.def)
-          .map((g) => ({ id: g.id, options: groupOptions(g) }))
-          .filter((g) => g.options.length > 0)
+      ? optionGroupsOf(column.def).map((g) => ({ id: g.id, options: groupOptions(g) }))
       : []
+  ).filter((g) => g.options.length > 0)
 
 export const toggleValue = (selected: string[], value: string): string[] =>
   selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]

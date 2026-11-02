@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, type RefObject, useEffect, useState } from 'react'
+import { Fragment, type ReactNode, type RefObject } from 'react'
 import type { ColumnStyle } from '../columnStyles'
 import {
   groupOptions,
@@ -21,164 +21,94 @@ import {
   MenuItem,
   MenuScrollFrame,
   MenuSeparator,
-  MenuTopRow,
   menuDropLine,
 } from '@pommora/uix/Menus/MenuRows'
 import { pickRuns, type PickRun } from '@pommora/uix/Menus/pickRuns'
-import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { Icon } from '@pommora/uix/Symbols'
-import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
-import { type PickGroup, pickGroups, pickOver } from './pickModel'
+import { type PickCommit, type PickGroup, pickGroups, pickOver } from './pickModel'
 import { OptionChip } from '../Cells/OptionChip'
-import { chooserTop, emptyPane } from './property-picker.css'
+import { emptyPane } from './property-picker.css'
 
-export type PickTarget = { current: PropertyValue | null } & (
+export type PickTarget =
   | {
       kind: 'options'
       column: ResolvedColumn
       pick: OptionPickKind
+      currents: Array<PropertyValue | null>
       style?: OptionStyleControl
       contextOptions?: PickOption[]
     }
   | {
       kind: 'dateTime'
+      current: PropertyValue | null
       dateFormat?: ColumnStyle['date_format']
       timeFormat?: ColumnStyle['time_format']
     }
-)
 
-export type PickEntry = {
-  id: string
-  name: string
-  icon: string
-  revealOnly: boolean
-  drillable: boolean
-  group?: 'Spaces' | 'Properties'
+export function ValuePane({
+  target,
+  header,
+  onCommit,
+  onClose,
+}: {
+  target: PickTarget
+  header?: ReactNode
+  onCommit: (commits: PickCommit[]) => void
+  onClose: () => void
+}): React.JSX.Element {
+  if (target.kind === 'dateTime')
+    return (
+      <>
+        {header}
+        <DateTimeValuePicker
+          value={target.current}
+          dateFormat={target.dateFormat}
+          timeFormat={target.timeFormat}
+          span
+          onCommit={(next) => onCommit([{ index: 0, next }])}
+        />
+      </>
+    )
+  const { selected, pick } = pickOver(target.pick, target.currents, onCommit, onClose)
+  return (
+    <PropertyOptionRows
+      column={target.column}
+      style={target.style}
+      contextOptions={target.contextOptions}
+      header={header}
+      selected={selected}
+      onPick={pick}
+      editable
+    />
+  )
 }
 
 export function PropertyPicker({
   target,
-  chooser,
-  open,
   triggerRef,
   centerX,
   onCommit,
-  onReveal,
   onDismiss,
-  resolveTarget,
 }: {
   target: PickTarget | null
-  chooser?: PickEntry[]
-  open: boolean
   triggerRef: RefObject<HTMLElement | null>
   centerX?: number
-  onCommit: (value: PropertyValue | null, entry?: PickEntry) => void
-  onReveal?: (entry: PickEntry) => void
+  onCommit: (commits: PickCommit[]) => void
   onDismiss: () => void
-  resolveTarget?: (entry: PickEntry) => PickTarget | null
 }): React.JSX.Element | null {
-  const held = useHeld(target, open)
-  const [picked, setPicked] = useState<PickEntry | null>(null)
-  useEffect(() => {
-    setPicked(null)
-  }, [open])
-
-  const t = picked ? (resolveTarget?.(picked) ?? null) : held
-  const commit = (v: PropertyValue | null): void => (picked ? onCommit(v, picked) : onCommit(v))
-
-  const origin = t?.kind !== 'options' ? 'auto' : centerX !== undefined ? 'center' : 'right'
-
-  const pane = !t ? null : t.kind === 'options' ? (
-    (() => {
-      const { selected, pick } = pickOver(
-        t.pick,
-        [t.current],
-        ([one]) => commit(one.next),
-        onDismiss,
-      )
-      return (
-        <PropertyOptionRows
-          column={t.column}
-          style={t.style}
-          contextOptions={t.contextOptions}
-          selected={selected}
-          onPick={pick}
-          editable
-        />
-      )
-    })()
-  ) : (
-    <DateTimeValuePicker
-      value={t.current}
-      dateFormat={t.dateFormat}
-      timeFormat={t.timeFormat}
-      span
-      onCommit={commit}
-    />
-  )
-
-  const entryRow = (e: PickEntry): React.JSX.Element => (
-    <MenuItem
-      key={e.id}
-      leading={<Icon name={e.icon} size="body" />}
-      trailing={e.revealOnly ? undefined : <Icon name="chevron-right" />}
-      onClick={() => {
-        if (e.drillable) return setPicked(e)
-        onReveal?.(e)
-        if (e.revealOnly) onDismiss()
-      }}
-    >
-      {e.name}
-    </MenuItem>
-  )
-  const spaces = chooser?.filter((e) => e.group === 'Spaces') ?? []
-  const rest = chooser?.filter((e) => e.group !== 'Spaces') ?? []
-
+  const options = target?.kind === 'options'
   return (
     <PickerMenu
       solid
-      open={open}
+      open={target !== null}
       onDismiss={onDismiss}
       triggerRef={triggerRef}
-      origin={chooser ? 'auto' : origin}
-      centerX={centerX}
+      origin={!options ? 'auto' : centerX !== undefined ? 'center' : 'right'}
+      centerX={options ? centerX : undefined}
     >
-      {chooser ? (
-        <FrameSlide
-          open={picked !== null}
-          minWidth={120}
-          minHeight={0}
-          root={
-            chooser.length === 0 ? (
-              <div className={emptyPane} />
-            ) : (
-              <div>
-                {spaces.map(entryRow)}
-                {spaces.length > 0 && rest.length > 0 && <MenuSeparator />}
-                {rest.map(entryRow)}
-              </div>
-            )
-          }
-          detail={
-            picked && (
-              <div>
-                <MenuTopRow
-                  label={picked.group ?? 'Properties'}
-                  current={picked.name}
-                  onBack={() => setPicked(null)}
-                  className={chooserTop}
-                />
-                {pane}
-              </div>
-            )
-          }
-        />
-      ) : (
-        pane
-      )}
+      {target && <ValuePane target={target} onCommit={onCommit} onClose={onDismiss} />}
     </PickerMenu>
   )
 }
@@ -187,6 +117,7 @@ export function PropertyOptionRows({
   column,
   style,
   contextOptions,
+  header,
   selected,
   onPick,
   editable,
@@ -194,6 +125,7 @@ export function PropertyOptionRows({
   column: ResolvedColumn
   style?: OptionStyleControl
   contextOptions?: PickOption[]
+  header?: ReactNode
   selected: string[]
   onPick: (value: string) => void
   editable?: boolean
@@ -205,6 +137,7 @@ export function PropertyOptionRows({
         key={column.id}
         def={column.def}
         style={style}
+        header={header}
         groups={groups}
         selected={selected}
         onPick={onPick}
@@ -212,7 +145,7 @@ export function PropertyOptionRows({
     )
   const look = style?.current.look
   return (
-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} header={header}>
       <OptionGroups
         groups={groups}
         selected={selected}
@@ -254,12 +187,14 @@ function OptionGroups({
 function EditableOptionRows({
   def,
   style,
+  header,
   groups,
   selected,
   onPick,
 }: {
   def: PropertyDefinition
   style?: OptionStyleControl
+  header?: ReactNode
   groups: PickGroup[]
   selected: string[]
   onPick: (value: string) => void
@@ -273,6 +208,7 @@ function EditableOptionRows({
     <>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
+        header={header}
         footer={
           creates && (
             <>

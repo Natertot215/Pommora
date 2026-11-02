@@ -13,6 +13,7 @@ import { FILEDATA, type PropertyDefinition } from '../properties'
 import { dateDefaults } from '../columnStyles'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { propertyColumn } from '../../Views/Pipeline/columns'
+import { pushUndo, undoValue } from '../../Session/undo'
 import { MenuSeat, type SeatHost, useValueSeat, ValueSeat, type ValueSeatApi } from './ValueSeat'
 
 let root: Root
@@ -153,11 +154,11 @@ describe('a value seat’s click', () => {
   it('a centered host carries the click’s x to the picker, and a plain one carries none', () => {
     mount(columnOf(SELECT), { centered: true })
     act(() => el().dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 40 })))
-    expect(seat.open?.x).toBe(40)
+    expect(seat.open).toMatchObject({ x: 40 })
     act(() => seat.close())
     mount(columnOf(SELECT))
     act(() => el().dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 40 })))
-    expect(seat.open?.x).toBeUndefined()
+    expect(seat.open).toMatchObject({ x: undefined })
   })
 })
 
@@ -278,6 +279,46 @@ describe('a value seat’s panes', () => {
       pane.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
     expect(menu).not.toHaveBeenCalled()
+  })
+})
+
+describe('a sweep', () => {
+  const rowA: ViewRow = { ...row, id: 'page_a', path: 'Col/A.md', frontmatter: {} as never }
+  const rowB: ViewRow = { ...row, id: 'page_b', path: 'Col/B.md', frontmatter: {} as never }
+  const rows = new Map([
+    [rowA.id, rowA],
+    [rowB.id, rowB],
+  ])
+  const open = (): void => {
+    mount(columnOf(SELECT), { rowOf: (id) => rows.get(id) })
+    act(() => seat.sweep(rowA, columnOf(SELECT), [rowA.id, rowB.id], el()))
+  }
+  const option = (label: string): HTMLElement | undefined =>
+    [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-picker-portal] [data-line-row] [role="button"]',
+      ),
+    ].find((e) => e.textContent?.includes(label))
+
+  it('opens its one picker at the settled cell', () => {
+    open()
+    expect(seat.open).toMatchObject({ mode: 'picker', swept: [rowA.id, rowB.id] })
+    expect(seat.anchor.current).toBe(el())
+  })
+
+  it('lands a pick on every row that lacks it, as one undo step', () => {
+    const reverted: string[] = []
+    commit.mockImplementation((r) =>
+      pushUndo(() => {
+        reverted.push(r.id)
+        return true
+      }),
+    )
+    open()
+    act(() => option('Alpha')?.click())
+    expect(commit.mock.calls.map(([r]) => r.id)).toEqual([rowA.id, rowB.id])
+    expect(undoValue(null)).toBe(true)
+    expect(reverted).toEqual([rowB.id, rowA.id])
   })
 })
 

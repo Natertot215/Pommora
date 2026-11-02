@@ -1,6 +1,6 @@
-// What a click or a value menu means on every surface: a checkbox toggles, the option kinds open their picker, a Date opens the calendar, and a stamp opens nothing; the value seat runs it.
+// What a click or a value menu means on every surface: a checkbox toggles, the option kinds and a Date open their picker, and a stamp opens nothing; the value seat runs it. An Add entry shows a value it holds, slides into a picker, or acts as that click.
 
-import { checkboxValue, type PropertyValue } from '../propertyValue'
+import { checkboxValue, isBlankValue, type PropertyValue } from '../propertyValue'
 import type { ColumnLook } from '../columnStyles'
 import type { CellMenuAction } from '../../Actions/cellMenu'
 import type { ConnEditAction, LinkAction } from '../../Actions/connectionMenu'
@@ -10,7 +10,6 @@ import { barDivisor } from '../formatValue'
 export type ValueIntent =
   | { kind: 'commit'; value: PropertyValue | null }
   | { kind: 'picker' }
-  | { kind: 'dateTime' }
   | { kind: 'file' }
   | { kind: 'edit'; seat?: ConnEditAction }
   | { kind: 'popover'; seat?: ConnEditAction }
@@ -33,9 +32,8 @@ export function valueClickIntent(
     case 'select':
     case 'multiSelect':
     case 'context':
-      return { kind: 'picker' }
     case 'dateTime':
-      return { kind: 'dateTime' }
+      return { kind: 'picker' }
     case 'file':
       return { kind: 'file' }
     case 'number':
@@ -44,6 +42,13 @@ export function valueClickIntent(
     case 'link':
       return { kind: 'edit' }
   }
+}
+
+type EntryOutcome = 'show' | 'slide' | 'click'
+
+export function entryOutcome(type: ColumnType, value: PropertyValue): EntryOutcome {
+  if (!isBlankValue(value)) return 'show'
+  return valueClickIntent(type, value)?.kind === 'picker' ? 'slide' : 'click'
 }
 
 const MENU_INTENTS: Partial<Record<CellMenuAction | LinkAction, ValueIntent>> = {

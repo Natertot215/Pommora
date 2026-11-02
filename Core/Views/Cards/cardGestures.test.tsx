@@ -7,6 +7,7 @@ import type { CollectionNode } from '../../Nexus/tree'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { ID_KEY } from '../../Nexus/identityMark'
 import { useSession } from '../../Session/store'
+import { daySelected } from '@pommora/uix/Pickers/calendar-picker.css'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { STATUS_DEF } from '../../Testing/definitions'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
@@ -314,7 +315,7 @@ describe('a card’s link value', () => {
   })
 })
 
-describe('the card’s Add chooser', () => {
+describe('the card’s Add list', () => {
   const doneDef: PropertyDefinition = {
     id: 'prop_done',
     label: 'Done',
@@ -345,10 +346,52 @@ describe('the card’s Add chooser', () => {
     expect(openPanes()).toBe(1)
   })
 
-  it('a Date entry opens its own calendar', async () => {
+  it('a Date entry slides into its calendar under ‹ Properties, in the same pane', async () => {
     await choose('Due')
+    expect(entry('Properties')?.textContent).toContain('Due')
     const shown = [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent)
     expect(shown.join('')).toContain('Mon')
+    expect(openPanes()).toBe(1)
+  })
+
+  it('a second date slides in on its own value, not the one the last calendar held', async () => {
+    const startDef: PropertyDefinition = {
+      id: 'prop_start',
+      label: 'Start',
+      key: 'Start',
+      type: 'dateTime',
+    }
+    const defs = [STATUS_DEF, numberDef, dueDef, startDef]
+    useSession.setState({ tree: makeTree({ registry: defs }) })
+    await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
+    await act(async () => {
+      ;(card('p2').querySelector('.card-text') as HTMLElement).click()
+    })
+    await act(async () => {
+      entry('Due')?.click()
+    })
+    await settle(30)
+    const days = (): HTMLElement[] => [
+      ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [data-k]'),
+    ]
+    const selected = (): number =>
+      days().filter((d) => d.querySelector(`.${daySelected}`) || d.classList.contains(daySelected))
+        .length
+    await act(async () => {
+      days()[10].click()
+    })
+    await settle(200)
+    expect(selected()).toBe(1)
+    await act(async () => {
+      entry('Properties')?.click()
+    })
+    await settle(300)
+    await act(async () => {
+      entry('Start')?.click()
+    })
+    await settle(30)
+    expect(entry('Properties')?.textContent).toContain('Start')
+    expect(selected()).toBe(0)
   })
 
   it('a Checkbox entry lands checked on the card with no pane open, and unchecking keeps it drawn', async () => {

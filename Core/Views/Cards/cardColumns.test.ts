@@ -1,17 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { FILEDATA, type PropertyDefinition } from '../../Properties/properties'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
-import type { SavedView } from '../views'
-import type { ValueContext } from '../../Properties/valueContext'
-import {
-  type AddEntry,
-  addEntriesFor,
-  fillsBlank,
-  orderAddableEntries,
-  shownColumnsFor,
-} from './cardColumns'
+import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
 import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
-import { contextColumn, propertyColumn, resolveColumn } from '../Pipeline/columns'
+import { itemColumns, propertyColumn, resolveColumn } from '../Pipeline/columns'
 
 const TITLE_COLUMN = resolveColumn(FILEDATA.title.id, [], [])!
 
@@ -59,27 +51,6 @@ describe('parseEditorValue', () => {
   })
 })
 
-describe('orderAddableEntries', () => {
-  const def = (id: string, type: 'number' | 'checkbox' | 'status' | 'link'): ResolvedColumn =>
-    propertyColumn({ id, label: id, key: id, type })
-  it('sinks reveal-only entries to the bottom; pane entries stay on top in order', () => {
-    const entries: AddEntry[] = [
-      { column: def('n', 'number'), name: 'N', revealOnly: false },
-      { column: def('chk', 'checkbox'), name: 'Chk', revealOnly: true },
-      { column: def('s', 'status'), name: 'S', revealOnly: false },
-      { column: contextColumn('area'), name: 'Areas', revealOnly: true },
-      { column: def('u', 'link'), name: 'U', revealOnly: false },
-    ]
-    expect(orderAddableEntries(entries).map((e) => e.column.id)).toEqual([
-      'n',
-      's',
-      'u',
-      'chk',
-      'area',
-    ])
-  })
-})
-
 describe('shownColumnsFor', () => {
   const sel = {
     id: 'sel',
@@ -106,19 +77,31 @@ describe('shownColumnsFor', () => {
   })
 })
 
-describe('addEntriesFor', () => {
-  const ctx = { schema: [], contexts: new Map() } as unknown as ValueContext
-  const view = { property_order: ['_title'], hidden_properties: [] } as unknown as SavedView
-  const row = { id: 'p', title: 'P', path: 'P.md', frontmatter: {} } as unknown as ViewRow
+describe('cardAddColumns', () => {
+  const sel = { id: 'sel', label: 'Sel', key: 'Sel', type: 'select' } as PropertyDefinition
+  const chk = { id: 'chk', label: 'Chk', key: 'Chk', type: 'checkbox' } as PropertyDefinition
+  const num = { id: 'num', label: 'Num', key: 'Num', type: 'number' } as PropertyDefinition
+  const item = itemColumns(null, [sel, chk, num], 'p')
+  const row = (fm: Record<string, unknown>): ViewRow =>
+    ({ id: 'p', title: 'P', path: 'P.md', frontmatter: fm }) as unknown as ViewRow
+  const listed = (fm: Record<string, unknown>, shown: ResolvedColumn[]): string[] =>
+    cardAddColumns(item, row(fm), shown).properties.map((c) => c.id)
 
-  it('a stamp entry carries its stamp type and only ever reveals, even while blank', () => {
-    const entries = addEntriesFor(row, view, ctx, [TITLE_COLUMN])
-    expect(entries.map((e) => [e.column.id, e.column.type, e.revealOnly])).toEqual([
-      [FILEDATA.createdAt.id, 'createdTime', true],
-      [FILEDATA.modifiedAt.id, 'lastEditedTime', true],
-    ])
+  it('leaves out what the card draws and lists held rows last, with no stamps', () => {
+    expect(listed({ Chk: true }, [propertyColumn(sel)])).toEqual(['num', 'chk'])
   })
 
+  it('lists a property hidden in the view that holds a value', () => {
+    expect(listed({ Chk: true }, [propertyColumn(sel), propertyColumn(num)])).toEqual(['chk'])
+  })
+
+  it('lists a blank a Compact card leaves undrawn', () => {
+    const columns = [TITLE_COLUMN, propertyColumn(sel), propertyColumn(chk)]
+    expect(listed({}, shownColumnsFor(row({}), columns, true))).toEqual(['sel', 'num'])
+  })
+})
+
+describe('fillsBlank', () => {
   it('fillsBlank: every type but the stamps', () => {
     for (const t of [
       'status',

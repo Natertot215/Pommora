@@ -6,30 +6,28 @@ import { heading } from '@pommora/uix/Menus/menu-row.css'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps, useGhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
-import { fullOrderIndex, moveItem, resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
+import { fullOrderIndex, moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
-import type { PropertyDefinition } from './properties'
-import { isBlankValue } from './propertyValue'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { Cell } from './Cells/Cell'
+import { holdsValue } from './fieldValue'
+import { columnIcon, columnLabel } from './columnDisplay'
 import { useValueSeat, ValueSeat } from './Cells/ValueSeat'
-import type { PickEntry } from './Pickers/PropertyPicker'
 import { assignValue, useValueWriter } from './assignValue'
 import { pageRowOf, spaceRowOf } from '../Views/pageRow'
 import { holderSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { holderOf, useValueContext } from './valueContext'
-import { contextPaneTargets, type PaneTarget, schemaTargets } from '../Views/paneTargets'
 import { FLUSH_GHOST } from './Schema/GhostOptionChip'
 import { pushUndo } from '../Session/undo'
 import { contextIdsOf } from '../Contexts/contextIdentity'
-import { contextColumn, propertyColumn, resolveColumn } from '../Views/Pipeline/columns'
+import { type ItemColumns, itemColumns, resolveColumn } from '../Views/Pipeline/columns'
 import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, retireSettled } from './valueOverride'
@@ -40,13 +38,10 @@ import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import * as s from './property-panel.css'
 import { AliasesRow } from '../Pages/AliasesRow'
 
-type Field = PaneTarget & { def: PropertyDefinition | null }
-
 const GROUPS = [
   { key: 'contexts', label: 'Contexts', add: 'Add Context' },
   { key: 'properties', label: 'Properties', add: 'Add Property' },
 ] as const
-type GroupKey = (typeof GROUPS)[number]['key']
 
 type PanelSubject =
   | { kind: 'page'; id: string; path: string; title?: string }
@@ -65,9 +60,8 @@ export function PropertyPanel({
   const isSpace = subject.kind === 'space'
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
-  const [addOpen, setAddOpen] = useState<{ key: GroupKey; fromRow: boolean } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
+  const addRefs = useRef<Record<keyof ItemColumns, HTMLButtonElement | null>>({
     contexts: null,
     properties: null,
   })
@@ -88,6 +82,11 @@ export function PropertyPanel({
     style: () => null,
     clear: (r, column) => emptyRow(r, column, true),
     hide: { from: 'row', run: (r, column) => emptyRow(r, column, false) },
+    add: {
+      columns: () => ({ contexts: unshown('contexts'), properties: unshown('properties') }),
+      show: (column) => reveal(column.id),
+      inPlace: true,
+    },
   })
   const subjectId = subject.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
@@ -96,7 +95,6 @@ export function PropertyPanel({
   if (editingFor !== path) {
     setEditingFor(path)
     seat.close()
-    setAddOpen(null)
   }
 
   useEffect(() => {
@@ -138,7 +136,6 @@ export function PropertyPanel({
   const nexusId = tree?.nexus.id
   useEffect(() => {
     seat.close()
-    setAddOpen(null)
     setRevealed(new Set())
   }, [nexusId])
 
@@ -152,39 +149,29 @@ export function PropertyPanel({
     return base ? pageRowOf(tree, { id: subjectId, path, title }, base, pending?.picked) : null
   }, [isSpace, tree, spaceNode, pending, base, subjectId, path, title])
   const fm = row?.frontmatter ?? null
-  const contextValues = row?.contextValues
 
   const contextIds = contextIdsOf(tree)
 
   const writer = useValueWriter({ rowOf: (id) => (row?.id === id ? row : undefined), setOverride })
 
-  const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
-  const schemaFields: Field[] = schemaTargets(schema, () => true)
-  const held = (f: Field): boolean => {
-    const picked = row?.picked?.[f.id]
-    if (picked) return !isBlankValue(picked)
-    return f.def
-      ? fm !== null && Object.hasOwn(fm, f.def.key)
-      : (contextValues?.[f.id]?.length ?? 0) > 0
-  }
-  const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
-  const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
-  const fields: Record<GroupKey, Field[]> = {
-    contexts: resolveRowOrder(nexusWide, (f) => f.id, spaceNode?.rowOrder),
-    properties: resolveRowOrder(schemaFields, (f) => f.id, spaceNode?.rowOrder),
-  }
-  const shown: Record<GroupKey, Field[]> = {
+  const fields = itemColumns(tree, schema, subjectId)
+  const held = (c: ResolvedColumn): boolean =>
+    row !== null &&
+    (holdsValue(row, c) ||
+      (c.def !== undefined && !row.picked?.[c.id] && Object.hasOwn(row.frontmatter, c.def.key)))
+  const isShown = (c: ResolvedColumn): boolean => held(c) || revealed.has(c.id)
+  const shown: ItemColumns = {
     contexts: fields.contexts.filter(isShown),
     properties: fields.properties.filter(isShown),
   }
-  const hidden = (key: GroupKey): PickEntry[] =>
-    fields[key]
-      .filter((f) => !isShown(f))
-      .map((f) => ({ id: f.id, name: f.label, icon: f.icon, revealOnly: true, drillable: false }))
+  const unshown = (key: keyof ItemColumns): ResolvedColumn[] =>
+    fields[key].filter((c) => !isShown(c))
   const entering = useEntrance([...shown.contexts, ...shown.properties], (f) => f.id, fm !== null)
-  const openAdd = (key: GroupKey, anchor?: HTMLElement): void => {
-    seat.anchor.current = anchor ?? addRefs.current[key]
-    setAddOpen({ key, fromRow: anchor !== undefined })
+  const adding = seat.open?.mode === 'add' ? seat.open : null
+  const addKey = adding?.group ?? null
+  const addFromRow = addKey !== null && seat.anchor.current !== addRefs.current[addKey]
+  const openAdd = (key: keyof ItemColumns, anchor?: HTMLElement): void => {
+    if (row) seat.openAdd(row, anchor ?? addRefs.current[key], key)
   }
 
   const sendWithUndo = <T,>(send: (order: T) => void, next: T, prior: T): void => {
@@ -195,7 +182,7 @@ export function PropertyPanel({
       return true
     })
   }
-  const commitOrder = (group: GroupKey, id: string, toIndex: number): void => {
+  const commitOrder = (group: keyof ItemColumns, id: string, toIndex: number): void => {
     const shownIds = shown[group].map((f) => f.id)
     if (isSpace) {
       const moved = moveItem(shown[group], shownIds.indexOf(id), toIndex)
@@ -236,17 +223,15 @@ export function PropertyPanel({
     )
   }
 
-  const fieldOf = (id: string): Field | undefined =>
-    [...fields.contexts, ...fields.properties].find((f) => f.id === id)
   const glyphOf = (id: string): React.ReactNode => {
-    const f = fieldOf(id)
-    return f && <Icon name={f.icon} />
+    const column = seat.host.columnOf(id)
+    return column && ctx && <Icon name={columnIcon(column, ctx.contexts)} />
   }
   const ghostApi = useGhostAnchor({
     ...FLUSH_GHOST,
-    suppressed: () => seat.open !== null || addOpen !== null,
+    suppressed: () => seat.open !== null,
   })
-  const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
+  const addSeat = useHeldPresence(addFromRow ? addKey : null, 'fast')
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const emptyRow = (at: ViewRow, column: ResolvedColumn, keep: boolean): void => {
@@ -254,25 +239,15 @@ export function PropertyPanel({
     if (keep) reveal(column.id)
     else setRevealed((prev) => new Set([...prev].filter((id) => id !== column.id)))
   }
-  const revealAndEdit = (id: string): void => {
-    setAddOpen(null)
-    reveal(id)
-    requestAnimationFrame(() => {
-      const column = resolveColumn(id, schema, contextIds)
-      const el =
-        rowEl(id) ?? addRefs.current[column?.kind === 'context' ? 'contexts' : 'properties']
-      if (row && column && el) seat.run(row, column, seat.intentOf(row, column), el)
-    })
-  }
 
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
-    const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
-      const column = def ? propertyColumn(def) : contextColumn(id)
+    const renderRow = (column: ResolvedColumn): React.ReactNode => {
+      const { id } = column
       const rowBody = (
         <MenuItem
           className={s.row}
-          leading={<Icon name={icon} size="control" />}
+          leading={<Icon name={columnIcon(column, ctx.contexts)} size="control" />}
           onContextMenu={(e) => void seat.menu(row, column, e, { label: true })}
           trailing={
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
@@ -296,7 +271,7 @@ export function PropertyPanel({
             </span>
           }
         >
-          {label}
+          {columnLabel(column, ctx.contexts)}
         </MenuItem>
       )
       return (
@@ -312,8 +287,8 @@ export function PropertyPanel({
             const rows = shown[key]
             const addable = fields[key].some((f) => !isShown(f))
             const standing = addable && rows.length === 0
-            const opened = addOpen?.key === key
-            const rowOpened = opened && addOpen.fromRow
+            const opened = addKey === key
+            const rowOpened = opened && addFromRow
             const addHeld = rowOpened || addSeat?.held === key
             const ghost =
               addable && !standing && ghostApi.ghost?.anchorId === key ? ghostApi.ghost : null
@@ -340,7 +315,7 @@ export function PropertyPanel({
               <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
                 <div className={heading}>
                   <span>{label}</span>
-                  {addable && (
+                  {(addable || opened) && (
                     <AccessoryButton
                       ref={(el) => {
                         addRefs.current[key] = el
@@ -360,17 +335,19 @@ export function PropertyPanel({
                     {...lineList({
                       commit: (id, slot) => commitOrder(key, id, slot.index),
                       line: menuDropLine,
-                      label: (id) => fieldOf(id)?.label ?? id,
+                      label: (id) => {
+                        const column = seat.host.columnOf(id)
+                        return column ? columnLabel(column, ctx.contexts) : id
+                      },
                       glyph: glyphOf,
                       watch: [rows.map((f) => f.id).join()],
                     })}
                   >
                     {rows.map(renderRow)}
-                    {standing && addRow((anchor) => openAdd(key, anchor))}
-                    {(ghost || (addHeld && !standing)) && (
+                    {(standing || ghost || addHeld) && (
                       <Reveal
-                        open={rowOpened || (ghost !== null && !ghost.closing)}
-                        enterOnMount
+                        open={standing || rowOpened || (ghost !== null && !ghost.closing)}
+                        enterOnMount={!standing}
                         onCollapsed={ghostApi.closed}
                       >
                         {addRow(
@@ -397,17 +374,7 @@ export function PropertyPanel({
             </>
           )}
         </div>
-        <ValueSeat
-          seat={seat}
-          chooser={
-            addOpen && {
-              row,
-              entries: hidden(addOpen.key),
-              onReveal: (entry: PickEntry) => revealAndEdit(entry.id),
-              onDismiss: () => setAddOpen(null),
-            }
-          }
-        />
+        <ValueSeat seat={seat} />
       </>
     )
   }

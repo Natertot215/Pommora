@@ -3,6 +3,10 @@
 import type { ResolvedColumn } from '../viewRow'
 import type { SavedView } from '../views'
 import { FILEDATA, FILEDATA_BY_ID, type PropertyDefinition } from '../../Properties/properties'
+import { contextIdsOf } from '../../Contexts/contextIdentity'
+import type { NexusTree } from '../../Nexus/tree'
+import { spaceNodeOf } from '../../Nexus/treeIndex'
+import { resolveRowOrder } from '@pommora/uix/Utilities/moveItem'
 
 const TITLE: ResolvedColumn = { id: FILEDATA.title.id, kind: 'title', type: 'title' }
 
@@ -31,6 +35,25 @@ export function resolveColumn(
   if (contextIds.includes(id)) return contextColumn(id)
   const def = schema.find((d) => d.id === id)
   return def && propertyColumn(def)
+}
+
+export type ItemColumns = Record<'contexts' | 'properties', ResolvedColumn[]>
+
+/** Every Context and property an item can hold, in the order its panel lists them: the Nexus's Context order and its schema's, with a Space's own row order over both. */
+export function itemColumns(
+  tree: NexusTree | null,
+  schema: PropertyDefinition[],
+  itemId: string,
+): ItemColumns {
+  const rowOrder = spaceNodeOf(tree, itemId)?.rowOrder ?? []
+  const idOf = (c: ResolvedColumn): string => c.id
+  return {
+    contexts: resolveRowOrder(contextIdsOf(tree).map(contextColumn), idOf, [
+      ...rowOrder,
+      ...(tree?.config.order.contexts ?? []),
+    ]),
+    properties: resolveRowOrder(schema.map(propertyColumn), idOf, rowOrder),
+  }
 }
 
 /** Context columns are default-OFF — they render only when the view's property_order explicitly reveals them. */

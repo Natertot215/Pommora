@@ -16,3 +16,5 @@ export const columnIcon = (
   { id, def, type }: ResolvedColumn,
   contexts: ReadonlyMap<string, ContextIdentity>,
 ): string => contexts.get(id)?.icon ?? (def ? propertyIcon(def) : propertyTypeIconName(type))
+
+export const GROUP_LABELS = { contexts: 'Spaces', properties: 'Properties' } as const

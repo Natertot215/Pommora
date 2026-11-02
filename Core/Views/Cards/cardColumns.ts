@@ -1,14 +1,7 @@
 import { type ColumnType, PROPERTY_TYPES } from '../../Properties/properties'
-import { isBlankValue } from '../../Properties/propertyValue'
-import type { NexusTree } from '../../Nexus/tree'
 import type { ResolvedColumn, ViewRow } from '../viewRow'
-import { isCompact, type SavedView } from '../views'
-import { hiddenListIds } from '../visibilityModel'
-import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { resolveFieldValue } from '../../Properties/fieldValue'
-import { resolveColumn } from '../Pipeline/columns'
-import { columnLabel } from '../../Properties/columnDisplay'
-import type { ValueContext } from '../../Properties/valueContext'
+import { holdsValue } from '../../Properties/fieldValue'
+import type { ItemColumns } from '../Pipeline/columns'
 
 /** A blank value of this type fills in place, unless the type is Filedata, which has no fill path. */
 export const fillsBlank = (type: ColumnType): boolean => PROPERTY_TYPES[type].origin !== 'filedata'
@@ -22,48 +15,22 @@ export function shownColumnsFor(
   return columns.filter(
     (c) =>
       c.kind !== 'title' &&
-      (!compactLayout ||
-        !isBlankValue(resolveFieldValue(row, c)) ||
-        PROPERTY_TYPES[c.type].blankDraws === true),
+      (!compactLayout || holdsValue(row, c) || PROPERTY_TYPES[c.type].blankDraws === true),
   )
 }
 
-export function addEntriesFor(
+export function cardAddColumns(
+  item: ItemColumns,
   row: ViewRow,
-  view: SavedView,
-  ctx: ValueContext,
-  columns: ResolvedColumn[],
-  tree: NexusTree | null = null,
-): AddEntry[] {
-  const contextIds = contextIdsOf(tree)
-  const shownIds = new Set(shownColumnsFor(row, columns, isCompact(view)).map((c) => c.id))
-  const ids = [
-    ...new Set([
-      ...hiddenListIds(view, ctx.schema, contextIds),
-      ...ctx.schema.map((d) => d.id),
-      ...columns.filter((c) => c.kind === 'context').map((c) => c.id),
-    ]),
-  ]
-  return ids.flatMap((id) => {
-    const column = shownIds.has(id) ? undefined : resolveColumn(id, ctx.schema, contextIds)
-    if (!column) return []
-    const blank = isBlankValue(resolveFieldValue(row, column))
+  shown: ResolvedColumn[],
+): ItemColumns {
+  const drawn = new Set(shown.map((c) => c.id))
+  const listed = (columns: ResolvedColumn[]): ResolvedColumn[] => {
+    const unshown = columns.filter((c) => !drawn.has(c.id))
     return [
-      {
-        column,
-        name: columnLabel(column, contextsByIdOf(tree)),
-        revealOnly: !fillsBlank(column.type) || !blank,
-      },
+      ...unshown.filter((c) => !holdsValue(row, c)),
+      ...unshown.filter((c) => holdsValue(row, c)),
     ]
-  })
-}
-
-export type AddEntry = {
-  column: ResolvedColumn
-  name: string
-  revealOnly: boolean
-}
-
-export function orderAddableEntries(entries: AddEntry[]): AddEntry[] {
-  return [...entries.filter((e) => !e.revealOnly), ...entries.filter((e) => e.revealOnly)]
+  }
+  return { contexts: listed(item.contexts), properties: listed(item.properties) }
 }

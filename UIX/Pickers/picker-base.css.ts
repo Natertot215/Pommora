@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { stack } from '../Theme/stack'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
-import { menuCompact } from '../Menus/menu-row.css'
+import { menuCompact, topBarTrailingLabel } from '../Menus/menu-row.css'
 import { viewport as frameViewport } from '../Menus/frame-slide.css'
 
 /** KNOB — a picker's height ceiling; below MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
@@ -39,6 +39,9 @@ export const surface = style({
   flexDirection: 'column',
   gap: '0px',
 })
+
+/** On a picker's surface a back bar's label keeps the row's trailing pad, which `MenuItem` drops for its trailing slot, so it sits as far in as the chevron opposite; a settings pane's stays flush with the controls beneath it. */
+globalStyle(`${surface} ${topBarTrailingLabel}`, { marginRight: 'var(--row-pad-x)' })
 
 /** A pane under a live resize tracks the pointer 1:1, so a frame's easing toward its content's size holds off. */
 export const resizing = style({})

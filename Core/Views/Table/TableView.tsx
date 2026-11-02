@@ -1,15 +1,12 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
 import type { ColumnStyle } from '../../Properties/columnStyles'
 import { cellMenuModel } from '../../Actions/cellMenu'
 import { type ColumnAlign, viewOption } from '../views'
 import type { PropertyValue } from '../../Properties/propertyValue'
 import { pickKindOf } from '../../Properties/properties'
-import { resolveFieldValue } from '../../Properties/fieldValue'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
-import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
-import { groupUndo } from '../../Session/undo'
 import { useValueSeat, ValueSeat } from '../../Properties/Cells/ValueSeat'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
@@ -96,6 +93,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ...host.seatHost,
     anchor: (el) => el.closest<HTMLElement>('.data-cell') ?? el,
     hold: interactions.holdGhost,
+    onClose: () => cellSweep.clear(),
   })
 
   // ── Cell click ────────────────────────────────────────────────────────────
@@ -160,20 +158,17 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The sweep ─────────────────────────────────────────────────────────────
 
-  const [mass, setMass] = useState<{ colId: string; rowIds: string[] } | null>(null)
-  const [massOpen, setMassOpen] = useState(false)
-  const massTriggerRef = useRef<HTMLElement | null>(null)
   const cellSweep = useCellSweep({
     gridEl: () => host.viewRootRef.current,
     onSettle: (colId, rowIds, settleRowId) => {
       const at = columns.findIndex((c) => c.id === colId)
-      const cell = host.viewRootRef.current
-        ?.querySelector(`[data-rid="${CSS.escape(settleRowId)}"]`)
-        ?.children.item(at)
-      if (!(cell instanceof HTMLElement)) return cellSweep.clear()
-      massTriggerRef.current = cell
-      setMass({ colId, rowIds })
-      setMassOpen(true)
+      const rowEl = host.viewRootRef.current?.querySelector(
+        `[data-rid="${CSS.escape(settleRowId)}"]`,
+      )
+      const cell = rowEl?.children.item(at)
+      const row = rowById.get(settleRowId)
+      if (!(cell instanceof HTMLElement) || !row) return cellSweep.clear()
+      seat.sweep(row, columns[at], rowIds, cell)
     },
   })
   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
@@ -182,50 +177,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     cellSweep.begin(row.id, col.id, e)
     return true
   }
-  const massDegraded =
-    mass !== null &&
-    massOpen &&
-    (columns.every((c) => c.id !== mass.colId) ||
-      mass.rowIds.filter((id) => rowById.has(id)).length < 2)
-  useEffect(() => {
-    if (!massDegraded) return
-    setMassOpen(false)
-    cellSweep.clear()
-  })
-
-  const massPicker = (): React.ReactNode => {
-    if (!mass) return null
-    const col = columns.find((c) => c.id === mass.colId)
-    if (!col) return null
-    const rows = mass.rowIds.flatMap((id) => {
-      const r = rowById.get(id)
-      return r ? [r] : []
-    })
-    if (rows.length < 2) return null
-    const target = seat.target(rows[0], col)
-    if (target?.kind !== 'options') return null
-    const currents = rows.map((r) => resolveFieldValue(r, col))
-    return (
-      <MassPropertyPicker
-        key={`${mass.colId}:${mass.rowIds.join('.')}`}
-        target={target}
-        currents={currents}
-        open={massOpen}
-        triggerRef={massTriggerRef}
-        onPick={(commits) => {
-          if (commits.length)
-            groupUndo(() => {
-              for (const { index, next } of commits) commitValue(rows[index], col, next)
-            })
-        }}
-        onDismiss={() => {
-          setMassOpen(false)
-          cellSweep.clear()
-        }}
-      />
-    )
-  }
-
   // ── The row api ───────────────────────────────────────────────────────────
 
   const cellApi = useStableApi<RowCellApi>({
@@ -250,7 +201,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         : null
   const popoverTarget =
     open?.mode === 'popover' ? { rowId: open.rowId, colId: open.columnId } : null
-  const activeCell = overlayTarget ?? (open && { rowId: open.rowId, colId: open.columnId })
+  const activeCell =
+    overlayTarget ??
+    (open?.mode === 'picker' ? { rowId: open.rowId, colId: open.columnId } : popoverTarget)
 
   // ── The render ────────────────────────────────────────────────────────────
 
@@ -376,7 +329,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         </div>
       </LineZone>
       <ValueSeat seat={seat} />
-      {massPicker()}
     </div>
   )
 }

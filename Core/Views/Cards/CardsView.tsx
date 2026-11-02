@@ -4,7 +4,6 @@ import type { SetNode } from '../../Nexus/tree'
 import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '../views'
 import type { ColumnStyle } from '../../Properties/columnStyles'
-import { pickKindOf } from '../../Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -43,7 +42,7 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnIcon, columnLabel } from '../../Properties/columnDisplay'
+import { columnLabel } from '../../Properties/columnDisplay'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
@@ -51,19 +50,13 @@ import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
-import type { PickEntry } from '../../Properties/Pickers/PropertyPicker'
 import { Cell } from '../../Properties/Cells/Cell'
 import { useValueSeat, ValueSeat, type ValueSeatApi } from '../../Properties/Cells/ValueSeat'
 import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
-import {
-  type AddEntry,
-  addEntriesFor,
-  fillsBlank,
-  orderAddableEntries,
-  shownColumnsFor,
-} from './cardColumns'
+import { cardAddColumns, fillsBlank, shownColumnsFor } from './cardColumns'
+import { itemColumns } from '../Pipeline/columns'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { popMenu } from '../../Actions/menuActions'
@@ -72,11 +65,6 @@ import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
 
 // ── Types and constants ─────────────────────────────────────────────────────
-
-type AddPickerRequest = {
-  rowId: string
-  anchor: HTMLElement
-}
 
 /** What a card asks the one root banner seat to do. */
 type BannerRequest = {
@@ -94,11 +82,10 @@ type CardApi = {
   pane: ValueSeatApi['pane']
   editor: ValueSeatApi['editor']
   open: (row: ViewRow, newTab: boolean) => void
-  openAddPicker: (req: AddPickerRequest) => void
+  openAdd: ValueSeatApi['openAdd']
   hover: (id: string, entering: boolean) => void
   titleMenuContext: (row: ViewRow) => TitleMenuContext
   titleAction: (action: string, row: ViewRow, anchor: HTMLElement) => boolean
-  addableFor: (row: ViewRow) => AddEntry[]
   openSet: (set: SetNode, newTab: boolean) => void
   banner: (req: BannerRequest) => void
 }
@@ -159,7 +146,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const hideLocation = viewOption(view, 'hide_location')
 
   const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
-  const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
     const root = host.viewRootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
@@ -173,10 +159,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ghost: {
       graceMs: CARDS_GHOST_GRACE_MS,
       suppressed: () =>
-        seat.open !== null ||
-        addPicker !== null ||
-        useSession.getState().renamingPath !== null ||
-        glanceShown(),
+        seat.open !== null || useSession.getState().renamingPath !== null || glanceShown(),
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
     rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),
@@ -190,7 +173,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The value seat ────────────────────────────────────────────────────────
 
-  // A value landing on a card shows its property; only one picked from the Add chooser isn't shown yet.
+  // A value from a card's Add shows its property; a right-click pick runs through `MenuSeat` and leaves the view alone.
   const commitOnCard = (row: ViewRow, column: ResolvedColumn, v: PropertyValue | null): void => {
     if (!isBlankValue(v)) revealProperty(column.id)
     commitValue(row, column, v)
@@ -202,6 +185,15 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     centered: true,
     hold: interactions.holdGhost,
     hide: { from: 'view', run: (_, column) => hideProperty(column.id) },
+    add: {
+      columns: (row) =>
+        cardAddColumns(
+          itemColumns(tree, ctx.schema, row.id),
+          row,
+          shownColumnsFor(row, columns, isCompact(view)),
+        ),
+      show: (column) => revealProperty(column.id),
+    },
   })
   // The ghost stands down while a value's inline field owns the pointer.
   const inline = seat.open?.mode === 'editor'
@@ -212,18 +204,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     return () => done()
   }, [inline])
 
-  // ── Value and add pickers ─────────────────────────────────────────────────
-
   const { styleById } = host
-  useEffect(() => {
-    if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
-  }, [addPicker, rowById])
-
-  const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
-  const addEntries = addRow
-    ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree))
-    : []
-
   // ── The root banner seat ──────────────────────────────────────────────────
 
   const [bannerRequest, setBannerRequest] = useState<BannerRequest | null>(null)
@@ -272,14 +253,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     pane: seat.pane,
     editor: seat.editor,
     open: interactions.openPage,
-    openAddPicker: (req) => {
-      seat.anchor.current = req.anchor
-      setAddPicker(req)
-    },
+    openAdd: seat.openAdd,
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
-    addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree),
     openSet: interactions.openSet,
     banner: setBannerRequest,
   })
@@ -471,40 +448,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         {interactions.iconPicker}
         {bannerEditor}
-        <ValueSeat
-          seat={seat}
-          chooser={
-            addPicker && addRow
-              ? {
-                  row: addRow,
-                  entries: addEntries.map(
-                    (e): PickEntry => ({
-                      id: e.column.id,
-                      name: e.name,
-                      icon: columnIcon(e.column, ctx.contexts),
-                      revealOnly: e.revealOnly,
-                      drillable: !e.revealOnly && pickKindOf(e.column.type) !== null,
-                      group: e.column.kind === 'context' ? 'Spaces' : 'Properties',
-                    }),
-                  ),
-                  onReveal: (entry) => {
-                    if (entry.revealOnly) return revealProperty(entry.id)
-                    const column = seat.host.columnOf(entry.id)
-                    if (!column) return
-                    setAddPicker(null)
-                    const intent = seat.intentOf(addRow, column)
-                    seat.run(
-                      addRow,
-                      column,
-                      intent?.kind === 'edit' ? { kind: 'popover' } : intent,
-                      seat.anchor.current,
-                    )
-                  },
-                  onDismiss: () => setAddPicker(null),
-                }
-              : null
-          }
-        />
+        <ValueSeat seat={seat} />
       </div>
     </GhostSuppress.Provider>
   )
@@ -911,8 +855,7 @@ const PageCard = memo(function PageCard({
   const openAdd = useCallback(
     (e: React.MouseEvent): void => {
       e.stopPropagation()
-      if (api.addableFor(row).length > 0 && textRef.current)
-        api.openAddPicker({ rowId: row.id, anchor: textRef.current })
+      api.openAdd(row, textRef.current)
     },
     [api, row],
   )

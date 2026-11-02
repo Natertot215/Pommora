@@ -10,7 +10,7 @@ import type { PropertyDefinition } from '../properties'
 import { defaultStatusSeed } from '../registryProperty'
 import { separator } from '@pommora/uix/Menus/menu-row.css'
 import { contextColumn, propertyColumn } from '../../Views/Pipeline/columns'
-import { PropertyPicker, type PickEntry, type PickTarget } from './PropertyPicker'
+import { PropertyPicker, type PickTarget } from './PropertyPicker'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -29,18 +29,15 @@ const optionsTarget = (): PickTarget => ({
   kind: 'options',
   column: propertyColumn(selectDef),
   pick: 'select',
-  current: null,
+  currents: [null],
 })
 const dateTimeTarget = (): PickTarget => ({ kind: 'dateTime', current: null })
 
 function Host(props: {
   target?: PickTarget | null
-  chooser?: PickEntry[]
   centerX?: number
-  onCommit?: (value: unknown, entry?: PickEntry) => void
-  onReveal?: (entry: PickEntry) => void
+  onCommit?: (commits: unknown) => void
   onDismiss?: () => void
-  resolveTarget?: (entry: PickEntry) => PickTarget | null
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   return (
@@ -49,25 +46,15 @@ function Host(props: {
         Trigger
       </button>
       <PropertyPicker
-        open
         triggerRef={ref}
         target={props.target ?? null}
-        chooser={props.chooser}
         centerX={props.centerX}
         onCommit={props.onCommit ?? (() => {})}
-        onReveal={props.onReveal}
         onDismiss={props.onDismiss ?? (() => {})}
-        resolveTarget={props.resolveTarget}
       />
     </>
   )
 }
-
-const rowButton = (name: string): HTMLElement | undefined =>
-  [
-    ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
-    ...buttons(),
-  ].find((e) => e.textContent?.includes(name))
 
 let host: HTMLDivElement
 let root: Root
@@ -100,9 +87,6 @@ const render = async (props: Parameters<typeof Host>[0]): Promise<void> => {
 const portal = (): HTMLElement | null => document.querySelector('[data-picker-portal]')
 const portalText = (): string =>
   [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent ?? '').join('')
-const buttons = (): HTMLButtonElement[] => [
-  ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
-]
 // jsdom measures the pane at zero width, so a centred pane's left edge sits exactly on the click.
 const isCentred = (): boolean =>
   [...document.querySelectorAll<HTMLElement>('[data-picker-portal]')].some(
@@ -122,7 +106,7 @@ describe('PropertyPicker panes', () => {
         kind: 'options',
         column: propertyColumn(selectDef),
         pick: 'select',
-        current: null,
+        currents: [null],
         style: { current: { ...dateDefaults('full'), look: 'compact' }, set: () => {} },
       },
     })
@@ -143,108 +127,14 @@ describe('PropertyPicker panes', () => {
     expect(isCentred()).toBe(true)
   })
 
-  it('an options target with no click does not centre', async () => {
-    await render({ target: optionsTarget() })
+  it('a calendar ignores the click and opens on its trigger', async () => {
+    await render({ target: dateTimeTarget(), centerX: 200 })
     expect(isCentred()).toBe(false)
   })
 
-  it('a revealOnly chooser entry calls onReveal and never onCommit', async () => {
-    const onReveal = vi.fn()
-    const onCommit = vi.fn()
-    const chooser: PickEntry[] = [
-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
-    ]
-    await render({ chooser, onReveal, onCommit })
-    const row = buttons().find((b) => b.textContent?.includes('Rank'))
-    const el =
-      row ??
-      [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find(
-        (e) => e.textContent?.includes('Rank'),
-      )
-    await act(async () => {
-      el?.click()
-    })
-    expect(onReveal).toHaveBeenCalledTimes(1)
-    expect(onCommit).not.toHaveBeenCalled()
-  })
-
-  it('a revealOnly entry dismisses here; a dependent entry hands back without dismissing (its caller reopens on this mount)', async () => {
-    const chooser: PickEntry[] = [
-      { id: 'prop_r', name: 'Rank', icon: 'square-dashed', revealOnly: true, drillable: false },
-      { id: 'prop_d', name: 'Due', icon: 'square-dashed', revealOnly: false, drillable: false },
-    ]
-    const revealOnlyDismiss = vi.fn()
-    await render({ chooser, onReveal: vi.fn(), onDismiss: revealOnlyDismiss })
-    await act(async () => {
-      rowButton('Rank')?.click()
-    })
-    expect(revealOnlyDismiss).toHaveBeenCalledTimes(1)
-
-    const dependentDismiss = vi.fn()
-    await act(() => root.unmount())
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    await render({ chooser, onReveal: vi.fn(), onDismiss: dependentDismiss })
-    await act(async () => {
-      rowButton('Due')?.click()
-    })
-    expect(dependentDismiss).not.toHaveBeenCalled()
-  })
-
-  it('lists Contexts, a divider, then properties, and a Context drills under Spaces', async () => {
-    const entry = (id: string, name: string, group: PickEntry['group']): PickEntry => ({
-      id,
-      name,
-      icon: 'square-dashed',
-      revealOnly: false,
-      drillable: true,
-      group,
-    })
-    const chooser = [entry('prop_sel', 'Stage', 'Properties'), entry('ctx_a', 'Areas', 'Spaces')]
-    await render({ chooser, resolveTarget: () => optionsTarget() })
-    const stage = rowButton('Stage')
-    const divider = stage?.previousElementSibling
-    expect(divider?.getAttribute('aria-hidden')).toBe('true')
-    expect(divider?.previousElementSibling).toBe(rowButton('Areas'))
-    await act(async () => {
-      rowButton('Areas')?.click()
-    })
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    expect(rowButton('Spaces')?.textContent).toContain('Areas')
-  })
-
-  it('a targeted chooser entry slides to its value pane and onCommit carries the entry', async () => {
-    const onCommit = vi.fn()
-    const chooser: PickEntry[] = [
-      {
-        id: 'prop_sel',
-        name: 'Stage',
-        icon: 'square-dashed',
-        revealOnly: false,
-        drillable: true,
-      },
-    ]
-    await render({ chooser, onCommit, resolveTarget: () => optionsTarget() })
-    await act(async () => {
-      rowButton('Stage')?.click()
-    })
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 30))
-    })
-    expect(portalText()).toContain('Alpha')
-    const alpha = [
-      ...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]'),
-    ]
-      .concat(buttons())
-      .find((b) => b.textContent?.includes('Alpha'))
-    await act(async () => {
-      alpha?.click()
-    })
-    expect(onCommit).toHaveBeenCalled()
-    expect(onCommit.mock.calls[0]?.[1]).toMatchObject({ id: 'prop_sel' })
+  it('an options target with no click does not centre', async () => {
+    await render({ target: optionsTarget() })
+    expect(isCentred()).toBe(false)
   })
 })
 
@@ -329,7 +219,12 @@ describe('editing options from the picker', () => {
       status_groups: [open, { ...active, options: [] }, done],
     }
     await render({
-      target: { kind: 'options', column: propertyColumn(statusDef), pick: 'select', current: null },
+      target: {
+        kind: 'options',
+        column: propertyColumn(statusDef),
+        pick: 'select',
+        currents: [null],
+      },
     })
     expect(newOption()).toBeNull()
     const order = [
@@ -343,7 +238,7 @@ describe('editing options from the picker', () => {
         kind: 'options',
         column: contextColumn('ctx_a'),
         pick: 'context',
-        current: null,
+        currents: [null],
         contextOptions: [{ id: 'Home', label: 'Home' }],
       },
     })
@@ -359,7 +254,9 @@ describe('editing options from the picker', () => {
       row?.focus()
       row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     })
-    expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'opt_Alpha' })
+    expect(onCommit).toHaveBeenCalledWith([
+      { index: 0, next: { kind: 'select', value: 'opt_Alpha' } },
+    ])
   })
 
   it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Delete", async () => {

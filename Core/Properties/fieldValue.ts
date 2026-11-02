@@ -3,7 +3,7 @@
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import type { PageFrontmatter } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
-import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import { decodeValue, isBlankValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 
 const stampValue = (iso: string | null): PropertyValue =>
   iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }
@@ -40,3 +40,6 @@ export function resolveFieldValue(row: ViewRow, column: ResolvedColumn): Propert
 
 // MEMOIZED per frontmatter object and definition: the decode was the measured grouped-view hot spot. A value write swaps the frontmatter and a definition edit mints a new definition, so entries self-expire.
 const resolvedByFm = new WeakMap<PageFrontmatter, WeakMap<PropertyDefinition, PropertyValue>>()
+
+export const holdsValue = (row: ViewRow, column: ResolvedColumn): boolean =>
+  !isBlankValue(resolveFieldValue(row, column))

@@ -19,9 +19,8 @@ describe('valueClickIntent', () => {
   })
 
   it('option kinds open their picker; a Date opens the calendar', () => {
-    for (const t of ['status', 'select', 'multiSelect', 'context'] as const)
+    for (const t of ['status', 'select', 'multiSelect', 'context', 'dateTime'] as const)
       expect(valueClickIntent(t, { kind: 'null' })).toEqual({ kind: 'picker' })
-    expect(valueClickIntent('dateTime', { kind: 'null' })).toEqual({ kind: 'dateTime' })
   })
 
   it('a file value names the dialog — one arm for the table, the cards and both panes', () => {

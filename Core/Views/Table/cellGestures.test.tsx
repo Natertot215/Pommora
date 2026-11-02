@@ -578,9 +578,8 @@ describe('PropertyPicker (direct mount) — seed values', () => {
             kind: 'options',
             column: propertyColumn(seedDef),
             pick: 'select',
-            current: null,
+            currents: [null],
           }}
-          open
           triggerRef={{ current: host }}
           onCommit={vi.fn()}
           onDismiss={vi.fn()}
@@ -603,9 +602,8 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
             kind: 'options',
             column: propertyColumn(multiDef),
             pick: 'multiSelect',
-            current: { kind: 'multiSelect', value: ['opt_a'] },
+            currents: [{ kind: 'multiSelect', value: ['opt_a'] }],
           }}
-          open
           triggerRef={{ current: host }}
           onCommit={onCommit}
           onDismiss={onDismiss}
@@ -616,14 +614,18 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
     await act(async () => {
       beta?.click()
     })
-    expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['opt_a', 'opt_b'] })
+    expect(onCommit).toHaveBeenCalledWith([
+      { index: 0, next: { kind: 'multiSelect', value: ['opt_a', 'opt_b'] } },
+    ])
     expect(onDismiss).not.toHaveBeenCalled()
 
     const alpha = pickerButtons().find((b) => b.textContent === 'a')
     await act(async () => {
       alpha?.click()
     })
-    expect(onCommit).toHaveBeenLastCalledWith({ kind: 'multiSelect', value: [] })
+    expect(onCommit).toHaveBeenLastCalledWith([
+      { index: 0, next: { kind: 'multiSelect', value: [] } },
+    ])
   })
 })
 
