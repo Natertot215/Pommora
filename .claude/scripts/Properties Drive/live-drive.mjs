@@ -1452,7 +1452,7 @@ async function addEntries(cdp, s) {
       inRow: !!document.activeElement?.closest('[data-property-row="${ADD[k].id}"]'),
       empty: (document.activeElement?.tagName === 'INPUT' ? document.activeElement.value : document.activeElement?.cmTile?.root.view.state.doc.toString()) === '',
     })`)
-    if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row', `document.querySelector('${s.scope}[data-property-row="${ADD.number.id}"]')`)
+    if (s.typedShot && k === 'number') await shot(cdp, 'g16-panel-typed-row', `document.activeElement.closest('[data-property-row]')`)
     await typeText(cdp, word)
     await pressKey(cdp, k === 'text' && s.card ? 'Escape' : 'Enter')
     await leaveList(cdp)
