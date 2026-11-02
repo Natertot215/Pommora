@@ -494,6 +494,59 @@ describe('the Add row', () => {
   })
 })
 
+describe('picking from the Add list', () => {
+  const entry = (name: string): HTMLElement | undefined =>
+    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] [role="button"]')].find(
+      (e) => e.textContent?.trim() === name,
+    )
+  const press = async (el: HTMLElement | null | undefined): Promise<void> => {
+    await act(async () => {
+      el?.click()
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 30))
+    })
+  }
+  const add = (): HTMLElement | null => host.querySelector('[aria-label="Add Property"]')
+  const row = (id: string): HTMLElement | null => host.querySelector(`[data-property-row="${id}"]`)
+
+  it('a typed entry shows its row with its field open in it', async () => {
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(add())
+    await press(entry('Note'))
+    expect(row('prop_note')?.querySelector('input')).not.toBeNull()
+  })
+
+  it('an option entry lands the picked option on the page and shows its row', async () => {
+    cachePageDetail(detail({ path: 'Col/Page.md' }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await press(add())
+    await press(entry('Stage'))
+    await press(entry('Alpha'))
+    expect(useSession.getState().mutate).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/Page.md',
+        propertyId: 'prop_stage',
+        value: { kind: 'select', value: 'opt_Alpha' },
+      },
+      expect.anything(),
+    )
+    expect(row('prop_stage')).not.toBeNull()
+  })
+
+  it('a file naming a Checkbox with false shows its row and leaves the Add list', async () => {
+    seedDef({ id: 'prop_done', label: 'Done', key: 'Done', type: 'checkbox' })
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Done: false } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    expect(row('prop_done')).not.toBeNull()
+    await press(add())
+    expect(entry('Note')).toBeDefined()
+    expect(entry('Done')).toBeUndefined()
+  })
+})
+
 describe('the property row drag', () => {
   const row = (id: string): Element =>
     host.querySelector(`[data-property-row="${id}"]`)!.closest('[data-line-row]')!

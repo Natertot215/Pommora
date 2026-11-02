@@ -191,6 +191,87 @@ describe('the card menu', () => {
     await rightClick('p1', 'title:newbelow')
     expect(mutateSpy).toHaveBeenCalledWith(expect.objectContaining({ op: 'createPage' }))
   })
+
+  it('a value set from a card’s right-click leaves a hidden property hidden', async () => {
+    const stageDef: PropertyDefinition = {
+      id: 'prop_stage',
+      label: 'Stage',
+      key: 'Stage',
+      type: 'select',
+      select_options: [{ id: 'opt_early', key: 'Early', label: 'Early' }],
+    }
+    const saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
+    useSession.setState({ tree: makeTree({ registry: [STATUS_DEF, numberDef, stageDef] }) })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () => VALUES,
+      'views:save': saveSpy,
+      menu: menuSpy,
+    })
+    await renderView(root, { ...source(), propertyIds: [STATUS_DEF.id, numberDef.id, stageDef.id] })
+    await rightClick('p1', 'prop:prop_stage:opt_early')
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/One.md',
+        propertyId: 'prop_stage',
+        value: { kind: 'select', value: 'opt_early' },
+      },
+      expect.anything(),
+    )
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('a card’s dates', () => {
+  const dueDef: PropertyDefinition = { id: 'prop_due', label: 'Due', key: 'Due', type: 'dateTime' }
+  const startDef: PropertyDefinition = {
+    id: 'prop_start',
+    label: 'Start',
+    key: 'Start',
+    type: 'dateTime',
+  }
+  const pane = (): string =>
+    [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent).join('')
+
+  it('a second date’s click shows its own date, even as the first’s pane leaves', async () => {
+    useSession.setState({ tree: makeTree({ registry: [dueDef, startDef] }) })
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () =>
+        valuesReply({
+          p1: {
+            [ID_KEY]: 'p1',
+            ...propsAtRoot({ prop_due: '2026-03-09', prop_start: '2026-07-21' }, [
+              dueDef,
+              startDef,
+            ]),
+          },
+          p2: { [ID_KEY]: 'p2' },
+        }),
+      menu: menuSpy,
+    })
+    const base = source()
+    await renderView(root, {
+      ...base,
+      propertyIds: [dueDef.id, startDef.id],
+      views: base.views?.map((v) => ({
+        ...v,
+        property_order: ['_title', 'prop_due', 'prop_start'],
+      })),
+    } as CollectionNode)
+    const values = (): HTMLElement[] => [...card('p1').querySelectorAll<HTMLElement>('.card-value')]
+    await act(async () => {
+      values()[0].click()
+    })
+    expect(pane()).toContain('March')
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+    await act(async () => {
+      values()[1].click()
+    })
+    expect(pane()).toContain('July')
+    expect(pane()).not.toContain('March')
+  })
 })
 
 describe('a card’s link value', () => {
@@ -306,6 +387,36 @@ describe('the card’s Add chooser', () => {
       expect.anything(),
     )
     expect(box()?.classList.contains('checkbox-checked')).toBe(false)
+  })
+
+  it('a card’s Add lists a file’s unticked Checkbox and fills it', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'view:loadValues': async () =>
+        valuesReply({
+          p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: false }, [doneDef]) },
+          p2: { [ID_KEY]: 'p2' },
+        }),
+      menu: menuSpy,
+    })
+    const defs = [STATUS_DEF, numberDef, doneDef]
+    useSession.setState({ tree: makeTree({ registry: defs }) })
+    await renderView(root, { ...source(), propertyIds: defs.map((d) => d.id) })
+    await act(async () => {
+      ;(card('p1').querySelector('.card-text') as HTMLElement).click()
+    })
+    expect(entry('Done')).toBeTruthy()
+    await act(async () => {
+      entry('Done')?.click()
+    })
+    expect(mutateSpy).toHaveBeenCalledWith(
+      {
+        op: 'setProperty',
+        path: 'Col/One.md',
+        propertyId: 'prop_done',
+        value: { kind: 'checkbox', value: true },
+      },
+      expect.anything(),
+    )
   })
 
   it('a Context entry draws the Context’s own icon', async () => {
