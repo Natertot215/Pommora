@@ -39,7 +39,7 @@ export function LinkCell({
   holder?: ConnPage
   ctx: ValueContext
 }): React.JSX.Element | null {
-  const api = ctx.connections?.()
+  const api = ctx.connections()
   const written = readLinkText(raw)
   const target = resolveLink(written, api?.index, holder)
   const url = target.kind === 'url' ? target.url : raw.trim()

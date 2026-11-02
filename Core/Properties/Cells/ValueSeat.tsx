@@ -39,7 +39,7 @@ export type SeatHost = {
   /** The element a pane opened from `el` anchors to. */
   anchor: (el: HTMLElement, column: ResolvedColumn) => HTMLElement
   holder: (row: ViewRow) => ConnPage | undefined
-  connections?: () => ConnectionsApi | undefined
+  connections: () => ConnectionsApi | undefined
   /** Null where a surface holds no column look: the panel, whose menu offers no Style and whose calendar reads the Nexus's forms. */
   style: (column: ResolvedColumn) => ColumnStyle | null
   /** A surface that styles its columns: its picker edits option looks. */
@@ -171,7 +171,7 @@ export function useValueSeat(host: SeatHost) {
     const link =
       !label && value.kind === 'link'
         ? linkMenuTarget(
-            resolveLink(readLinkText(value.value), host.connections?.()?.index, host.holder(row)),
+            resolveLink(readLinkText(value.value), host.connections()?.index, host.holder(row)),
             true,
             { hideable: host.hide?.from },
           )

@@ -65,6 +65,7 @@ const ctx = {
   schema,
   spaces: new Map(),
   assets: EMPTY_ASSET_MAP,
+  connections: () => undefined,
 } as unknown as ValueContext
 
 const col = (id: string): ResolvedColumn => resolveColumn(id, schema, [])!

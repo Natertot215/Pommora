@@ -84,7 +84,7 @@ export function PropertyPanel({
     // The label and the value both open on the value's span.
     anchor: (el, column) => rowEl(column.id) ?? el,
     holder: (r) => (ctx ? holderOf(r, ctx) : undefined),
-    connections: () => ctx?.connections?.(),
+    connections: () => ctx?.connections(),
     style: () => null,
     clear: (_, column) => emptyRow(column.id, true),
     hide: { from: 'row', run: (_, column) => emptyRow(column.id, false) },

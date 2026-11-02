@@ -72,6 +72,7 @@ function Surface({
     commit,
     anchor: (el) => el,
     holder: () => row,
+    connections: () => undefined,
     columnOf: (id) => (id === column.id ? column : undefined),
     style: () => STYLE,
     ...over,

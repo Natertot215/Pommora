@@ -16,7 +16,7 @@ export interface ValueContext {
   /** Held on the context rather than read per cell, so one subscription serves the whole view instead of one per rendered value. */
   assets: AssetMap
   /** Read when a value colors or follows a link. A getter rather than the api itself, so a view holding no link subscribes to no heading change and builds no page index. */
-  connections?: () => ConnectionsApi | undefined
+  connections: () => ConnectionsApi | undefined
   headingLinkStyle: HeadingLinkStyle
   inPageHeadingResolution: InPageHeadingResolution
 }

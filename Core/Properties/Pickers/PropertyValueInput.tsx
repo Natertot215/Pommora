@@ -29,16 +29,16 @@ export function PropertyValueInput({
   def: PropertyDefinition
   current: PropertyValue | null
   holder?: ConnPage
-  connections?: () => ConnectionsApi | undefined
+  connections: () => ConnectionsApi | undefined
   seat?: ConnEditAction
   popover?: { open: boolean; triggerRef: RefObject<HTMLElement | null> }
   onCommit: (next: PropertyValue | null) => void
   onClose: () => void
 }): React.JSX.Element {
-  const host = useEditorHost({ connections: useSession(() => connections?.()) })
+  const host = useEditorHost({ connections: useSession(() => connections()) })
   const initial = editorText(current)
   const parse = (text: string): PropertyValue | null | undefined =>
-    parseEditorValue(def.type, text, current, { index: connections?.()?.index, own: holder })
+    parseEditorValue(def.type, text, current, { index: connections()?.index, own: holder })
   const invalid = (text: string): boolean => parse(text) === undefined
   // Deduped on what the field would reopen on, since a seat may have rewritten the text it holds.
   const commit = (text: string): void => {
