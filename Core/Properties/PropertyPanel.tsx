@@ -14,9 +14,9 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyDefinition } from './properties'
-import { isBlankValue, type PropertyValue } from './propertyValue'
+import { isBlankValue } from './propertyValue'
 import type { PageFrontmatter } from '../Nexus/schemas'
-import type { ViewRow } from '../Views/viewRow'
+import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { Cell } from './Cells/Cell'
 import { useValueSeat, ValueSeat } from './Cells/ValueSeat'
 import type { PickEntry } from './Pickers/PropertyPicker'
@@ -86,8 +86,8 @@ export function PropertyPanel({
     holder: (r) => (ctx ? holderOf(r, ctx) : undefined),
     connections: () => ctx?.connections(),
     style: () => null,
-    clear: (_, column) => emptyRow(column.id, true),
-    hide: { from: 'row', run: (_, column) => emptyRow(column.id, false) },
+    clear: (r, column) => emptyRow(r, column, true),
+    hide: { from: 'row', run: (r, column) => emptyRow(r, column, false) },
   })
   const subjectId = subject.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
@@ -157,10 +157,6 @@ export function PropertyPanel({
   const contextIds = contextIdsOf(tree)
 
   const writer = useValueWriter({ rowOf: (id) => (row?.id === id ? row : undefined), setOverride })
-  const commit = (id: string, next: PropertyValue | null): void => {
-    const column = resolveColumn(id, schema, contextIds)
-    if (row && column) assignValue(writer, row, column, next)
-  }
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
   const schemaFields: Field[] = schemaTargets(schema, () => true)
@@ -253,10 +249,10 @@ export function PropertyPanel({
   const addSeat = useHeldPresence(addOpen?.fromRow ? addOpen.key : null, 'fast')
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
-  const emptyRow = (id: string, keep: boolean): void => {
-    commit(id, null)
-    if (keep) reveal(id)
-    else setRevealed((prev) => new Set([...prev].filter((r) => r !== id)))
+  const emptyRow = (at: ViewRow, column: ResolvedColumn, keep: boolean): void => {
+    assignValue(writer, at, column, null)
+    if (keep) reveal(column.id)
+    else setRevealed((prev) => new Set([...prev].filter((id) => id !== column.id)))
   }
   const revealAndEdit = (id: string): void => {
     setAddOpen(null)
@@ -292,7 +288,7 @@ export function PropertyPanel({
                   column={column}
                   ctx={ctx}
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
-                  commit={(next) => commit(id, next)}
+                  commit={(next) => assignValue(writer, row, column, next)}
                   empty={<EmptyValue className={cx('cell-empty', text.caption.standard)} />}
                   onPane={(anchor) => seat.pane(row, column, anchor)}
                 />
