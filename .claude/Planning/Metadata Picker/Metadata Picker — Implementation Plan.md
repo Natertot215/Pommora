@@ -10,7 +10,9 @@
 
 | Head | Tests | Start | End |
 |------|-------|-------|-----|
-| {filled by Task 0-5} | {filled by Task 0-5} | | |
+| `cb9620327` | 9,078 passed, 2 skipped (548 files) | 11-02-2026 11:31 AM | |
+
+**`~/Test` Hash:** `e5a32a5d30d6a11310cd559ee2b1b84b261c3265` at Run Start.
 
 **Net Ledger** (Actionable column of `view-delta --exclude .claude`; Measured is cumulative from the BASELINE head, and a phase's own delta, its Measured less the row above, is held against its per-phase Estimate):
 
@@ -209,13 +211,13 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
 
 #### Process Overview
 
-- [ ] `[Stop: Nathan ratifies; no code changes before this]`
+- [x] `[Stop: Nathan ratifies; no code changes before this]`
 - [ ] **Phase 0** — Drives and Pins
-  - [ ] Run Start
-  - [ ] Task 0-1 · The log reads as ratified
-  - [ ] Task 0-2 · Group 15's repair
-  - [ ] Task 0-3 · The harness additions
-  - [ ] Task 0-4 · The pins
+  - [x] Run Start
+  - [x] Task 0-1 · The log reads as ratified
+  - [x] Task 0-2 · Group 15's repair
+  - [x] Task 0-3 · The harness additions
+  - [x] Task 0-4 · The pins
   - [ ] Task 0-5 · The baseline and all seven drives
 - [ ] **Phase 1** — Kit Imports
   - [ ] Task 1-1 · The barrel leaves
