@@ -82,7 +82,6 @@ export function VisibilityFrame({
   footer,
   label = 'Settings',
   current,
-  maxHeight,
 }: {
   source: CollectionNode | SetNode
   schema: PropertyDefinition[]
@@ -91,7 +90,6 @@ export function VisibilityFrame({
   footer?: ReactNode
   label?: string
   current?: string
-  maxHeight?: number
 }): React.JSX.Element | null {
   const saveView = useSaveView(source)
   const tree = useSession((st) => st.tree)
@@ -122,7 +120,7 @@ export function VisibilityFrame({
     <MenuScrollFrame
       header={<MenuTopRow label={label} current={current} onBack={onBack} />}
       footer={footer}
-      maxHeight={maxHeight}
+      maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
     >
       <LineZone
         className={s.frameZone}

@@ -12,7 +12,7 @@ import { OptionOrderList } from './OptionOrderList'
 import { orderOptions, SUB_LOOK } from './paneRows'
 import { liveBucketOrder } from '../Pipeline/group'
 import { FILEDATA_TARGETS, schemaTargets, targetOption } from '../paneTargets'
-import { chipRegion, middleRegion, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+import { chipRegion, middleRegion, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { viewSpecOf } from '../valueKinds'
 
 type OrderChoice = SortCriterion['direction'] | 'custom'
@@ -104,7 +104,7 @@ export function SortFrame({
   return (
     <MenuScrollFrame
       header={<MenuTopRow label={label} current="Sorting" onBack={onBack} />}
-      maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
+      maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <MenuRowView
         row={pickerRow(

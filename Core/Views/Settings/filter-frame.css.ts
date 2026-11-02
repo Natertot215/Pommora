@@ -4,8 +4,7 @@ import { borderedField } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
 import { rowBox } from '@pommora/uix/Menus/menu-row.css'
-import { PANE_MIN_H } from '@pommora/uix/Menus/frame-slide.css'
-import { ruleFrame } from '@pommora/uix/Menus/frames.css'
+import { ruleFrame, SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
 
 const c = colorVars.color
 
@@ -17,7 +16,7 @@ const TRAILING_GAP = '2px'
 
 export const frame = style([
   ruleFrame,
-  { ...growToContent(FILTER_MAX_WIDTH), minHeight: `${PANE_MIN_H}px` },
+  { ...growToContent(FILTER_MAX_WIDTH), minHeight: `${SETTINGS_PANE_FLOOR.minHeight}px` },
 ])
 
 export const ruleList = style({

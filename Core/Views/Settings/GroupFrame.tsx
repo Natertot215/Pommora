@@ -64,7 +64,7 @@ import {
   hiddenRow,
   middleRegion,
   optionRow,
-  VIEW_SETTINGS_MAX_HEIGHT,
+  SETTINGS_PANE_MAX_HEIGHT,
 } from '@pommora/uix/Menus/frames.css'
 import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
@@ -225,7 +225,7 @@ export function GroupFrame({
     <MenuScrollFrame
       header={<MenuTopRow label={label} current="Grouping" onBack={onBack} />}
       footer={footings}
-      maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
+      maxHeight={SETTINGS_PANE_MAX_HEIGHT}
     >
       <MenuRowView
         row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupBy)}

@@ -38,8 +38,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { selectTargetOf } from '../../Navigation/navRef'
 
-const PANE_SQUARE = 225
-
 export function ViewFrame({
   node,
   schema,
@@ -216,13 +214,7 @@ export function ViewFrame({
 
   return (
     <>
-      <FrameSlide
-        open={!!editing}
-        root={list}
-        detail={detail}
-        minWidth={PANE_SQUARE}
-        minHeight={PANE_SQUARE}
-      />
+      <FrameSlide {...s.SETTINGS_PANE_FLOOR} open={!!editing} root={list} detail={detail} />
       <IconChoice
         open={!!iconFor}
         onClose={() => setIconFor(null)}

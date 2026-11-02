@@ -5,7 +5,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
-import { ICON } from '@pommora/uix/Menus/frames.css'
+import { ICON, SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { containerSchema, owningCollection } from '../../Nexus/treePatch'
@@ -16,7 +16,6 @@ import { LayoutFrame, VIEW_ROWS, type ViewRow, type ViewRowId } from './LayoutFr
 import { ViewLeaf } from './ViewLeaf'
 import { ScalePicker } from '../../Settings/ScalePicker'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { MenuIndex } from '@pommora/uix/Menus/MenuIndex'
 import {
   FooterIconButton,
@@ -200,11 +199,10 @@ function ContainerSettings({
   return (
     <>
       <FrameSlide
+        {...SETTINGS_PANE_FLOOR}
         open={detailPane !== null}
         root={scopedRoot || plainRoot}
         detail={detailPane && detailFor(detailPane)}
-        minWidth={PANE_MIN_W}
-        minHeight={PANE_MIN_H}
       />
       <IconChoice
         open={iconOpen}

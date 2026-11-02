@@ -40,7 +40,6 @@ import { OptionEditor } from './OptionEditor'
 import { PickerControl } from '@pommora/uix/Menus/PickerControl'
 import { rowsFor } from './typeRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneRestGroup, type PaneDrop, paneSpec } from '@pommora/uix/Menus/paneDrop'
 import { fullOrderIndex } from '@pommora/uix/Utilities/moveItem'
@@ -328,7 +327,7 @@ export function PropertyFrame({
           />
         }
         footer={styleFooting}
-        maxHeight={s.VIEW_SETTINGS_MAX_HEIGHT}
+        maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
       >
         <InlineEditHeader
           value={def.label}
@@ -353,6 +352,7 @@ export function PropertyFrame({
   const list = (
     <MenuScrollFrame
       header={<MenuTopRow label="Settings" current="Properties" onBack={onBack} />}
+      maxHeight={s.SETTINGS_PANE_MAX_HEIGHT}
       footer={
         <MenuFooting
           leading={
@@ -397,11 +397,10 @@ export function PropertyFrame({
   return (
     <>
       <FrameSlide
+        {...s.SETTINGS_PANE_FLOOR}
         open={view.kind === 'type' || editing !== undefined}
         root={list}
         detail={view.kind === 'type' ? typePicker : editing && editor(editing)}
-        minWidth={PANE_MIN_W}
-        minHeight={PANE_MIN_H}
       />
       <IconChoice
         open={iconFor === editing?.id}

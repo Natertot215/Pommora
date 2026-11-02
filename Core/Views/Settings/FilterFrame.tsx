@@ -39,6 +39,7 @@ import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Menus/PickerControl'
+import { SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { type DecodedFilter, decodeFilter, filterTargets, operatorsFor } from '../filterModel'
 import type { OperatorChoice } from '../valueKinds'
 import * as fp from './filter-frame.css'
@@ -195,7 +196,6 @@ export function FilterFrame({
   tree,
   back,
   targets: supplied,
-  maxHeight,
   onCommit,
 }: {
   locations: (CollectionNode | SetNode)[]
@@ -205,7 +205,6 @@ export function FilterFrame({
   tree: NexusTree | null
   back?: { label: string; onBack: () => void }
   targets?: PaneTarget[]
-  maxHeight?: number
   onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const nexus = useNexusForms()
@@ -477,7 +476,7 @@ export function FilterFrame({
   return (
     <MenuScrollFrame
       className={fp.frame}
-      maxHeight={maxHeight}
+      maxHeight={SETTINGS_PANE_MAX_HEIGHT}
       header={back && <MenuTopRow label={back.label} current="Filtering" onBack={back.onBack} />}
       footer={
         <MenuFooting

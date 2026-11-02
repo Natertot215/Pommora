@@ -7,8 +7,7 @@ import {
   MenuScrollFrame,
 } from '@pommora/uix/Menus/MenuRows'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
-import { VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+import { SETTINGS_PANE_FLOOR } from '@pommora/uix/Menus/frames.css'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
@@ -112,6 +111,7 @@ export function MatrixMenu(): React.JSX.Element {
 
   return (
     <FrameSlide
+      {...SETTINGS_PANE_FLOOR}
       open={filtering && tree !== null}
       root={root}
       detail={
@@ -123,13 +123,10 @@ export function MatrixMenu(): React.JSX.Element {
             schema={tree.config.registry}
             tree={tree}
             back={{ label: MATRIX_TITLE, onBack: () => setFiltering(false) }}
-            maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
             onCommit={(next) => patch({ filter: standalonePatch(next) })}
           />
         )
       }
-      minWidth={PANE_MIN_W}
-      minHeight={PANE_MIN_H}
     />
   )
 }

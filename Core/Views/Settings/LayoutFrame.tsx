@@ -13,7 +13,7 @@ import {
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import { MenuIndex, steppedRow, pickerRow } from '@pommora/uix/Menus/MenuIndex'
 import { MenuSeparator, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus/MenuRows'
-import { ICON, VIEW_SETTINGS_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
+import { ICON, SETTINGS_PANE_FLOOR, SETTINGS_PANE_MAX_HEIGHT } from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityFrame } from './VisibilityFrame'
@@ -21,7 +21,6 @@ import { switchRows, type SwitchEntry } from './switchRows'
 import type { PickerOption } from '@pommora/uix/Menus/PickerControl'
 import { ViewLeaf, type ViewLeafId } from './ViewLeaf'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
 import { TENTHS_SCALE } from '../../Settings/personalization'
@@ -192,7 +191,7 @@ export function LayoutFrame({
       return (
         <MenuScrollFrame
           header={<MenuTopRow label="Views" current="Layout" onBack={closeLeaf} />}
-          maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
+          maxHeight={SETTINGS_PANE_MAX_HEIGHT}
         >
           <ViewSwitches source={source} view={view} switches={options.switches} />
         </MenuScrollFrame>
@@ -204,7 +203,6 @@ export function LayoutFrame({
         view={view}
         label="Views"
         current="Layout"
-        maxHeight={VIEW_SETTINGS_MAX_HEIGHT}
         onBack={closeLeaf}
         footer={<ViewSwitches source={source} view={view} switches={options.switches} separated />}
       />
@@ -240,7 +238,7 @@ export function LayoutFrame({
     )
 
   const mainFrame = (
-    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={VIEW_SETTINGS_MAX_HEIGHT}>
+    <MenuScrollFrame header={header} footer={cardsRows} maxHeight={SETTINGS_PANE_MAX_HEIGHT}>
       {door === 'full' && (
         <>
           {title}
@@ -270,11 +268,10 @@ export function LayoutFrame({
 
   return (
     <FrameSlide
+      {...SETTINGS_PANE_FLOOR}
       open={frame !== null}
       root={mainFrame}
       detail={frame && leafFor(frame)}
-      minWidth={PANE_MIN_W}
-      minHeight={PANE_MIN_H}
     />
   )
 }
