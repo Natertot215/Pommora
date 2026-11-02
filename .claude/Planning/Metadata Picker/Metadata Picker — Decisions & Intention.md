@@ -80,7 +80,7 @@ This work should leave one place to start from when assigning or managing an ent
 - **E-3 [CONFIRMED]:** For I-027, a click on a second dropdown while a list is open should only close that list. This covers dropdown lists inside panes; a pane under `focus="keep"` still lets an outside press land, as it documents. The clock list should drop the release in place of a shield, as its one reasoned exception, since a shield takes a double-click's second press.
 - **E-4 [CONFIRMED]:** I-042 is in scope; I-051 stays its own issue, with its citations re-anchored only where this work moves them.
 - **E-5 [CONFIRMED]:** The calendar's month, year, hour, and minute lists stay as their own nested panes rather than joining the standard dropdown.
-- **E-6 [INFERRED]:** These smaller folds join this work: the `'dateTime'` intent merging into `'picker'` with `anchorX` passed only for option panes, the panel's two commit functions, `pageMetaMenuItems` taking the Spaces and Properties branches once, the Space chip's choice stated once, `PickOption.value` renaming to `id` on the picker's side, and the `PickerMenu` development warning keyed on `onDismiss`, since a pane nothing dismisses leaves with its host.
+- **E-6 [INFERRED]:** These smaller folds join this work: the `'dateTime'` intent merging into `'picker'` with `centerX` passed only for option panes, the panel's two commit functions, `pageMenuItems` taking the Spaces and Properties branches once, the Space chip's choice stated once, `PickOption.value` renaming to `id` on the picker's side, and the `PickerMenu` development warning keyed on `onDismiss`, since a pane nothing dismisses leaves with its host.
 
 #### F - Adjacent Fixes
 
