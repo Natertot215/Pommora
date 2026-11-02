@@ -57,7 +57,7 @@ The order is what makes each step land once. Phase 0 readies the drives and pins
 | `holdsValue` • Function | Whether a column has a value to show. | `Core/Properties/fieldValue.ts` |
 | `GROUP_LABELS` • Constant | "Spaces" and "Properties", stated once. | `Core/Properties/columnDisplay.ts` |
 | `cardAddColumns` • Function | A card's filter over `itemColumns`, with show-only rows last. | `Core/Views/Cards/cardColumns.ts` |
-| `panePlacement.ts` • File | `placePane`, `sideFor`, `roomAround`, `crossing`, `VIEWPORT_MARGIN`, `PickerDirection`, `PanePos`, `TriggerBox`. Placement math out of a component. | `UIX/Pickers/panePlacement.ts` |
+| `panePlacement.ts` • File | `placePane`, `sideFor`, `roomAround`, `VIEWPORT_MARGIN`, `PickerDirection`, `PanePos`, `PanePoint`, `TriggerBox`. Placement math out of a component. | `UIX/Pickers/panePlacement.ts` |
 | `SlideGrowth` • Context | Tells a pane how much a slide is about to grow it. | `UIX/Menus/FrameSlide.tsx` |
 | `BASE_FEEL` • Constant | The base timing, shared by the slide's timeout, the pane's move, and the windows' morphs. Replaces `SLIDE_MS` and two inline copies. | `UIX/Animations/feel.ts` |
 | `at`, `centerX` • Props | One meaning each. Replace `anchorX`, `anchorY`, `anchorHeight`. | `UIX/Pickers/PickerMenu.tsx` |
@@ -971,7 +971,7 @@ Every pane should stay inside the window on every path, including one neither si
 
 **VERIFY**
 
-- [ ] Run the gates; each new case is watched red without `fenced`.
+- [ ] Run the gates; each fenced case is watched red without `fenced`, and the case that fits pins the fence's no-op range.
 
 #### Task 2-4
 
@@ -1585,7 +1585,7 @@ Every Add outcome should run against the real app. Group 16 (The Add List) opens
 - **Group 18 Gains:** a low card's calendar ends inside the window above its trigger, the list being short enough to fit below; a 40-option list on a low card; End Date on a slid calendar rises; Back after a flip; the last card in a row stays inside; Add at a panel's end in a dropdown and the SidePane; a sweep's **last** cell against a single click there, with long option labels, opening the same rect (B-8).
 - **`stepSlides` (Option Picker):** New Option, drag, right-click, and Status groups inside a slid pane; a click and a leaf open the same rows with no back bar (B-2).
 - **`stepMassPicks` (Option Picker):** a mass Select writes every row and closes; a Multi toggles and stays; a value held by some rows isn't ringed; one ⌘Z undoes all; create, drag, and menu in the folded pane.
-- **Rewordings:** `Properties Drive:870,974,975,979` and `MATRIX.md:143`, `Text Property Drive:256,679,682,684,685,688` and its shot `pane-from-chooser`, and `reveal-parity/run.mjs:545`'s comment lose "chooser". `scripts/README.md:10-16` gains the slid-in and mass-pick surfaces and reads "both pickers", and `:93-97` reads "in eighteen groups". 
+- **Rewordings:** `Properties Drive:870,974,975,979` and `MATRIX.md:143`, `Text Property Drive:256,679,682,684,685,688` and its shot `pane-from-chooser`, and `reveal-parity/run.mjs:545`'s comment lose "chooser". `scripts/README.md:10-16` gains the slid-in and mass-pick surfaces and reads "both pickers", and `:93-97` reads "the Properties Restructure's and the Metadata Picker's visible surfaces … in eighteen groups". 
 **VERIFY**
 
 - [ ] Group 16, group 18, and the Option Picker Drive pass from a worktree of this commit, and group 16's `›`, stamp, back-bar, and 240px-ceiling cases print the values *§Group 16* measured at HEAD beside their new ones.
@@ -2692,4 +2692,4 @@ Each row's exact wording is in *Investigation · §What Becomes False*.
 
 #### Deviations
 
-None yet.
+- **Phase 2 Review (`2a8cae9a0`):** a flip starts from the pane's measured top rather than `crossing`, which assumed an unfenced old box and jumped by the fence's correction; `crossing` and `TriggerBox.height` left, and the fence holds a too-tall pane's top on both sides. Tasks 2-3 and 2-4's AFTERs show the forms the review replaced.
